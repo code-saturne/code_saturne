@@ -4,7 +4,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -81,7 +81,7 @@ class OutputControlModel(Model):
         default['postprocessing_options'] = "binary"
         default['postprocessing_format'] = "EnSight"
         if self.case['salome']:
-            default['postprocessing_format'] = "MED_fichier"
+            default['postprocessing_format'] = "MED"
         default['fluid_domain'] = "on"
         default['domain_boundary'] = "off"
         default['syrthes_boundary'] = "on"
@@ -298,7 +298,7 @@ class OutputControlModel(Model):
         """
         Set choice of format for post processing output file
         """
-        self.isInList(choice, ('EnSight', 'MED_fichier', 'CGNS'))
+        self.isInList(choice, ('EnSight', 'MED', 'CGNS'))
         node = self.node_out.xmlInitNode('postprocessing_format', 'choice')
         node['choice'] = choice
 
@@ -623,14 +623,14 @@ class OutputControlModelTestCase(ModelTest):
     def checkSetandGetPostProFormat(self):
         """Check whether the format for post processing could be set and get"""
         model = OutputControlModel(self.case)
-        model.setPostProFormat('MED_fichier')
+        model.setPostProFormat('MED')
         doc = '''<output>
                     <postprocessing_mesh_options choice="0"/>
-                    <postprocessing_format choice="MED_fichier"/>
+                    <postprocessing_format choice="MED"/>
                  </output>'''
         assert model.node_out== self.xmlNodeFromString(doc), \
         'Could not set format of post processing in output control model'
-        assert model.getPostProFormat() == 'MED_fichier', \
+        assert model.getPostProFormat() == 'MED', \
         'Could not get format of post processing in output control model'
 
     def checkSetandGetPostProOptionsFormat(self):

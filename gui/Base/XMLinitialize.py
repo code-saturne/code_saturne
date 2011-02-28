@@ -202,6 +202,11 @@ class XMLinit(Variables):
             n = self.case.xmlGetNode('zone', name = node['zone'])
             node['label'] = n['label']
 
+        for node in self.case.xmlGetNodeList('postprocessing_format',
+                                             choice='MED_fichier'):
+            node['choice'] = 'MED'
+
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------

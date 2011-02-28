@@ -1,3 +1,9 @@
+* 23/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Replace "MED_fichier" name in XML file by "MED" (MED 2.3/MED 3.0 neutral).
+  modified files:
+    gui/Base/XMLinitialize.py
+    gui/Pages/OutputControlModel.py
+
 * 23/02/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Make the sure the turbulence model definition is available in the interface
   when checking for it within the coal combustion setup (so as to avoid issues
