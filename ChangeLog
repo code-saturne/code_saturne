@@ -1,3 +1,8 @@
+* 28/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added file missing from previous checkin in GUI.
+  added file:
+    gui/Pages/icons/32x32/go-previous.png
+
 * 22/02/2011 - David Monfort <david.monfort@edf.fr>
   Fix a bug in the XML creation when defining several classes of coal.
   modified routine:
