@@ -1,4 +1,21 @@
 * 01/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix handling of probes using a physical-time based output frequency.
+  modified files:
+    src/base/caltri.f90
+
+* 01/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI update for probe format selection.
+  modified files:
+    gui/Pages/OutputControlForm.ui
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+    src/base/iniusi.f90
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+    src/rayt/rayopt.f90
+    users/base/usini1.f90
+
+* 01/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Port to first release of CGNS 3.1, in which PYRA_13 changes place again.
   modified file:
     preprocessor/pre-post/ecs_pre_cgns.c

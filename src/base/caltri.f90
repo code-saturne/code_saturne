@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2010 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -33,25 +33,24 @@ subroutine caltri &
    ra     )
 
 !===============================================================================
-!  FONCTION  :
-!  ----------
+! Purpose:
+! --------
 
-! GESTION DU PROGRAMME (LECTURE, RESOLUTION, ECRITURE)
+! Main solver subroutine (read, time loop, write)
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
+! iverif           ! i  ! <-- ! elementary tests flag                          !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________.____._____.________________________________________________.
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -109,7 +108,7 @@ integer          ifnia1 , ifnra1 , ifnia2 , ifnia3, ifnra2
 integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
-integer          ntsdef, nthdef, ntcrel, ntcam1
+integer          ntsdef, ntcam1
 integer          iphas , ivar
 
 integer          iicoce , iityce
@@ -129,6 +128,8 @@ integer          maxelt , ils
 
 double precision titer1, titer2
 double precision tecrf1, tecrf2
+
+double precision, save :: ttchis
 
 character        ficsui*32
 
@@ -154,6 +155,9 @@ istpp1 = 0
 
 !---> Nombre max d'elements pour le selector
 maxelt = max(ncelet,nfac,nfabor)
+
+!--> Probes output tracking
+ttchis = -1.d0
 
 !===============================================================================
 ! 2. GEOMETRIE
@@ -1223,24 +1227,20 @@ call pstvar                                                       &
 ! 22. HISTORIQUES
 !===============================================================================
 
-if (nthist.gt.0 .and. itrale.gt.0) then
-  if (mod(ntcabs,nthist).eq.0) then
+if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
-    modhis = 0
-    if(nthsav.gt.0) then
-      if(mod(ntcabs,nthsav).lt.nthist ) modhis = 1
-    elseif(nthsav.eq.0) then
-      ntcrel =  ntcabs-ntpabs
-      nthdef = (ntmabs-ntpabs)/4
-      if( (ntcrel-10).ge.0 .and. (ntcrel-10).lt.nthist) then
-        modhis = 1
-      elseif(nthdef.gt.0) then
-        if(mod(ntcrel,nthdef).lt.nthist) then
-          modhis = 1
-        endif
-      endif
+  modhis = -1
+  if (nthist.gt.0 .and. mod(ntcabs, nthist).eq.0) then
+    modhis = 1
+  else if (frhist.gt.0.d0) then
+    if ((ttcabs - ttchis) .gt. frhist*(1-1.0d-6)) then
+      modhis = 1
     endif
-    if (ntcabs.eq.ntmabs) modhis=0
+  endif
+
+  if (modhis.eq.1) then
+
+    ttchis = ttcabs
 
     call ecrhis(ndim, ncelet, ncel, modhis, xyzcen, ra)
     !==========
@@ -1257,6 +1257,7 @@ if (nthist.gt.0 .and. itrale.gt.0) then
     endif
 
   endif
+
 endif
 
 call ushist                                                       &
