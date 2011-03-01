@@ -1,4 +1,9 @@
 * 01/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Port to first release of CGNS 3.1, in which PYRA_13 changes place again.
+  modified file:
+    preprocessor/pre-post/ecs_pre_cgns.c
+
+* 01/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Correct hostfile argument for MPICH2 with mpdboot.
   modified file:
     bin/cs_exec_environment.py

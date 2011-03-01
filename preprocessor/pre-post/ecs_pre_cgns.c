@@ -198,14 +198,13 @@ typedef struct {
 } ecs_loc_cgns_zone_t;
 
 
-/* Structure définissant un type d'élément CGNS */
+/* Map element type from CGNS to Preprocessor */
 
 typedef struct {
 
-  CS_CG_ENUM(ElementType_t)   cgns_type;   /* Type CGNS de l'élément         */
-  ecs_elt_typ_t               ecs_type;    /* Type ECS  de l'élément         */
-  ecs_int_t                   nbr_som;     /* Nombre de sommets associés     */
-  ecs_int_t                   num_som[8];  /* Sommets ECS */
+  ecs_elt_typ_t               ecs_type;    /* ECS element type               */
+  ecs_int_t                   nbr_som;     /* Number of matching vertices    */
+  ecs_int_t                   num_som[8];  /* ECS vertices */
 
 } ecs_cgns_elt_t;
 
@@ -214,167 +213,6 @@ typedef struct {
  * Définitions de variables globales
  *============================================================================*/
 
-/* Le tableau suivant est donné dans le même ordre que les définitions */
-/* de cgnslib.h (mais ne contient pas les deux premières entrées)      */
-
-static const ecs_cgns_elt_t
-ecs_cgns_elt_liste_c[NofValidElementTypes] = {
-  {                                /* 0 */
-    CS_CG_ENUM(ElementTypeNull),
-    ECS_ELT_TYP_NUL,
-    1,
-    { 0 }
-  },
-  {                                /* 1 */
-    CS_CG_ENUM(ElementTypeUserDefined),
-    ECS_ELT_TYP_NUL,
-    1,
-    { 0 }
-  },
-  {                                /* 2 */
-    CS_CG_ENUM(NODE),
-    ECS_ELT_TYP_NUL,
-    1,
-    { 0 }
-  },
-  {                                /* 3 */
-    CS_CG_ENUM(BAR_2),
-    ECS_ELT_TYP_NUL,
-    2,
-    { 0 }
-  },
-  {                                /* 4 */
-    CS_CG_ENUM(BAR_3),
-    ECS_ELT_TYP_NUL,
-    3,
-    { 0 }
-  },
-  {                                /* 5 */
-    CS_CG_ENUM(TRI_3),
-    ECS_ELT_TYP_FAC_TRIA,
-    3,
-    { 1, 2, 3 }
-  },
-  {                                /* 6 */
-    CS_CG_ENUM(TRI_6),
-    ECS_ELT_TYP_FAC_TRIA,
-    6,
-    { 1, 2, 3 }
-  },
-  {                                /* 7 */
-    CS_CG_ENUM(QUAD_4),
-    ECS_ELT_TYP_FAC_QUAD,
-    4,
-    { 1, 2, 3, 4 }
-  },
-  {                                /* 8 */
-    CS_CG_ENUM(QUAD_8),
-    ECS_ELT_TYP_FAC_QUAD,
-    8,
-    { 1, 2, 3, 4 }
-  },
-  {                                /* 9 */
-    CS_CG_ENUM(QUAD_9),
-    ECS_ELT_TYP_FAC_QUAD,
-    9,
-    { 1, 2, 3, 4 }
-  },
-  {                               /* 10 */
-    CS_CG_ENUM(TETRA_4),
-    ECS_ELT_TYP_CEL_TETRA,
-    4,
-    { 1, 2, 3, 4 }
-  },
-  {                               /* 11 */
-    CS_CG_ENUM(TETRA_10),
-    ECS_ELT_TYP_CEL_TETRA,
-    10,
-    { 1, 2, 3, 4 }
-  },
-  {                               /* 12 */
-    CS_CG_ENUM(PYRA_5),
-    ECS_ELT_TYP_CEL_PYRAM,
-    5,
-    { 1, 2, 3, 4, 5 }
-  },
-#if (CGNS_VERSION >= 3000)
-  {                               /* 13 */
-    CS_CG_ENUM(PYRA_13),
-    ECS_ELT_TYP_CEL_PYRAM,
-    13,
-    { 1, 2, 3, 4, 5 }
-  },
-#endif
-  {                               /* 13 or 14 */
-    CS_CG_ENUM(PYRA_14),
-    ECS_ELT_TYP_CEL_PYRAM,
-    14,
-    { 1, 2, 3, 4, 5 }
-  },
-  {                               /* 14 or 15 */
-    CS_CG_ENUM(PENTA_6),
-    ECS_ELT_TYP_CEL_PRISM,
-    6,
-    { 1, 2, 3, 4, 5, 6 }
-  },
-  {                               /* 15 or 16 */
-    CS_CG_ENUM(PENTA_15),
-    ECS_ELT_TYP_CEL_PRISM,
-    15,
-    { 1, 2, 3, 4, 5, 6 }
-  },
-  {                               /* 16 or 17 */
-    CS_CG_ENUM(PENTA_18),
-    ECS_ELT_TYP_CEL_PRISM,
-    18,
-    { 1, 2, 3, 4, 5, 6 }
-  },
-  {                               /* 17 or 18 */
-    CS_CG_ENUM(HEXA_8),
-    ECS_ELT_TYP_CEL_HEXA,
-    8,
-    { 1, 2, 3, 4, 5, 6, 7, 8 },
-  },
-  {                               /* 18 or 19 */
-    CS_CG_ENUM(HEXA_20),
-    ECS_ELT_TYP_CEL_HEXA,
-    20,
-    { 1, 2, 3, 4, 5, 6, 7, 8 },
-  },
-  {                               /* 19 or 20 */
-    CS_CG_ENUM(HEXA_27),
-    ECS_ELT_TYP_CEL_HEXA,
-    27,
-    { 1, 2, 3, 4, 5, 6, 7, 8 },
-  },
-  {                               /* 20 or 21 */
-    CS_CG_ENUM(MIXED),
-    ECS_ELT_TYP_NUL,
-    0,
-    { 0 },
-  },
-#if (CGNS_VERSION < 3000)
-  {                               /* 21 */
-    CS_CG_ENUM(NGON_n),
-    ECS_ELT_TYP_FAC_POLY,
-    0,
-    { 0 }
-  }
-#else
-  {                               /* 22 */
-    CS_CG_ENUM(NGON_n),
-    ECS_ELT_TYP_FAC_POLY,
-    0,
-    { 0 }
-  },
-  {                               /* 23 */
-    CS_CG_ENUM(NFACE_n),
-    ECS_ELT_TYP_CEL_POLY,
-    0,
-    { 0 }
-  }
-#endif
-};
 
 /*============================================================================
  * Fonctions privées
@@ -2019,6 +1857,100 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
  *----------------------------------------------------------------------------*/
 
 static void
+ecs_loc_pre_cgns__init_elt_type(ecs_cgns_elt_t elt_type[NofValidElementTypes])
+{
+  int i, j;
+
+  /* Initialize all types to ECS_ELT_TYP_NUL so as to handle defaults;
+     MIXED will be handled separately in caller code. */
+
+  for (i = 0; i < NofValidElementTypes; i++) {
+    elt_type[i].ecs_type = ECS_ELT_TYP_NUL;
+    elt_type[i].nbr_som = 0;
+    for (j = 0; j < 8; j++)
+      elt_type[i].num_som[j] = -1;
+  }
+
+  /* Map known and supported element types */
+
+  elt_type[CS_CG_ENUM(ElementTypeNull)].nbr_som = 1;
+  elt_type[CS_CG_ENUM(ElementTypeUserDefined)].nbr_som = 1;
+  elt_type[CS_CG_ENUM(NODE)].nbr_som = 1;
+  elt_type[CS_CG_ENUM(BAR_2)].nbr_som = 2;
+  elt_type[CS_CG_ENUM(BAR_3)].nbr_som = 3;
+
+  elt_type[CS_CG_ENUM(TRI_3)].ecs_type = ECS_ELT_TYP_FAC_TRIA;
+  elt_type[CS_CG_ENUM(TRI_3)].nbr_som = 3;
+
+  elt_type[CS_CG_ENUM(TRI_6)].ecs_type = ECS_ELT_TYP_FAC_TRIA;
+  elt_type[CS_CG_ENUM(TRI_6)].nbr_som = 6;
+
+  elt_type[CS_CG_ENUM(QUAD_4)].ecs_type = ECS_ELT_TYP_FAC_QUAD;
+  elt_type[CS_CG_ENUM(QUAD_4)].nbr_som = 4;
+
+  elt_type[CS_CG_ENUM(QUAD_8)].ecs_type = ECS_ELT_TYP_FAC_QUAD;
+  elt_type[CS_CG_ENUM(QUAD_8)].nbr_som = 8;
+
+  elt_type[CS_CG_ENUM(QUAD_9)].ecs_type = ECS_ELT_TYP_FAC_QUAD;
+  elt_type[CS_CG_ENUM(QUAD_9)].nbr_som = 9;
+
+  elt_type[CS_CG_ENUM(TETRA_4)].ecs_type = ECS_ELT_TYP_CEL_TETRA;
+  elt_type[CS_CG_ENUM(TETRA_4)].nbr_som = 4;
+
+  elt_type[CS_CG_ENUM(TETRA_10)].ecs_type = ECS_ELT_TYP_CEL_TETRA;
+  elt_type[CS_CG_ENUM(TETRA_10)].nbr_som = 10;
+
+  elt_type[CS_CG_ENUM(PYRA_5)].ecs_type = ECS_ELT_TYP_CEL_PYRAM;
+  elt_type[CS_CG_ENUM(PYRA_5)].nbr_som = 5;
+
+  elt_type[CS_CG_ENUM(PYRA_14)].ecs_type = ECS_ELT_TYP_CEL_PYRAM;
+  elt_type[CS_CG_ENUM(PYRA_14)].nbr_som = 14;
+
+  elt_type[CS_CG_ENUM(PENTA_6)].ecs_type = ECS_ELT_TYP_CEL_PRISM;
+  elt_type[CS_CG_ENUM(PENTA_6)].nbr_som = 6;
+
+  elt_type[CS_CG_ENUM(PENTA_15)].ecs_type = ECS_ELT_TYP_CEL_PRISM;
+  elt_type[CS_CG_ENUM(PENTA_15)].nbr_som = 15;
+
+  elt_type[CS_CG_ENUM(PENTA_18)].ecs_type = ECS_ELT_TYP_CEL_PRISM;
+  elt_type[CS_CG_ENUM(PENTA_18)].nbr_som = 18;
+
+  elt_type[CS_CG_ENUM(HEXA_8)].ecs_type = ECS_ELT_TYP_CEL_HEXA;
+  elt_type[CS_CG_ENUM(HEXA_8)].nbr_som = 8;
+
+  elt_type[CS_CG_ENUM(HEXA_20)].ecs_type = ECS_ELT_TYP_CEL_HEXA;
+  elt_type[CS_CG_ENUM(HEXA_20)].nbr_som = 20;
+
+  elt_type[CS_CG_ENUM(HEXA_27)].ecs_type = ECS_ELT_TYP_CEL_HEXA;
+  elt_type[CS_CG_ENUM(HEXA_27)].nbr_som = 27;
+
+#if (CGNS_VERSION >= 3000)
+  elt_type[CS_CG_ENUM(PYRA_13)].ecs_type = ECS_ELT_TYP_CEL_PYRAM;
+  elt_type[CS_CG_ENUM(PYRA_13)].nbr_som = 13;
+#endif
+
+  elt_type[CS_CG_ENUM(NGON_n)].ecs_type = ECS_ELT_TYP_FAC_POLY;
+
+#if (CGNS_VERSION >= 3000)
+  elt_type[CS_CG_ENUM(NFACE_n)].ecs_type = ECS_ELT_TYP_CEL_POLY;
+#endif
+
+  /* Elements vertices in current CGNS versions have the same
+     local numbering as that of Code_Saturne. */
+
+  for (i = 0; i < NofValidElementTypes; i++) {
+    int nbr_som = ecs_fic_elt_typ_liste_c[elt_type[i].ecs_type].nbr_som;
+    for (j = 0; j < nbr_som; j++)
+      elt_type[i].num_som[j] = j+1;
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ *                        Lecture des éléments
+ *----------------------------------------------------------------------------*/
+
+static void
 ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
                           const ecs_loc_cgns_base_t  *base_maillage,
                           int                         nzones,
@@ -2055,6 +1987,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
   ecs_int_t    num_som_loc;
 
   ecs_elt_typ_t  ecs_typ;
+  ecs_cgns_elt_t ecs_cgns_elt_liste_c[NofValidElementTypes];
 
   /* Déclarations des variables de stockage        */
   /* avant transfert dans la structure du maillage */
@@ -2107,6 +2040,8 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
     ient_max = ECS_ENTMAIL_FAC;
   else
     ient_max = ECS_ENTMAIL_CEL;
+
+  ecs_loc_pre_cgns__init_elt_type(ecs_cgns_elt_liste_c);
 
   /* Allocations des tableaux locaux */
 
