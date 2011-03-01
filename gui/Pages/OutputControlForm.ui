@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>440</width>
-    <height>521</height>
+    <width>503</width>
+    <height>506</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -33,7 +33,7 @@
        <item row="0" column="0" >
         <widget class="QGroupBox" name="groupBoxListings" >
          <property name="title" >
-          <string>Outputs listings</string>
+          <string>Log frequency</string>
          </property>
          <layout class="QGridLayout" name="gridLayout" >
           <item row="0" column="0" >
@@ -512,13 +512,13 @@
      </widget>
      <widget class="QWidget" name="tabMONITORING" >
       <attribute name="title" >
-       <string>Monitoring Points Coordinates</string>
+       <string>Monitoring Points</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_6" >
        <item row="0" column="0" >
         <widget class="QGroupBox" name="groupBoxMonitoring" >
          <property name="title" >
-          <string>Monitoring points recording</string>
+          <string>Monitoring points output</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5" >
           <item row="0" column="0" >
@@ -548,6 +548,12 @@
             </item>
             <item>
              <widget class="QLineEdit" name="lineEditHisto" >
+              <property name="minimumSize" >
+               <size>
+                <width>30</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="maximumSize" >
                <size>
                 <width>40</width>
@@ -561,6 +567,12 @@
             </item>
             <item>
              <widget class="QLineEdit" name="lineEditFRHisto" >
+              <property name="minimumSize" >
+               <size>
+                <width>40</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="maximumSize" >
                <size>
                 <width>40</width>
@@ -569,6 +581,20 @@
               </property>
               <property name="toolTip" >
                <string>Code_Saturne key word: NTHIST</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label" >
+              <property name="text" >
+               <string>Format</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="comboBoxProbeFmt" >
+              <property name="sizeAdjustPolicy" >
+               <enum>QComboBox::AdjustToContents</enum>
               </property>
              </widget>
             </item>

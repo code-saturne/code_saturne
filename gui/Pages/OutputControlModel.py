@@ -82,6 +82,7 @@ class OutputControlModel(Model):
         default['postprocessing_format'] = "EnSight"
         if self.case['salome']:
             default['postprocessing_format'] = "MED"
+        default['probe_format'] = "DAT"
         default['fluid_domain'] = "on"
         default['domain_boundary'] = "off"
         default['syrthes_boundary'] = "on"
@@ -393,6 +394,27 @@ class OutputControlModel(Model):
         """
         self.isFloat(freq)
         self.node_out.xmlSetData('probe_recording_frequency_time', freq)
+
+
+    def getMonitoringPointFormat(self):
+        """
+        Return choice of format for post processing output file
+        """
+        node = self.node_out.xmlInitNode('probe_format', 'choice')
+        choice = node['choice']
+        if not choice:
+            choice = self.defaultInitialValues()['probe_format']
+            self.setMonitoringPointFormat(choice)
+        return choice
+
+
+    def setMonitoringPointFormat(self, choice):
+        """
+        Set choice of format for probes
+        """
+        self.isInList(choice, ('DAT', 'CSV'))
+        node = self.node_out.xmlInitNode('probe_format', 'choice')
+        node['choice'] = choice
 
 
     def addMonitoringPoint(self, x=0.0, y=0.0, z=0.0):

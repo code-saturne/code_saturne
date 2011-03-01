@@ -3971,6 +3971,7 @@ void CS_PROCF (csenso, CSENSO)
           int *const ichrvr,
           int *const ilisvr,
           int *const ihisvr,
+          int *const tplfmt,
  const    int *const isca,
  const    int *const iscapp,
  const    int *const ipprtp,
@@ -3980,6 +3981,8 @@ void CS_PROCF (csenso, CSENSO)
   int ipp;
 
   cs_var_t  *vars = cs_glob_var;
+  char fmtprb[16];
+  int size_fmtprb = sizeof(fmtprb) - 1;
 
   cs_gui_output_value("fluid_domain", ichrvl);
   cs_gui_output_value("domain_boundary", ichrbo);
@@ -3993,6 +3996,16 @@ void CS_PROCF (csenso, CSENSO)
   cs_gui_output_value("postprocessing_mesh_options", ichrmd);
   cs_gui_output_choice("postprocessing_format", fmtchr, size_fmt);
   cs_gui_output_choice("postprocessing_options", optchr, size_opt);
+  cs_gui_output_choice("probe_format", fmtprb, &size_fmtprb);
+
+  /* Time plot (probe) format */
+  for (i = strlen(fmtprb) - 1; i > 0 && fmtprb[i] == ' '; i--)
+    fmtprb[i] = '\0';
+
+  if (!strcmp(fmtprb, "DAT"))
+    *tplfmt = 1;
+  else if (!strcmp(fmtprb, "CSV"))
+    *tplfmt = 2;
 
   /* Surfacic variables output */
   cs_gui_surfacic_variable_post("yplus", ipstyp, ipstdv);
@@ -4075,6 +4088,7 @@ void CS_PROCF (csenso, CSENSO)
   bft_printf("--nthist = %i\n", *nthist);
   bft_printf("--frhist = %i\n", *frhist);
   bft_printf("--ncapt  = %i\n", *ncapt);
+  bft_printf("--tplfmt = %i\n", *tplfmt);
   for (i = 0; i < *ncapt; i++) {
     bft_printf("--xyzcap[%i][0] = %f\n", i, xyzcap[0 +i*3]);
     bft_printf("--xyzcap[%i][1] = %f\n", i, xyzcap[1 +i*3]);

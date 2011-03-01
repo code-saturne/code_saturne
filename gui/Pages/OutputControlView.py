@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -261,6 +261,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelPolygon        = QtPage.ComboModel(self.comboBoxPolygon,3,1)
         self.modelPolyhedra      = QtPage.ComboModel(self.comboBoxPolyhedra,3,1)
         self.modelHisto          = QtPage.ComboModel(self.comboBoxHisto,3,1)
+        self.modelProbeFmt       = QtPage.ComboModel(self.comboBoxProbeFmt,2,1)
 
         self.modelOutput.addItem(self.tr("No output"), 'None')
         self.modelOutput.addItem(self.tr("Output listing at each time step"), 'At each step')
@@ -281,7 +282,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         ale = self.ale()
 
         self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'EnSight')
-        self.modelFMTCHR.addItem(self.tr("MED"), 'MED_fichier')
+        self.modelFMTCHR.addItem(self.tr("MED"), 'MED')
         self.modelFMTCHR.addItem(self.tr("CGNS"), 'CGNS')
 
         self.modelFormat.addItem(self.tr("binary"), 'binary')
@@ -299,6 +300,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelHisto.addItem(self.tr("Monitoring points files at each time step"), 'At each step')
         self.modelHisto.addItem(self.tr("Monitoring points file every 'n' time steps"), 'Frequency_h')
         self.modelHisto.addItem(self.tr("Monitoring points file every 'x' second(s)"), 'Frequency_h_x')
+
+        self.modelProbeFmt.addItem(self.tr(".dat"), 'DAT')
+        self.modelProbeFmt.addItem(self.tr(".csv"), 'CSV')
 
         # Hide time frequency (in s) when calculation is steady
         if self.isSteady() != 1:
@@ -342,6 +346,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.comboBoxHisto, SIGNAL("activated(const QString&)"), self.slotMonitoringPoint)
         self.connect(self.lineEditHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequency)
         self.connect(self.lineEditFRHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequencyTime)
+        self.connect(self.comboBoxProbeFmt, SIGNAL("activated(const QString&)"), self.slotOutputProbeFmt)
 
         # Validators
 
@@ -441,6 +446,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             name = str(n+1)
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             self.__insertMonitoringPoint(name, X, Y, Z)
+
+        # values of probes format
+
+        fmt = self.mdl.getMonitoringPointFormat()
+        self.modelProbeFmt.setItem(str_model=fmt)
 
 
     @pyqtSignature("const QString &")
@@ -555,6 +565,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setMonitoringPointFrequency(nthist)
             self.lineEditHisto.hide()
             self.lineEditFRHisto.hide()
+            self.comboBoxProbeFmt.hide()
+        else:
+            self.comboBoxProbeFmt.show()
 
         if histo == "At each step":
             nthist = 1
@@ -599,6 +612,16 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if self.sender().validator().state == QValidator.Acceptable:
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)
+
+
+    @pyqtSignature("const QString &")
+    def slotOutputProbeFmt(self, text):
+        """
+        INPUT choice of the output for the probes (.dat, .csv)
+        """
+        fmt = self.modelProbeFmt.dicoV2M[str(text)]
+        log.debug("slotOutputProbeFmt-> fmt = %s" % fmt)
+        self.mdl.setMonitoringPointFormat(fmt)
 
 
     @pyqtSignature("")
@@ -788,6 +811,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelMeshes.disableItem(str_model='11')
             self.modelMeshes.disableItem(str_model='12')
         return ale
+
 
     def isSteady(self):
         """

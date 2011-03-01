@@ -1766,6 +1766,8 @@ frhist = -1.d0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ncapt  = 4
+tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
+
 xyzcap(1,1) = 0.30d0
 xyzcap(2,1) = 0.15d0
 xyzcap(3,1) = 0.01d0

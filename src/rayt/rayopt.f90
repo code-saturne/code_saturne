@@ -623,7 +623,7 @@ if (iihmpr.eq.1) then
        fmtchr, len(fmtchr), optchr, len(optchr),                  &
        ntchr,  frchr , iecaux,                                    &
        ipstdv, ipstyp, ipstcl, ipstft, ipstfo,                    &
-       ichrvr, ilisvr, ihisvr, isca, iscapp,                      &
+       ichrvr, ilisvr, ihisvr, tplfmt, isca, iscapp,              &
        ipprtp, xyzcap )
 
   do ii = 1,nvppmx
