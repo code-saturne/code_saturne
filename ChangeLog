@@ -1,4 +1,9 @@
-* 23/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+* 01/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct hostfile argument for MPICH2 with mpdboot.
+  modified file:
+    bin/cs_exec_environment.py
+
+* 28/02/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Replace "MED_fichier" name in XML file by "MED" (MED 2.3/MED 3.0 neutral).
   modified files:
     gui/Base/XMLinitialize.py

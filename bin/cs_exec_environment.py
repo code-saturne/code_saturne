@@ -655,11 +655,11 @@ class mpi_environment:
                     self.gen_hostsfile = 'sort $PBS_NODEFILE | uniq -C ' \
                         + '| awk \'{ printf("%s:%s", $2, $1); }\' > ./mpd.nodes'
                     self.del_hostsfile = 'rm -f ./mpd.nodes'
-                    self.mpiboot += ' --file ./mpd.nodes'
+                    self.mpiboot += ' --file=./mpd.nodes'
             else:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
-                    self.mpiboot += ' --file ' + hostsfile
+                    self.mpiboot += ' --file=' + hostsfile
 
         elif pm == 'hydra':
             # Nothing to do for resource managers directly handled by Hydra
