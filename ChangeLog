@@ -1,4 +1,9 @@
 * 02/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Only link cs_partition with required libraries.
+  modified file:
+    src/apps/Makefile.am
+
+* 02/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Path has priority over alternative mpiexec commands when searching for
   correct command in multiple MPI library environments.
   modified file:
