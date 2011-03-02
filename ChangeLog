@@ -1,3 +1,9 @@
+* 02/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Path has priority over alternative mpiexec commands when searching for
+  correct command in multiple MPI library environments.
+  modified file:
+    bin/cs_exec_environment.py
+
 * 01/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix handling of probes using a physical-time based output frequency.
   modified files:

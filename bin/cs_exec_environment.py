@@ -564,8 +564,8 @@ class mpi_environment:
                           'mpirun.mpich2', 'mpirun']
         pm = ''
 
-        for name in launcher_names:
-            for d in p:
+        for d in p:
+            for name in launcher_names:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
                     # Try to determine launcher type
@@ -606,19 +606,17 @@ class mpi_environment:
 
             # If a setup seems necessary, check paths
             if mpd_setup:
-                for d in p:
-                    if os.path.isfile(os.path.join(d, 'mpdboot')):
-                        if d == mpi_lib.bindir:
-                            self.mpiboot = os.path.join(d, 'mpdboot')
-                            self.mpihalt = os.path.join(d, 'mpdallexit')
-                            mpdtrace = os.path.join(d, 'mpdtrace')
-                            mpdlistjobs = os.path.join(d, 'mpdlistjobs')
-                        else:
-                            self.mpiboot = 'mpdboot'
-                            self.mpihalt = 'mpdallexit'
-                            mpdtrace = 'mpdtrace'
-                            mpdlistjobs = 'mpdlistjobs'
-                        break
+                if os.path.isfile(os.path.join(d, 'mpdboot')):
+                    if d == mpi_lib.bindir:
+                        self.mpiboot = os.path.join(d, 'mpdboot')
+                        self.mpihalt = os.path.join(d, 'mpdallexit')
+                        mpdtrace = os.path.join(d, 'mpdtrace')
+                        mpdlistjobs = os.path.join(d, 'mpdlistjobs')
+                    else:
+                        self.mpiboot = 'mpdboot'
+                        self.mpihalt = 'mpdallexit'
+                        mpdtrace = 'mpdtrace'
+                        mpdlistjobs = 'mpdlistjobs'
 
         # Determine processor count and MPMD handling
 
@@ -715,8 +713,8 @@ class mpi_environment:
                           'mpirun.mpich-shmem',
                           'mpirun']
 
-        for name in launcher_names:
-            for d in p:
+        for d in p:
+            for name in launcher_names:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
                     if d == mpi_lib.bindir:
@@ -763,8 +761,8 @@ class mpi_environment:
                           'mpiexec', 'mpirun']
         info_name = ''
 
-        for name in launcher_names:
-            for d in p:
+        for d in p:
+            for name in launcher_names:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
                     if d == mpi_lib.bindir:
@@ -823,8 +821,8 @@ class mpi_environment:
 
         launcher_names = ['mpiexec.lam', 'mpirun.lam', 'mpiexec', 'mpirun']
 
-        for name in launcher_names:
-            for d in p:
+        for d in p:
+            for name in launcher_names:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
                     if d == mpi_lib.bindir:
@@ -835,15 +833,13 @@ class mpi_environment:
             if self.mpiexec != None:
                 break
 
-        for d in p:
-            if os.path.isfile(os.path.join(d, 'lamboot')):
-                if d == mpi_lib.bindir:
-                    self.mpiboot = os.path.join(d, 'lamboot')
-                    self.mpihalt = os.path.join(d, 'lamhalt')
-                else:
-                    self.mpiboot = 'lamboot'
-                    self.mpihalt = 'lamhalt'
-                break
+        if os.path.isfile(os.path.join(d, 'lamboot')):
+            if d == mpi_lib.bindir:
+                self.mpiboot = os.path.join(d, 'lamboot')
+                self.mpihalt = os.path.join(d, 'lamhalt')
+            else:
+                self.mpiboot = 'lamboot'
+                self.mpihalt = 'lamhalt'
 
         # Determine processor count and MPMD handling
 
@@ -942,8 +938,8 @@ class mpi_environment:
 
         self.mpiexec = 'mpirun'
 
-        if not os.path.isabs(self.mpiexec):
-            for d in p:
+        for d in p:
+            if not os.path.isabs(self.mpiexec):
                 absname = os.path.join(d, self.mpiexec)
                 if os.path.isfile(absname):
                     if d == mpi_lib.bindir:
