@@ -764,7 +764,7 @@ void CS_PROCF (tppini, TPPINI)
  * integer          lpre        : <-- : prefix length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (tpsini, TPPINI)
+void CS_PROCF (tpsini, TPSINI)
 (
  const cs_int_t  *tplnum,
  const char      *tplnam,

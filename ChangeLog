@@ -1,4 +1,11 @@
 * 10/03/2011 - David Monfort <david.monfort@edf.fr>
+  Minor corrections as regards the time plotting code.
+  modified routines:
+    src/base/caltri.f90
+    src/base/cs_time_plot.c
+    src/base/iniini.f90
+
+* 10/03/2011 - David Monfort <david.monfort@edf.fr>
   Remove the MATISSE module from the current version as authorized
   by E. Bouquerel (internal letter, ref. ELIDC1100281).
   The MATISSE module can be found in its last version by the Subversion

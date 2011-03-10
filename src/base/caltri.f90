@@ -1152,12 +1152,12 @@ call pstvar                                                       &
 if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
   modhis = -1
-  if (nthist.gt.0 .and. mod(ntcabs, nthist).eq.0) then
-    modhis = 1
-  else if (frhist.gt.0.d0) then
+  if (frhist.gt.0.d0) then
     if ((ttcabs - ttchis) .gt. frhist*(1-1.0d-6)) then
       modhis = 1
     endif
+  else if (nthist.gt.0 .and. mod(ntcabs, nthist).eq.0) then
+    modhis = 1
   endif
 
   if (modhis.eq.1) then

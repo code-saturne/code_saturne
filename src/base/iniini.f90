@@ -297,7 +297,7 @@ do ii = 1, ncaptm
   xyzcap(3,ii) = 0.d0
 enddo
 
-tplflw = -1
+tplflw = -1.d0
 
 ! ---> Fichiers Lagrangiens
 
