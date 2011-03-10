@@ -324,7 +324,7 @@ class DefineUserScalarsModel(Variables, Model):
         """
         Put initial value for an additional_scalar with label scalar_label
         and zone zone.
-        Method also used by InitializationView, ThermalScalarModel and MatisseModel
+        Method also used by InitializationView, ThermalScalarModel
         """
         self.isInt(int(zone))
         self.isFloat(initial_value)
@@ -541,7 +541,6 @@ class DefineUserScalarsModel(Variables, Model):
     def setScalarValues(self, label, zone, init, mini, maxi, vari):
         """
         Put values to scalar with labelled I{label} for creating or replacing values.
-        Method also used by MatisseModel
         """
         self.isInt(int(zone))
         self.isFloat(init)

@@ -157,7 +157,6 @@ use lagran
 use ppppar
 use ppthch
 use ppincl
-use matiss
 use cplsat
 use mesh
 
@@ -1178,47 +1177,26 @@ do isou = 1, 3
 !       utilisateurs est faite uniquement a la premiere iter sur navsto.
   if(iterns.eq.1) then
 
-    if (imatis.eq.1) then
+    maxelt = max(ncelet, nfac, nfabor)
+    ils    = idebia
+    ifinia = ils + maxelt
+    call iasize('preduv',ifinia)
 
-      call mttsns                                                 &
-      !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   ivar   , iphas  ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   w7     , drtp   ,                                              &
-!        ------   ------
-   dam    , xam    ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   ra     )
-
-    else
-
-      maxelt = max(ncelet, nfac, nfabor)
-      ils    = idebia
-      ifinia = ils + maxelt
-      call iasize('preduv',ifinia)
-
-      call ustsns                                                 &
-      !==========
- ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   ivar   , iphas  ,                                              &
-   maxelt , ia(ils),                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
-   dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   w7     , drtp   ,                                              &
-!        ------   ------
-   dam    , xam    ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   ra     )
-
-    endif
+    call ustsns                                                 &
+    !==========
+  ( ifinia , idebra ,                                              &
+    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+    ivar   , iphas  ,                                              &
+    maxelt , ia(ils),                                              &
+    icepdc , icetsm , itypsm ,                                     &
+    ia     ,                                                       &
+    dt     , rtpa   , propce , propfa , propfb ,                   &
+    coefa  , coefb  , ckupdc , smacel ,                            &
+    w7     , drtp   ,                                              &
+ !        ------   ------
+    dam    , xam    ,                                              &
+    w1     , w2     , w3     , w4     , w5     , w6     ,          &
+    ra     )
 
     if (nbrcpl.gt.0) then
       call csccel                                                 &

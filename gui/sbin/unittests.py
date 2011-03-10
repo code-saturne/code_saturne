@@ -177,34 +177,6 @@ def starttest37():
     from Pages.GasCombustionModel import runTest
     runTest()
 
-def starttest38():
-    from Pages.MatisseModel import runTest
-    runTest()
-
-def starttest39():
-    from Pages.MatisseGeomModel import runTest
-    runTest()
-
-def starttest40():
-    from Pages.MatisseHydrauModel import runTest
-    runTest()
-
-def starttest41():
-    from Pages.MatisseNetworkModel import runTest
-    runTest()
-
-def starttest42():
-    from Pages.MatisseRangeDescriptionModel import runTest
-    runTest()
-
-def starttest43():
-    from Pages.MatisseThermicModel import runTest
-    runTest()
-
-def starttest44():
-    from Pages.MatisseTypeModel import runTest
-    runTest()
-
 def starttest45():
     from Pages.LocalizationModel import runTest
     runTest()

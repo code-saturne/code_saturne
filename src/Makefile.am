@@ -21,7 +21,7 @@
 #-------------------------------------------------------------------------------
 
 SUBDIRS = . bft fvm mei gui base pprt atmo cfbl cogz cplv ctwr elec fuel lagr \
-          mati rayt apps
+          rayt apps
 
 # General flags
 
@@ -64,7 +64,6 @@ $(top_srcdir)/src/fuel/fuincl.f90 \
 $(top_srcdir)/src/lagr/lagdim.f90 \
 $(top_srcdir)/src/lagr/lagpar.f90 \
 $(top_srcdir)/src/lagr/lagran.f90 \
-$(top_srcdir)/src/mati/matiss.f90 \
 $(top_srcdir)/src/pprt/ppcpfu.f90 \
 $(top_srcdir)/src/pprt/ppincl.f90 \
 $(top_srcdir)/src/pprt/ppppar.f90 \

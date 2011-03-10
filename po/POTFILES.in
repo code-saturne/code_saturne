@@ -157,7 +157,6 @@ src/fvm/fvm_writer_helper.c
 src/gui/cs_gui_boundary_conditions.c
 src/gui/cs_gui.c
 src/gui/cs_gui_conjugate_heat_transfer.c
-src/gui/cs_gui_matisse.c
 src/gui/cs_gui_mesh.c
 src/gui/cs_gui_mobile_mesh.c
 src/gui/cs_gui_particles.c

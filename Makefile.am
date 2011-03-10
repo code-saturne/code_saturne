@@ -221,13 +221,9 @@ dist_pkgdata_SCRIPTS = \
 bin/runcase_mpi_rank \
 bin/runcase_syrthes
 
-# Install thermochemistry and Matisse data files
+# Install thermochemistry data files
 
 nobase_dist_pkgdata_DATA = \
-data/mati/emm.dat \
-data/mati/emm.geom \
-data/mati/vault.dat \
-data/mati/vault.geom \
 data/thch/dp_C3P \
 data/thch/dp_C3PSJ \
 data/thch/dp_C4P \

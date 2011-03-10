@@ -32,9 +32,7 @@ This page is devoted to the time step management.
 
 This module contains the following classes and function:
 - TimeStepModel
-- TimeStepMatisseModel
 - TimeStepModelTestCase
-- TimeStepMatisseModelTestCase
 """
 
 #-------------------------------------------------------------------------------
@@ -382,52 +380,6 @@ class TimeStepModel(Model):
             self.node_time.xmlRemoveChild('thermal_time_step')
 
 #-------------------------------------------------------------------------------
-# Time Step Model class for Matisse
-#-------------------------------------------------------------------------------
-
-class TimeStepMatisseModel(TimeStepModel):
-
-    def __init__(self, case):
-        """
-        Constructor.
-        """
-        TimeStepModel.__init__(self, case)
-        self.node_matisse       = self.case.root().xmlInitChildNode('matisse')
-        self.node_compute       = self.node_matisse.xmlInitChildNode('compute')
-        self.node_phymodel      = self.node_compute.xmlInitChildNode('physical_model')
-
-
-    def _defaultValues(self):
-        """
-        Return in a dictionnary which contains default values
-        """
-        default = TimeStepModel.defaultValues(self)
-        default['dtdtmx'] = 1.0
-        return default
-
-
-    def setDtdtmx(self, val):
-        """
-        set value of Dtdtmx for node "dtdtmx"
-        """
-        self.isStrictPositiveFloat(val)
-        self.node_phymodel.xmlSetData('dtdtmx', val)
-
-
-    def getDtdtmx(self):
-        """
-        Get value of Dtdtmx for node "dtdtmx"
-        """
-        val = self.node_phymodel.xmlGetDouble('dtdtmx')
-        if val == None:
-            self.node_phymodel.xmlInitChildNode('dtdtmx')
-            val = self._defaultValues()['dtdtmx']
-            self.setDtdtmx(val)
-
-        return val
-
-
-#-------------------------------------------------------------------------------
 # TimeStepModel Test Class
 #-------------------------------------------------------------------------------
 
@@ -642,40 +594,6 @@ def runTest():
     print("TimeStepModelTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
-
-#-------------------------------------------------------------------------------
-# TimeStepMatisse Model Test Class
-#-------------------------------------------------------------------------------
-
-class TimeStepMatisseModelTestCase(ModelTest):
-    """
-    """
-    def checkTimeStepMatisseModelInstantiation(self):
-        """Check whether the TimeStepMatisseModel class could be instantiated"""
-        model = None
-        model = TimeStepMatisseModel(self.case)
-        assert model != None, 'Could not instantiate TimeStepMatisseModel'
-
-    def checkSetandGetDtdtmx(self):
-        """Check whether the TimeStepMatisseModel class could be set and get Dtdtmx"""
-        model = TimeStepMatisseModel(self.case)
-        model.setDtdtmx(10.5)
-        doc = '''<physical_model>
-                    <dtdtmx>10.5</dtdtmx>
-                 </physical_model>'''
-        assert model.node_phymodel == self.xmlNodeFromString(doc),\
-            'Could not set Dtdtmx in TimeStepMatisseModel'
-        assert model.getDtdtmx() == 10.5,\
-            'Could not get Dtdtmx in TimeStepMatisseModel'
-
-def suite2():
-    testSuite = unittest.makeSuite(TimeStepMatisseModelTestCase, "check")
-    return testSuite
-
-def runTest2():
-    print("TimeStepMatisseModelTestCase")
-    runner = unittest.TextTestRunner()
-    runner.run(suite2())
 
 #-------------------------------------------------------------------------------
 # End

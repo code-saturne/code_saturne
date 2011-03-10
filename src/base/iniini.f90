@@ -68,7 +68,6 @@ use parall
 use period
 use mltgrd
 use ihmpre
-use matiss
 use cplsat
 use mesh
 
@@ -232,10 +231,6 @@ indjon = 1
 ! ---> Fichiers module atmospherique
 impmet = 26
 ficmet = 'meteo'
-
-! ---> Fichier resuMatisse
-impmat = 28
-
 
 ! ---> Fichiers historiques
 

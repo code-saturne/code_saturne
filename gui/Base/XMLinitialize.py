@@ -118,17 +118,16 @@ class XMLinit(Variables):
 
         # First Volume Zone definition for all cells -> initialization
 
-        if Toolbox.GuiParam.matisse == False:
-            zones = LocalizationModel("VolumicZone", self.case).getZones()
-            iok = 0
-            for zone in zones:
-                if zone.getLabel() == 'all_cells':
-                    iok = 1
-            if iok == 0:
-                zone = Zone("VolumicZone", label = 'all_cells', localization = 'all[]')
-                LocalizationModel("VolumicZone", self.case).addZone(zone)
-                zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
-                InitializationModel(self.case).getInitialTurbulenceChoice(zone)
+        zones = LocalizationModel("VolumicZone", self.case).getZones()
+        iok = 0
+        for zone in zones:
+            if zone.getLabel() == 'all_cells':
+                iok = 1
+        if iok == 0:
+            zone = Zone("VolumicZone", label = 'all_cells', localization = 'all[]')
+            LocalizationModel("VolumicZone", self.case).addZone(zone)
+            zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
+            InitializationModel(self.case).getInitialTurbulenceChoice(zone)
 
         # Time step
 

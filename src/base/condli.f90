@@ -154,7 +154,6 @@ use parall
 use ppppar
 use ppthch
 use ppincl
-use matiss
 use radiat
 use cplsat
 use mesh
@@ -293,19 +292,6 @@ if(ippmod(iphpar).ge.1) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
-   ra     )
-endif
-
-if (imatis.eq.1) then
-  call mttycl                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ia(iitypf)      , ia(iitrif)      , icodcl , isostd ,          &
-   ia     ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl , frcxt  ,                            &
    w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 endif

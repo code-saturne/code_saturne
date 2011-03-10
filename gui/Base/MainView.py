@@ -94,7 +94,6 @@ class MainView(QMainWindow, Ui_MainForm):
 
     def __init__(self,
                  cmd_case         = "",
-                 cmd_matisse      = False,
                  cmd_batch_window = False,
                  cmd_batch_file   = 'runcase_batch',
                  cmd_script_file   = 'runcase',

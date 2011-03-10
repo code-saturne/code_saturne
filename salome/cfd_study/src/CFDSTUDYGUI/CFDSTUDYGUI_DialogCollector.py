@@ -851,10 +851,6 @@ class GUIActivationDialogHandler(GUIActivationDialog):
         self.LangCheckBox.hide()
         self.LangCB.hide()
 
-        self.MatissCheckBox = self.findChild(QtGui.QCheckBox,"MatissCheckBox")
-
-        self.MatissCheckBox.hide()
-
         self.connect(self.FileCheckBox, SIGNAL("clicked()"), self.slotUseXMLfileChange)
         self.connect(self.LangCheckBox, SIGNAL("clicked()"), self.slotUseLangChange)
 
@@ -886,13 +882,11 @@ class GUIActivationDialogHandler(GUIActivationDialog):
             self.CaseLabel.setTitle(self.tr("ICSACTIVATE_DLG_CASE_LABEL"))
             self.FileCheckBox.setChecked(False)
             self.LangCheckBox.setChecked(False)
-            self.MatissCheckBox.setChecked(False)
         elif CFD_Code() == CFD_Neptune:
             self.setWindowTitle(self.tr("IPBACTIVATE_DLG_CAPTION"))
             self.CaseLabel.setTitle(self.tr("IPBACTIVATE_DLG_CASE_LABEL"))
             self.LangCheckBox.hide()
             self.LangCB.hide()
-            self.MatissCheckBox.hide()
 
 
     def slotUpdateData(self):
@@ -1000,10 +994,6 @@ class GUIActivationDialogHandler(GUIActivationDialog):
 
     def ifUseLangOption(self):
         return self.LangCheckBox.isChecked()
-
-
-    def isUseMatissOption(self):
-        return self.MatissCheckBox.isChecked()
 
 
     def slotUseXMLfileChange(self):

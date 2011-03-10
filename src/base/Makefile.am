@@ -52,7 +52,6 @@ $(FCMODINCLUDE)$(top_builddir)/src/ctwr \
 $(FCMODINCLUDE)$(top_builddir)/src/elec \
 $(FCMODINCLUDE)$(top_builddir)/src/fuel \
 $(FCMODINCLUDE)$(top_builddir)/src/lagr \
-$(FCMODINCLUDE)$(top_builddir)/src/mati \
 $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCFLAGS_DBG) $(FCFLAGS_OPT)

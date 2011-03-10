@@ -52,7 +52,7 @@ from PyQt4.QtGui  import *
 from Base.Toolbox import GuiParam
 from Pages.TimeStepForm import Ui_TimeStepForm
 import Base.QtPage as QtPage
-from Pages.TimeStepModel import TimeStepModel, TimeStepMatisseModel
+from Pages.TimeStepModel import TimeStepModel
 
 #-------------------------------------------------------------------------------
 # log config

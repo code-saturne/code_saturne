@@ -76,7 +76,6 @@ use lagdim
 use lagran
 use vorinc
 use ihmpre
-use matiss
 use radiat
 use cplsat
 use mesh
@@ -232,23 +231,6 @@ call memtri                                                       &
    idt    , irtp   , irtpa  , ipropc , ipropf , ipropb ,          &
    icoefa , icoefb ,                                              &
    ifinia , ifinra )
-
-!     Reservations complementaires pour Matisse
-!       On remplit un pointeur dans matiss.f90, pour eviter de charger
-!       les arguments par des tableaux specifiques a Matisse.
-
-if (imatis.eq.1) then
-
-  idbia1 = ifinia
-  idbra1 = ifinra
-  call memmat                                                     &
-  !==========
- ( idbia1 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ncofab , nproce , nprofa , nprofb ,                            &
-   ifinia , ifinra )
-
-endif
 
 !     Reservations memoire pour les tableaux complementaires
 !         necesaires pour les physiques particulieres
@@ -556,52 +538,29 @@ do iphas = 1, nphas
 
   iappel = 1
 
-  if (imatis.eq.1) then
-
-!     Noter que uskpdc n'est pas permis avec Matisse
-!       (si necessaire, on pourrait regrouper toutes les pertes de
-!        charge de Matisse dans un unique sous-programme et reactiver
-!        uskpdc)
-
-    call  mtkpdc                                                  &
-    !===========
- ( idbia1 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , iphas  , iappel ,                              &
-   ia(idbia1),                                                    &
-   ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(idbra1) ,                         &
-   ra     )
-
-  else
-
-    if (iihmpr.eq.1) then
-      call uikpdc &
-      !==========
-    ( iappel, iphas, ncelet, ncepdc,     &
-      ia(idbia1), ra(idbra1) , ra(irtpa) )
-    endif
-
-    ils    = idbia1
-    idbia2 = ils + maxelt
-    call iasize('caltri',idbia2)
-
-    call  uskpdc                                                  &
-    !===========
- ( idbia2 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , iphas  , iappel ,                              &
-   maxelt , ia(ils),                                              &
-   ia(idbia1),                                                    &
-   ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(idbra1) ,                         &
-   ra     )
-
+  if (iihmpr.eq.1) then
+    call uikpdc &
+    !==========
+  ( iappel, iphas, ncelet, ncepdc,     &
+    ia(idbia1), ra(idbra1) , ra(irtpa) )
   endif
+
+  ils    = idbia1
+  idbia2 = ils + maxelt
+  call iasize('caltri',idbia2)
+
+  call  uskpdc &
+  !===========
+( idbia2 , idbra1 ,                                              &
+  nvar   , nscal  , nphas  ,                                     &
+  ncepdc(iphas) , iphas  , iappel ,                              &
+  maxelt , ia(ils),                                              &
+  ia(idbia1),                                                    &
+  ia     ,                                                       &
+  ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
+  ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
+  ra(icoefa) , ra(icoefb) , ra(idbra1) ,                         &
+  ra     )
 
 enddo
 
@@ -622,47 +581,29 @@ do iphas = 1, nphas
 
     iappel = 2
 
-    if (imatis.eq.1) then
-
-      call  mtkpdc                                                &
-      !===========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , iphas  , iappel ,                              &
-   ia(iicepd(iphas)),                                             &
-   ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(ickupd(iphas)) ,                  &
-   ra     )
-
-    else
-
-      if (iihmpr.eq.1) then
-        call uikpdc &
-        !==========
-      ( iappel, iphas, ncelet, ncepdc,                  &
-        ia(iicepd(iphas)), ra(ickupd(iphas)), ra(irtpa) )
-      endif
-
-      ils    = ifinia
-      ifnia2 = ils + maxelt
-      call iasize('caltri',ifnia2)
-
-      call  uskpdc                                                &
-      !===========
- ( ifnia2 , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , iphas  , iappel ,                              &
-   maxelt , ia(ils),                                              &
-   ia(iicepd(iphas)),                                             &
-   ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(ickupd(iphas)) ,                  &
-   ra     )
-
+    if (iihmpr.eq.1) then
+      call uikpdc &
+      !==========
+    ( iappel, iphas, ncelet, ncepdc,                  &
+      ia(iicepd(iphas)), ra(ickupd(iphas)), ra(irtpa) )
     endif
+
+    ils    = ifinia
+    ifnia2 = ils + maxelt
+    call iasize('caltri',ifnia2)
+
+    call  uskpdc                                                &
+    !===========
+  ( ifnia2 , ifinra ,                                              &
+    nvar   , nscal  , nphas  ,                                     &
+    ncepdc(iphas) , iphas  , iappel ,                              &
+    maxelt , ia(ils),                                              &
+    ia(iicepd(iphas)),                                             &
+    ia     ,                                                       &
+    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
+    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
+    ra(icoefa) , ra(icoefb) , ra(ickupd(iphas)) ,                  &
+    ra     )
 
   endif
 
@@ -986,25 +927,6 @@ endif
 !===============================================================================
 ! 14. BRANCHEMENT UTILISATEUR POUR MODIF DES VARIABLES EVENTUELLES
 !===============================================================================
-
-!     Appel pour Matisse d'une routine de bilans, d'impression, ...
-if (imatis.eq.1 .and. itrale.gt.0) then
-
-  call mtproj                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   ia(iiitep),                                                    &
-   ia        ,                                                    &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   ra(iettp)  , ra(iettpa) , ra(iitepa) , ra(istatc) , ra(itslag),&
-   ra(istatf) ,                                                   &
-   ra     )
-
-endif
 
 if (itrale.gt.0) then
 

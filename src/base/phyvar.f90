@@ -94,7 +94,6 @@ use ihmpre
 use ppppar
 use ppthch
 use ppincl
-use matiss
 use mesh
 
 !===============================================================================
@@ -224,53 +223,31 @@ if (ippmod(iphpar).ge.1) then
 endif
 
 
-if (imatis.eq.1) then
+! - Interface Code_Saturne
+!   ======================
 
-!     Matisse
-  call mtphyv                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   nphmx  ,                                                       &
-   ibrom  ,                                                       &
-   ia     ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
-   ra     )
-
-else
-
-  ! - Interface Code_Saturne
-  !   ======================
-
-  if (iihmpr.eq.1) then
-    call uiphyv                                                    &
-    !===========
-  ( ncel, ncelet, nscaus,                                         &
-    irom, iviscl, icp,    ivisls, irovar, ivivar,                 &
-    isca, iscalt, iscavr, ipproc,                                 &
-    ro0,  cp0,    rtp,    propce)
-  endif
-
-!     Utilisateur standard
-  call usphyv                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   nphmx  ,                                                       &
-   ibrom  ,                                                       &
-   ia     ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
-   propce , propfa , propfb ,                                     &
-   coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
-   ra     )
-
+if (iihmpr.eq.1) then
+  call uiphyv                                                    &
+  !===========
+( ncel, ncelet, nscaus,                                         &
+  irom, iviscl, icp,    ivisls, irovar, ivivar,                 &
+  isca, iscalt, iscavr, ipproc,                                 &
+  ro0,  cp0,    rtp,    propce)
 endif
+
+call usphyv &
+!==========
+( idebia , idebra ,                                              &
+  nvar   , nscal  , nphas  ,                                     &
+  nphmx  ,                                                       &
+  ibrom  ,                                                       &
+  ia     ,                                                       &
+  dt     , rtp    , rtpa   ,                                     &
+  propce , propfa , propfb ,                                     &
+  coefa  , coefb  ,                                              &
+  w1     , w2     , w3     , w4     ,                            &
+  w5     , w6     , w7     , w8     ,                            &
+  ra     )
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 

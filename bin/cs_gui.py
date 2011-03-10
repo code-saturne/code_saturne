@@ -98,7 +98,6 @@ def process_cmd_line(argv):
                       help="load file in read only mode")
 
 
-    parser.set_defaults(matisse=False)
     parser.set_defaults(read_only=False)
     parser.set_defaults(splash_screen=True)
     parser.set_defaults(tree_window=True)
@@ -126,7 +125,7 @@ def process_cmd_line(argv):
         batch_window = True
         options.batch_file = os.path.basename(options.batch_file)
 
-    return options.file_name, options.splash_screen, options.matisse, \
+    return options.file_name, options.splash_screen, \
         batch_window, options.batch_file, options.tree_window, options.read_only
 
 #-------------------------------------------------------------------------------
@@ -146,7 +145,7 @@ def main(argv, pkg):
         from core.MainView import MainView
         icons_path = os.path.join(pkg.pkgpythondir, 'core', 'icons')
 
-    case, spl, matisse, batch_window, batch_file, tree_window, read_only \
+    case, spl, batch_window, batch_file, tree_window, read_only \
        = process_cmd_line(argv)
 
     app = QApplication(argv)
@@ -169,7 +168,6 @@ def main(argv, pkg):
         QTimer.singleShot(1500, splash.hide)
 
     main = MainView(cmd_case = case,
-                    cmd_matisse = matisse,
                     cmd_batch_window = batch_window,
                     cmd_batch_file = batch_file,
                     cmd_tree_window = tree_window,

@@ -1698,9 +1698,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No:
                     return
 
-            if dlg.isUseMatissOption():
-                aCmd.append('--matisse')
-
         if self.DialogCollector.GUIActivationDialog.isUseXmlFile() and \
                self.DialogCollector.GUIActivationDialog.currentXMLfile() != None:
             aXmlFile = str(self.DialogCollector.GUIActivationDialog.currentXMLfile())

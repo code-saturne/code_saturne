@@ -105,7 +105,6 @@ use lagdim
 use lagran
 use vorinc
 use ihmpre
-use matiss
 use radiat
 use cplsat
 use mesh
@@ -644,45 +643,29 @@ do iphas = 1, nphas
   if (ncpdct(iphas).gt.0) then
 
     iappel = 3
-    if (imatis.eq.1) then
 
-      call mtkpdc                                                 &
+    if (iihmpr.eq.1) then
+      call uikpdc &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , iphas  , iappel ,                              &
-   ia(iicepd(iphas)) ,                                            &
-   ia     ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)) ,                          &
-   ra     )
-
-    else
-
-      if (iihmpr.eq.1) then
-        call uikpdc &
-        !==========
-      ( iappel, iphas, ncelet, ncepdc,             &
-        ia(iicepd(iphas)), ra(ickupd(iphas)), rtpa )
-      endif
-
-      ils    = idebia
-      idbia1 = ils + maxelt
-      call iasize('tridim',idbia1)
-
-      call uskpdc                                                 &
-      !==========
- ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , iphas  , iappel ,                              &
-   maxelt , ia(ils),                                              &
-   ia(iicepd(iphas)) ,                                            &
-   ia     ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)) ,                          &
-   ra     )
-
+    ( iappel, iphas, ncelet, ncepdc,             &
+      ia(iicepd(iphas)), ra(ickupd(iphas)), rtpa )
     endif
+
+    ils    = idebia
+    idbia1 = ils + maxelt
+    call iasize('tridim',idbia1)
+
+    call uskpdc &
+    !==========
+  ( idbia1 , idebra ,                                              &
+    nvar   , nscal  , nphas  ,                                     &
+    ncepdc(iphas) , iphas  , iappel ,                              &
+    maxelt , ia(ils),                                              &
+    ia(iicepd(iphas)) ,                                            &
+    ia     ,                                                       &
+    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+    coefa  , coefb  , ra(ickupd(iphas)) ,                          &
+    ra     )
 
   endif
 
@@ -911,113 +894,107 @@ do while (iterns.le.nterup)
   ra     )
 
 
-  if (imatis.eq.0) then
+  !     - Interface Code_Saturne
+  !       ======================
 
-  ! ON NE FAIT PAS DE MATISSE
+  if (iihmpr.eq.1) then
+
+  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
+  !    physiques particulieres, meme sans physique particuliere
+  !    -> sera modifie lors de la restructuration des zones de bord
+
+    call uiclim &
+    !==========
+  ( ntcabs, nfabor,                                                &
+    nozppm, ncharm, ncharb, nclpch,                                &
+    iindef, ientre, iparoi, iparug, isymet, isolib,                &
+    iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
+    ia(iitypf), ia(iizfpp), ia(iicodc),                            &
+    dtref,  ttcabs, surfbo, cdgfbo,                                &
+    qimp,   qimpat, qimpcp, dh,     xintur,                        &
+    timpat, timpcp, distch, ra(ircodc) )
+
+    if (ippmod(iphpar).eq.0) then
+
+    ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
+
+      nbzfmx = nbzppm
+      nozfmx = nozppm
+      iilzfb = ifinia
+      ifnia1 = iilzfb + nbzfmx
+      iqcalc = ifinra
+      ifnra1 = iqcalc + nozfmx
+      call iasize('tridim',ifnia1)
+      call rasize('tridim',ifnra1)
+
+      call stdtcl &
+      !==========
+    ( ifnia1 , ifnra1 ,                                              &
+      nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
+      iqimp  , icalke , qimp   , dh , xintur,                        &
+      ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp)   , &
+      ia(iilzfb)      ,                                              &
+      ia     ,                                                       &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  , ra(ircodc)      ,                            &
+      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+      ra(icoefu)      , ra(iqcalc)      ,                            &
+      ra     )
+
+    endif
+
+  endif
+
+  !     - Sous-programme utilisateur
+  !       ==========================
+
+  if (ippmod(iphpar).eq.0) then
+
+    ils    = ifinia
+    ifnia1 = ils + maxelt
+    call iasize('tridim',ifnia1)
+
+    call usclim &
+    !==========
+  ( ifnia1 , ifinra ,                                              &
+    nvar   , nscal  , nphas  ,                                     &
+    maxelt , ia(ils),                                              &
+    ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
+    ia     ,                                                       &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  , ra(ircodc)      ,                            &
+    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+    ra(icoefu)      ,                                              &
+    ra     )
+
+  else
+
+    ! ON FAIT DE LA PHYSIQUE PARTICULIERE
+
+    call ppclim &
+    !==========
+  ( ifinia , ifinra ,                                              &
+    nvar   , nscal  , nphas  ,                                     &
+    ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp) ,   &
+    ia     ,                                                       &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  , ra(ircodc)      ,                            &
+    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
+    ra(icoefu)      ,                                              &
+    ra     )
+
+  endif
 
   !     - Interface Code_Saturne
   !       ======================
 
-    if (iihmpr.eq.1) then
+  if(iihmpr.eq.1) then
 
-    ! N.B. Zones de face de bord : on utilise provisoirement les zones des
-    !    physiques particulieres, meme sans physique particuliere
-    !    -> sera modifie lors de la restructuration des zones de bord
-
-      call uiclim &
-      !==========
-    ( ntcabs, nfabor,                                                &
-      nozppm, ncharm, ncharb, nclpch,                                &
-      iindef, ientre, iparoi, iparug, isymet, isolib,                &
-      iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
-      ia(iitypf), ia(iizfpp), ia(iicodc),                            &
-      dtref,  ttcabs, surfbo, cdgfbo,                                &
-      qimp,   qimpat, qimpcp, dh,     xintur,                        &
-      timpat, timpcp, distch, ra(ircodc) )
-
-      if (ippmod(iphpar).eq.0) then
-
-      ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE NI DE MATISSE
-
-        nbzfmx = nbzppm
-        nozfmx = nozppm
-        iilzfb = ifinia
-        ifnia1 = iilzfb + nbzfmx
-        iqcalc = ifinra
-        ifnra1 = iqcalc + nozfmx
-        call iasize('tridim',ifnia1)
-        call rasize('tridim',ifnra1)
-
-        call stdtcl &
-        !==========
-      ( ifnia1 , ifnra1 ,                                              &
-        nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
-        iqimp  , icalke , qimp   , dh , xintur,                        &
-        ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp)   , &
-        ia(iilzfb)      ,                                              &
-        ia     ,                                                       &
-        dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-        coefa  , coefb  , ra(ircodc)      ,                            &
-        ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-        ra(icoefu)      , ra(iqcalc)      ,                            &
-        ra     )
-
-      endif
-
-    endif
-
-    !     - Sous-programme utilisateur
-    !       ==========================
-
-    if (ippmod(iphpar).eq.0) then
-
-      ils    = ifinia
-      ifnia1 = ils + maxelt
-      call iasize('tridim',ifnia1)
-
-      call usclim &
-      !==========
-    ( ifnia1 , ifinra ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
-      maxelt , ia(ils),                                              &
-      ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
-      ia     ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  , ra(ircodc)      ,                            &
-      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-      ra(icoefu)      ,                                              &
-      ra     )
-
-    else
-
-      ! ON FAIT DE LA PHYSIQUE PARTICULIERE (MAIS PAS DE MATISSE)
-
-      call ppclim &
-      !==========
-    ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
-      ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp) ,   &
-      ia     ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  , ra(ircodc)      ,                            &
-      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-      ra(icoefu)      ,                                              &
-      ra     )
-
-    endif
-
-    !     - Interface Code_Saturne
-    !       ======================
-
-    if(iihmpr.eq.1) then
-
-      call uiclve &
-      !==========
-    ( nfabor, nozppm,                                                &
-      iindef, ientre, iparoi, iparug, isymet, isolib,                &
-      ia(iitypf), ia(iizfpp) )
-
-    endif
+    call uiclve &
+    !==========
+  ( nfabor, nozppm,                                                &
+    iindef, ientre, iparoi, iparug, isymet, isolib,                &
+    ia(iitypf), ia(iizfpp) )
 
   endif
 

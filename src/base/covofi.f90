@@ -120,7 +120,6 @@ use fuincl
 use ppincl
 use lagpar
 use lagran
-use matiss
 use radiat
 use mesh
 
@@ -281,54 +280,27 @@ enddo
 
 iscala = iscal
 
+maxelt = max(ncelet,nfac,nfabor)
+ils    = idebia
+idbia1 = ils + maxelt
+call iasize('covofi',idbia1)
 
-if (imatis.eq.1) then
-
-!     Matisse
-  call mttssc                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iscala ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   ia(iiconr) ,                                                   &
-   ia     ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
+call ustssc &
+!==========
+( idbia1 , idebra ,                                              &
+  nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+  iscala ,                                                       &
+  maxelt , ia(ils),                                              &
+  icepdc , icetsm , itypsm ,                                     &
+  ia     ,                                                       &
+  dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+  coefa  , coefb  , ckupdc , smacel ,                            &
+  smbrs  , rovsdt ,                                              &
 !        ------   ------
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , drtp   , dam    ,          &
-   ra     )
-
-else
-
-!     Utilisateur standard
-
-  maxelt = max(ncelet,nfac,nfabor)
-  ils    = idebia
-  idbia1 = ils + maxelt
-  call iasize('covofi',idbia1)
-
-  call ustssc                                                     &
-  !==========
- ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iscala ,                                                       &
-   maxelt , ia(ils),                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-!        ------   ------
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , drtp   , dam    ,          &
-   ra     )
-
-endif
+  viscf  , viscb  , xam    ,                                     &
+  w1     , w2     , w3     , w4     , w5     ,                   &
+  w6     , w7     , w8     , w9     , drtp   , dam    ,          &
+  ra     )
 
 !     Si on extrapole les TS :
 !       SMBRS recoit -theta PROPCE du pas de temps precedent

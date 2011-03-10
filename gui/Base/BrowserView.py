@@ -671,20 +671,6 @@ Calculation management
         self.setRowClose(self.tr('Mobil mesh boundary'))
         self.setRowClose(self.tr('Fluid structure interaction'))
 
-        # Matisse
-
-        if GuiParam.matisse:
-            self.setRowOpen(self.tr('Storage system description'))
-            self.setRowOpen(self.tr('Thermohydraulic parameters'))
-            self.setRowClose(self.tr('Thermophysical models'))
-            self.setRowClose(self.tr('Physical properties'))
-            self.setRowClose(self.tr('Solution Domain'))
-            self.setRowClose(self.tr('Additional scalars'))
-            self.setRowClose(self.tr('Boundary conditions'))
-            self.setRowClose(self.tr('Numerical parameters'))
-            self.setRowClose(self.tr('Start/Restart'))
-            return
-
         # Steady flow management
 
         nodeanal = case.xmlGetNode('analysis_control')

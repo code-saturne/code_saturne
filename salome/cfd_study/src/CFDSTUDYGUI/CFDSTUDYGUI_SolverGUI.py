@@ -472,9 +472,9 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         from cs_gui import process_cmd_line
 
         self.Workspace = WorkSpace
-        case, splash, matisse, batch_window, batch_file, tree_window, read_only = process_cmd_line(Args)
+        case, splash, batch_window, batch_file, tree_window, read_only = process_cmd_line(Args)
 
-        mw = MainView(case, matisse, batch_window, batch_file, tree_window, read_only, aCase)
+        mw = MainView(case, batch_window, batch_file, tree_window, read_only, aCase)
         fatherName = aCase.GetFather().GetName()
 	
 	aTitle = str(fatherName + "." + aCase.GetName()) + '.' + str(Title)

@@ -49,21 +49,3 @@ used in the code so any other MPI library should work.
 * MPICH: 1.2.7p1
 * MPICH2: 1.2.1p1
 * Open-MPI: 1.4.2
-
-
-Specificities of the Matisse module of Code_Saturne
----------------------------------------------------
-The Matisse module of Code_Saturne only works through the Graphical
-User Interface. Hence the libraries PyQt, python and libxml2
-become compulsory.
-Also, the Matisse module requires usage of the Simail mesh generator,
-distributed by Distene SAS (France). For more information on this
-product:
-  Distene S.A.S.
-  Pôle Teratec - BARD-1
-  Domaine du Grand Rué
-  91680 Bruyères-le-Chatel
-  FRANCE
-  Telephone : +33 (0) 1 69 26 62 10
-  Email : info@distene.com
-

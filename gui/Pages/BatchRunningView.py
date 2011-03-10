@@ -847,35 +847,23 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Test 2: have we a mesh?
 
-        if not GuiParam.matisse :
-            node_ecs = self.case.xmlGetNode('solution_domain')
-            if not node_ecs.xmlGetNode('meshes_list'):
-                if not node_ecs.xmlGetNode('meshes_list').xmlGetNodeList('mesh'):
-                    title = self.tr("Warning")
-                    msg   = self.tr("You have to select a mesh.\n\n")
-                    QMessageBox.information(self, title, msg)
-                    return
-
-        # Test 3: have we a trouble with the mesh generation?
-
-        if GuiParam.matisse :
-            import Pages.Matisse as Matisse
-            if not Matisse.MatisseMeshRunning(self.case).ok :
+        node_ecs = self.case.xmlGetNode('solution_domain')
+        if not node_ecs.xmlGetNode('meshes_list'):
+            if not node_ecs.xmlGetNode('meshes_list').xmlGetNodeList('mesh'):
                 title = self.tr("Warning")
-                msg   = self.tr("Mesh generation error.\nSee the file 'listsim'")
+                msg   = self.tr("You have to select a mesh.\n\n")
                 QMessageBox.information(self, title, msg)
                 return
 
-        # Test 4: verify if boundary definition exists
+        # Test 3: verify if boundary definition exists
 
-        if not GuiParam.matisse:
-            bd = LocalizationModel('BoundaryZone', self.case)
-            if not bd.getZones():
-                if self.case['no_boundary_conditions'] == False:
-                    title = self.tr("Warning")
-                    msg   = self.tr("No boundary definition declared.\n\n")
-                    QMessageBox.warning(self, title, msg)
-                    self.case['no_boundary_conditions'] = True
+        bd = LocalizationModel('BoundaryZone', self.case)
+        if not bd.getZones():
+            if self.case['no_boundary_conditions'] == False:
+                title = self.tr("Warning")
+                msg   = self.tr("No boundary definition declared.\n\n")
+                QMessageBox.warning(self, title, msg)
+                self.case['no_boundary_conditions'] = True
 
         # Command line building
 
@@ -1137,7 +1125,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.labelFiles.show()
         self.toolButtonFiles.show()
 
-        if not GuiParam.matisse and self.case['batch_type'] == None:
+        if self.case['batch_type'] == None:
             self.labelNProcs.show()
             self.spinBoxNProcs.show()
         else:

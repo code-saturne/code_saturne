@@ -1,3 +1,86 @@
+* 10/03/2011 - David Monfort <david.monfort@edf.fr>
+  Remove the MATISSE module from the current version as authorized
+  by E. Bouquerel (internal letter, ref. ELIDC1100281).
+  The MATISSE module can be found in its last version by the Subversion
+  tag pre_removing_matisse.
+  removed files:
+    data/mati
+    data/mati/emm.dat
+    data/mati/emm.geom
+    data/mati/vault.dat
+    data/mati/vault.geom
+    gui/Pages/MatisseCustomForm.ui
+    gui/Pages/MatisseCustomView.py
+    gui/Pages/MatisseGeomForm.ui
+    gui/Pages/MatisseGeomModel.py
+    gui/Pages/MatisseGeomView.py
+    gui/Pages/MatisseHydrauForm.ui
+    gui/Pages/MatisseHydrauModel.py
+    gui/Pages/MatisseHydrauView.py
+    gui/Pages/MatisseModel.py
+    gui/Pages/MatisseNetworkForm.ui
+    gui/Pages/MatisseNetworkModel.py
+    gui/Pages/MatisseNetworkView.py
+    gui/Pages/MatisseRangeDescriptionForm.ui
+    gui/Pages/MatisseRangeDescriptionModel.py
+    gui/Pages/MatisseRangeDescriptionView.py
+    gui/Pages/MatisseThermicForm.ui
+    gui/Pages/MatisseThermicModel.py
+    gui/Pages/MatisseThermicView.py
+    gui/Pages/MatisseTypeForm.ui
+    gui/Pages/MatisseTypeModel.py
+    gui/Pages/MatisseTypeView.py
+    src/gui/cs_gui_matisse.c
+    src/gui/cs_gui_matisse.h
+    src/mati
+    src/mati/Makefile.am
+    src/mati/matiss.f90
+    src/mati/memmat.f90
+    src/mati/mtimpi.f90
+    src/mati/mtini1.f90
+    src/mati/mtkpdc.f90
+    src/mati/mtphyv.f90
+    src/mati/mtproj.f90
+    src/mati/mttsns.f90
+    src/mati/mttssc.f90
+    src/mati/mttycl.f90
+  modified files:
+    bin/cs_gui.py
+    COMPATIBILITY
+    configure.ac
+    doc/tutorial/intro.tex
+    doc/user/saturne1.tex
+    doc/user/summary.tex
+    gui/Base/BrowserView.py
+    gui/Base/MainView.py
+    gui/Base/Toolbox.py
+    gui/Base/XMLinitialize.py
+    gui/Pages/BatchRunningView.py
+    gui/Pages/DefineUserScalarsModel.py
+    gui/Pages/IdentityAndPathesModel.py
+    gui/Pages/Makefile.am
+    gui/Pages/TimeStepModel.py
+    gui/Pages/TimeStepView.py
+    gui/sbin/unittests.py
+    Makefile.am
+    po/POTFILES.in
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_SolverGUI.py
+    salome/cfd_study/src/CFDSTUDYGUI/GUIActivationDialog.ui
+    src/apps/Makefile.am
+    src/base/caltri.f90
+    src/base/condli.f90
+    src/base/covofi.f90
+    src/base/iniini.f90
+    src/base/initi1.f90
+    src/base/Makefile.am
+    src/base/phyvar.f90
+    src/base/preduv.f90
+    src/base/tridim.f90
+    src/gui/Makefile.am
+    src/Makefile.am
+
 * 02/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Only link cs_partition with required libraries.
   modified file:

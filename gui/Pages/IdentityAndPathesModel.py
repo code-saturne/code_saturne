@@ -51,10 +51,6 @@ import Base.Toolbox as Tool
 from Base.XMLvariables import Model
 from Base.XMLmodel import ModelTest
 
-import Pages.MatisseModel as Matisse
-import Pages.MatisseTypeModel as MatisseType
-import Pages.MatisseGeomModel as MatisseGeom
-
 #-------------------------------------------------------------------------------
 # Model class
 #-------------------------------------------------------------------------------
@@ -110,10 +106,6 @@ class IdentityAndPathesModel(Model):
         self.isInList(directory, dirList)
 
         self.case['relevant_subdir'] = val
-
-        if self.case['relevant_subdir'] == 'yes' and \
-                    Tool.GuiParam.matisse and directory == 'mesh_path':
-            Matisse.MatisseInit(self.case)
 
 
     def setPath(self, pathi, tag):

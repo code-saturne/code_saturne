@@ -66,7 +66,6 @@ $(top_builddir)/src/elec/libcselec.la \
 $(top_builddir)/src/fuel/libcsfuel.la \
 $(top_builddir)/src/gui/libcsgui.la \
 $(top_builddir)/src/lagr/libcslagr.la \
-$(top_builddir)/src/mati/libcsmati.la \
 $(top_builddir)/src/rayt/libcsrayt.la \
 $(top_builddir)/src/libcsmodules.la
 libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0

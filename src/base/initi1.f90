@@ -57,7 +57,6 @@ subroutine initi1 &
 use paramx
 use optcal
 use entsor
-use matiss
 use ihmpre
 
 !===============================================================================
@@ -105,9 +104,6 @@ call rayopt
 !==========
 
 call lagopt
-!==========
-
-call mtini1
 !==========
 
 ! En mode verification, on positionne IMRGRA a 2 de maniere a creer
@@ -219,12 +215,6 @@ if (iverif.eq.1) return
 
 call impini
 !==========
-
-if (imatis.eq.1) then
-  call mtimpi
-  !==========
-endif
-
 
 return
 end subroutine

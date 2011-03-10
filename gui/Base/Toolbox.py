@@ -70,10 +70,6 @@ class GuiParam(object):
     #
     pdfReader = 'on'
 
-    # Matisse: False (default) or True
-    #
-    matisse = False
-
     # debug
     #
     DEBUG = logging.NOTSET
@@ -109,34 +105,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         thisPage = Page.VolumeLocalizationView(root, case)
 ##         import Pages.AddScalarFieldBoundView as Page
 ##         thisPage = Page.AddScalarFieldBoundView(root, case)
-
-    elif page_name == tr("Storage system type"):
-        import Pages.MatisseTypeView as Page
-        thisPage = Page.MatisseTypeView(root, case)
-
-    elif page_name == tr("Storage system geometry"):
-        import Pages.MatisseGeomView as Page
-        thisPage = Page.MatisseGeomView(root, case)
-
-    elif page_name == tr("Inlet description"):
-        import Pages.MatisseRangeDescriptionView as Page
-        thisPage = Page.MatisseRangeDescriptionView(root, case, 'inlet_range')
-
-    elif page_name == tr("Outlet description"):
-        import Pages.MatisseRangeDescriptionView as Page
-        thisPage = Page.MatisseRangeDescriptionView(root, case, 'outlet_range')
-
-    elif page_name == tr("Network description"):
-        import Pages.MatisseNetworkView as Page
-        thisPage = Page.MatisseNetworkView(root, case)
-
-    elif page_name == tr("Hydraulic load"):
-        import Pages.MatisseHydrauView as Page
-        thisPage = Page.MatisseHydrauView(root, case)
-
-    elif page_name == tr("Thermal load"):
-        import Pages.MatisseThermicView as Page
-        thisPage = Page.MatisseThermicView(root, case)
 
     elif page_name == tr("Calculation features"):
         import Pages.AnalysisFeaturesView as Page
@@ -243,10 +211,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
     elif page_name == tr("Time step"):
         import Pages.TimeStepView as Page
         thisPage = Page.TimeStepView(root, case)
-##         if GuiParam.matisse :
-##             thisPage = Page.TimeStepMatisseView(root, case, stbar)
-##         else :
-##             thisPage = Page.TimeStepView(root, case, stbar)
 
     elif page_name == tr("Steady flow management"):
         import Pages.SteadyManagementView as Page
