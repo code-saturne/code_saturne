@@ -44,6 +44,8 @@ class package:
         self.bugreport = "@PACKAGE_BUGREPORT@"
         self.url = "@PACKAGE_URL@"
 
+        self.code_name = "Code_Saturne"
+
         self.preprocessor = "cs_preprocess"
         self.partitioner = "cs_partition"
         self.solver = "cs_solver"

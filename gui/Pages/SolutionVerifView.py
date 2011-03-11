@@ -46,8 +46,6 @@ import string, shutil, cStringIO
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
 
-from cs_package import package
-
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
@@ -88,10 +86,10 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         self.setWindowTitle(self.tr("Run mesh quality criteria"))
         self.pushButton.setEnabled(False)
 
-        self.cs = package().get_solver()
 
         self.case = case
         self.case2 = case2
+        self.cs = self.case['package'].get_solver()
         self.mdl = SolutionDomainModel(self.case)
         self.out2 = OutputControlModel(self.case2)
 
@@ -121,7 +119,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         for meshNode in nodeList:
 
-            cmd = package().get_preprocessor()
+            cmd = self.case['package'].get_preprocessor()
 
             name   = meshNode['name']
             format = meshNode['format']
@@ -339,7 +337,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.mdl = SolutionDomainModel(self.case)
         self.out = OutputControlModel(self.case)
 
-        self.case2 = Case(None)
+        self.case2 = Case(package = self.case['package'], file_name = None)
         XMLinit(self.case2)
         self.case2['xmlfile'] = 'cs_cmd'
         self.case2['salome'] = self.case['salome']

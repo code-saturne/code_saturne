@@ -93,6 +93,7 @@ class MainView(QMainWindow, Ui_MainForm):
     Instances = set()
 
     def __init__(self,
+                 package          = None,
                  cmd_case         = "",
                  cmd_batch_window = False,
                  cmd_batch_file   = 'runcase_batch',
@@ -185,6 +186,7 @@ class MainView(QMainWindow, Ui_MainForm):
         self.tree_w     = cmd_tree_window
         self.read_o     = cmd_read_only
         self.notree     = 0
+        self.package    = package
 
         self.resize(800, 700)
         #self.setMaximumSize(QSize(2000, 900))
@@ -463,10 +465,10 @@ class MainView(QMainWindow, Ui_MainForm):
         create new Code_Saturne case
         """
         if not hasattr(self, 'case'):
-            self.case = XMLengine.Case()
+            self.case = XMLengine.Case(package=self.package)
             self.case.root()['version'] = XML_DOC_VERSION
             XMLinit(self.case)
-            title = self.tr("New parameters set") + " - " + self.tr("Code_Saturne GUI")
+            title = self.tr("New parameters set") + " - " + self.tr(self.package.code_name) + self.tr(" GUI")
             self.setWindowTitle(title)
 
             self.Browser.configureTree(self.case)
@@ -485,7 +487,7 @@ class MainView(QMainWindow, Ui_MainForm):
             self.case['saved'] = "yes"
 
         else:
-            MainView(cmd_case="new case").show()
+            MainView(package=self.package, cmd_case="new case").show()
 
 
     def fileAlreadyLoaded(self, f):
@@ -551,7 +553,7 @@ class MainView(QMainWindow, Ui_MainForm):
         # Instantiate a new case
 
         try:
-            self.case = XMLengine.Case(file_name)
+            self.case = XMLengine.Case(package=self.package, file_name=file_name)
         except:
             err = QErrorMessage(self)
             msg = self.tr("XML file reading error. "\
@@ -586,7 +588,7 @@ class MainView(QMainWindow, Ui_MainForm):
 
         # Update the case and the StudyIdBar
         self.case['xmlfile'] = file_name
-        title = fn + " - " + self.tr("Code_Saturne GUI")
+        title = fn + " - " + self.tr(self.package.code_name) + self.tr(" GUI")
         self.setWindowTitle(title)
 
         msg = self.tr("Loaded: %s" % fn)
@@ -627,7 +629,7 @@ class MainView(QMainWindow, Ui_MainForm):
             path = os.getcwd()
             if os.path.isdir(path + "/../DATA"): path = path + "/../DATA"
 
-        filetypes = self.tr("Code_Saturne GUI files (*.xml);;""All Files (*)")
+        filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
 
         file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)
 
@@ -735,10 +737,11 @@ class MainView(QMainWindow, Ui_MainForm):
         log.debug("fileSaveAs()")
 
         if hasattr(self,'case'):
+            filetypes = self.tr(self.package.code_name) + self.tr(" GUI files (*.xml);;""All Files (*)")
             fname = QFileDialog.getSaveFileName(self,
                                   self.tr("Save File As"),
                                   self.case['data_path'],
-                                  self.tr("Code_Saturne GUI file (*.xml);;All files (*)"))
+                                  filetypes)
 
             if not fname.isEmpty():
                 f = str(fname)
@@ -747,7 +750,7 @@ class MainView(QMainWindow, Ui_MainForm):
                 self.fileSave()
                 self.updateStudyId()
                 self.case.xmlSaveDocument()
-                title = os.path.basename(self.case['xmlfile']) + " - " + self.tr("Code_Saturne GUI")
+                title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) + self.tr(" GUI")
                 self.setWindowTitle(title)
 
                 if self.case['script']:
@@ -829,16 +832,14 @@ class MainView(QMainWindow, Ui_MainForm):
          - version
          - contact
         """
-        from cs_package import package
-
-        msg = package().name + "\n"                      +\
-              "version " + package().version + "\n\n"    +\
+        msg = self.package.code_name + "\n"                      +\
+              "version " + self.package.version + "\n\n"    +\
               "For information about this application "  +\
               "please contact:\n\n"                      +\
-              "saturne-support@edf.fr\n\n"               +\
+              self.package.bugreport + "\n\n"               +\
               "Please visit our site:\n"                 +\
-              "http://www.code-saturne.org"
-        QMessageBox.about(self, package().name + ' Interface', msg)
+              self.package.url
+        QMessageBox.about(self, self.package.name + ' Interface', msg)
 
 
     @pyqtSignature("")
@@ -848,7 +849,7 @@ class MainView(QMainWindow, Ui_MainForm):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, 'Code_Saturne Interface', "see COPYING file") # TODO
+        QMessageBox.about(self, self.package.code_name + ' Interface', "see COPYING file") # TODO
 
 
     @pyqtSignature("")
@@ -858,7 +859,7 @@ class MainView(QMainWindow, Ui_MainForm):
 
         configuration information window
         """
-        QMessageBox.about(self, 'Code_Saturne Interface', "see config.py") # TODO
+        QMessageBox.about(self, self.package.code_name + ' Interface', "see config.py") # TODO
 
 
     def displayManual(self, manual, reader = None):
@@ -868,15 +869,14 @@ class MainView(QMainWindow, Ui_MainForm):
         open a manual
         """
         try:
-            from cs_package import package
             import cs_info
         except:
-            QMessageBox.warning(self, 'Code_Saturne Interface',
+            QMessageBox.warning(self, self.package.code_name + ' Interface',
                                 "The module 'cs_info' is not available.")
             return
         argv_info = ['--guide']
         argv_info.append(manual)
-        cs_info.main(argv_info, package())
+        cs_info.main(argv_info, self.package)
 
 
     @pyqtSignature("")

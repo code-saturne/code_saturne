@@ -167,7 +167,8 @@ def main(argv, pkg):
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)
 
-    main = MainView(cmd_case = case,
+    main = MainView(package = pkg,
+                    cmd_case = case,
                     cmd_batch_window = batch_window,
                     cmd_batch_file = batch_file,
                     cmd_tree_window = tree_window,

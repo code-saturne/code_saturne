@@ -244,13 +244,14 @@ class ScriptRunningModel(Model):
 
         # Specific data file for specific physics
 
-        model = CoalCombustionModel(self.case).getCoalCombustionModel()
-        if model == 'coal_homo' or model == 'coal_homo2':
-            self.dictValues['THERMOCHEMISTRY_DATA'] = 'dp_FCP'
+        if self.case['package'].name == 'code_saturne':
+            model = CoalCombustionModel(self.case).getCoalCombustionModel()
+            if model == 'coal_homo' or model == 'coal_homo2':
+                self.dictValues['THERMOCHEMISTRY_DATA'] = 'dp_FCP'
 
-        atmo = AtmosphericFlowsModel(self.case)
-        if atmo.getAtmosphericFlowsModel() != 'off':
-            self.dictValues['METEO_DATA'] = atmo.getMeteoDataFileName()
+            atmo = AtmosphericFlowsModel(self.case)
+            if atmo.getAtmosphericFlowsModel() != 'off':
+                self.dictValues['METEO_DATA'] = atmo.getMeteoDataFileName()
 
 
     def updateScriptFile(self, keyword=None):

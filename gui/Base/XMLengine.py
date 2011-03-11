@@ -44,8 +44,7 @@ This module defines the following classes:
 # String for the root node of the xml document from the case
 #-------------------------------------------------------------------------------
 
-rootNode = '<Code_Saturne_GUI study="" case="" version="2.0"/>'
-#rootNode = '<NeptuneCFD study="" case=""/>'
+rootNode = None
 
 #-------------------------------------------------------------------------------
 # Library modules import
@@ -103,7 +102,8 @@ class Dico:
         self.data['backupScript']     = False
         self.data['batch_type']       = ""
         self.data['no_boundary_conditions'] = False
-        self.data['salome']                 = False
+        self.data['salome']           = False
+        self.data['package']          = None
 
 
     def _errorExit(self, msg):
@@ -1095,12 +1095,15 @@ class XMLDocument(XMLElement):
 #-------------------------------------------------------------------------------
 
 class Case(Dico, XMLDocument):
-    def __init__(self, file_name=""):
+    def __init__(self, package=None, file_name=""):
         """
         Instantiate a new dico and a new xml doc
         """
         Dico.__init__(self)
         XMLDocument.__init__(self, case=self)
+
+        self['package'] = package
+        rootNode = '<' + self['package'].code_name +'_GUI study="" case="" version="2.0"/>'
 
         if file_name:
             self.parse(file_name)
