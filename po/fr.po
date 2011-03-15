@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-02-22 14:28+0100\n"
+"POT-Creation-Date: 2011-03-15 14:15+0100\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6719,10 +6719,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-" CLMLGA: maximum number of coarse grids (%d)\n"
+" clmlga: maximum number of coarse grids (%d)\n"
 "         reached for \"%s\".\n"
 msgstr ""
-" CLMLGA : nombre de maillages grossiers maximal (%d)\n"
+" clmlga : nombre de maillages grossiers maximal (%d)\n"
 "          atteint pour \"%s\".\n"
 
 #, c-format
@@ -9513,18 +9513,6 @@ msgstr ""
 
 #, c-format
 msgid "Unable to open the file: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Missing 'min' markup for xpath : %s\n"
-msgstr ""
-
-#, c-format
-msgid "Missing 'max' markup for xpath : %s\n"
-msgstr ""
-
-#, c-format
-msgid "Missing 'value' markup for xpath : %s\n"
 msgstr ""
 
 msgid "Number of periodicities (%d) and modes (%) do not match."
