@@ -1187,7 +1187,9 @@ fi
                                              dest + '.' + self.run_id)
                 if src_tmp_name == None:
                     scripts_tmp = open(dest_tmp_name, 'w')
+                    scripts_tmp.write(self.run_id + '\n')
                     scripts_tmp.write(self.exec_dir + '\n')
+                    scripts_tmp.write(self.result_dir + '\n')
                     scripts_tmp.close()
                 else:
                     os.rename(src_tmp_name, dest_tmp_name)
@@ -1234,13 +1236,13 @@ fi
 
         self.set_result_dir(self.run_id)
 
-        # Before creating or generating file, create stage 'marker' file.
-
-        self.update_scripts_tmp(None, 'preparing')
-
         # Create working directory (reachable by all the processors)
 
         self.mk_exec_dir(self.run_id)
+
+        # Before creating or generating file, create stage 'marker' file.
+
+        self.update_scripts_tmp(None, 'preparing')
 
         # Copy script before changing to the working directory
         # (as after that, the relative path will not be up to date).
@@ -1469,7 +1471,7 @@ fi
         else:
             status = 'failed'
 
-        self.update_scripts_tmp('partitioning', 'status')
+        self.update_scripts_tmp('partitioning', status)
 
         return retcode
 

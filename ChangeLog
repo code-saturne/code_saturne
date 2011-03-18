@@ -1,3 +1,8 @@
+* 18/03/2011 - Alexandre Douce <alexandre.douce@edf.fr>
+  Improvement of the runningcase script for SALOME features.
+  modified script:
+    bin/cs_case.py
+
 * 11/03/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Make use of the "package" concept in the graphical interface to have an
   easier management of both Code_Saturne and NEPTUNE_CFD codes.
