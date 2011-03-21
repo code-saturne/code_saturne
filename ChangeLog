@@ -1,3 +1,13 @@
+* 21/03/2011 - David Monfort <david.monfort@edf.fr>
+  Remove depecrated documentation for the old autovalidation process.
+  removed files:
+    doc/user/a1_autovalid.tex
+    doc/user/input/addstudy.xml
+    doc/user/input/autovalid.xml
+  modified files:
+    doc/user/Makefile.am
+    doc/user/user.tex
+
 * 18/03/2011 - Alexandre Douce <alexandre.douce@edf.fr>
   Improvement of the runningcase script for SALOME features.
   modified script:

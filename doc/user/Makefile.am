@@ -27,15 +27,12 @@ TEXMAIN = user.tex
 # Other LaTex document
 
 TEXOTHERS = \
-a1_autovalid.tex \
 biblio.tex \
 saturne1.tex \
 saturne2.tex \
 summary.tex
 
-TEXINPUTFILES = \
-input/addstudy.xml \
-input/autovalid.xml
+TEXINPUTFILES =
 
 # Distributed files
 
