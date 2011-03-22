@@ -1,3 +1,8 @@
+* 22/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix bounds checking issue with Intel Fortran compiler.
+  modified file:
+    src/base/inipst.f90
+
 * 22/03/2011 - David Monfort <david.monfort@edf.fr>
   Add a research API to let the user by-pass the main call to Code_Saturne
   solver.

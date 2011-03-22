@@ -88,8 +88,16 @@ integer          ipstvl , ipstbo , ipstsy , ipstze
 integer          ipstmd , ntpst
 double precision frpst
 
+#if defined(__INTEL_COMPILER)
+! ifort's bounds checking for character strings leads to an error if character
+! arrays passed from C are declared as character strings, but it accepts the
+! (nonstandard) byte type.
+byte             fmtpst(32)
+byte             optpst(96)
+#else
 character        fmtpst(32)
 character        optpst(96)
+#endif
 
 ! Local variables
 
