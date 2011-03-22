@@ -1,4 +1,10 @@
 * 22/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix bugs in computation of number of boundary cells and periodic
+  cell family synchronization in serial mode when MPI is enabled.
+  modified file:
+    src/base/cs_mesh.c
+
+* 22/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix bounds checking issue with Intel Fortran compiler.
   modified file:
     src/base/inipst.f90
