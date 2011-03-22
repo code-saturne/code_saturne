@@ -428,6 +428,7 @@ $(top_srcdir)/users/base/cs_user_mesh_input.c \
 $(top_srcdir)/users/base/cs_user_mesh_modify.c \
 $(top_srcdir)/users/base/cs_user_periodicity.c \
 $(top_srcdir)/users/base/cs_user_saturne_coupling.c \
+$(top_srcdir)/users/base/cs_user_solver.c \
 $(top_srcdir)/users/base/cs_user_syrthes_coupling.c
 
 libcsbase_la_SOURCES += $(baseusers)

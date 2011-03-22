@@ -1,3 +1,13 @@
+* 22/03/2011 - David Monfort <david.monfort@edf.fr>
+  Add a research API to let the user by-pass the main call to Code_Saturne
+  solver.
+  added file:
+    users/base/cs_user_solver.c
+  modified files:
+    src/apps/cs_solver.c
+    src/base/cs_prototypes.h
+    src/base/Makefile.am
+
 * 21/03/2011 - David Monfort <david.monfort@edf.fr>
   Remove depecrated documentation for the old autovalidation process.
   removed files:

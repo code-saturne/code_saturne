@@ -423,21 +423,6 @@ cs_run(void)
                                  cs_glob_mesh_quantities,
                                  (opts.verif ? 1 : 0));
 
-    /* Allocate Fortran working arrays */
-
-    CS_PROCF(memini, MEMINI)(&iasize, &rasize);
-
-    bft_printf(_("\n"
-                 " --- Main Fortran work arrays:\n"
-                 "       longia =   %10d (Number of integers)\n"
-                 "       longra =   %10d (Number of reals)\n"
-                 "       (%d bytes/integer, %d bytes/real)\n"),
-               iasize, rasize,
-               sizeof(cs_int_t)/sizeof(char),
-               sizeof(cs_real_t)/sizeof(char));
-
-    cs_base_mem_init_work(iasize, rasize, &ia, &ra);
-
     /* Initialize gradient computation */
 
     cs_gradient_initialize();
@@ -447,11 +432,42 @@ cs_run(void)
     cs_sles_initialize();
     cs_multigrid_initialize();
 
-    /*----------------------------------------------
-     * Call main calculation function (code Kernel)
-     *----------------------------------------------*/
+    /* Choose between standard and user solver */
 
-    CS_PROCF(caltri, CALTRI)(&_verif, ia, ra);
+    if (cs_user_solver_set() == 0) {
+
+      /* Allocate Fortran working arrays */
+
+      CS_PROCF(memini, MEMINI)(&iasize, &rasize);
+
+      bft_printf(_("\n"
+                   " --- Main Fortran work arrays:\n"
+                   "       longia =   %10d (Number of integers)\n"
+                   "       longra =   %10d (Number of reals)\n"
+                   "       (%d bytes/integer, %d bytes/real)\n"),
+                 iasize, rasize,
+                 sizeof(cs_int_t)/sizeof(char),
+                 sizeof(cs_real_t)/sizeof(char));
+
+      cs_base_mem_init_work(iasize, rasize, &ia, &ra);
+
+      /*----------------------------------------------
+       * Call main calculation function (code Kernel)
+       *----------------------------------------------*/
+
+      CS_PROCF(caltri, CALTRI)(&_verif, ia, ra);
+
+    }
+    else {
+
+      /*--------------------------------
+       * Call user calculation function
+       *--------------------------------*/
+
+      cs_user_solver(cs_glob_mesh,
+                     cs_glob_mesh_quantities);
+
+    }
 
     /* Finalize sparse linear systems resolution */
 

@@ -38,6 +38,7 @@
 
 #include "cs_base.h"
 #include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -675,6 +676,21 @@ cs_user_periodicity(void);
 
 void
 cs_user_saturne_coupling(void);
+
+/*----------------------------------------------------------------------------
+ * Set user solver.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_user_solver_set(void);
+
+/*----------------------------------------------------------------------------
+ * Main call to user solver.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_solver(const cs_mesh_t             *mesh,
+               const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Define couplings with SYRTHES code.
