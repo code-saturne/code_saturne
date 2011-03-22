@@ -1,3 +1,8 @@
+* 22/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Correct typo leading to wrong detection of number of processors with LSF.
+  modified file:
+    bin/runcase_mpi_env
+
 * 28/01/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Added file missing from previous checkin in GUI.
   added file:
@@ -246,7 +251,7 @@
     src/base/cs_join_perio.c
     src/base/cs_preprocessor_data.c
 
-* 21/07/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 21/07/2010 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix the periodicities definition when using the graphical interface.
   modified routines:
     src/base/cs_join.c
@@ -356,7 +361,7 @@
 * 21/06/2010 - David Monfort <david.monfort@edf.fr>
   Make the particles output compliant with EnSight 6 format and improve the
   robustness of the output for visualizing with ParaView.
-  Thanks to Stéphane Blanchet for reporting this issue.
+  Thanks to StÃ©phane Blanchet for reporting this issue.
   modified routine:
     src/lagr/enslag.f90
     src/lagr/enswaf.f90
@@ -420,7 +425,7 @@
     extras/installer/install_saturne.py
     extras/installer/setup
 
-* 08/06/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 08/06/2010 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Miscellaneous fixes for the parallel joining algorithm.
   modified routines:
     include/base/cs_join_util.h
@@ -660,7 +665,7 @@
     users/base/usjoin.f90
     users/base/usperi.f90
 
-* 31/03/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 31/03/2010 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Add the periodicity "joining" handling in parallel by the solver.
   modified script:
     src/base/Makefile.am
@@ -686,7 +691,7 @@
     src/base/cs_join_util.c
     src/base/cs_mesh.c
 
-* 31/03/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 31/03/2010 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Miscellaneous improvements for the parallel joining algorithm and
   preparation for the periodicity handling.
   modified routines:
@@ -1232,7 +1237,7 @@
   modified script:
     config/cs_blas.m4
 
-* 16/12/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 16/12/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Add a counter for the numbering of the joinings.
   modified routines:
     include/base/cs_join.h
@@ -1284,7 +1289,7 @@
     bin/cs_case.py
     bin/runcase.py.in
 
-* 14/12/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 14/12/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Improve the parallel joining algorithm.
   modified routines:
     include/base/cs_join.h
@@ -1585,7 +1590,7 @@
     gui/Pages/LagrangianBoundariesModel.py
     gui/Pages/LagrangianBoundariesView.py
 
-* 21/10/2009 - Namane Méchitoua <namane.mechitoua@edf.fr>
+* 21/10/2009 - Namane MÃ©chitoua <namane.mechitoua@edf.fr>
   Set the relaxation factor between P0/P1 interpolations to 0.95 in multigrid
   algorithm in order to stabilize the algorithm in some calculations.
   Remove a useless line in addition.
@@ -1634,7 +1639,7 @@
     users/base/usjoin.f90
     users/base/usproj.f90
 
-* 19/10/2009 - Namane Méchitoua <namane.mechitoua@edf.fr>
+* 19/10/2009 - Namane MÃ©chitoua <namane.mechitoua@edf.fr>
   Set the agglomeration limit to 3 instead of 8.
   modified routine:
     src/base/iniini.f90
@@ -1665,12 +1670,12 @@
     src/base/iniusi.f90
     src/base/inivar.f90
 
-* 19/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 19/10/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Add a coherency check for interior faces -> cells connectivity.
   modified routine:
     src/base/cs_mesh_halo.c
 
-* 19/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 19/10/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a freeze that could happen in the joining algorithm when
   no face is present after the slice redistribution.
   modified routines:
@@ -1680,14 +1685,14 @@
     src/base/cs_join_split.c
     src/base/cs_join_update.c
 
-* 19/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 19/10/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix an issue with the joining algorithm where not all the single
   vertices are detected during the selection step.
   modified routines:
     include/base/cs_join_util.h
     src/base/cs_join_util.c
 
-* 16/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 16/10/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Add a verification for negative volume.
   modified routines:
@@ -1695,13 +1700,13 @@
     src/apps/cs_solver.c
     src/base/cs_mesh_quantities.c
 
-* 16/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 16/10/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a wrong initialization in mesh quality display when the array
   is empty.
   modified routine:
     src/base/cs_mesh_quality.c
 
-* 16/10/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 16/10/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a bug in the joining algorithm when the number of faces is
   lower than the number of ranks.
   modified routine:
@@ -2276,22 +2281,22 @@
     src/base/cs_join_update.c
     src/base/cs_join_util.c
 
-* 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 09/09/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix an issue in the mesh cleaning stage of the joining algorithm.
   modified routine:
     src/base/cs_join_mesh.c
 
-* 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 09/09/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a memory leak in case of conforming joining.
   modified routine:
     src/base/cs_join.c
 
-* 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 09/09/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a bug in "single element" building.
   modified routine:
     src/base/cs_join_util.c
 
-* 09/09/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 09/09/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a blocking problem when compiling without MPI support.
   modified routine:
     src/base/cs_join_util.c
@@ -2535,7 +2540,7 @@
   modified routine:
     src/lagr/cs_lagr.c
 
-* 27/07/2009 - Jérome Lucas <jerome.lucas@incka.fr>
+* 27/07/2009 - JÃ©rome Lucas <jerome.lucas@incka.fr>
                David Monfort <david.monfort@edf.fr>
   Add restarting capabilities for cooling-towers module.
   modified routine:
@@ -2550,12 +2555,12 @@
     src/ctwr/cs_ctwr.c
     users/ctwr/uscti1.f90
 
-* 23/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 23/07/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix an issue in the parallel joining for specific cases.
   modified routines:
     src/base/cs_join_update.c
 
-* 23/07/2009 - Jérome Lucas <jerome.lucas@incka.fr>
+* 23/07/2009 - JÃ©rome Lucas <jerome.lucas@incka.fr>
   Fix a bug in parallel simulations with cooling-tower module.
   modified routine:
     src/ctwr/cs_ctwr_halo.c
@@ -2577,7 +2582,7 @@
     src/base/preduv.f90
     users/base/usini1.f90
 
-* 23/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 23/07/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix an issue in the parallel joining for specific cases.
   modified routines:
     include/base/cs_join_util.h
@@ -2591,12 +2596,12 @@
     users/base/usclim.f90
     users/base/usini1.f90
 
-* 22/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 22/07/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a test on tolerance in the merge stage.
   modified routine:
     src/base/cs_join_merge.c
 
-* 22/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 22/07/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a possible uninitialized variable in joining algorithm.
   modified routine:
     src/base/cs_join_intersect.c
@@ -2632,7 +2637,7 @@
     po/POTFILES.in
     po/fr.po
 
-* 22/07/2009 - Jérome Lucas <jerome.lucas@incka.fr>
+* 22/07/2009 - JÃ©rome Lucas <jerome.lucas@incka.fr>
                David Monfort <david.monfort@edf.fr>
   Fix several bugs in cooling-tower module and clean a few lines.
   modified routines:
@@ -2641,7 +2646,7 @@
     src/ctwr/cs_ctwr_halo.c
     src/ctwr/cs_ctwr_mesh.c
 
-* 22/07/2009 - Jérome Lucas <jerome.lucas@incka.fr>
+* 22/07/2009 - JÃ©rome Lucas <jerome.lucas@incka.fr>
                David Monfort <david.monfort@edf.fr>
   Split main cooling-tower modelling routine in two for a better
   understanding (mainly to move aside the mesh generation).
@@ -2777,7 +2782,7 @@
   modified script:
     src/base/Makefile.am
 
-* 17/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 17/07/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Improvements and fixes in the parallel join algorithm.
   modified routines:
@@ -2889,7 +2894,7 @@
     src/rayt/rayopt.f90
     users/rayt/usray1.f90
 
-* 10/07/2009 - François Jusserand <francois.jusserand@edf.fr>
+* 10/07/2009 - FranÃ§ois Jusserand <francois.jusserand@edf.fr>
   Fix a bug when accounting for orthotropic mesh viscosity.
   modified routine:
     src/base/condli.f90
@@ -2912,7 +2917,7 @@
 * 10/07/2009 - David Monfort <david.monfort@edf.fr>
   Blank removal.
 
-* 10/07/2009 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 10/07/2009 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Add parall mesh joining feature.
   modified script:
@@ -3467,7 +3472,7 @@
     src/lagr/lageqp.f90
     src/rayt/raypun.f90
 
-* 15/06/2009 - Jérôme Lucas <jerome.lucas@incka.fr>
+* 15/06/2009 - JÃ©rÃ´me Lucas <jerome.lucas@incka.fr>
   Fix a missing initialization in the halo structure.
   modified routine:
     src/base/cs_halo.c
@@ -3495,7 +3500,7 @@
   modified routine:
     src/base/cs_ventil.c
 
-* 15/06/2009 - François Jusserand <francois.jusserand@edf.fr>
+* 15/06/2009 - FranÃ§ois Jusserand <francois.jusserand@edf.fr>
   Fix a missing variable initialization for Code_Aster coupling.
   modified routine:
     src/base/cs_ast_coupling.c
@@ -4593,7 +4598,7 @@
     src/ctwr/cs_ctwr_halo.c
     src/lagr/cs_lagr_perio.c
 
-* 16/02/2009 - François Jusserand <francois.jusserand@edf.fr>
+* 16/02/2009 - FranÃ§ois Jusserand <francois.jusserand@edf.fr>
   Fix Code_Aster coupling for sequential calculations.
   modified routines:
     include/base/cs_ast_coupling.h
@@ -4808,7 +4813,7 @@
 * 28/11/2008 - David Monfort <david.monfort@edf.fr>
   Release of Code_Saturne version 1.4.0
 
-* 28/11/2008 - François Jusserand <francois.jusserand@edf.fr>
+* 28/11/2008 - FranÃ§ois Jusserand <francois.jusserand@edf.fr>
                Marc Sakiz <marc.sakiz@edf.fr>
                David Monfort <david.monfort@edf.fr>
   First integration of the Code_Aster coupling capability.
@@ -4838,7 +4843,7 @@
     src/base/tridim.F
 
 * 28/11/2008 - David Monfort <david.monfort@edf.fr>
-               Jérôme Lucas <jerome.lucas@incka.fr>
+               JÃ©rÃ´me Lucas <jerome.lucas@incka.fr>
   Complete the cooling towers feature.
   Still not complet and no restarting or parallelism.
   added routines:
@@ -5088,7 +5093,7 @@
   modified routine:
     src/base/cs_multigrid.c
 
-* 14/11/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 14/11/2008 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Minor corrections and improvements.
   modified routines:
     src/base/cs_ext_neighborhood.c
@@ -5573,7 +5578,7 @@
   modified routine:
     src/base/cs_multigrid.c
 
-* 12/09/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 12/09/2008 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Correction on periodicity transfer from the preprocessor.
   modified routine:
     src/base/cs_ecs_messages.c
@@ -6497,7 +6502,7 @@
 
 * 29/05/2008 - Yvan Fournier <yvan.fournier@edf.fr>
   Adding communications with a proxy, in order to prepare
-  the Code_Saturne/Code_Aster coupling via Salomé/YACS.
+  the Code_Saturne/Code_Aster coupling via SalomÃ©/YACS.
   modified routines:
     include/base/cs_opts.h
     include/base/cs_base.h
@@ -6690,7 +6695,7 @@
   modified routines:
     elphyv.F
 
-* 21/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 21/03/2008 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Corrected extended neighborhood reduction bug
   modified routines:
     cs_ext_neighborhood.c
@@ -6704,7 +6709,7 @@
   modified routines:
     lance_install
   
-* 05/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 05/03/2008 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
                David Monfort <david.monfort@edf.fr>
   Tests on a specific array for the extended neighborhood instead of
   halo_type, to avoid failing tests in sequential compuations.
@@ -6767,7 +6772,7 @@
   modified routines:
     cs_mesh_coherency.c
 
-* 04/03/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 04/03/2008 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Fix a bug in the definition of the extended halo when one needs to
   use the extended neighborhood
   modified routines:
@@ -6924,13 +6929,13 @@
     cs_base.h
     cs_lagrang.c
 
-* 14/01/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 14/01/2008 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Bug fix in face renumbering and ponderation algorithm
   improvement
   modified routines:
     cs_syr_coupling.c
 
-* 14/01/2008 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 14/01/2008 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Missing argument in printf function in cs_syr_mesages.c
 
 * 08/01/2008 - David Monfort <david.monfort@edf.fr>
@@ -7116,7 +7121,7 @@
 * 05/11/2007 - Alexandre Douce <alexandre.douce@edf.fr>
   Bug correction for P1 radiative transfer in usray5.F
 
-* 31/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 31/10/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Correction of an erroneous assert in cs_halo.c
 
 * 31/10/2007 - Yvan Fournier <yvan.fournier@edf.fr>
@@ -7192,7 +7197,7 @@
     macros_Blue_Gene_L.mk
     Makefile
 
-* 22/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 22/10/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Bug correction in extended neighborhood (index error
   in connectivity list and shunted use of ext_neighborhood
   in gradient calculation)
@@ -7200,7 +7205,7 @@
     cs_ext_neighborhood.c
     cs_gradient.c
 
-* 22/10/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 22/10/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Correction of bug in rotation periodicity with lagrangian
   module + minor comments and syntax modifications +
   compilation options for CCRT machines
@@ -7295,7 +7300,7 @@
   in covofi.F
 
 * 09/10/2007 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
-               Jérôme Bonelle <jerome.bonelle@edf.fr>
+               JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Various modifications:
   - synchronization with Syrthes only if ITRALE>0 in caltri.F
@@ -7366,27 +7371,27 @@
     lagent.F
     laglec.F
 
-* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 21/08/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Correction of character chain length in inipst.F
 
-* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 21/08/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Correction in DEPALE and CSMAGO initialisation
   modified routines:
     caltri.F
     iniva0.F
     memtri.F
 
-* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 21/08/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Optimised debug options for IA64 architecture
   modified script:
     macros_Linux_IA64.mk
 
-* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 21/08/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Correction of index error in mobile structures initialisation
   modified routine:
     iniini.F
 
-* 21/08/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 21/08/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Missing update of fortran commons after cutting of warped faces.
   modified routines:
     cs_main.c
@@ -7640,7 +7645,7 @@
 
 
 * 13/07/2007 - Carole Vit <carole.vit@edf.fr>
-               Éric Quémerais <eric.quemerais@edf.fr>
+               Ã‰ric QuÃ©merais <eric.quemerais@edf.fr>
                Nicole Picard <nicole-n.picard@edf.fr>
                Alexandre Douce <alexandre.douce@edf.fr>
   Adaptation to new version of GUI, implementation
@@ -7706,7 +7711,7 @@
     cs_gui.c
     cs_gui.h
 
-* 09/07/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 09/07/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Creation of parallel and periodic halos by the kernel,
   use of fvm-0.8.0 + internationalisation of C routines
@@ -8100,7 +8105,7 @@
   Tagging of version 1.3.g
 
 
-* 18/04/2007 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+* 18/04/2007 - JÃ©rÃ´me Bonelle <jerome.bonelle@edf.fr>
   Porting on Linux_Argent architecture (CCRT Bull Novascale
   Itanium cluster), including BLAS compatibility
   added script:

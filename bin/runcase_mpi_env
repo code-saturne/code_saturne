@@ -59,7 +59,7 @@ if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
     NUMBER_OF_PROCESSORS=$SLURM_NPROCS
   elif [ ! -z "${LSB_MCPU_HOSTS}" ] ; then
     # LSF queueing system, using LSB_MCPU_HOSTS
-    NUMBER_OF_PROCESSORS=`echo $LSB_MCPU_HOSTS | awk 'BEGIN {CPUS=0} {for (ii=2; i <= NF;ii+=2) CPUS+=$ii} END {print(CPUS)}'`
+    NUMBER_OF_PROCESSORS=`echo $LSB_MCPU_HOSTS | awk 'BEGIN {CPUS=0} {for (ii=2; ii <= NF;ii+=2) CPUS+=$ii} END {print(CPUS)}'`
   elif [ ! -z "${LSB_HOSTS}" ] ; then
     # LSF queueing system, using LSB_HOSTS
     NUMBER_OF_PROCESSORS=`echo $LSB_HOSTS | wc -w`
