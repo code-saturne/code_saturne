@@ -1,3 +1,9 @@
+* 23/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix point location bug for polyhedral cells.
+  modified files:
+    src/fvm/fvm_point_location.c
+    libple/examples/my_ple_point_location.c
+
 * 22/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix bugs in computation of number of boundary cells and periodic
   cell family synchronization in serial mode when MPI is enabled.

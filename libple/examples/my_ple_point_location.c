@@ -3620,9 +3620,9 @@ _polyhedra_section_locate(const my_ple_mesh_section_t  *this_section,
         coord_id[2] = triangle_vertices[k*3 + 1] - 1;
 
         for (l = 0; l < 3; l++) {
-          tetra_coords[0][l] = vertex_coords[coord_id[0] + l];
-          tetra_coords[1][l] = vertex_coords[coord_id[1] + l];
-          tetra_coords[2][l] = vertex_coords[coord_id[2] + l];
+          tetra_coords[0][l] = vertex_coords[3*coord_id[0] + l];
+          tetra_coords[1][l] = vertex_coords[3*coord_id[1] + l];
+          tetra_coords[2][l] = vertex_coords[3*coord_id[2] + l];
           tetra_coords[3][l] = center[l];
         }
 
