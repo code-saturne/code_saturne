@@ -1,3 +1,14 @@
+2011-03-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Automatically add PLE_COUPLING_INIT flag in applications status when
+	calling ple_coupling_mpi_set_create(), and cancel it upon first call
+	to ple_coupling_mpi_set_synchronize().
+
+2011-03-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* examples/my_ple_point_location.c: fix point location bug for
+	 polyhedral cells.
+
 2010-11-24  David Monfort <david.monfort@edf.fr>
 
 	* Makefile.am improvements.

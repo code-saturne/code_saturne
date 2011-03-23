@@ -524,7 +524,7 @@ ple_coupling_mpi_set_create(int          sync_flag,
     n_app_ranks = 1;
   }
 
-  l_rank_info[0] = sync_flag;
+  l_rank_info[0] = sync_flag | PLE_COUPLING_INIT;
   l_rank_info[1] = set_rank;
   l_rank_info[2] = n_app_ranks;
   if (app_type != NULL)
@@ -805,6 +805,9 @@ ple_coupling_mpi_set_synchronize(ple_coupling_mpi_set_t  *s,
 
     if (s->app_status[i] & last_sync_mask)
       s->app_status[i] = (s->app_status[i] | PLE_COUPLING_NO_SYNC);
+
+    if (s->app_status[i] & PLE_COUPLING_INIT)
+      s->app_status[i] -= PLE_COUPLING_INIT;
   }
 
   PLE_FREE(glob_vals);
