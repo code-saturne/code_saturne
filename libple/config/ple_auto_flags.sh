@@ -190,14 +190,6 @@ elif test "x$ple_gcc" = "xicc"; then
   cflags_default_opt="-O2"
   cflags_default_prf="-p"
 
-  # Modify default flags on certain systems
-
-  case "$host-os-$host_cpu" in
-    *ia64)
-      cflags_default_opt="-O2 -mcpu=itanium2-p9000"
-      ;;
-  esac
-
 fi
 
 # Otherwise, are we using pgcc ?
