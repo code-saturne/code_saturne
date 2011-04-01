@@ -190,11 +190,11 @@ if ( (mod(ipwaf-1,nvisla).eq.0 .and. nfin.eq.0)   .or.            &
 
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      WRITE(IMPLA1,'(I8,3E12.5)') NP,                             &
-                                ettp(np,jxp),                     &
-                                ettp(np,jyp),                     &
-                                ettp(np,jzp)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        write(impla1,'(I8,3E12.5)') np, &
+          ettp(np,jxp), ettp(np,jyp), ettp(np,jzp)
+      endif
     endif
   enddo
 
@@ -208,9 +208,11 @@ if ( (mod(ipwaf-1,nvisla).eq.0 .and. nfin.eq.0)   .or.            &
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      WRITE(IMPLA1,'(2I8)') IPT , NP
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        write(impla1,'(2I8)') ipt , np
+      endif
     endif
   enddo
   close(impla1)
@@ -231,9 +233,11 @@ if (ivistp.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = tepa(np,jrtsp)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = tepa(np,jrtsp)
+      endif
     endif
   enddo
 
@@ -266,9 +270,11 @@ if (iviste.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = ettp(np,jtp)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = ettp(np,jtp)
+      endif
     endif
   enddo
 
@@ -301,9 +307,11 @@ if (ivisdm.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = ettp(np,jdp)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = ettp(np,jdp)
+      endif
     endif
   enddo
 
@@ -336,9 +344,11 @@ if (ivismp.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = ettp(np,jmp)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = ettp(np,jmp)
+      endif
     endif
   enddo
 
@@ -371,9 +381,11 @@ if (ivishp.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = ettp(np,jhp)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = ettp(np,jhp)
+      endif
     endif
   enddo
 
@@ -406,9 +418,11 @@ if (ivisdk.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = tepa(np,jrdck)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = tepa(np,jrdck)
+      endif
     endif
   enddo
 
@@ -441,9 +455,11 @@ if (ivisch.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = ettp(np,jmch)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = ettp(np,jmch)
+      endif
     endif
   enddo
 
@@ -476,9 +492,11 @@ if (ivisck.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = ettp(np,jmck)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = ettp(np,jmck)
+      endif
     endif
   enddo
 
@@ -511,11 +529,13 @@ if (ivisv1.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = ettp(np,juf)
-      trav(ipt,2) = ettp(np,jvf)
-      trav(ipt,3) = ettp(np,jwf)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = ettp(np,juf)
+        trav(ipt,2) = ettp(np,jvf)
+        trav(ipt,3) = ettp(np,jwf)
+      endif
     endif
   enddo
 
@@ -548,11 +568,13 @@ if (ivisv2.eq.1) then
   ipt = 0
   do nl = 1,nbvis
     np = liste(nl)
-    if (np.ge.1 .and. itepa(np,jisor).ne.0) then
-      ipt = ipt + 1
-      trav(ipt,1) = ettp(np,jup)
-      trav(ipt,2) = ettp(np,jvp)
-      trav(ipt,3) = ettp(np,jwp)
+    if (np.ge.1) then
+      if (itepa(np,jisor).ne.0) then
+        ipt = ipt + 1
+        trav(ipt,1) = ettp(np,jup)
+        trav(ipt,2) = ettp(np,jvp)
+        trav(ipt,3) = ettp(np,jwp)
+      endif
     endif
   enddo
 

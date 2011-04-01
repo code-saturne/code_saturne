@@ -1,3 +1,8 @@
+* 01/04/2011 - David Monfort <david.monfort@edf.fr>
+  Change some tests to avoid issues when checking for array boundaries.
+  modified routine:
+    src/lagr/enswaf.f90
+
 * 23/03/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix point location bug for polyhedral cells.
   modified files:
