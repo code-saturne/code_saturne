@@ -76,7 +76,7 @@ L'équation discr\`ete de quantité de mouvement s'écrit, à un instant de r\'esolu
 \item[$\star$] $\vect{V_\alpha}^n$, de dimension $\var{NCEL}$, est un tableau où est stockée la $\alpha^{\text{\`eme}}$ composante de la vitesse $\vect{u}^n$ à l'instant précédent $n$,
 \item[$\star$] $\tens{A_\alpha}^n$ désigne l'opérateur de convection/diffusion (cet opérateur n'est pas forcément linéaire à cause des tests de pente éventuels dans le terme de convection, il peut d\'ependre de $\vect{V_\alpha}$),
 
-\item[$\star$] $\tens{G_\alpha}$ est l'opérateur linéaire\footnote{en toute rigueur, à cause des limitations éventuelles de gradient qui peuvent être activée par l'utilisateur, cet opérateur peut ne plus être vraiment linéaire} gradient "cellules" dans la direction $\alpha$ (il est donc appliqu\'e \`a des vecteurs de dimension \var{NCEL}),
+\item[$\star$] $\tens{G_\alpha}$ est l'opérateur linéaire\footnote{en toute rigueur, à cause des limitations éventuelles de gradient qui peuvent être activées par l'utilisateur, cet opérateur peut ne plus être vraiment linéaire} gradient "cellules" dans la direction $\alpha$ (il est donc appliqu\'e \`a des vecteurs de dimension \var{NCEL}),
 \item[$\star$] $\vect{P}^n$, de dimension $\var{NCEL}$, est un tableau où est
 stockée la pression $p^n$ du pas de temps pr\'ec\'edent à chaque cellule,
 
@@ -189,7 +189,7 @@ $$\tens{D}\ \vect{W}^{\,n+1} = \vect{\Gamma} $$
 D'où, en posant $ \delta \vect{P} = \vect{P}^{\,n+1} - \vect{P}^{\,n}$,
 
 \begin{equation}
- \tens{D}\ \tens{B}^{-1}\,\tens{G}\ \,\delta \vect{P} =\ \tens{D}\ \widetilde{W} -\ \vect{\Gamma}
+ \tens{D}\ \tens{B}^{-1}\,\tens{G}\ \,\delta \vect{P} =\ \tens{D}\ \vect{\widetilde{W}} -\ \vect{\Gamma}
 \label{Base_Resolp_eqn5bis}
 \end{equation}
 

@@ -654,6 +654,7 @@ et on calcule le nouveau champ de vitesse au centre des cellules gr\^ace \`a l'\
 \vect{u}^{n+1} =
 \vect{\widetilde{u}}^{n+1}-\frac{\Delta t}{\rho}\grad \,\delta P^{n+\theta}
 \end{equation}
+%
 \minititre{Remarque 8}
 Un traitement sp\'ecifique permet d'assurer que la conservation de la masse portant sur le bilan des flux
 de masse aux faces est toujours parfaitement v\'erifi\'ee \`a l'issue de
@@ -662,7 +663,7 @@ ou non atteint la convergence.
 En effet, $\delta P^{n+\theta,k_{fin}+1}$,
 dernier terme \'evalu\'e de la suite, est donn\'e par :
 
-\begin{equation}\notag
+\begin{equation}\label{resol_pression_derniere_it}
 \mathcal{FM}(\delta(\delta P)^{n+\theta,k_{fin}+1},I) = \mathcal{F}(\delta P^{n+\theta,k_{fin}},I)
 \end{equation}
 Au lieu de r\'eactualiser classiquement le flux de masse, on le calcule comme

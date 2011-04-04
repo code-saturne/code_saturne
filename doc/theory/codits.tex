@@ -248,7 +248,7 @@ termes reconstruits de convection-diffusion par appel au sous-programme
 \var{SMBINI}^{\,k}\  = f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}(\,a^{n+1,\,k-1} - a^n\,) \\
 \end{equation}
 \\
-$\bullet$ Avant de boucler sur $k$,un premier appel au sous-programme \fort{bilsc2} avec $\var{THETAP}=1-\theta$ permet de prendre
+$\bullet$ Avant de boucler sur $k$, un premier appel au sous-programme \fort{bilsc2} avec $\var{THETAP}=1-\theta$ permet de prendre
 en compte la partie explicite des termes de convection-diffusion provenant du sch\'ema en temps.
 \begin{equation}\notag
 \displaystyle

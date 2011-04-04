@@ -1,3 +1,15 @@
+* 04/04/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Minor corrections in the theory manual.
+  modified files:
+    doc/theory/bilsc2.tex
+    doc/theory/clsyvt.tex
+    doc/theory/codits.tex
+    doc/theory/condli.tex
+    doc/theory/covofi.tex
+    doc/theory/gradrc.tex
+    doc/theory/navsto.tex
+    doc/theory/resolp.tex
+
 * 01/04/2011 - David Monfort <david.monfort@edf.fr>
   Change some tests to avoid issues when checking for array boundaries.
   modified routine:

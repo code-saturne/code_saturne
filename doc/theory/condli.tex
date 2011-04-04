@@ -54,13 +54,9 @@ at the boundary is then required
 upon the gradient inside boundary cells are required, such as the transpose
 gradient terms in the Navier-Stokes equations). 
 \end{itemize}
-These considerations only concern the computation variables  
+These considerations only concern the computational variables  
 (velocity, pressure, Reynolds tensor, 
 scalars solution of a convection-diffussion equation). For these variables
-
-Les consid\'erations pr\'esentes concernent uniquement les variables de calcul
-(vitesse, pression, tenseur de Reynolds, scalaires solution d'une \'equation
-de convection-diffusion). Pour ces grandeurs
 \footnote{
 The other variables 
 (the physical properties for instance) have a different treatment which will 
@@ -137,7 +133,7 @@ en renseignant le tableau
 toutes les variables transport\'ees (vitesse, variables turbulentes,
 {\it VarScalaires}...), et \`a
 une condition de Neumann homog\`ene (flux nul) sur la pression.
-\item [$\bullet$] {\bf Sortie}\label{Base_Condli_Sortie_Pression}~:
+\item [$\bullet$] {\bf Sortie}~:
         \begin{itemize}
         \item [-] lorsque le flux de masse est effectivement dirig\'e vers
 l'ext\'erieur du domaine, ce choix correspond \`a une condition de Neumann
@@ -196,7 +192,7 @@ Dans le cas des couplages avec \syrthes, \CS
 re\c coit une temp\'erature de paroi et fournit un flux thermique. La condition
 de pression standard est une condition de Neumann homog\`ene\footnote{On pourra
 se reporter \`a \fort{gradrc} pour la condition conduisant \`a l'extrapolation de
-la pression au bord, condition pilotable par l'utilisation de la variable \var{EXTRAP}.}
+la pression au bord, condition pilotable par l'utilisation de la variable \var{EXTRAP}.}.
 \item [$\bullet$] {\bf Sym\'etrie}~: correspond \`a des conditions de Neumann homog\`enes pour les
 grandeurs scalaires et \`a des conditions  de sym\'etrie classiques pour les vecteurs
 (vitesse) et les tenseurs (tensions de Reynolds)~: voir \fort{clsyvt}.
@@ -568,7 +564,7 @@ quelques cas particuliers usuels.}\label{Base_Condli_table_h_phi_condli}
 \end{table}
 
 \newpage
-\etape{Condition de sortie pour la pression\vspace{0,3cm}}
+\etape{Condition de sortie pour la pression\vspace{0,3cm}}\label{Base_Condli_Sortie_Pression}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 On pr\'ecise ici la condition de sortie appliqu\'ee
 \`a la pression dans le cas des sorties standards.
@@ -1168,7 +1164,7 @@ probablement pas le m\^eme au travers de toutes les sorties)~;
 (cas des maillage irr\'eguliers par exemple).
 \end{itemize}
 
-On pourrait \'egalement tester la m\'ethode d'Orlansky (\'equation de convection
+On pourrait \'egalement tester la m\'ethode d'Orlanski (\'equation de convection
 sur la pression).
 
 Par ailleurs, en l'absence de condition de sortie, il pourrait peut-\^etre se

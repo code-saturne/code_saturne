@@ -30,7 +30,7 @@
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Fonction}
+\section{Function}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,10 +86,7 @@ F_{\,ij}((\rho \vect{u})^n,a) = \left[{(\rho \vect{u})_{\,ij}^n} \text{.}\, \vec
 F_{\,{b}_{ik}}((\rho \vect{u})^n, a) =  \left[{(\rho \vect{u})_{\,{b}_{ik}}^n} \text{.}\, \vect{S}_{\,{b}_{ik}}\right]\ {a_f}_{\,{b}_{ik}}
 \end{equation}
 where $a_{\,f,ij}$ and ${a_f}_{\,{b}_{ik}}$ represent the values of
-$a$ at the internal and boundary faces of ${\Omega_i}$, respectively.
-
-repr\'esentent les valeurs aux faces
-internes et de bord respectivement.\\
+$a$ at the internal and boundary faces of ${\Omega_i}$, respectively.\\
 
 Before presenting the different convection schemes available in \CS, we define:\\
 \begin{figure}[h]
@@ -147,6 +144,7 @@ a_{\,{b}_{ik}}\text{ \ \ if } (\rho \vect{u})_{\,{b}_{ik}}^n
 \end{array}\right.
 \end{equation}
 $a_{\,{b}_{ik}}$ is the boundary value directly computed from the prescribed boundary conditions.
+
 \minititre{Remark 1}
 
 When a centered scheme is used, we actually write (to ensure first order discretization in space for $a$) 
@@ -183,8 +181,7 @@ D_{\,b_{ik}}(\,\beta, a) = \beta_{\,b_{ik}}
 \frac{a_{\,b_{ik}}-a_{\,I'}}{\overline{I'F}} S_{\,b_{ik}}
 \end{equation}
 using the same notations as before, and with $S_{\,ij}$ and $S_{\,b_{ik}}$ being the norms of  vectors 
-$\vect{S}_{\,ij}$, $S_{\,b_{ik}}$ and  $\vect{S}_{\,b_{ik}}$,
-${a_{\,{b}_{ik}}}$, respectively.
+$\vect{S}_{\,ij}$, and $\vect{S}_{\,b_{ik}}$ respectively.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
