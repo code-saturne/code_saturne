@@ -1,4 +1,9 @@
 * 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix error in script when no user python file is present.
+  modified files:
+    bin/cs_case_domain.py
+
+* 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix compatibility bug removing 'id' attribute from zone nodes.
   modified files:
     gui/Base/XMLinitialize.py

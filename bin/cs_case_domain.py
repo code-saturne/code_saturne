@@ -475,11 +475,12 @@ class domain(base_domain):
 
         # Now override or complete data from the XML file.
 
-        try:
-            cs_user_scripts.define_domain_parameters(self)
-            del cs_user_scripts.define_domain_parameters
-        except AttributeError:
-            pass
+        if os.path.isfile(user_scripts):
+            try:
+                cs_user_scripts.define_domain_parameters(self)
+                del cs_user_scripts.define_domain_parameters
+            except AttributeError:
+                pass
 
         # Finally, ensure some fields are of the required types
 
