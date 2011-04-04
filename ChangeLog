@@ -1,4 +1,9 @@
 * 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow disabling of SALOME GUI in configure.
+  modified files:
+    m4/cs_salome.m4
+
+* 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix error in script when no user python file is present.
   modified files:
     bin/cs_case_domain.py

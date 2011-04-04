@@ -243,7 +243,11 @@ AC_ARG_WITH(salome-gui-lib,
 # We should add a couple of tests here...
 #fi
 
-cs_have_salome_gui=yes
+if test "x$with_salome_gui" = "xno" ; then
+  cs_have_salome_gui=no
+else
+  cs_have_salome_gui=yes
+fi
 
 AC_SUBST(cs_have_salome_gui)
 AC_SUBST(SALOME_GUI_CPPFLAGS)
