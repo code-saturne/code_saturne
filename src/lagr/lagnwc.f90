@@ -35,7 +35,7 @@ subroutine lagnwc &
    itycel , icocel ,                                              &
    ifrlag , isorti , iworkp ,                                     &
    ia     ,                                                       &
-   surfbn , ettp   ,                                              &
+   ettp   ,                                                       &
    ra     )
 
 
@@ -76,7 +76,6 @@ subroutine lagnwc &
 !                  !    !     !    * 0 si sortie du domaine                    !
 ! iworkp(npbmax    ! te ! <-- ! numero de la face d'injection                  !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! surfbn(nfabor    ! tr ! <-- ! surface des faces de bord                      !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -117,7 +116,6 @@ integer          isorti(nbpmax)
 integer          ifrlag(nfabor) , iworkp(nbpmax)
 integer          ia(*)
 
-double precision surfbn(nfabor)
 double precision ettp(nbpmax,nvp)
 double precision ra(*)
 

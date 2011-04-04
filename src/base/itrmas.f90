@@ -148,7 +148,7 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifac, ii, jj, iij, iii
 double precision pfac,pip
-double precision dpxf  , dpyf  , dpzf  ,surfan, dist
+double precision dpxf  , dpyf  , dpzf  , dist
 double precision dijpfx, dijpfy, dijpfz
 double precision diipbx, diipby, diipbz
 double precision dijx  , dijy  , dijz
@@ -271,13 +271,12 @@ endif
     dijz = (xyzcen(3,jj)-xyzcen(3,ii))-dijpfz
 
     dist   = ra(idist-1+ifac)
-    surfan = ra(isrfan-1+ifac)
 
     flumas(ifac) = flumas(ifac)                                   &
      + viscf(ifac)*( pvar(ii) -pvar(jj) )                         &
      + ( dpxf * dijx                                              &
      +   dpyf * dijy                                              &
-     +   dpzf * dijz )*surfan/dist
+     +   dpzf * dijz )*surfan(ifac)/dist
 
   enddo
 

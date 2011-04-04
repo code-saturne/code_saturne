@@ -1343,7 +1343,7 @@ do iphas = 1, nphas
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
-      surf = ra(isrfan-1+ifac)
+      surf = surfan(ifac)
       rhom = (propce(iel1,ipcrom)+propce(iel2,ipcrom))*0.5d0
       rnorm = propfa(ifac,iflmas)/(surf*rhom)
       rnorma = max(rnorma,rnorm)
@@ -1361,7 +1361,7 @@ do iphas = 1, nphas
     rnormi =  grand
     do ifac = 1, nfabor
       rnorm = propfb(ifac,iflmab)/                                &
-             (ra(isrfbn-1+ifac)*propfb(ifac,ipbrom))
+             (surfbn(ifac)*propfb(ifac,ipbrom))
       rnorma = max(rnorma,rnorm)
       rnormi = min(rnormi,rnorm)
     enddo

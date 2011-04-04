@@ -602,15 +602,11 @@ if( idiff(ivar).ge. 1 ) then
   imodif = 0
   call uscfth                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w9     , ra(iwb), w8     , w1     ,                            &
-!        ------   -------
-   ra     )
+   w9     , ra(iwb), w8     , w1     )
 
 !     Calcul de la divergence avec reconstruction
 
@@ -851,14 +847,11 @@ call clpsca                                                       &
   imodif = 0
   call uscfth                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w6     , w7     , w8     , w9     ,                            &
-   ra     )
+   w6     , w7     , w8     , w9     )
 
 
 ! --- Bilan explicite (voir codits : on enleve l'increment)
@@ -886,15 +879,11 @@ endif
   imodif = 0
   call uscfth                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rtp(1,ipr(iphas)) , rtp(1,isca(itempk(iphas))) , w8     , w9 , &
-!        -----------------   --------------------------
-   ra     )
+   rtp(1,ipr(iphas)) , rtp(1,isca(itempk(iphas))) , w8     , w9 )
 
 !===============================================================================
 ! 7. COMMUNICATION DE LA PRESSION, DE L'ENERGIE ET DE LA TEMPERATURE

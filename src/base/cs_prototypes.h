@@ -474,7 +474,9 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_real_t   cdgfac[],  /* <-- interior face centers */
  const cs_real_t   cdgfbo[],  /* <-- boundary face centers */
  const cs_real_t   xyznod[],  /* <-- vertex coordinates */
- const cs_real_t   volume[]   /* <-- cell volumes */
+ const cs_real_t   volume[],  /* <-- cell volumes */
+ const cs_real_t   surfan[],  /* <-- interior face surfaces */
+ const cs_real_t   surfbn[]   /* <-- boundary face surfaces */
 );
 
 /*----------------------------------------------------------------------------

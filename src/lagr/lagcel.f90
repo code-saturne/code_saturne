@@ -36,7 +36,6 @@ subroutine lagcel &
    itypfb , itrifb , icocel , itycel , ifrlag , itepa  , ibord  , &
    indep  ,                                                       &
    ia     ,                                                       &
-   surfbn ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , auxl   ,                   &
@@ -90,7 +89,6 @@ subroutine lagcel &
 ! indep            ! te ! --> ! pour chaque particule :                        !
 !   (nbpmax)       !    !     !   numero de la cellule de depart               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! surfbn(nfabor    ! tr ! ->  ! surface des faces de bord                      !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
@@ -152,7 +150,6 @@ integer          ibord(nbpmax)
 integer          indep(nbpmax)
 integer          ia(*)
 
-double precision surfbn(nfabor)
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
@@ -696,7 +693,7 @@ do ip = 1,nbpart
    ifac   , ip     , isuivi ,                                     &
    itypfb , itrifb , ifrlag , itepa  , indep  ,                   &
    ia     ,                                                       &
-   surfbn , dt     , rtpa   , rtp    , propce , propfa , propfb , &
+   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , ettp(1,jup) ,              &
                                        ettp(1,juf) , auxl   ,     &

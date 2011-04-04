@@ -211,7 +211,7 @@ call cgdcel                                                       &
    imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
    ifacel , ifabor , icelbr , ia(iisymp) ,                        &
-   volume , surfac , surfbo , ra(isrfbn) , ra(ipond),             &
+   volume , surfac , surfbo , surfbn , ra(ipond),                 &
    ra(idist) , ra(idistb) , ra(idijpf) , ra(idiipb) , ra(idofij) ,&
    fextx  , fexty  , fextz  ,                                     &
    xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &

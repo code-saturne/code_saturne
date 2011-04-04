@@ -136,71 +136,64 @@ character        ficsui*32
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATIONS
+! 1. Initialization
 !===============================================================================
 
-!     Initialisation de la premiere case libre des tableaux IA et RA
+! Initialize first free position in arrays "ia" and "ra"
 idebia = 1
 idebra = 1
 
-!     Initialisation du generateur de nombres aleatoires
-!     (pas toujours necessaire mais ne coute rien)
+! Initialize random number generator
+! (not always necessary, but not at all costly)
 call zufalli(0)
 !===========
 
-!---> Test d'arret mis a 1 si le rayonnement P-1 voit trop de cellules
-!       a epaisseur optique superieure a l'unite (voir ppcabs)
+!---> Stop test set to 1 if P-1 radiative module "sees" too many cells
+!     with an optical thickness greater than 1 (see ppcabs).
 istpp1 = 0
 
-!---> Nombre max d'elements pour le selector
-maxelt = max(ncelet,nfac,nfabor)
+!---> Maximum number of elements for selector.
+maxelt = max(ncelet, nfac, nfabor)
 
 !--> Probes output tracking
 ttchis = -1.d0
 
 !===============================================================================
-! 2. GEOMETRIE
+! 2. Geometry
 !===============================================================================
 
-!---> CALCULS GEOMETRIQUES
-
-!     (MEMCLG remplit directement pointe.f90)
+! (memclg directly initializes pointe.f90)
 call memclg                                                       &
 !==========
  ( idebia , idebra ,                                              &
    ifinia , ifinra )
 
-!---> La memoire sera conservee jusqu'a la fin.
+!---> Memory will be maintained until the end.
 idebia = ifinia
 idebra = ifinra
 
-call cregeo                                                       &
+call cregeo (idebia, idebra, ia, ra)
 !==========
- ( idebia , idebra ,                                              &
-   ia     ,                                                       &
-   ra     )
 
-!---> La memoire sera conservee jusqu'a la fin.
+!---> Memory will be maintained until the end.
 idebia = ifinia
 idebra = ifinra
 
 !===============================================================================
-! 3. FIN INITIALISATION DES COMMONS
+! 3. End of modules initialization
 !===============================================================================
 
-call initi2                                                       &
+call initi2(idebia, idebra,  ia, ra)
 !==========
- ( idebia , idebra ,                                              &
-   ia     , ra     )
 
 if (iilagr.gt.0) then
 
-!--> Calcul de LNDNOD (lagran.f90)
+  !--> Compute "lndnod" (lagran.f90)
 
-!   Tableau NCELET de travail entier
+  ! Integer work array of size ncelet
   iiwork = idebia
   ifinia = iiwork + ncelet
-  call iasize ('lagini',ifinia)
+  call iasize ('lagini', ifinia)
 
   ifinra = idebra
 
@@ -215,12 +208,11 @@ if (iilagr.gt.0) then
 
 endif
 
-
 !===============================================================================
-! 4. AUTRES TABLEAUX
+! 4. Other arrays
 !===============================================================================
 
-!---> GESTION MEMOIRE
+!---> Memory management
 
 call memtri                                                       &
 !==========
@@ -232,8 +224,7 @@ call memtri                                                       &
    icoefa , icoefb ,                                              &
    ifinia , ifinra )
 
-!     Reservations memoire pour les tableaux complementaires
-!         necesaires pour les physiques particulieres
+! Memory reservation for additional arrays required by specific physics.
 
 idbia1 = ifinia
 idbra1 = ifinra
@@ -244,9 +235,8 @@ call memppt                                                       &
    nvar   , nscal  , nphas  ,                                     &
    ifinia , ifinra )
 
-
 !===============================================================================
-! 4.1 RESERVATION DE LA MEMOIRE POUR LE RAYONNEMENT SEMI-TRANSPARENT
+! 4.1 Memory reservation for semi-transparent radiation module
 !===============================================================================
 
 if (iirayo.gt.0) then
@@ -263,7 +253,7 @@ if (iirayo.gt.0) then
 endif
 
 !===============================================================================
-! 4.2 RESERVATION DE LA MEMOIRE POUR LE LAGRANGIEN
+! 4.2 Memory reservation for Lagrangian module
 !===============================================================================
 
 !     Si on ne fait pas de Lagrangien, on initialise
@@ -1486,9 +1476,8 @@ write(nfecra,7000)
 #endif
 
 !===============================================================================
-! 26. FIN
+! 26. End
 !===============================================================================
-
 
 return
 end subroutine

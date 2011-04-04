@@ -172,10 +172,10 @@ iel   = ifabor(ifac)
 
 und   = (coefa(ifac,iclu)*surfbo(1,ifac)                          &
        + coefa(ifac,iclv)*surfbo(2,ifac)                          &
-       + coefa(ifac,iclw)*surfbo(3,ifac))/ra(isrfbn+ifac-1)
+       + coefa(ifac,iclw)*surfbo(3,ifac))/surfbn(ifac)
 uni   = (rtp(iel,iuiph)*surfbo(1,ifac)                            &
        + rtp(iel,iviph)*surfbo(2,ifac)                            &
-       + rtp(iel,iwiph)*surfbo(3,ifac))/ra(isrfbn+ifac-1)
+       + rtp(iel,iwiph)*surfbo(3,ifac))/surfbn(ifac)
 rund  = coefa(ifac,iclr)*und
 runi  = rtp(iel,irhiph)     *uni
 cd    = sqrt(gammag*coefa(ifac,iclp)/coefa(ifac,iclr))
@@ -198,7 +198,7 @@ runb  = 0.5d0*(coefa(ifac,iclr)*und+rtp(iel,irhiph)*uni)          &
 ia(iifbru+ifac-1+(iphas-1)*nfabor) = 1
 
 !     Flux de masse
-propfb(ifac,iflmab) = runb*ra(isrfbn+ifac-1)
+propfb(ifac,iflmab) = runb*surfbn(ifac)
 
 !     Flux de Qdm (la partie centree en pression pourrait etre prise dans
 !       la condition à la limite de pression, ce qui eviterait de retoucher
@@ -206,21 +206,21 @@ propfb(ifac,iflmab) = runb*ra(isrfbn+ifac-1)
 !       flexibilité quant à la condition à la limite de pression utilisee
 !       pour la reconstruction du gradient, si le maillage est non
 !       orthogonal en entree)
-propfb(ifac,ipprob(ifbrhu(iphas))) = ra(isrfbn+ifac-1)*           &
+propfb(ifac,ipprob(ifbrhu(iphas))) = surfbn(ifac)*                &
              0.5d0*(                                              &
              (rund*coefa(ifac,iclu)+runi*rtp(iel,iuiph))          &
              -rrus*( coefa(ifac,iclr)*coefa(ifac,iclu)            &
                     -rtp(iel,irhiph)     *rtp(iel,iuiph)     ))   &
                         + surfbo(1,ifac)*                         &
              0.5d0*(coefa(ifac,iclp)+rtp(iel,ipriph))
-propfb(ifac,ipprob(ifbrhv(iphas))) = ra(isrfbn+ifac-1)*           &
+propfb(ifac,ipprob(ifbrhv(iphas))) = surfbn(ifac)*                &
              0.5d0*(                                              &
              (rund*coefa(ifac,iclv)+runi*rtp(iel,iviph))          &
              -rrus*( coefa(ifac,iclr)*coefa(ifac,iclv)            &
                     -rtp(iel,irhiph)     *rtp(iel,iviph)     ))   &
                         + surfbo(2,ifac)*                         &
              0.5d0*(coefa(ifac,iclp)+rtp(iel,ipriph))
-propfb(ifac,ipprob(ifbrhw(iphas))) = ra(isrfbn+ifac-1)*           &
+propfb(ifac,ipprob(ifbrhw(iphas))) = surfbn(ifac)*                &
              0.5d0*(                                              &
              (rund*coefa(ifac,iclw)+runi*rtp(iel,iwiph))          &
              -rrus*( coefa(ifac,iclr)*coefa(ifac,iclw)            &
@@ -228,7 +228,7 @@ propfb(ifac,ipprob(ifbrhw(iphas))) = ra(isrfbn+ifac-1)*           &
                         + surfbo(3,ifac)*                         &
              0.5d0*(coefa(ifac,iclp)+rtp(iel,ipriph))
 !     Flux de E
-propfb(ifac,ipprob(ifbene(iphas))) = ra(isrfbn+ifac-1)*           &
+propfb(ifac,ipprob(ifbene(iphas))) = surfbn(ifac)*                &
              0.5d0*(                                              &
               rund*coefa(ifac,icle)+runi*rtp(iel,ieniph)          &
               +und*coefa(ifac,iclp)+ uni*rtp(iel,ipriph)          &

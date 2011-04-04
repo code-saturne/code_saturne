@@ -199,7 +199,7 @@ do ifac = 1, nfabor
         if (rcodcl(ifac,iviph,1).gt.rinfin*0.5d0) rcodcl(ifac,iviph,1) = 0.d0
         if (rcodcl(ifac,iwiph,1).gt.rinfin*0.5d0) rcodcl(ifac,iwiph,1) = 0.d0
 
-        srfbnf = ra(isrfbn-1+ifac)
+        srfbnf = surfbn(ifac)
         rnx = surfbo(1,ifac)/srfbnf
         rny = surfbo(2,ifac)/srfbnf
         rnz = surfbo(3,ifac)/srfbnf

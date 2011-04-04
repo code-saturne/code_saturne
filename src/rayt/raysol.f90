@@ -208,7 +208,7 @@ integer          ii, jj, kk, idtva0, ivar0
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision sx, sy, sz, domega
 double precision sxt(ndirs8), syt(ndirs8), szt(ndirs8)
-double precision aa, surfbn
+double precision aa
 double precision relaxp, thetap
 
 !===============================================================================
@@ -291,11 +291,10 @@ do ii = -1,1,2
         sz = kk *szt (idir)
 
         do ifac = 1,nfabor
-          surfbn = ra(isrfbn-1+ifac)
           aa = sx * surfbo(1,ifac)                                &
              + sy * surfbo(2,ifac)                                &
              + sz * surfbo(3,ifac)
-          aa = aa / surfbn
+          aa = aa / surfbn(ifac)
           snplus(ifac) =snplus(ifac) +0.5d0 *(-aa+abs(aa)) *domega
         enddo
 
@@ -467,11 +466,10 @@ do ii = -1,1,2
 
         do ifac = 1,nfabor
 
-          surfbn = ra(isrfbn-1+ifac)
           aa = sx * surfbo(1,ifac)                                &
              + sy * surfbo(2,ifac)                                &
              + sz * surfbo(3,ifac)
-          aa = aa / surfbn
+          aa = aa / surfbn(ifac)
 
           aa = 0.5d0 *(aa+abs(aa)) *domega
 

@@ -232,7 +232,7 @@ double precision xbilsy , xbilen , xbilso , xbildv
 double precision xbilmi , xbilma
 double precision epsrgp , climgp , extrap
 double precision xfluxf , xgamma
-double precision diipbx, diipby, diipbz, surfbn, distbr
+double precision diipbx, diipby, diipbz, distbr
 double precision visct, flumab , xcp , xvsl, cp0iph, rrr
 double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 
@@ -701,7 +701,6 @@ if (inpdt0.eq.0) then
 
     ! Geometric variables
 
-    surfbn = ra(isrfbn-1+ifac)
     distbr = ra(idistb-1+ifac)
 
     ! Physical variables
@@ -724,7 +723,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =      surfbn * dt(iel) * xcp                            &
+    xfluxf =      surfbn(ifac) * dt(iel) * xcp                      &
                 * (xvsl+visct/sigmas(iscal)) / distbr               &
                 * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
                    * ra(itreco+ifac-1))                             &
@@ -749,7 +748,6 @@ if (inpdt0.eq.0) then
 
     ! Geometric variables
 
-    surfbn = ra(isrfbn-1+ifac)
     distbr = ra(idistb-1+ifac)
 
     ! Physical variables
@@ -772,7 +770,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =    surfbn * dt(iel) * xcp                            &
+    xfluxf =    surfbn(ifac) * dt(iel) * xcp                      &
               * (xvsl+visct/sigmas(iscal)) / distbr               &
               * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
                  * ra(itreco+ifac-1))                             &
@@ -796,7 +794,6 @@ if (inpdt0.eq.0) then
 
     ! Geometric variables
 
-    surfbn = ra(isrfbn-1+ifac)
     distbr = ra(idistb-1+ifac)
 
     ! Physical variables
@@ -819,7 +816,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =          surfbn * dt(iel) * xcp *                    &
+    xfluxf =          surfbn(ifac) * dt(iel) * xcp *              &
      (xvsl+visct/sigmas(iscal))/distbr *                          &
      (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)                &
                                                *ra(itreco+ifac-1))&
@@ -843,7 +840,6 @@ if (inpdt0.eq.0) then
 
     ! Geometric variables
 
-    surfbn = ra(isrfbn-1+ifac)
     distbr = ra(idistb-1+ifac)
 
     ! Physical variables
@@ -866,7 +862,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =    surfbn * dt(iel) * xcp                            &
+    xfluxf =    surfbn(ifac) * dt(iel) * xcp                      &
               * (xvsl+visct/sigmas(iscal))/distbr                 &
               * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
                  * ra(itreco+ifac-1))                             &
@@ -890,7 +886,6 @@ if (inpdt0.eq.0) then
 
     ! Geometric variables
 
-    surfbn = ra(isrfbn-1+ifac)
     distbr = ra(idistb-1+ifac)
 
     ! Physical variables
@@ -913,7 +908,7 @@ if (inpdt0.eq.0) then
     ! Contribution to flux from the current face
     ! (diffusion and convection flux, negative if incoming)
 
-    xfluxf =     surfbn * dt(iel) * xcp                            &
+    xfluxf =     surfbn(ifac) * dt(iel) * xcp                      &
                * (xvsl+visct/sigmas(iscal))/distbr                 &
                * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
                   * ra(itreco+ifac-1))                             &

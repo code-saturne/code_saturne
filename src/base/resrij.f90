@@ -674,7 +674,7 @@ if (idifre(iphas).eq.1) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    surfn2 = ra(isrfan-1+ifac)**2
+    surfn2 = surfan(ifac)**2
 
     grdpx = 0.5d0*(w1(ii)+w1(jj))
     grdpy = 0.5d0*(w2(ii)+w2(jj))

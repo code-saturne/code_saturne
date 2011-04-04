@@ -87,9 +87,7 @@ idebra = idbra0
 
 ifinia = idebia
 
-isrfan = idebra
-isrfbn = isrfan + nfac
-idist  = isrfbn + nfabor
+idist  = idebra
 idistb = idist  + nfac
 ipond  = idistb + nfabor
 idijpf = ipond  + nfac

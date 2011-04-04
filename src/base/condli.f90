@@ -209,7 +209,7 @@ integer          nswrgp, imligp, iwarnp, icliva
 integer          iph
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , xdis
-double precision flumbf, visclc, visctc, distbf, surfbn
+double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision epsrgp, climgp, extrap
 double precision ro0iph, p0iph , pr0iph, xxp0, xyp0, xzp0
 double precision srfbnf, rnx   , rny   , rnz
@@ -1581,14 +1581,14 @@ if (iale.eq.1) then
 
     iel = ifabor(ifac)
     distbf = ra(idistb-1+ifac)
-    surfbn = ra(isrfbn-1+ifac)**2
+    srfbn2 = surfbn(ifac)**2
     if (iortvm.eq.0) then
       hint = propce(iel,ipproc(ivisma(1)))/distbf
     else
       hint = ( propce(iel,ipproc(ivisma(1)))*surfbo(1,ifac)**2    &
              + propce(iel,ipproc(ivisma(2)))*surfbo(2,ifac)**2    &
              + propce(iel,ipproc(ivisma(3)))*surfbo(3,ifac)**2 )  &
-           /distbf/surfbn
+           /distbf/srfbn2
     endif
 
     do ii = 1, 3
@@ -1624,7 +1624,7 @@ if (iale.eq.1) then
 !       sur les autres composantes (calque sur CLSYVT). On prend directement
 !       la valeur au centre de la cellule et pas reconstruite a la face (on
 !       ne cherche pas une precision particuliere sur w)
-      srfbnf = ra(isrfbn-1+ifac)
+      srfbnf = surfbn(ifac)
       rnx = surfbo(1,ifac)/srfbnf
       rny = surfbo(2,ifac)/srfbnf
       rnz = surfbo(3,ifac)/srfbnf
@@ -1659,7 +1659,7 @@ if (ineedf.eq.1) then
       vistot = visclc + visctc
     endif
     distbf = ra(idistb-1+ifac)
-    srfbnf = ra(isrfbn-1+ifac)
+    srfbnf = surfbn(ifac)
     ra(iforbr+(ifac-1)*ndim)     = -vistot * ( coefa(ifac,icluf)  &
          + (coefb(ifac,icluf)-1.d0)*coefu(ifac,1) )/distbf*srfbnf
     ra(iforbr+(ifac-1)*ndim + 1) = -vistot * ( coefa(ifac,iclvf)  &

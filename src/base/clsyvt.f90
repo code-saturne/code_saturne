@@ -227,7 +227,7 @@ do ifac = 1, nfabor
     isympa(ifac) = 0
 
 ! --- Grandeurs geometriques
-    srfbnf = ra(isrfbn-1+ifac)
+    srfbnf = surfbn(ifac)
 
 !===============================================================================
 ! 1. REPERE LOCAL

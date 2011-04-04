@@ -150,7 +150,7 @@ double precision pfac,pip
 double precision dpxf  , dpyf  , dpzf  , flumas, flumab
 double precision dijpfx, dijpfy, dijpfz
 double precision diipbx, diipby, diipbz
-double precision dist  , surfan
+double precision dist
 double precision dijx  , dijy  , dijz
 
 !===============================================================================
@@ -266,7 +266,6 @@ endif
     dijpfy = ra(iij+2)
     dijpfz = ra(iij+3)
     dist   = ra(idist-1+ifac)
-    surfan = ra(isrfan-1+ifac)
 
 !---> DIJ = IJ - (IJ.N) N
     dijx = (xyzcen(1,jj)-xyzcen(1,ii))-dijpfx
@@ -280,7 +279,7 @@ endif
     flumas = viscf(ifac)*( pvar(ii) -pvar(jj) )                   &
      + ( dpxf * dijx                                              &
      +   dpyf * dijy                                              &
-     +   dpzf * dijz )*surfan/dist
+     +   dpzf * dijz )*surfan(ifac)/dist
     diverg(ii) = diverg(ii) + flumas
     diverg(jj) = diverg(jj) - flumas
 

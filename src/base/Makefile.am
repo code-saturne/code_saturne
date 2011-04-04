@@ -186,7 +186,6 @@ clpsca.f90 \
 clptrg.f90 \
 clptur.f90 \
 clpv2f.f90 \
-clsurn.f90 \
 clsyvt.f90 \
 clvolc.f90 \
 codits.f90 \

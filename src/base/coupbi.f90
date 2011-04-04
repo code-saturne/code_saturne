@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,60 +28,48 @@
 subroutine coupbi &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nfabor ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nfabor , nvar   , nscal  , nphas  ,                            &
    icodcl ,                                                       &
-   ia     ,                                                       &
-   rcodcl ,                                                       &
-   ra     )
+   rcodcl )
 
 !===============================================================================
-! FONCTION :
-! ---------
+! Purpose:
+! --------
 
-! LECTURE DE DONNEES RELATIVES A UN COUPLAGE AVEC SYRTHES
+! Read data relative to a SYRTHES coupling
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
+! icodcl           ! te ! --> ! boundary condition code                        !
+!  (nfabor, nvar)  !    !     ! = 1   -> dirichlet                             !
+!                  !    !     ! = 3   -> flux density                          !
+!                  !    !     ! = 4   -> slip and u.n=0 (velocity)             !
+!                  !    !     ! = 5   -> friction and u.n=0 (velocity)         !
+!                  !    !     ! = 6   -> rugosity and u.n=0 (velocity)         !
+!                  !    !     ! = 9   -> free inlet/outlet (velocity)          !
+! rcodcl           ! tr ! --> ! boundary condition values                      !
+!  (nfabor, nvar)  !    !     ! rcodcl(1) = dirichlet value                    !
+!                  !    !     ! rcodcl(2) = exchange coefficient value         !
+!                  !    !     !  (infinite if no exchange)                     !
+!                  !    !     ! rcodcl(3) = flux density value (negative       !
+!                  !    !     !  if gain) in W/m2 or rugosity height (m)       !
+!                  !    !     !  if icodcl=6                                   !
+!                  !    !     ! for velocities (vistl+visct)*gradu             !
+!                  !    !     ! for pressure              dt*gradp             !
+!                  !    !     ! for scalars                                    !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -104,94 +92,73 @@ implicit none
 
 ! Arguments
 
-integer          idbia0, idbra0
-integer          nfabor
-integer          nvar , nscal , nphas
+integer          nfabor, nvar, nscal, nphas
 integer          icodcl(nfabor,nvar)
-integer          ia(*)
 double precision rcodcl(nfabor,nvar,3)
-double precision ra(*)
 
 ! Local variables
 
 integer          ll, nbccou, inbcou, inbcoo, nbfcou
 integer          ifac, iloc, iscal , iphas
-integer          idebia, idebra, ifinia, ifinra, ipfcou, ithpar
 integer          icldef
 integer          mode
 double precision temper, enthal
 
+integer, dimension(:), allocatable :: lfcou
+double precision, dimension(:), allocatable :: thpar
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
-
 !===============================================================================
-!     COUPLAGE SYRTHES : RECUPERATION DE LA TEMPERATURE DE PAROI
+! SYRTHES coupling: get wall temperature
 !===============================================================================
 
-!     RECUPERATION DU NOMBRE DE CAS DE COUPLAGE
+! Get number of coupling cases
 
 call nbcsyr (nbccou)
 !==========
 
-!---> BOUCLE SUR LES COUPLAGES : RECEPTION DES TABLEAUX TPAROI POUR
-!                                CHAQUE COUPLAGE ET APPLICATION DE
-!                                LA CONDITION LIMITE CORRESPONDANTE
+!---> Loop on couplings: get "tparoi" array for each coupling and apply
+!                        matching boundary condition.
 
 do inbcou = 1, nbccou
 
-!       NOMBRE DE FACES DE BORD PAR CAS DE COUPLAGE
+  ! Number of boundary faces per coupling case
   inbcoo = inbcou
   call nbfsyr (inbcoo, nbfcou)
   !==========
 
-!        GESTION MEMOIRE POUR RECEVOIR LE TABLEAU
+  ! Memory management to receive array
+  allocate(lfcou(nbfcou))
+  allocate(thpar(nbfcou))
 
-  ipfcou = idebia
-  ifinia = ipfcou + nbfcou
-
-  ithpar = idebra
-  ifinra = ithpar + nbfcou
-
-  call iasize('coupbi',ifinia)
-  !==========
-  call rasize('coupbi',ifinra)
+  ! Read wall temperature and interpolate if necessary.
+  call varsyi (inbcou, thpar(1))
   !==========
 
-!        LECTURE DU MESSAGE (TEMPERATURE PAROI) ET
-!        INTERPOLATION DES VALEURS AUX SOMMETS AUX FACES
-  call varsyi (inbcou, ra(ithpar))
-  !==========
-
-!        ON IMPOSE LA TEMPERATURE A LA PAROI
-
+  ! Prescribe wall temperature
   inbcoo = inbcou
-  call lfasyr(inbcoo, ia(ipfcou))
+  call lfasyr(inbcoo, lfcou(1))
   !==========
 
-!        TYPE DE CONDITION PAR DEFAUT
+  ! Default condition
   icldef = 5
-
 
   do iscal = 1, nscal
 
-    if(icpsyr(iscal).eq.1) then
+    if (icpsyr(iscal).eq.1) then
 
-! --- Pour les scalaires qui sont couples a SYRTHES
-!       on impose une condition de Dirichlet aux faces couplees
-!     Pour le moment, on ne passe ici qu'une seule fois,
-!       etant entendu que un seul scalaire est couple a SYRTHES
-!     Pour le module compressible, on resout en energie, mais on
-!       stocke la temperature a part, pour que ce soit plus clair
-!       dans les conditions aux limites
-
+      ! For scalars coupled with SYRTHES, prescribe a Dirichlet
+      ! condition at coupled faces.
+      ! For the time being, pass here only once, as only one scalar is
+      ! coupled with SYRTHES.
+      ! For the compressible module, solve in energy, but save the
+      ! temperature separately, for BC's to be clearer.
 
       ll = isca(iscal)
-      if(ippmod(icompf).ge.0) then
+      if (ippmod(icompf).ge.0) then
         iphas = iphsca(iscal)
-        if(iscal.eq.ienerg(iphas)) then
+        if (iscal.eq.ienerg(iphas)) then
           ll = isca(itempk(iphas))
         else
           write(nfecra,9000)ienerg(iphas),iscal
@@ -202,25 +169,25 @@ do inbcou = 1, nbccou
 
       do iloc = 1, nbfcou
 
-        ifac = ia(ipfcou+iloc-1)
+        ifac = lfcou(iloc)
 
         if ((icodcl(ifac,ll) .ne. 1) .and.                        &
             (icodcl(ifac,ll) .ne. 5) .and.                        &
             (icodcl(ifac,ll) .ne. 6)) icodcl(ifac,ll) = icldef
 
-        rcodcl(ifac,ll,1) = ra(ithpar+iloc-1)
+        rcodcl(ifac,ll,1) = thpar(iloc)
         rcodcl(ifac,ll,2) = rinfin
         rcodcl(ifac,ll,3) = 0.d0
 
       enddo
 
-      ! Conversion eventuelle temperature -> enthalpie
+      ! Possible temperature -> enthalpy conversion
 
-      if(iscsth(iscal).eq.2) then
+      if (iscsth(iscal).eq.2) then
 
         do iloc = 1, nbfcou
 
-          ifac = ia(ipfcou+iloc-1)
+          ifac = lfcou(iloc)
 
           temper = rcodcl(ifac,ll,1)
           mode   = -1
@@ -236,19 +203,22 @@ do inbcou = 1, nbccou
 
   enddo
 
+  deallocate(thpar)
+  deallocate(lfcou)
+
 enddo
 
 !===============================================================================
-!     FIN DES COUPLAGES DE BORD
+! End of boundary couplings
 !===============================================================================
 
 return
 
-! FORMATS
+! Formats
 
 #if defined(_CS_LANG_FR)
 
- 9000 format(                                                           &
+ 9000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -257,27 +227,27 @@ return
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Avec le module compressible, seul le scalaire ',I10        ,/,&
+'@  Avec le module compressible, seul le scalaire ', i10       ,/,&
 '@    peut etre couple a SYRTHES. Ici, on cherche a coupler   ',/,&
-'@    le scalaire ',I10                                        ,/,&
+'@    le scalaire ', i10                                       ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
 #else
 
- 9000 format(                                                           &
+ 9000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE SYRTHES COUPLING                  ',/,&
+'@ @@ WARNING: ABORT IN SYRTHES COUPLING                      ',/,&
 '@    ========                                                ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  With the compressible module, only the scalar ',I10        ,/,&
+'@  With the compressible module, only the scalar ', i10       ,/,&
 '@    may be coupled with SYRTHES. Here, one tries to couple  ',/,&
-'@    with the scalar ',I10                                    ,/,&
+'@    with the scalar ', i10                                   ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

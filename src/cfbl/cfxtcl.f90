@@ -221,15 +221,11 @@ do iphas = 1, nphas
     imodif = 0
     call uscfth                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w5     , coefu(1,1) , w3 , w4     ,                            &
-!        ------   ---------
-   ra     )
+   w5     , coefu(1,1) , w3 , w4     )
   endif
 
 
@@ -250,14 +246,11 @@ do iphas = 1, nphas
     imodif = 0
     call uscfth                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w6     , w4     ,                            &
-   ra     )
+   w1     , w2     , w6     , w4     )
 
     if(ieos(iphas).eq.1) then
       gammag = w6(1)
@@ -326,14 +319,11 @@ do iphas = 1, nphas
 
         call uscfth                                               &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   ra     )
+   w1     , w2     , w3     , w4     )
 
 !       En outre, il faut appliquer une pre-correction pour compenser
 !        le traitement fait dans condli... Si on pouvait remplir COEFA
@@ -460,14 +450,11 @@ do iphas = 1, nphas
 
       call uscfth                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   ra     )
+   w1     , w2     , w3     , w4     )
 
 
 !     Pression :
@@ -543,14 +530,11 @@ do iphas = 1, nphas
 
       call uscfth                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   ra     )
+   w1     , w2     , w3     , w4     )
 
 
 !     Rusanov, flux de masse et type de conditions aux limites :
@@ -601,14 +585,11 @@ do iphas = 1, nphas
 
       call uscfth                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   ra     )
+   w1     , w2     , w3     , w4     )
 
 !               flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -658,14 +639,11 @@ do iphas = 1, nphas
 
       call uscfth                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   ra     )
+   w1     , w2     , w3     , w4     )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas
@@ -715,14 +693,11 @@ do iphas = 1, nphas
 
       call uscfth                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   ra     )
+   w1     , w2     , w3     , w4     )
 
 !     Rusanov, flux de masse et type de conditions aux limites :
 !       voir plus bas

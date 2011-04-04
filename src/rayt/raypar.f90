@@ -183,7 +183,7 @@ double precision tpmin,tpmax,rapp,rapmax,abrapp
 double precision qcmax,qrmax
 double precision qcmin,qrmin
 double precision qrayt,qconv,qinci,detep
-double precision surfbn,und0,tp4
+double precision srfbn,und0,tp4
 double precision xtpmax,ytpmax,ztpmax,xtpmin,ytpmin,ztpmin
 double precision tzomax(nozrdm),tzomin(nozrdm),tzomoy(nozrdm)
 double precision flunet(nozrdm),radios(nozrdm),surft(nozrdm)
@@ -600,17 +600,17 @@ if(indtpm.gt.0) then
       surft (izone) = zero
     enddo
     do ifac = 1, nfabor
-      surfbn = ra(isrfbn-1+ifac)
+      srfbn = surfbn(ifac)
       izone = izfrap(ifac)
       if (indtp(izone).ne.0) then
         tp4 = tparop(ifac)**4
-        tzomoy(izone)= tzomoy(izone) + tparop(ifac)*surfbn
+        tzomoy(izone)= tzomoy(izone) + tparop(ifac)*srfbn
         flunet(izone)= flunet(izone)                              &
-             + epsp(ifac) *(qincip(ifac) -stephn*tp4 )*surfbn
+             + epsp(ifac) *(qincip(ifac) -stephn*tp4 )*srfbn
         radios(izone)= radios(izone)                              &
              - ( epsp(ifac)       *stephn*tp4                     &
-             +(1.d0-epsp(ifac))*qincip(ifac)      )*surfbn
-        surft (izone) = surft(izone) + surfbn
+             +(1.d0-epsp(ifac))*qincip(ifac)      )*srfbn
+        surft (izone) = surft(izone) + srfbn
       endif
     enddo
 

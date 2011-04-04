@@ -282,9 +282,8 @@ enddo
 !       par definition et obeit a un flux nul ailleurs
 
 do ifac = 1, nfabor
-  if(itypfb(ifac,iphas).eq.iparoi .or.                            &
-     itypfb(ifac,iphas).eq.iparug) then
-    xnorme = max(ra(isrfbn+ifac-1),epzero**2)
+  if (itypfb(ifac,iphas).eq.iparoi .or. itypfb(ifac,iphas).eq.iparug) then
+    xnorme = max(surfbn(ifac),epzero**2)
     coefax(ifac) = -surfbo(1,ifac)/xnorme
     coefbx(ifac) = 0.d0
     coefay(ifac) = -surfbo(2,ifac)/xnorme

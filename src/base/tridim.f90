@@ -1114,15 +1114,8 @@ do while (iterns.le.nterup)
 
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call coupbi &
+    call coupbi(nfabor, nvar, nscal, nphas, ia(iicodc), ra(ircodc))
     !==========
-  ( ifinia , ifinra ,                                              &
-    nfabor ,                                                       &
-    nvar   , nscal  , nphas  ,                                     &
-    ia(iicodc) ,                                                   &
-    ia     ,                                                       &
-    ra(ircodc) ,                                                   &
-    ra     )
 
     if (nfpt1t.gt.0) then
       call cou1di &
@@ -1254,15 +1247,12 @@ do while (iterns.le.nterup)
 
     call coupbo &
     !==========
-  ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  , isvtb  ,                            &
+  ( nvar   , nscal  , nphas  , isvtb  ,                            &
     ncp  , ncv , ientha ,                                          &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
     cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
-    ra(ihbord)      , ra(itbord)      ,                            &
-    ra     )
+    ra(ihbord)      , ra(itbord)      )
 
 
     if (nfpt1t.gt.0) then

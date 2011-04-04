@@ -392,7 +392,7 @@ do ifac = 1, nfabor
                + ( qx(iel) * surfbo(1,ifac) +                     &
                    qy(iel) * surfbo(2,ifac) +                     &
                    qz(iel) * surfbo(3,ifac) ) /                   &
-                   (0.5d0 * ra(isrfbn-1+ifac) )
+                   (0.5d0 * surfbn(ifac) )
   endif
 
 enddo

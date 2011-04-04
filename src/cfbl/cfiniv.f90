@@ -196,14 +196,11 @@ if ( isuite.eq.0 ) then
 
       call uscfth                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4),                &
-   ra     )
+   ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )
 
 !     On initialise la diffusivite thermique
       visls0(ienerg(iphas)) = visls0(itempk(iphas))/cv0(iphas)
@@ -294,14 +291,11 @@ else
 
       call uscfth                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4),                &
-   ra     )
+   ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )
 
     enddo
 

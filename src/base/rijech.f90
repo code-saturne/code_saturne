@@ -137,7 +137,7 @@ integer          inc   , iccocg, iphydp, ivar0 , iityph
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision unssur, vnk   , vnm   , vni   , vnj
 double precision deltki, deltkj, deltkm, deltij
-double precision aa    , bb    , surfbn, xnorme
+double precision aa    , bb    , xnorme
 
 
 !===============================================================================
@@ -201,8 +201,7 @@ if(abs(icdpar).eq.2) then
 
     do iel = 1, ncel
       ifacpt = ia(iifapa(iphas)-1+iel)
-      surfbn = ra(isrfbn-1+ifacpt)
-      unssur = 1.d0/surfbn
+      unssur = 1.d0/surfbn(ifacpt)
       w2(iel)= surfbo(1,ifacpt)*unssur
       w3(iel)= surfbo(2,ifacpt)*unssur
       w4(iel)= surfbo(3,ifacpt)*unssur

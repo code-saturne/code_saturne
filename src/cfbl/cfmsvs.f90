@@ -155,15 +155,11 @@ iccfth = 126
 imodif = 0
 call uscfth                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , ra(1)  , w2     , w3     ,                            &
-!        ------
-   ra     )
+   w1     , ra(1)  , w2     , w3     )
 
 ! --- "Vitesse" de diffusion de RHO = dt*c2
 do iel = 1, ncel

@@ -36,7 +36,7 @@ subroutine lagent &
    itycel , icocel ,                                              &
    itypfb , itrifb , ifrlag , itepa  ,                            &
    ia     ,                                                       &
-   surfbn , dt     , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     , &
    ra     )
@@ -92,7 +92,6 @@ subroutine lagent &
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! surfbn(nfabor)   ! tr ! <-- ! surface des faces de bord                      !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec ou                   !
@@ -159,7 +158,6 @@ integer          icocel(lndnod) , itycel(ncelet+1)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          ia(*)
 
-double precision surfbn(nfabor)
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
@@ -750,8 +748,8 @@ do ii = 1,nfrlag
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     nb     ,                                                      &
     ifrlag , itepa(1,jisor)  , ia(iiwork)      ,                  &
-    ia     ,                                    &
-    surfbn , ettp   ,                                             &
+    ia     ,                                                      &
+    ettp   ,                                                      &
     ra     )
 
       elseif ( iuslag(nc,nb,ijprpd) .eq. 2 ) then
@@ -764,8 +762,8 @@ do ii = 1,nfrlag
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     nb     ,                                                      &
     ifrlag , itepa(1,jisor)  , ia(iiwork)      ,                  &
-    ia     ,                                    &
-    surfbn , ettp   ,                                             &
+    ia     ,                                                      &
+    ettp   ,                                                      &
     ra     )
       endif
 
@@ -809,8 +807,8 @@ if ( injcon.eq.1 ) then
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     itycel , icocel ,                                             &
     ifrlag , itepa(1,jisor)  , ia(iiwork) ,                       &
-    ia     ,                                    &
-    surfbn , ettp   ,                                             &
+    ia     ,                                                      &
+    ettp   ,                                                      &
     ra     )
 
       endif

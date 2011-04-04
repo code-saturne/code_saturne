@@ -588,8 +588,6 @@ enddo
 
 ! --- Geometrie
 
-isrfan = 0
-isrfbn = 0
 idist  = 0
 idistb = 0
 ipond  = 0

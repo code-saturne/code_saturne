@@ -39,7 +39,7 @@ subroutine uslabo &
    kface  , nbpt   , isuivi ,                                     &
    itypfb , itrifb , ifrlag , itepa  , indep  ,                   &
    ia     ,                                                       &
-   surfbn , dt     , rtpa   , rtp    , propce , propfa , propfb , &
+   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , vitpar , vitflu , auxl   , &
    ra     )
@@ -139,7 +139,6 @@ subroutine uslabo &
 ! indep            ! ia ! --> ! for each cell, number of the departure cell    !
 !   (nbpmax)       !    !     !                                                !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
-! surfbn(nfabor    ! ra ! <-- ! area of the boundary faces                     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers          !
 ! (ncelet,*)       !    !     ! (current and previous time step)               !
@@ -211,7 +210,6 @@ integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          indep(nbpmax)
 integer          ia(*)
 
-double precision surfbn(nfabor)
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)

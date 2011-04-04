@@ -72,7 +72,6 @@ implicit none
 ! Local variables
 
 integer          ii, iphas, iprop, iok, iccfth, imodif
-integer          iit(1)
 double precision dblpre(1)
 
 !===============================================================================
@@ -132,18 +131,14 @@ if ( ippmod(icompf).ge.0 ) then
     iccfth = -1
     imodif = 0
     ii     = 1
-    iit(1)    = 1
     dblpre(1) = 0.d0
     call uscfth                                                   &
     !==========
- ( ii , ii ,                                                      &
-   ii , ii , ii ,                                                 &
+ ( ii , ii , ii ,                                                 &
    iccfth , imodif  , iphas   ,                                   &
-   iit ,                                                          &
    dblpre , dblpre , dblpre , dblpre , dblpre , dblpre ,          &
    dblpre , dblpre ,                                              &
-   dblpre , dblpre , dblpre , dblpre ,                            &
-   dblpre )
+   dblpre , dblpre , dblpre , dblpre )
 
 ! --> Utilisation d'un flux de masse specifique pour la vitesse
 

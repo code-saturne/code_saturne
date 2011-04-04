@@ -165,7 +165,7 @@ integer          ientla, ivarpr
 integer          iyplbp
 integer          ipccp , ipcrom
 
-double precision cp0iph, xcp   , xvsl  , surfbn, distbr
+double precision cp0iph, xcp   , xvsl  , srfbn, distbr
 double precision visct , flumab, diipbx, diipby, diipbz
 double precision epsrgp, climgp, extrap
 double precision omgnrm, daxis2
@@ -737,7 +737,7 @@ else if  (numtyp .eq. -2) then
           else
             xvsl = visls0(iscal)
           endif
-          surfbn = ra(isrfbn-1+ifac)
+          srfbn = surfbn(ifac)
           distbr = ra(idistb-1+ifac)
           visct  = propce(iel,ipcvst)
           flumab = propfb(ifac,iflmab)
@@ -746,7 +746,7 @@ else if  (numtyp .eq. -2) then
                (xvsl+visct/sigmas(iscal))/max(distbr,epzero)*     &
                (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)*     &
                rtp(iel,ivar))                                     &
-               - flumab/max(surfbn,epzero**2)*                    &
+               - flumab/max(srfbn,epzero**2)*                    &
                (coefa(ifac,iclvar)+ coefb(ifac,iclvar)*           &
                rtp(iel,ivar))
 
@@ -810,13 +810,13 @@ else if  (numtyp .eq. -2) then
 
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
-      surfbn = ra(isrfbn-1+ifac)
+      srfbn = surfbn(ifac)
       trafbr(1 + (iloc-1)*idimt ) =                               &
-             ra(iforbr+(ifac-1)*idimt  )/surfbn
+             ra(iforbr+(ifac-1)*idimt  )/srfbn
       trafbr(2 + (iloc-1)*idimt ) =                               &
-             ra(iforbr+(ifac-1)*idimt+1)/surfbn
+             ra(iforbr+(ifac-1)*idimt+1)/srfbn
       trafbr(3 + (iloc-1)*idimt ) =                               &
-             ra(iforbr+(ifac-1)*idimt+2)/surfbn
+             ra(iforbr+(ifac-1)*idimt+2)/srfbn
     enddo
 
 !           Valeurs entrelacées, définies sur tableau de travail

@@ -301,7 +301,7 @@ if ( ntcabs.eq.1 ) then
    itycel     , icocel      ,                                     &
    ia(iitypf) , ia(iitrif)  , ifrlag , itepa  ,                   &
    ia     ,                                                       &
-   ra(isrfbn) , dt     , rtp    , propce , propfa , propfb ,      &
+   dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     , &
    ra     )
@@ -318,7 +318,7 @@ else
    itycel     , icocel      ,                                     &
    ia(iitypf) , ia(iitrif)  , ifrlag , itepa  ,                   &
    ia     ,                                                       &
-   ra(isrfbn) , dt     , rtpa   , propce , propfa , propfb ,      &
+   dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     , &
    ra     )
@@ -338,7 +338,7 @@ if (iroule.ge.1) then
    ntersl , nvlsta , nvisbr ,                                     &
    ia(iitypf) , ia(iitrif)  , itepa ,                             &
    ia     ,                                                       &
-   ra(isrfbn)  , dt     , rtpa   , propce , propfa , propfb ,     &
+   dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl ,                     &
    ra(idipar) , ra(iyppar) ,                                      &
@@ -622,7 +622,6 @@ if (nor.eq.1) then
    ia(iitypf)      , ia(iitrif)      ,                            &
    icocel , itycel , ifrlag , itepa  , ibord  , indep  ,          &
    ia     ,                                                       &
-   ra(isrfbn)      ,                                              &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , auxl   ,                   &

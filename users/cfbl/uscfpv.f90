@@ -434,15 +434,11 @@ do iphas = 1, nphas
 
   call uscfth                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   propce(1, ipproc(icv(iphas)) )    , w1     , w2     , w3     , &
-!  ---------------------------------
-   ra     )
+   propce(1, ipproc(icv(iphas)) )    , w1     , w2     , w3     )
 
 enddo
 ! --- End of the loop on iphas

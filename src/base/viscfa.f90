@@ -116,7 +116,7 @@ if( imvisf.eq.0 ) then
     jj = ifacel(2,ifac)
     visci = vistot(ii)
     viscj = vistot(jj)
-    surfn = ra(isrfan-1+ifac)
+    surfn = surfan(ifac)
     dist  = ra(idist-1+ifac)
 
     viscf(ifac) = 0.5d0*( visci +viscj )*surfn/dist
@@ -131,7 +131,7 @@ else
     jj = ifacel(2,ifac)
     visci = vistot(ii)
     viscj = vistot(jj)
-    surfn = ra(isrfan-1+ifac)
+    surfn = surfan(ifac)
     dist  = ra(idist-1+ifac)
     pond  = ra(ipond-1+ifac)
 
@@ -145,7 +145,7 @@ endif
 do ifac = 1, nfabor
 
   ii = ifabor(ifac)
-  surfn = ra(isrfbn-1+ifac)
+  surfn = surfbn(ifac)
   dist  = ra(idistb-1+ifac)
 
   viscb(ifac) = vistot(ii)*surfn/dist

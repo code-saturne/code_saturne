@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -31,14 +31,11 @@
 subroutine uscfth &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   sorti1 , sorti2 , gamagr , xmasmr ,                            &
-   ra     )
+   sorti1 , sorti2 , gamagr , xmasmr )
 
 !===============================================================================
 ! Purpose:
@@ -195,12 +192,9 @@ subroutine uscfth &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
@@ -215,7 +209,6 @@ subroutine uscfth &
 !                  !    !     !   (first value only used for perfect gas)      !
 ! xmasmr(*)        ! ra ! --> ! molar mass of the components of the gas        !
 !                  !    !     !   (unused if iccfth.lt.0)                      !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -246,22 +239,17 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          iccfth   , imodif , iphas
-
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision sorti1(*), sorti2(*), gamagr(*), xmasmr(*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iiph   , ifac0
 integer          ierr
 integer          iel    , ifac   , ivar
@@ -298,10 +286,6 @@ if(1.eq.1) return
 ! 0. Initialization.
 !    No user input required.
 !===============================================================================
-
-! Memory pointers
-idebia = idbia0
-idebra = idbra0
 
 ! Error indicator (stop if non zero)
 ierr   = 0
@@ -751,7 +735,7 @@ if(ieos(iphas).eq.1) then
     xmach =                                                       &
          ( rtp(iel,iuiph)*surfbo(1,ifac)                          &
          + rtp(iel,iviph)*surfbo(2,ifac)                          &
-         + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)    &
+         + rtp(iel,iwiph)*surfbo(3,ifac) ) / surfbn(ifac)         &
          / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
 
     ! Pressure
@@ -830,12 +814,12 @@ if(ieos(iphas).eq.1) then
     xmachi =                                                      &
          ( rtp(iel,iuiph)*surfbo(1,ifac)                          &
          + rtp(iel,iviph)*surfbo(2,ifac)                          &
-         + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)    &
+         + rtp(iel,iwiph)*surfbo(3,ifac) ) / surfbn(ifac)         &
          / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
     xmache =                                                      &
          ( coefa(ifac,iclu)*surfbo(1,ifac)                        &
          + coefa(ifac,iclv)*surfbo(2,ifac)                        &
-         + coefa(ifac,iclw)*surfbo(3,ifac) ) /ra(isrfbn+ifac-1)   &
+         + coefa(ifac,iclw)*surfbo(3,ifac) ) /surfbn(ifac)        &
          / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
     dxmach = xmachi - xmache
 
@@ -914,21 +898,21 @@ if(ieos(iphas).eq.1) then
            * sqrt(gamagp*rtp(iel,ipriph)/rtp(iel,irhiph))         &
            * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipriph)              &
                         )**((gamagp-1.d0)/(2.d0*gamagp)))         &
-           * surfbo(1,ifac)/ra(isrfbn+ifac-1)
+           * surfbo(1,ifac)/surfbn(ifac)
 
       coefa(ifac,iclv) = rtp(iel,iviph)                           &
            + 2.d0/(gamagp-1.d0)                                   &
            * sqrt( gamagp*rtp(iel,ipriph)/rtp(iel,irhiph))        &
            * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipriph)              &
                         )**((gamagp-1.d0)/(2.d0*gamagp)))         &
-           * surfbo(2,ifac)/ra(isrfbn+ifac-1)
+           * surfbo(2,ifac)/surfbn(ifac)
 
       coefa(ifac,iclw) = rtp(iel,iwiph)                           &
            + 2.d0/(gamagp-1.d0)                                   &
            * sqrt( gamagp*rtp(iel,ipriph)/rtp(iel,irhiph))        &
            * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipriph)              &
                         )**((gamagp-1.d0)/(2.d0/gamagp)))         &
-           * surfbo(3,ifac)/ra(isrfbn+ifac-1)
+           * surfbo(3,ifac)/surfbn(ifac)
 
       ! Total energy
       coefa(ifac,icle) =                                          &
@@ -953,7 +937,7 @@ if(ieos(iphas).eq.1) then
                   (rtp(iel,irhiph)                                &
                    *((gamagp+1.d0)*coefa(ifac,iclp)               &
                     +(gamagp-1.d0)*rtp(iel,ipriph) )))            &
-           * surfbo(1,ifac)/ra(isrfbn+ifac-1)
+           * surfbo(1,ifac)/surfbn(ifac)
 
       coefa(ifac,iclv) = rtp(iel,iviph)                           &
            - (coefa(ifac,iclp)-rtp(iel,ipriph))                   &
@@ -961,7 +945,7 @@ if(ieos(iphas).eq.1) then
                   (rtp(iel,irhiph)                                &
                    *((gamagp+1.d0)*coefa(ifac,iclp)               &
                     +(gamagp-1.d0)*rtp(iel,ipriph) )))            &
-           * surfbo(2,ifac)/ra(isrfbn+ifac-1)
+           * surfbo(2,ifac)/surfbn(ifac)
 
       coefa(ifac,iclw) = rtp(iel,iwiph)                           &
            - (coefa(ifac,iclp)-rtp(iel,ipriph))                   &
@@ -969,7 +953,7 @@ if(ieos(iphas).eq.1) then
                   (rtp(iel,irhiph)                                &
                    *((gamagp+1.d0)*coefa(ifac,iclp)               &
                     +(gamagp-1.d0)*rtp(iel,ipriph) )))            &
-           * surfbo(3,ifac)/ra(isrfbn+ifac-1)
+           * surfbo(3,ifac)/surfbn(ifac)
 
       ! Total energy
       coefa(ifac,icle) =                                          &
@@ -1448,7 +1432,7 @@ elseif(ieos(iphas).eq.2) then
     !   cell center velocity projected on the vector normal to the boundary
     xmach = ( rtp(iel,iuiph)*surfbo(1,ifac)                       &
            + rtp(iel,iviph)*surfbo(2,ifac)                        &
-           + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)  &
+           + rtp(iel,iwiph)*surfbo(3,ifac) ) / surfbn(ifac)       &
          / sqrt( gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph) )
 
     coefa(ifac,iclp) = 0.d0
@@ -1496,11 +1480,11 @@ elseif(ieos(iphas).eq.2) then
     !   cell center velocity projected on the vector normal to the boundary
     xmachi = ( rtp(iel,iuiph)*surfbo(1,ifac)                      &
          + rtp(iel,iviph)*surfbo(2,ifac)                          &
-         + rtp(iel,iwiph)*surfbo(3,ifac) )/ra(isrfbn+ifac-1)      &
+         + rtp(iel,iwiph)*surfbo(3,ifac) )/surfbn(ifac)           &
          / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
     xmache = ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
          + coefa(ifac,iclv)*surfbo(2,ifac)                        &
-         + coefa(ifac,iclw)*surfbo(3,ifac) )/ra(isrfbn+ifac-1)    &
+         + coefa(ifac,iclw)*surfbo(3,ifac) )/surfbn(ifac)         &
          / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
     dxmach = xmachi - xmache
 
@@ -1544,7 +1528,7 @@ elseif(ieos(iphas).eq.2) then
     !   cell center velocity projected on the vector normal to the boundary
     xmach = ( rtp(iel,iuiph)*surfbo(1,ifac)                       &
            + rtp(iel,iviph)*surfbo(2,ifac)                        &
-           + rtp(iel,iwiph)*surfbo(3,ifac) ) / ra(isrfbn+ifac-1)  &
+           + rtp(iel,iwiph)*surfbo(3,ifac) ) / surfbn(ifac)       &
          / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
 
     ! Supersonic outlet: Dirichlet for all variables
@@ -1575,7 +1559,7 @@ elseif(ieos(iphas).eq.2) then
              * ( 1.d0                                             &
  - (coefa(ifac,iclp)/rtp(iel,ipriph))                             &
                **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
- * surfbo(1,ifac) / ra(isrfbn+ifac-1)
+ * surfbo(1,ifac) / surfbn(ifac)
 
         coefa(ifac,iclv) = rtp(iel,iviph)                         &
              + 2.d0/(gamagr(iel)-1.d0)                            &
@@ -1583,7 +1567,7 @@ elseif(ieos(iphas).eq.2) then
              * ( 1.d0                                             &
  - (coefa(ifac,iclp)/rtp(iel,ipriph))                             &
                **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
- * surfbo(2,ifac) / ra(isrfbn+ifac-1)
+ * surfbo(2,ifac) / surfbn(ifac)
 
         coefa(ifac,iclw) = rtp(iel,iwiph)                         &
              + 2.d0/(gamagr(iel)-1.d0)                            &
@@ -1591,7 +1575,7 @@ elseif(ieos(iphas).eq.2) then
              * ( 1.d0                                             &
  - (coefa(ifac,iclp)/rtp(iel,ipriph))                             &
                **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
- * surfbo(3,ifac) / ra(isrfbn+ifac-1)
+ * surfbo(3,ifac) / surfbn(ifac)
 
         ! Total energy
         coefa(ifac,icle) = coefa(ifac,iclp)                       &
@@ -1619,19 +1603,19 @@ elseif(ieos(iphas).eq.2) then
  - (coefa(ifac,iclp)-rtp(iel,ipriph))*sqrt(2.d0/rtp(iel,irhiph)   &
  / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
    + (gamagr(iel)-1.d0)*rtp(iel,ipriph) ))                        &
- * surfbo(1,ifac) / ra(isrfbn+ifac-1)
+ * surfbo(1,ifac) / surfbn(ifac)
 
         coefa(ifac,iclv) = rtp(iel,iviph)                         &
  - (coefa(ifac,iclp)-rtp(iel,ipriph))*sqrt(2.d0/rtp(iel,irhiph)   &
  / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
    + (gamagr(iel)-1.d0)*rtp(iel,ipriph) ))                        &
- * surfbo(2,ifac) / ra(isrfbn+ifac-1)
+ * surfbo(2,ifac) / surfbn(ifac)
 
         coefa(ifac,iclw) = rtp(iel,iwiph)                         &
  - (coefa(ifac,iclp)-rtp(iel,ipriph))*sqrt(2.d0/rtp(iel,irhiph)   &
  / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
    + (gamagr(iel)-1.d0)*rtp(iel,ipriph) ))                        &
- * surfbo(3,ifac) / ra(isrfbn+ifac-1)
+ * surfbo(3,ifac) / surfbn(ifac)
 
         ! Total energy
         coefa(ifac,icle) = coefa(ifac,iclp)                       &
@@ -1898,7 +1882,7 @@ endif
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
- 8100 format (                                                          &
+ 8100 format (                                                    &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
@@ -1920,7 +1904,7 @@ endif
 ! gamma variable option will have been fixed
 
 
- 1110 format(                                                           &
+ 1110 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
@@ -1936,7 +1920,7 @@ endif
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
- 1120 format(                                                           &
+ 1120 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
@@ -1952,7 +1936,7 @@ endif
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
- 1220 format(                                                           &
+ 1220 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
@@ -1968,7 +1952,7 @@ endif
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
- 1310 format(                                                           &
+ 1310 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &
@@ -1984,7 +1968,7 @@ endif
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
- 1320 format(                                                           &
+ 1320 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/,                                                            &

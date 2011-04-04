@@ -103,20 +103,7 @@ call clvolc                                                       &
        volmin , volmax , voltot , volume )
 
 !===============================================================================
-! 3. ON CALCULE LES SURFACES DES FACES
-!===============================================================================
-
-call clsurn                                                       &
-!==========
-     ( idebia , idebra ,                                          &
-       nfac   , nfabor ,                                          &
-       surfac , surfbo ,                                          &
-       ra(isrfan) , ra(isrfbn) ,                                  &
-       ia     , ra     )
-
-
-!===============================================================================
-! 4. ON CALCULE LE PRODUIT SCALAIRE DE LA NORMALE NORMEE A UNE FACE ET
+! 3. ON CALCULE LE PRODUIT SCALAIRE DE LA NORMALE NORMEE A UNE FACE ET
 !        DU VECTEUR DEFINI PAR LES VOISINS (VOISIN 1 : ORIGINE,
 !        VOISIN 2 : EXTREMITE)
 !               LA PONDERATION RESULTANTE   POND  = D2/(D1+D2)
@@ -132,12 +119,12 @@ call cldipo                                                       &
    nfac   , nfabor , ncelet , ncel   ,                            &
    ifacel , ifabor ,                                              &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   ra(isrfan) , ra(isrfbn) ,                                      &
+   surfan , surfbn ,                                              &
    ra(idist)  , ra(idistb) , ra(ipond) ,                          &
    ia     , ra     )
 
 !===============================================================================
-! 5. ON CALCULE LES VECTEURS IIP ET JJP POUR LES RECONSTRUCTIONS
+! 4. ON CALCULE LES VECTEURS IIP ET JJP POUR LES RECONSTRUCTIONS
 !===============================================================================
 
 call cldijp                                                       &
@@ -146,14 +133,14 @@ call cldijp                                                       &
    nfac   , nfabor , ncelet , ncel   ,                            &
    ifacel , ifabor ,                                              &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
-   ra(isrfan) , ra(isrfbn) ,                                      &
+   surfan , surfbn ,                                              &
    ra(ipond)  ,                                                   &
    ra(idijpf) , ra(idiipb)  , ra(idofij) ,                        &
    ia     , ra     )
 
 
 !===============================================================================
-! 6. FILTRAGE DU VOISINAGE ETENDU POUR LE GRADIENT PAR MOINDRES CARRES
+! 5. FILTRAGE DU VOISINAGE ETENDU POUR LE GRADIENT PAR MOINDRES CARRES
 !===============================================================================
 
 if (imrgra.eq.3) then
@@ -165,7 +152,7 @@ endif
 
 
 !===============================================================================
-! 8. FIN
+! 6. FIN
 !===============================================================================
 
 

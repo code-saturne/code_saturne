@@ -517,15 +517,11 @@ iccfth = 6
 imodif = 0
 call uscfth                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w8     , w9     , w10    ,                            &
-!        ------
-   ra     )
+   w1     , w8     , w9     , w10    )
 
 ! --- Communication de l'entropie
 if (irangp.ge.0.or.iperio.eq.1) then
@@ -538,15 +534,11 @@ iccfth = 162
 imodif = 0
 call uscfth                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w2     , w8     , w9     , w10    ,                            &
-!        ------
-   ra     )
+   w2     , w8     , w9     , w10    )
 
 ! --- Pour la condition au bord sur l'entropie
 !     COEFA=COEFA(.,ITEMPK) et COEFB=COEFB(.,ITEMPK)

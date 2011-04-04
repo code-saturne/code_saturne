@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -415,7 +415,9 @@ cs_run(void)
                               cs_glob_mesh_quantities->i_face_cog,
                               cs_glob_mesh_quantities->b_face_cog,
                               cs_glob_mesh->vtx_coord,
-                              cs_glob_mesh_quantities->cell_vol);
+                              cs_glob_mesh_quantities->cell_vol,
+                              cs_glob_mesh_quantities->i_face_surf,
+                              cs_glob_mesh_quantities->b_face_surf);
   }
 
   if (opts.preprocess == false && opts.benchmark <= 0) {

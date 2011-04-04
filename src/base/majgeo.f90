@@ -34,7 +34,7 @@ subroutine majgeo &
    iface2 , ifabo2 , ifmfb2 , ifmce2 , iprfm2 ,                   &
    ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , icelb2 ,                   &
    xyzce2 , surfa2 , surfb2 , cdgfa2 , cdgfb2 , xyzno2 ,          &
-   volum2                                                         &
+   volum2 , srfan2 , srfbn2                                       &
 )
 
 !===============================================================================
@@ -65,8 +65,19 @@ subroutine majgeo &
 ! ngrpi2           ! i  ! <-- ! nb. groupes de faces interieures               !
 ! ngrpb2           ! i  ! <-- ! nb. groupes de faces de bord                   !
 ! idxfi            ! i  ! <-- ! index pour faces internes                      !
-! idxfb            ! i  ! <-- ! index pour faces de bord                       !
-! icelbr           ! i  ! <-- ! boundary cell list                             !
+! idxfb            ! ia ! <-- ! index pour faces de bord                       !
+! iface2           ! ia ! <-- ! interior face->cells connectivity              !
+! ifabo2           ! ia ! <-- ! boundary face->cells connectivity              !
+! icelb2           ! ia ! <-- ! boundary cell list                             !
+! xyzce2           ! ia ! <-- ! cell centers                                   !
+! surfa2           ! ia ! <-- ! interior face normals                          !
+! surfb2           ! ia ! <-- ! boundary face normals                          !
+! cdgfa2           ! ia ! <-- ! interior face centers                          !
+! cdgfb2           ! ia ! <-- ! boundary face centers                          !
+! xyzno2           ! ia ! <-- ! vertex coordinates                             !
+! volum2           ! ia ! <-- ! cell volumes                                   !
+! srfan2           ! ia ! <-- ! interior face surfaces                         !
+! srfbn2           ! ia ! <-- ! boundary face surfaces                         !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -114,6 +125,8 @@ double precision, dimension(3,nfac2), target :: surfa2, cdgfa2
 double precision, dimension(3,nfabo2), target :: surfb2, cdgfb2
 double precision, dimension(3,nsom2), target :: xyzno2
 double precision, dimension(ncele2), target :: volum2
+double precision, dimension(nfac2), target :: srfan2
+double precision, dimension(nfabo2), target :: srfbn2
 
 ! Local variables
 
@@ -191,6 +204,9 @@ cdgfbo => cdgfb2(1:3,1:nfabor)
 xyznod => xyzno2(1:3,1:nnod)
 
 volume => volum2(1:ncelet)
+
+surfan => srfan2(1:nfac)
+surfbn => srfbn2(1:nfabor)
 
 !===============================================================================
 

@@ -194,7 +194,7 @@ double precision dijpfx, dijpfy, dijpfz
 double precision diipfx, diipfy, diipfz
 double precision djjpfx, djjpfy, djjpfz
 double precision diipbx, diipby, diipbz
-double precision pond, dist, surfan
+double precision pond, dist, srfan
 double precision pfac1, pfac2, pfac3, unsvol
 
 !===============================================================================
@@ -865,7 +865,7 @@ else
 
       pond   = ra(ipond-1+ifac)
       dist   = ra(idist-1+ifac)
-      surfan = ra(isrfan-1+ifac)
+      srfan  = surfan(ifac)
 
 ! ON RECALCULE II' ET JJ'
 
@@ -915,11 +915,11 @@ else
         dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
             + dpdz(ii)*surfac(3,ifac)
         ddi = testi
-        ddj = ( pvar(jj)-pvar(ii) )/dist *surfan
+        ddj = ( pvar(jj)-pvar(ii) )/dist *srfan
       else
         dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
             + dpdz(jj)*surfac(3,ifac)
-        ddi = ( pvar(jj)-pvar(ii) )/dist *surfan
+        ddi = ( pvar(jj)-pvar(ii) )/dist *srfan
         ddj = testj
       endif
       tesqck = dcc**2 -(ddi-ddj)**2
@@ -1033,7 +1033,7 @@ else
 
       pond   = ra(ipond-1+ifac)
       dist   = ra(idist-1+ifac)
-      surfan = ra(isrfan-1+ifac)
+      srfan  = surfan(ifac)
 
 ! ON RECALCULE II' ET JJ'
 
@@ -1077,11 +1077,11 @@ else
         dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
             + dpdz(ii)*surfac(3,ifac)
         ddi = testi
-        ddj = ( pvar(jj)-pvar(ii) )/dist *surfan
+        ddj = ( pvar(jj)-pvar(ii) )/dist *srfan
       else
         dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
             + dpdz(jj)*surfac(3,ifac)
-        ddi = ( pvar(jj)-pvar(ii) )/dist *surfan
+        ddi = ( pvar(jj)-pvar(ii) )/dist *srfan
         ddj = testj
       endif
       tesqck = dcc**2 -(ddi-ddj)**2

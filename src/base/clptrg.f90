@@ -368,7 +368,7 @@ do ifac = 1, nfabor
 
 ! --- Grandeurs geometriques
     distbf = ra(idistb-1+ifac)
-    srfbnf = ra(isrfbn-1+ifac)
+    srfbnf = surfbn(ifac)
 
 !===============================================================================
 ! 1. REPERE LOCAL

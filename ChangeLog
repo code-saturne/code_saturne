@@ -1,4 +1,71 @@
 * 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Move Fortran surfan and surfbn to cs_mesh_quantities.c,
+  and remove dependencies on ia/ra in coupbi.f90 and coupbo.f90.
+  removed files:
+    src/base/clsurn.f90
+  modified files:
+    src/apps/cs_solver.c
+    src/base/altycl.f90
+    src/base/bilsc2.f90
+    src/base/calgeo.f90
+    src/base/caltri.f90
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/clsyvt.f90
+    src/base/condli.f90
+    src/base/coupbi.f90
+    src/base/coupbo.f90
+    src/base/cs_mesh_quantities.c
+    src/base/cs_mesh_quantities.h
+    src/base/cs_prototypes.h
+    src/base/distyp.f90
+    src/base/dvvpst.f90
+    src/base/grdcel.f90
+    src/base/iniini.f90
+    src/base/itrgrp.f90
+    src/base/itrmas.f90
+    src/base/majgeo.f90
+    src/base/Makefile.am
+    src/base/memclg.f90
+    src/base/mesh.f90
+    src/base/mmtycl.f90
+    src/base/navsto.f90
+    src/base/pointe.f90
+    src/base/projts.f90
+    src/base/reseps.f90
+    src/base/resrij.f90
+    src/base/rijech.f90
+    src/base/tridim.f90
+    src/base/viscfa.f90
+    src/base/visort.f90
+    src/cfbl/cfbsc2.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfiniv.f90
+    src/cfbl/cfmsfl.f90
+    src/cfbl/cfmsgs.f90
+    src/cfbl/cfmsvl.f90
+    src/cfbl/cfmsvs.f90
+    src/cfbl/cfrusb.f90
+    src/cfbl/cfvarp.f90
+    src/cfbl/cfxtcl.f90
+    src/lagr/lagcel.f90
+    src/lagr/lagent.f90
+    src/lagr/lagnew.f90
+    src/lagr/lagnpr.f90
+    src/lagr/lagnwc.f90
+    src/lagr/lagune.f90
+    src/rayt/raydom.f90
+    src/rayt/raypar.f90
+    src/rayt/raypun.f90
+    src/rayt/raysol.f90
+    users/base/usproj.f90
+    users/cfbl/uscfpv.f90
+    users/cfbl/uscfth.f90
+    users/cfbl/uscfxi.f90
+    users/lagr/uslabo.f90
+    users/lagr/uslaru.f90
+
+* 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add limiter to local octree depth to handle sets of identical points.
   modified files:
     src/fvm/fvm_point_location.c

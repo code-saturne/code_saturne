@@ -39,8 +39,6 @@ module pointe
   !      accessibles directement dans ia, ra
 
   ! Pointeur Dimension       Description
-  ! isrfan ! nfac                    ! surface des faces internes
-  ! isrfbn ! nfabor                  ! surface des faces de bord
   ! idist  ! nfac                    ! ij.Nij
   ! idistb ! nfabor                  ! equivalent de idist au bord
   ! ipond  ! nfac                    ! ponderation (Aij=pond Ai+(1-pond)Aj)
@@ -48,8 +46,7 @@ module pointe
   ! idiipb ! nfac*ndim               ! equivalent de idiipf au bord
   ! idofij ! nfac*ndim               ! vecteur of a la face ij
 
-  integer, save :: isrfan , isrfbn , idist  , idistb , ipond ,     &
-                   idijpf , idiipb , idofij
+  integer, save :: idist  , idistb , ipond , idijpf , idiipb , idofij
 
   !... Auxiliaires independants du nombre de phases
   !      accessibles directement dans ia, ra

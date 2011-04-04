@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -28,56 +28,46 @@
 subroutine coupbo &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , isvtb  ,                            &
+ ( nvar   , nscal  , nphas  , isvtb  ,                            &
    ncp , ncv , ientha ,                                           &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cpcst  , cp     , cvcst  , cv     ,                            &
-   hbord  , tbord  ,                                              &
-   ra     )
+   hbord  , tbord  )
 
 !===============================================================================
-! FONCTION :
-! ---------
+! Purpose:
+! --------
 
-! ECRITURE DE DONNEES RELATIVES A UN COUPLAGE AVEC SYRTHES
+! Send data relative to a SYRTHES coupling
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncp              ! e  ! <-- ! dimension de cp (ncelet ou 1)                  !
-! ncv              ! e  ! <-- ! dimension de cv (ncelet ou 1)                  !
+! ncp              ! i  ! <-- ! dimension de cp (ncelet ou 1)                  !
+! ncv              ! i  ! <-- ! dimension de cv (ncelet ou 1)                  !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! ientha           ! e  ! <-- ! 1 si tparoi est une enthalpie                  !
-!                  ! e  ! <-- ! 2 si tparoi est une energie                    !
+! ientha           ! i  ! <-- ! 1 si tparoi est une enthalpie                  !
+!                  ! i  ! <-- ! 2 si tparoi est une energie                    !
 !                  !    !     !    (compressible)                              !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
-! cp(ncp)          ! tr ! <-- ! chaleur specifique si variable                 !
-! cv(ncp)          ! tr ! <-- ! chaleur specifique si variable                 !
-! hbord            ! tr ! <-- ! coefficients d'echange aux bords               !
-! (nfabor)         !    !     !                                                !
-! tbord            ! tr ! <-- ! temperatures aux bords                         !
-! (nfabor)         !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
+! cp(ncp)          ! ra ! <-- ! chaleur specifique si variable                 !
+! cv(ncp)          ! ra ! <-- ! chaleur specifique si variable                 !
+! hbord(nfabor)    ! ra ! <-- ! coefficients d'echange aux bords               !
+! tbord(nfabor)    ! ra ! <-- ! temperatures aux bords                         !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -96,12 +86,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0, idbra0
 integer          nvar   , nscal  , nphas
 integer          isvtb
 integer          ncp    , ncv    , ientha
-
-integer          ia(*)
 
 double precision cpcst  , cvcst
 
@@ -110,16 +97,18 @@ double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision cp(ncp), cv(ncv)
 double precision hbord(nfabor),tbord(nfabor)
-double precision ra(*)
 
 ! Local variables
 
 integer          nbccou, inbcou, inbcoo, nbfcou, ifac, iloc, iel
 integer          itflui, ihparo
-integer          idebia, idebra, ifinia, ifinra, ipfcou, mode
+integer          mode
 integer          iccfth, imodif, iphas
-integer          iepsel, iepsfa, igamag, ixmasm
+integer          iepsel, iepsfa, igamag, ixmasm, ifinwa
 double precision enthal, temper, energ, cvt
+
+integer, dimension(:), allocatable :: lfcou
+double precision, dimension(:), allocatable :: tfluid, hparoi, wa
 
 !===============================================================================
 
@@ -129,118 +118,95 @@ iepsel = 0
 iepsfa = 0
 igamag = 0
 ixmasm = 0
-
-! Memoire
-
-idebia = idbia0
-idebra = idbra0
+ifinwa = 0
 
 !===============================================================================
-!     COUPLAGE SYRTHES : CALCUL DE LA TEMPERATURE FLUIDE ET DU
-!                        COEFFICIENT D'ECHANGE
+! SYRTHES coupling: compute fluid temperature and exchange coefficient
 !===============================================================================
 
-!     RECUPERATION DU NOMBRE DE CAS DE COUPLAGE
+! Get number of coupling cases
 
-call nbcsyr (nbccou)
+call nbcsyr(nbccou)
 !==========
 
-!---> BOUCLE SUR LES CAS DE COUPLAGE DE TYPE SYRTHES
+!---> Loop on couplings
 
 do inbcou = 1, nbccou
 
-!        NOMBRE DE FACES DE BORD PAR CAS DE COUPLAGE
+  ! Number of boundary faces per coupling case
   inbcoo = inbcou
-  call nbfsyr (inbcoo, nbfcou)
+  call nbfsyr(inbcoo, nbfcou)
   !==========
 
-!        GESTION MEMOIRE POUR CONSTRUIRE LES TABLEAUX
+  ! Memory management to build arrays
+  allocate(lfcou(nbfcou))
+  allocate(tfluid(nbfcou))
+  allocate(hparoi(nbfcou))
 
-  ipfcou = idebia
-  ifinia = ipfcou + nbfcou
+  ! Compressible: coupling with energy
 
-  itflui = idebra
-  ihparo = itflui + nbfcou
-  ifinra = ihparo + nbfcou
-
-! Compressible : couplage avec l'energie
-
-  if(ientha .eq. 2) then
-    iepsel = ifinra
+  if (ientha .eq. 2) then
+    iepsel = 1
     iepsfa = iepsel + ncelet
     igamag = iepsfa + nfabor
     ixmasm = igamag + ncelet
-    ifinra = ixmasm + ncelet
+    ifinwa = ixmasm + ncelet
+    allocate(wa(ifinwa))
   endif
 
-! Fin Compressible
-
-  call rasize('coupbo',ifinia)
-  !==========
-  call rasize('coupbo',ifinra)
-  !==========
-
-!       BOUCLE SUR LES FACES DE COUPLAGE ET CALCUL DES COEFFICIENTS
+  ! Loop on coupled faces to compute coefficients
 
   inbcoo = inbcou
-  call lfasyr(inbcoo, ia(ipfcou))
+  call lfasyr(inbcoo, lfcou(1))
   !==========
 
   do iloc = 1, nbfcou
 
-    ifac = ia(ipfcou+iloc-1)
+    ifac = lfcou(iloc)
 
-!           TEMPERATURES FLUIDES SAUVEGARDEES
-    ra(itflui+iloc-1) = tbord(ifac)
-
-!           COEFFICIENTS D'ECHANGE SAUVEGARDES
-    ra(ihparo+iloc-1) = hbord(ifac)
+    ! Saved fluid temperatures and exchange coefficients
+    tfluid(iloc) = tbord(ifac)
+    hparoi(iloc) = hbord(ifac)
 
   enddo
 
-!        SI ENTHALPIE, ON TRANSFORME EN TEMPERATURE
-!          Il est necessaire de transmettre a SYRTHES des Temperatures
-!          Afin de conserver le flux Phi = (lambda/d     ) Delta T
-!                                 ou Phi = (lambda/(d Cp)) Delta H
-!            on multiplie HBORD = lambda/(d Cp) par Cp pris dans la
-!              cellule adjacente.
-!          Le resultat n'est pas garanti (conservation en particulier),
-!             on ajoute donc un avertissement.
+  ! In enthalpy formulation, transform to temperatures for SYRTHES
+  !  To conserve flux Phi = (lambda/d     ) Delta T
+  !                oe Phi = (lambda/(d Cp)) Delta H
+  !  we multiply hbord = lambda/(d Cp) by Cp in the adjacent cell.
+  !  Conservation is not guaranteed, so we add a warning.
 
-
-  if(ientha.eq.1) then
+  if (ientha.eq.1) then
 
     write(nfecra,1000)
     mode = 1
     do iloc = 1, nbfcou
-      ifac = ia(ipfcou+iloc-1)
+      ifac = lfcou(iloc)
       iel  = ifabor(ifac)
-      enthal = ra(itflui+iloc-1)
+      enthal = tfluid(iloc)
       call usthht (mode   , enthal , temper  )
       !==========
-      ra(itflui+iloc-1) = temper
-      if(ncp.eq.ncelet) then
-        ra(ihparo+iloc-1) = ra(ihparo+iloc-1)*cp(iel)
+      tfluid(iloc) = temper
+      if (ncp.eq.ncelet) then
+        hparoi(iloc) = hparoi(iloc)*cp(iel)
       else
-        ra(ihparo+iloc-1) = ra(ihparo+iloc-1)*cpcst
+        hparoi(iloc) = hparoi(iloc)*cpcst
       endif
     enddo
 
-  else if(ientha.eq.2) then
+  else if (ientha.eq.2) then
 
-!        SI ENERGIE, ON TRANSFORME EN TEMPERATURE
-!          Il est necessaire de transmettre a SYRTHES des Temperatures
-!          Afin de conserver le flux Phi = (lambda/d     ) Delta T
-!                                 ou Phi = (lambda/(d Cv)) (Ei - Ep)
-!            on multiplie HBORD = lambda/(d Cv) par Cv pris dans la
-!              cellule adjacente.
-!            noter que Ei = Cv Ti + 1/2 Ui*Ui + Epsilon_sup_i
-!               et que Ep = Cv Tp + 1/2 Ui*Ui + Epsilon_sup_i
-!               (l'ecart est donc bien Cv Delta T)
+    ! In energy formulation, transform to temperatures for SYRTHES
+    !  To conserve flux Phi = (lambda/d     ) Delta T
+    !                oe Phi = (lambda/(d Cp)) Delta H
+    !  we multiply hbord = lambda/(d Cp) by Cv in the adjacent cell.
+    !  Note that Ei = Cv Ti + 1/2 Ui*Ui + Epsilon_sup_i
+    !  and  that Ep = Cv Tp + 1/2 Ui*Ui + Epsilon_sup_i
+    !    (the difference is thus Cv Delta T)
 
-!     Modif temperature et coeff d'echange
+    ! Modify temperature and exchange coefficient
 
-!       Calcul de e - CvT
+    ! Compute e - CvT
 
     iccfth = 7
     imodif = 0
@@ -248,55 +214,58 @@ do inbcou = 1, nbccou
 
     call uscfth                                                   &
     !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(iepsel) , ra(iepsfa) , ra(igamag) , ra(ixmasm) ,            &
-!        ----------   ---------
-   ra     )
+   wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) )
+   !---------   ---------
 
     do iloc = 1, nbfcou
-      ifac  = ia(ipfcou+iloc-1)
+      ifac  = lfcou(iloc)
       iel   = ifabor(ifac)
-      energ = ra(itflui+iloc-1)
+      energ = tfluid(iloc)
       cvt   = energ                                               &
              -(0.5d0*( rtp(iel,iu(iphas))**2                      &
                       +rtp(iel,iv(iphas))**2                      &
                       +rtp(iel,iw(iphas))**2)                     &
-               + ra(iepsel+iel-1)           )
-       if(ncv.eq.ncelet) then
-         ra(itflui+iloc-1) = cvt/cv(iel)
-         ra(ihparo+iloc-1) = ra(ihparo+iloc-1)*cv(iel)
+               + wa(iepsel+iel-1)           )
+       if (ncv.eq.ncelet) then
+         tfluid(iloc) = cvt/cv(iel)
+         hparoi(iloc) = hparoi(iloc)*cv(iel)
        else
-         ra(itflui+iloc-1) = cvt/cvcst
-         ra(ihparo+iloc-1) = ra(ihparo+iloc-1)*cvcst
+         tfluid(iloc) = cvt/cvcst
+         hparoi(iloc) = hparoi(iloc)*cvcst
        endif
      enddo
 
   endif
 
-!       ENVOI DE LA TEMPERATURE FLUIDE ET DU COEFFICIENT D'ECHANGE
+  ! Send fluid temperature and exchange coefficient
 
   inbcoo = inbcou
-  call varsyo (inbcoo, ra(itflui), ra(ihparo))
+  call varsyo (inbcoo, tfluid(1), hparoi(1))
   !==========
+
+  ! Free memory
+  if (ientha .eq. 2) deallocate(wa)
+  deallocate(hparoi)
+  deallocate(tfluid)
+  deallocate(lfcou)
 
 enddo
 
 !===============================================================================
-!     FIN DES COUPLAGES DE BORD
+! End of boundary couplings
 !===============================================================================
 
 return
 
-! FORMATS
+! Formats
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@ @@ ATTENTION : COUPLAGE SYRTHES AVEC CALCUL EN ENTHALPIE   ',/,&
 '@    =========                                               ',/,&
@@ -305,7 +274,7 @@ return
 
 #else
 
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@ @@ WARNING: SYRTHES COUPLING WITH ENTHALPY CALCULATION     ',/,&
 '@    ========                                                ',/,&

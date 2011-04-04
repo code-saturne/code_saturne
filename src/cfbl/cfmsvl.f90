@@ -528,14 +528,11 @@ call clpsca                                                       &
   imodif = 0
   call uscfth                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w7     , w8     , w9     , w10    ,                            &
-   ra     )
+   w7     , w8     , w9     , w10    )
 
 
 ! --- Bilan explicite (voir codits : on enleve l'increment)
@@ -624,15 +621,11 @@ if(igrdpp(iphas).gt.0) then
   imodif = 0
   call uscfth                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rtp(1,ipr(iphas))        , w8     , w9     , w10    ,          &
-!        -----------------
-   ra     )
+   rtp(1,ipr(iphas))        , w8     , w9     , w10    )
 
 !===============================================================================
 ! 9. COMMUNICATION DE LA PRESSION

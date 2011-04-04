@@ -37,7 +37,7 @@ subroutine uslaru &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  ,                                     &
    ia     ,                                                       &
-   surfbn , dt     , rtpa   , propce , propfa , propfb ,          &
+   dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl  ,                    &
    distpa , distyp ,                                              &
@@ -81,7 +81,6 @@ subroutine uslaru &
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
-! surfbn(nfabor    ! ra ! <-- !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at cell centers for      !
 ! (ncelet,*)       !    !     ! the previous timestep                          !
@@ -145,7 +144,6 @@ integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep)
 integer          ia(*)
 
-double precision surfbn(nfabor)
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)

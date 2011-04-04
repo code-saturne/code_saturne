@@ -188,7 +188,7 @@ if( nswrgu.le.1 ) then
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    surfn = ra(isrfbn-1+ifac)
+    surfn = surfbn(ifac)
     dist  = ra(idistb-1+ifac)
 
     flumab(ifac) = flumab(ifac)+viscb(ifac)*dist/surfn            &
@@ -215,7 +215,7 @@ else
     dijpfx = ra(iii+1)
     dijpfy = ra(iii+2)
     dijpfz = ra(iii+3)
-    surfn = ra(isrfan-1+ifac)
+    surfn = surfan(ifac)
     dist  = ra(idist-1+ifac)
 
 !     calcul de II' et JJ'
@@ -247,7 +247,7 @@ else
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    surfn = ra(isrfbn-1+ifac)
+    surfn = surfbn(ifac)
     dist  = ra(idistb-1+ifac)
 
     flumab(ifac) = flumab(ifac)+viscb(ifac)*dist/surfn            &

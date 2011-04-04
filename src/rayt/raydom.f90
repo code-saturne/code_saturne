@@ -174,7 +174,6 @@ integer          mode   , icla   , ipcla  , ivar0
 integer          iscat  , ivart  , iphydp
 integer          iflux(nozrdm)
 double precision epsrgp, climgp, extrap
-double precision surfbn
 double precision aa, bb, ckmin, unspi, xlimit, cofrmn, flunmn
 double precision flux(nozrdm)
 double precision vv, sf, xlc, xkmin, pp
@@ -946,10 +945,8 @@ unspi = 1.d0/pi
     iflux(izone) = 0
   enddo
   do ifac = 1,nfabor
-    surfbn = ra(isrfbn-1+ifac)
     izone = izfrad(ifac)
-    flux(izone) = flux(izone)                                     &
-         + propfb(ifac,ipprob(ifnet))*surfbn
+    flux(izone) = flux(izone) + propfb(ifac,ipprob(ifnet))*surfbn(ifac)
     iflux(izone) = 1
   enddo
   if(irangp.ge.0) then
@@ -972,8 +969,7 @@ unspi = 1.d0/pi
 
   aa = zero
   do ifac = 1,nfabor
-    surfbn = ra(isrfbn-1+ifac)
-    aa =  aa + propfb(ifac,ipprob(ifnet)) * surfbn
+    aa =  aa + propfb(ifac,ipprob(ifnet)) * surfbn(ifac)
   enddo
   if(irangp.ge.0) then
     call parsom(aa)
@@ -1192,9 +1188,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 !------->>direction X
 
     do ifac = 1,nfabor
-      surfbn = ra(isrfbn-1+ifac)
-      cofrua(ifac) =                                              &
-      propfb(ifac,ipprob(ifnet)) *surfbo(1,ifac) /surfbn
+      cofrua(ifac) = propfb(ifac,ipprob(ifnet)) *surfbo(1,ifac) / surfbn(ifac)
     enddo
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -1222,9 +1216,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 !------->>direction Y
 
     do ifac = 1,nfabor
-      surfbn = ra(isrfbn-1+ifac)
-      cofrua(ifac) =                                              &
-      propfb(ifac,ipprob(ifnet)) *surfbo(2,ifac) /surfbn
+      cofrua(ifac) = propfb(ifac,ipprob(ifnet)) *surfbo(2,ifac) / surfbn(ifac)
     enddo
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
@@ -1252,9 +1244,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 !------->>direction Z
 
     do ifac = 1,nfabor
-      surfbn = ra(isrfbn-1+ifac)
-      cofrua(ifac) =                                              &
-      propfb(ifac,ipprob(ifnet)) *surfbo(3,ifac) /surfbn
+      cofrua(ifac) = propfb(ifac,ipprob(ifnet)) *surfbo(3,ifac) / surfbn(ifac)
     enddo
 
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable

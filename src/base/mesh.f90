@@ -95,6 +95,8 @@ module mesh
   ! cdgfbo : boundary faces centers of gravity
   ! xyznod : vertex coordinates (optional)
   ! volume : cell volumes
+  ! surfan : interior face surfaces
+  ! surfbn : boundary face surfaces
 
   double precision, dimension(:,:), pointer :: xyzcen
   double precision, dimension(:,:), pointer :: surfac
@@ -103,6 +105,8 @@ module mesh
   double precision, dimension(:,:), pointer :: cdgfbo
   double precision, dimension(:,:), pointer :: xyznod
   double precision, dimension(:), pointer :: volume
+  double precision, dimension(:), pointer :: surfan
+  double precision, dimension(:), pointer :: surfbn
 
   !=============================================================================
 
