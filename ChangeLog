@@ -1,3 +1,8 @@
+* 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Further corrections to detection of number of processors with LSF.
+  modified file:
+    bin/runcase_mpi_env
+
 * 04/04/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Minor corrections in the theory manual.
   modified files:
