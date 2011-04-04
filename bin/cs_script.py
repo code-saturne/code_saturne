@@ -38,6 +38,7 @@ class master_script:
                          'create':self.create,
                          'gui':self.gui,
                          'info':self.info,
+                         'run':self.run,
                          'salome':self.salome}
 
     def execute(self):
@@ -57,7 +58,7 @@ class master_script:
 
         if command in self.commands:
             options = self.command[1:]
-            self.commands[command](options)
+            return self.commands[command](options)
         else:
             self.usage()
             sys.exit(1)
@@ -85,35 +86,39 @@ Options:
 
     def check_consistency(self, options = None):
         import cs_check_consistency
-        cs_check_consistency.main(options, self.package)
+        return cs_check_consistency.main(options, self.package)
 
     def check_mesh(self, options = None):
         import cs_check_mesh
-        cs_check_mesh.main(options, self.package)
+        return cs_check_mesh.main(options, self.package)
 
     def compile(self, options = None):
         import cs_compile
-        cs_compile.main(options, self.package)
+        return cs_compile.main(options, self.package)
 
     def config(self, options = None):
         import cs_config
-        cs_config.main(options, self.package)
+        return cs_config.main(options, self.package)
 
     def create(self, options = None):
         import cs_create
-        cs_create.main(options, self.package)
+        return cs_create.main(options, self.package)
 
     def gui(self, options = None):
         import cs_gui
-        cs_gui.main(options, self.package)
+        return cs_gui.main(options, self.package)
 
     def info(self, options = None):
         import cs_info
-        cs_info.main(options, self.package)
+        return cs_info.main(options, self.package)
+
+    def run(self, options = None):
+        import cs_run
+        return cs_run.main(options, self.package)
 
     def salome(self, options = None):
         import cs_salome
-        cs_salome.main(options, self.package)
+        return cs_salome.main(options, self.package)
 
 #-------------------------------------------------------------------------------
 # End

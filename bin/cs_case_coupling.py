@@ -35,6 +35,43 @@ from cs_exec_environment import *
 from cs_case_domain import *
 from cs_case import *
 
+#-------------------------------------------------------------------------------
+# Extract a parameters file name from a shell run sript
+#-------------------------------------------------------------------------------
+
+def get_param(path):
+    """
+    Extract a parameters file name from a shell run sript
+    """
+    f = open(path, 'r')
+    lines = f.readlines()
+    f.close()
+
+    param = None
+
+    for line in lines:
+        if line[0] == '#':
+            continue
+        i = line.find('#')
+        if i > -1:
+            line = line[0:i]
+        line = line.strip()
+        i = string.find(line, '--param')
+        if i >= 0:
+            i += len('--param')
+            line = line[i:].strip()
+            if not line:
+                continue
+            # Find file name, possibly protected by quotes
+            # (protection by escape character not handled)
+            sep = line[0]
+            if sep == '"' or sep == "'":
+                param = line.split(sep)[1]
+            else:
+                param = line.split()[0]
+
+    return param
+
 #===============================================================================
 # Main function for code coupling execution
 #===============================================================================
@@ -72,9 +109,7 @@ def coupling(package,
                                        d.get('domain'),
                                        'SCRIPTS',
                                        d.get('script'))
-
-                execfile(runcase)
-                druncase = locals()
+                param = get_param(runcase)
 
             except Exception:
                 err_str = 'Cannot read Code_Saturne script: ' + runcase
@@ -82,25 +117,11 @@ def coupling(package,
 
             dom = domain(package,
                          name = d.get('domain'),
-                         meshes = druncase.get('MESHES'),
-                         mesh_dir = druncase.get('MESHDIR'),
-                         reorient = druncase.get('REORIENT'),
-                         partition_list = druncase.get('PARTITION_LIST'),
-                         partition_opts = druncase.get('PARTITION_OPTS'),
-                         param = druncase.get('PARAMETERS'),
-                         mode_args = druncase.get('CHECK_ARGS'),
-                         logging_args = druncase.get('OUTPUT_ARGS'),
-                         thermochemistry_data = druncase.get('THERMOCHEMISTRY_DATA'),
-                         meteo_data = druncase.get('METEO_DATA'),
-                         user_input_files = druncase.get('USER_INPUT_FILES'),
-                         user_scratch_files = druncase.get('USER_SCRATCH_FILES'),
+                         param = param,
                          n_procs_weight = d.get('n_procs_weight'),
                          n_procs_min = d.get('n_procs_min'),
                          n_procs_max = d.get('n_procs_max'),
                          n_procs_partition = None)
-
-            if druncase.get('VALGRIND') != None:
-                dom.valgrind = druncase.get('VALGRIND')
 
             use_saturne = True
             sat_domains.append(dom)
@@ -150,9 +171,7 @@ def coupling(package,
                                        d.get('domain'),
                                        'SCRIPTS',
                                        d.get('script'))
-
-                execfile(runcase)
-                druncase = locals()
+                param = get_param(runcase)
 
             except Exception:
                 err_str = 'Cannot read NEPTUNE_CFD script: ' + runcase
@@ -160,25 +179,11 @@ def coupling(package,
 
             dom = domain(package,
                          name = d.get('domain'),
-                         meshes = druncase.get('MESHES'),
-                         mesh_dir = druncase.get('MESHDIR'),
-                         reorient = druncase.get('REORIENT'),
-                         partition_list = druncase.get('PARTITION_LIST'),
-                         partition_opts = druncase.get('PARTITION_OPTS'),
-                         param = druncase.get('PARAMETERS'),
-                         mode_args = druncase.get('CHECK_ARGS'),
-                         logging_args = druncase.get('OUTPUT_ARGS'),
-                         thermochemistry_data = druncase.get('THERMOCHEMISTRY_DATA'),
-                         meteo_data = druncase.get('METEO_DATA'),
-                         user_input_files = druncase.get('USER_INPUT_FILES'),
-                         user_scratch_files = druncase.get('USER_SCRATCH_FILES'),
+                         param = param,
                          n_procs_weight = d.get('n_procs_weight'),
                          n_procs_min = d.get('n_procs_min'),
                          n_procs_max = d.get('n_procs_max'),
                          n_procs_partition = None)
-
-            if druncase.get('VALGRIND') != None:
-                dom.valgrind = druncase.get('VALGRIND')
 
             use_neptune = True
             nep_domains.append(dom)

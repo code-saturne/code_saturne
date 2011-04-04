@@ -147,6 +147,9 @@ _arg_env_help(const char  *name)
     (e, _(" -p, --param       <file_name> parameter file\n"));
 
   fprintf
+    (e, _(" --preprocess      mesh preprocessing mode\n"));
+
+  fprintf
     (e, _(" -q, --quality     mesh quality verification mode\n"));
 
   fprintf
@@ -254,6 +257,7 @@ cs_opts_define(int         argc,
 
   opts->mpi_io_mode = -1;
 
+  opts->preprocess = false;
   opts->verif = false;
   opts->benchmark = 0;
 
@@ -362,6 +366,9 @@ cs_opts_define(int         argc,
       else
         argerr = 1;
     }
+
+    else if (strcmp(s, "--preprocess") == 0)
+      opts->preprocess = true;
 
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
       opts->verif = true;

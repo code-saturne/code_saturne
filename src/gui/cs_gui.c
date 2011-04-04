@@ -3154,28 +3154,24 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSISUI (ISUITE, ILEAUX, ICCVFG)
+ * SUBROUTINE CSISUI (NTSUIT, ILEAUX, ICCVFG)
  * *****************
  *
- * INTEGER          ISUITE  <--   restart
  * INTEGER          NTSUIT  <--   checkpoint frequency
  * INTEGER          ILEAUX  <--   restart with auxiliary
  * INTEGER          ICCFVG  <--   restart with frozen field
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csisui, CSISUI) (int *const isuite,
-                                int *const ntsuit,
+void CS_PROCF (csisui, CSISUI) (int *const ntsuit,
                                 int *const ileaux,
                                 int *const iccvfg)
 {
-  cs_gui_restart_parameters_status("restart",                isuite);
   cs_gui_restart_parameters_status("restart_rescue",         ntsuit);
   cs_gui_restart_parameters_status("restart_with_auxiliary", ileaux);
   cs_gui_restart_parameters_status("frozen_field",           iccvfg);
 
 #if _XML_DEBUG_
   bft_printf("==>CSISUI\n");
-  bft_printf("--isuite = %i\n", *isuite);
   bft_printf("--ntsuit = %i\n", *ntsuit);
   bft_printf("--ileaux = %i\n", *ileaux);
   bft_printf("--iccvfg = %i\n", *iccvfg);

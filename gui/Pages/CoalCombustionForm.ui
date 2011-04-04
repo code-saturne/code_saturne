@@ -793,7 +793,7 @@
                      <item row="0" column="0" >
                       <widget class="QLabel" name="labelCoefY1" >
                        <property name="text" >
-                        <string>Coefficient stoechiomtrique Y&lt;sub>1&lt;/sub></string>
+                        <string>Stoechiometric coefficient Y&lt;sub>1&lt;/sub></string>
                        </property>
                       </widget>
                      </item>
@@ -817,7 +817,7 @@
                      <item row="1" column="0" >
                       <widget class="QLabel" name="labelCoefY2" >
                        <property name="text" >
-                        <string>Coefficient stoechiomtrique Y&lt;sub>2&lt;/sub></string>
+                        <string>Stoechiometric coefficient Y&lt;sub>2&lt;/sub></string>
                        </property>
                       </widget>
                      </item>
@@ -841,7 +841,7 @@
                      <item row="2" column="0" >
                       <widget class="QLabel" name="labelCoefA1" >
                        <property name="text" >
-                        <string>Facteur pre-exponentielle A&lt;sub>1&lt;/sub></string>
+                        <string>Pre-exponential constant A&lt;sub>1&lt;/sub></string>
                        </property>
                       </widget>
                      </item>
@@ -858,7 +858,7 @@
                      <item row="3" column="0" >
                       <widget class="QLabel" name="labelCoefA2" >
                        <property name="text" >
-                        <string>Facteur pre-exponentielle A&lt;sub>2&lt;/sub></string>
+                        <string>Pre-exponential constant A&lt;sub>2&lt;/sub></string>
                        </property>
                       </widget>
                      </item>
@@ -875,7 +875,7 @@
                      <item row="4" column="0" >
                       <widget class="QLabel" name="labelCoefE1" >
                        <property name="text" >
-                        <string>Energie d'activation E&lt;sub>1&lt;/sub></string>
+                        <string>Activation energy E&lt;sub>1&lt;/sub></string>
                        </property>
                       </widget>
                      </item>
@@ -892,7 +892,7 @@
                      <item row="5" column="0" >
                       <widget class="QLabel" name="labelCoefE2" >
                        <property name="text" >
-                        <string>Energie d'activation E&lt;sub>2&lt;/sub></string>
+                        <string>Activation energy E&lt;sub>2&lt;/sub></string>
                        </property>
                       </widget>
                      </item>

@@ -517,8 +517,12 @@ enddo
 ! 3. OPTIONS DU CALCUL : TABLEAUX DE optcal.h
 !===============================================================================
 
-! ---> Schema en temps
+! ---> restart
 
+call indsui(isuite)
+!==========
+
+! ---> Schema en temps
 
 do iphas = 1, nphas
 

@@ -64,7 +64,7 @@ class MemoryAllocationModel(Model):
         """
         self.case = case
 
-        self.node_calcul = self.case.xmlGetNode('calcul_management')
+        self.node_calcul = self.case.xmlGetNode('calculation_management')
         self.node_int    = self.node_calcul.xmlInitNode('integer_work_array')
         self.node_real   = self.node_calcul.xmlInitNode('real_work_array')
 

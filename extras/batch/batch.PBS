@@ -21,5 +21,3 @@
 # Change to submission directory
 cd $PBS_O_WORKDIR
 
-# Launch runcase script
-./scriptname

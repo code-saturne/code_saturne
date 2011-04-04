@@ -44,14 +44,14 @@ import types, string, re, fnmatch
 from optparse import OptionParser
 import ConfigParser
 
-#-------------------------------------------------------------------------------
-# Processes the passed command line arguments
-#-------------------------------------------------------------------------------
 
+#-------------------------------------------------------------------------------
+# Process the passed command line arguments
+#-------------------------------------------------------------------------------
 
 def process_cmd_line(argv, pkg):
     """
-    Processes the passed command line arguments.
+    Process the passed command line arguments.
     """
 
     parser = OptionParser(usage="usage: %prog [options]")
@@ -122,9 +122,8 @@ def process_cmd_line(argv, pkg):
 
 
 #-------------------------------------------------------------------------------
-# Give executable mode (chmod +x) to a file
+# Assign executable mode (chmod +x) to a file
 #-------------------------------------------------------------------------------
-
 
 def make_executable(filename):
     """
@@ -142,7 +141,6 @@ def make_executable(filename):
 #-------------------------------------------------------------------------------
 # Comment or uncomment examples in user files
 #-------------------------------------------------------------------------------
-
 
 def comments(filename, use_gui):
     """
@@ -395,11 +393,7 @@ class Study:
         e_pkg = re.compile('PACKAGE')
         e_dom = re.compile('DOMAIN')
 
-        solver_name = self.package.name
-        if solver_name == 'code_saturne':
-            solver_name = 'Code_Saturne'
-        elif solver_name =='neptune_cfd':
-            solver_name = 'NEPTUNE_CFD'
+        solver_name = self.package.solver_name
 
         for c in self.cases:
 
@@ -475,15 +469,9 @@ class Study:
         shutil.move(runcase_tmp, runcase)
         make_executable(runcase)
 
-        config = ConfigParser.ConfigParser()
-        config.read([self.package.get_configfile(),
-                     os.path.expanduser('~/.' + self.package.configfile)])
-
-        if config.has_option('install', 'batch'):
-            self.get_batch_file(config.get('install', 'batch'),
-                                distrep = repbase,
-                                casename = 'coupling',
-                                scriptname = 'runcase_coupling')
+        self.build_batch_file(distrep = repbase,
+                              casename = 'coupling',
+                              scriptname = 'runcase_coupling')
 
 
     def create_case(self, casename):
@@ -513,12 +501,14 @@ class Study:
         if self.use_ref:
 
             thch_distpath = os.path.join(data_distpath, 'thch')
-            thch          = os.path.join(data, 'THCH')
-            os.mkdir(thch)
+            ref           = os.path.join(data, 'REFERENCE')
+            os.mkdir(ref)
             for f in ['dp_C3P', 'dp_C3PSJ', 'dp_ELE', 'dp_FCP', 'dp_FUE', 'meteo']:
                 abs_f = os.path.join(thch_distpath, f)
                 if os.path.isfile(abs_f):
-                    shutil.copy(abs_f, thch)
+                    shutil.copy(abs_f, ref)
+            abs_f = os.path.join(datadir, 'cs_user_scripts.py')
+            shutil.copy(abs_f, ref)
 
         if self.use_gui:
 
@@ -586,76 +576,75 @@ class Study:
         scripts = 'SCRIPTS'
         os.mkdir(scripts)
 
-        shutil.copy(os.path.join(datadir, 'runcase'), scripts)
-        runcase = os.path.join(scripts, 'runcase')
+        self.build_batch_file(distrep = os.path.join(os.getcwd(), scripts),
+                              casename = casename)
 
-        kwd = re.compile('CASEDIRNAME')
 
-        repbase = os.getcwd()
+    def build_batch_file(self, distrep, casename, scriptname=None):
+        """
+        Retrieve batch file for the current system
+        Update batch file for the study
+        """
 
-        runcase_tmp = runcase + '.tmp'
+        user_shell = os.getenv('SHELL')
+        if not user_shell:
+            user_shell = '/bin/sh'
 
-        fd  = open(runcase, 'r')
-        fdt = open(runcase_tmp,'w')
+        batch_file = os.path.join(distrep, 'runcase')
+        if scriptname == 'runcase_coupling':
+            batchfile += '_batch'
 
-        for line in fd:
-            line = re.sub(kwd, repbase, line)
-            fdt.write(line)
+        fd = open(batch_file, 'w')
 
-        fd.close()
-        fdt.close()
+        fd.write('#!' + user_shell + '\n')
 
-        shutil.move(runcase_tmp, runcase)
-        make_executable(runcase)
-
-        # On clusters, also copy the batch card (if defined)
+        # Add batch system info if necessary
 
         config = ConfigParser.ConfigParser()
         config.read([self.package.get_configfile(),
                      os.path.expanduser('~/.' + self.package.configfile)])
 
         if config.has_option('install', 'batch'):
-            self.get_batch_file(config.get('install', 'batch'),
-                                distrep = scripts,
-                                casename = casename,
-                                scriptname = 'runcase')
 
+            template = 'batch.' + config.get('install', 'batch')
 
-    def get_batch_file(self, batchsys, distrep, casename, scriptname):
-        """
-        Retrieve batch file for the current system
-        Update batch file for the study
-        mode = 0 (runcase) ; mode = 1 (coupling)
-        """
+            fdt = open(os.path.join(self.package.get_batchdir(), template), 'r')
 
-        batchfile = 'batch.' + batchsys
+            kwd1 = re.compile('nameandcase')
 
-        shutil.copy(os.path.join(self.package.get_batchdir(), batchfile),
-                    os.path.join(distrep, 'runcase_batch'))
+            studycasename = string.lower(self.name) + string.lower(casename)
 
-        kwd1 = re.compile('nameandcase')
-        kwd2 = re.compile('scriptname')
+            # For some systems, names are limited to 15 caracters
+            studycasename = studycasename[:15]
 
-        studycasename = string.lower(self.name) + string.lower(casename)
+            for line in fdt:
+                line = re.sub(kwd1, studycasename, line)
+                fd.write(line)
 
-        # In the cluster, names are limited to 15 caracters
-        studycasename = studycasename[:15]
+            fdt.close()
 
-        batchfile = os.path.join(distrep, 'runcase_batch')
-        batchfile_tmp = batchfile + '.tmp'
+        else:
+            fd.write('\n')
 
-        fd  = open(batchfile, 'r')
-        fdt = open(batchfile_tmp, 'w')
+        # Add command to execute.
 
-        for line in fd:
-            line = re.sub(kwd1, studycasename, line)
-            line = re.sub(kwd2, scriptname, line)
-            fdt.write(line)
+        if scriptname:
+            fd.write('# Launch script:\n')
+            fd.write('./' + scriptname + '\n\n')
+        else:
+            fd.write('# Ensure the correct command is found:\n')
+            if user_shell[-3:] == 'csh': # handle C-type shells, just in case...
+                export_cmd = 'setenv PATH '
+            else:                        # handle Bourne-type shells (recommended)
+                export_cmd = 'export PATH='
+            export_cmd += '"' + self.package.bindir + '":$PATH'
+            fd.write(export_cmd + '\n\n')
+            fd.write('# Run command:\n')
+            fd.write('\\' + self.package.name + ' run\n\n')
 
         fd.close()
-        fdt.close()
 
-        shutil.move(batchfile_tmp, batchfile)
+        make_executable(batch_file)
 
 
     def dump(self):

@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2010 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -31,7 +31,6 @@
 This module contains the following classes and function:
 - SpinBoxDelegate
 - StandardItemModelMeshes
-- SolutionDomainMeshFormatDialogView
 - SolutionDomainView
 """
 
@@ -40,6 +39,7 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import os, sys, string, logging
+import ConfigParser
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -54,11 +54,11 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from Pages.SolutionDomainForm import Ui_SolutionDomainForm
-from Pages.SolutionDomainMeshFormatDialogForm import Ui_SolutionDomainMeshFormatDialogForm
-from Pages.SolutionDomainModel import SolutionDomainModel
-from Pages.SolutionDomainModel import MeshModel
+from Pages.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
 from Pages.FacesSelectionView import StandardItemModelFaces
-from Base.QtPage import ComboModel, DoubleValidator
+from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
+
+import cs_package
 
 #-------------------------------------------------------------------------------
 # log config
@@ -69,7 +69,121 @@ log = logging.getLogger("SolutionDomainView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Spin box delegate for 'Number' in Meshes table
+# Label delegate for 'Name' in Meshes table
+#-------------------------------------------------------------------------------
+
+class MeshNameDelegate(QItemDelegate):
+    def __init__(self, parent = None):
+        super(MeshNameDelegate, self).__init__(parent)
+        self.parent = parent
+
+    def paint(self, painter, option, index):
+        row = index.row()
+        isValid = index.model().dataMeshes[row][7]
+
+        if isValid:
+            QItemDelegate.paint(self, painter, option, index)
+
+        else:
+            painter.save()
+            # set background color
+            if option.state & QStyle.State_Selected:
+                painter.setBrush(QBrush(Qt.darkRed))
+            else:
+                painter.setBrush(QBrush(Qt.red))
+            # set text color
+            painter.setPen(QPen(Qt.NoPen))
+            painter.drawRect(option.rect)
+            painter.setPen(QPen(Qt.black))
+            value = index.data(Qt.DisplayRole)
+            if value.isValid():
+                text = value.toString()
+                painter.drawText(option.rect, Qt.AlignLeft, text)
+            painter.restore()
+
+
+#-------------------------------------------------------------------------------
+# QComboBox delegate for Format in Meshes table
+#-------------------------------------------------------------------------------
+
+class MeshFormatDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent = None, updateLayout = None):
+        super(MeshFormatDelegate, self).__init__(parent)
+        self.parent = parent
+        self.updateLayout = updateLayout
+        self.list = MeshModel().getBuildFormatList()
+        # Compute width based on longest possible string and font metrics
+        fm = self.parent.fontMetrics()
+        self.textSize = fm.size(Qt.TextSingleLine, QString('pro-STAR/STAR4 (*.ngeom)'))
+        self.textSize.setHeight(1)
+        for i in range(len(self.list)):
+            w = fm.size(Qt.TextSingleLine, QString(self.list[i][1])).width()
+            if w > self.textSize.width():
+                self.textSize.setWidth(w)
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        for i in range(len(self.list)):
+            fmt = self.list[i]
+            editor.addItem(QString(fmt[1] + fmt[2]))
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        key = index.model().dataMeshes[index.row()][1]
+        string = ''
+        for i in range(len(self.list)):
+            if key == self.list[i][0]:
+                comboBox.setCurrentIndex(i)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = str(comboBox.currentText())
+        key = ''
+        for i in range(len(self.list)):
+            if value == self.list[i][1] + self.list[i][2]:
+                key = self.list[i][0]
+        model.setData(index, QVariant(key))
+        if self.updateLayout != None:
+            self.updateLayout()
+
+
+    def sizeHint(self, option, index):
+        return self.textSize
+
+
+    def paint(self, painter, option, index):
+        row = index.row()
+        format = index.model().dataMeshes[row][1]
+        isValid = format != None and format != ''
+
+        if isValid:
+            QItemDelegate.paint(self, painter, option, index)
+
+        else:
+            painter.save()
+            # set background color
+            if option.state & QStyle.State_Selected:
+                painter.setBrush(QBrush(Qt.darkRed))
+            else:
+                painter.setBrush(QBrush(Qt.red))
+            # set text color
+            painter.setPen(QPen(Qt.NoPen))
+            painter.drawRect(option.rect)
+            painter.setPen(QPen(Qt.black))
+            value = index.data(Qt.DisplayRole)
+            if value.isValid():
+                text = value.toString()
+                painter.drawText(option.rect, Qt.AlignLeft, text)
+            painter.restore()
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for 'Number' in Meshes table
 #-------------------------------------------------------------------------------
 
 class MeshNumberDelegate(QItemDelegate):
@@ -79,31 +193,26 @@ class MeshNumberDelegate(QItemDelegate):
 
 
     def createEditor(self, parent, option, index):
-        editor = QSpinBox(parent)
-        editor.setMinimum(1)
+        editor = QLineEdit(parent)
+        vd = RegExpValidator(editor, QRegExp("[0-9- ]*"))
+        editor.setValidator(vd)
         editor.installEventFilter(self)
         return editor
 
 
-    def setEditorData(self, spinBox, index):
-        value, ok = index.model().data(index, Qt.DisplayRole).toInt()
-        spinBox.setValue(value)
+    def setEditorData(self, lineEdit, index):
+        string = index.model().dataMeshes[index.row()][2]
+        lineEdit.setText(string)
 
 
-    def setModelData(self, spinBox, model, index):
-        spinBox.interpretText()
-        value = spinBox.value()
+    def setModelData(self, lineEdit, model, index):
+        value = str(lineEdit.text()).strip()
         model.setData(index, QVariant(value))
-#        selectionModel = self.parent.selectionModel()
-#        for idx in selectionModel.selectedIndexes():
-#            if idx.column() == index.column():
-#                model.setData(idx, QVariant(value))
 
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for 'Group cells' and 'Group Faces' in Meshes table
 #-------------------------------------------------------------------------------
-
 
 class GroupDelegate(QItemDelegate):
     """
@@ -150,19 +259,29 @@ class StandardItemModelMeshes(QStandardItemModel):
         # list of items to be disabled in the QTableView
         self.disabledItem = []
 
+        list = MeshModel().getBuildFormatList()
+        self.formatDict = {'':''}
+        for i in range(len(list)):
+            self.formatDict[list[i][0]] = list[i][1]
+
         self.populateModel()
 
-        self.headers = [self.tr("Meshes"),
-                        self.tr("Format"),
-                        self.tr("Number"),
-                        self.tr("Add groups of faces"),
-                        self.tr("Add groups of cells")]
 
-        self.tooltip = [self.tr("Code_Saturne Preprocessor option: --mesh"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --format"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --num"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --grp-fac"),
-                        self.tr("Code_Saturne Preprocessor sub-option: --grp-cel")]
+        self.headers = [self.tr("File name"),
+                        self.tr("Format"),
+                        self.tr("Numbers"),
+                        self.tr("Reorient"),
+                        self.tr("Add face groups"),
+                        self.tr("Add cell groups"),
+                        self.tr("Path")]
+
+        self.tooltip = [self.tr("Preprocessor option: --mesh"),
+                        self.tr("Preprocessor sub-option: --format"),
+                        self.tr("Preprocessor sub-option: --num"),
+                        self.tr("Preprocessor sub-option: --reorient"),
+                        self.tr("Preprocessor sub-option: --grp-fac"),
+                        self.tr("Preprocessor sub-option: --grp-cel"),
+                        self.tr("Preprocessor option: --mesh")]
 
         self.setColumnCount(len(self.headers))
 
@@ -172,7 +291,10 @@ class StandardItemModelMeshes(QStandardItemModel):
                 role = Qt.DisplayRole
                 index = self.index(row, column)
                 value = self.data(index, role)
-                self.setData(index, value)
+                if column != 1:
+                    self.setData(index, value)
+                else:
+                    self.setData(index, QVariant(self.dataMeshes[row][1]))
 
 
     def populateModel(self):
@@ -180,21 +302,25 @@ class StandardItemModelMeshes(QStandardItemModel):
         for mesh in self.mdl.getMeshList():
             format = self.mdl.getMeshFormat(mesh)
             list   = []
-            list.append(mesh)
-            list.append(MeshModel().getMeshFormatDescription(format))
-            if format == 'med':
-                num = self.mdl.getMeshNumber(mesh)
+            list.append(mesh[0])
+            list.append(format)
+            if format in ['cgns', 'med', 'ensight']:
+                num = self.mdl.getMeshNumbers(mesh)
                 if not num:
-                    num = 1
+                    num = ''
                 list.append(num)
             else:
                 list.append("")
+            list.append(self.mdl.getMeshReorient(mesh))
             if format == 'cgns':
                 list.append(self.mdl.getMeshGroupFaces(mesh))
                 list.append(self.mdl.getMeshGroupCells(mesh))
             else:
                 list.append("")
                 list.append("")
+            list.append(mesh[1])
+            list.append(self.__isMeshPathValid(mesh))
+
             self.dataMeshes.append(list)
             log.debug("populateModel-> dataMeshes = %s" % list)
             row = self.rowCount()
@@ -205,18 +331,38 @@ class StandardItemModelMeshes(QStandardItemModel):
         if not index.isValid():
             return QVariant()
 
+        col = index.column()
+
         if role == Qt.ToolTipRole:
-            return QVariant(self.tooltip[index.column()])
+            return QVariant(self.tooltip[col])
 
         elif role == Qt.DisplayRole:
-            d = self.dataMeshes[index.row()][index.column()]
+            d = self.dataMeshes[index.row()][col]
             if d:
-                return QVariant(d)
+                if col == 1:
+                    return QVariant(self.formatDict[d])
+                elif col == 3:
+                    return QVariant()
+                else:
+                    return QVariant(d)
             else:
                 return QVariant()
 
         elif role == Qt.TextAlignmentRole:
-            return QVariant(Qt.AlignCenter)
+            if col == 6:
+                return QVariant(Qt.AlignLeft)
+            else:
+                return QVariant(Qt.AlignCenter)
+
+        elif role == Qt.CheckStateRole:
+            if col == 3:
+                d = self.dataMeshes[index.row()][3]
+                if d == True:
+                    return QVariant(Qt.Checked)
+                else:
+                    return QVariant(Qt.Unchecked)
+            else:
+                return QVariant()
 
         return QVariant()
 
@@ -231,10 +377,12 @@ class StandardItemModelMeshes(QStandardItemModel):
         if (index.row(), index.column()) in self.disabledItem:
             return Qt.ItemIsEnabled
 
-        if index.column() in [0, 1]:
+        if index.column() in [0, 6]:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        elif index.column() in [2, 3, 4]:
+        elif index.column() in [1, 2, 4, 5]:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        elif index.column() == 3:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
 
 
     def headerData(self, section, orientation, role):
@@ -247,21 +395,34 @@ class StandardItemModelMeshes(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        mesh = self.dataMeshes[row][0]
+        mesh = (self.dataMeshes[row][0], self.dataMeshes[row][6])
 
-        if col == 2:
-            v, ok = value.toInt()
-            if ok:
-                self.dataMeshes[row][2] = v
-                self.mdl.setMeshNumber(mesh, v)
+        if col == 1:
+            v = str(value.toString())
+            self.dataMeshes[row][col] = v
+            if v:
+                self.mdl.setMeshFormat(mesh, v)
 
-        elif col == 3:
+        elif col == 2:
+            v = str(value.toString())
+            self.dataMeshes[row][col] = v
+            self.mdl.setMeshNumbers(mesh, v)
+
+        elif col == 3 and role == Qt.CheckStateRole:
+            state, ok = value.toInt()
+            if state == Qt.Unchecked:
+                self.dataMeshes[row][col] = False
+            else:
+                self.dataMeshes[row][col] = True
+            self.mdl.setMeshReorient(mesh, self.dataMeshes[row][col])
+
+        elif col == 4:
             v = str(value.toString())
             self.dataMeshes[row][col] = v
             if v:
                 self.mdl.setMeshGroupFaces(mesh, v)
 
-        elif col == 4:
+        elif col == 5:
             v = str(value.toString())
             self.dataMeshes[row][col] = v
             if v:
@@ -271,18 +432,17 @@ class StandardItemModelMeshes(QStandardItemModel):
         return True
 
 
-    def addRow(self, name, format):
+    def addRow(self, mesh, format):
         """
         Add a row in the table.
         """
-        txt_format = MeshModel().getMeshFormatDescription(format)
-
-        if format == 'med':
-            item = [name, txt_format, 1, "", ""]
+        if format == 'med' or format == 'ensight':
+            item = [mesh[0], format, "1", "", "", "", mesh[1]]
         elif format == 'cgns':
-            item = [name, txt_format, "", "off", "off"]
+            item = [mesh[0], format, "1", "", "off", "off", mesh[1]]
         else:
-            item = [name, txt_format, "", "", ""]
+            item = [mesh[0], format, "", "", "", "", mesh[1]]
+        item.append(self.__isMeshPathValid(mesh))
 
         self.dataMeshes.append(item)
 
@@ -300,93 +460,103 @@ class StandardItemModelMeshes(QStandardItemModel):
 
 
     def __disableData(self, row):
-        if self.mdl.getMeshFormat(self.dataMeshes[row][0]) != "med":
+
+        mesh = (self.dataMeshes[row][0], self.dataMeshes[row][6])
+        self.dataMeshes[row][7] = self.__isMeshPathValid(mesh)
+
+        if not self.dataMeshes[row][1] in ["cgns", "med", "ensight"]:
             if (row, 2) not in self.disabledItem:
                 self.disabledItem.append((row, 2))
         else:
             if (row, 2) in self.disabledItem:
                 self.disabledItem.remove((row, 2))
 
-        if self.mdl.getMeshFormat(self.dataMeshes[row][0]) != "cgns":
-            if (row, 3) not in self.disabledItem:
-                self.disabledItem.append((row, 3))
+        if self.dataMeshes[row][1] != "cgns":
             if (row, 4) not in self.disabledItem:
                 self.disabledItem.append((row, 4))
+            if (row, 5) not in self.disabledItem:
+                self.disabledItem.append((row, 5))
         else:
-            if (row, 3) in self.disabledItem:
-                self.disabledItem.remove((row, 3))
             if (row, 4) in self.disabledItem:
                 self.disabledItem.remove((row, 4))
+            if (row, 5) in self.disabledItem:
+                self.disabledItem.remove((row, 5))
 
 
-    def getName(self, row):
+    def __isMeshPathValid(self, mesh):
         """
-        Returns the name of the mesh file.
+        Public method. Check if a mesh named "mesh" matches an existing file
         """
-        return self.dataMeshes[row][0]
+        if mesh[1] != None:
+            path = os.path.join(mesh[1], mesh[0])
+        else:
+            path = mesh[0]
+        if not os.path.isabs(path) and self.mdl.case['mesh_path'] != None:
+            path = os.path.join(self.mdl.case['mesh_path'], path)
+
+        if not (os.path.isfile(path) and os.path.isabs(path)):
+            return False
+
+        return True
 
 
 #-------------------------------------------------------------------------------
-# Popup window: Mesh Format dialog window
+# File dialog to select either file or directory
 #-------------------------------------------------------------------------------
 
-class SolutionDomainMeshFormatDialogView(QDialog, Ui_SolutionDomainMeshFormatDialogForm):
-    """
-    Advanced dialog
-    """
-    def __init__(self, parent, default):
-        """
-        Constructor
-        """
-        QDialog.__init__(self, parent)
-        Ui_SolutionDomainMeshFormatDialogForm.__init__(self)
-        self.setupUi(self)
+class MeshInputDialog(QFileDialog):
 
-        self.setWindowTitle(self.tr("Mesh format selection"))
-        self.default = default
-        self.result  = self.default
+    def __init__(self,
+                 parent = None,
+                 search_dirs = []):
 
-        # Combo models and items
+        if len(search_dirs) == 0:
+            directory = QString()
+        else:
+            directory = QString(search_dirs[0])
 
-        self.dico_txt_format = {}
-        liste = MeshModel().getBuildFormatList()
-        for (num, v, txt) in liste:
-            self.dico_txt_format[txt] = v
-            self.comboBox.addItem(QString(txt))
+        QFileDialog.__init__(self,
+                             parent = parent,
+                             directory = directory)
 
-        # Activate the default format: "NOPO Simail (.des)"
+        # Self.tr is only available once the parent class __init__ has been called,
+        # so we may now set the caption, filter, and selection label
 
-        self.comboBox.setCurrentIndex(2)
+        caption =  self.tr("Select input mesh file or directory")
+        self.setWindowTitle(caption)
 
+        self.name_filter = QString(self.tr("Imported or preprocessed meshes (mesh_input; mesh_output)"))
+        self.setFilter(self.name_filter)
 
-    def get_result(self):
-        """
-        Method to get the result
-        """
-        return self.result
+        self.select_label = QString(self.tr("Choose"))
+        self.setLabelText(QFileDialog.Accept, self.select_label)
 
+        if hasattr(QFileDialog, 'ReadOnly'):
+            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+        else:
+            options  = QFileDialog.DontUseNativeDialog
+        if hasattr(self, 'setOptions'):
+            self.setOptions(options)
+        search_urls = []
+        for d in search_dirs:
+            search_urls.append(QUrl.fromLocalFile(d))
+        self.setSidebarUrls(search_urls)
 
-    def accept(self):
-        """
-        Method called when user clicks 'OK'
-        """
-        txt_format = str(self.comboBox.currentText())
-        self.result = self.dico_txt_format[txt_format]
-        QDialog.accept(self)
+        QObject.connect(self, SIGNAL('currentChanged(const QString &)'), self._selectChange)
+
+        self.setFileMode(QFileDialog.ExistingFile)
 
 
-    def reject(self):
-        """
-        Method called when user clicks 'Cancel'
-        """
-        QDialog.reject(self)
+    def _selectChange(self, spath):
+        mode = QFileDialog.ExistingFile
+        path = str(spath)
+        if os.path.basename(path) == 'mesh_input':
+            if os.path.isdir(path):
+                mode = QFileDialog.Directory
+        self.setFileMode(mode)
+        self.setFilter(self.name_filter)
+        self.setLabelText(QFileDialog.Accept, self.select_label)
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # Main class
@@ -407,42 +577,101 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.case = case
         self.mdl = SolutionDomainModel(self.case)
 
-        # 1) MESHES SELECTION LAYOUT
+        # 0) Mesh Input
 
-        # 1.1) Model for meshes table
+        self.mesh_input = self.mdl.getMeshInput()
+
+        if self.mesh_input:
+            self.radioButtonImport.setChecked(False)
+            self.radioButtonExists.setChecked(True)
+            self.frameMeshImport.hide()
+            self.lineEditMeshInput.setText(self.mesh_input)
+        else:
+            self.radioButtonImport.setChecked(True)
+            self.radioButtonExists.setChecked(False)
+            self.frameMeshInput.hide()
+
+        self.connect(self.radioButtonImport, SIGNAL("clicked()"), self.slotSetImportMesh)
+        self.connect(self.radioButtonExists, SIGNAL("clicked()"), self.slotSetInputMesh)
+        self.connect(self.toolButtonMeshInput, SIGNAL("pressed()"), self.selectInputMesh)
+
+        # 1) Meshes directory
+
+        self.mesh_dirs = [None]
+
+        d = self.mdl.getMeshDir()
+        study_path = os.path.split(self.case['case_path'])[0]
+
+        if d == None:
+            d = os.path.join(study_path, 'MESH')
+        elif not os.path.abspath(d):
+            d = os.path.join(self.case['case_path'], d)
+
+        if d != None:
+            if os.path.isdir(d):
+                self.lineEditMeshDir.setText(RelOrAbsPath(d, self.case['case_path']))
+                self.mesh_dirs[0] = d
+
+        self.case['mesh_path'] = self.mesh_dirs[0]
+
+        package = cs_package.package()
+
+        # User and global mesh directories
+
+        for config_file in [os.path.expanduser('~/.' + package.configfile),
+                            package.get_configfile()]:
+            cfg = ConfigParser.ConfigParser()
+            cfg.read(config_file)
+            if cfg.has_option('run', 'meshpath'):
+                cfg_mesh_dirs = cfg.get('run', 'meshpath').split(':')
+                for d in cfg_mesh_dirs:
+                    self.mesh_dirs.append(d)
+
+        del(package)
+
+        # 2) Meshes selection layout
+
+        # 2.1) Model for meshes table
         self.modelMeshes = StandardItemModelMeshes(self.mdl)
         self.tableViewMeshes.setModel(self.modelMeshes)
         self.tableViewMeshes.resizeColumnsToContents()
         self.tableViewMeshes.resizeRowsToContents()
 
+        delegateName = MeshNameDelegate(self.tableViewMeshes)
+        self.tableViewMeshes.setItemDelegateForColumn(0, delegateName)
+
+        delegateFormat = MeshFormatDelegate(self.tableViewMeshes, self._tableViewLayout)
+        self.tableViewMeshes.setItemDelegateForColumn(1, delegateFormat)
+
         delegateNumber = MeshNumberDelegate(self.tableViewMeshes)
         self.tableViewMeshes.setItemDelegateForColumn(2, delegateNumber)
 
         delegateGroupFaces = GroupDelegate(self.tableViewMeshes)
-        self.tableViewMeshes.setItemDelegateForColumn(3, delegateGroupFaces)
+        self.tableViewMeshes.setItemDelegateForColumn(4, delegateGroupFaces)
 
         delegateGroupCells = GroupDelegate(self.tableViewMeshes)
-        self.tableViewMeshes.setItemDelegateForColumn(4, delegateGroupCells)
+        self.tableViewMeshes.setItemDelegateForColumn(5, delegateGroupCells)
 
-        # 1.2) Connections
+        self.groupBoxMeshes.resizeEvent = self.MeshesResizeEvent
+
+        # 2.2) Connections
 
         self.connect(self.pushButtonAddMesh, SIGNAL("clicked()"), self.slotSearchMesh)
         self.connect(self.pushButtonDeleteMesh, SIGNAL("clicked()"), self.slotDeleteMesh)
         self.connect(self.groupBoxWarp, SIGNAL("clicked(bool)"), self.slotFacesCutting)
         self.connect(self.lineEditWarp, SIGNAL("textChanged(const QString &)"), self.slotWarpParam)
-        self.connect(self.groupBoxOrient, SIGNAL("clicked(bool)"), self.slotOrientation)
 
-        # 1.3) Set up validators
+        # 2.3) Set up validators
         validatorWarp = DoubleValidator(self.lineEditWarp, min=0.0)
         self.lineEditWarp.setValidator(validatorWarp)
 
-        # 1.4) Faces to join selection (Custom Widgets)
+        # 2.4) Faces to join selection (Custom Widgets)
 
         model = StandardItemModelFaces(self, self.mdl, 'face_joining')
         self.widgetFacesJoin.modelFaces = model
         self.widgetFacesJoin.tableView.setModel(model)
 
-        # 2) PERIODICITIES
+        # 3) Periodicities
 
         self.perio_mode = ""
 
@@ -466,7 +695,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # Set up validators
 
-        # 2)
+        # 4)
         self.lineEditTX.setValidator(DoubleValidator(self.lineEditTX))
         self.lineEditTY.setValidator(DoubleValidator(self.lineEditTY))
         self.lineEditTZ.setValidator(DoubleValidator(self.lineEditTZ))
@@ -531,46 +760,45 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.connect(self.lineEditM33, SIGNAL("textChanged(const QString &)"), self.slotMatrix33)
         self.connect(self.lineEditM34, SIGNAL("textChanged(const QString &)"), self.slotMatrix34)
 
-        # 3) INITIALIZE MESHES LIST
+        # 5) Initialize meshes list
 
-        # 3.1) Meshes list
+        # 5.1) Meshes default directory
+
+        self.connect(self.toolButtonMeshDir, SIGNAL("pressed()"), self.searchDir)
+        self.connect(self.toolButtonMeshDirClear, SIGNAL("pressed()"), self.clearDir)
+
+        # 5.1) Meshes list
 
         msg = ""
         nameList = self.mdl.getMeshList()
         log.debug("__init__ -> nameList = %s " % nameList)
 
         if nameList:
-            for mesh in nameList:
-                if mesh not in os.listdir(self.case['mesh_path']):
-                    msg = msg  + mesh + '\n'
+            for i in range(len(nameList)):
+                mesh = nameList[i]
+                if mesh[1] != None:
+                    path = os.path.join(mesh[1], mesh[0])
+                else:
+                    path = mesh[0]
+                if not os.path.isabs(path) and self.case['mesh_path'] != None:
+                    path = os.path.join(self.case['mesh_path'], path)
+                if not (os.path.isfile(path) and os.path.isabs(path)):
+                    msg = msg  + path + '\n'
 
-            if msg:
-                msg =  msg + '\n'
-                title = self.tr("WARNING")
-                msg2  = self.tr("The following meshes are not in the meshes "  \
-                                "directory given in the 'Identity and paths' " \
-                                "section:\n\n" +
-                                msg +
-                                "Verify existence and location of the mesh " \
-                                "files, and the 'Identity and Paths' section." )
-                QMessageBox.warning(self, title, msg2)
-
-#            for mesh in nameList:
-#                format = self.mdl.getMeshFormat(mesh)
-#                txt_format = self.dico_format[format]
-#                self.modelMeshes.addRow(mesh, txt_format)
-
-        elif os.listdir(self.case['mesh_path']):
-            for mesh in os.listdir(self.case['mesh_path']):
-                if MeshModel().getMeshExtension(mesh):
-                    format = self._meshFormatFromFileName(mesh)
-                    self.modelMeshes.addRow(mesh, format)
-                    self.mdl.addMesh(mesh, format)
+        if msg != "":
+            msg =  msg + '\n'
+            title = self.tr("WARNING")
+            msg2  = self.tr("The following mesh files are not present or\n" +
+                            "in the meshes directory search path:\n\n" +
+                            msg +
+                            "Verify existence and location of the mesh files,\n" +
+                            "and the 'Mesh Directory' section." )
+            QMessageBox.warning(self, title, msg2)
 
         self._tableViewLayout()
 
 
-        # 3.2) Warped faces cutting
+        # 5.2) Warped faces cutting
 
         if self.mdl.getCutStatus() == 'on':
             self.groupBoxWarp.setChecked(True)
@@ -583,142 +811,259 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.warp = v
         self.lineEditWarp.setText(str(self.warp))
 
-        # 3.3) Reorientation
 
-        if self.mdl.getOrientation() == 'on':
-            self.groupBoxOrient.setChecked(True)
+    def MeshesResizeEvent(self, event):
+        QWidget.resizeEvent(self, event)
+        self._tableViewLayout()
+
+
+    def searchDir(self):
+        """
+        Open a File Dialog in order to search the case directory.
+        """
+        title    = self.tr("Select input mesh directory")
+        default  = os.path.split(self.case['case_path'])[0]
+
+        if hasattr(QFileDialog, 'ReadOnly'):
+            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
         else:
-            self.groupBoxOrient.setChecked(False)
+            options  = QFileDialog.DontUseNativeDialog
+        # options  = options | QFileDialog.ShowDirsOnly
+
+        l_mesh_dirs = []
+        for i in range(0, len(self.mesh_dirs)):
+            if self.mesh_dirs[i] != None:
+                l_mesh_dirs.append(QUrl.fromLocalFile(self.mesh_dirs[i]))
+
+        dialog = QFileDialog(self, title, default)
+        if hasattr(dialog, 'setOptions'):
+            dialog.setOptions(options)
+        dialog.setSidebarUrls(l_mesh_dirs)
+        dialog.setFileMode(QFileDialog.Directory)
+
+        if dialog.exec_() == 1:
+
+            s = dialog.selectedFiles()
+
+            dir_name = str(s.first())
+            dir_name = os.path.abspath(dir_name)
+
+            self.lineEditMeshDir.setText(RelOrAbsPath(dir_name,
+                                                 self.case['case_path']))
+            self.mdl.setMeshDir(dir_name)
+            self.mesh_dirs[0] = dir_name
+
+            mesh_list = self.mdl.getMeshList()
+            for i in range(len(mesh_list)):
+                self.modelMeshes.dataMeshes[i][6] = mesh_list[i][1]
 
 
-    def setLink(self, fullfile):
+    def clearDir(self):
         """
-        Tab1: set link between asked file and case's directory 'MESH'
-        and keep dependency between file in a directory if destruction
+        Clear the case directory.
         """
-        name = os.path.basename(fullfile)
-        new_full = self.case['mesh_path'] + "/" + name
-        os.symlink(fullfile, new_full)
+        self.lineEditMeshDir.setText('')
+        if self.case['mesh_path'] != None:
+            self.mesh_dirs[0] = None
+            self.mdl.setMeshDir(None)
+
+            mesh_list = self.mdl.getMeshList()
+            for i in range(len(mesh_list)):
+                self.modelMeshes.dataMeshes[i][6] = mesh_list[i][1]
 
 
-    def _meshFormatFromFileName(self, mesh):
+    def selectMeshFiles(self):
         """
-        Tab1: return the format and the listbox name fo the given elementNode.
-        Put the format in attribute of the elementNode if necessary.
+        Open a File Dialog in order to select mesh files.
         """
-        # Search the format of the mesh
-        format = MeshModel().getMeshFormat(mesh)
+        mesh_files = []
 
-        # If the format is not found ask to the user
-        if not format:
-            default = ""
-            dialog = SolutionDomainMeshFormatDialogView(self, default)
-            if dialog.exec_():
-                format = dialog.get_result()
+        title    = self.tr("Select input mesh file(s)")
 
-        return format
+        default = self.mesh_dirs[0]
+        if default == None:
+            default  = os.path.split(self.case['case_path'])[0]
+
+        if hasattr(QFileDialog, 'ReadOnly'):
+            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+        else:
+            options  = QFileDialog.DontUseNativeDialog
+
+        l_mesh_dirs = []
+        for i in range(0, len(self.mesh_dirs)):
+            if self.mesh_dirs[i] != None:
+                l_mesh_dirs.append(QUrl.fromLocalFile(self.mesh_dirs[i]))
+
+        filetypes = ""
+        for Format in MeshModel().getFileFormatList():
+            filetypes += "%s (%s);;"%(Format[0], Format[1])
+
+        dialog = QFileDialog(self, title, default, filetypes)
+        if hasattr(dialog, 'setOptions'):
+            dialog.setOptions(options)
+        dialog.setSidebarUrls(l_mesh_dirs)
+        dialog.setFileMode(QFileDialog.ExistingFiles)
+
+        if dialog.exec_() == 1:
+            s = dialog.selectedFiles()
+            count = s.count()
+            for i in range(count):
+                mesh_files.append(str(s.takeFirst()))
+
+        return mesh_files
 
 
     def _tableViewLayout(self):
         """
         Configure QTableView column number
         """
-        format_list = []
-        for mesh in self.mdl.getMeshList():
-            format_list.append(self.mdl.getMeshFormat(mesh))
+        fm = self.tableViewMeshes.fontMetrics()
+        last_width = 0
+        n_groups = 0
+        n_num = 0
+        for row in self.modelMeshes.dataMeshes:
+            if row[1] == 'cgns':
+                n_groups += 1
+                n_num += 1
+            elif row[1] in ['med', 'ensight']:
+                n_num += 1
+            if row[6] != None:
+                cmp_width = fm.size(Qt.TextSingleLine, QString(row[6])).width()
+                if cmp_width > last_width:
+                    last_width = cmp_width
 
-        self.tableViewMeshes.resizeColumnsToContents()
-        self.tableViewMeshes.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-
-        if "med" in format_list:
+        self.tableViewMeshes.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
+        self.tableViewMeshes.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
+        if n_num == 0:
+            self.tableViewMeshes.setColumnHidden(2, True)
+        else:
             self.tableViewMeshes.setColumnHidden(2, False)
             self.tableViewMeshes.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
-        else:
-            self.tableViewMeshes.setColumnHidden(2, True)
 
-        if "cgns" in format_list:
-            self.tableViewMeshes.setColumnHidden(3, False)
-            self.tableViewMeshes.setColumnHidden(4, False)
-            self.tableViewMeshes.horizontalHeader().setResizeMode(3, QHeaderView.ResizeToContents)
-            self.tableViewMeshes.horizontalHeader().setResizeMode(4, QHeaderView.ResizeToContents)
-        else:
-            self.tableViewMeshes.setColumnHidden(3, True)
+        if n_groups == 0:
             self.tableViewMeshes.setColumnHidden(4, True)
+            self.tableViewMeshes.setColumnHidden(5, True)
+        else:
+            self.tableViewMeshes.setColumnHidden(4, False)
+            self.tableViewMeshes.setColumnHidden(5, False)
+            self.tableViewMeshes.horizontalHeader().setResizeMode(4, QHeaderView.ResizeToContents)
+            self.tableViewMeshes.horizontalHeader().setResizeMode(5, QHeaderView.ResizeToContents)
 
-        self.tableViewMeshes.horizontalHeader().setResizeMode(0, QHeaderView.Stretch)
-        self.tableViewMeshes.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
+        # We have a bug under KDE (but not Gnome) if the line below is not commented.
+        # self.tableViewMeshes.horizontalHeader().setResizeMode(6, QHeaderView.ResizeToContents)
+
+        self.tableViewMeshes.horizontalHeader().setStretchLastSection(True)
+
+        if last_width > self.tableViewMeshes.columnWidth(6):
+            self.tableViewMeshes.horizontalHeader().setStretchLastSection(False)
+            self.tableViewMeshes.resizeColumnsToContents()
 
 
-    def _addMeshInList(self,  m):
+    def _addMeshInList(self,  file_name):
         """
         Tab1: add input new meshes in the listbox and case.
         """
-        input_meshes = string.split(m)
-        if not input_meshes: return
+        (d, m) = os.path.split(file_name)
 
-        # 1) Verify if the all new meshes are the mesh_path directory.
+        index = -1
+        if self.mesh_dirs[0] != None:
+            index = d.find(self.mesh_dirs[0])
+            if index == 0:
+                d = d[len(self.mesh_dirs[0])+1:]
 
-        for mesh in input_meshes:
+        if d == '':
+            d = None
 
-            if mesh not in os.listdir(self.case['mesh_path']):
-                title = self.tr("Warning")
-                msg   = self.tr("The new mesh entry is not in meshes directory " \
-                                "given in the 'Identity and paths' section."  \
-                                "One link is created in this directory.\n\n"  \
-                                "Verify existence and location of the meshes " \
-                                "files, and the 'Identity and Pathes' section." )
-                QMessageBox.information(self, title, msg)
+        mesh = (m, d)
 
-        # 2) Verify that the new mesh is not allready in the case
+        # 1) Verify that the new mesh is not already in the case
 
-        for mesh in input_meshes:
+        if mesh in self.mdl.getMeshList():
+            title = self.tr("Warning")
+            msg   = self.tr("Warning, the following input is already " \
+                                "uploaded in the list:\n\n" + file_name)
+            QMessageBox.information(self, title, msg)
 
-            if mesh in self.mdl.getMeshList():
-                title = self.tr("Warning")
-                msg   = self.tr("Warning, the following input is already " \
-                                "uploaded in the list:\n\n" + mesh)
-                QMessageBox.information(self, title, msg)
+        else:
 
-            else:
+            # 2) Update View and model
 
-                # 3) Update View and model
-
-                format = self._meshFormatFromFileName(mesh)
-                if format:
-                    self.modelMeshes.addRow(mesh, format)
-                    self.mdl.addMesh(mesh, format)
+            format = MeshModel().getMeshFormat(mesh[0])
+            self.mdl.addMesh(mesh, format)
+            self.modelMeshes.addRow(mesh, format)
 
         self._tableViewLayout()
 
 
     @pyqtSignature("")
+    def selectInputMesh(self):
+
+        # Open a File Dialog in order to search the mesh_input file or directory.
+
+        search_dirs = []
+        study_dir = os.path.split(self.case['case_path'])[0]
+        for d in [os.path.join(study_dir, 'RESU_COUPLING'),
+                  os.path.join(self.case['case_path'], 'RESU'),
+                  study_dir]:
+            if os.path.isdir(d):
+                search_dirs.append(d)
+
+        dialog = MeshInputDialog(search_dirs = search_dirs)
+
+        if dialog.exec_() == 1:
+
+            s = dialog.selectedFiles()
+
+            mi = str(s.first())
+            mi = os.path.abspath(mi)
+            mi = RelOrAbsPath(mi, self.case['case_path'])
+
+            self.lineEditMeshInput.setText(mi)
+            self.mdl.setMeshInput(mi)
+            self.mesh_input = mi
+
+
+    @pyqtSignature("")
+    def slotSetInputMesh(self):
+
+        self.radioButtonImport.setChecked(False)
+        self.radioButtonExists.setChecked(True)
+
+        self.frameMeshInput.show()
+        self.frameMeshImport.hide()
+
+        if self.mesh_input == None:
+            self.selectInputMesh()
+
+        # If Dialog was canceled and no previous mesh_input was selected
+        if self.mesh_input == None:
+            self.slotSetImportMesh()
+
+
+    @pyqtSignature("")
+    def slotSetImportMesh(self):
+
+        self.radioButtonImport.setChecked(True)
+        self.radioButtonExists.setChecked(False)
+
+        self.frameMeshInput.hide()
+        self.frameMeshImport.show()
+
+        if self.mesh_input:
+            self.lineEditMeshInput.setText("")
+            self.mesh_input = None
+            self.mdl.setMeshInput(self.mesh_input)
+
+
+    @pyqtSignature("")
     def slotSearchMesh(self):
-        msg = self.tr("Select a mesh file (the file must be " \
-                      "in the directory %s)."%self.case['mesh_path'])
+        msg = self.tr("Select a mesh file.")
         self.stbar.showMessage(msg, 2000)
 
-        title = self.tr("New mesh")
-        if self.case['mesh_path'] and os.path.isdir(self.case['mesh_path']):
-            path = self.case['mesh_path']
-        else:
-            path = os.getcwd()
+        file_names = self.selectMeshFiles()
 
-        filetypes = ""
-        for Format in MeshModel().getFileFormatList():
-            filetypes += "%s (%s);;"%(Format[0], Format[1])
-
-        filt = "All files (*)"
-        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes, filt)
-        file_name = str(file_name)
-
-        if file_name:
-            if os.path.dirname(file_name) != self.case['mesh_path']:
-                self.setLink(file_name)
-                msg = self.tr("Select a mesh file (the file must be " \
-                              "in the directory %s)."%self.case['mesh_path'])
-                self.stbar.showMessage(msg, 2000)
-            m = os.path.basename(file_name)
-            self._addMeshInList(m)
+        for file_name in file_names:
+            self._addMeshInList(file_name)
 
 
     @pyqtSignature("")
@@ -731,7 +1076,8 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         selectionModel = self.tableViewMeshes.selectionModel()
         for index in selectionModel.selectedRows():
             row = index.row()
-            mesh = self.modelMeshes.getName(row)
+            mesh = (self.modelMeshes.dataMeshes[row][0],
+                    self.modelMeshes.dataMeshes[row][6])
 
             # 2) Delete mesh from view and from model
 
@@ -760,29 +1106,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.frameWarp.hide()
 
 
-    @pyqtSignature("bool")
-    def slotOrientation(self, checked):
-        """
-        Private slot.
-
-        Do we cut any warp faces ?
-
-        @type checked: C{True} or C{False}
-        @param checked: if C{True}, shows the QGroupBox warp parameters
-        """
-        #self.groupBoxOrient.setFlat(not checked)
-        if checked:
-            self.mdl.setOrientation ("on")
-        else:
-            self.mdl.setOrientation("off")
-
-
     @pyqtSignature("const QString&")
     def slotWarpParam(self, text):
         """
         Private slot.
-
-        Input '--cwf' parameters.
 
         @type text: C{QString}
         @param text: max angle of warped faces

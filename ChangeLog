@@ -1,3 +1,69 @@
+* 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Scripts and GUI overhauled, with user Python and script XML reader.
+  Restart behavior is now based on the presence of a restart sub-directory
+  in the execution directory. A "--preprocess" option has also been added
+  to the Kernel so as to handle purely preprocessing runs.
+  added files:
+    bin/cs_run.py
+    bin/cs_user_scripts.py
+    bin/cs_xml_reader.py
+    gui/Pages/icons/22x22/add.png
+    gui/Pages/icons/22x22/edit-clear.png
+    gui/Pages/icons/22x22/remove.png
+  removed files:
+    bin/runcase.in
+    gui/Pages/SolutionDomainMeshFormatDialogForm.ui
+  modified files:
+    bin/code_saturne.in
+    bin/cs_case_coupling.py
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/cs_create.py
+    bin/cs_script.py
+    extras/batch/batch.CCC
+    extras/batch/batch.LOADL
+    extras/batch/batch.LOADL_BG
+    extras/batch/batch.LSF
+    extras/batch/batch.PBS
+    extras/batch/batch.SGE
+    extras/code_saturne.cfg
+    gui/Base/MainView.py
+    gui/Base/XMLengine.py
+    gui/Base/XMLinitialize.py
+    gui/Pages/BatchRunningAdvancedOptionsDialogForm.ui
+    gui/Pages/BatchRunningForm.ui
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BatchRunningView.py
+    gui/Pages/CoalCombustionForm.ui
+    gui/Pages/FacesSelectionForm.ui
+    gui/Pages/IdentityAndPathesForm.ui
+    gui/Pages/IdentityAndPathesView.py
+    gui/Pages/Makefile.am
+    gui/Pages/MemoryAllocationModel.py
+    gui/Pages/PreProcessingInformationsView.py
+    gui/Pages/resources_pages.qrc
+    gui/Pages/ScriptRunningModel.py
+    gui/Pages/SolutionDomainForm.ui
+    gui/Pages/SolutionDomainModel.py
+    gui/Pages/SolutionDomainView.py
+    gui/Pages/SolutionVerifView.py
+    gui/Pages/StartRestartForm.ui
+    gui/Pages/StartRestartModel.py
+    gui/Pages/StartRestartView.py
+    gui/Pages/TimeAveragesModel.py
+    gui/Pages/TimeAveragesView.py
+    Makefile.am
+    src/apps/cs_solver.c
+    src/base/cs_opts.c
+    src/base/cs_opts.h
+    src/base/cs_restart.c
+    src/base/cs_restart.h
+    src/base/iniusi.f90
+    src/base/modini.f90
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+    users/base/usini1.f90
+
 * 04/04/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Fix volumic zone deletion.
   modified routine:

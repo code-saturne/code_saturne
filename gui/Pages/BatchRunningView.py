@@ -61,8 +61,8 @@ from Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedO
 from Base.Common import cs_batch_type
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
-from Pages.BatchRunningModel import BatchModel, BatchRunningModel
-from Pages.ScriptRunningModel import ScriptModel, ScriptRunningModel
+from Pages.BatchRunningModel import BatchRunningModel
+from Pages.ScriptRunningModel import ScriptRunningModel
 from Pages.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
     """
     Class for data user files
     """
-    def __init__(self, parent, default):
+    def __init__(self, parent, data_path, default):
         """
         Constructor
         """
@@ -93,10 +93,9 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
 
         self.setWindowTitle(self.tr("User files"))
 
+        self.data_path = data_path
         self.default = default
-        self.result  = {}
-        for key in self.default.keys():
-            self.result[key] = []
+        self.result  = []
 
         # Models
         rows = 0
@@ -105,16 +104,16 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
 
         # associated with views.
         self.viewData.setModel(self.modelData)
+        self.viewData.setItemDelegate(DataDelegate(self, self.data_path))
 
-        self.viewData.setItemDelegate(DataDelegate(self, self.default['data_path']))
         # Connections
         self.connect(self.buttonNewData, SIGNAL("clicked()"), self.slotAddData)
         self.connect(self.buttonAddData, SIGNAL("clicked()"), self.slotNewData)
         self.connect(self.buttonDeleteData, SIGNAL("clicked()"), self.slotDeleteData)
 
         # Previous values
-        if self.default['data'] != None:
-            for item in self.default['data']:
+        if self.default != None:
+            for item in self.default:
                 self.setFileData(item)
 
 
@@ -140,7 +139,7 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         filetypes = self.tr("User data files (*);;""All Files (*)")
         list = QFileDialog.getOpenFileNames(self,
                                             title,
-                                            self.default['data_path'],
+                                            self.data_path,
                                             filetypes)
         for item in list:
             self.setFileData(os.path.basename(str(item)))
@@ -180,7 +179,7 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         for row in range(self.modelData.rowCount()):
             index = self.modelData.index(row, column, QModelIndex())
             qstring = index.data(Qt.DisplayRole).toString()
-            self.result['data'].append(str(qstring))
+            self.result.append(str(qstring))
 
         QDialog.accept(self)
 
@@ -189,7 +188,7 @@ class BatchRunningUserFilesDialogView(QDialog, Ui_BatchRunningUserFilesDialogFor
         """
         Method called when user clicks 'Cancel'
         """
-        self.result  = self.default.copy()
+        self.result  = self.default
         QDialog.reject(self)
 
 
@@ -279,7 +278,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
     """
     Advanced dialog
     """
-    def __init__(self, parent, default):
+    def __init__(self, parent):
         """
         Constructor
         """
@@ -289,17 +288,13 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.setupUi(self)
 
         self.setWindowTitle(self.tr("Advanced options"))
-        self.default = default
-        self.result  = self.default.copy()
+        self.parent = parent
 
         self.lineEdit.setReadOnly(True)
 
         # Combo models
         self.modelSCRATCHDIR   = ComboModel(self.comboBoxSCRATCHDIR, 2, 1)
-        self.modelExecPrepro   = ComboModel(self.comboBox, 2, 1)
-        self.modelExecPartit   = ComboModel(self.comboBox_2, 2, 1)
-        self.modelExecKernel   = ComboModel(self.comboBox_3, 2, 1)
-        self.modelArg_cs_verif = ComboModel(self.comboBox_5, 2, 1)
+        self.modelPartitType   = ComboModel(self.comboBox_2, 4, 1)
         self.modelCSOUT1       = ComboModel(self.comboBox_6, 2, 1)
         self.modelCSOUT2       = ComboModel(self.comboBox_7, 3, 1)
 
@@ -307,45 +302,37 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelSCRATCHDIR.addItem(self.tr("automatic"), 'automatic')
         self.modelSCRATCHDIR.addItem(self.tr("prescribed"), 'prescribed')
 
-        self.modelExecPrepro.addItem(self.tr("Run the preprocessor"), 'True')
-        self.modelExecPrepro.addItem(self.tr("Use existing DATA/mesh_input"), 'False')
+        self.modelPartitType.addItem(self.tr("Default"), 'default')
+        self.modelPartitType.addItem(self.tr("Scotch"), 'scotch')
+        self.modelPartitType.addItem(self.tr("Metis"), 'metis')
+        self.modelPartitType.addItem(self.tr("Morton curve"), 'morton sfc')
 
-        self.modelExecPartit.addItem(self.tr("Run the partitioner"), 'True')
-        self.modelExecPartit.addItem(self.tr("Use existing DATA/partition/domain_number_<p> "\
-                                             "or space-filling curve"), 'False')
-
-        self.modelExecKernel.addItem(self.tr("Setup data and run the calculation"), 'True')
-        self.modelExecKernel.addItem(self.tr("Do not setup data and run the calculation"), 'False')
-
-        self.modelArg_cs_verif.addItem(self.tr("Off"), 'standard')
-        self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria"), 'mesh_quality')
-
-        self.modelCSOUT1.addItem(self.tr("to standard output"), 'standard')
+        self.modelCSOUT1.addItem(self.tr("to standard output"), 'stdout')
         self.modelCSOUT1.addItem(self.tr("to listing"), 'listing')
 
-        self.modelCSOUT2.addItem(self.tr("no output"), 'shunte')
-        self.modelCSOUT2.addItem(self.tr("to standard output"), 'standard')
+        self.modelCSOUT2.addItem(self.tr("no output"), 'null')
+        self.modelCSOUT2.addItem(self.tr("to standard output"), 'stdout')
         self.modelCSOUT2.addItem(self.tr("to listing_n<p>"), 'listing')
 
-        # connections
+        # Validators
+        partListVd = RegExpValidator(self.lineEdit_2, QRegExp("[0-9- ]*"))
+        self.lineEdit_2.setValidator(partListVd)
+
+        # Connections
         self.connect(self.comboBoxSCRATCHDIR, SIGNAL("activated(const QString&)"), self.slotSCRATCHDIR)
         self.connect(self.toolButton, SIGNAL("clicked()"), self.slotSearchDirectory)
-        self.connect(self.comboBox, SIGNAL("activated(const QString&)"), self.slotExePrepro)
         self.connect(self.comboBox_2, SIGNAL("activated(const QString&)"), self.slotExePartit)
-        self.connect(self.comboBox_3, SIGNAL("activated(const QString&)"), self.slotExeKernel)
         self.connect(self.toolButton_2, SIGNAL("clicked()"), self.slotSearchFile)
         self.connect(self.lineEdit_2, SIGNAL("textChanged(const QString &)"), self.slotPartitionList)
         self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotValgrind)
-        self.connect(self.comboBox_5, SIGNAL("activated(const QString&)"), self.slotArgCsVerif)
-        self.connect(self.comboBox_6, SIGNAL("activated(const QString&)"), self.slotArgCsOutput)
-        self.connect(self.comboBox_7, SIGNAL("activated(const QString&)"), self.slotArgCsOutput)
+        self.connect(self.comboBox_6, SIGNAL("activated(const QString&)"), self.slotLogType)
+        self.connect(self.comboBox_7, SIGNAL("activated(const QString&)"), self.slotLogType)
 
         # Previous values
-        self.dir_name = self.default['SCRATCHDIR']
-        if self.dir_name == None:
-            self.dir_name = ""
-        self.lineEdit.setText(QString(self.dir_name))
-        if self.dir_name == "":
+        self.scratchdir = self.parent.mdl.getString('scratchdir')
+        self.scratchdir_default = self.scratchdir
+        self.lineEdit.setText(QString(self.scratchdir))
+        if self.scratchdir == "":
             self.lineEdit.setEnabled(False)
             self.toolButton.setEnabled(False)
             self.modelSCRATCHDIR.setItem(str_model='automatic')
@@ -354,29 +341,17 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
             self.toolButton.setEnabled(True)
             self.modelSCRATCHDIR.setItem(str_model='prescribed')
 
-        self.exe_prepro = self.default['EXEC_PREPROCESS']
-        self.modelExecPrepro.setItem(str_model=str(self.exe_prepro))
+        self.partition_type = str(self.parent.mdl.getPartitionType())
+        self.modelPartitType.setItem(str_model=self.partition_type)
 
-        self.exe_partit = self.default['EXEC_PARTITION']
-        self.modelExecPartit.setItem(str_model=str(self.exe_partit))
-
-        self.exe_kernel = self.default['EXEC_SOLVER']
-        self.modelExecKernel.setItem(str_model=str(self.exe_kernel))
-
-        self.partition_list = self.default['PARTITION_LIST']
-        plist = []
-        if self.partition_list != None:
-            for p in self.partition_list:
-                plist.append(str(p))
-        self.partition_list = string.join(plist)
+        self.partition_list = self.parent.mdl.getString('partition_list')
         self.lineEdit_2.setText(QString(self.partition_list))
 
-        self.valgrind = self.default['VALGRIND']
+        self.valgrind = self.parent.mdl.getString('valgrind')
         if self.valgrind != None:
             self.lineEdit_3.setText(QString(self.valgrind))
 
-        self.setArgCsVerif()
-        self.setArgCsOutput()
+        self.setLogType()
 
 
     @pyqtSignature("const QString &")
@@ -385,16 +360,16 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         Select mode for SCRATCHDIR.
         """
         if self.modelSCRATCHDIR.dicoV2M[str(text)] == 'prescribed':
-            self.dir_name = self.default['SCRATCHDIR']
+            self.scratchdir = self.scratchdir_default
             self.lineEdit.setEnabled(True)
             self.toolButton.setEnabled(True)
             setGreenColor(self.toolButton, True)
         else:
-            self.dir_name = ""
+            self.scratchdir = ""
             self.lineEdit.setEnabled(False)
             self.toolButton.setEnabled(False)
             setGreenColor(self.toolButton, False)
-        self.lineEdit.setText(QString(self.dir_name))
+        self.lineEdit.setText(QString(self.scratchdir))
 
 
     @pyqtSignature("const QString &")
@@ -414,99 +389,29 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
 
     @pyqtSignature("const QString &")
-    def slotExePrepro(self, text):
-        """
-        Preprocessor execution mode option.
-        """
-        self.exe_prepro = self.modelExecPrepro.dicoV2M[str(text)]
-
-
-    @pyqtSignature("const QString &")
     def slotExePartit(self, text):
         """
         Partitioner execution mode option.
         """
-        self.exe_partit = self.modelExecPartit.dicoV2M[str(text)]
+        self.partition_type = self.modelPartitType.dicoV2M[str(text)]
+
+
+    def setLogType(self):
+        """
+        Set logging arguments.
+        """
+        self.log_type = self.parent.mdl.getLogType()
+        self.modelCSOUT1.setItem(str_model=self.log_type[0])
+        self.modelCSOUT2.setItem(str_model=self.log_type[1])
 
 
     @pyqtSignature("const QString &")
-    def slotExeKernel(self, text):
+    def slotLogType(self, text):
         """
-        Kernel execution mode option.
+        Input logging options.
         """
-        self.exe_kernel = self.modelExecKernel.dicoV2M[str(text)]
-
-
-    def setArgCsVerif(self):
-        """
-        Put CHECK_ARGS option from "runcase" file.
-        """
-        if self.default['CHECK_ARGS'] == '--quality' or self.default['CHECK_ARGS'] == '-q':
-            self.arg_cs_verif = 'mesh_quality'
-            self.val_verif = '--quality'
-        else:
-            self.arg_cs_verif = 'standard'
-            self.val_verif = ""
-        self.modelArg_cs_verif.setItem(str_model=self.arg_cs_verif)
-
-
-    @pyqtSignature("const QString &")
-    def slotArgCsVerif(self, text):
-        """
-        Input CHECK_ARGS option.
-        """
-        self.val_verif = ''
-        self.arg_cs_verif = self.modelArg_cs_verif.dicoV2M[str(text)]
-        arg_verif = self.arg_cs_verif
-
-        if arg_verif == 'standard'     : self.val_verif = ''
-        if arg_verif == 'mesh_quality' : self.val_verif = '--quality'
-
-
-    def setArgCsOutput(self):
-        """
-        Put OUTPUT_ARGS options from 'runcase' file.
-        """
-        self.val_output = self.default['OUTPUT_ARGS']
-        if self.default['OUTPUT_ARGS'] == None:
-            self.modelCSOUT1.setItem(str_model='listing')
-            self.modelCSOUT2.setItem(str_model='shunte')
-        else:
-            list = self.default['OUTPUT_ARGS'].split()
-            l1 = 0
-            l2 = 0
-            for n in range(len(list)):
-                if list[n] == '--log':
-                    l1 = 1
-                    if list[n+1] == '0': self.modelCSOUT1.setItem(str_model='standard')
-                    if list[n+1] == '1': self.modelCSOUT1.setItem(str_model='listing')
-                if list[n] == '--logp':
-                    l2 = 1
-                    if list[n+1] == '0': self.modelCSOUT2.setItem(str_model='standard')
-                    if list[n+1] == '1': self.modelCSOUT2.setItem(str_model='listing')
-                    if list[n+1] == '-1': self.modelCSOUT2.setItem(str_model='shunte')
-            if l1 == 0: self.modelCSOUT1.setItem(str_model='listing')
-            if l2 == 0: self.modelCSOUT2.setItem(str_model='shunte')
-
-
-    @pyqtSignature("const QString &")
-    def slotArgCsOutput(self, text):
-        """
-        Input OUTPUT_ARGS options.
-        """
-        self.val_output =''
-        out1 = ''
-        out2 = ''
-        arg_out1 = self.modelCSOUT1.dicoV2M[str(self.comboBox_6.currentText())]
-        arg_out2 = self.modelCSOUT2.dicoV2M[str(self.comboBox_7.currentText())]
-        if arg_out1 == 'listing': out1 = ''
-        if arg_out1 == 'standard': out1 = '--log 0'
-        if arg_out2 == 'shunte': out2 = ''
-        if arg_out2 == 'standard': out2 = '--logp 0'
-        if arg_out2 == 'listing': out2 = '--logp 1'
-        self.val_output = out1 + ' ' + out2
-        if len(self.val_output) < 2:
-            self.val_output = None
+        self.log_type = [self.modelCSOUT1.dicoV2M[str(self.comboBox_6.currentText())],
+                         self.modelCSOUT2.dicoV2M[str(self.comboBox_7.currentText())]]
 
 
     @pyqtSignature("")
@@ -517,15 +422,15 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         title    = self.tr("Select directory")
         default  = os.getcwd()
         options  = QFileDialog.ShowDirsOnly # | QFileDialog.DontResolveSymlinks
-        dir_name = QFileDialog.getExistingDirectory(self, title, default, options)
+        scratchdir = QFileDialog.getExistingDirectory(self, title, default, options)
 
-        dir = str(dir_name)
+        dir = str(scratchdir)
         if dir:
-            self.dir_name = dir
+            self.scratchdir = dir
             setGreenColor(self.toolButton, False)
-        self.lineEdit.setText(QString(self.dir_name))
+        self.lineEdit.setText(QString(self.scratchdir))
 
-        return self.dir_name
+        return self.scratchdir
 
 
     @pyqtSignature("")
@@ -568,24 +473,13 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         Method called when user clicks 'OK'
         """
 
-        plist = []
-        for p in self.partition_list.split():
-            try:
-                plist.append(int(p))
-            except Exception:
-                pass
-        partition_tuple = None
-        if len(plist) > 0:
-            partition_tuple = tuple(plist)
+        self.parent.mdl.setPartitionType(self.partition_type)
+        self.parent.mdl.setString('partition_list', self.partition_list.strip())
 
-        self.result['SCRATCHDIR']   = self.dir_name
-        self.result['EXEC_PREPROCESS'] = self.exe_prepro
-        self.result['EXEC_PARTITION']  = self.exe_partit
-        self.result['EXEC_SOLVER']     = self.exe_kernel
-        self.result['PARTITION_LIST']  = partition_tuple
-        self.result['VALGRIND']        = self.valgrind
-        self.result['CHECK_ARGS']    = self.val_verif
-        self.result['OUTPUT_ARGS']   = self.val_output
+        self.parent.mdl.setString('valgrind', self.valgrind.strip())
+        self.parent.mdl.setString('scratchdir', self.scratchdir)
+
+        self.parent.mdl.setLogType(self.log_type)
 
         QDialog.accept(self)
 
@@ -627,14 +521,21 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.setupUi(self)
 
         self.case = case
-        BatchModel(self.case)
-        ScriptModel(self.case)
+
+        self.mdl = ScriptRunningModel(self.case)
+
+        # Check if the script file name is already defined
+
+        if self.case['scripts_path']:
+            if not self.case['batch']:
+                if 'runcase' in os.listdir(self.case['scripts_path']):
+                    self.case['batch'] = 'runcase'
+
+        self.case['batch_type'] = cs_batch_type
+
+        self.jmdl = BatchRunningModel(parent, self.case)
 
         # Batch info
-
-        self.labelBatch.hide()
-        self.toolButtonSearchBatch.hide()
-        self.labelBatchName.hide()
 
         self.hideBatchInfo()
 
@@ -643,7 +544,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.class_list = None
 
-        self.case['batch_type'] = cs_batch_type
+        self.n_procs = None
 
         if self.case['batch_type'] != None:
 
@@ -656,6 +557,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.lineEditJobName.setValidator(validatorSimpleName)
             self.lineEditJobGroup.setValidator(validatorSimpleName)
             self.pushButtonRunSubmit.setText("Submit job")
+
+        else:
+
+            try:
+                self.n_procs = int(self.mdl.getString('n_procs'))
+            except Exception:
+                self.n_procs = 1
+
 
         # Connections
 
@@ -685,34 +594,39 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.connect(self.spinBoxNProcs, SIGNAL("valueChanged(int)"), self.slotParallelComputing)
 
         self.connect(self.toolButtonSearchBatch, SIGNAL("clicked()"), self.slotSearchBatchFile)
-        self.connect(self.toolButtonSearchScript, SIGNAL("clicked()"), self.slotSearchScriptFile)
+        self.connect(self.comboBoxRunType, SIGNAL("activated(const QString&)"), self.slotArgRunType)
         self.connect(self.toolButtonFiles, SIGNAL("clicked()"), self.slotUserFiles)
         self.connect(self.toolButtonAdvanced, SIGNAL("clicked()"), self.slotAdvancedOptions)
         self.connect(self.pushButtonRunSubmit, SIGNAL("clicked()"), self.slotBatchRunning)
 
-        # initialize Widgets
+        # Combomodels
 
-        if self.case['batch_type'] != None:
-            if self.case['scripts_path']:
-                if 'runcase_batch' in os.listdir(self.case['scripts_path']):
-                    self.case['batch'] = 'runcase_batch'
-                    self.displayBatchInfo()
-                    setGreenColor(self.toolButtonSearchBatch, False)
-                else:
-                    setGreenColor(self.toolButtonSearchBatch, True)
+        self.modelArg_cs_verif = ComboModel(self.comboBoxRunType, 2, 1)
+
+        self.modelArg_cs_verif.addItem(self.tr("Import mesh / partition only"), 'none')
+        self.modelArg_cs_verif.addItem(self.tr("Mesh preprocessing"), 'mesh preprocess')
+        self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria"), 'mesh quality')
+        self.modelArg_cs_verif.addItem(self.tr("Standard"), 'standard')
+        self.modelArg_cs_verif.setItem(str_model=self.mdl.getRunType())
+
+
+        # initialize Widgets
 
         # Check if the script file name is already defined
 
-        self.groupBoxScript.hide()
-        self.labelScript.setEnabled(True)
+        name = self.case['batch']
+        if name:
+            self.labelBatchName.setText(QString(name))
+            setGreenColor(self.toolButtonSearchBatch, False)
+        else:
+            setGreenColor(self.toolButtonSearchBatch, True)
 
-        if self.case['scripts_path']:
-            if "runcase" in os.listdir(self.case['scripts_path']):
-                self.case['script'] = "runcase"
-                self.displayScriptInfo()
-                setGreenColor(self.toolButtonSearchScript, False)
-            else:
-                setGreenColor(self.toolButtonSearchScript, True)
+        if self.case['batch_type'] != None and self.case['batch']:
+            self.displayBatchInfo()
+
+        # Script info is based on the XML model
+
+        self.displayScriptInfo()
 
 
     @pyqtSignature("const QString &")
@@ -733,6 +647,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.dictValues['job_nodes'] = str(self.spinBoxNodes.text())
         self.jmdl.updateBatchFile('job_nodes')
 
+
     @pyqtSignature("int")
     def slotJobPpn(self, v):
         """
@@ -740,6 +655,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         self.jmdl.dictValues['job_ppn']  = str(self.spinBoxPpn.text())
         self.jmdl.updateBatchFile('job_ppn')
+
 
     @pyqtSignature("int")
     def slotJobProcs(self, v):
@@ -749,6 +665,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.dictValues['job_procs']  = str(self.spinBoxProcs.text())
         self.jmdl.updateBatchFile('job_procs')
 
+
     @pyqtSignature("")
     def slotJobWallTime(self):
 
@@ -757,6 +674,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         s_cput = self.spinBoxSeconds.value()
         self.jmdl.dictValues['job_walltime'] = h_cput*3600 + m_cput*60 + s_cput
         self.jmdl.updateBatchFile('job_walltime')
+
 
     @pyqtSignature("")
     def slotClass(self):
@@ -776,32 +694,40 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.updateBatchFile('job_group')
 
 
+    @pyqtSignature("const QString &")
+    def slotArgRunType(self, text):
+        """
+        Input run type option.
+        """
+        self.run_type = self.modelArg_cs_verif.dicoV2M[str(text)]
+        self.mdl.setRunType(self.run_type)
+
+
     @pyqtSignature("int")
     def slotParallelComputing(self, v):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.mdl.dictValues['N_PROCS'] = v
-        self.mdl.updateScriptFile('N_PROCS')
+        self.n_procs = int(v)
+        self.mdl.setString('n_procs', str(v))
 
 
     @pyqtSignature("")
     def slotUserFiles(self):
         """
-        Input 'USER_INPUT_FILES'
+        Input user data files
         """
-        default = {}
-        default['data_path'] = self.case['data_path']
-        default['data']      = self.mdl.dictValues['USER_INPUT_FILES']
+        default = self.mdl.getUserInputFiles()
         log.debug("slotUserFiles -> %s" % str(default))
 
-        dialog = BatchRunningUserFilesDialogView(self, default)
+        dialog = BatchRunningUserFilesDialogView(self,
+                                                 self.case['data_path'],
+                                                 default)
 
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotUserFiles -> %s" % str(result))
-            self.mdl.dictValues['USER_INPUT_FILES']  = result['data']
-            self.mdl.updatedScriptFile('USER_INPUT_FILES')
+            self.mdl.setUserInputFiles(result)
 
 
     @pyqtSignature("")
@@ -809,21 +735,12 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Ask one popup for advanced specifications
         """
-        default = {}
-        list = ['SCRATCHDIR', 'EXEC_PREPROCESS', 'EXEC_PARTITION', 'EXEC_SOLVER',
-                'PARTITION_LIST', 'VALGRIND', 'CHECK_ARGS', 'OUTPUT_ARGS', ]
-        for option in list:
-            default[option] = self.mdl.dictValues[option]
-        log.debug("slotAdvancedOptions result = %s "%str(default))
+        log.debug("slotAdvancedOptions")
 
-        dialog = BatchRunningAdvancedOptionsDialogView(self, default)
+        dialog = BatchRunningAdvancedOptionsDialogView(self)
 
         if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("slotAdvancedOptions result = %s "%str(result))
-            for option in list:
-                self.mdl.dictValues[option] = result[option]
-                self.mdl.updateScriptFile(option)
+            log.debug("slotAdvancedOptions validated")
 
 
     @pyqtSignature("")
@@ -831,7 +748,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Launch Code_Saturne batch running.
         """
-        # Test 1: is the file saved?
+        # Is the file saved?
 
         if self.case['new'] == "yes" or self.case.isModified():
 
@@ -840,22 +757,23 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                             "running the ") + self.tr(self.case['package']).code_name + self.tr(" script.")
             QMessageBox.information(self, title, msg)
             return
-#        if self.case.saved() == "no":
-#            self.case.xmlSaveDocument()
-#            self.mdl.dictValues['PARAMETERS'] = os.path.basename(self.case['xmlfile'])
-#            self.mdl.updateScriptFile('PARAMETERS')
 
-        # Test 2: have we a mesh?
+        # Do we have a mesh ?
 
+        have_mesh = False
         node_ecs = self.case.xmlGetNode('solution_domain')
-        if not node_ecs.xmlGetNode('meshes_list'):
-            if not node_ecs.xmlGetNode('meshes_list').xmlGetNodeList('mesh'):
-                title = self.tr("Warning")
-                msg   = self.tr("You have to select a mesh.\n\n")
-                QMessageBox.information(self, title, msg)
-                return
+        if node_ecs.xmlGetNode('meshes_list'):
+            if node_ecs.xmlGetNode('meshes_list').xmlGetNodeList('mesh'):
+                have_mesh = True
+        if node_ecs.xmlGetNode('mesh_input', 'path'):
+            have_mesh = True
+        if not have_mesh:
+            title = self.tr("Warning")
+            msg   = self.tr("You have to select a mesh.\n\n")
+            QMessageBox.information(self, title, msg)
+            return
 
-        # Test 3: verify if boundary definition exists
+        # Verify if boundary condition definitions exist
 
         bd = LocalizationModel('BoundaryZone', self.case)
         if not bd.getZones():
@@ -865,21 +783,20 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 QMessageBox.warning(self, title, msg)
                 self.case['no_boundary_conditions'] = True
 
-        # Command line building
+        # Build command line
 
         key = self.case['batch_type']
 
         batch = os.path.join(self.case['scripts_path'], self.case['batch'])
-        script = os.path.join(self.case['scripts_path'], self.case['script'])
 
         if key == None:
-            cmd = 'nice nohup ' + script + ' | tee ' + script + '.log &'
+            cmd = 'nice nohup ' + batch + ' | tee ' + batch + '.log &'
         elif key[0:3] == 'CCC':
             cmd = 'qsub ' + batch
         elif key[0:5] == 'LOADL':
             cmd = 'llsubmit ' + batch
         elif key[0:3] == 'LSF':
-            cmd = 'bsub < ' + script + ' ' + self.case['batch'] + ' &'
+            cmd = 'bsub < ' + batch + ' ' + self.case['batch'] + ' &'
         elif key[0:3] == 'PBS' or key[0:3] == 'SGE':
             cmd = 'qsub ' + batch
         else:
@@ -887,7 +804,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         if self.case['salome']:
             from Pages import  SalomeHandler
-            SalomeHandler.runSolver(self.case, script)
+            SalomeHandler.runSolver(self.case, batch)
         else:
             os.system(cmd)
 
@@ -1001,10 +918,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Layout of the second part of this page.
         """
-        if hasattr(self, 'jmdl'):
-            del self.jmdl
-        self.jmdl = BatchRunningModel(self.case)
-        self.jmdl.readBatchFile()
 
         self.job_name     = self.jmdl.dictValues['job_name']
         self.job_nodes = self.jmdl.dictValues['job_nodes']
@@ -1013,10 +926,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.job_walltime = self.jmdl.dictValues['job_walltime']
         self.job_class  = self.jmdl.dictValues['job_class']
         self.job_group  = self.jmdl.dictValues['job_group']
-
-        name = self.case['batch']
-        self.labelBatchName.show()
-        self.labelBatchName.setText(QString(name))
 
         if self.job_name != None:
             self.labelJobName.show()
@@ -1112,16 +1021,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Layout of the second part of this page.
         """
 
-        if hasattr(self, 'mdl'):
-            del self.mdl
-        self.mdl = ScriptRunningModel(self.case)
-        self.mdl.readScriptFile()
-
-        self.labelScriptName.show()
-
-        name = self.case['script']
-        self.labelScriptName.setText(QString(name))
-
         self.labelFiles.show()
         self.toolButtonFiles.show()
 
@@ -1132,18 +1031,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.labelNProcs.hide()
             self.spinBoxNProcs.hide()
 
-        self.groupBoxScript.show()
-
-        dico = self.mdl.dictValues
-
         if self.case['batch_type'] == None:
-            if not isinstance(dico['N_PROCS'], int):
-                dico['N_PROCS'] = 1
-            self.spinBoxNProcs.setValue(dico['N_PROCS'])
+            self.spinBoxNProcs.setValue(self.n_procs)
         else:
-            dico['N_PROCS'] = None
-
-        self.mdl.updateScriptFile()
+            pass
 
 
     @pyqtSignature("")
@@ -1163,49 +1054,20 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         file_name = str(file_name)
 
         if file_name:
+
             launcher = os.path.basename(file_name)
             setGreenColor(self.toolButtonSearchBatch, False)
 
             if self.case['scripts_path'] == os.path.dirname(file_name):
                 self.case['batch'] = launcher
+                self.labelBatchName.setText(QString(launcher))
+                self.jmdl.readBatchFile()
                 self.hideBatchInfo()
-                self.displayBatchInfo()
+                if self.case['batch_type'] != None:
+                    self.displayBatchInfo()
             else:
                 title = self.tr("Warning")
                 msg   = self.tr("The new batch file is not in scripts "\
-                                "directory given in the 'Identity and paths' "\
-                                "section.\n\n" + \
-                                "Verify the existence and location of these files, "\
-                                "and the 'Identity and Pathes' section")
-                QMessageBox.warning(self, title, msg)
-
-
-    @pyqtSignature("")
-    def slotSearchScriptFile(self):
-        """
-        Open a FileDialog in order to select the script file
-        in the system file.
-        """
-        file_name = ""
-        if self.case['scripts_path'] and os.path.isdir(self.case['scripts_path']):
-            path = self.case['scripts_path']
-        else:
-            path = os.getcwd()
-        title = self.tr("Select the script")
-        filetypes = self.tr("All Files (*)")
-        file_name = QFileDialog.getOpenFileName(self, title, path, filetypes)
-        file_name = str(file_name)
-
-        if file_name:
-            launcher = os.path.basename(file_name)
-            setGreenColor(self.toolButtonSearchScript, False)
-
-            if self.case['scripts_path'] == os.path.dirname(file_name):
-                self.case['script'] = launcher
-                self.displayScriptInfo()
-            else:
-                title = self.tr("Warning")
-                msg   = self.tr("The new script file is not in scripts "\
                                 "directory given in the 'Identity and paths' "\
                                 "section.\n\n" + \
                                 "Verify the existence and location of these files, "\

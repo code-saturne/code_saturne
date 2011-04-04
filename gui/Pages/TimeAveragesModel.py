@@ -85,7 +85,7 @@ class TimeAveragesModel(Model):
         value['start']   = 1
         value['restart'] = -2
 
-#        if StartRestartModel(self.case).getRestart() == 'off':
+#        if not StartRestartModel(self.case).getRestartPath():
 #            value['restart']    = 0
 #        else:
 #            value['restart']    = -1
@@ -157,7 +157,7 @@ class TimeAveragesModel(Model):
 
         node.xmlSetData('time_step_start', start)
 
-        if StartRestartModel(self.case).getRestart() == 'on':
+        if StartRestartModel(self.case).getRestartPath():
             if restart != -2:
                 node.xmlSetData('restart_from_time_average', restart)
         else:
@@ -241,7 +241,7 @@ class TimeAveragesModel(Model):
         restart = self.defaultValues()['restart']
         node = self.node_mean.xmlGetNode('time_average', id=imom)
         start = node.xmlGetInt('time_step_start')
-        if StartRestartModel(self.case).getRestart() != 'off':
+        if StartRestartModel(self.case).getRestartPath():
             restart = node.xmlGetInt('restart_from_time_average')
 
         for var in node.xmlGetChildNodeList('var_prop'):

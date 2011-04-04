@@ -74,7 +74,7 @@ from Pages.ThermalRadiationModel import ThermalRadiationModel
 
 class XMLinit(Variables):
     """
-    This class initialize the XML contents of the case.
+    This class initializes the XML contents of the case.
     """
     def __init__(self, case):
         """
@@ -172,7 +172,7 @@ class XMLinit(Variables):
                    'additional_scalars',
                    'boundary_conditions',
                    'analysis_control',
-                   'calcul_management')
+                   'calculation_management')
 
         for tag in tagList:
             nodeList = self.root.xmlInitChildNodeList(tag)
@@ -208,6 +208,12 @@ class XMLinit(Variables):
         for node in self.case.xmlGetNodeList('postprocessing_format',
                                              choice='MED_fichier'):
             node['choice'] = 'MED'
+
+        oldnode = self.case.xmlGetNode('calcul_management')
+        if oldnode:
+            newnode = self.case.xmlInitNode('calculation_management')
+            newnode.xmlChildsCopy(oldnode)
+            oldnode.xmlRemoveNode()
 
 
 #-------------------------------------------------------------------------------
@@ -316,7 +322,7 @@ class XMLinitTestCase(unittest.TestCase):
                         '<property label="FourierNb" name="fourier_number">'\
                 '</time_parameters>'\
         '</analysis_control>'\
-        '<calcul_management/>'\
+        '<calculation_management/>'\
         '</Code_Saturne_GUI>'
 
         XMLinit(self.case)

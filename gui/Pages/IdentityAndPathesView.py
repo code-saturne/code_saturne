@@ -199,25 +199,17 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
 
             if os.path.isdir(self.spath) and meshes_dir in os.listdir(self.spath):
                 self.mdl.setPath(self.path[4], os.path.abspath(self.spath + '/' + meshes_dir))
-                self.lineEditMeshPath.setText(QtCore.QString(meshes_dir))
-                self.setStatusTip("")
                 self.mdl.setRelevantSubdir("yes", self.path[4])
             else:
                 self.mdl.setPath(self.path[4], "")
-                self.lineEditMeshPath.setText(msgError)
-                msg = self.tr("Warning: the MESH directory "\
-                              "is required, at the level of the case directory.")
-                self.lineEditMeshPath.setStatusTip(msg)
                 self.mdl.setRelevantSubdir("no", self.path[4])
 
         else:
-            for i in range(0,4) :
+            for i in range(0, 4):
                 line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX
                 line.setText(unknown_dir)
-            self.lineEditMeshPath.setText(unknown_dir)
 
             msg = self.tr("Warning: the given directory does not exist.")
-            self.lineEditMeshPath.setStatusTip(msg)
             self.mdl.setRelevantSubdir("no", '')
 
 

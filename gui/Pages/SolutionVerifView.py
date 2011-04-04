@@ -111,45 +111,63 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         # Prepare preprocessing
 
-        self.preprocess_cmd = []
-        nodeList = self.mdl.node_meshes.xmlGetNodeList('mesh', 'name')
+        mesh_input = None
+        node = self.mdl.node_meshes.xmlGetNode('mesh_input', 'path')
+        if node:
+            mesh_input = node['path']
+            if mesh_input:
+                if not os.path.isabs(mesh_input):
+                    mesh_input = os.path.join(self.case['case_path'], mesh_input)
 
-        if len(nodeList) > 1:
-            os.mkdir('mesh_input')
+        if mesh_input:
+            try:
+                os.symlink(mesh_input, 'mesh_input')
+            except AttributeError:
+                shutil.copy2(mesh_input, 'mesh_input')
 
-        for meshNode in nodeList:
+        else:
 
-            cmd = self.case['package'].get_preprocessor()
+            self.preprocess_cmd = []
+            nodeList = self.mdl.node_meshes.xmlGetNodeList('mesh', 'name')
 
-            name   = meshNode['name']
-            format = meshNode['format']
-            mesh = self.case['mesh_path'] + '/' + name
-            cmd += ' --mesh ' + mesh
-            if meshNode['num']:
-                cmd += ' --num ' + meshNode['num']
-            if meshNode['grp_fac']:
-                cmd += ' --grp-fac ' + meshNode['grp_fac']
-            if meshNode['grp_cel']:
-                cmd += ' --grp-cel ' + meshNode['grp_cel']
-
-            cmd += ' ' + self.__getPostCommand()
-
-            # Limit postprocessing output to errors and info.
-
-            cmd += ' --info'
-
-            cmd += ' --case preprocess'
             if len(nodeList) > 1:
-                str_add = '_%02d' % (len(self.preprocess_cmd) + 1)
-                cmd += str_add
-                cmd += ' --out ' + os.path.join('mesh_input', 'mesh' + str_add)
-            else:
-                cmd += ' --out mesh_input'
-            log.debug("ecs_cmd = %s" % cmd)
+                os.mkdir('mesh_input')
 
-            self.preprocess_cmd.append(cmd)
+            for meshNode in nodeList:
 
-        self.__preProcess()
+                cmd = self.case['package'].get_preprocessor()
+
+                name   = meshNode['name']
+                format = meshNode['format']
+                mesh = self.case['mesh_path'] + '/' + name
+                cmd += ' --mesh ' + mesh
+                if meshNode['num']:
+                    cmd += ' --num ' + meshNode['num']
+                if meshNode['reorient'] == 'on':
+                    cmd += ' --reorient'
+                if meshNode['grp_fac']:
+                    cmd += ' --grp-fac ' + meshNode['grp_fac']
+                if meshNode['grp_cel']:
+                    cmd += ' --grp-cel ' + meshNode['grp_cel']
+
+                cmd += ' ' + self.__getPostCommand()
+
+                # Limit postprocessing output to errors and info.
+
+                cmd += ' --info'
+
+                cmd += ' --case preprocess'
+                if len(nodeList) > 1:
+                    str_add = '_%02d' % (len(self.preprocess_cmd) + 1)
+                    cmd += str_add
+                    cmd += ' --out ' + os.path.join('mesh_input', 'mesh' + str_add)
+                else:
+                    cmd += ' --out mesh_input'
+                log.debug("ecs_cmd = %s" % cmd)
+
+                self.preprocess_cmd.append(cmd)
+
+            self.__preProcess()
 
 
     def __preProcess(self):
@@ -240,7 +258,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         # Cleanup
         mesh_input = os.path.join(self.exec_dir, 'mesh_input')
-        if os.path.isdir(mesh_input):
+        if os.path.isdir(mesh_input) and not os.path.islink(mesh_input):
             shutil.rmtree(mesh_input)
         else:
             os.remove(mesh_input)
@@ -259,7 +277,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         format = self.out2.getPostProFormat()
         if format == "EnSight":
             l = " --ensight"
-        elif format == "MED_fichier":
+        elif format == "MED":
             l = " --med"
         elif format == "CGNS":
             l = " --cgns"
@@ -365,7 +383,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.modelPolyhedra      = ComboModel(self.comboBoxPolyhedra, 3, 1)
 
         self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'EnSight')
-        self.modelFMTCHR.addItem(self.tr("MED"), 'MED_fichier')
+        self.modelFMTCHR.addItem(self.tr("MED"), 'MED')
         self.modelFMTCHR.addItem(self.tr("CGNS"), 'CGNS')
 
         self.modelFormat.addItem(self.tr("binary"), 'binary')
@@ -469,8 +487,6 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
             if format == 'EnSight':
                 if opt == 'big_endian':
                     self.checkBoxBigEndian.setChecked(True)
-##                if opt == 'split_tensors':
-##                    self.opt_splittens.set('on')
 
         if 'discard_polygons' not in list and 'divide_polygons' not in list:
             self.modelPolygon.setItem(str_model="display")
@@ -478,8 +494,6 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
             self.modelPolyhedra.setItem(str_model="display")
         if 'big_endian' not in list:
             self.checkBoxBigEndian.setChecked(False)
-##        if 'split_tensors' not in list:
-##            self.opt_splittens.set('off')
 
         # enable and disable options related to the format
 

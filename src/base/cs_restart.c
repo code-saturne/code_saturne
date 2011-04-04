@@ -143,6 +143,10 @@ static size_t         _restart_pointer_size = 2;
 static cs_restart_t  *_restart_pointer_base[2] = {NULL, NULL};
 static cs_restart_t **_restart_pointer = _restart_pointer_base;
 
+/* Do we have a restart directory ? */
+
+static int _restart_present = 0;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -820,6 +824,25 @@ _restart_permute_write(cs_int_t           n_ents,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Indicate if a restart directory is present.
+ *
+ * Fortran interface
+ *
+ * subroutine indsui (isuite)
+ * *****************
+ *
+ * integer          isuite      : --> : 1 for restart, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (indsui, INDSUI)
+(
+ cs_int_t   *isuite
+)
+{
+  *isuite = cs_restart_present();
+}
+
+/*----------------------------------------------------------------------------
  * Open a restart file
  *
  * Fortran interface
@@ -1206,6 +1229,24 @@ void CS_PROCF (ecrsui, ECRSUI)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Check if we have a restart directory.
+ *
+ * returns:
+ *   1 if a restart directory is present, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_present(void)
+{
+  if (! _restart_present) {
+     if (bft_file_isdir("restart"))
+       _restart_present = 1;
+  }
+
+  return _restart_present;
+}
 
 /*----------------------------------------------------------------------------
  * Initialize a restart file

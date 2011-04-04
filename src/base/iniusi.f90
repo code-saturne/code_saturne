@@ -432,7 +432,8 @@ if(iihmpr.eq.1) then
              isca, iscapp)
 
 !     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
-  call csisui(isuite, ntsuit, ileaux, iccvfg)
+
+  call csisui(ntsuit, ileaux, iccvfg)
   !==========
 
 !     Pas de temps (seulement NTMABS, DTREF, INPDT0)
@@ -511,6 +512,8 @@ endif
 call usipsu(nmodpp , iverif)
 !==========
 
+call indsui(isuite)
+!==========
 
 ! --- Varpos
 !      4ieme passage

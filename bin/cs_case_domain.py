@@ -31,6 +31,7 @@ import stat
 
 import cs_config
 import cs_compile
+import cs_xml_reader
 
 from cs_exec_environment import run_command
 
@@ -303,13 +304,35 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
-    def solver_args(self, **kw):
+    def solver_command(self, **kw):
         """
         Returns a tuple indicating the solver's working directory,
         executable path, and associated command-line arguments.
         """
 
         return self.exec_dir, self.solver_path, ''
+
+    #---------------------------------------------------------------------------
+
+    def summary_info(self, s):
+        """
+        Output summary data into file s
+        """
+
+        if self.name:
+            name = self.name
+            exec_dir = os.path.join(self.exec_dir, name)
+            result_dir = os.path.join(self.result_dir, name)
+        else:
+            name = os.path.basename(self.case_dir)
+            exec_dir = self.exec_dir
+            result_dir = self.result_dir
+
+        s.write('  Case           : ' + name + '\n')
+        s.write('    directory    : ' + self.case_dir + '\n')
+        s.write('    results dir. : ' + self.result_dir + '\n')
+        if exec_dir != result_dir:
+            s.write('    exec. dir.   : ' + self.exec_dir + '\n')
 
 #-------------------------------------------------------------------------------
 
@@ -325,18 +348,8 @@ class domain(base_domain):
                  n_procs_min = None,          # min. number of processes
                  n_procs_max = None,          # max. number of processes
                  n_procs_partition = None,    # n. processes for partitioner
-                 meshes = None,               # name or names of mesh files
-                 mesh_dir = None,             # mesh database directory
-                 reorient = False,            # reorient badly-oriented meshes
-                 partition_list = None,       # list of partitions
-                 partition_opts = None,       # partitioner options
-                 mode_args = None,            # --quality or --benchmark ?
                  logging_args = None,         # command-line options for logging
                  param = None,                # XML parameters file
-                 thermochemistry_data = None, # file name
-                 meteo_data = None,           # meteo. profileFile name
-                 user_input_files = None,     # file name or names
-                 user_scratch_files = None,   # file or directory name or names
                  lib_add = None,              # linker command-line options
                  adaptation = None):          # HOMARD adaptation script
 
@@ -348,7 +361,7 @@ class domain(base_domain):
 
         # Directories, and files in case structure
 
-        self.restart_input_dir = None
+        self.restart_input = None
         self.mesh_input = None
         self.partition_input = None
 
@@ -358,46 +371,46 @@ class domain(base_domain):
 
         # Preprocessor options
 
-        if mesh_dir is not None:
-            self.mesh_dir = os.path.expanduser(mesh_dir)
+        self.mesh_input = None
 
-        if type(meshes) == list:
-            self.meshes = meshes
-        else:
-            self.meshes = [meshes,]
-        self.reorient = reorient
+        self.mesh_dir = None
+        self.meshes = None
 
         # Partition options
 
+        self.exec_partition = True
+
         self.partition_n_procs = n_procs_partition
-        self.partition_list = partition_list
-        self.partition_opts = partition_opts
+        self.partition_list = None
+        self.partition_args = None
 
         # Solver options
 
-        self.mode_args = mode_args
-
-        self.logging_args = logging_args
+        self.exec_solver = True
 
         self.param = param
+        self.logging_args = logging_args
+        self.solver_args = None
+
+        self.valgrind = None
 
         # Additional data
 
-        self.thermochemistry_data = thermochemistry_data
-        self.meteo_data = meteo_data
+        self.thermochemistry_data = None
+        self.meteo_data = None
 
-        self.user_input_files = user_input_files
-        self.user_scratch_files = user_scratch_files
+        self.user_input_files = None
+        self.user_scratch_files = None
 
         self.lib_add = lib_add
 
-        # Adaptation using HOMARD
-        self.adaptation = adaptation
+        # MPI IO (if available: options are: 'off', 'eo', 'ip')
 
-        # Steps to execute
-        self.exec_preprocess = True
-        self.exec_partition = True
-        self.exec_solver = True
+        self.mpi_io = None
+
+        # Adaptation using HOMARD
+
+        self.adaptation = adaptation
 
     #---------------------------------------------------------------------------
 
@@ -416,9 +429,62 @@ class domain(base_domain):
 
         base_domain.set_case_dir(self, case_dir)
 
-        self.restart_input_dir = os.path.join(self.data_dir, 'restart')
-        self.mesh_input = os.path.join(self.data_dir, 'mesh_input')
-        self.partition_input = os.path.join(self.data_dir, 'partition')
+        # We may now import user python script functions if present.
+
+        user_scripts = os.path.join(self.data_dir, 'cs_user_scripts.py')
+        if os.path.isfile(user_scripts):
+
+            sys.path.insert(0, self.data_dir)
+            import cs_user_scripts
+            reload(cs_user_scripts) # In case of multiple domains
+            sys.path.pop(0)
+
+            try:
+                cs_user_scripts.define_domain_parameter_file(self)
+                del cs_user_scripts.define_domain_parameter_file
+            except AttributeError:
+                pass
+
+            try:
+                self.define_case_parameters \
+                    = cs_user_scripts.define_case_parameters
+                del cs_user_scripts.define_case_parameters
+            except AttributeError:
+                pass
+
+            try:
+                self.define_mpi_environment \
+                    = cs_user_scripts.define_mpi_environment
+                del cs_user_scripts.define_mpi_environment
+            except AttributeError:
+                pass
+
+        # We may now parse the optional XML parameter file
+        # now that its path may be built and checked.
+
+        if self.param != None:
+            root_str = self.package.code_name + '_GUI'
+            version_str = '2.0'
+            P = cs_xml_reader.Parser(os.path.join(self.data_dir,
+                                                  self.param),
+                                                  root_str = root_str,
+                                                  version_str = version_str)
+            params = P.getParams()
+            for k in params.keys():
+                self.__dict__[k] = params[k]
+
+        # Now override or complete data from the XML file.
+
+        try:
+            cs_user_scripts.define_domain_parameters(self)
+            del cs_user_scripts.define_domain_parameters
+        except AttributeError:
+            pass
+
+        # Finally, ensure some fields are of the required types
+
+        if type(self.meshes) != list:
+            self.meshes = [self.meshes,]
 
     #---------------------------------------------------------------------------
 
@@ -475,7 +541,7 @@ class domain(base_domain):
                      + fnmatch.filter(dir_files, '*.cpp')
                      + fnmatch.filter(dir_files, '*.[fF]90'))
 
-        if len(src_files) > 0:
+        if self.exec_solver and len(src_files) > 0:
             return True
         else:
             return False
@@ -552,100 +618,14 @@ class domain(base_domain):
         Copy preprocessor data to execution directory
         """
 
-        if self.exec_preprocess == False:
+        # If we are using a prior preprocessing, simply link to it here
+        if self.mesh_input:
+            mesh_input = os.path.expanduser(self.mesh_input)
+            if not os.path.isabs(mesh_input):
+                mesh_input = os.path.join(self.case_dir, mesh_input)
+            link_path = os.path.join(self.exec_dir, 'mesh_input')
+            self.symlink(mesh_input, link_path)
             return
-
-        # Study directory
-        study_dir = os.path.split(self.case_dir)[0]
-
-        # User config file
-        u_cfg = ConfigParser.ConfigParser()
-        u_cfg.read(os.path.expanduser('~/.' + self.package.configfile))
-
-        # Global config file
-        g_cfg = ConfigParser.ConfigParser()
-        g_cfg.read(self.package.get_configfile())
-
-        # A mesh can be found in different mesh database directories
-        # (case, study, user, global -- in this order)
-        mesh_dirs = []
-        if self.mesh_dir is not None:
-            mesh_dirs.append(self.mesh_dir)
-        if os.path.isdir(os.path.join(study_dir, 'MESH')):
-            mesh_dirs.append(os.path.join(study_dir, 'MESH'))
-        if u_cfg.has_option('run', 'meshdir'):
-            mesh_dirs.append(u_cfg.get('run', 'meshdir'))
-        if g_cfg.has_option('run', 'meshdir'):
-            mesh_dirs.append(g_cfg.get('run', 'meshdir'))
-
-        # Symlink the different meshes
-        for mesh in self.meshes:
-
-            if mesh is None:
-                err_str = 'Preprocessing stage required but no mesh is given'
-                raise RunCaseError(err_str)
-
-            if (type(mesh) == tuple):
-                mesh = mesh[0]
-
-            mesh = os.path.expanduser(mesh)
-
-            if os.path.isabs(mesh):
-                mesh_path = mesh
-            elif len(mesh_dirs) > 0:
-                for mesh_dir in mesh_dirs:
-                    mesh_path = os.path.join(mesh_dir, mesh)
-                    if os.path.isfile(mesh_path):
-                        break
-            else:
-                err_str = 'No mesh directory given'
-                raise RunCaseError(err_str)
-
-            if not os.path.isfile(mesh_path):
-                err_str = 'Mesh file ' + mesh + ' not found'
-                raise RunCaseError(err_str)
-
-            base_name = os.path.basename(mesh_path)
-
-            link_path = os.path.join(self.exec_dir, base_name)
-            self.symlink(mesh_path, link_path)
-
-            # Special case for meshes in EnSight format: link to .geo file
-            # necessary (retrieve name through .case file)
-            base, ext = os.path.splitext(base_name)
-            if ext == '.case':
-                try:
-                    f = open(mesh_path)
-                    text = f.read(4096) # Should be largely sufficient
-                    f.close()
-                    m = re.search('^model:.*$', text, re.MULTILINE)
-                    geo_name = (m.group()).split()[1]
-                    mesh_path = os.path.join(self.mesh_dir, geo_name)
-                    link_path = os.path.join(self.exec_dir, geo_name)
-                    self.symlink(mesh_path, link_path)
-                except Exception:
-                    err_str = 'Model file name not found in ' + mesh_path
-                    raise RunCaseError(err_str)
-
-    #---------------------------------------------------------------------------
-
-    def copy_preprocessor_output_data(self):
-        """
-        Copy or link mesh_input file or directory to the execution directory,
-        required both for the partitioner and the solver.
-        """
-
-        if self.exec_preprocess:
-            return
-        elif not (self.exec_partition or self.exec_solver):
-            return
-
-        if self.mesh_input != None:
-            self.symlink(self.mesh_input,
-                         os.path.join(self.exec_dir, 'mesh_input'))
-        else:
-            err_str = 'Error: no path name given for link to: ' + target
-            raise RunCaseError(err_str)
 
     #---------------------------------------------------------------------------
 
@@ -654,14 +634,17 @@ class domain(base_domain):
         Copy solver data to the execution directory
         """
 
-        if self.exec_solver == False:
+        if not self.exec_solver:
             return
 
         if self.n_procs < 2:
             self.exec_partition = False
         elif self.exec_partition == False and self.partition_input != None:
+            partition_input = os.path.expanduser(self.partition_input)
+            if not os.path.isabs(partition_input):
+                partition_input = os.path.join(self.case_dir, partition_input)
             part_name = 'domain_number_' + str(self.n_procs)
-            partition = os.path.join(self.partition_input, part_name)
+            partition = os.path.join(partition_input, part_name)
             if os.path.isfile(partition):
                 part_dir = os.path.join(self.exec_dir, 'partition')
                 if not os.path.isdir(part_dir):
@@ -684,15 +667,19 @@ class domain(base_domain):
 
         # Restart files
 
-        if self.restart_input_dir != None:
+        if self.restart_input != None:
 
-            if os.path.exists(self.restart_input_dir):
+            restart_input =  os.path.expanduser(self.restart_input)
+            if not os.path.isabs(restart_input):
+                restart_input = os.path.join(self.case_dir, restart_input)
 
-                if not os.path.isdir(self.restart_input_dir):
-                    err_str = self.restart_input_dir + ' is not a directory.'
+            if os.path.exists(restart_input):
+
+                if not os.path.isdir(restart_input):
+                    err_str = restart_input + ' is not a directory.'
                     raise RunCaseError(err_str)
                 else:
-                    self.symlink(self.restart_input_dir,
+                    self.symlink(restart_input,
                                  os.path.join(self.exec_dir, 'restart'))
 
         # Data for specific physics
@@ -729,8 +716,38 @@ class domain(base_domain):
         Runs the preprocessor in the execution directory
         """
 
-        if self.exec_preprocess == False:
+        if self.mesh_input:
             return
+
+        # Study directory
+        study_dir = os.path.split(self.case_dir)[0]
+
+        # User config file
+        u_cfg = ConfigParser.ConfigParser()
+        u_cfg.read(os.path.expanduser('~/.' + self.package.configfile))
+
+        # Global config file
+        g_cfg = ConfigParser.ConfigParser()
+        g_cfg.read(self.package.get_configfile())
+
+        # A mesh can be found in different mesh database directories
+        # (case, study, user, global -- in this order)
+        mesh_dirs = []
+        if self.mesh_dir is not None:
+            mesh_dir = os.path.expanduser(self.mesh_dir)
+            if not os.path.isabs(mesh_dir):
+                mesh_dir = os.path.join(self.case_dir, mesh_dir)
+            mesh_dirs.append(mesh_dir)
+        if os.path.isdir(os.path.join(study_dir, 'MESH')):
+            mesh_dirs.append(os.path.join(study_dir, 'MESH'))
+        if u_cfg.has_option('run', 'meshdir'):
+            add_path = u_cfg.get('run', 'meshdir').split(':')
+            for d in add_path:
+                mesh_dirs.append(d)
+        if g_cfg.has_option('run', 'meshdir'):
+            add_path = g_cfg.get('run', 'meshdir').split(':')
+            for d in add_path:
+                mesh_dirs.append(d)
 
         # Switch to execution directory
 
@@ -754,20 +771,37 @@ class domain(base_domain):
 
         for m in self.meshes:
 
-            # Build command
+            # Get absolute mesh paths
 
-            cmd = self.package.get_preprocessor()
+            if m is None:
+                err_str = 'Preprocessing stage required but no mesh is given'
+                raise RunCaseError(err_str)
 
             if (type(m) == tuple):
-                cmd += ' --mesh ' + os.path.basename(m[0])
+                m = m[0]
+
+            m = os.path.expanduser(m)
+
+            mesh_path = m
+            if (not os.path.isabs(m)) and len(mesh_dirs) > 0:
+                for mesh_dir in mesh_dirs:
+                    mesh_path = os.path.join(mesh_dir, m)
+                    if os.path.isfile(mesh_path):
+                        break
+
+            if not os.path.isfile(mesh_path):
+                err_str = 'Mesh file ' + mesh + ' not found'
+                if not (os.path.isabs(mesh_file) or mesh_dirs):
+                    err_str += '(no mesh directory given)'
+                raise RunCaseError(err_str)
+
+            # Build command
+
+            cmd = self.package.get_preprocessor() + ' --mesh ' + mesh_path
+
+            if (type(m) == tuple):
                 for opt in m[1:]:
                     cmd += ' ' + opt
-
-            else:
-                cmd += ' --mesh ' + os.path.basename(m)
-
-            if self.reorient:
-                cmd += ' --reorient'
 
             if (mesh_id != None):
                 mesh_id += 1
@@ -809,8 +843,13 @@ class domain(base_domain):
         Tests if the partitioner is available and partitioning is defined.
         """
 
+        if self.n_procs < 2:
+            self.exec_partition = False
+
         if (self.exec_partition == False):
             return
+
+        w_str = None
 
         partitioner = self.package.get_partitioner()
         if not os.path.isfile(partitioner):
@@ -819,26 +858,16 @@ class domain(base_domain):
                     'Warning: ' + partitioner + ' not found.\n\n' \
                     'The partitioner may not have been installed' \
                     '  (this is the case if neither METIS nor SCOTCH ' \
-                    ' are available).\n\n' \
-                    'Partitioning by a space-filling curve will be used.\n\n'
-                sys.stderr.write(w_str)
-            self.exec_partition = False
-            self.partition_n_procs = None
-
-        if self.partition_list == None and not self.exec_solver:
-            err_str = \
-                'Unable to run the partitioner:\n' \
-                'The list of required partitionings is not set.\n' \
-                'It should contain the number of processors for which a\n' \
-                'partition is required, or a list of such numbers.\n'
-            raise RunCaseError(err_str)
+                    ' are available).\n\n'
 
         if os.path.isdir(os.path.join(self.exec_dir, 'mesh_input')):
             w_str = \
                 'Warning: mesh_input is a directory\n\n' \
                 'The Kernel must be run to concatenate its contents\n' \
-                ' before graph-based partitioning is available.\n\n' \
-                'Partitioning by a space-filling curve will be used.\n\n'
+                ' before graph-based partitioning is available.\n\n'
+
+        if w_str:
+            w_str += 'Partitioning by a space-filling curve will be used.\n\n'
             sys.stderr.write(w_str)
             self.exec_partition = False
             self.partition_n_procs = None
@@ -858,8 +887,11 @@ class domain(base_domain):
 
         cmd = self.package.get_partitioner()
 
-        if self.partition_opts != None:
-            cmd += ' ' + self.partition_opts
+        if self.logging_args != None:
+            cmd += ' ' + self.logging_args
+
+        if self.partition_args != None:
+            cmd += ' ' + self.partition_args
 
         if self.partition_list != None:
             cmd += ' ' + any_to_str(self.partition_list)
@@ -896,7 +928,7 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def partitioner_args(self):
+    def partitioner_command(self):
         """
         Returns a tuple indicating the partitioner's working directory,
         executable path, and associated command-line arguments.
@@ -910,11 +942,17 @@ class domain(base_domain):
 
         args = ''
 
+        if self.logging_args != None:
+            args += ' ' + self.logging_args
+
         if self.partition_n_procs > 1:
             args += ' --mpi'
 
-        if self.partition_opts != None:
-            args += ' ' + self.partition_opts
+        if self.mpi_io != None:
+            args += ' --mpi-io ' + self.mpi_io
+
+        if self.partition_args != None:
+            args += ' ' + self.partition_args
 
         if self.partition_list != None:
             args += ' ' + any_to_str(self.partition_list)
@@ -936,7 +974,7 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def solver_args(self, **kw):
+    def solver_command(self, **kw):
         """
         Returns a tuple indicating the solver's working directory,
         executable path, and associated command-line arguments.
@@ -955,13 +993,16 @@ class domain(base_domain):
         if self.logging_args != None:
             args += ' ' + self.logging_args
 
-        if self.mode_args != None:
-            args += ' ' + self.mode_args
+        if self.solver_args != None:
+            args += ' ' + self.solver_args
 
         if self.name != None:
             args += ' --mpi --app-name ' + self.name
         elif self.n_procs > 1:
             args += ' --mpi'
+
+        if self.mpi_io != None:
+            args += ' --mpi-io ' + self.mpi_io
 
         if 'syr_port' in kw:
             args += ' --syr-socket ' + str(kw['syr_port'])
@@ -982,34 +1023,14 @@ class domain(base_domain):
         and remove preprocessor input files if necessary.
         """
 
+        if self.mesh_input:
+            return
+
         # Determine if we should purge the execution directory
 
         purge = True
         if self.error == 'preprocess':
             purge = False
-
-        # Remove input data if necessary
-
-        if purge:
-            for mesh in self.meshes:
-                if mesh is None:
-                    pass
-                elif (type(mesh) == tuple):
-                    mesh = mesh[0]
-                try:
-                    # Special case for meshes in EnSight format
-                    base, ext = os.path.splitext(mesh)
-                    m = os.path.join(self.exec_dir, mesh)
-                    if ext == '.case':
-                        f = open(os.path.join(self.exec_dir, mesh))
-                        text = f.read(4096) # Should be largely sufficient
-                        f.close()
-                        l = re.search('^model:.*$', text, re.MULTILINE)
-                        g = (l.group()).split()[1]
-                        os.remove(os.path.join(self.exec_dir, g))
-                    os.remove(m)
-                except Exception:
-                    pass
 
         # Copy log file(s) first
 
@@ -1047,6 +1068,9 @@ class domain(base_domain):
         Retrieve partition results from the execution directory
         """
 
+        if not self.exec_partition:
+            return
+
         # Determine if we should purge the execution directory
 
         purge = True
@@ -1067,7 +1091,7 @@ class domain(base_domain):
 
         d = os.path.join(self.exec_dir, 'partition')
 
-        if not self.exec_solver:
+        if self.partition_list or not self.exec_solver:
             if os.path.isdir(d):
                 self.copy_result(d, purge)
         elif purge:
@@ -1075,7 +1099,7 @@ class domain(base_domain):
 
         # Purge mesh_input if it was used solely by the partitioner
 
-        if not (self.exec_preprocess or self.exec_solver):
+        if self.mesh_input and self.exec_solver == False:
             if self.error == '':
                 self.purge_result('mesh_input')
 
@@ -1085,6 +1109,9 @@ class domain(base_domain):
         """
         Retrieve solver results from the execution directory
         """
+
+        if not self.exec_solver:
+            return
 
         # Determine all files present in execution directory
 
@@ -1102,9 +1129,13 @@ class domain(base_domain):
 
         purge_list = []
 
-        for f in ['mesh_input', 'partition', 'restart']:
+        for f in ['mesh_input', 'restart']:
             if f in dir_files:
                 purge_list.append(f)
+
+        f = 'partition'
+        if f in dir_files and (not self.partition_list):
+            purge_list.append(f)
 
         # Determine files from this stage to ignore or to possibly remove
 
@@ -1163,6 +1194,26 @@ class domain(base_domain):
 
         for f in dir_files:
             self.copy_result(f, purge)
+
+    #---------------------------------------------------------------------------
+
+    def summary_info(self, s):
+        """
+        Output summary data into file s
+        """
+
+        base_domain.summary_info(self, s)
+
+        if not self.mesh_input:
+            p = self.package.get_preprocessor()
+            s.write('    preprocessor : ' + any_to_str(p) + '\n')
+
+        if self.exec_partition:
+            p = self.package.get_partitioner()
+            s.write('    partitioner  : ' + any_to_str(p) + '\n')
+
+        if self.exec_solver:
+            s.write('    solver       : ' + self.solver_path + '\n')
 
 #-------------------------------------------------------------------------------
 
@@ -1279,7 +1330,7 @@ class syrthes3_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def solver_args(self, **kw):
+    def solver_command(self, **kw):
         """
         Returns a tuple indicating SYRTHES's working directory,
         executable path, and associated command-line arguments.
@@ -1385,6 +1436,18 @@ class syrthes3_domain(base_domain):
             raise RunCaseError
 
         os.chdir(cwd)
+
+    #---------------------------------------------------------------------------
+
+    def summary_info(self, s):
+        """
+        Output summary data into file s
+        """
+
+        base_domain.__init__(self)
+
+        if self.solver_path:
+            s.write('    SYRTHES      : ' + self.solver_path + '\n')
 
 #-------------------------------------------------------------------------------
 
@@ -1492,7 +1555,7 @@ class syrthes_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def solver_args(self, **kw):
+    def solver_command(self, **kw):
         """
         Returns a tuple indicating SYRTHES's working directory,
         executable path, and associated command-line arguments.
@@ -1644,6 +1707,18 @@ class syrthes_domain(base_domain):
         if retval != 0:
             err_str = '\n   Error saving SYRTHES results\n'
             raise RunCaseError(err_str)
+
+    #---------------------------------------------------------------------------
+
+    def summary_info(self, s):
+        """
+        Output summary data into file s
+        """
+
+        base_domain.__init__(self)
+
+        if self.solver_path:
+            s.write('    SYRTHES      : ' + self.solver_path + '\n')
 
 #-------------------------------------------------------------------------------
 # End

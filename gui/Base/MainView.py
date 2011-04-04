@@ -73,7 +73,6 @@ except:
 
 from Pages.WelcomeView import WelcomeView
 from Pages.IdentityAndPathesModel import IdentityAndPathesModel
-from Pages.ScriptRunningModel import ScriptRunningModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -96,8 +95,7 @@ class MainView(QMainWindow, Ui_MainForm):
                  package          = None,
                  cmd_case         = "",
                  cmd_batch_window = False,
-                 cmd_batch_file   = 'runcase_batch',
-                 cmd_script_file   = 'runcase',
+                 cmd_batch_file   = 'runcase',
                  cmd_tree_window  = True,
                  cmd_read_only    = False,
                  cmd_salome       = None):
@@ -177,16 +175,16 @@ class MainView(QMainWindow, Ui_MainForm):
 
         # create some instance variables
 
-        self.cmd_case   = cmd_case
-        self.salome     = cmd_salome
-        self.batch_type = cs_batch_type
-        self.batch      = cmd_batch_window
-        self.batch_file = cmd_batch_file
-        self.script_file = cmd_script_file
-        self.tree_w     = cmd_tree_window
-        self.read_o     = cmd_read_only
-        self.notree     = 0
-        self.package    = package
+        self.cmd_case    = cmd_case
+        self.salome      = cmd_salome
+        self.batch_type  = cs_batch_type
+        self.batch       = cmd_batch_window
+        self.batch_file  = cmd_batch_file
+        self.batch_lines = []
+        self.tree_w      = cmd_tree_window
+        self.read_o      = cmd_read_only
+        self.notree      = 0
+        self.package     = package
 
         self.resize(800, 700)
         #self.setMaximumSize(QSize(2000, 900))
@@ -226,6 +224,7 @@ class MainView(QMainWindow, Ui_MainForm):
         self.statusbar.showMessage(self.tr("Ready"), 5000)
 #        self.setMaximumSize(QSize(700, 600))
 #        self.setMinimumSize(QSize(700, 600))
+
 
     @staticmethod
     def updateInstances(qobj):
@@ -378,9 +377,6 @@ class MainView(QMainWindow, Ui_MainForm):
         self.IdPthMdl.setPathI('mesh_path',
                                os.path.abspath(os.path.split(file_dir)[0] + '/' + 'MESH'))
         self.case['batch'] =  self.batch_file
-        self.case['script'] = self.script_file
-        self.case['backupBatch'] = False
-        self.case['backupScript'] = False
         del IdentityAndPathesModel
 
         self.updateStudyId()
@@ -531,7 +527,7 @@ class MainView(QMainWindow, Ui_MainForm):
         # check if the file to load is not already loaded
         if hasattr(self, 'case'):
             if not self.fileAlreadyLoaded(file_name):
-                MainView(cmd_case = file_name).show()
+                MainView(package=self.package, cmd_case = file_name).show()
         else:
             self.loadFile(file_name)
 
@@ -645,7 +641,7 @@ class MainView(QMainWindow, Ui_MainForm):
 
         if hasattr(self, 'case'):
             if not self.fileAlreadyLoaded(file_name):
-                MainView(cmd_case = file_name).show()
+                MainView(package=self.package, cmd_case = file_name).show()
         else:
             self.loadFile(file_name)
 
@@ -720,8 +716,15 @@ class MainView(QMainWindow, Ui_MainForm):
 
         self.updateStudyId()
         self.case.xmlSaveDocument()
+        self.batchFileSave()
 
         log.debug("fileSave(): ok")
+
+        if self.case['batch'] and self.batch_lines:
+            batch = self.case['scripts_path'] + "/" + self.case['batch']
+            f = open(batch, 'w')
+            f.writelines(self.batch_lines)
+            f.close()
 
         msg = self.tr("%s saved" % file_name)
         self.statusbar.showMessage(msg, 2000)
@@ -750,16 +753,83 @@ class MainView(QMainWindow, Ui_MainForm):
                 self.fileSave()
                 self.updateStudyId()
                 self.case.xmlSaveDocument()
+                self.batchFileSave()
                 title = os.path.basename(self.case['xmlfile']) + " - " + self.tr(self.package.code_name) + self.tr(" GUI")
                 self.setWindowTitle(title)
-
-                if self.case['script']:
-                    mdl = ScriptRunningModel(self.case)
-                    mdl.updateScriptFile('PARAMETERS')
 
             else:
                 msg = self.tr("Saving aborted")
                 self.statusbar.showMessage(msg, 2000)
+
+
+    def batchFileUpdate(self):
+        """
+        Update the run command
+        """
+        cmd_name = self.case['package'].name
+        parameters = os.path.basename(self.case['xmlfile'])
+        batch_lines = self.batch_lines
+
+        # If filename has whitespace, protect it
+        if parameters.find(' ') > -1:
+            parameters = '"' + parameters + '"'
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:1] != '#':
+                line = batch_lines[i].strip()
+                index = string.find(line, cmd_name)
+                if index < 0:
+                    continue
+                if line[index + len(cmd_name):].strip()[0:3] != 'run':
+                    continue
+                index = string.find(line, '--param')
+                if index >= 0:
+                    # Find file name, possibly protected by quotes
+                    # (protection by escape character not handled)
+                    index += len('--param')
+                    end = len(line)
+                    while index < end and line[index] in (' ', '\t'):
+                        index += 1
+                    if index < end:
+                        sep = line[index]
+                        if sep == '"' or sep == "'":
+                            index += 1
+                        else:
+                            sep = ' '
+                        start = index
+                        while index < end and line[index] != sep:
+                            index += 1
+                        end = index
+                        batch_lines[i] = line[0:start].strip() \
+                            + ' ' + parameters + ' ' + line[end:].strip() + '\n'
+                    else:
+                        batch_lines[i] = line + ' --param ' + parameters + '\n'
+                else:
+                    batch_lines[i] = line + ' --param ' + parameters + '\n'
+
+        self.batch_lines = batch_lines
+
+
+    @pyqtSignature("")
+    def batchFileSave(self):
+        """
+        public slot
+
+        save the current case
+        """
+        log.debug("batchFileSave()")
+
+        if not hasattr(self, 'case'):
+            return
+
+        if self.case['batch'] and self.batch_lines:
+
+            self.batchFileUpdate()
+
+            batch = self.case['scripts_path'] + "/" + self.case['batch']
+            f = open(batch, 'w')
+            f.writelines(self.batch_lines)
+            f.close()
 
 
     @pyqtSignature("")

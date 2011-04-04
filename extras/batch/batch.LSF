@@ -20,5 +20,3 @@
 # Change to submission drectory
 cd $LS_SUBCWD
 
-# Launch runcase script
-./scriptname

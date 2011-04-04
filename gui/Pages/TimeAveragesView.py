@@ -242,7 +242,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
         # Is it a following calculation ?
 
-        if StartRestartModel(self.case).getRestart() == 'off':
+        if not StartRestartModel(self.case).getRestartPath():
             self.labelRestart.setDisabled(True)
             self.comboBoxIMOOLD.setDisabled(True)
             self.lineEditRestart.setDisabled(True)
@@ -382,7 +382,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             log.debug("slotAddAverage -> %s" % (label,))
 
             ntdmom = self.start
-            if StartRestartModel(self.case).getRestart() != 'off':
+            if StartRestartModel(self.case).getRestartPath():
                 imoold = self.restart
             else:
                 imoold = self.mdl.defaultValues()['restart']
@@ -452,7 +452,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
                 log.debug("slotEditAverage -> %s" % (new_label,))
 
                 new_start = self.start
-                if StartRestartModel(self.case).getRestart() != 'off':
+                if StartRestartModel(self.case).getRestartPath():
                     new_restart = self.restart
                 else:
                     new_restart = self.mdl.defaultValues()['restart']
@@ -478,7 +478,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.lineEditAverage.setText(QString(label))
         self.lineEditStart.setText(QString(str(ntdmom)))
 
-        if StartRestartModel(self.case).getRestart() != 'off':
+        if StartRestartModel(self.case).getRestartPath():
             if not imoold or imoold == -2:
                 imoold = -2
                 choice = "automatic"
@@ -520,7 +520,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         self.lineEditAverage.setText(str(""))
         self.lineEditStart.setText(str(""))
-        if StartRestartModel(self.case).getRestart() == 'on':
+        if not StartRestartModel(self.case).getRestartPath():
             self.lineEditRestart.setText(str(""))
         self.modelDrop.setStringList(QStringList())
         self.treeViewAverage.clearSelection()

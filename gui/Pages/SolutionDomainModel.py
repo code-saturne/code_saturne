@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2010 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -49,6 +49,31 @@ from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
+# Utility function
+#-------------------------------------------------------------------------------
+
+def RelOrAbsPath(path, case_dir):
+    """
+    Return a relative filepath in a same study, an absolute path otherwise.
+    """
+
+    study_dir = os.path.split(case_dir)[0]
+
+    if path.find(study_dir) == 0:
+
+        if hasattr(os.path, 'relpath'):
+            return os.path.relpath(path, case_dir)
+
+        elif path.find(case_dir) == 0:
+            return path[len(case_dir)+1:]
+
+        else:
+            return os.path.join('..', path[len(study_dir)+1:])
+
+    else:
+        return path
+
+#-------------------------------------------------------------------------------
 # Class Mesh Model
 #-------------------------------------------------------------------------------
 
@@ -62,16 +87,15 @@ class MeshModel:
 
         Initialize the dictionary file extension => format.
         """
-        self.ext = {}
-        self.ext['case']  = "ensight"
-        self.ext['cgns']  = "cgns"
-        self.ext['des']   = "des"
-        self.ext['med']   = "med"
-        self.ext['msh']   = "gmsh"
-        self.ext['neu']   = "gambit"
-        self.ext['ccm']   = "ccm"
-        self.ext['ngeom'] = "ngeom"
-        self.ext['unv']   = "ideas"
+        self.ext = {'case':'ensight',
+                    'cgns':'cgns',
+                    'des':'des',
+                    'med':'med',
+                    'msh':'gmsh',
+                    'neu':'gambit',
+                    'ccm':'ccm',
+                    'ngeom':'ngeom',
+                    'unv':'ideas'}
 
 
     def getMeshExtension(self, mesh):
@@ -121,35 +145,19 @@ class MeshModel:
         Public method.
 
         @return: List of number, format and description for view of popup.
-        @rtype: C{List} of C{3-tuple}
+        @rtype: C{List} of C{2-tuple}
         """
-        list = [(0,  'ensight', 'EnSight (6 or Gold) ".case"' ),
-                (1,  'cgns',    'CGNS ".cgns"'                ),
-                (2,  'des',     'Simail (NOPO) ".des"'        ),
-                (3,  'med',     'MED ".med"'                  ),
-                (4,  'gmsh',    'Gmsh ".msh"'                 ),
-                (5,  'gambit',  'GAMBIT Neutral ".neu"'       ),
-                (6,  'ccm',     'STAR-CCM+ ".ccm"'            ),
-                (7,  'ngeom',   'pro-STAR/STAR4 ".ngeom"'     ),
-                (8,  'ideas',   'I-deas universal ".unv"'     )]
+        list = [('ensight', 'EnSight',          ' (*.case)' ),
+                ('cgns',    'CGNS',             ' (*.cgns)' ),
+                ('des',     'Simail/NOPO',      ' (*.des)'  ),
+                ('med',     'MED',              ' (*.med)'  ),
+                ('gmsh',    'Gmsh',             ' (*.msh)'  ),
+                ('gambit',  'GAMBIT Neutral',   ' (*.neu)'  ),
+                ('ccm',     'STAR-CCM+',        ' (*.ccm)'  ),
+                ('ngeom',   'pro-STAR/STAR4',   ' (*.ngeom)'),
+                ('ideas',   'I-deas universal', ' (*.unv)'  )]
 
         return list
-
-
-    def getMeshFormatDescription(self, format):
-        """
-        Public method.
-
-        @type format: C{String}
-        @param format: name of the I{format} (ensight, cgns,...)
-        @return: Description of I{format}.
-        @rtype: C{String}
-        """
-        label = ''
-        for line in self.getBuildFormatList():
-            if format == line[1]:
-                label = line[2]
-        return label
 
 
     def getFileFormatList(self):
@@ -163,7 +171,7 @@ class MeshModel:
                 ("EnSight (6 or Gold) files", "*.case" ),
                 ("CGNS files",                "*.cgns" ),
                 ("Simail (NOPO) files",       "*.des"  ),
-                ("MED  files",                "*.med"  ),
+                ("MED files",                 "*.med"  ),
                 ("GMSH files",                "*.msh"  ),
                 ("GAMBIT Neutral files",      "*.neu"  ),
                 ("STAR-CCM+",                 "*.ccm"  ),
@@ -191,7 +199,6 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_ecs        = self.case.xmlGetNode('solution_domain')
         self.node_meshes     = self.node_ecs.xmlInitNode('meshes_list')
         self.node_cut        = self.node_ecs.xmlInitNode('faces_cutting', "status")
-        self.node_orient     = self.node_ecs.xmlInitNode('reorientation', "status")
         self.node_join       = self.node_ecs.xmlInitNode('joining')
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
         self.node_standalone = self.node_ecs.xmlInitNode('standalone')
@@ -205,7 +212,6 @@ class SolutionDomainModel(MeshModel, Model):
         """
         defvalue = {}
         defvalue['cutting_status'] = "off"
-        defvalue['reorientation']  = "off"
         defvalue['select_status']  = "off"
         defvalue['selector']       = "all[]"
         defvalue['fraction']       = 0.1
@@ -226,19 +232,22 @@ class SolutionDomainModel(MeshModel, Model):
         return defvalue
 
 
-    def _updateScriptFile(self, keyword):
+    def _getMeshNode(self, mesh):
         """
-        Update, for keyword, the backup file if it's ready to run.
+        Public method. Return the node matching a mesh.
         """
-        self.isInList(keyword,('MESHES',
-                               'REORIENT'))
-        if not self.case['script']: return
+        nodeList = self.node_meshes.xmlGetNodeList('mesh', 'name')
+        for node in nodeList:
+            name = node['name']
+            path = node['path']
+            if path == '':
+                path = None
+            if (name, path) == mesh:
+                return node
 
-        from Pages.ScriptRunningModel import ScriptRunningModel
-        script = ScriptRunningModel(self.case)
-        script.initializeScriptFile()
-        script.updateScriptFile(keyword)
-        del ScriptRunningModel
+        msg = "There is an error: this value " + str(mesh) + "\n"\
+            "is not in list " + str(nodeList) + "\n"
+        raise ValueError(msg)
 
 
 #To follow : private methods to get or put faces
@@ -414,6 +423,35 @@ class SolutionDomainModel(MeshModel, Model):
 
 #************************* Methods callable by users*****************************
 
+# Methods to manage the mesh_input path
+#======================================
+
+    def getMeshInput(self):
+        """
+        Public method. Return the mesh_input file or directory path.
+        """
+        mesh_input = self.node_ecs.xmlGetNode('mesh_input', 'path')
+        if mesh_input:
+            return mesh_input['path']
+        else:
+            return None
+
+
+    def setMeshInput(self, mesh_input):
+        """
+        Public method. Add mesh_input path name in xml file.
+        """
+
+        if mesh_input == '':
+            mesh_input = None
+
+        node = self.node_ecs.xmlInitNode('mesh_input', 'path')
+        if mesh_input:
+            node['path'] = mesh_input
+        else:
+            node.xmlRemoveNode()
+
+
 # Methods to manage meshes :
 #=========================
 
@@ -423,24 +461,23 @@ class SolutionDomainModel(MeshModel, Model):
         """
         self.isNotInList(mesh, self.getMeshList())
         if not format:
-            format = MeshModel().getMeshFormat(mesh)
+            format = MeshModel().getMeshFormat(mesh[0])
         else:
             self.isInList(format, MeshModel().ext.values())
 
-        self.node_meshes.xmlInitNode('mesh', name=mesh, format=format)
-        self._updateScriptFile('MESHES')
+        if mesh[1] != None:
+            self.node_meshes.xmlInitNode('mesh',
+                                         name=mesh[0], format=format, path=mesh[1])
+        else:
+            self.node_meshes.xmlInitNode('mesh', name=mesh[0], format=format)
 
 
     def delMesh(self, mesh):
         """
         Public method. Delete node for mesh named "mesh" in xml file
         """
-        self.isInList(mesh, self.getMeshList())
-        nodeList = self.node_meshes.xmlGetNodeList('mesh', 'name')
-        for node in nodeList:
-            if node['name'] == mesh:
-                node.xmlRemoveNode()
-        self._updateScriptFile('MESHES')
+        node = self._getMeshNode(mesh)
+        node.xmlRemoveNode()
 
 
     def getMeshList(self):
@@ -450,64 +487,89 @@ class SolutionDomainModel(MeshModel, Model):
         meshList = []
         nodeList = self.node_meshes.xmlGetNodeList('mesh', 'name')
         for node in nodeList:
-            meshList.append(node['name'])
+            name = node['name']
+            path = node['path']
+            if path == '':
+                path = None
+            meshList.append((name, path))
         return meshList
+
+
+    def setMeshFormat(self, mesh, format):
+        """
+        Public method. Set the mesh format.
+        """
+        node = self._getMeshNode(mesh)
+        if not format or format == MeshModel().getMeshFormat(mesh[0]):
+            del node['format']
+        else:
+            node['format'] = format
 
 
     def getMeshFormat(self, mesh):
         """
-        Public method. Return the mesh name format recorded in the case.
+        Public method. Return the mesh format recorded in the case.
         """
-        self.isInList(mesh, self.getMeshList())
-        return self.node_meshes.xmlGetNode('mesh', name=mesh)['format']
+        node = self._getMeshNode(mesh)
+        format = node['format']
+        if not format:
+            format = MeshModel().getMeshFormat(mesh[0])
+        return format
 
 
-    def getMeshExtendedFormat(self, mesh):
+    def setMeshNumbers(self, mesh, num):
         """
-        Public method. Return the mesh extended format.
+        Public method. Set the mesh number(s).
         """
-        fmt = MeshModel().getMeshFormat(mesh)
-        for line in MeshModel().getBuildFormatList():
-            if fmt == line[1]:
-                label = line[2]
-        return label
+        node = self._getMeshNode(mesh)
+        if not num:
+            del node['num']
+        else:
+            node['num'] = num
 
 
-    def setMeshNumber(self, mesh, num):
-        """
-        Public method. Put the mesh number.
-        """
-        self.isInList(mesh, self.getMeshList())
-        self.isInt(num)
-        self.isGreater(num, 0)
-
-        self.node_meshes.xmlGetNode('mesh', name=mesh)['num'] = num
-        self._updateScriptFile('MESHES')
-
-
-    def getMeshNumber(self, mesh):
+    def getMeshNumbers(self, mesh):
         """
         Public method. Return the mesh number recorded in the case.
         """
-        self.isInList(mesh, self.getMeshList())
-        num = self.node_meshes.xmlGetNode('mesh', name=mesh)['num']
-        if num:
-            num = int(num)
-        return num
+        node = self._getMeshNode(mesh)
+        return node['num']
 
 
     def setMeshGroupCells(self, mesh, grp_cel):
         """
         Public method. Put the grp-cel option.
         """
-        self.isInList(mesh, self.getMeshList())
+        node = self._getMeshNode(mesh)
         self.isInList(grp_cel, ('off', 'section', 'zone'))
 
         if grp_cel == "off":
-            del self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_cel']
+            del node['grp_cel']
         else:
-            self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_cel'] = grp_cel
-        self._updateScriptFile('MESHES')
+            node['grp_cel'] = grp_cel
+
+
+    def setMeshReorient(self, mesh, reorient):
+        """
+        Public method. Put the grp-cel option.
+        """
+        node = self._getMeshNode(mesh)
+
+        if reorient == False:
+            del node['reorient']
+        else:
+            node['reorient'] = 'on'
+
+
+    def getMeshReorient(self, mesh):
+        """
+        Public method. Return the mesh 'grp-cel' sub-option recorded in the case.
+        """
+        node = self._getMeshNode(mesh)
+        reorient = False
+        if node['reorient'] == 'on':
+            reorient = True
+        return reorient
 
 
     def getMeshGroupCells(self, mesh):
@@ -521,14 +583,13 @@ class SolutionDomainModel(MeshModel, Model):
         """
         Public method. Put the 'grp-fac' sub-option.
         """
-        self.isInList(mesh, self.getMeshList())
+        node = self._getMeshNode(mesh)
         self.isInList(grp_fac, ('off', 'section', 'zone'))
 
         if grp_fac == "off":
-            del self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_fac']
+            del node['grp_fac']
         else:
-            self.node_meshes.xmlGetNode('mesh', name=mesh)['grp_fac'] = grp_fac
-        self._updateScriptFile('MESHES')
+            node['grp_fac'] = grp_fac
 
 
     def getMeshGroupFaces(self, mesh):
@@ -542,11 +603,72 @@ class SolutionDomainModel(MeshModel, Model):
         """
         Private method. Return the mesh 'grp_fac' or 'grp_cel' sub-option recorded in the case.
         """
-        self.isInList(mesh, self.getMeshList())
-        grp = self.node_meshes.xmlGetNode('mesh', name=mesh)[group]
+        node = self._getMeshNode(mesh)
+        grp = node[group]
         if grp == None:
             grp = 'off'
         return grp
+
+
+    def getMeshDir(self):
+        """
+        Public method. Return the meshdir directory name.
+        """
+        meshnode = self.node_meshes.xmlGetNode('meshdir', 'name')
+        if meshnode != None:
+            meshdir = meshnode['name']
+            if not os.path.isabs(meshdir):
+                meshdir = os.path.join(self.case['case_path'], meshdir)
+            meshdir = os.path.abspath(meshdir)
+            return meshdir
+        else:
+            return None
+
+
+    def setMeshDir(self, mesh_dir):
+        """
+        Public method. Add mesh name in xml file.
+        """
+
+        case_dir = self.case['case_path']
+
+        if mesh_dir:
+            if not os.path.isabs(mesh_dir):
+                mesh_dir = os.path.join(case_dir, mesh_dir)
+            mesh_dir = os.path.abspath(mesh_dir)
+
+        node = self.node_meshes.xmlInitNode('meshdir', 'name')
+        if mesh_dir:
+            study_dir = os.path.split(case_dir)[0]
+            node['name'] = RelOrAbsPath(mesh_dir, case_dir)
+        else:
+            node.xmlRemoveNode()
+
+        old_mesh_dir = self.case['mesh_path']
+        self.case['mesh_path'] = mesh_dir
+
+        nodeList = self.node_meshes.xmlGetNodeList('mesh', 'name')
+        for node in nodeList:
+            name = node['name']
+            path = node['path']
+            # Rebuild absolute name
+            if path != None and path !='':
+                name = os.path.join(path, name)
+            if not os.path.isabs(name) and old_mesh_dir != None:
+                name = os.path.join(old_mesh_dir, name)
+            # Split components
+            if os.path.isfile(name):
+                path = os.path.dirname(name)
+                if mesh_dir != None:
+                    index = path.find(mesh_dir)
+                    if index == 0:
+                        path = path[len(mesh_dir)+1:]
+                if len(path) > 0:
+                    node['path'] = path
+                else:
+                    del node['path']
+
+
 
 # Methods to manage status of all main tags :
 #==========================================
@@ -589,26 +711,6 @@ class SolutionDomainModel(MeshModel, Model):
         if angle == None:
             angle = self.defaultValues()['angle']
         return angle
-
-
-    def getOrientation(self):
-        """
-        Get status on tag "reorientation" from xml file
-        """
-        status = self.node_orient['status']
-        if not status:
-            status = self.defaultValues()['reorientation']
-            self.setOrientation(status)
-        return status
-
-
-    def setOrientation(self, status):
-        """
-        Put status on tag "reorientation" in xml file
-        """
-        self.isOnOff(status)
-        self.node_orient['status'] = status
-        self._updateScriptFile('REORIENT')
 
 
     def getSimCommStatus(self):
@@ -1002,8 +1104,8 @@ class SolutionDomainModel(MeshModel, Model):
             self._updateJoinSelectionNumbers()
 
 
-# In following methods we build command for "runcase" file
-#=========================================================
+# In following methods we build the command to run the Preprocessor
+#==================================================================
 
     def getMeshCommand(self):
         """
@@ -1015,32 +1117,22 @@ class SolutionDomainModel(MeshModel, Model):
         for meshNode in nodeList:
             name   = meshNode['name']
             format = meshNode['format']
-            #f = string.split(string.split(name,".")[1]," ")[0]
-            #if f not in .getExtensionFileList():
-            #         name=string.split(name," ")[0]
             mesh = self.case['mesh_path'] + '/' + name
             lines += " -m " + mesh
 
+            if meshNode['format']:
+                lines += " --format " + meshNode['format']
             if meshNode['num']:
                 lines += " --num " + meshNode['num']
             if meshNode['grp_fac']:
                 lines += " --grp-fac " + meshNode['grp_fac']
             if meshNode['grp_cel']:
                 lines += " --grp-cel " + meshNode['grp_cel']
+            if meshNode['reorient']:
+                lines += " --reorient"
 
         lines += " "
         return lines
-
-
-    def getReorientCommand(self):
-        """
-        Get reorient value for preprocessor execution
-        """
-        line = 'False'
-        if self.node_orient and self.node_orient['status'] == 'on':
-            line = 'True'
-
-        return line
 
 
     def getSimCommCommand(self):
@@ -1062,44 +1154,12 @@ class SolutionDomainModel(MeshModel, Model):
         iok = 0
         if self.getPostProFormat() == "EnSight":
             line = ' --ensight '
-        if self.getPostProFormat() == "MED_fichier":
+        if self.getPostProFormat() == "MED":
             line = ' --med '
         if self.getPostProFormat() == "CGNS":
             line = ' --cgns '
 
-        options = self.getPostProOptionsFormat()
-        options = string.split(options, ',')
-
-        for opt in options:
-            if opt in ('binary', 'discard_polygons', 'discard_polyhedra'):
-                line = line
-            if opt in ('divide_polygons', 'divide_polyhedra'):
-                opt = line + ' --divide-poly '
-            if opt == "big_endian":
-                line = line + ' --big_endian '
-
         return line
-
-
-# These following methods are kept only for tkInter View
-#=======================================================
-
-    def getListNodes(self, tagName):
-        """
-        Return node corresponding at the selection (only for view)
-        """
-        node = self._getTagNode(tagName)
-        listNode = node.xmlGetNodeList(tagName)
-
-        return listNode
-
-
-    def getStatusNode(self, node):
-        """
-        Return status for node "node"
-        """
-        if node : status = node['status']
-        return status
 
 
 #-------------------------------------------------------------------------------
@@ -1707,9 +1767,10 @@ class MeshModelTestCase(unittest.TestCase):
         mdl = MeshModel()
 
         for f in self.files:
-          fmt = mdl.getMeshFormat(f[0])
-          if fmt:
-              assert fmt == mdl.ext[f[1]], 'could not get the mesh format'
+            m = (f[0], "")
+            fmt = mdl.getMeshFormat(m)
+            if fmt:
+                assert fmt == mdl.ext[f[1]], 'could not get the mesh format'
 
 
 def suite1():

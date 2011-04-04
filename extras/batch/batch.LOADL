@@ -35,5 +35,3 @@
 # Change to submission drectory
 cd $LOADL_STEP_INITDIR
 
-# Launch runcase script
-./scriptname

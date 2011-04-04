@@ -1,4 +1,3 @@
-#!/bin/bash
 #-------------------------------------------------------------------------------
 #
 # Batch options for IBM LoadLeveler (example: BlueGene/P)
@@ -8,8 +7,6 @@
 # "xloadl", choose the "build job" option; select options,
 # then select "save". Options and their matching syntax
 # may then be inferred from the saved file.
-#
-# @ shell = bash
 #
 # @ job_name = nameandcase
 # @ step_name = runcase
@@ -41,5 +38,3 @@
 # Change to submission drectory
 cd $LOADL_STEP_INITDIR
 
-# Launch runcase script
-./scriptname

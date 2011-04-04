@@ -167,7 +167,6 @@ ProfilesForm.ui \
 QMeiEditorForm.ui \
 ReferenceValuesForm.ui \
 SolutionDomainForm.ui \
-SolutionDomainMeshFormatDialogForm.ui \
 SolutionVerifForm.ui \
 StartRestartAdvancedDialogForm.ui \
 StartRestartForm.ui \

@@ -29,7 +29,6 @@
 
 """
 This module modify the batch file
-- BatchModel
 - BatchRunningModel
 """
 #-------------------------------------------------------------------------------
@@ -53,55 +52,19 @@ from Base.XMLvariables import Variables, Model
 # Class BatchRunningModel
 #-------------------------------------------------------------------------------
 
-class BatchModel:
-    """
-    """
-    def __init__(self, case):
-        """
-        Constructor.
-        """
-        self.case = case
-
-        if not self.case['batch']:
-            self.case['batch'] = ""
-
-        if not self.case['backupBatch']:
-            self.case['backupBatch'] = False
-
-
 class BatchRunningModel(Model):
     """
     This class modifies the batch file (runcase_batch)
     """
-    def __init__(self, case):
+    def __init__(self, parent, case):
         """
         Constructor.
         """
+        self.parent = parent
         self.case = case
 
-        BatchModel(self.case)
-
-        # Is a batch file present ?
-
-        self.batch1 = self.case['scripts_path'] + "/" + self.case['batch']
-
-        if not os.path.isfile(self.batch1):
-            return
-
-        # Save a backup file before any modification.
-        # There is only one backup for the entire session.
-
-        batch2 = self.batch1 + "~"
-
-        # Read the batch file line by line.
-        # All lines are stored in a list called "self.batch_lines".
-
-        f = open(self.batch1, 'rw')
-        self.batch_lines = f.readlines()
-        f.close()
-
-        for i in range(len(self.batch_lines)):
-            self.batch_lines[i] = self.batch_lines[i].rstrip(' \t')
+        if not self.case['batch']:
+            self.case['batch'] = ""
 
         self.dictValues = {}
 
@@ -113,16 +76,15 @@ class BatchRunningModel(Model):
         self.dictValues['job_class'] = None
         self.dictValues['job_group'] = None
 
-        if self.case['backupBatch'] == False:
-            shutil.copy2(self.batch1, batch2)
-            self.case['backupBatch'] = True
+        # Is a batch file present ?
 
+        self.batch1 = os.path.join(self.case['scripts_path'], self.case['batch'])
 
-    def initializeBatchFile(self):
-        """
-        Currently empty
-        """
-        pass
+        if os.path.isfile(self.batch1):
+            if self.parent.batch_lines:
+                self.parseBatchFile()
+            else:
+                self.readBatchFile()
 
 
     def preParse(self, s):
@@ -142,7 +104,7 @@ class BatchRunningModel(Model):
         """
         Parse Platform LSF batch file lines
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:5] == '#MSUB':
@@ -166,7 +128,7 @@ class BatchRunningModel(Model):
         """
         Update the Platform LSF batch file lines
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:5] == '#MSUB':
@@ -192,7 +154,7 @@ class BatchRunningModel(Model):
         """
         Parse LoadLeveler batch file lines
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0] == '#':
@@ -233,7 +195,7 @@ class BatchRunningModel(Model):
         Update the LoadLeveler batch file from dictionary self.dictValues.
         """
 
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0] == '#':
@@ -271,7 +233,7 @@ class BatchRunningModel(Model):
         """
         Parse Platform LSF batch file lines
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:5] == '#BSUB':
@@ -298,7 +260,7 @@ class BatchRunningModel(Model):
         """
         Update the Platform LSF batch file lines
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:5] == '#BSUB':
@@ -323,7 +285,7 @@ class BatchRunningModel(Model):
         """
         Parse PBS batch file lines
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         # TODO: specialize for PBS Professional and TORQUE (OpenPBS has not been
         # maintained since 2004, so we do not support it).
@@ -369,7 +331,7 @@ class BatchRunningModel(Model):
         """
         Update the PBS batch file from dictionary self.dictValues.
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:4] == '#PBS':
@@ -403,7 +365,7 @@ class BatchRunningModel(Model):
         """
         Parse Sun Grid Engine batch file lines
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:2] == '#$':
@@ -439,7 +401,7 @@ class BatchRunningModel(Model):
         """
         Update the Sun Grid Engine batch file lines
         """
-        batch_lines = self.batch_lines
+        batch_lines = self.parent.batch_lines
 
         for i in range(len(batch_lines)):
             if batch_lines[i][0:2] == '#$':
@@ -475,10 +437,45 @@ class BatchRunningModel(Model):
 
     def readBatchFile(self):
         """
-        Fill self.dictValues reading the backup file.
+        Fill self.dictValues reading the batch file.
         """
 
-        if self.case['batch_type'][0:3] == 'CCC':
+        if not self.case['batch']:
+            return
+
+        self.batch1 = os.path.join(self.case['scripts_path'], self.case['batch'])
+        if not os.path.isfile(self.batch1):
+            return
+
+        # Read the batch file line by line.
+        # All lines are stored in a list called "self.batch_lines".
+
+        f = open(self.batch1, 'r')
+        batch_lines = f.readlines()
+        f.close()
+
+        for i in range(len(batch_lines)):
+            batch_lines[i] = batch_lines[i].rstrip(' \t')
+
+        self.parent.batch_lines = batch_lines
+
+
+        # Parse lines depending on batch type
+
+        self.parseBatchFile()
+
+
+    def parseBatchFile(self):
+        """
+        Fill self.dictValues reading the batch file.
+        """
+
+        # Parse lines depending on batch type
+
+        if self.case['batch_type'] == None:
+            return
+
+        elif self.case['batch_type'][0:3] == 'CCC':
             self.parseBatchCCC()
         elif self.case['batch_type'][0:5] == 'LOADL':
             self.parseBatchLOADL()
@@ -489,12 +486,9 @@ class BatchRunningModel(Model):
         elif self.case['batch_type'][0:3] == 'SGE':
             self.parseBatchSGE()
 
-        self.initializeBatchFile()
-
-
     def updateBatchFile(self, keyword=None):
         """
-        Update the backup file from reading dictionary self.dictValues.
+        Update the batch file from reading dictionary self.dictValues.
         If keyword == None, all keywords are updated
         If keyword == key, only key is updated.
         """
@@ -505,20 +499,28 @@ class BatchRunningModel(Model):
                 self.dictValues[k] = None
         self.isInList(keyword, l)
 
-        if self.case['batch_type'][0:3] == 'CCC':
-            self.updateBatchCCC()
-        elif self.case['batch_type'][0:5] == 'LOADL':
-            self.updateBatchLOADL()
-        elif self.case['batch_type'][0:3] == 'LSF':
-            self.updateBatchLSF()
-        elif self.case['batch_type'][0:3] == 'PBS':
-            self.updateBatchPBS()
-        elif self.case['batch_type'][0:3] == 'SGE':
-            self.updateBatchSGE()
+        batch_type = self.case['batch_type']
+        if batch_type:
+            if batch_type[0:3] == 'CCC':
+                self.updateBatchCCC()
+            elif batch_type[0:5] == 'LOADL':
+                self.updateBatchLOADL()
+            elif batch_type[0:3] == 'LSF':
+                self.updateBatchLSF()
+            elif batch_type[0:3] == 'PBS':
+                self.updateBatchPBS()
+            elif batch_type[0:3] == 'SGE':
+                self.updateBatchSGE()
 
-        f = open(self.batch1, 'w')
-        f.writelines(self.batch_lines)
-        f.close()
+
+    def _getRegex(self, word):
+        """
+        Get regular expression to extract line without comment
+        """
+        # handles both comments and "$word":
+        regex = re.compile(r"""(^(?#)^\s*(?<!$)""" + word + r""".*$)""")
+
+        return regex
 
 
 #-------------------------------------------------------------------------------
@@ -542,7 +544,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         self.case['batch_type'] = None
         self.case['scripts_path'] = os.getcwd()
         self.case['batch'] = 'runcase_batch'
-        self.case['backupBatch'] = True
 
         lance_PBS = '# test \n'\
         '#\n'\

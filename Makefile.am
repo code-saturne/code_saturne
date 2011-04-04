@@ -156,7 +156,7 @@ edit_config = sed \
 	-e 's|@ROOT_SALOME[@]|$(ROOT_SALOME)|g' \
 	-e 's|@SALOME_VERSION[@]|$(SALOME_VERSION)|g'
 
-bin/code_saturne bin/runcase bin/runcase_coupling: Makefile
+bin/code_saturne bin/runcase_coupling: Makefile
 	rm -f $@ $@.tmp
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
@@ -172,12 +172,11 @@ bin/cs_package.py bin/runcase_aster: Makefile
 
 bin/code_saturne: $(srcdir)/bin/code_saturne.in 
 bin/cs_package.py: $(srcdir)/bin/cs_package.py.in 
-bin/runcase: $(srcdir)/bin/runcase.in 
 bin/runcase_aster: $(srcdir)/bin/runcase_aster.in 
 bin/runcase_coupling: $(srcdir)/bin/runcase_coupling.in 
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase.in bin/runcase_coupling.in
+EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase_coupling.in
 
 # Install binary scripts
 
@@ -206,22 +205,22 @@ bin/cs_create.py \
 bin/cs_exec_environment.py \
 bin/cs_gui.py \
 bin/cs_info.py \
+bin/cs_run.py \
 bin/cs_salome.py \
-bin/cs_script.py
+bin/cs_script.py \
+bin/cs_xml_reader.py
 
 # Install user scripts
 
 nodist_pkgdata_DATA = \
-bin/runcase \
+bin/cs_user_scripts.py \
 bin/runcase_aster \
 bin/runcase_coupling \
 bin/SaturneGUI
 
-dist_pkgdata_SCRIPTS = \
-bin/runcase_mpi_rank \
-bin/runcase_syrthes
+dist_pkgdata_SCRIPTS =
 
-# Install thermochemistry data files
+# Install thermochemistry and other data files
 
 nobase_dist_pkgdata_DATA = \
 data/thch/dp_C3P \

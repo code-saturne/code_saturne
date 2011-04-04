@@ -214,7 +214,8 @@ cs_run(void)
 
   /* Call main calculation initialization function or help */
 
-  _verif = (opts.verif == true || opts.benchmark > 0) ? 1 : 0;
+  _verif = (   (opts.preprocess | opts.verif) == true
+            || opts.benchmark > 0) ? 1 : 0;
 
   CS_PROCF(initi1, INITI1)(&_verif);
 
@@ -314,7 +315,7 @@ cs_run(void)
 
   /* Initialize meshes for the main post-processing */
 
-  check_mask = (opts.verif == true) ? 2 + 1 : 0;
+  check_mask = ((opts.preprocess | opts.verif) == true) ? 2 + 1 : 0;
 
   cs_post_init_main_meshes(check_mask);
 
@@ -344,6 +345,8 @@ cs_run(void)
     cs_mesh_quality(cs_glob_mesh, cs_glob_mesh_quantities);
     cs_mesh_coherency_check();
   }
+  else if (opts.preprocess == true)
+    cs_mesh_coherency_check();
 
   if (opts.benchmark > 0) {
     int mpi_trace_mode = (opts.benchmark == 2) ? 1 : 0;
@@ -415,7 +418,7 @@ cs_run(void)
                               cs_glob_mesh_quantities->cell_vol);
   }
 
-  if (opts.benchmark <= 0) {
+  if (opts.preprocess == false && opts.benchmark <= 0) {
 
     /* Check that mesh seems valid */
 

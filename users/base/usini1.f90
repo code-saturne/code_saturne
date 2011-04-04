@@ -930,12 +930,10 @@ endif
 ! Calculation options (optcal.h)
 ! ==============================
 
-! --- Calculation restart: isuite (= 1) or not (0)
 !     In case of restart, read auxiliary restart file ileaux (= 1) or not (0).
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-isuite = 0
 ileaux = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END

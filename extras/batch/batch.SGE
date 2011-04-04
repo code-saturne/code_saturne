@@ -25,5 +25,3 @@
 # Change to submission directory
 cd $SGE_O_WORKDIR
 
-# Launch runcase script
-./scriptname

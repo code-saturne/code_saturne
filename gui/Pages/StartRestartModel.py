@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -64,7 +64,7 @@ class StartRestartModel(Model):
         Constuctor.
         """
         self.case = case
-        node_magt = self.case.xmlInitNode('calcul_management')
+        node_magt = self.case.xmlInitNode('calculation_management')
         self.node_start = node_magt.xmlInitNode('start_restart')
 
 
@@ -81,30 +81,29 @@ class StartRestartModel(Model):
         return default
 
 
-    def getRestart(self):
+    def getRestartPath(self):
         """
-        Return if this calcul is restarted with a restart file
+        Return restart path if applicable
         """
-        node = self.node_start.xmlInitNode('restart', 'status')
-        restart = node['status']
+        node = self.node_start.xmlInitNode('restart', 'path')
+        restart = node['path']
         if not restart:
-            restart = self._defaultStartRestartValues()['restart']
-            self.setRestart(restart)
+            restart = None
+            self.setRestartPath(restart)
         return restart
 
 
-    def setRestart(self, v):
+    def setRestartPath(self, v):
         """
-        Set status if we continue calculation or not
+        Set restart path if applicable
         """
-        self.isOnOff(v)
-        node = self.node_start.xmlInitNode('restart', 'status')
-        node['status'] = v
-        if v == 'off':
-            self.node_start.xmlRemoveChild('current_restart')
+        node = self.node_start.xmlInitNode('restart', 'path')
+        if v:
+            node['path'] = v
+        else:
+            node.xmlRemoveNode()
             for n in self.case.xmlGetNodeList('time_average'):
                 n.xmlRemoveChild('restart_from_time_average')
-
 
 
     def getFrozenField(self):
@@ -149,7 +148,9 @@ class StartRestartModel(Model):
             val = self._defaultStartRestartValues()['restart_rescue']
             self.setRestartRescue(val)
         else:
-            if val == -1:
+            if val == -2:
+                period = "Never"
+            elif val == -1:
                 period = "At the end"
             else:
                 period = "Frequency"
@@ -173,18 +174,6 @@ class StartRestartModel(Model):
         self.node_start.xmlSetData('restart_rescue', freq)
 
 
-    def getRestartDirectory(self):
-        """ Convenient method only for the View """
-        return self.node_start.xmlGetString('current_restart')
-
-
-    def setRestartDirectory(self, dir):
-        """ Convenient method only for the View """
-#        if not os.path.isdir(self.case['resu_path'] + "/" + dir):
-#            raise ValueError,  "Invalid restart directory %s" % dir
-        self.node_start.xmlSetData('current_restart', dir)
-
-
 #-------------------------------------------------------------------------------
 # StartRestartModel test case
 #-------------------------------------------------------------------------------
@@ -206,14 +195,14 @@ class StartRestartTestCase(ModelTest):
         Check whether the restart method could be set and get
         """
         model = StartRestartModel(self.case)
-        model.setRestart("on")
+        model.setRestartPath("RESU/test/restart")
         doc= '''<start_restart>
-                    <restart status="on"/>
+                    <restart path="RESU/test/restart"/>
                 </start_restart>'''
 
         assert model.node_start == self.xmlNodeFromString(doc),\
                     'Could not set restart in StartRestart model'
-        assert model.getRestart() == 'on',\
+        assert model.getRestartPath() == 'RESU/test/restart',\
                     'Could not get restart in StartRestart model'
 
     def checkSetandGetFrozenStatus(self):
@@ -249,29 +238,6 @@ class StartRestartTestCase(ModelTest):
         assert model.getRestartWithAuxiliaryStatus() == "on",\
                 'Could not get auxiliary restart status in StartRestart model'
 
-##    def checkSetandGetMainandAxiliaryRestartFormat(self):
-##        """
-##        Check whether the Main and Auxiliary Restart format method
-##        could be set and get
-##        """
-##        model = StartRestartModel(self.case)
-##        model.setRestart("on")
-##        model.setRestartWithAuxiliaryStatus('on')
-##        model.setMainRestartFormat('binary')
-##        model.setAuxiliaryRestartFormat('ascii')
-##        doc= '''<start_restart>
-##                    <restart status="on"/>
-##                    <restart_with_auxiliary status="on"/>
-##                    <main_restart format="binary"/>
-##                    <auxiliary_restart format="ascii"/>
-##                </start_restart>'''
-##        assert model.node_start == self.xmlNodeFromString(doc),\
-##                'Could not set main and auxiliary restart formats in StartRestart model'
-##        assert model.getMainRestartFormat() == "binary",\
-##                'Could not get main restart format in StartRestart model'
-##        assert model.getAuxiliaryRestartFormat() == "ascii",\
-##                'Could not get auxiliary restart format in StartRestart model'
-
     def checkSetandGetRestartRescue(self):
         """
         Check whether the  Restart rescue could be set and get
@@ -297,27 +263,6 @@ class StartRestartTestCase(ModelTest):
                 'Could not get restart rescue value in StartRestart model'
         assert period == "At the end",\
                 'Could not get restart rescue period in StartRestart model'
-
-    def checksetRestartDirectory(self):
-        """
-        Check whether the setRestartDirectory method could be set
-        """
-        model = StartRestartModel(self.case)
-        model.setRestart("on")
-        model.setRestartDirectory('RESTART.11221504')
-        doc = '''<start_restart>
-                    <restart status="on"/>
-                    <current_restart>RESTART.11221504</current_restart>
-                 </start_restart>'''
-        assert model.node_start == self.xmlNodeFromString(doc),\
-                'Could not update restart directory in StartRestart model'
-
-        model.setRestart("off")
-        doc = '''<start_restart>
-                    <restart status="off"/>
-                 </start_restart>'''
-        assert model.node_start == self.xmlNodeFromString(doc),\
-                'Could not remove the restart directory in StartRestart model'
 
 
 def suite():

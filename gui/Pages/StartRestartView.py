@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -55,6 +55,7 @@ from PyQt4.QtGui  import *
 
 from Base.Toolbox import GuiParam
 from Base.QtPage import ComboModel, IntValidator, setGreenColor
+from Pages.SolutionDomainModel import RelOrAbsPath
 from Pages.StartRestartForm import Ui_StartRestartForm
 from Pages.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
 from Pages.StartRestartModel import StartRestartModel
@@ -89,8 +90,9 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
         self.result = self.default.copy()
 
         # Combo models and items
-        self.modelFreq   = ComboModel(self.comboBoxFreq, 3, 1)
+        self.modelFreq   = ComboModel(self.comboBoxFreq, 4, 1)
 
+        self.modelFreq.addItem(self.tr("Never"), 'Never')
         self.modelFreq.addItem(self.tr("Only at the end of the calculation"), 'At the end')
         self.modelFreq.addItem(self.tr("4 restart checkpoints"), '4 output')
         self.modelFreq.addItem(self.tr("Checkpoints frequency :"), 'Frequency')
@@ -107,7 +109,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
 
         # Read of auxiliary file if calculation restart is asked
 
-        if self.default['restart'] == "on":
+        if self.default['restart']:
             self.groupBoxRestart.show()
 
             if self.default['restart_with_auxiliary'] == 'on':
@@ -119,7 +121,11 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
 
         # Frequency of rescue of restart file
 
-        if self.default['restart_rescue'] == -1:
+        if self.default['restart_rescue'] == -2:
+            self.nsuit = -2
+            self.lineEditNSUIT.setDisabled(True)
+            self.freq = 'Never'
+        elif self.default['restart_rescue'] == -1:
             self.nsuit = -1
             self.lineEditNSUIT.setDisabled(True)
             self.freq = 'At the end'
@@ -143,7 +149,12 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
         self.freq = self.modelFreq.dicoV2M[str(text)]
         log.debug("getFreq-> %s" % self.freq)
 
-        if self.freq == "At the end":
+        if self.freq == "Never":
+            self.nsuit = -2
+            self.lineEditNSUIT.setText(str(self.nsuit))
+            self.lineEditNSUIT.setDisabled(True)
+
+        elif self.freq == "At the end":
             self.nsuit = -1
             self.lineEditNSUIT.setText(str(self.nsuit))
             self.lineEditNSUIT.setDisabled(True)
@@ -231,19 +242,22 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
         # Widget initialization
 
-        if 'restart' in os.listdir(self.case['data_path']):
-            p = os.path.join(self.case['data_path'], 'restart')
-            if not os.path.exists(p):
+        self.restart_path = self.model.getRestartPath()
+
+        if self.restart_path:
+            if not os.path.isdir(os.path.join(self.case['case_path'],
+                                              self.restart_path)):
                 title = self.tr("WARNING")
-                msg   = self.tr("Invalid link in %s!" % self.case['data_path'])
+                msg   = self.tr("Invalid path in %s!" % self.restart_path)
                 QMessageBox.warning(self, title, msg)
 
-        if self.model.getRestart() == "on":
             self.radioButtonYes.setChecked(True)
             self.radioButtonNo.setChecked(False)
+
         else:
             self.radioButtonYes.setChecked(False)
             self.radioButtonNo.setChecked(True)
+
         self.slotStartRestart()
 
         if self.model.getFrozenField() == 'on':
@@ -257,58 +271,42 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         """
         Search restart file (directory) in list of directories
         """
-        title    = self.tr("Selection of the restart directory")
-        default  = self.case['resu_path']
-        dir_path = QFileDialog.getExistingDirectory(self, title, default, QFileDialog.ShowDirsOnly)
+        title    = self.tr("Select checkpoint/restart directory")
 
-        if dir_path:
-            dir_path = os.path.abspath(str(dir_path))
-            dir_name = os.path.basename(dir_path)
-            if os.path.dirname(dir_path) == self.case['data_path'] and dir_name == 'restart':
-                setGreenColor(self.toolButton, False)
-                self.slotStartRestart()
-                return
+        default = None
+        l_restart_dirs = []
+        for d in [os.path.join(os.path.split(self.case['case_path'])[0],
+                               'RESU_COUPLING'),
+                  os.path.join(self.case['case_path'], 'RESU')]:
+            if os.path.isdir(d):
+                l_restart_dirs.append(QUrl.fromLocalFile(d))
+                if not default:
+                    default = d
 
-            log.debug("slotSearchRestartDirectory-> %s" % dir_name)
-            link = os.path.join(self.case['data_path'], 'restart')
+        if not default:
+            default = self.case['case_path']
 
-            # a link already exists
-            if os.path.islink(link):
-                exist_name = os.path.abspath(os.readlink(link))
-                if dir_path != exist_name:
-                    title = self.tr("WARNING")
-                    msg   = self.tr("This symbolic link already exists in DATA:\n\n" \
-                                    + exist_name + "\n\nReplace with the new directory?")
-                    ans = QMessageBox.question(self, title, msg, QMessageBox.Yes, QMessageBox.No)
-                    if ans == QMessageBox.Yes:
-                        os.unlink(link)
-                        os.symlink(dir_path, link)
-                        self.model.setRestartDirectory(dir_name)
-                    else:
-                        self.model.setRestartDirectory(os.path.basename(exist_name))
-                else:
-                    self.model.setRestartDirectory(os.path.basename(exist_name))
+        if hasattr(QFileDialog, 'ReadOnly'):
+            options  = QFileDialog.DontUseNativeDialog | QFileDialog.ReadOnly
+        else:
+            options  = QFileDialog.DontUseNativeDialog
 
-            # a restart directory exists
-            elif os.path.isdir(link):
-                title = self.tr("WARNING")
-                msg   = self.tr("The directory restart is already in DATA.\n\n" \
-                                "Replace with the new directory?")
-                ans = QMessageBox.question(self, title, msg, QMessageBox.Yes, QMessageBox.No)
-                if ans == QMessageBox.Yes:
-                    shutil.rmtree(link)
-                    os.symlink(dir_path, link)
-                    self.model.setRestartDirectory(dir_name)
-                else:
-                    self.model.setRestartDirectory('restart')
+        dialog = QFileDialog(self, title, default)
+        if hasattr(dialog, 'setOptions'):
+            dialog.setOptions(options)
+        dialog.setSidebarUrls(l_restart_dirs)
+        dialog.setFileMode(QFileDialog.Directory)
 
-            # create a new link
-            else:
-                os.symlink(os.path.abspath(dir_path), link)
-                self.model.setRestartDirectory(dir_name)
+        if dialog.exec_() == 1:
 
-            setGreenColor(self.toolButton, False)
-            self.slotStartRestart()
+            s = dialog.selectedFiles()
+
+            dir_path = str(s.first())
+            dir_path = os.path.abspath(dir_path)
+
+            self.restart_path = RelOrAbsPath(dir_path, self.case['case_path'])
+
+            log.debug("slotSearchRestartDirectory-> %s" % self.restart_path)
 
 
     @pyqtSignature("")
@@ -317,36 +315,32 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         Input IRESTART Code_Saturne keyword.
         """
         if self.radioButtonYes.isChecked():
-            self.model.setRestart("on")
-            self.toolButton.setEnabled(True)
-            self.radioButtonYes.setChecked(True)
-            self.radioButtonNo.setChecked(False)
-
-            if 'restart' in os.listdir(self.case['data_path']):
-                p = os.path.join(self.case['data_path'], 'restart')
-                if os.path.isdir(p) and not os.path.islink(p):
-                    self.model.setRestartDirectory('restart')
-                elif os.path.isdir(p) and os.path.islink(p):
-                    self.model.setRestartDirectory(os.path.basename(os.readlink(p)))
-
-            name = self.model.getRestartDirectory()
-            if name:
-                self.labelDir1.show()
-                self.labelDir2.show()
-                self.labelDir2.setText(name)
-            else:
-                setGreenColor(self.toolButton)
+            if not self.restart_path:
+                self.slotSearchRestartDirectory()
 
         else:
-            self.model.setRestart("off")
-            self.toolButton.setDisabled(True)
+            self.restart_path = None
+
+        if self.restart_path:
+            self.model.setRestartPath(self.restart_path)
+            self.radioButtonYes.setChecked(True)
+            self.radioButtonNo.setChecked(False)
+            self.frameRestart.show()
+            self.lineEdit.setText(self.restart_path)
+            if not os.path.isdir(os.path.join(self.case['resu_path'],
+                                              self.restart_path)):
+                setGreenColor(self.toolButton)
+            else:
+                setGreenColor(self.toolButton, False)
+
+        else:
+            self.model.setRestartPath(None)
             self.model.setFrozenField("off")
             self.radioButtonYes.setChecked(False)
             self.radioButtonNo.setChecked(True)
 
-            self.labelDir1.hide()
-            self.labelDir2.hide()
-            setGreenColor(self.toolButton, False)
+            self.frameRestart.hide()
+            self.lineEdit.setText("")
 
 
     @pyqtSignature("")
@@ -368,12 +362,10 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         freq, period = self.model.getRestartRescue()
 
         default                           = {}
-        default['restart']                = self.model.getRestart()
+        default['restart']                = self.model.getRestartPath()
         default['restart_with_auxiliary'] = self.model.getRestartWithAuxiliaryStatus()
         default['restart_rescue']         = freq
         default['period_rescue']          = period
-##        default['main_restart']           = self.model.getMainRestartFormat()
-##        default['auxiliary_restart']      = self.model.getAuxiliaryRestartFormat()
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
         dialog = StartRestartAdvancedDialogView(self, default)
@@ -381,11 +373,8 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAdvancedOptions -> %s" % str(result))
-            self.model.setRestart(result['restart'])
             self.model.setRestartWithAuxiliaryStatus(result['restart_with_auxiliary'])
             self.model.setRestartRescue(result['restart_rescue'])
-##            self.model.setMainRestartFormat(result['main_restart'])
-##            self.model.setAuxiliaryRestartFormat(result['auxiliary_restart'])
 
 
     def tr(self, text):

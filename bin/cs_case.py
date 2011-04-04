@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009-2010  EDF
+#   Copyright (C) 2009-2011  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -71,10 +71,7 @@ class case:
                  package,
                  case_dir,
                  domains,
-                 syr_domains = None,
-                 exec_preprocess = True,
-                 exec_partition = True,
-                 exec_solver = True):
+                 syr_domains = None):
 
         # Package specific information
 
@@ -143,14 +140,24 @@ class case:
         # Working directory
 
         self.exec_dir = None
-
-        # Execution and debugging options
-
-        self.exec_preprocess = exec_preprocess
-        self.exec_partition = exec_partition
-        self.exec_solver = exec_solver
-
         self.exec_prefix = None
+
+        self.exec_solver = True
+
+        n_exec_solver = 0
+        for d in self.domains:
+            if d.exec_solver:
+                n_exec_solver += 1
+        for d in self.syr_domains:
+            if d.exec_solver:
+                n_exec_solver += 1
+
+        if n_exec_solver == 0:
+            self.exec_solver = False
+        elif n_exec_solver < len(self.domains) + len(self.syr_domains):
+            err_str = 'In case of multiple domains (i.e. code coupling), ' \
+                + 'all or no domains must execute its solver.\n'
+            raise RunCaseError(err_str)
 
         # Date or other name
 
@@ -513,14 +520,16 @@ class case:
         s.write(dhline)
         s.write('Start time       : ' + date + '\n')
         s.write(dhline)
-        s.write('  Solver         : ' + self.package.exec_prefix + '\n')
+        cmd = sys.argv[0]
+        for arg in sys.argv[1:]:
+            cmd += ' ' + arg
+        s.write('  Command        : ' + cmd + '\n')
+        s.write(dhline)
+        s.write('  Solver path    : ' + self.package.exec_prefix + '\n')
         s.write(hline)
-        syr_path = None
-        if len(self.syr_domains) > 0:
-            s.write('  SYRTHES        : ' + self.get_syrthes_path() + '\n')
         if homard_prefix != None:
             s.write('  HOMARD          : ' + homard_prefix + '\n')
-        s.write(hline)
+            s.write(hline)
         s.write('  MPI path       : ' + mpi_lib.bindir + '\n')
         if len(mpi_lib.type) > 0:
             s.write('  MPI type       : ' + mpi_lib.type + '\n')
@@ -535,10 +544,16 @@ class case:
                 s.write(' ' + p)
             s.write('\n')
         s.write(hline)
-        s.write('  Case dir.      : ' + self.name + '\n')
-        s.write('  Exec. dir.     : ' + self.exec_dir + '\n')
-        if self.exec_solver:
-            s.write('  Executable     : ' + solver + '\n')
+
+        if len(self.domains) + len(self.syr_domains) > 1:
+            s.write('  Exec. dir.     : ' + self.exec_dir + '\n')
+            s.write(hline)
+
+        for d in self.domains:
+            d.summary_info(s)
+            s.write(hline)
+        for d in self.syr_domains:
+            d.summary_info(s)
             s.write(hline)
 
         s.close()
@@ -553,36 +568,14 @@ class case:
 
         date = (datetime.datetime.now()).strftime("%A %B %d %H:%M:%S CEST %Y")
 
-        if self.exec_preprocess:
-            preprocess = "yes"
-            if self.error == 'preprocess':
-                preprocess = "failed"
-        else:
-            preprocess = "no"
-
-        if self.exec_partition:
-            partition = "yes"
-            if self.error == 'partition':
-                partition = "failed"
-        else:
-            partition = "no"
-
-        if self.exec_solver:
-            solver = "yes"
-            if self.error == 'solver':
-                solver = "failed"
-        else:
-            solver = "no"
-
         dhline = '========================================================\n'
         hline =  '  ----------------------------------------------------\n'
 
         s_path = os.path.join(self.exec_dir, 'summary')
         s = open(s_path, 'a')
 
-        s.write('  Preprocessing  : ' + preprocess + '\n')
-        s.write('  Partitioning   : ' + partition + '\n')
-        s.write('  Calculation    : ' + solver + '\n')
+        if self.error:
+            s.write('  ' + self.error + ' failed\n')
 
         s.write(dhline)
         s.write('Finish time      : ' + date + '\n')
@@ -612,10 +605,13 @@ class case:
 
     def copy_script(self):
         """
-        Retrieve script from the execution directory
+        Retrieve script (if present) from the execution directory
         """
 
         src = sys.argv[0]
+
+        if os.path.basename(src) == self.package.name:
+            return
 
         dest = os.path.join(self.result_dir, os.path.basename(src))
 
@@ -693,7 +689,7 @@ class case:
             if mpi_env.mpiexec_args != None:
                 mpi_cmd_args = mpi_env.mpiexec_args + ' '
 
-        p_args = d.partitioner_args()
+        p_args = d.partitioner_command()
 
         s.write('cd ' + p_args[0] + '\n\n')
         s.write('# Run partitioner.\n')
@@ -743,7 +739,7 @@ class case:
 
         for d in self.syr_domains:
             if d.coupling_mode == 'MPI':
-                s_args = d.solver_args()
+                s_args = d.solver_command()
                 if len(cmd) > 0:
                     cmd += ' : '
                 cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
@@ -751,7 +747,7 @@ class case:
                 app_id += 1
 
         for d in self.domains:
-            s_args = d.solver_args(app_id=app_id)
+            s_args = d.solver_command(app_id=app_id)
             if len(cmd) > 0:
                 cmd += ' : '
             cmd += '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
@@ -776,14 +772,14 @@ class case:
 
         for d in self.syr_domains:
             if d.coupling_mode == 'MPI':
-                s_args = d.solver_args()
+                s_args = d.solver_command()
                 cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
                     + ' ' + s_args[1] + s_args[2] + '\n'
                 e.write(cmd)
                 app_id += 1
 
         for d in self.domains:
-            s_args = d.solver_args(app_id=app_id)
+            s_args = d.solver_command(app_id=app_id)
             cmd = '-n ' + str(d.n_procs) + ' -wdir ' + s_args[0] \
                 + ' ' + s_args[1] + s_args[2] + '\n'
             e.write(cmd)
@@ -822,7 +818,7 @@ class case:
         for d in self.syr_domains:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
-            s_args = d.solver_args()
+            s_args = d.solver_command()
             e.write('  cd ' + s_args[0] + '\n')
             if 'compile_and_link' in dir(d):  # For SYRTHES 3
                 e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
@@ -838,7 +834,7 @@ class case:
         for d in self.domains:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
-            s_args = d.solver_args(app_id=app_id)
+            s_args = d.solver_command(app_id=app_id)
             e.write('  cd ' + s_args[0] + '\n')
             e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
@@ -908,7 +904,7 @@ class case:
             if d.coupling_mode == 'MPI':
 
                 nr += d.n_procs
-                s_args = self.domains[0].solver_args()
+                s_args = self.domains[0].solver_command()
                 arg0 = os.path.split(s_args[1])[1]
 
                 e.write('  else if (rank < ' + str(nr) + ') {\n')
@@ -931,7 +927,7 @@ class case:
         for d in self.domains:
 
             nr += d.n_procs
-            s_args = self.domains[0].solver_args()
+            s_args = self.domains[0].solver_command()
             arg0 = os.path.split(s_args[1])[1]
 
             e.write('  else if (rank < ' + str(nr) + ') {\n')
@@ -1074,7 +1070,7 @@ fi
 
             if len(self.syr_domains) == 0:
 
-                s_args = self.domains[0].solver_args()
+                s_args = self.domains[0].solver_command()
 
                 s.write('cd ' + s_args[0] + '\n\n')
                 s.write('# Run solver.\n')
@@ -1087,14 +1083,14 @@ fi
 
                 syr_id = 0
                 for d in self.syr_domains:
-                    s_args = d.solver_args(host_port='localhost:$CS_PORT')
+                    s_args = d.solver_command(host_port='localhost:$CS_PORT')
                     s.write('cd ' + s_args[0] + '\n')
                     s.write(s_args[1] + s_args[2] + ' $@ > '
                             + s_args[0] + '/listsyr 2>&1 &\n')
                     s.write('SYR_PID' + str(syr_id) + '=$!\n')
                     syr_id += 1
 
-                s_args = self.domains[0].solver_args(syr_port='$CS_PORT')
+                s_args = self.domains[0].solver_command(syr_port='$CS_PORT')
                 s.write('cd ' + s_args[0] + '\n')
                 s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2] + ' $@\n')
                 s.write('CS_PID=$!\n')
@@ -1224,11 +1220,6 @@ fi
             self.run_id = run_id
 
         for d in self.domains:
-
-            d.exec_preprocess = self.exec_preprocess
-            d.exec_partition = self.exec_partition
-            d.exec_solver = self.exec_solver
-
             if d.adaptation:
                 adaptation(d.adaptation, saturne_script, self.case_dir)
 
@@ -1300,26 +1291,24 @@ fi
 
         # Compile user subroutines if necessary.
 
-        if self.exec_solver == True:
+        need_compile = False
 
-            need_compile = False
+        for d in self.domains:
+            if d.check_model_consistency() != 0:
+                raise RunCaseError('Incompatible model options.')
+            if d.needs_compile() == True:
+                need_compile = True
+
+        if need_compile == True:
+
+            msg = \
+                " ****************************************\n" \
+                "  Compiling user subroutines and linking\n" \
+                " ****************************************\n\n"
+            sys.stdout.write(msg)
 
             for d in self.domains:
-                if d.check_model_consistency() != 0:
-                    raise RunCaseError('Incompatible model options.')
-                if d.needs_compile() == True:
-                    need_compile = True
-
-            if need_compile == True:
-
-                msg = \
-                    " ****************************************\n" \
-                    "  Compiling user subroutines and linking\n" \
-                    " ****************************************\n\n"
-                sys.stdout.write(msg)
-
-                for d in self.domains:
-                    d.compile_and_link()
+                d.compile_and_link()
 
         # Setup data
         #===========
@@ -1329,16 +1318,11 @@ fi
                          '  Preparing calculation data\n'
                          ' ****************************\n\n')
 
-        if self.exec_preprocess:
-            for d in self.domains:
-                d.copy_preprocessor_data()
-        else:
-            for d in self.domains:
-                d.copy_preprocessor_output_data()
+        for d in self.domains:
+            d.copy_preprocessor_data()
 
-        if self.exec_solver:
-            for d in self.domains:
-                d.copy_solver_data()
+        for d in self.domains:
+            d.copy_solver_data()
 
         sys.stdout.write('\n'
                          ' ***************************\n'
@@ -1347,25 +1331,23 @@ fi
 
         self.summary_init(exec_env)
 
-        if self.exec_preprocess:
-            for d in self.domains:
-                d.run_preprocessor()
-                if len(d.error) > 0:
-                    self.error = d.error
-            for d in self.syr_domains:
-                d.preprocess()
-                if len(d.error) > 0:
-                    self.error = d.error
+        for d in self.domains:
+            d.run_preprocessor()
+            if len(d.error) > 0:
+                self.error = d.error
+        for d in self.syr_domains:
+            d.preprocess()
+            if len(d.error) > 0:
+                self.error = d.error
 
-        if self.exec_partition:
-            for d in self.domains:
-                d.check_partitioner()
-                if d.partition_n_procs > 1:
-                    p_path = self.generate_partition_script(d, exec_env)
-                else:
-                    d.run_partitioner()
-                if len(d.error) > 0:
-                    self.error = d.error
+        for d in self.domains:
+            d.check_partitioner()
+            if d.partition_n_procs > 1:
+                p_path = self.generate_partition_script(d, exec_env)
+            else:
+                d.run_partitioner()
+            if len(d.error) > 0:
+                self.error = d.error
 
         if self.exec_solver:
             s_path = self.generate_solver_script(exec_env)
@@ -1401,9 +1383,6 @@ fi
         """
         Run partitioner.
         """
-
-        if not self.exec_partition:
-            return 0
 
         # Check if parallel partitioning is required
 
@@ -1606,25 +1585,25 @@ fi
                     except Exception:
                         pass
 
-        if self.exec_preprocess:
-            for d in self.domains:
-                d.copy_preprocessor_results()
+        for d in self.domains:
+            d.copy_preprocessor_results()
 
-        if self.exec_partition:
-            for d in self.domains:
-                d.copy_partition_results()
+        for d in self.domains:
+            d.copy_partition_results()
 
-        if self.exec_solver:
-            for d in self.domains:
-                d.copy_solver_results()
+        for d in self.domains:
+            d.copy_solver_results()
 
-            for d in self.syr_domains:
-                d.copy_results()
+        for d in self.syr_domains:
+            d.copy_results()
 
         # Remove directories if empty
 
         try:
             os.removedirs(self.exec_dir)
+            msg = ' Cleaned working directory:\n' \
+                + '   ' +  str(self.exec_dir) + '\n'
+            sys.stdout.write(msg)
         except Exception:
             pass
 
@@ -1637,7 +1616,7 @@ fi
     def run(self,
             n_procs = None,
             mpi_environment = None,
-            exec_prefix = None,
+            scratchdir = None,
             run_id = None,
             prepare_data = True,
             run_solver = True,
@@ -1647,12 +1626,39 @@ fi
         Main script.
         """
 
-        scratchdir = None
+        # Transfer parameters from case parameters or user scripts here
 
-        if exec_prefix != None:
-            scratchdir = exec_prefix
-        else:
-            # Read the possible config files
+        if len(self.domains) == 1 and len(self.syr_domains) == 0:
+
+            d = self.domains[0]
+
+            if hasattr(d, 'case_scratchdir'):
+                scratchdir = d.case_scratchdir
+            if hasattr(d, 'case_n_procs'):
+                n_procs = int(d.case_n_procs)
+            if hasattr(d, 'define_case_parameters'):
+                d.define_case_parameters(self)
+                del(self.domains[0].define_case_parameters)
+                if hasattr(self, 'scratchdir'):
+                    scratchdir = self.scratchdir
+                    del(self.scratchdir)
+                if hasattr(self, 'n_procs'):
+                    n_procs = int(self.n_procs)
+                    del(self.n_procs)
+
+            if mpi_environment == None:
+                mpi_environment = cs_exec_environment.mpi_environment()
+                try:
+                    d.define_mpi_environment(mpi_environment)
+                    del(self.domains[0].define_mpi_environment)
+                except AttributeError:
+                    pass
+
+        # Define scratch directory
+
+        if scratchdir == None:
+
+           # Read the possible config files
 
             if sys.platform == 'win32' or sys.platform == 'win64':
                 username = os.getenv('USERNAME')

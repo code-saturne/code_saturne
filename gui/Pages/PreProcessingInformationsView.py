@@ -140,14 +140,13 @@ class Informations:
 
             lang = ""
             for i in range(len(lines)):
-                #index = re.search("processeur", lines[i])
-                index = string.rfind(lines[i], "processeur")
+                index = string.find(lines[i], "familles de faces et cellules")
                 if index > 0:
                     lang = 'fr'
                     break
 
             if lang == 'fr':
-                self.str1 = "Définition des familles de faces et cellules"
+                self.str1 = "finition des familles de faces et cellules"
                 if self.chain == 'faces':
                    self.str2 = "Nombre de faces de bord"
                 elif self.chain == 'cells':
