@@ -1,4 +1,9 @@
 * 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix compatibility bug removing 'id' attribute from zone nodes.
+  modified files:
+    gui/Base/XMLinitialize.py
+
+* 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Scripts and GUI overhauled, with user Python and script XML reader.
   Restart behavior is now based on the presence of a restart sub-directory
   in the execution directory. A "--preprocess" option has also been added

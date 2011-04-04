@@ -203,7 +203,8 @@ class XMLinit(Variables):
         XMLSolutionDomainNode = self.case.xmlInitNode('solution_domain')
         self.__XMLVolumicConditionsNode = XMLSolutionDomainNode.xmlInitNode('volumic_conditions')
         for node in self.__XMLVolumicConditionsNode.xmlGetNodeList('zone'):
-            node['id'] = node['name']
+            if node['id'] == None:
+                node['id'] = node['name']
 
         for node in self.case.xmlGetNodeList('postprocessing_format',
                                              choice='MED_fichier'):
