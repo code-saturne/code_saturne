@@ -86,7 +86,7 @@ class DefineUserScalarsModel(Variables, Model):
         default['temperature_celsius']   = 20.0
         default['temperature_kelvin']    = 293.15
         default['enthalpy']              = 297413.
-        default['zone']                  = 1
+        default['zone_id']               = 1
 
         return default
 
@@ -309,7 +309,7 @@ class DefineUserScalarsModel(Variables, Model):
         self.isInList(scalar_label, self.getScalarLabelsList())
 
         n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        val = n.xmlGetChildDouble('initial_value', zone=zone)
+        val = n.xmlGetChildDouble('initial_value', zone_id=zone)
         if val == None:
             if n['type'] == 'thermal':
                 val = self.defaultScalarValues()[n['name']]
@@ -330,10 +330,8 @@ class DefineUserScalarsModel(Variables, Model):
         self.isFloat(initial_value)
         self.isInList(scalar_label, self.getScalarLabelsList())
 
-        label = self.case.xmlGetNode('zone', name = zone)['label']
-
         n = self.scalar_node.xmlGetNode('scalar', label=scalar_label)
-        nz = n.xmlInitChildNode('initial_value', zone=zone, label=label)
+        nz = n.xmlInitChildNode('initial_value', zone_id=zone)
         nz.xmlSetTextNode(initial_value)
 
 
@@ -643,7 +641,7 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="toto" name="scalar1" type="user">
-                            <initial_value zone="1">0.0 </initial_value>
+                            <initial_value zone_id="1">0.0 </initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
@@ -665,7 +663,7 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="toto" name="scalar1" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
@@ -673,7 +671,7 @@ class UserScalarTestCase(ModelTest):
                             </property>
                     </scalar>
                     <scalar label="MACHIN" name="scalar2" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
@@ -696,7 +694,7 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="usersca1" name="scalar1" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
@@ -704,7 +702,7 @@ class UserScalarTestCase(ModelTest):
                             </property>
                     </scalar>
                     <scalar label="TempC" name="temperature_celsius" type="thermal">
-                            <initial_value zone="1">20.0</initial_value>
+                            <initial_value zone_id="1">20.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                     </scalar>
@@ -724,7 +722,7 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="toto" name="scalar1" type="user">
-                            <initial_value zone="1">0.05</initial_value>
+                            <initial_value zone_id="1">0.05</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
@@ -750,7 +748,7 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="toto" name="scalar1" type="user">
-                            <initial_value zone="1">0.05</initial_value>
+                            <initial_value zone_id="1">0.05</initial_value>
                             <min_value>0.01</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
@@ -758,7 +756,7 @@ class UserScalarTestCase(ModelTest):
                             </property>
                     </scalar>
                     <scalar label="titi" name="scalar2" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>100.</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
@@ -784,13 +782,13 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="toto" name="scalar1" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>0</min_value>
                             <max_value>1e+12</max_value>
                             <variance>titi</variance>
                     </scalar>
                     <scalar label="titi" name="scalar2" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
@@ -830,7 +828,7 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="premier" name="scalar1" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>0</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
@@ -838,7 +836,7 @@ class UserScalarTestCase(ModelTest):
                             </property>
                     </scalar>
                     <scalar label="second" name="scalar2" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
@@ -863,7 +861,7 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="premier" name="scalar1" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
@@ -871,7 +869,7 @@ class UserScalarTestCase(ModelTest):
                             </property>
                     </scalar>
                     <scalar label="second" name="scalar2" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
@@ -894,7 +892,7 @@ class UserScalarTestCase(ModelTest):
         model.setScalarDiffusivityChoice('premier', 'variable')
         doc = '''<additional_scalars>
                     <scalar label="premier" name="scalar1" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="variable" label="Dscal1" name="diffusion_coefficient_1">
@@ -902,7 +900,7 @@ class UserScalarTestCase(ModelTest):
                             </property>
                     </scalar>
                     <scalar label="second" name="scalar2" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal2" name="diffusion_coefficient_2">
@@ -940,7 +938,7 @@ class UserScalarTestCase(ModelTest):
 
         doc = '''<additional_scalars>
                     <scalar label="premier" name="scalar1" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal1" name="diffusion_coefficient_1">
@@ -948,12 +946,12 @@ class UserScalarTestCase(ModelTest):
                             </property>
                     </scalar>
                     <scalar label="TempC" name="temperature_celsius" type="thermal">
-                            <initial_value zone="1">20.0</initial_value>
+                            <initial_value zone_id="1">20.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                     </scalar>
                     <scalar label="troisieme" name="scalar3" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal4" name="diffusion_coefficient_3">
@@ -961,7 +959,7 @@ class UserScalarTestCase(ModelTest):
                             </property>
                     </scalar>
                     <scalar label="quatrieme" name="scalar4" type="user">
-                            <initial_value zone="1">0.0</initial_value>
+                            <initial_value zone_id="1">0.0</initial_value>
                             <min_value>-1e+12</min_value>
                             <max_value>1e+12</max_value>
                             <property choice="constant" label="Dscal5" name="diffusion_coefficient_4">

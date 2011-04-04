@@ -197,7 +197,7 @@ class InitializationModel(Model):
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
 
-        n = node.xmlInitChildNode('initial_value', zone=zone)
+        n = node.xmlInitChildNode('initial_value', zone_id=zone)
         if var_init == 0:
             n.xmlRemoveNode()
         else:
@@ -217,7 +217,7 @@ class InitializationModel(Model):
             if not node:
                 msg = "There is an error: this node " + str(node) + "should be existed"
                 raise ValueError(msg)
-            v = node.xmlGetDouble('initial_value', zone=zone)
+            v = node.xmlGetDouble('initial_value', zone_id=zone)
             if v == None:
                 v = self.__defaultValues()['velocity']
             velocity_list.append(v)
@@ -345,8 +345,8 @@ class InitializationModel(Model):
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
 
-        node.xmlInitNode('initial_value', zone=zone)
-        node.xmlSetData('initial_value', var_init, zone=zone)
+        node.xmlInitNode('initial_value', zone_id=zone)
+        node.xmlSetData('initial_value', var_init, zone_id=zone)
 
 
     def getTurbulenceInitialValue(self, zone, var_name):
@@ -362,7 +362,7 @@ class InitializationModel(Model):
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
 
-        init = node.xmlGetDouble('initial_value', zone=zone)
+        init = node.xmlGetDouble('initial_value', zone_id=zone)
         if init == None:
             init = self.__defaultValues()[var_name]
             self.setTurbulenceInitialValue(zone, var_name, init)
@@ -429,10 +429,10 @@ class InitializationTestCase(ModelTest):
         doc = '''<velocity_pressure>
                     <variable label="Pressure" name="pressure"/>
                     <variable label="VelocitU" name="velocity_U">
-                            <initial_value zone="1">123</initial_value>
+                            <initial_value zone_id="1">123</initial_value>
                     </variable>
                     <variable label="VelocitV" name="velocity_V">
-                            <initial_value zone="1">100.0</initial_value>
+                            <initial_value zone_id="1">100.0</initial_value>
                     </variable>
                     <variable label="VelocitW" name="velocity_W"/>
                     <property label="total_pressure" name="total_pressure"/>
@@ -535,13 +535,13 @@ class InitializationTestCase(ModelTest):
                             <reference_velocity>1</reference_velocity>
                     </initialization>
                     <variable label="R11" name="component_R11">
-                            <initial_value zone="1">0.0011</initial_value>
+                            <initial_value zone_id="1">0.0011</initial_value>
                     </variable>
                     <variable label="R22" name="component_R22">
-                            <initial_value zone="1">0.0022</initial_value>
+                            <initial_value zone_id="1">0.0022</initial_value>
                     </variable>
                     <variable label="R33" name="component_R33">
-                            <initial_value zone="1">0.0033</initial_value>
+                            <initial_value zone_id="1">0.0033</initial_value>
                     </variable>
                     <variable label="R12" name="component_R12"/>
                     <variable label="R13" name="component_R13"/>

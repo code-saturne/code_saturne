@@ -198,8 +198,12 @@ class XMLinit(Variables):
         Change XML in order to ensure backward compatibility.
         """
         for node in self.case.xmlGetNodeList('initial_value', 'zone'):
-            n = self.case.xmlGetNode('zone', name = node['zone'])
-            node['label'] = n['label']
+            node['zone_id'] = node['zone']
+
+        XMLSolutionDomainNode = self.case.xmlInitNode('solution_domain')
+        self.__XMLVolumicConditionsNode = XMLSolutionDomainNode.xmlInitNode('volumic_conditions')
+        for node in self.__XMLVolumicConditionsNode.xmlGetNodeList('zone'):
+            node['id'] = node['name']
 
         for node in self.case.xmlGetNodeList('postprocessing_format',
                                              choice='MED_fichier'):

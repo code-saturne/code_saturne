@@ -646,7 +646,7 @@ class NumericalParamEquatTestCase(ModelTest):
                  </velocity_pressure>"""
         sca = """<additional_scalars>
                     <scalar label="TempC" name="temperature_celsius" type="thermal">
-                            <initial_value zone="1">20.0</initial_value>
+                            <initial_value zone_id="1">20.0</initial_value>
                             <min_value>-1e+12 </min_value>
                             <max_value>1e+12</max_value>
                             <time_step_factor>52</time_step_factor>

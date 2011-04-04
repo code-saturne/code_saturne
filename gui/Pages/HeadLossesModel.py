@@ -110,169 +110,169 @@ class HeadLossesModel(Variables, Model):
         for zone in zonesList:
             if zone.getNature()['head_losses'] == 'on':
                 label = zone.getLabel()
-                name = zone.getCodeNumber()
+                zoneid = zone.getCodeNumber()
                 localization = zone.getLocalization()
-                zoneDico[label] = (name, localization)
-                self.setNameAndLabelZone(name, label)
+                zoneDico[label] = (zoneid, localization)
+                self.setNameAndLabelZone(zoneid)
 
         return zoneDico
 
 
-    def setNameAndLabelZone(self, name, label):
+    def setNameAndLabelZone(self, zoneid):
         """
         Set name and label zone for head losses markups.
         """
-        self.node_hloss.xmlInitChildNode('head_loss', name=name, label=label)
-        self.getKCoefficients(name)
-        self.getMatrix(name)
-        self.getMatrixChoice(name,'choice')
+        self.node_hloss.xmlInitChildNode('head_loss', zone_id=zoneid)
+        self.getKCoefficients(zoneid)
+        self.getMatrix(zoneid)
+        self.getMatrixChoice(zoneid,'choice')
 
-    def getMatrixChoice(self,name,choice):
+    def getMatrixChoice(self,zoneid,choice):
         """
         Get the Transfo Matrix choice
         """
         self.isInList(choice, self.choicevalue)
-        node = self.node_hloss.xmlGetNode('head_loss', name=name)
+        node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         value = node.xmlGetString(choice)
         if value == None:
             value = self.__defaultValues()[choice]
-            self.setMatrixChoice(name, choice, value)
+            self.setMatrixChoice(zoneid, choice, value)
         return value
 
 
-    def setMatrixChoice(self, name, choice, value):
+    def setMatrixChoice(self, zoneid, choice, value):
         """
         Set the Transfo Matrix Choice
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
         self.isInList(choice, self.choicevalue)
 
-        node = self.node_hloss.xmlGetNode('head_loss', name=name)
+        node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         node.xmlSetData(choice, value)
 
-    def getCoefficient(self, name, k):
+    def getCoefficient(self, zoneid, k):
         """
-        Return value of coefficient k for the head loss with zone's name.
+        Return value of coefficient k for the head loss with zone's id.
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
         self.isInList(k, self.coeffNames)
 
-        node = self.node_hloss.xmlGetNode('head_loss', name=name)
+        node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         value = node.xmlGetDouble(k)
         if value == None:
             value = self.__defaultValues()[k]
-            self.setCoefficient(name, k, value)
+            self.setCoefficient(zoneid, k, value)
 
         return value
 
 
-    def getKCoefficients(self, name):
+    def getKCoefficients(self, zoneid):
         """
-        Get value of kxx, kyy and kzz from xml file, for the head loss with zone's name.
+        Get value of kxx, kyy and kzz from xml file, for the head loss with zone's id.
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
 
-        kxx = self.getCoefficient(name, 'kxx')
-        kyy = self.getCoefficient(name, 'kyy')
-        kzz = self.getCoefficient(name, 'kzz')
+        kxx = self.getCoefficient(zoneid, 'kxx')
+        kyy = self.getCoefficient(zoneid, 'kyy')
+        kzz = self.getCoefficient(zoneid, 'kzz')
 
         return kxx, kyy, kzz
 
 
-    def setCoefficient(self, name, k, value):
+    def setCoefficient(self, zoneid, k, value):
         """
-        Set value of coefficient k for the head loss with zone's name.
+        Set value of coefficient k for the head loss with zone's id.
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
         self.isInList(k, self.coeffNames)
         self.isFloat(value)
 
-        node = self.node_hloss.xmlGetNode('head_loss', name=name)
+        node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         node.xmlSetData(k, value)
 
 
-    def setKCoefficients(self, name, kxx, kyy, kzz):
+    def setKCoefficients(self, zoneid, kxx, kyy, kzz):
         """
-        Set value of kxx, kyy and kzz into xml file, for the head loss with zone's name.
+        Set value of kxx, kyy and kzz into xml file, for the head loss with zone's id.
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
         self.isFloat(kxx)
         self.isFloat(kyy)
         self.isFloat(kzz)
 
-        self.setCoefficient(name, 'kxx', kxx)
-        self.setCoefficient(name, 'kyy', kyy)
-        self.setCoefficient(name, 'kzz', kzz)
+        self.setCoefficient(zoneid, 'kxx', kxx)
+        self.setCoefficient(zoneid, 'kyy', kyy)
+        self.setCoefficient(zoneid, 'kzz', kzz)
 
 
-    def getMatrixComposant(self, name, a):
+    def getMatrixComposant(self, zoneid, a):
         """
         Get values of one composant of the matrix of the change reference frame,
-        for the head loss with zone's name.
+        for the head loss with zone's id.
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
         self.isInList(a, self.matrix)
 
-        node = self.node_hloss.xmlGetNode('head_loss', name=name)
+        node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         value = node.xmlGetDouble(a)
         if value == None:
             value = self.__defaultValues()[a]
-            self.setMatrixComposant(name, a, value)
+            self.setMatrixComposant(zoneid, a, value)
 
         return value
 
 
-    def getMatrix(self, name):
+    def getMatrix(self, zoneid):
         """
         Get values of matrix of the change reference frame from xml file,
-        for the head loss with zone's name.
+        for the head loss with zone's id.
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
 
-        a11 = self.getMatrixComposant(name, 'a11')
-        a12 = self.getMatrixComposant(name, 'a12')
-        a13 = self.getMatrixComposant(name, 'a13')
-        a21 = self.getMatrixComposant(name, 'a21')
-        a22 = self.getMatrixComposant(name, 'a22')
-        a23 = self.getMatrixComposant(name, 'a23')
-        a31 = self.getMatrixComposant(name, 'a31')
-        a32 = self.getMatrixComposant(name, 'a32')
-        a33 = self.getMatrixComposant(name, 'a33')
+        a11 = self.getMatrixComposant(zoneid, 'a11')
+        a12 = self.getMatrixComposant(zoneid, 'a12')
+        a13 = self.getMatrixComposant(zoneid, 'a13')
+        a21 = self.getMatrixComposant(zoneid, 'a21')
+        a22 = self.getMatrixComposant(zoneid, 'a22')
+        a23 = self.getMatrixComposant(zoneid, 'a23')
+        a31 = self.getMatrixComposant(zoneid, 'a31')
+        a32 = self.getMatrixComposant(zoneid, 'a32')
+        a33 = self.getMatrixComposant(zoneid, 'a33')
 
         return a11, a12, a13, a21, a22, a23, a31, a32, a33
 
 
-    def setMatrixComposant(self, name, a, value):
+    def setMatrixComposant(self, zoneid, a, value):
         """
         Set value of composant of matrix of the change reference frame,
-        for the head loss with zone's name.
+        for the head loss with zone's id.
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
         self.isInList(a, self.matrix)
         self.isFloat(value)
 
-        node = self.node_hloss.xmlGetNode('head_loss', name=name)
+        node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         node.xmlSetData(a, value)
 
 
-    def setMatrix(self, name, a11, a12, a13, a21, a22, a23, a31, a32, a33):
+    def setMatrix(self, zoneid, a11, a12, a13, a21, a22, a23, a31, a32, a33):
         """
         Set values of the matrix of the change reference frame,
-        for the head loss with zone's name.
+        for the head loss with zone's id.
         """
-        self.isInt(int(name))
+        self.isInt(int(zoneid))
         for a in (a11, a12, a13, a21, a22, a23, a31, a32, a33):
             self.isFloat(a)
 
-        self.setMatrixComposant(name, 'a11', a11)
-        self.setMatrixComposant(name, 'a12', a12)
-        self.setMatrixComposant(name, 'a13', a13)
-        self.setMatrixComposant(name, 'a21', a21)
-        self.setMatrixComposant(name, 'a22', a22)
-        self.setMatrixComposant(name, 'a23', a23)
-        self.setMatrixComposant(name, 'a31', a31)
-        self.setMatrixComposant(name, 'a32', a32)
-        self.setMatrixComposant(name, 'a33', a33)
+        self.setMatrixComposant(zoneid, 'a11', a11)
+        self.setMatrixComposant(zoneid, 'a12', a12)
+        self.setMatrixComposant(zoneid, 'a13', a13)
+        self.setMatrixComposant(zoneid, 'a21', a21)
+        self.setMatrixComposant(zoneid, 'a22', a22)
+        self.setMatrixComposant(zoneid, 'a23', a23)
+        self.setMatrixComposant(zoneid, 'a31', a31)
+        self.setMatrixComposant(zoneid, 'a32', a32)
+        self.setMatrixComposant(zoneid, 'a33', a33)
 
 
 #-------------------------------------------------------------------------------
@@ -301,7 +301,7 @@ class HeadLossesModelTestCase(ModelTest):
         mdl = HeadLossesModel(self.case)
         mdl.getNameAndLocalizationZone()
         doc = '''<heads_losses>
-                    <head_loss label="toto" name="2">
+                    <head_loss zone_id="2">
                         <kxx>0</kxx>
                         <kyy>0</kyy>
                         <kzz>0</kzz>
@@ -317,9 +317,9 @@ class HeadLossesModelTestCase(ModelTest):
                     </head_loss>
                 </heads_losses>'''
         assert mdl.node_hloss == self.xmlNodeFromString(doc),\
-            'Could not set name and label for head losses'
+            'Could not set zone_id and label for head losses'
         assert mdl.getNameAndLocalizationZone() == {'toto': (2, '1 or door')},\
-            'Could not get name, label and localization for head losses'
+            'Could not get zone_id, label and localization for head losses'
 
     def checkSetandGetKCoefficients(self):
         """Check whether the head_losses could be set and get kxx, kyy, kzz"""
@@ -331,7 +331,7 @@ class HeadLossesModelTestCase(ModelTest):
         mdl = HeadLossesModel(self.case)
         mdl.setKCoefficients('2', 10., 100., 1000.)
         doc = '''<heads_losses>
-                    <head_loss label="toto" name="2">
+                    <head_loss zone_id="2">
                         <kxx>10</kxx>
                         <kyy>100</kyy>
                         <kzz>1000</kzz>
@@ -354,7 +354,7 @@ class HeadLossesModelTestCase(ModelTest):
 
         mdl.setCoefficient('2', 'kyy', 555.)
         doc2 = '''<heads_losses>
-                    <head_loss label="toto" name="2">
+                    <head_loss zone_id="2">
                         <kxx>10</kxx>
                         <kyy>555</kyy>
                         <kzz>1000</kzz>
@@ -385,7 +385,7 @@ class HeadLossesModelTestCase(ModelTest):
         mdl = HeadLossesModel(self.case)
         mdl.setMatrix('2', 1., 1.2, 1.5, 2., 2.2, 2.5, 3., 3.2, 3.5)
         doc = '''<heads_losses>
-                    <head_loss label="toto" name="2">
+                    <head_loss zone_id="2">
                         <kxx>0</kxx>
                         <kyy>0</kyy>
                         <kzz>0</kzz>
@@ -408,7 +408,7 @@ class HeadLossesModelTestCase(ModelTest):
 
         mdl.setMatrixComposant('2', 'a23', 2300.55)
         doc2='''<heads_losses>
-                    <head_loss label="toto" name="2">
+                    <head_loss zone_id="2">
                         <kxx>0</kxx>
                         <kyy>0</kyy>
                         <kzz>0</kzz>

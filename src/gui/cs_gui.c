@@ -2255,7 +2255,7 @@ static char *_scalar_name_label(const char *kw, const int scalar_num)
  *   ith_zone        -->  id of volumic zone
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_volumic_zone_label(const int ith_zone)
+static char *cs_gui_volumic_zone_id(const int ith_zone)
 {
   char *path = NULL;
   char *name = NULL;
@@ -2264,7 +2264,7 @@ static char *cs_gui_volumic_zone_label(const int ith_zone)
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
   cs_xpath_add_element_num(&path, "zone", ith_zone);
-  cs_xpath_add_attribute(&path, "label");
+  cs_xpath_add_attribute(&path, "id");
 
   name = cs_gui_get_attribute_value(path);
 
@@ -2274,13 +2274,13 @@ static char *cs_gui_volumic_zone_label(const int ith_zone)
 }
 
 /*-----------------------------------------------------------------------------
- * Return the localisation for the volumic zone named label
+ * Return the localisation for the volumic zone with a given id
  *
  * parameters:
- *   label        -->  label of volumic zone
+ *   zone_id      -->  volumic zone id
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_volumic_zone_localization(const char *const label)
+static char *cs_gui_volumic_zone_localization(const char *const zone_id)
 {
   char *path = NULL;
   char *description = NULL;
@@ -2289,7 +2289,7 @@ static char *cs_gui_volumic_zone_localization(const char *const label)
   cs_xpath_add_elements(&path, 3, "solution_domain",
                                   "volumic_conditions",
                                   "zone");
-  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_test_attribute(&path, "id", zone_id);
   cs_xpath_add_function_text(&path);
 
   description = cs_gui_get_text_value(path);
@@ -2304,12 +2304,12 @@ static char *cs_gui_volumic_zone_localization(const char *const label)
  *
  * parameters:
  *   variable_name    -->  name of variable
- *   zone_label       -->  label of volumic zone
+ *   zone_id          -->  id of volumic zone
  *   initial_value    <--  initial value
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_variable_initial_value(const char   *const variable_name,
-                                          const char   *const zone_label,
+                                          const char   *const zone_id,
                                                 double *const initial_value)
 {
   char *path = NULL;
@@ -2319,7 +2319,7 @@ static void cs_gui_variable_initial_value(const char   *const variable_name,
   cs_xpath_add_element(&path, "variable");
   cs_xpath_add_test_attribute(&path, "name", variable_name);
   cs_xpath_add_element(&path, "initial_value");
-  cs_xpath_add_test_attribute(&path, "label", zone_label);
+  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
   cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &result))
@@ -2336,13 +2336,13 @@ static void cs_gui_variable_initial_value(const char   *const variable_name,
  * parameters:
  *   parent           -->  name of balise parent for the scalar
  *   label            -->  label of scalar
- *   zone_label       -->  label of volumic zone
+ *   zone_id          -->  id of volumic zone
  *   initial_value    <--  initial value
  *----------------------------------------------------------------------------*/
 
 static void cs_gui_scalar_initial_value(const char   *const parent,
                                         const char   *const label,
-                                        const char   *const zone_label,
+                                        const char   *const zone_id,
                                               double *const initial_value)
 {
   char *path = NULL;
@@ -2352,7 +2352,7 @@ static void cs_gui_scalar_initial_value(const char   *const parent,
   cs_xpath_add_elements(&path, 2, parent, "scalar");
   cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_element(&path, "initial_value");
-  cs_xpath_add_test_attribute(&path, "label", zone_label);
+  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
   cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &result))
@@ -4301,13 +4301,13 @@ void CS_PROCF(nvamem, NVAMEM) (void)
  * Return the list of cells describing a given zone.
  *
  * parameters:
- *   label     -->  volume label
+ *   zone_id   -->  volume zone id
  *   ncelet    -->  number of cells with halo
  *   faces     <--  number of selected cells
  *----------------------------------------------------------------------------*/
 
 static int*
-cs_gui_get_cells_list(const char *label,
+cs_gui_get_cells_list(const char *zone_id,
                       const int   ncelet,
                             int  *cells )
 {
@@ -4315,7 +4315,7 @@ cs_gui_get_cells_list(const char *label,
     int  *cells_list  = NULL;
     char *description = NULL;
 
-    description = cs_gui_volumic_zone_localization(label);
+    description = cs_gui_volumic_zone_localization(zone_id);
 
     /* build list of cells */
     BFT_MALLOC(cells_list, ncelet, int);
@@ -4371,7 +4371,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
   char *choice = NULL;
   char *path = NULL;
   char *status = NULL;
-  char *label = NULL;
+  char *zone_id = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -4395,15 +4395,15 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
 
     if (cs_gui_strcmp(status, "on"))  {
 
-      label = cs_gui_volumic_zone_label(i);
-      cells_list = cs_gui_get_cells_list(label, *ncelet, &cells);
+      zone_id = cs_gui_volumic_zone_id(i);
+      cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
 
       if (*isuite == 0) {
 
         /* Velocity variables initialization */
         for (j=1; j < 4; j++) {
 
-          cs_gui_variable_initial_value(vars->name[j], label, &initial_value);
+          cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
 
           for (icel = 0; icel < cells; icel++) {
             iel = cells_list[icel]-1;
@@ -4417,7 +4417,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
         if (cs_gui_strcmp(choice, "values")) {
           for (j=4; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
 
-            cs_gui_variable_initial_value(vars->name[j], label, &initial_value);
+            cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
 
             for (icel = 0; icel < cells; icel++) {
               iel = cells_list[icel]-1;
@@ -4434,7 +4434,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
 
         cs_gui_scalar_initial_value("additional_scalars",
                                     vars->label[j],
-                                    label,
+                                    zone_id,
                                     &initial_value);
 
         if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
@@ -4448,12 +4448,12 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
       BFT_FREE(cells_list);
 
 #if _XML_DEBUG_
-      bft_printf("--zone label: %s\n", label);
+      bft_printf("--zone zone_id: %s\n", zone_id);
       bft_printf("--zone's element number: %i\n", cells);
 
       if (*isuite == 0) {
         for (j=1; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
-          cs_gui_variable_initial_value(vars->name[j], label, &initial_value);
+          cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
           bft_printf("--initial value for %s: %f\n",
             vars->name[j], initial_value);
         }
@@ -4462,7 +4462,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
       for (j=0; j < vars->nscaus; j++) {
         cs_gui_scalar_initial_value("additional_scalars",
                                     vars->label[j],
-                                    label,
+                                    zone_id,
                                     &initial_value);
         if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
           bft_printf("--initial value for %s: %f\n", vars->label[j], initial_value);
@@ -4470,7 +4470,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
       }
 #endif
       BFT_FREE(cells_list);
-      BFT_FREE(label);
+      BFT_FREE(zone_id);
     }
     BFT_FREE(status);
   } /* zones+1 */
@@ -4566,12 +4566,12 @@ _matrix_base_conversion(double  a11,   double  a12,   double  a13,
  * Return value of coefficient associated to the head losses definition.
  *
  * parameters:
- *   label     -->  label of the volume zone
+ *   zone_id   -->  id of the volume zone
  *   c         -->  name of the coefficient
  *----------------------------------------------------------------------------*/
 
 static double
-_c_heads_losses(const char* label, const char* c)
+_c_heads_losses(const char* zone_id, const char* c)
 {
     char* path;
     double result = 0.0;
@@ -4579,7 +4579,7 @@ _c_heads_losses(const char* label, const char* c)
 
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 3, "thermophysical_models", "heads_losses", "head_loss");
-    cs_xpath_add_test_attribute(&path, "label", label);
+    cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
     cs_xpath_add_element(&path, c);
     cs_xpath_add_function_text(&path);
     if (cs_gui_get_double(path, &result))
@@ -4623,7 +4623,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
   double a11, a12, a13, a21, a22, a23, a31, a32, a33;
   double c11, c12, c13, c21, c22, c23, c31, c32, c33;
   double k11, k22, k33;
-  char *label = NULL;
+  char *zone_id = NULL;
   char *status = NULL;
   char *path = NULL;
 
@@ -4652,8 +4652,8 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
 
             if (cs_gui_strcmp(status, "on"))
             {
-                label = cs_gui_volumic_zone_label(i);
-                cells_list = cs_gui_get_cells_list(label, *ncelet, &cells);
+                zone_id = cs_gui_volumic_zone_id(i);
+                cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
 
                 for (j=0; j < cells; j++)
                 {
@@ -4662,7 +4662,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
                     ielpdc++;
                 }
                 BFT_FREE(cells_list);
-                BFT_FREE(label);
+                BFT_FREE(zone_id);
             }
             BFT_FREE(status);
         } /* zones+1 */
@@ -4689,22 +4689,22 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
 
             if (cs_gui_strcmp(status, "on"))
             {
-                label = cs_gui_volumic_zone_label(i);
-                cells_list = cs_gui_get_cells_list(label, *ncelet, &cells);
+                zone_id = cs_gui_volumic_zone_id(i);
+                cells_list = cs_gui_get_cells_list(zone_id, *ncelet, &cells);
 
-                k11 = _c_heads_losses(label, "kxx");
-                k22 = _c_heads_losses(label, "kyy");
-                k33 = _c_heads_losses(label, "kzz");
+                k11 = _c_heads_losses(zone_id, "kxx");
+                k22 = _c_heads_losses(zone_id, "kyy");
+                k33 = _c_heads_losses(zone_id, "kzz");
 
-                a11 = _c_heads_losses(label, "a11");
-                a12 = _c_heads_losses(label, "a12");
-                a13 = _c_heads_losses(label, "a13");
-                a21 = _c_heads_losses(label, "a21");
-                a22 = _c_heads_losses(label, "a22");
-                a23 = _c_heads_losses(label, "a23");
-                a31 = _c_heads_losses(label, "a31");
-                a32 = _c_heads_losses(label, "a32");
-                a33 = _c_heads_losses(label, "a33");
+                a11 = _c_heads_losses(zone_id, "a11");
+                a12 = _c_heads_losses(zone_id, "a12");
+                a13 = _c_heads_losses(zone_id, "a13");
+                a21 = _c_heads_losses(zone_id, "a21");
+                a22 = _c_heads_losses(zone_id, "a22");
+                a23 = _c_heads_losses(zone_id, "a23");
+                a31 = _c_heads_losses(zone_id, "a31");
+                a32 = _c_heads_losses(zone_id, "a32");
+                a33 = _c_heads_losses(zone_id, "a33");
 
                 if (a12 == 0.0 && a13 == 0.0 && a23 == 0.0)
                 {
@@ -4738,7 +4738,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
                     ielpdc++;
                 }
                 BFT_FREE(cells_list);
-                BFT_FREE(label);
+                BFT_FREE(zone_id);
             }
             BFT_FREE(status);
         } /* zones+1 */

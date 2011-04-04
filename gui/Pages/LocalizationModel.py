@@ -494,20 +494,23 @@ class VolumicLocalizationModel(LocalizationModel):
         XMLSolutionDomainNode = self._case.xmlInitNode('solution_domain')
         self.__XMLVolumicConditionsNode = XMLSolutionDomainNode.xmlInitNode('volumic_conditions')
         self.__natureOptions = Zone('VolumicZone').getNatureList()
-        self._tagList = ['initial_value']
-
+        self._tagList = ['initial_value', 'head_loss']
+        self.node_models = self._case.xmlGetNode('thermophysical_models')
+        self.node_veloce = self.node_models.xmlGetNode('velocity_pressure')
+        self.scalar_node = self._case.xmlGetNode('additional_scalars')
+        self.losses_node = self._case.xmlGetNode('heads_losses')
 
     def getZones(self):
         """
         Get zones in the XML file
         """
-        XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'name')
+        XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'id')
 
         # XML file reading
         zones = []
         for node in XMLZonesNodes:
             label = str(node['label'])
-            codeNumber = int(node['name'])
+            codeNumber = int(node['id'])
             localization = str(node.xmlGetTextNode())
             nature = self.getNature(label)
             zone = Zone('VolumicZone',
@@ -523,12 +526,12 @@ class VolumicLocalizationModel(LocalizationModel):
         """
         Get zones in the XML file
         """
-        XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'name')
+        XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'id')
 
         # XML file reading
         for node in XMLZonesNodes:
             if node['label'] == label:
-                codeNumber = node['name']
+                codeNumber = node['id']
 
         return codeNumber
 
@@ -538,7 +541,7 @@ class VolumicLocalizationModel(LocalizationModel):
         Define a new localization for the current zone (zone.getLabel == label)
         Update XML file
         """
-        node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'name', label = label)
+        node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'id', label = label)
         node.xmlSetTextNode(localization)
 
 
@@ -547,10 +550,10 @@ class VolumicLocalizationModel(LocalizationModel):
         Define a new code number for the current zone (zone.getLabel == label)
         Update XML file
         """
-        XMLZonesNodesList = self._case.xmlGetNodeList('zone', 'label', 'name')
+        XMLZonesNodesList = self._case.xmlGetNodeList('zone', 'label', 'id')
         codeList = []
         for node in XMLZonesNodesList:
-            codeList.append(node['name'])
+            codeList.append(node['id'])
         return codeList
 
 
@@ -559,7 +562,7 @@ class VolumicLocalizationModel(LocalizationModel):
         Define a new Nature for the current zone (zone.getLabel == label)
         Update XML file
         """
-        node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'name', label = label)
+        node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'id', label = label)
         nature = {}
         for option in self.__natureOptions:
             if node[option] == 'on':
@@ -574,7 +577,7 @@ class VolumicLocalizationModel(LocalizationModel):
         Define a new Nature for the current zone (zone.getLabel == label)
         Update XML file
         """
-        node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'name', label = label)
+        node = self.__XMLVolumicConditionsNode.xmlGetChildNode('zone', 'id', label = label)
         oldNature = self.getNature(label)
         if oldNature != nature:
             for option in self.__natureOptions:
@@ -593,7 +596,7 @@ class VolumicLocalizationModel(LocalizationModel):
         # XML file updating
         node = self.__XMLVolumicConditionsNode.xmlInitNode('zone',
                                                            label = newZone.getLabel(),
-                                                           name = newZone.getCodeNumber())
+                                                           id = newZone.getCodeNumber())
 
         for k, v in newZone.getNature().items():
             node[k] = v
@@ -614,7 +617,7 @@ class VolumicLocalizationModel(LocalizationModel):
 
         # if codeNumber is modified, we must modify zone in initialization of variables
         if old_zone.getCodeNumber() != newCodeNumber:
-            node['name'] = newCodeNumber
+            node['id'] = newCodeNumber
 
         node['label'] = newLabel
         node.xmlSetTextNode(newLocal)
@@ -628,8 +631,8 @@ class VolumicLocalizationModel(LocalizationModel):
         for tag in list:
             for n in self._case.xmlGetNodeList(tag, zone=old_zone.getCodeNumber()):
                 n['zone'] = newCodeNumber
-            for n in self._case.xmlGetNodeList(tag, name=old_zone.getCodeNumber()):
-                n['name'] = newCodeNumber
+            for n in self._case.xmlGetNodeList(tag, id=old_zone.getCodeNumber()):
+                n['zone_id'] = newCodeNumber
             for n in self._case.xmlGetNodeList(tag, label=old_zone.getLabel()):
                 n['label'] = newLabel
 
@@ -643,14 +646,40 @@ class VolumicLocalizationModel(LocalizationModel):
         # Delete node
         node = self._case.xmlGetNode('zone', label=label)
         if node:
-            name = node['name']
+            name = node['id']
             node.xmlRemoveNode()
 
         # Delete the other nodes for zone initializations
         for tag in self._tagList:
-            nodeList = self._case.xmlGetNodeList(tag, zone=name)
+            nodeList = self._case.xmlGetNodeList(tag, zone_id=name)
             for node in nodeList:
                 node.xmlRemoveNode()
+
+        # Update Id's
+        XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'id')
+
+        for node in XMLZonesNodes:
+            nodeid = int(node['id'])
+            if nodeid > int(name):
+                node['id'] = str(nodeid-1)
+
+        for node in self.losses_node.xmlGetNodeList('head_loss'):
+            nodeid = int(node['zone_id'])
+            if nodeid > int(name):
+                node['zone_id'] = str(nodeid-1)
+
+        for tag in self._tagList:
+            for n in self.node_veloce.xmlGetNodeList('variable'):
+                node = n.xmlGetNode('initial_value')
+                if node:
+                    nodeid = int(node['zone_id'])
+                    if nodeid > int(name):
+                        node['zone_id'] = str(nodeid-1)
+            for n in self.scalar_node.xmlGetNodeList('scalar'):
+                for node in n.xmlGetNodeList('initial_value', 'zone_id'):
+                    nodeid = int(node['zone_id'])
+                    if nodeid > int(name):
+                        node['zone_id'] = str(nodeid-1)
 
 #-------------------------------------------------------------------------------
 #

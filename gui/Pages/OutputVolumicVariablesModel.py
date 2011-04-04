@@ -516,7 +516,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         node_out = mdl.case.xmlGetNode('additional_scalars')
         doc = '''<additional_scalars>
                     <scalar label="TempC" name="temperature_celsius" type="thermal">
-                        <initial_value zone="1">20.0</initial_value>
+                        <initial_value zone_id="1">20.0</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
                         <listing_printing status="off"/>
@@ -542,7 +542,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         node_out = mdl.case.xmlGetNode('additional_scalars')
         doc = '''<additional_scalars>
                     <scalar label="TempC" name="temperature_celsius" type="thermal">
-                        <initial_value zone="1">20.0</initial_value>
+                        <initial_value zone_id="1">20.0</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
                         <postprocessing_recording status="off"/>

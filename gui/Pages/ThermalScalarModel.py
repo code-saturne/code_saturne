@@ -110,7 +110,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         else:
             lab_def = node['label']
 
-        self.setScalarInitialValue(self.defaultScalarValues()['zone'],
+        self.setScalarInitialValue(self.defaultScalarValues()['zone_id'],
                                    lab_def,
                                    self.defaultScalarValues()[thermal_scalar])
         self.setScalarMinValue(lab_def, self.defaultScalarValues()['min_value'])
@@ -221,7 +221,7 @@ class ThermalScalarTestCase(ModelTest):
         mdl.setThermalModel('temperature_kelvin')
         doc = '''<additional_scalars>
                     <scalar label="TempK" name="temperature_kelvin" type="thermal">
-                        <initial_value zone="1">293.15</initial_value>
+                        <initial_value zone_id="1">293.15</initial_value>
                         <min_value>-1e+12</min_value>
                         <max_value>1e+12</max_value>
                     </scalar>

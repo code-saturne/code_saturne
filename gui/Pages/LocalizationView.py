@@ -572,19 +572,28 @@ class StandardItemModelLocalization(QStandardItemModel):
         self.setRowCount(row+1)
 
         # Warning: the Volume region 'all_cells' is mandatory, and can not be modified.
-        if self.zoneType == "VolumicZone" and zone.getLabel() == "all_cells":
-            for c in range(self.columnCount()):
-                self._disable.append((row, c))
+        if self.zoneType == "VolumicZone":
+            if zone.getLabel() == "all_cells":
+                for c in range(self.columnCount()):
+                    self._disable.append((row, c))
+            self._disable.append((row, 1))
 
 
     def getItem(self, row):
         return self._data[row]
 
 
+    def updateItem(self):
+        # update zone Id
+        for id in self.mdl.getCodeNumbersList():
+            self._data[int(id)-1][1] = id
+
+
     def deleteItem(self, irow):
         del self._data[irow]
         nb_rows = self.rowCount()
         self.setRowCount(nb_rows-1)
+        self.updateItem()
 
 
     def getData(self, row, column):
