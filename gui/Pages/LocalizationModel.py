@@ -663,10 +663,11 @@ class VolumicLocalizationModel(LocalizationModel):
             if nodeid > int(name):
                 node['id'] = str(nodeid-1)
 
-        for node in self.losses_node.xmlGetNodeList('head_loss'):
-            nodeid = int(node['zone_id'])
-            if nodeid > int(name):
-                node['zone_id'] = str(nodeid-1)
+        if self.losses_node is not None:
+            for node in self.losses_node.xmlGetNodeList('head_loss'):
+                nodeid = int(node['zone_id'])
+                if nodeid > int(name):
+                    node['zone_id'] = str(nodeid-1)
 
         for tag in self._tagList:
             for n in self.node_veloce.xmlGetNodeList('variable'):

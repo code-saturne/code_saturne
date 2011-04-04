@@ -1,4 +1,9 @@
 * 04/04/2011 - Cyril Baudry <cyril.baudry@edf.fr>
+  Fix volumic zone deletion.
+  modified routine:
+    gui/Pages/LocalizationModel.py
+
+* 04/04/2011 - Cyril Baudry <cyril.baudry@edf.fr>
   Replace the zone label concept by a zone id for volumic zones.
   modified routines:
     gui/Base/XMLinitialize.py
