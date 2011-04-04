@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2007-2009  EDF
+  Copyright (C) 2007-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -163,8 +163,9 @@ typedef struct {
 
 static double      _epsilon_denom = 1.e-14; /* Minimum denominator */
 
-static fvm_lnum_t  _octree_threshold = 4; /* Number of points in octree node
-                                             under which the node is final */
+static int         _octree_max_levels = 18; /* Maximum number of levels */
+static fvm_lnum_t  _octree_threshold = 4;   /* Number of points in octree node
+                                               under which the node is final */
 
 /*============================================================================
  * Private function definitions
@@ -514,18 +515,19 @@ _locate_in_extents(const fvm_lnum_t    elt_num,
  * Build a local octree's leaves.
  *
  * parameters:
- *   extents            <-> extents associated with node:
+ *   level              <-- current level in octree
+ *   extents            <-- extents associated with node:
  *                          x_min, y_min, z_min, x_max, y_max, z_max (size: 6)
  *   point_coords       <-- point coordinates
  *   point_ids_tmp      <-- temporary point indexes
- *   pos_tmp            <-- temporary point position in octree
  *   octree             <-> current octree structure
  *   point_range        <-> start and past-the end index in point_idx
  *                          for current node (size: 2)
  *----------------------------------------------------------------------------*/
 
 static void
-_build_octree_leaves(const double        extents[],
+_build_octree_leaves(int                 level,
+                     const double        extents[],
                      const fvm_coord_t   point_coords[],
                      fvm_lnum_t         *point_ids_tmp,
                      _octree_t          *octree,
@@ -607,55 +609,60 @@ _build_octree_leaves(const double        extents[],
 
   /* Build leaves recursively */
 
-  for (i = 0; i < 8; i++) {
+  if (level < _octree_max_levels) {
 
-    if (count[i] > _octree_threshold) {
+    for (i = 0; i < 8; i++) {
 
-      tmp_size++;
+      if (count[i] > _octree_threshold) {
 
-      octant_id[i] = tmp_size;
+        tmp_size++;
 
-      if (i < 4) {
-        sub_extents[0] = extents[0];
-        sub_extents[3] = mid[0];
+        octant_id[i] = tmp_size;
+
+        if (i < 4) {
+          sub_extents[0] = extents[0];
+          sub_extents[3] = mid[0];
+        }
+        else {
+          sub_extents[0] = mid[0];
+          sub_extents[3] = extents[3];
+        }
+        /* 1.0e-12 term in assert() used to allow for
+           truncation error in for xmin = xmax case */
+        assert(sub_extents[0] < sub_extents[3] + 1.0e-12);
+
+        if (i%4 < 2) {
+          sub_extents[1] = extents[1];
+          sub_extents[4] = mid[1];
+        }
+        else {
+          sub_extents[1] = mid[1];
+          sub_extents[4] = extents[4];
+        }
+        assert(sub_extents[1] < sub_extents[4] + 1.0e-12);
+
+        if (i%2 < 1) {
+          sub_extents[2] = extents[2];
+          sub_extents[5] = mid[2];
+        }
+        else {
+          sub_extents[2] = mid[2];
+          sub_extents[5] = extents[5];
+        }
+        assert(sub_extents[2] < sub_extents[5] + 1.0e-12);
+
+        octree->n_nodes = tmp_size;
+
+        _build_octree_leaves(level + 1,
+                             sub_extents,
+                             point_coords,
+                             point_ids_tmp,
+                             octree,
+                             idx + i);
+
+        tmp_size = octree->n_nodes;
       }
-      else {
-        sub_extents[0] = mid[0];
-        sub_extents[3] = extents[3];
-      }
-      /* 1.0e-12 term in assert() used to allow for
-         truncation error in for xmin = xmax case */
-      assert(sub_extents[0] < sub_extents[3] + 1.0e-12);
 
-      if (i%4 < 2) {
-        sub_extents[1] = extents[1];
-        sub_extents[4] = mid[1];
-      }
-      else {
-        sub_extents[1] = mid[1];
-        sub_extents[4] = extents[4];
-      }
-      assert(sub_extents[1] < sub_extents[4] + 1.0e-12);
-
-      if (i%2 < 1) {
-        sub_extents[2] = extents[2];
-        sub_extents[5] = mid[2];
-      }
-      else {
-        sub_extents[2] = mid[2];
-        sub_extents[5] = extents[5];
-      }
-      assert(sub_extents[2] < sub_extents[5] + 1.0e-12);
-
-      octree->n_nodes = tmp_size;
-
-      _build_octree_leaves(sub_extents,
-                           point_coords,
-                           point_ids_tmp,
-                           octree,
-                           idx + i);
-
-      tmp_size = octree->n_nodes;
     }
 
   }
@@ -720,7 +727,8 @@ _build_octree(fvm_lnum_t         n_points,
 
     BFT_MALLOC(point_ids_tmp, n_points, int);
 
-    _build_octree_leaves(_octree.extents,
+    _build_octree_leaves(0,
+                         _octree.extents,
                          point_coords,
                          point_ids_tmp,
                          &_octree,
@@ -894,7 +902,8 @@ _query_octree(const double        extents[],
  * Build a local quadtree's leaves.
  *
  * parameters:
- *   extents            <-> extents associated with node:
+ *   level              <-- current level in octree
+ *   extents            <-- extents associated with node:
  *                          x_min, y_min, x_max, y_max, (size: 4)
  *   point_coords       <-- point coordinates
  *   point_ids_tmp      <-- temporary point indexes
@@ -905,7 +914,8 @@ _query_octree(const double        extents[],
  *----------------------------------------------------------------------------*/
 
 static void
-_build_quadtree_leaves(const double        extents[],
+_build_quadtree_leaves(int                 level,
+                       const double        extents[],
                        const fvm_coord_t   point_coords[],
                        fvm_lnum_t         *point_ids_tmp,
                        _quadtree_t        *quadtree,
@@ -987,43 +997,48 @@ _build_quadtree_leaves(const double        extents[],
 
   /* Build leaves recursively */
 
-  for (i = 0; i < 4; i++) {
+  if (level < _octree_max_levels) {
 
-    if (count[i] > _octree_threshold) {
+    for (i = 0; i < 4; i++) {
 
-      tmp_size++;
+      if (count[i] > _octree_threshold) {
 
-      quadrant_id[i] = tmp_size;
+        tmp_size++;
 
-      if (i < 2) {
-        sub_extents[0] = extents[0];
-        sub_extents[2] = mid[0];
+        quadrant_id[i] = tmp_size;
+
+        if (i < 2) {
+          sub_extents[0] = extents[0];
+          sub_extents[2] = mid[0];
+        }
+        else {
+          sub_extents[0] = mid[0];
+          sub_extents[2] = extents[2];
+        }
+        assert(sub_extents[0] < sub_extents[2] + 1.0e-12);
+
+        if (i%2 < 1) {
+          sub_extents[1] = extents[1];
+          sub_extents[3] = mid[1];
+        }
+        else {
+          sub_extents[1] = mid[1];
+          sub_extents[3] = extents[3];
+        }
+        assert(sub_extents[1] < sub_extents[3] + 1.0e-12);
+
+        quadtree->n_nodes = tmp_size;
+
+        _build_quadtree_leaves(0,
+                               sub_extents,
+                               point_coords,
+                               point_ids_tmp,
+                               quadtree,
+                               idx + i);
+
+        tmp_size = quadtree->n_nodes;
       }
-      else {
-        sub_extents[0] = mid[0];
-        sub_extents[2] = extents[2];
-      }
-      assert(sub_extents[0] < sub_extents[2] + 1.0e-12);
 
-      if (i%2 < 1) {
-        sub_extents[1] = extents[1];
-        sub_extents[3] = mid[1];
-      }
-      else {
-        sub_extents[1] = mid[1];
-        sub_extents[3] = extents[3];
-      }
-      assert(sub_extents[1] < sub_extents[3] + 1.0e-12);
-
-      quadtree->n_nodes = tmp_size;
-
-      _build_quadtree_leaves(sub_extents,
-                             point_coords,
-                             point_ids_tmp,
-                             quadtree,
-                             idx + i);
-
-      tmp_size = quadtree->n_nodes;
     }
 
   }
@@ -1088,7 +1103,8 @@ _build_quadtree(fvm_lnum_t         n_points,
 
     BFT_MALLOC(point_ids_tmp, n_points, int);
 
-    _build_quadtree_leaves(_quadtree.extents,
+    _build_quadtree_leaves(0,
+                           _quadtree.extents,
                            point_coords,
                            point_ids_tmp,
                            &_quadtree,

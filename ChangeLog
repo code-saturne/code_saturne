@@ -1,4 +1,10 @@
 * 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add limiter to local octree depth to handle sets of identical points.
+  modified files:
+    src/fvm/fvm_point_location.c
+    libple/examples/my_ple_point_location.c
+
+* 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow disabling of SALOME GUI in configure.
   modified files:
     m4/cs_salome.m4
