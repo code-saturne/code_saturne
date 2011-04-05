@@ -65,7 +65,7 @@ extern "C" {
  * C99 Qualifiers
  *============================================================================*/
 
-/* inline provided by cs_config.h */
+/* inline provided by cs_config.h if necessary */
 
 /* restrict type qualifier (standard in C99) */
 
@@ -93,7 +93,7 @@ extern "C" {
 
 /*
  * Usually stdint.h is included by inttypes.h, but only inttypes.h exists
- * on certain systems, such as Tru64Unix
+ * on certain systems, such as Tru64Unix.
  */
 
 #if HAVE_STDINT_H

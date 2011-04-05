@@ -81,7 +81,7 @@ extern "C" {
 
 /*
  * Usually stdint.h is included by inttypes.h, but only inttypes.h exists
- * on certain systems, such as Tru64Unix
+ * on certain systems, such as Tru64Unix.
  */
 
 #if HAVE_STDINT_H

@@ -43,16 +43,16 @@ def define_domain_parameters(domain):
     #----------------------------------
 
     # To use the output of a previous Preprocessor (mesh import) run, set:
-    #   domain.mesh_input = RESU/<run_id>/mesh_input
+    #   domain.mesh_input = 'RESU/<run_id>/mesh_input'
 
     # To use the mesh output of a previous solver run, set:
-    #   domain.mesh_input = RESU/<run_id>/mesh_output
+    #   domain.mesh_input = 'RESU/<run_id>/mesh_output'
 
     # To reuse a previous partitioning, set:
-    #   domain.partition_input = RESU/<run_id>/partition
+    #   domain.partition_input = 'RESU/<run_id>/partition'
 
     # To continue a calculation from a previous checkpoint, set:
-    #  domain.resart_input_dir = RESU/<run_id>/checkpoint
+    #  domain.resart_input_dir = 'RESU/<run_id>/checkpoint'
 
     if domain.param == None:
         domain.mesh_input = None

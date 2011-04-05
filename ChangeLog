@@ -1,3 +1,11 @@
+* 05/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Comment improvements.
+  modified files:
+    AUTHORS
+    bin/cs_user_scripts.py
+    src/bft/bft_config_defs.h
+    src/fvm/fvm_config_defs.h
+
 * 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Move Fortran surfan and surfbn to cs_mesh_quantities.c,
   and remove dependencies on ia/ra in coupbi.f90 and coupbo.f90.
