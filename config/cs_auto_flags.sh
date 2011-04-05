@@ -318,7 +318,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cs_linker_set=yes
 
     # Default compiler flags
-    cflags_default="-q64"
+    cflags_default="-qlanglvl=stdc99 -q64"
     cflags_default_opt="-O3"
     cflags_default_hot="-O3"
     cflags_default_dbg="-g"

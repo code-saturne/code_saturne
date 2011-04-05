@@ -1,4 +1,9 @@
 * 05/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update default compiler flags.
+  modified files:
+    config/cs_auto_flags.sh
+
+* 05/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Comment improvements.
   modified files:
     AUTHORS
