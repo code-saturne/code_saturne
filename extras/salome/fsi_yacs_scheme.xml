@@ -118,7 +118,7 @@
     <component>FSI_SATURNE</component>
     <!-- inter_run = programme milieu agissant comme point d'entree de YACS  -->
     <method>spawn_run</method>
-    <load container="FSI_CFD"/>
+    <load container="FSI_SATURNE"/>
 
     <!-- definition des ports -->
     <inport name="exec_dir" type="string"/>
