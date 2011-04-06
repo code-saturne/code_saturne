@@ -62,16 +62,13 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction recv_geom
- *
- * Réceptionne les données geométriques et renseigne les variables
- * nb_for et nb_dyn
+ * Receive geometric data and sets variables nb_for, nb_dyn and lref
  *----------------------------------------------------------------------------*/
 
 int
 recv_geom(void *component)
 {
-  /* variables locales */
+  /* local variables */
   int    i = 0;
   int    ii = 0;
   int    iret = 0;
@@ -81,17 +78,17 @@ recv_geom(void *component)
   double tps2=0.;
   double almloc = 0.;
 
-  printf("dans recv_geom \n");
+  printf("in recv_geom \n");
 
-  /* Initialisations */
+  /* Initializations */
   nb_for = 0;
   nb_dyn = 0;
   lref   = 0.0;
 
   strcpy(nomvar, "DONGEO");
 
-  /* commande de reception des variables geometriques
-   * 1 tableau de taille 1 * 2 est recu
+  /* Receive geometric variables:
+   * 1 array of size 1 * 2 is received
    * geom[0] = nb_for; geom[1] = nb_dyn */
 
   i = 0;
@@ -107,7 +104,7 @@ recv_geom(void *component)
 
   if (iret < 1) {
     strcpy(nomvar, "ALMAXI");
-    /* commande de reception de la variable lref */
+    /* Receive lref variable */
     i = 0;
     iret = cp_ldb(component,
                   CP_ITERATION,
@@ -128,27 +125,25 @@ recv_geom(void *component)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction send_geom
- *
- * Envoi les données géometriques à Code_Aster et renseigne
- * À supprimer lors de la phase d'initialisation
+ * Send geometric data to Code_Aster
+ * To be removed in initialization stage
  *----------------------------------------------------------------------------*/
 
 int
 send_geom(void* component)
 {
-  /* Variables locales */
+  /* Local variables */
   int iret = 0;
   char nomvar[] = "NB_DYN";
 
-  /* Test impression passage dans la routine */
-  printf("dans recv_geom\n");
+  /* Trace of call to this function */
+  printf("in recv_geom\n");
 
-  /* envoi du nombre de points Code_Saturne à Code_Aster */
+  /* Send number of Code_Saturne points to Code_Aster */
   iret = cp_een(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(nb_dyn));
   if (iret < 1) {
     strcpy(nomvar,"NB_FOR");
-    /* commande d'envoi de la variable nbssit */
+    /* send nbssit variable */
     iret = cp_een(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(nb_for));
   }
 
@@ -156,9 +151,7 @@ send_geom(void* component)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction send_pdt
- *
- * Envoie le pas de temps calculé par le composant Milieu aux codes
+ * Sends time step computed by middle component to codes
  *----------------------------------------------------------------------------*/
 
 int
@@ -166,23 +159,21 @@ send_pdt(void *component,
          double dt,
          int numpdt)
 {
-  /* Variables locales */
+  /* Local variables */
   int iret = 0;
   char nomvar[] = "DTCALC";
 
-  /* Test impression passage dans la routine */
-  printf("dans send_pdt\n");
+  /* Trace of call to this function */
+  printf("in send_pdt\n");
 
-  /* envoi du pas de temps dtref aux codes */
+  /* send dtref time step to codes */
   iret = cp_edb(component, CP_ITERATION, 0.0, numpdt, nomvar, 1, &(dt));
 
   return iret;
 }
 
 /*----------------------------------------------------------------------------
- * Fonction send_pdt
- *
- * Reçoit les pas de temps venant de Code_Aster et de Code_Saturne
+ * Receives time steps from Code_Aster and Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
@@ -191,21 +182,21 @@ recv_pdt(void *component,
          double *dt_sat,
          int numpdt)
 {
-  /* Variables locales */
+  /* Local variables */
   int    iret = 0;
   char   nomvar[] = "DTSAT";
   int    i, ii;
   double tps = 0.;
   double dtloc = 0.;
 
-  /* Test impression passage dans la routine */
-  printf("dans recv_pdt\n");
+  /* Trace of call to this function */
+  printf("in recv_pdt\n");
 
   i = numpdt;
 
   if (iret < 1) {
     strcpy(nomvar, "DTSAT");
-    /* commande de réception du pas de temps Code_Saturne */
+    /* Receive Code_Saturne time step */
     i = numpdt;
     iret = cp_ldb(component,
                   CP_ITERATION,
@@ -221,7 +212,7 @@ recv_pdt(void *component,
 
   if (iret < 1) {
     strcpy(nomvar, "DTSAT");
-    /* commande de reception du pas de temps aster */
+    /* Receive Code_Aster time step */
     i = numpdt;
     iret = cp_ldb(component,
                   CP_ITERATION,
@@ -239,63 +230,60 @@ recv_pdt(void *component,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction send_param
- *
- * Envoie les donnees suivantes:
- *                               nbpdtm
- *                               nbssit
- *                               epsilo
- *                               isyncp
- *                               ntchr
- *                               ttpabs
+ * Sends the following parameters:
+ *                                 nbpdtm
+ *                                 nbssit
+ *                                 epsilo
+ *                                 isyncp
+ *                                 ntchr
+ *                                 ttpabs
  *----------------------------------------------------------------------------*/
 
 int
-send_param(void* component)
+send_param(void *component)
 {
-  /* Variables locales */
+  /* Local variables */
   char nomvar[] = "NBPDTM";
   int iret = 0;
 
-  printf("dans send_param \n");
+  printf("in send_param \n");
 
-  /* commande d'envoi de la variable nbpdtm */
+  /* Send nbpdtm */
   iret = cp_een(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(nbpdtm));
 
+  /* Send nbssit */
   if (iret < 1) {
     strcpy(nomvar, "NBSSIT");
-
-    /* commande d'envoi de la variable nbssit */
     iret = cp_een(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(nbssit));
   }
 
+  /* Send epsilo */
   if (iret < 1) {
     strcpy(nomvar, "EPSILO");
-    /* commande d'envoi de la variable epsilo */
     iret = cp_edb(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(epsilo));
   }
 
+  /* Send isyncp */
   if (iret < 1) {
     strcpy(nomvar, "ISYNCP");
-    /* commande d'envoi de la variable isyncp */
     iret = cp_een(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(isyncp));
   }
 
+  /* Send ntchr  */
   if (iret < 1) {
     strcpy(nomvar, "NTCHRO");
-    /* commande d'envoi de la variable ntchr  */
     iret = cp_een(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(ntchr));
   }
 
+  /* Send ttinit */
   if (iret < 1) {
     strcpy(nomvar,"TTINIT");
-    /* commande d'envoi de la variable ttinit */
     iret = cp_edb(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(ttinit));
   }
 
+  /* Send dtref */
   if (iret < 1) {
     strcpy(nomvar, "PDTREF");
-    /* commande d'envoi de la variable dtref */
     iret = cp_edb(component, CP_ITERATION, 0.0, 0, nomvar, 1, &(dtref));
   }
 
@@ -303,24 +291,21 @@ send_param(void* component)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction recv_dyn
- *
- * Reçoit les déplacements et les vitesses venant de Code_Aster
- * au pas de temps courant
+ * Receives displacements and velocities from Code_Aster at current time step
  *----------------------------------------------------------------------------*/
 
 int
 recv_dyn(void *component)
 {
-  /* Variables locales */
+  /* Local variables */
   char nomvar[] = "DEPAST";
   int iret = 0;
   int i, ii;
   double tps = 0.;
 
-  printf("dans recv_dyn \n");
+  printf("in recv_dyn \n");
 
-  /* commande de reception de la variable depast */
+  /* Receive depast */
   i = ntcast;
   iret = cp_ldb(component,
                 CP_ITERATION,
@@ -332,9 +317,9 @@ recv_dyn(void *component)
                 &(ii),
                 xast);
 
+  /* Receive vitast */
   if (iret < 1) {
     strcpy(nomvar, "VITAST");
-    /* commande de reception de la variable vitast */
     i = ntcast;
     iret = cp_ldb(component,
                   CP_ITERATION,
@@ -351,19 +336,17 @@ recv_dyn(void *component)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction send_dyn
- *
- * Envoie les déplacements prédits à Code_Saturne
+ * Send predicted displacements to Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
 send_dyn(void *component)
 {
-  /* Variables locales */
+  /* Local variables */
   char nomvar[] = "DEPSAT";
   int iret = 0;
 
-  printf("dans send_dyn \n");
+  printf("in send_dyn \n");
 
   iret = cp_edb(component,
                 CP_ITERATION,
@@ -377,21 +360,19 @@ send_dyn(void *component)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction recv_for
- *
- * Reçoit les efforts venant de Code_Saturne
+ * Receive efforts from Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
 recv_for(void *component)
 {
-  /* Variables locales */
+  /* Local variables */
   char nomvar[] = "FORSAT";
   int iret = 0;
   double tps;
   int i, ii;
 
-  printf("dans recv_for \n");
+  printf("in recv_for \n");
 
   i = ntcast;
   iret = cp_ldb(component,
@@ -408,20 +389,18 @@ recv_for(void *component)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction recv_for
- *
- * Envoie les efforts prédits vers Code_Aster
+ * Send predicted efforts to Code_Aster
  *----------------------------------------------------------------------------*/
 
 int
 send_for(void *component)
 {
-  /* Variables locales */
+  /* Local variables */
   char nomvar[] = "FORAST";
   int iret = 0;
   int i;
 
-  printf("dans send_for \n");
+  printf("in send_for \n");
 
   i = ntcast;
   iret = cp_edb(component, CP_ITERATION, 0.0, i, nomvar, 3*nb_for, fopas);
@@ -430,44 +409,40 @@ send_for(void *component)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction send_icv1
- *
- * Envoie l'indice de convergence à Code_Saturne
+ * Send convergence indicator to Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
 send_icv1(void *component,
           int icv)
 {
-  /* Variables locales */
+  /* Local variables */
   int iret;
   char nomvar[] = "ICVEXT";
 
-  printf("dans send_icv1 \n");
+  printf("in send_icv1 \n");
 
-  /* commande d'envoi de la variable icvext */
+  /* Send icvext */
   iret =  cp_een(component, CP_ITERATION, 0.0, ntcast, nomvar, 1, &(icv));
 
   return iret;
 }
 
 /*----------------------------------------------------------------------------
- * Fonction recv_icv
- *
- * Reçoit l'indice de convergence de Code_Saturne
+ * Receive convergence indicator from Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
 recv_icv(void *component,
          int *icv)
 {
-  /* Variables locales */
+  /* Local variables */
   int iret;
   char nomvar[] = "ICV";
   float tps=0.;
   int i, ii;
 
-  /* commande d'envoi de la variable icv */
+  /* Send icv */
   i = ntcast;
   iret = cp_len(component,
                 CP_ITERATION,
@@ -482,22 +457,20 @@ recv_icv(void *component,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction send_icv2
- *
- * Envoie l'indice de convergence à Code_Aster
+ * Send convergence indicator to Code_Aster
  *----------------------------------------------------------------------------*/
 
 int
 send_icv2(void *component,
           int icv)
 {
-  /* Variables locales */
+  /* Local variables */
   int iret;
   char nomvar[] = "ICVAST";
 
-  printf("dans send_icv2 %d \n",icv);
+  printf("in send_icv2 %d \n",icv);
 
-  /* commande d'envoi de la variable icvext */
+  /* Send icvext */
   iret = cp_een(component, CP_ITERATION, 0.0, ntcast, nomvar, 1, &(icv));
 
   printf("iret = %d\n", iret);
@@ -506,9 +479,7 @@ send_icv2(void *component,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction inicom
- *
- * Initialisation de la communication avec Calcium
+ * Initialize communication with Calcium
  *----------------------------------------------------------------------------*/
 
 int
@@ -522,9 +493,7 @@ inicom(void *component)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction calfin
- *
- * Fin de la communication avec Calcium et arrêt du calcul
+ * End communication with Calcium and stop calculation
  *----------------------------------------------------------------------------*/
 
 int

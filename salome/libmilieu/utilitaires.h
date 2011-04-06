@@ -38,10 +38,8 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction pred
- *
- * Réalise la prédiction du déplacement ou des forces à partir des valeurs
- * aux pas de temps courant et precedent(s)
+ * Predict displacement or forces based on values of the current and
+ * previous time step(s)
  *
  * valpre = c1 * val1 + c2 * val2 + c3 * val3
  *----------------------------------------------------------------------------*/
@@ -57,12 +55,10 @@ pred(double *valpre,
      int nbpts);
 
 /*----------------------------------------------------------------------------
- * Fonction dinorm
+ * Compute the L2 norm of the difference between vectors vect1 and vect2
  *
- * Calcule la norme de la différence entre les vecteurs vect1 et vect2
- *
- * dinorm = sqrt(somme sur nbpts i
- *                 (somme sur composante j
+ * dinorm = sqrt(sum on nbpts i
+ *                 (sum on component j
  *                    ((vect1[i,j]-vect2[i,j])^2)))
  *----------------------------------------------------------------------------*/
 
@@ -72,43 +68,36 @@ dinorm(double *vect1,
        double nbpts);
 
 /*----------------------------------------------------------------------------
- * Fonction alldyn
- *
- * Réalise l'allocation et l'initialisation des vecteurs dynamiques (double)
- * sur la base du nombre de points 'nb_dyn'.
+ * Allocate and initialize dynamic vectors (double) based on the 'nb_dyn'
+ * number of points.
  *----------------------------------------------------------------------------*/
 
 void
 alldyn(void);
 
 /*----------------------------------------------------------------------------
- * Fonction allfor
- *
- * Réalise l'allocation et l'initialisation des vecteurs dynamiques (double)
- * sur la base du nombre de points 'nb_for'.
+ * Allocate and initialize dynamic vectors (double) based on the 'nb_for'
+ * number of points.
  *----------------------------------------------------------------------------*/
 
 void
 allfor(void);
 
 /*----------------------------------------------------------------------------
- * Fonction conv
+ * Convergence test for implicit calculation case
  *
- * Réalise le test de convergence en cas de calcul implicite
- *
- * renvoie: 0 si non-convergence
- *          1 si     convergence
+ * returns:
+ *   0 if not converged
+ *   1 if     converged
  *----------------------------------------------------------------------------*/
 
 int
 conv(int *icv);
 
 /*----------------------------------------------------------------------------
- * Fonction val_ant
- *
- * Écrase les données de la sous iter k-1 avec les données de la sous iter k
- * données dynamiques : vitesses
- * efforts            : forces
+ * Overwrites data from sub-iteration k-1 with data from sub-iteration k
+ * dynamic data: velocities
+ * efforts:      forces
  *----------------------------------------------------------------------------*/
 
 void

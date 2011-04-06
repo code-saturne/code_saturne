@@ -56,10 +56,8 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction pred
- *
- * Réalise la prédiction du déplacement ou des forces à partir des valeurs
- * aux pas de temps courant et precedent(s)
+ * Predict displacement or forces based on values of the current and
+ * previous time step(s)
  *
  * valpre = c1 * val1 + c2 * val2 + c3 * val3
  *----------------------------------------------------------------------------*/
@@ -74,10 +72,10 @@ pred(double *valpre,
      double c3,
      int nbpts)
 {
-  /* Variables locales */
+  /* Local variables */
   int i;
 
-  /* Mise à jour du tableau de prediction */
+  /* Update prediction array */
   for (i = 0; i < nbpts; i++) {
     valpre[3*i]     = c1*val1[3*i]     + c2*val2[3*i]     + c3*val3[3*i];
     valpre[(3*i)+1] = c1*val1[(3*i)+1] + c2*val2[(3*i)+1] + c3*val3[(3*i)+1];
@@ -86,12 +84,10 @@ pred(double *valpre,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction dinorm
+ * Compute the L2 norm of the difference between vectors vect1 and vect2
  *
- * Calcule la norme de la différence entre les vecteurs vect1 et vect2
- *
- * dinorm = sqrt(somme sur nbpts i
- *                 (somme sur composante j
+ * dinorm = sqrt(sum on nbpts i
+ *                 (sum on component j
  *                    ((vect1[i,j]-vect2[i,j])^2)))
  *----------------------------------------------------------------------------*/
 
@@ -100,11 +96,11 @@ dinorm(double *vect1,
        double *vect2,
        double nbpts)
 {
-  /* Variables locales */
+  /* Local variables */
   int i;
   double norme;
 
-  /* Calcul de la norme de la difference */
+  /* Compute the norm of the difference */
   norme = 0.;
   for (i = 0; i < nbpts; i++) {
     norme = norme + (vect1[3*i]-vect2[3*i])*(vect1[3*i]-vect2[3*i]);
@@ -116,16 +112,14 @@ dinorm(double *vect1,
 }
 
 /*----------------------------------------------------------------------------
- * Fonction alldyn
- *
- * Réalise l'allocation et l'initialisation des vecteurs dynamiques (double)
- * sur la base du nombre de points 'nb_dyn'.
+ * Allocate and initialize dynamic vectors (double) based on the 'nb_dyn'
+ * number of points.
  *----------------------------------------------------------------------------*/
 
 void
 alldyn(void)
 {
-  /* Variables locales */
+  /* Local variables */
   int k;
 
   xast =(double *)calloc(3*nb_dyn,sizeof(double));
@@ -154,16 +148,14 @@ alldyn(void)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction allfor
- *
- * Réalise l'allocation et l'initialisation des vecteurs dynamiques (double)
- * sur la base du nombre de points 'nb_for'.
+ * Allocate and initialize dynamic vectors (double) based on the 'nb_for'
+ * number of points.
  *----------------------------------------------------------------------------*/
 
 void
 allfor(void)
 {
-  /* Variables locales */
+  /* Local variables */
   int k;
 
   foras =(double *)calloc(3*nb_for,sizeof(double));
@@ -187,18 +179,17 @@ allfor(void)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction conv
+ * Convergence test for implicit calculation case
  *
- * Réalise le test de convergence en cas de calcul implicite
- *
- * renvoie: 0 si non-convergence
- *          1 si     convergence
+ * returns:
+ *   0 if not converged
+ *   1 if     converged
  *----------------------------------------------------------------------------*/
 
 int
 conv(int *icv)
 {
-  /* Variables locales */
+  /* Local variables */
   int iret;
   double delast = 0.;
 
@@ -206,28 +197,28 @@ conv(int *icv)
 
     delast = (dinorm(xast, xastp, nb_dyn))/lref;
 
-    printf("-------------------------------------\n");
-    printf("test de convergence:\n");
+    printf("--------------------------------\n");
+    printf("convergence test:\n");
     printf("delast = %4.2le\n", delast);
 
     if (delast <= epsilo) {
       *(icv) = 1;
       printf("icv = %i\n", *(icv));
-      printf("convergence de la sous iteration\n");
-      printf("-------------------------------------\n");
+      printf("convergence of sub iteration\n");
+      printf("--------------------------------\n");
     }
     else {
       printf("icv = %i\n", *(icv));
-      printf("non convergence de la sous iteration\n");
-      printf("-------------------------------------\n");
+      printf("non convergence of sub iteration\n");
+      printf("--------------------------------\n");
     }
 
     iret = 0;
   }
   else {
-    printf("la valeur de lref negative ou nulle\n");
-    printf("le calcul est interrompu\n");
-    printf("------------------------------------------\n");
+    printf("Value of lref is negative or zero\n");
+    printf("calculation is aborted\n");
+    printf("---------------------------------\n");
     iret = -1;
   }
 
@@ -235,27 +226,25 @@ conv(int *icv)
 }
 
 /*----------------------------------------------------------------------------
- * Fonction val_ant
- *
- * Écrase les données de la sous iter k-1 avec les données de la sous iter k
- * données dynamiques : vitesses
- * efforts            : forces
+ * Overwrites data from sub-iteration k-1 with data from sub-iteration k
+ * dynamic data: velocities
+ * efforts:      forces
  *----------------------------------------------------------------------------*/
 
 void
 val_ant(void)
 {
-  /* Variables locales */
+  /* Local variables */
   int i;
 
-  /* enregistrement des efforts */
+  /* record efforts */
   for (i = 0; i< nb_for; i++) {
     foaas[3*i]   = foras[3*i];
     foaas[3*i+1] = foras[3*i+1];
     foaas[3*i+2] = foras[3*i+2];
   }
 
-  /* enregistrement des donnees dynamiques */
+  /* record dynamic data */
   for (i = 0; i< nb_dyn; i++) {
     xvasa[3*i]   = xvast[3*i];
     xvasa[3*i+1] = xvast[3*i+1];

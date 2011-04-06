@@ -73,13 +73,13 @@ double  *fopas = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction runmilieu
+ * "runmilieu" function
  *----------------------------------------------------------------------------*/
 
 void
 runmilieu(void *icompo)
 {
-  /* variables locales */
+  /* local variables */
 
   int i,j;
   int ierr = 0;
@@ -90,39 +90,39 @@ runmilieu(void *icompo)
   double dtold = 0.;
   double dt = dtref;
 
-  /* Les données d'entrée du calcul couplé sont définies dans SALOME dans le
-     XML du cas d'étude */
+  /* Input data for the coupled calculation are defined in SALOME by
+     the study case's XML file */
 
-  /* Initialisation de la communication */
+  /* Initialize communication */
   if ((ierr = inicom(icompo)) >= 0) {
-    printf(" Initialisation de la communication\n");
+    printf(" Initializing communication\n");
   }
 
-  /* Envoi des paramètres aux codes */
+  /* Send parameters to codes */
   if ((ierr = send_param(icompo)) >= 0) {
-    printf(" Envoi des parametres de calcul aux codes\n");
+    printf(" Send calculation parameters to codes\n");
   }
 
-  /* Dimensionnement des tableaux et initialisation */
+  /* Compute array sizes and initialize */
 
-  /* Réception des données géométriques (nb_for et nb_dyn) */
+  /* Receive geometric data (nb_for and nb_dyn) */
   if (ierr >= 0) {
     ierr = recv_geom(icompo);
 
     printf("----------------------------------\n");
-    printf(" Parametres geometriques\n");
-    printf(" nombre de faces couplees : %i\n", nb_for);
-    printf(" nombre de noeuds couples : %i\n", nb_dyn);
-    printf(" longueur de reference (m): %4.2le\n", lref  );
+    printf(" Geometric parameters\n");
+    printf("   number of coupled faces: %i\n", nb_for);
+    printf("   number of coupled nodes: %i\n", nb_dyn);
+    printf("   reference length (m): %4.2le\n", lref  );
     printf("----------------------------------\n");
 
-    /* dynamique */
+    /* dynamics */
     alldyn();
 
     /* efforts  */
     allfor();
 
-    /* Coefficients de prediction */
+    /* Prediction coefficients */
     c1    = 0.;
     c2    = 0.;
     c3    = 0.;
@@ -130,20 +130,20 @@ runmilieu(void *icompo)
     alpha = 0.;
   }
 
-  /* Envoi des donnees geometriques a Code_Aster (a supprimer a l avenir)*/
+  /* Send geometric data to Code_Aster (remove in the future)*/
   if (ierr >= 0) {
     ierr = send_geom(icompo);
   }
 
-  /* initialisation pas de temps */
+  /* Initialize time step */
   dt = 0.;
   dt_ast = 0.;
   dt_sat = 0.;
 
-  /* initialisation iteration de couplage */
+  /* Initialize coupling iteration */
   ntcast = 0;
 
- /* Boucle principale */
+ /* Main loop */
   i = 1;
   while (ierr >= 0) {
     printf("\n");
@@ -155,26 +155,26 @@ runmilieu(void *icompo)
     printf("\n");
     printf("\n");
 
-    /* Info sur les schémas en temps */
+    /* Info on time scheme */
     if (nbssit <= 1) {
-      printf("Schema explicite de marche en temps\n");
+      printf("Explicit time-stepping scheme\n");
     }
     else {
-      printf("Schema implicite de marche en temps\n");
-      printf("Nombre de sous-iterations: %i\n", nbssit);
+      printf("Implicit time-stepping scheme\n");
+      printf("  number of sub-iterations: %i\n", nbssit);
     }
 
-    /* Gestion pas de temps */
+    /* Manage time steps */
 
-    /* Réception pdt Code_Aster et pdt Code_Saturne */
+    /* Receive time steps from Code_Aster and Code_Saturne */
     ierr = recv_pdt(icompo,&(dt_ast), &(dt_sat), i);
 
     printf("----------------------------------\n");
-    printf("pas de temps de reference: %4.21e \n", dtref );
-    printf("pas de temps saturne     : %4.2le \n", dt_sat);
-    printf("pas de temps aster       : %4.2le \n", dt_ast);
+    printf("reference time step:     %4.21e \n", dtref );
+    printf("Code_Saturne time step:  %4.2le \n", dt_sat);
+    printf("Code_Aster time step:    %4.2le \n", dt_ast);
 
-    /* choix du pdt minimum : dt = dt_ast; */
+    /* choose the smallest time step: dt = dt_ast; */
     dt = dtref;
     if (dt > dt_ast) {
       dt = dt_ast;
@@ -183,10 +183,10 @@ runmilieu(void *icompo)
       dt = dt_sat;
     }
 
-    /* envoi du pas de temps retenu */
+    /* Send the selected time step */
     if (ierr >= 0) ierr = send_pdt(icompo, dt, i);
 
-    printf("pas de temps retenu      : %4.2le \n", dt);
+    printf("selected time step:      %4.2le \n", dt);
     printf("----------------------------------\n");
     printf("\n\n");
 
@@ -196,26 +196,26 @@ runmilieu(void *icompo)
     while (ierr >= 0) {
 
       printf("*********************************\n");
-      printf("*    sous - iteration %i        *\n", j);
+      printf("*     sub - iteration %i        *\n", j);
       printf("*********************************\n");
       printf("\n\n");
 
-      /* incrémentation itération de couplage */
-      printf("milieu\n");
+      /* increment coupling iteration */
+      printf("midde\n");
       ntcast = ntcast + 1;
       printf("ntcast = %i\n", ntcast);
 
       /* printf("***************************************\n"); */
-      /* printf("*     prediction des deplacements     *\n"); */
+      /* printf("*        predict displacements        *\n"); */
       /* printf("***************************************\n"); */
 
-      /* Prédiction des déplacements */
+      /* Predict displacements */
 
       c1 = 0.;
       c2 = 0.;
       c3 = 0.;
 
-      /* distinction cas explicite / cas implicite  pour la prédiction */
+      /* seperate prediction for explicit/implicit cases */
       if (j == 1) {
         alpha = 0.5;
         beta  = 0.;
@@ -234,91 +234,91 @@ runmilieu(void *icompo)
       }
 
       printf("--------------------------------------------\n");
-      printf("Coefficients de prediction des deplacements \n");
+      printf("Displacement prediction coefficients\n");
       printf(" C1: %4.2le\n", c1);
       printf(" C2: %4.2le\n", c2);
       printf(" C3: %4.2le\n", c3);
       printf("--------------------------------------------\n");
       printf("\n\n");
 
-      /* envoi des déplacements prédits */
+      /* send predicted displacements */
       if (ierr >= 0) ierr = send_dyn(icompo);
 
-      /* cas explicite: pas besoin de faire un test de convergence */
+      /* explicit case: no need for a convergence test */
 
-      /* cas implicite: nécessite un test de convergence */
+      /* implicit case: needs a convergence test */
 
       /* printf("***************************************\n"); */
-      /* printf("*  fin prediction des deplacements    *\n"); */
+      /* printf("*  end of displacements prediction    *\n"); */
       /* printf("***************************************\n"); */
 
       /* printf("*********************************\n"); */
-      /* printf("*     prediction des forces     *\n"); */
+      /* printf("*       forces prediction       *\n"); */
       /* printf("*********************************\n"); */
 
-      /* réception des  forces */
+      /* Receive forces */
       ierr = recv_for(icompo);
 
-      /* pas de distinction cas explicite et cas implicite pour les forces */
+      /* No difference between explicit and implicit cases for forces */
       alpha = 2.0;
       c1    = alpha;
       c2    = 1-alpha;
       c3    = 0.;
       pred(fopas, foras, foaas, foaas, c1, c2, c3, nb_for);
       printf("--------------------------------------\n");
-      printf("Coefficients de prediction des forces \n");
+      printf("Forces prediction coefficients\n");
       printf(" C1: %4.2le\n",c1);
       printf(" C2: %4.2le\n",c2);
       printf(" C3: %4.2le\n",c3);
       printf("--------------------------------------\n");
       printf("\n\n");
 
-      /* envoi des forces */
+      /* send des forces */
       if (ierr >= 0) ierr = send_for(icompo);
 
       /* printf("*********************************\n"); */
-      /* printf("*   fin prediction des forces   *\n"); */
+      /* printf("*   end of forces prediction    *\n"); */
       /* printf("*********************************\n"); */
 
       printf("\n");
 
-      /* cas explicite: pas besoin de faire un test de convergence */
+      /* explicit case: no need fo a convergence test */
       if (nbssit <= 1) {
-        /* gestion de la convergence même si pas de test */
+        /* handle convergence even when no test is done */
         icv =1;
         if (ierr >= 0) ierr = send_icv1(icompo,icv);
         if (ierr >= 0) ierr = recv_icv(icompo,&(icv));
         icv = 1;
         if (ierr >= 0) ierr = send_icv2(icompo,icv);
 
-        /* réception des déplacements calculés effectivement par Code_Aster */
+        /* receive displacements effectively calculated by Code_Aster */
         if (ierr >= 0) ierr = recv_dyn(icompo);
 
-        /* enregistrement des valeurs antérieures */
+        /* record previous values */
         val_ant();
 
         break;
       }
 
-      /* cas implicite: necessite un test de convergence */
+      /* implicit case: requires a convergence test */
       else {
-        /* calcul de icv */
+        /* compute icv */
         if (ierr >= 0) ierr = conv(&(icv));
         if (ierr >= 0) ierr = send_icv1(icompo,icv);
         if (ierr >= 0) ierr = recv_icv(icompo,&(icv));
         if (ierr >= 0) ierr = send_icv2(icompo,icv);
 
         if((j>=nbssit) || (icv == 1)) {
-          /* réception des déplacements calculés effectivement par Code_Aster */
-          /* Réception des déplacements */
+          /* receive displacements effectivemey computed by Code_Aster */
+          /* Receive displacements */
           if (ierr >= 0) ierr = recv_dyn(icompo);
 
-          /* et envoi vers Code_Saturne ? la question demeure ? */
-          /* si nécessaire routine d'envoi de ces deps à créer dans milieu */
-          /* et homologue de réception dans Code_Saturne */
+          /* then send to Code_Saturne ? the question remains open... */
+          /* if necessary, function to send these displs. should be
+             created in middle and matching receive in Code_Saturne */
           /* if (ierr >= 0) ierr = send2_dyn(); */
 
-          /* réception des déplacements calculés effectivement par Code_Aster */
+          /* receive displacements effectiveley calculated by Code_Aster */
           if (ierr >= 0) ierr = recv_dyn(icompo);
           break;
         }
@@ -326,20 +326,20 @@ runmilieu(void *icompo)
           j = j+1;
         }
       }
-    } /* fin boucle sous itération */
+    } /* end of sub-iterations loop */
 
-    /* test iterations */
+    /* iterations test */
     if (i >= nbpdtm) {
       ierr = -1;
     }
-    /* fin test iterations */
+    /* end of iterations test */
 
     i = i+1;
 
-    /* sauvegarde pas de temps */
+    /* save time step */
     dtold = dt;
 
-  } /* fin boucle itération */
+  } /* en of iterations loop */
 
   ierr = calfin(icompo);
 }

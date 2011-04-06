@@ -38,29 +38,22 @@ extern "C" {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Fonction recv_geom
- *
- * Réceptionne les données geométriques et renseigne les variables
- * nb_for, nb_dyn et lref
+ * Receive geometric data and sets variables nb_for, nb_dyn and lref
  *----------------------------------------------------------------------------*/
 
 int
 recv_geom(void *component);
 
 /*----------------------------------------------------------------------------
- * Fonction send_geom
- *
- * Envoi les données géometriques à Code_Aster et renseigne
- * À supprimer lors de la phase d'initialisation
+ * Send geometric data to Code_Aster
+ * To be removed in initialization stage
  *----------------------------------------------------------------------------*/
 
 int
 send_geom(void* component);
 
 /*----------------------------------------------------------------------------
- * Fonction send_pdt
- *
- * Envoie le pas de temps calculé par le composant Milieu aux codes
+ * Sends time step computed by middle component to codes
  *----------------------------------------------------------------------------*/
 
 int
@@ -69,9 +62,7 @@ send_pdt(void *component,
          int numpdt);
 
 /*----------------------------------------------------------------------------
- * Fonction send_pdt
- *
- * Reçoit les pas de temps venant de Code_Aster et de Code_Saturne
+ * Receives time steps from Code_Aster and Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
@@ -81,61 +72,48 @@ recv_pdt(void *component,
          int numpdt);
 
 /*----------------------------------------------------------------------------
- * Fonction send_param
- *
- * Envoie les donnees suivantes:
- *                               nbpdtm
- *                               nbssit
- *                               epsilo
- *                               isyncp
- *                               ntchr
- *                               ttpabs
+ * Sends the following parameters:
+ *                                 nbpdtm
+ *                                 nbssit
+ *                                 epsilo
+ *                                 isyncp
+ *                                 ntchr
+ *                                 ttpabs
  *----------------------------------------------------------------------------*/
 
 int
-send_param(void* component);
+send_param(void *component);
 
 /*----------------------------------------------------------------------------
- * Fonction recv_dyn
- *
- * Reçoit les déplacements et les vitesses venant de Code_Aster
- * au pas de temps courant
+ * Receives displacements and velocities from Code_Aster at current time step
  *----------------------------------------------------------------------------*/
 
 int
 recv_dyn(void *component);
 
 /*----------------------------------------------------------------------------
- * Fonction send_dyn
- *
- * Envoie les déplacements prédits à Code_Saturne
+ * Send predicted displacements to Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
 send_dyn(void *component);
 
 /*----------------------------------------------------------------------------
- * Fonction recv_for
- *
- * Reçoit les efforts venant de Code_Saturne
+ * Receive efforts from Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
 recv_for(void *component);
 
 /*----------------------------------------------------------------------------
- * Fonction recv_for
- *
- * Envoie les efforts prédits vers Code_Aster
+ * Send predicted efforts to Code_Aster
  *----------------------------------------------------------------------------*/
 
 int
 send_for(void *component);
 
 /*----------------------------------------------------------------------------
- * Fonction send_icv1
- *
- * Envoie l'indice de convergence à Code_Saturne
+ * Send convergence indicator to Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
@@ -143,9 +121,7 @@ send_icv1(void *component,
           int icv);
 
 /*----------------------------------------------------------------------------
- * Fonction recv_icv
- *
- * Reçoit l'indice de convergence de Code_Saturne
+ * Receive convergence indicator from Code_Saturne
  *----------------------------------------------------------------------------*/
 
 int
@@ -153,9 +129,7 @@ recv_icv(void *component,
          int *icv);
 
 /*----------------------------------------------------------------------------
- * Fonction send_icv2
- *
- * Envoie l'indice de convergence à Code_Aster
+ * Send convergence indicator to Code_Aster
  *----------------------------------------------------------------------------*/
 
 int
@@ -163,18 +137,14 @@ send_icv2(void *component,
           int icv);
 
 /*----------------------------------------------------------------------------
- * Fonction inicom
- *
- * Initialisation de la communication avec Calcium
+ * Initialize communication with Calcium
  *----------------------------------------------------------------------------*/
 
 int
 inicom(void *component);
 
 /*----------------------------------------------------------------------------
- * Fonction calfin
- *
- * Fin de la communication avec Calcium et arrêt du calcul
+ * End communication with Calcium and stop calculation
  *----------------------------------------------------------------------------*/
 
 int

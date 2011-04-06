@@ -70,7 +70,7 @@ double  epsilo = 0.0;
 /*----------------------------------------------------------------------------
  * Fonction inter_cs_ast_set_nbpdtm
  *
- * Récuperation du pas de temps défini dans le XML du cas de couplage
+ * Get time step defined in coupling case XML description
  *----------------------------------------------------------------------------*/
 
 void
@@ -84,8 +84,8 @@ inter_cs_ast_set_nbpdtm(long i)
 /*----------------------------------------------------------------------------
  * Fonction inter_cs_ast_set_nbssit
  *
- * Récuperation du nombre de sous itérations du couplage implicite défini
- * dans le XML du cas de couplage
+ * Get number of iterations of implicit coupling defined in coupling
+ * case XML description
  *----------------------------------------------------------------------------*/
 
 void
@@ -97,7 +97,7 @@ inter_cs_ast_set_nbssit(long i)
 /*----------------------------------------------------------------------------
  * Fonction inter_cs_ast_set_isyncp
  *
- * Récuperation de isyncp défini dans le XML du cas de couplage
+ * Get "isyncp" defined in coupling case XML description
  *----------------------------------------------------------------------------*/
 
 void
@@ -109,7 +109,7 @@ inter_cs_ast_set_isyncp(long i)
 /*----------------------------------------------------------------------------
  * Fonction inter_cs_ast_set_ntchr
  *
- * Récuperation de ntchr défini dans le XML du cas de couplage
+ * Get "ntchr" defined in coupling case XML description
  *----------------------------------------------------------------------------*/
 
 void
@@ -121,7 +121,7 @@ inter_cs_ast_set_ntchr(long i)
 /*----------------------------------------------------------------------------
  * Fonction inter_cs_ast_set_dtref
  *
- * Récuperation de dtref défini dans le XML du cas de couplage
+ * Get "dtref" defined in coupling case XML description
  *----------------------------------------------------------------------------*/
 
 void
@@ -133,7 +133,7 @@ inter_cs_ast_set_dtref(double dt)
 /*----------------------------------------------------------------------------
  * Fonction inter_cs_ast_set_ttinit
  *
- * Récuperation de ttinit défini dans le XML du cas de couplage
+ * Get "ttinit" defined in coupling case XML description
  *----------------------------------------------------------------------------*/
 
 void
@@ -145,7 +145,7 @@ inter_cs_ast_set_ttinit(double tt)
 /*----------------------------------------------------------------------------
  * Fonction inter_cs_ast_set_epsilo
  *
- * Récuperation de epsilo défini dans le XML du cas de couplage
+ * Get "epsilo" defined in coupling case XML description
  *----------------------------------------------------------------------------*/
 
 void
