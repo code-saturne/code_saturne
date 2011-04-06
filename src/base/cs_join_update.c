@@ -286,7 +286,6 @@ _sync_single_vertices(const cs_join_select_t  *selection,
 {
   cs_int_t  i, s, e, rank, shift, length, request_count;
 
-  cs_int_t  *selection_tag = NULL;
   double  *s_buf = NULL, *c_buf = NULL;
   cs_join_sync_t  *s_vertices = selection->s_vertices;
   cs_join_sync_t  *c_vertices = selection->c_vertices;
@@ -306,15 +305,6 @@ _sync_single_vertices(const cs_join_select_t  *selection,
 
   BFT_MALLOC(request, c_vertices->n_ranks + s_vertices->n_ranks, MPI_Request);
   BFT_MALLOC(status, c_vertices->n_ranks + s_vertices->n_ranks, MPI_Status);
-  BFT_MALLOC(selection_tag, mesh->n_vertices, cs_int_t);
-
-  /* Define a selection tag to find quickly "single" vertices */
-
-  for (i = 0; i < mesh->n_vertices; i++)
-    selection_tag[i] = 0;
-
-  for (i = 0; i < s_vertices->n_elts; i++)
-    selection_tag[s_vertices->array[i]-1] = 1;
 
   /* Synchronization of vertex coordinates */
 
@@ -400,7 +390,6 @@ _sync_single_vertices(const cs_join_select_t  *selection,
   BFT_FREE(s_buf);
   BFT_FREE(request);
   BFT_FREE(status);
-  BFT_FREE(selection_tag);
 
 }
 
