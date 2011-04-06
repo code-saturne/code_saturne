@@ -1,4 +1,5 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
+#
 #-------------------------------------------------------------------------------
 #
 #     This file is part of the Code_Saturne User Interface, element of the
