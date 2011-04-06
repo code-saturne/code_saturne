@@ -1035,9 +1035,7 @@ _cut_warped_faces(cs_mesh_t       *mesh,
 
   /* Build flag for each face from list of faces to cut */
 
-  /* Build flag for each face from list of faces to cut */
-
-  BFT_MALLOC(cut_flag, mesh->n_i_faces, char);
+  BFT_MALLOC(cut_flag, n_init_faces, char);
 
   for (face_id = 0; face_id < n_init_faces; face_id++)
     cut_flag[face_id] = 0;

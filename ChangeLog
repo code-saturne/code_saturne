@@ -1,4 +1,9 @@
 * 06/04/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix memory allocation in the warped-face cutting algorithm.
+  modified routine:
+    src/base/cs_mesh_warping.c
+
+* 06/04/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix a couple of things in the scripts to handle SYRTHES coupling.
   modified scripts:
     bin/cs_case_domain.py
