@@ -1,4 +1,10 @@
 * 06/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Prefer having the runcase_aster.in file with other script files for
+  EXTRA_DIST variable.
+  modified script
+    Makefile.am
+
+* 06/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Translate libmilieu comments to English.
   modified files:
     salome/libmilieu/communication.c

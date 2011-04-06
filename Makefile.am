@@ -70,7 +70,6 @@ COMPATIBILITY \
 QUALITY_ASSURANCE \
 po/Makevars.template \
 po/Rules-install \
-bin/runcase_aster.in \
 sbin/backup \
 sbin/bootstrap \
 sbin/clean \
@@ -177,7 +176,7 @@ bin/runcase_aster: $(srcdir)/bin/runcase_aster.in
 bin/runcase_coupling: $(srcdir)/bin/runcase_coupling.in 
 
 CLEANFILES = $(edit_scripts)
-EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase_coupling.in
+EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in bin/runcase_aster.in bin/runcase_coupling.in
 
 # Install binary scripts
 
