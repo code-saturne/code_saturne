@@ -1,3 +1,9 @@
+* 06/04/2011 - David Monfort <david.monfort@edf.fr>
+  Update bash completion script and code_saturne command help.
+  modified scripts:
+    bin/cs_script.py
+    extras/bash_completion/code_saturne
+
 * 06/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add extra synchronization info flags for PLE coupling.
   modified files:

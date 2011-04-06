@@ -77,6 +77,7 @@ Topics:
   create
   gui
   info
+  run
   salome
 
 Options:

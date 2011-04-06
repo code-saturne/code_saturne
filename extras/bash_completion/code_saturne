@@ -34,7 +34,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="check_consistency check_mesh compile config create gui info salome"
+    cmds="check_consistency check_mesh compile config create gui info run salome"
 
     # Help and Case options
     local helpOpts="-h --help"
@@ -93,13 +93,23 @@ _code_saturne() {
                      -s --source -d --dest --opt-libs --syrthes";;
             esac
             ;;
+        config)
+            case ${prev} in
+                --have)               COMPREPLY=( ); return 0;;
+                --cppflags|--ldflags) COMPREPLY=( ); return 0;;
+                --libs|--deplibs)     COMPREPLY=( ); return 0;;
+                *) cmdOpts="--cc --cxx --fc --cflags --cxxflags --fcflags \
+                     --rpath --pyuic4 --pyrcc4 \
+                     --have --cppflags --ldflags --libs --deplibs";;
+            esac
+            ;;
         create)
             case ${prev} in
                 -c|--case)     COMPREPLY=( ); return 0;;
                 -s|--study)    COMPREPLY=( ); return 0;;
                 --syrthes|--aster) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
-                *) cmdOpts="-s --study -c --case -n --nogui --noref --copy-from \
+                *) cmdOpts="-s --study -c --case --nogui --noref --copy-from \
                      --syrthes --aster -q --quiet -v --verbose";;
             esac
             ;;
@@ -108,7 +118,7 @@ _code_saturne() {
                 -f|--file)  _filedir; return 0;;
                 -b|--batch) COMPREPLY=( ); return 0;;
                 *) cmdOpts="-f --file -b --batch -n --new \
-                     --no-tree -z --no-splash";;
+                     -r --read-only --no-tree -z --no-splash";;
             esac
             ;;
         info)
@@ -122,6 +132,15 @@ _code_saturne() {
                     return 0
                     ;;
                 *) cmdOpts="-r --reader -g --guide --version"
+            esac
+            ;;
+        run)
+            case ${prev} in
+                -p|--param)  _filedir; return 0;;
+                --case)      _filedir -d; return 0;;
+                --id)        COMPREPLY=( ); return 0;;
+                *) cmdOpts="-p --param --case --id --suggest-id \
+                     --initialize --execute --finalize";;
             esac
             ;;
         *)
@@ -176,7 +195,12 @@ _code_saturne() {
             --param)         cmdOpts=${cmdOpts/ -p / } ;;
             -q)              cmdOpts=${cmdOpts/ --quiet / } ;;
             --quiet)         cmdOpts=${cmdOpts/ -q / } ;;
-            -r)              cmdOpts=${cmdOpts/ --reader / } ;;
+            -r)
+                case ${cmd} in
+                    info)    cmdOpts=${cmdOpts/ --reader / } ;;
+                    gui)     cmdOpts=${cmdOpts/ --read-only / } ;;
+                esac ;;
+            --read-only)     cmdOpts=${cmdOpts/ -r / } ;;
             --reader)        cmdOpts=${cmdOpts/ -r / } ;;
             -s)
                 case ${cmd} in
