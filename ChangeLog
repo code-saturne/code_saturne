@@ -3,7 +3,6 @@
   modified files:
     libple/src/ple_coupling.h
 
-    gui/Base/BrowserView.py
 * 06/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Replace iso-8859-1 by utf-8 coding in GUI source for consistency
   (most are actually simply ASCII).
