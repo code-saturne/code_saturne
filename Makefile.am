@@ -70,6 +70,7 @@ COMPATIBILITY \
 QUALITY_ASSURANCE \
 po/Makevars.template \
 po/Rules-install \
+bin/runcase_aster.in \
 sbin/backup \
 sbin/bootstrap \
 sbin/clean \
@@ -218,7 +219,9 @@ bin/runcase_aster \
 bin/runcase_coupling \
 bin/SaturneGUI
 
-dist_pkgdata_SCRIPTS =
+dist_pkgdata_SCRIPTS = \
+bin/runcase_mpi_rank \
+bin/runcase_syrthes
 
 # Install thermochemistry and other data files
 
