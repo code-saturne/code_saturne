@@ -9,7 +9,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2010  EDF
+  Copyright (C) 2005-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -70,18 +70,25 @@ extern "C" {
 #define PLE_COUPLING_NEW_ITERATION    (1 << 4)
 #define PLE_COUPLING_REDO_ITERATION   (1 << 5)
 
+/* Time step value handling bits */
+
+#define PLE_COUPLING_TS_MIN           (1 << 6)  /* Use smallest time step */
+#define PLE_COUPLING_TS_LEADER        (1 << 7)  /* Prescribe time step for all
+                                                   members of group (only one
+                                                   member may set this flag) */
+
 /* Calculation type or state information bits */
 
-#define PLE_COUPLING_UNSTEADY         (1 << 6)
-#define PLE_COUPLING_STEADY           (1 << 7)
-#define PLE_COUPLING_CONVERGED        (1 << 8)
+#define PLE_COUPLING_UNSTEADY         (1 << 8)
+#define PLE_COUPLING_STEADY           (1 << 9)
+#define PLE_COUPLING_CONVERGED        (1 << 10)
 
 /* Optional user code information bits */
 
-#define PLE_COUPLING_USER_1           (1 << 9)
-#define PLE_COUPLING_USER_2           (1 << 10)
-#define PLE_COUPLING_USER_3           (1 << 11)
-#define PLE_COUPLING_USER_4           (1 << 12)
+#define PLE_COUPLING_USER_1           (1 << 11)
+#define PLE_COUPLING_USER_2           (1 << 12)
+#define PLE_COUPLING_USER_3           (1 << 13)
+#define PLE_COUPLING_USER_4           (1 << 14)
 
 /*============================================================================
  * Type definitions
@@ -97,7 +104,7 @@ typedef struct _ple_coupling_mpi_set_t  ple_coupling_mpi_set_t;
 
 typedef struct {
 
-  int          status;    /* Status flag for synchroniation info */
+  int          status;    /* Status flag for synchronization info */
   int          root_rank; /* Application root rank in MPI_COMM_WORLD */
   int          n_ranks;   /* Number of ranks associated with application */
   const char  *app_type;  /* Application type name (may be empty) */
