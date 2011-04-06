@@ -1,4 +1,10 @@
 * 06/04/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix a couple of things in the scripts to handle SYRTHES coupling.
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+
+* 06/04/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Remove unused array in the joining algorithm.
   modified routine:
     src/base/cs_join_update.c

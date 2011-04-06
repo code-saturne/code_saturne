@@ -262,7 +262,7 @@ class case:
         # If process count is given and not sufficient, abort.
 
         elif n_procs < n_procs_min:
-            ' Error:\n' \
+            err_str = ' Error:\n' \
                 '   The current calculation scheme requires at least ' \
                 + str(n_procs_min) + 'processes,\n' \
                 + '   while the execution environment provides only ' \
@@ -634,7 +634,7 @@ class case:
 
         if n_procs != None:
             if n_procs < d.partition_n_procs:
-                ' Error:\n' \
+                err_str = ' Error:\n' \
                     '   The current partitioning scheme requires at least ' \
                     + str(n_procs_min) + 'processes,\n' \
                     + '   while the execution environment provides only ' \

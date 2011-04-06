@@ -1580,7 +1580,7 @@ class syrthes_domain(base_domain):
             args += ' --name ' + self.name
 
         # Output to a logfile
-        # args += ' --log ' + self.logfile
+        args += ' --log ' + self.logfile
 
         # Adjust for Valgrind if used
 
@@ -1602,7 +1602,6 @@ class syrthes_domain(base_domain):
         # Build command-line arguments
 
         args = '-d ' + os.path.join(self.case_dir, self.param)
-        args += ' -l ' + self.logfile
         args += ' --name ' + self.name
 
         if self.n_procs != None and self.n_procs != 1:
@@ -1638,6 +1637,11 @@ class syrthes_domain(base_domain):
             sys.exit(1)
 
         self.syrthes_case = syrthes.process_cmd_line(args.split())
+
+        if self.syrthes_case.logfile == None:
+            self.syrthes_case.set_logfile(self.logfile)
+        else:
+            self.logfile = self.syrthes_case.logfile
 
         # Read data file and store parameters
 
