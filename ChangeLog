@@ -1,4 +1,9 @@
-* 05/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+* 06/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Only define mesh format in XML file when non-default.
+  modified files:
+    gui/Pages/SolutionDomainModel.py
+
+* 06/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Revert removal of bin/runcase_mpi_rank and bin/runcase_syrthes scripts from
   installation, and add runcase_aster to make dist.
   modified files:

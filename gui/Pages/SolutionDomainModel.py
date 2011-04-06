@@ -455,21 +455,16 @@ class SolutionDomainModel(MeshModel, Model):
 # Methods to manage meshes :
 #=========================
 
-    def addMesh(self, mesh, format=None):
+    def addMesh(self, mesh):
         """
         Public method. Add mesh name in xml file.
         """
         self.isNotInList(mesh, self.getMeshList())
-        if not format:
-            format = MeshModel().getMeshFormat(mesh[0])
-        else:
-            self.isInList(format, MeshModel().ext.values())
 
         if mesh[1] != None:
-            self.node_meshes.xmlInitNode('mesh',
-                                         name=mesh[0], format=format, path=mesh[1])
+            self.node_meshes.xmlInitNode('mesh', name=mesh[0], path=mesh[1])
         else:
-            self.node_meshes.xmlInitNode('mesh', name=mesh[0], format=format)
+            self.node_meshes.xmlInitNode('mesh', name=mesh[0])
 
 
     def delMesh(self, mesh):
