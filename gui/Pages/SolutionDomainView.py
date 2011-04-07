@@ -989,7 +989,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             # 2) Update View and model
 
             format = MeshModel().getMeshFormat(mesh[0])
-            self.mdl.addMesh(mesh, format)
+            self.mdl.addMesh(mesh)
             self.modelMeshes.addRow(mesh, format)
 
         self._tableViewLayout()

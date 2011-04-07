@@ -1,4 +1,9 @@
 * 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI: fix error introduced in revision 1952 when adding mesh.
+  modified files:
+    gui/Pages/SolutionDomainView.py
+
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Convert AUTHORS and ChangeLog to UTF-8, update AUTHORS and TODO.
   modified files:
     ChangeLog
