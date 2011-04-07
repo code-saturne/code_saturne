@@ -225,36 +225,42 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
     def __csPostTreatment(self):
         if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
-            if self.fmt == "--ensight":
 
-                os.rename(os.path.join(self.exec_dir, 'chr.ensight'),
-                          os.path.join(self.exec_dir, 'quality.ensight'))
+            try:
 
-                os.chdir(os.path.join(self.exec_dir, 'quality.ensight'))
+                if self.fmt == "--ensight":
 
-                for src in os.listdir(os.getcwd()):
-                    if src[:4] == "chr.":
-                        dst = src.replace("chr.", "quality.")
-                        os.rename(src, dst)
+                    os.rename(os.path.join(self.exec_dir, 'chr.ensight'),
+                              os.path.join(self.exec_dir, 'quality.ensight'))
 
-                os.rename('CHR.case', 'QUALITY.case')
+                    os.chdir(os.path.join(self.exec_dir, 'quality.ensight'))
 
-                out = cStringIO.StringIO()
-                f = open('QUALITY.case')
-                for line in f:
-                    out.write(line.replace('chr', 'quality'))
-                f.close()
-                out2 = open('QUALITY.case', 'w')
-                out2.write(out.getvalue())
-                out2.close()
+                    for src in os.listdir(os.getcwd()):
+                        if src[:4] == "chr.":
+                            dst = src.replace("chr.", "quality.")
+                            os.rename(src, dst)
 
-                os.chdir(self.exec_dir)
+                    os.rename('CHR.case', 'QUALITY.case')
 
-            elif self.fmt == "--med":
-                os.rename('chr.med', 'QUALITY.med')
+                    out = cStringIO.StringIO()
+                    f = open('QUALITY.case')
+                    for line in f:
+                        out.write(line.replace('chr', 'quality'))
+                    f.close()
+                    out2 = open('QUALITY.case', 'w')
+                    out2.write(out.getvalue())
+                    out2.close()
 
-            elif self.fmt == "--cgns":
-                os.rename('chr.cgns', 'QUALITY.cgns')
+                    os.chdir(self.exec_dir)
+
+                elif self.fmt == "--med":
+                    os.rename('chr.med', 'QUALITY.med')
+
+                elif self.fmt == "--cgns":
+                    os.rename('chr.cgns', 'QUALITY.cgns')
+
+            except OSError: # file to rename might not exist
+                pass
 
         # Cleanup
         mesh_input = os.path.join(self.exec_dir, 'mesh_input')

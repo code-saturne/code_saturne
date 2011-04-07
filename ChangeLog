@@ -1,4 +1,10 @@
 * 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI: check mesh should work correctly even when no quality criteria
+  postprocessing is produced (required for NEPTUNE_CFD).
+  modified files:
+    gui/Pages/SolutionVerifView.py
+
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI: fix error introduced in revision 1952 when adding mesh.
   modified files:
     gui/Pages/SolutionDomainView.py
