@@ -1,4 +1,9 @@
 * 21/07/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Deactivate debugging code.
+  modified routines:
+    src/base/cs_join_update.c
+
+* 21/07/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Remove unused array in the joining algorithm.
   modified routines:
     src/base/cs_join_update.c

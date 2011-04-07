@@ -2483,7 +2483,7 @@ _print_error_info(cs_int_t                jfnum,
 
   /* Define a specific name for the output */
 
-#if 1 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
+#if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
   {
     int  len;
     FILE  *dbg_file = NULL;
