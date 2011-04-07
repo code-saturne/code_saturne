@@ -1,3 +1,8 @@
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix missing synchronization of periodic cell families in serial build.
+  modified file:
+    src/base/cs_mesh.c
+
 * 04/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Further corrections to detection of number of processors with LSF.
   modified file:

@@ -1091,43 +1091,44 @@ cs_mesh_init_parall(cs_mesh_t  *mesh)
   cs_int_t  i;
   fvm_gnum_t  n_g_elts[4], max_elt_num[4];
 
-  if (cs_glob_n_ranks <= 1)
-    return;
+  if (cs_glob_n_ranks > 1) {
 
-  bft_printf(_("\n Global definition of the number of elements "
-               "(cells, vertices, faces...)\n"));
+    bft_printf(_("\n Global definition of the number of elements "
+                 "(cells, vertices, faces...)\n"));
 
-  /* Global dimensions of the mesh */
+    /* Global dimensions of the mesh */
 
-  max_elt_num[0] = mesh->n_cells;
-  MPI_Allreduce(max_elt_num, n_g_elts, 1, FVM_MPI_GNUM, MPI_SUM,
-                cs_glob_mpi_comm);
+    max_elt_num[0] = mesh->n_cells;
+    MPI_Allreduce(max_elt_num, n_g_elts, 1, FVM_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
 
-  max_elt_num[1] = 0;
-  for (i = 0; i < mesh->n_i_faces; i++) {
-    if (mesh->global_i_face_num[i] > max_elt_num[1])
-      max_elt_num[1] = mesh->global_i_face_num[i];
+    max_elt_num[1] = 0;
+    for (i = 0; i < mesh->n_i_faces; i++) {
+      if (mesh->global_i_face_num[i] > max_elt_num[1])
+        max_elt_num[1] = mesh->global_i_face_num[i];
+    }
+
+    max_elt_num[2] = 0;
+    for (i = 0; i < mesh->n_b_faces; i++) {
+      if (mesh->global_b_face_num[i] > max_elt_num[2])
+        max_elt_num[2] = mesh->global_b_face_num[i];
+    }
+
+    max_elt_num[3] = 0;
+    for (i = 0; i < mesh->n_vertices; i++) {
+      if (mesh->global_vtx_num[i] > max_elt_num[3])
+        max_elt_num[3] = mesh->global_vtx_num[i];
+    }
+
+    MPI_Allreduce(max_elt_num + 1, n_g_elts + 1, 3, FVM_MPI_GNUM, MPI_MAX,
+                  cs_glob_mpi_comm);
+
+    mesh->n_g_cells = n_g_elts[0];
+    mesh->n_g_i_faces = n_g_elts[1];
+    mesh->n_g_b_faces = n_g_elts[2];
+    mesh->n_g_vertices = n_g_elts[3];
+
   }
-
-  max_elt_num[2] = 0;
-  for (i = 0; i < mesh->n_b_faces; i++) {
-    if (mesh->global_b_face_num[i] > max_elt_num[2])
-      max_elt_num[2] = mesh->global_b_face_num[i];
-  }
-
-  max_elt_num[3] = 0;
-  for (i = 0; i < mesh->n_vertices; i++) {
-    if (mesh->global_vtx_num[i] > max_elt_num[3])
-      max_elt_num[3] = mesh->global_vtx_num[i];
-  }
-
-  MPI_Allreduce(max_elt_num + 1, n_g_elts + 1, 3, FVM_MPI_GNUM, MPI_MAX,
-                cs_glob_mpi_comm);
-
-  mesh->n_g_cells = n_g_elts[0];
-  mesh->n_g_i_faces = n_g_elts[1];
-  mesh->n_g_b_faces = n_g_elts[2];
-  mesh->n_g_vertices = n_g_elts[3];
 
 #endif
 
