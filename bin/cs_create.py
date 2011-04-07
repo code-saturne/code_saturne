@@ -139,6 +139,27 @@ def make_executable(filename):
 
 
 #-------------------------------------------------------------------------------
+# Build lines necessary to import SYRTHES packages
+#-------------------------------------------------------------------------------
+
+def syrthes_path_line():
+    """
+    Build lines necessary to import SYRTHES packages
+    """
+    line = None
+    try:
+        config = ConfigParser.ConfigParser()
+        config.read([self.package.get_configfile(),
+                     os.path.expanduser('~/.' + self.package.configfile)])
+        syr_datapath = os.path.join(config.get('install', 'syrthes'),
+                                    os.path.join('share', 'syrthes'))
+        line = 'sys.path.insert(1, ' + syr_datapath + ')\n'
+    except Exception:
+        pass
+
+    return line
+
+#-------------------------------------------------------------------------------
 # Comment or uncomment examples in user files
 #-------------------------------------------------------------------------------
 
@@ -455,13 +476,20 @@ class Study:
         e_dir = re.compile('CASEDIRNAME')
         e_apps = re.compile('APP_DICTS')
 
+        syrthes_insert = syrthes_path_line()
+
         fd  = open(runcase, 'r')
         fdt = open(runcase_tmp,'w')
 
         for line in fd:
+
             line = re.sub(e_dir, repbase, line)
             line = re.sub(e_apps, dict_str, line)
             fdt.write(line)
+
+            if syrthes_insert and line[0:15] == 'sys.path.insert':
+                fdt.write(syrthes_insert)
+                syrthes_insert = None
 
         fd.close()
         fdt.close()

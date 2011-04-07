@@ -1,3 +1,10 @@
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Location of SYRTHES 4 install is now fixed when creating a
+  coupled case, not at runtime.
+  modified files:
+    bin/cs_create.py
+    bin/cs_case_domain.py
+
 * 06/04/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix memory allocation in the warped-face cutting algorithm.
   modified routine:
