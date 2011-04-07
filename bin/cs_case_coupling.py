@@ -21,15 +21,11 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-import ConfigParser
-import datetime
 import os
 import os.path
 import sys
-import stat
 
 import cs_config
-import cs_check_consistency
 
 from cs_exec_environment import *
 from cs_case_domain import *

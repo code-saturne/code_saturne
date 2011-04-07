@@ -1,4 +1,10 @@
 * 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove unused module imports and definitions.
+  modified files:
+    bin/cs_case.py
+    bin/cs_case_coupling.py
+
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixes to coupled case creation.
   modified files:
     bin/cs_create.py

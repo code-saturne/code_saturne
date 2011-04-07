@@ -467,25 +467,6 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def get_syrthes_path(self):
-
-        """
-        Get SYRTHES path.
-        """
-        syr_path = 'None'
-        try:
-            config = ConfigParser.ConfigParser()
-            config.read([self.package.get_configfile(),
-                         os.path.expanduser('~/.' + self.package.configfile)])
-            syr_path = os.path.join(config.get('install', 'syrthes'))
-        except Exception:
-            if (len(self.package.syrthes_prefix) > 0):
-                syr_path = self.package.syrthes_prefix
-
-        return syr_path
-
-    #---------------------------------------------------------------------------
-
     def summary_init(self, exec_env):
 
         """
