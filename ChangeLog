@@ -1,3 +1,8 @@
+* 21/07/2010 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Remove unused array in the joining algorithm.
+  modified routines:
+    src/base/cs_join_update.c
+
 * 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix missing synchronization of periodic cell families in serial build.
   modified file:
