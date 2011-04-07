@@ -33,33 +33,18 @@ SCRIPTS ET DOC
  - doc noyau calcul du pas de temps en compressible
  - doc noyau lois de paroi (IDEUCH=2) + MAJ de RCPROD et RCFLUX
  - doc noyau gradients et limitation des gradients
- - doc noyau distance à la paroi + y+
-
-* Le "commente_exemple" de cree_sat peut etre tres long
+ - doc noyau distance a la paroi + y+
 
 * Reorganiser la base des cas tests
 
-* Adapter les scripts d'autovalidation pour prendre en compte les fichier
-  de sortie binaire EnSight (changement ASCII => binaire du mode verif)
-
 IHM
 ---
-* Quand on ne visite pas la page des physiques particulieres, meme si on n'a 
-  rien a y faire, le code plante et demande de remplir usipph.
-
-* Pb des "d" quand on rentre des 1.D0 par megarde
-
-* Phys part, suivi des evolutions du noyau (CL de sortie, ...)
-
 * Blinder le cas ou on change le nombre de variables dans usini1 (scalaire de plus
   ou changement de modele de turb). A priori, il y a seulement a relire nscaus
   dans CSVNUM
 
 BASE
 ----
-* Modifier les commentaires des routines utilisant le selector, rajouter
-  MAXELT et LSTELT aux autres routines usts* et traiter proprement usdpst.F
-
 * Remettre SRROM et DIFLT0 a -GRAND dans cpini1.F quand l'IHM leur redonnera une
   valeur par defaut
 
@@ -113,9 +98,6 @@ BASE
 * En cas d'utilisation de van Driest, le Fourier max et le pas de temps sont
   calcules avant l'amortissement -> peut etre limitant
 
-* PARCOM et PERCOM de CLVOLC peut-etre redondants par rapport a
-  cs_maillage_grd_calc
-
 * Unifier les boucles de sous-iterations ALE et U/P. La boucle U/P doit etre remontee
   pour pouvoir impliciter les CL (notamment pour MIGAL). Attention a ce qui est remis
   aux anciennes valeurs en fin de boucle. Pour l'instant, dans le cas U/P on met la
@@ -136,18 +118,18 @@ COGZ
 
 LAGR
 ----
-* iconfo est dimensionne en dur à 100 dans 3 sous-programmes (lagcel, lagnex, lagnwc)
-  -> centraliser son dimensionnement et tester si le nb de sommets est > à 100.
+* iconfo est dimensionne en dur a 100 dans 3 sous-programmes (lagcel, lagnex, lagnwc)
+  -> centraliser son dimensionnement et tester si le nb de sommets est > 100.
 
 * Prevoir le cas ilagr=2 pour ineedy (i.e. forces de paroi)
 
 ELEC
 ----
-* uselrc n'est pas standard. Il est activé par ielcor=1 et pas seulement par le fait
+* uselrc n'est pas standard. Il est active par ielcor=1 et pas seulement par le fait
   de le placer dans fort -> eliminer le test sur ielcor dans scalai.f90. Il faudrait 
   cependant conserver un ielcor dans uselrc pour activer le recalage par defaut prevu
   dans uselrc sans avoir a placer le ss-prg dans SRC. Attention, uselrc est commun
-  a Joule et Arcs électriques.
+  a Joule et Arcs electriques.
 
 CFBL
 ----
@@ -158,8 +140,6 @@ RAYT
 
 ALE
 ---
-* Branchement de couplage avec Aster.
-
 * Non compatible avec la periodicite de rotation (a cause de inimas
     qui necessiterait de connaitre le gradient de w) -> au pire le changer
     en ne reconstruisant pas a ces points la
@@ -305,7 +285,7 @@ BASE
   des cellules pourrait n'etre faite qu'une fois dans clvolc, a condition que le voisinage
   etendu y soit bien defini.
 
-* Supprimer les dépendances croises entre cs_mesh.* et cs_ext_neighborhood.*,
+* Supprimer les dependances croises entre cs_mesh.* et cs_ext_neighborhood.*,
   ou au moins faire apparaitre la hierarchie des structures
   (peut necessiter la creation d'un fichier cs_mesh_priv.h, et le maintien d'un lien
   entre les structures de maillage publiques et privees, ou le passage de certains
