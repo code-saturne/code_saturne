@@ -153,7 +153,7 @@ def syrthes_path_line():
                      os.path.expanduser('~/.' + self.package.configfile)])
         syr_datapath = os.path.join(config.get('install', 'syrthes'),
                                     os.path.join('share', 'syrthes'))
-        line = 'sys.path.insert(1, ' + syr_datapath + ')\n'
+        line = 'sys.path.insert(1, \'' + syr_datapath + '\')\n'
     except Exception:
         pass
 
@@ -414,7 +414,7 @@ class Study:
         e_pkg = re.compile('PACKAGE')
         e_dom = re.compile('DOMAIN')
 
-        solver_name = self.package.solver_name
+        solver_name = self.package.name
 
         for c in self.cases:
 
@@ -620,7 +620,7 @@ class Study:
 
         batch_file = os.path.join(distrep, 'runcase')
         if scriptname == 'runcase_coupling':
-            batchfile += '_batch'
+            batch_file += '_batch'
 
         fd = open(batch_file, 'w')
 

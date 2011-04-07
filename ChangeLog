@@ -1,4 +1,9 @@
 * 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixes to coupled case creation.
+  modified files:
+    bin/cs_create.py
+
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Location of SYRTHES 4 install is now fixed when creating a
   coupled case, not at runtime.
   modified files:
