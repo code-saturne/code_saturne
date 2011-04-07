@@ -1,4 +1,9 @@
 * 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  BLAS detection now handles Intel MKL 10.3 distributed with ICC 12.
+  modified file:
+    m4/cs_blas.m4
+
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI: check mesh should work correctly even when no quality criteria
   postprocessing is produced (required for NEPTUNE_CFD).
   modified files:

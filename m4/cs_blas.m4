@@ -155,12 +155,25 @@ if test "x$with_blas" != "xno" ; then
   if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xMKL" ; then
 
     if test "x$with_blas_lib" = "x" ; then
+      mkl_lib="$with_blas/lib"
       if test `uname -m` = ia64 ; then
-        mkl_sub_lib="/64"
+        if test -d ${mkl_lib}/intel64 ; then
+          mkl_sub_lib="/intel64"
+        elif test -d ${mkl_lib}/64 ; then
+          mkl_sub_lib="/64"
+        fi
       elif test `uname -m` = x86_64 ; then
-        mkl_sub_lib="/em64t"
+        if test -d ${mkl_lib}/intel64 ; then
+          mkl_sub_lib="/intel64"
+        elif test -d ${mkl_lib}/em64t ; then
+          mkl_sub_lib="/em64t"
+        fi
       else
-        mkl_sub_lib="/32"
+        if test -d ${mkl_lib}/ia32 ; then
+          mkl_sub_lib="/ia32"
+        elif test -d ${mkl_lib}/32 ; then
+          mkl_sub_lib="/32"
+        fi
       fi
     fi
 
