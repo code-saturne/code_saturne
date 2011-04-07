@@ -156,6 +156,7 @@ if test "x$with_blas" != "xno" ; then
   if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xMKL" ; then
 
     if test "x$with_blas_lib" = "x" ; then
+      mkl_lib="$with_blas/lib"
       if test `uname -m` = ia64 ; then
         if test -d ${mkl_lib}/intel64 ; then
           mkl_sub_lib="/intel64"
