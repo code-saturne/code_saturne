@@ -57,6 +57,8 @@
     CS_ROOT=/gpfs/home/saturne/Code_Saturne/1.3
   elif [ "$NOM_ARCH" = "calibre7" ] ; then
     CS_ROOT=/netdata/saturne/Code_Saturne/1.3
+  elif [ "$NOM_ARCH" = "ivanoe" ] ; then
+    CS_ROOT=/home/projets/saturne/Code_Saturne/1.3
   else
     CS_ROOT=/home/saturne/Code_Saturne/1.3
   fi

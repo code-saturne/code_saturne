@@ -35,7 +35,7 @@
 # Macros for BFT
 #---------------
 
-BFT_HOME        =/home/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/ivanoe
+BFT_HOME        =/home/projets/saturne/Code_Saturne/1.3/opt/bft-1.1/arch/ivanoe
 
 BFT_INC         =-I$(BFT_HOME)/include
 BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
@@ -43,7 +43,7 @@ BFT_LDFLAGS     =-L$(BFT_HOME)/lib -lbft
 # Macros for FVM
 #---------------
 
-FVM_HOME        =/home/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/ivanoe
+FVM_HOME        =/home/projets/saturne/Code_Saturne/1.3/opt/fvm-0.15/arch/ivanoe_ompi
 
 FVM_INC         =-I$(FVM_HOME)/include
 FVM_LDFLAGS     =-L$(FVM_HOME)/lib -lfvm
@@ -84,10 +84,10 @@ XML_LIB  =-lxml2
 
 # BLAS support
 BLAS            =1
-BLAS_HOME       =/logiciels/intel/composerxe-2011.0.084/mkl
+BLAS_HOME       =/logiciels/intel/cmkl/10.2.5.035
 BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_MKL
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
 # Macros for gettext
 #-------------------
