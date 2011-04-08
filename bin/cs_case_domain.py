@@ -791,8 +791,8 @@ class domain(base_domain):
                         break
 
             if not os.path.isfile(mesh_path):
-                err_str = 'Mesh file ' + mesh + ' not found'
-                if not (os.path.isabs(mesh_file) or mesh_dirs):
+                err_str = 'Mesh file ' + m + ' not found'
+                if not (os.path.isabs(mesh_path) or mesh_dirs):
                     err_str += '(no mesh directory given)'
                 raise RunCaseError(err_str)
 

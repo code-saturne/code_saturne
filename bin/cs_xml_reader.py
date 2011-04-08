@@ -219,22 +219,24 @@ class Parser:
                 self.dict['mesh_input'] = mesh_input
                 return
 
-        # Get meshes search directory.
-
-        node = getChildNode(sol_domain_node, 'meshdir')
-
-        if node != None:
-            meshdir = str(node.getAttribute('name'))
-            if len(meshdir) > 0:
-                self.dict['mesh_dir'] = meshdir
-
         # Get meshes.
 
         meshes = []
 
         meshes_node = getChildNode(sol_domain_node, 'meshes_list')
+
         if meshes_node != None:
+
+            # Get meshes search directory.
+            node = getChildNode(meshes_node, 'meshdir')
+            if node != None:
+                meshdir = str(node.getAttribute('name'))
+                if len(meshdir) > 0:
+                    self.dict['mesh_dir'] = meshdir
+
+            # Get meshes list
             nodeList = childNodeList(meshes_node, 'mesh')
+
         else:
             nodeList = []
 
