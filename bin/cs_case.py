@@ -1194,11 +1194,12 @@ fi
 
         # General values
 
-        if run_id == None:
+        if run_id != None:
+            self.run_id = run_id
+
+        if self.run_id == None:
             now = datetime.datetime.now()
             self.run_id = now.strftime('%Y%m%d-%H%M')
-        else:
-            self.run_id = run_id
 
         for d in self.domains:
             if d.adaptation:

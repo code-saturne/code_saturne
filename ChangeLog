@@ -1,4 +1,9 @@
 * 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix handing of prescribed run id by execution script.
+  modified file:
+    bin/cas_case.py
+
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   BLAS detection now handles Intel MKL 10.3 distributed with ICC 12.
   modified file:
     m4/cs_blas.m4
