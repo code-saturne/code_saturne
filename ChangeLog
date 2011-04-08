@@ -1,4 +1,9 @@
 * 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix handling of meshes by XML file when only one mesh is present.
+  modified file:
+    bin/cs_xml_reader.py
+
+* 07/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix handing of prescribed run id by execution script.
   modified file:
     bin/cas_case.py

@@ -266,7 +266,7 @@ class Parser:
             else:
                 meshes.append(name)
 
-        if len(meshes) > 1:
+        if len(meshes) > 0:
             self.dict['meshes'] = meshes
 
     #---------------------------------------------------------------------------
