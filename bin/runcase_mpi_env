@@ -42,6 +42,8 @@ elif [ ! -z "$LSB_HOSTS" ] ; then       # LSF queueing system
    \rm -f $RUN/hostsfile
    echo $LSB_HOSTS | awk '{ for (ii = 1; ii < NF+1; ++ii) print $ii }' >> $RUN/hostsfile
    MPIHOSTS="$RUN/hostsfile"
+elif [ ! -z "$LOADL_HOSTFILE" ] ; then    # Load Leveler
+   MPIHOSTS="$LOADL_HOSTFILE"
 elif [ ! -z "$PROCESSOR_LIST" ] ; then
    \rm -f $RUN/hostsfile
    localproc=`hostname`
@@ -66,6 +68,12 @@ if [ -z  "${NUMBER_OF_PROCESSORS}" ] ; then
   elif [ ! -z  "${MPIHOSTS}" ] ; then
     # PBS queueing system
     NUMBER_OF_PROCESSORS=`cat $MPIHOSTS | wc -l`
+  elif [ ! -z "${LOADL_TOTAL_TASKS}" ] ; then
+    # Load Leveler
+    NUMBER_OF_PROCESSORS=$LOADL_TOTAL_TASKS
+  elif [ ! -z "${LOADL_HOSTFILE}" ] ; then
+    # Load Leveler
+    NUMBER_OF_PROCESSORS=`echo $LOADL_HOSTFILE | wc -w`
   else
     NUMBER_OF_PROCESSORS=1
   fi
@@ -113,7 +121,14 @@ if [ $NUMBER_OF_PROCESSORS -gt 1 ] ; then
   fi
 #
   if [ "$NOM_ARCH" = "ivanoe" ] ; then
-    MPIRUN="mpirun -f ${LOADL_HOSTFILE} -np ${LOADL_TOTAL_TASKS}"
+    type mpdboot > /dev/null 2>&1
+    if [ $? = 0 ] ; then
+      # If we are using Intel MPI (MPICH2)
+      MPIRUN="mpirun -f ${LOADL_HOSTFILE} -np ${LOADL_TOTAL_TASKS}"
+    else
+      # If we are using Open MPI (MPICH2)
+      MPIRUN="mpirun --machinefile ${LOADL_HOSTFILE} -n ${LOADL_TOTAL_TASKS}"
+    fi
 #
   elif [ "$NOM_ARCH" = "platine" ] ; then
     MPIRUN="srun -n ${NUMBER_OF_PROCESSORS}"

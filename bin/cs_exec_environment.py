@@ -243,7 +243,11 @@ class resource_info(batch_info):
             s = os.getenv('LOADL_PROCESSOR_LIST')
             self.manager = 'LOADL'
             if s != None:
-                self.hosts_list = s.split(' ')
+                self.hosts_list = s.strip().split(' ')
+                self.n_procs = len(self.hosts_list)
+            s = os.getenv('LOADL_HOSTFILE')
+            if s != None:
+                self.hosts_file = '$LOADL_HOSTFILE'
 
         if self.manager == None and self.batch_type == 'PBS':
             s = os.getenv('PBS_NODEFILE')

@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2009 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -29,8 +29,8 @@
 #
 ########################################################################
 #
-#                  BATCH FILE FOR THE CCRT (Platine under LSF)
-#                  ===========================================
+# Batch options for the CCRT (Titane or Platine under LSF)
+# ==========================
 #
 #BSUB -n 2
 #BSUB -W 00:05
@@ -46,8 +46,8 @@
 #
 # ------------------------------------------------------------------
 #
-#                  BATCH FILE FOR THE Chatou CLUSTER (PBS)
-#                  =======================================
+# Batch options for PBS (example: Clamart 2 Cluster)
+# =====================
 #
 #PBS -l nodes=4:ppn=2
 #PBS -l walltime=1:00:00
@@ -56,19 +56,14 @@
 #PBS -N nameandcase
 #
 #  nodes    : number of nodes
-#  ppn      : number of process per node
+#  ppn      : number of processes per node
 #  walltime : wall clock time (hh:mm:ss)
 #  mem      : memory
 #
-#WARNING: when coupling with SYRTHES, 1 processor will be reserved for each
-#         instance of SYRTHES. The Kernel will be executed on the remaining
-#         processors, so make sure to reserve a sufficiently high number
-#         of processors.
-#
 # ------------------------------------------------------------------
 #
-#                  BATCH FILE (University of Manchester Cluster)
-#                  =============================================
+# Batch options for Sun Grid Engine (example: MACE cluster)
+# =================================
 #
 # set the name of the job
 ##$ -N nameandcase
@@ -89,34 +84,41 @@
 #
 # ------------------------------------------------------------------
 #
-#                  BATCH FILE (AIX, Loadlever)
-#                  ===========================
+# Batch options for IBM LoadLeveler (example: IVANOE IBM iDataPlex cluster)
+# =================================
 #
-#@ shell = /bin/sh
+# To obtain all available options, run the LoadLeveler GUI,
+# "xloadl", choose the "build job" option; select options,
+# then select "save". Options and their matching syntax
+# may then be inferred from the saved file.
 #
-#@ job_name = nameandcase
+# @ job_name = nameandcase
 #
-#@ job_type = parallel
-#@ cpus = 128
-#@ node_usage = not_shared
+# @ job_type = mpich
+# @ node = 21
+# @ tasks_per_node = 6
+# @ node_usage = not_shared
+# @ class = standard
 #
-#@ network.MPI = csss,shared,US
-#@ bulkxfer = yes
+# @ wall_clock_limit = 00:20:00
 #
-#@ wall_clock_limit = 00:20:00
-#@ account_no = z001
+# @ output = $(job_name).$(jobid).out
+# @ error  = $(job_name).$(jobid).err
+# @ notification = never
 #
-#@ output = $(job_name).$(schedd_host).$(jobid).out
-#@ error  = $(job_name).$(schedd_host).$(jobid).err
-#@ notification = never
+# @ queue
 #
-#@ queue
-# suggested environment settings:
-#  export MP_EAGER_LIMIT=65536
-#  export MP_SHARED_MEMORY=yes
-#  export MEMORY_AFFINITY=MCM
-#  export MP_TASK_AFFINITY=MCM
+# Other LoadLeveler arguments or variants: (use "@" to define):
+#   wall_clock_limit = <hard_limit>, <soft_limit>
+#   class = <class_name>
 #
+########################################################################
+
+#WARNING: when coupling with SYRTHES, 1 processor will be reserved for each
+#         instance of SYRTHES. The Kernel will be executed on the remaining
+#         processors, so make sure to reserve a sufficiently high number
+#         of processors.
+
 ########################################################################
 #
 # BEGINNING OF USER MODIFIABLE ZONE FOR STANDARD CALCULATIONS
