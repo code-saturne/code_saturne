@@ -247,8 +247,8 @@ export CS_HOME
 if [ "$NOM_ARCH" = "titane" ] ; then
   module load gcc/4.4.0 # some gcc path necessary for icc in bach mode
 elif [ "$NOM_ARCH" = "ivanoe" ] ; then
-  module load intel_compilers/12.0.0.084
-  module load intel_mpi/4.0.1.007
+  module load intel_compilers/11.1.072
+  module load open_mpi/intel/1.4.2
 fi
 #
 # Library compatibility check
@@ -528,7 +528,14 @@ if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then
     MPIRUN="mpirun -n ${NOMBRE_DE_PROCESSEURS}"
 #
   elif [ "$NOM_ARCH" = "ivanoe" ] ; then
-    MPIRUN="mpirun -f ${LOADL_HOSTFILE} -np ${LOADL_TOTAL_TASKS}"
+    type mpdboot > /dev/null 2>&1
+    if [ $? = 0 ] ; then
+      # If we are using Intel MPI (MPICH2)
+      MPIRUN="mpirun -f ${LOADL_HOSTFILE} -np ${LOADL_TOTAL_TASKS}"
+    else
+      # If we are using Open MPI (MPICH2)
+      MPIRUN="mpirun --machinefile ${LOADL_HOSTFILE} -n ${LOADL_TOTAL_TASKS}"
+    fi
 #
   else 
     if [ -d "$CS_MPI_PATH" ] ; then 

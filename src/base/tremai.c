@@ -114,8 +114,12 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
 
 #if defined(_CS_HAVE_MPI) /* Ensure all ranks have the same info
                              (especially for LoadLeveler) */
-  if (cs_glob_base_nbr > 1)
-    MPI_Bcast(ret, 1, CS_MPI_INT, 0, cs_glob_base_mpi_comm);
+  if (cs_glob_base_nbr > 1) {
+    double buf[2];
+    buf[0] = *ret; buf[1] = *tps;
+    MPI_Bcast(buf, 2, MPI_DOUBLE, 0, cs_glob_mpi_comm);
+    *ret = buf[0]; *tps = buf[1];
+  }
 #endif
 
 }

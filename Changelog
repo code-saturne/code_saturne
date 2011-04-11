@@ -1,4 +1,10 @@
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixes for IVANOE port.
+  modified files:
+    bin/lance
+    src/base/tremai.c
+
+* 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix incorrect arguments passed to user subroutines.
   modified files:
     src/base/strdef.F
