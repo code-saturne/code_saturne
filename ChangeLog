@@ -1,4 +1,11 @@
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix bounds checking issue with Intel Fortran compiler.
+  modified files:
+    include/base/cs_base.h
+    src/base/cs_base.c
+    src/base/inipst.f90
+
+* 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Ensure all ranks have the same remaining time info.
   modified files:
     src/base/tremai.c

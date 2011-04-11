@@ -88,12 +88,20 @@ include "entsor.h"
 integer          ipstvl , ipstbo , ipstsy , ipstze
 integer          ipstmd , ntpst
 
+#if defined(__INTEL_COMPILER)
+! ifort's bounds checking for character strings leads to an error if character
+! arrays passed from C are declared as character strings, but it accepts the
+! (nonstandard) byte type.
+byte             fmtpst(32)
+byte             optpst(96)
+#else
 character        fmtpst(32)
 character        optpst(96)
+#endif
 
 ! Local variables
 
-integer          ii
+integer          ll
 
 !===============================================================================
 
@@ -107,12 +115,11 @@ ipstze = ichrze
 ipstmd = ichrmd
 ntpst = ntchr
 
-do ii = 1, len(fmtchr)
-  fmtpst(ii) = fmtchr(ii:ii)
-enddo
-do ii = 1, len(optchr)
-  optpst(ii) = optchr(ii:ii)
-enddo
+ll = len(fmtchr)
+call cssf2c(ll, fmtchr, fmtpst)
+
+ll = len(optchr)
+call cssf2c(ll, optchr, optpst)
 
 !===============================================================================
 
