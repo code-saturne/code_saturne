@@ -161,12 +161,12 @@ C         ===========
      &   II , II , II , II ,
      &   IIT , IIT , IIT , IIT , IIT ,
      &   IIT , IIT , IIT , IIT ,
-     &   IIT , IIT , IIT , IIT ,
+     &   IIT , IIT , IIT ,
      &   DBLPRE , DBLPRE , DBLPRE , DBLPRE , DBLPRE , DBLPRE , DBLPRE ,
      &   DBLPRE , DBLPRE , DBLPRE , DBLPRE , DBLPRE , DBLPRE ,
      &   DBLPRE , DBLPRE ,
      &   DBLPRE , DBLPRE , DBLPRE , DBLPRE ,
-     &   DBLPRE , DBLPRE , DBLPRE , DBLPRE )
+     &   DBLPRE , DBLPRE , DBLPRE )
 C
 C --> Utilisation d'un flux de masse specifique pour la vitesse
 C

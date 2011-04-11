@@ -278,7 +278,7 @@ C     ===========
      &   NNOD   , LNDFAC , LNDFBR , NCELBR , NBSTRU ,
      &   NIDEVE , NRDEVE , NITUSE , NRTUSE ,
      &   IFACEL , IFABOR , IFMFBR , IFMCEL , IPRFML ,
-     &   IPNFAC , NODFAC , IPNFBR , NODFBR , RA(IIDFST),
+     &   IPNFAC , NODFAC , IPNFBR , NODFBR , IA(IIDFST),
      &   IDEVEL , ITUSER , IA     ,
      &   XYZCEN , SURFAC , SURFBO , CDGFAC , CDGFBO , XYZNOD , VOLUME ,
      &   DT     ,
