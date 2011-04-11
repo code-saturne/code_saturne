@@ -253,7 +253,7 @@ class resource_info(batch_info):
                 s = os.getenv('LOADL_PROCESSOR_LIST')
                 if s != None:
                     self.manager = 'LOADL'
-                    hl = s.split(' ')
+                    hl = s.strip().split(' ')
                     self.n_procs_from_hosts_list(hl, True)
             s = os.getenv('LOADL_HOSTFILE')
             if s != None:

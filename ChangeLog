@@ -1,4 +1,10 @@
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixes for LoadLeveler environment.
+  modified files:
+    bin/cs_exec_environment.py
+    extras/batch/batch.LOADL
+
+* 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Ensure all ranks have the same remaining time info.
   modified files:
     src/base/tremai.c
