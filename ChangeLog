@@ -1,4 +1,9 @@
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Ensure all ranks have the same remaining time info and code.
+  modified files:
+    src/base/tremai.c
+
+* 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Finalize port to (IVANOE) IBM iDataPlex cluster.
   modified files:
     bin/cs_exec_environment.py
