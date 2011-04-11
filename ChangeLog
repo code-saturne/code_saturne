@@ -1,4 +1,9 @@
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Bump version number to 2.0.2
+  modified files:
+    configure.ac
+
+* 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Ensure all ranks have the same remaining time info and code.
   modified files:
     src/base/tremai.c
