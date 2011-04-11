@@ -465,10 +465,9 @@ class domain(base_domain):
         if self.param != None:
             root_str = self.package.code_name + '_GUI'
             version_str = '2.0'
-            P = cs_xml_reader.Parser(os.path.join(self.data_dir,
-                                                  self.param),
-                                                  root_str = root_str,
-                                                  version_str = version_str)
+            P = cs_xml_reader.Parser(os.path.join(self.data_dir, self.param),
+                                     root_str = root_str,
+                                     version_str = version_str)
             params = P.getParams()
             for k in params.keys():
                 self.__dict__[k] = params[k]
