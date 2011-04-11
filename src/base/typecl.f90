@@ -675,10 +675,9 @@ do iphas = 1, nphas
     if (iphydr.eq.0) then
       do ifac = 1, nfabor
         ii = ifabor(ifac)
-        iii = idiipb-1+3*(ifac-1)
-        diipbx = ra(iii+1)
-        diipby = ra(iii+2)
-        diipbz = ra(iii+3)
+        diipbx = diipb(1,ifac)
+        diipby = diipb(2,ifac)
+        diipbz = diipb(3,ifac)
         coefu(ifac,1) = rtpa(ii,ipriph)                           &
              + diipbx*w1(ii)+ diipby*w2(ii) + diipbz*w3(ii)       &
              + ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &

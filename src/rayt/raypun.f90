@@ -374,7 +374,7 @@ do ifac = 1, nfabor
 
     aaaa = tparoi(ifac)**4
 
-    aaa  = 1.5d0 * ra(idistb-1+ifac) / ckmel(iel)                 &
+    aaa  = 1.5d0 * distb(ifac) / ckmel(iel)                 &
            * ( 2.d0 /(2.d0-eps(ifac)) -1.d0 )
     aa   = ( aaa * aaaa + theta4(iel) ) / (1.d0 + aaa)
 

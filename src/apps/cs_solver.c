@@ -409,6 +409,9 @@ cs_run(void)
                               cs_glob_mesh->b_face_vtx_idx,
                               cs_glob_mesh->b_face_vtx_lst,
                               cs_glob_mesh->b_cells,
+                              &(cs_glob_mesh_quantities->min_vol),
+                              &(cs_glob_mesh_quantities->max_vol),
+                              &(cs_glob_mesh_quantities->tot_vol),
                               cs_glob_mesh_quantities->cell_cen,
                               cs_glob_mesh_quantities->i_face_normal,
                               cs_glob_mesh_quantities->b_face_normal,
@@ -417,7 +420,13 @@ cs_run(void)
                               cs_glob_mesh->vtx_coord,
                               cs_glob_mesh_quantities->cell_vol,
                               cs_glob_mesh_quantities->i_face_surf,
-                              cs_glob_mesh_quantities->b_face_surf);
+                              cs_glob_mesh_quantities->b_face_surf,
+                              cs_glob_mesh_quantities->i_dist,
+                              cs_glob_mesh_quantities->b_dist,
+                              cs_glob_mesh_quantities->weight,
+                              cs_glob_mesh_quantities->dijpf,
+                              cs_glob_mesh_quantities->diipb,
+                              cs_glob_mesh_quantities->dofij);
   }
 
   if (opts.preprocess == false && opts.benchmark <= 0) {

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -833,7 +833,10 @@ _compute_cell_cen_face(const cs_mesh_t  *const mesh,
  *   i_face_cog     <--  centre of gravity of internal faces
  *   b_face_norm    <--  surface normal of border faces
  *   b_face_cog     <--  centre of gravity of border faces
- *   cell_cen       -->  centre of gravity of cells
+ *   cell_vol       -->  cells volume
+ *   min_vol        -->  minimum control volume
+ *   max_vol        -->  maximum control volume
+ *   tot_vol        -->  total   control volume
  *----------------------------------------------------------------------------*/
 
 static void
@@ -842,7 +845,10 @@ _compute_cell_volume(const cs_mesh_t  *const mesh,
                      const cs_real_t         i_face_cog[],
                      const cs_real_t         b_face_norm[],
                      const cs_real_t         b_face_cog[],
-                           cs_real_t         cell_vol[])
+                           cs_real_t         cell_vol[],
+                            cs_real_t        *min_vol,
+                           cs_real_t        *max_vol,
+                           cs_real_t        *tot_vol)
 {
   cs_int_t  id1, id2, i, fac_id, cell_id;
 
@@ -855,6 +861,10 @@ _compute_cell_volume(const cs_mesh_t  *const mesh,
 
   for (cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++)
     cell_vol[cell_id] = 0;
+
+  *min_vol =  1.e12;
+  *max_vol = -1.e12;
+  *tot_vol = 0.;
 
   /* Loop on internal faces */
 
@@ -888,9 +898,265 @@ _compute_cell_volume(const cs_mesh_t  *const mesh,
 
   /* Computation of the volume */
 
-  for (cell_id = 0; cell_id < mesh->n_cells; cell_id++)
+  for (cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
+
     cell_vol[cell_id] *= a_third;
 
+    *min_vol = CS_MIN(*min_vol, cell_vol[cell_id]);
+    *max_vol = CS_MAX(*max_vol, cell_vol[cell_id]);
+    *tot_vol = *tot_vol + cell_vol[cell_id];
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute some distances relative to faces and associated weighting.
+ *
+ * parameters:
+ *   dim            <--  dimension
+ *   n_i_faces      <--  number of interior faces
+ *   n_b_faces      <--  number of border  faces
+ *   i_face_cells   <--  interior "faces -> cells" connectivity
+ *   b_face_cells   <--  border "faces -> cells" connectivity
+ *   i_face_norm    <--  surface normal of interior faces
+ *   b_face_norm    <--  surface normal of border faces
+ *   i_face_cog     <--  centre of gravity of interior faces
+ *   b_face_cog     <--  centre of gravity of border faces
+ *   i_face_surf    <--  interior faces surface
+ *   b_face_surf    <--  border faces surface
+ *   cell_cen       <--  cell center
+ *   i_dist         -->  distance IJ.Nij for interior faces
+ *   b_dist         -->  likewise for border faces
+ *   weight         -->  weighting factor (Aij=pond Ai+(1-pond)Aj)
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_face_distances(const cs_int_t   dim,
+                        const cs_int_t   n_i_faces,
+                        const cs_int_t   n_b_faces,
+                        const cs_int_t   i_face_cells[],
+                        const cs_int_t   b_face_cells[],
+                        const cs_real_t  i_face_normal[],
+                        const cs_real_t  b_face_normal[],
+                        const cs_real_t  i_face_cog[],
+                        const cs_real_t  b_face_cog[],
+                        const cs_real_t  i_face_surf[],
+                        const cs_real_t  b_face_surf[],
+                        const cs_real_t  cell_cen[],
+                              cs_real_t  i_dist[],
+                              cs_real_t  b_dist[],
+                              cs_real_t  weight[])
+{
+  cs_int_t w_count;
+  cs_int_t face_id;
+  cs_int_t cell_id, cell_id1, cell_id2;
+
+  cs_real_t surfn, surfx, surfy, surfz;
+  cs_real_t xvn, yvn, zvn, xvv, yvv, zvv;
+  cs_real_t dist2f;
+
+  /* Interior faces */
+
+  w_count = 0;
+
+  for (face_id = 0; face_id < n_i_faces; face_id++) {
+
+    surfx = i_face_normal[face_id*dim];
+    surfy = i_face_normal[face_id*dim + 1];
+    surfz = i_face_normal[face_id*dim + 2];
+
+    surfn = i_face_surf[face_id];
+
+    cell_id1 = i_face_cells[2*face_id] - 1;
+    cell_id2 = i_face_cells[2*face_id + 1] - 1;
+
+    /* Distance between the face centre of gravity
+       and the neighbor cell centre */
+    xvn = cell_cen[cell_id2*dim]     - i_face_cog[face_id*dim];
+    yvn = cell_cen[cell_id2*dim + 1] - i_face_cog[face_id*dim + 1];
+    zvn = cell_cen[cell_id2*dim + 2] - i_face_cog[face_id*dim + 2];
+
+    /* Distance between the neighbor cell centres */
+    xvv = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
+    yvv = cell_cen[cell_id2*dim + 1] - cell_cen[cell_id1*dim + 1];
+    zvv = cell_cen[cell_id2*dim + 2] - cell_cen[cell_id1*dim + 2];
+
+    /* dot-product with the normal */
+    i_dist[face_id] = (xvv*surfx + yvv*surfy + zvv*surfz) / surfn;
+
+    if (CS_ABS(i_dist[face_id]) > 1e-12) {
+      /* dot-product with the normal */
+      dist2f = (xvn*surfx + yvn*surfy + zvn*surfz) / surfn;
+      weight[face_id] = dist2f / i_dist[face_id];
+    }
+    else {
+      w_count++;
+      weight[face_id] = 0.5;
+    }
+
+  }
+
+  if (w_count > 0)
+    bft_printf("%f faces have a null distance between centres.\n"
+               "For these faces, the weight is set to 0.5.\n",
+               w_count);
+
+  /* Border faces */
+
+  for (face_id = 0; face_id < n_b_faces; face_id++) {
+
+    surfx = b_face_normal[face_id*dim];
+    surfy = b_face_normal[face_id*dim + 1];
+    surfz = b_face_normal[face_id*dim + 2];
+
+    surfn = b_face_surf[face_id];
+
+    cell_id = b_face_cells[face_id] - 1;
+
+    /* Distance between the face centre of gravity
+       and the neighbor cell centre */
+    xvn = b_face_cog[face_id*dim]     - cell_cen[cell_id*dim];
+    yvn = b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1];
+    zvn = b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2];
+
+    b_dist[face_id] = (xvn*surfx + yvn*surfy + zvn*surfz) / surfn;
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute some vectors to handle non-orthogonalities.
+ *
+ * Let a face and I, J the centers of neighboring cells
+ *   (only I is defined for a border face)
+ *
+ * The face is oriented from I to J, with Nij its normal.
+ *   (border faces are oriented towards the exterior)
+ * The norm of Nij is 1.
+ * The face surface is Sij.
+ *
+ * I' and J' are defined as the orthogonal projection of I and J on the line
+ * orthogonal to the face passing through the center of gravity F of the face.
+ *   (only I' is defined for a border face)
+ *
+ * We compute here the vector I'J' for interior faces (dijpf)
+ *                 the vector II'  for border faces   (diipb)
+ *                 the vector OF   for interior faces (dofij)
+ *
+ * We also have the following formulae
+ *   II' = IG - (IG.Nij)Nij
+ *   JJ' = JG - (JG.Nij)Nij
+ *
+ * parameters:
+ *   dim            <--  dimension
+ *   n_i_faces      <--  number of interior faces
+ *   n_b_faces      <--  number of border  faces
+ *   i_face_cells   <--  interior "faces -> cells" connectivity
+ *   b_face_cells   <--  border "faces -> cells" connectivity
+ *   i_face_norm    <--  surface normal of interior faces
+ *   b_face_norm    <--  surface normal of border faces
+ *   i_face_cog     <--  centre of gravity of interior faces
+ *   b_face_cog     <--  centre of gravity of border faces
+ *   i_face_surf    <--  interior faces surface
+ *   b_face_surf    <--  border faces surface
+ *   cell_cen       <--  cell center
+ *   weight         <--  weighting factor (Aij=pond Ai+(1-pond)Aj)
+ *   dijpf          -->  vector i'j' for interior faces
+ *   diipb          -->  vector ii'  for border faces
+ *   dofij          -->  vector OF   for interior faces
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_face_vectors(const cs_int_t   dim,
+                      const cs_int_t   n_i_faces,
+                      const cs_int_t   n_b_faces,
+                      const cs_int_t   i_face_cells[],
+                      const cs_int_t   b_face_cells[],
+                      const cs_real_t  i_face_normal[],
+                      const cs_real_t  b_face_normal[],
+                      const cs_real_t  i_face_cog[],
+                      const cs_real_t  b_face_cog[],
+                      const cs_real_t  i_face_surf[],
+                      const cs_real_t  b_face_surf[],
+                      const cs_real_t  cell_cen[],
+                      const cs_real_t  weight[],
+                            cs_real_t  dijpf[],
+                            cs_real_t  diipb[],
+                            cs_real_t  dofij[])
+{
+  cs_int_t face_id;
+  cs_int_t cell_id, cell_id1, cell_id2;
+
+  cs_real_t dipjp, psi, pond;
+  cs_real_t surfnx, surfny, surfnz;
+  cs_real_t vecigx, vecigy, vecigz, vecijx, vecijy, vecijz;
+
+  /* Interior faces */
+
+  for (face_id = 0; face_id < n_i_faces; face_id++) {
+
+    cell_id1 = i_face_cells[2*face_id] - 1;
+    cell_id2 = i_face_cells[2*face_id  + 1] - 1;
+
+    /* Normalized normal */
+    surfnx = i_face_normal[face_id*dim]     / i_face_surf[face_id];
+    surfny = i_face_normal[face_id*dim + 1] / i_face_surf[face_id];
+    surfnz = i_face_normal[face_id*dim + 2] / i_face_surf[face_id];
+
+    /* ---> IJ */
+    vecijx = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
+    vecijy = cell_cen[cell_id2*dim + 1] - cell_cen[cell_id1*dim + 1];
+    vecijz = cell_cen[cell_id2*dim + 2] - cell_cen[cell_id1*dim + 2];
+
+    /* ---> DIJPP = IJ.NIJ */
+    dipjp = vecijx*surfnx + vecijy*surfny + vecijz*surfnz;
+
+    /* ---> DIJPF = (IJ.NIJ).NIJ */
+    dijpf[face_id*dim]     = dipjp*surfnx;
+    dijpf[face_id*dim + 1] = dipjp*surfny;
+    dijpf[face_id*dim + 2] = dipjp*surfnz;
+
+    pond = weight[face_id];
+
+    /* ---> DOFIJ = OF */
+    dofij[face_id*dim]     = i_face_cog[face_id*dim]
+      - (        pond *cell_cen[cell_id1*dim]
+         + (1. - pond)*cell_cen[cell_id2*dim]);
+
+    dofij[face_id*dim + 1] = i_face_cog[face_id*dim + 1]
+      - (        pond *cell_cen[cell_id1*dim + 1]
+         + (1. - pond)*cell_cen[cell_id2*dim + 1]);
+
+    dofij[face_id*dim + 2] = i_face_cog[face_id*dim + 2]
+      - (        pond *cell_cen[cell_id1*dim + 2]
+         + (1. - pond)*cell_cen[cell_id2*dim + 2]);
+  }
+
+  /* Border faces */
+
+  for (face_id = 0; face_id < n_b_faces; face_id++) {
+
+    cell_id = b_face_cells[face_id] - 1;
+
+    /* Normalized normal */
+    surfnx = b_face_normal[face_id*dim]     / b_face_surf[face_id];
+    surfny = b_face_normal[face_id*dim + 1] / b_face_surf[face_id];
+    surfnz = b_face_normal[face_id*dim + 2] / b_face_surf[face_id];
+
+    /* ---> IG */
+    vecigx = b_face_cog[face_id*dim]     - cell_cen[cell_id*dim];
+    vecigy = b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1];
+    vecigz = b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2];
+
+    /* ---> PSI = IG.NIJ */
+    psi = vecigx*surfnx + vecigy*surfny + vecigz*surfnz;
+
+    /* ---> DIIPB = IG - (IG.NIJ)NIJ */
+    diipb[face_id*dim]     = vecigx - psi*surfnx;
+    diipb[face_id*dim + 1] = vecigy - psi*surfny;
+    diipb[face_id*dim + 2] = vecigz - psi*surfnz;
+
+  }
 }
 
 /*============================================================================
@@ -979,6 +1245,12 @@ cs_mesh_quantities_create(void)
   mesh_quantities->b_face_cog = NULL;
   mesh_quantities->i_face_surf = NULL;
   mesh_quantities->b_face_surf = NULL;
+  mesh_quantities->i_dist = NULL;
+  mesh_quantities->b_dist = NULL;
+  mesh_quantities->weight = NULL;
+  mesh_quantities->dijpf = NULL;
+  mesh_quantities->diipb = NULL;
+  mesh_quantities->dofij = NULL;
 
   return (mesh_quantities);
 }
@@ -1004,6 +1276,12 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->b_face_cog);
   BFT_FREE(mesh_quantities->i_face_surf);
   BFT_FREE(mesh_quantities->b_face_surf);
+  BFT_FREE(mesh_quantities->i_dist);
+  BFT_FREE(mesh_quantities->b_dist);
+  BFT_FREE(mesh_quantities->weight);
+  BFT_FREE(mesh_quantities->dijpf);
+  BFT_FREE(mesh_quantities->diipb);
+  BFT_FREE(mesh_quantities->dofij);
 
   BFT_FREE(mesh_quantities);
 
@@ -1022,13 +1300,16 @@ void
 cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                            cs_mesh_quantities_t  *mesh_quantities)
 {
-  cs_int_t  i, j;
-
   cs_int_t  dim = mesh->dim;
   cs_int_t  n_i_faces = mesh->n_i_faces;
   cs_int_t  n_b_faces = mesh->n_b_faces;
-  cs_int_t  n_cells = mesh->n_cells;
   cs_int_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+
+  static int  n_pass = 0;
+
+  /* Update the number of passes */
+
+  n_pass++;
 
   /* If this is not an update, allocate members of the structure */
 
@@ -1055,6 +1336,24 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   if (mesh_quantities->b_face_surf == NULL)
     BFT_MALLOC(mesh_quantities->b_face_surf, n_b_faces, cs_real_t);
+
+  if (mesh_quantities->i_dist == NULL)
+    BFT_MALLOC(mesh_quantities->i_dist, n_i_faces, cs_real_t);
+
+  if (mesh_quantities->b_dist == NULL)
+    BFT_MALLOC(mesh_quantities->b_dist, n_b_faces, cs_real_t);
+
+  if (mesh_quantities->weight == NULL)
+    BFT_MALLOC(mesh_quantities->weight, n_i_faces, cs_real_t);
+
+  if (mesh_quantities->dijpf == NULL)
+    BFT_MALLOC(mesh_quantities->dijpf, n_i_faces*dim, cs_real_t);
+
+  if (mesh_quantities->diipb == NULL)
+    BFT_MALLOC(mesh_quantities->diipb, n_b_faces*dim, cs_real_t);
+
+  if (mesh_quantities->dofij == NULL)
+    BFT_MALLOC(mesh_quantities->dofij, n_i_faces*dim, cs_real_t);
 
   /* Compute centres of gravity, normals, and surfaces of interior faces */
 
@@ -1108,20 +1407,10 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                        mesh_quantities->i_face_cog,
                        mesh_quantities->b_face_normal,
                        mesh_quantities->b_face_cog,
-                       mesh_quantities->cell_vol);
-
-  /* Initialize values for cells in halo (standard or extended) */
-
-  for (j = n_cells; j < n_cells_with_ghosts; j++) {
-
-    mesh_quantities->cell_vol[j] = 0.;
-
-    for (i = 0; i < dim; i++)
-      mesh_quantities->cell_cen[j*dim + i] = 0.;
-
-  }
-
-  /* Parallel synchronization */
+                       mesh_quantities->cell_vol,
+                       &(mesh_quantities->min_vol),
+                       &(mesh_quantities->max_vol),
+                       &(mesh_quantities->tot_vol));
 
   /* Synchronize geometric quantities */
 
@@ -1131,6 +1420,27 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                              mesh_quantities->cell_cen, 3);
 
     cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, mesh_quantities->cell_vol);
+
+#if defined(HAVE_MPI)
+    if (cs_glob_n_ranks > 1) {
+
+      cs_real_t  _min_vol, _max_vol, _tot_vol;
+
+      MPI_Allreduce(&(mesh_quantities->min_vol), &_min_vol, 1, CS_MPI_REAL,
+                    MPI_MIN, cs_glob_mpi_comm);
+
+      MPI_Allreduce(&(mesh_quantities->max_vol), &_max_vol, 1, CS_MPI_REAL,
+                    MPI_MAX, cs_glob_mpi_comm);
+
+      MPI_Allreduce(&(mesh_quantities->tot_vol), &_tot_vol, 1, CS_MPI_REAL,
+                    MPI_SUM, cs_glob_mpi_comm);
+
+      mesh_quantities->min_vol = _min_vol;
+      mesh_quantities->max_vol = _max_vol;
+      mesh_quantities->tot_vol = _tot_vol;
+
+    }
+#endif
 
     if (mesh->n_init_perio > 0) {
 
@@ -1144,6 +1454,64 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
     }
 
   }
+
+  /* Compute some distances relative to faces and associated weighting */
+
+  _compute_face_distances(dim,
+                          mesh->n_i_faces,
+                          mesh->n_b_faces,
+                          mesh->i_face_cells,
+                          mesh->b_face_cells,
+                          mesh_quantities->i_face_normal,
+                          mesh_quantities->b_face_normal,
+                          mesh_quantities->i_face_cog,
+                          mesh_quantities->b_face_cog,
+                          mesh_quantities->i_face_surf,
+                          mesh_quantities->b_face_surf,
+                          mesh_quantities->cell_cen,
+                          mesh_quantities->i_dist,
+                          mesh_quantities->b_dist,
+                          mesh_quantities->weight);
+
+  /* Compute some vectors relative to faces to handle non-orthogonalities */
+
+  _compute_face_vectors(dim,
+                        mesh->n_i_faces,
+                        mesh->n_b_faces,
+                        mesh->i_face_cells,
+                        mesh->b_face_cells,
+                        mesh_quantities->i_face_normal,
+                        mesh_quantities->b_face_normal,
+                        mesh_quantities->i_face_cog,
+                        mesh_quantities->b_face_cog,
+                        mesh_quantities->i_face_surf,
+                        mesh_quantities->b_face_surf,
+                        mesh_quantities->cell_cen,
+                        mesh_quantities->weight,
+                        mesh_quantities->dijpf,
+                        mesh_quantities->diipb,
+                        mesh_quantities->dofij);
+
+  /* Print some information on the control volumes, and check min volume */
+
+  if (n_pass == 1)
+    bft_printf(_(" --- Information on the volumes\n"
+                 "       Minimum control volume      = %14.7e\n"
+                 "       Maximum control volume      = %14.7e\n"
+                 "       Total volume for the domain = %14.7e\n"),
+               mesh_quantities->min_vol, mesh_quantities->max_vol,
+               mesh_quantities->tot_vol);
+  else
+    if (mesh_quantities->min_vol <= 0.) {
+      bft_printf(_(" --- Information on the volumes\n"
+                   "       Minimum control volume      = %14.7e\n"
+                   "       Maximum control volume      = %14.7e\n"
+                   "       Total volume for the domain = %14.7e\n"),
+                 mesh_quantities->min_vol, mesh_quantities->max_vol,
+                 mesh_quantities->tot_vol);
+      bft_printf(_("\nAbort due to the detection of a negative control "
+                   "volume.\n"));
+    }
 }
 
 /*----------------------------------------------------------------------------

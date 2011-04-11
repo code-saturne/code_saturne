@@ -708,10 +708,9 @@ else if  (numtyp .eq. -2) then
 
         do ifac = 1, nfabor
           iel = ifabor(ifac)
-          iii = idiipb-1+3*(ifac-1)
-          diipbx = ra(iii+1)
-          diipby = ra(iii+2)
-          diipbz = ra(iii+3)
+          diipbx = diipb(1,ifac)
+          diipby = diipb(2,ifac)
+          diipbz = diipb(3,ifac)
           ra(itreco+ifac-1) = rtp(iel,ivar)                       &
                + diipbx*ra(igradx+iel-1)                          &
                + diipby*ra(igrady+iel-1)                          &
@@ -738,7 +737,7 @@ else if  (numtyp .eq. -2) then
             xvsl = visls0(iscal)
           endif
           srfbn = surfbn(ifac)
-          distbr = ra(idistb-1+ifac)
+          distbr = distb(ifac)
           visct  = propce(iel,ipcvst)
           flumab = propfb(ifac,iflmab)
 

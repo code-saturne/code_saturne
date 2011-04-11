@@ -367,7 +367,7 @@ do ifac = 1, nfabor
     romc   = propce(iel,ipcrom)
 
 ! --- Grandeurs geometriques
-    distbf = ra(idistb-1+ifac)
+    distbf = distb(ifac)
     srfbnf = surfbn(ifac)
 
 !===============================================================================

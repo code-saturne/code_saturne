@@ -468,6 +468,9 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_int_t    ipnfbr[],  /* <-- boundary faces -> vertices index */
  const cs_int_t    nodfbr[],  /* <-- boundary faces -> vertices connectivity */
  const cs_int_t    icelbr[],  /* <-- list of boundary cells */
+ const cs_real_t  *volmin,    /* <-- minimum control volume */
+ const cs_real_t  *volmax,    /* <-- maximum control volume */
+ const cs_real_t  *voltot,    /* <-- total   control volume */
  const cs_real_t   xyzcen[],  /* <-- cell centers */
  const cs_real_t   surfac[],  /* <-- interior face surface vectors */
  const cs_real_t   surfbo[],  /* <-- boundary face surface vectors */
@@ -476,7 +479,13 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_real_t   xyznod[],  /* <-- vertex coordinates */
  const cs_real_t   volume[],  /* <-- cell volumes */
  const cs_real_t   surfan[],  /* <-- interior face surfaces */
- const cs_real_t   surfbn[]   /* <-- boundary face surfaces */
+ const cs_real_t   surfbn[],  /* <-- boundary face surfaces */
+ const cs_real_t   dist[],    /* <-- distance IJ.Nij */
+ const cs_real_t   distb[],   /* <-- likewise for border faces */
+ const cs_real_t   pond[],    /* <-- weighting (Aij=pond Ai+(1-pond)Aj */
+ const cs_real_t   dijpf[],   /* <-- vector I'J' */
+ const cs_real_t   diipb[],   /* <-- likewise for border faces */
+ const cs_real_t   dofij[]    /* <-- vector OF at interior faces */
 );
 
 /*----------------------------------------------------------------------------

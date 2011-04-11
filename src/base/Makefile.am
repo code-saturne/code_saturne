@@ -171,15 +171,12 @@ altycl.f90 \
 armtps.f90 \
 autmgr.f90 \
 bilsc2.f90 \
-calgeo.f90 \
 calhyd.f90 \
 calmom.f90 \
 caltri.f90 \
 catsma.f90 \
 causta.f90 \
 clca66.f90 \
-cldijp.f90 \
-cldipo.f90 \
 clipke.f90 \
 clprij.f90 \
 clpsca.f90 \
@@ -187,7 +184,6 @@ clptrg.f90 \
 clptur.f90 \
 clpv2f.f90 \
 clsyvt.f90 \
-clvolc.f90 \
 codits.f90 \
 condli.f90 \
 cou1di.f90 \
@@ -299,7 +295,6 @@ majgeo.f90 \
 matrdt.f90 \
 matrix.f90 \
 memale.f90 \
-memclg.f90 \
 memcli.f90 \
 memcs1.f90 \
 memcs2.f90 \

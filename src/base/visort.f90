@@ -103,7 +103,7 @@ double precision ra(*)
 
 integer          ifac, ii, jj
 double precision viscxi, viscxj, viscyi, viscyj, visczi, visczj
-double precision sx2, sy2, sz2, dist, pond, surfn
+double precision sx2, sy2, sz2, distbf, pnd, surfn
 
 !===============================================================================
 
@@ -123,7 +123,6 @@ if( imvisf.eq.0 ) then
     jj = ifacel(2,ifac)
 
     surfn = surfan(ifac)
-    dist  = ra(idist -1+ifac)
 
     viscxi = w1(ii)
     viscxj = w1(jj)
@@ -139,7 +138,7 @@ if( imvisf.eq.0 ) then
     viscf(ifac) = 0.5d0*(                                         &
        (viscxi+viscxj)*sx2                                        &
      + (viscyi+viscyj)*sy2                                        &
-     + (visczi+visczj)*sz2 ) / (surfn*dist)
+     + (visczi+visczj)*sz2 ) / (surfn*dist(ifac))
 
   enddo
 
@@ -151,8 +150,7 @@ else
     jj = ifacel(2,ifac)
 
     surfn = surfan(ifac)
-    dist  = ra(idist -1+ifac)
-    pond  = ra(ipond -1+ifac)
+    pnd  = pond(ifac)
 
     viscxi = w1(ii)
     viscxj = w1(jj)
@@ -167,12 +165,12 @@ else
 
     viscf(ifac) =                                                 &
       ( viscxi*viscxj*sx2                                         &
-              /(pond*viscxi+(1.d0-pond)*viscxj)                   &
+              /(pnd*viscxi+(1.d0-pnd)*viscxj)                     &
       + viscyi*viscyj*sy2                                         &
-              /(pond*viscyi+(1.d0-pond)*viscyj)                   &
+              /(pnd*viscyi+(1.d0-pnd)*viscyj)                     &
       + visczi*visczj*sz2                                         &
-              /(pond*visczi+(1.d0-pond)*visczj)                   &
-       ) /(surfn*dist)
+              /(pnd*visczi+(1.d0-pnd)*visczj)                     &
+       ) /(surfn*dist(ifac))
   enddo
 
 endif
@@ -182,7 +180,7 @@ do ifac=1,nfabor
   ii = ifabor(ifac)
 
   surfn = surfbn(ifac)
-  dist  = ra(idistb-1+ifac)
+  distbf = distb(ifac)
 
   viscxi = w1(ii)
   viscyi = w2(ii)
@@ -193,7 +191,7 @@ do ifac=1,nfabor
   sz2    = surfbo(3,ifac)**2
 
   viscb(ifac) =                                                   &
-    (viscxi*sx2+viscyi*sy2+visczi*sz2)/(surfn*dist)
+    (viscxi*sx2+viscyi*sy2+visczi*sz2)/(surfn*distbf)
 
 enddo
 

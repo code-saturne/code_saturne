@@ -617,9 +617,8 @@ do iphas = 1, nphas
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
-        iii = idiipb-1+3*(ifac-1)
-        thbord(ifac)       =                                      &
-          w1(iel)*ra(iii+1)+w2(iel)*ra(iii+2)+w3(iel)*ra(iii+3)   &
+        thbord(ifac)       =                                                 &
+          w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac)  &
         + rtpa(iel,ivar)
       enddo
 
@@ -706,9 +705,8 @@ do iphas = 1, nphas
 
         do ifac = 1, nfabor
           iel = ifabor(ifac)
-          iii = idiipb-1+3*(ifac-1)
-          coefu(ifac,isou) =                                      &
-            w1(iel)*ra(iii+1)+w2(iel)*ra(iii+2)+w3(iel)*ra(iii+3) &
+          coefu(ifac,isou) =                                                  &
+            w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac) &
           + rtpa(iel,ivar)
         enddo
 
@@ -777,9 +775,8 @@ do iphas = 1, nphas
 
         do ifac = 1 , nfabor
           iel = ifabor(ifac)
-          iii = idiipb-1+3*(ifac-1)
-          rijipb(ifac,isou) =                                     &
-            w1(iel)*ra(iii+1)+w2(iel)*ra(iii+2)+w3(iel)*ra(iii+3) &
+          rijipb(ifac,isou) =                                                 &
+            w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac) &
           + rtpa(iel,ivar)
         enddo
 
@@ -959,7 +956,7 @@ do iphas = 1, nphas
       visctc = propce(iel,ipcvst)
 
 ! --- Grandeurs geometriques
-      distbf = ra(idistb-1+ifac)
+      distbf = distb(ifac)
 
       if (itytur(iphas).eq.3) then
         hint =   visclc         /distbf
@@ -1032,7 +1029,7 @@ do iphas = 1, nphas
     iel = ifabor(ifac)
 
 ! --- Grandeurs geometriques
-    distbf = ra(idistb-1+ifac)
+    distbf = distb(ifac)
 
 ! ON MET UN FLUX EN DT.GRAD P (W/m2) DANS USCLIM
     hint = dt(iel)/distbf
@@ -1115,7 +1112,7 @@ do iphas = 1, nphas
         flumbf = propfb(ifac,ipprob(ifluma(ikiph)))
 
 ! --- Grandeurs geometriques
-        distbf = ra(idistb-1+ifac)
+        distbf = distb(ifac)
 
         hint = (visclc+visctc/sigma)/distbf
 
@@ -1172,7 +1169,7 @@ do iphas = 1, nphas
         flumbf = propfb(ifac,ipprob(ifluma(ir11ip)))
 
 ! --- Grandeurs geometriques
-        distbf = ra(idistb-1+ifac)
+        distbf = distb(ifac)
 
         if(icodcl(ifac,ivar).eq.1) then
           hint = visclc/distbf
@@ -1210,7 +1207,7 @@ do iphas = 1, nphas
       flumbf = propfb(ifac,ipprob(ifluma(iepiph)))
 
 ! --- Grandeurs geometriques
-      distbf = ra(idistb-1+ifac)
+      distbf = distb(ifac)
 
       hint = visclc/distbf
 
@@ -1260,7 +1257,7 @@ do iphas = 1, nphas
         flumbf = propfb(ifac,ipprob(ifluma(ikiph)))
 
 ! --- Grandeurs geometriques
-        distbf = ra(idistb-1+ifac)
+        distbf = distb(ifac)
 
         hint = (visclc+visctc/sigma)/distbf
 
@@ -1292,7 +1289,7 @@ do iphas = 1, nphas
       flumbf = propfb(ifac,ipprob(ifluma(ifbiph)))
 
 ! --- Grandeurs geometriques
-      distbf = ra(idistb-1+ifac)
+      distbf = distb(ifac)
 
       hint = visclc/distbf
 
@@ -1374,7 +1371,7 @@ do iphas = 1, nphas
           flumbf = propfb(ifac,ipprob(ifluma(ivar)))
 
 ! --- Grandeurs geometriques
-          distbf = ra(idistb-1+ifac)
+          distbf = distb(ifac)
 
 ! --- Prise en compte de Cp ou CV
 !      (dans le Cas compressible IHCP=0)
@@ -1580,7 +1577,7 @@ if (iale.eq.1) then
   do ifac = 1, nfabor
 
     iel = ifabor(ifac)
-    distbf = ra(idistb-1+ifac)
+    distbf = distb(ifac)
     srfbn2 = surfbn(ifac)**2
     if (iortvm.eq.0) then
       hint = propce(iel,ipproc(ivisma(1)))/distbf
@@ -1658,7 +1655,7 @@ if (ineedf.eq.1) then
     else
       vistot = visclc + visctc
     endif
-    distbf = ra(idistb-1+ifac)
+    distbf = distb(ifac)
     srfbnf = surfbn(ifac)
     ra(iforbr+(ifac-1)*ndim)     = -vistot * ( coefa(ifac,icluf)  &
          + (coefb(ifac,icluf)-1.d0)*coefu(ifac,1) )/distbf*srfbnf

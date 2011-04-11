@@ -148,7 +148,7 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifac, ii, jj, iij, iii
 double precision pfac,pip
-double precision dpxf  , dpyf  , dpzf  , dist
+double precision dpxf  , dpyf  , dpzf
 double precision dijpfx, dijpfy, dijpfz
 double precision diipbx, diipby, diipbz
 double precision dijx  , dijy  , dijz
@@ -260,23 +260,20 @@ endif
     dpyf = 0.5d0*(visely(ii)*dpdy(ii) + visely(jj)*dpdy(jj))
     dpzf = 0.5d0*(viselz(ii)*dpdz(ii) + viselz(jj)*dpdz(jj))
 
-    iij = idijpf-1+3*(ifac-1)
-    dijpfx = ra(iij+1)
-    dijpfy = ra(iij+2)
-    dijpfz = ra(iij+3)
+    dijpfx = dijpf(1,ifac)
+    dijpfy = dijpf(2,ifac)
+    dijpfz = dijpf(3,ifac)
 
 !---> DIJ = IJ - (IJ.N) N
     dijx = (xyzcen(1,jj)-xyzcen(1,ii))-dijpfx
     dijy = (xyzcen(2,jj)-xyzcen(2,ii))-dijpfy
     dijz = (xyzcen(3,jj)-xyzcen(3,ii))-dijpfz
 
-    dist   = ra(idist-1+ifac)
-
     flumas(ifac) = flumas(ifac)                                   &
      + viscf(ifac)*( pvar(ii) -pvar(jj) )                         &
      + ( dpxf * dijx                                              &
      +   dpyf * dijy                                              &
-     +   dpzf * dijz )*surfan(ifac)/dist
+     +   dpzf * dijz )*surfan(ifac)/dist(ifac)
 
   enddo
 
@@ -285,10 +282,10 @@ endif
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    iii = idiipb-1+3*(ifac-1)
-    diipbx = ra(iii+1)
-    diipby = ra(iii+2)
-    diipbz = ra(iii+3)
+
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
     pip = pvar(ii)                                                &
         + dpdx(ii)*diipbx                                         &

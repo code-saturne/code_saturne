@@ -332,7 +332,7 @@ if (iappel.eq.1) then
       else if (itypfb(ifac).eq.iparoi .or.                        &
                itypfb(ifac).eq.iparug ) then
 
-        distbf = ra(idistb-1+ifac)
+        distbf = distb(ifac)
 
         xit = 1.5d0 *distbf *ck(ifabor(ifac))                     &
             * (2.d0 /(2.d0-eps(ifac)) -1.d0)

@@ -586,15 +586,6 @@ enddo
 ! 6. POSITION DES VARIABLES DE pointe.f90
 !===============================================================================
 
-! --- Geometrie
-
-idist  = 0
-idistb = 0
-ipond  = 0
-idijpf = 0
-idiipb = 0
-idofij = 0
-
 ! --- Auxiliaires independants du nb phases
 
 icocg  = 0

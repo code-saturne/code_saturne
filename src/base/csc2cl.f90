@@ -226,10 +226,9 @@ do ivar = 1, nvcp
       iel  = ifabor(ifac)
 
 !         Information de l'instance en cours interpolée en I'
-      iii = idiipb-1+3*(ifac-1)
-      xiip = ra(iii+1)
-      yiip = ra(iii+2)
-      ziip = ra(iii+3)
+      xiip = diipb(1,ifac)
+      yiip = diipb(2,ifac)
+      ziip = diipb(3,ifac)
 
       xif = cdgfbo(1,ifac) -xyzcen(1,iel)
       yif = cdgfbo(2,ifac) -xyzcen(2,iel)
@@ -240,12 +239,6 @@ do ivar = 1, nvcp
       zipf = cdgfbo(3,ifac)-ziip - xyzcen(3,iel)
 
       ipf = sqrt(xipf**2+yipf**2+zipf**2)
-
-
-      iii = idiipb-1+3*(ifac-1)
-      xiip = ra(iii+1)
-      yiip = ra(iii+2)
-      ziip = ra(iii+3)
 
       xopf = dofcpl(1,ipt)
       yopf = dofcpl(2,ipt)
@@ -364,10 +357,9 @@ do ivar = 1, nvcp
       iel  = ifabor(ifac)
 
 !         Information de l'instance en cours interpolée en I'
-      iii = idiipb-1+3*(ifac-1)
-      xiip = ra(iii+1)
-      yiip = ra(iii+2)
-      ziip = ra(iii+3)
+      xiip = diipb(1,ifac)
+      yiip = diipb(2,ifac)
+      ziip = diipb(3,ifac)
 
       xif = cdgfbo(1,ifac) -xyzcen(1,iel)
       yif = cdgfbo(2,ifac) -xyzcen(2,iel)
@@ -378,12 +370,6 @@ do ivar = 1, nvcp
       zipf = cdgfbo(3,ifac)-ziip - xyzcen(3,iel)
 
       ipf = sqrt(xipf**2+yipf**2+zipf**2)
-
-
-      iii = idiipb-1+3*(ifac-1)
-      xiip = ra(iii+1)
-      yiip = ra(iii+2)
-      ziip = ra(iii+3)
 
       xopf = dofcpl(1,ipt)
       yopf = dofcpl(2,ipt)

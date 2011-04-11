@@ -97,6 +97,12 @@ module mesh
   ! volume : cell volumes
   ! surfan : interior face surfaces
   ! surfbn : boundary face surfaces
+  ! dist   : distance IJ.Nij
+  ! distb  : likewise for border faces
+  ! pond   : weighting (Aij=pond Ai+(1-pond)Aj)
+  ! dijpf  : vector I'J'
+  ! diipb  : likewise for border faces
+  ! dofij  : vector OF at interior faces
 
   double precision, dimension(:,:), pointer :: xyzcen
   double precision, dimension(:,:), pointer :: surfac
@@ -107,6 +113,12 @@ module mesh
   double precision, dimension(:), pointer :: volume
   double precision, dimension(:), pointer :: surfan
   double precision, dimension(:), pointer :: surfbn
+  double precision, dimension(:), pointer :: dist
+  double precision, dimension(:), pointer :: distb
+  double precision, dimension(:), pointer :: pond
+  double precision, dimension(:,:), pointer :: dijpf
+  double precision, dimension(:,:), pointer :: diipb
+  double precision, dimension(:,:), pointer :: dofij
 
   !=============================================================================
 

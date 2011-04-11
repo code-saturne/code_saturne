@@ -1,3 +1,57 @@
+* 11/04/2011 - David Monfort <david.monfort@edf.fr>
+  Move the calculation of geometric quantities (useful for handling the
+  non-orthogonalities) from the Fortran part to the C part.
+  The arrays are now accessed directly instead of through a pointer to ra.
+  modified file:
+    po/fr.po
+  modified routines:
+    src/apps/cs_solver.c
+    src/base/alemaj.f90
+    src/base/bilsc2.f90
+    src/base/calgeo.f90
+    src/base/caltri.f90
+    src/base/cldijp.f90
+    src/base/cldipo.f90
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/clvolc.f90
+    src/base/condli.f90
+    src/base/cregeo.f90
+    src/base/csc2cl.f90
+    src/base/cs_mesh_quantities.c
+    src/base/cs_mesh_quantities.h
+    src/base/cs_prototypes.h
+    src/base/dvvpst.f90
+    src/base/grdcel.f90
+    src/base/iniini.f90
+    src/base/inimas.f90
+    src/base/itrgrp.f90
+    src/base/itrmas.f90
+    src/base/majgeo.f90
+    src/base/Makefile.am
+    src/base/memclg.f90
+    src/base/mesh.f90
+    src/base/pointe.f90
+    src/base/preduv.f90
+    src/base/projts.f90
+    src/base/reseps.f90
+    src/base/resrij.f90
+    src/base/tridim.f90
+    src/base/typecl.f90
+    src/base/vectds.f90
+    src/base/viscfa.f90
+    src/base/visort.f90
+    src/cfbl/cfbsc2.f90
+    src/cfbl/cfbsc3.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfmsvl.f90
+    src/cfbl/cfqdmv.f90
+    src/cfbl/cfxtcl.f90
+    src/rayt/raypun.f90
+    users/base/usproj.f90
+    users/base/usvpst.f90
+    users/rayt/usray5.f90
+
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixes for LoadLeveler environment.
   modified files:

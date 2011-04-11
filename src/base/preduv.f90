@@ -383,10 +383,9 @@ call grdcel                                                       &
 if (ineedf.eq.1 .and. iterns.eq.1) then
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    ii = idiipb-1+3*(ifac-1)
-    diipbx = ra(ii+1)
-    diipby = ra(ii+2)
-    diipbz = ra(ii+3)
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
     pip =  rtpa(iel,ipriph)                                       &
          +diipbx*w1(iel) +diipby*w2(iel)                          &
          +diipbz*w3(iel)
@@ -700,10 +699,9 @@ if( (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                   &
   if (ineedf.eq.1) then
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      ii = idiipb-1+3*(ifac-1)
-      diipbx = ra(ii+1)
-      diipby = ra(ii+2)
-      diipbz = ra(ii+3)
+      diipbx = diipb(1,ifac)
+      diipby = diipb(2,ifac)
+      diipbz = diipb(3,ifac)
       xkb = rtpa(iel,ikiph) + diipbx*w1(iel)                      &
            + diipby*w2(iel) + diipbz*w3(iel)
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb

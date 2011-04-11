@@ -302,7 +302,7 @@ do iphas = 1, nphas
       if(icfgrp(iphas).eq.1) then
 
         icodcl(ifac,ipriph) = 3
-        hint = dt(iel)/ra(idistb-1+ifac)
+        hint = dt(iel)/distb(ifac)
         rcodcl(ifac,ipriph,3) = -hint                             &
          * ( gx*(cdgfbo(1,ifac)-xyzcen(1,iel))                    &
            + gy*(cdgfbo(2,ifac)-xyzcen(2,iel))                    &
@@ -333,7 +333,7 @@ do iphas = 1, nphas
         icodcl(ifac,ipriph) = 1
         if(coefb(ifac,iclp).lt.rinfin*0.5d0.and.                  &
            coefb(ifac,iclp).gt.0.d0  ) then
-          hint = dt(iel)/ra(idistb-1+ifac)
+          hint = dt(iel)/distb(ifac)
           rcodcl(ifac,ipriph,1) = 0.d0
           rcodcl(ifac,ipriph,2) =                                 &
                hint*(1.d0/coefb(ifac,iclp)-1.d0)

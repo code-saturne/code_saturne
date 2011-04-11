@@ -184,16 +184,16 @@ endif
 call pstema (ntcabs, ttcabs)
 !==========
 
+
 !===============================================================================
-! 5. CALCUL DES TABLEAUX COMPLEMENTAIRES
+! 5. FILTRAGE DU VOISINAGE ETENDU POUR LE GRADIENT PAR MOINDRES CARRES
 !===============================================================================
 
-call calgeo                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   ia     ,                                                       &
-   volmin , volmax , voltot ,                                     &
-   ra     )
+if (imrgra.eq.3) then
+  call redvse (anomax)
+  !==========
+endif
+
 
 return
 end subroutine

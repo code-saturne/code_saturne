@@ -153,7 +153,7 @@ integer          iel, ifac, iloc, iphas, ivar, iclt
 integer          idimt, ii , jj
 integer          ientla, ivarpr
 integer          imom1, imom2, ipcmo1, ipcmo2, idtcm
-double precision pond
+double precision pnd
 double precision rvoid(1)
 
 integer          ipass
@@ -480,14 +480,14 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     ifac = lstfac(iloc)
     ii = ifacel(1, ifac)
     jj = ifacel(2, ifac)
-    pond = ra(ipond-1+ifac)
+    pnd = pond(ifac)
 
-    trafac(1 + (iloc-1)*idimt)  =            pond  * rtp(ii,iu(iphas))   &
-                                   + (1.d0 - pond) * rtp(jj,iu(iphas))
-    trafac(2 + (iloc-1)*idimt)  =            pond  * rtp(ii,iv(iphas))   &
-                                   + (1.d0 - pond) * rtp(jj,iv(iphas))
-    trafac(3 + (iloc-1)*idimt)  =            pond  * rtp(ii,iw(iphas))   &
-                                   + (1.d0 - pond) * rtp(jj,iw(iphas))
+    trafac(1 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iu(iphas))   &
+                                   + (1.d0 - pnd) * rtp(jj,iu(iphas))
+    trafac(2 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iv(iphas))   &
+                                   + (1.d0 - pnd) * rtp(jj,iv(iphas))
+    trafac(3 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iw(iphas))   &
+                                   + (1.d0 - pnd) * rtp(jj,iw(iphas))
 
   enddo
 
@@ -551,10 +551,10 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     ifac = lstfac(iloc)
     ii = ifacel(1, ifac)
     jj = ifacel(2, ifac)
-    pond = ra(ipond-1+ifac)
+    pnd = pond(ifac)
 
-    trafac(iloc) =           pond  * rtp(ii, ivar)  &
-                   + (1.d0 - pond) * rtp(jj, ivar)
+    trafac(iloc) =           pnd  * rtp(ii, ivar)  &
+                   + (1.d0 - pnd) * rtp(jj, ivar)
   enddo
 
   ! Compute variable values on boundary faces.
@@ -791,14 +791,14 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
     ifac = lstfac(iloc)
     ii = ifacel(1, ifac)
     jj = ifacel(2, ifac)
-    pond = ra(ipond-1+ifac)
+    pnd = pond(ifac)
 
-    trafac(iloc) =                       pond  * rtp(ii, iu(iphas))   &
-                               + (1.d0 - pond) * rtp(jj, iu(iphas))
-    trafac(iloc + nfacps)    =           pond  * rtp(ii, iv(iphas))   &
-                               + (1.d0 - pond) * rtp(jj, iv(iphas))
-    trafac(iloc + 2*nfacps)  =           pond  * rtp(ii, iw(iphas))   &
-                               + (1.d0 - pond) * rtp(jj, iw(iphas))
+    trafac(iloc) =                       pnd  * rtp(ii, iu(iphas))   &
+                               + (1.d0 - pnd) * rtp(jj, iu(iphas))
+    trafac(iloc + nfacps)    =           pnd  * rtp(ii, iv(iphas))   &
+                               + (1.d0 - pnd) * rtp(jj, iv(iphas))
+    trafac(iloc + 2*nfacps)  =           pnd  * rtp(ii, iw(iphas))   &
+                               + (1.d0 - pnd) * rtp(jj, iw(iphas))
   enddo
 
   ! Compute variable values on boundary faces.
@@ -860,10 +860,10 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
     ifac = lstfac(iloc)
     ii = ifacel(1, ifac)
     jj = ifacel(2, ifac)
-    pond = ra(ipond-1+ifac)
+    pnd = pond(ifac)
 
-    trafac(iloc)  =           pond  * rtp(ii, ivar)   &
-                    + (1.d0 - pond) * rtp(jj, ivar)
+    trafac(iloc)  =           pnd  * rtp(ii, ivar)   &
+                    + (1.d0 - pnd) * rtp(jj, ivar)
   enddo
 
   ! Compute variable values on boundary faces.

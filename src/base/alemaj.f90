@@ -180,12 +180,9 @@ enddo
 call algrma
 !==========
 
-call calgeo                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   ia     ,                                                       &
-   volmin , volmax , voltot ,                                     &
-   ra     )
+! Abort at the end of the current time-step if there is a negative volume
+if (volmin.le.0.d0) ntmabs = ntcabs
+
 
 ! Si on est a l'iteration d'initialisation, on remet les vitesses de maillage
 !   a leur valeur initiale

@@ -170,7 +170,7 @@ integer          iel1  , iel2, iifru, iifbe
 integer          iterns
 integer          maxelt, ils, idbia1
 double precision flux
-double precision dijpfx, dijpfy, dijpfz, pond  , pip   , pjp
+double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 !      DOUBLE PRECISION FLUI  , FLUJ
 
@@ -435,27 +435,26 @@ endif
 !        ii = ifacel(1,ifac)
 !        jj = ifacel(2,ifac)
 
-!        iij = idijpf-1+3*(ifac-1)
-!        dijpfx = ra(iij+1)
-!        dijpfy = ra(iij+2)
-!        dijpfz = ra(iij+3)
+!        dijpfx = dijpf(1,ifac)
+!        dijpfy = dijpf(2,ifac)
+!        dijpfz = dijpf(3,ifac)
 
-!        pond   = ra(ipond-1+ifac)
+!        pnd   = pond(ifac)
 
 !        Calcul II' et JJ'
 
 !        diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+
-!     &           (1.d0-pond) * dijpfx)
+!     &           (1.d0-pnd) * dijpfx)
 !        diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+
-!     &           (1.d0-pond) * dijpfy)
+!     &           (1.d0-pnd) * dijpfy)
 !        diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+
-!     &           (1.d0-pond) * dijpfz)
+!     &           (1.d0-pnd) * dijpfz)
 !        djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+
-!     &               pond  * dijpfx
+!     &               pnd  * dijpfx
 !        djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+
-!     &               pond  * dijpfy
+!     &               pnd  * dijpfy
 !        djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+
-!     &               pond  * dijpfz
+!     &               pnd  * dijpfz
 
 !        pip = w7(ii)
 !     &       +w1(ii)*diipfx+w2(ii)*diipfy+w3(ii)*diipfz
@@ -466,7 +465,7 @@ endif
 !        flui = (propfa(ifac,iflmas)+abs(propfa(ifac,iflmas)))
 !        fluj = (propfa(ifac,iflmas)-abs(propfa(ifac,iflmas)))
 
-!        viscf(ifac) = -(pond*pip*flui+pond*pjp*fluj)
+!        viscf(ifac) = -(pnd*pip*flui+pnd*pjp*fluj)
 
 !      enddo
 
@@ -680,27 +679,26 @@ do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
 
-  iij = idijpf-1+3*(ifac-1)
-  dijpfx = ra(iij+1)
-  dijpfy = ra(iij+2)
-  dijpfz = ra(iij+3)
+  dijpfx = dijpf(1,ifac)
+  dijpfy = dijpf(2,ifac)
+  dijpfz = dijpf(3,ifac)
 
-  pond   = ra(ipond-1+ifac)
+  pnd   = pond(ifac)
 
 !        Calcul II' et JJ'
 
   diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                        &
-           (1.d0-pond) * dijpfx)
+           (1.d0-pnd) * dijpfx)
   diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                        &
-           (1.d0-pond) * dijpfy)
+           (1.d0-pnd) * dijpfy)
   diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                        &
-           (1.d0-pond) * dijpfz)
+           (1.d0-pnd) * dijpfz)
   djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                        &
-               pond  * dijpfx
+               pnd  * dijpfx
   djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                        &
-               pond  * dijpfy
+               pnd  * dijpfy
   djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                        &
-               pond  * dijpfz
+               pnd  * dijpfz
 
   pip = w7(ii)                                                    &
        +w1(ii)*diipfx+w2(ii)*diipfy+w3(ii)*diipfz

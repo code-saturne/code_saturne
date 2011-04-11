@@ -362,10 +362,9 @@ if (ineedf.eq.1) then
   iclipr = iclrtp(ipriph,icoef)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    ii = idiipb-1+3*(ifac-1)
-    diipbx = ra(ii+1)
-    diipby = ra(ii+2)
-    diipbz = ra(ii+3)
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
     pip =  rtpa(iel,ipriph)                                       &
          +diipbx*w1(iel) +diipby*w2(iel)                          &
          +diipbz*w3(iel)
@@ -398,10 +397,9 @@ if(iifbru.gt.0) then
 
       iel = ifabor(ifac)
 
-      iii = idiipb-1+3*(ifac-1)
-      diipbx = ra(iii+1)
-      diipby = ra(iii+2)
-      diipbz = ra(iii+3)
+      diipbx = diipb(1,ifac)
+      diipby = diipb(2,ifac)
+      diipbz = diipb(3,ifac)
 
       pip = rtp(iel,ipriph)                                       &
            +(w1(iel)*diipbx+w2(iel)*diipby+w3(iel)*diipbz)
@@ -479,10 +477,9 @@ if( (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                   &
   if (ineedf.eq.1) then
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      ii = idiipb-1+3*(ifac-1)
-      diipbx = ra(ii+1)
-      diipby = ra(ii+2)
-      diipbz = ra(ii+3)
+      diipbx = diipb(1,ifac)
+      diipby = diipb(2,ifac)
+      diipbz = diipb(3,ifac)
       xkb = rtpa(iel,ikiph) + diipbx*w1(iel)                      &
            + diipby*w2(iel) + diipbz*w3(iel)
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb

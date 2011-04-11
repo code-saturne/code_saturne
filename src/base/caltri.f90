@@ -162,22 +162,8 @@ ttchis = -1.d0
 ! 2. Geometry
 !===============================================================================
 
-! (memclg directly initializes pointe.f90)
-call memclg                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   ifinia , ifinra )
-
-!---> Memory will be maintained until the end.
-idebia = ifinia
-idebra = ifinra
-
 call cregeo (idebia, idebra, ia, ra)
 !==========
-
-!---> Memory will be maintained until the end.
-idebia = ifinia
-idebra = ifinra
 
 !===============================================================================
 ! 3. End of modules initialization
@@ -333,12 +319,9 @@ if (isuite.eq.1) then
 
     call algrma
     !==========
-    call calgeo                                                   &
-    !==========
- ( idebia , idebra ,                                              &
-   ia     ,                                                       &
-   volmin , volmax , voltot ,                                     &
-   ra     )
+
+    ! Abort at the end of the current time-step if there is a negative volume
+    if (volmin.le.0.d0) ntmabs = ntcabs
 
   endif
 

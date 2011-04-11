@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-03-15 14:15+0100\n"
+"POT-Creation-Date: 2011-04-11 17:41+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6428,6 +6428,11 @@ msgstr ""
 "Le calcul des grandeurs géométriques associées aux faces\n"
 "ne sont implantés qu'en 3D."
 
+msgid ""
+"Face surface computation is only\n"
+"implemented in 3D."
+msgstr "Le calcul des surfaces des faces n'est implanté qu'en 3D."
+
 msgid "Cell centre computation is only implemented in 3D."
 msgstr "Le calcul des centres des cellules n'est implanté qu'en 3D."
 
@@ -6445,6 +6450,23 @@ msgstr ""
 "  0 : calcul basé sur les centres et surfaces des faces\n"
 "  1 : calcul basé sur les sommets\n"
 "et non %d."
+
+#, c-format
+msgid ""
+" --- Information on the volumes\n"
+"       Minimum control volume      = %14.7e\n"
+"       Maximum control volume      = %14.7e\n"
+"       Total volume for the domain = %14.7e\n"
+msgstr ""
+" --- Information sur les volumes\n"
+"       Volume de controle minimal = %14.7e\n"
+"       Volume de controle maximal = %14.7e\n"
+"       Volume total du domaine    = %14.7e\n"
+
+msgid ""
+"\n"
+"Abort due to the detection of a negative control volume.\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -6826,6 +6848,10 @@ msgstr ""
 #, c-format
 msgid " -p, --param       <file_name> parameter file\n"
 msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
+
+#, c-format
+msgid " --preprocess      mesh preprocessing mode\n"
+msgstr ""
 
 #, c-format
 msgid " -q, --quality     mesh quality verification mode\n"

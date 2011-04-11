@@ -194,7 +194,7 @@ double precision dijpfx, dijpfy, dijpfz
 double precision diipfx, diipfy, diipfz
 double precision djjpfx, djjpfy, djjpfz
 double precision diipbx, diipby, diipbz
-double precision pond, dist, srfan
+double precision pnd, distf, srfan
 double precision pfac1, pfac2, pfac3, unsvol
 
 !===============================================================================
@@ -366,10 +366,9 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
 !CDIR NODEP
     do ifac = 1, nfabor
       ii = ifabor(ifac )
-      iii = idiipb-1+3*(ifac-1)
-      diipbx = ra(iii+1)
-      diipby = ra(iii+2)
-      diipbz = ra(iii+3)
+      diipbx = diipb(1,ifac)
+      diipby = diipb(2,ifac)
+      diipbz = diipb(3,ifac)
       pfac = inc*coefap(ifac )                                    &
             +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
                     +diipby*dpdy(ii)+diipbz*dpdz(ii) )
@@ -383,10 +382,9 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
 ! VECTORISATION NON FORCEE
     do ifac =1,nfabor
       ii = ifabor(ifac )
-      iii = idiipb-1+3*(ifac-1)
-      diipbx = ra(iii+1)
-      diipby = ra(iii+2)
-      diipbz = ra(iii+3)
+      diipbx = diipb(1,ifac)
+      diipby = diipb(2,ifac)
+      diipbz = diipb(3,ifac)
       pfac = inc*coefap(ifac )                                    &
             +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
                     +diipby*dpdy(ii)+diipbz*dpdz(ii) )
@@ -486,27 +484,26 @@ if(iupwin.eq.1) then
         infac = infac+1
       endif
 
-      iij = idijpf-1+3*(ifac-1)
-      dijpfx = ra(iij+1)
-      dijpfy = ra(iij+2)
-      dijpfz = ra(iij+3)
+      dijpfx = dijpf(1,ifac)
+      dijpfy = dijpf(2,ifac)
+      dijpfz = dijpf(3,ifac)
 
-      pond   = ra(ipond-1+ifac)
+      pnd   = pond(ifac)
 
 ! ON RECALCULE A CE NIVEAU II' ET JJ'
 
       diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pond) * dijpfx)
+               (1.d0-pnd) * dijpfx)
       diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pond) * dijpfy)
+               (1.d0-pnd) * dijpfy)
       diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pond) * dijpfz)
+               (1.d0-pnd) * dijpfz)
       djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pond  * dijpfx
+                   pnd  * dijpfx
       djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pond  * dijpfy
+                   pnd  * dijpfy
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pond  * dijpfz
+                   pnd  * dijpfz
 
       dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
       dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
@@ -553,27 +550,26 @@ if(iupwin.eq.1) then
         infac = infac+1
       endif
 
-      iij = idijpf-1+3*(ifac-1)
-      dijpfx = ra(iij+1)
-      dijpfy = ra(iij+2)
-      dijpfz = ra(iij+3)
+      dijpfx = dijpf(1,ifac)
+      dijpfy = dijpf(2,ifac)
+      dijpfz = dijpf(3,ifac)
 
-      pond   = ra(ipond-1+ifac)
+      pnd   = pond(ifac)
 
 ! ON RECALCULE A CE NIVEAU II' ET JJ'
 
       diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pond) * dijpfx)
+               (1.d0-pnd) * dijpfx)
       diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pond) * dijpfy)
+               (1.d0-pnd) * dijpfy)
       diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pond) * dijpfz)
+               (1.d0-pnd) * dijpfz)
       djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pond  * dijpfx
+                   pnd  * dijpfx
       djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pond  * dijpfy
+                   pnd  * dijpfy
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pond  * dijpfz
+                   pnd  * dijpfz
 
       dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
       dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
@@ -615,29 +611,27 @@ elseif(isstpp.eq.1) then
       ii = ifacel(1,ifac)
       jj = ifacel(2,ifac)
 
-      iij = idijpf-1+3*(ifac-1)
+      dijpfx = dijpf(1,ifac)
+      dijpfy = dijpf(2,ifac)
+      dijpfz = dijpf(3,ifac)
 
-      dijpfx = ra(iij+1)
-      dijpfy = ra(iij+2)
-      dijpfz = ra(iij+3)
-
-      pond   = ra(ipond-1+ifac)
+      pnd   = pond(ifac)
 
 ! ON RECALCULE A CE NIVEAU II' ET JJ'
 
 
       diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pond) * dijpfx)
+               (1.d0-pnd) * dijpfx)
       diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pond) * dijpfy)
+               (1.d0-pnd) * dijpfy)
       diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pond) * dijpfz)
+               (1.d0-pnd) * dijpfz)
       djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pond  * dijpfx
+                   pnd  * dijpfx
       djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pond  * dijpfy
+                   pnd  * dijpfy
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pond  * dijpfz
+                   pnd  * dijpfz
 
       dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
       dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
@@ -664,9 +658,9 @@ elseif(isstpp.eq.1) then
 
       if (ischcp.eq.1) then
 
-        pifri = pond*pipr +(1.d0-pond)*pjp
+        pifri = pnd*pipr +(1.d0-pnd)*pjp
         pjfri = pifri
-        pifrj = pond*pip  +(1.d0-pond)*pjpr
+        pifrj = pnd*pip  +(1.d0-pnd)*pjpr
         pjfrj = pifrj
 
 
@@ -739,28 +733,26 @@ elseif(isstpp.eq.1) then
       ii = ifacel(1,ifac)
       jj = ifacel(2,ifac)
 
-      iij = idijpf-1+3*(ifac-1)
+      dijpfx = dijpf(1,ifac)
+      dijpfy = dijpf(2,ifac)
+      dijpfz = dijpf(3,ifac)
 
-      dijpfx = ra(iij+1)
-      dijpfy = ra(iij+2)
-      dijpfz = ra(iij+3)
-
-      pond   = ra(ipond-1+ifac)
+      pnd   = pond(ifac)
 
 ! ON RECALCULE II' ET JJ'
 
       diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pond) * dijpfx)
+               (1.d0-pnd) * dijpfx)
       diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pond) * dijpfy)
+               (1.d0-pnd) * dijpfy)
       diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pond) * dijpfz)
+               (1.d0-pnd) * dijpfz)
       djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pond  * dijpfx
+                   pnd  * dijpfx
       djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pond  * dijpfy
+                   pnd  * dijpfy
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pond  * dijpfz
+                   pnd  * dijpfz
 
       dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
       dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
@@ -780,7 +772,7 @@ elseif(isstpp.eq.1) then
 
       if (ischcp.eq.1) then
 
-        pif = pond*pip +(1.d0-pond)*pjp
+        pif = pnd*pip +(1.d0-pnd)*pjp
         pjf = pif
 
 
@@ -857,30 +849,28 @@ else
       ii = ifacel(1,ifac)
       jj = ifacel(2,ifac)
 
-      iij = idijpf-1+3*(ifac-1)
+      dijpfx = dijpf(1,ifac)
+      dijpfy = dijpf(2,ifac)
+      dijpfz = dijpf(3,ifac)
 
-      dijpfx = ra(iij+1)
-      dijpfy = ra(iij+2)
-      dijpfz = ra(iij+3)
-
-      pond   = ra(ipond-1+ifac)
-      dist   = ra(idist-1+ifac)
+      pnd    = pond(ifac)
+      distf  = dist(ifac)
       srfan  = surfan(ifac)
 
 ! ON RECALCULE II' ET JJ'
 
       diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pond) * dijpfx)
+               (1.d0-pnd) * dijpfx)
       diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pond) * dijpfy)
+               (1.d0-pnd) * dijpfy)
       diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pond) * dijpfz)
+               (1.d0-pnd) * dijpfz)
       djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pond  * dijpfx
+                   pnd  * dijpfx
       djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pond  * dijpfy
+                   pnd  * dijpfy
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pond  * dijpfz
+                   pnd  * dijpfz
 
       dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
       dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
@@ -915,11 +905,11 @@ else
         dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
             + dpdz(ii)*surfac(3,ifac)
         ddi = testi
-        ddj = ( pvar(jj)-pvar(ii) )/dist *srfan
+        ddj = ( pvar(jj)-pvar(ii) )/distf *srfan
       else
         dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
             + dpdz(jj)*surfac(3,ifac)
-        ddi = ( pvar(jj)-pvar(ii) )/dist *srfan
+        ddi = ( pvar(jj)-pvar(ii) )/distf *srfan
         ddj = testj
       endif
       tesqck = dcc**2 -(ddi-ddj)**2
@@ -948,9 +938,9 @@ else
 
         if (ischcp.eq.1) then
 
-          pifri = pond*pipr +(1.d0-pond)*pjp
+          pifri = pnd*pipr +(1.d0-pnd)*pjp
           pjfri = pifri
-          pifrj = pond*pip  +(1.d0-pond)*pjpr
+          pifrj = pnd*pip  +(1.d0-pnd)*pjpr
           pjfrj = pifrj
 
 
@@ -1025,30 +1015,28 @@ else
       ii = ifacel(1,ifac)
       jj = ifacel(2,ifac)
 
-      iij = idijpf-1+3*(ifac-1)
+      dijpfx = dijpf(1,ifac)
+      dijpfy = dijpf(2,ifac)
+      dijpfz = dijpf(3,ifac)
 
-      dijpfx = ra(iij+1)
-      dijpfy = ra(iij+2)
-      dijpfz = ra(iij+3)
-
-      pond   = ra(ipond-1+ifac)
-      dist   = ra(idist-1+ifac)
+      pnd    = pond(ifac)
+      distf  = dist(ifac)
       srfan  = surfan(ifac)
 
 ! ON RECALCULE II' ET JJ'
 
       diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pond) * dijpfx)
+               (1.d0-pnd) * dijpfx)
       diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pond) * dijpfy)
+               (1.d0-pnd) * dijpfy)
       diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pond) * dijpfz)
+               (1.d0-pnd) * dijpfz)
       djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pond  * dijpfx
+                   pnd  * dijpfx
       djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pond  * dijpfy
+                   pnd  * dijpfy
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pond  * dijpfz
+                   pnd  * dijpfz
 
       dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
       dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
@@ -1077,11 +1065,11 @@ else
         dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
             + dpdz(ii)*surfac(3,ifac)
         ddi = testi
-        ddj = ( pvar(jj)-pvar(ii) )/dist *srfan
+        ddj = ( pvar(jj)-pvar(ii) )/distf *srfan
       else
         dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
             + dpdz(jj)*surfac(3,ifac)
-        ddi = ( pvar(jj)-pvar(ii) )/dist *srfan
+        ddi = ( pvar(jj)-pvar(ii) )/distf *srfan
         ddj = testj
       endif
       tesqck = dcc**2 -(ddi-ddj)**2
@@ -1108,7 +1096,7 @@ else
 
         if (ischcp.eq.1) then
 
-          pif = pond*pip +(1.d0-pond)*pjp
+          pif = pnd*pip +(1.d0-pnd)*pjp
           pjf = pif
 
 
@@ -1191,10 +1179,9 @@ if (idtvar.lt.0) then
 
     ii = ifabor(ifac)
 
-    iii = idiipb-1+3*(ifac-1)
-    diipbx = ra(iii+1)
-    diipby = ra(iii+2)
-    diipbz = ra(iii+3)
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
     ! On enleve le decentrement pour les faces couplees (test sur iphas=1)
     if (ifaccp.eq.1.and.ia(iitypf-1+ifac).eq.icscpl) then
@@ -1225,10 +1212,9 @@ else
 
     ii = ifabor(ifac)
 
-    iii = idiipb-1+3*(ifac-1)
-    diipbx = ra(iii+1)
-    diipby = ra(iii+2)
-    diipbz = ra(iii+3)
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
     ! On enleve le decentrement pour les faces couplees (test sur iphas=1)
     if (ifaccp.eq.1.and.ia(iitypf-1+ifac).eq.icscpl) then

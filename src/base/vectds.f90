@@ -29,7 +29,6 @@ subroutine vectds &
 !================
 
  ( ia     ,                                                       &
-   pond   ,                                                       &
    vectx  , vecty  , vectz  ,                                     &
    valf   , valb   , ra     )
 
@@ -48,7 +47,6 @@ subroutine vectds &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ia(*)            ! ia ! --- ! main integer work array                        !
-! pond(nfac        ! tr ! <-- ! ponderation pour interpolation faces           !
 ! vectx (ncelet    ! tr ! <-- ! composante x du vecteur   entre                !
 ! vecty (ncelet    ! tr ! <-- ! composante y du vecteur   entre                !
 ! vectz (ncelet    ! tr ! <-- ! composante z du vecteur   entre                !
@@ -80,7 +78,6 @@ implicit none
 ! Arguments
 
 integer          ia(*)
-double precision pond(nfac)
 double precision vectx(ncelet), vecty(ncelet), vectz(ncelet)
 double precision valf(nfac), valb(nfabor)
 double precision ra(*)

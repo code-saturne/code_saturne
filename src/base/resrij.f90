@@ -611,7 +611,6 @@ call grdcel                                                       &
  call vectds                                                      &
 !!==========
  (ia     ,                                                        &
-  ra(ipond) ,                                                     &
   w4     , w5     , w6     ,                                      &
   viscf  , viscb  , ra     )
 

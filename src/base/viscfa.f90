@@ -96,7 +96,7 @@ double precision ra(*)
 ! Local variables
 
 integer          ifac, ii, jj
-double precision visci, viscj, surfn, dist, pond
+double precision visci, viscj, surfn, distbf, pnd
 
 !===============================================================================
 
@@ -117,9 +117,8 @@ if( imvisf.eq.0 ) then
     visci = vistot(ii)
     viscj = vistot(jj)
     surfn = surfan(ifac)
-    dist  = ra(idist-1+ifac)
 
-    viscf(ifac) = 0.5d0*( visci +viscj )*surfn/dist
+    viscf(ifac) = 0.5d0*( visci +viscj )*surfn/dist(ifac)
 
   enddo
 
@@ -132,11 +131,10 @@ else
     visci = vistot(ii)
     viscj = vistot(jj)
     surfn = surfan(ifac)
-    dist  = ra(idist-1+ifac)
-    pond  = ra(ipond-1+ifac)
+    pnd  = pond(ifac)
 
     viscf(ifac) =                                                 &
-      visci*viscj / (pond*visci+(1.d0-pond)*viscj)  * surfn/dist
+      visci*viscj / (pnd*visci+(1.d0-pnd)*viscj)  * surfn/dist(ifac)
 
   enddo
 
@@ -146,9 +144,9 @@ do ifac = 1, nfabor
 
   ii = ifabor(ifac)
   surfn = surfbn(ifac)
-  dist  = ra(idistb-1+ifac)
+  distbf = distb(ifac)
 
-  viscb(ifac) = vistot(ii)*surfn/dist
+  viscb(ifac) = vistot(ii)*surfn/distbf
 
 enddo
 

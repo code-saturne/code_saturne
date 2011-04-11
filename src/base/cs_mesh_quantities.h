@@ -68,6 +68,21 @@ typedef struct {
   cs_real_t  *i_face_surf;    /* Surface of interior faces. */
   cs_real_t  *b_face_surf;    /* Surface of boundary faces. */
 
+  cs_real_t  *dijpf;          /* Vector I'J' for interior faces */
+  cs_real_t  *diipb;          /* Vector II'  for border faces */
+  cs_real_t  *dofij;          /* Vector OF   for interior faces */
+
+  cs_real_t  *i_dist;         /* Distance between the cell center and
+                                 the center of gravity of interior faces */
+  cs_real_t  *b_dist;         /* Distance between the cell center and
+                                 the center of gravity of border faces */
+
+  cs_real_t  *weight;         /* Interior faces weighting factor */
+
+  cs_real_t   min_vol;        /* Minimum cell volume */
+  cs_real_t   max_vol;        /* Maximum cell volume */
+  cs_real_t   tot_vol;        /* Total volume */
+
 } cs_mesh_quantities_t ;
 
 /*============================================================================

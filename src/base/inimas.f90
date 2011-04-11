@@ -168,10 +168,10 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, ii, jj, iel, iof, iii
+integer          ifac, ii, jj, iel, iii
 integer          iappel, iphydp
 double precision pfac,pip,uxfac,uyfac,uzfac
-double precision dofx,dofy,dofz,pond
+double precision dofx,dofy,dofz,pnd
 double precision diipbx, diipby, diipbz
 
 !===============================================================================
@@ -231,12 +231,12 @@ if( nswrgu.le.1 ) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    pond = ra(ipond-1+ifac)
+    pnd = pond(ifac)
 
     flumas(ifac) =  flumas(ifac)                                  &
-     +(pond*qdmx(ii)+(1.d0-pond)*qdmx(jj) )*surfac(1,ifac)        &
-     +(pond*qdmy(ii)+(1.d0-pond)*qdmy(jj) )*surfac(2,ifac)        &
-     +(pond*qdmz(ii)+(1.d0-pond)*qdmz(jj) )*surfac(3,ifac)
+     +(pnd*qdmx(ii)+(1.d0-pnd)*qdmx(jj) )*surfac(1,ifac)        &
+     +(pnd*qdmy(ii)+(1.d0-pnd)*qdmy(jj) )*surfac(2,ifac)        &
+     +(pnd*qdmz(ii)+(1.d0-pnd)*qdmz(jj) )*surfac(3,ifac)
 
   enddo
 
@@ -312,16 +312,14 @@ if( nswrgu.gt.1 ) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    pond = ra(ipond-1+ifac)
+    pnd = pond(ifac)
 
-    iof = idofij-1+3*(ifac-1)
-!---> DOF = OF
-    dofx = ra(iof+1)
-    dofy = ra(iof+2)
-    dofz = ra(iof+3)
+    dofx = dofij(1,ifac)
+    dofy = dofij(2,ifac)
+    dofz = dofij(3,ifac)
 
     flumas(ifac) = flumas(ifac)                                   &
-         +( pond*qdmx(ii) +(1.d0-pond)*qdmx(jj)                   &
+         +( pnd*qdmx(ii) +(1.d0-pnd)*qdmx(jj)                     &
            +0.5d0*( dpdx(ii) +dpdx(jj) )*dofx                     &
            +0.5d0*( dpdy(ii) +dpdy(jj) )*dofy                     &
            +0.5d0*( dpdz(ii) +dpdz(jj) )*dofz    )*surfac(1,ifac)
@@ -333,10 +331,10 @@ if( nswrgu.gt.1 ) then
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    iii = idiipb-1+3*(ifac-1)
-    diipbx = ra(iii+1)
-    diipby = ra(iii+2)
-    diipbz = ra(iii+3)
+
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
     pip = romb(ifac) * ux(ii)                                     &
           +dpdx(ii)*diipbx                                        &
@@ -377,18 +375,14 @@ if( nswrgu.gt.1 ) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    pond = ra(ipond-1+ifac)
+    pnd = pond(ifac)
 
-    iof = idofij-1+3*(ifac-1)
-
-!---> DOF = OF
-
-    dofx = ra(iof+1)
-    dofy = ra(iof+2)
-    dofz = ra(iof+3)
+    dofx = dofij(1,ifac)
+    dofy = dofij(2,ifac)
+    dofz = dofij(3,ifac)
 
     flumas(ifac) = flumas(ifac)                                   &
-         +( pond*qdmy(ii) +(1.d0-pond)*qdmy(jj)                   &
+         +( pnd*qdmy(ii) +(1.d0-pnd)*qdmy(jj)                     &
            +0.5d0*( dpdx(ii) +dpdx(jj) )*dofx                     &
            +0.5d0*( dpdy(ii) +dpdy(jj) )*dofy                     &
            +0.5d0*( dpdz(ii) +dpdz(jj) )*dofz    )*surfac(2,ifac)
@@ -400,10 +394,10 @@ if( nswrgu.gt.1 ) then
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    iii = idiipb-1+3*(ifac-1)
-    diipbx = ra(iii+1)
-    diipby = ra(iii+2)
-    diipbz = ra(iii+3)
+
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
     pip = romb(ifac) * uy(ii)                                     &
         +dpdx(ii)*diipbx                                          &
@@ -442,18 +436,14 @@ if( nswrgu.gt.1 ) then
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
 
-    pond = ra(ipond-1+ifac)
+    pnd = pond(ifac)
 
-    iof = idofij-1+3*(ifac-1)
-
-!---> DOF = OF
-
-    dofx = ra(iof+1)
-    dofy = ra(iof+2)
-    dofz = ra(iof+3)
+    dofx = dofij(1,ifac)
+    dofy = dofij(2,ifac)
+    dofz = dofij(3,ifac)
 
     flumas(ifac) = flumas(ifac)                                   &
-         +( pond*qdmz(ii) +(1.d0-pond)*qdmz(jj)                   &
+         +( pnd*qdmz(ii) +(1.d0-pnd)*qdmz(jj)                     &
            +0.5d0*( dpdx(ii) +dpdx(jj) )*dofx                     &
            +0.5d0*( dpdy(ii) +dpdy(jj) )*dofy                     &
            +0.5d0*( dpdz(ii) +dpdz(jj) )*dofz    )*surfac(3,ifac)
@@ -465,10 +455,10 @@ if( nswrgu.gt.1 ) then
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    iii = idiipb-1+3*(ifac-1)
-    diipbx = ra(iii+1)
-    diipby = ra(iii+2)
-    diipbz = ra(iii+3)
+
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
     pip = romb(ifac) * uz(ii)                                     &
         +dpdx(ii)*diipbx                                          &

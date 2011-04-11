@@ -541,7 +541,6 @@ if (iturb(iphas).eq.30) then
   call vectds                                                     &
   !==========
  (ia     ,                                                        &
-  ra(ipond) ,                                                     &
   w4     , w5     , w6     ,                                      &
   viscf  , viscb  , ra     )
 
