@@ -83,19 +83,18 @@ def preprocessorFile(parent, initdir):
         lines = f.readlines()
         f.close()
 
-        j=0
+        j=-1
         for i in range(len(lines)):
             index = string.rfind(lines[i], "Code_Saturne")
             if index != -1:
                 j = i
                 break
 
-        if j == 0:
+        if j == -1:
             title = tr("Informations")
             msg = tr("Warning : the selected file is not a correct file.\n\n"\
                      "Verify your selection")
             QMessageBox.information(parent, title, msg)
-            preprocessorFile(initdir) # ???
 
     return file_name
 

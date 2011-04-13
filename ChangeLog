@@ -1,4 +1,10 @@
 * 13/04/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the import of a check_mesh file when the name Code_Saturne is present
+  within the first line of the file (e.g. for an installation directory).
+  modified routine:
+    gui/Pages/PreProcessingInformationsView.py
+
+* 13/04/2011 - David Monfort <david.monfort@edf.fr>
   Fix the profile page view in the interface when one modifies the data.
   modified routine:
     gui/Pages/ProfilesView.py
