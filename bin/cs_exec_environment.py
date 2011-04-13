@@ -314,8 +314,8 @@ class resource_info(batch_info):
                     sys.stderr.write('Warning:\n'
                                      +'   Will use ' + str(self.n_procs)
                                      + ' processes while resource manager ('
-                                     + self.resources + ')\n   allows for '
-                                     + str(self.resources.n_procs) + '.\n\n')
+                                     + self.manager + ')\n   allows for '
+                                     + str(n_procs) + '.\n\n')
             self.n_procs = n_procs
 
     #---------------------------------------------------------------------------
