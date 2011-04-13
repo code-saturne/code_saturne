@@ -360,10 +360,10 @@ class Parser:
         logging_args = ''
         log_node = getChildNode(calc_node, 'logging')
         if log_node != None:
-            attr = str(node.getAttribute('main'))
+            attr = str(log_node.getAttribute('main'))
             if attr == 'stdout':
                 logging_args += '--log 0 '
-            attr = str(node.getAttribute('parallel'))
+            attr = str(log_node.getAttribute('parallel'))
             if attr == 'stdout':
                 logging_args += '--logp 0'
             elif attr == 'listing':
