@@ -1,3 +1,8 @@
+* 13/04/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the profile page view in the interface when one modifies the data.
+  modified routine:
+    gui/Pages/ProfilesView.py
+
 * 11/04/2011 - David Monfort <david.monfort@edf.fr>
   Move the calculation of geometric quantities (useful for handling the
   non-orthogonalities) from the Fortran part to the C part.

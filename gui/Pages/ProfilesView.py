@@ -417,7 +417,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
                     new_label = old_label
 
                 log.debug("slotEditedProfile -> %s" % (new_label,))
-                self.__replaceProfile(self.entriesNumber, new_label, var_prof)
+                self.__replaceProfile(row+1, new_label, var_prof)
                 idx = self.treeViewProfile.currentIndex()
                 self.treeViewProfile.dataChanged(idx, idx)
 
