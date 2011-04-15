@@ -57,6 +57,7 @@ from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
 from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from Pages.ReferenceValuesModel import ReferenceValuesModel
 
 from Pages.QMeiEditorView import QMeiEditorView
 
@@ -376,9 +377,17 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         exa = FluidCharacteristicsView.density
         setGreenColor(self.sender(), False)
 
+        symbols_rho = []
+        for s in self.list_scalars:
+           symbols_rho.append(s)
+        rho0_value = self.mdl.getInitialValueDensity()
+        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        symbols_rho.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
+        symbols_rho.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
-                                     symbols    = self.list_scalars,
+                                     symbols    = symbols_rho,
                                      examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
@@ -398,9 +407,20 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         req = [('mu', 'Molecular Viscosity')]
         exa = FluidCharacteristicsView.molecular_viscosity
 
+        symbols_mu = []
+        for s in self.list_scalars:
+           symbols_mu.append(s)
+        mu0_value = self.mdl.getInitialValueViscosity()
+        rho0_value = self.mdl.getInitialValueDensity()
+        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        symbols_mu.append(('mu0', 'Viscosity (reference value) = ' + str(mu0_value)))
+        symbols_mu.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
+        symbols_mu.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+        symbols_mu.append(('rho', 'Density'))
+
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
-                                     symbols    = self.list_scalars,
+                                     symbols    = symbols_mu,
                                      examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
@@ -420,9 +440,17 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         req = [('cp', 'Specific heat')]
         exa = FluidCharacteristicsView.specific_heat
 
+        symbols_cp = []
+        for s in self.list_scalars:
+           symbols_cp.append(s)
+        cp0_value = self.mdl.getInitialValueHeat()
+        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        symbols_cp.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
+        symbols_cp.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
-                                     symbols    = self.list_scalars,
+                                     symbols    = symbols_cp,
                                      examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()
@@ -442,9 +470,17 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
         req = [('lambda', 'Thermal conductivity')]
         exa = FluidCharacteristicsView.thermal_conductivity
 
+        symbols_al = []
+        for s in self.list_scalars:
+           symbols_al.append(s)
+        lambda0_value = self.mdl.getInitialValueCond()
+        ref_pressure = ReferenceValuesModel(self.case).getPressure()
+        symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
+        symbols_al.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+
         dialog = QMeiEditorView(self,expression = exp,
                                      required   = req,
-                                     symbols    = self.list_scalars,
+                                     symbols    = symbols_al,
                                      examples   = exa)
         if dialog.exec_():
             result = dialog.get_result()

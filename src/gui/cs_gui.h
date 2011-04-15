@@ -498,10 +498,14 @@ void CS_PROCF(uiiniv, UIINIV) (const int    *ncelet,
  * INTEGER          ISCALT   -->  pointer for the thermal scalar in ISCA
  * INTEGER          ISCAVR   -->  scalars that are variance
  * INTEGER          IPPROC   -->  indirection array for cell properties
- * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
- * DOUBLE PRECISION CP0      -->  value of predifined heat if ICP=0
+ * DOUBLE PRECISION P0       -->  pressure reference value
+ * DOUBLE PRECISION T0       -->  temperature reference value
+ * DOUBLE PRECISION RO0      -->  density reference value
+ * DOUBLE PRECISION CP0      -->  specific heat reference value
+ * DOUBLE PRECISION VISCL0   -->  dynamic viscosity reference value
+ * DOUBLE PRECISION VISLS0   -->  diffusion coefficient of the scalars
  * DOUBLE PRECISION RTP      -->  variables and scalars array
- * DOUBLE PRECISION PROPCE  <--   cell properties array
+ * DOUBLE PRECISION PROPCE   <--  cell properties array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
@@ -517,8 +521,12 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t         iscalt[],
                               const cs_int_t         iscavr[],
                               const cs_int_t         ipproc[],
+                              const cs_real_t        p0[],
+                              const cs_real_t        t0[],
                               const cs_real_t        ro0[],
                               const cs_real_t        cp0[],
+                              const cs_real_t        viscl0[],
+                              const cs_real_t        visls0[],
                               const cs_real_t        rtp[],
                                     cs_real_t        propce[]);
 

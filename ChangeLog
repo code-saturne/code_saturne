@@ -1,3 +1,11 @@
+* 14/04/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
+  Add reference values to the list of available symbols for formulae definition.
+  modified routines:
+    gui/Pages/FluidCharacteristicsView.py
+    src/base/phyvar.f90
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+
 * 14/04/2011 - David Monfort <david.monfort@edf.fr>
   Fix the definition of a user law for the specific heat (XML reader).
   modified routine:

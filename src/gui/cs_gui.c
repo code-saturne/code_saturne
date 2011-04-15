@@ -4769,10 +4769,14 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  * INTEGER          ISCALT   -->  pointer for the thermal scalar in ISCA
  * INTEGER          ISCAVR   -->  scalars that are variance
  * INTEGER          IPPROC   -->  indirection array for cell properties
- * DOUBLE PRECISION RO0      -->  value of density if IROVAR=0
- * DOUBLE PRECISION CP0      -->  value of specific heat if ICP=0
+ * DOUBLE PRECISION P0       -->  pressure reference value
+ * DOUBLE PRECISION T0       -->  temperature reference value
+ * DOUBLE PRECISION RO0      -->  density reference value
+ * DOUBLE PRECISION CP0      -->  specific heat reference value
+ * DOUBLE PRECISION VISCL0   -->  dynamic viscosity reference value
+ * DOUBLE PRECISION VISLS0   -->  diffusion coefficient of the scalars
  * DOUBLE PRECISION RTP      -->  variables and scalars array
- * DOUBLE PRECISION PROPCE  <--   cell properties array
+ * DOUBLE PRECISION PROPCE   <--  cell properties array
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
@@ -4788,8 +4792,12 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                               const cs_int_t         iscalt[],
                               const cs_int_t         iscavr[],
                               const cs_int_t         ipproc[],
+                              const cs_real_t        p0[],
+                              const cs_real_t        t0[],
                               const cs_real_t        ro0[],
                               const cs_real_t        cp0[],
+                              const cs_real_t        viscl0[],
+                              const cs_real_t        visls0[],
                               const cs_real_t        rtp[],
                                     cs_real_t        propce[])
 {
@@ -4843,6 +4851,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         /* return an empty interpreter */
 
         ev_rho = mei_tree_new(law_rho);
+
+        mei_tree_insert(ev_rho, "rho0", ro0[iphas]);
+        mei_tree_insert(ev_rho, "p0", p0[iphas]);
+
         for (i = 0; i < *nscaus; i++)
             mei_tree_insert(ev_rho, vars->label[i], 0.0);
 
@@ -4900,6 +4912,12 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         /* return an empty interpreter */
 
         ev_mu = mei_tree_new(law_mu);
+
+        mei_tree_insert(ev_mu, "rho0", ro0[iphas]);
+        mei_tree_insert(ev_mu, "mu0", viscl0[iphas]);
+        mei_tree_insert(ev_mu, "p0", p0[iphas]);
+        mei_tree_insert(ev_mu, "rho", 0.0);
+
         for (i = 0; i < *nscaus; i++)
             mei_tree_insert(ev_mu, vars->label[i], 0.0);
 
@@ -4914,7 +4932,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                       _("Error: can not find the required symbol: %s\n"), "mu");
 
         /* for each cell, update the value of the table of symbols for each scalar
-           (including the thermal scalar), and evaluate the interpreter */
+           (including the thermal scalar) and for the density,
+            then evaluate the interpreter */
 
         for (iel = 0; iel < *ncel; iel++)
         {
@@ -4922,6 +4941,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                 mei_tree_insert(ev_mu,
                                 vars->label[i],
                                 rtp[(isca[i] -1) * (*ncelet) + iel]);
+
+            mei_tree_insert(ev_mu,
+                            "rho",
+                            propce[ipcrom * (*ncelet) + iel]);
 
             tmp = mei_evaluate(ev_mu);
             propce[ipcvis * (*ncelet) + iel] = mei_tree_lookup(ev_mu, "mu");
@@ -4957,6 +4980,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         /* return an empty interpreter */
 
         ev_cp = mei_tree_new(law_cp);
+
+        mei_tree_insert(ev_cp, "cp0", cp0[iphas]);
+        mei_tree_insert(ev_cp, "p0", p0[iphas]);
+
         for (i = 0; i < *nscaus; i++)
             mei_tree_insert(ev_cp, vars->label[i], 0.0);
 
@@ -5014,6 +5041,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         /* return an empty interpreter */
 
         ev_la = mei_tree_new(law_la);
+
+        mei_tree_insert(ev_la, "lambda0", visls0[iscalt[iphas]-1]*cp0[iphas]);
+        mei_tree_insert(ev_la, "p0", p0[iphas]);
+
         for (i = 0; i < *nscaus; i++)
             mei_tree_insert(ev_la, vars->label[i], 0.0);
 
