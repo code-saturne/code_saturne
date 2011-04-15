@@ -1,4 +1,17 @@
 * 14/04/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
+  Add the possibility to define a Coriolis source term within the interface.
+  added routines:
+    gui/Pages/CoriolisSourceTermsForm.ui
+    gui/Pages/CoriolisSourceTermsModel.py
+    gui/Pages/CoriolisSourceTermsView.py
+  modified routines:
+    gui/Base/BrowserView.py
+    gui/Base/Toolbox.py
+    src/gui/cs_gui.c
+  modified script:
+    gui/Pages/Makefile.am
+
+* 14/04/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
   Add reference values to the list of available symbols for formulae definition.
   modified routines:
     gui/Pages/FluidCharacteristicsView.py

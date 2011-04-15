@@ -49,6 +49,8 @@ CoalThermoChemistry.py \
 CommonCombustion.py \
 ConjugateHeatTransferView.py \
 ConjugateHeatTransferModel.py \
+CoriolisSourceTermsModel.py \
+CoriolisSourceTermsView.py \
 CurrentSpeciesModel.py \
 CurrentSpeciesView.py \
 DefineUserScalarsModel.py \
@@ -140,6 +142,7 @@ BoundaryConditionsVelocityInletForm.ui \
 BoundaryConditionsWallRadiativeTransferForm.ui \
 CoalCombustionForm.ui \
 ConjugateHeatTransferForm.ui \
+CoriolisSourceTermsForm.ui \
 CurrentSpeciesForm.ui \
 DefineUserScalarsForm.ui \
 FacesSelectionForm.ui \

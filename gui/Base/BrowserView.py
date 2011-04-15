@@ -440,6 +440,7 @@ Volume conditions
     Volume regions definition
     Initialization
     Head losses
+    Coriolis Source Terms
 Particles and droplets tracking
     Global settings
     Statistics

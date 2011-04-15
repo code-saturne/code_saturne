@@ -827,6 +827,30 @@ cs_gui_gravity_value(const char   *const param,
 }
 
 /*-----------------------------------------------------------------------------
+ * Modify coriolis source terms parameters.
+ *
+ * parameters:
+ *   param               -->  coriolis parameter (OMEGAX, OMEGAY, OMEGAZ)
+ *   keyword            <-->  new value of the coriolis parameter
+ *----------------------------------------------------------------------------*/
+
+static void
+cs_gui_coriolis_value(const char   *const param,
+                           double *const value)
+{
+  char   *path = NULL;
+  double  result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "physical_properties", "omega", param);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result)) *value = result;
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
  * Get initial value from property markup.
  *
  * parameters:
@@ -3481,6 +3505,15 @@ void CS_PROCF (csphys, CSPHYS)
   cs_gui_gravity_value("gravity_y", gy);
   cs_gui_gravity_value("gravity_z", gz);
 
+  cs_gui_coriolis_value("omega_x", omegax);
+  cs_gui_coriolis_value("omega_y", omegay);
+  cs_gui_coriolis_value("omega_z", omegaz);
+
+  if (*omegax == 0. && *omegay == 0. && *omegaz ==0.)
+    *icorio = 0;
+  else
+    *icorio = 1;
+
   cs_gui_properties_value("density", &ro0[iphas]);
   cs_gui_properties_value("molecular_viscosity", &viscl0[iphas]);
   cs_gui_properties_value("specific_heat", &cp0[iphas]);
@@ -3506,8 +3539,12 @@ void CS_PROCF (csphys, CSPHYS)
   bft_printf("--gx = %f \n",*gx);
   bft_printf("--gy = %f \n",*gy);
   bft_printf("--gz = %f \n",*gz);
+  bft_printf("--omegax = %f \n",*omegax);
+  bft_printf("--omegay = %f \n",*omegay);
+  bft_printf("--omegaz = %f \n",*omegaz);
   bft_printf("--rho = %g , variable %i\n", ro0[iphas], irovar[iphas]);
   bft_printf("--mu = %g , variable %i \n", viscl0[iphas], ivivar[iphas]);
+  bft_printf("--icorio = %i \n", icorio[iphas]);
   bft_printf("--Cp = %g \n", cp0[0]);
   bft_printf("--T0 = %f \n", *t0);
   bft_printf("--P0 = %f \n", *p0);

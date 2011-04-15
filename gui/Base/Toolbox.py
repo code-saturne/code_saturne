@@ -152,6 +152,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.HeadLossesView as Page
         thisPage = Page.HeadLossesView(root, case)
 
+    elif page_name == tr("Coriolis Source Terms"):
+        import Pages.CoriolisSourceTermsView as Page
+        thisPage = Page.CoriolisSourceTermsView(root, case)
+
     elif page_name == tr("Reference values"):
         import Pages.ReferenceValuesView as Page
         thisPage = Page.ReferenceValuesView(root, case)
