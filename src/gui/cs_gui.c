@@ -4933,7 +4933,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
     /* law for specific heat */
 
     user_law = 0;
-    if (icp[iphas] == 1)
+    if (icp[iphas] > 0)
     {
         char *prop_choice = _properties_choice("specific_heat");
         if (cs_gui_strcmp(prop_choice, "user_law"))

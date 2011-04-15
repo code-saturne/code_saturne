@@ -1,4 +1,9 @@
 * 14/04/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the definition of a user law for the specific heat (XML reader).
+  modified routine:
+    src/gui/cs_gui.c
+
+* 14/04/2011 - David Monfort <david.monfort@edf.fr>
   Adapt part of SALOME module to account for the presence of neptune_cfd package.
   modified routines:
     salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py
