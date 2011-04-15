@@ -193,7 +193,7 @@ def activate():
         d_activation[studyId] = 1
 
     if d_activation[studyId] == 1:
-	d_activation[studyId] = 0
+        d_activation[studyId] = 0
         env_saturne = CheckCFD_CodeEnv(CFD_Saturne)
         env_neptune = CheckCFD_CodeEnv(CFD_Neptune)
 
@@ -205,7 +205,7 @@ def activate():
             QMessageBox.critical(ActionHandler.dskAgent().workspace(),
                                  "Error", mess, QMessageBox.Ok, 0)
 
-	    d_activation[studyId] = 1
+            d_activation[studyId] = 1
             return False
         elif env_saturne:
             ActionHandler.DialogCollector.InfoDialog.setCode(CFD_Saturne, True)
@@ -215,7 +215,7 @@ def activate():
         ActionHandler.DialogCollector.InfoDialog.exec_()
 
         if not ActionHandler.DialogCollector.InfoDialog.result() == QDialog.Accepted:
-	    d_activation[studyId] = 1
+            d_activation[studyId] = 1
             return False
 
     ActionHandler.connect(ActionHandler._SalomeSelection,

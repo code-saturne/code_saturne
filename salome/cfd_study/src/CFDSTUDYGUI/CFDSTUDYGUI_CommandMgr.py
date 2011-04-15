@@ -208,8 +208,8 @@ class CFDSTUDYGUI_CommandMgr(QObject):
 
             dsk.addDockWidget(Qt.RightDockWidgetArea,dock)
             runDock = dock
-	    studyId = sgPyQt.getStudyId()
-	    if studyId not in _d_DockWindowsRuncase.keys():
+            studyId = sgPyQt.getStudyId()
+            if studyId not in _d_DockWindowsRuncase.keys():
                 _d_DockWindowsRuncase[studyId] = []
             _d_DockWindowsRuncase[studyId].append(runDock)
 

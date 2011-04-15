@@ -104,7 +104,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
        calcium.create_calcium_port(self.proxy,"DEPAST","CALCIUM_double","OUT","I")
        calcium.create_calcium_port(self.proxy,"VITAST","CALCIUM_double","OUT","I")
        calcium.create_calcium_port(self.proxy,"DTAST","CALCIUM_double","OUT","I")
-       return True 
+       return True
     return False
 
 
@@ -174,7 +174,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
        #retour sans erreur (il faut pousser les variables de sortie)
        sys.stdout.flush()
        self.endService("FSI_ASTER.op0103")
-       return 
+       return
 
     # Verification de la validite du jeu de commande
     cr=j.report()
@@ -205,7 +205,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
          err=calcium.cp_fin(self.proxy,calcium.CP_ARRET)
          sys.stdout.flush()
          self.endService("FSI_ASTER.op0103")
-         return 
+         return
     except :
       self.MESSAGE("ERREUR INOPINEE - INTERRUPTION")
       sys.stdout.flush()

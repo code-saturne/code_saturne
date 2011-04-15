@@ -131,11 +131,11 @@ def updateDockWindowsBrowser() :
     """
     force le regroupement en onglets des fenetres Browser d'etudes CFD
     """
-    dsk = sgPyQt.getDesktop()   
+    dsk = sgPyQt.getDesktop()
     studyId = sgPyQt.getStudyId()
 
     if not getDockWindowsLists():
-        return        
+        return
     if len(_d_DockWindowsBrowser[studyId]) > 1 :
         for i in range(1,len(_d_DockWindowsBrowser[studyId])):
             dsk.tabifyDockWidget(_d_DockWindowsBrowser[studyId][0], _d_DockWindowsBrowser[studyId][i])
@@ -151,23 +151,23 @@ def findDockWindow(xmlName,caseName,studyCFDName) :
     dsk = sgPyQt.getDesktop()
     studyId = sgPyQt.getStudyId()
     ldockWindows =dsk.findChildren(QDockWidget)
-    for dock in ldockWindows:    
-        dockTitle = dock.windowTitle()	
-	if studyId not in _d_DockWindowsBrowser.keys():
+    for dock in ldockWindows:
+        dockTitle = dock.windowTitle()
+        if studyId not in _d_DockWindowsBrowser.keys():
             _d_DockWindowsBrowser[studyId] = []
-	if (str(dockTitle) == 'Object Browser') and (dock not in _d_DockWindowsBrowser[studyId]):
+        if (str(dockTitle) == 'Object Browser') and (dock not in _d_DockWindowsBrowser[studyId]):
             _d_DockWindowsBrowser[studyId].append(dock)
-	if studyId not in _d_DockWindows.keys():
+        if studyId not in _d_DockWindows.keys():
             _d_DockWindows[studyId] = []
-        
-	if _d_DockWindows[studyId] != [] :
-	    for dock in _d_DockWindows[studyId] :
-	        if str(name) in str(dock.windowTitle()) :
-		    bool_findDockWindow = True
-		    dock.show()
-		    dock.raise_()
-		   
-    return bool_findDockWindow 
+
+        if _d_DockWindows[studyId] != [] :
+            for dock in _d_DockWindows[studyId] :
+                if str(name) in str(dock.windowTitle()) :
+                    bool_findDockWindow = True
+                    dock.show()
+                    dock.raise_()
+
+    return bool_findDockWindow
 
 
 def removeDockWindow(caseName) :
@@ -206,7 +206,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         self._WindowsMap = {}
         self._CurrentWindow = None
         _d_DockWindows = {}
-	_d_DockWindowsBrowser = {}
+        _d_DockWindowsBrowser = {}
 
     def ExecGUI(self, WorkSpace, aTitle, aCase, Args=''):
         """
@@ -223,10 +223,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 return win
         else:
             aTitle = "unnamed"
-	    if findDockWindow(aTitle,aCase.GetName(),aCase.GetFather().GetName()) :
-	        mess = "A case is not finished to be set"
-	        QMessageBox.warning(None, "Warning : ",mess)
-	        return
+            if findDockWindow(aTitle,aCase.GetName(),aCase.GetFather().GetName()) :
+                mess = "A case is not finished to be set"
+                QMessageBox.warning(None, "Warning : ",mess)
+                return
 
         if aCase != None:
             if CFD_Code() == CFD_Saturne:
@@ -276,11 +276,11 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
     def onSaveAsXmlFile(self):
         """
-	"""	
+        """
         old_xml_file = None
         xml_file = None
         if  len(_selectedMainViewCase) != 0:
-	    _sMainViewCase = self._CurrentWindow 
+            _sMainViewCase = self._CurrentWindow
             if CFD_Code() == CFD_Saturne:
                 old_xml_file = _sMainViewCase.case['xmlfile']
                 _sMainViewCase.fileSaveAs()
@@ -289,67 +289,67 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                 #need update object browser
                 case = self._WindowsMap[_sMainViewCase]
                 study = CFDSTUDYGUI_DataModel.GetStudyByObj(case)
-                
+
                 obj = CFDSTUDYGUI_DataModel.checkPathUnderObject(study, xml_file)
                 if obj:
                     #changes Title of the tab
                     new_title = os.path.basename(xml_file)
                     _sMainViewCase.setWindowTitle(new_title)
-                    
+
                     #updates Object Browser
                     CFDSTUDYGUI_DataModel._RebuildTreeRecursively(obj)
-		    #if os.path.exists(old_xml_file) and os.path.exists(xml_file) :
-		    if os.path.exists(xml_file) :
-		        self.replaceDockTitleName(xml_file,old_xml_file,case,study)
-                    
+                    #if os.path.exists(old_xml_file) and os.path.exists(xml_file) :
+                    if os.path.exists(xml_file) :
+                        self.replaceDockTitleName(xml_file,old_xml_file,case,study)
+
                     updateObjectBrowser()
 
 
     def getDockTitleName(self,xml_file) :
         """
-	Build the Dock Title Name STUDY.CASE.file.xml with the entire file Name
-	"""
-	lnames = string.split(xml_file,"/")
-	if len(lnames) < 4 : return None
-	xmlname   = lnames[-1]
-	casename  = lnames[-3]
-	studyname = lnames[-4]
-	return string.join([studyname,casename,xmlname],".")
+        Build the Dock Title Name STUDY.CASE.file.xml with the entire file Name
+        """
+        lnames = string.split(xml_file,"/")
+        if len(lnames) < 4 : return None
+        xmlname   = lnames[-1]
+        casename  = lnames[-3]
+        studyname = lnames[-4]
+        return string.join([studyname,casename,xmlname],".")
 
 
     def replaceDockTitleName(self,new_xml_file,old_xml_file,case,study) :
         """
-	replace dock title name in the title of the dock widget and update 
-	the _d_DockWindows and _d_DockWindowsBrowser dictionary
-	"""
-	OldDockTitleName = self.getDockTitleName(old_xml_file)
-	NewDockTitleName = self.getDockTitleName(new_xml_file)
+        replace dock title name in the title of the dock widget and update
+        the _d_DockWindows and _d_DockWindowsBrowser dictionary
+        """
+        OldDockTitleName = self.getDockTitleName(old_xml_file)
+        NewDockTitleName = self.getDockTitleName(new_xml_file)
 
-	if NewDockTitleName == None : 
-	    mess = "File : "+xml_file+ \
+        if NewDockTitleName == None :
+            mess = "File : "+xml_file+ \
                    " is not stored into a CFDSTUDY directory structure like .../STUDY_CFD/CASE/DATA/filename.xml"
-	    QMessageBox.warning(None, "File Error : ",mess)
-	    return
-	if OldDockTitleName == None :
-	    studyname = study.GetName()
-	    casename  = case.GetName()
-	    xmlname = "unnamed"
-	    OldDockTitleName = string.join([studyname,casename,xmlname],".")
-	if NewDockTitleName != None :
-	    studyId = sgPyQt.getStudyId()
-	    if studyId in _d_DockWindows.keys():
-	        for dock in _d_DockWindows[studyId]:
-	            if str(OldDockTitleName) in str(dock.windowTitle()) :
-		        dock.setWindowTitle(str(NewDockTitleName))
-		        dock.show()
-		        dock.raise_()
-	    if studyId in _d_DockWindowsBrowser.keys():
-	        for dock in _d_DockWindowsBrowser[studyId]:
-            	    if str(OldDockTitleName) in str(dock.windowTitle()) :
-		        dock.setWindowTitle(string.join([str(NewDockTitleName),"Browser"]))
-		        dock.show()
-		        dock.raise_()	        
-	return 
+            QMessageBox.warning(None, "File Error : ",mess)
+            return
+        if OldDockTitleName == None :
+            studyname = study.GetName()
+            casename  = case.GetName()
+            xmlname = "unnamed"
+            OldDockTitleName = string.join([studyname,casename,xmlname],".")
+        if NewDockTitleName != None :
+            studyId = sgPyQt.getStudyId()
+            if studyId in _d_DockWindows.keys():
+                for dock in _d_DockWindows[studyId]:
+                    if str(OldDockTitleName) in str(dock.windowTitle()) :
+                        dock.setWindowTitle(str(NewDockTitleName))
+                        dock.show()
+                        dock.raise_()
+            if studyId in _d_DockWindowsBrowser.keys():
+                for dock in _d_DockWindowsBrowser[studyId]:
+                        if str(OldDockTitleName) in str(dock.windowTitle()) :
+                        dock.setWindowTitle(string.join([str(NewDockTitleName),"Browser"]))
+                        dock.show()
+                        dock.raise_()
+        return
 
 
     def onOpenShell(self):
@@ -476,8 +476,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
         mw = MainView(case, batch_window, batch_file, tree_window, read_only, aCase)
         fatherName = aCase.GetFather().GetName()
-	
-	aTitle = str(fatherName + "." + aCase.GetName()) + '.' + str(Title)
+
+        aTitle = str(fatherName + "." + aCase.GetName()) + '.' + str(Title)
         mw.setWindowTitle(aTitle)
 
         dsk = sgPyQt.getDesktop()
@@ -491,7 +491,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
         if studyId not in _d_DockWindows.keys():
             _d_DockWindows[studyId] = []
-	_d_DockWindows[studyId].append(dock)
+        _d_DockWindows[studyId].append(dock)
 
         dock.setVisible(True)
         dock.show()
@@ -501,7 +501,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         mw.dockWidgetBrowser.setWindowTitle(BrowserTitle)
         dsk.addDockWidget(Qt.LeftDockWidgetArea,mw.dockWidgetBrowser)
 
-	if studyId not in _d_DockWindowsBrowser.keys():
+        if studyId not in _d_DockWindowsBrowser.keys():
             _d_DockWindowsBrowser[studyId] = []
         _d_DockWindowsBrowser[studyId].append(mw.dockWidgetBrowser)
 
@@ -537,8 +537,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         dock = self.sender()
         if dock.isActiveWindow() == False : return
         titledock = str(dock.windowTitle())
-	studyId = sgPyQt.getStudyId()
-	if studyId not in _d_DockWindowsBrowser.keys():
+        studyId = sgPyQt.getStudyId()
+        if studyId not in _d_DockWindowsBrowser.keys():
             return
         for i in range(len(_d_DockWindowsBrowser[studyId])):
             if titledock in str(_d_DockWindowsBrowser[studyId][i].windowTitle()):
@@ -556,8 +556,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if dock.isActiveWindow() == False : return
         title = str(dock.windowTitle())
         titledock,br = string.split(title," Browser")
-	studyId = sgPyQt.getStudyId()
-	if studyId not in _d_DockWindowsBrowser.keys():
+        studyId = sgPyQt.getStudyId()
+        if studyId not in _d_DockWindowsBrowser.keys():
             return
         for i in range(len(_d_DockWindows[studyId])):
             if str(_d_DockWindows[studyId][i].windowTitle()) in str(title):
@@ -574,14 +574,14 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         for mw in self._WindowsMap.keys() :
             casename = mw.case['salome'].GetName()
             xmlfile = mw.case['xmlfile']
-	    if xmlfile == "" or xmlfile == None :
-	        xmlfileName = "unnamed"
+            if xmlfile == "" or xmlfile == None :
+                xmlfileName = "unnamed"
             else :
-	        xmlfileName = os.path.basename(xmlfile)
-	    fatherCaseName = mw.case['salome'].GetFather().GetName()
-	    if title == string.join([fatherCaseName,casename,xmlfileName],".") :
+                xmlfileName = os.path.basename(xmlfile)
+            fatherCaseName = mw.case['salome'].GetFather().GetName()
+            if title == string.join([fatherCaseName,casename,xmlfileName],".") :
                 self._CurrentWindow = mw
-		if mw not in _selectedMainViewCase :		  
+                if mw not in _selectedMainViewCase :
                     _selectedMainViewCase.append(mw)
                 mw.activateWindow()
 
@@ -592,10 +592,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         We can have one or several of them with the right click on the main menu bar of
         Salome
         """
-	studyId = sgPyQt.getStudyId()
-	if studyId not in _d_DockWindowsBrowser.keys():
+        studyId = sgPyQt.getStudyId()
+        if studyId not in _d_DockWindowsBrowser.keys():
             return
-	if studyId not in _d_DockWindows.keys():
+        if studyId not in _d_DockWindows.keys():
             return
 
         if len(_d_DockWindows[studyId]) != 0 :
@@ -604,9 +604,9 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
         if len(_d_DockWindowsBrowser[studyId]) != 0 :
             for dock in _d_DockWindowsBrowser[studyId]:
-	        if dock.windowTitle() != 'Object Browser':
+                if dock.windowTitle() != 'Object Browser':
                     dock.hide()
-	if studyId not in _d_DockWindowsRuncase.keys():
+        if studyId not in _d_DockWindowsRuncase.keys():
             return
         if len(_d_DockWindowsRuncase[studyId]) != 0:
             for dock in _d_DockWindowsRuncase[studyId]:
@@ -618,10 +618,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         Show all the dock windows of CFDSTUDY GUI, when activating another Salome Component
         visualise les dock windows  lors d'un changement de composant
         """
-	studyId = sgPyQt.getStudyId()
-	if studyId not in _d_DockWindowsBrowser.keys():
+        studyId = sgPyQt.getStudyId()
+        if studyId not in _d_DockWindowsBrowser.keys():
             return
-	if studyId not in _d_DockWindows.keys():
+        if studyId not in _d_DockWindows.keys():
             return
 
         if len(_d_DockWindows[studyId]) != 0:
@@ -633,8 +633,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             for dock in _d_DockWindowsBrowser[studyId]:
                 dock.show()
                 dock.setVisible(True)
- 
-	if studyId not in _d_DockWindowsRuncase.keys():
+
+        if studyId not in _d_DockWindowsRuncase.keys():
             return
         if len(_d_DockWindowsRuncase[studyId]) != 0:
             for dock in _d_DockWindowsRuncase[studyId]:

@@ -486,8 +486,8 @@ class RunCaseDialogHandler(RunCaseDialog):
         if len(aStudyList) == 0:
             self.__SetInvalidMode(True)
             return
-        self.StudyCB.clear()	
-	self.StudyCB.addItem(self.CurrentStudy.GetName())
+        self.StudyCB.clear()
+        self.StudyCB.addItem(self.CurrentStudy.GetName())
         aCaseList = CFDSTUDYGUI_DataModel.GetCaseNameList(self.CurrentStudy)
         self.CaseCB.clear()
 
@@ -826,7 +826,7 @@ class GUIActivationDialogHandler(GUIActivationDialog):
     def __init__(self, parent = None):
 
         self.xmlfile = ""
-	GUIActivationDialog.__init__(self, parent)
+        GUIActivationDialog.__init__(self, parent)
 
         self.ActivateBtn = self.findChild(QtGui.QPushButton,"ActivateBtn")
         self.ActivateBtn.setText(self.tr("GUIACTIVATE_DLG_ACTIVATE_BTN"))
@@ -866,15 +866,15 @@ class GUIActivationDialogHandler(GUIActivationDialog):
 
         self.disconnect(self.CaseCB, SIGNAL("activated(int)"), self.slotUpdateData)
         self.CaseCB.clear()
-	self.xmlfile = xmlFileName	
+        self.xmlfile = xmlFileName
 
-	for i in CFDSTUDYGUI_DataModel.GetCaseNameList(self.CurrentStudy):
+        for i in CFDSTUDYGUI_DataModel.GetCaseNameList(self.CurrentStudy):
             if self.CurrentCase and self.CurrentCase.GetName() == i:
                 self.CaseCB.addItem(i)
 
-        if self.xmlfile == "" : 
+        if self.xmlfile == "" :
             self.slotUpdateData()
-	else:
+        else:
             self.slotUpdateData()
 
         if CFD_Code() == CFD_Saturne:
@@ -928,7 +928,7 @@ class GUIActivationDialogHandler(GUIActivationDialog):
             aDataObj =  aChildList[0]
 
             #fill File combo-box
-	    if self.xmlfile == "" :
+            if self.xmlfile == "" :
                 aFileList = CFDSTUDYGUI_DataModel.ScanChildNames(aDataObj, ".*\.xml$")
                 if len(aFileList) == 0:
                     self.FileCheckBox.setEnabled(False);
@@ -937,9 +937,9 @@ class GUIActivationDialogHandler(GUIActivationDialog):
                     self.FileCB.addItem(i)
 
                 self.FileCB.setEnabled(self.FileCheckBox.isChecked())
-	    else :
-	        self.FileCB.addItem(self.xmlfile)
-	        self.FileCB.setEnabled(self.FileCheckBox.isChecked())
+            else :
+                self.FileCB.addItem(self.xmlfile)
+                self.FileCB.setEnabled(self.FileCheckBox.isChecked())
 
             #check for activation file SaturneGUI or NeptuneGUI
             if not CFDSTUDYGUI_DataModel.checkCaseLaunchGUI(aCase):

@@ -449,15 +449,15 @@ def _SetStudyLocation(theStudyPath, theCaseNames):
 
         CreateStudy = True
         if os.path.exists(theStudyPath):
-            CreateStudy = False      
-	_CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
+            CreateStudy = False
+        _CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
         UpdateSubTree(studyObject)
     else :
 
         CreateStudy = True
         if os.path.exists(theStudyPath):
-            CreateStudy = False     
-	_CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
+            CreateStudy = False
+        _CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
         # here, if CreateStudy is True, _SetStudyLocation is used to add a case into a CFD study
         #updating Object browser : optimization : UpdateSubTree(studyObject) updates all the cases inside of de studyObject
         # here it only updates the concerned cases
@@ -496,7 +496,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames):
     @type theCaseNames: C{String}
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
-    
+
     if isCreateStudy or theCaseNames != "":
         scrpt, c = BinCode()
 
@@ -575,7 +575,7 @@ def _RebuildTreeRecursively(theObject):
     @type theObject: C{SObject}
     @param theObject: branch of a tree of data
     """
-    # SObject is the main constituent of SALOMEDS-based data structure. 
+    # SObject is the main constituent of SALOMEDS-based data structure.
     # If you are familiar with CAF (Cascade Application Framework) - the
     # analogy of SObject would be TDF_Label class. It can be understood as
     # a branch of a tree of data, or as a record in a database table. Usually
