@@ -1,4 +1,11 @@
 * 14/04/2011 - David Monfort <david.monfort@edf.fr>
+  Adapt part of SALOME module to account for the presence of neptune_cfd package.
+  modified routines:
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_ActionsHandler.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_Commons.py
+    salome/cfd_study/src/CFDSTUDYGUI/CFDSTUDYGUI_DialogCollector.py
+
+* 14/04/2011 - David Monfort <david.monfort@edf.fr>
   Update the trailing blank removal script so as to handle SALOME modules.
   modified script:
     sbin/rmb

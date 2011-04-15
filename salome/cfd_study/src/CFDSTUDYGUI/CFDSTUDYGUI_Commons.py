@@ -130,21 +130,21 @@ def CheckCFD_CodeEnv(code):
         try:
             from code_saturne import cs_package
             pkg = cs_package.package()
-            prefix = pkg.prefix
-            bindir = pkg.bindir
             iok = True
         except:
             iok = False
     elif code == CFD_Neptune:
         try:
-            from ncs import nc_config
-            prefix = nc_config.dirs.prefix
-            bindir = nc_config.dirs.bindir
+            from neptune_cfd import nc_package
+            pkg = nc_package.package()
             iok = True
         except:
             iok = False
     else:
         raise ApplicationError, "Invalid name of solver!"
+
+    prefix = pkg.prefix
+    bindir = pkg.bindir
 
     if iok:
         if not os.path.exists(prefix):
@@ -154,8 +154,7 @@ def CheckCFD_CodeEnv(code):
 
     if iok:
         if not os.path.isfile(os.path.join(bindir, "code_saturne")) and \
-           not os.path.isfile(os.path.join(bindir, "cs")) and \
-           not os.path.isfile(os.path.join(bindir, "nc")):
+           not os.path.isfile(os.path.join(bindir, "neptune_cfd")):
             iok = False
 
     log.debug("CheckCFD_CodeEnv -> %s = %s" % (code, iok))
@@ -169,14 +168,14 @@ def BinCode():
         bindir = pkg.bindir
         if os.path.isfile(os.path.join(bindir, "code_saturne")):
             b = os.path.join(bindir, "code_saturne")
-        elif os.path.isfile(os.path.join(bindir, "cs")):
-            b = os.path.join(bindir, "cs")
     elif CFD_Code() == CFD_Neptune:
-        from ncs import nc_config
-        bindir = nc_config.dirs.bindir
-        b = os.path.join(bindir, "nc")
+        from neptune_cfd import nc_package
+        pkg = nc_package.package()
+        bindir = pkg.bindir
+        if os.path.isfile(os.path.join(bindir, "neptune_cfd")):
+            b = os.path.join(bindir, "neptune_cfd")
 
-    c = os.path.join(bindir, "cs_preprocess")
+    c = pkg.get_preprocessor()
     log.debug("BinCode -> \n    %s\n    %s" % (b, c))
     return b, c
 

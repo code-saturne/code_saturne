@@ -1726,7 +1726,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def __compile(self, aCaseObject):
         """
         Private method.
-        Build the 'code_saturne compile -t' or the 'nc compile -t' command.
+        Build the 'code_saturne compile -t' or the 'neptune_cfd compile -t' command.
 
         @type theCase: C{SObject}
         @param theCase: object from the Object Browser.

@@ -138,17 +138,16 @@ class InfoDialogHandler(InfoDialog):
             self.NeptuneRB.setEnabled(not isDisableOther)
             from code_saturne import cs_package
             pkg = cs_package.package()
-            self.labelVersionValue.setText(pkg.version)
-            self.labelPrefixValue.setText(pkg.prefix)
         elif code == CFD_Neptune:
             self.NeptuneRB.setEnabled(True)
             self.NeptuneRB.setChecked(True)
             self.SaturneRB.setEnabled(not isDisableOther)
-            from ncs import nc_config
-            self.labelVersionValue.setText(nc_config.package.version)
-            self.labelPrefixValue.setText(nc_config.dirs.prefix)
+            from neptune_cfd import nc_package
+            pkg = nc_package.package()
         else:
             raise DialogError, "Invalid CFD_Code in InfoDialog class"
+        self.labelVersionValue.setText(pkg.version)
+        self.labelPrefixValue.setText(pkg.prefix)
         _SetCFDCode(code)
 
 
@@ -159,13 +158,13 @@ class InfoDialogHandler(InfoDialog):
                 _SetCFDCode(CFD_Saturne)
                 from code_saturne import cs_package
                 pkg = cs_package.package()
-                self.labelVersionValue.setText(pkg.version)
-                self.labelPrefixValue.setText(pkg.prefix)
             if codeBG.selected() == self.NeptuneRB:
                 _SetCFDCode(CFD_Neptune)
-                from ncs import nc_config
-                self.labelVersionValue.setText(nc_config.package.version)
-                self.labelPrefixValue.setText(nc_config.dirs.prefix)
+                from neptune_cfd import nc_package
+                pkg = nc_package.package()
+            self.labelVersionValue.setText(pkg.version)
+            self.labelPrefixValue.setText(pkg.prefix)
+
 
 #-----------------------------------------------------------------------------------------------------------
 
