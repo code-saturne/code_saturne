@@ -455,16 +455,18 @@ if(iihmpr.eq.1) then
   call uinum1                                                     &
   !==========
         (isca, iscapp, blencv, ischcv, isstpc, ircflu,            &
-         cdtvar, nitmax, epsilo, iresol, imgr, nswrsm)
+         cdtvar, nitmax, epsilo)
 
 !     Options numériques globales
   relaxp = -999.d0
   extrap = 0.d0
-  call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, nterup)
+  imgrpr = 0
+  call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, imgrpr)
   !==========
   iphas = 1
   extrag(ipr(iphas)) = extrap
   if (idtvar.ge.0) relaxv(ipr(iphas)) = relaxp
+  imgr(ipr(iphas)) = imgrpr
 
 !     Gravite, prop. phys
   call csphys                                                     &

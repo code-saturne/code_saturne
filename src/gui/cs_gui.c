@@ -582,22 +582,10 @@ _attribute_value(      char *      path,
       *keyword = 0;
     BFT_FREE(choice);
 
-  } else if (cs_gui_strcmp(child, "solveur_choice")) {
-
-    /* *keyword = 1; */
-    cs_xpath_add_attribute(&path, "choice");
-    choice = cs_gui_get_attribute_value(path);
-    if (cs_gui_strcmp(choice, "conjugate_gradient") || cs_gui_strcmp(choice, "multigrid"))
-      *keyword = 0;
-    else if (cs_gui_strcmp(choice, "jacobi"))
-      *keyword = 1;
-    else if (cs_gui_strcmp(choice, "bi_cgstab"))
-      *keyword = 2;
-    BFT_FREE(choice);
-
   } else {
 
     cs_xpath_add_attribute(&path, "status");
+
     if (cs_gui_get_status(path, &result)) {
       *keyword = result;
 
@@ -661,36 +649,6 @@ cs_gui_scalar_value(const char   *const label,
   cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_element(&path, child);
   cs_xpath_add_function_text(&path);
-
-  if (cs_gui_get_double(path, &result)) *value = result;
-
-  BFT_FREE(path);
-}
-
-/*----------------------------------------------------------------------------
- * Get the text value associated to a child markup from a turbulent variable.
- *
- * parameters:
- *   label                -->  label of the turbulent variable markup
- *   child                -->  name of the child markup
- *   value               <--   value of text node contained in the child markup
- *----------------------------------------------------------------------------*/
-
-static void
-cs_gui_turb_value(const char   *const label,
-                    const char   *const child,
-                          double *const value)
-{
-  char   *path = NULL;
-  double  result;
-
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3, "thermophysical_models", "turbulence", "variable");
-  cs_xpath_add_test_attribute(&path, "name", label);
-  cs_xpath_add_element(&path, child);
-  cs_xpath_add_function_text(&path);
-  cs_gui_get_double(path, &result);
 
   if (cs_gui_get_double(path, &result)) *value = result;
 
@@ -826,26 +784,17 @@ cs_gui_numerical_int_parameters(const char *const param,
 
   path = cs_xpath_init_path();
   cs_xpath_add_element(&path, "numerical_parameters");
+  cs_xpath_add_element(&path, param);
 
   if (cs_gui_strcmp(param, "gradient_reconstruction")){
 
-    cs_xpath_add_element(&path, param);
     cs_xpath_add_attribute(&path, "choice");
     choice = cs_gui_get_attribute_value(path);
     if (choice) *keyword = atoi(choice);
     BFT_FREE(choice);
 
-  } else if (cs_gui_strcmp(param,"piso_sweep_number")){
-
-    cs_xpath_add_element(&path, "velocity_pressure_algo");
-    cs_xpath_add_element(&path, param);
-    cs_xpath_add_function_text(&path);
-    if (cs_gui_get_int(path, &result))
-       *keyword = result;
-
   } else {
 
-    cs_xpath_add_element(&path, param);
     cs_xpath_add_attribute(&path, "status");
     if (cs_gui_get_status(path, &result)) *keyword = result;
 
@@ -1067,23 +1016,24 @@ static void _option_turbulence_double(const char *const param,
 }
 
 /*----------------------------------------------------------------------------
- * Initialization choice of the reference variables parameters.
+ * Initialization choice of the turbulence variables parameters.
  *
  * parameters:
  *   param                -->  name of the parameters
  *   value               <--   initialization choice
  *----------------------------------------------------------------------------*/
 
-static void cs_gui_reference_initialization(const char   *const param,
+static void cs_gui_turbulence_initialization(const char   *const param,
                                                    double *const value)
 {
   char   *path = NULL;
   double  result;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
+  cs_xpath_add_elements(&path, 4,
                         "thermophysical_models",
-                        "reference_values",
+                        "turbulence",
+                        "initialization",
                         param);
   cs_xpath_add_function_text(&path);
 
@@ -2373,6 +2323,70 @@ static char *cs_gui_volumic_zone_localization(const char *const zone_id)
   return description;
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the initial value of variable for the volumic zone named name
+ *
+ * parameters:
+ *   variable_name    -->  name of variable
+ *   zone_id          -->  id of volumic zone
+ *   initial_value    <--  initial value
+ *----------------------------------------------------------------------------*/
+
+static void cs_gui_variable_initial_value(const char   *const variable_name,
+                                          const char   *const zone_id,
+                                                double *const initial_value)
+{
+  char *path = NULL;
+  double result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "variable");
+  cs_xpath_add_test_attribute(&path, "name", variable_name);
+  cs_xpath_add_element(&path, "initial_value");
+  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result))
+    *initial_value = result;
+  else
+    *initial_value = 0.0;
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Return the initial value of scalar for the volumic zone named name
+ *
+ * parameters:
+ *   parent           -->  name of balise parent for the scalar
+ *   label            -->  label of scalar
+ *   zone_id          -->  id of volumic zone
+ *   initial_value    <--  initial value
+ *----------------------------------------------------------------------------*/
+
+static void cs_gui_scalar_initial_value(const char   *const parent,
+                                        const char   *const label,
+                                        const char   *const zone_id,
+                                              double *const initial_value)
+{
+  char *path = NULL;
+  double result;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_elements(&path, 2, parent, "scalar");
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, "initial_value");
+  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+  cs_xpath_add_function_text(&path);
+
+  if (cs_gui_get_double(path, &result))
+    *initial_value = result;
+  else
+    *initial_value = 0.0;
+
+  BFT_FREE(path);
+}
+
 /*----------------------------------------------------------------------------
  * Return integer value for calculation of size of user arrays
  *----------------------------------------------------------------------------*/
@@ -2897,7 +2911,6 @@ void CS_PROCF (csiphy, CSIPHY) (int *const iphydr)
   int   result;
 
   path = cs_xpath_short_path();
-  cs_xpath_add_element(&path, "numerical_parameters");
   cs_xpath_add_element(&path, "hydrostatic_pressure");
   cs_xpath_add_attribute(&path, "status");
 
@@ -3134,6 +3147,11 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     BFT_MALLOC(cs_glob_var->name[k+j], strlen(cs_glob_var->label[j]) +1, char);
     strcpy(cs_glob_var->name[k+j], cs_glob_var->label[j]);
 
+    BFT_MALLOC(cs_glob_var->type[k+j], strlen("scalar")+1, char);
+    strcpy(cs_glob_var->type[k+j], "scalar");
+
+    BFT_MALLOC(cs_glob_var->head[k+j], strlen(cs_glob_var->model)+1, char);
+    strcpy(cs_glob_var->head[k+j], cs_glob_var->model);
   }
 
   /* 7) check for errors */
@@ -3313,7 +3331,7 @@ void CS_PROCF (cssca1, CSSCA1) (int *const iscalt,
 
 /*----------------------------------------------------------------------------
  * Treatment of local numerical aspects:
- *     BLENCV, ISCHCV, ISSTPC, IRCFLU, CDTVAR, NITMAX, EPSILO, IRESOL, IMGRPR NSWRSM
+ *     BLENCV, ISCHCV, ISSTPC, IRCFLU, CDTVAR, NITMAX, EPSILO
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
@@ -3324,10 +3342,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
                                          int *const ircflu,
                                       double *const cdtvar,
                                          int *const nitmax,
-                                      double *const epsilo,
-                                         int *const iresol,
-                                         int *const imgr,
-                                         int *const nswrsm)
+                                      double *const epsilo)
 {
   int i, j, jj, k;
   double tmp;
@@ -3343,31 +3358,18 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
      tmp = (double) nitmax[j];
      cs_gui_variable_value(vars->name[0], "max_iter_number", &tmp);
      nitmax[j] = (int) tmp;
-     cs_gui_variable_attribute(vars->name[0], "solveur_choice", &iresol[j]);
-     if(iresol[j] == 0 || iresol[j] == - 1)// revoir  pour la question du -1
-       imgr[j] = 1;
-     else
-       imgr[j] = 0;
 
   /* 1-b) for the other variables */
   for (i=1; i < k; i++) {
      j = vars->rtp[i];
      cs_gui_variable_value(vars->name[i], "blending_factor", &blencv[j]);
      cs_gui_variable_value(vars->name[i], "solveur_precision", &epsilo[j]);
-     cs_gui_variable_attribute(vars->name[i], "solveur_choice", &iresol[j]);
-     if(iresol[j] == 0)
-       imgr[j] = 1;
-     else
-       imgr[j] = 0;
      tmp = (double) nitmax[j];
      cs_gui_variable_value(vars->name[i], "max_iter_number", &tmp);
      nitmax[j] = (int) tmp;
      cs_gui_variable_attribute(vars->name[i], "order_scheme", &ischcv[j]);
      cs_gui_variable_attribute(vars->name[i], "slope_test", &isstpc[j]);
      cs_gui_variable_attribute(vars->name[i], "flux_reconstruction", &ircflu[j]);
-     tmp = (double) nswrsm[j];
-     cs_gui_variable_value(vars->name[i], "rhs_reconstruction", &tmp);
-     nswrsm[j] = (int) tmp;
   }
 
   /* 2) user scalars */
@@ -3377,11 +3379,6 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       j = isca[i]-1;
       cs_gui_scalar_value(vars->label[i], "blending_factor", &blencv[j]);
       cs_gui_scalar_value(vars->label[i], "solveur_precision", &epsilo[j]);
-      cs_gui_scalar_attribute(vars->label[i], "solveur_choice", &iresol[j]);
-      if(iresol[j] == 0)
-        imgr[j]=1;
-      else
-        imgr[j]=0;
       cs_gui_scalar_value(vars->label[i], "time_step_factor", &cdtvar[j]);
       tmp = (double) nitmax[j];
       cs_gui_scalar_value(vars->label[i], "max_iter_number", &tmp);
@@ -3389,9 +3386,6 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       cs_gui_scalar_attribute(vars->label[i], "order_scheme", &ischcv[j]);
       cs_gui_scalar_attribute(vars->label[i], "slope_test", &isstpc[j]);
       cs_gui_scalar_attribute(vars->label[i], "flux_reconstruction", &ircflu[j]);
-      tmp = (double) nswrsm[j];
-      cs_gui_scalar_value(vars->label[i], "rhs_reconstruction", &tmp);
-      nswrsm[j] = (int) tmp;
     }
   }
 
@@ -3403,11 +3397,6 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       jj = isca[j]-1;
       cs_gui_model_scalar_value(vars->model, vars->label[j], "blending_factor", &blencv[jj]);
       cs_gui_model_scalar_value(vars->model, vars->label[j], "solveur_precision", &epsilo[jj]);
-      cs_gui_model_scalar_output_status(vars->model, vars->label[j], "solveur_choice", &iresol[jj]);
-      if(iresol[j] == 0)
-        imgr[j] = 1;
-      else
-        imgr[j] = 0;
       cs_gui_model_scalar_value(vars->model, vars->label[j], "time_step_factor", &cdtvar[jj]);
       tmp = (double) nitmax[jj];
       cs_gui_model_scalar_value(vars->model, vars->label[j], "max_iter_number", &tmp);
@@ -3415,9 +3404,6 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
       cs_gui_model_scalar_output_status(vars->model, vars->label[j], "order_scheme", &ischcv[jj]);
       cs_gui_model_scalar_output_status(vars->model, vars->label[j], "slope_test", &isstpc[jj]);
       cs_gui_model_scalar_output_status(vars->model, vars->label[j], "flux_reconstruction", &ircflu[jj]);
-      tmp = (double) nswrsm[j];
-      cs_gui_model_scalar_value(vars->model, vars->label[j], "rhs_reconstruction", &tmp);
-      nswrsm[j] = (int) tmp;
     }
   }
 
@@ -3427,27 +3413,21 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
     bft_printf("-->variable[%i] = %s\n", i, vars->name[i]);
     bft_printf("--blencv = %f\n", blencv[vars->rtp[i]]);
     bft_printf("--epsilo = %g\n", epsilo[vars->rtp[i]]);
-    bft_printf("--iresol = %i\n", iresol[vars->rtp[i]]);
-    bft_printf("--imgr   = %i\n", imgr[vars->rtp[i]]);
     bft_printf("--cdtvar = %g\n", cdtvar[vars->rtp[i]]);
     bft_printf("--nitmax = %i\n", nitmax[vars->rtp[i]]);
     bft_printf("--ischcv = %i\n", ischcv[vars->rtp[i]]);
     bft_printf("--isstpc = %i\n", isstpc[vars->rtp[i]]);
     bft_printf("--ircflu = %i\n", ircflu[vars->rtp[i]]);
-    bft_printf("--nswrsm = %i\n", nswrsm[vars->rtp[i]]);
   }
   for (i=0 ; i < vars->nscaus + vars->nscapp ; i++) {
     bft_printf("-->scalar[%i]: %s\n", isca[i]-1, vars->label[i]);
     bft_printf("--blencv = %f\n", blencv[isca[i]-1]);
     bft_printf("--epsilo = %g\n", epsilo[isca[i]-1]);
-    bft_printf("--iresol = %i\n", iresol[isca[i]-1]);
-    bft_printf("--imgr   = %i\n", imgr[isca[i]-1]);
     bft_printf("--cdtvar = %g\n", cdtvar[isca[i]-1]);
     bft_printf("--nitmax = %i\n", nitmax[isca[i]-1]);
     bft_printf("--ischcv = %i\n", ischcv[isca[i]-1]);
     bft_printf("--isstpc = %i\n", isstpc[isca[i]-1]);
     bft_printf("--ircflu = %i\n", ircflu[isca[i]-1]);
-    bft_printf("--nswrsm = %i\n", nswrsm[isca[i]-1]);
   }
 #endif
 }
@@ -3464,7 +3444,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  * INTEGER          IPUCOU  <--   velocity pressure coupling
  * DOUBLE PRECISION EXTRAG  <--   wall pressure extrapolation
  * INTEGER          IMRGRA  <--   gradient reconstruction
- * INTEGER          NTERUP  <--   number of sweeps for U/P solver
+ * INTEGER          IMGRPR  <--   multigrid algorithm for pressure
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
@@ -3472,12 +3452,12 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
                                   int *const ipucou,
                                double *const extrag,
                                   int *const imrgra,
-                                  int *const nterup)
+                                  int *const imgrpr)
 {
   cs_gui_numerical_int_parameters("gradient_transposed", ivisse);
   cs_gui_numerical_int_parameters("velocity_pressure_coupling", ipucou);
   cs_gui_numerical_int_parameters("gradient_reconstruction", imrgra);
-  cs_gui_numerical_int_parameters("piso_sweep_number", nterup);
+  cs_gui_numerical_int_parameters("multigrid", imgrpr);
   cs_gui_numerical_double_parameters("wall_pressure_extrapolation", extrag);
   cs_gui_numerical_double_parameters("pressure_relaxation", relaxp);
 
@@ -3488,7 +3468,7 @@ void CS_PROCF (csnum2, CSNUM2)(   int *const ivisse,
   bft_printf("--imrgra = %i\n", *imrgra);
   bft_printf("--extrag = %f\n", *extrag);
   bft_printf("--relaxp = %f\n", *relaxp);
-  bft_printf("--nterup = %i\n", *nterup);
+  bft_printf("--imgrpr = %i\n", *imgrpr);
 #endif
 }
 
@@ -3695,9 +3675,16 @@ void CS_PROCF (cstini, CSTINI) (double *const uref,
                                 double *const almax)
 {
   int iphas = 0;
+  char* turb_ini_choice = NULL;
 
-  cs_gui_reference_initialization("velocity", &uref[iphas]);
-  cs_gui_reference_initialization("length", &almax[iphas]);
+  cs_gui_turbulence_initialization("reference_velocity", &uref[iphas]);
+
+  turb_ini_choice = cs_gui_turbulence_initialization_choice();
+
+  if (cs_gui_strcmp(turb_ini_choice, "reference_velocity_length"))
+    cs_gui_turbulence_initialization("reference_length", &almax[iphas]);
+
+  BFT_FREE(turb_ini_choice);
 
 #if _XML_DEBUG_
   bft_printf("==>CSTINI\n");
@@ -4398,28 +4385,14 @@ cs_gui_get_cells_list(const char *zone_id,
  * integer          isuite   -->  restart indicator
  * integer          isca     -->  indirection array for scalar number
  * integer          iscold   -->  scalar number for restart
- * double precision ro0      -->  density reference value
- * double precision cp0      -->  specific heat reference value
- * double precision viscl0   -->  dynamic viscosity reference value
- * double precision visls0   -->  diffusion coefficient of the scalars
- * double precision uref     -->  velocity reference
- * double precision almax    -->  length reference
- * double precision xyzcen   -->  cell's gravity center
- * double precision rtp      -->  variables and scalars array
+ * double precision rtp     <--   variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV)(const int       *ncelet,
-                              const int       *isuite,
-                              const int        isca[],
-                              const int        iscold[],
-                              const cs_real_t  ro0[],
-                              const cs_real_t  cp0[],
-                              const cs_real_t  viscl0[],
-                              const cs_real_t  visls0[],
-                              const cs_real_t  uref[],
-                              const cs_real_t  almax[],
-                              const cs_real_t  xyzcen[],
-                                    cs_real_t  rtp[])
+void CS_PROCF(uiiniv, UIINIV)(const int    *ncelet,
+                              const int    *isuite,
+                              const int    *isca,
+                              const int    *iscold,
+                                    double  rtp[])
 {
   /* Coal combustion: the initialization of the model scalar are not given */
 
@@ -4432,13 +4405,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int       *ncelet,
   char *path = NULL;
   char *status = NULL;
   char *zone_id = NULL;
-  char *formula = NULL;
-  char *result_formula = NULL;
-  char *model = NULL;
-  char num_zone[8];
-  cs_int_t iphas = 0;
-
-  mei_tree_t *ev_formula  = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -4470,339 +4436,47 @@ void CS_PROCF(uiiniv, UIINIV)(const int       *ncelet,
         /* Velocity variables initialization */
         for (j=1; j < 4; j++) {
 
-                  path = cs_xpath_init_path();
-                  cs_xpath_add_elements(&path, 1, "thermophysical_models");
-                  cs_xpath_add_elements(&path, 1,"velocity_pressure");
-                  cs_xpath_add_elements(&path, 1,"initialization");
-                  cs_xpath_add_elements(&path, 1,"formula");
+          cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
 
-                  cs_xpath_add_test_attribute(&path, "zone_id",zone_id);
-                  cs_xpath_add_function_text(&path);
-                  formula = cs_gui_get_text_value(path);
-                  cs_gui_get_double(path, &formula);
-                  if (formula != NULL){
-
-                      ev_formula = mei_tree_new(formula);
-                      mei_tree_insert(ev_formula,"x",0.0);
-                      mei_tree_insert(ev_formula,"y",0.0);
-                      mei_tree_insert(ev_formula,"z",0.0);
-                      /* try to build the interpreter */
-                      if (mei_tree_builder(ev_formula))
-                          bft_error(__FILE__, __LINE__, 0, _("Error: can not interpret expression: %s\n %i"), ev_formula->string, mei_tree_builder(ev_formula));
-
-                      const char *symbols[3];
-                      symbols[0] = "x";
-                      symbols[1] = "y";
-                      symbols[2] = "z";
-                      if (mei_tree_find_symbols(ev_formula, 2, symbols))
-                          bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k or eps");
           for (icel = 0; icel < cells; icel++) {
             iel = cells_list[icel]-1;
-                          mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-                          mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-                          mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
-                          mei_evaluate(ev_formula);
-                          if (j == 1) {
-                              rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"u");
-
-                          }
-                          if (j == 2) {
-                              rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"v");
-
-                          }
-                          if (j == 3) {
-                              rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"w");
-
+            rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
           }
         }
-                  }
-                  else {
+
+        /* Turbulence variables initialization */
+        choice = cs_gui_turbulence_initialization_choice();
+
+        if (cs_gui_strcmp(choice, "values")) {
+          for (j=4; j < vars->nvar - vars->nscaus - vars->nscapp; j++) {
+
+            cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
+
             for (icel = 0; icel < cells; icel++) {
               iel = cells_list[icel]-1;
-                          rtp[vars->rtp[j]*(*ncelet) + iel] = 0.0;
-
+              rtp[vars->rtp[j]*(*ncelet) + iel] = initial_value;
             }
           }
         }
 
-              /* Turbulence variables initialization */
-
-              for (j=4; j < vars->nvar - vars->nscaus - vars->nscapp; j++){
-                 path = cs_xpath_init_path();
-
-                 cs_xpath_add_elements(&path, 4,
-                                       "thermophysical_models",
-                                       "turbulence",
-                                       "initialization",
-                                       "formula");
-
-                 cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-                 cs_xpath_add_function_text(&path);
-                 formula = cs_gui_get_text_value(path);
-                 if (formula != NULL){
-
-                     ev_formula = mei_tree_new(formula);
-                     mei_tree_insert(ev_formula,"rho0",ro0[iphas]);
-                     mei_tree_insert(ev_formula,"mu0",viscl0[iphas]);
-                     mei_tree_insert(ev_formula,"cp0",cp0[iphas]);
-                     mei_tree_insert(ev_formula,"lambda0",visls0[iphas]*cp0[iphas]);
-                     mei_tree_insert(ev_formula,"uref",uref[iphas]);
-                     mei_tree_insert(ev_formula,"almax",almax[iphas]);
-
-                     mei_tree_insert(ev_formula,"x",0.0);
-                     mei_tree_insert(ev_formula,"y",0.0);
-                     mei_tree_insert(ev_formula,"z",0.0);
-
-                  /* try to build the interpreter */
-
-                     if (mei_tree_builder(ev_formula))
-                         bft_error(__FILE__, __LINE__, 0, _("Error: can not interpret expression: %s\n %i"), ev_formula->string, mei_tree_builder(ev_formula));
-
-                     model = cs_gui_get_thermophysical_model("turbulence");
-                     if (model == NULL) return;
-                     if (cs_gui_strcmp(model, "k-epsilon")||cs_gui_strcmp(model, "k-epsilon-PL")){
-
-                         const char *symbols[2];
-                         symbols[0] = "k";
-                         symbols[1] = "eps";
-                         if (mei_tree_find_symbols(ev_formula, 2, symbols))
-                             bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k or eps");
-                         for (icel = 0; icel < cells; icel++) {
-                             iel = cells_list[icel]-1;
-                             mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-                             mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-                             mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
-                             mei_evaluate(ev_formula);
-                             if (j == 4) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"k");
-
+        BFT_FREE(choice);
       }
-                             if (j == 5) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"eps");
-
-                             }
-                         }
-                     }
-                     else if (cs_gui_strcmp(model, "Rij-epsilon")||cs_gui_strcmp(model, "Rij-SSG")){
-
-                         const char *symbols[7];
-                         symbols[0] = "r11";
-                         symbols[1] = "r22";
-                         symbols[2] = "r33";
-                         symbols[3] = "r12";
-                         symbols[4] = "r13";
-                         symbols[5] = "r23";
-                         symbols[6] = "eps";
-                         if (mei_tree_find_symbols(ev_formula, 7, symbols))
-                             bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "r11, r22, r33, r12, r13, r23 or eps");
-                         for (icel = 0; icel < cells; icel++) {
-                             iel = cells_list[icel]-1;
-                             mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-                             mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-                             mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
-                             mei_evaluate(ev_formula);
-                             if (j == 4) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"r11");
-
-                             }
-                             if (j == 5) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"r22");
-
-                             }
-                                 if (j == 6) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"r33");
-
-                             }
-                            if (j == 7) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"r12");
-
-                            }
-                            if (j == 8) {
-                               rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"r13");
-
-                            }
-                            if (j == 9) {
-                                rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"r23");
-
-                            }
-                            if (j == 10) {
-                                rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"eps");
-
-                            }
-                         }
-                     }
-                     else if (cs_gui_strcmp(model, "v2f-phi")){
-
-                         const char *symbols[3];
-                         symbols[0] = "k";
-                         symbols[1] = "eps";
-                         symbols[2] = "phi";
-                         symbols[3] = "fb";
-                         if (mei_tree_find_symbols(ev_formula, 3, symbols))
-                             bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k, eps, phi of fb");
-                         for (icel = 0; icel < cells; icel++) {
-                             iel = cells_list[icel]-1;
-                             mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-                             mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-                             mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
-                             mei_evaluate(ev_formula);
-                             if (j == 4) {
-                              rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"k");
-
-                             }
-                             if (j == 5) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"eps");
-
-                             }
-                             if (j == 6) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"phi");
-
-                             }
-                             if (j == 7) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"fb");
-
-                             }
-                         }
-                     }
-                     else if (cs_gui_strcmp(model, "k-omega-SST")){
-
-                         const char *symbols[2];
-                         symbols[0] = "k";
-                         symbols[1] = "omega";
-                         if (mei_tree_find_symbols(ev_formula, 2, symbols))
-                             bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), "k or omega");
-                         for (icel = 0; icel < cells; icel++) {
-                             iel = cells_list[icel]-1;
-                             mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-                             mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-                             mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
-                             mei_evaluate(ev_formula);
-                             if (j == 4) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"k");
-
-                             }
-                             if (j == 5) {
-                                 rtp[vars->rtp[j]*(*ncelet) + iel] = mei_tree_lookup(ev_formula,"omega");
-
-                             }
-                         }
-                     }
-                     else
-                        bft_error(__FILE__, __LINE__, 0,
-                                  _("Invalid turbulence model: %s.\n"), model); //----------------vraiment pas sûre de ça à voire
-                 }
-                 else {
-                     for (icel = 0; icel < cells; icel++) {
-                          iel = cells_list[icel]-1;
-                          rtp[vars->rtp[j]*(*ncelet) + iel] = 0.0;
-
-                      }
-                 }
-
-              }
-              int jj;
 
       /* User Scalars initialization */
       for (j=0; j < vars->nscaus; j++) {
 
-                  path = cs_xpath_init_path();
-                  cs_xpath_add_elements(&path, 2,
-                                       "additional_scalars",
-                                       "scalar");
-                  cs_xpath_add_test_attribute(&path, "label", vars->label[j]);
-                  cs_xpath_add_element(&path, "formula");
-                  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-                  cs_xpath_add_function_text(&path);
-                  formula = cs_gui_get_text_value(path);
-                  if (formula != NULL){
-
-                       printf("scalar label = %s; zone = %s \n",vars->label[j], zone_id);
-                      ev_formula = mei_tree_new(formula);
-                      mei_tree_insert(ev_formula,"x",0.);
-                      mei_tree_insert(ev_formula,"y",0.);
-                      mei_tree_insert(ev_formula,"z",0.);
-                  /* try to build the interpreter */
-                      if (mei_tree_builder(ev_formula))
-                          bft_error(__FILE__, __LINE__, 0, _("Error: can not interpret expression: %s\n %i"), ev_formula->string, mei_tree_builder(ev_formula));
-
-                      printf("nom de la variable : %s \n", vars->label[j]);
-                      if (mei_tree_find_symbol(ev_formula, vars->label[j]))
-                          bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), vars->label[j]);
+        cs_gui_scalar_initial_value("additional_scalars",
+                                    vars->label[j],
+                                    zone_id,
+                                    &initial_value);
 
         if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
           for (icel = 0; icel < cells; icel++) {
             iel = cells_list[icel]-1;
-                              mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-                              mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-                              mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
-                              mei_evaluate(ev_formula);
-                              rtp[(isca[j]-1)*(*ncelet) + iel] = mei_tree_lookup(ev_formula,vars->label[j]);
-
+            rtp[(isca[j]-1)*(*ncelet) + iel] = initial_value;
           }
         }
       }
-                  else {
-
-                      if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
-                          for (icel = 0; icel < cells; icel++) {
-                              iel = cells_list[icel]-1;
-                              rtp[(isca[j]-1)*(*ncelet) + iel] = 0.0;
-
-                          }
-                      }
-                  }
-              }
-               /* Meteo Scalars initialization */
-              for (j=vars->nscaus;j< vars->nscaus + vars->nscapp;j++) {
-
-                  path = cs_xpath_init_path();
-                  cs_xpath_add_elements(&path, 3,
-                                       "thermophysical_models",
-                                       "atmospheric_flows",
-                                       "scalar");
-                  cs_xpath_add_test_attribute(&path, "label", vars->label[j]);//------> ce n'est plus le même label
-                  cs_xpath_add_element(&path, "formula");
-                  printf("nom et label de scalaire meteo %s et %s \n", vars->label[j],vars->name[j]);
-                  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-                  cs_xpath_add_function_text(&path);
-                  formula = cs_gui_get_text_value(path);
-                  if (formula != NULL){
-
-                      ev_formula = mei_tree_new(formula);
-                      mei_tree_insert(ev_formula,"x",0.);
-                      mei_tree_insert(ev_formula,"y",0.);
-                      mei_tree_insert(ev_formula,"z",0.);
-                  /* try to build the interpreter */
-                      if (mei_tree_builder(ev_formula))
-                          bft_error(__FILE__, __LINE__, 0, _("Error: can not interpret expression: %s\n %i"), ev_formula->string, mei_tree_builder(ev_formula));
-
-                      printf("nom de la variable : %s \n", vars->label[j]);
-                      if (mei_tree_find_symbol(ev_formula, vars->label[j]))
-                          bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"), vars->label[j]);
-
-                      if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
-                          for (icel = 0; icel < cells; icel++) {
-                              iel = cells_list[icel]-1;
-                              mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-                              mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-                              mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
-                              mei_evaluate(ev_formula);
-                              rtp[(isca[j]-1)*(*ncelet) + iel] = mei_tree_lookup(ev_formula,vars->label[j]);
-
-                          }
-                      }
-                  }
-                  else{
-
-                      if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
-                          for (icel = 0; icel < cells; icel++) {
-                              iel = cells_list[icel]-1;
-                              rtp[(isca[j]-1)*(*ncelet) + iel] = 0.0;
-
-                          }
-                      }
-                  }
-              }
 
       BFT_FREE(cells_list);
 
@@ -4815,6 +4489,16 @@ void CS_PROCF(uiiniv, UIINIV)(const int       *ncelet,
           cs_gui_variable_initial_value(vars->name[j], zone_id, &initial_value);
           bft_printf("--initial value for %s: %f\n",
             vars->name[j], initial_value);
+        }
+      }
+
+      for (j=0; j < vars->nscaus; j++) {
+        cs_gui_scalar_initial_value("additional_scalars",
+                                    vars->label[j],
+                                    zone_id,
+                                    &initial_value);
+        if (*isuite == 0 || (*isuite !=0 && iscold[j] == 0)) {
+          bft_printf("--initial value for %s: %f\n", vars->label[j], initial_value);
         }
       }
 #endif
@@ -5602,9 +5286,6 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
   char *filename = NULL;
   char *title = NULL;
   char *name = NULL;
-  char *path = NULL;
-  char *formula = NULL;
-  const char *coord[3];
 
   int fic_nbr = 0;
   int i, ii, iii, j;
@@ -5614,8 +5295,6 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
   double xx, yy, zz, xyz[3];
   double a, aa;
   double *array;
-
-  mei_tree_t *ev_formula  = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -5634,29 +5313,12 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
     if ((output_frequency == -1 && *ntmabs == *ntcabs) ||
         (output_frequency > 0 && (*ntcabs % output_frequency) == 0)) {
 
-      path = cs_xpath_init_path();
-      cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-      cs_xpath_add_element_num(&path, "profile", i+1);
-      cs_xpath_add_element(&path, "formula");
-      cs_xpath_add_function_text(&path);
-      formula = cs_gui_get_text_value(path);
-
-      ev_formula = mei_tree_new(formula);
-      mei_tree_insert(ev_formula,"t",0.0);
-      /* try to build the interpreter */
-
-      if (mei_tree_builder(ev_formula))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not interpret expression: %s\n %i"),
-                    ev_formula->string, mei_tree_builder(ev_formula));
-
-
-      coord[0] = "x";
-      coord[1] = "y";
-      coord[2] = "z";
-      if (mei_tree_find_symbols(ev_formula, 3, coord))
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Error: can not find the required symbol: x, y or z\n"));
+      x1 = _get_profile_coordinate(i, "x1");
+      y1 = _get_profile_coordinate(i, "y1");
+      z1 = _get_profile_coordinate(i, "z1");
+      x2 = _get_profile_coordinate(i, "x2");
+      y2 = _get_profile_coordinate(i, "y2");
+      z2 = _get_profile_coordinate(i, "z2");
 
       nvar_prop = _get_profile_names_number(i);
       nvar_prop4 = nvar_prop + 4;
@@ -5714,15 +5376,7 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
         BFT_FREE(title);
       }
 
-      path = cs_xpath_init_path();
-      cs_xpath_add_elements(&path, 2, "analysis_control", "profiles");
-      cs_xpath_add_element_num(&path, "profile", i+1);
-      cs_xpath_add_element(&path, "NbPoint");
-      cs_xpath_add_function_text(&path);
-
-      if (!cs_gui_get_int(path, &npoint))
-        bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
-
+      npoint = 200;
       iel1   = -999;
       irang1 = -999;
 
@@ -5731,12 +5385,9 @@ void CS_PROCF (uiprof, UIPROF) (const int    *const ncelet,
       for (ii = 0; ii < npoint; ii++) {
 
         aa = ii*a;
-        mei_tree_insert(ev_formula, "t", aa);
-        mei_evaluate(ev_formula);
-
-        xyz[0] = mei_tree_lookup(ev_formula, "x");
-        xyz[1] = mei_tree_lookup(ev_formula, "y");
-        xyz[2] = mei_tree_lookup(ev_formula, "z");
+        xyz[0] = aa * (x2 - x1) + x1;
+        xyz[1] = aa * (y2 - y1) + y1;
+        xyz[2] = aa * (z2 - z1) + z1;
 
         CS_PROCF(findpt, FINDPT)(ncelet,  ncel,    xyzcen,
                                  &xyz[0], &xyz[1], &xyz[2],
