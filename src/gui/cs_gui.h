@@ -279,7 +279,10 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
                                          int *const ircflu,
                                       double *const cdtvar,
                                          int *const nitmax,
-                                      double *const epsilo);
+                                      double *const epsilo,
+                                         int *const iresol,
+                                         int *const imgr,
+                                         int *const nswrsm);
 
 /*----------------------------------------------------------------------------
  * Global numerical parameters.
@@ -294,7 +297,7 @@ void CS_PROCF (uinum1, UINUM1) (const    int *const isca,
  * INTEGER          IPUCOU  <--   velocity pressure coupling
  * INTEGER          EXTRAG  <--   wall pressure extrapolation
  * INTEGER          IMRGRA  <--   gradient reconstruction
- * INTEGER          IMGR    <--   multigrid algorithm for pressure
+ * INTEGER          NTERUP  <--   number of sweeps for U/P solver
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnum2, CSNUM2) (   int *const ivisse,
@@ -302,7 +305,7 @@ void CS_PROCF (csnum2, CSNUM2) (   int *const ivisse,
                                    int *const ipucou,
                                 double *const extrag,
                                    int *const imrgra,
-                                   int *const imgrpr);
+                                   int *const nterup);
 
 void CS_PROCF (csphys, CSPHYS) (const    int *const nmodpp,
                                          int *const irovar,
@@ -468,14 +471,28 @@ void CS_PROCF (uiusar, UIUSAR) (int *const icoftu);
  * integer          isuite   -->  restart indicator
  * integer          isca     -->  indirection array for scalar number
  * integer          iscold   -->  scalar number for restart
- * double precision rtp     <--   variables and scalars array
+ * double precision ro0      -->  density reference value
+ * double precision cp0      -->  specific heat reference value
+ * double precision viscl0   -->  dynamic viscosity reference value
+ * double precision visls0   -->  diffusion coefficient of the scalars
+ * double precision uref     -->  velocity reference
+ * double precision almax    -->  length reference
+ * double precision xyzcen   -->  cell's gravity center
+ * double precision rtp      -->  variables and scalars array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV) (const int    *ncelet,
-                               const int    *isuite,
-                               const int     isca[],
-                               const int     iscold[],
-                                     double  rtp[]);
+void CS_PROCF(uiiniv, UIINIV) (const int       *ncelet,
+                               const int       *isuite,
+                               const int        isca[],
+                               const int        iscold[],
+                               const cs_real_t  ro0[],
+                               const cs_real_t  cp0[],
+                               const cs_real_t  viscl0[],
+                               const cs_real_t  visls0[],
+                               const cs_real_t  uref[],
+                               const cs_real_t  almax[],
+                               const cs_real_t  xyzcen[],
+                                     cs_real_t  rtp[]);
 
 /*----------------------------------------------------------------------------
  * User law for material Properties

@@ -833,6 +833,29 @@ void CS_PROCF (uiatpr, UIATPR) (const int *const nsalpp,
 #endif
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the label or the name from a scalar.
+ *
+ * parameters:
+ *----------------------------------------------------------------------------*/
+
+static char *_scalar_label(const char *name)
+{
+  char *path = NULL;
+  char *str  = NULL;
+
+  path = cs_xpath_short_path();
+  cs_xpath_add_element(&path, "scalar");
+  cs_xpath_add_test_attribute(&path, "name", name);
+  cs_xpath_add_attribute(&path, "label");
+
+  str = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  return str;
+}
+
 /*----------------------------------------------------------------------------
  * Atmospheric flows: indirection between the solver numbering and the XML one
  * for models scalars.
@@ -870,22 +893,22 @@ void CS_PROCF (uiatsc, UIATSC) (const int *const ippmod,
     if (ippmod[*iatmos -1] == 1)
     {
         /* itempp */
-        BFT_MALLOC(vars->label[*itempp -1], strlen("potential_temperature")+1, char);
-        strcpy(vars->label[*itempp -1], "potential_temperature");
+        BFT_MALLOC(vars->label[*itempp -1], strlen(_scalar_label("potential_temperature"))+1, char);
+        strcpy(vars->label[*itempp -1], _scalar_label("potential_temperature"));
     }
     else if (ippmod[*iatmos -1] == 2)
     {
         /* itempl */
-        BFT_MALLOC(vars->label[*itempl -1], strlen("liquid_potential_temperature")+1, char);
-        strcpy(vars->label[*itempl -1], "liquid_potential_temperature");
+        BFT_MALLOC(vars->label[*itempl -1], strlen(_scalar_label("liquid_potential_temperature"))+1, char);
+        strcpy(vars->label[*itempl -1], _scalar_label("liquid_potential_temperature"));
 
         /* itotwt */
-        BFT_MALLOC(vars->label[*itotwt -1], strlen("total_water")+1, char);
-        strcpy(vars->label[*itotwt -1], "total_water");
+        BFT_MALLOC(vars->label[*itotwt -1], strlen(_scalar_label("total_water"))+1, char);
+        strcpy(vars->label[*itotwt -1], _scalar_label("total_water"));
 
         /* intdrp */
-        BFT_MALLOC(vars->label[*intdrp -1], strlen("number_of_droplets")+1, char);
-        strcpy(vars->label[*intdrp -1], "number_of_droplets");
+        BFT_MALLOC(vars->label[*intdrp -1], strlen(_scalar_label("number_of_droplets"))+1, char);
+        strcpy(vars->label[*intdrp -1], _scalar_label("number_of_droplets"));
     }
 #if _XML_DEBUG_
     {
