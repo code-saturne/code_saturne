@@ -879,6 +879,13 @@ enddo
 ncegrm = 30
 ngrmax = 25
 
+! --- Parallel merging parameters
+
+mltmmn = 300
+mltmgl = 500
+mltmmr = 1
+mltmst = 1
+
 rlxp1 = 0.95d0
 
 ! --- Suite de calcul

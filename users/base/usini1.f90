@@ -840,6 +840,7 @@ use numvar
 use optcal
 use cstphy
 use entsor
+use mltgrd
 use parall
 use period
 use ihmpre
@@ -862,6 +863,7 @@ integer iverif
 ! Local variables
 
 integer iphas, iutile, ii, jj, imom
+integer mlttmn, mlttgl, mlttst
 
 !===============================================================================
 
@@ -1138,6 +1140,11 @@ endif
 !     Only available for pressure and purely diffusive variables.
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
+
+! mltmmn = 300  ! mean number of cells under which merging takes place
+! mltmgl = 500  ! global number of cells under which merging takes place
+! mltmmr = 1    ! number of active ranks under which no merging is done
+! mltmst = 4    ! number of ranks over which merging takes place
 
 iphas = 1
 imgr(ipr(iphas)) = 1

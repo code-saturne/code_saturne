@@ -65,8 +65,37 @@ BEGIN_C_DECLS
 typedef struct _cs_grid_t cs_grid_t;
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
+
+/*============================================================================
+ * Public function prototypes Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Set the default parameters for multigrid coarsening.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(clmopt, CLMOPT)
+(
+ const cs_int_t   *mltmmn,    /* <-- Mean number of cells under which merging
+                               *     should take place */
+ const cs_int_t   *mltmgl,    /* <-- Global number of cells under which
+                               *     merging should take place */
+ const cs_int_t   *mltmmr,    /* <-- Number of active ranks under which no
+                               *     merging takes place */
+ const cs_int_t   *mltmst     /* <-- Number of ranks over which merging
+                               *     takes place */
+);
+
+/*----------------------------------------------------------------------------
+ * Print the default parameters for multigrid coarsening.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(clmimp, CLMIMP)
+(
+ void
+);
 
 /*=============================================================================
  * Public function prototypes
@@ -129,9 +158,10 @@ cs_grid_destroy(cs_grid_t **grid);
  *   g           <-- Grid structure
  *   level       --> Level in multigrid hierarchy (or NULL)
  *   symmetric   --> Symmetric matrix coefficients indicator (or NULL)
- *   n_cells_ext --> Number of local cells (or NULL)
+ *   n_ranks     --> number of ranks with data (or NULL)
+ *   n_cells     --> Number of local cells (or NULL)
  *   n_cells_ext --> Number of cells including ghosts (or NULL)
- *   n_cells_ext --> Number of faces (or NULL)
+ *   n_faces     --> Number of faces (or NULL)
  *   n_g_cells   --> Number of global cells (or NULL)
  *----------------------------------------------------------------------------*/
 
@@ -139,6 +169,7 @@ void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  cs_bool_t        *symmetric,
+                 int              *n_ranks,
                  fvm_lnum_t       *n_cells,
                  fvm_lnum_t       *n_cells_ext,
                  fvm_lnum_t       *n_faces,
@@ -169,6 +200,21 @@ cs_grid_get_n_cells(const cs_grid_t  *g);
 
 fvm_lnum_t
 cs_grid_get_n_cells_ext(const cs_grid_t  *g);
+
+/*----------------------------------------------------------------------------
+ * Get maximum number of extended (local + ghost) cells corresponding to
+ * a grid, both with and without merging between ranks
+ *
+ * parameters:
+ *   g <-- Grid structure
+ *
+ * returns:
+ *   maximum number of extended cells of grid structure, with or without
+ *   merging
+ *----------------------------------------------------------------------------*/
+
+fvm_lnum_t
+cs_grid_get_n_cells_max(const cs_grid_t  *g);
 
 /*----------------------------------------------------------------------------
  * Get global number of cells corresponding to a grid.
@@ -239,6 +285,22 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
                           cs_real_t        *c_var);
 
 /*----------------------------------------------------------------------------
+ * Compute fine cell integer values from coarse cell values
+ *
+ * parameters:
+ *   c       <-- Fine grid structure
+ *   f       <-- Fine grid structure
+ *   c_num   --> Variable defined on coarse grid cells
+ *   f_num   <-- Variable defined on fine grid cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_prolong_cell_num(const cs_grid_t  *c,
+                         const cs_grid_t  *f,
+                         int              *c_num,
+                         int              *f_num);
+
+/*----------------------------------------------------------------------------
  * Compute fine cell variable values from coarse cell values
  *
  * parameters:
@@ -246,15 +308,12 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
  *   f       <-- Fine grid structure
  *   c_var   --> Variable defined on coarse grid cells
  *   f_var   <-- Variable defined on fine grid cells
- *
- * returns:
- *   coarse grid structure
  *----------------------------------------------------------------------------*/
 
 void
 cs_grid_prolong_cell_var(const cs_grid_t  *c,
                          const cs_grid_t  *f,
-                         const cs_real_t  *c_var,
+                         cs_real_t        *c_var,
                          cs_real_t        *f_var);
 
 /*----------------------------------------------------------------------------
@@ -275,6 +334,20 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
                          fvm_lnum_t        n_base_cells,
                          int               max_num,
                          int               c_cell_num[]);
+
+/*----------------------------------------------------------------------------
+ * Project coarse grid cell rank to base grid.
+ *
+ * parameters:
+ *   g            <-- Grid structure
+ *   n_base_cells <-- Number of cells in base grid
+ *   f_cell_rank  --> Global coarse cell rank projected to fine cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_project_cell_rank(const cs_grid_t  *g,
+                          fvm_lnum_t        n_base_cells,
+                          int               f_cell_rank[]);
 
 /*----------------------------------------------------------------------------
  * Project variable from coarse grid to base grid
@@ -305,6 +378,72 @@ void
 cs_grid_project_diag_dom(const cs_grid_t  *g,
                          fvm_lnum_t        n_base_cells,
                          cs_real_t         diag_dom[]);
+
+/*----------------------------------------------------------------------------
+ * Get the default parameters for multigrid coarsening.
+ *
+ * parameters:
+ *   merge_mean_threshold --> mean number of cells under which merging
+ *                            should take place, or NULL
+ *   merge_glob_threshold --> global number of cells under which merging
+ *                            should take place, or NULL
+ *   merg_min_ranks       --> number of active ranks under which no merging
+ *                            takes place, or NULL
+ *   merge_stride         --> number of ranks over which merging takes place,
+ *                            or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_get_defaults(int  *merge_mean_threshold,
+                     int  *merge_glob_threshold,
+                     int  *merge_min_ranks,
+                     int  *merge_stride);
+
+/*----------------------------------------------------------------------------
+ * Set the default parameters for multigrid coarsening.
+ *
+ * parameters:
+ *   merge_mean_threshold <-- mean number of cells under which merging
+ *                            should take place
+ *   merge_glob_threshold <-- global number of cells under which merging
+ *                            should take place
+ *   merg_min_ranks       <-- number of active ranks under which no merging
+ *                            takes place
+ *   merge_stride         <-- number of ranks over which merging takes place
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_defaults(int  merge_mean_threshold,
+                     int  merge_glob_threshold,
+                     int  merge_min_ranks,
+                     int  merge_stride);
+
+/*----------------------------------------------------------------------------
+ * Return the merge_stride if merging is active.
+ *
+ * returns:
+ *   grid merge stride if merging is active, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+int
+cs_grid_get_merge_stride(void);
+
+/*----------------------------------------------------------------------------
+ * Print the default parameters for multigrid coarsening.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_log_defaults(void);
+
+/*----------------------------------------------------------------------------
+ * Dump grid structure
+ *
+ * parameters:
+ *   g <-- grid structure that should be dumped
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_dump(const cs_grid_t  *g);
 
 /*----------------------------------------------------------------------------*/
 

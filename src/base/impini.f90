@@ -1841,6 +1841,9 @@ do ipp = 2, nvppmx
 enddo
 write(nfecra,5530)
 
+call clmimp
+!==========
+
 write(nfecra,9900)
 
 

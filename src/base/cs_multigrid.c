@@ -133,6 +133,8 @@ typedef struct _cs_multigrid_info_t {
   unsigned             n_levels[3];         /* Number of grid levels:
                                                [last, min, max] */
 
+  int                  coarse_ranks[3];     /* Number of ranks for coarse
+                                               grid: [last, min, max] */
   unsigned long long   coarse_size[3];      /* Coarse grid size:
                                                [min, max, total] */
 
@@ -176,6 +178,11 @@ typedef struct _cs_multigrid_t {
   int       **post_cell_num;   /* If post_cell_max > 0, array of
                                   (n_levels - 1) arrays of projected
                                   coarse cell numbers on the base grid */
+
+  int       **post_cell_rank;  /* If post_cell_max > 0 and grid merging
+                                  is active, array of (n_levels - 1) arrays
+                                  of projected coarse cell ranks on the
+                                  base grid */
 
 } cs_multigrid_t;
 
@@ -223,6 +230,7 @@ _multigrid_info_init(cs_multigrid_info_t *info,
 
   for (i = 0; i < 3; i++) {
     info->n_levels[i] = 0;
+    info->coarse_ranks[i] = 0;
     info->coarse_size[i] = 0;
     info->n_cycles[i] = 0;
     for (j = 0; j < 3; j++)
@@ -268,6 +276,8 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
   int n_solves = this_info->n_solves;
   int n_lv_min = this_info->n_levels[1];
   int n_lv_max = this_info->n_levels[2];
+  int n_cr_min = this_info->coarse_ranks[1];
+  int n_cr_max = this_info->coarse_ranks[2];
   int n_lv_mean = (int)(this_info->n_levels_tot / n_builds_denom);
   unsigned long long c_size_min = this_info->coarse_size[0];
   unsigned long long c_size_max = this_info->coarse_size[1];
@@ -312,8 +322,19 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                "  Coarse grid size (n cells):\n"
                "    minimum:                        %llu\n"
                "    maximum:                        %llu\n"
-               "    mean:                           %llu\n"
-               "  Number of cycles:\n"
+               "    mean:                           %llu\n"),
+             n_builds, n_solves, n_lv_min, n_lv_max, n_lv_mean,
+             c_size_min, c_size_max, c_size_mean);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1)
+    bft_printf(_("  Coarse grid ranks:\n"
+                 "    minimum:                        %d\n"
+                 "    maximum:                        %d\n"),
+               n_cr_min, n_cr_max);
+#endif
+
+  bft_printf(_("  Number of cycles:\n"
                "    minimum:                        %d\n"
                "    maximum:                        %d\n"
                "    mean:                           %d\n"
@@ -332,8 +353,6 @@ _multigrid_info_dump(const cs_multigrid_info_t *this_info)
                "      mean:                         %d\n"
                "  Associated times (construction, resolution)\n"
                "    total elapsed:                  %12.3f  %12.3f\n"),
-             n_builds, n_solves, n_lv_min, n_lv_max, n_lv_mean,
-             c_size_min, c_size_max, c_size_mean,
              this_info->n_cycles[0], this_info->n_cycles[1], n_cy_mean,
              n_it_f_min, n_it_f_max, n_it_f_mean,
              n_it_c_min, n_it_c_max, n_it_c_mean,
@@ -398,6 +417,7 @@ _multigrid_create(const char  *name)
     mg->grid_hierarchy[ii] = NULL;
 
   mg->post_cell_num = NULL;
+  mg->post_cell_rank = NULL;
 
   return mg;
 }
@@ -427,6 +447,13 @@ _multigrid_destroy(cs_multigrid_t  **mg)
       if (_mg->post_cell_num[ii] != NULL)
         BFT_FREE(_mg->post_cell_num[ii]);
     BFT_FREE(_mg->post_cell_num);
+  }
+
+  if (_mg->post_cell_rank != NULL) {
+    for (ii = 0; ii < _mg->n_levels_max - 1; ii++)
+      if (_mg->post_cell_rank[ii] != NULL)
+        BFT_FREE(_mg->post_cell_rank[ii]);
+    BFT_FREE(_mg->post_cell_rank);
   }
 
   BFT_FREE(_mg->grid_hierarchy);
@@ -466,6 +493,14 @@ _multigrid_add_level(cs_multigrid_t  *mg,
         mg->post_cell_num[ii] = NULL;
       if (mg->n_levels > 0)
         mg->post_cell_num[mg->n_levels - 1] = NULL;
+    }
+
+    if (mg->post_cell_rank != NULL) {
+      BFT_REALLOC(mg->post_cell_rank, mg->n_levels_max, int *);
+      for (ii = mg->n_levels; ii < mg->n_levels_max; ii++)
+        mg->post_cell_rank[ii] = NULL;
+      if (mg->n_levels > 0)
+        mg->post_cell_rank[mg->n_levels - 1] = NULL;
     }
   }
 
@@ -598,12 +633,27 @@ _multigrid_add_post(cs_multigrid_t  *mg,
       mg->post_cell_num[ii] = NULL;
   }
 
+  if (mg->post_cell_rank == NULL && cs_grid_get_merge_stride() > 1) {
+    BFT_MALLOC(mg->post_cell_rank, mg->n_levels_max, int *);
+    for (ii = 0; ii < mg->n_levels_max; ii++)
+      mg->post_cell_rank[ii] = NULL;
+  }
+
   for (ii = 0; ii < mg->n_levels_post; ii++) {
     BFT_REALLOC(mg->post_cell_num[ii], n_base_cells, int);
     cs_grid_project_cell_num(mg->grid_hierarchy[ii+1],
                              n_base_cells,
                              mg->post_cell_max,
                              mg->post_cell_num[ii]);
+  }
+
+  if (mg->post_cell_rank != NULL) {
+    for (ii = 0; ii < mg->n_levels_post; ii++) {
+      BFT_REALLOC(mg->post_cell_rank[ii], n_base_cells, int);
+      cs_grid_project_cell_rank(mg->grid_hierarchy[ii+1],
+                                n_base_cells,
+                                mg->post_cell_rank[ii]);
+    }
   }
 }
 
@@ -625,7 +675,6 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
   size_t name_len;
   char *var_name = NULL;
   cs_multigrid_t *mg = NULL;
-  const char name_prefix[] = "mg";
   const char *base_name = NULL;
 
   /* Return if necessary structures inconsistent or have been destroyed */
@@ -642,15 +691,15 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
   /* Allocate name buffer */
 
   base_name = mg->info.name;
-  name_len = strlen(name_prefix) + 1 + strlen(base_name) + 1 + 3 + 1 + 4 + 1;
+  name_len = 3 + strlen(base_name) + 1 + 3 + 1 + 4 + 1;
   BFT_MALLOC(var_name, name_len, char);
 
   /* Loop on grid levels */
 
   for (ii = 0; ii < mg->n_levels_post; ii++) {
 
-    sprintf(var_name, "%s %s %3d %2d",
-            name_prefix, base_name, (int)(ii+1), (int)nt_cur_abs);
+    sprintf(var_name, "mg %s %2d %3d",
+            base_name, (int)(ii+1), (int)nt_cur_abs);
 
     cs_post_write_var(-1,
                       var_name,
@@ -665,6 +714,27 @@ _cs_multigrid_post_function(cs_int_t   hierarchy_id,
                       NULL);
 
     BFT_FREE(mg->post_cell_num[ii]);
+
+    if (mg->post_cell_rank != NULL) {
+
+      sprintf(var_name, "rk %s %2d %3d",
+              base_name, (int)(ii+1), (int)nt_cur_abs);
+
+      cs_post_write_var(-1,
+                        var_name,
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_int,
+                        -1,
+                        0.0,
+                        mg->post_cell_rank[ii],
+                        NULL,
+                        NULL);
+
+      BFT_FREE(mg->post_cell_rank[ii]);
+
+    }
 
   }
   mg->n_levels_post = 0;
@@ -1007,7 +1077,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
   int cvg = 0, c_cvg = 0;
   int n_iter = 0;
-  size_t alloc_size = 0;
+  size_t alloc_size = 0, wr_size = 0;
   cs_real_t c_precision = precision;
   cs_real_t _residue = -1.;
 
@@ -1052,6 +1122,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   cs_grid_get_info(f,
                    NULL,
                    NULL,
+                   NULL,
                    &n_cells,
                    &n_cells_ext,
                    NULL,
@@ -1062,13 +1133,19 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
   /* Allocate wr or use working area */
 
-  if (aux_size >= (size_t)n_cells_ext) {
+  for (level = 1, wr_size = n_cells_ext; level < mg->n_levels; level++) {
+    fvm_lnum_t n_cells_max
+      = cs_grid_get_n_cells_max(mg->grid_hierarchy[level]);
+    wr_size = CS_MAX(wr_size, (size_t)n_cells_max);
+  }
+
+  if (aux_size >= wr_size) {
     wr = aux_vectors;
-    _aux_vectors = wr + n_cells_ext;
-    _aux_size = aux_size - n_cells_ext;
+    _aux_vectors = wr + wr_size;
+    _aux_size = aux_size - wr_size;
   }
   else
-    BFT_MALLOC(wr, n_cells_ext, cs_real_t);
+    BFT_MALLOC(wr, wr_size, cs_real_t);
 
   /* reserve memory for rhs and vx;
      for the finest level, simply point to input and output arrays */
@@ -1087,7 +1164,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
     alloc_size = 0;
 
     for (level = 1; level < mg->n_levels; level++)
-      alloc_size += cs_grid_get_n_cells_ext(mg->grid_hierarchy[level]);
+      alloc_size += cs_grid_get_n_cells_max(mg->grid_hierarchy[level]);
 
     BFT_MALLOC(_rhs_vx_val, alloc_size*2, cs_real_t);
 
@@ -1096,7 +1173,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
     for (level = 2; level < mg->n_levels; level++) {
       fvm_lnum_t _n_cells_ext_prev
-        = cs_grid_get_n_cells_ext(mg->grid_hierarchy[level-1]);
+        = cs_grid_get_n_cells_max(mg->grid_hierarchy[level-1]);
       _rhs[level] = _rhs[level - 1] + _n_cells_ext_prev;
       _vx[level] = _vx[level - 1] + _n_cells_ext_prev;
     }
@@ -1209,6 +1286,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
     cs_grid_get_info(c,
                      NULL,
                      NULL,
+                     NULL,
                      &n_cells,
                      &n_cells_ext,
                      NULL,
@@ -1284,6 +1362,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
       f = mg->grid_hierarchy[level];
 
       cs_grid_get_info(f,
+                       NULL,
                        NULL,
                        NULL,
                        &n_cells,
@@ -1427,6 +1506,7 @@ _multigrid_solve(const char         *var_name,
   mg_info = &(mg->info);
 
   cs_grid_get_info(mg->grid_hierarchy[0],
+                   NULL,
                    NULL,
                    NULL,
                    &n_cells,
@@ -1614,6 +1694,8 @@ void CS_PROCF(clmlga, CLMLGA)
   char *var_name;
   double  wt_start, wt_stop, cpu_start, cpu_stop;
 
+  int n_coarse_ranks = cs_glob_n_ranks;
+  int n_coarse_ranks_prev = 0;
   fvm_lnum_t n_cells = 0;
   fvm_lnum_t n_faces = 0;
   fvm_gnum_t n_g_cells = 0;
@@ -1680,6 +1762,7 @@ void CS_PROCF(clmlga, CLMLGA)
   while (true) {
 
     n_g_cells_prev = n_g_cells;
+    n_coarse_ranks_prev = n_coarse_ranks;
 
     /* Recursion test */
 
@@ -1706,6 +1789,7 @@ void CS_PROCF(clmlga, CLMLGA)
     cs_grid_get_info(g,
                      &grid_lv,
                      &symmetric,
+                     &n_coarse_ranks,
                      &n_cells,
                      NULL,
                      &n_faces,
@@ -1752,16 +1836,11 @@ void CS_PROCF(clmlga, CLMLGA)
 
     /* If too few cells were grouped, we stop at this level */
 
-    if (   n_g_cells > (0.8 * n_g_cells_prev)
-        || n_g_cells < (1.5 * cs_glob_n_ranks))
+    if (n_g_cells > (0.8 * n_g_cells_prev) && n_coarse_ranks == n_coarse_ranks_prev)
       break;
   }
 
   cs_base_string_f_to_c_free(&var_name);
-
-  mg_info->coarse_size[0] = CS_MIN(n_g_cells, mg_info->coarse_size[0]);
-  mg_info->coarse_size[1] = CS_MAX(n_g_cells, mg_info->coarse_size[1]);
-  mg_info->coarse_size[2] += n_g_cells;
 
   /* Print final info */
 
@@ -1791,17 +1870,28 @@ void CS_PROCF(clmlga, CLMLGA)
   mg->info.n_levels_tot += grid_lv;
 
   mg->info.n_levels[0] = grid_lv;
+  mg->info.coarse_ranks[0] = n_coarse_ranks;
 
   if (mg->info.n_builds > 0) {
     if (mg->info.n_levels[0] < mg->info.n_levels[1])
       mg->info.n_levels[1] = mg->info.n_levels[0];
     if (mg->info.n_levels[0] > mg->info.n_levels[2])
       mg->info.n_levels[2] = mg->info.n_levels[0];
+    mg_info->coarse_ranks[1] = CS_MIN(n_coarse_ranks, mg_info->coarse_ranks[1]);
+    mg_info->coarse_ranks[2] = CS_MAX(n_coarse_ranks, mg_info->coarse_ranks[2]);
+    mg_info->coarse_size[0] = CS_MIN(n_g_cells, mg_info->coarse_size[0]);
+    mg_info->coarse_size[1] = CS_MAX(n_g_cells, mg_info->coarse_size[1]);
   }
   else {
+    mg->info.coarse_ranks[1] = n_coarse_ranks;
+    mg->info.coarse_ranks[2] = n_coarse_ranks;
     mg->info.n_levels[1] = mg->info.n_levels[0];
     mg->info.n_levels[2] = mg->info.n_levels[0];
+    mg_info->coarse_size[0] = n_g_cells;
+    mg_info->coarse_size[1] = n_g_cells;
   }
+
+  mg_info->coarse_size[2] += n_g_cells;
 
   mg->info.n_builds += 1;
 

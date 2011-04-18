@@ -1,4 +1,17 @@
 * 18/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Optional merge of coarse grids across processors so as to allow coarsening
+  beyond domain boundaries.
+  modified files:
+    src/base/cs_grid.c
+    src/base/cs_grid.h
+    src/base/cs_multigrid.c
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/iniusi.f90
+    src/base/mltgrd.f90
+    users/base/usini1.f90
+
+* 18/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix ParMETIS detection.
   modified files:
     m4/cs_metis.m4

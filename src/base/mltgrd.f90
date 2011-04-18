@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2010 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -35,18 +35,25 @@ module mltgrd
 
   !=============================================================================
 
-  ! Multigrille
+  ! Multigrid
   ! -----------
-  !   ncegrm : nombre max de cellules sur maillage le plus grossier
-  !   ngrmax : nombre max de niveaux de maillages
+  !   ncegrm : maximum number of cells on coarsest mesh
+  !   ngrmax : maximum number of grids
+
+  !   mltmmn : mean number of cells under which merging should take place
+  !   mltmgl : global number of cells under which merging should take place
+  !   mltmmr : number of active ranks under which no merging is done
+  !   mltmst : number of ranks over which merging takes place (stride)
+  !
   !   nagmx0 : parametre construction de  maillage automatique
   !   iagmx0 : parametre construction de  maillage automatique
   !   ncpmgr : si > 0, active le post traitement de l'agglomeration, en
   !            projetant les numeros de cellules grossieres sur le
   !            maillage fin (modulo ncpmgr(ivar))
 
-  integer, save :: ncegrm, ngrmax,                                 &
-                   nagmx0(nvarmx), iagmx0(nvarmx), ncpmgr(nvarmx)
+  integer, save :: ncegrm, ngrmax
+  integer, save :: mltmmn, mltmgl, mltmst, mltmmr
+  integer, save :: nagmx0(nvarmx), iagmx0(nvarmx), ncpmgr(nvarmx)
 
   !=============================================================================
 

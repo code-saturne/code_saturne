@@ -73,6 +73,7 @@ use optcal
 use cstphy
 use entsor
 use albase
+use mltgrd
 use parall
 use period
 use ihmpre
@@ -510,6 +511,9 @@ endif
 !     ==========================
 
 call usipsu(nmodpp , iverif)
+!==========
+
+call clmopt(mltmmn, mltmgl, mltmmr, mltmst)
 !==========
 
 call indsui(isuite)

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -65,12 +65,14 @@
 
 #include <bft_mem.h>
 #include <bft_error.h>
+#include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
 #include <fvm_defs.h>
+#include <fvm_order.h>
 #include <fvm_parall.h>
 
 /*----------------------------------------------------------------------------
@@ -120,6 +122,10 @@ struct _cs_grid_t {
                                        (cells + ghost cells sharing a face) */
   fvm_lnum_t          n_faces;      /* Local number of faces */
   fvm_gnum_t          n_g_cells;    /* Global number of cells */
+
+  fvm_lnum_t          n_cells_r[2]; /* Size of array used for restriction
+                                       operations ({ncells, n_cells_ext} when
+                                       no grid merging has taken place) */
 
   /* Grid hierarchy information */
 
@@ -174,11 +180,43 @@ struct _cs_grid_t {
   cs_real_t        *xa0ij;
 
   cs_matrix_t      *matrix;         /* Associated matrix structure */
+
+#if defined(HAVE_MPI)
+
+  /* Additional fields to allow merging grids */
+
+  int               merge_sub_root;    /* sub-root when merging */
+  int               merge_sub_rank;    /* sub-rank when merging
+                                          (0 <= sub-rank < merge_sub_size) */
+  int               merge_sub_size;    /* current number of merged ranks
+                                          for this subset */
+  int               merge_stride;      /* total number of ranks over which
+                                          merging occurred at previous levels */
+  int               next_merge_stride; /* total number of ranks over which
+                                          merging occurred at current level */
+
+  fvm_lnum_t       *merge_cell_idx;    /* start cell_id for each sub-rank
+                                          when merge_sub_rank = 0
+                                          (size: merge_size + 1) */
+
+  int               n_ranks;           /* Number of active ranks */
+  int               comm_id;           /* Associated communicator
+                                          (owner when merge_idx != NULL) */
+
+#endif
 };
 
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+#if defined(HAVE_MPI)
+
+static fvm_gnum_t  _grid_merge_threshold[2] = {300, 500};
+static int         _grid_merge_min_ranks = 1;
+static int         _grid_merge_stride = 4;
+
+#endif /* defined(HAVE_MPI) */
 
 /*============================================================================
  * Private function definitions
@@ -206,6 +244,9 @@ _create_grid(void)
   g->n_cells_ext = 0;
   g->n_faces = 0;
   g->n_g_cells = 0;
+
+  g->n_cells_r[0] = 0;
+  g->n_cells_r[1] = 0;
 
   g->parent = NULL;
 
@@ -236,6 +277,20 @@ _create_grid(void)
 
   g->matrix = NULL;
 
+#if defined(HAVE_MPI)
+
+  g->merge_sub_root = 0;
+  g->merge_sub_rank = 0;
+  g->merge_sub_size = 1;
+  g->merge_stride = 0;
+  g->next_merge_stride = 1;
+
+  g->merge_cell_idx = NULL;
+
+  g->n_ranks = cs_glob_n_ranks;
+  g->comm_id = 0;
+
+#endif
   return g;
 }
 
@@ -246,7 +301,7 @@ _create_grid(void)
  * level information initialized, and coarsening array allocated and
  * zeroed.
  *
- * After this function is called, the coarsening array mus be determined,
+ * After this function is called, the coarsening array must be determined,
  * then _coarsen must be called to complete the coarse grid.
  *
  * parameters:
@@ -273,6 +328,13 @@ _coarse_init(const cs_grid_t *f)
 
   for (ii = 0; ii < f->n_cells_ext; ii++)
     c->coarse_cell[ii] = 0;
+
+#if defined(HAVE_MPI)
+  c->merge_stride = f->merge_stride;
+  c->next_merge_stride = f->next_merge_stride;
+  c->n_ranks = f->n_ranks;
+  c->comm_id = f->comm_id;
+#endif
 
   return c;
 }
@@ -701,6 +763,7 @@ _coarsen_halo(const cs_grid_t   *f,
   /* Proceed halo section by halo section */
 
   c_halo->n_elts[0] = 0;
+  c_halo->n_elts[1] = 0;
   c_halo->index[0] = 0;
 
   for (domain_id = 0; domain_id < f_halo->n_c_domains; domain_id++) {
@@ -903,9 +966,11 @@ _coarsen(const cs_grid_t   *f,
     _coarsen_halo(f, c);
     c->n_cells_ext = c->n_cells + c->halo->n_elts[0];
   }
-
   else
     c->n_cells_ext = c_n_cells;
+
+  c->n_cells_r[0] = c->n_cells;
+  c->n_cells_r[1] = c->n_cells_ext;
 
   /* Build face coarsening and coarse grid face -> cells connectivity */
 
@@ -917,6 +982,1099 @@ _coarsen(const cs_grid_t   *f,
                  &(c->_face_cell));
 
   c->face_cell = c->_face_cell;
+}
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Merge halo info after appending arrays.
+ *
+ * parameters:
+ *   h                 <-> Pointer to halo structure
+ *   new_src_cell_num  <-> new list of cells the senders should provide
+ *----------------------------------------------------------------------------*/
+
+static void
+_rebuild_halo_send_lists(cs_halo_t   *h,
+                         fvm_lnum_t   new_src_cell_id[])
+{
+  /* As halos are based on interior faces, every domain is both
+     sender and receiver */
+
+  fvm_lnum_t start, length;
+
+  int rank_id, tr_id;
+  int n_sections = 1 + h->n_transforms;
+  int request_count = 0;
+  fvm_lnum_t *send_buf = NULL, *recv_buf = NULL;
+  MPI_Status *status = NULL;
+  MPI_Request *request = NULL;
+
+  BFT_MALLOC(status, h->n_c_domains*2, MPI_Status);
+  BFT_MALLOC(request, h->n_c_domains*2, MPI_Request);
+  BFT_MALLOC(send_buf, h->n_c_domains*n_sections, fvm_lnum_t);
+  BFT_MALLOC(recv_buf, h->n_c_domains*n_sections, fvm_lnum_t);
+
+  /* Exchange sizes */
+
+  for (rank_id = 0; rank_id < h->n_c_domains; rank_id++)
+    MPI_Irecv(recv_buf + rank_id*n_sections,
+              n_sections,
+              FVM_MPI_LNUM,
+              h->c_domain_rank[rank_id],
+              h->c_domain_rank[rank_id],
+              cs_glob_mpi_comm,
+              &(request[request_count++]));
+
+  /* Send data to distant ranks */
+
+  for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+    send_buf[rank_id*n_sections]
+      = h->index[2*(rank_id+1)] - h->index[2*rank_id];
+    for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
+      send_buf[rank_id*n_sections + tr_id + 1]
+        = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1];
+    }
+    MPI_Isend(send_buf + rank_id*n_sections,
+              n_sections,
+              FVM_MPI_LNUM,
+              h->c_domain_rank[rank_id],
+              cs_glob_rank_id,
+              cs_glob_mpi_comm,
+              &(request[request_count++]));
+  }
+
+  /* Wait for all exchanges */
+
+  MPI_Waitall(request_count, request, status);
+  request_count = 0;
+
+  /* Update sizes */
+
+  BFT_MALLOC(h->send_index, h->n_c_domains*2 + 1, fvm_lnum_t);
+  h->send_index[0] = 0;
+  for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+    h->send_index[rank_id*2 + 1]
+      = h->send_index[rank_id*2] + recv_buf[rank_id*n_sections];
+    h->send_index[rank_id*2 + 2] = h->send_index[rank_id*2 + 1];
+  }
+
+  /* Update send_perio_lst in case of transforms */
+
+  if (h->n_transforms > 0) {
+    BFT_MALLOC(h->send_perio_lst, h->n_c_domains*h->n_transforms*4, fvm_lnum_t);
+    for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+      fvm_lnum_t n_cur_vals = recv_buf[rank_id*n_sections];
+      for (tr_id = 0; tr_id < h->n_transforms; tr_id++)
+        n_cur_vals -= recv_buf[rank_id*n_sections + 1 + tr_id];
+      for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
+        fvm_lnum_t n_tr_vals = recv_buf[rank_id*n_sections + 1 + tr_id];
+        h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id] = n_cur_vals;
+        h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1] = n_tr_vals;
+        n_cur_vals += n_tr_vals;
+        h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 2] = n_cur_vals;
+        h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 3] = 0;
+      }
+    }
+  }
+
+  BFT_FREE(send_buf);
+  BFT_FREE(recv_buf);
+
+  h->n_send_elts[0] = h->send_index[h->n_c_domains*2];
+  h->n_send_elts[1] = h->n_send_elts[0];
+
+  BFT_MALLOC(h->send_list, h->n_send_elts[0], fvm_lnum_t);
+
+  /* Receive data from distant ranks */
+
+  for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+    start = h->send_index[2*rank_id];
+    length = h->send_index[2*rank_id + 1] - h->send_index[2*rank_id];
+    MPI_Irecv(h->send_list + start,
+              length,
+              FVM_MPI_LNUM,
+              h->c_domain_rank[rank_id],
+              h->c_domain_rank[rank_id],
+              cs_glob_mpi_comm,
+              &(request[request_count++]));
+  }
+
+  /* Send data to distant ranks */
+
+  for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+    start = h->index[2*rank_id];
+    length = h->index[2*rank_id + 1] - h->index[2*rank_id];
+    MPI_Isend(new_src_cell_id + start,
+              length,
+              FVM_MPI_LNUM,
+              h->c_domain_rank[rank_id],
+              cs_glob_rank_id,
+              cs_glob_mpi_comm,
+              &(request[request_count++]));
+  }
+
+  /* Wait for all exchanges */
+
+  MPI_Waitall(request_count, request, status);
+
+  BFT_FREE(request);
+  BFT_FREE(status);
+}
+
+/*----------------------------------------------------------------------------
+ * Empty a halo that is only useful for global synchronization
+ *
+ * parameters:
+ *   h <-> pointer to halo structure being emptyied
+ *----------------------------------------------------------------------------*/
+
+static void
+_empty_halo(cs_halo_t  *h)
+{
+  if (h == NULL)
+    return;
+
+  h->n_c_domains = 0;
+  BFT_FREE(h->c_domain_rank);
+
+  h->n_send_elts[0] = 0;
+  h->n_send_elts[1] = 0;
+  h->n_elts[0] = 0;
+  h->n_elts[1] = 0;
+
+  BFT_FREE(h->send_list);
+  BFT_FREE(h->send_index);
+  BFT_FREE(h->send_perio_lst);
+  BFT_FREE(h->index);
+  BFT_FREE(h->perio_lst);
+}
+
+/*----------------------------------------------------------------------------
+ * Merge halo info after appending arrays.
+ *
+ * parameters:
+ *   h                 <-> pointer to halo structure
+ *   loc_rank_id       <-- local rank id
+ *   n_new_cells       <-- number of new local cells
+ *   new_src_cell_id   <-> in: new halo sender cell id matching halo cell;
+ *                         out: new list of cells the senders should provide
+ *                              (same numbers, merged and possibly reordered)
+ *   new_halo_cell_num --> new cell number for each halo cell
+ *                         (< n_new_cells for cells that have become local,
+ *                         >= n_new_cells for cells still in halo)
+ *----------------------------------------------------------------------------*/
+
+static void
+_merge_halo_data(cs_halo_t   *h,
+                 int          loc_rank_id,
+                 fvm_lnum_t   n_new_cells,
+                 fvm_lnum_t   new_src_cell_id[],
+                 fvm_lnum_t   new_halo_cell_num[])
+{
+  int  rank_id, prev_rank_id, tr_id, prev_section_id;
+  fvm_lnum_t  ii, cur_id, section_id, src_id, prev_src_id;
+
+  int   stride = (h->n_transforms > 0) ? 3 : 2;
+  int   n_c_domains_ini = h->n_c_domains;
+
+  fvm_lnum_t   n_elts_ini = h->n_elts[0];
+  fvm_lnum_t  *order = NULL, *section_idx = NULL;
+  fvm_gnum_t  *tmp_num = NULL;
+
+  const int  n_sections = h->n_transforms + 1;
+
+  if (h->n_elts[0] < 1) {
+    _empty_halo(h);
+    return;
+  }
+
+  /* Order list by rank, transform, and new element number */
+
+  BFT_MALLOC(tmp_num, n_elts_ini*stride, fvm_gnum_t);
+
+  for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
+    for (ii = h->index[rank_id*2];
+         ii < h->index[(rank_id+1)*2];
+         ii++)
+      tmp_num[ii*stride] = h->c_domain_rank[rank_id];
+  }
+
+  if (stride == 2) {
+    for (ii = 0; ii < n_elts_ini; ii++)
+      tmp_num[ii*2 + 1] = new_src_cell_id[ii];
+  }
+  else { /* if (stride == 3) */
+
+    for (ii = 0; ii < n_elts_ini; ii++) {
+      tmp_num[ii*3 + 2] = 0;
+      tmp_num[ii*3 + 2] = new_src_cell_id[ii];
+    }
+
+    for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
+      for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
+        fvm_lnum_t ii_0
+          = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
+        fvm_lnum_t ii_1
+          = ii_0 + h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1];
+        for (ii = ii_0; ii < ii_1; ii++)
+          tmp_num[ii*3 + 1] = tr_id + 1;
+      }
+    }
+  }
+
+  order = fvm_order_local_s(NULL, tmp_num, stride, n_elts_ini);
+
+  /* Rebuilt lists and build renumbering */
+
+  cur_id = order[0];
+  h->n_c_domains = 0;
+  h->index[0] = 0;
+  h->n_elts[0] = 0;
+  h->n_elts[1] = 0;
+
+  prev_rank_id = -1;
+  prev_src_id = 0;
+
+  if (stride == 2) {
+
+    for (ii = 0; ii < n_elts_ini; ii++) {
+
+      cs_bool_t is_same = true;
+      cur_id = order[ii];
+
+      rank_id = tmp_num[cur_id*2];
+      src_id = tmp_num[cur_id*2 + 1];
+
+      if (rank_id != loc_rank_id) {
+
+        if (rank_id != prev_rank_id) {
+          h->c_domain_rank[h->n_c_domains] = rank_id;
+          h->index[h->n_c_domains*2] = h->n_elts[0];
+          h->n_c_domains += 1;
+          is_same = false;
+        }
+        if (src_id != prev_src_id)
+          is_same = false;
+
+        if (is_same == false) {
+          new_src_cell_id[h->n_elts[0]] = src_id;
+          h->n_elts[0] += 1;
+        }
+
+        new_halo_cell_num[cur_id] = n_new_cells + h->n_elts[0];
+
+        prev_rank_id = rank_id;
+        prev_src_id = src_id;
+
+      }
+      else /* if (rank_id == loc_rank_id) */
+        new_halo_cell_num[cur_id] = tmp_num[cur_id*2 + 1] + 1;
+    }
+
+  }
+  else { /* if (stride == 3) */
+
+    const fvm_lnum_t section_idx_size = n_sections * h->n_c_domains + 1;
+
+    prev_section_id = -1;
+
+    /* Initialize index as count */
+
+    BFT_MALLOC(section_idx, section_idx_size, fvm_lnum_t);
+    for (ii = 0; ii < section_idx_size; ii++)
+      section_idx[ii] = 0;
+
+    for (ii = 0; ii < n_elts_ini; ii++) {
+
+      cs_bool_t is_same = true;
+      cur_id = order[ii];
+
+      rank_id = tmp_num[cur_id*3];
+      section_id = tmp_num[cur_id*3 + 1];
+      src_id = tmp_num[cur_id*3 + 2];
+
+      if (rank_id != loc_rank_id || tmp_num[cur_id*3 + 1] != 0) {
+
+        if (rank_id != prev_rank_id) {
+          h->c_domain_rank[h->n_c_domains] = rank_id;
+          h->index[h->n_c_domains*2] = h->n_elts[0];
+          h->n_c_domains += 1;
+          is_same = false;
+        }
+        if (section_id != prev_section_id)
+          is_same = false;
+        if (src_id != prev_src_id)
+          is_same = false;
+
+        if (is_same == false) {
+          new_src_cell_id[h->n_elts[0]] = src_id;
+          h->n_elts[0] += 1;
+          section_idx[h->n_c_domains*n_sections + section_id + 1] += 1;
+        }
+
+        new_halo_cell_num[cur_id] = n_new_cells + h->n_elts[0];
+
+        prev_rank_id = rank_id;
+        prev_section_id = section_id;
+        prev_src_id = src_id;
+
+      }
+      else /* if (rank_id == loc_rank_id && tmp_num[cur_id*3 + 1] == 0) */
+        new_halo_cell_num[cur_id] = tmp_num[cur_id*2 + 1];
+
+    }
+
+    /* Transform count to index */
+
+    for (ii = 1; ii < section_idx_size; ii++)
+      section_idx[ii] += section_idx[ii - 1];
+  }
+
+  if (h->n_transforms > 0) {
+
+    for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
+      for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+        section_id = rank_id*n_sections + tr_id + 1;
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id]
+          = section_idx[section_id];
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1]
+          = section_idx[section_id + 1] - section_idx[section_id];
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 2]
+          = section_idx[section_id + 1];
+        h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 3]
+          = 0;
+      }
+    }
+
+    BFT_FREE(section_idx);
+
+  }
+
+  /* Free and resize memory */
+
+  BFT_FREE(order);
+  BFT_FREE(tmp_num);
+  BFT_REALLOC(h->c_domain_rank, h->n_c_domains, int);
+  BFT_REALLOC(h->index, h->n_c_domains*2+1, fvm_lnum_t);
+  if (h->n_transforms > 0)
+    BFT_REALLOC(h->perio_lst,
+                h->n_c_domains * h->n_transforms * 4,
+                fvm_lnum_t);
+
+  h->n_elts[1] = h->n_elts[0];
+  h->index[h->n_c_domains*2] = h->n_elts[0];
+  for (ii = 0; ii < h->n_c_domains; ii++)
+    h->index[ii*2+1] = h->index[ii*2+2];
+}
+
+/*----------------------------------------------------------------------------
+ * Append halo info for grid grouping and merging.
+ *
+ * parameters:
+ *   g           <-> pointer to grid structure being merged
+ *   new_cel_num <-> new cell numbering for local cells
+ *                   in: defined for local cells
+ *                   out: updated also for halo cells
+ *----------------------------------------------------------------------------*/
+
+static void
+_append_halos(cs_grid_t   *g,
+              fvm_lnum_t  *new_cell_num)
+{
+  fvm_lnum_t ii, jj;
+  int rank_id;
+  int counts[3];
+
+  int *recv_count = NULL;
+  fvm_lnum_t *new_src_cell_id = NULL, *new_halo_cell_num = NULL;
+
+  cs_halo_t *h = g->_halo;
+
+  MPI_Status status;
+  MPI_Comm  comm = cs_glob_mpi_comm;
+
+  const int n_transforms = h->n_transforms;
+  static const int tag = 'a'+'p'+'p'+'e'+'n'+'d'+'_'+'h';
+
+  /* Remove send indexes, which will be rebuilt */
+
+  h->n_send_elts[0] = 0;
+  h->n_send_elts[1] = 0;
+  BFT_FREE(h->send_list);
+  BFT_FREE(h->send_index);
+  BFT_FREE(h->send_perio_lst);
+
+  if (g->merge_sub_size == 0) {
+    _empty_halo(h);
+    return;
+  }
+
+  /* Adjust numbering */
+
+  for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+    int init_rank_id = h->c_domain_rank[rank_id];
+    h->c_domain_rank[rank_id]
+      = init_rank_id - (init_rank_id % g->next_merge_stride);
+  }
+
+  counts[0] = h->n_c_domains;
+  counts[1] = h->n_local_elts;
+  counts[2] = h->n_elts[0];
+
+  /* Exchange counters needed for concatenation */
+
+  if (g->merge_sub_rank == 0) {
+    BFT_MALLOC(recv_count, g->merge_sub_size*3, int);
+    for (ii = 0; ii < 3; ii++)
+      recv_count[ii] = counts[ii];
+    for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
+      int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
+      MPI_Recv(recv_count + 3*rank_id, 3, MPI_INT, dist_rank,
+               tag, comm, &status);
+      for (ii = 0; ii < 3; ii++)
+        counts[ii] += recv_count[rank_id*3 + ii];
+    }
+  }
+  else
+    MPI_Send(counts, 3, MPI_INT, g->merge_sub_root, tag, comm);
+
+  /* Reallocate arrays for receiving rank and append data */
+
+  if (g->merge_sub_rank == 0) {
+
+    BFT_MALLOC(new_src_cell_id, counts[2], fvm_lnum_t);
+    for (ii = g->n_cells, jj = 0; ii < g->n_cells_ext; ii++, jj++)
+      new_src_cell_id[jj] = new_cell_num[ii] - 1;
+
+    BFT_REALLOC(h->c_domain_rank, counts[0], int);
+    BFT_REALLOC(h->index, counts[0]*2 + 1, fvm_lnum_t);
+    BFT_REALLOC(h->perio_lst, counts[0]*n_transforms*4, fvm_lnum_t);
+
+    for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
+
+      int n_c_domains_r = recv_count[rank_id*3 + 0];
+      fvm_lnum_t n_recv = recv_count[rank_id*3 + 2];
+
+      fvm_lnum_t index_shift = h->index[2*h->n_c_domains];
+      int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
+
+      MPI_Recv(h->c_domain_rank + h->n_c_domains, n_c_domains_r,
+               MPI_INT, dist_rank, tag, comm, &status);
+      MPI_Recv(new_src_cell_id + h->n_elts[0], n_recv,
+               FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+      MPI_Recv(h->index + h->n_c_domains*2, n_c_domains_r*2+1,
+               FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+
+      for (ii = 0, jj = h->n_c_domains*2;
+           ii < n_c_domains_r*2+1;
+           ii++, jj++)
+        h->index[jj] += index_shift;
+
+      if (n_transforms > 0)
+        MPI_Recv(h->perio_lst + h->n_c_domains*n_transforms*4,
+                 n_c_domains_r*n_transforms*4,
+                 FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+
+      /* Update halo sizes */
+
+      h->n_local_elts += recv_count[rank_id*3 + 1];
+      h->n_c_domains += n_c_domains_r;
+      h->n_elts[0] += n_recv;
+      h->n_elts[1] = h->n_elts[0];
+    }
+
+  }
+  else if (g->merge_sub_size > 1) {
+
+    BFT_MALLOC(new_src_cell_id, h->n_elts[0], fvm_lnum_t);
+    for (ii = g->n_cells, jj = 0; ii < g->n_cells_ext; ii++, jj++)
+      new_src_cell_id[jj] = new_cell_num[ii] - 1;
+
+    MPI_Send(h->c_domain_rank, h->n_c_domains, MPI_INT,
+             g->merge_sub_root, tag, comm);
+    MPI_Send(new_src_cell_id, h->n_elts[0], FVM_MPI_LNUM,
+             g->merge_sub_root, tag, comm);
+    MPI_Send(h->index, h->n_c_domains*2+1, FVM_MPI_LNUM,
+             g->merge_sub_root, tag, comm);
+
+    if (n_transforms > 0)
+      MPI_Send(h->perio_lst, h->n_c_domains*n_transforms*4,
+               FVM_MPI_LNUM, g->merge_sub_root, tag, comm);
+
+    _empty_halo(h);
+  }
+
+  /* Cleanup halo and set pointer for coarsening (sub_rooot) ranks*/
+
+  if (h != NULL) {
+
+    BFT_MALLOC(new_halo_cell_num, h->n_elts[0], fvm_lnum_t);
+
+    _merge_halo_data(h,
+                     cs_glob_rank_id,
+                     counts[1],
+                     new_src_cell_id,
+                     new_halo_cell_num);
+
+    _rebuild_halo_send_lists(h, new_src_cell_id);
+
+  }
+
+  if (new_src_cell_id != NULL)
+    BFT_FREE(new_src_cell_id);
+
+  cs_halo_update_buffers(h);
+
+  g->halo = h;
+  g->_halo = h;
+
+  /* Finally, update halo section of cell renumbering array */
+
+  if (g->merge_sub_rank == 0) {
+
+    fvm_lnum_t n_send = recv_count[2];
+    fvm_lnum_t send_shift = n_send;
+
+    for (ii = 0; ii < n_send; ii++)
+      new_cell_num[g->n_cells + ii] = new_halo_cell_num[ii];
+
+    for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
+      int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
+      n_send = recv_count[rank_id*3 + 2];
+      MPI_Send(new_halo_cell_num + send_shift, n_send, FVM_MPI_LNUM,
+               dist_rank, tag, comm);
+      send_shift += n_send;
+    }
+
+    BFT_FREE(recv_count);
+  }
+  else if (g->merge_sub_size > 1)
+    MPI_Recv(new_cell_num + g->n_cells, g->n_cells_ext - g->n_cells,
+             FVM_MPI_LNUM, g->merge_sub_root, tag, comm, &status);
+
+  BFT_FREE(new_halo_cell_num);
+}
+
+/*----------------------------------------------------------------------------
+ * Append cell arrays and counts for grid grouping and merging.
+ *
+ * parameters:
+ *   g <-> pointer to grid structure being merged
+ *----------------------------------------------------------------------------*/
+
+static void
+_append_cell_data(cs_grid_t  *g)
+{
+  int rank_id;
+
+  MPI_Status status;
+  MPI_Comm  comm = cs_glob_mpi_comm;
+
+  static const int tag = 'a'+'p'+'p'+'e'+'n'+'d'+'_'+'c';
+
+  /* Reallocate arrays for receiving rank and append data */
+
+  if (g->merge_sub_rank == 0) {
+
+    g->n_cells = g->merge_cell_idx[g->merge_sub_size];
+    g->n_cells_ext = g->n_cells + g->halo->n_elts[0];
+
+    BFT_REALLOC(g->_cell_cen, g->n_cells_ext * 3, cs_real_t);
+    BFT_REALLOC(g->_cell_vol, g->n_cells_ext, cs_real_t);
+    BFT_REALLOC(g->_da, g->n_cells_ext, cs_real_t);
+
+    for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
+
+      fvm_lnum_t n_recv = (  g->merge_cell_idx[rank_id+1]
+                           - g->merge_cell_idx[rank_id]);
+      int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
+
+      MPI_Recv(g->_cell_cen + g->merge_cell_idx[rank_id]*3, n_recv*3,
+               CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+      MPI_Recv(g->_cell_vol + g->merge_cell_idx[rank_id], n_recv,
+               CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+      MPI_Recv(g->_da + g->merge_cell_idx[rank_id], n_recv,
+               CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+    }
+
+  }
+  else {
+    MPI_Send(g->_cell_cen, g->n_cells*3, CS_MPI_REAL, g->merge_sub_root,
+             tag, comm);
+    BFT_FREE(g->_cell_cen);
+
+    MPI_Send(g->_cell_vol, g->n_cells, CS_MPI_REAL, g->merge_sub_root,
+             tag, comm);
+    BFT_FREE(g->_cell_vol);
+
+    MPI_Send(g->_da, g->n_cells, CS_MPI_REAL, g->merge_sub_root, tag, comm);
+    BFT_FREE(g->_da);
+
+    g->n_cells = 0;
+    g->n_cells_ext = 0;
+  }
+
+  g->cell_cen = g->_cell_cen;
+  g->cell_vol = g->_cell_vol;
+  g->da = g->_da;
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize cell array values for grid grouping and merging.
+ *
+ * parameters:
+ *   g <-> pointer to grid structure being merged
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_merged_cell_data(cs_grid_t  *g)
+{
+  if (g->halo != NULL) {
+
+    cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_cell_cen, 3);
+    if (g->halo->n_transforms > 0)
+      cs_perio_sync_coords(g->halo, CS_HALO_STANDARD, g->_cell_cen);
+
+    cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_cell_vol);
+
+    cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_da);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Append face arrays and counts for grid grouping and merging.
+ *
+ * parameters:
+ *   g           <-> pointer to grid structure being merged
+ *   n_faces     <-- number of faces to append
+ *   new_cel_num <-> new cell numbering for local cells
+ *                   in: defined for local cells
+ *                   out: updated also for halo cells
+ *----------------------------------------------------------------------------*/
+
+static void
+_append_face_data(cs_grid_t   *g,
+                  fvm_lnum_t   n_faces,
+                  fvm_lnum_t  *face_list)
+{
+  int rank_id;
+
+  fvm_lnum_t *recv_count = NULL;
+
+  MPI_Status status;
+  MPI_Comm  comm = cs_glob_mpi_comm;
+
+  static const int tag = 'a'+'p'+'p'+'e'+'n'+'d'+'_'+'f';
+
+  /* Exchange counters needed for concatenation */
+
+  if (g->merge_sub_rank == 0) {
+    BFT_MALLOC(recv_count, g->merge_sub_size, fvm_lnum_t);
+    recv_count[0] = g->n_faces;
+    for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
+      int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
+      MPI_Recv(recv_count + rank_id, 1, FVM_MPI_LNUM, dist_rank,
+               tag, comm, &status);
+    }
+  }
+  else
+    MPI_Send(&n_faces, 1, FVM_MPI_LNUM, g->merge_sub_root, tag, comm);
+
+  /* Reallocate arrays for receiving rank and append data */
+
+  BFT_FREE(g->coarse_face);
+
+  if (g->merge_sub_rank == 0) {
+
+    fvm_lnum_t n_faces_tot = 0;
+
+    for (rank_id = 0; rank_id < g->merge_sub_size; rank_id++)
+      n_faces_tot += recv_count[rank_id];
+
+    BFT_REALLOC(g->_face_cell, n_faces_tot*2, fvm_lnum_t);
+
+    BFT_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
+
+    if (g->symmetric == true)
+      BFT_REALLOC(g->_xa, n_faces_tot, cs_real_t);
+    else
+      BFT_REALLOC(g->_xa, n_faces_tot*2, cs_real_t);
+
+    BFT_REALLOC(g->_xa0, n_faces_tot, cs_real_t);
+    BFT_REALLOC(g->xa0ij, n_faces_tot*3, cs_real_t);
+
+    g->n_faces = recv_count[0];
+
+    for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
+
+      fvm_lnum_t n_recv = recv_count[rank_id];
+      int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
+
+      MPI_Recv(g->_face_cell + g->n_faces*2, n_recv*2,
+               FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+
+      MPI_Recv(g->_face_normal + g->n_faces*3, n_recv*3,
+               CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+      MPI_Recv(g->_xa + g->n_faces, n_recv,
+               CS_MPI_REAL, dist_rank, tag, comm, &status);
+      if (g->symmetric == false)
+        MPI_Recv(g->_xa + n_faces_tot + g->n_faces, n_recv,
+                 CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+      MPI_Recv(g->_xa0 + g->n_faces, n_recv,
+               CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+      MPI_Recv(g->xa0ij + g->n_faces*3, n_recv*3,
+               CS_MPI_REAL, dist_rank, tag, comm, &status);
+
+      g->n_faces += recv_count[rank_id];
+    }
+
+    BFT_FREE(recv_count);
+
+  }
+  else {
+
+    fvm_lnum_t face_id = 0;
+
+    /* Filter face connectivity then send it */
+    for (face_id = 0; face_id < n_faces; face_id++) {
+      fvm_lnum_t p_face_id = face_list[face_id];
+      g->_face_cell[face_id*2] = g->_face_cell[p_face_id*2];
+      g->_face_cell[face_id*2 + 1] = g->_face_cell[p_face_id*2 + 1];
+      g->_face_normal[face_id*3] = g->_face_normal[p_face_id*3];
+      g->_face_normal[face_id*3 + 1] = g->_face_normal[p_face_id*3 + 1];
+      g->_face_normal[face_id*3 + 2] = g->_face_normal[p_face_id*3 + 2];
+      g->_xa[face_id] = g->_xa[p_face_id];
+      if (g->symmetric == false)
+        g->_xa[face_id + n_faces] = g->_xa[p_face_id + g->n_faces];
+      g->_xa0[face_id] = g->_xa0[p_face_id];
+      g->xa0ij[face_id*3] = g->xa0ij[p_face_id*3];
+      g->xa0ij[face_id*3 + 1] = g->xa0ij[p_face_id*3 + 1];
+      g->xa0ij[face_id*3 + 2] = g->xa0ij[p_face_id*3 + 2];
+    }
+
+    MPI_Send(g->_face_cell, n_faces*2, FVM_MPI_LNUM,
+             g->merge_sub_root, tag, comm);
+    BFT_FREE(g->_face_cell);
+
+    MPI_Send(g->_face_normal, n_faces*3, CS_MPI_REAL,
+             g->merge_sub_root, tag, comm);
+    BFT_FREE(g->_face_normal);
+
+    MPI_Send(g->_xa, n_faces, CS_MPI_REAL,
+             g->merge_sub_root, tag, comm);
+    if (g->symmetric == false)
+      MPI_Send(g->_xa + n_faces, n_faces, CS_MPI_REAL,
+               g->merge_sub_root, tag, comm);
+    BFT_FREE(g->_xa);
+
+    MPI_Send(g->_xa0, n_faces, CS_MPI_REAL,
+             g->merge_sub_root, tag, comm);
+    BFT_FREE(g->_xa0);
+
+    MPI_Send(g->xa0ij, n_faces*3, CS_MPI_REAL,
+             g->merge_sub_root, tag, comm);
+    BFT_FREE(g->xa0ij);
+
+    g->n_faces = 0;
+  }
+
+  g->face_cell = g->_face_cell;
+  g->face_normal = g->_face_normal;
+  g->xa = g->_xa;
+  g->xa0 = g->_xa0;
+}
+
+/*----------------------------------------------------------------------------
+ * Merge grids on several ranks to a grid on a single rank
+ *
+ * The coarse grid must previously have been initialized with _coarse_init()
+ * and its coarsening indicator determined (at least for the local cells;
+ * it is extended to halo cells here if necessary).
+ *
+ * - Periodic faces are not handled yet
+ *
+ * parameters:
+ *   g         <-- Pointer to grid structure
+ *   verbosity <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+static void
+_merge_grids(cs_grid_t  *g,
+             int         verbosity)
+{
+  int i, rank_id, t_id;
+  fvm_lnum_t j, face_id;
+  int base_rank = cs_glob_rank_id;
+  fvm_lnum_t cell_shift = 0;
+  fvm_lnum_t n_faces = 0;
+  fvm_lnum_t *new_cell_num = NULL, *face_list = NULL;
+  cs_bool_t  *halo_cell_flag = NULL;
+  MPI_Comm comm = cs_glob_mpi_comm;
+  MPI_Status status;
+
+  static const int tag = 'm'+'e'+'r'+'g'+'e';
+
+  /* Determine rank in merged group */
+
+  g->merge_sub_size = _grid_merge_stride;
+  g->merge_stride = g->next_merge_stride;
+  g->next_merge_stride *= _grid_merge_stride;
+
+  if (base_rank % g->merge_stride != 0) {
+    g->merge_sub_size = 0;
+    g->merge_sub_root = -1;
+    g->merge_sub_rank = -1;
+  }
+  else {
+    int merge_rank = base_rank / g->merge_stride;
+    int merge_size = (cs_glob_n_ranks/g->merge_stride);
+    int merge_sub_root = (merge_rank / _grid_merge_stride) * _grid_merge_stride;
+    if (cs_glob_n_ranks % g->merge_stride > 0)
+      merge_size += 1;
+    g->merge_sub_root = merge_sub_root * g->merge_stride;
+    g->merge_sub_rank = merge_rank % _grid_merge_stride;
+    if (merge_sub_root + g->merge_sub_size > merge_size)
+      g->merge_sub_size = merge_size - merge_sub_root;
+  }
+
+  if (g->next_merge_stride > 1) {
+    if (g->n_ranks % _grid_merge_stride)
+      g->n_ranks = (g->n_ranks/_grid_merge_stride) + 1;
+    else
+      g->n_ranks = (g->n_ranks/_grid_merge_stride);
+  }
+
+  if (verbosity > 2) {
+    bft_printf("\n"
+               "    merging level %2d grid:\n"
+               "      merge_stride = %d; new ranks = %d\n",
+               g->level, g->merge_stride, g->n_ranks);
+    if (verbosity > 3)
+      bft_printf("      sub_root = %d; sub_rank = %d; sub_size = %d\n",
+                 g->merge_sub_root, g->merge_sub_rank, g->merge_sub_size);
+  }
+
+  /* Compute number of coarse cells in new grid;
+     local cell numbers will be shifted by cell_shift in the merged grid */
+
+  if (g->merge_sub_size > 1) {
+
+    if (g->merge_sub_rank == 0) {
+      BFT_MALLOC(g->merge_cell_idx, g->merge_sub_size + 1, fvm_lnum_t);
+      g->merge_cell_idx[0] = 0; g->merge_cell_idx[1] = g->n_cells;
+      for (i = 1; i < g->merge_sub_size; i++) {
+        fvm_lnum_t recv_val;
+        int dist_rank = g->merge_sub_root + g->merge_stride*i;
+        MPI_Recv(&recv_val, 1, FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+        g->merge_cell_idx[i + 1] = recv_val + g->merge_cell_idx[i];
+      }
+    }
+    else {
+      fvm_lnum_t send_val = g->n_cells;
+      MPI_Send(&send_val, 1, FVM_MPI_LNUM, g->merge_sub_root, tag, comm);
+    }
+
+    /* Now return computed info to grids that will be merged */
+
+    if (g->merge_sub_rank == 0) {
+      for (i = 1; i < g->merge_sub_size; i++) {
+        fvm_lnum_t send_val;
+        send_val = g->merge_cell_idx[i];
+        MPI_Send(&send_val, 1, FVM_MPI_LNUM,
+                 g->merge_sub_root + g->merge_stride*i, tag, comm);
+      }
+    }
+    else
+      MPI_Recv(&cell_shift, 1, FVM_MPI_LNUM,
+               g->merge_sub_root, tag, comm, &status);
+  }
+
+  /* Compute and exchange new cell numbers */
+
+  BFT_MALLOC(new_cell_num, g->n_cells_ext, fvm_lnum_t);
+  for (j = 0; j < g->n_cells; j++)
+    new_cell_num[j] = cell_shift + j + 1;
+  for (j = g->n_cells; j < g->n_cells; j++)
+    new_cell_num[j] = 0;
+
+  cs_halo_sync_untyped(g->halo,
+                       CS_HALO_STANDARD,
+                       sizeof(fvm_lnum_t),
+                       new_cell_num);
+
+  /* Now build face filter list (before halo is modified) */
+
+  if (g->merge_sub_size > 1 && g->merge_sub_rank > 0 && g->n_faces > 0) {
+
+    fvm_lnum_t n_ghost_cells = g->n_cells_ext - g->n_cells;
+
+    /* Mark which faces should be merged: to avoid duplicates, a face
+       connected to a cell on a lower rank in the same merge set is
+       discarded, as it has already been accounted for by that rank. */
+
+    BFT_MALLOC(face_list, g->n_faces, fvm_lnum_t);
+    BFT_MALLOC(halo_cell_flag, n_ghost_cells, cs_bool_t);
+    for (j = 0; j < n_ghost_cells; j++)
+      halo_cell_flag[j] = false;
+
+    for (i = 0; i < g->halo->n_c_domains; i++) {
+      rank_id = g->halo->c_domain_rank[i];
+      if (rank_id >= g->merge_sub_root && rank_id < cs_glob_rank_id) {
+        for (t_id = 0; t_id < g->halo->n_transforms; t_id++) {
+          int t_shift = 4 * g->halo->n_c_domains * t_id;
+          fvm_lnum_t t_start = g->halo->perio_lst[t_shift + 4*i];
+          fvm_lnum_t t_end = t_start + g->halo->perio_lst[t_shift + 4*i + 1];
+          for (j = t_start; j < t_end; j++)
+            halo_cell_flag[j] = true;
+        }
+      }
+      else {
+        for (j = g->halo->index[2*i]; j < g->halo->index[2*i+2]; j++)
+          halo_cell_flag[j] = true;
+      }
+    }
+
+    for (face_id = 0; face_id < g->n_faces; face_id++) {
+      cs_bool_t use_face = true;
+      fvm_lnum_t ii = g->face_cell[face_id*2] - g->n_cells;
+      fvm_lnum_t jj = g->face_cell[face_id*2 + 1] - g->n_cells;
+      if (ii > 0) {
+        if (halo_cell_flag[ii - 1] == false)
+          use_face = false;
+      }
+      else if (jj > 0) {
+        if (halo_cell_flag[jj - 1] == false)
+          use_face = false;
+      }
+      if (use_face == true)
+        face_list[n_faces++] = face_id;
+    }
+
+    BFT_FREE(halo_cell_flag);
+  }
+
+  /* Append and merge halos */
+
+  _append_halos(g, new_cell_num);
+
+  /* Update face ->cells connectivity */
+
+  for (face_id = 0; face_id < g->n_faces; face_id++) {
+    fvm_lnum_t ii = g->face_cell[face_id*2] - 1;
+    fvm_lnum_t jj = g->face_cell[face_id*2 + 1] - 1;
+    assert(ii != jj && new_cell_num[ii] != new_cell_num[jj]);
+    g->_face_cell[face_id*2] = new_cell_num[ii];
+    g->_face_cell[face_id*2 + 1] = new_cell_num[jj];
+  }
+
+  BFT_FREE(new_cell_num);
+
+  /* Merge cell and face data */
+
+  if (g->merge_sub_size > 1) {
+    _append_cell_data(g);
+    _append_face_data(g, n_faces, face_list);
+  }
+  _sync_merged_cell_data(g);
+
+  BFT_FREE(face_list);
+
+  if (verbosity > 3)
+    bft_printf("      merged to %d (from %d) cells\n\n",
+               g->n_cells, g->n_cells_r[0]);
+}
+
+#endif /* defined(HAVE_MPI) */
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Scatter coarse cell integer data in case of merged grids
+ *
+ * parameters:
+ *   g    <-- Grid structure
+ *   num  <-> Variable defined on merged grid cells in,
+ *            defined on scattered to grid cells out
+ *----------------------------------------------------------------------------*/
+
+static void
+_scatter_cell_num(const cs_grid_t  *g,
+                  int              *num)
+{
+  assert(g != NULL);
+
+  /* If grid merging has taken place, scatter coarse data */
+
+  if (g->merge_sub_size > 1) {
+
+    MPI_Comm  comm = cs_glob_mpi_comm;
+    static const int tag = 'p'+'r'+'o'+'l'+'o'+'n'+'g';
+
+    /* Append data */
+
+    if (g->merge_sub_rank == 0) {
+      int rank_id;
+      assert(cs_glob_rank_id == g->merge_sub_root);
+      for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
+        fvm_lnum_t n_send = (  g->merge_cell_idx[rank_id+1]
+                             - g->merge_cell_idx[rank_id]);
+        int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
+        MPI_Send(num + g->merge_cell_idx[rank_id], n_send, MPI_INT,
+                 dist_rank, tag, comm);
+      }
+    }
+    else {
+      MPI_Status status;
+      MPI_Recv(num, g->n_cells_r[0], MPI_INT,
+               g->merge_sub_root, tag, comm, &status);
+    }
+  }
+
+}
+
+#endif /* defined(HAVE_MPI) */
+
+/*============================================================================
+ *  Public function definitions for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Set the default parameters for multigrid coarsening.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(clmopt, CLMOPT)
+(
+ const cs_int_t   *mltmmn,    /* <-- Mean number of cells under which merging
+                               *     should take place */
+ const cs_int_t   *mltmgl,    /* <-- Global number of cells under which
+                               *     merging should take place */
+ const cs_int_t   *mltmmr,    /* <-- Number of active ranks under which no
+                               *     merging takes place */
+ const cs_int_t   *mltmst     /* <-- Number of ranks over which merging
+                               *     takes place */
+)
+{
+  cs_grid_set_defaults(*mltmmn, *mltmgl, *mltmmr, *mltmst);
+}
+
+/*----------------------------------------------------------------------------
+ * Print the default parameters for multigrid coarsening.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(clmimp, CLMIMP)
+(
+ void
+)
+{
+  cs_grid_log_defaults();
 }
 
 /*============================================================================
@@ -1085,6 +2243,10 @@ cs_grid_destroy(cs_grid_t **grid)
 
     cs_matrix_destroy(&(g->matrix));
 
+#if defined(HAVE_MPI)
+    BFT_FREE(g->merge_cell_idx);
+#endif
+
     BFT_FREE(*grid);
   }
 }
@@ -1096,9 +2258,10 @@ cs_grid_destroy(cs_grid_t **grid)
  *   g           <-- Grid structure
  *   level       --> Level in multigrid hierarchy (or NULL)
  *   symmetric   --> Symmetric matrix coefficients indicator (or NULL)
- *   n_cells_ext --> Number of local cells (or NULL)
+ *   n_ranks     --> number of ranks with data (or NULL)
+ *   n_cells     --> Number of local cells (or NULL)
  *   n_cells_ext --> Number of cells including ghosts (or NULL)
- *   n_cells_ext --> Number of faces (or NULL)
+ *   n_faces     --> Number of faces (or NULL)
  *   n_g_cells   --> Number of global cells (or NULL)
  *----------------------------------------------------------------------------*/
 
@@ -1106,6 +2269,7 @@ void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  cs_bool_t        *symmetric,
+                 int              *n_ranks,
                  fvm_lnum_t       *n_cells,
                  fvm_lnum_t       *n_cells_ext,
                  fvm_lnum_t       *n_faces,
@@ -1118,6 +2282,14 @@ cs_grid_get_info(const cs_grid_t  *g,
 
   if (symmetric != NULL)
     *symmetric = g->symmetric;
+
+  if (n_ranks != NULL) {
+#if defined(HAVE_MPI)
+    *n_ranks = g->n_ranks;
+#else
+    *n_ranks = 1;
+#endif
+  }
 
   if (n_cells != NULL)
     *n_cells = g->n_cells;
@@ -1164,6 +2336,29 @@ cs_grid_get_n_cells_ext(const cs_grid_t  *g)
   assert(g != NULL);
 
   return g->n_cells_ext;
+}
+
+/*----------------------------------------------------------------------------
+ * Get maximum number of extended (local + ghost) cells corresponding to
+ * a grid, both with and without merging between ranks
+ *
+ * parameters:
+ *   g <-- Grid structure
+ *
+ * returns:
+ *   maximum number of extended cells of grid structure, with or without
+ *   merging
+ *----------------------------------------------------------------------------*/
+
+fvm_lnum_t
+cs_grid_get_n_cells_max(const cs_grid_t  *g)
+{
+  fvm_lnum_t retval = 0;
+
+  if (g != NULL)
+    retval = CS_MAX(g->n_cells_ext, g->n_cells_r[1]);
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -1425,15 +2620,27 @@ cs_grid_coarsen(const cs_grid_t   *f,
                             c->_xa0, c->xa0ij, c->_da, c->_xa,
                             rwc1, rwc2, rwc3, rwc4);
 
+  BFT_FREE(rwc1);
+  rwc2 = NULL;
+  rwc3 = NULL;
+  rwc4 = NULL;
+
   /* Synchronize matrix's geometric quantities */
 
   if (c->halo != NULL)
     cs_halo_sync_var(c->halo, CS_HALO_STANDARD, c->_da);
 
-  BFT_FREE(rwc1);
-  rwc2 = NULL;
-  rwc3 = NULL;
-  rwc4 = NULL;
+  /* Merge grids if we are below the threshold */
+
+#if defined(HAVE_MPI)
+  if (c->n_ranks > _grid_merge_min_ranks && _grid_merge_stride > 1) {
+    fvm_gnum_t  _n_ranks = c->n_ranks;
+    fvm_gnum_t  _n_mean_g_cells = c->n_g_cells / _n_ranks;
+    if (   _n_mean_g_cells < _grid_merge_threshold[0]
+        || c->n_g_cells < _grid_merge_threshold[1])
+    _merge_grids(c, verbosity);
+  }
+#endif
 
   c->matrix = cs_matrix_create(CS_MATRIX_NATIVE,
                                c->symmetric,
@@ -1460,9 +2667,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
  *   c       <-- Fine grid structure
  *   f_var   <-- Variable defined on fine grid cells
  *   c_var   --> Variable defined on coarse grid cells
- *
- * returns:
- *   coarse grid structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -1476,13 +2680,13 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
   const fvm_lnum_t *coarse_cell;
 
   fvm_lnum_t f_n_cells = f->n_cells;
-  fvm_lnum_t c_n_cells_ext = c->n_cells_ext;
+  fvm_lnum_t c_n_cells_ext = c->n_cells_r[1];
 
   assert(f != NULL);
   assert(c != NULL);
-  assert(c->coarse_cell != NULL);
-  assert(f_var != NULL);
-  assert(c_var != NULL);
+  assert(c->coarse_cell != NULL || f_n_cells == 0);
+  assert(f_var != NULL || f_n_cells == 0);
+  assert(c_var != NULL || c_n_cells_ext == 0);
 
   /* Set coarse values */
 
@@ -1493,6 +2697,77 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
 
   for (ii = 0; ii < f_n_cells; ii++)
     c_var[coarse_cell[ii] - 1] += f_var[ii];
+
+#if defined(HAVE_MPI)
+
+  /* If grid merging has taken place, gather coarse data */
+
+  if (c->merge_sub_size > 1) {
+
+    MPI_Comm  comm = cs_glob_mpi_comm;
+    static const int tag = 'r'+'e'+'s'+'t'+'r'+'i'+'c'+'t';
+
+    /* Append data */
+
+    if (c->merge_sub_rank == 0) {
+      int rank_id;
+      MPI_Status status;
+      assert(cs_glob_rank_id == c->merge_sub_root);
+      for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
+        fvm_lnum_t n_recv = (  c->merge_cell_idx[rank_id+1]
+                             - c->merge_cell_idx[rank_id]);
+        int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
+        MPI_Recv(c_var + c->merge_cell_idx[rank_id], n_recv, CS_MPI_REAL,
+                 dist_rank, tag, comm, &status);
+      }
+    }
+    else
+      MPI_Send(c_var, c->n_cells_r[0], CS_MPI_REAL,
+               c->merge_sub_root, tag, comm);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+}
+
+/*----------------------------------------------------------------------------
+ * Compute fine cell integer values from coarse cell values
+ *
+ * parameters:
+ *   c       <-- Fine grid structure
+ *   f       <-- Fine grid structure
+ *   c_num   --> Variable defined on coarse grid cells
+ *   f_num   <-- Variable defined on fine grid cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_prolong_cell_num(const cs_grid_t  *c,
+                         const cs_grid_t  *f,
+                         int              *c_num,
+                         int              *f_num)
+{
+  fvm_lnum_t ii;
+  const fvm_lnum_t *coarse_cell;
+  const int *_c_num = c_num;
+
+  fvm_lnum_t f_n_cells = f->n_cells;
+
+  assert(f != NULL);
+  assert(c != NULL);
+  assert(c->coarse_cell != NULL || f_n_cells == 0);
+  assert(f_num != NULL);
+  assert(c_num != NULL);
+
+#if defined(HAVE_MPI)
+  _scatter_cell_num(c, c_num);
+#endif
+
+  /* Set fine values */
+
+  coarse_cell = c->coarse_cell;
+
+  for (ii = 0; ii < f_n_cells; ii++)
+    f_num[ii] = _c_num[coarse_cell[ii] - 1];
 }
 
 /*----------------------------------------------------------------------------
@@ -1503,34 +2778,63 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
  *   f       <-- Fine grid structure
  *   c_var   --> Variable defined on coarse grid cells
  *   f_var   <-- Variable defined on fine grid cells
- *
- * returns:
- *   coarse grid structure
  *----------------------------------------------------------------------------*/
 
 void
 cs_grid_prolong_cell_var(const cs_grid_t  *c,
                          const cs_grid_t  *f,
-                         const cs_real_t  *c_var,
+                         cs_real_t        *c_var,
                          cs_real_t        *f_var)
 {
   fvm_lnum_t ii;
   const fvm_lnum_t *coarse_cell;
+  const cs_real_t *_c_var = c_var;
 
   fvm_lnum_t f_n_cells = f->n_cells;
 
   assert(f != NULL);
   assert(c != NULL);
-  assert(c->coarse_cell != NULL);
+  assert(c->coarse_cell != NULL || f_n_cells == 0);
   assert(f_var != NULL);
   assert(c_var != NULL);
+
+#if defined(HAVE_MPI)
+
+  /* If grid merging has taken place, scatter coarse data */
+
+  if (c->merge_sub_size > 1) {
+
+    MPI_Comm  comm = cs_glob_mpi_comm;
+    static const int tag = 'p'+'r'+'o'+'l'+'o'+'n'+'g';
+
+    /* Append data */
+
+    if (c->merge_sub_rank == 0) {
+      int rank_id;
+      assert(cs_glob_rank_id == c->merge_sub_root);
+      for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
+        fvm_lnum_t n_send = (  c->merge_cell_idx[rank_id+1]
+                             - c->merge_cell_idx[rank_id]);
+        int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
+        MPI_Send(c_var + c->merge_cell_idx[rank_id], n_send, CS_MPI_REAL,
+                 dist_rank, tag, comm);
+      }
+    }
+    else {
+      MPI_Status status;
+      MPI_Recv(c_var, c->n_cells_r[0], CS_MPI_REAL,
+               c->merge_sub_root, tag, comm, &status);
+    }
+  }
+
+#endif /* defined(HAVE_MPI) */
 
   /* Set fine values */
 
   coarse_cell = c->coarse_cell;
 
   for (ii = 0; ii < f_n_cells; ii++)
-    f_var[ii] = c_var[coarse_cell[ii] - 1];
+    f_var[ii] = _c_var[coarse_cell[ii] - 1];
 }
 
 /*----------------------------------------------------------------------------
@@ -1555,17 +2859,22 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
   fvm_lnum_t ii = 0;
   fvm_gnum_t base_shift = 1;
   fvm_gnum_t _max_num = max_num;
+  fvm_lnum_t n_max_cells = 0;
+  fvm_lnum_t *tmp_num_1 = NULL, *tmp_num_2 = NULL;
+  const cs_grid_t *_g = g;
 
   assert(g != NULL);
   assert(c_cell_num != NULL);
 
   /* Initialize array */
 
-  for (ii = 0; ii < n_base_cells; ii++)
-    c_cell_num[ii] = 0;
+  n_max_cells = g->n_cells;
+  for (_g = g; _g != NULL; _g = _g->parent) {
+    if (_g->n_cells > n_max_cells)
+      n_max_cells = _g->n_cells;
+  }
 
-  if (g->level == 0)
-    return;
+  BFT_MALLOC(tmp_num_1, n_max_cells, fvm_lnum_t);
 
   /* Compute local base starting cell number in parallel mode */
 
@@ -1579,29 +2888,22 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
   }
 #endif
 
-  if (g->level == 1) {
+  for (ii = 0; ii < g->n_cells; ii++)
+    tmp_num_1[ii] = (fvm_gnum_t)(ii + base_shift) % _max_num;
 
-    for (ii = 0; ii < n_base_cells; ii++)
-      c_cell_num[ii]
-        = ((fvm_gnum_t)(g->coarse_cell[ii]) + base_shift) % _max_num;
-
-  }
-  else { /* if g->level > 1) */
-
-    fvm_lnum_t *tmp_num_1 = NULL, *tmp_num_2 = NULL;
-    const cs_grid_t *_g = g;
+  if (g->level > 0) {
 
     /* Allocate temporary arrays */
 
-    BFT_MALLOC(tmp_num_1, n_base_cells, fvm_lnum_t);
-    BFT_MALLOC(tmp_num_2, n_base_cells, fvm_lnum_t);
+    BFT_MALLOC(tmp_num_2, n_max_cells, fvm_lnum_t);
 
-    for (ii = 0; ii < g->n_cells; ii++)
-      tmp_num_1[ii] = ii;
-
-    for (_g = g; _g->level > 1; _g = _g->parent) {
+    for (_g = g; _g->level > 0; _g = _g->parent) {
 
       fvm_lnum_t n_parent_cells = _g->parent->n_cells;
+
+#if defined(HAVE_MPI)
+      _scatter_cell_num(_g, tmp_num_1);
+#endif /* defined(HAVE_MPI) */
 
       for (ii = 0; ii < n_parent_cells; ii++)
         tmp_num_2[ii] = tmp_num_1[_g->coarse_cell[ii] - 1];
@@ -1611,20 +2913,85 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
 
     }
 
-    assert(_g->level == 1);
-    assert(_g->parent->n_cells == n_base_cells);
-
-    for (ii = 0; ii < n_base_cells; ii++)
-      c_cell_num[ii]
-        =   ((fvm_gnum_t)(tmp_num_1[_g->coarse_cell[ii] - 1]) + base_shift)
-          % _max_num;
+    assert(_g->level == 0);
+    assert(_g->n_cells == n_base_cells);
 
     /* Free temporary arrays */
 
-    BFT_FREE(tmp_num_1);
     BFT_FREE(tmp_num_2);
   }
 
+  memcpy(c_cell_num, tmp_num_1, n_base_cells*sizeof(int));
+
+  BFT_FREE(tmp_num_1);
+}
+
+/*----------------------------------------------------------------------------
+ * Project coarse grid cell rank to base grid.
+ *
+ * parameters:
+ *   g            <-- Grid structure
+ *   n_base_cells <-- Number of cells in base grid
+ *   c_cell_rank  --> Global coarse cell rank projected to fine cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_project_cell_rank(const cs_grid_t  *g,
+                          fvm_lnum_t        n_base_cells,
+                          int               c_cell_rank[])
+{
+  fvm_lnum_t ii;
+  fvm_lnum_t n_max_cells = 0;
+  int *tmp_rank_1 = NULL, *tmp_rank_2 = NULL;
+  const cs_grid_t *_g = g;
+
+  assert(g != NULL);
+  assert(c_cell_rank != NULL || g->n_cells == 0);
+
+  n_max_cells = g->n_cells;
+  for (_g = g; _g != NULL; _g = _g->parent) {
+    if (_g->n_cells > n_max_cells)
+      n_max_cells = _g->n_cells;
+  }
+
+  BFT_MALLOC(tmp_rank_1, n_max_cells, int);
+
+  for (ii = 0; ii < g->n_cells; ii++)
+    tmp_rank_1[ii] = cs_glob_rank_id;
+
+  /* Project to finer levels */
+
+  if (g->level > 0) {
+
+    /* Allocate temporary arrays */
+
+    BFT_MALLOC(tmp_rank_2, n_max_cells, int);
+
+    for (_g = g; _g->level > 0; _g = _g->parent) {
+
+      fvm_lnum_t n_parent_cells = _g->parent->n_cells;
+
+      cs_grid_prolong_cell_num(_g,
+                               _g->parent,
+                               tmp_rank_1,
+                               tmp_rank_2);
+
+      for (ii = 0; ii < n_parent_cells; ii++)
+        tmp_rank_1[ii] = tmp_rank_2[ii];
+
+    }
+
+    assert(_g->level == 0);
+    assert(_g->n_cells == n_base_cells);
+
+    /* Free temporary arrays */
+
+    BFT_FREE(tmp_rank_2);
+  }
+
+  memcpy(c_cell_rank, tmp_rank_1, n_base_cells*sizeof(int));
+
+  BFT_FREE(tmp_rank_1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1644,58 +3011,56 @@ cs_grid_project_var(const cs_grid_t  *g,
                     cs_real_t         f_var[])
 {
   fvm_lnum_t ii;
+  fvm_lnum_t n_max_cells = 0;
+  cs_real_t *tmp_var_1 = NULL, *tmp_var_2 = NULL;
+  const cs_grid_t *_g = g;
 
   assert(g != NULL);
-  assert(c_var != NULL);
+  assert(c_var != NULL || g->n_cells == 0);
   assert(f_var != NULL);
 
-  if (g->level == 0)
-    memcpy(f_var, c_var, n_base_cells*sizeof(cs_real_t));
+  n_max_cells = g->n_cells;
+  for (_g = g; _g != NULL; _g = _g->parent) {
+    if (_g->n_cells > n_max_cells)
+      n_max_cells = _g->n_cells;
+  }
+
+  BFT_MALLOC(tmp_var_1, n_max_cells, cs_real_t);
+  memcpy(tmp_var_1, c_var, g->n_cells*sizeof(cs_real_t));
 
   /* Project to finer levels */
 
-  else if (g->level == 1) {
-
-    for (ii = 0; ii < n_base_cells; ii++)
-      f_var[ii] = c_var[g->coarse_cell[ii] - 1];
-
-  }
-  else { /* if g->level > 1) */
-
-    cs_real_t *tmp_var_1 = NULL, *tmp_var_2 = NULL;
-    const cs_grid_t *_g = g;
+  if (g->level > 0) {
 
     /* Allocate temporary arrays */
 
-    BFT_MALLOC(tmp_var_1, n_base_cells, cs_real_t);
-    BFT_MALLOC(tmp_var_2, n_base_cells, cs_real_t);
+    BFT_MALLOC(tmp_var_2, n_max_cells, cs_real_t);
 
-    for (ii = 0; ii < g->n_cells; ii++)
-      tmp_var_1[ii] = c_var[ii];
-
-    for (_g = g; _g->level > 1; _g = _g->parent) {
+    for (_g = g; _g->level > 0; _g = _g->parent) {
 
       fvm_lnum_t n_parent_cells = _g->parent->n_cells;
 
-      for (ii = 0; ii < n_parent_cells; ii++)
-        tmp_var_2[ii] = tmp_var_1[_g->coarse_cell[ii] - 1];
+      cs_grid_prolong_cell_var(_g,
+                               _g->parent,
+                               tmp_var_1,
+                               tmp_var_2);
 
       for (ii = 0; ii < n_parent_cells; ii++)
         tmp_var_1[ii] = tmp_var_2[ii];
 
     }
 
-    assert(_g->level == 1);
-    assert(_g->parent->n_cells == n_base_cells);
-
-    for (ii = 0; ii < n_base_cells; ii++)
-      f_var[ii] = tmp_var_1[_g->coarse_cell[ii] - 1];
+    assert(_g->level == 0);
+    assert(_g->n_cells == n_base_cells);
 
     /* Free temporary arrays */
 
-    BFT_FREE(tmp_var_1);
     BFT_FREE(tmp_var_2);
   }
+
+  memcpy(f_var, tmp_var_1, n_base_cells*sizeof(cs_real_t));
+
+  BFT_FREE(tmp_var_1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1769,6 +3134,199 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
     cs_grid_project_var(g, n_base_cells, dd, diag_dom);
     BFT_FREE(dd);
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Get the default parameters for multigrid coarsening.
+ *
+ * parameters:
+ *   merge_mean_threshold --> mean number of cells under which merging
+ *                            should take place, or NULL
+ *   merge_glob_threshold --> global number of cells under which merging
+ *                            should take place, or NULL
+ *   merg_min_ranks       --> number of active ranks under which no merging
+ *                            takes place, or NULL
+ *   merge_stride         --> number of ranks over which merging takes place,
+ *                            or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_get_defaults(int  *merge_mean_threshold,
+                     int  *merge_glob_threshold,
+                     int  *merge_min_ranks,
+                     int  *merge_stride)
+{
+#if defined(HAVE_MPI)
+  if (merge_mean_threshold != NULL)
+    *merge_mean_threshold = _grid_merge_threshold[0];
+  if (merge_glob_threshold != NULL)
+    *merge_glob_threshold = _grid_merge_threshold[1];
+  if (merge_min_ranks != NULL)
+    *merge_min_ranks = _grid_merge_min_ranks;
+  if (merge_stride != NULL)
+    *merge_stride = _grid_merge_stride;
+#else
+  if (merge_mean_threshold != NULL)
+    *merge_mean_threshold = 0;
+  if (merge_glob_threshold != NULL)
+    *merge_glob_threshold = 0;
+  if (merge_min_ranks != NULL)
+    *merge_min_ranks = 0;
+  if (merge_stride != NULL)
+    *merge_stride = 0;
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Set the default parameters for multigrid coarsening.
+ *
+ * parameters:
+ *   merge_mean_threshold <-- mean number of cells under which merging
+ *                            should take place
+ *   merge_glob_threshold <-- global number of cells under which merging
+ *                            should take place
+ *   merg_min_ranks       <-- number of active ranks under which no merging
+ *                            takes place
+ *   merge_stride         <-- number of ranks over which merging takes place
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_defaults(int  merge_mean_threshold,
+                     int  merge_glob_threshold,
+                     int  merge_min_ranks,
+                     int  merge_stride)
+{
+#if defined(HAVE_MPI)
+  _grid_merge_threshold[0] = merge_mean_threshold;
+  _grid_merge_threshold[1] = merge_glob_threshold;
+  _grid_merge_min_ranks = merge_min_ranks;
+  _grid_merge_stride = merge_stride;
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Return the merge_stride if merging is active.
+ *
+ * returns:
+ *   grid merge stride if merging is active, 1 otherwise
+ *----------------------------------------------------------------------------*/
+
+int
+cs_grid_get_merge_stride(void)
+{
+  int retval = 1;
+
+#if defined(HAVE_MPI)
+  if (_grid_merge_min_ranks < cs_glob_n_ranks && _grid_merge_stride > 1)
+    retval = _grid_merge_stride;
+#endif
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Print the default parameters for multigrid coarsening.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_log_defaults(void)
+{
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1)
+    bft_printf(_("\n"
+                 "  Multigrid rank merge parameters:\n"
+                 "    mean  coarse cells merge threshold: %d\n"
+                 "    total coarse cells merge threshold: %d\n"
+                 "    minimum ranks merge threshold:      %d\n"
+                 "    merge stride:                       %d\n"),
+               _grid_merge_threshold[0], _grid_merge_threshold[1],
+               _grid_merge_min_ranks, _grid_merge_stride);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Dump grid structure
+ *
+ * parameters:
+ *   g <-- grid structure that should be dumped
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_dump(const cs_grid_t  *g)
+{
+  fvm_lnum_t  i;
+
+  if (g == NULL) {
+    bft_printf("\n\n  grid: null\n");
+    return;
+  }
+
+  bft_printf("\n"
+             "  grid:           %p\n"
+             "  level:          %d (parent: %p)\n"
+             "  n_cells:        %d\n"
+             "  n_cells_ext:    %d\n"
+             "  n_faces:        %d\n"
+             "  n_g_cells:      %d\n"
+             "  n_cells_r:      [%d, %d]\n",
+             g, g->level, g->parent,
+             (int)(g->n_cells), (int)(g->n_cells_ext),
+             (int)(g->n_faces), (int)(g->n_g_cells),
+             (int)(g->n_cells_r[0]), (int)(g->n_cells_r[1]));
+
+#if defined(HAVE_MPI)
+
+  bft_printf("\n"
+             "  merge_sub_root:     %d\n"
+             "  merge_sub_rank:     %d\n"
+             "  merge_sub_size:     %d\n"
+             "  merge_stride:       %d\n"
+             "  next_merge_stride:  %d\n"
+             "  n_ranks:            %d\n",
+             g->merge_sub_root, g->merge_sub_rank, g->merge_sub_size,
+             g->merge_stride, g->next_merge_stride, g->n_ranks);
+
+  if (g->merge_cell_idx != NULL) {
+    bft_printf("  merge_cell_idx\n");
+    for (i = 0; i < g->merge_sub_size + 1; i++)
+      bft_printf("    %d: %d\n", i, g->merge_cell_idx[i]);
+  }
+
+#endif
+  bft_printf("\n"
+             "  face_cell:      %p\n"
+             "  _face_cell:     %p\n"
+             "  coarse_cell:    %p\n"
+             "  coarse_face:    %p\n"
+             "  halo:           %p\n",
+             g->face_cell, g->_face_cell, g->coarse_cell, g->coarse_face,
+             g->halo);
+
+  if (g->face_cell != NULL) {
+    bft_printf("\n"
+               "  face -> cell connectivity;\n");
+    for (i = 0; i < g->n_faces; i++)
+      bft_printf("    %d : %d, %d\n", (int)(i+1),
+                 (int)(g->face_cell[i*2]), (int)(g->face_cell[i*2+1]));
+  }
+
+  if (g->coarse_cell != NULL && g->parent != NULL) {
+    bft_printf("\n"
+               "  coarse_cell;\n");
+    for (i = 0; i < g->parent->n_cells; i++)
+      bft_printf("    %d : %d\n",
+                 (int)(i+1), (int)(g->coarse_cell[i]));
+  }
+
+  if (g->coarse_face != NULL && g->parent != NULL) {
+    bft_printf("\n"
+               "  coarse_face;\n");
+    for (i = 0; i < g->parent->n_faces; i++)
+      bft_printf("    %d : %d\n",
+                 (int)(i+1), (int)(g->coarse_face[i]));
+  }
+
+  cs_halo_dump(g->halo, 1);
 }
 
 /*----------------------------------------------------------------------------*/
