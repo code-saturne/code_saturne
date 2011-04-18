@@ -274,7 +274,7 @@ do ivar = 1, nvcp
         !        xip =  rtp(iel,ivar)
 
         ! -- SOLU
-        
+
         !        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
 
         ! -- CENTERED
@@ -328,7 +328,7 @@ do ivar = 1, nvcp
         !        else
         !          rcodcl(ifac,ivar,1) = xjp
         !        endif
-        
+
         ! -- CENTERED
 
         rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip
