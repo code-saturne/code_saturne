@@ -1,4 +1,9 @@
 * 18/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix ParMETIS detection.
+  modified files:
+    m4/cs_metis.m4
+
+* 18/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Translation update.
   modified files:
     src/base/autmgr.f90
