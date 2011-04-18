@@ -144,7 +144,7 @@ milieu_instream = [satLengthScale,
 
 # Code_Aster component
 
-aster_service = Service("op0103",
+aster_service = Service("op0117",
                         instream = aster_instream,
                         outstream = aster_outstream)
 

@@ -1,3 +1,9 @@
+* 18/04/2011 - Julien Berland <julien-j.berland@edf.fr>
+  Fixes for the Code_Aster coupling due to minor changes during integration.
+  modified routines:
+    extras/salome/fsi_yacsgen.py
+    salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER.py.in
+
 * 14/04/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
   Add the possibility to define a Coriolis source term within the interface.
   added routines:

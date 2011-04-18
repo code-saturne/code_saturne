@@ -29,9 +29,11 @@ else:
 
 # Code_Aster Python library files
 if config.has_option('install', 'aster_bibpyt'):
-  sys.path.insert(0, config.get('install', 'aster_bibpyt'))
+  aster_path = config.get('install', 'aster_bibpyt')
 else:
-  sys.path.insert(0, os.path.join(aster_dir, 'bibpyt'))
+  aster_path = os.path.join(aster_dir, 'bibpyt')
+
+sys.path.insert(0, aster_path)
 
 # Code_Aster tools location
 if config.has_option('install', 'aster_outils'):
@@ -82,7 +84,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
       shutil.copyfile(os.path.join(aster_dir,"catobj","elements"),"elem.1")
 
   def init_service(self,service):
-    if service == "op0103":
+    if service == "op0117":
        #initialization CALCIUM ports IN
        calcium.create_calcium_port(self.proxy,"NB_FOR","CALCIUM_integer","IN","I")
        calcium.create_calcium_port(self.proxy,"NB_DYN","CALCIUM_integer","IN","I")
@@ -108,8 +110,8 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
     return False
 
 
-  def op0103(self,jdc):
-    self.beginService("FSI_ASTER.op0103")
+  def op0117(self,jdc):
+    self.beginService("FSI_ASTER.op0117")
     self.jdc=Cata.cata.JdC(procedure=jdc,cata=Cata.cata,nom="Salome",context_ini={"jdc":jdc,"component":self.proxy.ptr()})
     j=self.jdc
     #modif pour aster 9.0
@@ -173,7 +175,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
        err=calcium.cp_fin(self.proxy,calcium.CP_ARRET)
        #retour sans erreur (il faut pousser les variables de sortie)
        sys.stdout.flush()
-       self.endService("FSI_ASTER.op0103")
+       self.endService("FSI_ASTER.op0117")
        return
 
     # Verification de la validite du jeu de commande
@@ -204,7 +206,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
          #retour sans erreur (il faut pousser les variables de sortie)
          err=calcium.cp_fin(self.proxy,calcium.CP_ARRET)
          sys.stdout.flush()
-         self.endService("FSI_ASTER.op0103")
+         self.endService("FSI_ASTER.op0117")
          return
     except :
       self.MESSAGE("ERREUR INOPINEE - INTERRUPTION")
