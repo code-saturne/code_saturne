@@ -1,3 +1,10 @@
+* 18/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Translation update.
+  modified files:
+    src/base/autmgr.f90
+    src/base/csc2cl.f90
+    src/base/crstgr.f90
+
 * 18/04/2011 - Julien Berland <julien-j.berland@edf.fr>
   Fixes for the Code_Aster coupling due to minor changes during integration.
   modified routines:

@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2010 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -41,10 +41,10 @@ subroutine csc2cl &
    ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! --------
 
-!         TRADUCTION DE LA CONDITION ITYPFB(*,*) = ICSCPL
+! Translation of the "itypfb(*, *) = icscpl" condition.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -56,19 +56,17 @@ subroutine csc2cl &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-!                  !    !     ! = 10  -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle non bloquee :             !
-!                  !    !     !  prescrire une valeur de dirichlet en          !
-!                  !    !     !  prevision pour les scalaires k, eps,          !
-!                  !    !     !  scal en plus du neumann usuel                 !
+! icodcl           ! te ! --> ! boundary condition code at boundary faces      !
+!  (nfabor, nvar)  !    !     ! = 1   -> dirichlet                             !
+!                  !    !     ! = 3   -> flux density                          !
+!                  !    !     ! = 4   -> sliding and u.n=0 (velocity)          !
+!                  !    !     ! = 5   -> friction and u.n=0 (velocity)         !
+!                  !    !     ! = 9   -> free inlet/outlet (inlet velocity     !
+!                  !    !     !  possibly fixed)                               !
+!                  !    !     ! = 10  -> free inlet/outlet (possible inlet     !
+!                  !    !     !  volocity not fixed: prescribe a Dirichlet     !
+!                  !    !     !  value for scalars k, eps, scal in addition to !
+!                  !    !     !  the usual Neumann                             !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 !  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
@@ -82,26 +80,24 @@ subroutine csc2cl &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2                   !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
+! rcodcl           ! tr ! --> ! value of boundary conditions at boundary faces !
+!  (nfabor, nvar)  !    !     ! rcodcl(1) = Dirichlet value                    !
+!                  !    !     ! rcodcl(2) = ext. exchange coefficient value    !
+!                  !    !     !  (infinite if no exchange)                     !
+!                  !    !     ! rcodcl(3) = value of the flux density          !
+!                  !    !     !  (negative if gain) in w/m2                    !
+!                  !    !     ! for velocities:   (vistl+visct)*gradu          !
+!                  !    !     ! for pressure:                dt*gradp          !
+!                  !    !     ! for scalars:                                   !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -150,7 +146,6 @@ double precision ra(*)
 
 ! Local variables
 
-
 integer          idebia, idebra
 integer          ifac, iel,isou, iphas
 integer          inc, iccocg, iphydp, iclvar, nswrgp, imligp
@@ -175,17 +170,17 @@ idebra = idbra0
 
 
 !===============================================================================
-! 1.  TRADUCTION DU COUPLAGE EN TERMES DE CONDITIONS AUX LIMITES
+! 1.  Translation of the coupling to boundary conditions
 !===============================================================================
 
-! On rappelle que les variables sont reçues dans l'ordre de VARPOS ;
-! il suffit dont de boucler sur les variables.
+! Reminder: variables are received in the order of VARPOS;
+! loopin on variables is thus sufficient.
 
 do ivar = 1, nvcp
 
-!   --- Calcul du gradient de la variable si celle-ci est interpolée
-!         Les échanges pour le parallélisme et la périodicité
-!         ont déjà été fait dans CSCPFB. Inutile de les refaire.
+  ! --- Compute gradient of variable if it is interpolated.
+  !       Exchanges for parallelism and periodicity have already been
+  !       done in CSCPFB. Non need to do them again.
 
   inc    = 1
   iccocg = 1
@@ -225,7 +220,7 @@ do ivar = 1, nvcp
       ifac = lfbcpl(ipt)
       iel  = ifabor(ifac)
 
-!         Information de l'instance en cours interpolée en I'
+      ! Information for current instance interpolated at I'
       xiip = diipb(1,ifac)
       yiip = diipb(2,ifac)
       ziip = diipb(3,ifac)
@@ -246,55 +241,54 @@ do ivar = 1, nvcp
 
       if (ivar.eq.ipr(1)) then
 
-! --- On veut imposer un dirichlet de pression de manière à conserver
-!     le gradient de pression à la traversée du couplage et être consistant
-!     avec la résolution du gradient de pression sur maillage orthogonal
+        ! --- We want to prescribe a Direchlet for pressure so as to conserve
+        !     the pressure gradient through the coupling and remain consistent
+        !     with the resolution of the pressure gradient on an orthogonal mesh.
 
         xip = rtp(iel,ivar) + (w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip)
 
       else if (ivar.eq.iu(1).or.ivar.eq.iv(1).or.ivar.eq.iw(1)) then
 
-! --- Pour toutes les autres variables, on veut imposer un dirichlet
-!     en accord avec les flux convectifs au centre. On se laisse le choix
-!     entre UPWIND, SOLU et CENTRE. Seul le centré respecte la diffusion
-!     des faces internes du somaine. Pour l'UPWIND et le SOLU, le décentrement
-!     est réalisé ici et plus dans bilsc2.F pour les faces couplées.
+        ! --- For all other variables, we want to prescribe a Dirichlet matching
+        !     the convective fluxes at the center. We resrve a choice between
+        !     UPWIND, SOLU, and CENTERED. Only the centered case respects the diffusion
+        !     at the domain's interior faces. For UPWIND and SOLU, the decentering
+        !     is done here and in bilsc2.f90 for coupled faces.
 
-! -- UPWIND
+        ! -- UPWIND
 
-!        xip =  rtp(iel,ivar)
+        !        xip =  rtp(iel,ivar)
 
-! -- SOLU
+        ! -- SOLU
 
-!        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
+        !        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
 
-! -- CENTRE
+        ! -- CENTERED
 
         xip =  rtp(iel,ivar) + w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip
 
       else
 
-! -- UPWIND
+        ! -- UPWIND
 
-!        xip =  rtp(iel,ivar)
+        !        xip =  rtp(iel,ivar)
 
-! -- SOLU
+        ! -- SOLU
+        
+        !        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
 
-!        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
-
-! -- CENTRE
+        ! -- CENTERED
 
         xip =  rtp(iel,ivar) + (w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip)
 
       endif
 
-! -- on a besoin de alpha_ij pour interpolation centrée et du flumab
-!    pour le décentrement
+      ! -- We need alpha_ij for centered interpolation and flumab for decentering
 
       pondj = pndcpl(ipt)
       flumab = propfb(ifac,ipprob(ifluma(iu(1))))
 
-!         Informations recues de l'instance distante en J'/O'
+      ! Information received from distant instance at J'/O'
       xjp = rvcpfb(ipt,ivar)
 
 
@@ -311,15 +305,15 @@ do ivar = 1, nvcp
 
         icodcl(ifac,ivar  ) = 1
 
-! -- DECENTRE (SOLU ou UPWIND)
+        ! -- DECENTERED (SOLU or UPWIND)
 
-!        if (flumab.ge.0.d0) then
-!          rcodcl(ifac,ivar,1) = xip
-!        else
-!          rcodcl(ifac,ivar,1) = xjp
-!        endif
+        !        if (flumab.ge.0.d0) then
+        !          rcodcl(ifac,ivar,1) = xip
+        !        else
+        !          rcodcl(ifac,ivar,1) = xjp
+        !        endif
 
-! -- CENTRE
+        ! -- CENTERED
 
         rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip
 
@@ -327,15 +321,15 @@ do ivar = 1, nvcp
 
         icodcl(ifac,ivar  ) = 1
 
-! -- DECENTRE (SOLU ou UPWIND)
+        ! -- DECENTERED (SOLU or UPWIND)
 
-!        if(flumab.ge.0.d0) then
-!          rcodcl(ifac,ivar,1) = xip
-!        else
-!          rcodcl(ifac,ivar,1) = xjp
-!        endif
-
-! -- CENTRE
+        !        if(flumab.ge.0.d0) then
+        !          rcodcl(ifac,ivar,1) = xip
+        !        else
+        !          rcodcl(ifac,ivar,1) = xjp
+        !        endif
+        
+        ! -- CENTERED
 
         rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip
 
@@ -343,20 +337,20 @@ do ivar = 1, nvcp
 
     enddo
 
-  ! For a generic coupling, no assumption can be made
+    ! For a generic coupling, no assumption can be made
 
   else
 
 
-!   --- Traduction en termes de condition limite pour les faces de bord localisées
-!         --> CL type Dirichlet
+    ! --- Translation in terms of boundary conditions for located boundary faces
+    !     --> Dirichlet BC type
 
     do ipt = 1, nfbcpl
 
       ifac = lfbcpl(ipt)
       iel  = ifabor(ifac)
 
-!         Information de l'instance en cours interpolée en I'
+      ! Information from local instance interpolated at I'
       xiip = diipb(1,ifac)
       yiip = diipb(2,ifac)
       ziip = diipb(3,ifac)
@@ -375,13 +369,12 @@ do ivar = 1, nvcp
       yopf = dofcpl(2,ipt)
       zopf = dofcpl(3,ipt)
 
-!         Informations locales interpolees en I'/O'
+      ! Local information interpolated at I'/O'
 
       xip =  rtp(iel,ivar)                                          &
-        + (w1(iel)*(xiip+xopf) + w2(iel)*(yiip+yopf) +              &
-           w3(iel)*(ziip+zopf))
+        + (w1(iel)*(xiip+xopf) + w2(iel)*(yiip+yopf) + w3(iel)*(ziip+zopf))
 
-!         Informations recues de l'instance distante en J'/O'
+      ! Information received from distant instance at J'/O'
       xjp = rvcpfb(ipt,ivar)
 
 
@@ -404,8 +397,8 @@ do ivar = 1, nvcp
 
   endif
 
-! --- Faces de bord non localisées
-!       --> CL type Neumann homogène
+  ! --- Non-located boundary faces
+  !     --> Homogeneous Neuman BC type
 
   do ipt = 1, nfbncp
 
@@ -424,11 +417,11 @@ enddo
 
 
 !----
-! FORMAT
+! Formats
 !----
 
 !----
-! FIN
+! End
 !----
 
 return

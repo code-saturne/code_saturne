@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -41,85 +41,62 @@ subroutine crstgr &
 
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-!  MULTIGRILLE ALGEBRIQUE :
-!  CONSTRUCTION D'UN NIVEAU DE MAILLAGE GROSSIER A PARTIR
-!  DU NIVEAU SUPERIEUR
+!  Algebraic multigrid:
+!  build a coarse level from a finer level
 
-! structure grille fine ==> grille grossiere
-! ------------------------------------------
-! [ NCELF,NFACF,IFACLF,ROVDTF,XAF0,VOLUMF,XYZFIN,
-!        SURFAF,XAF,XAF0,XAF0IJ ]
-! [ NCELG,NFACG,IFACLG,ROVDTG,XAG0,VOLUMG,XYZGRO,
-!        SURFAG,XAG,XAG0,XAG0IJ ]
-
-!             explicité dans le cartouche
-
+! fine grid -> coarse grid struture
+! ---------------------------------
+! [ ncelf, nfacf, ifaclf, rovdtf, xaf0, volumf, xyzfin, surfaf,
+!          xaf, xaf0, xaf0ij ]
+! [ ncelg, nfacg, ifaclg, rovdtg, xag0, volumg, xyzgro, surfag,
+!          xag, xag0, xag0ij ]
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! iappel           ! e  ! <-- ! numero d'appel                                 !
-! isym             ! e  ! <-- ! indicateur = 1 matrice sym                     !
-!                  !    !     !            = 2 matrice non sym                 !
-! igr              ! e  ! <-- ! niveau du maillage grossier                    !
-! ncelf            ! e  ! <-- ! nombre d'elements maillage fin                 !
-! ncelg            ! e  ! <-- ! nombre d'elements maillage grossier            !
-! ncelfe           ! e  ! <-- ! nombre d'elements etendus fin                  !
-! ncelge           ! e  ! <-- ! nombre d'elements etendus grossier             !
-! nfacf            ! e  ! <-- ! nombre de faces internes maill. fin            !
-! nfacg            ! e  ! <-- ! nombre de faces internes maill. gro.           !
+! iappel           ! i  ! <-- ! call number                                    !
+! isym             ! i  ! <-- ! 1: symmetric matrix; 2: non-symmetric matrix   !
+! igr              ! i  ! <-- ! coarse grid level                              !
+! ncelf            ! i  ! <-- ! number of cells in fine grid                   !
+! ncelg            ! i  ! <-- ! number of cells in coarse grid                 !
+! ncelfe           ! i  ! <-- ! number of exteded cells in fine grid           !
+! ncelge           ! i  ! <-- ! number of extended cells in coarse grid        !
+! nfacf            ! i  ! <-- ! number of interior faces in fine grid          !
+! nfacg            ! i  ! <-- ! number of interior faces in coarse grid        !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! ifacef           ! te ! <-- ! elements voisins d'une face interne            !
-!  (2, nfacf)      !    !     ! sur maillage fin                               !
-! ifaceg           ! te ! <-- ! elements voisins d'une face interne            !
-!  (2, nfacg)      !    !     ! sur maillage grossier                          !
-! irscel           ! te ! <-- ! cellule fine -> cellule grossiere              !
-!  (ncelfe)        !    !     !                                                !
-! irsfac           ! te ! <-- ! face fine -> face grossiere                    !
-!  (nfacf)         !    !     !  = 0 : face interne cel. grossiere             !
-!                  !    !     !  < 0 : orientation inverse                     !
-!                  !    !     !  > 0 : orientation identique                   !
-! daf(ncelf)       ! tr ! <-- ! diagonale de la matrice mail fin               !
-! xaf              ! tr ! <-- ! extradiagonale matrice maillage fin            !
-!  (nfacf,isym)    !    !     !                                                !
-! dag(ncelg)       ! tr ! --> ! diagonale matrice maillage grossier            !
-! xag              ! tr ! --> ! extradiagonale matrice maillage                !
-!  (nfacg,isym)    !    !     !  grossier                                      !
-! ivois(ncelf)     ! te ! --- ! indicateur de voisinage cellules               !
-! ip(ncelf)        ! te ! --- ! pointeurs sur voisins pour connecti-           !
-!                  !    !     ! vite inverse                                   !
-! icelfa           ! te ! --- ! connectivite cellules->faces mailla-           !
-!  (2*nfacf)       !    !     ! ge fin                                         !
-! icelce           ! te ! --- ! connectivite cellules->cellules                !
-!  (2*nfacf)       !    !     ! voisines du maillage fin                       !
-! rw(ncelf)        ! tr ! --- ! tableau de travail                             !
-! ifaclf(2,nfacf   ! te ! <-- ! cell. voisines face intrn maill fin            !
-! xaf0(nfacf,isym) ! tr ! <-- ! extradiagonale matrice p0 mailage fin          !
-! volumf(ncelf)    ! tr ! <-- ! volume cellule maillage fin                    !
-! xyzfin(3,ncelf)  ! tr ! <-- ! coordonnes cellule maillage fin                !
-! surfaf(3,nfacf)  ! tr ! <-- ! surface face interne maillage fin              !
-! xafxf0(2,nfacf)  ! tr ! <-- ! integ. xaf0*coord.cell adj. mail.fin           !
-! ncelg            ! e  ! <-- ! nombre d'elements maillage grossier            !
-! nfacg            ! e  ! <-- ! nombre faces internes maill. grossier          !
-! ifaclg(2,nfacg)  ! te ! <-- ! cell. voisines face internes maillage grossier !
-! xag0(nfacg,isym) ! tr ! <-- ! extradiagonale matrice p0 maillage grossier    !
-! volumg(ncelg)    ! tr ! <-- ! volume cellule maillage grossier               !
-! xyzgro(3,ncelg)  ! tr ! <-- ! coordonnes cellule maillage grossier           !
-! surfag(3,nfacg)  ! tr ! <-- ! surface face interne maillage grossier         !
-! xagxg0(2,nfacg)  ! tr ! <-- ! integ. xag0*coord.cell adj. maillage grossier  !
-! rlxp1            ! tr ! <-- ! P0/P1 relaxation parameter                     !
-! w1,..,4(ncel)    ! tr ! <-> ! tableaux de travail                            !
+! ifaclf(2, nfacf) ! ia ! <-- ! fine grid interior face -> cells connectivity  !
+! ifaclg(2, nfacg) ! ia ! <-- ! coarse grid interior face -> cells connect.    !
+! irscel(ncelfe)   ! ia ! <-- ! fine grid cell -> coarse grid cell             !
+! irsfac(nfacf)    ! ia ! <-- ! fine grid face -> coarse grid face             !
+!                  !    !     !  = 0 : interior face for coarse cell           !
+!                  !    !     !  < 0 : inverse orientation                     !
+!                  !    !     !  > 0 : same orientation                        !
+! rlxp1            ! ra ! <-- ! P0/P1 relaxation parameter                     !
+! volumf(ncelf)    ! ra ! <-- ! fine grid cell volumes                         !
+! xyzfin(3, ncelf) ! ra ! <-- ! fine grid cell centers                         !
+! surfaf(3, nfacf) ! ra ! <-- ! fine grid face surfaces                        !
+! xaf0(nfacf, isym)! ra ! <-- ! fine grid p0 matrix extradiagonal terms        !
+! xaf0ij(3, nfacf) ! ra ! <-- ! fine grid weighted face centers                !
+! daf(ncelf)       ! ra ! <-- ! fine grid matrix diagonal terms                !
+! xaf(nfacf, isym) ! ra ! <-- ! fine grid matrix extra-diagonal terms          !
+! volumg(ncelg)    ! ra ! <-- ! coarse grid cell volumes                       !
+! xyzgro(3, ncelg) ! ra ! <-- ! coarse grid cell centers                       !
+! surfag(3, nfacg) ! ra ! <-- ! coarse grid face surfaces                      !
+! xag0(nfacf, isym)! ra ! <-- ! coarse grid p0 matrix extradiagonal terms      !
+! xag0ij(3, nfacf) ! ra ! <-- ! coarse grid weighted face centers              !
+! dag(ncelg)       ! ra ! --> ! coarse grid matrix diagonal terms              !
+! xag(nfacg, isym) ! ra ! --> ! coarse grid matrix extra-diagonal terms        !
+! w1, .., w4(ncel) ! ra ! <-> ! work arrays                                    !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -202,7 +179,7 @@ if (iappel .eq. 1) then
 
 endif
 
-! P0 restriction of matrixes, "internal" surface:
+! P0 restriction of matrixes, "interior" surface:
 ! xag0(nfacg), surfag(3,nfacgl), xagxg0(2,nfacg)
 !==========================================================================
 
@@ -262,7 +239,7 @@ enddo
 
 interp = 1
 
-! Initialize non differential fine mesh term saved in w1
+! Initialize non differential fine grid term saved in w1
 
 do iel = 1, ncelf
   w1(iel) = daf(iel)
@@ -290,7 +267,7 @@ enddo
 ! Extradiagonal terms
 ! (symmetric matrixes for now, even with non symmetric storage isym=2)
 
-! Matrix intialized to xag0 (interp=0)
+! Matrix initialized to xag0 (interp=0)
 
 do ifacg = 1, nfacg
   xag(ifacg, 1) = xag0(ifacg)
@@ -537,18 +514,18 @@ endif
   '    crstgr: coarse matrix < xag0 at ', i10,' faces', /, &
   '                          > 0    at ', i10,' faces')
  2002 format(&
-  '       fine mesh anisotropy:   min = ', e12.5, /, &
+  '       fine grid anisotropy:   min = ', e12.5, /, &
   '                               max = ', e12.5, /, &
-  '       coarse mesh anisotropy: min = ', e12.5, /, &
+  '       coarse grid anisotropy: min = ', e12.5, /, &
   '                               max = ', e12.5, /)
  2003 format(&
   '       minimum xag_p1/xag_p0 = ', e12.5, /, &
   '       maximum xag_p1/xag_p0 = ', e12.5, /)
 
  2004 format(&
-  '       fine mesh diag dominance:   min = ', e12.5, /, &
+  '       fine grid diag dominance:   min = ', e12.5, /, &
   '                                   max = ', e12.5, /, &
-  '       coarse mesh diag dominance: min = ', e12.5, /, &
+  '       coarse grid diag dominance: min = ', e12.5, /, &
   '                                   max = ', e12.5, /)
 !----
 ! End

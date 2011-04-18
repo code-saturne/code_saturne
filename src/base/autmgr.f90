@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -29,64 +29,51 @@ subroutine autmgr &
 !================
 
     ( igr    , isym   , iagmax , nagmax ,                         &
-      ncelf  , ncelfe , nfacf  , iwarnp ,                         &
-      ifacef ,                                                    &
+      ncelf  , ncelfe , nfacf  , iwarnp , ifacef ,                &
       daf    , xaf    , surfaf , volumf , xyzfin ,                &
       irscel ,                                                    &
       indic  , inombr , irsfac , indicf , w1     , w2 )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-!  MULTIGRILLE ALGEBRIQUE :
-!  CONSTRUCTION D'UN NIVEAU DE MAILLAGE GROSSIER A PARTIR
-!  DU NIVEAU SUPERIEUR SUIVANT CRITERE AUTOMATIQUE
+!  Algebraic multigrid:
+!  build a coarse grid level from the previous level using
+!  an automatic criterion.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nfecra           ! e  ! <-- ! numero du fichier d'impressions                !
-! isym             ! e  ! <-- ! indicateur = 1 matrice sym                     !
-!                  !    !     !            = 2 matrice non sym                 !
-! igr              ! e  ! <-- ! niveau du maillage grossier                    !
-! ncelf            ! e  ! <-- ! nombre d'elements maillage fin                 !
-! ncelfe           ! e  ! <-- ! nombre d'elements etendus fin                  !
-! nfacf            ! e  ! <-- ! nombre de faces internes maill. fin            !
+! igr              ! i  ! <-- ! coarse grid level                              !
+! isym             ! i  ! <-- ! 1: symmetric matrix; 2: non-symmetric matrix   !
+! iagmax           ! i  ! <-> ! max. fine cells per coarse cell                !
+! nagmax           ! i  ! <-- ! max. fine cells per coarse cell target         !
+! ncelf            ! i  ! <-- ! number of cells in fine grid                   !
+! ncelfe           ! i  ! <-- ! extended number of cells in fine grid          !
+! nfacf            ! i  ! <-- ! number of interior faces in fine grid          !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
-! ifacef           ! te ! <-- ! elements voisins d'une face interne            !
-! (2, nfacf)       !    !     !  du maillage fin                               !
-! daf(ncelfe)      ! tr ! <-- ! diagonale matrice maillage fin                 !
-! xaf              ! tr ! <-- ! extradiagonale matrice maillage fin            !
-! (nfacf, isym)    !    !     !                                                !
-! surfaf           ! tr ! <-- ! surfaces faces internes maillage fin           !
-! (3, nfacf)       !    !     !                                                !
-! volumf           ! tr ! <-- ! volumes des cellules du maillage fin           !
-! (ncelfe)         !    !     !                                                !
-! xyzfin           ! tr ! <-- ! centres des cellules du maillage fin           !
-! (3, ncelfe)      !    !     !                                                !
-! irscel           ! te ! --> ! cellule fine -> cellule grossiere              !
-!  (ncelfe)        !    !     !                                                !
-! indic(ncelfe)    ! te ! --- ! tableau de travail                             !
-! inombr           ! te ! --- ! tableau de travail                             !
-!  (ncelfe)        !    !     !                                                !
-! irsfac           ! te ! --- ! face fine -> face grossiere                    !
-!  (nfacf)         !    !     !  (tableau de travail)                          !
-! indicf(nfacf)    ! te ! --- ! indicateur de regroupement des faces           !
-! icelfa           ! te ! --- ! connectivite cellules->faces mailla-           !
-!  (2*nfacf)       !    !     ! ge fin                                         !
-! icelce           ! te ! --- ! connectivite cellules->cellules                !
-!  (2*nfacf)       !    !     ! voisines du maillage fin                       !
-! rw(ncelf)        ! tr ! --- ! tableau de travail                             !
+! ifacef(2, nfacf) ! ia ! <-- ! fine grid interior face -> cells connectivity  !
+! daf(ncelf)       ! ra ! <-- ! fine grid matrix diagonal terms                !
+! xaf(nfacf, isym) ! ra ! <-- ! fine grid matrix extra-diagonal terms          !
+! surfaf(3, nfacf) ! ra ! <-- ! fine grid face surfaces                        !
+! volumf(ncelf)    ! ra ! <-- ! fine grid cell volumes                         !
+! xyzfin(3, ncelf) ! ra ! <-- ! fine grid cell centers                         !
+! irscel(ncelfe)   ! ia ! --> ! fine cell -> coarse cell                       !
+! indic(ncelfe)    ! ia ! --- ! work array                                     !
+! inombr(ncelfe)   ! ia ! --- ! work array                                     !
+! irsfac(nfacf)    ! ia ! --- ! fine face -> coarse face (work array)          !
+! indicf(nfacf)    ! ia ! --- ! face merging indicator                         !
+! icelfa(2*nfacf)  ! ia ! --- ! fine grid cells -> faces connectivity          !
+! icelce(2*nfacf)  ! ia ! --- ! fine mesh cells -> cells connectivity          !
+! rw(ncelf)        ! ra ! --- ! work array                                     !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
