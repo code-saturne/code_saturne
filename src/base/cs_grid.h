@@ -245,6 +245,23 @@ cs_grid_get_matrix(const cs_grid_t  *g,
                    const cs_real_t  **xa,
                    cs_matrix_t      **m);
 
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Get the MPI subcommunicator for a given grid.
+ *
+ * parameters:
+ *   g <-- Grid structure
+ *
+ * returns:
+ *   MPI communicator
+ *----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_grid_get_comm(const cs_grid_t  *g);
+
+#endif
+
 /*----------------------------------------------------------------------------
  * Create coarse grid from fine grid.
  *

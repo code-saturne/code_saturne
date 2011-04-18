@@ -1204,6 +1204,10 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
     _initial_residue = _residue;
 
+#if defined(HAVE_MPI)
+    cs_sles_set_mpi_reduce_comm(cs_grid_get_comm(f));
+#endif
+
     c_cvg = cs_sles_solve(var_lv_name,
                           descent_smoother_type,
                           false, /* Stats not updated here */
@@ -1224,6 +1228,10 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                           _vx[level],
                           _aux_size,
                           _aux_vectors);
+
+#if defined(HAVE_MPI)
+    cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
+#endif
 
     if (c_cvg == -2)
       _abort_on_divergence(mg, level,
@@ -1319,6 +1327,10 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
     _initial_residue = _residue;
 
+#if defined(HAVE_MPI)
+    cs_sles_set_mpi_reduce_comm(cs_grid_get_comm(c));
+#endif
+
     c_cvg = cs_sles_solve(var_lv_name,
                           coarse_solver_type,
                           false, /* Stats not updated here */
@@ -1339,6 +1351,10 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                           _vx[level],
                           _aux_size,
                           _aux_vectors);
+
+#if defined(HAVE_MPI)
+    cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
+#endif
 
     if (c_cvg == -2)
       _abort_on_divergence(mg, level,
@@ -1392,6 +1408,10 @@ _multigrid_cycle(cs_multigrid_t     *mg,
 
         _initial_residue = _residue;
 
+#if defined(HAVE_MPI)
+        cs_sles_set_mpi_reduce_comm(cs_grid_get_comm(f));
+#endif
+
         c_cvg = cs_sles_solve(var_lv_name,
                               ascent_smoother_type,
                               false, /* Stats not updated here */
@@ -1412,6 +1432,10 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                               _vx[level],
                               _aux_size,
                               _aux_vectors);
+
+#if defined(HAVE_MPI)
+        cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
+#endif
 
         if (c_cvg == -2)
           _abort_on_divergence(mg, level,
@@ -2089,6 +2113,8 @@ cs_multigrid_finalize(void)
 
   cs_glob_multigrid_n_systems = 0;
   cs_glob_multigrid_n_max_systems = 0;
+
+  cs_grid_finalize();
 }
 
 /*----------------------------------------------------------------------------*/

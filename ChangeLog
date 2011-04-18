@@ -1,4 +1,15 @@
 * 18/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use reduced MPI communicators with multigrid merging.
+  modified files:
+    src/base/cs_grid.c
+    src/base/cs_grid.h
+    src/base/cs_halo.c
+    src/base/cs_halo.h
+    src/base/cs_multigrid.c
+    src/base/cs_sles.c
+    src/base/cs_sles.h
+
+* 18/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Translation updates.
   modified files:
     po/fr.po

@@ -216,6 +216,10 @@ static fvm_gnum_t  _grid_merge_threshold[2] = {300, 500};
 static int         _grid_merge_min_ranks = 1;
 static int         _grid_merge_stride = 4;
 
+static int        _n_grid_comms = 0;
+static int       *_grid_ranks = NULL;
+static MPI_Comm  *_grid_comm = NULL;
+
 #endif /* defined(HAVE_MPI) */
 
 /*============================================================================
@@ -985,6 +989,92 @@ _coarsen(const cs_grid_t   *f,
 }
 
 #if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Create a set of reduced communicators
+ *
+ * parameters:
+ *   grid_merge_stride <-- size multiple between communicators
+ *----------------------------------------------------------------------------*/
+
+static void
+_init_reduced_communicators(int  grid_merge_stride)
+{
+  int comm_id;
+  int n_ranks;
+  int ranges[1][3];
+  MPI_Group old_group, new_group;
+
+  _grid_merge_stride = grid_merge_stride;
+
+  /* Determine number of communicators */
+
+  _n_grid_comms = 1;
+  n_ranks = cs_glob_n_ranks;
+  while (n_ranks > 1) {
+    _n_grid_comms += 1;
+    if (n_ranks % _grid_merge_stride == 0)
+      n_ranks = n_ranks / _grid_merge_stride;
+    else
+      n_ranks = (n_ranks / _grid_merge_stride) + 1;
+  }
+
+  BFT_MALLOC(_grid_comm, _n_grid_comms, MPI_Comm);
+  BFT_MALLOC(_grid_ranks, _n_grid_comms, cs_int_t);
+
+  n_ranks = cs_glob_n_ranks;
+  _grid_ranks[0] = cs_glob_n_ranks;
+  _grid_comm[0] = cs_glob_mpi_comm;
+
+  MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+
+  MPI_Comm_size(cs_glob_mpi_comm, &n_ranks);
+  MPI_Comm_group(cs_glob_mpi_comm, &old_group);
+
+  ranges[0][0] = 0;
+  ranges[0][1] = n_ranks - 1;
+  ranges[0][2] = 1;
+
+  for (comm_id = 1; comm_id < _n_grid_comms; comm_id++) {
+
+    if (n_ranks % _grid_merge_stride == 0)
+      n_ranks = n_ranks / _grid_merge_stride;
+    else
+      n_ranks = (n_ranks / _grid_merge_stride) + 1;
+    _grid_ranks[comm_id] = n_ranks;
+
+    ranges[0][2] *= _grid_merge_stride;
+
+    MPI_Group_range_incl(old_group, 1, ranges, &new_group);
+    MPI_Comm_create(cs_glob_mpi_comm, new_group, &(_grid_comm[comm_id]));
+    MPI_Group_free(&new_group);
+
+  }
+
+  MPI_Group_free(&old_group);
+
+  MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a set of reduced communicators
+ *----------------------------------------------------------------------------*/
+
+static void
+_finalize_reduced_communicators(void)
+{
+  int comm_id;
+
+  for (comm_id = 1; comm_id < _n_grid_comms; comm_id++) {
+    if (_grid_comm[comm_id] != MPI_COMM_NULL)
+      MPI_Comm_free(&(_grid_comm[comm_id]));
+  }
+
+  BFT_FREE(_grid_comm);
+  BFT_FREE(_grid_ranks);
+
+  _n_grid_comms = 0;
+}
 
 /*----------------------------------------------------------------------------
  * Merge halo info after appending arrays.
@@ -1822,6 +1912,11 @@ _merge_grids(cs_grid_t  *g,
 
   static const int tag = 'm'+'e'+'r'+'g'+'e';
 
+  if (_grid_merge_stride > 1) {
+     if (_n_grid_comms == 0)
+       _init_reduced_communicators(_grid_merge_stride);
+  }
+
   /* Determine rank in merged group */
 
   g->merge_sub_size = _grid_merge_stride;
@@ -2406,6 +2501,39 @@ cs_grid_get_matrix(const cs_grid_t   *g,
   if (m != NULL)
     *m = g->matrix;
 }
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Get the MPI subcommunicator for a given grid.
+ *
+ * parameters:
+ *   g <-- Grid structure
+ *
+ * returns:
+ *   MPI communicator
+ *----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_grid_get_comm(const cs_grid_t  *g)
+{
+  int grid_id;
+
+  MPI_Comm comm = cs_glob_mpi_comm;
+
+  assert(g != NULL);
+
+  if (g->n_ranks != cs_glob_n_ranks) {
+    grid_id = 0;
+    while (_grid_ranks[grid_id] != g->n_ranks && grid_id < _n_grid_comms)
+      grid_id++;
+    comm = _grid_comm[grid_id];
+  }
+
+  return comm;
+}
+
+#endif
 
 /*----------------------------------------------------------------------------
  * Create coarse grid from fine grid.
@@ -3241,6 +3369,18 @@ cs_grid_log_defaults(void)
                  "    merge stride:                       %d\n"),
                _grid_merge_threshold[0], _grid_merge_threshold[1],
                _grid_merge_min_ranks, _grid_merge_stride);
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Finalize global info related to multigrid solvers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_finalize(void)
+{
+#if defined(HAVE_MPI)
+  _finalize_reduced_communicators();
 #endif
 }
 

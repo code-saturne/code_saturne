@@ -175,6 +175,10 @@ const char *cs_sles_type_name[] = {N_("Conjugate gradient"),
                                    N_("Jacobi"),
                                    N_("Bi-CGstab")};
 
+#if defined(HAVE_MPI)
+MPI_Comm _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
+#endif
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -500,9 +504,10 @@ _dot_product(cs_int_t          n_elts,
 
 #if defined(HAVE_MPI)
 
-  if (cs_glob_n_ranks > 1) {
+  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
     double _sum;
-    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM,
+                  _cs_sles_mpi_reduce_comm);
     s = _sum;
   }
 
@@ -561,9 +566,10 @@ _dot_products_2(cs_int_t          n_elts,
 
 #if defined(HAVE_MPI)
 
-  if (cs_glob_n_ranks > 1) {
+  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
     double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM,
+                  _cs_sles_mpi_reduce_comm);
     s[0] = _sum[0];
     s[1] = _sum[1];
   }
@@ -975,10 +981,10 @@ _jacobi(const char             *var_name,
 
 #if defined(HAVE_MPI)
 
-    if (cs_glob_n_ranks > 1) {
+    if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
       double _sum;
       MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
-                    cs_glob_mpi_comm);
+                    _cs_sles_mpi_reduce_comm);
       res2 = _sum;
     }
 
@@ -1576,6 +1582,13 @@ cs_sles_initialize(void)
                                                 mesh->i_face_cells,
                                                 mesh->halo,
                                                 mesh->i_face_numbering);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1)
+    _cs_sles_mpi_reduce_comm = cs_glob_mpi_comm;
+  else
+    _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -1604,6 +1617,28 @@ cs_sles_finalize(void)
   cs_matrix_destroy(&cs_glob_sles_native_matrix);
   cs_matrix_destroy(&cs_glob_sles_base_matrix);
 }
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Set MPI communicator for dot products.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_mpi_reduce_comm(MPI_Comm comm)
+{
+  _cs_sles_mpi_reduce_comm = comm;
+
+  if (comm != cs_glob_mpi_comm)
+    cs_halo_set_use_barrier(0);
+  else {
+    cs_halo_set_use_barrier(1);
+    if (cs_glob_n_ranks < 2)
+      _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
+  }
+}
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Test if a general sparse linear system needs solving or if the right-hand
@@ -1639,6 +1674,11 @@ cs_sles_needs_solving(const char        *var_name,
   /* Initialize residue, check for immediate return */
 
   *residue = sqrt(_dot_product(n_rows, rhs, rhs));
+
+#if defined(HAVE_MPI)
+  if (_cs_sles_mpi_reduce_comm != cs_glob_mpi_comm )
+    MPI_Bcast(residue, 1, MPI_DOUBLE, 0, cs_glob_mpi_comm);
+#endif
 
   if (r_norm <= EPZERO || *residue <= EPZERO) {
     if (verbosity > 1)
@@ -1775,45 +1815,64 @@ cs_sles_solve(const char         *var_name,
                       r_norm,
                       *residue);
 
-    switch (solver_type) {
-    case CS_SLES_PCG:
-      cvg = _conjugate_gradient(var_name,
-                                _a,
-                                _ax,
-                                poly_degree,
-                                rotation_mode,
-                                &convergence,
-                                rhs,
-                                vx,
-                                aux_size,
-                                aux_vectors);
-      break;
-    case CS_SLES_JACOBI:
-      cvg = _jacobi(var_name,
-                    ad_coeffs,
-                    _ax,
-                    rotation_mode,
-                    &convergence,
-                    rhs,
-                    vx,
-                    aux_size,
-                    aux_vectors);
-      break;
-    case CS_SLES_BICGSTAB:
-      cvg = _bi_cgstab(var_name,
-                       _a,
-                       _ax,
-                       poly_degree,
-                       rotation_mode,
-                       &convergence,
-                       rhs,
-                       vx,
-                       aux_size,
-                       aux_vectors);
-      break;
-    default:
-      break;
+#if defined(HAVE_MPI)
+    if (cs_glob_n_ranks < 2 || _cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
+#endif
+
+      switch (solver_type) {
+      case CS_SLES_PCG:
+        cvg = _conjugate_gradient(var_name,
+                                  _a,
+                                  _ax,
+                                  poly_degree,
+                                  rotation_mode,
+                                  &convergence,
+                                  rhs,
+                                  vx,
+                                  aux_size,
+                                  aux_vectors);
+        break;
+      case CS_SLES_JACOBI:
+        cvg = _jacobi(var_name,
+                      ad_coeffs,
+                      _ax,
+                      rotation_mode,
+                      &convergence,
+                      rhs,
+                      vx,
+                      aux_size,
+                      aux_vectors);
+        break;
+      case CS_SLES_BICGSTAB:
+        cvg = _bi_cgstab(var_name,
+                         _a,
+                         _ax,
+                         poly_degree,
+                         rotation_mode,
+                         &convergence,
+                         rhs,
+                         vx,
+                         aux_size,
+                         aux_vectors);
+        break;
+      default:
+        break;
+      }
+
+#if defined(HAVE_MPI)
     }
+#endif
+
+    /* Broadcast convergence info */
+
+#if defined(HAVE_MPI)
+    if (_cs_sles_mpi_reduce_comm != cs_glob_mpi_comm) {
+      MPI_Bcast(&convergence.n_iterations, 1, MPI_UNSIGNED, 0,
+                cs_glob_mpi_comm);
+      MPI_Bcast(&convergence.residue, 1, MPI_DOUBLE, 0,
+                cs_glob_mpi_comm);
+    }
+#endif
 
     /* Release matrix coefficients */
 

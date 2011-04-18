@@ -369,6 +369,17 @@ cs_halo_sync_component(const cs_halo_t    *halo,
                        cs_real_t           var[]);
 
 /*----------------------------------------------------------------------------
+ * Set MPI_Barrier usage flag.
+ *
+ * parameters:
+ *   use_barrier <-- if 1, use MPI barriers after posting receives and
+ *                   before posting sends. if 0, do not use barriers;
+ *---------------------------------------------------------------------------*/
+
+void
+cs_halo_set_use_barrier(int use_barrier);
+
+/*----------------------------------------------------------------------------
  * Dump a cs_halo_t structure.
  *
  * parameters:

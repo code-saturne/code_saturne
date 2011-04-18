@@ -101,6 +101,10 @@ static MPI_Status   *_cs_glob_halo_status = NULL;
 static size_t  _cs_glob_halo_rot_backup_size = 0;
 static cs_real_t  *_cs_glob_halo_rot_backup = NULL;
 
+/* Should we use barriers after posting receives ? */
+
+static int _cs_glob_halo_use_barrier = 1;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -751,7 +755,8 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_mpi_comm);
+    if (_cs_glob_halo_use_barrier)
+      MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
 
@@ -881,7 +886,8 @@ cs_halo_sync_num(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_mpi_comm);
+    if (_cs_glob_halo_use_barrier)
+      MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
 
@@ -1007,7 +1013,8 @@ cs_halo_sync_var(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_mpi_comm);
+    if (_cs_glob_halo_use_barrier)
+      MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
 
@@ -1151,7 +1158,8 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 
     /* We wait for posting all receives (often recommended) */
 
-    MPI_Barrier(cs_glob_mpi_comm);
+    if (_cs_glob_halo_use_barrier)
+      MPI_Barrier(cs_glob_mpi_comm);
 
     /* Send data to distant ranks */
 
@@ -1281,6 +1289,20 @@ cs_halo_sync_component(const cs_halo_t    *halo,
       _zero_rotation_values(halo, sync_mode, var);
   }
 
+}
+
+/*----------------------------------------------------------------------------
+ * Set MPI_Barrier usage flag.
+ *
+ * parameters:
+ *   use_barrier <-- if 1, use MPI barriers after posting receives and
+ *                   before posting sends. if 0, do not use barriers;
+ *---------------------------------------------------------------------------*/
+
+void
+cs_halo_set_use_barrier(int use_barrier)
+{
+  _cs_glob_halo_use_barrier = use_barrier;
 }
 
 /*----------------------------------------------------------------------------

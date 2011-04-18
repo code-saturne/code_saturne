@@ -128,6 +128,17 @@ cs_sles_initialize(void);
 void
 cs_sles_finalize(void);
 
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Set MPI communicator for dot products.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_mpi_reduce_comm(MPI_Comm comm);
+
+#endif /* defined(HAVE_MPI) */
+
 /*----------------------------------------------------------------------------
  * Test if a general sparse linear system needs solving or if the right-hand
  * side is already zero within convergence criteria.
