@@ -1234,6 +1234,16 @@ fi
         if mpi_environment != None:
             exec_env.mpi_env = mpi_environment
 
+        # Transfer parameters MPI parameters from user scripts here
+
+        if len(self.domains) == 1 and len(self.syr_domains) == 0:
+            d = self.domains[0]
+            try:
+                d.define_mpi_environment(exec_env.mpi_env)
+                del(self.domains[0].define_mpi_environment)
+            except AttributeError:
+                pass
+
         # Compute number of processors
 
         n_procs_tot = self.distribute_procs(exec_env.resources.n_procs)
@@ -1627,14 +1637,6 @@ fi
                 if hasattr(self, 'n_procs'):
                     n_procs = int(self.n_procs)
                     del(self.n_procs)
-
-            if mpi_environment == None:
-                mpi_environment = cs_exec_environment.mpi_environment()
-                try:
-                    d.define_mpi_environment(mpi_environment)
-                    del(self.domains[0].define_mpi_environment)
-                except AttributeError:
-                    pass
 
         # Define scratch directory
 

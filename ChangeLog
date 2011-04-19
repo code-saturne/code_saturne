@@ -1,4 +1,10 @@
 * 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix errors in MPI environment handling on batch systems.
+  modified files:
+    bin/cs_case.py
+    bin/cs_exec_environment.py
+
+* 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add comments for reduced communicators.
   modified files:
     src/base/cs_sles.c

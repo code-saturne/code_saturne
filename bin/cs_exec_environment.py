@@ -258,7 +258,7 @@ class resource_info(batch_info):
             s = os.getenv('LOADL_HOSTFILE')
             if s != None:
                 self.manager = 'LOADL'
-                self.hosts_file = s
+                self.hosts_file = '$LOADL_HOSTFILE'
 
         # Test for TORQUE or PBS Pro.
 
@@ -266,7 +266,7 @@ class resource_info(batch_info):
             s = os.getenv('PBS_NODEFILE')
             if s != None:
                 self.manager = 'PBS'
-                self.hosts_file = s
+                self.hosts_file = '$PBS_NODEFILE'
 
         # Test for Oracle Grid Engine.
 
@@ -286,23 +286,19 @@ class resource_info(batch_info):
             else:
                 s = os.getenv('PE_HOSTFILE')
                 if s != None:
-                    self.hosts_file = s
+                    self.hosts_file = 'PE_HOSTFILE'
 
         # Check hosts file presence
 
         if self.hosts_file != None:
-            if not os.path.isfile(self.hosts_file):
+            if not os.path.isfile(os.getenv(self.hosts_file[1:])):
                 self.hosts_file = None
 
         # Determine number of processors from hosts file or list
 
         if self.n_procs == None:
             if self.hosts_file != None:
-                self.n_procs = 0
-                f = open(self.hosts_file, 'r')
-                for line in f:
-                    self.n_procs += 1
-                f.close()
+                self.n_procs_from_hosts_file(self.hosts_file)
             elif self.hosts_list != None:
                 self.n_procs_from_hosts_list(self.hosts_list)
 
@@ -327,7 +323,11 @@ class resource_info(batch_info):
         """
 
         self.n_procs = 0
-        f = open(hosts_file, 'r')
+        if hosts_file[0] == '$':
+           path = os.getenv(hosts_file[1:])
+        else:
+           path = hosts_file
+        f = open(path, 'r')
         for line in f:
             self.n_procs += 1
         f.close()
