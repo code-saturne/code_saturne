@@ -176,6 +176,8 @@ const char *cs_sles_type_name[] = {N_("Conjugate gradient"),
                                    N_("Jacobi"),
                                    N_("Bi-CGstab")};
 
+/* Communicator used for reduction operations */
+
 #if defined(HAVE_MPI)
 MPI_Comm _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
 #endif
@@ -2125,6 +2127,8 @@ cs_sles_solve(const char         *var_name,
                       r_norm,
                       *residue);
 
+    /* Only call solver for "active" ranks */
+
 #if defined(HAVE_MPI)
     if (cs_glob_n_ranks < 2 || _cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
 #endif
@@ -2185,7 +2189,7 @@ cs_sles_solve(const char         *var_name,
     }
 #endif
 
-    /* Broadcast convergence info */
+    /* Broadcast convergence info from "active" ranks to others*/
 
 #if defined(HAVE_MPI)
     if (_cs_sles_mpi_reduce_comm != cs_glob_mpi_comm) {
