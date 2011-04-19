@@ -1,3 +1,11 @@
+* 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Typo and missing function prototype fixes for multigrid.
+  modified files:
+    src/base/cs_grid.c
+    src/base/cs_grid.h
+    src/base/cs_multigrid.c
+    users/base/usini1.f90
+
 * 18/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Use reduced MPI communicators with multigrid merging.
   modified files:

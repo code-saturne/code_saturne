@@ -26,7 +26,7 @@
  *============================================================================*/
 
 /*============================================================================
- * Grid connectivity and data used for multgrid coarsening
+ * Grid connectivity and data used for multigrid coarsening
  * and associated matrix construction.
  *============================================================================*/
 
@@ -3272,7 +3272,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
  *                            should take place, or NULL
  *   merge_glob_threshold --> global number of cells under which merging
  *                            should take place, or NULL
- *   merg_min_ranks       --> number of active ranks under which no merging
+ *   merge_min_ranks      --> number of active ranks under which no merging
  *                            takes place, or NULL
  *   merge_stride         --> number of ranks over which merging takes place,
  *                            or NULL
@@ -3313,7 +3313,7 @@ cs_grid_get_defaults(int  *merge_mean_threshold,
  *                            should take place
  *   merge_glob_threshold <-- global number of cells under which merging
  *                            should take place
- *   merg_min_ranks       <-- number of active ranks under which no merging
+ *   merge_min_ranks      <-- number of active ranks under which no merging
  *                            takes place
  *   merge_stride         <-- number of ranks over which merging takes place
  *----------------------------------------------------------------------------*/

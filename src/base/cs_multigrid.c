@@ -788,7 +788,7 @@ _dot_product(cs_int_t          n_elts,
  *   precision     <-- Precision limit
  *   r_norm        <-- Residue normalization
  *   residue       <-> Residue
- *   rhs           --> Right-hand side
+ *   rhs           <-- Right-hand side
  *
  * returns:
  *   1 if converged, 0 if not converged, -1 if not converged and maximum
@@ -805,7 +805,7 @@ _convergence_test(const char         *var_name,
                   double              precision,
                   double              r_norm,
                   double             *residue,
-                  cs_real_t          *rhs)
+                  const cs_real_t     rhs[])
 {
   const char cycle_h_fmt[]
     = N_("  ---------------------------------------------------\n"

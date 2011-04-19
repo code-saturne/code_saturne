@@ -863,7 +863,6 @@ integer iverif
 ! Local variables
 
 integer iphas, iutile, ii, jj, imom
-integer mlttmn, mlttgl, mlttst
 
 !===============================================================================
 

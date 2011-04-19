@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -29,7 +29,7 @@
 #define __CS_GRID_H__
 
 /*============================================================================
- * Grid connectivity and data used for multgrid coarsening
+ * Grid connectivity and data used for multigrid coarsening
  * and associated matrix construction.
  *============================================================================*/
 
@@ -404,7 +404,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
  *                            should take place, or NULL
  *   merge_glob_threshold --> global number of cells under which merging
  *                            should take place, or NULL
- *   merg_min_ranks       --> number of active ranks under which no merging
+ *   merge_min_ranks      --> number of active ranks under which no merging
  *                            takes place, or NULL
  *   merge_stride         --> number of ranks over which merging takes place,
  *                            or NULL
@@ -424,7 +424,7 @@ cs_grid_get_defaults(int  *merge_mean_threshold,
  *                            should take place
  *   merge_glob_threshold <-- global number of cells under which merging
  *                            should take place
- *   merg_min_ranks       <-- number of active ranks under which no merging
+ *   merge_min_ranks      <-- number of active ranks under which no merging
  *                            takes place
  *   merge_stride         <-- number of ranks over which merging takes place
  *----------------------------------------------------------------------------*/
@@ -451,6 +451,13 @@ cs_grid_get_merge_stride(void);
 
 void
 cs_grid_log_defaults(void);
+
+/*----------------------------------------------------------------------------
+ * Finalize global info related to multigrid solvers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_finalize(void);
 
 /*----------------------------------------------------------------------------
  * Dump grid structure
