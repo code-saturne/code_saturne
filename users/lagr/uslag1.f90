@@ -178,7 +178,7 @@ endif
 !                         ENC1 * 1.0D+7
 !     Log  (10*VISCEN) = --------------- + ENC2
 !        10                            2
-!                        (Tp(�C) - 150)
+!                        (Tp(C) - 150)
 
 !     In literature, the range of the critical viscosity VISREF is between
 !     8 Pa.s and 1.D7 Pa.s  For general purpose 1.0D+4 Pa.s is chosen
@@ -837,12 +837,12 @@ seuilf = 0.d0
 !   * Some information that may interest the user are already written
 !     in the uslabo subroutine. To activate them, the user has to set below
 !     the corresponding keyword to 1.
-!   * The selection of the interaction modes (irebol, idepo1... see the uslabo subroutine)
-!     that triggers the recording of the information is carried out in uslabo. The default
-!     selection must be validated or modified by the user.
-!   * By default the asked information for all the particle/wall interactions are written
-!     in the same recording. Modifying this behavior can me performed by an intervention
-!     in the uslabo subroutine.
+!   * The selection of the interaction modes (irebol, idepo1... see the uslabo
+!     subroutine) that triggers the recording of the information is carried out
+!     in uslabo. The default selection must be validated or modified by the user.
+!   * By default the asked information for all the particle/wall interactions
+!     are written in the same recording. Modifying this behavior can me performed
+!     by an intervention in the uslabo subroutine.
 !   * The boundary statistic 'number of particle/boundary interactions' must be
 !     selected to activate the particle average imoybr(...) = 2
 
@@ -895,15 +895,19 @@ nusbor = 0
 !    * The applied average is prescribed through the imoybr array:
 !      - if imoybr(iusb(ii)) = 0 -> no average applied
 !      - if imoybr(iusb(ii)) = 1 -> a time average is applied, i.e. the
-!       statistic is divided by the last time step in the case of an unsteady calculation
-!       of a stationary calculation with a number of iterations lower than nstbor ; or that
-!       the statistic is divided by the recording time in the case of a stationary calculation.
-!      -if imoybr(iusb(ii)) = 2 -> a particle average is applied, i.e. the statistic is divided
-!       by the number of recorded particle/boundary interactions (in terms of statistical weight)
-!       dans parbor(nfabor,inbr) (cf uslabo). To use this average, inbrbd must be set to 1.
-!    * The back-ups in the restart file are performed without applying this average.
-!    * The average is applied if the number of interactions (in statistical weight) of the boundary
-!      face considered is greater than seuilf ; otherwise this average is set to zero.
+!       statistic is divided by the last time step in the case of an unsteady
+!       calculation with a number of iterations lower than nstbor; or that
+!       the statistic is divided by the recording time in the case of a
+!       steady calculation.
+!      -if imoybr(iusb(ii)) = 2 -> a particle average is applied, i.e. the
+!       statistic is divided by the number of recorded particle/boundary
+!       interactions (in terms of statistical weight) dans parbor(nfabor,inbr)
+!       (cf uslabo). To use this average, inbrbd must be set to 1.
+!    * The back-ups in the restart file are performed without applying
+!      this average.
+!    * The average is applied if the number of interactions (in statistical
+!      weight) of the boundary face considered is greater than seuilf;
+!      otherwise this average is set to zero.
 
 ipv = 0
 
@@ -912,35 +916,35 @@ if (iensi3.eq.1) then
   if (inbrbd.eq.1) then
     ipv = ipv + 1
     inbr = ipv
-    NOMBRD(INBR) = 'nombreImpact'
+    nombrd(inbr) = 'impactCount'
     imoybr(inbr) = 0
   endif
 
   if (iflmbd.eq.1) then
     ipv = ipv + 1
     iflm = ipv
-    NOMBRD(IFLM) = 'fluxDeMasse'
+    nombrd(iflm) = 'massFlow'
     imoybr(iflm) = 1
   endif
 
   if (iangbd.eq.1) then
     ipv = ipv + 1
     iang = ipv
-    NOMBRD(IANG) = 'angleImpact'
+    nombrd(iang) = 'impactAngle'
     imoybr(iang) = 1
   endif
 
   if (ivitbd.eq.1) then
     ipv = ipv + 1
     ivit = ipv
-    NOMBRD(IVIT) = 'normeVitImpact'
+    nombrd(ivit) = 'impactVelNorm'
     imoybr(ivit) = 1
   endif
 
   if (iencbd.eq.1) then
     ipv = ipv + 1
     ienc = ipv
-    NOMBRD(IENC) = 'masseEncras'
+    nombrd(ienc) = 'foulingMass'
     imoybr(ienc) = 0
   endif
 
@@ -948,7 +952,7 @@ if (iensi3.eq.1) then
     do ii = 1,nusbor
       ipv = ipv + 1
       iusb(ii) = ipv
-      WRITE(NOMBRD(IUSB(II)),'(A8,I4.4)') 'enrSupp',II
+      write(nombrd(iusb(ii)),'(a8,i4.4)') 'addRec',II
       imoybr(iusb(ii)) = 0
     enddo
   endif

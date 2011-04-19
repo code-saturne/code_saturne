@@ -50,7 +50,7 @@ subroutine uspt1d &
 
 !     User subroutine.
 
-!     Data Entry ot the thermic module in 1-Dimension Wall.
+!     Data Entry ot the thermal module in 1-Dimension Wall.
 
 
 ! Introduction:
@@ -60,10 +60,10 @@ subroutine uspt1d &
 !--------------------------------------------------------
 
 ! iappel = 1 (only one call on initialization):
-!            Computation of the cells number where we impose a wall
+!            Computation of the cells number where we prescribe a wall
 
 ! iappel = 2 (only one call on initialization):
-!            Locating cells where we impose a wall
+!            Locating cells where we prescribe a wall
 !            Data linked to the meshing.
 
 ! iappel = 3 (call on each time step):
@@ -71,8 +71,8 @@ subroutine uspt1d &
 !            boundary condition type on the exterior wall:
 !            --------------------------------------------
 !
-!             iclt1d = 1 -> constant temperature imposed
-!             iclt1d = 3 -> heat flux imposed
+!             iclt1d = 1 -> constant temperature prescribed
+!             iclt1d = 3 -> heat flux prescribed
 
 !            Initialization of the temperature on the wall.
 
@@ -94,7 +94,7 @@ subroutine uspt1d &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermic module    !
+! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermal module    !
 ! iappel           ! i  ! <-- ! data type to send                              !
 ! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
@@ -185,7 +185,7 @@ idebra = idbra0
 !     isuit1 = 0        --> No rereading
 !                           (meshing and wall temperature reinitialization)
 !     isuit1 = 1        --> Rereading of the restart file for the 1-Dimension
-!                           thermic module
+!                           thermal module
 !     isuit1 = isuite   --> Rereading only if the computational fluid dynamic is
 !                           a continuation of the computation.
 
@@ -205,11 +205,11 @@ if (1.eq.1) return
 if (iappel.eq.1.or.iappel.eq.2) then
 
 !===============================================================================
-! Faces determining with the 1-D thermic module:
+! Faces determining with the 1-D thermal module:
 !----------------------------------------------
 !
-!     nfpt1d    : Total number of faces with the 1-D thermic module
-!     ifpt1d(ii): Number of the (ii)th face with the 1-D thermic module
+!     nfpt1d    : Total number of faces with the 1-D thermal module
+!     ifpt1d(ii): Number of the (ii)th face with the 1-D thermal module
 
 ! Remarks:
 !--------
@@ -249,18 +249,18 @@ endif
 !     (Only one pass during the beginning of the computation)
 
 !     nppt1d(ii): number of discretized points associated to the (ii)th face
-!                 with the 1-D thermic module.
+!                 with the 1-D thermal module.
 !     eppt1d(ii): wall thickness associated to the (ii)th face
-!                 with the 1-D thermic module.
+!                 with the 1-D thermal module.
 !     rgpt1d(ii): geometric progression ratio of the meshing refinement
-!                 associated to the (ii)th face with the 1-D thermic module.
+!                 associated to the (ii)th face with the 1-D thermal module.
 !                 (with : rgpt1d(ii) > 1 => small meshes  on the fluid side)
 !     tppt1d(ii): wall temperature initialization associated to the (ii)th face
-!                 with the 1-D thermic module.
+!                 with the 1-D thermal module.
 
 ! Remarks:
 !--------
-!     During the rereading of the restart file for the 1-D thermic module,
+!     During the rereading of the restart file for the 1-D thermal module,
 !     the tppt1d variable is not used.
 !
 !     The nfpt1d, eppt1d and rgpt1d variables are compared to the previous
@@ -292,10 +292,10 @@ endif
 !     tept1d(ii): exterior temperature
 !     hept1d(ii): exterior exchange coefficient
 !     fept1d(ii): flux applied to the exterior (flux<0 = coming flux)
-!     xlmt1d(ii): lambda wall conductivity coefficient (W/m/°C)
-!     rcpt1d(ii): wall coefficient rho*Cp (J/m3/°C)
-!     dtpt1d(ii): time step resolution of the thermic equation to the
-!                 (ii)th border face with the 1-D thermic module (s)
+!     xlmt1d(ii): lambda wall conductivity coefficient (W/m/C)
+!     rcpt1d(ii): wall coefficient rho*Cp (J/m3/C)
+!     dtpt1d(ii): time step resolution of the thermal equation to the
+!                 (ii)th border face with the 1-D thermal module (s)
 !===============================================================================
 if (iappel.eq.3) then
   if (iphas.eq.1) then

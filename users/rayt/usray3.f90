@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -41,37 +41,31 @@ subroutine usray3 &
    ra     )
 
 !===============================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-!   SOUS-PROGRAMME DU MODULE DE RAYONNEMENT :
-!   -----------------------------------------
+! Absorption coefficient for radiative module
+! ----------------------
 
+! It is necessary to define the value of the fluid's absorption
+! coefficient Ck.
 
-!     Coefficient d'absorption
-!    -------------------------
+! For a transparent medium, the coefficient should be set to 0.d0.
 
-!      Il est indispensable de renseigner la valeur du coefficient
-!        d'absorption du fluide CK.
+! In the case of the P-1 model, we check that the optical length is at
+! least of the order of 1.
 
-!      Pour un milieu transparent, le coefficient doit etre
-!        fixe a 0.D0.
+! Caution:
+! ========
+!   For specific physics (Combustion, coal, ...),
 
-!  DANS LE CAS DU MODELE P-1 ON VERIFIE QUE LA LONGUEUR OPTIQUE
-!    DU MILIEU EST AU MINIMUM DE L'ORDRE DE L'UNITE
+!   it is Forbidden to define the absorption coefficient here.
+!         =========
 
-!      ATTENTION :
-!      =========
-!        Pour les physiques particulieres (Combustion, charbon...)
-
-!        il est INTERDIT de fournir le COEFFICIENT D'ABSORPTION ici.
-!               ========
-
-!        Voir le sous-programme PPCABS
-
+!   See subroutine ppcabs.
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
+! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
@@ -82,7 +76,7 @@ subroutine usray3 &
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 !  (nfabor, nphas) !    !     !                                                !
-! izfrdp(nfabor    ! te ! <-- ! numero de zone pour les faces de bord          !
+! izfrdp(nfabor    ! ia ! <-- ! zone number for boundary faces                 !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -90,9 +84,9 @@ subroutine usray3 &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ck (ncelet)      ! tr ! --> ! coefficient d'absorption du milieu             !
-!                  !    !     ! (nul si transparent)                           !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
+! ck(ncelet)       ! ra ! --> ! medium's absorption coefficient                !
+!                  !    !     ! (zero if transparent)                          !
+! w1...6(ncelet)   ! ra ! --- ! working array                                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -158,9 +152,8 @@ double precision vv, sf, xlc, xkmin, pp
 !===============================================================================
 
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to be certain his version if the subroutine
+!     is being used, and not that from the library.
 !===============================================================================
 
 if (iihmpr.eq.1) then
@@ -189,55 +182,45 @@ endif
 
 
 !===============================================================================
-! 0 - GESTION MEMOIRE
+! 0 - Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
-! Indicateur d'arret (pour savoir si des faces ont ete oubliees)
+! Stop flag (to determine if faces were forgotten)
 iok = 0
 
 !===============================================================================
-!   COEFFICIENT D'ABSORPTION DU MILIEU (m-1)
+! Absorption coefficient of the medium (m-1)
 
-!     DANS LE CAS DES PHYSIQUES PARTICULIERES (COMBUSTION GAZ/CHARBON/ELEC/FIOUL)
+! In the case of specific physics (gas/coal/fuel combustion, elec)
 
-!         CK NE DOIT PAS ETRE FOURNI
-       !==========
-!         (il est determine automatiquement, eventuellement a partir
-!          du fichier parametrique)
+! Ck must not be defined here
+!============
+! (it is determined automatically, possibly from the parametric file)
 
-!     DANS LES AUTRES CAS
-!         CK DOIT ETRE COMPLETE (IL EST NUL PAR DEFAUT)
-
-
+! In other cases, Ck must be defined (it is zero by default)
 !===============================================================================
 
-
-
-
-if( ippmod(iphpar).le.1 ) then
+if (ippmod(iphpar).le.1) then
 
   do iel = 1, ncel
     ck(iel) = 0.d0
   enddo
 
-!--> MODELE P1 : Controle standard des valeurs du coefficient
-!                d'absorption. Ce coefficient doit assurer une
-!                longueur optique au minimum de l'ordre de l'unite.
+  !--> P1 model: standard control of absorption coefficient values.
+  !              this coefficient must ensure an optical length
+  !              at least of the order of 1.
 
   if (iirayo.eq.2) then
     sf = 0.d0
     vv = 0.d0
 
-!         Calcul de la longueur caractéristique du domaine de calcul
+    ! Compute characteristic length of calculation domain
 
     do ifac = 1,nfabor
-      sf = sf + sqrt(                                             &
-                surfbo(1,ifac)**2 +                               &
-                surfbo(2,ifac)**2 +                               &
-                surfbo(3,ifac)**2 )
+      sf = sf + sqrt(surfbo(1,ifac)**2 + surfbo(2,ifac)**2 + surfbo(3,ifac)**2)
     enddo
     if (irangp.ge.0) then
       call parsom(sf)
@@ -254,7 +237,7 @@ if( ippmod(iphpar).le.1 ) then
 
     xlc = 3.6d0 * vv / sf
 
-!         Clipping pour la variable CK
+    ! Clipping for variable CK
 
     xkmin = 1.d0 / xlc
 
@@ -266,51 +249,49 @@ if( ippmod(iphpar).le.1 ) then
       endif
     enddo
 
-!     Arret en fin de pas de temps si epaisseur optique trop grande
-!       (ISTPP1 = 1 permet d'arreter proprement a la fin du pas de temps
-!        courant).
+    ! Stop at the end of the time step if the optical thickness is too big
+    ! (istpp1 = 1 allows stopping cleanly at the end of the current time step).
     pp = xnp1mx/100.0d0
     if (dble(iok).gt.pp*dble(ncel)) then
-      write(nfecra,3000) xkmin, dble(iok)/dble(ncel)*100.d0,      &
-                         xnp1mx
+      write(nfecra,3000) xkmin, dble(iok)/dble(ncel)*100.d0, xnp1mx
       istpp1 = 1
-!            CALL CSEXIT (1)
-       !==========
+      ! call csexit(1)
+      !==========
     endif
   endif
 
 endif
+
 ! -------
-! FORMATS
+! Formats
 ! -------
 
- 3000 format(                                                           &
+ 3000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : RAYONNEMENT APPROXIMATION P-1 (USRAY3)      ',/,&
-'@    =========                                               ',/,&
+'@ @@ WARNING:    P1 radiation approximation (usray3)         ',/,&
+'@    ========                                                ',/,&
 '@                                                            ',/,&
-'@    LA LONGUEUR OPTIQUE DU MILIEU SEMI-TRANSPARENT          ',/,&
-'@      DOIT AU MOINS ETRE DE L''ORDRE DE L''UNITE POUR ETRE  ',/,&
-'@      DANS LE DOMAINE D''APPLICATION DE L''APPROXIMATION P-1',/,&
-'@    CELA NE SEMBLE PAS ETRE LE CAS ICI.                     ',/,&
+'@    The optical length of the semi-transparent medium       ',/,&
+'@      must be at least of the order of one to be in the     ',/,&
+'@      domain of validity of the P-1 approximation.          ',/,&
+'@    This does not seem to be the case here.                 ',/,&
 '@                                                            ',/,&
-'@    LE COEFFICIENT D''ABSORPTION MINIMUM POUR ASSURER CETTE ',/,&
-'@      LONGUEUR OPTIQUE EST XKMIN = ',E10.4                   ,/,&
-'@    CETTE VALEUR N''EST PAS ATTEINTE POUR ', E10.4,'%       ',/,&
-'@      DES CELLULES DU MAILLAGE.                             ',/,&
-'@    LE POURCENTAGE DE CELLULES DU MAILLAGE POUR LESQUELLES  ',/,&
-'@      ON ADMET QUE CETTE CONDITION SOIT VIOLEE EST IMPOSE   ',/,&
-'@      PAR DEFAUT OU DANS USINI1 A XNP1MX = ', E10.4,'%      ',/,&
+'@    The minimum absorption coefficient to ensure this       ',/,&
+'@      optical length is XKmin = ', e10.4                     ,/,&
+'@    This value is not reached for ', e10.4,'%               ',/,&
+'@      of the meshe''s cells.                                ',/,&
+'@    The percentage of mesh cells for which we allow this    ',/,&
+'@      condition not to be rspected is set by default in     ',/,&
+'@      usini1 to xnp1mx = ', e10.4,'%                        ',/,&
 '@                                                            ',/,&
-'@    Le calcul est interrompu.                               ',/,&
+'@    The calculation is interrupted.                         ',/,&
 '@                                                            ',/,&
-'@    Verifier les valeurs du coefficient d''absorption CK    ',/,&
-'@      dans PPCABS, USRAY3 ou Fichier thermochimie.          ',/,&
+'@    Check the values of the absorption coefficient Ck       ',/,&
+'@      in ppcabs, usray3 or the thermochemistry data file.   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
 
 end subroutine

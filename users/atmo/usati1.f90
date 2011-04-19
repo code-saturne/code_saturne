@@ -33,12 +33,10 @@ subroutine usati1
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! --------
 
-!    INIT DES OPTIONS DE CALCUL NON STANDARD
-!            POUR LA VERSION ATMOSPHERIQUE
-
+! Initialize non-standard calculation options for the atmospheric version.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -84,7 +82,7 @@ if(1.eq.1) return
 
 
 !===============================================================================
-! 1. EXEMPLE D'OPTIONS DE CALCUL A MODIFIER
+! 1. Example of calculation options to modify
 !===============================================================================
 
 ! Reading the meteo file
@@ -96,14 +94,12 @@ imeteo = 1
 !   For each phase
 
 do iphas = 1, nphas
-
-irovar(iphas) = 0
-ivivar(iphas) = 0
-
+  irovar(iphas) = 0
+  ivivar(iphas) = 0
 enddo
 
 !----
-! FIN
+! End
 !----
 
 return

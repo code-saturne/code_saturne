@@ -54,10 +54,9 @@ subroutine atlecm &
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -106,22 +105,22 @@ character*1      csaute
 !===============================================================================
 
 if (imode.eq.0) then
-  write(NFECRA,*) 'reading of dimensions for meteo profiles'
+  write(nfecra, *) 'reading of dimensions for meteo profiles'
 else
-  write(NFECRA,*) 'reading of meteo profiles data'
- endif
+  write(NFECRA, *) 'reading of meteo profiles data'
+endif
 
 !===============================================================================
-! 0. INITIALIZATION
+! 0. Initialization
 !===============================================================================
 
 CSAUTE = '/'
 
 ! --> Opens the meteo file
-open ( unit=impmet, file=ficmet,                                  &
-       STATUS='OLD', FORM='FORMATTED', ACCESS='SEQUENTIAL',       &
-                                          iostat=ios, err=99 )
-rewind(unit=impmet,err=99)
+open (unit=impmet, file=ficmet,                                  &
+      status='old', form='formatted', access='sequential',       &
+      iostat=ios, err=99)
+rewind(unit=impmet, err=99)
 
 itp=0
 
@@ -132,33 +131,34 @@ smin=-999
 ssec=-999.
 
 !===============================================================================
-! 1. LOOP ON TIME
+! 1. Loop on time
 !===============================================================================
 
  100  continue
 itp = itp+1
 
-! ---> READING THE COMMENTS
-! ---------------------------
+! ---> Read the comments
+! ----------------------
 
- 101  READ(IMPMET,'(A80)',ERR=999,END=906) CCOMNT
+ 101  read(impmet, '(a80)', err=999, end=906) ccomnt
 
 if(ccomnt(1:1).eq.csaute) go to 101
 backspace(impmet)
 
 !===============================================================================
-! 2. READING THE TIME OF THE PROFILE
+! 2. Read the time of the profile
 !===============================================================================
 
 ! --> year, quant-day, hour, minute, second  of the profile (TU)
 
 if (imode.eq.0) then
-  read(impmet,*,err=999,end=906)
+  read(impmet, *, err=999, end=906)
 else
-  read(impmet,*,err=999,end=906) year, quant,hour,minute,second
+  read(impmet, *, err=999, end=906) year, quant, hour, minute, second
 
-! --> the date and time of the first meteo profile are taken as the
-!     starting time of the simulation
+  ! --> the date and time of the first meteo profile are taken as the
+  !     starting time of the simulation
+
   if (syear.lt.0) then
     syear=year
     squant=quant
@@ -167,32 +167,31 @@ else
     ssec=second
   endif
 
-!--> Compute the relative time to the starting time of the simulation
+  !--> Compute the relative time to the starting time of the simulation
 
 
-! --> Compute the julian day for the starting day of the simulation
-!     (julian day at 12h)
-  sjday= squant + ((1461 * (syear + 4800 + (1 - 14) / 12)) / 4 +  &
-             (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -            &
-             (3 * ((syear + 4900 + (1 - 14) / 12) / 100)) / 4         &
+  ! --> Compute the julian day for the starting day of the simulation
+  !     (julian day at 12h)
+  sjday= squant + ((1461 * (syear + 4800 + (1 - 14) / 12)) / 4 +   &
+             (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -         &
+             (3 * ((syear + 4900 + (1 - 14) / 12) / 100)) / 4      &
               + 1 - 32075) - 1
 
-! --> Compute the julian day for the date of the current profile
-!     (julian day at 12h)
-  jday = quant + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4 +   &
-             (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -           &
-            (3 * ((year + 4900 + (1 - 14) / 12) / 100)) / 4          &
+  ! --> Compute the julian day for the date of the current profile
+  !     (julian day at 12h)
+  jday = quant + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4 +     &
+             (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -         &
+             (3 * ((year + 4900 + (1 - 14) / 12) / 100)) / 4       &
               + 1 - 32075) - 1
 
-!
   tmprom(itp) = (jday - sjday)*86400 + (hour - shour)*3600 + (minute - smin)*60 &
               + (second - ssec)
 
-! --> verification de l'ordre chronologique des profils
+  ! --> check the chronlogical order of profiles
 
-  if(itp.gt.1) then
-    if(tmprom(itp).lt.tmprom(itp-1)) then
-      write(nfecra,8000)
+  if (itp.gt.1) then
+    if (tmprom(itp).lt.tmprom(itp-1)) then
+      write(nfecra, 8000)
       call csexit (1)
       !==========
     endif
@@ -201,193 +200,191 @@ else
 endif
 
 !===============================================================================
-! 3. READING THE POSITION OF THE PROFILE
+! 3. Read the position of the profile
 !===============================================================================
 
- 102  READ(IMPMET,'(A80)',ERR=999,END=999) CCOMNT
+ 102  read(impmet, '(a80)', err=999, end=999) ccomnt
 
 if(ccomnt(1:1).eq.csaute) go to 102
 backspace(impmet)
 
 
 if (imode.eq.0) then
-  read(impmet,*,err=999,end=999)
+  read(impmet, *, err=999, end=999)
 else
-  read(impmet,*,err=999,end=999) xmet(itp), ymet(itp)
+  read(impmet, *, err=999, end=999) xmet(itp), ymet(itp)
 endif
 
 !===============================================================================
-! 4. READING THE SEA-LEVEL PRESSURE
+! 4. Read the sea-level pressure
 !===============================================================================
 
- 103  READ(IMPMET,'(A80)',ERR=999,END=999) CCOMNT
+ 103  read(impmet, '(a80)', err=999, end=999) ccomnt
 
-if(ccomnt(1:1).eq.csaute) go to 103
+if (ccomnt(1:1).eq.csaute) go to 103
 backspace(impmet)
 
 
 if (imode.eq.0) then
-  read(impmet,*,err=999,end=999)
+  read(impmet, *, err=999, end=999)
 else
-  read(impmet,*,err=999,end=999) pmer(itp)
+  read(impmet, *, err=999, end=999) pmer(itp)
 endif
 
 !=================================================================================
-! 5. READING THE TEMPERATURE AND HUMIDITY PROFILES
+! 5. Read the temperature and humidity profiles
 !=================================================================================
 
- 104  READ(IMPMET,'(A80)',ERR=999,END=999) CCOMNT
+ 104  read(impmet, '(a80)', err=999, end=999) ccomnt
 
-if(ccomnt(1:1).eq.csaute) go to 104
+if (ccomnt(1:1).eq.csaute) go to 104
 backspace(impmet)
 
 
 if (imode.eq.0) then
-  read(impmet,*,err=999,end=999) nbmett
+  read(impmet, *, err=999, end=999) nbmett
 
-  if(nbmett.le.1) then
-    write(nfecra,8001)
+  if (nbmett.le.1) then
+    write(nfecra, 8001)
     call csexit (1)
     !==========
   endif
 
-  do ii=1,nbmett
-    read (impmet,*,err=999,end=999)
+  do ii=1, nbmett
+    read (impmet, *, err=999, end=999)
   enddo
 
 else
 
-  read(impmet,*,err=999,end=999)
+  read(impmet, *, err=999, end=999)
 
-  do ii=1,nbmett
+  do ii=1, nbmett
 
-!     Altitude, temperature, humidite
-    read (impmet,*,err=999,end=999) ztprom(ii),                   &
-                                    ttprom(ii,itp), qvprom(ii,itp)
+    ! Altitude, temperature, humidity
+    read (impmet, *, err=999, end=999) ztprom(ii),                       &
+                                       ttprom(ii, itp), qvprom(ii, itp)
 
   enddo
 
 endif
 
 !===============================================================================
-! 6. COMPUTING HYDRO PRESSURE PROFILE  (LAPLACE INTEGRATION)
+! 6. Compute hydro pressure profile  (Laplace integration)
 !===============================================================================
 !  NOTE : BASEE SUR LA PRESSION PMER
 !         ET UNE INTEGRATION DE LAPLACE DE BAS EN HAUT
 
 if (imode.eq.1) then
   iphas = 1
-  phprom(1,itp)=pmer(itp)
+  phprom(1, itp)=pmer(itp)
   psol=p0(iphas)
   rscp=rair/cp0(iphas)
 
-  do k=2,nbmett
-    tmoy=0.5*(ttprom(k-1,itp)+ttprom(k,itp))+tkelvi
-!         RHMOY=RAIR*(1.+(RVSRA-1.)*
-!    &         (QVPROM(K-1,ITP)+QVPROM(K,ITP))/2.*IH2O)
-!         RAP=-ABS(GZ)*(ZK-ZKM1)/RHMOY/TMOY
+  do k=2, nbmett
+    tmoy=0.5*(ttprom(k-1, itp)+ttprom(k, itp))+tkelvi
+    !         rhmoy=rair*(1.+(rvsra-1.)*
+    !    &         (qvprom(k-1, itp)+qvprom(k, itp))/2.*ih2o)
+    !         rap=-abs(gz)*(zk-zkm1)/rhmoy/tmoy
     rap=-abs(gz)*(ztprom(k)-ztprom(k-1))/rair/tmoy
-    phprom(k,itp)=phprom(k-1,itp)*exp(rap)
+    phprom(k, itp)=phprom(k-1, itp)*exp(rap)
   enddo
 
 endif
 
 !===============================================================================
-! 7. COMPUTING THE POT. TEMPERATURE PROFILE AND THE DENSITY PROFILE
+! 7. Compute the pot. temperature profile and the density profile
 !===============================================================================
 
 if (imode.eq.1) then
-  do k=1,nbmett
-!         RHUM=RAIR*(1.D0+(RVSRA-1.D0)*QVPROM(K,ITP)*IH2O)
+  do k=1, nbmett
+    ! rhum=rair*(1.d0+(rvsra-1.d0)*qvprom(k, itp)*ih2o)
 
-!         IF ((ISCALT(IPHAS).EQ.-1).OR.(IPHYSI.EQ.0)) THEN
-!     MASSE VOLUMIQUE CONSTANTE
-!           RPROM(K,ITP)=PMER/(TPROM(K,ITP)+TKELVI)/RHUM
-!         ELSE
-!     MASSE VOLUMIQUE VARIABLE
-!           RPROM(K,ITP)=PHPROM(K,ITP)/(TTPROM(K,ITP)+TKELVI)/RHUM
-!         ENDIF
-    rprom(k,itp)=phprom(k,itp)/(ttprom(k,itp)+tkelvi)/rair
-!    &            *(1.D0+(RVSRA-CPVCPA)*QVPROM(K,ITP)*IH2O)
-    tpprom(k,itp)=(ttprom(k,itp)+tkelvi)*                         &
-         ((psol/phprom(k,itp))**rscp)
+    !   if ((iscalt(iphas).eq.-1).or.(iphysi.eq.0)) then
+    ! Constant density
+    !     rprom(k, itp)=pmer/(tprom(k, itp)+tkelvi)/rhum
+    !   else
+    ! Variable density
+    !     rprom(k, itp)=phprom(k, itp)/(ttprom(k, itp)+tkelvi)/rhum
+    !   endif
+    rprom(k, itp)=phprom(k, itp)/(ttprom(k, itp)+tkelvi)/rair
+    !    &            *(1.d0+(rvsra-cpvcpa)*qvprom(k, itp)*ih2o)
+    tpprom(k, itp)=(ttprom(k, itp)+tkelvi)*                         &
+         ((psol/phprom(k, itp))**rscp)
   enddo
 
 endif
 
 !================================================================================
-! 8. READING THE VELOCITY PROFILE
+! 8. Read the velocity profile
 !================================================================================
 
+ 105  read(impmet, '(a80)', err=999, end=999) ccomnt
 
- 105  READ(IMPMET,'(A80)',ERR=999,END=999) CCOMNT
-
-if(ccomnt(1:1).eq.csaute) go to 105
+if (ccomnt(1:1).eq.csaute) go to 105
 backspace(impmet)
 
 
 if (imode.eq.0) then
 
-  read(impmet,*,err=999,end=999) nbmetd
+  read(impmet, *, err=999, end=999) nbmetd
 
-  if(nbmetd.le.1) then
-    write(nfecra,8002)
+  if (nbmetd.le.1) then
+    write(nfecra, 8002)
     call csexit (1)
     !==========
   endif
 
-  do ii=1,nbmetd
-    read (impmet,*,err=999,end=999)
+  do ii=1, nbmetd
+    read (impmet, *, err=999, end=999)
   enddo
 
 else
 
-  read(impmet,*,err=999,end=999)
+  read(impmet, *, err=999, end=999)
 
-  do ii=1,nbmetd
-!     Altitude,  u,  v, k, epsilon
-    read (impmet,*,err=999,end=999) zdprom(ii),                   &
-                                    uprom(ii,itp),  vprom(ii,itp),&
-                                    ekprom(ii,itp), epprom(ii,itp)
-
+  do ii=1, nbmetd
+    !  Altitude, u, v, k, epsilon
+    read (impmet, *, err=999, end=999) zdprom(ii),                    &
+                                    uprom(ii, itp),  vprom(ii, itp),  &
+                                    ekprom(ii, itp), epprom(ii, itp)
   enddo
 
 endif
 
 !================================================================================
-! 9. PRINTINGS
+! 9. Printings
 !================================================================================
 
 if (imode.eq.1) then
-  if(itp.eq.1) then
-    write(nfecra,*)
-    write(nfecra,*) '==================================================='
-    write(nfecra,*) 'printing meteo profiles'
+  if (itp.eq.1) then
+    write(nfecra, *)
+    write(nfecra, *) '==================================================='
+    write(nfecra, *) 'printing meteo profiles'
   endif
-  write(nfecra,*) 'year, quant-day , hour, minute, second'
-  write(nfecra,7995) year, quant,hour,minute,second
+  write(nfecra, *) 'year, quant-day , hour, minute, second'
+  write(nfecra, 7995) year, quant, hour, minute, second
  7995   format(1x, i4, i5, 2i4, f8.2)
-  write(nfecra,*) 'tmprom(itp)'
-  write(nfecra,7996) tmprom(itp)
+  write(nfecra, *) 'tmprom(itp)'
+  write(nfecra, 7996) tmprom(itp)
  7996   format(1x, f8.2)
-  write(nfecra,*) 'zdprom,uprom,vprom,ekprom,epprom'
-  do ii=1,nbmetd
-    write(nfecra,7997)                                            &
-      zdprom(ii), uprom(ii,itp), vprom(ii,itp), ekprom(ii,itp), epprom(ii,itp)
- 7997     format(1x, 3f8.2,2e10.3)
+  write(nfecra, *) 'zdprom, uprom, vprom, ekprom, epprom'
+  do ii=1, nbmetd
+    write(nfecra, 7997)                                            &
+      zdprom(ii), uprom(ii, itp), vprom(ii, itp), ekprom(ii, itp), epprom(ii, itp)
+ 7997   format(1x, 3f8.2, 2e10.3)
   enddo
-  write(nfecra,*) 'ztprom,ttprom,tpprom,rprom,phprom,qvprom'
-  do ii=1,nbmett
-    write(nfecra,7998)                                            &
-         ztprom(ii), ttprom(ii,itp), tpprom(ii,itp),              &
-         rprom(ii,itp), phprom(ii,itp), qvprom(ii,itp)
- 7998     format(1x, 3f8.2,f8.4,f12.3,e10.3)
+  write(nfecra, *) 'ztprom, ttprom, tpprom, rprom, phprom, qvprom'
+  do ii=1, nbmett
+    write(nfecra, 7998)                                             &
+         ztprom(ii), ttprom(ii, itp), tpprom(ii, itp),              &
+         rprom(ii, itp), phprom(ii, itp), qvprom(ii, itp)
+ 7998     format(1x, 3f8.2, f8.4, f12.3, e10.3)
   enddo
 
 endif
 
 !================================================================================
-! 10. END OF THE LOOP ON TIME
+! 10. End of the loop on time
 !================================================================================
 
 goto 100
@@ -399,36 +396,37 @@ if (imode.eq.0) nbmetm= itp-1
 close(unit=impmet)
 
 ! ---
-! END
+! End
 ! ---
+
 return
 
 !============================
-! XX. ERROR OUTPUTS
+! XX. Error outputs
 !============================
 
  99   continue
-write ( nfecra,9998 )
+write ( nfecra, 9998 )
 call csexit (1)
 !==========
 
  999  continue
-write ( nfecra,9999 )
+write ( nfecra, 9999 )
 call csexit (1)
 !==========
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
- 8000 format (                                                          &
+ 8000 format (                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (atlecm)      ',/,&
 '@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE               ',/,    &
+'@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE                   ',/,&
 '@                                                            ',/,&
 '@              Erreur  dans le fichier meteo:                ',/,&
 '@      ordre chronologique des profils non respecte          ',/,&
@@ -437,7 +435,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8001 format (                                                          &
+ 8001 format (                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -446,14 +444,14 @@ call csexit (1)
 '@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE                   ',/,&
 '@                                                            ',/,&
 '@              Erreur  dans le fichier meteo:                ',/,&
-'@  le nombre de mesures de temperatures doit être            ',/,&
+'@  le nombre de mesures de temperatures doit etre            ',/,&
 '@  superieur a 2                                             ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8002 format (                                                          &
+ 8002 format (                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -462,14 +460,14 @@ call csexit (1)
 '@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE                   ',/,&
 '@                                                            ',/,&
 '@              Erreur  dans le fichier meteo:                ',/,&
-'@  le nombre de mesures de vitesses doit être                ',/,&
+'@  le nombre de mesures de vitesses doit etre                ',/,&
 '@  superieur a 2                                             ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9998 format(                                                           &
+ 9998 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -478,13 +476,13 @@ call csexit (1)
 '@      PHYSIQUE PARTICULIERE ATMOSPHERIQUE                   ',/,&
 '@                                                            ',/,&
 '@  Erreur a l''ouverture du fichier meteo                    ',/,&
-'@  VÃ©rifier le nom du fichier meteo                          ',/,&
+'@  Verifier le nom du fichier meteo                          ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9999 format(                                                           &
+ 9999 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -496,7 +494,7 @@ call csexit (1)
 '@    Le fichier a ete ouvert mais est peut etre incomplet    ',/,&
 '@    ou son format inadapte.                                 ',/,&
 '@                                                            ',/,&
-'@    year (integer), quantile (integer), hour (integer),     ',/,&
+'@    year (integer), quantile (integer), hour (integer),    ',/,&
 '@          minute (integer), second (dble prec) of the profile',/,&
 '@    location of the meteo profile (x,y) (dble prec)         ',/,&
 '@    sea level pressure (double precision)                   ',/,&
@@ -515,7 +513,7 @@ call csexit (1)
 
 #else
 
- 8000 format (                                                          &
+ 8000 format (                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -531,7 +529,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8001 format (                                                          &
+ 8001 format (                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -547,7 +545,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8002 format (                                                          &
+ 8002 format (                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -563,7 +561,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9998 format(                                                           &
+ 9998 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -578,7 +576,7 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9999 format(                                                           &
+ 9999 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

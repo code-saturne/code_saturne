@@ -324,7 +324,7 @@ if (ipass.eq.3) then
 
   !--> FLUX CONVECTIF AUX FACES FRONTIERES DE PAROIS
 
-  nbrvaf(ifconp) = 'Flux_convectif'
+  nbrvaf(ifconp) = 'Convective_flux'
   irayvf(ifconp) = 0
 
   !--> COEFFICIENT D'ECHANGE CONVECTIF AUX FACES FRONTIERES DE PAROIS

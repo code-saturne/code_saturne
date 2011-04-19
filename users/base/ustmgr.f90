@@ -41,15 +41,13 @@ subroutine ustmgr &
       iw     , rw     )
 
 !==========================================================================
-! FONCTION :
-! ----------
+! Purpose:
+! --------
 
-!  MULTIGRILLE ALGEBRIQUE :
+!  Algebraic multigrid:
 
-!  DETERMINATION DE LA CONNECTIVITE
-!  CELLULE FINE -> CELLULE GROSSIERE (IRSCEL)
-!  POUR LA CONSTRUCTION D'UN NIVEAU DE MAILLAGE GROSSIER
-!  A PARTIR DU NIVEAU SUPERIEUR
+!  Determine fine -> coarse cell connectivity (irscel)
+!  for the construction of a coarse grid level from the previous level.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -119,7 +117,6 @@ double precision xyzfin(3, ncelfe)
 integer          iw(niw)
 double precision rw(nrw)
 
-
 ! Local variables
 
 integer          ncelg
@@ -133,7 +130,6 @@ double precision dx, dy, dz, xyzmin(3), xyzmax(3)
 double precision xmn, xmx, ymn, ymx, zmn, zmx
 double precision xg, yg, zg, rap, rep, epslon
 double precision ngros
-
 
 !===============================================================================
 
@@ -149,12 +145,12 @@ ncelg = 0
 epslon = +1.d-6
 
 !===============================================================================
-! 0.  INITIALISATION ET DIMENSIONNEMENT
+! 0. Initialization and memory size
 !===============================================================================
 
 iusmgr = 0
 
-!     DIMENSIONNEMENT MEMOIRE
+! Memory size
 
 indic  = 1
 irspr2 = indic + ncelfe
@@ -167,13 +163,13 @@ nrw    = iw1 + ncelfe
 if (iappel.eq.1) return
 
 !===============================================================================
-! 1.  CREATION DES CELLULES GROSSIERES : IRSCEL
+! 1.  Creation of coarse cells: irscel
 !===============================================================================
 
 !===============================================================================
-!  MAILLAGE DU CARRE CAS 2D
+! Mesh of a 2D square
 
-!     BORNE MIN/MAX DU MAILLAGE
+! Min/max mesh bounds
 
 do i = 1, 3
   xyzmin(i) = +1.d12
@@ -186,12 +182,11 @@ do i = 1, 3
   xyzmax(i) = xyzmax(i) +epslon
 enddo
 
-!     EVALUATION DE IMP,JMP,KMP AVEC LA REGLE MAILLAGE REGULIER
-!      IMP/(Xmax-Xmin) ~ JMP/(Ymax-Ymin) ~ KMP/(Zmax-Zmin)
-!                       NCELG ~ IMP.JMP.KMP ~ NCEL/NGROS
+! Evaluation of IMP,JMP,KMP with the regular mesh rule
+! IMP/(Xmax-Xmin) ~ JMP/(Ymax-Ymin) ~ KMP/(Zmax-Zmin)
+! NCELG ~ IMP.JMP.KMP ~ NCEL/NGROS
 
-
-!     CAS 2D
+! 2D case
 
 ngros = 4
 
@@ -206,7 +201,7 @@ imp = max(imp, 1)
 jmp = max(jmp, 1)
 ncelg = imp*jmp*kmp
 
-!     INCLUSION DANS LE MAILLAGE STRUCTURÉ ORTHOGONAL
+! Inclusion in the orthogonal structured mesh
 
 dx = (xyzmax(1) -xyzmin(1))/imp
 dy = (xyzmax(2) -xyzmin(2))/jmp
@@ -219,7 +214,7 @@ enddo
 
 do icel = 1, ncelf
 
-!       INITIALISATION
+  ! Initialization
   xg = xyzfin(1, icel)
   yg = xyzfin(2, icel)
   zg = xyzfin(3, icel)
@@ -273,7 +268,7 @@ do icel = 1, ncelf
 enddo
 
 
-!     DEFINITION DU MAILLAGE PAIR-IMPAIR POUR VISUALISATION
+! Definition of even-odd mesh for 'visualization'
 
 do iglob =1,ncelf
   iw(ipaimp+iglob-1) = 0
@@ -294,8 +289,8 @@ do k = 1, kmp
   enddo
 enddo
 
-!     Compactage du maillage structure si, au moins, une maille
-!     grossiere ne contient aucune maille du maillage fin non structure
+! Compact structured mesh, if at least one coarse cell contains no
+! cell of the unstructured fine mesh.
 
 ntest = 0
 do iglob = 1, ncelg
@@ -317,7 +312,7 @@ else
     endif
   enddo
 
-!       NOUVEAU NCELG
+  ! New NCELG
   ncelg = i
 
   do icel=1,ncelf
@@ -338,7 +333,7 @@ iedir = 0
 
 if (iedir.gt.0) then
 
-!       EXTRACTION DES POINTS DIRICHLETS (DIAGONALE FORTEMENT DOMINANTE)
+  ! Extraction of Dirichlet points (stringly dominant diagonal)
 
   do icel = 1, ncelf
     iw(indic+icel-1) = 0
@@ -377,12 +372,12 @@ endif
 !==============================================================================
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 
 !----
-! FIN
+! End
 !----
 
 return

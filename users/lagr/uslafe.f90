@@ -60,7 +60,6 @@ subroutine uslafe &
 !    By default gravity and drag force are the only forces acting on the particles
 !    (the gravity components gx gy gz are assigned in usini1)
 !
-!
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -81,9 +80,9 @@ subroutine uslafe &
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
-! ibord            ! ia ! --> ! if nordre=2, contains the number of the        !
-!   (nbpmax)       !    !     ! boundary face of particle/wall interaction     !
+! (nbpmax,nivep)   !    !     !                                                !
+! ibord(nbpmax)    ! ia ! --> ! if nordre=2, contains the number of the        !
+!                  !    !     ! boundary face of particle/wall interaction     !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers for      !
@@ -99,28 +98,27 @@ subroutine uslafe &
 ! ettpa            ! ra ! <-- ! array of the variables associated to           !
 !  (nbpmax,nvp)    !    !     !                                                !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-! (nbpmax,nvep)    !    !     !                                                !
+!  (nbpmax,nvep)   !    !     !                                                !
 ! statis           ! ra ! <-- ! cumul for the averages of the volume stats.    !
-!(ncelet,nvlsta    !    !     !                                                !
+!  (ncelet,nvlsta) !    !     !                                                !
 ! stativ           ! ra ! <-- ! cumulation for the variance of the volume      !
-!(ncelet,          !    !     ! statistics                                     !
+!  (ncelet,        !    !     ! statistics                                     !
 !   nvlsta-1)      !    !     !                                                !
 ! taup(nbpmax)     ! ra ! <-- ! particle relaxation time                       !
 ! tlag(nbpmax)     ! ra ! <-- ! relaxation time for the flow                   !
-! piil(nbpmax,3    ! ra ! <-- ! term in the integration of the sde             !
-! tsup(nbpmax,3    ! ra ! <-- ! prediction 1st substep for                     !
+! piil(nbpmax,3)   ! ra ! <-- ! term in the integration of the sde             !
+! tsup(nbpmax,3)   ! ra ! <-- ! prediction 1st substep for                     !
 !                  !    !     ! the velocity of the particles                  !
-! tsuf(nbpmax,3    ! ra ! <-- ! prediction 1st substep for                     !
+! tsuf(nbpmax,3)   ! ra ! <-- ! prediction 1st substep for                     !
 !                  !    !     ! the velocity of the flow seen                  !
-! bx(nbpmax,3,2    ! ra ! <-- ! characteristics of the turbulence              !
+! bx(nbpmax,3,2)   ! ra ! <-- ! characteristics of the turbulence              !
 ! tsfext(nbpmax    ! ra ! <-- ! infos for the return coupling                  !
 ! vagaus           ! ra ! <-- ! Gaussian random variables                      !
-!(nbpmax,nvgaus    !    !     !                                                !
-! gradpr(ncel,3    ! ra ! <-- ! pressure gradient                              !
-! gradvf(ncel,3    ! ra ! <-- ! gradient of the flow velocity                  !
+!  (nbpmax,nvgaus) !    !     !                                                !
+! gradpr(ncel,3)   ! ra ! <-- ! pressure gradient                              !
+! gradvf(ncel,3)   ! ra ! <-- ! gradient of the flow velocity                  !
 ! romp             ! ra ! --- ! particle density                               !
-! fextla           ! ra ! --> ! user external force field (m/s²)               !
-!(ncelet,3)        !    !     !                                                !
+! fextla(ncelet,3) ! ra ! --> ! user external force field (m/s^2)              !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 

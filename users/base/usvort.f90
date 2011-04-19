@@ -199,7 +199,7 @@ elseif (iappel.eq.2) then
 ! 3. PARAMETRES GEOMETRIQUES ET CONDITIONS LIMITES
 !===============================================================================
 
-! --- Cas traité
+! --- Cas traite
 
 ! ICAS = 1...Conduite rectangulaire
 !        2...Conduite circulaire
@@ -219,7 +219,7 @@ elseif (iappel.eq.2) then
 
 !     Si ICAS = 4, le code se charge de ces donnees
 !     Sinon il faut preciser les vecteurs DIR1 et DIR2 definissant
-!     un repère directe tel que DIR3 soit un vecteur entrant normal
+!     un repere directe tel que DIR3 soit un vecteur entrant normal
 !     a la face d'entree.
 
   ient = 1
@@ -383,7 +383,7 @@ elseif (iappel.eq.2) then
 
 !         Grad[u.DIR3].n est le gradient dans la direction normale
 !         a la paroi, de la vitesse principale dans le plan d'entree.
-!         Cette données n'est utilisée qu'avec ICAS=2
+!         Cette donnees n'est utilisee qu'avec ICAS=2
 
 ! FICVOR...Nom du fichier de donnees utilisateur
 
@@ -393,8 +393,7 @@ elseif (iappel.eq.2) then
   ient = 2
   ndat(ient) = 2080
 
-! Par les defaut les fichiers sont nommes "vordat" affecté de l'indice
-! d'entrée
+! Par les defaut les fichiers sont nommes "vordat" affecte de l'indice d'entree
 
   ient = 1
   FICVOR(IENT) = 'entree_1.dat'
@@ -483,7 +482,7 @@ phidat = 0.d0
 
 ! Dans l'exemple suivant, on se contente de retourne la valeur situee
 ! dans le fichier de donnee a l'abscisse la plus proche du point de
-! coordonnée (Y,Z) ou l'on cherche a connaitre la valeur de la
+! coordonnee (Y,Z) ou l'on cherche a connaitre la valeur de la
 ! variable numero VARDAT.
 
 

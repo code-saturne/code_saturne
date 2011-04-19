@@ -51,13 +51,13 @@ subroutine raydom &
 !   SOUS-PROGRAMME DU MODULE RAYONNEMENT :
 !   --------------------------------------
 
-!  Enveloppe principale du module de résolution de l'équation
+!  Enveloppe principale du module de resolution de l'equation
 !  des transferts radiatifs
 
 !  Deux methodes sont disponibles :
 
 !    1) La methode : "Discretes Ordinates Methods" (DOM)
-!    2) L'approximation P-1 (recommandé uniquement pour le CP)
+!    2) L'approximation P-1 (recommande uniquement pour le CP)
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
@@ -84,7 +84,7 @@ subroutine raydom &
 !(nfabor)          !    !     !    faces de bord pour la luminances            !
 ! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !
 !(nfac)(nfabor)    !    !     !    et faces de bord )                          !
-! dtr(ncelet)      ! tr ! --- ! dt*cdtvar                                      !
+! dtr(ncelet)      ! ra ! --- ! dt*cdtvar                                      !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
@@ -92,16 +92,15 @@ subroutine raydom &
 ! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
-!   ,nphasc)       !    !     !                                                !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
+! tempk(ncelet,    ! ra ! --> ! temperature in Kelvin                          !
+!       nphasc)    !    !     !                                                !
+! w1...9(ncelet)   ! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -294,7 +293,7 @@ unspi = 1.d0/pi
         sf = 0.d0
         vv = 0.d0
 
-!         Calcul de la longueur caractéristique du domaine de calcul
+!         Calcul de la longueur caracteristique du domaine de calcul
         do ifac = 1,nfabor
           sf = sf + sqrt(surfbo(1,ifac)**2 +                      &
                          surfbo(2,ifac)**2 +                      &
@@ -937,7 +936,7 @@ unspi = 1.d0/pi
     !==========
   endif
 
-!--> Intégration du flux net sur les différentes zones de frontieres
+!--> Integration du flux net sur les differentes zones de frontieres
 !     IFLUX sert en parallele pour reperer les zones existantes
 
   do izone = 1, nozrdm
@@ -965,7 +964,7 @@ unspi = 1.d0/pi
   write(nfecra,5000)
 
 
-!--> Intégration de la densité de flux net aux frontieres
+!--> Integration de la densite de flux net aux frontieres
 
   aa = zero
   do ifac = 1,nfabor
@@ -989,7 +988,7 @@ unspi = 1.d0/pi
 
 !--> On stocke dans le tableau de travail W9 le CP
 !    Attention : il faut conserver W9 dans la suite de la routine,
-!    car son contenu est utilisé plus loin
+!    car son contenu est utilise plus loin
 
     if (icp(irapha).gt.0) then
       do iel = 1,ncel
@@ -1008,7 +1007,7 @@ unspi = 1.d0/pi
       propce(iel,ipproc(iabs(1))) =                          &
 propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 
-!--> part d'émission du terme source explicite
+!--> part d'emission du terme source explicite
 
       propce(iel,ipproc(iemi(1))) = -4.d0 *                  &
              propce(iel,ipproc(itsri(1)))
@@ -1072,8 +1071,8 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 
     endif
 
-!--> Première méthode pour le calcul du terme source explicite :
-!    il est calculé comme la somme des termes d'absorption et d'émission
+!--> Premiere methode pour le calcul du terme source explicite :
+!    il est calcule comme la somme des termes d'absorption et d'emission
 !    (il faudra multiplier ce terme par VOLUME(IEL) dans COVOFI->RAYSCA)
 
     do iel = 1,ncel
@@ -1352,7 +1351,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
            3X,'   -----------------------------------------' )
  1100 FORMAT (/, 3X,'   Calcul effectue en rayonnement transparent'  ,/)
 
- 2010 format(                                                           &
+ 2010 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1367,7 +1366,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2020 format(                                                           &
+ 2020 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1382,7 +1381,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3000 format(                                                           &
+ 3000 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1393,7 +1392,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@                CONDITIONS AUX LIMITES MAL RENSEIGNEES      ',/,&
 '@                                                            ',/,&
 '@    Face = ',I10   ,' Zone = ',I10   ,' Type = ',I10           )
- 3100 format(                                                           &
+ 3100 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1413,7 +1412,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3200 format(                                                           &
+ 3200 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1433,7 +1432,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 3500 format(                                                           &
+ 3500 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1449,7 +1448,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4000 format(                                                           &
+ 4000 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1459,7 +1458,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@    =========                                               ',/,&
 '@                                                            ',/,&
 '@    Face = ',I10   ,' Zone = ',I10   ,' Type = ',I10           )
- 4100 format(                                                           &
+ 4100 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -1490,7 +1489,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
  5030 format('Flux net radiatif sur toutes les frontieres  Fnet = ',    &
            E10.4,' Watt')
 
- 5040 format('Intégrale volumique du terme source radiatif Srad = ',    &
+ 5040 format('Integrale volumique du terme source radiatif Srad = ',    &
            E10.4,' Watt')
 
  5050 format('(Si IDIVER = 1 ou 2 alors on doit avoir Srad = -Fnet)')
@@ -1522,7 +1521,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@                                                            ',/)
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

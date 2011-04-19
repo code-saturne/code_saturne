@@ -39,7 +39,7 @@ subroutine uscpiv &
    ra     )
 
 !===============================================================================
-! PURPOSE  :
+! Purpose:
 ! --------
 
 ! Initialisation of transported variables for extended physics :
@@ -340,7 +340,7 @@ if ( isuite.eq.0 ) then
     enddo
   enddo
 
-! ------ Transported variables for the mix (solid+carrying gas)²
+! ------ Transported variables for the mix (solid+carrying gas)^2
 
   do ige = 1, ngazem
     coefe(ige) = zero

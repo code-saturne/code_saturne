@@ -42,7 +42,7 @@ subroutine uscfcl &
    ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! --------
 
 !    ROUTINE UTILISATEUR
@@ -219,9 +219,8 @@ double precision ustar2, xkent , xeent , d2s3
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-! 0.  CE TEST PERMET A L'UTILISATEUR D'ETRE CERTAIN QUE C'EST
-!       SA VERSION DU SOUS PROGRAMME QUI EST UTILISEE
-!       ET NON CELLE DE LA BIBLIOTHEQUE
+! 0.  This test allows the user to be certain his version if the subroutine
+!     is being used, and not that from the library.
 !===============================================================================
 
 if(1.eq.1) then
@@ -234,12 +233,12 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES COND. LIM.      ',/,&
+'@ @@ WARNING:    stop during definition of compressible      ',/,&
 '@    =========                                               ',/,&
-'@     COMPRESSIBLE                                           ',/,&
-'@     LE SOUS-PROGRAMME UTILISATEUR uscfcl DOIT ETRE COMPLETE',/,&
+'@     boundary conditions.                                   ',/,&
+'@     The uscfcl user subroutine must be completed.          ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -290,7 +289,7 @@ do ilelt = 1, nlelt
 
   iel = ifabor(ifac)
 
-!       On numerote les zones de 1 a n...
+  ! Number zones from 1 to n...
   izone = 1
   izfppp(ifac) = izone
 
@@ -309,7 +308,7 @@ do ilelt = 1, nlelt
 !       calculees automatiquement
 
 !    ** Choisir les 2 variables a imposer et effacer les autres
-!       (elles sont calculées par les lois thermodynamiques dans uscfth)
+!       (elles sont calculees par les lois thermodynamiques dans uscfth)
 
 !     Pression (en Pa)
   rcodcl(ifac,ipr(iphas),1) = 5.d5
@@ -345,8 +344,8 @@ do ilelt = 1, nlelt
 !         imposee dans USCFPV. On utilise ici par defaut la valeur
 !         VISCL0 donnee dans USINI1
 !       En ce qui concerne la masse volumique, on peut utiliser directement
-!         sa valeur aux faces de bord si elle est connue (et imposée
-!         ci-dessus). Dans le cas général, on propose d'utiliser la valeur
+!         sa valeur aux faces de bord si elle est connue (et imposee
+!         ci-dessus). Dans le cas general, on propose d'utiliser la valeur
 !         de la cellule adjacente.
 
 !         Diametre hydraulique
@@ -406,14 +405,14 @@ enddo
 
 ! --- Exemple de sortie supersonique
 
-!       toutes les caractéristiques sortent
+!       toutes les caracteristiques sortent
 !       on ne doit rien imposer (ce sont les valeurs internes qui sont
 !         utilisees pour le calcul des flux de bord)
 
 !       pour la turbulence et les scalaires, si on fournit ici des
 !         valeurs de RCODCL, on les impose en Dirichlet si le flux
 !         de masse est entrant ; sinon, on impose un flux nul (flux de
-!         masse sortant ou RCODCL renseigné ici).
+!         masse sortant ou RCODCL renseigne ici).
 !         Noter que pour la turbulence, il faut renseigner RCODCL pour
 !         toutes les variables turbulentes (sinon, on applique un flux
 !         nul).
@@ -426,7 +425,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!       On numerote les zones de 1 a n...
+  ! Number zones from 1 to n...
   izone = 2
   izfppp(ifac) = izone
 
@@ -485,7 +484,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!       On numerote les zones de 1 a n...
+  ! Number zones from 1 to n...
   izone = 4
   izfppp(ifac) = izone
 
@@ -521,8 +520,8 @@ do ilelt = 1, nlelt
 !         imposee dans USCFPV. On utilise ici par defaut la valeur
 !         VISCL0 donnee dans USINI1
 !       En ce qui concerne la masse volumique, on peut utiliser directement
-!         sa valeur aux faces de bord si elle est connue (et imposée
-!         ci-dessus). Dans le cas général, on propose d'utiliser la valeur
+!         sa valeur aux faces de bord si elle est connue (et imposee
+!         ci-dessus). Dans le cas general, on propose d'utiliser la valeur
 !         de la cellule adjacente.
 
 !         Diametre hydraulique
@@ -571,8 +570,8 @@ do ilelt = 1, nlelt
 
   endif
 
-!   - On traite les scalaires rattaches a la phase courante
-!       (ne pas boucler sur NSCAL sous peine de modifier rho et energie)
+  ! - Handle scalars attached to the current phase
+  !   (do not loop on nscal, to avoid risking modifying rho and energy)
   if(nscaus.gt.0) then
     do ii = 1, nscaus
       if(iphsca(ii).eq.iphas) then
@@ -583,67 +582,68 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- Exemple de sortie subsonique
+! --- Subsonic outlet example
 
-!       1 caracteristique sur 3 sort : il faut donner 1 information
-!         les deux autres sont deduites par un scenario de 2-contact et
-!         3-detente dans le domaine
-!       ici on choisit de donner P
+! 1 characteristic out of 3 exits: 1 information must be given
+! the 2 others are deduced by a 2-contact and 3-relaxation in the domain.
+! Here we choose to definer P.
 
-!       La turbulence et les scalaires utilisateur prennent un flux nul.
+! Turbulence and user scalars take a zero flux.
 
-CALL GETFBR('5',NLELT,LSTELT)
+call getfbr('5', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!       On numerote les zones de 1 a n...
+  ! Number zones from 1 to n...
   izone = 5
   izfppp(ifac) = izone
 
   itypfb(ifac,iphas) = isopcf
 
-!     Pression (en Pa)
+  ! Pressure (in Pa)
   rcodcl(ifac,ipr(iphas),1) = 5.d5
 
 enddo
 
-! --- Exemple de paroi
+! --- Wall example
 
-CALL GETFBR('7',NLELT,LSTELT)
+call getfbr('7', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!       On numerote les zones de 1 a n...
+  ! Number zones from 1 to n...
   izone = 7
   izfppp(ifac) = izone
 
   itypfb(ifac,iphas) = iparoi
 
 
-!     Paroi défilante
-!       Par défaut, la paroi n'est pas défilante
-!       Si la paroi est défilante, donner les composantes non nulles
-!         de la vitesse. La vitesse sera projetée dans le plan
-!         tangeant à la paroi. Dans l'exemple suivant, on impose
-!         Ux = 1. (l'exemple est activé si IUTILE=1)
+! --- Sliding wall
+
+! By default, the wall does not slide.
+! If the wall slides, define the nonzero components of its velocity.
+! The velocity will be projected in a plane tangent to the wall.
+!   In the following example, we prescribe Ux = 1.
+!   (example activated if iutile=1)
 
   iutile = 0
   if(iutile.eq.1) then
     rcodcl(ifac,iu(iphas),1) = 1.d0
   endif
 
-!     Température imposée
-!       Par défaut, la paroi est adiabatique
-!       Si la paroi est à température imposée, l'indiquer par
-!         ICODCL = 5 et donner la valeur en Kelvin dans RCODCL(.,.,1)
-!         Dans l'exemple suivant, on impose T = 293.15 K (l'exemple
-!         est activé si IUTILE=1)
+! --- Prescribed temperature
+
+! By default, the wall is adiabatic.
+! If the wall has a prescribed temperature, indicate it by setting
+!   icodcl = 5 and define a value in Kelvin in rcodcl(., ., 1)
+!   In the following example, we prescribe T = 293.15 K
+!   (example activated if iutile=1)
 
   iutile = 0
   if(iutile.eq.1) then
@@ -651,12 +651,13 @@ do ilelt = 1, nlelt
     rcodcl(ifac,isca(itempk(iphas)),1) = 20.d0 + 273.15d0
   endif
 
-!     Flux imposé
-!       Par défaut, la paroi est adiabatique
-!       Si la paroi est à flux imposé, l'indiquer par
-!         ICODCL = 3 et donner la valeur en Watt/m2 dans RCODCL(.,.,3)
-!         Dans l'exemple suivant, on impose un flux de 1000 W/m2
-!         - la plage en été - (l'exemple est activé si IUTILE=1)
+! --- Prescribed flux
+
+! By default, the wall is adiabatic.
+! If the wall has a prescribed flux, indicate it by setting
+!   icodcl = 3 and define the value in Watt/m2 in rcodcl(., ., 3)
+!   In the following example, we prescribe a flux of 1000 W/m2
+!   - a midday in the summer - (example is activated if iutile=1)
 
   iutile = 0
   if(iutile.eq.1) then
@@ -666,16 +667,16 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- Exemple de symetrie
+! --- Symmetry example
 
-CALL GETFBR('8',NLELT,LSTELT)
+call getfbr('8', nlelt, lstelt)
 !==========
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-!       On numerote les zones de 1 a n...
+  ! Number zones from 1 to n...
   izone = 8
   izfppp(ifac) = izone
 
@@ -683,15 +684,15 @@ do ilelt = 1, nlelt
 
 enddo
 
-!     Il est deconseille d'utiliser d'autres types de conditions
-!     aux limites que ceux proposes ci-dessus.
+! It is not recommended to use other boundary condition types than
+! the ones provided above.
 
 !----
-! FORMATS
+! Formats
 !----
 
 !----
-! FIN
+! End
 !----
 
 return

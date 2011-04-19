@@ -81,7 +81,7 @@ integer         it
 
 !     Pour le second exemple ci-dessous,
 !        donnee de NTAB > 1 valeurs (fictives) de H (=HT) tabulees
-!        en fonction de NTAB valeurs de T (=TH) (attention a l'unité K ou C)
+!        en fonction de NTAB valeurs de T (=TH) (attention a l'unite K ou C)
 
 integer          ntab
 parameter       (ntab=5)

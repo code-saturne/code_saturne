@@ -1,4 +1,23 @@
 * 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Translation and formatting updates.
+  modified files:
+    src/atmo/atlecm.f90
+    src/rayt/raycli.f90
+    src/rayt/raydom.f90
+    src/rayt/raylec.f90
+    users/atmo/usati1.f90
+    users/base/uspt1d.f90
+    users/base/usthht.f90
+    users/base/ustmgr.f90
+    users/base/usvort.f90
+    users/cfbl/uscfcl.f90
+    users/cplv/uscpiv.f90
+    users/lagr/uslafe.f90
+    users/lagr/uslag1.f90
+    users/rayt/usray1.f90
+    users/rayt/usray3.f90
+
+* 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Typo and missing function prototype fixes for multigrid.
   modified files:
     src/base/cs_grid.c
