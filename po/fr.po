@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-04-18 19:25+0200\n"
+"POT-Creation-Date: 2011-04-19 16:27+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7567,6 +7567,9 @@ msgstr ""
 
 msgid "Conjugate gradient"
 msgstr "Gradient conjugué"
+
+msgid "Conjugate gradient, single reduction"
+msgstr "Gradient conjugué, simple réduction"
 
 msgid "Jacobi"
 msgstr "Jacobi"
