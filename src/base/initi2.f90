@@ -106,7 +106,8 @@ do iphas = 1, nphas
     write(nfecra,1100) iphas,almax(iphas)
     write(nfecra,1102)
     if(itytur(iphas).eq.2.or.itytur(iphas).eq.3                   &
-         .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60) then
+         .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60          &
+         .or. iturb(iphas).eq.70) then
       write(nfecra,1101)
     endif
   endif

@@ -909,6 +909,8 @@ do iphas = 1, nphas
         elseif(iturb(iphas).eq.60) then
           icodcl(ifac,ik  (iphas)) = 3
           icodcl(ifac,iomg(iphas)) = 3
+        elseif(iturb(iphas).eq.70) then
+          icodcl(ifac,inusa(iphas)) = 3
         endif
         if(nscaus.gt.0) then
           do ii = 1, nscaus
@@ -972,6 +974,12 @@ do iphas = 1, nphas
           else
             icodcl(ifac,ik  (iphas)) = 3
             icodcl(ifac,iomg(iphas)) = 3
+          endif
+        elseif(iturb(iphas).eq.70) then
+         if(rcodcl(ifac,inusa(iphas),1).gt.0.d0) then
+            icodcl(ifac,inusa(iphas)) = 1
+          else
+            icodcl(ifac,inusa(iphas)) = 3
           endif
         endif
         if(nscaus.gt.0) then

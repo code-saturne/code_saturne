@@ -170,8 +170,10 @@ integer          imprim, modntl
 integer          inturb, inlami, iuiptn
 integer          iuiph , iviph , iwiph
 integer          ikiph , iepiph, iphiph, ifbiph, iomgip
+integer          inuiph
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          iclu  , iclv  , iclw  , iclk  , iclep
+integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
@@ -210,6 +212,7 @@ ifbiph = 0
 ikiph = 0
 iomgip = 0
 iphiph = 0
+inuiph = 0
 ir11ip = 0
 ir22ip = 0
 ir33ip = 0
@@ -221,6 +224,7 @@ iclk = 0
 iclomg = 0
 iclfb = 0
 iclphi = 0
+iclnu = 0
 icl11 = 0
 icl22 = 0
 icl33 = 0
@@ -267,6 +271,8 @@ elseif(iturb(iphas).eq.50) then
 elseif(iturb(iphas).eq.60) then
   ikiph  = ik  (iphas)
   iomgip = iomg(iphas)
+elseif(iturb(iphas).eq.70) then
+  inuiph  = inusa (iphas)
 endif
 
 ! --- Conditions aux limites
@@ -292,6 +298,8 @@ elseif(iturb(iphas).eq.50) then
 elseif(iturb(iphas).eq.60) then
   iclk   = iclrtp(ikiph ,icoef)
   iclomg = iclrtp(iomgip,icoef)
+elseif(iturb(iphas).eq.70) then
+  iclnu  = iclrtp(inuiph,icoef)
 endif
 
 icluf  = iclrtp(iuiph ,icoeff)
@@ -756,9 +764,9 @@ do ifac = 1, nfabor
       coefb(ifac,iclv)   = 0.d0
       coefb(ifac,iclw)   = 0.d0
 
-!     En LES on est forcement en IDEUCH=0, pas la peine d'exprimer les flux en version "scalable
-!     wall function".
-    elseif(itytur(iphas).eq.4) then
+    ! En LES on est forcement en IDEUCH=0, pas la peine d'exprimer les flux en
+    ! version "scalable wall function". Idem pour le modele de Spalart Allmaras.
+    elseif(itytur(iphas).eq.4.or.iturb(iphas).eq.70) then
       if(ilogpo(iphas).eq.0) then
         uiptn  = utau                                             &
              + uet*apow*bpow*yplus**bpow*(2.d0**(bpow-1.d0)-2.d0)
@@ -974,6 +982,15 @@ do ifac = 1, nfabor
              /(ckwbt1*distbf**3)
         coefb(ifac,iclomg)  = 1.d0
       endif
+
+!===============================================================================
+! 7.1 CONDITIONS AUX LIMITES SUR LE MODELE DE SPALART ALLMARAS
+!===============================================================================
+
+    elseif (iturb(iphas).eq.70) then
+
+      coefa(ifac,iclnu)   = 0.d0
+      coefb(ifac,iclnu)   = 0.d0
 
     endif
 

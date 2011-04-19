@@ -403,6 +403,9 @@ do iphas = 1, nphas
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
     ivar = iomg  (iphas)
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  elseif(iturb(iphas).eq.70) then
+    ivar = inusa (iphas)
+    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
   endif
 
 enddo

@@ -262,6 +262,10 @@ if (isuite.eq.0) then
       rtp(iel,ik(iphas))   = xkent
       rtp(iel,iomg(iphas)) = xeent/cmu/xkent
 
+    elseif(iturb(iphas).eq.70) then
+
+      rtp(iel,inusa(iphas)) = cmu*xkent**2/xeent
+
     endif
 
     if (iscalt(iphas).ge.0) then

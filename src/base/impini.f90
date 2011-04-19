@@ -84,6 +84,7 @@ implicit none
 
 character        name*300, chaine*80
 integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok60
+integer          iok70
 integer          ii    , jj    , ivar  , iphas , iiesca, iest
 integer          ipp   , iwar  , imom
 integer          nbccou
@@ -361,7 +362,7 @@ do iphas = 1, nphas
     if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
       write(nfecra,2527) relaxv(ik(iphas)),relaxv(iep(iphas))
     else
-      write(nfecra,2529)
+      write(nfecra,2540)
     endif
   elseif(iturb(iphas).eq.21) then
     write(nfecra,2518)                                            &
@@ -370,7 +371,7 @@ do iphas = 1, nphas
     if (ikecou(iphas).eq.0.and. idtvar.ge.0) then
       write(nfecra,2527) relaxv(ik(iphas)),relaxv(iep(iphas))
     else
-      write(nfecra,2529)
+      write(nfecra,2540)
     endif
   elseif(iturb(iphas).eq.30) then
     write(nfecra,2519)                                            &
@@ -394,7 +395,7 @@ do iphas = 1, nphas
     if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
       write(nfecra,2527) relaxv(ik(iphas)),relaxv(iep(iphas))
     else
-      write(nfecra,2529)
+      write(nfecra,2540)
     endif
   elseif(iturb(iphas).eq.60) then
     write(nfecra,2523)                                            &
@@ -403,8 +404,10 @@ do iphas = 1, nphas
     if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
       write(nfecra,2528) relaxv(ik(iphas)),relaxv(iomg(iphas))
     else
-      write(nfecra,2529)
+      write(nfecra,2540)
     endif
+  elseif(iturb(iphas).eq.70) then
+    write(nfecra,2529) almax(iphas) , uref(iphas) , relaxv(inusa(iphas))
   endif
 enddo
 
@@ -418,6 +421,7 @@ iok30 = 0
 iok31 = 0
 iok50 = 0
 iok60 = 0
+iok70 = 0
 do iphas = 1, nphas
   if(iturb(iphas).eq.20) then
     iok20 = 20
@@ -436,6 +440,9 @@ do iphas = 1, nphas
   endif
   if(iturb(iphas).eq.60) then
     iok60 = 60
+  endif
+  if(iturb(iphas).eq.70) then
+    iok70 = 70
   endif
 enddo
 if(iok20.gt.0) then
@@ -459,6 +466,9 @@ endif
 if(iok60.gt.0) then
   write(nfecra,2536) ckwsk1,ckwsk2,ckwsw1,ckwsw2,ckwbt1,ckwbt2,   &
        ckwgm1,ckwgm2,ckwa1,ckwc1
+endif
+if(iok70.gt.0) then
+  write(nfecra,2537) csab1,csab2,csasig,csav1,csaw1,csaw2,csaw3
 endif
 
 write(nfecra,9900)
@@ -560,7 +570,11 @@ write(nfecra,9900)
  2528 format(                                                           &
 '       RELAXV = ', E14.5,    ' pour k     (Relaxation)       ',/,&
 '       RELAXV = ', E14.5,    ' pour omega (Relaxation)       ',/)
- 2529 format(/)
+ 2529 format(                                                           &
+'   - Spalart-Allmares    (ITURB = 70)                        ',/,&
+'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
+'       RELAXV = ', E14.5,    ' pour nu (Relaxation)          ',/)
 
  2530 format(                                                           &
 ' --- Constantes                                              ',/,&
@@ -637,6 +651,16 @@ write(nfecra,9900)
 '       CKWC1  = ', E14.5,    ' (Cste c1 pour limiteur prod  )',/,&
 '       CMU    = ', E14.5,    ' (Cste Cmu (ou Beta*) pour    )',/,&
 '                                    conversion omega/epsilon)',/)
+ 2537 format(                                                           &
+'   - Spalart-Allmaras    (ITURB = 70)'                        ,/,&
+'       CSAB1  = ', E14.5,    ' (Constante b1                )',/,&
+'       CSAB2  = ', E14.5,    ' (Constante b2                )',/,&
+'       CSASIG = ', E14.5,    ' (Constante sigma             )',/,&
+'       CSAV1  = ', E14.5,    ' (Constante v1                )',/,&
+'       CSAW1  = ', E14.5,    ' (Constante w1                )',/,&
+'       CSAW2  = ', E14.5,    ' (Constante w2                )',/,&
+'       CSAW3  = ', E14.5,    ' (Constante w3                )',/)
+ 2540 format(/)
 
 #else
 
@@ -733,7 +757,11 @@ write(nfecra,9900)
  2528 format(                                                           &
 '       RELAXV = ', E14.5,    ' for k      (Relaxation)       ',/,&
 '       RELAXV = ', E14.5,    ' for omega  (Relaxation)       ',/)
- 2529 format(/)
+ 2529 format(                                                           &
+'   - Spalart-Allmares    (ITURB = 70)                        ',/,&
+'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
+'       RELAXV = ', E14.5,    ' for nu (Relaxation)           ',/)
 
  2530 format(                                                           &
 ' --- Constants'                                               ,/,&
@@ -810,6 +838,17 @@ write(nfecra,9900)
 '       CKWC1  = ', E14.5,    ' (c1 const. for prod. limiter )',/,&
 '       CMU    = ', E14.5,    ' (Cmu (or Beta*) constant for )',/,&
 '                                    omega/epsilon conversion)',/)
+ 2537 format(                                                           &
+'   - Spalart-Allmaras    (ITURB = 70)'                        ,/,&
+'       CSAB1  = ', E14.5,    ' (b1 constant                 )',/,&
+'       CSAB2  = ', E14.5,    ' (b2 constant                 )',/,&
+'       CSASIG = ', E14.5,    ' (sigma constant              )',/,&
+'       CSAV1  = ', E14.5,    ' (v1 constant                 )',/,&
+'       CSAW1  = ', E14.5,    ' (w1 constant                 )',/,&
+'       CSAW2  = ', E14.5,    ' (w2 constant                 )',/,&
+'       CSAW3  = ', E14.5,    ' (w3 constant                 )',/)
+
+ 2540 format(/)
 
 #endif
 

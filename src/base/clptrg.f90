@@ -171,6 +171,7 @@ integer          iuiptn
 integer          iuiph , iviph , iwiph
 integer          ikiph , iepiph, iphiph, ifbiph, iomgip
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
+integer          inuiph, iclnu
 integer          iclu  , iclv  , iclw  , iclk  , iclep
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
@@ -195,6 +196,7 @@ double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
 double precision distbf0,rugd,rugt,ydep,act
+double precision dsa0
 
 !===============================================================================
 
@@ -209,6 +211,7 @@ ifbiph = 0
 ikiph = 0
 iomgip = 0
 iphiph = 0
+inuiph = 0
 ir11ip = 0
 ir22ip = 0
 ir33ip = 0
@@ -220,6 +223,7 @@ iclk = 0
 iclomg = 0
 iclfb = 0
 iclphi = 0
+iclnu = 0
 icl11 = 0
 icl22 = 0
 icl33 = 0
@@ -272,6 +276,8 @@ elseif(iturb(iphas).eq.50) then
 elseif(iturb(iphas).eq.60) then
   ikiph  = ik  (iphas)
   iomgip = iomg(iphas)
+elseif(iturb(iphas).eq.70) then
+  inuiph = inusa(iphas)
 endif
 
 ! --- Conditions aux limites
@@ -297,6 +303,8 @@ elseif(iturb(iphas).eq.50) then
 elseif(iturb(iphas).eq.60) then
   iclk   = iclrtp(ikiph ,icoef)
   iclomg = iclrtp(iomgip,icoef)
+elseif(iturb(iphas).eq.70) then
+  iclnu  = iclrtp(inuiph,icoef)
 endif
 
 icluf  = iclrtp(iuiph ,icoeff)
@@ -628,9 +636,10 @@ do ifac = 1, nfabor
 !               de facon conditionnelle   --> Coef RCFLUX
 
 ! On traite tous les modeles de la meme maniere (a revisiter)
-    if (itytur(iphas).eq.2 .or. iturb(iphas).eq.60                &
-        .or.iturb(iphas).eq.0 .or.iturb(iphas).eq.10.or.          &
-           itytur(iphas).eq.3.or.itytur(iphas).eq.4) then
+    if (itytur(iphas).eq.2 .or. iturb(iphas).eq.60 .or.        &
+         iturb(iphas).eq.0 .or. iturb(iphas).eq.10 .or.        &
+        itytur(iphas).eq.3 .or. itytur(iphas).eq.4 .or.        &
+         iturb(iphas).eq.70        ) then
 
 ! Pseudo decalage de la paroi de la distance RUGD :
 ! modified for non neutral boundary layer (cfnnu)
@@ -639,7 +648,7 @@ do ifac = 1, nfabor
 
       rcprod = max(distbf/distbf0,                                &
               deuxd0*distbf*sqrt(xmutlm/visctc/distbf0**2)        &
-              -1./(2.+rugd/distbf0))
+              -1.d0/(2.d0+rugd/distbf0))
 
       rcflux = max(xmutlm,visctc)/(visclc+visctc)*distbf/distbf0
 
@@ -823,6 +832,14 @@ do ifac = 1, nfabor
               (sqrcmu*xkappa*visclc**2*yplus**2)
         coefb(ifac,iclomg) = 1.d0
 
+!===============================================================================
+! 7.1 CONDITIONS AUX LIMITES SUR NUSA dE SPALART ALLMARAS
+!===============================================================================
+
+    elseif (iturb(iphas).eq.70) then
+        dsa0 = rugd
+        coefa(ifac,iclnu)   = 0.d0
+        coefb(ifac,iclnu)   = dsa0/(dsa0+distbf)
     endif
 
 !===============================================================================

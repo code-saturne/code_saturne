@@ -96,6 +96,7 @@ module cstphy
   !   cv2f*  : constantes specifiques du v2f phi-model
   !   ckw*   : constantes specifiques du k-omega SST
   !            (sk=sigma_k, sw=sigma_w, bt=beta, gm=gamma)
+  !   csa*   : constantes specifiques de Spalart-Allmaras
   !   almax  : echelle de longueur turbulente
   !   uref   : vitesse de reference
   !   xlomlg : longueur pour longueur de melange
@@ -132,6 +133,8 @@ module cstphy
                             cv2fct , cv2fcl , cv2fet ,                      &
                             ckwsk1 , ckwsk2 , ckwsw1 , ckwsw2 , ckwbt1 ,    &
                             ckwbt2 , ckwgm1 , ckwgm2 , ckwa1  , ckwc1  ,    &
+                            csab1  , csab2  , csasig , csav1  , csaw1  ,    &
+                            csaw2  , csaw3  ,                               &
                             volmin , volmax , voltot ,                      &
                             almax (nphsmx)  , uref  (nphsmx),               &
                             xlomlg(nphsmx)  ,                               &
@@ -139,6 +142,7 @@ module cstphy
                             csmago(nphsmx)  , cdries(nphsmx),               &
                             xlesfd(nphsmx)  , smagmx(nphsmx),               &
                             cwale(nphsmx)
+
 
   ! Constantes pour les scalaires
 

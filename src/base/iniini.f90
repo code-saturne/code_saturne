@@ -531,6 +531,7 @@ do iphas = 1, nphsmx
   ir23  (iphas) = 0
   iphi  (iphas) = 0
   ifb   (iphas) = 0
+  inusa (iphas) = 0
 enddo
 
 do iscal = 1, nscamx
@@ -1310,6 +1311,15 @@ ckwgm1 = ckwbt1/cmu - xkappa**2/(ckwsw1*sqrt(cmu))
 ckwgm2 = ckwbt2/cmu - xkappa**2/(ckwsw2*sqrt(cmu))
 ckwa1  = 0.31d0
 ckwc1  = 10.d0
+
+!   pour le modele de Spalart Allmaras
+csab1    = 0.1355d0
+csab2    = 0.622d0
+csav1    = 7.1d0
+csasig   = 2.d0/3.d0
+csaw1    = csab1/xkappa**2 + 1.d0/csasig*(1.d0 + csab2)
+csaw2    = 0.3d0
+csaw3    = 2.d0
 
 !   echelle de longueur negative, recalculee par la suite
 !    ou entree par l'utilisateur

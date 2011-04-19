@@ -46,6 +46,7 @@ module numvar
   ! iep                        Dissipation turbulente
   ! iphi, ifb                  variables phi et f_barre du v2f phi-model
   ! iomg                       variable omega du k-omega SST
+  ! inusa                      variable nu du Spalart-Allmaras
   ! isca(i)                    scalaire numero i
   ! iscapp(i)                  no du scalaire physique particuliere i
   ! nscaus                     nbre de scalaires utilisateur
@@ -58,9 +59,11 @@ module numvar
                    ir11(nphsmx), ir22(nphsmx)  , ir33(nphsmx),     &
                    ir12(nphsmx), ir13(nphsmx)  , ir23(nphsmx),     &
                    iphi(nphsmx), ifb(nphsmx)   , iomg(nphsmx),     &
+                   inusa(nphsmx),                                  &
                    isca(nscamx), iscapp(nscamx),                   &
                    nscaus      , nscapp        ,                   &
                    iuma        , ivma          , iwma
+
 
   ! Position des proprietes (physiques ou numeriques)
   !  (dans propce, propfa et propfb)

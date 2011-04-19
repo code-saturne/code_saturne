@@ -585,6 +585,10 @@ do ilelt = 1, nlelt
       rcodcl(ifac,ik(iphas),1)   = xkent
       rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
 
+    elseif(iturb(iphas).eq.70) then
+
+      rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+
     endif
 
     ! --- Handle scalars attached to the current phase
@@ -669,6 +673,10 @@ do ilelt = 1, nlelt
 
       rcodcl(ifac,ik(iphas),1)   = xkent
       rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+
+    elseif(iturb(iphas).eq.70) then
+
+      rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
 
     endif
 

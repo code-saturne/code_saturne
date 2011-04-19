@@ -118,11 +118,13 @@ integer          ivar  , iphas , iscal , iphass, imom
 integer          iel
 integer          iclip , ipp  , iok   , ii
 integer          ikiph , ieiph , ir11ip, ir22ip, ir33ip, iphiph
+integer          inuiph
 integer          iomgip, idtcm , ipcmom, iiptot, ipriph
 integer          ibormo(nbmomx)
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
 double precision xekmin, xepmin, xomgmn, xphmin, xphmax
+double precision xnumin
 double precision x11min, x22min, x33min, valmom
 double precision vmomax(nbmomx), vmomin(nbmomx)
 double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0
@@ -395,6 +397,25 @@ if(iusini.eq.1.or.isuite.eq.1) then
         iok = iok + 1
       endif
 
+    elseif(iturb(iphas).eq.70) then
+
+      inuiph  = inusa(iphas)
+
+      xnumin = rtp(1,inuiph)
+      do iel = 1, ncel
+        xnumin = min(xnumin,rtp(iel,inuiph))
+      enddo
+      if (irangp.ge.0) then
+        call parmin (xnumin)
+        !==========
+      endif
+
+!     En Spalart-Allmaras on clippe seulement a 0
+      if(xnumin.lt.0.d0 ) then
+        write(nfecra,3032) iphas,xnumin
+        iok = iok + 1
+      endif
+
     endif
   enddo
 
@@ -404,7 +425,7 @@ else
     if (iturb(iphas).ne.0 .and. iturb(iphas).ne.10                &
          .and. itytur(iphas).ne.4) then
       if (uref(iphas).lt.0.d0) then
-        write(nfecra,3032) iphas,uref(iphas)
+        write(nfecra,3039) iphas,uref(iphas)
         iok = iok + 1
       endif
     endif
@@ -915,6 +936,28 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
 '@    =========                                               ',/,&
+'@    TURBULENCE NEGATIVE OU NULLE                            ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Phase                       = ',I4                         ,/,&
+'@   Valeur minimale de nu      = ',E14.5                      ,/,&
+'@                                                            ',/,&
+'@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
+'@    le fichier suite ou bien la valeur de UREF (usini1      ',/,&
+'@    et/ou interface).                                       ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
+'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
+'@    par l''interface.                                       ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 3039 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
+'@    =========                                               ',/,&
 '@    PHASE ',I10                                              ,/,&
 '@    LA VITESSE DE REFERENCE UREF N''A PAS ETE INITIALISEE   ',/,&
 '@    OU A ETE MAL INITIALISEE (VALEUR NEGATIVE).             ',/,&
@@ -1194,6 +1237,28 @@ write(nfecra,3000)
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  3032 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
+'@    ========                                                ',/,&
+'@     NEGATIVE OR NULL TURBULENCE                            ',/,&
+'@                                                            ',/,&
+'@  The calculation will not be run.                          ',/,&
+'@                                                            ',/,&
+'@  Phase                     = ',I4                           ,/,&
+'@   Minimum value of nu      = ',E14.5                        ,/,&
+'@                                                            ',/,&
+'@  Verify the initialization (usiniv and/or interface),      ',/,&
+'@    the restart file or the value of UREF (usini1 and/or    ',/,&
+'@    interface).                                             ',/,&
+'@  In the case where the values read in the restart file     ',/,&
+'@    are incorrect, they may be modified with usiniv or      ',/,&
+'@    with the interface.                                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 3039 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

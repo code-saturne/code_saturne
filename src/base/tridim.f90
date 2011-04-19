@@ -144,7 +144,7 @@ integer          idtr  , iviscf, iviscb, ivisfi, ivisbi, iiptot
 integer          idam  , ixam
 integer          icofbd
 integer          idrtp , igrdp , ismbr , irovsd
-integer          itinsk, itinse, idivu , iprv2f
+integer          itinsk, itinse, idivu , iprv2f, itinsa
 integer          iw1   , iw2   , iw3   , iw4   , iw5   , iw6
 integer          iw7   , iw8   , iw9   , iw10  , iw11  , iw12
 integer          ixmij
@@ -161,6 +161,7 @@ integer          iphas , kphas , ii    , jj    , ippcp , ientha, ippcv
 integer          ikiph , ieiph , iomiph
 integer          iuiph , iviph , iwiph , ipriph, iphiph, iphass
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
+integer          inuiph
 integer          ipcrom, ipcroa
 integer          iprnew, idimte, itenso
 integer          ifinib, ifinrb, iiifap
@@ -180,7 +181,7 @@ integer          maxelt, ils, iilzfb, nbzfmx, nozfmx, iqcalc
 
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0
-double precision relaxk, relaxe, relaxw
+double precision relaxk, relaxe, relaxw, relaxn
 double precision ctheta, stheta, omgnrm, rrotgb(3,3)
 
 integer          ipass
@@ -1975,6 +1976,58 @@ if (iccvfg.eq.0) then
         do iel = 1,ncel
           rtp(iel,ikiph)  = relaxk*rtp(iel,ikiph) +(1.d0-relaxk)*rtpa(iel,ikiph)
           rtp(iel,iomiph) = relaxw*rtp(iel,iomiph)+(1.d0-relaxw)*rtpa(iel,iomiph)
+        enddo
+      endif
+
+    else if( iturb(iphas).eq.70 ) then
+
+      inuiph = inusa (iphas)
+
+      call memspa &
+      !==========
+    ( idebia , idebra ,                                              &
+      nvar   , nscal  , nphas  ,                                     &
+      idtr   , iviscf , iviscb , idam   , ixam   ,                   &
+      idrtp  , ismbr           , itinsa , idivu ,                    &
+      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
+      iw8    , iw9    ,                                              &
+      ifinia , ifinra )
+
+      if(cdtvar(inuiph).ne.1.d0) then
+        do iel = 1, ncel
+          ra(idtr-1+iel) = dt(iel)*cdtvar(inuiph)
+        enddo
+      else
+        do iel = 1, ncel
+          ra(idtr-1+iel) = dt(iel)
+        enddo
+      endif
+
+      call turbsa &
+      !==========
+    ( ifinia , ifinra ,                                              &
+      nvar   , nscal  , nphas  ,                                     &
+      ncepdc(iphas) , ncetsm(iphas) ,                                &
+      iphas  ,                                                       &
+      ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+      ia     ,                                                       &
+      ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
+      tslagr   ,                                                     &
+      coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+      ia(iitypf) ,                                                   &
+      ra(iviscf) , ra(iviscb) ,                                      &
+      ra(idam  ) , ra(ixam  ) ,                                      &
+      ra(idrtp ) , ra(ismbr )              , ra(itinsa)             ,&
+      ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
+      ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+      ra     )
+
+      !  RELAXATION DE NUSA
+      if (idtvar.ge.0) then
+        inuiph = inusa(iphas)
+        relaxn = relaxv(inuiph)
+        do iel = 1,ncel
+          rtp(iel,inuiph) = relaxn*rtp(iel,inuiph)+(1.d0-relaxn)*rtpa(iel,inuiph)
         enddo
       endif
 

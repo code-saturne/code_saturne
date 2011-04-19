@@ -295,6 +295,11 @@ do ifac = 1, nfabor
           if (rcodcl(ifac,iomg(iphas),1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
 
+        elseif(iturb(iphas).eq.70) then
+
+          if (rcodcl(ifac,inusa(iphas),1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+
         endif
 
         if (iscalt(iphas).ne.-1) then

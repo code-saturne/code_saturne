@@ -310,6 +310,12 @@ if ( isuite.eq.0 ) then
       rtp(iel,iomg(iphas)) = xeent/cmu/xkent
     enddo
 
+  elseif (iturb(iphas).eq.70) then
+
+    do iel = 1, ncel
+      rtp(iel,inusa(iphas)) = cmu*xkent**2/xeent
+    enddo
+
   endif
 
 ! --> All the domain is filled with the fisrt oxidizer at TINITK

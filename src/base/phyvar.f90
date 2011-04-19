@@ -126,9 +126,11 @@ integer          ii    , iok   , iok1  , iok2  , iisct
 integer          nphmx , nn
 integer          ibrom(nphsmx) , ipcrom, ipbrom, ipcvst
 integer          ikiph , ieiph , ir11ip, ir22ip, ir33ip
+integer          inuiph
 integer          ipccp , ipcvis, iphiph, ipcvma
 integer          iclipc
 double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
+double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, vistot
 
 integer          ipass
@@ -502,6 +504,26 @@ do iphas = 1, nphas
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
    ra     )
+
+  elseif (iturb(iphas).eq.70) then
+
+! 3.10 SPALART -ALLMARAS
+! ======================
+
+    cv13 = csav1**3
+
+    inuiph = inusa(iphas)
+    ipcvst = ipproc(ivisct(iphas))
+    ipcrom = ipproc(irom  (iphas))
+    ipcvis = ipproc(iviscl(iphas))
+
+    do iel = 1, ncel
+      xrom = propce(iel,ipcrom)
+      nusa = rtp(iel,inuiph)
+      xi3  = (xrom*nusa/propce(iel,ipcvis))**3
+      fv1  = xi3/(xi3+cv13)
+      propce(iel,ipcvst) = xrom*nusa*fv1
+    enddo
 
   endif
 

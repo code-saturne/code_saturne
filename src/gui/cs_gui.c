@@ -2675,6 +2675,9 @@ void CS_PROCF (csturb, CSTURB) (int    *const iturb,
      cs_gui_advanced_options_turbulence("scale_model", &ideuch[iphas]);
      cs_gui_advanced_options_turbulence("gravity_terms", &igrake[iphas]);
    }
+  else if (cs_gui_strcmp(model, "Spalart-Allmaras")){
+     iturb[iphas] = 70;
+   }
   else
      bft_error(__FILE__, __LINE__, 0,
                _("Invalid turbulence model: %s.\n"), model);
@@ -2955,6 +2958,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
                                 const int *const iomg,
                                 const int *const iphi,
                                 const int *const ifb,
+                                const int *const inusa,
                                 const int *const iale,
                                 const int *const iuma,
                                 const int *const ivma,
@@ -3082,6 +3086,13 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     cs_glob_var->rtp[n] = iomg[iphas] -1;
     BFT_MALLOC(cs_glob_var->name[n], strlen("turb_omega")+1, char);
     strcpy(cs_glob_var->name[n++], "turb_omega");
+
+  } else if (iturb[iphas] == 70) {
+
+    cs_glob_var->rtp[n] = inusa[iphas]   -1;
+    BFT_MALLOC(cs_glob_var->name[n], strlen("turb_nusa")+1, char);
+    strcpy(cs_glob_var->name[n++], "turb_nusa");
+
   }
 
   for (i=k; i < n; i++) {

@@ -125,6 +125,7 @@ integer          iicp  , iicpa
 integer          iiviss, iiptot
 integer          iptsna, iptsta, iptsca
 integer          ikiph , ieiph , iphiph, ifbiph, iomgip
+integer          inuiph
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          nn
 double precision ro0iph, visiph
@@ -421,6 +422,27 @@ do iphas = 1, nphas
 
     endif
 
+  elseif(iturb(iphas).eq.70) then
+
+    inuiph  = inusa(iphas)
+
+    if (uref(iphas).ge.0.d0) then
+
+      do iel = 1, ncel
+        rtp(iel,inuiph ) = sqrt(1.5d0)*(0.02d0*uref(iphas))*almax(iphas)
+!     on utilise la formule classique eps=k**1.5/Cmu/ALMAX
+!     et nusa=Cmu*k**2/eps
+      enddo
+!     pas la peine de clipper, les valeurs sont forcement positives
+
+    else
+
+      do iel = 1, ncel
+        rtp(iel,inuiph ) = -grand
+      enddo
+
+    endif
+
   endif
 
 enddo
@@ -557,6 +579,7 @@ do iphas = 1, nphas
     if(itytur(iphas).eq.3) jj = 7
     if(iturb(iphas).eq.50) jj = 4
     if(iturb(iphas).eq.60) jj = 2
+    if(iturb(iphas).eq.70) jj = 1
     iptsta = ipproc(itstua(iphas))
     do ii = 1, jj
       do iel = 1, ncel

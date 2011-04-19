@@ -429,6 +429,7 @@ if(iihmpr.eq.1) then
              ir11, ir22, ir33,                                    &
              ir12, ir13, ir23,                                    &
              iomg, iphi, ifb,                                     &
+             inusa,                                               &
              iale, iuma, ivma, iwma,                              &
              isca, iscapp)
 

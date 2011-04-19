@@ -135,17 +135,21 @@ integer          nstoke(nphsmx), nstosc, nstovf
 integer          nstuvw(nphsmx), nstoup(nphsmx), nstuke(nphsmx)
 integer          nstrij(nphsmx), nsurij(nphsmx), nstov2(nphsmx)
 integer          nstuv2(nphsmx), nstokw(nphsmx), nstukw(nphsmx)
+integer          nstunu(nphsmx), nstonu(nphsmx)
 integer          nstusc
 integer          iis, icodcu, icodcv, icodcw, icodck, icodce
+integer          icodcn
 integer          icodcp, icodcf, icodom
 integer          icor11, icor22, icor33, icor12, icor13, icor23
 integer          ipp, iokcod, iok, iphas
 integer          ipriph, iuiph , iviph , iwiph , ikiph , iepiph
+integer          inuiph
 integer          iphiph, ifbiph, iomgip
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          ippprp, ippuip, ippvip, ippwip, ippepp, ippkip
 integer          ipp11p, ipp22p, ipp33p, ipp12p, ipp13p, ipp23p
 integer          ippphp, ippfbp, ippomg
+integer          ippnup
 
 !===============================================================================
 
@@ -164,6 +168,7 @@ ikiph = 0
 iomgip = 0
 iphiph = 0
 iviph = 0
+inuiph = 0
 ir11ip = 0
 ir22ip = 0
 ir33ip = 0
@@ -175,6 +180,7 @@ ippkip = 0
 ippfbp = 0
 ippomg = 0
 ippphp = 0
+ippnup = 0
 ipp11p = 0
 ipp22p = 0
 ipp33p = 0
@@ -220,6 +226,8 @@ do iphas = 1, nphas
   nsurij(iphas) = 0
   nstuv2(iphas) = 0
   nstukw(iphas) = 0
+  nstunu(iphas) = 0
+  nstonu(iphas) = 0
 enddo
 
 
@@ -286,6 +294,8 @@ do iphas = 1, nphas
   elseif(iturb(iphas).eq.60) then
     ikiph  = ik  (iphas)
     iomgip = iomg(iphas)
+  elseif(iturb(iphas).eq.70) then
+    inuiph = inusa(iphas)
   endif
 
   ippprp = ipprtp(ipriph)
@@ -311,6 +321,8 @@ do iphas = 1, nphas
   elseif(iturb(iphas).eq.60) then
     ippkip = ipprtp(ikiph )
     ippomg = ipprtp(iomgip)
+  elseif(iturb(iphas).eq.70) then
+    ippnup = ipprtp(inuiph )
   endif
 
 ! --- Conditions admissibles pour les composantes de vitesse
@@ -549,6 +561,23 @@ do iphas = 1, nphas
 
     enddo
 
+! --- Conditions admissibles pour Spalart-Allmaras
+  elseif (iturb(iphas).eq.70) then
+
+    do ifac = 1, nfabor
+
+      if(icodcl(ifac,inuiph ).ne. 1.and.                           &
+          icodcl(ifac,inuiph ).ne. 3.and.                          &
+          icodcl(ifac,inuiph ).ne. 5.and.                          &
+          icodcl(ifac,inuiph ).ne. 6           )then
+        chaine=nomvar(ippnup)
+        write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+                          icodcl(ifac,inuiph )
+        nstonu(iphas) = nstonu(iphas) + 1
+      endif
+
+    enddo
+
   endif
 
 enddo
@@ -627,6 +656,8 @@ do iphas = 1, nphas
   elseif(iturb(iphas).eq.60) then
     ikiph  = ik  (iphas)
     iomgip = iomg(iphas)
+  elseif(iturb(iphas).eq.70) then
+    inuiph = inusa(iphas)
   endif
 
   ippprp = ipprtp(ipriph)
@@ -652,6 +683,8 @@ do iphas = 1, nphas
   elseif(iturb(iphas).eq.60) then
     ippkip = ipprtp(ikiph )
     ippomg = ipprtp(iomgip)
+  elseif(iturb(iphas).eq.70) then
+    ippnup = ipprtp(inuiph)
   endif
 
 ! --- Coherence pour les composantes de vitesse
@@ -919,6 +952,37 @@ do iphas = 1, nphas
 
     enddo
 
+  elseif(iturb(iphas).eq.70 ) then
+
+    do ifac = 1, nfabor
+
+      icodcu = icodcl(ifac,iuiph)
+      icodcv = icodcl(ifac,iviph)
+      icodcw = icodcl(ifac,iwiph)
+      icodcn = icodcl(ifac,inuiph)
+
+      if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.     &
+           icodcn.eq.5 ) .and.                                    &
+          (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.     &
+           icodcn.ne.5 ) ) then
+        chaine=nomvar(ippnup)
+        write(nfecra,1030)                                        &
+          ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
+          icodcl(ifac,inuiph),icodcu,icodcv,icodcw
+        nstunu(iphas) = nstunu(iphas) + 1
+      endif
+
+      if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
+           icodcn.eq.6 ) .and.                                    &
+          (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.     &
+           icodcn.ne.6 ) ) then
+        chaine=nomvar(ippnup)
+        write(nfecra,1030)                                        &
+          ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
+          icodcl(ifac,inuiph),icodcu,icodcv,icodcw
+      endif
+
+    enddo
   endif
 
 enddo
@@ -964,16 +1028,16 @@ endif
 do iphas = 1, nphas
   if( nstvit(iphas).gt.0 .or. nstopp(iphas).gt.0 .or.             &
       nstoke(iphas).gt.0 .or. nstrij(iphas).gt.0 .or.             &
-      nstov2(iphas).gt.0 .or.                                     &
+      nstov2(iphas).gt.0 .or. nstonu(iphas).gt.0 .or.             &
       nstuvw(iphas).gt.0 .or. nstoup(iphas).gt.0 .or.             &
       nstuke(iphas).gt.0 .or. nsurij(iphas).gt.0 .or.             &
-      nstuv2(iphas).gt.0       ) then
+      nstuv2(iphas).gt.0 .or. nstunu(iphas).gt.0       ) then
     write (nfecra,1902) iphas, nstvit(iphas),nstopp(iphas),       &
                                nstoke(iphas),nstrij(iphas),       &
-                               nstov2(iphas),                     &
+                               nstov2(iphas),nstonu(iphas),       &
                                nstuvw(iphas),nstoup(iphas),       &
                                nstuke(iphas),nsurij(iphas),       &
-                               nstuv2(iphas)
+                               nstuv2(iphas),nstunu(iphas)
     iok = 1
   endif
 enddo
@@ -1076,12 +1140,14 @@ endif
 '@             sur k et epsilon                     : ',I10    ,/,&
 '@             sur Rij et epsilon                   : ',I10    ,/,&
 '@             sur k, epsilon, phi et f_barre       : ',I10    ,/,&
+'@             sur nu de Spalart Allmaras           : ',I10    ,/,&
 '@         Incoherences :                                     ',/,&
 '@             entre les composantes de la vitesse  : ',I10    ,/,&
 '@             entre vitesse et pression            : ',I10    ,/,&
 '@             entre vitesse et k-epsilon           : ',I10    ,/,&
 '@             entre vitesse et Rij-epsilon         : ',I10    ,/,&
 '@             entre vitesse et v2f                 : ',I10    ,/,&
+'@             entre vitesse et nu                  : ',I10    ,/,&
 '@                                                            ',/,&
 '@         Le calcul ne sera pas execute.                     ',/,&
 '@                                                            ',/,&
@@ -1180,12 +1246,14 @@ endif
 '@             on k and epsilon                     : ',I10    ,/,&
 '@             on Rij and epsilon                   : ',I10    ,/,&
 '@             on k, epsilon, phi and f_barre       : ',I10    ,/,&
+'@             on nu of Spalart Allmaras model      : ',I10    ,/,&
 '@         Incoherencies:                                     ',/,&
 '@             between the velocity components      : ',I10    ,/,&
 '@             between velocity and pressure        : ',I10    ,/,&
 '@             between velocity and k-epsilon       : ',I10    ,/,&
 '@             between velocity and Rij-epsilon     : ',I10    ,/,&
 '@             between velocity and v2f             : ',I10    ,/,&
+'@             between velocity and nu              : ',I10    ,/,&
 '@                                                            ',/,&
 '@         The calculation will not be run.                   ',/,&
 '@                                                            ',/,&

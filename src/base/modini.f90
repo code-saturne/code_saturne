@@ -119,7 +119,8 @@ do iphas = 1, nphas
   if(                       ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
   ipp = ipppro(ipproc(ivisct(iphas)))
   if( (iturb(iphas).eq.10 .or. itytur(iphas).eq.2                 &
-       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60)           &
+       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
+       .or. iturb(iphas).eq.70 )                                  &
        .and.ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
   if (idtvar.lt.0) then
     ichrvr(ipppro(ipproc(icour(iphas)))) = 0
@@ -204,7 +205,8 @@ endif
 do iphas = 1, nphas
   ipp = ipppro(ipproc(ivisct(iphas)))
   if( (iturb(iphas).eq.10 .or. itytur(iphas).eq.2                 &
-       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60)           &
+       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
+       .or. iturb(iphas).eq.70 )                                  &
        .and.ihisvr(ipp,1).eq.-999) ihisvr(ipp,1) = -1
   if (idtvar.lt.0) then
     ihisvr(ipppro(ipproc(icour(iphas))),1) = 0
@@ -325,6 +327,11 @@ do iphas = 1, nphas
     IF(NOMVAR(IPPRTP(IOMG  (IPHAS))) .EQ.' ') THEN
       WRITE(NOMVAR(IPPRTP(IOMG  (IPHAS))),'(A5,I2.2)')            &
                                                     'Omega',IPHAS
+    endif
+  elseif(iturb(iphas).eq.70) then
+    IF(NOMVAR(IPPRTP(INUSA (IPHAS))) .EQ.' ') THEN
+      WRITE(NOMVAR(IPPRTP(INUSA (IPHAS))),'(A6,I2.2)')            &
+                                                    'NuTild',IPHAS
     endif
   endif
 
@@ -453,8 +460,11 @@ do iphas = 1, nphas
   if(irovar(iphas).eq.1.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
   ipp = ipppro(ipproc(ivisct(iphas)))
   if( (iturb(iphas).eq.10 .or. itytur(iphas).eq.2                 &
-       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60)           &
+       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
+       .or. iturb(iphas).eq.70 )                                  &
        .and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
+  ipp = ipppro(ipproc(inusa(iphas)))
+  if(iturb(iphas).eq.70.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
   ipp = ipppro(ipproc(icour(iphas)))
   if (ilisvr(ipp).eq.-999 .or. idtvar.lt.0) ilisvr(ipp) = 0
   ipp = ipppro(ipproc(ifour(iphas)))
@@ -716,6 +726,16 @@ do iphas = 1, nphas
       thetav(ik  (iphas)) = 0.5d0
       thetav(iomg(iphas)) = 0.5d0
     endif
+  elseif(iturb(iphas).eq.70) then
+    if(abs(thetav(inusa(iphas))+999.d0).gt.epzero) then
+      WRITE(NFECRA,1031) IPHAS,'VARIABLE NU_tilde de SA','THETAV'
+      iok = iok + 1
+    elseif(ischtp(iphas).eq.1) then
+      thetav(inusa(iphas)) = 1.d0
+    elseif(ischtp(iphas).eq.2) then
+!     pour le moment, on ne peut pas passer par ici (cf varpos)
+      thetav(inusa(iphas)) = 0.5d0
+    endif
   endif
 
 enddo
@@ -923,12 +943,16 @@ do iphas = 1, nphas
     cdtvar(ifb (iphas)) = cdtvar(ik  (iphas))
   elseif(iturb(iphas).eq.60) then
     cdtvar(iomg(iphas)) = cdtvar(ik  (iphas))
+  elseif(iturb(iphas).eq.70) then
+! cdtvar est à 1.0 par defaut dans iniini.f90
+    cdtvar(inusa(iphas))= cdtvar(inusa(iphas))
   endif
 
 enddo
 
 ! ---> IDEUCH, YPLULI
-!      En laminaire, longueur de melange et LES, une echelle de vitesse
+!      En laminaire, longueur de melange, Spalar-Allmaras et LES,
+!      une echelle de vitesse.
 !      Sinon, 2 echelles, sauf si l'utilisateur choisit 1 echelle.
 !      On a initialise IDEUCH a -999 pour voir si l'utilisateur essaye
 !        de choisir deux echelles quand ce n'est pas possible et le
@@ -938,20 +962,28 @@ do iphas = 1, nphas
   if(ideuch(iphas).eq.-999) then
     if(iturb(iphas).eq. 0.or.                                     &
        iturb(iphas).eq.10.or.                                     &
-       itytur(iphas).eq.4 ) then
+       itytur(iphas).eq.4.or.                                     &
+       iturb(iphas).eq.70) then
       ideuch(iphas) = 0
     else
       ideuch(iphas) = 1
     endif
   endif
-!     Pour YPLULI, 1/XKAPPA est la valeur qui assure la continuite de la derivee entre
-!     la zone lineaire et la zone logarithmique. Dans le cas des lois de paroi invariantes,
-!     on utilise la valeur de continuite du profil de vitesse, 10,88.
-!     Pour la L    .E.S., on remet 10,88, afin d'eviter des clic/clac quand on est a la limite
-!     (en modele a une echelle en effet, YPLULI=1/XKAPPA ne permet pas forcement de calculer
-!      u* de maniere totalement satisfaisante)
+
+  ! Pour YPLULI, 1/XKAPPA est la valeur qui assure la continuite de la derivee
+  ! entre la zone lineaire et la zone logarithmique.
+
+  ! Dans le cas des lois de paroi invariantes, on utilise la valeur de
+  ! continuite du profil de vitesse, 10.88.
+
+  ! Pour la LES, on remet 10.88, afin d'eviter des clic/clac quand on est a
+  ! la limite (en modele a une echelle en effet, YPLULI=1/XKAPPA ne permet pas
+  ! forcement de calculer u* de maniere totalement satisfaisante).
+  ! Idem en Spalart-Allmaras.
+
   if (ypluli(iphas).lt.-grand) then
-    if (ideuch(iphas).eq.2 .or. itytur(iphas).eq.4 ) then
+    if (ideuch(iphas).eq.2 .or. itytur(iphas).eq.4 .or.           &
+        iturb(iphas).eq.70    ) then
       ypluli(iphas) = 10.88d0
     else
       ypluli(iphas) = 1.d0/xkappa
@@ -1110,7 +1142,7 @@ ineedy = 0
 do iphas = 1, nphas
   if((iturb(iphas).eq.30.and.irijec(iphas).eq.1).or.              &
      (itytur(iphas).eq.4.and.idries(iphas).eq.1).or.              &
-      iturb(iphas).eq.60 ) then
+      iturb(iphas).eq.60.or.iturb(iphas).eq.70      ) then
     ineedy = 1
   endif
 enddo
@@ -1173,6 +1205,11 @@ else
              relaxv(ik(iphas)) = 0.7d0
         if (abs(relaxv(iomg(iphas))+999.d0).lt.epzero)            &
              relaxv(iomg(iphas)) = 0.7d0
+      endif
+    endif
+    if(iturb(iphas).eq.70) then
+      if(abs(relaxv(inusa(iphas))+999.d0).lt.epzero) then
+        relaxv(inusa(iphas)) = 1.D0
       endif
     endif
     if (abs(relaxv(ipr(iphas))+999.d0).lt.epzero)                 &

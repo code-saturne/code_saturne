@@ -219,6 +219,12 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
       rtp(iel,iomg(iphas)) = xeent/cmu/xkent
     enddo
 
+  elseif (iturb(iphas).eq.70) then
+
+    do iel = 1, ncel
+      rtp(iel,inusa(iphas)) = cmu*xkent**2/xeent
+    enddo
+
   endif
 
 ! --> On initialise tout le domaine de calcul avec de l'air a TINITK

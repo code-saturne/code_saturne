@@ -564,6 +564,16 @@ do iphas = 1, nphas
       iok = iok + 1
     endif
   endif
+  if (iturb(iphas).eq.70) then
+    if((    thetst(iphas)       .gt.0.d0 ).or.                    &
+       (    isto2t(iphas)       .gt.0    ).or.                    &
+       (abs(thetav(inusa(iphas))-1.0d0).gt.epzero) ) then
+      write(nfecra,2145)iphas,iturb(iphas),                       &
+           thetst(iphas),isto2t(iphas),                           &
+           thetav(inusa  (iphas))
+      iok = iok + 1
+    endif
+  endif
 enddo
 
 !     A priori, pour le moment, l'ordre 2 en temps
@@ -594,7 +604,7 @@ if(ippmod(iphpar).ge.1) then
   enddo
 
   if(istop.ne.0) then
-    write(nfecra,2145)
+    write(nfecra,2146)
     iok = iok + 1
   endif
 endif
@@ -608,7 +618,7 @@ if(iilagr .eq. 2) then
       (    isno2t(iphas)       .gt.0    ).or.                     &
        (    thetst(iphas)       .gt.0.d0 ).or.                    &
        (    isto2t(iphas)       .gt.0    ) ) then
-      write(nfecra,2146)iphas,thetsn(iphas),isno2t(iphas),        &
+      write(nfecra,2147)iphas,thetsn(iphas),isno2t(iphas),        &
                               thetst(iphas),isto2t(iphas)
       iok = iok + 1
     endif
@@ -617,7 +627,7 @@ if(iilagr .eq. 2) then
     if (iscsth(iscal).eq.1.or.iscsth(iscal).eq.2) then
       if((    thetss(iscal)       .gt.0.d0 ).or.                  &
          (    isso2t(iscal)       .gt.0    )) then
-        write(nfecra,2147)                                        &
+        write(nfecra,2148)                                        &
     'lagrangien ',ISCAL,THETSS(ISCAL),ISSO2T(ISCAL),'uslag1'
         iok = iok + 1
       endif
@@ -634,7 +644,7 @@ if (iirayo.gt.0) then
       if (iscal.eq.iscalt(iphas)) then
         if((    thetss(iscal)       .gt.0.d0 ).or.                &
            (    isso2t(iscal)       .gt.0    )) then
-          write(nfecra,2147)                                      &
+          write(nfecra,2148)                                      &
          'rayonnement',ISCAL,THETSS(ISCAL),ISSO2T(ISCAL),'usray1'
           iok = iok + 1
         endif
@@ -650,7 +660,7 @@ if (idtvar.lt.0) then
     if (ii.ge.1) then
       if (relaxv(ii).gt.1d0.or.relaxv(ii).lt.0d0) then
         chaine=nomvar(ipp)
-        write(nfecra,2148) chaine(1:8),relaxv(ii)
+        write(nfecra,2149) chaine(1:8),relaxv(ii)
         iok = iok + 1
       endif
     endif
@@ -658,20 +668,20 @@ if (idtvar.lt.0) then
   do iphas = 1, nphas
     if((relaxv(iv(iphas)).ne.relaxv(iu(iphas)))                   &
    .or.(relaxv(iw(iphas)).ne.relaxv(iu(iphas))) ) then
-      write(nfecra,2149) relaxv(iu(iphas)),relaxv(iv(iphas)),     &
+      write(nfecra,2150) relaxv(iu(iphas)),relaxv(iv(iphas)),     &
            relaxv(iw(iphas))
       iok = iok + 1
     endif
   enddo
 !       L'algorithme stationnaire n'est pas compatible avec le module Lagrangien
   if (iilagr.ne.0) then
-    write(nfecra,2150) iilagr
+    write(nfecra,2151) iilagr
     iok = iok + 1
   endif
 !       L'algorithme stationnaire n'est pas compatible avec la LES
   do iphas = 1, nphas
     if (itytur(iphas).eq.4) then
-      write(nfecra,2151) iturb(iphas)
+      write(nfecra,2152) iturb(iphas)
       iok = iok + 1
     endif
   enddo
@@ -924,7 +934,7 @@ do iphas = 1, nphas
   if ( itrbph.ne. 0.and.itrbph.ne.10.and.itrbph.ne.20.and.        &
        itrbph.ne.21.and.itrbph.ne.30.and.itrbph.ne.31.and.        &
        itrbph.ne.40.and.itrbph.ne.41.and.itrbph.ne.42.and.        &
-       itrbph.ne.50.and.itrbph.ne.60) then
+       itrbph.ne.50.and.itrbph.ne.60.and.itrbph.ne.70  ) then
     WRITE(NFECRA,2600) IPHAS,'ITURB  ',ITRBPH
     iok = iok + 1
   endif
@@ -969,7 +979,8 @@ if(nscal.ge.1) then
          (nvar.lt. 6+nscal.and.itytur(iphas).eq.2).or.            &
          (nvar.lt.11+nscal.and.itytur(iphas).eq.3).or.            &
          (nvar.lt. 8+nscal.and.iturb(iphas).eq.50).or.            &
-         (nvar.lt. 6+nscal.and.iturb(iphas).eq.60)    ) then
+         (nvar.lt. 6+nscal.and.iturb(iphas).eq.60).or.            &
+         (nvar.lt. 5+nscal.and.iturb(iphas).eq.70)      ) then
       write(nfecra,2610)iphas,                                    &
                  'NOMBRE DE VARIABLES            ',NVAR,          &
                  'NOMBRE DE SCALAIRES            ',NSCAL
@@ -986,7 +997,7 @@ do iphas = 1, nphas
   endif
   if (ideuch(iphas).ne.0 .and.                                    &
        (iturb(iphas).eq.0 .or. iturb(iphas).eq.10 .or.            &
-       itytur(iphas).eq.4) ) then
+       itytur(iphas).eq.4 .or. iturb(iphas).eq.7 )) then
      write(nfecra,2209)iphas,iturb(iphas),ideuch(iphas)
      iok = iok + 1
   endif
@@ -998,10 +1009,10 @@ do iphas = 1, nphas
 !      Specifique k-epsilon, v2f et k-omega
 
  if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50                    &
-       .or. iturb(iphas).eq.60) then
+       .or. iturb(iphas).eq.60 ) then
     if( (nvar.le.5.and.itytur(iphas).eq.2) .or.                   &
         (nvar.le.7.and.iturb(iphas).eq.50) .or.                   &
-        (nvar.le.5.and.iturb(iphas).eq.60) ) then
+        (nvar.le.5.and.iturb(iphas).eq.60)     ) then
       write(nfecra,2610)iphas,                                    &
                  'NOMBRE DE VARIABLES            ',NVAR,          &
                  'OPTION POUR LA TURBULENCE      ',ITURB(IPHAS)
@@ -1452,7 +1463,8 @@ do iphas = 1, nphas
 !      initialiser la turbulence a la main. Un test complementaire sera fait
 !      dans inivar.
   if(itytur(iphas).eq.2.or.itytur(iphas).eq.3                     &
-       .or.iturb(iphas).eq.50.or.iturb(iphas).eq.60) then
+       .or.iturb(iphas).eq.50.or.iturb(iphas).eq.60               &
+       .or.iturb(iphas).eq.70) then
     if(uref(iphas)  .lt.0.d0) then
       write(nfecra,4100)iphas, uref(iphas)
     endif
@@ -2529,6 +2541,31 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
+'@  Pour la phase ',I10   ,' avec le modele de turbulence     ',/,&
+'@    Spallart-Allmaras (ITURB = ',I10   ,')                  ',/,&
+'@    la version courante ne permet pas de traiter les        ',/,&
+'@    l''ordre 2 en temps.                                    ',/,&
+'@    couplage.                                               ',/,&
+'@    Une ou plusieurs valeurs parmi les suivantes ne sont    ',/,&
+'@    donc pas permises :                                     ',/,&
+'@                                                            ',/,&
+'@       THETST    ISTO2T     THETA K   THETA OMEGA           ',/,&
+'@ ',     E12.4,      I10,      E12.4,      E12.4              ,/,&
+'@                                                            ',/,&
+'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2146 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    OPTIONS DE CALCUL INCOMPATIBLES AVEC LE SCHEMA EN TEMPS ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
 '@  La version actuelle ne permet pas de modifier le schema en',/,&
 '@    temps lorsqu''une physique particuliere est activee     ',/,&
 '@    (combustion, charbon, electrique).                      ',/,&
@@ -2538,7 +2575,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2146 format(                                                           &
+ 2147 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2565,7 +2602,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2147 format(                                                           &
+ 2148 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2592,7 +2629,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2148 format(                                                           &
+ 2149 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2610,7 +2647,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2149  format(                                                          &
+ 2150  format(                                                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2630,7 +2667,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2150  format(                                                          &
+ 2151  format(                                                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2646,7 +2683,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2151  format(                                                          &
+ 2152  format(                                                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -2838,7 +2875,7 @@ endif
 '@    =========                                               ',/,&
 '@    LE MODELE DE PAROI A DEUX ECHELLES (IDEUCH=1 OU 2)      ',/,&
 '@    EST INCOMPATIBLE AVEC UN CALCUL EN LAMINAIRE, EN        ',/,&
-'@    LONGUEUR DE MELANGE OU EN L.E.S.                        ',/,&
+'@    LONGUEUR DE MELANGE, EN SPALART-ALLMARAS OU EN L.E.S.   ',/,&
 '@    POUR LA PHASE ',I10                                      ,/,&
 '@    ON A ICI ITURB=',I10                                     ,/,&
 '@         ET IDEUCH=',I10                                     ,/,&
@@ -5042,6 +5079,30 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
+'@  for phase ',I10   ,' with the Spalart-Allmaras            ',/,&
+'@  turbulence model (ITURB = ',I10 ,')                       ',/,&
+'@    the current version does not allow second order         ',/,&
+'@    in time resolution.                                     ',/,&
+'@                                                            ',/,&
+'@   Thus one or more of the values below are not permited    ',/,&
+'@                                                            ',/,&
+'@       THETST    ISTO2T     THETA K   THETA OMEGA           ',/,&
+'@ ',     E12.4,      I10,      E12.4,      E12.4              ,/,&
+'@                                                            ',/,&
+'@ Check the input data given via User Interface or in usini1.',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2146 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@    OPTIONS NOT COMPATIBLE WITH TIME DICRETISATION SCHEME   ',/,&
+'@                                                            ',/,&
+'@  Computation CAN NOT run                                   ',/,&
+'@                                                            ',/,&
 '@  The current version does not allow changing the time      ',/,&
 '@  discretisation scheme when a specific physics is active   ',/,&
 '@    (combustion, coal, electrical, ...).                    ',/,&
@@ -5051,7 +5112,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2146 format(                                                           &
+ 2147 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5078,7 +5139,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2147 format(                                                           &
+ 2148 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5105,7 +5166,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2148 format(                                                           &
+ 2149 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5123,7 +5184,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2149  format(                                                          &
+ 2150  format(                                                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5143,7 +5204,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2150  format(                                                          &
+ 2151  format(                                                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -5159,7 +5220,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2151  format(                                                          &
+ 2152  format(                                                          &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

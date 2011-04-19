@@ -271,7 +271,8 @@ do ilelt = 1, nlelt
 
 !     (ITYTUR est un indicateur qui vaut ITURB/10)
   if (itytur(iphas).eq.2 .or. itytur(iphas).eq.3                  &
-       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60) then
+       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
+       .or. iturb(iphas).eq.70) then
 
     uref2 = rcodcl(ifac,iu(iphas),1)**2                           &
            +rcodcl(ifac,iv(iphas),1)**2                           &
@@ -337,6 +338,10 @@ do ilelt = 1, nlelt
 
       rcodcl(ifac,ik(iphas),1)   = xkent
       rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+
+    elseif (iturb(iphas).eq.70) then
+
+      rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
 
     endif
 

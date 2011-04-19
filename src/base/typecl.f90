@@ -159,7 +159,7 @@ integer          ityp, ii, jj, iphas, iwaru, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          ipriph, iuiph, iviph, iwiph
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip,ir23ip
-integer          ikiph , iepiph, iphiph, ifbiph, iomgip
+integer          ikiph , iepiph, iphiph, ifbiph, iomgip,inuiph
 integer          iprnew, kphas, iii
 integer          irangd, iclipr, iiptot
 integer          ifadir
@@ -196,6 +196,7 @@ ir33ip = 0
 ir12ip = 0
 ir13ip = 0
 ir23ip = 0
+inuiph = 0
 
 pref = 0.d0
 
@@ -589,6 +590,8 @@ do iphas = 1, nphas
   elseif(iturb(iphas).eq.60) then
     ikiph  = ik (iphas)
     iomgip = iomg(iphas)
+  elseif(iturb(iphas).eq.70) then
+    inuiph  = inusa(iphas)
   endif
 
 ! Check if the pressure (unique) has not been handled already
@@ -1001,7 +1004,9 @@ do iphas = 1, nphas
           (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
            ivar.eq.ifbiph)                    ).or.               &
        ( iturb(iphas).eq.60.and.                                  &
-          (ivar.eq.ikiph.or.ivar.eq.iomgip)   ) ) then
+          (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
+       ( iturb(iphas).eq.70.and.                                  &
+          (ivar.eq.inuiph)                    )    ) then
       do ii = ideb, ifin
         ifac = itrifb(ii,iphas)
         if(icodcl(ifac,ivar).eq.0) then
@@ -1058,7 +1063,9 @@ do iphas = 1, nphas
           (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
            ivar.eq.ifbiph)                    ).or.               &
        ( iturb(iphas).eq.60.and.                                  &
-          (ivar.eq.ikiph.or.ivar.eq.iomgip)   ) ) then
+          (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
+       ( iturb(iphas).eq.70.and.                                  &
+          (ivar.eq.inuiph)                    )    ) then
       do ii = ideb, ifin
         ifac = itrifb(ii,iphas)
         if(icodcl(ifac,ivar).eq.0) then

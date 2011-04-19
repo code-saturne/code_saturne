@@ -452,6 +452,8 @@ do iphas = 1, nphas
   elseif (iturb(iphas) == 60) then
     nomrtp(ik(iphas))='k_ce_phase'//cphase(iphas)
     nomrtp(iomg(iphas))='omega_ce_phase'//cphase(iphas)
+  elseif (iturb(iphas).eq.70) then
+    nomrtp(inusa(iphas))='nusa_ce_phase'//cphase(iphas)
   endif
 enddo
 if(nscal.gt.0) then
@@ -858,6 +860,8 @@ nberro=nberro+ierror
     elseif (iturb(iphas).eq.60) then
       nomflu(IK(iphas))='fm_k_phase'//cphase(iphas)
       nomflu(IOMG(iphas))='fm_omega_phase'//cphase(iphas)
+    elseif (iturb(iphas).eq.70) then
+      nomflu(inusa(iphas))='fm_nusa_phase'//cphase(iphas)
     endif
   enddo
   if(nscal.gt.0) then
@@ -948,6 +952,8 @@ nberro=nberro+ierror
     elseif (iturb(iphas).eq.60) then
       nomflu(IK(iphas))='fm_a_k_phase'//cphase(iphas)
       nomflu(IOMG(iphas))='fm_a_omega_phase'//cphase(iphas)
+    elseif (iturb(iphas).eq.70) then
+      nomflu(inusa(iphas))='fm_a_nusa_phase'//cphase(iphas)
     endif
   enddo
   if(nscal.gt.0) then
@@ -1048,6 +1054,8 @@ nberro=nberro+ierror
     elseif (iturb(iphas).eq.60) then
       nomcli(IK(iphas))='_k_phase'//cphase(iphas)
       nomcli(IOMG(iphas))='_omega_phase'//cphase(iphas)
+    elseif (iturb(iphas).eq.70) then
+      nomcli(inusa(iphas))='_nusa_phase'//cphase(iphas)
     endif
   enddo
   if(nscal.gt.0) then
@@ -1266,6 +1274,13 @@ nberro=nberro+ierror
         rubriq = 'tsource_tu_ce_omega_phase'//cphase(iphas)
         call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
                     propce(1,iptsta+1),ierror)
+        nberro=nberro+ierror
+!          En Spalart Allmaras
+      elseif(iturb(iphas).eq.70) then
+
+        RUBRIQ = 'tsource_tu_ce_nusa_phase'//CPHASE(IPHAS)
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta  ),ierror)
         nberro=nberro+ierror
 
       endif

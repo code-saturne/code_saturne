@@ -587,6 +587,9 @@ if(ipass.eq.3) then
       ik    (iphas) = ivar
       ivar          = ivar + 1
       iomg  (iphas) = ivar
+    elseif (iturb(iphas).eq.70) then
+      ivar          = ivar + 1
+      inusa (iphas) = ivar
     endif
 
   enddo
@@ -806,6 +809,8 @@ if(ipass.eq.3) then
     elseif(iturb(iphas).eq.60) then
       ifluma(ik  (iphas)) = iprop
       ifluma(iomg(iphas)) = iprop
+    elseif(iturb(iphas).eq.70) then
+      ifluma(inusa(iphas))= iprop
     endif
   enddo
   do iscal = 1, nscal
@@ -1236,6 +1241,10 @@ if(ipass.eq.4) then
       write(nfecra,8115) iphas,ischtp(iphas),iturb(iphas)
       iok = iok + 1
     endif
+    if(ischtp(iphas).eq. 2.and.iturb(iphas).eq.70) then
+      write(nfecra,8116) iphas,ischtp(iphas),iturb(iphas)
+      iok = iok + 1
+    endif
 
 !     Schema en temps pour le flux de masse
     if(istmpf(iphas).ne. 2.and.istmpf(iphas).ne.0.and.            &
@@ -1406,6 +1415,8 @@ if(ipass.eq.4) then
       elseif(iturb(iphas).eq.60) then
         ifluaa(ik  (iphas)) = iprop
         ifluaa(iomg(iphas)) = iprop
+      elseif (iturb(iphas).eq.70) then
+        ifluaa(inusa(iphas))= iprop
       endif
     enddo
     do iscal = 1, nscal
@@ -1457,6 +1468,8 @@ if(ipass.eq.4) then
         iprop                 = iprop + 7-1
       elseif(iturb(iphas).eq.50) then
         iprop                 = iprop + 4-1
+      elseif(iturb(iphas).eq.70) then
+        iprop                 = iprop + 1-1
       endif
     endif
   enddo
@@ -1976,7 +1989,8 @@ if(ipass.eq.4) then
   enddo
   do iphas = 1, nphas
     if( itytur(iphas).eq.2 .or. itytur(iphas).eq.4                &
-         .or. iturb(iphas).eq.60 ) then
+         .or. iturb(iphas).eq.60 .or. iturb(iphas).eq.70          &
+         ) then
       ivar = iu(iphas)
       icondl = icondl + 1
       iclrtp(ivar,icoeff) = icondl
@@ -2937,6 +2951,24 @@ endif
 '@                                                            ',/,&
 '@   La version courante ne supporte pas l''ordre 2 avec le   ',/,&
 '@   couplage des termes sources du k-omega.                  ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Modifier usini1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8116 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@    =========                                               ',/,&
+'@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 2 (ISCHTP = ',I10   ,/,&
+'@    EN SPALART   (ITURB = ',I10,' )'                         ,/,&
+'@                                                            ',/,&
+'@   La version courante ne supporte pas l''ordre 2 avec le   ',/,&
+'@   couplage des termes sources de Spalart-Allmaras.         ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -4073,6 +4105,24 @@ endif
 '@                                                            ',/,&
 '@   The current version does not support the 2nd order with  ',/,&
 '@   coupling of the source terms of k-omega.                 ',/,&
+'@                                                            ',/,&
+'@  The calculation cannot be executed                        ',/,&
+'@                                                            ',/,&
+'@  Modify   usini1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8116 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@    =========                                               ',/,&
+'@    A 2nd ORDER SCHEME HAS BEEN IMPOSED    (ISCHTP = ',I10   ,/,&
+'@    FOR SPALART   (ITURB = ',I10,' )'                        ,/,&
+'@                                                            ',/,&
+'@   The current version does not support the 2nd order with  ',/,&
+'@   coupling of the source terms of Spalart-Allmaras.        ',/,&
 '@                                                            ',/,&
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&

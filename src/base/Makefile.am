@@ -178,6 +178,7 @@ catsma.f90 \
 causta.f90 \
 clca66.f90 \
 clipke.f90 \
+clipsa.f90 \
 clprij.f90 \
 clpsca.f90 \
 clptrg.f90 \
@@ -310,6 +311,7 @@ mempdc.f90 \
 memphy.f90 \
 memrij.f90 \
 memsca.f90 \
+memspa.f90 \
 memt1d.f90 \
 memtri.f90 \
 memtsm.f90 \
@@ -355,6 +357,7 @@ tsepdc.f90 \
 tstvec.f90 \
 turbke.f90 \
 turbkw.f90 \
+turbsa.f90 \
 turent.f90 \
 turrij.f90 \
 typecl.f90 \
@@ -411,6 +414,7 @@ $(top_srcdir)/users/base/ustskw.f90 \
 $(top_srcdir)/users/base/ustsma.f90 \
 $(top_srcdir)/users/base/ustsns.f90 \
 $(top_srcdir)/users/base/ustsri.f90 \
+$(top_srcdir)/users/base/ustssa.f90 \
 $(top_srcdir)/users/base/ustssc.f90 \
 $(top_srcdir)/users/base/ustsv2.f90 \
 $(top_srcdir)/users/base/usvima.f90 \

@@ -198,9 +198,11 @@ integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          iuiph , iviph , iwiph , ipriph
 integer          ikiph , iepiph, iphiph, ifbiph, iomgip
+integer          inuiph
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          ipcvis, ipcvst, ipccp , ipcvsl, ipccv
 integer          iclpr , iclu  , iclv  , iclw  , iclk  , iclep
+integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
 integer          iclvar, iclvaf, icluma, iclvma, iclwma
@@ -236,6 +238,7 @@ ifbiph = 0
 ikiph = 0
 iomgip = 0
 iphiph = 0
+inuiph = 0
 ir11ip = 0
 ir22ip = 0
 ir33ip = 0
@@ -247,6 +250,7 @@ iclk = 0
 iclomg = 0
 iclfb = 0
 iclphi = 0
+iclnu = 0
 icl11 = 0
 icl22 = 0
 icl33 = 0
@@ -259,7 +263,6 @@ icluf = 0
 iclvf = 0
 iclwf = 0
 ipccv = 0
-
 ! Memoire
 
 idebia = idbia0
@@ -457,6 +460,8 @@ do iphas = 1, nphas
   elseif(iturb(iphas).eq.60) then
     ikiph  = ik  (iphas)
     iomgip = iomg(iphas)
+  elseif(iturb(iphas).eq.70) then
+    inuiph = inusa(iphas)
   endif
 
 ! --- Conditions aux limites
@@ -483,6 +488,8 @@ do iphas = 1, nphas
   elseif(iturb(iphas).eq.60) then
     iclk   = iclrtp(ikiph ,icoef)
     iclomg = iclrtp(iomgip,icoef)
+  elseif(iturb(iphas).eq.70) then
+    iclnu  = iclrtp(inuiph,icoef)
   endif
 
   icluf  = iclrtp(iuiph ,icoeff)
@@ -1225,6 +1232,41 @@ do iphas = 1, nphas
       endif
 
     enddo
+
+! ---> SPALART ALLMARAS
+
+  elseif(iturb(iphas).eq.70) then
+
+    ivar   = inuiph
+    iclvar = iclnu
+
+    do ifac = 1, nfabor
+
+      iel = ifabor(ifac)
+
+! --- Proprietes physiques
+      visclc = propce(iel,ipcvis)
+      flumbf = propfb(ifac,ipprob(ifluma(inuiph)))
+
+! --- Grandeurs geometriques
+      distbf = distb(ifac)
+      hint = visclc/distbf
+
+!      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+      if( icodcl(ifac,ivar).eq.1) then
+        hext = rcodcl(ifac,ivar,2)
+        pimp = rcodcl(ifac,ivar,1)
+        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+        coefb(ifac,iclvar) = hint     /(hint +hext)
+!      C.L DE TYPE FLUX
+      elseif(                                                     &
+        icodcl(ifac,ivar).eq.3)then
+        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+        coefb(ifac,iclvar) = 1.d0
+      endif
+
+    enddo
+
 
 ! ---> V2F
 

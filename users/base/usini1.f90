@@ -183,6 +183,7 @@ endif
 !      42...LES (WALE)
 !      50...v2f (phi-model)
 !      60...k-omega SST
+!      70...Spalart Allmaras
 !  For 10, contact the development team before use
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
@@ -1964,6 +1965,15 @@ elseif (iturb(iphas).eq.60) then
   ! omega
   ipp = ipprtp(iomg  (iphas))
   nomvar(ipp)   = 'Omega'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+elseif (iturb(iphas).eq.70) then
+
+  ! Spalart-Allmaras variable (viscosity-like)
+  ipp = ipprtp(inusa (iphas))
+  nomvar(ipp)   = 'NuTilda'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
