@@ -59,6 +59,7 @@ BEGIN_C_DECLS
 typedef enum {
 
   CS_SLES_PCG,       /* Preconditionned conjugate gradient */
+  CS_SLES_PCG_SR,    /* Preconditionned conjugate gradient, single reduction*/
   CS_SLES_JACOBI,    /* Jacobi */
   CS_SLES_BICGSTAB,  /* Bi-conjugate gradient stabilized */
   CS_SLES_N_TYPES    /* Number of resolution algorithms */

@@ -1,4 +1,11 @@
 * 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added single-reduction variant of preconditioned conjugate gradient solver
+  (accessible from C only).
+  modified files:
+    src/base/cs_sles.c
+    src/base/cs_sles.h
+
+* 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Translation and formatting updates.
   modified files:
     src/atmo/atlecm.f90
