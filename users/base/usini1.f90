@@ -508,7 +508,7 @@ endif
 !       So, if we set iscavr(j) = k, we must have
 !       0 < j < nscaus+1, 0< k < nscaus+1 and j different from k.
 
-!     For example for user scalar 3 to be the variance of user scalar 3,
+!     For example for user scalar 3 to be the variance of user scalar 2,
 !       we set:
 !       iscavr(3) = 2
 !       with nscaus at least equal to 3.
