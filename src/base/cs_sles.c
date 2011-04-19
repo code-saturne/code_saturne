@@ -888,10 +888,8 @@ _conjugate_gradient(const char             *var_name,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);
 
-  for (ii = 0; ii < n_rows; ii++) {
+  for (ii = 0; ii < n_rows; ii++)
     rk[ii] = rk[ii] - rhs[ii];
-    dk[ii] = rk[ii];
-  }
 
   /* Polynomial preconditionning of order poly_degre */
 
