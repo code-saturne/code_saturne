@@ -1,3 +1,8 @@
+* 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix possible error in MPI environment handling with Python script.
+  modified files:
+    bin/cs_exec_environment.py
+
 * 13/04/2011 - David Monfort <david.monfort@edf.fr>
   Fix the profile page view in the interface when one modifies the data.
   modified routine:

@@ -316,7 +316,11 @@ class resource_info(batch_info):
         """
 
         self.n_procs = 0
-        f = open(hosts_file, 'r')
+        if hosts_file[0] == '$':
+           path = os.getenv(hosts_file[1:])
+        else:
+           path = hosts_file
+        f = open(path, 'r')
         for line in f:
             self.n_procs += 1
         f.close()
