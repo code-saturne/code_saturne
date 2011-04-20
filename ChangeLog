@@ -1,4 +1,11 @@
 * 20/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Workaround for apparent bug in some Python libraries leading to loss
+  of standard and error output of "code_saturne compile" command
+  (so far observed only with Python 2.4, at least on RHEL).
+  modified files:
+    bin/cs_exec_environment.py
+
+* 20/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix bug in hostfile handling for SGE batch system.
   modified files:
     bin/cs_exec_environment.py

@@ -67,10 +67,18 @@ def run_command(cmd, echo = False, stdout = sys.stdout, stderr = sys.stderr):
     if echo == True:
         stdout.write(cmd + '\n')
 
-    p = subprocess.Popen(cmd,
-                         shell=True,
-                         stdout=stdout,
-                         stderr=stderr)
+    # As a workaround for a bug in which the standard output an error
+    # are "lost" (observed in an apparently random manner, with Python 2.4),
+    # we only add the stdout and stderr keywords if they are non-default.
+
+    kwargs = {}
+    if (stdout != sys.stdout):
+        kwargs['stdout'] = stdout
+    if (stderr != sys.stderr):
+        kwargs['stderr'] = stderr
+
+    p = subprocess.Popen(cmd, shell=True, **kwargs)
+
     p.communicate()
 
     return p.returncode
