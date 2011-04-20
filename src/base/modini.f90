@@ -463,8 +463,10 @@ do iphas = 1, nphas
        .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
        .or. iturb(iphas).eq.70 )                                  &
        .and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-  ipp = ipppro(ipproc(inusa(iphas)))
-  if(iturb(iphas).eq.70.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
+  if (inusa(iphas) .gt. 0) then
+    ipp = ipppro(ipproc(inusa(iphas)))
+    if(iturb(iphas).eq.70.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
+  endif
   ipp = ipppro(ipproc(icour(iphas)))
   if (ilisvr(ipp).eq.-999 .or. idtvar.lt.0) ilisvr(ipp) = 0
   ipp = ipppro(ipproc(ifour(iphas)))
@@ -1311,7 +1313,7 @@ omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
 if (omgnrm.ge.epzero) then
 
-  ! Vecteur rotation normé
+  ! Normalized rotation vector
 
   ux = omegax / omgnrm
   uy = omegay / omgnrm
@@ -1332,7 +1334,7 @@ if (omgnrm.ge.epzero) then
   prot(2,3) = uy*uz
   prot(3,2) = prot(2,3)
 
-  ! Représentation antisymétrique de Omega
+  ! Antisymetrc representation of Omega
 
   qrot(1,1) = 0.d0
   qrot(2,2) = 0.d0
@@ -1408,7 +1410,7 @@ if (cfopre.lt.-0.5d0*grand) cfopre = 2.0d0
 ! 7. PARAMETRES DE cplsat.h
 !===============================================================================
 
-! Récupération du nombre de couplage
+! Get coupling number
 
 call nbccpl(nbrcpl)
 !==========

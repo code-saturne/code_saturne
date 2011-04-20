@@ -436,72 +436,57 @@ _zero_range(cs_real_t  *restrict y,
  * Descend binary tree for the ordering of a fvm_gnum (integer) array.
  *
  * parameters:
- *   number    <-- pointer to numbers of elements that should be ordered.
- *                 (if NULL, a default 1 to n numbering is considered)
+ *   number    <-> pointer to elements that should be ordered
  *   level     <-- level of the binary tree to descend
  *   n_elts    <-- number of elements in the binary tree to descend
- *   order     <-> ordering array
  *----------------------------------------------------------------------------*/
 
 inline static void
-_order_descend_tree(const cs_int_t  number[],
-                    size_t          level,
-                    const size_t    n_elts,
-                    fvm_lnum_t      order[])
+_sort_descend_tree(cs_int_t  number[],
+                   size_t    level,
+                   size_t    n_elts)
 {
-  size_t i_save, i1, i2, lv_cur;
+  size_t lv_cur;
+  cs_int_t i1, i2, num_save;
 
-  i_save = (size_t)(order[level]);
+  num_save = number[level];
 
   while (level <= (n_elts/2)) {
 
     lv_cur = (2*level) + 1;
 
-    if (lv_cur < n_elts - 1) {
-
-      i1 = (size_t)(order[lv_cur+1]);
-      i2 = (size_t)(order[lv_cur]);
-
-      if (number[i1] > number[i2]) lv_cur++;
-    }
+    if (lv_cur < n_elts - 1)
+      if (number[lv_cur+1] > number[lv_cur]) lv_cur++;
 
     if (lv_cur >= n_elts) break;
 
-    i1 = i_save;
-    i2 = (size_t)(order[lv_cur]);
+    i1 = num_save;
+    i2 = number[lv_cur];
 
-    if (number[i1] >= number[i2]) break;
+    if (i1 >= i2) break;
 
-    order[level] = order[lv_cur];
+    number[level] = number[lv_cur];
     level = lv_cur;
 
   }
 
-  order[level] = i_save;
+  number[level] = num_save;
 }
 
 /*----------------------------------------------------------------------------
  * Order an array of global numbers.
  *
  * parameters:
- *   number   <-- array of entity numbers (if NULL, a default 1 to n
- *                numbering is considered)
- *   order    <-- pre-allocated ordering table
+ *   number   <-> number of arrays to sort
  *   n_elts   <-- number of elements considered
  *----------------------------------------------------------------------------*/
 
 static void
-_order_local(const cs_int_t  number[],
-             cs_int_t        order[],
-             const size_t    n_elts)
+_sort_local(cs_int_t  number[],
+            size_t    n_elts)
 {
   size_t i, j, inc;
-  cs_int_t o_save;
-
-  /* Initialize ordering array */
-
-  for (i = 0 ; i < n_elts ; i++)
-    order[i] = i;
+  cs_int_t num_save;
 
   if (n_elts < 2)
     return;
@@ -510,19 +495,21 @@ _order_local(const cs_int_t  number[],
 
   if (n_elts < 20) {
 
-    inc = (n_elts / 2);
+    /* Compute increment */
+    for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
 
+    /* Sort array */
     while (inc > 0) {
       for (i = inc; i < n_elts; i++) {
-        o_save = order[i];
+        num_save = number[i];
         j = i;
-        while (j >= inc && number[order[j-inc]] > number[o_save]) {
-          order[j] = order[j-inc];
-          j = j - inc;
+        while (j >= inc && number[j-inc] > num_save) {
+          number[j] = number[j-inc];
+          j -= inc;
         }
-        order[j] = o_save;
+        number[j] = num_save;
       }
-      inc = inc / 2.2;
+      inc = inc / 3;
     }
 
   }
@@ -534,16 +521,16 @@ _order_local(const cs_int_t  number[],
     i = (n_elts / 2);
     do {
       i--;
-      _order_descend_tree(number, i, n_elts, order);
+      _sort_descend_tree(number, i, n_elts);
     } while (i > 0);
 
     /* Sort binary tree */
 
     for (i = n_elts - 1 ; i > 0 ; i--) {
-      o_save   = order[0];
-      order[0] = order[i];
-      order[i] = o_save;
-      _order_descend_tree(number, 0, i, order);
+      num_save   = number[0];
+      number[0] = number[i];
+      number[i] = num_save;
+      _sort_descend_tree(number, 0, i);
     }
   }
 }
@@ -1546,30 +1533,17 @@ _create_struct_csr(cs_bool_t         symmetric,
 
   if (n_cols_max > 1) {
 
-    cs_int_t  *order = NULL;
-    cs_int_t  *new_col_id = NULL;
-
-    BFT_MALLOC(order, n_cols_max, fvm_lnum_t);
-    BFT_MALLOC(new_col_id, n_cols_max, cs_int_t);
-
     for (ii = 0; ii < ms->n_rows; ii++) {
       cs_int_t *col_id = ms->col_id + ms->row_index[ii];
       cs_int_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_int_t col_id_prev = -1;
-      _order_local(col_id,
-                   order,
-                   ms->row_index[ii+1] - ms->row_index[ii]);
+      _sort_local(col_id, ms->row_index[ii+1] - ms->row_index[ii]);
       for (jj = 0; jj < n_cols; jj++) {
-        new_col_id[jj] = col_id[order[jj]];
-        if (new_col_id[jj] == col_id_prev)
+        if (col_id[jj] == col_id_prev)
           ms->direct_assembly = false;
-        col_id_prev = new_col_id[jj];
+        col_id_prev = col_id[jj];
       }
-      memcpy(col_id, new_col_id, n_cols*sizeof(cs_int_t));
     }
-
-    BFT_FREE(new_col_id);
-    BFT_FREE(order);
 
   }
 
