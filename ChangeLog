@@ -1,4 +1,9 @@
 * 20/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix bug in hostfile handling for SGE batch system.
+  modified files:
+    bin/cs_exec_environment.py
+
+* 20/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix out of bounds bug when logging options info.
   modified files:
     src/base/modini.f90
