@@ -1,3 +1,63 @@
+* 19/04/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Add a one-equation turbulence  model: the Spalart-Allmaras model.
+  added routines:
+    src/base/clipsa.f90
+    src/base/memspa.f90
+    src/base/turbsa.f90
+    users/base/ustssa.f90
+  modified routines:
+    src/atmo/attycl.f90
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/condli.f90
+    src/base/cstphy.f90
+    src/base/ecrava.f90
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/initi2.f90
+    src/base/iniusi.f90
+    src/base/iniva0.f90
+    src/base/inivar.f90
+    src/base/Makefile.am
+    src/base/memtri.f90
+    src/base/modini.f90
+    src/base/numvar.f90
+    src/base/phyvar.f90
+    src/base/tridim.f90
+    src/base/typecl.f90
+    src/base/varpos.f90
+    src/base/vericl.f90
+    src/base/verini.f90
+    src/cfbl/cfxtcl.f90
+    src/cogz/d3ptcl.f90
+    src/cogz/ebuini.f90
+    src/cogz/ebutcl.f90
+    src/cogz/lwcini.f90
+    src/cogz/lwctcl.f90
+    src/cplv/cpiniv.f90
+    src/cplv/cplini.f90
+    src/cplv/cpltcl.f90
+    src/cplv/cpptcl.f90
+    src/elec/eliniv.f90
+    src/fuel/fuiniv.f90
+    src/fuel/fuptcl.f90
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+    users/atmo/usatcl.f90
+    users/atmo/usativ.f90
+    users/base/usclim.f90
+    users/base/usini1.f90
+    users/cfbl/uscfcl.f90
+    users/cogz/usd3pc.f90
+    users/cogz/usebuc.f90
+    users/cogz/uslwcc.f90
+    users/cplv/uscpcl.f90
+    users/cplv/uscpiv.f90
+    users/cplv/uscplc.f90
+    users/elec/uselcl.f90
+    users/fuel/usfucl.f90
+    users/fuel/usfuiv.f90
+
 * 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix errors in MPI environment handling on batch systems.
   modified files:
