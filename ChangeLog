@@ -1,4 +1,9 @@
 * 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update Copyright date in log header.
+  modified files:
+    src/base/cs_opts.c
+
+* 19/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix possible error in MPI environment handling with Python script.
   modified files:
     bin/cs_exec_environment.py
