@@ -1,5 +1,10 @@
 * 20/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
-  Fix bug in matix index ordering for CSR matrix structure.
+  Fix out of bounds bug when logging options info.
+  modified files:
+    src/base/modini.f90
+
+* 20/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix bug in matrix index ordering for CSR matrix structure.
   modified files:
     src/base/cs_matrix.c
 
