@@ -1,3 +1,10 @@
+* 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  When unsetting malloc hooks, check that the current hooks are those
+  defined here, as they may already have been replaced by another
+  library (such as some MPI library).
+  modified files:
+    src/bft/bft_mem_usage.c
+
 * 20/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update Copyright date in log header.
   modified files:

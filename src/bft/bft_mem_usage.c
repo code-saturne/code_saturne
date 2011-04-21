@@ -6,7 +6,7 @@
   This file is part of the "Base Functions and Types" library, intended to
   simplify and enhance portability, memory and I/O use for scientific codes.
 
-  Copyright (C) 2004-2009  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -326,13 +326,25 @@ static void
 _bft_mem_usage_unset_hooks(void)
 {
   if (_bft_mem_usage_global_use_hooks != 0) {
-    __malloc_hook  = _bft_mem_usage_old_malloc_hook;
-    __realloc_hook = _bft_mem_usage_old_realloc_hook;
-    __free_hook    = _bft_mem_usage_old_free_hook;
+
+    /* Check that the hooks set are those defined here, as
+       they may already have been replaced by another library
+       (such as some MPI libraries). */
+
+    if (__malloc_hook == _bft_mem_usage_malloc_hook)
+      __malloc_hook = _bft_mem_usage_old_malloc_hook;
+    if (__realloc_hook == _bft_mem_usage_realloc_hook)
+      __realloc_hook = _bft_mem_usage_old_realloc_hook;
+    if (__free_hook == _bft_mem_usage_free_hook)
+      __free_hook = _bft_mem_usage_old_free_hook;
+
+    _bft_mem_usage_global_use_hooks = 0;
+
     _bft_mem_usage_global_use_hooks = 0;
     _bft_mem_usage_n_allocs = 0;
     _bft_mem_usage_n_reallocs = 0;
     _bft_mem_usage_n_frees = 0;
+
   }
 }
 
