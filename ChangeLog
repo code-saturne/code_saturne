@@ -1,4 +1,12 @@
 * 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove (very) incomplete OpenMP support, which will be available in
+  future versions, but is not usable yet in the 2.0 release series.
+  modified files:
+    configure.ac
+    config/cs_blas.m4
+    src/base/cs_matrix.c
+
+* 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Use "-log" option of syrthes coupling wrapper rather than redirection
   from shell as a precaution against problems with I/O redirection in
   MPI environments.

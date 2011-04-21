@@ -20,7 +20,7 @@ dnl   Free Software Foundation, Inc.,
 dnl   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 dnl-----------------------------------------------------------------------------
 
-# CS_AC_TEST_BLAS([use_threads])
+# CS_AC_TEST_BLAS
 #----------------
 # modifies or sets cs_have_blas, BLAS_CPPFLAGS, BLAS_LDFLAGS, and BLAS_LIBS
 # depending on libraries found
