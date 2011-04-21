@@ -1,3 +1,8 @@
+* 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add "-log" option to syrthes coupling wrapper so as to redirect output.
+  modified files:
+    libsyrcs/syr_cs.c
+
 * 20/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Workaround for apparent bug in some Python libraries leading to loss
   of standard and error output of "code_saturne compile" command

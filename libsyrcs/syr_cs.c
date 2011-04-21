@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -144,28 +145,72 @@ syr_cs_loc_aidelc(char  *nom,
   char opt_sock[] = "";
 #endif
 
-  fprintf(e,
-          "\nUtilisation : %s\n%s%s"
-          "              [-app_num n] [-echo-comm <n>] [-h]\n",
-          nom, opt_sock, opt_mpi);
+  fprintf
+    (e,
+     "\nUtilisation : %s\n%s%s"
+     "              [-app_num n] [-echo-comm <n>] [-h]\n",
+     nom, opt_sock, opt_mpi);
 
   if (niveau == 2) {
-    fprintf(e, "\nOptions de la ligne de commandes :\n\n");
-    fprintf(e, " -app-num     : numero d'application SYRTHES (defaut: 0)\n");
+    fprintf
+      (e,
+       "\nOptions de la ligne de commandes :\n\n");
+    fprintf
+      (e,
+       " -app-num :     numero d'application SYRTHES (defaut: 0)\n");
 #ifdef HAVE_MPI
-    fprintf(e, " -comm-mpi    : communication par MPI\n");
-    fprintf(e, "                n : numero d'application Code_Saturne\n");
+    fprintf
+      (e,
+       " -comm-mpi :       communication par MPI\n"
+       "                   n : numero d'application Code_Saturne\n");
 #endif
 #ifdef HAVE_SOCKET
-    fprintf(e, " -comm-socket <machine:port> : communication par sockets IP\n");
+    fprintf
+      (e,
+       " -comm-socket <machine:port> : communication par sockets IP\n");
 #endif
-    fprintf(e, " -echo-comm   : echo de la communication ;\n");
-    fprintf(e, "                -1 : erreur seulement (defaut)\n");
-    fprintf(e, "                 0 : impression des entetes des messages\n");
-    fprintf(e, "                 n : impression des entetes des messages ainsi\n");
-    fprintf(e, "                     que des n premiers et derniers elements\n");
-    fprintf(e, " -h           : appel de l'aide (cet affichage)\n\n");
+    fprintf
+      (e,
+       " -echo-comm <n> :  echo de la communication ;\n"
+       "                   -1 : erreur seulement (defaut)\n"
+       "                    0 : impression des entetes des messages\n"
+       "                    n : impression des entetes des messages ainsi\n"
+       "                        que des n premiers et derniers elements\n");
+    fprintf
+      (e,
+       " -h :              appel de l'aide (cet affichage)\n\n");
+    fprintf
+      (e,
+       " -log <f> :        redirection de la sortie standard vers\n"
+       "                   le fichier f\n");
+    fprintf(e, "\n");
   }
+}
+
+/*----------------------------------------------------------------------------*
+ * Check presence of string argument
+ *
+ * parameters:
+ *   numarg <-- number of argument to convert
+ *   argc   <-- number of arguments in command line
+ *   argv   <-- array of command-line arguments
+ *   argerr <-- error code
+ *----------------------------------------------------------------------------*/
+
+static char *
+syr_cs_loc_argstr(int   numarg,
+                  int   argc,
+                  char *argv[],
+                  int  *argerr)
+{
+  char *retval = NULL;
+
+  if (numarg < argc)
+    retval = argv[numarg];
+  else
+    *argerr = 2;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*
@@ -195,7 +240,7 @@ syr_cs_loc_argint(int   numarg,
     if (argfin != argdeb + strlen(argdeb)) *argerr = 1;
   }
   else {
-    *argerr = 1;
+    *argerr = 2;
   }
 
   return valint;
@@ -256,6 +301,7 @@ main(int argc,
   int echo_comm = -1;        /* Communication verbosity */
   syr_comm_type_t type_comm = SYR_COMM_TYPE_NULL; /* Communication type */
   char **sock_str = NULL;    /* strings for server sockets description */
+  char *log_name = NULL;         /* name of log file (default: log to stdout) */
 
   /* Initialize error handler */
 
@@ -271,6 +317,23 @@ main(int argc,
   syr_mpi_initialize(&argc, &argv);
   atexit(syr_mpi_exit_force);
 #endif
+
+  /* Redirect output if necessary (pre-analyze command line) */
+
+  numarg = 0;
+
+  while (++numarg < argc) {
+    s = argv[numarg];
+    if (strcmp(s, "-log") == 0)
+      log_name = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
+  }
+
+  if (log_name != NULL) {
+    FILE *log_ptr = freopen(log_name, "w", stdout);
+    if (log_ptr != NULL)
+      dup2(fileno(log_ptr), fileno(stderr));
+    fflush(stdout);
+  }
 
   /* ---------------------------- */
   /* Parse command-line arguments */
@@ -329,6 +392,8 @@ main(int argc,
       if (numarg + 1 < argc && *(argv[numarg + 1]) != '-')
         echo_comm = (int)syr_cs_loc_argint(++numarg, argc, argv, &argerr);
     }
+    else if (strcmp(s, "-log") == 0)
+      log_name = syr_cs_loc_argstr(++numarg, argc, argv, &argerr);
     else if (strcmp(s, "-h") == 0) {
       syr_cs_loc_aidelc(argv[0], 2);
       syr_exit(EXIT_SUCCESS);
@@ -348,6 +413,12 @@ main(int argc,
     syr_cs_loc_aidelc(argv[0], argerr);
     bft_error(__FILE__, __LINE__, 0,
               "Erreur lors de la lecture de la ligne de commande.\n");
+  }
+
+  else if (nbr_cas_sat == 0) {
+    syr_cs_loc_aidelc(argv[0], argerr);
+    bft_error(__FILE__, __LINE__, 0,
+              "Aucun couplage n'est defini.\n");
   }
 
   /* ----------------------------------------*/
