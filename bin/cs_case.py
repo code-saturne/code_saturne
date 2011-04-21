@@ -631,7 +631,9 @@ class case:
 
         s = open(s_path, 'w')
 
-        s.write('#!/bin/sh\n\n')
+        user_shell = self.get_shell_name()
+
+        s.write('#!' + user_shell + '\n\n')
 
         # Add MPI directories to PATH if in nonstandard path
 
@@ -772,6 +774,22 @@ class case:
 
     #---------------------------------------------------------------------------
 
+    def get_shell_name(self):
+        """
+        Get name of current shell if available.
+        (Bourne shell variants are handled, C-shell variants are not).
+        """
+
+        user_shell = os.getenv('SHELL')
+        if not user_shell:
+            user_shell = '/bin/sh'
+        elif user_shell[-3] == 'csh':
+            user_shell = '/bin/sh'
+
+        return user_shell
+
+    #---------------------------------------------------------------------------
+
     def generate_solver_mpmd_script(self, n_procs, mpi_env):
         """
         Generate MPMD dispatch file.
@@ -780,7 +798,9 @@ class case:
         e_path = os.path.join(self.exec_dir, 'mpmd_exec.sh')
         e = open(e_path, 'w')
 
-        e.write('#!/bin/sh\n\n')
+        user_shell = self.get_shell_name()
+
+        e.write('#!' + user_shell + '\n\n')
         e.write('# Make sure to transmit possible additional '
                 + 'arguments assigned by mpirun to\n'
                 + '# the executable with some MPI-1 implementations:\n'
@@ -990,7 +1010,9 @@ class case:
         s_path = self.solver_script_path()
         s = open(s_path, 'w')
 
-        s.write('#!/bin/sh\n\n')
+        user_shell = self.get_shell_name()
+
+        s.write('#!' + user_shell + '\n\n')
 
         # Add detection and handling of SALOME YACS module if run from
         # this environment.

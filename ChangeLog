@@ -1,4 +1,10 @@
 * 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Try to use the same shell as the user's current shell in generated
+  scripts used by the "code_saturne run" command.
+  modified files:
+    bin/cs_case.py
+
+* 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   When unsetting malloc hooks, check that the current hooks are those
   defined here, as they may already have been replaced by another
   library (such as some MPI library).
