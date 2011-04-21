@@ -532,17 +532,17 @@ else if (iusclb(kzone).eq.idepfa) then
           itepa  ,                                                 &
           ettpa  , tepa   , ra)
   endif
-  
+
   !-->Modification of the arrival point
   !   (the absolute value is intended to avoid the negative scalar products
   !  that may occur due to computer round-off error
-  
+
   aa = 2.d0 * abs( (xq-xk)*xnn + (yq-yk)*ynn + (zq-zk)*znn )
-  
+
   ettp(ip,jxp) = xq - aa*xnn
   ettp(ip,jyp) = yq - aa*ynn
   ettp(ip,jzp) = zq - aa*znn
-  
+
   !--> Modification of the particle velocity at the arrival point
 
 !-->Modification of the particle velocity at the impaction point
