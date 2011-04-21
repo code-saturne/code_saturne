@@ -33,31 +33,9 @@ import cs_exec_environment
 
 from cs_case_domain import *
 
-homard_prefix = None
-
 #===============================================================================
 # Utility functions
 #===============================================================================
-
-def adaptation(adaptation, saturne_script, case_dir):
-
-    """
-    Call HOMARD adaptation.
-    """
-
-    cmd = os.path.join(homard_prefix, 'saturne_homard')
-
-    if adaptation == '-help':
-        cmd += ' -help'
-        run_command(cmd)
-        sys.exit(0)
-    else:
-        homard_options=' -v'
-        cmd += ' -Saturne_Script ' + saturne_script + ' ' + case_dir
-        cmd += ' -Pilotage_Adaptation ' + adaptation + homard_options
-
-    if run_command(cmd) != 0:
-        sys.exit(0)
 
 #===============================================================================
 # Main class
@@ -169,16 +147,11 @@ class case:
                 sys.stdout.write(msg)
 
         if len(self.syr_domains) == 1:
-            if self.syr_domains[0].n_procs > 1:
-                msg = ' Parallel SYRTHES on ' \
-                    + str(self.syr_domains[0].n_procs) + ' processes.\n'
-            else:
-                msg = ' Single processor SYRTHES simulation.\n'
+            msg = ' Single processor SYRTHES simulation.\n'
             sys.stdout.write(msg)
         else:
             for d in self.syr_domains:
-                msg = ' SYRTHES domain ' + str(d.tag) + ' on ' \
-                    + str(d.n_procs) + ' processes.\n'
+                msg = ' SYRTHES domain ' + str(d.tag) + ' on 1 process.\n'
                 sys.stdout.write(msg)
 
         sys.stdout.write('\n')
@@ -456,8 +429,6 @@ class case:
         s.write('    Partitioner     : ' + partitioner + '\n')
         s.write(hline)
         s.write('    SYRTHES         : ' + cs_config.dirs.syrthes_prefix + '\n')
-        if homard_prefix != None:
-            s.write('    HOMARD          : ' + homard_prefix + '\n')
         s.write(hline)
         s.write('    MPI path        : ' + cs_config.mpi_lib.bindir + '\n')
         if len(cs_config.mpi_lib.type) > 0:
@@ -618,6 +589,22 @@ class case:
 
     #---------------------------------------------------------------------------
 
+    def get_shell_name(self):
+        """
+        Get name of current shell if available.
+        (Bourne shell variants are handled, C-shell variants are not).
+        """
+
+        user_shell = os.getenv('SHELL')
+        if not user_shell:
+            user_shell = '/bin/sh'
+        elif user_shell[-3] == 'csh':
+            user_shell = '/bin/sh'
+
+        return user_shell
+
+    #---------------------------------------------------------------------------
+
     def generate_solver_mpmd_script(self, n_procs, mpi_env):
         """
         Generate MPMD dispatch file.
@@ -626,7 +613,9 @@ class case:
         e_path = os.path.join(self.exec_dir, 'mpmd_exec.sh')
         e = open(e_path, 'w')
 
-        e.write('#!/bin/sh\n\n')
+        user_shell = self.get_shell_name()
+
+        e.write('#!' + user_shell + '\n\n')
         e.write('# Make sure to transmit possible additional '
                 + 'arguments assigned by mpirun to\n'
                 + '# the executable with some MPI-1 implementations:\n'
@@ -827,20 +816,9 @@ class case:
         s_path = self.solver_script_path()
         s = open(s_path, 'w')
 
-        s.write('#!/bin/sh\n\n')
+        user_shell = self.get_shell_name()
 
-        # Add detection and handling of SALOME YACS module if run from
-        # this environment.
-
-        yacs_test = \
-"""
-# Detect and handle running under SALOME YACS module.
-YACS_ARG=
-if test "$SALOME_CONTAINERNAME" != "" -a "$CFDRUN_ROOT_DIR" != "" ; then
-  YACS_ARG="--yacs-module=${CFDRUN_ROOT_DIR}"/lib/salome/libCFD_RunExelib.so
-fi
-"""
-        s.write(yacs_test + '\n')
+        s.write('#!' + user_shell + '\n\n')
 
         # Add MPI directories to PATH if in nonstandard path
 
@@ -891,7 +869,7 @@ fi
                 s.write('cd ' + s_args[0] + '\n\n')
                 s.write('# Run solver.\n')
                 s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2]
-                        + ' $YACS_ARGS' + ' $@\n')
+                        + ' $@\n')
 
             else: # coupling through sockets
 
@@ -1037,9 +1015,6 @@ fi
             d.exec_preprocess = self.exec_preprocess
             d.exec_partition = self.exec_partition
             d.exec_solver = self.exec_solver
-
-            if d.adaptation:
-                adaptation(d.adaptation, saturne_script, self.case_dir)
 
         if len(self.syr_domains) > 0:
             coupling_mode = self.syr_domains[0].coupling_mode

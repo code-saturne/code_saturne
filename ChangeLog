@@ -1,4 +1,9 @@
 * 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove dead (never called) code from Python script.
+  modified files:
+    bin/cs_case.py
+
+* 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove (very) incomplete OpenMP support, which will be available in
   future versions, but is not usable yet in the 2.0 release series.
   modified files:
