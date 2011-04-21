@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009  EDF
+#   Copyright (C) 2011  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -1305,10 +1305,10 @@ class syrthes_domain(base_domain):
 
         # Build kernel command-line arguments
 
-        args = ''
+        args = '-log listsyr'
+
         if self.echo_comm != None:
             args += ' -echo-comm ' + str(self.echo_comm)
-            syr_cmd += ' > listsyr 2>&1\n'
 
         if self.coupling_mode == 'MPI':
 

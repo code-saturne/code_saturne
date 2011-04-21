@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009-2010  EDF
+#   Copyright (C) 2009-2011  EDF
 #
 #   Code_Saturne is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -647,7 +647,7 @@ class case:
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_args(app_id=app_id)
             e.write('  cd ' + s_args[0] + '\n')
-            e.write('  ' + s_args[1] + s_args[2] + ' $@ > listsyr 2>&1\n')
+            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -736,10 +736,7 @@ class case:
                     a_s += ', "' + arg + '"'
                 a_s += ', (char *)NULL};\n'
                 e.write(a_s)
-                e.write('    FILE *fp;\n')
                 e.write('    chdir("' + s_args[0] + '");\n')
-                e.write('    freopen("listsyr", "w", stdout);\n'
-                        '    dup2(fileno(fp), fileno(stderr));\n')
                 e.write('    execve(filename, argv, envp);\n'
                         '  }\n')
 
@@ -904,8 +901,7 @@ fi
                 for d in self.syr_domains:
                     s_args = d.solver_args(host_port='localhost:$CS_PORT')
                     s.write('cd ' + s_args[0] + '\n')
-                    s.write(s_args[1] + s_args[2] + ' $@ > '
-                            + s_args[0] + '/listsyr 2>&1 &\n')
+                    s.write(s_args[1] + s_args[2] + ' $@ &\n')
                     s.write('SYR_PID' + str(syr_id) + '=$!\n')
                     syr_id += 1
 

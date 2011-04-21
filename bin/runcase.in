@@ -832,7 +832,7 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     echo "MPI_RANK=\`${pkgdatadir}/runcase_mpi_rank \$@\`" >> $localexec
     echo cd $RUN >> $localexec
     echo "if [ \$MPI_RANK -eq 0 ] ; then" >> $localexec
-    echo "  $RUN/$EXE_SYR \$@ -app-num 0 -comm-mpi 1 $ECHOCOMMSYR > listsyr 2>&1" >> $localexec
+    echo "  $RUN/$EXE_SYR \$@ -app-num 0 -comm-mpi 1 -log listsyr $ECHOCOMMSYR " >> $localexec
     echo "else" >> $localexec
     echo "  $VALGRIND $RUN/$EXE \$@ --mpi 1 $COMMAND_CWF "\
          "$ARG_CS_VERIF $ARG_CS_OUTPUT $COMMAND_PARAM " >> $localexec
@@ -865,7 +865,7 @@ if [ "$ERROR" != "true" -a "$EXEC_KERNEL" = "yes" ] ; then
     $MPIBOOT
     $MPIRUN $localexec || EXECUTION_ERROR=true &
     #
-    ./$EXE_SYR $ECHOCOMMSYR $SOCKETSYR > listsyr 2>&1
+    ./$EXE_SYR -log listsyr $ECHOCOMMSYR $SOCKETSYR
     #
     $MPIHALT
     #
