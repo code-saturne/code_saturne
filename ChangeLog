@@ -1,5 +1,7 @@
 * 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
-  Remove dead (never called) code from Python script.
+  Try to use the same shell as the user's current shell in generated
+  scripts used by the Python runcase script.
+  Also remove dead (never called) code from that script.
   modified files:
     bin/cs_case.py
 
