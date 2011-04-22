@@ -2284,7 +2284,6 @@ cs_grid_create_from_shared(fvm_lnum_t             n_cells,
   }
 
   g->matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                               symmetric,
                                true,
                                false, /* No periodicity here yet */
                                n_cells,
@@ -2771,7 +2770,6 @@ cs_grid_coarsen(const cs_grid_t   *f,
 #endif
 
   c->matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                               c->symmetric,
                                true,
                                false, /* No periodicity here yet */
                                c->n_cells,

@@ -1,4 +1,14 @@
 * 22/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove matrix structure symmetry flag, replacing if by using a specific
+  symmetric matrix type where applicable (added symmetric CSR type).
+  modified files:
+    src/base/cs_benchmark.c
+    src/base/cs_grid.c
+    src/base/cs_matrix.c
+    src/base/cs_matrix.h
+    src/base/cs_sles.c
+
+* 22/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix tests on use of LoadLeveler in GUI.
   modified files:
     gui/Pages/BatchRunningView.py

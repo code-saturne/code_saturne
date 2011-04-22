@@ -1872,7 +1872,6 @@ cs_sles_initialize(void)
     periodic = true;
 
   cs_glob_sles_base_matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                                              false,
                                               true,
                                               periodic,
                                               mesh->n_cells,
@@ -1884,7 +1883,6 @@ cs_sles_initialize(void)
                                               mesh->i_face_numbering);
 
   cs_glob_sles_native_matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                                                false,
                                                 true,
                                                 periodic,
                                                 mesh->n_cells,

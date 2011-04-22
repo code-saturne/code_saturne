@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -68,6 +68,7 @@ typedef enum {
 
   CS_MATRIX_NATIVE,     /* Native matrix format */
   CS_MATRIX_CSR,        /* Compressed Sparse Row storage format */
+  CS_MATRIX_CSR_SYM,    /* Compressed Symmetric Sparse Row storage format */
   CS_MATRIX_N_TYPES     /* Number of known matrix types */
 
 } cs_matrix_type_t;
@@ -108,8 +109,6 @@ extern const char  *cs_matrix_type_fullname[];
  *
  * parameters:
  *   type        --> Type of matrix considered
- *   symmetric   --> Indicates if a symmetric variant of the matrix type
- *                   should be used
  *   have_diag   --> Indicates if the diagonal structure contains nonzeroes
  *   periodic    --> Indicates if periodicity is present
  *   n_cells     --> Local number of cells
@@ -126,7 +125,6 @@ extern const char  *cs_matrix_type_fullname[];
 
 cs_matrix_t *
 cs_matrix_create(cs_matrix_type_t       type,
-                 cs_bool_t              symmetric,
                  cs_bool_t              have_diag,
                  cs_bool_t              periodic,
                  cs_int_t               n_cells,
