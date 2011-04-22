@@ -1,3 +1,8 @@
+* 22/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix tests on use of LoadLeveler in GUI.
+  modified files:
+    gui/Pages/BatchRunningView.py
+
 * 21/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Try to use the same shell as the user's current shell in generated
   scripts used by the "code_saturne run" command.

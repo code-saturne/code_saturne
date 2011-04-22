@@ -847,7 +847,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                     else:
                         self.class_list.append(l.split(' ')[0])
 
-            elif self.case['batch_type'][0:2] == 'LOADL':
+            elif self.case['batch_type'][0:5] == 'LOADL':
                 output = self.getCommandOutput('llclass')
                 ignore = True
                 for l in output:
@@ -998,7 +998,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Show Job management box
 
-        if self.case['batch_type'][0:2] == 'LOADL':
+        if self.case['batch_type'][0:5] == 'LOADL':
             self.groupBoxJob.setTitle("Load Leveler job parameters")
         elif self.case['batch_type'][0:3] == 'LSF':
             self.groupBoxJob.setTitle("LSF job parameters")
