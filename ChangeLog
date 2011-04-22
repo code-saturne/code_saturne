@@ -1,4 +1,9 @@
 * 22/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  GUI: fix dialog open bug with old PyQt versions.
+  modified files:
+    gui/Pages/SolutionDomainView.py
+
+* 22/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove matrix structure symmetry flag, replacing if by using a specific
   symmetric matrix type where applicable (added symmetric CSR type).
   modified files:

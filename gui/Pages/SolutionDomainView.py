@@ -515,9 +515,12 @@ class MeshInputDialog(QFileDialog):
         else:
             directory = QString(search_dirs[0])
 
-        QFileDialog.__init__(self,
-                             parent = parent,
-                             directory = directory)
+        try:
+            QFileDialog.__init__(self,
+                                 parent = parent,
+                                 directory = directory)
+        except TypeError:
+            QFileDialog.__init__(self)  # for older PyQt versions
 
         # Self.tr is only available once the parent class __init__ has been called,
         # so we may now set the caption, filter, and selection label
