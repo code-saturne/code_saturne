@@ -52,7 +52,7 @@ def define_domain_parameters(domain):
     #   domain.partition_input = 'RESU/<run_id>/partition'
 
     # To continue a calculation from a previous checkpoint, set:
-    #  domain.resart_input_dir = 'RESU/<run_id>/checkpoint'
+    #  domain.restart_input_dir = 'RESU/<run_id>/checkpoint'
 
     if domain.param == None:
         domain.mesh_input = None
