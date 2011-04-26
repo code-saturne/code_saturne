@@ -665,7 +665,7 @@ class case:
             if mpi_env.mpiexec_opts != None:
                 mpi_cmd += ' ' + mpi_env.mpiexec_opts
             if mpi_env.mpiexec_n != None:
-                mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
+                mpi_cmd += mpi_env.mpiexec_n + str(d.partition_n_procs)
             mpi_cmd += ' '
             if mpi_env.mpiexec_exe != None:
                 mpi_cmd += mpi_env.mpiexec_exe + ' '

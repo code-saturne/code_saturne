@@ -1,3 +1,14 @@
+* 26/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix so as to use the correct number of processors for partitioning.
+  modified files:
+    bin/cs_case.py
+
+* 26/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Save user Python scripts with calculation results.
+  modified files:
+    bin/cs_case.py
+    bin/cs_case_domain.py
+
 * 22/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   GUI: fix dialog open bug with old PyQt versions.
   modified files:
