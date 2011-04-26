@@ -165,8 +165,8 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
                        fvm_part_to_block_t       *d,
                        cs_io_t                   *pp_out)
 {
-  fvm_lnum_t i, j, k, n_block_faces, n_face_vertices;
-  fvm_gnum_t block_size, g_vtx_connect_size;
+  fvm_lnum_t i, j, k;
+  fvm_gnum_t block_size, g_vtx_connect_size, n_block_faces, n_face_vertices;
   fvm_gnum_t idx_range[4];
 
   fvm_lnum_t *face_vtx_idx = NULL, *_face_vtx_idx = NULL;
@@ -212,7 +212,7 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
   face_vtx_idx_g[0] -= block_size;
   face_vtx_idx_g[0] += 1;
 
-  for (i = 0; i < n_block_faces; i++) {
+  for (i = 0; i < (fvm_lnum_t)n_block_faces; i++) {
     n_face_vertices = _face_vtx_idx[i+1] - _face_vtx_idx[i];
     face_vtx_idx_g[i+1] = face_vtx_idx_g[i] + n_face_vertices;
   }

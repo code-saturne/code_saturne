@@ -3724,9 +3724,9 @@ cs_join_intersect_edges(cs_join_param_t         param,
   if (param.verbosity > 0) {
 
     bft_printf(_("\n"
-                 "  Global number of intersections detected: %12lu\n"
-                 "    Vertex-Vertex intersections:    %12lu\n"
-                 "    Other intersections:            %12lu\n"),
+                 "  Global number of intersections detected: %12llu\n"
+                 "    Vertex-Vertex intersections:    %12llu\n"
+                 "    Other intersections:            %12llu\n"),
                (unsigned long long)n_g_inter[0],
                (unsigned long long)n_g_inter[1],
                (unsigned long long)n_g_inter[2]);

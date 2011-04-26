@@ -1011,7 +1011,8 @@ _get_missing_vertices(cs_int_t              n_vertices,
 
   if (n_g_elts > 0) {
 
-    bft_printf("\n  Global number of single vertices found: %6u\n", n_g_elts);
+    bft_printf("\n  Global number of single vertices found: %6llu\n",
+               (unsigned long long)n_g_elts);
     bft_printf_flush();
     selection->do_single_sync = true;
 
