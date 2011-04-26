@@ -548,6 +548,17 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
+    def copy_user_script(self):
+        """
+        Copy the user script to the execution directory
+        """
+        user_scripts = os.path.join(self.data_dir, 'cs_user_scripts.py')
+        if os.path.isfile(user_scripts):
+            dest = os.path.join(self.result_dir, 'cs_user_scripts.py')
+            shutil.copy2(src_file, dest_file)
+
+    #---------------------------------------------------------------------------
+
     def compile_and_link(self):
         """
         Compile and link user subroutines if necessary

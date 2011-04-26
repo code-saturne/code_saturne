@@ -1310,6 +1310,7 @@ fi
         for d in self.domains:
             if d.check_model_consistency() != 0:
                 raise RunCaseError('Incompatible model options.')
+            d.copy_user_script()
             if d.needs_compile() == True:
                 need_compile = True
 
