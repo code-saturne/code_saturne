@@ -1,6 +1,7 @@
 * 26/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixes for 64-bit global counts with large meshes.
   modified files:
+    po/fr.po
     src/base/cs_join_intersect.c
     src/base/cs_join_util.c
     src/base/cs_mesh_save.c
