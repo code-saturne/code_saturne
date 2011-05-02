@@ -9729,9 +9729,3 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
-
-#~ msgid "CSR sym"
-#~ msgstr "CSR sym"
-
-#~ msgid "CSR_sym"
-#~ msgstr "CSR_sym"
