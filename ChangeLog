@@ -1,3 +1,11 @@
+* 03/05/2011 - Julien Berland <julien-j.berland@edf.fr>
+  Finalize the Code_Saturne/Code_Aster coupling scripts (known to work
+  with SALOME 5.1.5 and Code_Aster NEW10 recent enough on Calibre 5).
+  modified scripts:
+    bin/cs_create.py
+    bin/runcase_aster.in
+    extras/salome/fsi_yacs_scheme.xml
+
 * 03/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix for saving of user Python scripts with calculation results.
   modified file:
