@@ -1,3 +1,19 @@
+* 03/05/2011 - David Monfort <david.monfort@edf.fr>
+  Remove inconsistant 'check_mesh' command from the main script (superseded
+  by both the graphical interface and the 'run' command). Also remove
+  the 'check_consistency' command that were a pale copy of the verification
+  stage (--quality option of the solver).
+  removed files:
+    bin/cs_check_consistency.py
+    bin/cs_check_mesh.py
+  modified files:
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/cs_script.py
+    doc/refcard/refcard.tex
+    doc/user/saturne1.tex
+    extras/bash_completion/code_saturne
+
 * 03/05/2011 - Julien Berland <julien-j.berland@edf.fr>
   Finalize the Code_Saturne/Code_Aster coupling scripts (known to work
   with SALOME 5.1.5 and Code_Aster NEW10 recent enough on Calibre 5).

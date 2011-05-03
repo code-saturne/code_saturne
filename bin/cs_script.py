@@ -31,9 +31,7 @@ class master_script:
         self.command = argv
         self.package = package
 
-        self.commands = {'check_consistency':self.check_consistency,
-                         'check_mesh':self.check_mesh,
-                         'compile':self.compile,
+        self.commands = {'compile':self.compile,
                          'config':self.config,
                          'create':self.create,
                          'gui':self.gui,
@@ -70,8 +68,6 @@ class master_script:
 
 Topics:
   help
-  check_consistency
-  check_mesh
   compile
   config
   create
@@ -84,14 +80,6 @@ Options:
   -h, --help  show this help message and exit"""
 
         print(usage % {'prog':sys.argv[0]})
-
-    def check_consistency(self, options = None):
-        import cs_check_consistency
-        return cs_check_consistency.main(options, self.package)
-
-    def check_mesh(self, options = None):
-        import cs_check_mesh
-        return cs_check_mesh.main(options, self.package)
 
     def compile(self, options = None):
         import cs_compile

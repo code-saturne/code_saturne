@@ -34,7 +34,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="check_consistency check_mesh compile config create gui info run salome"
+    cmds="compile config create gui info run salome"
 
     # Help and Case options
     local helpOpts="-h --help"
@@ -75,14 +75,6 @@ _code_saturne() {
                     return 0
                     ;;
                 *) return 0;;
-            esac
-            ;;
-        check_consistency)
-            case ${prev} in
-                -p|--param)  _filedir; return 0;;
-                -s|--source) _filedir -d; return 0;;
-                -n|--nproc)  COMPREPLY=( ); return 0;;
-                *) cmdOpts="-p --param -s --source -n --nproc";;
             esac
             ;;
         compile)
@@ -180,16 +172,11 @@ _code_saturne() {
             --guide)         cmdOpts=${cmdOpts/ -g / } ;;
             -k)              cmdOpts=${cmdOpts/ --keep-going / } ;;
             --keep-going)    cmdOpts=${cmdOpts/ -k / } ;;
-            -n)
-                case ${cmd} in
-                    check_consistency) cmdOpts=${cmdOpts/ --nproc / } ;;
-                    gui)               cmdOpts=${cmdOpts/ --new / } ;;
-                esac ;;
+            -n)              cmdOpts=${cmdOpts/ --new / } ;;
             --new)           cmdOpts=${cmdOpts/ -n / }
                              cmdOpts=${cmdOpts/ --batch / }
                              cmdOpts=${cmdOpts/ --file / } ;;
             --no-splash)     cmdOpts=${cmdOpts/ -z / } ;;
-            --nproc)         cmdOpts=${cmdOpts/ -n / } ;;
             --opt-libs)      cmdOpts=${cmdOpts/ --syrthes / } ;;
             -p)              cmdOpts=${cmdOpts/ --param / } ;;
             --param)         cmdOpts=${cmdOpts/ -p / } ;;

@@ -615,15 +615,6 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def check_model_consistency(self):
-        """
-        Check model user subroutine and xml options consistency
-        """
-        from cs_check_consistency import check_consistency
-        return check_consistency(self.param, self.src_dir, self.n_procs)
-
-    #---------------------------------------------------------------------------
-
     def copy_preprocessor_data(self):
         """
         Copy preprocessor data to execution directory
