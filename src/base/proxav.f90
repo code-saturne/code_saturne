@@ -140,51 +140,21 @@ endif
 
 if( isym.eq.1 ) then
 
-  if (ivecti.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      vy(ii) = vy(ii) +xa(ifac,1)*vx(jj)
-      vy(jj) = vy(jj) +xa(ifac,1)*vx(ii)
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      vy(ii) = vy(ii) +xa(ifac,1)*vx(jj)
-      vy(jj) = vy(jj) +xa(ifac,1)*vx(ii)
-    enddo
-
-  endif
+  do ifac = 1,nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+    vy(ii) = vy(ii) +xa(ifac,1)*vx(jj)
+    vy(jj) = vy(jj) +xa(ifac,1)*vx(ii)
+  enddo
 
 else
 
-  if (ivecti.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      vy(ii) = vy(ii) +xa(ifac,1)*vx(jj)
-      vy(jj) = vy(jj) +xa(ifac,2)*vx(ii)
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      vy(ii) = vy(ii) +xa(ifac,1)*vx(jj)
-      vy(jj) = vy(jj) +xa(ifac,2)*vx(ii)
-    enddo
-
-  endif
+  do ifac = 1,nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+    vy(ii) = vy(ii) +xa(ifac,1)*vx(jj)
+    vy(jj) = vy(jj) +xa(ifac,2)*vx(ii)
+  enddo
 
 endif
 

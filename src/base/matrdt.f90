@@ -132,63 +132,27 @@ endif
 
 if(isym.eq.2) then
 
-  if (ivecti.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      fluj =-0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-      xaifa2 = iconvp*fluj -idiffp*viscf(ifac)
-      xaifa1 = iconvp*flui -idiffp*viscf(ifac)
-      da(ii) = da(ii) -xaifa2
-      da(jj) = da(jj) -xaifa1
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      fluj =-0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-      xaifa2 = iconvp*fluj -idiffp*viscf(ifac)
-      xaifa1 = iconvp*flui -idiffp*viscf(ifac)
-      da(ii) = da(ii) -xaifa2
-      da(jj) = da(jj) -xaifa1
-    enddo
-
-  endif
+  do ifac = 1,nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+    fluj =-0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
+    flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
+    xaifa2 = iconvp*fluj -idiffp*viscf(ifac)
+    xaifa1 = iconvp*flui -idiffp*viscf(ifac)
+    da(ii) = da(ii) -xaifa2
+    da(jj) = da(jj) -xaifa1
+  enddo
 
 else
 
-  if (ivecti.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-      xaifa1 = iconvp*flui -idiffp*viscf(ifac)
-      da(ii) = da(ii) -xaifa1
-      da(jj) = da(jj) -xaifa1
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-      xaifa1 = iconvp*flui -idiffp*viscf(ifac)
-      da(ii) = da(ii) -xaifa1
-      da(jj) = da(jj) -xaifa1
-    enddo
-
-  endif
+  do ifac = 1,nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+    flui = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
+    xaifa1 = iconvp*flui -idiffp*viscf(ifac)
+    da(ii) = da(ii) -xaifa1
+    da(jj) = da(jj) -xaifa1
+  enddo
 
 endif
 
@@ -196,29 +160,13 @@ endif
 ! 4.     CONTRIBUTION DES FACETTES DE BORDS A LA DIAGONALE
 !===============================================================================
 
-if (ivectb.eq.1) then
-
-!CDIR NODEP
-  do ifac = 1, nfabor
-    ii = ifabor(ifac)
-    flui = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-    fluj =-0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-    da(ii) = da(ii) +iconvp*(-fluj + flui*coefbp(ifac) )          &
-                    +idiffp*viscb(ifac)*(1.d0-coefbp(ifac))
-  enddo
-
-else
-
-! VECTORISATION NON FORCEE
-  do ifac = 1, nfabor
-    ii = ifabor(ifac)
-    flui = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-    fluj =-0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-    da(ii) = da(ii) +iconvp*(-fluj + flui*coefbp(ifac) )          &
-                    +idiffp*viscb(ifac)*(1.d0-coefbp(ifac))
-  enddo
-
-endif
+do ifac = 1, nfabor
+  ii = ifabor(ifac)
+  flui = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+  fluj =-0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
+  da(ii) = da(ii) +iconvp*(-fluj + flui*coefbp(ifac) )          &
+                  +idiffp*viscb(ifac)*(1.d0-coefbp(ifac))
+enddo
 
 !--------
 ! FORMATS

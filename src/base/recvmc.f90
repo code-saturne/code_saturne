@@ -134,49 +134,19 @@ enddo
 do idim1 = 1, 3
   do idim2 = idim1, 3
 
-    if (ivecti.eq.1) then
+    do ifac = 1, nfac
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+      vecfac = surfac(idim1,ifac)*surfac(idim2,ifac)
+      cocg(ii,idim1,idim2) = cocg(ii,idim1,idim2) + vecfac
+      cocg(jj,idim1,idim2) = cocg(jj,idim1,idim2) + vecfac
+    enddo
 
-!CDIR NODEP
-      do ifac = 1, nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        vecfac = surfac(idim1,ifac)*surfac(idim2,ifac)
-        cocg(ii,idim1,idim2) = cocg(ii,idim1,idim2) + vecfac
-        cocg(jj,idim1,idim2) = cocg(jj,idim1,idim2) + vecfac
-      enddo
-
-    else
-
-! VECTORISATION NON FORCEE
-      do ifac = 1, nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        vecfac = surfac(idim1,ifac)*surfac(idim2,ifac)
-        cocg(ii,idim1,idim2) = cocg(ii,idim1,idim2) + vecfac
-        cocg(jj,idim1,idim2) = cocg(jj,idim1,idim2) + vecfac
-      enddo
-
-    endif
-
-    if (ivectb.eq.1) then
-
-!CDIR NODEP
-      do ifac = 1, nfabor
-        ii = ifabor(ifac)
-        cocg(ii,idim1,idim2) = cocg(ii,idim1,idim2)               &
-                         + surfbo(idim1,ifac)*surfbo(idim2,ifac)
-      enddo
-
-    else
-
-! VECTORISATION NON FORCEE
-      do ifac = 1, nfabor
-        ii = ifabor(ifac)
-        cocg(ii,idim1,idim2) = cocg(ii,idim1,idim2)               &
-                         + surfbo(idim1,ifac)*surfbo(idim2,ifac)
-      enddo
-
-    endif
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      cocg(ii,idim1,idim2) = cocg(ii,idim1,idim2)               &
+                          + surfbo(idim1,ifac)*surfbo(idim2,ifac)
+    enddo
 
   enddo
 enddo
@@ -311,66 +281,29 @@ enddo
 
 !     ASSEMBLAGE A PARTIR DES FACETTES FLUIDES
 
-if (ivecti.eq.1) then
-
-!CDIR NODEP
-  do ifac = 1,nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    pfacx = flumas(ifac)*surfac(1,ifac)
-    pfacy = flumas(ifac)*surfac(2,ifac)
-    pfacz = flumas(ifac)*surfac(3,ifac)
-    bx(ii) = bx(ii) + pfacx
-    by(ii) = by(ii) + pfacy
-    bz(ii) = bz(ii) + pfacz
-    bx(jj) = bx(jj) + pfacx
-    by(jj) = by(jj) + pfacy
-    bz(jj) = bz(jj) + pfacz
-  enddo
-
-else
-
-! VECTORISATION NON FORCEE
-  do ifac = 1,nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    pfacx = flumas(ifac)*surfac(1,ifac)
-    pfacy = flumas(ifac)*surfac(2,ifac)
-    pfacz = flumas(ifac)*surfac(3,ifac)
-    bx(ii) = bx(ii) + pfacx
-    by(ii) = by(ii) + pfacy
-    bz(ii) = bz(ii) + pfacz
-    bx(jj) = bx(jj) + pfacx
-    by(jj) = by(jj) + pfacy
-    bz(jj) = bz(jj) + pfacz
-  enddo
-
-endif
+do ifac = 1,nfac
+  ii = ifacel(1,ifac)
+  jj = ifacel(2,ifac)
+  pfacx = flumas(ifac)*surfac(1,ifac)
+  pfacy = flumas(ifac)*surfac(2,ifac)
+  pfacz = flumas(ifac)*surfac(3,ifac)
+  bx(ii) = bx(ii) + pfacx
+  by(ii) = by(ii) + pfacy
+  bz(ii) = bz(ii) + pfacz
+  bx(jj) = bx(jj) + pfacx
+  by(jj) = by(jj) + pfacy
+  bz(jj) = bz(jj) + pfacz
+enddo
 
 
 !     ASSEMBLAGE A PARTIR DES FACETTES DE BORD
 
-if (ivectb.eq.1) then
-
-!CDIR NODEP
-  do ifac = 1,nfabor
-    ii = ifabor(ifac)
-    bx(ii) = bx(ii) + flumab(ifac)*surfbo(1,ifac)
-    by(ii) = by(ii) + flumab(ifac)*surfbo(2,ifac)
-    bz(ii) = bz(ii) + flumab(ifac)*surfbo(3,ifac)
-  enddo
-
-else
-
-! VECTORISATION NON FORCEE
-  do ifac = 1,nfabor
-    ii = ifabor(ifac)
-    bx(ii) = bx(ii) + flumab(ifac)*surfbo(1,ifac)
-    by(ii) = by(ii) + flumab(ifac)*surfbo(2,ifac)
-    bz(ii) = bz(ii) + flumab(ifac)*surfbo(3,ifac)
-  enddo
-
-endif
+do ifac = 1,nfabor
+  ii = ifabor(ifac)
+  bx(ii) = bx(ii) + flumab(ifac)*surfbo(1,ifac)
+  by(ii) = by(ii) + flumab(ifac)*surfbo(2,ifac)
+  bz(ii) = bz(ii) + flumab(ifac)*surfbo(3,ifac)
+enddo
 
 !===============================================================================
 ! 4. RESOLUTION

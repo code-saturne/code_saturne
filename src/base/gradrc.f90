@@ -228,69 +228,30 @@ if (imrgra.eq.0) then
 
 !     ASSEMBLAGE A PARTIR DES FACETTES FLUIDES
 
-    if (ivecti.eq.1) then
-
-!CDIR NODEP
-      do ifac = 1,nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        pfac   = pond(ifac)*pvar(ii) +(1.d0-pond(ifac))*pvar(jj)
-        pfac1  = pfac*surfac(1,ifac)
-        pfac2  = pfac*surfac(2,ifac)
-        pfac3  = pfac*surfac(3,ifac)
-        bx(ii) = bx(ii) +pfac1
-        by(ii) = by(ii) +pfac2
-        bz(ii) = bz(ii) +pfac3
-        bx(jj) = bx(jj) -pfac1
-        by(jj) = by(jj) -pfac2
-        bz(jj) = bz(jj) -pfac3
-      enddo
-
-    else
-
-! VECTORISATION NON FORCEE
-      do ifac = 1,nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        pfac   = pond(ifac)*pvar(ii) +(1.d0-pond(ifac))*pvar(jj)
-        pfac1  = pfac*surfac(1,ifac)
-        pfac2  = pfac*surfac(2,ifac)
-        pfac3  = pfac*surfac(3,ifac)
-        bx(ii) = bx(ii) +pfac1
-        by(ii) = by(ii) +pfac2
-        bz(ii) = bz(ii) +pfac3
-        bx(jj) = bx(jj) -pfac1
-        by(jj) = by(jj) -pfac2
-        bz(jj) = bz(jj) -pfac3
-      enddo
-
-    endif
+    do ifac = 1,nfac
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+      pfac   = pond(ifac)*pvar(ii) +(1.d0-pond(ifac))*pvar(jj)
+      pfac1  = pfac*surfac(1,ifac)
+      pfac2  = pfac*surfac(2,ifac)
+      pfac3  = pfac*surfac(3,ifac)
+      bx(ii) = bx(ii) +pfac1
+      by(ii) = by(ii) +pfac2
+      bz(ii) = bz(ii) +pfac3
+      bx(jj) = bx(jj) -pfac1
+      by(jj) = by(jj) -pfac2
+      bz(jj) = bz(jj) -pfac3
+    enddo
 
 !     ASSEMBLAGE A PARTIR DES FACETTES DE BORD
 
-    if (ivectb.eq.1) then
-
-!CDIR NODEP
-      do ifac = 1,nfabor
-        ii = ifabor(ifac)
-        pfac = inc*coefap(ifac) +coefbp(ifac)*pvar(ii)
-        bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
-        by(ii) = by(ii) +pfac*surfbo(2,ifac)
-        bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
-      enddo
-
-    else
-
-! VECTORISATION NON FORCEE
-      do ifac = 1,nfabor
-        ii = ifabor(ifac)
-        pfac = inc*coefap(ifac) +coefbp(ifac)*pvar(ii)
-        bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
-        by(ii) = by(ii) +pfac*surfbo(2,ifac)
-        bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
-      enddo
-
-    endif
+    do ifac = 1,nfabor
+      ii = ifabor(ifac)
+      pfac = inc*coefap(ifac) +coefbp(ifac)*pvar(ii)
+      bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
+      by(ii) = by(ii) +pfac*surfbo(2,ifac)
+      bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
+    enddo
 
 !  CAS AVEC PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
 !  =====================================================
@@ -298,89 +259,40 @@ if (imrgra.eq.0) then
 
 !     ASSEMBLAGE A PARTIR DES FACETTES FLUIDES
 
-    if (ivecti.eq.1) then
-
-!CDIR NODEP
-      do ifac = 1,nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        pfac   = pond(ifac)*(pvar(ii)                             &
-             -(xyzcen(1,ii)-cdgfac(1,ifac))*fextx(ii)             &
-             -(xyzcen(2,ii)-cdgfac(2,ifac))*fexty(ii)             &
-             -(xyzcen(3,ii)-cdgfac(3,ifac))*fextz(ii))            &
-             +(1.d0-pond(ifac))*(pvar(jj)                         &
-             -(xyzcen(1,jj)-cdgfac(1,ifac))*fextx(jj)             &
-             -(xyzcen(2,jj)-cdgfac(2,ifac))*fexty(jj)             &
-             -(xyzcen(3,jj)-cdgfac(3,ifac))*fextz(jj))
-        pfac1  = pfac*surfac(1,ifac)
-        pfac2  = pfac*surfac(2,ifac)
-        pfac3  = pfac*surfac(3,ifac)
-        bx(ii) = bx(ii) +pfac1
-        by(ii) = by(ii) +pfac2
-        bz(ii) = bz(ii) +pfac3
-        bx(jj) = bx(jj) -pfac1
-        by(jj) = by(jj) -pfac2
-        bz(jj) = bz(jj) -pfac3
-      enddo
-
-    else
-
-! VECTORISATION NON FORCEE
-      do ifac = 1,nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-        pfac   = pond(ifac)*(pvar(ii)                             &
-             -(xyzcen(1,ii)-cdgfac(1,ifac))*fextx(ii)             &
-             -(xyzcen(2,ii)-cdgfac(2,ifac))*fexty(ii)             &
-             -(xyzcen(3,ii)-cdgfac(3,ifac))*fextz(ii))            &
-             +(1.d0-pond(ifac))*(pvar(jj)                         &
-             -(xyzcen(1,jj)-cdgfac(1,ifac))*fextx(jj)             &
-             -(xyzcen(2,jj)-cdgfac(2,ifac))*fexty(jj)             &
-             -(xyzcen(3,jj)-cdgfac(3,ifac))*fextz(jj))
-        pfac1  = pfac*surfac(1,ifac)
-        pfac2  = pfac*surfac(2,ifac)
-        pfac3  = pfac*surfac(3,ifac)
-        bx(ii) = bx(ii) +pfac1
-        by(ii) = by(ii) +pfac2
-        bz(ii) = bz(ii) +pfac3
-        bx(jj) = bx(jj) -pfac1
-        by(jj) = by(jj) -pfac2
-        bz(jj) = bz(jj) -pfac3
-      enddo
-
-    endif
+    do ifac = 1,nfac
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+      pfac   = pond(ifac)*(pvar(ii)                             &
+           -(xyzcen(1,ii)-cdgfac(1,ifac))*fextx(ii)             &
+           -(xyzcen(2,ii)-cdgfac(2,ifac))*fexty(ii)             &
+           -(xyzcen(3,ii)-cdgfac(3,ifac))*fextz(ii))            &
+           +(1.d0-pond(ifac))*(pvar(jj)                         &
+           -(xyzcen(1,jj)-cdgfac(1,ifac))*fextx(jj)             &
+           -(xyzcen(2,jj)-cdgfac(2,ifac))*fexty(jj)             &
+           -(xyzcen(3,jj)-cdgfac(3,ifac))*fextz(jj))
+      pfac1  = pfac*surfac(1,ifac)
+      pfac2  = pfac*surfac(2,ifac)
+      pfac3  = pfac*surfac(3,ifac)
+      bx(ii) = bx(ii) +pfac1
+      by(ii) = by(ii) +pfac2
+      bz(ii) = bz(ii) +pfac3
+      bx(jj) = bx(jj) -pfac1
+      by(jj) = by(jj) -pfac2
+      bz(jj) = bz(jj) -pfac3
+    enddo
 
 !     ASSEMBLAGE A PARTIR DES FACETTES DE BORD
 
-    if (ivectb.eq.1) then
-
-!CDIR NODEP
-      do ifac = 1,nfabor
-        ii = ifabor(ifac)
-        pfac = inc*coefap(ifac) +coefbp(ifac)*(pvar(ii)           &
-             -(xyzcen(1,ii)-cdgfbo(1,ifac))*fextx(ii)             &
-             -(xyzcen(2,ii)-cdgfbo(2,ifac))*fexty(ii)             &
-             -(xyzcen(3,ii)-cdgfbo(3,ifac))*fextz(ii) )
-        bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
-        by(ii) = by(ii) +pfac*surfbo(2,ifac)
-        bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
-      enddo
-
-    else
-
-!  VECTORISATION NON FORCEE
-      do ifac = 1,nfabor
-        ii = ifabor(ifac)
-        pfac = inc*coefap(ifac) +coefbp(ifac)*(pvar(ii)           &
-             -(xyzcen(1,ii)-cdgfbo(1,ifac))*fextx(ii)             &
-             -(xyzcen(2,ii)-cdgfbo(2,ifac))*fexty(ii)             &
-             -(xyzcen(3,ii)-cdgfbo(3,ifac))*fextz(ii) )
-        bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
-        by(ii) = by(ii) +pfac*surfbo(2,ifac)
-        bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
-      enddo
-
-    endif
+    do ifac = 1,nfabor
+      ii = ifabor(ifac)
+      pfac = inc*coefap(ifac) +coefbp(ifac)*(pvar(ii)           &
+           -(xyzcen(1,ii)-cdgfbo(1,ifac))*fextx(ii)             &
+           -(xyzcen(2,ii)-cdgfbo(2,ifac))*fexty(ii)             &
+           -(xyzcen(3,ii)-cdgfbo(3,ifac))*fextz(ii) )
+      bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
+      by(ii) = by(ii) +pfac*surfbo(2,ifac)
+      bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
+    enddo
 
   endif
 
@@ -451,39 +363,18 @@ if(ipass.eq.1 .or. iale.eq.1 .or. imobil.eq.1) then
   do ll =1,3
     do mm =1,3
 
-      if (ivecti.eq.1) then
-
-!CDIR NODEP
-        do ifac=1,nfac
-          ii = ifacel(1,ifac)
-          jj = ifacel(2,ifac)
+      do ifac=1,nfac
+        ii = ifacel(1,ifac)
+        jj = ifacel(2,ifac)
 
 !---> DOF = OF
-          dof = dofij(mm,ifac)
+        dof = dofij(mm,ifac)
 
-          pfaci  = -dof*0.5d0
-          vecfac = pfaci*surfac(ll,ifac)
-          cocg(ii,ll,mm) = cocg(ii,ll,mm) + vecfac
-          cocg(jj,ll,mm) = cocg(jj,ll,mm) - vecfac
-        enddo
-
-      else
-
-! VECTORISATION NON FORCEE
-        do ifac=1,nfac
-          ii = ifacel(1,ifac)
-          jj = ifacel(2,ifac)
-
-!---> DOF = OF
-          dof = dofij(mm,ifac)
-
-          pfaci  = -dof*0.5d0
-          vecfac = pfaci*surfac(ll,ifac)
-          cocg(ii,ll,mm) = cocg(ii,ll,mm) + vecfac
-          cocg(jj,ll,mm) = cocg(jj,ll,mm) - vecfac
-        enddo
-
-      endif
+        pfaci  = -dof*0.5d0
+        vecfac = pfaci*surfac(ll,ifac)
+        cocg(ii,ll,mm) = cocg(ii,ll,mm) + vecfac
+        cocg(jj,ll,mm) = cocg(jj,ll,mm) - vecfac
+      enddo
 
     enddo
   enddo
@@ -502,25 +393,11 @@ if(ipass.eq.1 .or. iale.eq.1 .or. imobil.eq.1) then
   do ll =1,3
     do mm =1,3
 
-      if (ivectb.eq.1) then
-
-!CDIR NODEP
-        do ifac=1,nfabor
-          ii = ifabor(ifac)
-          cocg(ii,ll,mm) = cocg(ii,ll,mm)                         &
-            - coefbp(ifac)*diipb(mm,ifac)*surfbo(ll,ifac)
-        enddo
-
-      else
-
-! VECTORISATION NON FORCEE
-        do ifac=1,nfabor
-          ii = ifabor(ifac)
-          cocg(ii,ll,mm) = cocg(ii,ll,mm)                         &
-            - coefbp(ifac)*diipb(mm,ifac)*surfbo(ll,ifac)
-        enddo
-
-      endif
+      do ifac=1,nfabor
+        ii = ifabor(ifac)
+        cocg(ii,ll,mm) = cocg(ii,ll,mm)                         &
+             - coefbp(ifac)*diipb(mm,ifac)*surfbo(ll,ifac)
+      enddo
 
     enddo
   enddo
@@ -654,25 +531,11 @@ if(iccocg.eq.1 .and. ipass.gt.1 .and. iale.eq.0 .and. imobil.eq.0) then
         cocg(iel,ll,mm) = cocgb(kk,ll,mm)
       enddo
 
-      if (ivectb.eq.1) then
-
-!CDIR NODEP
-        do ifac=1,nfabor
-          ii = ifabor(ifac)
-          cocg(ii,ll,mm) = cocg(ii,ll,mm)                         &
-            - coefbp(ifac)*diipb(mm,ifac)*surfbo(ll,ifac)
-        enddo
-
-      else
-
-! VECTORISATION NON FORCEE
-        do ifac=1,nfabor
-          ii = ifabor(ifac)
-          cocg(ii,ll,mm) = cocg(ii,ll,mm)                         &
-            - coefbp(ifac)*diipb(mm,ifac)*surfbo(ll,ifac)
-        enddo
-
-      endif
+      do ifac=1,nfabor
+        ii = ifabor(ifac)
+        cocg(ii,ll,mm) = cocg(ii,ll,mm)                         &
+             - coefbp(ifac)*diipb(mm,ifac)*surfbo(ll,ifac)
+      enddo
 
     enddo
   enddo
@@ -757,92 +620,42 @@ if (iphydp.eq.0) then
 
 !     ASSEMBLAGE A PARTIR DES FACETTES FLUIDES
 
-  if (ivecti.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      vecfac = pond(ifac)*pvar(ii)  +(1.d0-pond(ifac))*pvar(jj)   &
-           +(dofij(1,ifac)*(dpdx(ii)+dpdx(jj))                    &
-           + dofij(2,ifac)*(dpdy(ii)+dpdy(jj))                    &
-           + dofij(3,ifac)*(dpdz(ii)+dpdz(jj)))*0.5d0
-      pfsx = vecfac*surfac(1,ifac)
-      pfsy = vecfac*surfac(2,ifac)
-      pfsz = vecfac*surfac(3,ifac)
-      bx(ii) = bx(ii) +pfsx
-      by(ii) = by(ii) +pfsy
-      bz(ii) = bz(ii) +pfsz
-      bx(jj) = bx(jj) -pfsx
-      by(jj) = by(jj) -pfsy
-      bz(jj) = bz(jj) -pfsz
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      vecfac = pond(ifac)*pvar(ii)  +(1.d0-pond(ifac))*pvar(jj)   &
-           +(dofij(1,ifac)*(dpdx(ii)+dpdx(jj))                    &
-           + dofij(2,ifac)*(dpdy(ii)+dpdy(jj))                    &
-           + dofij(3,ifac)*(dpdz(ii)+dpdz(jj)))*0.5d0
-      pfsx = vecfac*surfac(1,ifac)
-      pfsy = vecfac*surfac(2,ifac)
-      pfsz = vecfac*surfac(3,ifac)
-      bx(ii) = bx(ii) +pfsx
-      by(ii) = by(ii) +pfsy
-      bz(ii) = bz(ii) +pfsz
-      bx(jj) = bx(jj) -pfsx
-      by(jj) = by(jj) -pfsy
-      bz(jj) = bz(jj) -pfsz
-    enddo
-
-  endif
+  do ifac = 1,nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+    vecfac = pond(ifac)*pvar(ii)  +(1.d0-pond(ifac))*pvar(jj)   &
+         +(dofij(1,ifac)*(dpdx(ii)+dpdx(jj))                    &
+         + dofij(2,ifac)*(dpdy(ii)+dpdy(jj))                    &
+         + dofij(3,ifac)*(dpdz(ii)+dpdz(jj)))*0.5d0
+    pfsx = vecfac*surfac(1,ifac)
+    pfsy = vecfac*surfac(2,ifac)
+    pfsz = vecfac*surfac(3,ifac)
+    bx(ii) = bx(ii) +pfsx
+    by(ii) = by(ii) +pfsy
+    bz(ii) = bz(ii) +pfsz
+    bx(jj) = bx(jj) -pfsx
+    by(jj) = by(jj) -pfsy
+    bz(jj) = bz(jj) -pfsz
+  enddo
 
 
 !     ASSEMBLAGE A PARTIR DES FACETTES DE BORD
 
-  if (ivectb.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1,nfabor
-      ii = ifabor(ifac)
-      pip =  pvar(ii)                                             &
-           +diipb(1,ifac)*dpdx(ii) +diipb(2,ifac)*dpdy(ii)        &
-           +diipb(3,ifac)*dpdz(ii)
-      pfac = inc*coefap(ifac) +coefbp(ifac)*pip
-      pfac1= pvar(ii) +(cdgfbo(1,ifac)-xyzcen(1,ii))*dpdx(ii)     &
-           +(cdgfbo(2,ifac)-xyzcen(2,ii))*dpdy(ii)                &
-           +(cdgfbo(3,ifac)-xyzcen(3,ii))*dpdz(ii)
-      pfac = coefbp(ifac)*(extrap*pfac1 +(1.d0-extrap)*pfac)      &
-           +(1.d0-coefbp(ifac))*pfac
-      bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
-      by(ii) = by(ii) +pfac*surfbo(2,ifac)
-      bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1,nfabor
-      ii = ifabor(ifac)
-      pip =  pvar(ii)                                             &
-           +diipb(1,ifac)*dpdx(ii) +diipb(2,ifac)*dpdy(ii)        &
-           +diipb(3,ifac)*dpdz(ii)
-      pfac = inc*coefap(ifac) +coefbp(ifac)*pip
-      pfac1= pvar(ii) +(cdgfbo(1,ifac)-xyzcen(1,ii))*dpdx(ii)     &
-           +(cdgfbo(2,ifac)-xyzcen(2,ii))*dpdy(ii)                &
-           +(cdgfbo(3,ifac)-xyzcen(3,ii))*dpdz(ii)
-      pfac = coefbp(ifac)*(extrap*pfac1 +(1.d0-extrap)*pfac)      &
-           +(1.d0-coefbp(ifac))*pfac
-      bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
-      by(ii) = by(ii) +pfac*surfbo(2,ifac)
-      bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
-    enddo
-
-  endif
+  do ifac = 1,nfabor
+    ii = ifabor(ifac)
+    pip =  pvar(ii)                                             &
+         +diipb(1,ifac)*dpdx(ii) +diipb(2,ifac)*dpdy(ii)        &
+         +diipb(3,ifac)*dpdz(ii)
+    pfac = inc*coefap(ifac) +coefbp(ifac)*pip
+    pfac1= pvar(ii) +(cdgfbo(1,ifac)-xyzcen(1,ii))*dpdx(ii)     &
+         +(cdgfbo(2,ifac)-xyzcen(2,ii))*dpdy(ii)                &
+         +(cdgfbo(3,ifac)-xyzcen(3,ii))*dpdz(ii)
+    pfac = coefbp(ifac)*(extrap*pfac1 +(1.d0-extrap)*pfac)      &
+         +(1.d0-coefbp(ifac))*pfac
+    bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
+    by(ii) = by(ii) +pfac*surfbo(2,ifac)
+    bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
+  enddo
 
 !  CAS AVEC PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
 !  =====================================================
@@ -850,118 +663,55 @@ else
 
 !     ASSEMBLAGE A PARTIR DES FACETTES FLUIDES
 
-  if (ivecti.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      fmoyx=0.5d0*(fextx(ii)+fextx(jj))
-      fmoyy=0.5d0*(fexty(ii)+fexty(jj))
-      fmoyz=0.5d0*(fextz(ii)+fextz(jj))
-      vecfac   = pond(ifac)*(pvar(ii)                             &
-           -(xyzcen(1,ii)-cdgfac(1,ifac))*(fextx(ii)-fmoyx)       &
-           -(xyzcen(2,ii)-cdgfac(2,ifac))*(fexty(ii)-fmoyy)       &
-           -(xyzcen(3,ii)-cdgfac(3,ifac))*(fextz(ii)-fmoyz))      &
-           +(1.d0-pond(ifac))*(pvar(jj)                           &
-           -(xyzcen(1,jj)-cdgfac(1,ifac))*(fextx(jj)-fmoyx)       &
-           -(xyzcen(2,jj)-cdgfac(2,ifac))*(fexty(jj)-fmoyy)       &
-           -(xyzcen(3,jj)-cdgfac(3,ifac))*(fextz(jj)-fmoyz))      &
-           +(dofij(1,ifac)*(dpdx(ii)+dpdx(jj))                    &
-           + dofij(2,ifac)*(dpdy(ii)+dpdy(jj))                    &
-           + dofij(3,ifac)*(dpdz(ii)+dpdz(jj)))*0.5d0
-      pfsx = vecfac*surfac(1,ifac)
-      pfsy = vecfac*surfac(2,ifac)
-      pfsz = vecfac*surfac(3,ifac)
-      bx(ii) = bx(ii) +pfsx
-      by(ii) = by(ii) +pfsy
-      bz(ii) = bz(ii) +pfsz
-      bx(jj) = bx(jj) -pfsx
-      by(jj) = by(jj) -pfsy
-      bz(jj) = bz(jj) -pfsz
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1,nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      fmoyx=0.5d0*(fextx(ii)+fextx(jj))
-      fmoyy=0.5d0*(fexty(ii)+fexty(jj))
-      fmoyz=0.5d0*(fextz(ii)+fextz(jj))
-      vecfac   = pond(ifac)*(pvar(ii)                             &
-           -(xyzcen(1,ii)-cdgfac(1,ifac))*(fextx(ii)-fmoyx)       &
-           -(xyzcen(2,ii)-cdgfac(2,ifac))*(fexty(ii)-fmoyy)       &
-           -(xyzcen(3,ii)-cdgfac(3,ifac))*(fextz(ii)-fmoyz))      &
-           +(1.d0-pond(ifac))*(pvar(jj)                           &
-           -(xyzcen(1,jj)-cdgfac(1,ifac))*(fextx(jj)-fmoyx)       &
-           -(xyzcen(2,jj)-cdgfac(2,ifac))*(fexty(jj)-fmoyy)       &
-           -(xyzcen(3,jj)-cdgfac(3,ifac))*(fextz(jj)-fmoyz))      &
-           +(dofij(1,ifac)*(dpdx(ii)+dpdx(jj))                    &
-           + dofij(2,ifac)*(dpdy(ii)+dpdy(jj))                    &
-           + dofij(3,ifac)*(dpdz(ii)+dpdz(jj)))*0.5d0
-      pfsx = vecfac*surfac(1,ifac)
-      pfsy = vecfac*surfac(2,ifac)
-      pfsz = vecfac*surfac(3,ifac)
-      bx(ii) = bx(ii) +pfsx
-      by(ii) = by(ii) +pfsy
-      bz(ii) = bz(ii) +pfsz
-      bx(jj) = bx(jj) -pfsx
-      by(jj) = by(jj) -pfsy
-      bz(jj) = bz(jj) -pfsz
-    enddo
-
-  endif
+  do ifac = 1,nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+    fmoyx=0.5d0*(fextx(ii)+fextx(jj))
+    fmoyy=0.5d0*(fexty(ii)+fexty(jj))
+    fmoyz=0.5d0*(fextz(ii)+fextz(jj))
+    vecfac   = pond(ifac)*(pvar(ii)                             &
+         -(xyzcen(1,ii)-cdgfac(1,ifac))*(fextx(ii)-fmoyx)       &
+         -(xyzcen(2,ii)-cdgfac(2,ifac))*(fexty(ii)-fmoyy)       &
+         -(xyzcen(3,ii)-cdgfac(3,ifac))*(fextz(ii)-fmoyz))      &
+         +(1.d0-pond(ifac))*(pvar(jj)                           &
+         -(xyzcen(1,jj)-cdgfac(1,ifac))*(fextx(jj)-fmoyx)       &
+         -(xyzcen(2,jj)-cdgfac(2,ifac))*(fexty(jj)-fmoyy)       &
+         -(xyzcen(3,jj)-cdgfac(3,ifac))*(fextz(jj)-fmoyz))      &
+         +(dofij(1,ifac)*(dpdx(ii)+dpdx(jj))                    &
+         + dofij(2,ifac)*(dpdy(ii)+dpdy(jj))                    &
+         + dofij(3,ifac)*(dpdz(ii)+dpdz(jj)))*0.5d0
+    pfsx = vecfac*surfac(1,ifac)
+    pfsy = vecfac*surfac(2,ifac)
+    pfsz = vecfac*surfac(3,ifac)
+    bx(ii) = bx(ii) +pfsx
+    by(ii) = by(ii) +pfsy
+    bz(ii) = bz(ii) +pfsz
+    bx(jj) = bx(jj) -pfsx
+    by(jj) = by(jj) -pfsy
+    bz(jj) = bz(jj) -pfsz
+  enddo
 
 
 !     ASSEMBLAGE A PARTIR DES FACETTES DE BORD
 
-  if (ivectb.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1,nfabor
-      ii = ifabor(ifac)
-      pip =  pvar(ii)                                             &
-           +diipb(1,ifac)*dpdx(ii) +diipb(2,ifac)*dpdy(ii)        &
-           +diipb(3,ifac)*dpdz(ii)
-      pfac = inc*coefap(ifac) +coefbp(ifac)*(pip                  &
-           -(xyzcen(1,ii)-cdgfbo(1,ifac)+diipb(1,ifac))*fextx(ii) &
-           -(xyzcen(2,ii)-cdgfbo(2,ifac)+diipb(2,ifac))*fexty(ii) &
-           -(xyzcen(3,ii)-cdgfbo(3,ifac)+diipb(3,ifac))*fextz(ii))
-      pfac1= pvar(ii) +(cdgfbo(1,ifac)-xyzcen(1,ii))*dpdx(ii)     &
-                    +(cdgfbo(2,ifac)-xyzcen(2,ii))*dpdy(ii)       &
-                    +(cdgfbo(3,ifac)-xyzcen(3,ii))*dpdz(ii)
-      pfac = coefbp(ifac)*(extrap*pfac1 +(1.d0-extrap)*pfac)      &
+  do ifac = 1,nfabor
+    ii = ifabor(ifac)
+    pip =  pvar(ii)                                             &
+         +diipb(1,ifac)*dpdx(ii) +diipb(2,ifac)*dpdy(ii)        &
+         +diipb(3,ifac)*dpdz(ii)
+    pfac = inc*coefap(ifac) +coefbp(ifac)*(pip                  &
+         -(xyzcen(1,ii)-cdgfbo(1,ifac)+diipb(1,ifac))*fextx(ii) &
+         -(xyzcen(2,ii)-cdgfbo(2,ifac)+diipb(2,ifac))*fexty(ii) &
+         -(xyzcen(3,ii)-cdgfbo(3,ifac)+diipb(3,ifac))*fextz(ii))
+    pfac1= pvar(ii) +(cdgfbo(1,ifac)-xyzcen(1,ii))*dpdx(ii)     &
+         +(cdgfbo(2,ifac)-xyzcen(2,ii))*dpdy(ii)       &
+         +(cdgfbo(3,ifac)-xyzcen(3,ii))*dpdz(ii)
+    pfac = coefbp(ifac)*(extrap*pfac1 +(1.d0-extrap)*pfac)      &
            +(1.d0-coefbp(ifac))*pfac
-      bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
-      by(ii) = by(ii) +pfac*surfbo(2,ifac)
-      bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1,nfabor
-      ii = ifabor(ifac)
-      pip =  pvar(ii)                                             &
-           +diipb(1,ifac)*dpdx(ii) +diipb(2,ifac)*dpdy(ii)        &
-           +diipb(3,ifac)*dpdz(ii)
-      pfac = inc*coefap(ifac) +coefbp(ifac)*(pip                  &
-           -(xyzcen(1,ii)-cdgfbo(1,ifac)+diipb(1,ifac))*fextx(ii) &
-           -(xyzcen(2,ii)-cdgfbo(2,ifac)+diipb(2,ifac))*fexty(ii) &
-           -(xyzcen(3,ii)-cdgfbo(3,ifac)+diipb(3,ifac))*fextz(ii))
-      pfac1= pvar(ii) +(cdgfbo(1,ifac)-xyzcen(1,ii))*dpdx(ii)     &
-                    +(cdgfbo(2,ifac)-xyzcen(2,ii))*dpdy(ii)       &
-                    +(cdgfbo(3,ifac)-xyzcen(3,ii))*dpdz(ii)
-      pfac = coefbp(ifac)*(extrap*pfac1 +(1.d0-extrap)*pfac)      &
-           +(1.d0-coefbp(ifac))*pfac
-      bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
-      by(ii) = by(ii) +pfac*surfbo(2,ifac)
-      bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
-    enddo
-
-  endif
+    bx(ii) = bx(ii) +pfac*surfbo(1,ifac)
+    by(ii) = by(ii) +pfac*surfbo(2,ifac)
+    bz(ii) = bz(ii) +pfac*surfbo(3,ifac)
+  enddo
 
 endif
 

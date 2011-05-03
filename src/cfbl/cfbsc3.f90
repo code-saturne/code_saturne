@@ -244,184 +244,78 @@ enddo
 !  --> FLUX UPWIND PUR
 !  =====================
 
-if (ivecti.eq.1) then
+do ifac = 1, nfac
 
-!CDIR NODEP
-  do ifac = 1, nfac
+  ii = ifacel(1,ifac)
+  jj = ifacel(2,ifac)
 
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
+  dijpfx = dijpf(1,ifac)
+  dijpfy = dijpf(2,ifac)
+  dijpfz = dijpf(3,ifac)
 
-    dijpfx = dijpf(1,ifac)
-    dijpfy = dijpf(2,ifac)
-    dijpfz = dijpf(3,ifac)
-
-    pnd   = pond(ifac)
+  pnd   = pond(ifac)
 
 ! ON RECALCULE A CE NIVEAU II' ET JJ'
 
-    diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                      &
-               (1.d0-pnd) * dijpfx)
-    diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                      &
-               (1.d0-pnd) * dijpfy)
-    diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                      &
-               (1.d0-pnd) * dijpfz)
-    djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                      &
-                   pnd  * dijpfx
-    djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                      &
-                   pnd  * dijpfy
-    djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                      &
-                   pnd  * dijpfz
+  diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
+  diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
+  diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
+  djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) + pnd  * dijpfx
+  djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) + pnd  * dijpfy
+  djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) + pnd  * dijpfz
 
-    dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-    dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-    dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+  dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
+  dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
+  dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
 
-!     reconstruction uniquement si IRCFLP = 1
-    pip = pvar(ii)                                                &
-           + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-    pjp = pvar(jj)                                                &
-           + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+  pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+  pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
-    flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-    fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
+  flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
+  fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
 
-    pif = pvar(ii)
-    pjf = pvar(jj)
-    infac = infac+1
+  pif = pvar(ii)
+  pjf = pvar(jj)
+  infac = infac+1
 
-    flux = iconvp*( flui*pif +fluj*pjf )                          &
-           + idiffp*viscf(ifac)*( pip -pjp )
+  flux = iconvp*( flui*pif +fluj*pjf ) + idiffp*viscf(ifac)*( pip -pjp )
 
 ! --- FLVARF(IFAC) : flux de convection-diffusion de la variable
 !                    a la face ij
 
-    flvarf(ifac) = flux
+  flvarf(ifac) = flux
 
-  enddo
-
-else
-
-! VECTORISATION NON FORCEE
-  do ifac = 1, nfac
-
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-
-    dijpfx = dijpf(1,ifac)
-    dijpfy = dijpf(2,ifac)
-    dijpfz = dijpf(3,ifac)
-
-    pnd   = pond(ifac)
-
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-
-    diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                      &
-               (1.d0-pnd) * dijpfx)
-    diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                      &
-               (1.d0-pnd) * dijpfy)
-    diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                      &
-               (1.d0-pnd) * dijpfz)
-    djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                      &
-                   pnd  * dijpfx
-    djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                      &
-                   pnd  * dijpfy
-    djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                      &
-                   pnd  * dijpfz
-
-    dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-    dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-    dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
-
-    pip = pvar(ii)                                                &
-           + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-    pjp = pvar(jj)                                                &
-           + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
-
-    flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-    fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-    pif = pvar(ii)
-    pjf = pvar(jj)
-    infac = infac+1
-
-    flux = iconvp*( flui*pif +fluj*pjf )                          &
-           + idiffp*viscf(ifac)*( pip -pjp )
-
-! --- FLVARF(IFAC) : flux de convection-diffusion de la variable
-!                    a la face ij
-
-    flvarf(ifac) = flux
-
-  enddo
-
-endif
+enddo
 
 
 ! ======================================================================
 ! ---> ASSEMBLAGE A PARTIR DES FACETTES DE BORD
 ! ======================================================================
 
-if (ivectb.eq.1) then
+do ifac = 1, nfabor
 
-!CDIR NODEP
-  do ifac = 1, nfabor
+  ii = ifabor(ifac)
 
-    ii = ifabor(ifac)
+  diipbx = diipb(1,ifac)
+  diipby = diipb(2,ifac)
+  diipbz = diipb(3,ifac)
 
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
+  flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
+  fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
 
-    flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-    fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+  pip = pvar(ii) +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
 
-    pip = pvar(ii)                                                &
-       +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
+  pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
+  pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
 
-    pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
-    pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
-
-    flux = iconvp*( flui*pvar(ii) +fluj*pfac )                    &
-         + idiffp*viscb(ifac)*( pip -pfacd )
+  flux = iconvp*( flui*pvar(ii) +fluj*pfac ) + idiffp*viscb(ifac)*( pip -pfacd )
 
 ! --- FLVARB(IFAC) : flux de convection-diffusion de la variable
 !                    a la face de bord i
 
-    flvarb(ifac) = flux
+  flvarb(ifac) = flux
 
-  enddo
-
-else
-
-  do ifac = 1, nfabor
-
-    ii = ifabor(ifac)
-
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
-
-    flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-    fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-
-    pip = pvar(ii)                                                &
-       +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
-
-    pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
-    pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
-
-    flux = iconvp*( flui*pvar(ii) +fluj*pfac )                    &
-         + idiffp*viscb(ifac)*( pip -pfacd )
-
-! --- FLVARB(IFAC) : flux de convection-diffusion de la variable
-!                    a la face de bord i
-
-    flvarb(ifac) = flux
-
-  enddo
-
-endif
+enddo
 
 !--------
 ! FORMATS

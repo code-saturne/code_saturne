@@ -362,64 +362,28 @@ do isou = 1, 3
 
 
 
-  if(ivecti.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1, nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
+  do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
 !MO             VECFAC = SURFAC(ISOU,IFAC)
 !MO     &                  *(POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
-      vecfac = surfac(1,ifac)*(w4(ii)+w4(jj))*0.5d0               &
-             + surfac(2,ifac)*(w5(ii)+w5(jj))*0.5d0               &
-             + surfac(3,ifac)*(w6(ii)+w6(jj))*0.5d0
-      diverg(ii) = diverg(ii) + vecfac
-      diverg(jj) = diverg(jj) - vecfac
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-!MO             VECFAC = SURFAC(ISOU,IFAC)
-!MO     &                  *(POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
-      vecfac = surfac(1,ifac)*(w4(ii)+w4(jj))*0.5d0               &
-             + surfac(2,ifac)*(w5(ii)+w5(jj))*0.5d0               &
-             + surfac(3,ifac)*(w6(ii)+w6(jj))*0.5d0
-      diverg(ii) = diverg(ii) + vecfac
-      diverg(jj) = diverg(jj) - vecfac
-    enddo
-
-  endif
+    vecfac = surfac(1,ifac)*(w4(ii)+w4(jj))*0.5d0               &
+         + surfac(2,ifac)*(w5(ii)+w5(jj))*0.5d0               &
+         + surfac(3,ifac)*(w6(ii)+w6(jj))*0.5d0
+    diverg(ii) = diverg(ii) + vecfac
+    diverg(jj) = diverg(jj) - vecfac
+  enddo
 
 
 ! --- Assemblage sur les faces de bord
 
-  if(ivectb.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1, nfabor
-      ii = ifabor(ifac)
-      vecfac = surfbo(1,ifac)*w4(ii)                              &
-             + surfbo(2,ifac)*w5(ii)                              &
-             + surfbo(3,ifac)*w6(ii)
-      diverg(ii) = diverg(ii) + vecfac
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfabor
-      ii = ifabor(ifac)
-      vecfac = surfbo(1,ifac)*w4(ii)                              &
-             + surfbo(2,ifac)*w5(ii)                              &
-             + surfbo(3,ifac)*w6(ii)
-      diverg(ii) = diverg(ii) + vecfac
-    enddo
-
-  endif
+  do ifac = 1, nfabor
+    ii = ifabor(ifac)
+    vecfac = surfbo(1,ifac)*w4(ii)                              &
+         + surfbo(2,ifac)*w5(ii)                              &
+         + surfbo(3,ifac)*w6(ii)
+    diverg(ii) = diverg(ii) + vecfac
+  enddo
 
 enddo
 

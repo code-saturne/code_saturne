@@ -113,49 +113,22 @@ endif
 ! 2.  INTEGRATION SUR LES FACETTES INTERNES
 !===============================================================================
 
-if (ivecti.eq.1) then
-
-!CDIR NODEP
-  do ifac = 1, nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    diverg(ii) = diverg(ii) +flumas(ifac)
-    diverg(jj) = diverg(jj) -flumas(ifac)
-  enddo
-
-else
-
-! VECTORISATION NON FORCEE
-  do ifac = 1, nfac
-    ii = ifacel(1,ifac)
-    jj = ifacel(2,ifac)
-    diverg(ii) = diverg(ii) +flumas(ifac)
-    diverg(jj) = diverg(jj) -flumas(ifac)
-  enddo
-
-endif
+do ifac = 1, nfac
+  ii = ifacel(1,ifac)
+  jj = ifacel(2,ifac)
+  diverg(ii) = diverg(ii) +flumas(ifac)
+  diverg(jj) = diverg(jj) -flumas(ifac)
+enddo
 
 
 !===============================================================================
 ! 3.  INTEGRATION SUR LES FACETTES DE BORD
 !===============================================================================
 
-if (ivectb.eq.1) then
-
-!CDIR NODEP
-  do ifac = 1, nfabor
-    ii = ifabor(ifac)
-    diverg(ii) = diverg(ii) +flumab(ifac)
-  enddo
-
-else
-
-  do ifac = 1, nfabor
-    ii = ifabor(ifac)
-    diverg(ii) = diverg(ii) +flumab(ifac)
-  enddo
-
-endif
+do ifac = 1, nfabor
+  ii = ifabor(ifac)
+  diverg(ii) = diverg(ii) +flumab(ifac)
+enddo
 
 #if defined(_CS_LANG_FR)
 

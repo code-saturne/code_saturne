@@ -289,111 +289,50 @@ enddo
 
 if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
 
-  if (ivecti.eq.1) then
+  do ifac = 1, nfac
 
-!CDIR NODEP
-    do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
 
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
+    difx = cdgfac(1,ifac) - xyzcen(1,ii)
+    dify = cdgfac(2,ifac) - xyzcen(2,ii)
+    difz = cdgfac(3,ifac) - xyzcen(3,ii)
+    djfx = cdgfac(1,ifac) - xyzcen(1,jj)
+    djfy = cdgfac(2,ifac) - xyzcen(2,jj)
+    djfz = cdgfac(3,ifac) - xyzcen(3,jj)
 
-      difx = cdgfac(1,ifac) - xyzcen(1,ii)
-      dify = cdgfac(2,ifac) - xyzcen(2,ii)
-      difz = cdgfac(3,ifac) - xyzcen(3,ii)
-      djfx = cdgfac(1,ifac) - xyzcen(1,jj)
-      djfy = cdgfac(2,ifac) - xyzcen(2,jj)
-      djfz = cdgfac(3,ifac) - xyzcen(3,jj)
+    pif = pvar(ii) +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
+    pjf = pvar(jj) +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
 
-      pif = pvar(ii) +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-      pjf = pvar(jj) +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+    pfac = pjf
+    if( flumas(ifac ).gt.0.d0 ) pfac = pif
 
-      pfac = pjf
-      if( flumas(ifac ).gt.0.d0 ) pfac = pif
+    pfac1 = pfac*surfac(1,ifac )
+    pfac2 = pfac*surfac(2,ifac )
+    pfac3 = pfac*surfac(3,ifac )
 
-      pfac1 = pfac*surfac(1,ifac )
-      pfac2 = pfac*surfac(2,ifac )
-      pfac3 = pfac*surfac(3,ifac )
+    dpdxa(ii) = dpdxa(ii) +pfac1
+    dpdya(ii) = dpdya(ii) +pfac2
+    dpdza(ii) = dpdza(ii) +pfac3
 
-      dpdxa(ii) = dpdxa(ii) +pfac1
-      dpdya(ii) = dpdya(ii) +pfac2
-      dpdza(ii) = dpdza(ii) +pfac3
+    dpdxa(jj) = dpdxa(jj) -pfac1
+    dpdya(jj) = dpdya(jj) -pfac2
+    dpdza(jj) = dpdza(jj) -pfac3
 
-      dpdxa(jj) = dpdxa(jj) -pfac1
-      dpdya(jj) = dpdya(jj) -pfac2
-      dpdza(jj) = dpdza(jj) -pfac3
+  enddo
 
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      difx = cdgfac(1,ifac) - xyzcen(1,ii)
-      dify = cdgfac(2,ifac) - xyzcen(2,ii)
-      difz = cdgfac(3,ifac) - xyzcen(3,ii)
-      djfx = cdgfac(1,ifac) - xyzcen(1,jj)
-      djfy = cdgfac(2,ifac) - xyzcen(2,jj)
-      djfz = cdgfac(3,ifac) - xyzcen(3,jj)
-
-      pif = pvar(ii) +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-      pjf = pvar(jj) +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
-
-      pfac = pjf
-      if( flumas(ifac ).gt.0.d0 ) pfac = pif
-
-      pfac1 = pfac*surfac(1,ifac )
-      pfac2 = pfac*surfac(2,ifac )
-      pfac3 = pfac*surfac(3,ifac )
-
-      dpdxa(ii) = dpdxa(ii) +pfac1
-      dpdya(ii) = dpdya(ii) +pfac2
-      dpdza(ii) = dpdza(ii) +pfac3
-
-      dpdxa(jj) = dpdxa(jj) -pfac1
-      dpdya(jj) = dpdya(jj) -pfac2
-      dpdza(jj) = dpdza(jj) -pfac3
-
-    enddo
-
-  endif
-
-  if (ivectb.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1, nfabor
-      ii = ifabor(ifac )
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
-      pfac = inc*coefap(ifac )                                    &
-            +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
-                    +diipby*dpdy(ii)+diipbz*dpdz(ii) )
-      dpdxa(ii) = dpdxa(ii) +pfac*surfbo(1,ifac )
-      dpdya(ii) = dpdya(ii) +pfac*surfbo(2,ifac )
-      dpdza(ii) = dpdza(ii) +pfac*surfbo(3,ifac )
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac =1,nfabor
-      ii = ifabor(ifac )
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
-      pfac = inc*coefap(ifac )                                    &
-            +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
-                    +diipby*dpdy(ii)+diipbz*dpdz(ii) )
-      dpdxa(ii) = dpdxa(ii) +pfac*surfbo(1,ifac )
-      dpdya(ii) = dpdya(ii) +pfac*surfbo(2,ifac )
-      dpdza(ii) = dpdza(ii) +pfac*surfbo(3,ifac )
-    enddo
-
-  endif
+  do ifac =1,nfabor
+    ii = ifabor(ifac )
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
+    pfac = inc*coefap(ifac )                                    &
+         +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
+         +diipby*dpdy(ii)+diipbz*dpdz(ii) )
+    dpdxa(ii) = dpdxa(ii) +pfac*surfbo(1,ifac )
+    dpdya(ii) = dpdya(ii) +pfac*surfbo(2,ifac )
+    dpdza(ii) = dpdza(ii) +pfac*surfbo(3,ifac )
+  enddo
 
   do iel = 1, ncel
     unsvol = 1.d0/volume(iel)

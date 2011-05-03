@@ -324,54 +324,23 @@ do isou = 1, 3
 
 
 
-    if(ivecti.eq.1) then
-
-!CDIR NODEP
-      do ifac = 1, nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
+    do ifac = 1, nfac
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
 !MO             VECFAC = SURFAC(ISOU,IFAC)
 !MO     &                  *(POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
-        vecfac = surfac(isou,ifac)*(w4(ii)+w4(jj))*0.5d0
-        trav(ii,idim) = trav(ii,idim) + vecfac*w6(ii)
-        trav(jj,idim) = trav(jj,idim) - vecfac*w6(jj)
-      enddo
-
-    else
-
-! VECTORISATION NON FORCEE
-      do ifac = 1, nfac
-        ii = ifacel(1,ifac)
-        jj = ifacel(2,ifac)
-!MO             VECFAC = SURFAC(ISOU,IFAC)
-!MO     &                  *(POND(IFAC)*W4(II)+(1.D0-POND(IFAC))*W4(JJ))
-        vecfac = surfac(isou,ifac)*(w4(ii)+w4(jj))*0.5d0
-        trav(ii,idim) = trav(ii,idim) + vecfac*w6(ii)
-        trav(jj,idim) = trav(jj,idim) - vecfac*w6(jj)
-      enddo
-
-    endif
+      vecfac = surfac(isou,ifac)*(w4(ii)+w4(jj))*0.5d0
+      trav(ii,idim) = trav(ii,idim) + vecfac*w6(ii)
+      trav(jj,idim) = trav(jj,idim) - vecfac*w6(jj)
+    enddo
 
 
 ! --- Assemblage sur les faces de bord
 
-!MO          IF(IVECTB.EQ.1) THEN
-!MOC
-!MO!CDIR NODEP
 !MO            DO IFAC = 1, NFABOR
 !MO             II = IFABOR(IFAC)
 !MO             TRAV(II,IDIM) = TRAV(II,IDIM) + SURFBO(ISOU,IFAC)*W4(II)
 !MO            ENDDO
-!MOC
-!MO          ELSE
-!MOC
-!MOC VECTORISATION NON FORCEE
-!MO            DO IFAC = 1, NFABOR
-!MO             II = IFABOR(IFAC)
-!MO             TRAV(II,IDIM) = TRAV(II,IDIM) + SURFBO(ISOU,IFAC)*W4(II)
-!MO            ENDDO
-!MOC
-!MO          ENDIF
 
   enddo
 
@@ -450,50 +419,21 @@ do isou = 1, 3
 
 ! --- Assemblage sur les faces internes
 
-  if(ivecti.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1, nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      vecfac = surfac(isou,ifac)*viscf(ifac)
-      trav(ii,idim) = trav(ii,idim) + vecfac
-      trav(jj,idim) = trav(jj,idim) - vecfac
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfac
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-      vecfac = surfac(isou,ifac)*viscf(ifac)
-      trav(ii,idim) = trav(ii,idim) + vecfac
-      trav(jj,idim) = trav(jj,idim) - vecfac
-    enddo
-
-  endif
+  do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+    vecfac = surfac(isou,ifac)*viscf(ifac)
+    trav(ii,idim) = trav(ii,idim) + vecfac
+    trav(jj,idim) = trav(jj,idim) - vecfac
+  enddo
 
 
 ! --- Assemblage sur les faces de bord
 
-  if(ivectb.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1, nfabor
-     ii = ifabor(ifac)
-     trav(ii,idim) = trav(ii,idim) + surfbo(isou,ifac)*w4(ii)
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfabor
-     ii = ifabor(ifac)
-     trav(ii,idim) = trav(ii,idim) + surfbo(isou,ifac)*w4(ii)
-    enddo
-
-  endif
+  do ifac = 1, nfabor
+    ii = ifabor(ifac)
+    trav(ii,idim) = trav(ii,idim) + surfbo(isou,ifac)*w4(ii)
+  enddo
 
 ! --- Calcul des efforts aux bords (partie 4/5)
 

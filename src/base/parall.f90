@@ -57,7 +57,7 @@ module parall
 
   integer(kind=8), save :: ncelgb, nfacgb, nfbrgb, nsomgb
 
-  ! Forced vectorization flags
+  ! Forced vectorization flags (not used anymore at the moment)
   !   ivecti : force vectorization of interior face -> cell loops (0/1)
   !   ivectb : force vectorization of boundary face -> cell loops (0/1)
 

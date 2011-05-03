@@ -1,3 +1,23 @@
+* 26/04/2011 - David Monfort <david.monfort@edf.fr>
+  Remove the vectorization directives (when forced) so as to simplify
+  the code maintainance and since we do not have  access to a vector
+  computer at the moment. Thus, the ivecti/b indicators are now useless.
+  modified routines:
+    src/base/bilsc2.f90
+    src/base/divmas.f90
+    src/base/gradmc.f90
+    src/base/gradrc.f90
+    src/base/matrdt.f90
+    src/base/matrix.f90
+    src/base/parall.f90
+    src/base/promav.f90
+    src/base/proxav.f90
+    src/base/recvmc.f90
+    src/base/vissec.f90
+    src/cfbl/cfbsc2.f90
+    src/cfbl/cfbsc3.f90
+    src/cfbl/cfdivs.f90
+
 * 26/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixes for 64-bit global counts with large meshes.
   modified files:

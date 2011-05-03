@@ -273,111 +273,50 @@ enddo
 
 if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
 
-  if (ivecti.eq.1) then
+  do ifac = 1, nfac
 
-!CDIR NODEP
-    do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
 
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
+    difx = cdgfac(1,ifac) - xyzcen(1,ii)
+    dify = cdgfac(2,ifac) - xyzcen(2,ii)
+    difz = cdgfac(3,ifac) - xyzcen(3,ii)
+    djfx = cdgfac(1,ifac) - xyzcen(1,jj)
+    djfy = cdgfac(2,ifac) - xyzcen(2,jj)
+    djfz = cdgfac(3,ifac) - xyzcen(3,jj)
 
-      difx = cdgfac(1,ifac) - xyzcen(1,ii)
-      dify = cdgfac(2,ifac) - xyzcen(2,ii)
-      difz = cdgfac(3,ifac) - xyzcen(3,ii)
-      djfx = cdgfac(1,ifac) - xyzcen(1,jj)
-      djfy = cdgfac(2,ifac) - xyzcen(2,jj)
-      djfz = cdgfac(3,ifac) - xyzcen(3,jj)
+    pif = pvar(ii) +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
+    pjf = pvar(jj) +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
 
-      pif = pvar(ii) +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-      pjf = pvar(jj) +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+    pfac = pjf
+    if( flumas(ifac ).gt.0.d0 ) pfac = pif
 
-      pfac = pjf
-      if( flumas(ifac ).gt.0.d0 ) pfac = pif
+    pfac1 = pfac*surfac(1,ifac )
+    pfac2 = pfac*surfac(2,ifac )
+    pfac3 = pfac*surfac(3,ifac )
 
-      pfac1 = pfac*surfac(1,ifac )
-      pfac2 = pfac*surfac(2,ifac )
-      pfac3 = pfac*surfac(3,ifac )
+    dpdxa(ii) = dpdxa(ii) +pfac1
+    dpdya(ii) = dpdya(ii) +pfac2
+    dpdza(ii) = dpdza(ii) +pfac3
 
-      dpdxa(ii) = dpdxa(ii) +pfac1
-      dpdya(ii) = dpdya(ii) +pfac2
-      dpdza(ii) = dpdza(ii) +pfac3
+    dpdxa(jj) = dpdxa(jj) -pfac1
+    dpdya(jj) = dpdya(jj) -pfac2
+    dpdza(jj) = dpdza(jj) -pfac3
 
-      dpdxa(jj) = dpdxa(jj) -pfac1
-      dpdya(jj) = dpdya(jj) -pfac2
-      dpdza(jj) = dpdza(jj) -pfac3
+  enddo
 
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      difx = cdgfac(1,ifac) - xyzcen(1,ii)
-      dify = cdgfac(2,ifac) - xyzcen(2,ii)
-      difz = cdgfac(3,ifac) - xyzcen(3,ii)
-      djfx = cdgfac(1,ifac) - xyzcen(1,jj)
-      djfy = cdgfac(2,ifac) - xyzcen(2,jj)
-      djfz = cdgfac(3,ifac) - xyzcen(3,jj)
-
-      pif = pvar(ii) +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-      pjf = pvar(jj) +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
-
-      pfac = pjf
-      if( flumas(ifac ).gt.0.d0 ) pfac = pif
-
-      pfac1 = pfac*surfac(1,ifac )
-      pfac2 = pfac*surfac(2,ifac )
-      pfac3 = pfac*surfac(3,ifac )
-
-      dpdxa(ii) = dpdxa(ii) +pfac1
-      dpdya(ii) = dpdya(ii) +pfac2
-      dpdza(ii) = dpdza(ii) +pfac3
-
-      dpdxa(jj) = dpdxa(jj) -pfac1
-      dpdya(jj) = dpdya(jj) -pfac2
-      dpdza(jj) = dpdza(jj) -pfac3
-
-    enddo
-
-  endif
-
-  if (ivectb.eq.1) then
-
-!CDIR NODEP
-    do ifac = 1, nfabor
-      ii = ifabor(ifac )
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
-      pfac = inc*coefap(ifac )                                    &
-            +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
-                    +diipby*dpdy(ii)+diipbz*dpdz(ii) )
-      dpdxa(ii) = dpdxa(ii) +pfac*surfbo(1,ifac )
-      dpdya(ii) = dpdya(ii) +pfac*surfbo(2,ifac )
-      dpdza(ii) = dpdza(ii) +pfac*surfbo(3,ifac )
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac =1,nfabor
-      ii = ifabor(ifac )
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
-      pfac = inc*coefap(ifac )                                    &
-            +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
-                    +diipby*dpdy(ii)+diipbz*dpdz(ii) )
-      dpdxa(ii) = dpdxa(ii) +pfac*surfbo(1,ifac )
-      dpdya(ii) = dpdya(ii) +pfac*surfbo(2,ifac )
-      dpdza(ii) = dpdza(ii) +pfac*surfbo(3,ifac )
-    enddo
-
-  endif
+  do ifac =1,nfabor
+    ii = ifabor(ifac )
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
+    pfac = inc*coefap(ifac )                                    &
+         +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
+         +diipby*dpdy(ii)+diipbz*dpdz(ii) )
+    dpdxa(ii) = dpdxa(ii) +pfac*surfbo(1,ifac )
+    dpdya(ii) = dpdya(ii) +pfac*surfbo(2,ifac )
+    dpdza(ii) = dpdza(ii) +pfac*surfbo(3,ifac )
+  enddo
 
   do iel = 1, ncel
     unsvol = 1.d0/volume(iel)
@@ -456,114 +395,46 @@ endif
 
 if(iupwin.eq.1) then
 
-  if (ivecti.eq.1) then
+  do ifac = 1, nfac
 
-!CDIR NODEP
-    do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
 
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
+    dijpfx = dijpf(1,ifac)
+    dijpfy = dijpf(2,ifac)
+    dijpfz = dijpf(3,ifac)
 
-      dijpfx = dijpf(1,ifac)
-      dijpfy = dijpf(2,ifac)
-      dijpfz = dijpf(3,ifac)
-
-      pnd   = pond(ifac)
+    pnd   = pond(ifac)
 
 ! ON RECALCULE A CE NIVEAU II' ET JJ'
 
-      diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pnd) * dijpfx)
-      diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pnd) * dijpfy)
-      diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pnd) * dijpfz)
-      djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pnd  * dijpfx
-      djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pnd  * dijpfy
-      djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pnd  * dijpfz
+    diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
+    diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
+    diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
+    djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) + pnd  * dijpfx
+    djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) + pnd  * dijpfy
+    djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) + pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+    dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
+    dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
+    dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
 
-!     reconstruction uniquement si IRCFLP = 1
-      pip = pvar(ii)                                              &
-           + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-      pjp = pvar(jj)                                              &
-           + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+    pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+    pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
+    flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
+    fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
 
-      pif = pvar(ii)
-      pjf = pvar(jj)
-      infac = infac+1
+    pif = pvar(ii)
+    pjf = pvar(jj)
+    infac = infac+1
 
-      flux = iconvp*( flui*pif +fluj*pjf )                        &
-           + idiffp*viscf(ifac)*( pip -pjp )
+    flux = iconvp*( flui*pif +fluj*pjf ) + idiffp*viscf(ifac)*( pip -pjp )
 
-      smbrp(ii) = smbrp(ii) -flux
-      smbrp(jj) = smbrp(jj) +flux
+    smbrp(ii) = smbrp(ii) -flux
+    smbrp(jj) = smbrp(jj) +flux
 
-    enddo
-
-  else
-
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      dijpfx = dijpf(1,ifac)
-      dijpfy = dijpf(2,ifac)
-      dijpfz = dijpf(3,ifac)
-
-      pnd   = pond(ifac)
-
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-
-      diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pnd) * dijpfx)
-      diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pnd) * dijpfy)
-      diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pnd) * dijpfz)
-      djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pnd  * dijpfx
-      djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pnd  * dijpfy
-      djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pnd  * dijpfz
-
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
-
-      pip = pvar(ii)                                              &
-           + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-      pjp = pvar(jj)                                              &
-           + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-      pif = pvar(ii)
-      pjf = pvar(jj)
-      infac = infac+1
-
-      flux = iconvp*( flui*pif +fluj*pjf )                        &
-           + idiffp*viscf(ifac)*( pip -pjp )
-
-      smbrp(ii) = smbrp(ii) -flux
-      smbrp(jj) = smbrp(jj) +flux
-
-    enddo
-
-  endif
+  enddo
 
 
 !  --> FLUX SANS TEST DE PENTE
@@ -571,218 +442,96 @@ if(iupwin.eq.1) then
 
 elseif(isstpp.eq.1) then
 
-  if (ivecti.eq.1) then
+  iok = 0
+  do ifac = 1, nfac
 
-    iok = 0
-!CDIR NODEP
-    do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
 
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
+    dijpfx = dijpf(1,ifac)
+    dijpfy = dijpf(2,ifac)
+    dijpfz = dijpf(3,ifac)
 
-      dijpfx = dijpf(1,ifac)
-      dijpfy = dijpf(2,ifac)
-      dijpfz = dijpf(3,ifac)
-
-      pnd   = pond(ifac)
-
-! ON RECALCULE A CE NIVEAU II' ET JJ'
-
-
-      diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pnd) * dijpfx)
-      diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pnd) * dijpfy)
-      diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pnd) * dijpfz)
-      djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pnd  * dijpfx
-      djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pnd  * dijpfy
-      djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pnd  * dijpfz
-
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
-
-
-      pip = pvar(ii)                                              &
-           + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-      pjp = pvar(jj)                                              &
-           + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-
-!         CENTRE
-!        --------
-
-      if (ischcp.eq.1) then
-
-        pif = pnd*pip +(1.d0-pnd)*pjp
-        pjf = pif
-
-
-!         SECOND ORDER
-!        --------------
-
-      elseif(ischcp.eq.0) then
-
-        difx = cdgfac(1,ifac) - xyzcen(1,ii)
-        dify = cdgfac(2,ifac) - xyzcen(2,ii)
-        difz = cdgfac(3,ifac) - xyzcen(3,ii)
-        djfx = cdgfac(1,ifac) - xyzcen(1,jj)
-        djfy = cdgfac(2,ifac) - xyzcen(2,jj)
-        djfz = cdgfac(3,ifac) - xyzcen(3,jj)
-
-!     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
-!     sinon cela revient a faire de l'upwind
-        pif = pvar(ii)                                            &
-             +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-        pjf = pvar(jj)                                            &
-             +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
-
-      else
-        write(nfecra,9000)ischcp
-        iok = 1
-      endif
-
-
-!        BLENDING
-!       ----------
-
-      pif = blencp*pif+(1.d0-blencp)*pvar(ii)
-      pjf = blencp*pjf+(1.d0-blencp)*pvar(jj)
-
-
-!        FLUX
-!       ------
-
-      flux = iconvp*( flui*pif +fluj*pjf )                        &
-           + idiffp*viscf(ifac)*( pip -pjp )
-
-
-!        ASSEMBLAGE
-!       ------------
-
-      smbrp(ii) = smbrp(ii) -flux
-      smbrp(jj) = smbrp(jj) +flux
-
-    enddo
-!        Le call csexit ne doit pas etre dans la boucle, sinon
-!         le VPP la devectorise.
-    if(iok.ne.0) then
-      call csexit (1)
-    endif
-
-  else
-
-    iok = 0
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      dijpfx = dijpf(1,ifac)
-      dijpfy = dijpf(2,ifac)
-      dijpfz = dijpf(3,ifac)
-
-      pnd   = pond(ifac)
+    pnd   = pond(ifac)
 
 ! ON RECALCULE II' ET JJ'
 
-      diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pnd) * dijpfx)
-      diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pnd) * dijpfy)
-      diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pnd) * dijpfz)
-      djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pnd  * dijpfx
-      djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pnd  * dijpfy
-      djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pnd  * dijpfz
+    diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
+    diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
+    diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
+    djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) + pnd  * dijpfx
+    djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) + pnd  * dijpfy
+    djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) + pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+    dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
+    dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
+    dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
 
-      pip = pvar(ii)                                              &
-           + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-      pjp = pvar(jj)                                              &
-           + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+    pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+    pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
+    flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
+    fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
 
 
 !         CENTRE
 !        --------
 
-      if (ischcp.eq.1) then
+    if (ischcp.eq.1) then
 
-        pif = pnd*pip +(1.d0-pnd)*pjp
-        pjf = pif
+      pif = pnd*pip +(1.d0-pnd)*pjp
+      pjf = pif
 
 
 !         SECOND ORDER
 !        --------------
 
-      elseif(ischcp.eq.0) then
+    elseif(ischcp.eq.0) then
 
-        difx = cdgfac(1,ifac) - xyzcen(1,ii)
-        dify = cdgfac(2,ifac) - xyzcen(2,ii)
-        difz = cdgfac(3,ifac) - xyzcen(3,ii)
-        djfx = cdgfac(1,ifac) - xyzcen(1,jj)
-        djfy = cdgfac(2,ifac) - xyzcen(2,jj)
-        djfz = cdgfac(3,ifac) - xyzcen(3,jj)
+      difx = cdgfac(1,ifac) - xyzcen(1,ii)
+      dify = cdgfac(2,ifac) - xyzcen(2,ii)
+      difz = cdgfac(3,ifac) - xyzcen(3,ii)
+      djfx = cdgfac(1,ifac) - xyzcen(1,jj)
+      djfy = cdgfac(2,ifac) - xyzcen(2,jj)
+      djfz = cdgfac(3,ifac) - xyzcen(3,jj)
 
 !     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
 !     sinon cela revient a faire de l'upwind
-        pif = pvar(ii)                                            &
-             +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-        pjf = pvar(jj)                                            &
-             +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+      pif = pvar(ii) + difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
+      pjf = pvar(jj) + djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
 
-      else
-        write(nfecra,9000)ischcp
-        iok = 1
-      endif
+    else
+      write(nfecra,9000)ischcp
+      iok = 1
+    endif
 
 
 !        BLENDING
 !       ----------
 
-      pif = blencp*pif+(1.d0-blencp)*pvar(ii)
-      pjf = blencp*pjf+(1.d0-blencp)*pvar(jj)
+    pif = blencp*pif+(1.d0-blencp)*pvar(ii)
+    pjf = blencp*pjf+(1.d0-blencp)*pvar(jj)
 
 
 !        FLUX
 !       ------
 
-      flux = iconvp*( flui*pif +fluj*pjf )                        &
-           + idiffp*viscf(ifac)*( pip -pjp )
+    flux = iconvp*( flui*pif +fluj*pjf ) + idiffp*viscf(ifac)*( pip -pjp )
 
 
 !        ASSEMBLAGE
 !       ------------
 
-      smbrp(ii) = smbrp(ii) -flux
-      smbrp(jj) = smbrp(jj) +flux
+    smbrp(ii) = smbrp(ii) -flux
+    smbrp(jj) = smbrp(jj) +flux
 
-    enddo
+  enddo
 !        Le call csexit ne doit pas etre dans la boucle, sinon
 !         le VPP la devectorise (pour la boucle non vectorisee forcee,
 !         ce n'est pas grave, c'est juste pour recopier exactement
 !         la precedente)
-    if(iok.ne.0) then
-      call csexit (1)
-    endif
-
+  if(iok.ne.0) then
+    call csexit (1)
   endif
 
 
@@ -793,296 +542,136 @@ elseif(isstpp.eq.1) then
 
 else
 
-  if (ivecti.eq.1) then
+  iok = 0
+  do ifac = 1, nfac
 
-    iok = 0
-!CDIR NODEP
-    do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
 
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
+    dijpfx = dijpf(1,ifac)
+    dijpfy = dijpf(2,ifac)
+    dijpfz = dijpf(3,ifac)
 
-      dijpfx = dijpf(1,ifac)
-      dijpfy = dijpf(2,ifac)
-      dijpfz = dijpf(3,ifac)
-
-      pnd    = pond(ifac)
-      srfan  = surfan(ifac)
+    pnd    = pond(ifac)
+    srfan  = surfan(ifac)
 
 ! ON RECALCULE II' ET JJ'
 
-      diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pnd) * dijpfx)
-      diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pnd) * dijpfy)
-      diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pnd) * dijpfz)
-      djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pnd  * dijpfx
-      djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pnd  * dijpfy
-      djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pnd  * dijpfz
+    diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
+    diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
+    diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
+    djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) + pnd  * dijpfx
+    djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) + pnd  * dijpfy
+    djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) + pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+    dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
+    dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
+    dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
 
-      pip = pvar(ii)                                              &
-           + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-      pjp = pvar(jj)                                              &
-           + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
+    pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
+    pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
 
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
+    flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
+    fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
 
 
 !         TEST DE PENTE
 !        ---------------
 
-      testi = dpdxa(ii)*surfac(1,ifac) +dpdya(ii)*surfac(2,ifac)  &
-            + dpdza(ii)*surfac(3,ifac)
-      testj = dpdxa(jj)*surfac(1,ifac) +dpdya(jj)*surfac(2,ifac)  &
-            + dpdza(jj)*surfac(3,ifac)
-      testij= dpdxa(ii)*dpdxa(jj)    +dpdya(ii)*dpdya(jj)         &
-            + dpdza(ii)*dpdza(jj)
+    testi = dpdxa(ii)*surfac(1,ifac) +dpdya(ii)*surfac(2,ifac)  &
+          + dpdza(ii)*surfac(3,ifac)
+    testj = dpdxa(jj)*surfac(1,ifac) +dpdya(jj)*surfac(2,ifac)  &
+          + dpdza(jj)*surfac(3,ifac)
+    testij= dpdxa(ii)*dpdxa(jj)    +dpdya(ii)*dpdya(jj)         &
+          + dpdza(ii)*dpdza(jj)
 
-      if( flumas(ifac).gt.0.d0) then
-        dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
-            + dpdz(ii)*surfac(3,ifac)
-        ddi = testi
-        ddj = ( pvar(jj)-pvar(ii) )/dist(ifac) *srfan
-      else
-        dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
-            + dpdz(jj)*surfac(3,ifac)
-        ddi = ( pvar(jj)-pvar(ii) )/dist(ifac)*srfan
-        ddj = testj
-      endif
-      tesqck = dcc**2 -(ddi-ddj)**2
+    if( flumas(ifac).gt.0.d0) then
+      dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
+          + dpdz(ii)*surfac(3,ifac)
+      ddi = testi
+      ddj = ( pvar(jj)-pvar(ii) )/dist(ifac) *srfan
+    else
+      dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
+          + dpdz(jj)*surfac(3,ifac)
+      ddi = ( pvar(jj)-pvar(ii) )/dist(ifac) *srfan
+      ddj = testj
+    endif
+    tesqck = dcc**2 -(ddi-ddj)**2
 
 
 !         UPWIND
 !        --------
 
 !MO          IF( (TESTI*TESTJ).LE.0.D0 .OR. TESTIJ.LE.0.D0 ) THEN
-      if( tesqck.le.0.d0 .or. testij.le.0.d0 ) then
+    if( tesqck.le.0.d0 .or. testij.le.0.d0 ) then
 
-        pif = pvar(ii)
-        pjf = pvar(jj)
-        infac = infac+1
+      pif = pvar(ii)
+      pjf = pvar(jj)
+      infac = infac+1
 
-      else
+    else
 
 
 !         CENTRE
 !        --------
 
-        if (ischcp.eq.1) then
+      if (ischcp.eq.1) then
 
-          pif = pnd*pip +(1.d0-pnd)*pjp
-          pjf = pif
+        pif = pnd*pip +(1.d0-pnd)*pjp
+        pjf = pif
 
 
 !         SECOND ORDER
 !        --------------
 
-        elseif(ischcp.eq.0) then
+      elseif(ischcp.eq.0) then
 
-          difx = cdgfac(1,ifac) - xyzcen(1,ii)
-          dify = cdgfac(2,ifac) - xyzcen(2,ii)
-          difz = cdgfac(3,ifac) - xyzcen(3,ii)
-          djfx = cdgfac(1,ifac) - xyzcen(1,jj)
-          djfy = cdgfac(2,ifac) - xyzcen(2,jj)
-          djfz = cdgfac(3,ifac) - xyzcen(3,jj)
+        difx = cdgfac(1,ifac) - xyzcen(1,ii)
+        dify = cdgfac(2,ifac) - xyzcen(2,ii)
+        difz = cdgfac(3,ifac) - xyzcen(3,ii)
+        djfx = cdgfac(1,ifac) - xyzcen(1,jj)
+        djfy = cdgfac(2,ifac) - xyzcen(2,jj)
+        djfz = cdgfac(3,ifac) - xyzcen(3,jj)
 
 !     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
 !     sinon cela revient a faire de l'upwind
-          pif = pvar(ii)                                          &
-              + difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-          pjf = pvar(jj)                                          &
-              + djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+        pif = pvar(ii) + difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
+        pjf = pvar(jj) + djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
 
-        else
-          write(nfecra,9000)ischcp
-          iok = 1
-        endif
-
+      else
+        write(nfecra,9000)ischcp
+        iok = 1
       endif
 
-
-!        BLENDING
-!       ----------
-
-      pif = blencp*pif+(1.d0-blencp)*pvar(ii)
-      pjf = blencp*pjf+(1.d0-blencp)*pvar(jj)
-
-
-!        FLUX
-!       ------
-
-      flux = iconvp*( flui*pif +fluj*pjf )                        &
-           + idiffp*viscf(ifac)*( pip -pjp )
-
-
-!        ASSEMBLAGE
-!       ------------
-
-      smbrp(ii) = smbrp(ii) -flux
-      smbrp(jj) = smbrp(jj) +flux
-
-    enddo
-!        Le call csexit ne doit pas etre dans la boucle, sinon
-!         le VPP la devectorise.
-    if(iok.ne.0) then
-      call csexit (1)
     endif
 
-  else
-
-    iok = 0
-! VECTORISATION NON FORCEE
-    do ifac = 1, nfac
-
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
-
-      dijpfx = dijpf(1,ifac)
-      dijpfy = dijpf(2,ifac)
-      dijpfz = dijpf(3,ifac)
-
-      pnd    = pond(ifac)
-      srfan  = surfan(ifac)
-
-! ON RECALCULE II' ET JJ'
-
-      diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pnd) * dijpfx)
-      diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pnd) * dijpfy)
-      diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pnd) * dijpfz)
-      djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pnd  * dijpfx
-      djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pnd  * dijpfy
-      djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pnd  * dijpfz
-
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
-
-      pip = pvar(ii)                                              &
-           + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
-      pjp = pvar(jj)                                              &
-           + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
-
-      flui = 0.5d0*( flumas(ifac) +abs(flumas(ifac)) )
-      fluj = 0.5d0*( flumas(ifac) -abs(flumas(ifac)) )
-
-
-!         TEST DE PENTE
-!        ---------------
-
-      testi = dpdxa(ii)*surfac(1,ifac) +dpdya(ii)*surfac(2,ifac)  &
-            + dpdza(ii)*surfac(3,ifac)
-      testj = dpdxa(jj)*surfac(1,ifac) +dpdya(jj)*surfac(2,ifac)  &
-            + dpdza(jj)*surfac(3,ifac)
-      testij= dpdxa(ii)*dpdxa(jj)    +dpdya(ii)*dpdya(jj)         &
-            + dpdza(ii)*dpdza(jj)
-
-      if( flumas(ifac).gt.0.d0) then
-        dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
-            + dpdz(ii)*surfac(3,ifac)
-        ddi = testi
-        ddj = ( pvar(jj)-pvar(ii) )/dist(ifac) *srfan
-      else
-        dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
-            + dpdz(jj)*surfac(3,ifac)
-        ddi = ( pvar(jj)-pvar(ii) )/dist(ifac) *srfan
-        ddj = testj
-      endif
-      tesqck = dcc**2 -(ddi-ddj)**2
-
-
-!         UPWIND
-!        --------
-
-!MO          IF( (TESTI*TESTJ).LE.0.D0 .OR. TESTIJ.LE.0.D0 ) THEN
-      if( tesqck.le.0.d0 .or. testij.le.0.d0 ) then
-
-        pif = pvar(ii)
-        pjf = pvar(jj)
-        infac = infac+1
-
-      else
-
-
-!         CENTRE
-!        --------
-
-        if (ischcp.eq.1) then
-
-          pif = pnd*pip +(1.d0-pnd)*pjp
-          pjf = pif
-
-
-!         SECOND ORDER
-!        --------------
-
-        elseif(ischcp.eq.0) then
-
-          difx = cdgfac(1,ifac) - xyzcen(1,ii)
-          dify = cdgfac(2,ifac) - xyzcen(2,ii)
-          difz = cdgfac(3,ifac) - xyzcen(3,ii)
-          djfx = cdgfac(1,ifac) - xyzcen(1,jj)
-          djfy = cdgfac(2,ifac) - xyzcen(2,jj)
-          djfz = cdgfac(3,ifac) - xyzcen(3,jj)
-
-!     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
-!     sinon cela revient a faire de l'upwind
-          pif = pvar(ii)                                          &
-              + difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-          pjf = pvar(jj)                                          &
-              + djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
-
-        else
-          write(nfecra,9000)ischcp
-          iok = 1
-        endif
-
-      endif
-
 
 !        BLENDING
 !       ----------
 
-      pif = blencp*pif+(1.d0-blencp)*pvar(ii)
-      pjf = blencp*pjf+(1.d0-blencp)*pvar(jj)
+    pif = blencp*pif+(1.d0-blencp)*pvar(ii)
+    pjf = blencp*pjf+(1.d0-blencp)*pvar(jj)
 
 
 !        FLUX
 !       ------
 
-      flux = iconvp*( flui*pif +fluj*pjf )                        &
-           + idiffp*viscf(ifac)*( pip -pjp )
+    flux = iconvp*( flui*pif +fluj*pjf ) + idiffp*viscf(ifac)*( pip -pjp )
 
 
 !        ASSEMBLAGE
 !       ------------
 
-      smbrp(ii) = smbrp(ii) -flux
-      smbrp(jj) = smbrp(jj) +flux
+    smbrp(ii) = smbrp(ii) -flux
+    smbrp(jj) = smbrp(jj) +flux
 
-    enddo
+  enddo
 !        Le call csexit ne doit pas etre dans la boucle, sinon
 !         le VPP la devectorise (pour la boucle non vectorisee forcee,
 !         ce n'est pas grave, c'est juste pour recopier exactement
 !         la precedente)
-    if(iok.ne.0) then
-      call csexit (1)
-    endif
-
+  if(iok.ne.0) then
+    call csexit (1)
   endif
 
 endif
@@ -1120,120 +709,54 @@ endif
 !       il sera imposé par les C.L.
 if(iifbru.gt.0) then
 
-  if (ivectb.eq.1) then
+  do ifac = 1, nfabor
 
-!CDIR NODEP
-    do ifac = 1, nfabor
+    ii = ifabor(ifac)
 
-      ii = ifabor(ifac)
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
+    flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
+    fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
 
-      flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-      fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+    pip = pvar(ii) +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
 
-      pip = pvar(ii)                                              &
-       +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
-
-      pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
-      pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
+    pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
+    pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
 
 !            FLUX = ICONVP*( FLUI*PVAR(II) +FLUJ*PFAC )
 !     &           + IDIFFP*VISCB(IFAC)*( PIP -PFACD )
-      flux = iconvp*( flui*pvar(ii) +fluj*pfac )                  &
-                   *dble(1-ifrusb(ifac))                          &
-           + idiffp*viscb(ifac)*( pip -pfacd )
-      smbrp(ii) = smbrp(ii) -flux
+    flux = iconvp*( flui*pvar(ii) +fluj*pfac ) *dble(1-ifrusb(ifac)) &
+         + idiffp*viscb(ifac)*( pip -pfacd )
+    smbrp(ii) = smbrp(ii) -flux
 
-    enddo
-
-  else
-
-    do ifac = 1, nfabor
-
-      ii = ifabor(ifac)
-
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
-
-      flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-      fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-
-      pip = pvar(ii)                                              &
-       +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
-
-      pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
-      pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
-
-!            FLUX = ICONVP*( FLUI*PVAR(II) +FLUJ*PFAC )
-!     &           + IDIFFP*VISCB(IFAC)*( PIP -PFACD )
-      flux = iconvp*( flui*pvar(ii) +fluj*pfac )                  &
-                   *dble(1-ifrusb(ifac))                          &
-           + idiffp*viscb(ifac)*( pip -pfacd )
-      smbrp(ii) = smbrp(ii) -flux
-
-    enddo
-
-  endif
+  enddo
 
 !     On ne dispose pas de flux issu des C.L. : traitement std
 else
 
-  if (ivectb.eq.1) then
+  do ifac = 1, nfabor
 
-!CDIR NODEP
-    do ifac = 1, nfabor
+    ii = ifabor(ifac)
 
-      ii = ifabor(ifac)
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
+    flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
+    fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
 
-      flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-      fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+    pip = pvar(ii) + ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
 
-      pip = pvar(ii)                                              &
-       +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
+    pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
+    pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
 
-      pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
-      pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
+    flux = iconvp*( flui*pvar(ii) +fluj*pfac )                  &
+         + idiffp*viscb(ifac)*( pip -pfacd )
+    smbrp(ii) = smbrp(ii) -flux
 
-      flux = iconvp*( flui*pvar(ii) +fluj*pfac )                  &
-           + idiffp*viscb(ifac)*( pip -pfacd )
-      smbrp(ii) = smbrp(ii) -flux
-
-    enddo
-
-  else
-
-    do ifac = 1, nfabor
-
-      ii = ifabor(ifac)
-
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
-
-      flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-      fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-
-      pip = pvar(ii)                                              &
-       +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
-
-      pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
-      pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
-
-      flux = iconvp*( flui*pvar(ii) +fluj*pfac )                  &
-           + idiffp*viscb(ifac)*( pip -pfacd )
-      smbrp(ii) = smbrp(ii) -flux
-
-    enddo
-
-  endif
+  enddo
 
 endif
 
