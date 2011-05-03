@@ -1,7 +1,12 @@
 * 03/05/2011 - David Monfort <david.monfort@edf.fr>
+  Forgotten Makefile.am...
+  modified script:
+    Makefile.am
+
+* 03/05/2011 - David Monfort <david.monfort@edf.fr>
   Remove inconsistant 'check_mesh' command from the main script (superseded
   by both the graphical interface and the 'run' command). Also remove
-  the 'check_consistency' command that were a pale copy of the verification
+  the 'check_consistency' command which was a pale copy of the verification
   stage (--quality option of the solver).
   removed files:
     bin/cs_check_consistency.py

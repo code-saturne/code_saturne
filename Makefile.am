@@ -197,8 +197,6 @@ bin/__init__.py \
 bin/cs_case.py \
 bin/cs_case_domain.py \
 bin/cs_case_coupling.py \
-bin/cs_check_consistency.py \
-bin/cs_check_mesh.py \
 bin/cs_compile.py \
 bin/cs_create.py \
 bin/cs_exec_environment.py \
