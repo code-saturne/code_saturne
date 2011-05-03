@@ -1,3 +1,8 @@
+* 03/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix for saving of user Python scripts with calculation results.
+  modified file:
+    bin/cs_case_domain.py
+
 * 26/04/2011 - David Monfort <david.monfort@edf.fr>
   Remove the vectorization directives (when forced) so as to simplify
   the code maintainance and since we do not have  access to a vector
