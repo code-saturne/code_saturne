@@ -3,7 +3,7 @@
   modified file:
     bin/cs_case_domain.py
 
-* 26/04/2011 - David Monfort <david.monfort@edf.fr>
+* 03/05/2011 - David Monfort <david.monfort@edf.fr>
   Remove the vectorization directives (when forced) so as to simplify
   the code maintainance and since we do not have  access to a vector
   computer at the moment. Thus, the ivecti/b indicators are now useless.
