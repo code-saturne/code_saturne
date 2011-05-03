@@ -96,6 +96,7 @@ cs_join_add(const char  *sel_criteria,
  *   tml            <-- tree max level
  *   tmb            <-- tree max boxes
  *   tmr            <-- tree max ratio
+ *   tmr_distrib    <-- tree max ratio for distribution
  *---------------------------------------------------------------------------*/
 
 void
@@ -108,7 +109,8 @@ cs_join_set_advanced_param(int      join_num,
                            int      max_sub_faces,
                            int      tml,
                            int      tmb,
-                           double   tmr);
+                           double   tmr,
+                           double   tmr_distrib);
 
 /*----------------------------------------------------------------------------
  * Apply all the defined joining operations.

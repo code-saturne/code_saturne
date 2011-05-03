@@ -760,7 +760,7 @@ fvm_box_set_dump(const fvm_box_set_t  *boxes,
       const fvm_coord_t *bmax = boxes->extents + i*4 + 2;
       bft_printf("  id %8d, num %9llu: "
                  "[%7.5e %7.5e] --> [%7.5e %7.5e]\n",
-                 i, (unsigned long long)(boxes->g_num),
+                 i, (unsigned long long)(boxes->g_num[i]),
                  bmin[0], bmin[1], bmax[0], bmax[1]);
     }
   }
@@ -771,7 +771,7 @@ fvm_box_set_dump(const fvm_box_set_t  *boxes,
       const fvm_coord_t *bmax = boxes->extents + i*2 + 1;
       bft_printf("  id %8d, num %9llu: "
                  "[%7.5e] --> [%7.5e]\n",
-                 i, (unsigned long long)(boxes->g_num),
+                 i, (unsigned long long)(boxes->g_num[i]),
                  bmin[0], bmax[0]);
     }
   }

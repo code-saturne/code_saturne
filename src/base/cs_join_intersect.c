@@ -3804,7 +3804,8 @@ cs_join_intersect_faces(const cs_join_param_t   param,
   fvm_neighborhood_set_options(face_neighborhood,
                                param.tree_max_level,
                                param.tree_n_max_boxes,
-                               param.tree_max_box_ratio);
+                               param.tree_max_box_ratio,
+                               param.tree_max_box_ratio_distrib);
 
   /* Allocate temporary extent arrays */
 

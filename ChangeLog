@@ -1,3 +1,20 @@
+* 03/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve control of box tree growth limits for mesh joining.
+  modified files:
+    po/fr.po
+    src/base/cs_join.c
+    src/base/cs_join.h
+    src/base/cs_join_intersect.c
+    src/base/cs_join_util.c
+    src/base/cs_join_util.h
+    src/fvm/fvm_box.c
+    src/fvm/fvm_box_tree.c
+    src/fvm/fvm_box_tree.h
+    src/fvm/fvm_neighborhood.c
+    src/fvm/fvm_neighborhood.h
+    users/base/cs_user_join.c
+    users/base/cs_user_periodicity.c
+
 * 03/05/2011 - David Monfort <david.monfort@edf.fr>
   Forgotten Makefile.am...
   modified script:

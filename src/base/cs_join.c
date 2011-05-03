@@ -1279,6 +1279,9 @@ _print_mesh_info(const cs_mesh_t  *mesh,
 /*----------------------------------------------------------------------------
  * Set advanced parameters to user-defined values.
  *
+ * Out-of range values are silently set to minimum acceptable values
+ * where those are possible.
+ *
  * parameters:
  *   join           <-> pointer a to cs_join_t struct. to update
  *   mtf            <-- merge tolerance coefficient
@@ -1290,6 +1293,7 @@ _print_mesh_info(const cs_mesh_t  *mesh,
  *   tml            <-- tree max level
  *   tmb            <-- tree max boxes
  *   tmr            <-- tree max ratio
+ *   tmr_distrib    <-- tree max ratio for distribution
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1302,15 +1306,13 @@ _set_advanced_param(cs_join_t   *join,
                     int          max_sub_faces,
                     int          tml,
                     int          tmb,
-                    double       tmr)
+                    double       tmr,
+                    double       tmr_distrib)
 {
   /* Deepest level reachable during tree building */
 
   if (tml < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the tml parameter.\n"
-                "  It must be between > 0 and is here: %d\n"), tml);
+    tml = 1;
 
   join->param.tree_max_level = tml;
 
@@ -1318,23 +1320,22 @@ _set_advanced_param(cs_join_t   *join,
      if level != tree_max_level */
 
   if (tmb < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the tmb parameter.\n"
-                "  It must be between > 0 and is here: %d\n"), tmb);
+    tmb = 1;
 
   join->param.tree_n_max_boxes = tmb;
 
   /* Stop tree building if:
      n_linked_boxes > tree_max_box_ratio*n_init_boxes */
 
-  if (tmr <= 0.0 )
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the tmr parameter.\n"
-                "  It must be between > 0.0 and is here: %f\n"), tmr);
+  if (tmr < 1.0 )
+    tmr = 1.0;
 
   join->param.tree_max_box_ratio = tmr;
+
+  if (tmr_distrib < 1.0 )
+    tmr_distrib = 1.0;
+
+  join->param.tree_max_box_ratio_distrib = tmr_distrib;
 
   /* Coef. used to modify the tolerance associated to each vertex BEFORE the
      merge operation.
@@ -1344,20 +1345,14 @@ _set_advanced_param(cs_join_t   *join,
      If coef > 1.0 => increase vertex merge */
 
   if (mtf < 0.0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the merge tolerance factor.\n"
-                "  It must be positive or nul and not: %f\n"), mtf);
+    mtf = 0.0;
 
   join->param.merge_tol_coef = mtf;
 
    /* Maximum number of equivalence breaks */
 
   if (maxbrk < 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Mesh joining:"
-                "  Forbidden value for the max. number of tolerance breaks.\n"
-                "  It must be between >= 0 and not: %d\n"), maxbrk);
+    maxbrk = 0;
 
   join->param.n_max_equiv_breaks = maxbrk;
 
@@ -1374,7 +1369,7 @@ _set_advanced_param(cs_join_t   *join,
     bft_error(__FILE__, __LINE__, 0,
               _("Mesh joining:"
                 "  Forbidden value for the tcm parameter.\n"
-                "  It must be between 1, 2 or 11, 12 and here is: %d\n"), tcm);
+                "  It must be 1, 2, 11, or 12 and not: %d\n"), tcm);
 
   join->param.tcm = tcm;
 
@@ -1384,7 +1379,7 @@ _set_advanced_param(cs_join_t   *join,
     bft_error(__FILE__, __LINE__, 0,
               _("Mesh joining:"
                 "  Forbidden value for icm parameter.\n"
-                "  It must be 1 or 2 and here is: %d\n"), icm);
+                "  It must be 1 or 2 and not: %d\n"), icm);
 
   join->param.icm = icm;
 
@@ -1394,7 +1389,7 @@ _set_advanced_param(cs_join_t   *join,
     bft_error(__FILE__, __LINE__, 0,
               _("Mesh joining:"
                 "  Forbidden value for the maxsf parameter.\n"
-                "  It must be between > 0 and here is: %d\n"), max_sub_faces);
+                "  It must be > 0 and not: %d\n"), max_sub_faces);
 
   join->param.max_sub_faces = max_sub_faces;
 
@@ -1456,6 +1451,7 @@ cs_join_add(const char  *sel_criteria,
  *   tml            <-- tree max level
  *   tmb            <-- tree max boxes
  *   tmr            <-- tree max ratio
+ *   tmr_distrib    <-- tree max ratio for distribution
  *---------------------------------------------------------------------------*/
 
 void
@@ -1468,7 +1464,8 @@ cs_join_set_advanced_param(int      join_num,
                            int      max_sub_faces,
                            int      tml,
                            int      tmb,
-                           double   tmr)
+                           double   tmr,
+                           double   tmr_distrib)
 {
   int  i, join_id = -1;
   cs_join_t  *join = NULL;
@@ -1500,7 +1497,8 @@ cs_join_set_advanced_param(int      join_num,
                       max_sub_faces,
                       tml,
                       tmb,
-                      tmr);
+                      tmr,
+                      tmr_distrib);
 }
 
 /*----------------------------------------------------------------------------
@@ -1573,6 +1571,7 @@ cs_join_all(void)
                    "    Deepest level reachable in tree building: %8d\n"
                    "    Max boxes by leaf:                        %8d\n"
                    "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
+                   "    Max ratio of boxes for distribution:      %8.5f\n"
                    "    Merge step tolerance multiplier:          %8.5f\n"
                    "    Pre-merge factor:                         %8.5f\n"
                    "    Tolerance computation mode:               %8d\n"
@@ -1583,6 +1582,7 @@ cs_join_all(void)
                  join_param.tree_max_level,
                  join_param.tree_n_max_boxes,
                  join_param.tree_max_box_ratio,
+                 join_param.tree_max_box_ratio_distrib,
                  join_param.merge_tol_coef,
                  join_param.pre_merge_factor,
                  join_param.tcm, join_param.icm,

@@ -106,6 +106,9 @@ typedef struct {
   float  tree_max_box_ratio; /* Stop building tree when:
                                 (  n_linked_boxes
                                  > tree_max_box_ratio * n_init_boxes) */
+  float  tree_max_box_ratio_distrib; /* In parallel, tree_max_box_ratio for
+                                        initial coarse tree used to
+                                        determine load-distribution */
 
   /* Geometric parameters */
   /* -------------------- */

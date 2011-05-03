@@ -122,9 +122,12 @@ struct _fvm_neighborhood_t {
   int  leaf_threshold;               /* Maximum number of boxes which can
                                         be related to a leaf of the tree if
                                         level < max_tree_depth */
-  int  max_box_ratio;                /* Stop adding levels to tree when
+  float  max_box_ratio;              /* Stop adding levels to tree when
                                         (  n_linked_boxes
                                          > max_box_ratio*n_initial_boxes) */
+  float  max_box_ratio_distrib;      /* In parallel, max_box_ratio for
+                                        initial coarse tree used for
+                                        distribution */
 
   _box_tree_stats_t  bt_stats;       /* Statistics associated with the
                                         box-trees used for search */
@@ -227,15 +230,13 @@ _redistribute_boxes(fvm_neighborhood_t  *n,
   fvm_box_tree_t  *coarse_tree = NULL;
   fvm_box_distrib_t  *distrib = NULL;
 
-  const int  max_box_ratio = FVM_MIN(6, n->max_box_ratio);
-
   /* Sanity checks */
 
   assert(boxes != NULL);
 
   coarse_tree = fvm_box_tree_create(n->max_tree_depth,
                                     n->leaf_threshold,
-                                    max_box_ratio);
+                                    n->max_box_ratio_distrib);
 
   /* Build a tree and associate boxes */
 
@@ -459,7 +460,7 @@ _order_neighborhood(fvm_neighborhood_t  *n)
  *
  * parameters:
  *   n        <-- pointer to neighborhood management structure
- *   n_g_elts <--  global number of elements
+ *   n_g_elts <-- global number of elements
  *----------------------------------------------------------------------------*/
 
 static void
@@ -680,7 +681,8 @@ fvm_neighborhood_create(void)
 
   n->max_tree_depth = 30; /* defaults */
   n->leaf_threshold = 30;
-  n->max_box_ratio = 10;
+  n->max_box_ratio = 10.0;
+  n->max_box_ratio_distrib = 6.0;
 
   _init_bt_statistics(&(n->bt_stats));
 
@@ -727,19 +729,22 @@ fvm_neighborhood_destroy(fvm_neighborhood_t  **n)
  * Set non-default algorithm parameters for neighborhood management structure.
  *
  * parameters:
- *   n              <-> pointer to neighborhood management structure
- *   max_tree_depth <-- maximum search tree depth
- *   leaf_threshold <-- maximum number of boxes which can be related to
- *                      a leaf of the tree if level < max_tree_depth
- *   max_box_ratio  <-- stop adding levels to tree when
- *                      (n_linked_boxes > max_box_ratio*n_initial_boxes)
+ *   n                     <-> pointer to neighborhood management structure
+ *   max_tree_depth        <-- maximum search tree depth
+ *   leaf_threshold        <-- maximum number of boxes which can be related to
+ *                             a leaf of the tree if level < max_tree_depth
+ *   max_box_ratio         <-- stop adding levels to tree when
+ *                             (n_linked_boxes > max_box_ratio*n_init_boxes)
+ *   max_box_ratio_distrib <-- maximum box ratio when computing coarse
+ *                             tree prior to parallel distribution
  *---------------------------------------------------------------------------*/
 
 void
 fvm_neighborhood_set_options(fvm_neighborhood_t  *n,
                              int                  max_tree_depth,
                              int                  leaf_threshold,
-                             int                  max_box_ratio)
+                             float                max_box_ratio,
+                             float                max_box_ratio_distrib)
 {
   if (n == NULL)
     return;
@@ -747,6 +752,7 @@ fvm_neighborhood_set_options(fvm_neighborhood_t  *n,
   n->max_tree_depth = max_tree_depth;
   n->leaf_threshold = leaf_threshold;
   n->max_box_ratio = max_box_ratio;
+  n->max_box_ratio_distrib = max_box_ratio_distrib;
 }
 
 /*----------------------------------------------------------------------------
@@ -1212,7 +1218,7 @@ fvm_neighborhood_dump(const fvm_neighborhood_t  *n)
 
   bft_printf("max tree depth:     %d\n"
              "leaf threshold:     %d\n"
-             "max box ratio       %d\n\n",
+             "max box ratio       %f\n\n",
              n->max_tree_depth, n->leaf_threshold, n->max_box_ratio);
 
 #if defined(HAVE_MPI)

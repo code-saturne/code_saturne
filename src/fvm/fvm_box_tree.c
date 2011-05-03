@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2008-2009  EDF
+  Copyright (C) 2008-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -124,7 +124,7 @@ struct _fvm_box_tree_t {
   fvm_morton_int_t  max_level;       /* Max. possible level */
   fvm_lnum_t        threshold;       /* Max number of boxes linked to a
                                         node if max_level is not reached */
-  fvm_lnum_t        max_box_ratio;   /* Max n_linked_boxes / n_boxes value */
+  float             max_box_ratio;   /* Max n_linked_boxes / n_boxes value */
 
   fvm_box_tree_stats_t stats;        /* Statistics related to the structure */
 
@@ -752,7 +752,7 @@ _recurse_tree_build(fvm_box_tree_t       *bt,
 
   if (state == 0) {
 
-    int  box_ratio;
+    float box_ratio;
 
     /* Limit, to avoid excessive memory usage */
 
@@ -763,11 +763,11 @@ _recurse_tree_build(fvm_box_tree_t       *bt,
                       &_next_size);
 
     if (bt->stats.n_boxes > 0)
-      box_ratio = _next_size/bt->stats.n_boxes;
+      box_ratio = (_next_size*1.0)/bt->stats.n_boxes;
     else
       box_ratio = 0;
 
-    if (box_ratio > bt->max_box_ratio)
+    if (bt->stats.max_level_reached > 0 && box_ratio > bt->max_box_ratio)
       state = 1;
 
   }
@@ -1961,16 +1961,16 @@ _dump_node(const fvm_box_tree_t  *bt,
  *  max_level     <-- max possible level
  *  threshold     <-- max number of  boxes linked to an octant if
  *                    max_level is not reached
- *  max_box_ratio <-- max n_linked_boxes / n_boxes value
+ *  max_box_ratio <-- max n_linked_boxes / n_boxes ratio
  *
  * returns:
  *   pointer to an empty fvm_box_tree_t structure.
  *----------------------------------------------------------------------------*/
 
 fvm_box_tree_t *
-fvm_box_tree_create(int  max_level,
-                    int  threshold,
-                    int  max_box_ratio)
+fvm_box_tree_create(int    max_level,
+                    int    threshold,
+                    float  max_box_ratio)
 {
   fvm_box_tree_t  *bt = NULL;
 
@@ -1988,10 +1988,10 @@ fvm_box_tree_create(int  max_level,
               _("  Forbidden threshold value (%d) in the tree structure\n"),
               threshold);
 
-  if (max_box_ratio < 1)
+  if (max_box_ratio < 1.0)
     bft_error(__FILE__, __LINE__, 0,
-              _("  Forbidden max_box_ratio value (%d) in the tree structure\n"),
-              max_box_ratio);
+              _("  Forbidden max_box_ratio value (%f) in the tree structure\n"),
+              (double)max_box_ratio);
 
   /* Create and initialize tree structure according to its type */
 
@@ -2697,10 +2697,10 @@ fvm_box_tree_dump_statistics(const fvm_box_tree_t  *bt)
              "Box tree statistics:\n\n");
   bft_printf("  Number of children per leaf:              %d\n"
              "  Max number of bounding boxes for a leaf:  %d\n"
-             "  Max value for box ratio (final/init):     %d\n"
+             "  Max value for box ratio (final/init):     %f\n"
              "  Max level allowed:                        %d\n\n",
              bt->n_children, (int)(bt->threshold),
-             (int)(bt->max_box_ratio), (int)(bt->max_level));
+             (double)(bt->max_box_ratio), (int)(bt->max_level));
 
   bft_printf("  Max level reached:                  %5u\n"
              "  Number of leaves:                   %10llu\n"
@@ -2767,10 +2767,10 @@ fvm_box_tree_dump(fvm_box_tree_t  *bt)
 
   bft_printf("  Number of children per leaf:              %d\n"
              "  Max number of bounding boxes for a leaf:  %d\n"
-             "  Max value for box ratio (linked/init):    %d\n"
+             "  Max value for box ratio (linked/init):    %f\n"
              "  Max level allowed:                        %d\n\n",
              bt->n_children, (int)(bt->threshold),
-             (int)(bt->max_box_ratio), (int)(bt->max_level));
+             (double)(bt->max_box_ratio), (int)(bt->max_level));
 
   bft_printf("  Max level reached:                  %5u\n"
              "  Number of leaves:                   %10llu\n"

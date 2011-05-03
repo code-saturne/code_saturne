@@ -205,6 +205,7 @@ _join_param_define(int                      join_num,
       Default value: 5.0 */
 
    param.tree_max_box_ratio = 5.0;
+   param.tree_max_box_ratio_distrib = 2.0;
 
    /* Level of display */
 

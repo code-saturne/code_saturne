@@ -6,7 +6,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -174,7 +174,7 @@ cs_user_join(void)
       * Useful to adjust speed vs. memory consumption. */
 
      /* Tree Max Level:
-      * deepest level reachable during the tree building */
+      * deepest level reachable when building the tree */
 
      int tml = 30;
 
@@ -185,17 +185,20 @@ cs_user_join(void)
      int tmb = 25;
 
      /* Tree Max. Ratio:
-      * stop to build the tree structure when
-      * number of bounding boxes > tmr * number of faces to locate
-      * Efficient parameter to reduce memory consumption. */
+      * stop refining the tree structure when
+      * number of bounding boxes > tmr * number of faces to locate.
+      * In parallel, a separate (usually lower) value may be set for
+      * the initial coarse tree used to determine distribution.
+      * Reducing this will help reduce memory consumption. */
 
-     int tmr = 5.0;
+     double tmr = 5.0;
+     double tmr_distrib = 2.0;
 
      /* Set advanced parameters */
 
      cs_join_set_advanced_param(join_num,
                                 mtf, pmf, tcm, icm,
                                 max_break, max_sub_face,
-                                tml, tmb, tmr);
+                                tml, tmb, tmr, tmr_distrib);
   }
 }

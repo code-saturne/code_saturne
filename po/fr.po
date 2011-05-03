@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-04-26 18:22+0200\n"
+"POT-Creation-Date: 2011-05-03 19:21+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4961,50 +4961,20 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Mesh joining:  Forbidden value for the tml parameter.\n"
-"  It must be between > 0 and is here: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the tmb parameter.\n"
-"  It must be between > 0 and is here: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the tmr parameter.\n"
-"  It must be between > 0.0 and is here: %f\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the merge tolerance factor.\n"
-"  It must be positive or nul and not: %f\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Mesh joining:  Forbidden value for the max. number of tolerance breaks.\n"
-"  It must be between >= 0 and not: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "Mesh joining:  Forbidden value for the tcm parameter.\n"
-"  It must be between 1, 2 or 11, 12 and here is: %d\n"
+"  It must be 1, 2, 11, or 12 and not: %d\n"
 msgstr ""
 
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for icm parameter.\n"
-"  It must be 1 or 2 and here is: %d\n"
+"  It must be 1 or 2 and not: %d\n"
 msgstr ""
 
 #, c-format
 msgid ""
 "Mesh joining:  Forbidden value for the maxsf parameter.\n"
-"  It must be between > 0 and here is: %d\n"
+"  It must be > 0 and not: %d\n"
 msgstr ""
 
 #, c-format
@@ -5064,6 +5034,7 @@ msgid ""
 "    Deepest level reachable in tree building: %8d\n"
 "    Max boxes by leaf:                        %8d\n"
 "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
+"    Max ratio of boxes for distribution:      %8.5f\n"
 "    Merge step tolerance multiplier:          %8.5f\n"
 "    Pre-merge factor:                         %8.5f\n"
 "    Tolerance computation mode:               %8d\n"
@@ -5077,6 +5048,7 @@ msgstr ""
 "    Profondeur max. pour construction de l'arbre : %8d\n"
 "    Nombre max. de boîtes par feuille :            %8d\n"
 "    Rapport max. de boîtes liées / initiales :     %8.5f\n"
+"    Rapport max. de boîtes pour la distribution :  %8.5f\n"
 "    Multiplicateur de tolérance de fusion :        %8.5f\n"
 "    Facteur pré-fusion :                           %8.5f\n"
 "    Mode de calcul de la tolérance :               %8d\n"
@@ -8528,7 +8500,7 @@ msgid "  Forbidden threshold value (%d) in the tree structure\n"
 msgstr ""
 
 #, c-format
-msgid "  Forbidden max_box_ratio value (%d) in the tree structure\n"
+msgid "  Forbidden max_box_ratio value (%f) in the tree structure\n"
 msgstr ""
 
 msgid ""

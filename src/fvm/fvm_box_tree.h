@@ -78,16 +78,16 @@ typedef enum {
  *  max_level     <-- max possible level
  *  threshold     <-- max number of  boxes linked to an octant if
  *                    max_level is not reached
- *  max_box_ratio <-- max n_linked_boxes / n_boxes value
+ *  max_box_ratio <-- max n_linked_boxes / n_boxes ratio
  *
  * returns:
  *   pointer to an empty fvm_box_tree_t structure.
  *----------------------------------------------------------------------------*/
 
 fvm_box_tree_t *
-fvm_box_tree_create(int  max_level,
-                    int  threshold,
-                    int  max_box_ratio);
+fvm_box_tree_create(int    max_level,
+                    int    threshold,
+                    float  max_box_ratio);
 
 /*----------------------------------------------------------------------------
  * Destroy a fvm_box_tree_t structure.

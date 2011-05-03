@@ -97,19 +97,22 @@ fvm_neighborhood_destroy(fvm_neighborhood_t  **n);
  * Set non-default algorithm parameters for neighborhood management structure.
  *
  * parameters:
- *   n              <-> pointer to neighborhood management structure
- *   max_tree_depth <-- maximum search tree depth
- *   max_leaf_boxes <-- maximum number of boxes which can be related to
- *                      a leaf of the tree if level < max_tree_depth
- *   max_box_ratio  <-- stop adding levels to tree when
- *                      (n_linked_boxes > max_box_ratio*n_initial_boxes)
+ *   n                     <-> pointer to neighborhood management structure
+ *   max_tree_depth        <-- maximum search tree depth
+ *   leaf_threshold        <-- maximum number of boxes which can be related to
+ *                             a leaf of the tree if level < max_tree_depth
+ *   max_box_ratio         <-- stop adding levels to tree when
+ *                             (n_linked_boxes > max_box_ratio*n_init_boxes)
+ *   max_box_ratio_distrib <-- maximum box ratio when computing coarse
+ *                             tree prior to parallel distribution
  *---------------------------------------------------------------------------*/
 
 void
 fvm_neighborhood_set_options(fvm_neighborhood_t  *n,
                              int                  max_tree_depth,
-                             int                  max_leaf_boxes,
-                             int                  max_box_ratio);
+                             int                  leaf_threshold,
+                             float                max_box_ratio,
+                             float                max_box_ratio_distrib);
 
 /*----------------------------------------------------------------------------
  * Retrieve pointers to of arrays from a neighborhood_t structure.
