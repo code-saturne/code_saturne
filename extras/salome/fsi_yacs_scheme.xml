@@ -155,7 +155,7 @@
   <!-- A small Python script that loads the Aster command file,    -->
   <!-- taking as input the name of the command file and whose      -->
   <!-- output is linked to the Code_Aster component                -->
-  
+
   <inline name="ljdc" >
     <script>
       <!-- open and read the Code_Aster command file -->

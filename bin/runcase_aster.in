@@ -226,7 +226,7 @@ if [ ! -z "$SAT_PARAM" ]
     then
     file=${STUDY_PATH}/${SAT_NAME}/DATA/${SAT_PARAM}
     if [ -f ${file} ]
-	then
+        then
         cp ${file} .
         file_tmp=${SAT_SCRATCH_PATH}/${SAT_PARAM}
         COMMAND_PARAM="--param $file_tmp"
@@ -253,16 +253,16 @@ if [ ! -z "$AST_COMM" ]
     file=${STUDY_PATH}/${AST_NAME}/${AST_COMM}
     #
     if [ -f $file ]
-	then
-	cp $file $AST_SCRATCH_PATH
+        then
+        cp $file $AST_SCRATCH_PATH
     else
-	echo '***********************************************'
-	echo ' ERROR                                         '
-	echo ' The command file ' $file
-	echo ' can not be accessed.                          '
-	echo ' The simulation will not be run                '
-	echo '***********************************************'
-	exit 1
+        echo '***********************************************'
+        echo ' ERROR                                         '
+        echo ' The command file ' $file
+        echo ' can not be accessed.                          '
+        echo ' The simulation will not be run                '
+        echo '***********************************************'
+        exit 1
     fi
 else
     echo "**************************************"
@@ -277,17 +277,17 @@ if [ ! -z "$AST_MESH" ]
     file=$STUDY_PATH/$AST_NAME/$AST_MESH
     #
     if [ -f $file ]
-	then
-	cp $file $AST_SCRATCH_PATH
-	AST_MESH_GLOB_NAME=$AST_SCRATCH_PATH/$AST_MESH
+        then
+        cp $file $AST_SCRATCH_PATH
+        AST_MESH_GLOB_NAME=$AST_SCRATCH_PATH/$AST_MESH
     else
-	echo '***********************************************'
-	echo ' ERROR                                         '
-	echo ' The command file ' $file
-	echo ' can not be accessed.                          '
-	echo ' The simulation will not be run                '
-	echo '***********************************************'
-	exit 1
+        echo '***********************************************'
+        echo ' ERROR                                         '
+        echo ' The command file ' $file
+        echo ' can not be accessed.                          '
+        echo ' The simulation will not be run                '
+        echo '***********************************************'
+        exit 1
     fi
 else
     echo "*************************************"
