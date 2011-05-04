@@ -1,8 +1,8 @@
 * 04/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 3).
   Rename the total number of radiant phases from nphasc to nrphas to better
-  reflect the fact that not lony coal can be accounted for be also fuel, and
-  also to ease the search of the nphas keyword in later commits.
+  reflect the fact that not only coal can be accounted for but also fuel,
+  and also to ease the search of the nphas keyword in later changesets.
   Likewise for the change iphas->irphas (local variable).
   modified routines:
     src/base/varpos.f90
