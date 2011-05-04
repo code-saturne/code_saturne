@@ -1,3 +1,19 @@
+* 04/05/2011 - David Monfort <david.monfort@edf.fr>
+  Removing the dependency to the number of phases (step 4).
+  The XML reader for the graphical user interface do not refer anymore to the
+  phase number. User setup is accounted for by using the fact that, if a variable
+  is defined as "type *var" (in C) then "ivar[0]" is equivalent to "*var".
+  Besides, most of the code could only handle a single-phase setup (from the XML).
+  modified routines:
+    src/base/caltri.f90
+    src/base/tridim.f90
+    src/gui/cs_gui_boundary_conditions.c
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+    src/gui/cs_gui_radiative_transfer.c
+    src/gui/cs_gui_radiative_transfer.h
+    src/rayt/rayopt.f90
+
 * 04/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
  Simplify preprocessor command-line syntax.
   modified files:

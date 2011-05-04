@@ -122,7 +122,6 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
-                                int *const nphas,
                                 int *const iirayo,
                                 int *const irayvf);
 

@@ -515,11 +515,10 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
-                                int *const nphas,
                                 int *const iirayo,
                                 int *const irayvf)
 {
-    int i, iphas = 0;
+    int i;
     int list_ind, record_ind = 0;
     char *label = NULL;
 
@@ -540,12 +539,9 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
             list_ind =  1;
             record_ind =  1;
             label = _radiative_transfer_char_post(_cs_properties_name2[i],  &list_ind, &record_ind);
-            for (iphas=0 ; iphas < *nphas ; iphas++)
-            {
-                irayvf[(*nbrayf)*iphas + i] = record_ind;
-                if (label)
-                    _cs_gui_copy_varname(label, i + 1 + (*nbrayf)*iphas);
-            }
+            irayvf[i] = record_ind;
+            if (label)
+                _cs_gui_copy_varname(label, i + 1);
             BFT_FREE(label);
         }
     }
@@ -555,12 +551,9 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
     {
         for (i=0 ; i < *nbrayf ; i++)
         {
-            for (iphas=0 ; iphas < *nphas ; iphas++)
-            {
-                bft_printf(_("--output boundary faces: %s value %i \n"),
-                           _cs_gui_var_rayt[i + (*nbrayf)*iphas],
-                irayvf[(*nbrayf)*iphas + i]);
-            }
+            bft_printf(_("--output boundary faces: %s value %i \n"),
+                       _cs_gui_var_rayt[i],
+            irayvf[i]);
         }
     }
 #endif

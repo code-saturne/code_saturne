@@ -1170,7 +1170,6 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                      double *const distch,
                                      double *const rcodcl)
 {
-    int iphas = 0;
     int faces = 0;
     int zones = 0;
     int izone, ith_zone, zone_nbr;
@@ -1267,7 +1266,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
 
                 /* zone number and nature of boundary */
                 izfppp[ifbr] = zone_nbr;
-                itypfb[iphas * (*nfabor) + ifbr] = *ientre;
+                itypfb[ifbr] = *ientre;
 
                 /* dirichlet for turbulent variables and scalars */
 
@@ -1288,7 +1287,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                    for (ifac = 0; ifac < faces; ifac++)
                     {
                         ifbr = faces_list[ifac]- 1;
-                        itypfb[iphas * (*nfabor) + ifbr] = 0;
+                        itypfb[ifbr] = 0;
                     }
                 }
             }
@@ -1535,7 +1534,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             {
                 ifbr = faces_list[ifac]-1;
                 izfppp[ifbr] = zone_nbr;
-                itypfb[iphas *(*nfabor) +ifbr] = iwall;
+                itypfb[ifbr] = iwall;
             }
 
             for (i = 0; i < vars->nvar; i++)
@@ -1598,7 +1597,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             {
                 ifbr = faces_list[ifac]-1;
                 izfppp[ifbr] = zone_nbr;
-                itypfb[iphas *(*nfabor) +ifbr] = *isolib;
+                itypfb[ifbr] = *isolib;
             }
 
             for (i = 0; i < vars->nvar; i++)
@@ -1628,7 +1627,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                    for (ifac = 0; ifac < faces; ifac++)
                     {
                         ifbr = faces_list[ifac]- 1;
-                        itypfb[iphas * (*nfabor) + ifbr] = 0;
+                        itypfb[ifbr] = 0;
                     }
                 }
             }
@@ -1640,7 +1639,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             {
                 ifbr = faces_list[ifac]-1;
                 izfppp[ifbr] = zone_nbr;
-                itypfb[iphas *(*nfabor) +ifbr] = *isymet;
+                itypfb[ifbr] = *isymet;
             }
 
         }
@@ -1650,7 +1649,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
             {
                 ifbr = faces_list[ifac]-1;
                 izfppp[ifbr] = zone_nbr;
-                itypfb[iphas *(*nfabor) +ifbr] = *iindef;
+                itypfb[ifbr] = *iindef;
             }
 
         }
@@ -1790,7 +1789,7 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
     int inature = 0;
     int inature2 = 0;
     int *faces_list = NULL;
-    int faces = 0, iphas = 0;
+    int faces = 0;
 
     zones   = cs_gui_boundary_zones_number();
 
@@ -1854,7 +1853,7 @@ void CS_PROCF (uiclve, UICLVE)(const int *const nfabor,
                   "@                                                            \n"),
                   boundaries->label[izone], zone_nbr, izfppp[ifbr]);
 
-            inature2 = itypfb[iphas *(*nfabor) +ifbr];
+            inature2 = itypfb[ifbr];
 
             /* The nature of the boundary can be changed from smooth wall to
                rough wall or vice-versa between the GUI and the FORTRAN */

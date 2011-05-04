@@ -514,7 +514,7 @@ do iphas = 1, nphas
   if (iihmpr.eq.1) then
     call uikpdc &
     !==========
-  ( iappel, iphas, ncelet, ncepdc,     &
+  ( iappel, ncelet, ncepdc,     &
     ia(idbia1), ra(idbra1) , ra(irtpa) )
   endif
 
@@ -557,7 +557,7 @@ do iphas = 1, nphas
     if (iihmpr.eq.1) then
       call uikpdc &
       !==========
-    ( iappel, iphas, ncelet, ncepdc,                  &
+    ( iappel, ncelet, ncepdc,                  &
       ia(iicepd(iphas)), ra(ickupd(iphas)), ra(irtpa) )
     endif
 

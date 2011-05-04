@@ -603,7 +603,7 @@ if (iihmpr.eq.1) then
     call fcnmra(nbrvaf(ii), len(nbrvaf(ii)), ii)
   enddo
 
-   call uiray4(nbrayf, nphas, iirayo, irayvf)
+   call uiray4(nbrayf, iirayo, irayvf)
    !==========
 
   do ii = 1, nbrayf

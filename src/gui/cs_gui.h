@@ -540,7 +540,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
  * *****************
  *
  * integer          iappel   -->  number of calls during a time step
- * integer          iphas    -->  number of phase (only 1 allowed)
  * integer          ncelet   -->  number of cells with halo
  * integer          ncepdp  <--   number of cells with head losses
  * integer          icepdc  <--   ncepdp cells number with head losses
@@ -549,7 +548,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
-                              const int*   iphas,
                               const int*   ncelet,
                                     int*   ncepdp,
                                     int    icepdc[],
