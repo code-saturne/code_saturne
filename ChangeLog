@@ -1,3 +1,9 @@
+* 03/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Removed obsolete initialization arguments for coupled case.
+  modified files:
+    bin/cs_case_coupling.py
+    bin/runcase_coupling.in
+
 * 04/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 3).
   Rename the total number of radiant phases from nphasc to nrphas to better

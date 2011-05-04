@@ -74,10 +74,7 @@ def get_param(path):
 
 def coupling(package,
              domains,
-             casedir,
-             exec_preprocess = True,
-             exec_partition = True,
-             exec_solver = True):
+             casedir):
 
     use_saturne = False
     use_syrthes = False
@@ -197,10 +194,7 @@ def coupling(package,
     c = case(package,
              casedir,
              sat_domains + nep_domains,
-             syr_domains,
-             exec_preprocess = exec_preprocess,
-             exec_partition = exec_partition,
-             exec_solver = exec_solver)
+             syr_domains)
 
     msg = ' Coupling execution between: \n'
     if use_saturne == True:

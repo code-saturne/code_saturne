@@ -71,10 +71,7 @@ if __name__ == '__main__':
 
     case = coupling(package(),
                     domains,
-                    casedir,
-                    exec_preprocess = True,
-                    exec_partition = True,
-                    exec_solver = True)
+                    casedir)
 
     # Select run id
     # (usually date+time; defined automatically when preparing data, but we need
