@@ -36,14 +36,14 @@ module radiat
   !===========================================================================
 
   !-->  IIRAYO = 0 pas de rayonnement, 1 DOM, 2 P-1
-  !-->  NPHASC = 1 (phase qui rayonne) augmentee eventuellement
-  !              du nombre de classe (Charbon)
+  !-->  NRPHAS = 1 (phase qui rayonne) augmentee eventuellement
+  !              du nombre de classe (Charbon, Fioul)
   !-->  IIMPAR = 0,1,2 niveau d'impression du calcul des temperatures de paroi
   !-->  IIMLUM = 0,1,2 niveau d'impression de la resolution luminance
   !-->  IMODAK = 1 calcul du coefficient d'absorption a l'aide de Modak
   !            = 0 on n'utilise pas Modak
 
-  integer, save :: iirayo, nphasc, iimpar, iimlum, imodak
+  integer, save :: iirayo, nrphas, iimpar, iimlum, imodak
 
   !--> pointeur dans le macrotableau PROPCE :
 

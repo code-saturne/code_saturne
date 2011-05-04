@@ -145,7 +145,7 @@ iw8    =       iw7    + ncelet
 iw9    =       iw8    + ncelet
 iw10   =       iw9    + ncelet
 itek   =       iw10   + ncelet
-ifinra =       itek   + ncelet * nphasc
+ifinra =       itek   + ncelet * nrphas
 
 icorua =       ifinra
 icorub =       icorua + nfabor

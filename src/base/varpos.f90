@@ -2089,18 +2089,18 @@ if (ipass.eq.5) then
     iqz          = iprop
 
 
-    do iphas = 1, nphasc
+    do irphas = 1, nrphas
 
-      iprop                = iprop + 1
-      itsre(iphas)         = iprop
-      iprop                = iprop + 1
-      itsri(iphas)         = iprop
-      iprop                = iprop + 1
-      iabs(iphas)          = iprop
-      iprop                = iprop + 1
-      iemi(iphas)          = iprop
-      iprop                = iprop + 1
-      icak(iphas)          = iprop
+      iprop                 = iprop + 1
+      itsre(irphas)         = iprop
+      iprop                 = iprop + 1
+      itsri(irphas)         = iprop
+      iprop                 = iprop + 1
+      iabs(irphas)          = iprop
+      iprop                 = iprop + 1
+      iemi(irphas)          = iprop
+      iprop                 = iprop + 1
+      icak(irphas)          = iprop
 
     enddo
 
@@ -2139,30 +2139,30 @@ if (ipass.eq.5) then
 ! Leur dimensionnement n'est pas le meme si on est en charbon ou non
 
 
-    do iphas = 1, nphasc
+    do irphas = 1, nrphas
 !
       iprop                = iprop + 1
-      ipproc(itsre(iphas)) = iprop
+      ipproc(itsre(irphas)) = iprop
       ipppst               = ipppst + 1
       ipppro(iprop)        = ipppst
 
       iprop                = iprop + 1
-      ipproc(itsri(iphas)) = iprop
+      ipproc(itsri(irphas)) = iprop
       ipppst               = ipppst + 1
       ipppro(iprop)        = ipppst
 !
       iprop                = iprop + 1
-      ipproc(iabs(iphas))  = iprop
+      ipproc(iabs(irphas))  = iprop
       ipppst               = ipppst + 1
       ipppro(iprop)        = ipppst
 
       iprop                = iprop + 1
-      ipproc(iemi(iphas))  = iprop
+      ipproc(iemi(irphas))  = iprop
       ipppst               = ipppst + 1
       ipppro(iprop)        = ipppst
 
       iprop                = iprop + 1
-      ipproc(icak(iphas))  = iprop
+      ipproc(icak(irphas))  = iprop
       ipppst               = ipppst + 1
       ipppro(iprop)        = ipppst
 
@@ -2233,7 +2233,7 @@ if (ipass.eq.5) then
 
       call uirapr &
       !==========
-    ( nprayc, nprayb, nphasc, ipppro, ipproc,           &
+    ( nprayc, nprayb, nrphas, ipppro, ipproc,           &
       ilumin, iqx, iqy, iqz,                            &
       itsre, itsri, iabs, iemi, icak)
 

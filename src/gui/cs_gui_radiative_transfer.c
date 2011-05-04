@@ -573,7 +573,7 @@ void CS_PROCF (uiray4, UIRAY4) (int *const nbrayf,
 
 void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
                                 const int *const nprayb,
-                                const int *const nphasc,
+                                const int *const nrphas,
                                 const int *const ipppro,
                                 const int *const ipproc,
                                 const int *const ilumin,
@@ -635,7 +635,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     BFT_MALLOC(name, strlen("radiative_source_term_")+1 + 2, char);
     BFT_MALLOC(snumpp, 1 + 2, char);
     strcpy(name, "radiative_source_term_");
-    for (i = 1; i < *nphasc; i++)
+    for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
@@ -657,7 +657,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     /* ITSRI loop on classes */
     BFT_REALLOC(name, strlen("implicit_source_term_")+1 + 2, char);
     strcpy(name, "implicit_source_term_");
-    for (i = 1; i < *nphasc; i++)
+    for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
@@ -679,7 +679,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     /* IABS loop on classes */
     BFT_REALLOC(name, strlen("absorption_")+1 + 2, char);
     strcpy(name, "absorption_");
-    for (i = 1; i < *nphasc; i++)
+    for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
@@ -701,7 +701,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     /* IEMI loop on classes */
     BFT_REALLOC(name, strlen("emission_")+1 + 2, char);
     strcpy(name, "emission_");
-    for (i = 1; i < *nphasc; i++)
+    for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);
@@ -723,7 +723,7 @@ void CS_PROCF (uirapr, UIRAPR) (const int *const nprayc,
     /* ICAK loop on classes */
     BFT_REALLOC(name, strlen("absorption_coefficient_")+1 + 2, char);
     strcpy(name, "absorption_coefficient_");
-    for (i = 1; i < *nphasc; i++)
+    for (i = 1; i < *nrphas; i++)
     {
         sprintf(snumpp, "%2.2i", i);
         strcat(name, snumpp);

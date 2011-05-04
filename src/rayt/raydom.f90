@@ -93,7 +93,7 @@ subroutine raydom &
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! tempk(ncelet,    ! ra ! --> ! temperature in Kelvin                          !
-!       nphasc)    !    !     !                                                !
+!       nrphas)    !    !     !                                                !
 ! w1...9(ncelet)   ! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
@@ -159,7 +159,7 @@ double precision w4(ncelet) , w5(ncelet) , w6(ncelet)
 double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
 double precision w10(ncelet)
 
-double precision tempk(ncelet,nphasc)
+double precision tempk(ncelet,nrphas)
 
 double precision ra(*)
 

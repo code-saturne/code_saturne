@@ -113,7 +113,7 @@ use radiat
 
 implicit none
 
-integer          iphas, ipp
+integer          irphas, ipp
 character*2      num
 
 integer       ipass
@@ -246,13 +246,13 @@ if (ipass.eq.3) then
   ihisvr(ipp,1) = -1
 
 
-  do iphas = 1,nphasc
+  do irphas = 1,nrphas
 
-    write(num,'(I1)') iphas
+    write(num,'(I1)') irphas
 
     !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
-    ipp = ipppro(ipproc(itsre(iphas)))
+    ipp = ipppro(ipproc(itsre(irphas)))
     nomvar(ipp)   = 'Srad'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
@@ -260,7 +260,7 @@ if (ipass.eq.3) then
 
     !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
-    ipp = ipppro(ipproc(iabs(iphas)))
+    ipp = ipppro(ipproc(iabs(irphas)))
     nomvar(ipp)   = 'Absorp'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
@@ -268,7 +268,7 @@ if (ipass.eq.3) then
 
     !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
-    ipp = ipppro(ipproc(iemi(iphas)))
+    ipp = ipppro(ipproc(iemi(irphas)))
     nomvar(ipp)   = 'Emiss'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0
@@ -276,7 +276,7 @@ if (ipass.eq.3) then
 
     !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
-    ipp = ipppro(ipproc(icak(iphas)))
+    ipp = ipppro(ipproc(icak(irphas)))
     nomvar(IPP)   = 'CoefAb_'//num
     ichrvr(ipp)   = 0
     ilisvr(ipp)   = 0

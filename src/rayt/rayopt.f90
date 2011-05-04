@@ -79,6 +79,7 @@ implicit none
 ! Local variables
 
 integer          ii, jj, iphas, iok , iiscal, iscaok, ipp, iph, nmodpp, iverif
+integer          irphas
 character        car4*4
 character*2      num
 
@@ -87,16 +88,16 @@ character*2      num
 ! 0. REDEFINITION DU NOMBRE DE PHASES POUR LE CHARBON PULVERISE
 !===============================================================================
 
-!--> nphasc: for pulverized coal and fuel combustion:
-!            nphasc = 1 (gaz) + number of classes (particles or droplets)
+!--> nrphas: for pulverized coal and fuel combustion:
+!            nrphas = 1 (gaz) + number of classes (particles or droplets)
 
 !--> For pulverized coal and fuel combustion:
 if ( ippmod(icp3pl) .ge. 0 ) then
-  nphasc = 1 + nclacp
+  nrphas = 1 + nclacp
 else if ( ippmod(icfuel) .ge. 0 ) then
-  nphasc = 1 + nclafu
+  nrphas = 1 + nclafu
 else
-  nphasc = 1
+  nrphas = 1
 endif
 
 nmodpp = 0
@@ -540,13 +541,13 @@ ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 
 
-do iphas = 1, nphasc-1
+do irphas = 1, nrphas-1
 
-  WRITE(NUM,'(I1)') IPHAS
+  WRITE(NUM,'(I1)') IRPHAS
 
 !--> TERME SOURCE IMPLICITE
 
-  ipp = ipppro(ipproc(itsri(iphas)))
+  ipp = ipppro(ipproc(itsri(irphas)))
   NOMVAR(IPP)   = 'ITSRI_'//NUM
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = 0
@@ -555,7 +556,7 @@ do iphas = 1, nphasc-1
 
 !--> TERME SOURCE RADIATIF (ANALYTIQUE/CONSERVATIF/SEMI-ANALYTIQUE)
 
-  ipp = ipppro(ipproc(itsre(iphas)))
+  ipp = ipppro(ipproc(itsre(irphas)))
   NOMVAR(IPP)   = 'Srad_'//NUM
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -563,7 +564,7 @@ do iphas = 1, nphasc-1
 
 !--> PART DE L'ABSORPTION DANS LE TERME SOURCE RADIATIF
 
-  ipp = ipppro(ipproc(iabs(iphas)))
+  ipp = ipppro(ipproc(iabs(irphas)))
   NOMVAR(IPP)   = 'Absorp_'//NUM
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -571,7 +572,7 @@ do iphas = 1, nphasc-1
 
 !--> PART DE L'EMISSION DANS LE TERME SOURCE RADIATIF
 
-  ipp = ipppro(ipproc(iemi(iphas)))
+  ipp = ipppro(ipproc(iemi(irphas)))
   NOMVAR(IPP)   = 'Emiss_'//NUM
   ichrvr(ipp)   = 0
   ihisvr(ipp,1) = -1
@@ -579,7 +580,7 @@ do iphas = 1, nphasc-1
 
 !--> COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
 
-  ipp = ipppro(ipproc(icak(iphas)))
+  ipp = ipppro(ipproc(icak(irphas)))
   NOMVAR(IPP)   = 'CoefAb_'//NUM
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
