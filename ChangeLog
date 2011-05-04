@@ -1,4 +1,9 @@
-* 03/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+* 04/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix for preprocessing or quality criteria with GUI and non-default turbulence.
+  modified files:
+    src/gui/cs_gui.c
+
+* 04/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Removed obsolete initialization arguments for coupled case.
   modified files:
     bin/cs_case_coupling.py

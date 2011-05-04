@@ -160,15 +160,20 @@ _gui_copy_varname(const char *varname, int ipp)
               _("Variable index %d out of bounds (1 to %d)"),
                  ipp, cs_glob_label->_cs_gui_last_var);
 
-  l = strlen(varname);
+  if (varname == NULL)
+    cs_glob_label->_cs_gui_var_name[ipp-1] = NULL;
 
-  if (cs_glob_label->_cs_gui_var_name[ipp-1] == NULL)
-    BFT_MALLOC(cs_glob_label->_cs_gui_var_name[ipp-1], l + 1, char);
+  else {
+    l = strlen(varname);
 
-  else if (strlen(cs_glob_label->_cs_gui_var_name[ipp-1]) != l)
-    BFT_REALLOC(cs_glob_label->_cs_gui_var_name[ipp-1], l + 1, char);
+    if (cs_glob_label->_cs_gui_var_name[ipp-1] == NULL)
+      BFT_MALLOC(cs_glob_label->_cs_gui_var_name[ipp-1], l + 1, char);
 
-  strcpy(cs_glob_label->_cs_gui_var_name[ipp-1], varname);
+    else if (strlen(cs_glob_label->_cs_gui_var_name[ipp-1]) != l)
+      BFT_REALLOC(cs_glob_label->_cs_gui_var_name[ipp-1], l + 1, char);
+
+    strcpy(cs_glob_label->_cs_gui_var_name[ipp-1], varname);
+  }
 }
 
 /*----------------------------------------------------------------------------
