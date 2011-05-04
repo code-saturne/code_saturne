@@ -140,7 +140,6 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 name   = meshNode['name']
                 format = meshNode['format']
                 mesh = self.case['mesh_path'] + '/' + name
-                cmd += ' --mesh ' + mesh
                 if meshNode['num']:
                     cmd += ' --num ' + meshNode['num']
                 if meshNode['reorient'] == 'on':
@@ -163,6 +162,9 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                     cmd += ' --out ' + os.path.join('mesh_input', 'mesh' + str_add)
                 else:
                     cmd += ' --out mesh_input'
+
+                cmd += ' ' + mesh
+
                 log.debug("ecs_cmd = %s" % cmd)
 
                 self.preprocess_cmd.append(cmd)

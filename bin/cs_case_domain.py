@@ -799,7 +799,7 @@ class domain(base_domain):
 
             # Build command
 
-            cmd = self.package.get_preprocessor() + ' --mesh ' + mesh_path
+            cmd = self.package.get_preprocessor()
 
             if (type(m) == tuple):
                 for opt in m[1:]:
@@ -813,6 +813,8 @@ class domain(base_domain):
             else:
                 cmd += ' --log'
                 cmd += ' --out mesh_input'
+
+            cmd += ' ' + mesh_path
 
             # Run command
 
