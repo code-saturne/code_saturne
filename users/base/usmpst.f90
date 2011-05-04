@@ -32,7 +32,7 @@ subroutine usmpst &
 !================
 
  ( idbia0 , idbra0 , ipart  ,                                     &
-   nvar   , nscal  , nphas  , nvlsta ,                            &
+   nvar   , nscal  , nvlsta ,                                     &
    ncelps , nfacps , nfbrps ,                                     &
    imodif ,                                                       &
    itypps ,                                                       &
@@ -65,7 +65,6 @@ subroutine usmpst &
 ! ipart            ! i  ! <-- ! number of the post-processing mesh (< 0 or > 0)!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
 ! ncelps           ! i  ! <-- ! number of cells in post-processing mesh        !
 ! nfacps           ! i  ! <-- ! number of interior faces in post-process. mesh !
@@ -121,7 +120,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          ipart
-integer          nvar   , nscal  , nphas  , nvlsta
+integer          nvar   , nscal  , nvlsta
 integer          ncelps , nfacps , nfbrps
 integer          imodif
 

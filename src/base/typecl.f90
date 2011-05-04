@@ -223,7 +223,7 @@ enddo
 
 if (irangp.ge.0) call parcmx(iok)
 if(iok.ne.0) then
-  call bcderr(nphas, itypfb)
+  call bcderr(itypfb)
 endif
 
 !===============================================================================
@@ -1163,7 +1163,7 @@ do iphas = 1, nphas
   if (iok.gt.0) then
     if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
     if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
-    call bcderr(nphas, itypfb)
+    call bcderr(itypfb)
   endif
 
 

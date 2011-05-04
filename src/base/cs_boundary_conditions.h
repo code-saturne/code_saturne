@@ -84,16 +84,14 @@ BEGIN_C_DECLS
  *
  * Fortran Interface:
  *
- * SUBROUTINE BCDERR (NPHAS , ITYPFB)
+ * SUBROUTINE BCDERR (ITYPFB)
  * *****************
  *
- * INTEGER          NPHAS       : --> : Number of active phases
- * INTEGER          ITYPFB      : <-> : Array of BC type ids (per phase)
+ * INTEGER          ITYPFB      : <-> : Array of BC type ids
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (bcderr, BCDERR)
 (
- const cs_int_t  *nphas,
  cs_int_t        *itypfb
 );
 
@@ -111,13 +109,11 @@ void CS_PROCF (bcderr, BCDERR)
  * absolute value indicating the original boundary condition type.
  *
  * parameters:
- *   n_phases  <-- number of active phases
- *   bc_type   <-- array of BC type ids (per phase)
+ *   bc_type   <-- array of BC type ids
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_error(int             n_phases,
-                             const cs_int_t  bc_type[]);
+cs_boundary_conditions_error(const cs_int_t  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 

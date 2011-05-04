@@ -1085,7 +1085,7 @@ endif ! iisuit = 1
 call usnpst                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  , nvlsta ,                            &
+   nvar   , nscal  , nvlsta ,                                     &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
@@ -1109,7 +1109,7 @@ call pstvar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    ntcabs ,                                                       &
-   nvar   , nscal  , nphas  , nvlsta , nvisbr ,                   &
+   nvar   , nscal  , nvlsta , nvisbr ,                            &
    ia     ,                                                       &
    ttcabs ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &

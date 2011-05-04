@@ -49,13 +49,6 @@
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Macro Definition
- *============================================================================*/
-
-#define CS_NPHSMX  1  /* Max number of phases */
-                      /* Keep it coherent with NPHSMX in paramx.h */
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -233,7 +226,6 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
  * INTEGER          IMASPE      :  -> : suivant l'appel de INIMAS
  *                                          = 1 si appel de RESOLP ou NAVSTO
  *                                          = 2 si appel de DIVRIJ
- * INTEGER          IPHAS       :  -> : numero de phase courante
  * INTEGER          IMASPE      :  -> : indicateur d'appel dans INIMAS
  *                                          = 1 si appel au debut
  *                                          = 2 si appel a la fin
@@ -245,13 +237,12 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
  * DOUBLE PRECISION WDUDXY      :  -  : tableau de travail pour DUDXYZ
  * DOUBLE PRECISION WDRDXY      :  -  : tableau de travail pour DRDXYZ
  *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3*NPHAS
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3*NPHAS
+ * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
+ * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
-                          const cs_int_t    *iphas,
                           const cs_int_t    *iappel,
                           cs_real_t          rom[],
                           cs_real_t         *dudxyz,
@@ -285,7 +276,6 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
  * SUBROUTINE PERING
  * *****************
  *
- * INTEGER          NPHAS        :  -> : numero de phase courante
  * INTEGER          IVAR         :  -> : numero de la variable
  * INTEGER          IDIMTE       : <-  : dimension de la variable (maximum 3)
  *                                        0 : scalaire (VAR11), ou assimile
@@ -328,28 +318,27 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
  * DOUBLE PRECISION DRDXYZ       :  -> : gradient de R aux cellules halo pour
  *                                       l'approche explicite en periodicite
  *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3*NPHAS
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3*NPHAS
+ * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
+ * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
-                          const cs_int_t    *ivar,
+CS_PROCF (pering, PERING)(const cs_int_t    *ivar,
                           cs_int_t          *idimte,
                           cs_int_t          *itenso,
                           const cs_int_t    *iperot,
                           const cs_int_t    *iguper,
                           const cs_int_t    *igrper,
-                          const cs_int_t     iu[CS_NPHSMX],
-                          const cs_int_t     iv[CS_NPHSMX],
-                          const cs_int_t     iw[CS_NPHSMX],
-                          const cs_int_t     itytur[CS_NPHSMX],
-                          const cs_int_t     ir11[CS_NPHSMX],
-                          const cs_int_t     ir22[CS_NPHSMX],
-                          const cs_int_t     ir33[CS_NPHSMX],
-                          const cs_int_t     ir12[CS_NPHSMX],
-                          const cs_int_t     ir13[CS_NPHSMX],
-                          const cs_int_t     ir23[CS_NPHSMX],
+                          const cs_int_t    *iu,
+                          const cs_int_t    *iv,
+                          const cs_int_t    *iw,
+                          const cs_int_t    *itytur,
+                          const cs_int_t    *ir11,
+                          const cs_int_t    *ir22,
+                          const cs_int_t    *ir33,
+                          const cs_int_t    *ir12,
+                          const cs_int_t    *ir13,
+                          const cs_int_t    *ir23,
                           cs_real_t          dpdx[],
                           cs_real_t          dpdy[],
                           cs_real_t          dpdz[],
@@ -365,18 +354,16 @@ CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
  * *****************
  *
  * INTEGER          ISOU          :  -> : component of the velocity vector
- * INTEGER          IPHAS         :  -> : current phase number
  * DOUBLE PRECISION DUDXYZ        :  -> : gradient of the velocity vector
  *                                        for ghost cells and for an explicit
  *                                        treatment of the periodicity.
  * DOUBLE PRECISION W1..3(NCELET) :  -  : working buffers
  *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3*NPHAS
+ * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
-                          const cs_int_t    *iphas,
                           cs_real_t         *dudxyz,
                           cs_real_t          w1[],
                           cs_real_t          w2[],
@@ -390,17 +377,15 @@ CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
  * SUBROUTINE PEINU2 (VAR)
  * *****************
  *
- * INTEGER          IPHAS         :  -> : current phase number
  * DOUBLE PRECISION DUDXYZ        : <-> : gradient of the velocity vector
  *                                        for ghost cells and for an explicit
  *                                        treatment of the periodicity.
  *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3*NPHAS
+ * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (peinu2, PEINU2)(const cs_int_t    *iphas,
-                          cs_real_t         *dudxyz);
+CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz);
 
 /*----------------------------------------------------------------------------
  * Exchange buffers for PERINR
@@ -411,18 +396,16 @@ CS_PROCF (peinu2, PEINU2)(const cs_int_t    *iphas,
  * *****************
  *
  * INTEGER          ISOU          :  -> : component of the Reynolds stress tensor
- * INTEGER          IPHAS         :  -> : current phase number
  * DOUBLE PRECISION DRDXYZ        : <-> : gradient of the Reynolds stress tensor
  *                                       for ghost cells and for an explicit
  *                                       treatment of the periodicity.
  * DOUBLE PRECISION W1..3(NCELET) : -  : working buffers
  *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3*NPHAS
+ * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
-                          const cs_int_t    *iphas,
                           cs_real_t         *drdxyz,
                           cs_real_t          w1[],
                           cs_real_t          w2[],
@@ -436,17 +419,15 @@ CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
  * SUBROUTINE PEINR2 (VAR)
  * *****************
  *
- * INTEGER          IPHAS         :  -> : current phase number
  * DOUBLE PRECISION DRDXYZ        :  -> : gradient of the Reynolds stress tensor
  *                                       for ghost cells and for an explicit
  *                                       treatment of the periodicity.
  *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3*NPHAS
+ * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (peinr2, PEINR2)(const cs_int_t    *iphas,
-                          cs_real_t         *drdxyz);
+CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz);
 
 /*=============================================================================
  * Public function prototypes

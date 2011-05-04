@@ -1781,7 +1781,7 @@ void CS_PROCF (pstema, PSTEMA)
  * subroutine pstvar (idbia0, idbra0,
  * *****************
  *                    ntcabs,
- *                    nvar,   nscal,  nphas,  nvlsta, nvisbr,
+ *                    nvar,   nscal,  nvlsta, nvisbr,
  *                    ia,
  *                    ttcabs,
  *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
@@ -1794,7 +1794,6 @@ void CS_PROCF (pstema, PSTEMA)
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
- * integer          nphas       : <-- : number of phases
  * integer          nvlsta      : <-- : number of statistical variables (lagr)
  * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
  * integer          ia          : <-- : ia integer array
@@ -1820,7 +1819,6 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *ntcabs,
  const cs_int_t   *nvar,
  const cs_int_t   *nscal,
- const cs_int_t   *nphas,
  const cs_int_t   *nvlsta,
  const cs_int_t   *nvisbr,
        cs_int_t    ia[],
@@ -1979,7 +1977,7 @@ void CS_PROCF (pstvar, PSTVAR)
       imodif = 0;
 
       CS_PROCF(usmpst, USMPST) (idbia0, idbra0, &nummai,
-                                nvar, nscal, nphas, nvlsta,
+                                nvar, nscal, nvlsta,
                                 &n_cells, &n_i_faces, &n_b_faces,
                                 &imodif,
                                 itypps,
@@ -2184,7 +2182,7 @@ void CS_PROCF (pstvar, PSTVAR)
 
       if (numtyp < 0)
         CS_PROCF(dvvpst, DVVPST) (idbia0, idbra0, &nummai, &numtyp,
-                                  nvar, nscal, nphas, nvlsta, nvisbr,
+                                  nvar, nscal, nvlsta, nvisbr,
                                   &n_cells, &n_i_faces, &n_b_faces,
                                   itypps,
                                   cell_list, i_face_list, b_face_list,
@@ -2197,7 +2195,7 @@ void CS_PROCF (pstvar, PSTVAR)
       /* Call to user subroutine for additional post-processing */
 
       CS_PROCF(usvpst, USVPST) (idbia0, idbra0, &nummai,
-                                nvar, nscal, nphas, nvlsta,
+                                nvar, nscal, nvlsta,
                                 &n_cells, &n_i_faces, &n_b_faces,
                                 itypps,
                                 cell_list, i_face_list, b_face_list,

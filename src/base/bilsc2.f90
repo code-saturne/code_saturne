@@ -375,7 +375,7 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
 
     call pering                                                   &
     !==========
-  ( nphas  , ivar   ,                                             &
+  ( ivar   ,                                                      &
     idimte , itenso , iperot , iguper , igrper ,                  &
     iiu    , iiv    , iiw    , iitytu ,                           &
     iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &

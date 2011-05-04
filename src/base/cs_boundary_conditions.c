@@ -198,20 +198,18 @@ _min_gnum_face(fvm_gnum_t  *face_gnum,
  *
  * Fortran Interface:
  *
- * SUBROUTINE BCDERR (NPHAS , ITYPFB)
+ * SUBROUTINE BCDERR (ITYPFB)
  * *****************
  *
- * INTEGER          NPHAS       : --> : Number of active phases
- * INTEGER          ITYPFB      : <-> : Array of BC type ids (per phase)
+ * INTEGER          ITYPFB      : <-> : Array of BC type ids
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (bcderr, BCDERR)
 (
- const cs_int_t  *nphas,
  cs_int_t        *itypfb
 )
 {
-  cs_boundary_conditions_error(*nphas, itypfb);
+  cs_boundary_conditions_error(itypfb);
 }
 
 /*============================================================================
@@ -229,17 +227,14 @@ void CS_PROCF (bcderr, BCDERR)
  *
  *
  * parameters:
- *   n_phases  <-- number of active phases
- *   bc_type   <-- array of BC type ids (per phase)
+ *   bc_type   <-- array of BC type ids
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_error(int             n_phases,
-                             const cs_int_t  bc_type[])
+cs_boundary_conditions_error(const cs_int_t  bc_type[])
 {
   /* local variables */
 
-  int  phase_id;
   fvm_lnum_t  face_id;
 
   fvm_gnum_t  n_errors = 0;
@@ -260,13 +255,12 @@ cs_boundary_conditions_error(int             n_phases,
 
   /* Count and mark faces with problems */
 
-  for (phase_id = 0; phase_id < n_phases; phase_id++) {
-
+  {
     int         err_face_type;
     cs_real_t   err_face_coo[3];
     fvm_gnum_t  err_face_gnum = 0;
 
-    const cs_int_t  *_bc_type = bc_type + phase_id*n_b_faces;
+    const cs_int_t  *_bc_type = bc_type;
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -302,9 +296,6 @@ cs_boundary_conditions_error(int             n_phases,
     _min_gnum_face(&err_face_gnum, &err_face_type, err_face_coo);
 
     if (cs_glob_rank_id < 1) {
-
-      if (n_phases > 1)
-        bft_printf(_("\nPhase %d:\n  "), phase_id + 1);
 
       bft_printf(_("\nFirst face with boundary condition definition error\n"
                    "  (out of %llu)\n"
@@ -392,20 +383,13 @@ cs_boundary_conditions_error(int             n_phases,
 
     cs_post_write_meshes(-1, 0.0);
 
-    for (phase_id = 0; phase_id < n_phases; phase_id++) {
-
+    {
       size_t name_size = 0;
       char var_name[32];
 
-      const cs_int_t  *_bc_type = bc_type + phase_id*n_b_faces;
+      const cs_int_t  *_bc_type = bc_type;
 
-      if (n_phases > 1) {
-        sprintf(var_name, _("Phase %d, "), phase_id + 1);
-        name_size = strlen(var_name);
-      }
-      else
-        var_name[0] = '\0';
-
+      var_name[0] = '\0';
       strncpy(var_name + name_size, _("BC type"), 31 - name_size);
 
       for (ii = 0; ii < 2; ii++) {

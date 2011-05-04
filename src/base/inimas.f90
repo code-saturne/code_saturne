@@ -277,7 +277,7 @@ if( nswrgu.gt.1 ) then
 
     call permas                                                   &
     !==========
- ( imaspe , iphas  , iappel ,                                     &
+ ( imaspe , iappel ,                                              &
    rom    ,                                                       &
    ra(idudxy) , ra(idrdxy) , ra(iwdudx) , ra(iwdrdx) )
 
@@ -479,7 +479,7 @@ if( nswrgu.gt.1 ) then
 
     call permas                                                   &
     !==========
- ( imaspe , iphas  , iappel ,                                     &
+ ( imaspe , iappel ,                                              &
    rom    ,                                                       &
    ra(idudxy) , ra(idrdxy) , ra(iwdudx) , ra(iwdrdx) )
 

@@ -340,7 +340,7 @@ void CS_PROCF (pstema, PSTEMA)
  * subroutine pstvar (idbia0, idbra0,
  * *****************
  *                    ntcabs,
- *                    nvar,   nscal,  nphas,  nvlsta, nvisbr,
+ *                    nvar,   nscal,  nvlsta, nvisbr,
  *                    ia,
  *                    ttcabs,
  *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
@@ -353,7 +353,6 @@ void CS_PROCF (pstema, PSTEMA)
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
- * integer          nphas       : <-- : number of phases
  * integer          nvlsta      : <-- : number of statistical variables (lagr)
  * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
  * integer          ia          : <-- : ia integer array
@@ -379,7 +378,6 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *ntcabs,
  const cs_int_t   *nvar,
  const cs_int_t   *nscal,
- const cs_int_t   *nphas,
  const cs_int_t   *nvlsta,
  const cs_int_t   *nvisbr,
        cs_int_t    ia[],

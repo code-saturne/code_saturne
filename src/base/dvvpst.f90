@@ -29,7 +29,7 @@ subroutine dvvpst &
 !================
 
  ( idbia0 , idbra0 , nummai , numtyp ,                            &
-   nvar   , nscal  , nphas  , nvlsta , nvisbr ,                   &
+   nvar   , nscal  , nvlsta , nvisbr ,                            &
    ncelps , nfacps , nfbrps ,                                     &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
@@ -58,7 +58,6 @@ subroutine dvvpst &
 !                  !    !     ! (-1: volume, -2: bord, nummai par defaut)      !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nvlsta           ! e  ! <-- ! nombre de variables stat. lagrangien           !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
@@ -127,7 +126,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nummai , numtyp
-integer          nvar   , nscal  , nphas  , nvlsta , nvisbr
+integer          nvar   , nscal  , nvlsta , nvisbr
 integer          ncelps , nfacps , nfbrps
 
 integer          itypps(3)
@@ -164,6 +163,7 @@ integer          iscal , ipcvsl, ipcvst, iflmab
 integer          ientla, ivarpr
 integer          iyplbp
 integer          ipccp , ipcrom
+integer          nphas
 
 double precision cp0iph, xcp   , xvsl  , srfbn, distbr
 double precision visct , flumab, diipbx, diipby, diipbz
@@ -183,6 +183,10 @@ cp0iph = 0
 
 idebia = idbia0
 idebra = idbra0
+
+! Number of phases
+
+nphas = 1
 
 !===============================================================================
 !     1.1. TRAITEMENT POUR LE MAILLAGE FLUIDE

@@ -201,7 +201,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
                               *     (-1 as volume, -2 as boundary, or nummai) */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */
- const cs_int_t  *nphas,     /* <-- nulber of phases */
  const cs_int_t  *nvlsta,    /* <-- number of statistical variables (lagr) */
  const cs_int_t  *nvisbr,    /* <-- number of boundary stat. variables (lagr) */
  const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
@@ -556,7 +555,6 @@ void CS_PROCF (usmpst, USMPST)
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */
- const cs_int_t  *nphas,     /* <-- number of phases */
  const cs_int_t  *nvlsta,    /* <-- number of statistical variables (lagr) */
  cs_int_t        *ncelps,    /* <-> number of post-processed cells */
  cs_int_t        *nfacps,    /* <-> number of post processed interior faces */
@@ -594,7 +592,6 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */
- const cs_int_t  *nphas,     /* <-- number of phases */
  const cs_int_t  *nvlsta,    /* <-- number of statistical variables (lagr) */
  const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
  const cs_int_t  *nfacps,    /* <-- number of post processed interior faces */

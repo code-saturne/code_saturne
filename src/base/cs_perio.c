@@ -380,7 +380,6 @@ _test_halo_compatibility(const cs_halo_t  *halo)
  *   cell_id   --> cell id
  *   rom       --> density array
  *   call_id   --> first or second call
- *   phase_id  --> phase id
  *   dudxyz    <-> gradient on the components of the velocity.
  *   wdudxy    <-> associated working array.
  *----------------------------------------------------------------------------*/
@@ -390,7 +389,6 @@ _update_dudxyz(cs_int_t          h_cell_id,
                cs_int_t          cell_id,
                const cs_real_t  *rom,
                cs_int_t          call_id,
-               cs_int_t          phase_id,
                cs_real_t        *dudxyz,
                cs_real_t        *wdudxy)
 {
@@ -405,7 +403,7 @@ _update_dudxyz(cs_int_t          h_cell_id,
 
     for (i = 0; i < 3; i++) {
       for (j = 0; j < 3; j++) {
-        id = h_cell_id + n_ghost_cells*i + stride*j + 3*stride*phase_id;
+        id = h_cell_id + n_ghost_cells*i + stride*j;
         wdudxy[id] = dudxyz[id];
         dudxyz[id] *= rom[cell_id];
       }
@@ -416,7 +414,7 @@ _update_dudxyz(cs_int_t          h_cell_id,
 
     for (i = 0; i < 3; i++) {
       for (j = 0; j < 3; j++) {
-        id = h_cell_id + n_ghost_cells*i + stride*j + 3*stride*phase_id;
+        id = h_cell_id + n_ghost_cells*i + stride*j;
         dudxyz[id] = wdudxy[id];
       }
     }
@@ -434,7 +432,6 @@ _update_dudxyz(cs_int_t          h_cell_id,
  *   cell_id   --> cell id
  *   rom       --> density array
  *   call_id   --> first or second call
- *   phase_id  --> phase id
  *   drdxyz    <-> Gradient on components of Rij (Reynolds stress tensor)
  *   wdrdxy    <-> associated working array.
  *----------------------------------------------------------------------------*/
@@ -444,7 +441,6 @@ _update_drdxyz(cs_int_t          h_cell_id,
                cs_int_t          cell_id,
                const cs_real_t  *rom,
                cs_int_t          call_id,
-               cs_int_t          phase_id,
                cs_real_t        *drdxyz,
                cs_real_t        *wdrdxy)
 {
@@ -459,7 +455,7 @@ _update_drdxyz(cs_int_t          h_cell_id,
 
     for (i = 0; i < 2*3; i++) {
       for (j = 0; j < 3; j++) {
-        id = h_cell_id + n_ghost_cells*i + stride*j +3*stride*phase_id;
+        id = h_cell_id + n_ghost_cells*i + stride*j;
         wdrdxy[id] = drdxyz[id];
         drdxyz[id] *= rom[cell_id];
       }
@@ -470,7 +466,7 @@ _update_drdxyz(cs_int_t          h_cell_id,
 
     for (i = 0; i < 2*3; i++) {
       for (j = 0; j < 3; j++) {
-        id = h_cell_id + n_ghost_cells*i + stride*j +3*stride*phase_id;
+        id = h_cell_id + n_ghost_cells*i + stride*j;
         drdxyz[id] = wdrdxy[id];
       }
     }
@@ -484,7 +480,6 @@ _update_drdxyz(cs_int_t          h_cell_id,
  * parameters:
  *   strid_c    --> stride on the component
  *   strid_v    --> stride on the variable
- *   strid_p    --> stride on the phase
  *   dxyz       <-> gradient on the variable (dudxy or drdxy)
  *   w1, w2, w3 <-> working buffers
  *----------------------------------------------------------------------------*/
@@ -492,7 +487,6 @@ _update_drdxyz(cs_int_t          h_cell_id,
 static void
 _peinur1(cs_int_t      strid_c,
          cs_int_t      strid_v,
-         cs_int_t      strid_p,
          cs_real_t    *dxyz,
          cs_real_t    *w1,
          cs_real_t    *w2,
@@ -539,17 +533,17 @@ _peinur1(cs_int_t      strid_c,
       }
 
       for (i = start_std; i < end_std; i++) {
-        dxyz[i + strid_c + strid_v*0 + strid_p] = w1[n_cells + i];
-        dxyz[i + strid_c + strid_v*1 + strid_p] = w2[n_cells + i];
-        dxyz[i + strid_c + strid_v*2 + strid_p] = w3[n_cells + i];
+        dxyz[i + strid_c + strid_v*0] = w1[n_cells + i];
+        dxyz[i + strid_c + strid_v*1] = w2[n_cells + i];
+        dxyz[i + strid_c + strid_v*2] = w3[n_cells + i];
       }
 
       if (mesh->halo_type == CS_HALO_EXTENDED) {
 
         for (i = start_ext; i < end_ext; i++) {
-          dxyz[i + strid_c + strid_v*0 + strid_p] = w1[n_cells + i];
-          dxyz[i + strid_c + strid_v*1 + strid_p] = w2[n_cells + i];
-          dxyz[i + strid_c + strid_v*2 + strid_p] = w3[n_cells + i];
+          dxyz[i + strid_c + strid_v*0] = w1[n_cells + i];
+          dxyz[i + strid_c + strid_v*1] = w2[n_cells + i];
+          dxyz[i + strid_c + strid_v*2] = w3[n_cells + i];
         }
 
       } /* End if extended halo */
@@ -912,7 +906,6 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
  * INTEGER          IMASPE      :  -> : suivant l'appel de INIMAS
  *                                          = 1 si appel de RESOLP ou NAVSTO
  *                                          = 2 si appel de DIVRIJ
- * INTEGER          IPHAS       :  -> : numero de phase courante
  * INTEGER          IMASPE      :  -> : indicateur d'appel dans INIMAS
  *                                          = 1 si appel au debut
  *                                          = 2 si appel a la fin
@@ -924,13 +917,12 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
  * DOUBLE PRECISION WDUDXY      :  -  : tableau de travail pour DUDXYZ
  * DOUBLE PRECISION WDRDXY      :  -  : tableau de travail pour DRDXYZ
  *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3*NPHAS
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3*NPHAS
+ * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
+ * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
-                          const cs_int_t    *iphas,
                           const cs_int_t    *iappel,
                           cs_real_t          rom[],
                           cs_real_t         *dudxyz,
@@ -944,8 +936,6 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_halo_t  *halo = mesh->halo;
   cs_halo_type_t  halo_type = mesh->halo_type;
-
-  const cs_int_t  phase_id = *iphas - 1;
 
   if (halo_type == CS_HALO_N_TYPES)
     return;
@@ -976,10 +966,10 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
         cell_id = mesh->n_cells + i;
 
         if (*imaspe == 1)
-          _update_dudxyz(i, cell_id, rom, *iappel, phase_id, dudxyz, wdudxy);
+          _update_dudxyz(i, cell_id, rom, *iappel, dudxyz, wdudxy);
 
         if (*imaspe == 2)
-          _update_drdxyz(i, cell_id, rom, *iappel, phase_id, drdxyz, wdrdxy);
+          _update_drdxyz(i, cell_id, rom, *iappel, drdxyz, wdrdxy);
 
       } /* End of loop on halo elements */
 
@@ -990,10 +980,10 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
           cell_id = mesh->n_cells + i;
 
           if (*imaspe == 1)
-            _update_dudxyz(i, cell_id, rom, *iappel, phase_id, dudxyz, wdudxy);
+            _update_dudxyz(i, cell_id, rom, *iappel, dudxyz, wdudxy);
 
           if (*imaspe == 2)
-            _update_drdxyz(i, cell_id, rom, *iappel, phase_id, drdxyz, wdrdxy);
+            _update_drdxyz(i, cell_id, rom, *iappel, drdxyz, wdrdxy);
 
         } /* End of loop on halo elements */
 
@@ -1030,7 +1020,6 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
  * SUBROUTINE PERING
  * *****************
  *
- * INTEGER          NPHAS        :  -> : numero de phase courante
  * INTEGER          IVAR         :  -> : numero de la variable
  * INTEGER          IDIMTE       : <-  : dimension de la variable (maximum 3)
  *                                        0 : scalaire (VAR11), ou assimile
@@ -1073,35 +1062,34 @@ CS_PROCF (permas, PERMAS)(const cs_int_t    *imaspe,
  * DOUBLE PRECISION DRDXYZ       :  -> : gradient de R aux cellules halo pour
  *                                       l'approche explicite en periodicite
  *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3*NPHAS
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3*NPHAS
+ * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
+ * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
-                          const cs_int_t    *ivar,
+CS_PROCF (pering, PERING)(const cs_int_t    *ivar,
                           cs_int_t          *idimte,
                           cs_int_t          *itenso,
                           const cs_int_t    *iperot,
                           const cs_int_t    *iguper,
                           const cs_int_t    *igrper,
-                          const cs_int_t     iu[CS_NPHSMX],
-                          const cs_int_t     iv[CS_NPHSMX],
-                          const cs_int_t     iw[CS_NPHSMX],
-                          const cs_int_t     itytur[CS_NPHSMX],
-                          const cs_int_t     ir11[CS_NPHSMX],
-                          const cs_int_t     ir22[CS_NPHSMX],
-                          const cs_int_t     ir33[CS_NPHSMX],
-                          const cs_int_t     ir12[CS_NPHSMX],
-                          const cs_int_t     ir13[CS_NPHSMX],
-                          const cs_int_t     ir23[CS_NPHSMX],
+                          const cs_int_t    *iu,
+                          const cs_int_t    *iv,
+                          const cs_int_t    *iw,
+                          const cs_int_t    *itytur,
+                          const cs_int_t    *ir11,
+                          const cs_int_t    *ir22,
+                          const cs_int_t    *ir33,
+                          const cs_int_t    *ir12,
+                          const cs_int_t    *ir13,
+                          const cs_int_t    *ir23,
                           cs_real_t          dpdx[],
                           cs_real_t          dpdy[],
                           cs_real_t          dpdz[],
                           const cs_real_t   *dudxyz,
                           const cs_real_t   *drdxyz)
 {
-  cs_int_t  i, rank_id, phase_id, t_id, shift, tag;
+  cs_int_t  i, rank_id, t_id, shift, tag;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
   cs_int_t  d_ph = 0, d_var = 0;
 
@@ -1112,7 +1100,6 @@ CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
   const cs_int_t  n_transforms = mesh->n_transforms;
   const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
   const cs_int_t  stride1 = n_ghost_cells * 3;
-  const cs_int_t  stride2 = stride1 * 3;
 
   if (halo == NULL)
     return;
@@ -1139,123 +1126,115 @@ CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
 
     tag = 0;
 
-    for (phase_id = 0; phase_id < *nphas; phase_id++) {
+    if (*ivar == *iu || *ivar == *iv || *ivar == *iw) {
 
-      if (   *ivar == iu[phase_id]
-          || *ivar == iv[phase_id]
-          || *ivar == iw[phase_id]) {
+      tag = 1;
 
-        d_ph = stride2*phase_id;
-        tag = 1;
+      if (*ivar == *iu) d_var = 0;
+      if (*ivar == *iv) d_var = n_ghost_cells;
+      if (*ivar == *iw) d_var = 2*n_ghost_cells;
 
-        if (*ivar == iu[phase_id]) d_var = 0;
-        if (*ivar == iv[phase_id]) d_var = n_ghost_cells;
-        if (*ivar == iw[phase_id]) d_var = 2*n_ghost_cells;
+      if (*iguper == 1) { /* dudxyz not computed */
 
-        if (*iguper == 1) { /* dudxyz not computed */
+        for (t_id = 0; t_id < n_transforms; t_id++) {
 
-          for (t_id = 0; t_id < n_transforms; t_id++) {
+          shift = 4 * halo->n_c_domains * t_id;
 
-            shift = 4 * halo->n_c_domains * t_id;
+          for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
-            for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+            start_std = halo->perio_lst[shift + 4*rank_id];
+            length = halo->perio_lst[shift + 4*rank_id + 1];
+            end_std = start_std + length;
 
-              start_std = halo->perio_lst[shift + 4*rank_id];
-              length = halo->perio_lst[shift + 4*rank_id + 1];
-              end_std = start_std + length;
+            if (mesh->halo_type == CS_HALO_EXTENDED) {
 
-              if (mesh->halo_type == CS_HALO_EXTENDED) {
+              start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+              length = halo->perio_lst[shift + 4*rank_id + 3];
+              end_ext = start_ext + length;
 
-                start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-                length = halo->perio_lst[shift + 4*rank_id + 3];
-                end_ext = start_ext + length;
+            }
 
+            for (i = start_std; i < end_std; i++) {
+              dpdx[n_cells + i] = dudxyz[i + d_var + stride1*0];
+              dpdy[n_cells + i] = dudxyz[i + d_var + stride1*1];
+              dpdz[n_cells + i] = dudxyz[i + d_var + stride1*2];
+            }
+
+            if (mesh->halo_type == CS_HALO_EXTENDED) {
+
+              for (i = start_ext; i < end_ext; i++) {
+                dpdx[n_cells + i] = dudxyz[i + d_var + stride1*0];
+                dpdy[n_cells + i] = dudxyz[i + d_var + stride1*1];
+                dpdz[n_cells + i] = dudxyz[i + d_var + stride1*2];
               }
 
-              for (i = start_std; i < end_std; i++) {
-                dpdx[n_cells + i] = dudxyz[i + d_var + stride1*0 + d_ph];
-                dpdy[n_cells + i] = dudxyz[i + d_var + stride1*1 + d_ph];
-                dpdz[n_cells + i] = dudxyz[i + d_var + stride1*2 + d_ph];
-              }
+            } /* End if extended halo */
 
-              if (mesh->halo_type == CS_HALO_EXTENDED) {
+          } /* End of loop on ranks */
 
-                for (i = start_ext; i < end_ext; i++) {
-                  dpdx[n_cells + i] = dudxyz[i + d_var + stride1*0 + d_ph];
-                  dpdy[n_cells + i] = dudxyz[i + d_var + stride1*1 + d_ph];
-                  dpdz[n_cells + i] = dudxyz[i + d_var + stride1*2 + d_ph];
-                }
+        } /* End of loop on transformations */
 
-              } /* End if extended halo */
+      } /* End if *iguper == 1 */
 
-            } /* End of loop on ranks */
+    } /* If *ivar == iu or iv or iw */
 
-          } /* End of loop on transformations */
+    else if ((*itytur == 3) &&
+             (*ivar == *ir11 || *ivar == *ir22 ||
+              *ivar == *ir33 || *ivar == *ir12 ||
+              *ivar == *ir13 || *ivar == *ir23)) {
 
-        } /* End if *iguper == 1 */
+      tag = 1;
 
-      } /* If *ivar == iu or iv or iw */
+      if (*ivar == *ir11) d_var = 0;
+      if (*ivar == *ir22) d_var = n_ghost_cells;
+      if (*ivar == *ir33) d_var = 2*n_ghost_cells;
+      if (*ivar == *ir12) d_var = 3*n_ghost_cells;
+      if (*ivar == *ir13) d_var = 4*n_ghost_cells;
+      if (*ivar == *ir23) d_var = 5*n_ghost_cells;
 
-      else if ((itytur[phase_id] == 3) &&
-               (*ivar == ir11[phase_id] || *ivar == ir22[phase_id] ||
-                *ivar == ir33[phase_id] || *ivar == ir12[phase_id] ||
-                *ivar == ir13[phase_id] || *ivar == ir23[phase_id])) {
+      if (*igrper == 1) {
 
-        d_ph = 2*stride2*phase_id;
-        tag = 1;
+        for (t_id = 0; t_id < n_transforms; t_id++) {
 
-        if (*ivar == ir11[phase_id]) d_var = 0;
-        if (*ivar == ir22[phase_id]) d_var = n_ghost_cells;
-        if (*ivar == ir33[phase_id]) d_var = 2*n_ghost_cells;
-        if (*ivar == ir12[phase_id]) d_var = 3*n_ghost_cells;
-        if (*ivar == ir13[phase_id]) d_var = 4*n_ghost_cells;
-        if (*ivar == ir23[phase_id]) d_var = 5*n_ghost_cells;
+          shift = 4 * halo->n_c_domains * t_id;
 
-        if (*igrper == 1) {
+          for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
-          for (t_id = 0; t_id < n_transforms; t_id++) {
+            start_std = halo->perio_lst[shift + 4*rank_id];
+            length = halo->perio_lst[shift + 4*rank_id + 1];
+            end_std = start_std + length;
 
-            shift = 4 * halo->n_c_domains * t_id;
+            if (mesh->halo_type == CS_HALO_EXTENDED) {
 
-            for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+              start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+              length = halo->perio_lst[shift + 4*rank_id + 3];
+              end_ext = start_ext + length;
 
-              start_std = halo->perio_lst[shift + 4*rank_id];
-              length = halo->perio_lst[shift + 4*rank_id + 1];
-              end_std = start_std + length;
+            }
 
-              if (mesh->halo_type == CS_HALO_EXTENDED) {
+            for (i = start_std; i < end_std; i++) {
+              dpdx[n_cells + i] = drdxyz[i + d_var + 2*stride1*0 + d_ph];
+              dpdy[n_cells + i] = drdxyz[i + d_var + 2*stride1*1 + d_ph];
+              dpdz[n_cells + i] = drdxyz[i + d_var + 2*stride1*2 + d_ph];
+            }
 
-                start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-                length = halo->perio_lst[shift + 4*rank_id + 3];
-                end_ext = start_ext + length;
+            if (mesh->halo_type == CS_HALO_EXTENDED) {
 
-              }
-
-              for (i = start_std; i < end_std; i++) {
+              for (i = start_ext; i < end_ext; i++) {
                 dpdx[n_cells + i] = drdxyz[i + d_var + 2*stride1*0 + d_ph];
                 dpdy[n_cells + i] = drdxyz[i + d_var + 2*stride1*1 + d_ph];
                 dpdz[n_cells + i] = drdxyz[i + d_var + 2*stride1*2 + d_ph];
               }
 
-              if (mesh->halo_type == CS_HALO_EXTENDED) {
+            } /* End if extended halo */
 
-                for (i = start_ext; i < end_ext; i++) {
-                  dpdx[n_cells + i] = drdxyz[i + d_var + 2*stride1*0 + d_ph];
-                  dpdy[n_cells + i] = drdxyz[i + d_var + 2*stride1*1 + d_ph];
-                  dpdz[n_cells + i] = drdxyz[i + d_var + 2*stride1*2 + d_ph];
-                }
+          } /* End of loop on ranks */
 
-              } /* End if extended halo */
+        } /* End of loop on transformations */
 
-            } /* End of loop on ranks */
+      } /* End if *igrper == 1 */
 
-          } /* End of loop on transformations */
-
-        } /* End if *igrper == 1 */
-
-      } /* If itytur[phase_id] == 3 and *ivar == irij */
-
-    } /* End of loop on phases */
+    } /* If *itytur == 3 and *ivar == irij */
 
     if (tag == 1) {
       *idimte = 0;
@@ -1274,18 +1253,16 @@ CS_PROCF (pering, PERING)(const cs_int_t    *nphas,
  * *****************
  *
  * INTEGER          ISOU          :  -> : component of the velocity vector
- * INTEGER          IPHAS         :  -> : current phase number
  * DOUBLE PRECISION DUDXYZ        : <-> : gradient of the velocity vector
  *                                        for ghost cells and for an explicit
  *                                        treatment of the periodicity.
  * DOUBLE PRECISION W1..3(NCELET) :  -  : working buffers
  *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3*NPHAS
+ * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
-                          const cs_int_t    *iphas,
                           cs_real_t         *dudxyz,
                           cs_real_t          w1[],
                           cs_real_t          w2[],
@@ -1295,12 +1272,10 @@ CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
 
   const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
   const cs_int_t  comp_id = *isou - 1;
-  const cs_int_t  phas_id = *iphas - 1;
   const cs_int_t  strid_v = n_ghost_cells * 3;
-  const cs_int_t  strid_p = strid_v * 3 * phas_id;
   const cs_int_t  strid_c = n_ghost_cells * comp_id;
 
-  _peinur1(strid_c, strid_v, strid_p, dudxyz, w1, w2, w3);
+  _peinur1(strid_c, strid_v, dudxyz, w1, w2, w3);
 }
 
 /*----------------------------------------------------------------------------
@@ -1311,17 +1286,15 @@ CS_PROCF (peinu1, PEINU1)(const cs_int_t    *isou,
  * SUBROUTINE PEINU2 (VAR)
  * *****************
  *
- * INTEGER          IPHAS         :  -> : current phase number
  * DOUBLE PRECISION DUDXYZ        : <-> : gradient of the velocity vector
  *                                        for ghost cells and for an explicit
  *                                        treatment of the periodicity.
  *
- * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3*NPHAS
+ * Size of DUDXYZ and WDUDXY = n_ghost_cells*3*3
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (peinu2, PEINU2)(const cs_int_t    *iphas,
-                          cs_real_t         *dudxyz)
+CS_PROCF (peinu2, PEINU2)(cs_real_t         *dudxyz)
 {
   cs_int_t  i, t_id, rank_id, shift;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
@@ -1333,14 +1306,12 @@ CS_PROCF (peinu2, PEINU2)(const cs_int_t    *iphas,
 
   const cs_int_t  n_transforms = mesh->n_transforms;
   const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
-  const cs_int_t  phase_id = *iphas - 1;
   const cs_int_t  stride = 3 * n_ghost_cells;
   const fvm_periodicity_t  *periodicity = mesh->periodicity;
 
   /* Macro for position inside an array */
 
-#define GET_ID1(i, j, k) ( \
-   i + n_ghost_cells*j + stride*k + 3*stride*phase_id)
+#define GET_ID1(i, j, k) ( i + n_ghost_cells*j + stride*k )
 
   if (mesh->halo_type == CS_HALO_N_TYPES || halo == NULL)
     return;
@@ -1429,18 +1400,16 @@ CS_PROCF (peinu2, PEINU2)(const cs_int_t    *iphas,
  * *****************
  *
  * INTEGER          ISOU          : -> : component of the Reynolds stress tensor
- * INTEGER          IPHAS         : -> : current phase number
  * DOUBLE PRECISION DRDXYZ        : -> : gradient of the Reynolds stress tensor
  *                                       for ghost cells and for an explicit
  *                                       treatment of the periodicity.
  * DOUBLE PRECISION W1..3(NCELET) : -  : working buffers
  *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3*NPHAS
+ * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
-                          const cs_int_t    *iphas,
                           cs_real_t         *drdxyz,
                           cs_real_t          w1[],
                           cs_real_t          w2[],
@@ -1450,12 +1419,10 @@ CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
 
   const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
   const cs_int_t  comp_id = *isou - 1;
-  const cs_int_t  phase_id = *iphas - 1;
   const cs_int_t  strid_v = 2 * n_ghost_cells * 3;
-  const cs_int_t  strid_p = strid_v * 3 * phase_id;
   const cs_int_t  strid_c = n_ghost_cells * comp_id;
 
-  _peinur1(strid_c, strid_v, strid_p, drdxyz, w1, w2, w3);
+  _peinur1(strid_c, strid_v, drdxyz, w1, w2, w3);
 }
 
 /*----------------------------------------------------------------------------
@@ -1466,17 +1433,15 @@ CS_PROCF (peinr1, PEINR1)(const cs_int_t    *isou,
  * SUBROUTINE PEINR2 (VAR)
  * *****************
  *
- * INTEGER          IPHAS         :  -> : current phase number
  * DOUBLE PRECISION DRDXYZ        :  -> : gradient of the Reynolds stress tensor
  *                                       for ghost cells and for an explicit
  *                                       treatment of the periodicity.
  *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3*NPHAS
+ * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (peinr2, PEINR2)(const cs_int_t    *iphas,
-                          cs_real_t         *drdxyz)
+CS_PROCF (peinr2, PEINR2)(cs_real_t         *drdxyz)
 {
   cs_int_t  i, i1, i2, j, k, l, m, rank_id, shift, t_id;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
@@ -1493,12 +1458,10 @@ CS_PROCF (peinr2, PEINR2)(const cs_int_t    *iphas,
   const cs_int_t  n_transforms = mesh->n_transforms;
   const cs_int_t  n_ghost_cells = mesh->n_ghost_cells;
   const cs_int_t  stride = 2 * 3 * n_ghost_cells;
-  const cs_int_t  phase_id = *iphas - 1;
   const cs_halo_type_t  halo_type = mesh->halo_type;
   const fvm_periodicity_t  *periodicity = mesh->periodicity;
 
-#define GET_ID2(elt_id, i, j)   ( \
- elt_id + n_ghost_cells*i + stride*j + 3*stride*phase_id)
+#define GET_ID2(elt_id, i, j)   ( elt_id + n_ghost_cells*i + stride*j )
 
   if (mesh->halo_type == CS_HALO_N_TYPES || halo == NULL)
     return;

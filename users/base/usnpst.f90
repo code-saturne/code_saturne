@@ -32,7 +32,7 @@ subroutine usnpst &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , nvlsta ,                            &
+   nvar   , nscal  , nvlsta ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis ,                                     &
@@ -71,7 +71,6 @@ subroutine usnpst &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -109,7 +108,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , nvlsta
+integer          nvar   , nscal  , nvlsta
 
 integer          ia(*)
 
