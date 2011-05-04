@@ -403,7 +403,7 @@ endif
 ! --> Lagrangien (couplage retour thermique)
 !     Ordre 2 non pris en compte
 
-if (iilagr.eq.2 .and. ltsthe.eq.1 .and. iphas.eq.ilphas)  then
+if (iilagr.eq.2 .and. ltsthe.eq.1)  then
 
   if (iscsth(iscal).eq.2) then
 

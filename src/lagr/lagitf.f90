@@ -161,7 +161,7 @@ double precision energ , dissip
 dissip = 0.d0
 energ = 0.d0
 
-iphas = ilphas
+iphas = 1
 
 ct = 1.d0
 

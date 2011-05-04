@@ -185,7 +185,7 @@ parameter ( precis = 1.d-15 )
 
 coef = 0.d0
 
-iphas = ilphas
+iphas = 1
 
 d6spi = 6.d0 / pi
 dpis6 = pi / 6.d0

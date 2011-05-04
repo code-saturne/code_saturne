@@ -141,7 +141,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , iel
+integer          idebia , idebra , iel , iphas
 double precision aa
 
 !===============================================================================
@@ -158,6 +158,8 @@ double precision aa
 
 idebia = idbia0
 idebra = idbra0
+
+iphas = 1
 
 !===============================================================================
 ! 1 . Zone of standard statistics
@@ -316,11 +318,11 @@ endif
         do iel = 1, ncel
           if ( statis(iel,ilpd1).gt.seuil .and. npst.gt.0 ) then
             tracel(iel) = statis(iel,ivarl1)                      &
-                        / ( dble(npst) *ro0(ilphas) *volume(iel) )
+                        / ( dble(npst) *ro0(iphas) *volume(iel) )
           else if ( statis(iel,ilpd1).gt.seuil .and.              &
                   iplas.ge.idstnt                  ) then
             tracel(iel) = statis(iel,ivarl1)                      &
-                        / ( ro0(ilphas) *volume(iel) )
+                        / ( ro0(iphas) *volume(iel) )
           else
             tracel(iel) = zero
           endif

@@ -1,3 +1,39 @@
+* 04/05/2011 - David Monfort <david.monfort@edf.fr>
+  Removing the dependency to the number of phases (step 1).
+  The continuous phase number relative to the Lagrangian phase is no more
+  necessary (ilphas keyword). Beside, most of the Lagrangian code had not
+  been adapted to handle this keyword...
+  The phase number is now handled by a standard iphas variable set to 1.
+  modified file:
+    doc/user/saturne1.tex
+  modified routines:
+    src/base/covofi.f90
+    src/base/impini.f90
+    src/base/preduv.f90
+    src/base/reseps.f90
+    src/base/resolp.f90
+    src/base/resrij.f90
+    src/base/resssg.f90
+    src/base/turbke.f90
+    src/base/turbkw.f90
+    src/lagr/lagaff.f90
+    src/lagr/lagcar.f90
+    src/lagr/lagcou.f90
+    src/lagr/lagent.f90
+    src/lagr/lages1.f90
+    src/lagr/lages2.f90
+    src/lagr/laggra.f90
+    src/lagr/lagich.f90
+    src/lagr/lagipn.f90
+    src/lagr/lagitf.f90
+    src/lagr/laglec.f90
+    src/lagr/lagopt.f90
+    src/lagr/lagout.f90
+    src/lagr/lagran.f90
+    users/lagr/uslaed.f90
+    users/lagr/uslaen.f90
+    users/lagr/uslast.f90
+
 * 03/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve control of box tree growth limits for mesh joining.
   modified files:

@@ -375,7 +375,7 @@ if(irnpnw.ne.1) then
 
 ! ---> LAGRANGIEN : COUPLAGE RETOUR
 
-  if (iilagr.eq.2 .and. ltsmas.eq.1 .and. iphas.eq.ilphas) then
+  if (iilagr.eq.2 .and. ltsmas.eq.1) then
 
     do iel = 1, ncel
       w1(iel) = w1(iel) -tslagr(iel,itsmas)
@@ -935,7 +935,7 @@ if (ncesmp.gt.0) then
 endif
 
 ! ---> Termes sources Lagrangien
-if (iilagr.eq.2 .and. ltsmas.eq.1 .and. iphas.eq.ilphas) then
+if (iilagr.eq.2 .and. ltsmas.eq.1) then
   do iel = 1, ncel
     w7(iel) = w7(iel) -tslagr(iel,itsmas)
   enddo

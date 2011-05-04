@@ -184,7 +184,7 @@ double precision ra(*)
 
 integer          idebia , idebra
 integer          ifinia, ifinra
-integer          npt ,  iel , iphas
+integer          npt ,  iel
 
 integer          ivf , ivff , itabvr , iflu , icla
 
@@ -263,8 +263,6 @@ idebra = idbra0
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
-
-iphas = ilphas
 
 !===============================================================================
 ! 2 - Computation of user-defined particle statistics

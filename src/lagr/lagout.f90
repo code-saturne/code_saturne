@@ -191,7 +191,7 @@ idebra = idbra0
 ! 1. ECRITURE DU FICHIER SUITE : VARIABLES LIEES AUX PARTICULES
 !===============================================================================
 
-iphas = ilphas
+iphas = 1
 
 ! ---> Ouverture (et on saute si erreur)
 !     ILECEC = 2 : ecriture

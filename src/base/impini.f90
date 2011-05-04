@@ -2540,7 +2540,7 @@ endif
 ! --- Lagrangien
 
 if (iilagr.ne.0) then
-  write(nfecra,8100) ilphas, iilagr, isuila, isuist, iphyla
+  write(nfecra,8100) iilagr, isuila, isuist, iphyla
 
   if (iphyla.eq.1) then
     write(nfecra,8105) idpvar, itpvar, impvar
@@ -2598,7 +2598,7 @@ endif
                                                                 /,&
 ' ** ECOULEMENT DIPHASIQUE LAGRANGIEN'                         ,/,&
 '    --------------------------------'                         ,/,&
-' --- Numero de la phase continue : ',I10                      ,/,&
+' --- Phase continue : '                                       ,/,&
 '       IILAGR = ',4X,I10,    ' (0 : Lagrangien desactive     ',/,&
 '                ',14X,       '  1 : one way coupling         ',/,&
 '                ',14X,       '  2 : two way coupling         ',/,&
@@ -2707,7 +2707,7 @@ endif
                                                                 /,&
 ' ** TWO-PHASE LANGRANGIEN FLOW'                               ,/,&
 '    --------------------------'                               ,/,&
-' --- Number of the continuous phase: ',I10                    ,/,&
+' --- Continuous phase: '                                      ,/,&
 '       IILAGR = ',4X,I10,    ' (0: Lagrangian deactivated    ',/,&
 '                ',14X,       '  1: one way coupling          ',/,&
 '                ',14X,       '  2: two way coupling          ',/,&

@@ -180,7 +180,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia , idebra
-integer          npt , iel , iiii , ipl , iphas
+integer          npt , iel , iiii , ipl
 
 !===============================================================================
 
@@ -232,8 +232,6 @@ endif
 
 idebia = idbia0
 idebra = idbra0
-
-iphas = ilphas
 
 !===============================================================================
 ! 2. Characteristic time of the current sde

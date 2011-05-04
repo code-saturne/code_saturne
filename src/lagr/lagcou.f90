@@ -181,7 +181,7 @@ double precision uuf , vvf , wwf , mf
 ! 1. INITIALISATION
 !===============================================================================
 
-iphas = ilphas
+iphas = 1
 
 tvmax = 0.8d0
 

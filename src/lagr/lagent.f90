@@ -200,7 +200,7 @@ idebra = idbra0
 
 ! Init aberrante pour forcer l'utilisateur a mettre sa valeur
 
-iphas = ilphas
+iphas = 1
 
 pis6 = pi / 6.d0
 

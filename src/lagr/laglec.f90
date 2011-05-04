@@ -177,7 +177,7 @@ idebra = idbra0
 !     tableaux lagrangiens ouverts dans la routine MEMLA1
 !     (sauf ITYCEL et ICOCEL qui sont initialises dans LAGDEB),
 
-iphas = ilphas
+iphas = 1
 
 do ivar = 1,nvp
   do ip = 1,nbpmax

@@ -105,12 +105,6 @@ call csieee
 !    A LA VERIFICATION POUR ETRE SUR QUE L'UTILISATEUR LES A MODIFIEES
 !===============================================================================
 
-!     ILPHAS : numero de la phase continue qui est la phase porteuse
-!              des particules
-
-ilphas = 1
-
-
 !     IILAGR = 0 : PAS DE CALCUL LAGRANGIEN
 !            = 1 : DIPHASIQUE LAGRANGIEN SANS COUPLAGE RETOUR
 !            = 2 : DIPHASIQUE LAGRANGIEN AVEC COUPLAGE RETOUR
@@ -476,6 +470,10 @@ if (iok.ne.0) call csexit (1)
 
 !     IDPVAR ITPVAR IMPVAR
 
+!     Couplage-retour uniquement vers la phase continue
+
+iphas  = 1
+
 if (iphyla.eq.1) then
   if (idpvar.lt.0 .or. idpvar.gt.1) then
     write(nfecra,1031) idpvar
@@ -489,9 +487,8 @@ if (iphyla.eq.1) then
     write(nfecra,1033) impvar
     iok = iok + 1
   endif
-  ii = ilphas
-  if (itpvar.eq.1 .and. iscalt(ii).eq.-1) then
-    write(nfecra,1034) itpvar, ii, ii, iscalt(ii)
+  if (itpvar.eq.1 .and. iscalt(iphas).eq.-1) then
+    write(nfecra,1034) itpvar, iphas, iphas, iscalt(iphas)
     iok = iok + 1
   endif
 else
@@ -691,15 +688,14 @@ if (idistu.lt.0 .or. idistu.gt.1) then
   iok = iok + 1
 endif
 
-ii = ilphas
-if (idistu.eq.1 .and. itytur(ii).ne.2 .and. itytur(ii).ne.3       &
-     .and.  iturb(ii).ne.50 .and. iturb(ii).ne.60 ) then
-  write(nfecra,2011) iilagr, idistu, ii, iturb(ii)
+if (idistu.eq.1 .and. itytur(iphas).ne.2 .and. itytur(iphas).ne.3       &
+     .and.  iturb(iphas).ne.50 .and. iturb(iphas).ne.60 ) then
+  write(nfecra,2011) iilagr, idistu, iphas, iturb(iphas)
   iok = iok + 1
-else if (idistu.eq.0 .and. iturb(ii).ne.0 .and.                   &
-         itytur(ii).ne.2 .and. itytur(ii).ne.3                    &
-     .and.  iturb(ii).ne.50 .and. iturb(ii).ne.60) then
-  write(nfecra,2012) iilagr, idistu, ii, iturb(ii)
+else if (idistu.eq.0 .and. iturb(iphas).ne.0 .and.                   &
+         itytur(iphas).ne.2 .and. itytur(iphas).ne.3                    &
+     .and.  iturb(iphas).ne.50 .and. iturb(iphas).ne.60) then
+  write(nfecra,2012) iilagr, idistu, iphas, iturb(iphas)
   iok = iok + 1
 endif
 
@@ -1603,9 +1599,9 @@ endif
 !     POUR COUPLAGE RETOUR
 
 
-!     Couplage-retour uniquement vers la phase continue numero ILPHAS
+!     Couplage-retour uniquement vers la phase continue
 
-iphas  = ilphas
+iphas  = 1
 
 !     Nombre de termes sources de couplage-retour
 

@@ -1452,7 +1452,7 @@ do isou = 1, 3
 !       decomposer TSLAGR(IEL,ISOU) en partie implicite et
 !       explicite, comme c'est fait dans ustsns.
 !     Pour le moment, on n'y touche pas.
-  if (iilagr.eq.2 .and. ltsdyn.eq.1 .and. iphas.eq.ilphas)  then
+  if (iilagr.eq.2 .and. ltsdyn.eq.1)  then
 
     do iel = 1, ncel
       smbr(iel)   = smbr(iel) + tslagr(iel,itsvx+isou-1)

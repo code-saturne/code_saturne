@@ -197,7 +197,7 @@ idebra = idbra0
 
 vitf = 0.d0
 
-iphas = ilphas
+iphas = 1
 
 grav(1) = gx
 grav(2) = gy

@@ -51,11 +51,7 @@ module lagran
   !     ISTTIO = 0 : calcul instationnaire pour le lagrangien
   !            = 1 : calcul stationnaire   pour le lagrangien
 
-  !     ILPHAS     : Numero de la phase continue sur laquelle le
-  !                  module prend ses infos et vers laquelle il
-  !                  renvoie les termes sources de couplage retour.
-
-  integer, save ::           iilagr , isuila , isttio , ilphas
+  integer, save ::           iilagr , isuila , isttio
 
   !=============================================================================
   ! 2. Compteurs de particules (sans et avec poids statistique)

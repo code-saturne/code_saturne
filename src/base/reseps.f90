@@ -295,7 +295,7 @@ endif
 !===============================================================================
 
 !     Ordre 2 non pris en compte
- if (iilagr.eq.2 .and. ltsdyn.eq.1 .and. iphas.eq.ilphas) then
+ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
    do iel = 1,ncel
 ! Ts sur eps

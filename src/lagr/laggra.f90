@@ -154,7 +154,7 @@ iphydp  = 0
 
 !-->Numero de la phase continue qui est la phase porteuse
 
-iphas = ilphas
+iphas = 1
 
 !===============================================================================
 ! 1. CALCUL DE :  - (GRADIENT DE PRESSION)/ROM
