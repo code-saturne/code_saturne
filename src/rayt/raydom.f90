@@ -167,7 +167,7 @@ double precision ra(*)
 
 integer          idebia , idebra
 integer          iappel
-integer          ifac   , iel    , iok    , izone
+integer          ifac   , iel    , iok    , izone  , iphas
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
 integer          mode   , icla   , ipcla  , ivar0
 integer          iscat  , ivart  , iphydp
@@ -193,6 +193,10 @@ idebra = idbra0
 ! 1. INITIALISATIONS GENERALES
 !===============================================================================
 
+!---> NUMERO DE LA PHASE PORTEUSE
+
+iphas = 1
+
 !---> NUMERO DE PASSAGE RELATIF
 
 ipadom = ipadom + 1
@@ -210,8 +214,8 @@ unspi = 1.d0/pi
 
 !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
 
-  iscat = iscalt(irapha)
-  ivart = isca(iscalt(irapha))
+  iscat = iscalt(iphas)
+  ivart = isca(iscalt(iphas))
 
 !===============================================================================
 ! 3.1 COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
@@ -234,8 +238,8 @@ unspi = 1.d0/pi
     call ppcabs                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
-   itypfb(1,irapha),                                              &
+   nvar   , nscal  , iphas  ,                                    &
+   itypfb(1,iphas),                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -339,8 +343,8 @@ unspi = 1.d0/pi
     call usray3                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha , iappel ,                            &
-   itypfb(1,irapha),                                              &
+   nvar   , nscal  , iphas , iappel ,                            &
+   itypfb(1,iphas),                                              &
    izfrad ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -417,8 +421,8 @@ unspi = 1.d0/pi
   call usray5                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  , iappel ,                           &
-   itypfb(1,irapha),                                              &
+   nvar   , nscal  , iphas  , iappel ,                           &
+   itypfb(1,iphas),                                              &
    izfrad ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -455,12 +459,12 @@ unspi = 1.d0/pi
     if (cofrua(ifac).le.xlimit) then
       iok = iok + 1
       cofrmn = min(cofrmn,cofrua(ifac))
-      write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac,irapha)
+      write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac,iphas)
     endif
   enddo
 
   if (iok.ne.0) then
-    write(nfecra,3100) irapha, cofrmn
+    write(nfecra,3100) cofrmn
     call csexit (1)
     !==========
   endif
@@ -473,12 +477,12 @@ unspi = 1.d0/pi
       if (cofrub(ifac).le.xlimit) then
         iok = iok + 1
         cofrmn = min(cofrmn,cofrub(ifac))
-        write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac,irapha)
+        write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac,iphas)
       endif
     enddo
 
     if (iok.ne.0) then
-      write(nfecra,3200) irapha,cofrmn
+      write(nfecra,3200) cofrmn
       call csexit (1)
       !==========
     endif
@@ -516,9 +520,9 @@ unspi = 1.d0/pi
         call usray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,irapha),                                              &
+   itypfb(1,iphas),                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -531,9 +535,9 @@ unspi = 1.d0/pi
         call ppray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,irapha),                                              &
+   itypfb(1,iphas),                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -746,7 +750,7 @@ unspi = 1.d0/pi
     call raypun                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , irapha  ,                           &
+   nvar   , nscal  , nphas  , iphas  ,                           &
    itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -847,7 +851,7 @@ unspi = 1.d0/pi
     call raysol                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , irapha  ,                           &
+   nvar   , nscal  , nphas  , iphas  ,                           &
    itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -902,8 +906,8 @@ unspi = 1.d0/pi
   call usray5                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  , iappel ,                           &
-   itypfb(1,irapha),                                              &
+   nvar   , nscal  , iphas  , iappel ,                           &
+   itypfb(1,iphas),                                              &
    izfrad ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -926,12 +930,12 @@ unspi = 1.d0/pi
     if (propfb(ifac,ipprob(ifnet)).le.xlimit) then
       iok = iok + 1
       flunmn = min(flunmn,propfb(ifac,ipprob(ifnet)))
-      write(nfecra,4000)ifac,izfrad(ifac),itypfb(ifac,irapha)
+      write(nfecra,4000)ifac,izfrad(ifac),itypfb(ifac,iphas)
     endif
   enddo
 
   if (iok.ne.0) then
-    write(nfecra,4100) irapha,flunmn
+    write(nfecra,4100) flunmn
     call csexit (1)
     !==========
   endif
@@ -990,13 +994,13 @@ unspi = 1.d0/pi
 !    Attention : il faut conserver W9 dans la suite de la routine,
 !    car son contenu est utilise plus loin
 
-    if (icp(irapha).gt.0) then
+    if (icp(iphas).gt.0) then
       do iel = 1,ncel
-        w9(iel) = 1.d0/propce(iel,ipproc(icp(irapha)))
+        w9(iel) = 1.d0/propce(iel,ipproc(icp(iphas)))
       enddo
     else
       do iel = 1,ncel
-        w9(iel) = 1.d0/cp0(irapha)
+        w9(iel) = 1.d0/cp0(iphas)
       enddo
     endif
 
@@ -1402,7 +1406,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@    =========                                               ',/,&
 '@    LES COEFFICIENTS DE CONDITIONS AUX LIMITES (COFRUA)     ',/,&
 '@    NE SONT PAS RENSEIGNES POUR CERTAINES                   ',/,&
-'@        FACES DE BORD (Phase ',I10   ,')                    ',/,&
+'@        FACES DE BORD                                       ',/,&
 '@                                                            ',/,&
 '@        Valeur minimale COFRUA ',E14.5                       ,/,&
 '@                                                            ',/,&
@@ -1422,7 +1426,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@    =========                                               ',/,&
 '@    LES COEFFICIENTS DE CONDITIONS AUX LIMITES (COFRUB)     ',/,&
 '@    NE SONT PAS RENSEIGNES POUR CERTAINES                   ',/,&
-'@        FACES DE BORD (Phase ',I10   ,')                    ',/,&
+'@        FACES DE BORD                                       ',/,&
 '@                                                            ',/,&
 '@        Valeur minimale COFRUB ',E14.5                       ,/,&
 '@                                                            ',/,&
@@ -1467,7 +1471,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 '@ @@ ATTENTION : RAYONNEMENT                                 ',/,&
 '@    =========                                               ',/,&
 '@    LE FLUNET    N''EST PAS RENSEIGNEE POUR CERTAINES       ',/,&
-'@        FACES DE BORD (Phase ',I10   ,')                    ',/,&
+'@        FACES DE BORD                                       ',/,&
 '@                                                            ',/,&
 '@        Valeur minimale ',E14.5                              ,/,&
 '@                                                            ',/,&

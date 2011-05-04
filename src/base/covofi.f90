@@ -358,7 +358,7 @@ endif
 ! --> Rayonnement
 !     Ordre 2 non pris en compte
 
-if ( iirayo.ge.1 .and. iphas.eq.irapha) then
+if ( iirayo.ge.1 ) then
 
   if (iscal.eq.iscalt(iphas)) then
     call raysca                    &

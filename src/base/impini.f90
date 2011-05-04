@@ -887,10 +887,13 @@ write(nfecra,9900)
 ! --- Rayonnement thermique
 
 if (iirayo.gt.0) then
+
+  iphas = 1
+
   write(nfecra,2630)
 
-  write(nfecra,2640) irapha, iirayo, iscalt(irapha),       &
-                     iscsth(iscalt(irapha))
+  write(nfecra,2640) iirayo, iscalt(iphas),       &
+                     iscsth(iscalt(iphas))
 
   write(nfecra,2650) isuird, nfreqr, ndirec,                      &
                      idiver, imodak, iimpar, iimlum
@@ -911,7 +914,7 @@ endif
 ' ** TRANSFERTS THERMIQUES RADIATIFS                          ',/,&
 '    -------------------------------                          ',/)
  2640 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
+' --- Phase continue :'                                        ,/,&
 '       IIRAYO = ',4X,I10,    ' (0 : non ; 1 : DOM ; 2 : P-1 )',/,&
 '       ICSALT = ',4X,I10,    ' (Num du sca thermique associe)',/,&
 '       ISCSTH = ',4X,I10,    ' (-1 : T(C) ; 1 : T(K) ; 2 : H)',/)
@@ -936,7 +939,7 @@ endif
 ' ** RADIATIVE THERMAL TRANSFER'                               ,/,&
 '    --------------------------'                               ,/)
  2640 format(                                                           &
-' --- Phase: ',I10                                             ,/,&
+' --- Continuous phase:'                                       ,/,&
 '       IIRAYO = ',4X,I10,    ' (0: no; 1: DOM; 2: P-1       )',/,&
 '       ICSALT = ',4X,I10,    ' (Assoc. thermal scalar num.  )',/,&
 '       ISCSTH = ',4X,I10,    ' (-1: T(C); 1: T(K); 2: H     )',/)

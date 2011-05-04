@@ -1169,11 +1169,10 @@ do ifac = 1, nfabor
 
 
 
-!               Si on rayonne sur la phase et que
+!               Si on rayonne et que
 !                  le scalaire est la variable energetique
 
-            if (iirayo.ge.1         .and.                         &
-                ll.eq.iscalt(iphas) .and. iphas.eq.irapha   ) then
+            if (iirayo.ge.1 .and. ll.eq.iscalt(iphas)) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 

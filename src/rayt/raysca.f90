@@ -84,7 +84,7 @@ implicit none
 
 ! Arguments
 
-integer          iisca , ncelet , ncel
+integer          iisca , ncelet , ncel , iphas
 
 double precision volume(ncelet)
 double precision smbrs(ncelet)
@@ -96,6 +96,8 @@ double precision propce(ncelet,*)
 integer          iel
 
 !===============================================================================
+
+iphas = 1
 
 !===============================================================================
 ! Radiative source terms (thermal scalar only)
@@ -115,15 +117,15 @@ if (abs(iscsth(iisca)).eq.1 .or. iscsth(iisca).eq.2) then
   if (abs(iscsth(iisca)).eq.1) then
 
     ! Source term correction if the thermal scalar is the temperature
-    if (icp(irapha).gt.0) then
+    if (icp(iphas).gt.0) then
       do iel = 1,ncel
         smbrs(iel) = smbrs(iel) +                                         &
-           propce(iel,ipproc(itsre(1))) / propce(iel,ipproc(icp(irapha))) &
+           propce(iel,ipproc(itsre(1))) / propce(iel,ipproc(icp(iphas))) &
          * volume(iel)
       enddo
     else
       do iel = 1,ncel
-        smbrs(iel) = smbrs(iel) +  propce(iel,ipproc(itsre(1))) / cp0(irapha) &
+        smbrs(iel) = smbrs(iel) +  propce(iel,ipproc(itsre(1))) / cp0(iphas) &
          * volume(iel)
       enddo
     endif

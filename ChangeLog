@@ -1,4 +1,22 @@
 * 04/05/2011 - David Monfort <david.monfort@edf.fr>
+  Removing the dependency to the number of phases (step 2).
+  The continuous phase number relative to the radiative transfer is no more
+  necessary (irapha keyword).
+  The phase number is now handled by a standard iphas variable set to 1.
+  modified routines:
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/condli.f90
+    src/base/covofi.f90
+    src/base/impini.f90
+    src/base/verini.f90
+    src/rayt/radiat.f90
+    src/rayt/raycli.f90
+    src/rayt/raydom.f90
+    src/rayt/rayopt.f90
+    src/rayt/raysca.f90
+
+* 04/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 1).
   The continuous phase number relative to the Lagrangian phase is no more
   necessary (ilphas keyword). Beside, most of the Lagrangian code had not

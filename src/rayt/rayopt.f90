@@ -111,6 +111,9 @@ enddo
 !                        ^^^^^^
 !===============================================================================
 
+!--> NUMERO DE LA PHASE PORTEUSE
+
+iphas = 1
 
 !-->  IIRAYO = 0 : PAS DE TRANSFERTS RADIATIFS
 !            = 1 : TRANSFERTS RADIATIFS, METHODE DES ORDONNEES DISCRETES
@@ -118,10 +121,6 @@ enddo
 !     On initialise a -1 pour montrer que ce n'est pas initialise ...
 !        (on fera un test apres usray1)
 iirayo = -1
-
-!--> IRAPHA : NUMERO DE LA PHASE POUR LAQUELLE ON FAIT DU RAYONNEMENT
-
-irapha = 1
 
 !-->  CALCUL DU COEFFICIENT D'ABSORPTION
 !      IMODAK = 0 : sans utiliser modak
@@ -218,17 +217,17 @@ if(ippmod(iphpar).ge.2) then
 !        On cherche s'il y a un scalaire thermique
       iscaok = 0
       do iiscal = 1, nscal
-        if (iiscal.eq.iscalt(irapha)) then
+        if (iiscal.eq.iscalt(iphas)) then
           iscaok = 1
 !           Et on regarde si on a dit enthalpie
           if (iscsth(iiscal).ne.2) then
-            write(nfecra,3000) irapha,iiscal,iiscal
+            write(nfecra,3000) iiscal,iiscal
             iok = iok + 1
           endif
         endif
       enddo
       if (iscaok.eq.0) then
-        write(nfecra,3001) irapha,irapha
+        write(nfecra,3001)
         iok = iok + 1
       endif
     endif
@@ -241,20 +240,20 @@ else
 !        On cherche s'il y a un scalaire thermique
       iscaok = 0
       do iiscal = 1, nscal
-        if (iiscal.eq.iscalt(irapha)) then
+        if (iiscal.eq.iscalt(iphas)) then
           iscaok = 1
 
 !           Et on regarde si on a dit temp C, K ou enthalpie
           if (abs(iscsth(iiscal)).ne.1.and.                       &
                   iscsth(iiscal) .ne.2      ) then
-            write(nfecra,3010) irapha,iiscal,iiscal
+            write(nfecra,3010) iiscal,iiscal
             iok = iok + 1
           endif
 
         endif
       enddo
       if(iscaok.eq.0)then
-        write(nfecra,3011)irapha,irapha
+        write(nfecra,3011)
         iok = iok + 1
       endif
 
@@ -309,7 +308,7 @@ endif
 '@    =========                                               ',/,&
 '@    PHYSIQUE PARTICULIERE ACTIVEE : ENTHALPIE NECESSAIRE    ',/,&
 '@                                                            ',/,&
-'@  Avec rayonnement, pour la phase ',I10   ,', il faut       ',/,&
+'@  Avec rayonnement, il faut                                 ',/,&
 '@    preciser la variable energetique representee par le     ',/,&
 '@    scalaire ',I10   ,' en renseignant ISCSTH(',I10   ,')   ',/,&
 '@    dans usini1 : soit                                      ',/,&
@@ -333,7 +332,7 @@ endif
 '@    =========                                               ',/,&
 '@    PHYSIQUE PARTICULIERE ACTIVEE : ENTHALPIE NECESSAIRE    ',/,&
 '@                                                            ',/,&
-'@  Lorsque le rayonnement est utilise (phase ',I10   ,'), il ',/,&
+'@  Lorsque le rayonnement est utilise, il                    ',/,&
 '@    faut indiquer qu''un scalaire represente la variable    ',/,&
 '@    energetique (enthalpie) en renseignant                  ',/,&
 '@    ISCALT(',I10   ,') dans usini1 (numero du scalaire).    ',/,&
@@ -353,7 +352,7 @@ endif
 '@    =========                                               ',/,&
 '@    ISCSTH DOIT ETRE RENSEIGNE OBLIGATOIREMENT DANS USINI1  ',/,&
 '@                                                            ',/,&
-'@  Avec rayonnement, pour la phase ',I10   ,', il faut       ',/,&
+'@  Avec rayonnement, il faut                                 ',/,&
 '@    preciser la variable energetique representee par le     ',/,&
 '@    scalaire ',I10   ,' en renseignant ISCSTH(',I10   ,')   ',/,&
 '@    dans usini1 : soit                                      ',/,&
@@ -375,7 +374,7 @@ endif
 '@    =========                                               ',/,&
 '@    IL FAUT UTILISER UNE VARIABLE ENERGETIQUE.              ',/,&
 '@                                                            ',/,&
-'@  Lorsque le rayonnement est utilise (phase ',I10   ,', il  ',/,&
+'@  Lorsque le rayonnement, il                                ',/,&
 '@    faut indiquer qu''un scalaire represente la variable    ',/,&
 '@    energetique (temperature ou enthalpie) en renseignant   ',/,&
 '@    ISCALT(',I10   ,') dans usini1 (numero du scalaire).    ',/,&

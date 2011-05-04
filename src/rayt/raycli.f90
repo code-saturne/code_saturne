@@ -169,7 +169,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, ideb, ivart, iscat
+integer          ifac, iel, ideb, ivart, iscat, iphas
 integer          mode, iok, ifvu, ii, izonem, izone
 integer          maxelt, idbia1, ils
 
@@ -193,6 +193,10 @@ maxelt = max(ncelet,nfac,nfabor)
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+!--> NUMERO DE LA PHASE PORTEUSE
+
+iphas = 1
 
 !---> NUMERO DE PASSAGE RELATIF
 
@@ -276,7 +280,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
       if (iihmpr.eq.1) then
 
 !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
-        ivart = isca(iscalt(irapha))
+        ivart = isca(iscalt(iphas))
 
         call uiray2                                               &
         !==========
@@ -296,7 +300,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
       call usray2                                                 &
       !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas   ,                                    &
    itypfb ,                                                       &
    maxelt , ia(ils),                                              &
    icodcl , izfrad , isothm ,                                     &
@@ -318,8 +322,8 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
       do ifac = 1,nfabor
         propfb(ifac,ipprob(itparo)) = tint(ifac)
         propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
-        if ( itypfb(ifac,irapha).eq.iparoi .or.                   &
-             itypfb(ifac,irapha).eq.iparug ) then
+        if ( itypfb(ifac,iphas).eq.iparoi .or.                   &
+             itypfb(ifac,iphas).eq.iparug ) then
           propfb(ifac,ipprob(itparo)) = tint(ifac)
           propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
         else
@@ -336,8 +340,8 @@ endif
 !===============================================================================
 
 !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
-  iscat = iscalt(irapha)
-  ivart = isca(iscalt(irapha))
+  iscat = iscalt(iphas)
+  ivart = isca(iscalt(iphas))
 
 !===============================================================================
 ! 3.1 DONNEES SUR LES FACES FRONTIERES
@@ -377,7 +381,7 @@ endif
   call usray2                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
    itypfb ,                                                       &
    maxelt , ia(ils),                                              &
    icodcl , izfrad , isothm ,                                     &
@@ -462,22 +466,22 @@ endif
 
 !--> Si en paroi ISOTHM non renseignee : stop
     do ifac = 1, nfabor
-      if( (itypfb(ifac,irapha).eq.iparoi  .or.                    &
-           itypfb(ifac,irapha).eq.iparug) .and.                   &
+      if( (itypfb(ifac,iphas).eq.iparoi  .or.                    &
+           itypfb(ifac,iphas).eq.iparug) .and.                   &
            isothm(ifac)  .eq.-1    ) then
         iok = iok + 1
-        write(nfecra,2110) irapha,ifac,izfrad(ifac)
+        write(nfecra,2110) ifac,izfrad(ifac)
       endif
     enddo
 
 !--> Si ISOTHM renseignee en non paroi : stop
     do ifac = 1, nfabor
-      if( itypfb(ifac,irapha).ne.iparoi .and.                     &
-          itypfb(ifac,irapha).ne.iparug .and.                     &
+      if( itypfb(ifac,iphas).ne.iparoi .and.                     &
+          itypfb(ifac,iphas).ne.iparug .and.                     &
           isothm(ifac)  .ne.-1         ) then
         iok = iok + 1
         write(nfecra,2111)                                        &
-             irapha,ifac,izfrad(ifac),isothm(ifac)
+             ifac,izfrad(ifac),isothm(ifac)
       endif
     enddo
 
@@ -488,7 +492,7 @@ endif
             propfb(ifac,ipprob(ieps)).gt.1.d0.or.                 &
            tint(ifac).le.0.d0                      ) then
           iok = iok + 1
-          write(nfecra,2120) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2120) ifac,izfrad(ifac),            &
                propfb(ifac,ipprob(ieps)),                         &
                               tint(ifac)
         endif
@@ -500,7 +504,7 @@ endif
            text(ifac).le.0.d0.or.                                 &
            tint(ifac).le.0.d0                      ) then
           iok = iok + 1
-          write(nfecra,2130) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2130) ifac,izfrad(ifac),            &
                propfb(ifac,ipprob(ieps)) ,                        &
                propfb(ifac,ipprob(ixlam)),                        &
                propfb(ifac,ipprob(iepa)) ,                        &
@@ -512,7 +516,7 @@ endif
            text(ifac).le.0.d0.or.                                 &
            tint(ifac).le.0.d0                      ) then
           iok = iok + 1
-          write(nfecra,2140) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2140) ifac,izfrad(ifac),            &
                              propfb(ifac,ipprob(ixlam))    ,      &
                              propfb(ifac,ipprob(iepa))     ,      &
                text(ifac),tint(ifac)
@@ -522,19 +526,19 @@ endif
            propfb(ifac,ipprob(ieps)).gt.1.d0.or.                  &
            tint(ifac).le.0.d0                      ) then
           iok = iok + 1
-          write(nfecra,2150) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2150) ifac,izfrad(ifac),            &
                propfb(ifac,ipprob(ieps)),                         &
                               tint(ifac)
         endif
       elseif(isothm(ifac).eq.ifrefl ) then
         if(tint(ifac).le.0.d0                      ) then
           iok = iok + 1
-          write(nfecra,2160) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2160) ifac,izfrad(ifac),            &
                               tint(ifac)
         endif
       elseif(isothm(ifac).ne.-1) then
           iok = iok + 1
-          write(nfecra,2170) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2170) ifac,izfrad(ifac),            &
                              isothm(ifac)
       endif
     enddo
@@ -546,14 +550,14 @@ endif
            propfb(ifac,ipprob(iepa))  .gt.0.d0.or.                &
            text(ifac).gt.0.d0                      ) then
           iok = iok + 1
-          write(nfecra,2220) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2220) ifac,izfrad(ifac),            &
                propfb(ifac,ipprob(ixlam)),                        &
                propfb(ifac,ipprob(iepa)) ,text(ifac)
         endif
       elseif(isothm(ifac).eq.iprefl ) then
         if(propfb(ifac,ipprob(ieps)).ge.0.d0             ) then
           iok = iok + 1
-          write(nfecra,2240) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2240) ifac,izfrad(ifac),            &
                propfb(ifac,ipprob(ieps))
         endif
       elseif(isothm(ifac).eq.ifgrno ) then
@@ -561,7 +565,7 @@ endif
            propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                 &
            text(ifac).gt.0.d0                      ) then
           iok = iok + 1
-          write(nfecra,2250) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2250) ifac,izfrad(ifac),            &
                propfb(1,ipprob(ixlam)),propfb(1,ipprob(iepa)),    &
                text(ifac)
         endif
@@ -571,7 +575,7 @@ endif
            propfb(ifac,ipprob(iepa)) .gt.0.d0.or.                 &
            text(ifac).gt.0.d0                      ) then
           iok = iok + 1
-          write(nfecra,2260) irapha,ifac,izfrad(ifac),            &
+          write(nfecra,2260) ifac,izfrad(ifac),            &
                propfb(ifac,ipprob(ieps)) ,                        &
                propfb(ifac,ipprob(ixlam)),                        &
                propfb(ifac,ipprob(iepa)) ,text(ifac)
@@ -640,9 +644,9 @@ endif
       call usray4                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,irapha) ,                                             &
+   itypfb(1,iphas) ,                                             &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -656,11 +660,11 @@ endif
       call ppray4                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
 
    mode   ,                                                       &
 
-   itypfb(1,irapha) ,                                             &
+   itypfb(1,iphas) ,                                             &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -723,8 +727,8 @@ endif
     call raypar                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
-   itypfb(1,irapha) ,                                             &
+   nvar   , nscal  , iphas  ,                                    &
+   itypfb(1,iphas) ,                                             &
 
    icodcl , isothm , izfrad ,                                     &
 
@@ -811,9 +815,9 @@ endif
         call usray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,irapha) ,                                             &
+   itypfb(1,iphas) ,                                             &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -828,11 +832,11 @@ endif
         call ppray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
 
    mode   ,                                                       &
 
-   itypfb(1,irapha) ,                                             &
+   itypfb(1,iphas) ,                                             &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -861,9 +865,9 @@ endif
         call usray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,irapha) ,                                             &
+   itypfb(1,iphas) ,                                             &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -877,11 +881,11 @@ endif
         call ppray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , irapha  ,                                    &
+   nvar   , nscal  , iphas  ,                                    &
 
    mode   ,                                                       &
 
-   itypfb(1,irapha) ,                                             &
+   itypfb(1,iphas) ,                                             &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -905,11 +909,11 @@ endif
 
       else if (isothm(ifac).eq.iprefl) then
 
-        if (icp(irapha).gt.0) then
+        if (icp(iphas).gt.0) then
           iel = ifabor(ifac)
-          cpp = propce(iel,ipproc(icp(irapha)))
+          cpp = propce(iel,ipproc(icp(iphas)))
         else
-          cpp = cp0(irapha)
+          cpp = cp0(iphas)
         endif
 
         rcodcl(ifac,ivart,1) = tbord(ifac)
@@ -987,7 +991,6 @@ endif
 '@    =========                                               ',/,&
 '@    ISOTHP DOIT ETRE RENSEIGNE SUR TOUTES LES FACES DE PAROI',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Il ne l''a pas ete pour la face ',I10                      ,/,&
 '@                    zone         ',I10                       ,/,&
 '@                                                            ',/,&
@@ -1005,7 +1008,6 @@ endif
 '@    =========                                               ',/,&
 '@    ISOTHP A ETE RENSEIGNE SUR UNE FACE NON PAROI           ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Sur la face ',I10   ,', zone  ',I10   ,', ISOTHP a ete    ',/,&
 '@    renseigne dans usray2 (ISOTHP = ',I10   ,') alors que   ',/,&
 '@    la face n''a pas ete declaree de type IPAROI ou IPARUG  ',/,&
@@ -1027,7 +1029,6 @@ endif
 '@    EPSP  DOIT ETRE UN REEL INCLUS DANS [0.; 1.]            ',/,&
 '@    TINTP DOIT ETRE UN REEL STRICTEMENT POSITIF             ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = ITPIMP       ',/,&
 '@  EPSP  = ',E14.5                                            ,/,&
 '@  TINTP = ',E14.5                                            ,/,&
@@ -1049,7 +1050,6 @@ endif
 '@    XLAMP, EPAP, TINTP, TEXTP DOIVENT ETRE DES REELS        ',/,&
 '@                                      STRICTEMENT POSITIFS  ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IPGRNO       ',/,&
 '@  EPSP  = ',E14.5                                            ,/,&
 '@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
@@ -1070,7 +1070,6 @@ endif
 '@    XLAMP, EPAP, TINTP, TEXTP DOIVENT ETRE DES REELS        ',/,&
 '@                                      STRICTEMENT POSITIFS  ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IPREFL       ',/,&
 '@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
 '@  TEXTP = ',E14.5    ,' TINTP = ',E14.5                      ,/,&
@@ -1090,7 +1089,6 @@ endif
 '@    EPSP  DOIT ETRE UN REEL INCLUS DANS [0.; 1.]            ',/,&
 '@    TINTP DOIT ETRE UN REEL STRICTEMENT POSITIF             ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IFGRNO       ',/,&
 '@  EPSP  = ',E14.5                                            ,/,&
 '@  TINTP = ',E14.5                                            ,/,&
@@ -1109,7 +1107,6 @@ endif
 '@    =========                                               ',/,&
 '@  TINTP DOIT ETRE UN REEL STRICTEMENT POSITIF               ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IFREFL       ',/,&
 '@  TINTP = ',E14.5                                            ,/,&
 '@                                                            ',/,&
@@ -1127,7 +1124,6 @@ endif
 '@    =========                                               ',/,&
 '@   VALEUR NON ADMISSIBLE DE ISOTHP                          ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = ',I10         ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
@@ -1145,7 +1141,6 @@ endif
 '@    XLAMP, EPAP ET TEXTP NE DOIVENT PAS ETRE RENSEIGNES     ',/,&
 '@                                     AVEC ISOTHP = ITPIMP   ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = ITPIMP       ',/,&
 '@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
 '@  TEXTP = ',E14.5                                            ,/,&
@@ -1164,7 +1159,6 @@ endif
 '@    =========                                               ',/,&
 '@    EPSP NE DOIT PAS ETRE RENSEIGNE AVEC ISOTHP = IPREFL    ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IPREFL       ',/,&
 '@  EPSP  = ',E14.5                                            ,/,&
 '@                                                            ',/,&
@@ -1183,7 +1177,6 @@ endif
 '@    XLAMP, EPAP, TEXTP NE DOIVENT PAS ETRE RENSEIGNES       ',/,&
 '@                                       AVEC ISOTHP = IFGRNO ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IFGRNO       ',/,&
 '@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&
 '@  TEXTP = ',E14.5                                            ,/,&
@@ -1203,7 +1196,6 @@ endif
 '@    XLAMP, EPAP, TEXTP NE DOIVENT PAS ETRE RENSEIGNES       ',/,&
 '@                                       AVEC ISOTHP = IFREFL ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10                                                ,/,&
 '@  Face = ',I10   ,' Zone = ',I10   ,' ISOTHP = IFREFL       ',/,&
 '@  EPSP  = ',E14.5                                            ,/,&
 '@  XLAMP = ',E14.5    ,' EPAP  = ',E14.5                      ,/,&

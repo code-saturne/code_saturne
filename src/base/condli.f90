@@ -581,10 +581,10 @@ do iphas = 1, nphas
  endif
 
 
-!     S'il y a du rayonnement sur la phase
+!     S'il y a du rayonnement
 !       (il y a forcement une variable energetique)
 !       on en calcule le gradient
-  if(iirayo.ge.1 .and. iphas.eq.irapha) then
+  if(iirayo.ge.1) then
     iscat = iscalt(iphas)
   endif
 
@@ -1510,11 +1510,10 @@ do iphas = 1, nphas
 
 !      De meme plus bas et de meme dans clptur.
 
-!               Si on rayonne sur la phase et que
+!               Si on rayonne et que
 !                  le scalaire est la variable energetique
 
-            if (iirayo.ge.1         .and.                         &
-                ii.eq.iscalt(iphas) .and. iphas.eq.irapha   ) then
+            if (iirayo.ge.1 .and. ii.eq.iscalt(iphas)) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 
@@ -1562,8 +1561,7 @@ do iphas = 1, nphas
 
 !--> Rayonnement :
 
-            if (iirayo.ge.1         .and.                         &
-                ii.eq.iscalt(iphas) .and. iphas.eq.irapha ) then
+            if (iirayo.ge.1 .and. ii.eq.iscalt(iphas)) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 

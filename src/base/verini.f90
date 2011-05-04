@@ -1694,7 +1694,7 @@ endif
 !if(iperio.gt.0.and.iirayo.gt.0) then ! de translation aussi ?
 if(iperot.gt.0.and.iirayo.gt.0) then
   if(iirayo.eq.1) then
-    write(nfecra,5008) iperio , irapha, iirayo
+    write(nfecra,5008) iperio , iirayo
     iok = iok + 1
   endif
 endif
@@ -4110,7 +4110,7 @@ endif
 '@    lanceur (la periodicite a ete activee, ce qui se traduit',/,&
 '@    par IPERIO = ',I10,   ')                                ',/,&
 '@    et certaines periodicites sont de rotation.             ',/,&
-'@  L''indicateur IIRAYO(',I10,') a ete positionne a ',I10     ,/,&
+'@  L''indicateur IIRAYO a ete positionne a ',I10              ,/,&
 '@    dans l''interface ou usray1.                            ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6664,7 +6664,7 @@ endif
 '@ variable COMMANDE_PERIO was activated in the runcase script',/,&
 '@  Flag  IPERIO is equal to ',I10                             ,/,&
 '@              (periodicity actived if IPERIO=1).            ',/,&
-'@  Flag IIRAYO(',I10,') is equal to ',I10                     ,/,&
+'@  Flag IIRAYO is equal to ',I10                              ,/,&
 '@    in usray1.                                              ',/,&
 '@                                                            ',/,&
 '@                                                            ',/,&
