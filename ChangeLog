@@ -1,4 +1,10 @@
 * 04/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Declare joining tolerance parameters as float to avoid compiler warning.
+  modified files:
+    users/base/cs_user_join.c
+    users/base/cs_user_periodicity.c
+
+* 04/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix for preprocessing or quality criteria with GUI and non-default turbulence.
   modified files:
     src/gui/cs_gui.c

@@ -100,9 +100,9 @@ BEGIN_C_DECLS
 void
 cs_user_periodicity(void)
 {
-  int     join_num;
-  int     verbosity = 1;
-  double  fraction = 0.10, plane = 0.25;
+  int    join_num;
+  int    verbosity = 1;
+  float  fraction = 0.10, plane = 0.25;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
   fraction = 0.10;
