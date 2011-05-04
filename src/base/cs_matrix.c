@@ -481,7 +481,7 @@ _sort_descend_tree(cs_int_t  number[],
                    size_t    n_elts)
 {
   size_t lv_cur;
-  cs_int_t i1, i2, num_save;
+  cs_int_t num_save;
 
   num_save = number[level];
 
@@ -494,10 +494,7 @@ _sort_descend_tree(cs_int_t  number[],
 
     if (lv_cur >= n_elts) break;
 
-    i1 = num_save;
-    i2 = number[lv_cur];
-
-    if (i1 >= i2) break;
+    if (num_save >= number[lv_cur]) break;
 
     number[level] = number[lv_cur];
     level = lv_cur;
