@@ -1,3 +1,12 @@
+* 05/05/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Added GMRES to linear solvers.
+  modified files:
+    src/base/cs_sles.c
+    src/base/cs_sles.h
+    src/base/invers.f90
+    src/base/verini.f90
+    users/base/usini1.f90
+
 * 05/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Enable build of Doxygen documentation (currently minimal).
   added files:

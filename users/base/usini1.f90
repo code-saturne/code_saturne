@@ -1106,6 +1106,7 @@ endif
 !                            j = 0: conjugate gradient,
 !                            j = 1: Jacobi
 !                            j = 2: bi-CgStab
+!                            j = 3: GMRES
 
 !     nitmax: maximum number of iterations for each unknown ivar
 !     epsilo: relative precision for the solution of the linear system.

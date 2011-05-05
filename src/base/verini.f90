@@ -814,8 +814,7 @@ do ipp = 2, nvppmx
     if(iresol(ii).ne.-1) then
       iresop = mod(iresol(ii),1000)
       ipolop = (iresol(ii)-iresop)/1000
-      if ((iresop.ne.0.and.                                       &
-           iresop.ne.1.and.iresop.ne.2).or.                       &
+      if ((iresop.lt.0.or.iresop.gt.3).or.                        &
           (iresop.eq.1.and.ipolop.ne.0)) then
         chaine=nomvar(ipp)
         write(nfecra,2400) chaine(1:8),ii,iresol(ii)
@@ -3043,6 +3042,7 @@ endif
 '@        ET J    = 0 POUR GRADIENT CONJUGUE                  ',/,&
 '@                = 1 POUR JACOBI   (IPOL = 0 DANS CE CAS)    ',/,&
 '@                = 2 POUR BI-CGSTAB                          ',/,&
+'@                = 3 POUR GMRES                              ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
@@ -5580,6 +5580,7 @@ endif
 '@      and  J    = 0 for conjugate grandient                 ',/,&
 '@                = 1 for  JACOBI   (IPOL = 0 DANS CE CAS)    ',/,&
 '@                = 2 for  BI-CGSTAB                          ',/,&
+'@                = 3 for  GMRES                              ',/,&
 '@   IT HAS VALUE ',I10                                        ,/,&
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&

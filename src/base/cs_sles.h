@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -62,6 +62,7 @@ typedef enum {
   CS_SLES_PCG_SR,    /* Preconditionned conjugate gradient, single reduction*/
   CS_SLES_JACOBI,    /* Jacobi */
   CS_SLES_BICGSTAB,  /* Bi-conjugate gradient stabilized */
+  CS_SLES_GMRES,     /* Generalized minimal residual */
   CS_SLES_N_TYPES    /* Number of resolution algorithms */
 
 } cs_sles_type_t;

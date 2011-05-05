@@ -141,7 +141,7 @@ if( imgrp.eq.1 ) then
 
 elseif(imgrp.eq.0) then
 
-  if (ireslp.ge.0 .and. ireslp.le. 2) then
+  if (ireslp.ge.0 .and. ireslp.le. 3) then
 
     call reslin                                                   &
     !==========

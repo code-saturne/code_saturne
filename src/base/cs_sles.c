@@ -174,7 +174,8 @@ cs_matrix_t *cs_glob_sles_native_matrix = NULL;
 const char *cs_sles_type_name[] = {N_("Conjugate gradient"),
                                    N_("Conjugate gradient, single reduction"),
                                    N_("Jacobi"),
-                                   N_("Bi-CGstab")};
+                                   N_("Bi-CGstab"),
+                                   N_("GMRES")};
 
 /* Communicator used for reduction operations */
 
@@ -1568,6 +1569,408 @@ _bi_cgstab(const char             *var_name,
 }
 
 /*----------------------------------------------------------------------------
+ * Transform using Givens rotations a system Ax=b where A is an upper
+ * triangular matrix of size n*(n-1) with a lower diagonal to an equivalent
+ * system A'x=b' where A' is an upper triangular matrix.
+ *
+ * parameters:
+ *   a              <-> dense matrix (size: size a_size*a_size):
+ *                      a(i,j) = a[i + j*a_size]
+ *                      input: A; output: A'
+ *   a_size         <-- matrix dim
+ *   b              <-> pre-allocated vector of a_size elements
+ *                      input: b; output: b'
+ *   givens_coeff   <-> pre-allocated vector of a_size elements
+ *                      input: previous Givens coefficients
+ *                      output: updated Givens coefficients
+ *   update_rank    <-- rank of first non null coefficient on lower diagonal
+ *   end_update     <-- rank of last non null coefficient on lower diagonal
+ *----------------------------------------------------------------------------*/
+
+static void
+_givens_rot_update(cs_real_t    *restrict a,
+		   int                    a_size,
+		   cs_real_t    *restrict b,
+		   cs_real_t    *restrict givens_coeff, 
+		   int                    update_rank, 
+		   int                    end_update)
+{
+  int i, j;
+  cs_real_t _aux;
+  cs_real_t norm;
+
+  for (i = 0; i < update_rank; ++i) {
+    for (j = update_rank; j < end_update; ++j) {
+      
+      _aux =   givens_coeff[i]*a[j*a_size + i]
+             + givens_coeff[i + a_size] * a[j*a_size + i+1];
+      
+      a[j*a_size + i+1] =   givens_coeff[i] * a[i+1 + j*a_size]
+                          - givens_coeff[i + a_size] * a[j*a_size + i];
+
+      a[j*a_size + i] = _aux;
+    }
+  }
+   
+  for (i = update_rank; i < end_update; ++i) {
+
+    norm = pow(a[i*a_size + i], 2) + pow(a[i*a_size + i+1], 2);
+    norm = sqrt(norm);
+
+    givens_coeff[a_size + i] = a[i*a_size + i+1]/norm;
+    givens_coeff[i] = a[i*a_size + i]/norm;
+
+    b[i+1] = -b[i]*givens_coeff[a_size + i];
+    b[i] = b[i]*givens_coeff[i];
+
+    for (j = i; j < end_update; j++) {
+
+      _aux =   givens_coeff[i] * a[j*a_size + i]
+             + givens_coeff[a_size+i] * a[j*a_size + i+1];
+      if (j == i)
+        a[j*a_size+i+1] = 0;
+      else
+        a[i+1 + j*a_size] =   givens_coeff[i]*a[i+1 + j*a_size]
+                            - givens_coeff[a_size + i]*a[i + j*a_size];
+      
+      a[j*a_size + i] = _aux;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute solution of Ax = b where A is an upper triangular matrix.
+ *
+ * As the system solved by GMRES will grow with iteration number, we
+ * preallocate a allocated size, and solve only the useful part:
+ *
+ *   |       |       |   |x1|   |b1|
+ *   |   A   |  pad  |   |x2|   |b2|
+ *   |_______|       |   |x3|   |b3|
+ *   |               | * |p | = |p |
+ *   |     pad       |   |a |   |a |
+ *   |               |   |d |   |d |
+ *
+ * parameters:
+ *   a          <-- dense upper triangular matrix A (size: glob_size*glob_size)
+ *                 a(i,j) = a[i + j*glob_size]
+ *   a_size     <-- system size
+ *   alloc_size <-- a_size + halo size
+ *   b          <-- pre-allocated vector of a_size elements
+ *   x          --> system solution, pre-allocated vector of a_size elements
+ *
+ * returns:
+ *   0 in case of success, 1 in case of zero-pivot.
+ *----------------------------------------------------------------------------*/
+
+static int
+_solve_diag_sup_halo(cs_real_t  *restrict a, 
+		     int                  a_size,
+		     int                  alloc_size,    
+		     cs_real_t  *restrict b, 
+		     cs_real_t  *restrict x)
+{
+  int i, j;
+
+  for (i = a_size - 1; i > -1; i--) {
+
+    x[i] = b[i];
+
+    for (j = i + 1; j < a_size; j++)
+      x[i] = x[i] - a[j*alloc_size + i]*x[j];
+
+    x[i] /= a[i*alloc_size + i];
+  }
+
+  return 0; /* We should add a check for zero-pivot */
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of (ad+ax).vx = Rhs using preconditioned GMRES.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   var_name      <-- Variable name
+ *   a             <-- Matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
+ *                     (only necessary if poly_degree > 0)
+ *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   convergence   <-- Convergence information structure
+ *   rhs           <-- Right hand side
+ *   vx            --> System solution
+ *   aux_size      <-- Number of elements in aux_vectors
+ *   aux_vectors   --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   iteration number reached, -2 if divergence is detected.
+ *----------------------------------------------------------------------------*/
+
+static int
+_gmres(const char             *var_name,
+       const cs_matrix_t      *a,
+       const cs_matrix_t      *ax,
+       int                     poly_degree,
+       cs_perio_rota_t         rotation_mode,
+       cs_sles_convergence_t  *convergence,
+       const cs_real_t        *rhs,
+       cs_real_t              *restrict vx,
+       size_t                  aux_size,
+       void                   *aux_vectors)
+{  
+  int cvg;
+  char *sles_name;
+  int check_freq, l_iter, l_old_iter, scaltest;
+  int krylov_size, _krylov_size;
+  cs_int_t  n_cols, n_rows, ii, kk, jj;
+  double    beta, dot_prod, residue, _residue, epsi;
+  cs_real_t  *_aux_vectors;
+  cs_real_t *restrict _krylov_vectors, *restrict _h_matrix;
+  cs_real_t *restrict _givens_coeff, *restrict _beta;
+  cs_real_t *restrict dk, *restrict gk, *restrict ad_inv;
+  cs_real_t *restrict bk, *restrict fk, *restrict krk;
+
+  int krylov_size_max = 75;
+  unsigned n_iter = 0;
+
+#if defined(__xlc__)
+#pragma disjoint(*rhs, *vx, *_krylov_vectors, *_h_matrix, \
+  *_givens_coeff, *_beta, *dk, *gk, *bk, *fk, *ad_inv, *krk)
+#endif
+  
+  sles_name = _(cs_sles_type_name[CS_SLES_GMRES]);
+
+  /* Preliminary calculations */
+  /*--------------------------*/
+  
+  n_cols = cs_matrix_get_n_columns(a);
+  n_rows = cs_matrix_get_n_rows(a);
+
+  /* Allocate work arrays */
+
+  krylov_size =  (krylov_size_max < (int)sqrt(n_rows)*1.5) ?
+                  krylov_size_max : (int)sqrt(n_rows)*1.5 + 1;
+
+#if defined(HAVE_MPI)
+  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
+    MPI_Allreduce(&krylov_size, 
+                  &_krylov_size, 
+                  1, 
+                  MPI_INT, 
+                  MPI_MIN, 
+                  _cs_sles_mpi_reduce_comm);
+    krylov_size = _krylov_size;
+  }
+#endif
+
+  check_freq = (int)(krylov_size/10) + 1;
+  epsi = 1.e-15;
+  scaltest = 0;
+
+  {
+    size_t  n_wa = 5;
+    size_t  wa_size = n_cols < krylov_size? krylov_size:n_cols;
+    size_t _aux_size = wa_size*n_wa 
+                       + (krylov_size-1)*(n_rows + krylov_size) 
+                       + 3*krylov_size;
+
+    if (aux_vectors == NULL || aux_size < _aux_size)
+      BFT_MALLOC(_aux_vectors, _aux_size, cs_real_t);
+    else
+      _aux_vectors = aux_vectors;
+   
+    dk = _aux_vectors;
+    gk = _aux_vectors + wa_size;
+    ad_inv = _aux_vectors + 2*wa_size;
+    bk = _aux_vectors + 3*wa_size;
+    fk = _aux_vectors + 4*wa_size;
+    _krylov_vectors = _aux_vectors + 5*wa_size;
+    _h_matrix = _aux_vectors + 5*wa_size + (krylov_size - 1)*n_rows;
+    _givens_coeff =   _aux_vectors + 5*wa_size 
+                    + (krylov_size - 1)*(n_rows + krylov_size);
+    _beta =   _aux_vectors + 5*wa_size 
+            + (krylov_size - 1)*(n_rows + krylov_size) + 2*krylov_size;
+  }
+
+  for (ii = 0; ii < krylov_size*(krylov_size - 1); ii++) 
+    _h_matrix[ii] = 0.;
+  
+  cs_matrix_get_diagonal(a, ad_inv);
+  
+  for (ii = 0; ii < n_rows; ii++)
+    ad_inv[ii] = 1./ad_inv[ii]; 
+
+  cvg = 0;
+
+  while (cvg == 0) {
+    
+    /* compute  rk <- a*vx (vx = x0) */
+
+    cs_matrix_vector_multiply(rotation_mode, a, vx, dk);
+    
+    /* compute  rk <- rhs - rk (r0 = b-A*x0) */
+
+    for (ii = 0; ii < n_rows; ii++)
+      dk[ii] = rhs[ii] - dk[ii];
+    
+    /* beta = ||r0|| */
+    beta = sqrt(_dot_product(n_rows, dk, dk));
+    dot_prod = beta;
+
+    _beta[0] = beta;
+    for (ii = 1; ii < krylov_size; ii++)
+      _beta[ii] = 0.;
+       
+    /* Lap */
+
+    l_iter = 0;
+    l_old_iter = 0;
+
+    for (ii = 0; ii < krylov_size - 1; ii++) {
+
+      /* krk = k-ieth col of _krylov_vector = vi */
+      krk = _krylov_vectors + ii*n_rows;
+
+      for (jj = 0; jj < n_rows; jj++)
+	krk[jj] = dk[jj]/dot_prod;
+
+      _polynomial_preconditionning(n_rows,
+				   poly_degree,
+				   rotation_mode,
+				   ad_inv,
+				   ax,
+				   krk,
+				   gk,
+				   dk);
+      
+      /* compute w=dk <- A*vj */
+     
+      cs_matrix_vector_multiply(rotation_mode, a, gk, dk);
+      
+      for (kk = 0; kk < ii + 1; kk++) {
+
+	/* compute h(k,i) = <w,vi> = <dk,vi> */
+	_h_matrix[ii*krylov_size + kk]
+          = _dot_product(n_rows, dk, (_krylov_vectors + kk*n_rows));
+	
+	/* compute w = dk <- w - h(i,k)*vi */
+	cblas_daxpy(n_rows,
+                    -_h_matrix[ii*krylov_size+kk], 
+                    (_krylov_vectors + kk*n_rows), 
+                    1, dk, 1);
+      }
+         
+      /* compute h(i+1,i) = sqrt<w,w> */
+      dot_prod = sqrt(_dot_product(n_rows, dk, dk));
+      _h_matrix[ii*krylov_size + ii + 1] = dot_prod;
+
+      if (dot_prod < epsi) scaltest = 1;
+	
+      if (   (l_iter + 1)%check_freq == 0 
+          || l_iter == krylov_size - 2
+          || scaltest == 1) {
+
+	  /* H matrix to diagonal sup matrix */
+
+        _givens_rot_update(_h_matrix,
+                           krylov_size,
+                           _beta,
+                           _givens_coeff,
+                           l_old_iter,
+                           l_iter + 1);
+			  
+        l_old_iter = l_iter + 1;
+	  
+        /* solve diag sup system */
+        _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
+
+#if defined(HAVE_CBLAS) || defined(HAVE_MKL)
+
+        cblas_dgemv(CblasColMajor,
+                    CblasNoTrans,
+                    n_rows,
+                    l_iter + 1,
+                    1.0,
+                    _krylov_vectors,
+                    n_rows,
+                    gk,
+                    1,
+                    0.,
+                    fk,
+                    1);
+
+#else
+	  
+        for (jj = 0; jj < n_rows; jj++) {
+          fk[jj] = cblas_ddot(l_iter + 1,
+                              _krylov_vectors + jj,
+                              n_rows,
+                              gk,
+                              1);
+        }
+#endif
+
+        _polynomial_preconditionning(n_rows,
+                                     poly_degree,
+                                     rotation_mode,
+                                     ad_inv,
+                                     ax,
+                                     fk,
+                                     gk,
+                                     bk);
+  
+   
+        for (jj = 0; jj < n_rows; jj++)
+          fk[jj] = vx[jj] + gk[jj];
+	
+        cs_matrix_vector_multiply(rotation_mode, a, fk, bk);
+	  
+        /* compute residue = | Ax - b |_1 */
+
+        residue = 0.;
+        for (jj = 0; jj < n_rows; jj++)
+          residue += pow(rhs[jj] - bk[jj], 2);
+
+#if defined(HAVE_MPI)	 
+
+        if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
+          MPI_Allreduce(&residue, &_residue, 1, MPI_DOUBLE, MPI_SUM,
+                        _cs_sles_mpi_reduce_comm);
+          residue = _residue;
+        }
+
+#endif
+
+        residue = sqrt(residue);
+
+        cvg = _convergence_test(sles_name, 
+                                var_name, 
+                                n_iter, 
+                                residue, 
+                                convergence);
+	  
+      }
+        
+      n_iter++;
+      l_iter++;
+     
+      if (cvg == 1 || l_iter == krylov_size - 1 || scaltest == 1) { 
+	for (jj = 0; jj < n_rows; jj++)
+          vx[jj] = fk[jj];
+	break;
+      }
+    }
+  }
+
+  if (_aux_vectors != aux_vectors)
+    BFT_FREE(_aux_vectors);
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
  * Output post-processing data for failed system convergence.
  *
  * parameters:
@@ -1798,6 +2201,9 @@ void CS_PROCF(reslin, RESLIN)
     break;
   case 2:
     type = CS_SLES_BICGSTAB;
+    break;
+  case 3:
+    type = CS_SLES_GMRES;
     break;
   default:
     type = CS_SLES_N_TYPES;
@@ -2179,6 +2585,18 @@ cs_sles_solve(const char         *var_name,
                          aux_size,
                          aux_vectors);
         break;
+      case CS_SLES_GMRES:
+   	cvg = _gmres(var_name,
+                     _a,
+                     _ax,
+                     poly_degree,
+                     rotation_mode,
+                     &convergence,
+                     rhs,
+                     vx,
+                     aux_size,
+                     aux_vectors);
+	break;
       default:
         break;
       }
