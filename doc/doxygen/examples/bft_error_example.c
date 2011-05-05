@@ -1,0 +1,116 @@
+/*============================================================================
+ * BFT Examples
+ *============================================================================*/
+
+/*
+  This file is part of the "Base Functions and Types" library, intended to
+  simplify and enhance portability, memory and I/O use for scientific codes.
+
+  Copyright (C) 2004  EDF
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+  As an exception, example code in this file may be used with no
+  restrictions on redistibution and copying.
+*/
+
+/*-----------------------------------------------------------------------------*/
+
+/*
+ * Standard C library and BFT headers
+ */
+
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#if defined(HAVE_MPI)
+# include <mpi.h>
+#endif
+
+#include "bft_intl.h"
+#include "bft_error.h"
+
+/*-----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} /* Fake brace to force back Emacs auto-indentation back to column 0 */
+#endif
+#endif /* __cplusplus */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*
+ * MPI-aware error handler.
+ *
+ * An error message is output to stderr (after bft_print_flush() is called),
+ * and the current process (or process group) is terminated.
+ *
+ * parameters:
+ *   file_name:      --> name of source file from which error handler called.
+ *   line_num:       --> line of source file from which error handler called.
+ *   sys_error_code: --> error code if error in system or libc call, 0 otherwise.
+ *   format:         --> format string, as printf() and family.
+ *   arg_ptr:        --> variable argument list based on format string.
+ */
+
+void
+my_error_handler(const char     *const file_name,
+                 const int             line_num,
+                 const int             sys_error_code,
+                 const char     *const format,
+                 const va_list         arg_ptr)
+{
+  bft_printf_flush();
+
+  fprintf(stderr, "\n");
+
+  if (sys_error_code != 0)
+    fprintf(stderr, _("\nSystem error: %s\n"), strerror(sys_error_code));
+
+  fprintf(stderr, _("\n%s:%d: Fatal error.\n\n"), file_name, line_num);
+
+  vfprintf(stderr, format, arg_ptr);
+
+  fprintf(stderr, "\n\n");
+
+  assert(0);   /* Use assert to avoit exiting under debugger */
+
+#if defined(HAVE_MPI)
+  {
+    int mpi_flag;
+
+    MPI_Initialized(&mpi_flag);
+
+    if (mpi_flag != 0) {
+      MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+  }
+#endif /* HAVE_MPI */
+
+  exit(EXIT_FAILURE);
+}
+
+/*-----------------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */

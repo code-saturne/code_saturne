@@ -846,7 +846,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  salome/cfd_study/src/Makefile
                  salome/cfd_study/src/CFDSTUDY/Makefile
                  salome/cfd_study/src/CFDSTUDYGUI/Makefile
-                 doc/Makefile doc/style/csvers.tex
+                 doc/Makefile doc/doxygen/Makefile doc/style/csvers.tex
                  doc/howto/Makefile doc/howto/graphics/Makefile
                  doc/developper/Makefile doc/developper/graphics/Makefile
                  doc/install/Makefile

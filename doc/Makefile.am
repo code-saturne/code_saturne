@@ -26,7 +26,7 @@ if HAVE_SPHINX
 SALOME = salome
 endif
 
-SUBDIRS = refcard theory tutorial user developper $(SALOME)
+SUBDIRS = refcard theory tutorial user developper doxygen $(SALOME)
 
 DIST_SUBDIRS = $(SUBDIRS) howto install
 
