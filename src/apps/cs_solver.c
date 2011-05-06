@@ -248,6 +248,10 @@ cs_run(void)
   }
   else {
 
+    /* Choose partitioning type */
+
+    cs_preprocessor_data_part_choice(cs_gui_get_sfc_partition_type() + 2);
+
     /* Read Preprocessor output */
 
     cs_preprocessor_data_read_mesh(cs_glob_mesh,

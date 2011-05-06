@@ -5531,6 +5531,48 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb)
 #endif
 }
 
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*-----------------------------------------------------------------------------
+ * Return value of partitioning option.
+ *
+ * returns:
+ *   id of selected (or default) partitioning type (0-3)
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_get_sfc_partition_type(void)
+{
+  char  *path = NULL;
+  char  *sfc = NULL;
+  int retval = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "calculation_management", "partition_type");
+  cs_xpath_add_function_text(&path);
+
+  sfc = cs_gui_get_text_value(path);
+
+  if (sfc != NULL) {
+    if (!strcmp(sfc, "morton sfc"))
+      retval = 0;
+    else if (!strcmp(sfc, "morton sfc cube"))
+      retval = 1;
+    else if (!strcmp(sfc, "hilbert sfc"))
+      retval = 2;
+    else if (!strcmp(sfc, "hilbert sfc cube"))
+      retval = 3;
+  }
+
+
+  BFT_FREE(path);
+  BFT_FREE(sfc);
+
+  return retval;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

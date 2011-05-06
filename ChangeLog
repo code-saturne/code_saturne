@@ -1,4 +1,21 @@
 * 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added choice of Hilbert SFC for domain partitioning.
+  added files:
+    src/fvm/fvm_hilbert.c
+    src/fvm/fvm_hilbert.h
+  modified files:
+    gui/Pages/BatchRunningView.py
+    gui/Pages/ScriptRunningModel.py
+    po/fr.po
+    src/base/cs_preprocessor_data.c
+    src/base/cs_preprocessor_data.h
+    src/fvm/fvm_io_num.c
+    src/fvm/fvm_io_num.h
+    src/fvm/Makefile.am
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+
+* 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Separate matrix structure from container.
   modified files:
     po/fr.po

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-05-06 15:22+0200\n"
+"POT-Creation-Date: 2011-05-06 15:42+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4134,6 +4134,7 @@ msgstr ""
 "x = sqrt(x)\n"
 "-----------\n"
 
+#, c-format
 msgid ""
 "\n"
 "Matrix structure construction / destruction (%s)\n"
@@ -7046,6 +7047,10 @@ msgstr ""
 "(rapport nombre de cellules / nombre de processeurs trop faible)."
 
 #, c-format
+msgid " Partitioning by space-filling curve: %s.\n"
+msgstr " Partitionnement par courbe fractale : %s.\n"
+
+#, c-format
 msgid " Reading metadata from file: \"%s\"\n"
 msgstr " Lecture des méta-données du fichier: \"%s\"\n"
 
@@ -7091,14 +7096,14 @@ msgstr ""
 msgid ""
 "The algorithm selection indicator for domain partitioning\n"
 "can take the following values:\n"
-"  1: partition based on initial numbering\n"
-"  2: partition based on space-filling curve\n"
+"  1:   partition based on initial numbering\n"
+"  2-5: partition based on space-filling curve\n"
 "and not %d."
 msgstr ""
 "L'indicateur de choix d'algorithme de partitionement de domaine\n"
 "peut prendre les valeurs suivantes :\n"
-"  1: partition basée sur la numérotation initiale\n"
-"  2: partition basée sur une courbe fractale\n"
+"  1 :   partition basée sur la numérotation initiale\n"
+"  2-5 : partition basée sur une courbe fractale\n"
 "et non %d."
 
 #, c-format
@@ -8557,6 +8562,18 @@ msgid ""
 "Trying to build an interface with unordered elements\n"
 "not currently handled."
 msgstr ""
+
+msgid "Morton (in bounding box)"
+msgstr "Morton (dans boîte englobante)"
+
+msgid "Morton (in bounding cube)"
+msgstr "Morton (dans cube englobant)"
+
+msgid "Hilbert (in bounding box)"
+msgstr "Hilbert (dans boîte englobante)"
+
+msgid "Hilbert (in bounding cube)"
+msgstr "Hilbert (dans cube englobant)"
 
 #, c-format
 msgid ""

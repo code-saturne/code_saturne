@@ -37,6 +37,12 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
+#include "fvm_io_num.h"
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -62,10 +68,13 @@ BEGIN_C_DECLS
  * subroutine algdom (iopt)
  * *****************
  *
- * integer          iopt        : <-> : Choice of the partitioning base
+ * integer          iopt        : <-> : choice of the partitioning base
  *                                        0: query
  *                                        1: initial numbering
- *                                        2: space-filling curve (default)
+ *                                        2: Morton curve (bounding box)
+ *                                        3: Morton curve (bounding cube)
+ *                                        4: Hilbert curve (bounding box)
+ *                                        5: Hilbert curve (bounding cube)
  *----------------------------------------------------------------------------*/
 
 void
@@ -122,13 +131,16 @@ CS_PROCF(addppi, ADDPPI)(const char  *name);
  * partitioning file is present.
  *
  *  0 : query
- *  1 : partition based on initial numbering
- *  2 : partition based on space-filling curve (default)
+ *  1 : based on initial numbering
+ *  2 : based on Morton space-filling curve in bounding box
+ *  3 : based on Morton space-filling curve in bounding cube
+ *  4 : based on Hilbert space-filling curve in bounding box
+ *  5 : based on Hilbert space-filling curve in bounding cube (default)
  *
  * choice <-- of partitioning algorithm.
  *
  * returns:
- *   1 or 2 according to the selected algorithm.
+ *   1 to 5 according to the selected algorithm.
  *----------------------------------------------------------------------------*/
 
 int

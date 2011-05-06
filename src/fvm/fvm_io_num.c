@@ -19,7 +19,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2009  EDF
+  Copyright (C) 2004-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -47,6 +47,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -63,6 +64,7 @@
 
 #include "fvm_defs.h"
 #include "fvm_config_defs.h"
+#include "fvm_hilbert.h"
 #include "fvm_morton.h"
 #include "fvm_order.h"
 #include "fvm_parall.h"
@@ -130,6 +132,17 @@ struct _fvm_io_num_t {
                                          NULL otherwise */
 
 };
+
+/*=============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Names of space-filling curve types */
+
+const char  *fvm_io_num_sfc_type_name[] = {N_("Morton (in bounding box)"),
+                                           N_("Morton (in bounding cube)"),
+                                           N_("Hilbert (in bounding box)"),
+                                           N_("Hilbert (in bounding cube)")};
 
 /*=============================================================================
  * Private function definitions
@@ -250,8 +263,8 @@ _check_morton_ordering(int                      dim,
       if (i_prev < i - 1)
         _reorder_coords_lexicographic(dim, i_prev, i-1, coords, order);
 
+      i_prev = i;
     }
-    i_prev = i;
   }
 
   if (i_prev < n_entities - 1)
@@ -1263,6 +1276,592 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
 #endif /* defined(HAVE_MPI) */
 
+/*----------------------------------------------------------------------------
+ * Stretch extents in some directions.
+ *
+ * If the multiplication factor for a given axis direction is less than 1,
+ * the extents in that direction will be defined so that the extent box's
+ * size in that direction is its maximum size.
+ *
+ * parameters:
+ *   extents     <-> box extents
+ *   box_to_cube <-- if 1, transform bounding box to boundign cube
+ *----------------------------------------------------------------------------*/
+
+static void
+_adjust_extents(fvm_coord_t  extents[6],
+                int          box_to_cube)
+{
+  size_t  i;
+  fvm_coord_t max_width = 0.;
+  const double epsilon = 1e-12;
+
+  for (i = 0; i < 3; i++) {
+    double  w = fabs(extents[i+3] - extents[i]);
+    max_width = FVM_MAX(max_width, w);
+  }
+
+  for (i = 0; i < 3; i++) {
+    double  mult = 1.0;
+    double  m = (extents[i] + extents[i+3])*0.5;
+    double  w = fabs(extents[i+3] - extents[i]);
+    if (box_to_cube > 0) {
+      if (w > epsilon)
+        mult = max_width / w;
+    }
+    if (mult < 1.0 + epsilon)
+      mult= 1.0 + epsilon;
+    extents[i] = m - (w*0.5*mult);
+    extents[i+3] = m + (w*0.5*mult);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Creation of an I/O numbering structure based on coordinates.
+ *
+ * The ordering is based on a Morton code, and it is expected that
+ * entities are unique (i.e. not duplicated on 2 or more ranks).
+ * In the case that 2 entities have a same Morton code, their global
+ * number will be determined by lexicographical ordering of coordinates.
+ *
+ * parameters:
+ *   coords      <-- pointer to entity coordinates (interlaced)
+ *   dim         <-- spatial dimension
+ *   n_entities  <-- number of entities considered
+ *   box_to_cube <-- if 1, use bounding cube instead of bounding box
+ *
+ * returns:
+ *  pointer to I/O numbering structure
+ *----------------------------------------------------------------------------*/
+
+static fvm_io_num_t *
+_create_from_coords_morton(const fvm_coord_t  coords[],
+                           int                dim,
+                           size_t             n_entities,
+                           int                box_to_cube)
+{
+  size_t i;
+  fvm_coord_t extents[6];
+  fvm_lnum_t *order = NULL;
+  fvm_morton_code_t *m_code = NULL;
+
+#if defined(HAVE_MPI)
+  MPI_Comm comm = fvm_parall_get_mpi_comm();
+#endif
+
+  const int level = sizeof(fvm_morton_int_t)*8 - 1;
+  const int n_ranks = fvm_parall_get_size();
+
+  fvm_io_num_t  *this_io_num = NULL;
+
+  /* Create structure */
+
+  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+
+  this_io_num->global_num_size = n_entities;
+
+  BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
+  this_io_num->global_num = this_io_num->_global_num;
+
+  /* Build Morton encoding and order it */
+
+#if defined(HAVE_MPI)
+  fvm_morton_get_coord_extents(dim, n_entities, coords, extents, comm);
+#else
+  fvm_morton_get_coord_extents(dim, n_entities, coords, extents);
+#endif
+
+  _adjust_extents(extents, box_to_cube);
+
+  BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
+  BFT_MALLOC(order, n_entities, fvm_lnum_t);
+
+  fvm_morton_encode_coords(dim, level, extents, n_entities, coords, m_code);
+
+  fvm_morton_local_order(n_entities, m_code, order);
+
+#if defined(HAVE_MPI)
+
+  if (n_ranks > 1) {
+
+    int rank_id;
+    fvm_lnum_t j, shift;
+
+    size_t n_block_ents = 0;
+    fvm_gnum_t current_global_num = 0, global_num_shift = 0;
+    double fit = 0.;
+
+    int *c_rank = NULL;
+    int *send_count = NULL, *send_shift = NULL;
+    int *recv_count = NULL, *recv_shift = NULL;
+    fvm_coord_t *send_coords = NULL, *recv_coords = NULL;
+    fvm_lnum_t *weight = NULL;
+    fvm_gnum_t *block_global_num = NULL, *part_global_num = NULL;
+    fvm_morton_code_t *morton_index = NULL;
+
+    BFT_MALLOC(weight, n_entities, fvm_lnum_t);
+    BFT_MALLOC(morton_index, n_ranks + 1, fvm_morton_code_t);
+
+    for (i = 0; i < n_entities; i++)
+      weight[i] = 1;
+
+    fit = fvm_morton_build_rank_index(dim,
+                                      level,
+                                      n_entities,
+                                      m_code,
+                                      weight,
+                                      order,
+                                      morton_index,
+                                      comm);
+
+    BFT_FREE(order);
+    BFT_FREE(weight);
+    BFT_MALLOC(c_rank, n_entities, int);
+
+    for (i = 0; i < n_entities; i++)
+      c_rank[i] = fvm_morton_quantile_search(n_ranks,
+                                             m_code[i],
+                                             morton_index);
+
+    BFT_FREE(morton_index);
+    BFT_FREE(m_code);
+
+    /* Build send_buf, send_count and send_shift
+       to build a rank to coords indexed list */
+
+    BFT_MALLOC(send_count, n_ranks, int);
+    BFT_MALLOC(recv_count, n_ranks, int);
+    BFT_MALLOC(send_shift, n_ranks + 1, int);
+    BFT_MALLOC(recv_shift, n_ranks + 1, int);
+
+    for (rank_id = 0; rank_id < n_ranks; rank_id++)
+      send_count[rank_id] = 0;
+
+    for (i = 0; i < n_entities; i++)
+      send_count[c_rank[i]] += dim;
+
+    /* Exchange number of coords to send to each process */
+
+    MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+
+    send_shift[0] = 0;
+    recv_shift[0] = 0;
+    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
+      send_shift[rank_id + 1] = send_shift[rank_id] + send_count[rank_id];
+      recv_shift[rank_id + 1] = recv_shift[rank_id] + recv_count[rank_id];
+    }
+
+    /* Build send and receive buffers */
+
+    BFT_MALLOC(send_coords, send_shift[n_ranks], fvm_coord_t);
+
+    for (rank_id = 0; rank_id < n_ranks; rank_id++)
+      send_count[rank_id] = 0;
+
+    for (i = 0; i < n_entities; i++) {
+      rank_id = c_rank[i];
+      shift = send_shift[rank_id] + send_count[rank_id];
+      for (j = 0; j < dim; j++)
+        send_coords[shift + j] = coords[i*dim + j];
+      send_count[rank_id] += dim;
+    }
+
+    BFT_MALLOC(recv_coords, recv_shift[n_ranks], fvm_coord_t);
+
+    /* Exchange coords between processes */
+
+    MPI_Alltoallv(send_coords, send_count, send_shift, FVM_MPI_COORD,
+                  recv_coords, recv_count, recv_shift, FVM_MPI_COORD,
+                  comm);
+
+    BFT_FREE(send_coords);
+
+    /* Now re-build Morton codes on block distribution */
+
+    n_block_ents = recv_shift[n_ranks] / dim;
+
+    BFT_MALLOC(m_code, n_block_ents, fvm_morton_code_t);
+    BFT_MALLOC(order, n_block_ents, fvm_lnum_t);
+
+    fvm_morton_encode_coords(dim,
+                             level,
+                             extents,
+                             n_block_ents,
+                             recv_coords,
+                             m_code);
+
+    fvm_morton_local_order(n_block_ents, m_code, order);
+
+    /* Check ordering; if two entities have the same Morton codes,
+       use lexicographical coordinates ordering to ensure the
+       final order is deterministic. */
+
+    _check_morton_ordering(dim, n_block_ents, recv_coords, m_code, order);
+
+    /* Determine global order; requires ordering to loop through buffer by
+       increasing number (slice blocks associated with each process are
+       already sorted, but the whole "gathered" slice is not).
+       We build an initial global order based on the initial global numbering,
+       such that for each slice, the global number of an entity is equal to
+       the cumulative number of sub-entities */
+
+    BFT_FREE(m_code);
+    BFT_FREE(recv_coords);
+    BFT_MALLOC(block_global_num, n_block_ents, fvm_gnum_t);
+
+    for (i = 0; i < n_block_ents; i++)
+      block_global_num[order[i]] = i+1;
+
+    BFT_FREE(order);
+
+    current_global_num = n_block_ents;
+
+    /* At this stage, block_global_num[] is valid for this process, and
+       current_global_num indicates the total number of entities handled
+       by this process; we must now shift global numberings on different
+       processes by the cumulative total number of entities handled by
+       each process */
+
+    MPI_Scan(&current_global_num, &global_num_shift, 1, FVM_MPI_GNUM,
+             MPI_SUM, comm);
+    global_num_shift -= current_global_num;
+
+    for (i = 0; i < n_block_ents; i++)
+      block_global_num[i] += global_num_shift;
+
+    /* Return global order to all processors */
+
+    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
+      send_count[rank_id] /= dim;
+      recv_count[rank_id] /= dim;
+      send_shift[rank_id] /= dim;
+      recv_shift[rank_id] /= dim;
+    }
+
+    send_shift[n_ranks] /= dim;
+
+    BFT_MALLOC(part_global_num, send_shift[n_ranks], fvm_gnum_t);
+
+    MPI_Alltoallv(block_global_num, recv_count, recv_shift, FVM_MPI_GNUM,
+                  part_global_num, send_count, send_shift, FVM_MPI_GNUM,
+                  comm);
+
+    for (rank_id = 0; rank_id < n_ranks; rank_id++)
+      send_count[rank_id] = 0;
+
+    for (i = 0; i < n_entities; i++) {
+      rank_id = c_rank[i];
+      shift = send_shift[rank_id] + send_count[rank_id];
+      this_io_num->_global_num[i] = part_global_num[shift];
+      send_count[rank_id] += 1;
+    }
+
+    /* Free memory */
+
+    BFT_FREE(c_rank);
+
+    BFT_FREE(block_global_num);
+    BFT_FREE(part_global_num);
+
+    BFT_FREE(send_count);
+    BFT_FREE(recv_count);
+    BFT_FREE(send_shift);
+    BFT_FREE(recv_shift);
+
+    /* Get final maximum global number value */
+
+    this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
+
+  }
+
+#endif /* HAVE_MPI */
+
+  if (n_ranks == 1) {
+
+    _check_morton_ordering(dim, n_entities, coords, m_code, order);
+
+    BFT_FREE(m_code);
+
+    for (i = 0; i < n_entities; i++)
+      this_io_num->_global_num[order[i]] = i+1;
+
+    BFT_FREE(order);
+
+    this_io_num->global_count = n_entities;
+
+  }
+
+  return this_io_num;
+}
+
+/*----------------------------------------------------------------------------
+ * Creation of an I/O numbering structure based on coordinates.
+ *
+ * The ordering is based on a Hilbert curve, and it is expected that
+ * entities are unique (i.e. not duplicated on 2 or more ranks).
+ * In the case that 2 entities have a same Hilbert code, their global
+ * number will be determined by lexicographical ordering of coordinates.
+ *
+ * parameters:
+ *   coords      <-- pointer to entity coordinates (interlaced)
+ *   dim         <-- spatial dimension
+ *   n_entities  <-- number of entities considered
+ *   box_to_cube <-- if 1, use bounding cube instead of bounding box
+ *
+ * returns:
+ *  pointer to I/O numbering structure
+ *----------------------------------------------------------------------------*/
+
+static fvm_io_num_t *
+_create_from_coords_hilbert(const fvm_coord_t  coords[],
+                            int                dim,
+                            size_t             n_entities,
+                            int                box_to_cube)
+{
+  size_t i;
+  fvm_coord_t extents[6];
+  fvm_lnum_t *order = NULL;
+
+#if defined(HAVE_MPI)
+  MPI_Comm comm = fvm_parall_get_mpi_comm();
+#endif
+
+  const int n_ranks = fvm_parall_get_size();
+
+  fvm_io_num_t  *this_io_num = NULL;
+
+  /* Create structure */
+
+  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+
+  this_io_num->global_num_size = n_entities;
+
+  BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
+  this_io_num->global_num = this_io_num->_global_num;
+
+  /* Build Hilbert encoding and order it */
+
+#if defined(HAVE_MPI)
+  fvm_hilbert_get_coord_extents(dim, n_entities, coords, extents, comm);
+#else
+  fvm_hilbert_get_coord_extents(dim, n_entities, coords, extents);
+#endif
+
+  _adjust_extents(extents, box_to_cube);
+
+  BFT_MALLOC(order, n_entities, fvm_lnum_t);
+
+#if defined(HAVE_MPI)
+
+  if (n_ranks > 1) {
+
+    int rank_id;
+    fvm_lnum_t j, shift;
+
+    size_t n_block_ents = 0;
+    fvm_gnum_t current_global_num = 0, global_num_shift = 0;
+    double fit = 0.;
+
+    int *c_rank = NULL;
+    int *send_count = NULL, *send_shift = NULL;
+    int *recv_count = NULL, *recv_shift = NULL;
+    fvm_coord_t *send_coords = NULL, *recv_coords = NULL;
+    fvm_lnum_t *weight = NULL;
+    fvm_gnum_t *block_global_num = NULL, *part_global_num = NULL;
+    fvm_hilbert_code_t *h_code = NULL;
+    fvm_hilbert_code_t *hilbert_index = NULL;
+
+    BFT_MALLOC(h_code, n_entities, fvm_hilbert_code_t);
+
+    fvm_hilbert_encode_coords(dim, extents, n_entities, coords, h_code);
+
+    fvm_hilbert_local_order(n_entities, h_code, order);
+
+    BFT_MALLOC(weight, n_entities, fvm_lnum_t);
+    BFT_MALLOC(hilbert_index, (n_ranks + 1)*3, fvm_hilbert_code_t);
+
+    for (i = 0; i < n_entities; i++)
+      weight[i] = 1;
+
+    fit = fvm_hilbert_build_rank_index(dim,
+                                       n_entities,
+                                       h_code,
+                                       weight,
+                                       order,
+                                       hilbert_index,
+                                       comm);
+
+    BFT_FREE(order);
+    BFT_FREE(weight);
+    BFT_MALLOC(c_rank, n_entities, int);
+
+    for (i = 0; i < n_entities; i++)
+      c_rank[i] = fvm_hilbert_quantile_search(n_ranks,
+                                              h_code[i],
+                                              hilbert_index);
+
+    BFT_FREE(hilbert_index);
+    BFT_FREE(h_code);
+
+    /* Build send_buf, send_count and send_shift
+       to build a rank to coords indexed list */
+
+    BFT_MALLOC(send_count, n_ranks, int);
+    BFT_MALLOC(recv_count, n_ranks, int);
+    BFT_MALLOC(send_shift, n_ranks + 1, int);
+    BFT_MALLOC(recv_shift, n_ranks + 1, int);
+
+    for (rank_id = 0; rank_id < n_ranks; rank_id++)
+      send_count[rank_id] = 0;
+
+    for (i = 0; i < n_entities; i++)
+      send_count[c_rank[i]] += dim;
+
+    /* Exchange number of coords to send to each process */
+
+    MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
+
+    send_shift[0] = 0;
+    recv_shift[0] = 0;
+    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
+      send_shift[rank_id + 1] = send_shift[rank_id] + send_count[rank_id];
+      recv_shift[rank_id + 1] = recv_shift[rank_id] + recv_count[rank_id];
+    }
+
+    /* Build send and receive buffers */
+
+    BFT_MALLOC(send_coords, send_shift[n_ranks], fvm_coord_t);
+
+    for (rank_id = 0; rank_id < n_ranks; rank_id++)
+      send_count[rank_id] = 0;
+
+    for (i = 0; i < n_entities; i++) {
+      rank_id = c_rank[i];
+      shift = send_shift[rank_id] + send_count[rank_id];
+      for (j = 0; j < dim; j++)
+        send_coords[shift + j] = coords[i*dim + j];
+      send_count[rank_id] += dim;
+    }
+
+    BFT_MALLOC(recv_coords, recv_shift[n_ranks], fvm_coord_t);
+
+    /* Exchange coords between processes */
+
+    MPI_Alltoallv(send_coords, send_count, send_shift, FVM_MPI_COORD,
+                  recv_coords, recv_count, recv_shift, FVM_MPI_COORD,
+                  comm);
+
+    BFT_FREE(send_coords);
+
+    /* Now re-order coords on block distribution */
+
+    n_block_ents = recv_shift[n_ranks] / dim;
+
+    BFT_MALLOC(order, n_block_ents, fvm_lnum_t);
+
+    fvm_hilbert_local_order_coords(dim,
+                                   extents,
+                                   n_block_ents,
+                                   recv_coords,
+                                   order);
+
+    /* Determine global order; requires ordering to loop through buffer by
+       increasing number (slice blocks associated with each process are
+       already sorted, but the whole "gathered" slice is not).
+       We build an initial global order based on the initial global numbering,
+       such that for each slice, the global number of an entity is equal to
+       the cumulative number of sub-entities */
+
+    BFT_FREE(recv_coords);
+    BFT_MALLOC(block_global_num, n_block_ents, fvm_gnum_t);
+
+    for (i = 0; i < n_block_ents; i++)
+      block_global_num[order[i]] = i+1;
+
+    BFT_FREE(order);
+
+    current_global_num = n_block_ents;
+
+    /* At this stage, block_global_num[] is valid for this process, and
+       current_global_num indicates the total number of entities handled
+       by this process; we must now shift global numberings on different
+       processes by the cumulative total number of entities handled by
+       each process */
+
+    MPI_Scan(&current_global_num, &global_num_shift, 1, FVM_MPI_GNUM,
+             MPI_SUM, comm);
+    global_num_shift -= current_global_num;
+
+    for (i = 0; i < n_block_ents; i++)
+      block_global_num[i] += global_num_shift;
+
+    /* Return global order to all processors */
+
+    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
+      send_count[rank_id] /= dim;
+      recv_count[rank_id] /= dim;
+      send_shift[rank_id] /= dim;
+      recv_shift[rank_id] /= dim;
+    }
+
+    send_shift[n_ranks] /= dim;
+
+    BFT_MALLOC(part_global_num, send_shift[n_ranks], fvm_gnum_t);
+
+    MPI_Alltoallv(block_global_num, recv_count, recv_shift, FVM_MPI_GNUM,
+                  part_global_num, send_count, send_shift, FVM_MPI_GNUM,
+                  comm);
+
+    for (rank_id = 0; rank_id < n_ranks; rank_id++)
+      send_count[rank_id] = 0;
+
+    for (i = 0; i < n_entities; i++) {
+      rank_id = c_rank[i];
+      shift = send_shift[rank_id] + send_count[rank_id];
+      this_io_num->_global_num[i] = part_global_num[shift];
+      send_count[rank_id] += 1;
+    }
+
+    /* Free memory */
+
+    BFT_FREE(c_rank);
+
+    BFT_FREE(block_global_num);
+    BFT_FREE(part_global_num);
+
+    BFT_FREE(send_count);
+    BFT_FREE(recv_count);
+    BFT_FREE(send_shift);
+    BFT_FREE(recv_shift);
+
+    /* Get final maximum global number value */
+
+    this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
+
+  }
+
+#endif /* HAVE_MPI */
+
+  if (n_ranks == 1) {
+
+    fvm_hilbert_local_order_coords(dim,
+                                   extents,
+                                   n_entities,
+                                   coords,
+                                   order);
+
+    for (i = 0; i < n_entities; i++)
+      this_io_num->_global_num[order[i]] = i+1;
+
+    BFT_FREE(order);
+
+    this_io_num->global_count = n_entities;
+
+  }
+
+  return this_io_num;
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1667,274 +2266,45 @@ fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
 }
 
 /*----------------------------------------------------------------------------
- * Creation of an I/O numbering structure based on coordinates.
+ * Creation of an I/O numbering structure based on a space-filling curve.
  *
- * The ordering is based on a Morton code, and it is expected that
- * entities are unique (i.e. not duplicated on 2 or more ranks).
- * In the case that 2 entities have a same Morton code, their global
+ * It is expected that entities are unique (i.e. not duplicated on 2 or
+ * more ranks). If 2 entities have a same Morton codeor Hilbert, their global
  * number will be determined by lexicographical ordering of coordinates.
  *
  * parameters:
  *   coords     <-- pointer to entity coordinates (interlaced)
  *   dim        <-- spatial dimension
  *   n_entities <-- number of entities considered
+ *   sfc_type   <-- type of space-filling curve (Morton or Hilbert)
  *
  * returns:
  *  pointer to I/O numbering structure
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_coords(const fvm_coord_t  coords[],
-                              int                dim,
-                              size_t             n_entities)
+fvm_io_num_create_from_sfc(const fvm_coord_t  coords[],
+                           int                dim,
+                           size_t             n_entities,
+                           fvm_io_num_sfc_t   sfc_type)
 {
-  size_t  i;
-  fvm_coord_t extents[6];
-  fvm_lnum_t  *order = NULL;
-  fvm_morton_code_t *m_code = NULL;
-
-#if defined(HAVE_MPI)
-  MPI_Comm comm = fvm_parall_get_mpi_comm();
-#endif
-
-  const int level = sizeof(fvm_morton_int_t)*8 - 1;
-  const int n_ranks = fvm_parall_get_size();
-
   fvm_io_num_t  *this_io_num = NULL;
 
-  /* Create structure */
-
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
-
-  this_io_num->global_num_size = n_entities;
-
-  BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
-  this_io_num->global_num = this_io_num->_global_num;
-
-  /* Build Morton encoding and order it */
-
-#if defined(HAVE_MPI)
-  fvm_morton_get_coord_extents(dim, n_entities, coords, extents, comm);
-#else
-  fvm_morton_get_coord_extents(dim, n_entities, coords, extents);
-#endif
-
-  BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
-  BFT_MALLOC(order, n_entities, fvm_lnum_t);
-
-  fvm_morton_encode_coords(dim, level, extents, n_entities, coords, m_code);
-
-  fvm_morton_local_order(n_entities, m_code, order);
-
-#if defined(HAVE_MPI)
-
-  if (n_ranks > 1) {
-
-    int rank_id;
-    fvm_lnum_t j, shift;
-
-    size_t n_block_ents = 0;
-    fvm_gnum_t current_global_num = 0, global_num_shift = 0;
-    double fit = 0.;
-
-    int *c_rank = NULL;
-    int *send_count = NULL, *send_shift = NULL;
-    int *recv_count = NULL, *recv_shift = NULL;
-    fvm_coord_t *send_coords = NULL, *recv_coords = NULL;
-    fvm_lnum_t *weight = NULL;
-    fvm_gnum_t *block_global_num = NULL, *part_global_num = NULL;
-    fvm_morton_code_t *morton_index = NULL;
-
-    BFT_MALLOC(weight, n_entities, fvm_lnum_t);
-    BFT_MALLOC(morton_index, n_ranks + 1, fvm_morton_code_t);
-
-    for (i = 0; i < n_entities; i++)
-      weight[i] = 1;
-
-    fit = fvm_morton_build_rank_index(dim,
-                                      level,
-                                      n_entities,
-                                      m_code,
-                                      weight,
-                                      order,
-                                      morton_index,
-                                      comm);
-
-    BFT_FREE(order);
-    BFT_FREE(weight);
-    BFT_MALLOC(c_rank, n_entities, int);
-
-    for (i = 0; i < n_entities; i++)
-      c_rank[i] = fvm_morton_quantile_search(n_ranks,
-                                             m_code[i],
-                                             morton_index);
-
-    BFT_FREE(morton_index);
-    BFT_FREE(m_code);
-
-    /* Build send_buf, send_count and send_shift
-       to build a rank to coords indexed list */
-
-    BFT_MALLOC(send_count, n_ranks, int);
-    BFT_MALLOC(recv_count, n_ranks, int);
-    BFT_MALLOC(send_shift, n_ranks + 1, int);
-    BFT_MALLOC(recv_shift, n_ranks + 1, int);
-
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
-
-    for (i = 0; i < n_entities; i++)
-      send_count[c_rank[i]] += dim;
-
-    /* Exchange number of coords to send to each process */
-
-    MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-    send_shift[0] = 0;
-    recv_shift[0] = 0;
-    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
-      send_shift[rank_id + 1] = send_shift[rank_id] + send_count[rank_id];
-      recv_shift[rank_id + 1] = recv_shift[rank_id] + recv_count[rank_id];
-    }
-
-    /* Build send and receive buffers */
-
-    BFT_MALLOC(send_coords, send_shift[n_ranks], fvm_coord_t);
-
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
-
-    for (i = 0; i < n_entities; i++) {
-      rank_id = c_rank[i];
-      shift = send_shift[rank_id] + send_count[rank_id];
-      for (j = 0; j < dim; j++)
-        send_coords[shift + j] = coords[i*dim + j];
-      send_count[rank_id] += dim;
-    }
-
-    BFT_MALLOC(recv_coords, recv_shift[n_ranks], fvm_coord_t);
-
-    /* Exchange coords between processes */
-
-    MPI_Alltoallv(send_coords, send_count, send_shift, FVM_MPI_COORD,
-                  recv_coords, recv_count, recv_shift, FVM_MPI_COORD,
-                  comm);
-
-    BFT_FREE(send_coords);
-
-    /* Now re-build Morton codes on block distribution */
-
-    n_block_ents = recv_shift[n_ranks] / dim;
-
-    BFT_MALLOC(m_code, n_block_ents, fvm_morton_code_t);
-    BFT_MALLOC(order, n_block_ents, fvm_lnum_t);
-
-    fvm_morton_encode_coords(dim,
-                             level,
-                             extents,
-                             n_block_ents,
-                             recv_coords,
-                             m_code);
-
-    fvm_morton_local_order(n_block_ents, m_code, order);
-
-    /* Check ordering; if two entities have the same Morton codes,
-       use lexicographical coordinates ordering to ensure the
-       final order is deterministic. */
-
-    _check_morton_ordering(dim, n_block_ents, recv_coords, m_code, order);
-
-    /* Determine global order; requires ordering to loop through buffer by
-       increasing number (slice blocks associated with each process are
-       already sorted, but the whole "gathered" slice is not).
-       We build an initial global order based on the initial global numbering,
-       such that for each slice, the global number of an entity is equal to
-       the cumulative number of sub-entities */
-
-    BFT_FREE(m_code);
-    BFT_FREE(recv_coords);
-    BFT_MALLOC(block_global_num, n_block_ents, fvm_gnum_t);
-
-    for (i = 0; i < n_block_ents; i++)
-      block_global_num[order[i]] = i+1;
-
-    BFT_FREE(order);
-
-    current_global_num = n_block_ents;
-
-    /* At this stage, block_global_num[] is valid for this process, and
-       current_global_num indicates the total number of entities handled
-       by this process; we must now shift global numberings on different
-       processes by the cumulative total number of entities handled by
-       each process */
-
-    MPI_Scan(&current_global_num, &global_num_shift, 1, FVM_MPI_GNUM,
-             MPI_SUM, comm);
-    global_num_shift -= current_global_num;
-
-    for (i = 0; i < n_block_ents; i++)
-      block_global_num[i] += global_num_shift;
-
-    /* Return global order to all processors */
-
-    for (rank_id = 0; rank_id < n_ranks; rank_id++) {
-      send_count[rank_id] /= dim;
-      recv_count[rank_id] /= dim;
-      send_shift[rank_id] /= dim;
-      recv_shift[rank_id] /= dim;
-    }
-
-    send_shift[n_ranks] /= dim;
-
-    BFT_MALLOC(part_global_num, send_shift[n_ranks], fvm_gnum_t);
-
-    MPI_Alltoallv(block_global_num, recv_count, recv_shift, FVM_MPI_GNUM,
-                  part_global_num, send_count, send_shift, FVM_MPI_GNUM,
-                  comm);
-
-    for (rank_id = 0; rank_id < n_ranks; rank_id++)
-      send_count[rank_id] = 0;
-
-    for (i = 0; i < n_entities; i++) {
-      rank_id = c_rank[i];
-      shift = send_shift[rank_id] + send_count[rank_id];
-      this_io_num->_global_num[i] = part_global_num[shift];
-      send_count[rank_id] += 1;
-    }
-
-    /* Free memory */
-
-    BFT_FREE(c_rank);
-
-    BFT_FREE(block_global_num);
-    BFT_FREE(part_global_num);
-
-    BFT_FREE(send_count);
-    BFT_FREE(recv_count);
-    BFT_FREE(send_shift);
-    BFT_FREE(recv_shift);
-
-    /* Get final maximum global number value */
-
-    this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
-
-  }
-
-#endif /* HAVE_MPI */
-
-  if (n_ranks == 1) {
-
-    _check_morton_ordering(dim, n_entities, coords, m_code, order);
-
-    BFT_FREE(m_code);
-
-    for (i = 0; i < n_entities; i++)
-      this_io_num->_global_num[order[i]] = i+1;
-
-    BFT_FREE(order);
-
-    this_io_num->global_count = n_entities;
-
+  switch(sfc_type) {
+  case FVM_IO_NUM_SFC_MORTON_BOX:
+    this_io_num = _create_from_coords_morton(coords, dim, n_entities, 0);
+    break;
+  case FVM_IO_NUM_SFC_MORTON_CUBE:
+    this_io_num = _create_from_coords_morton(coords, dim, n_entities, 1);
+    break;
+  case FVM_IO_NUM_SFC_HILBERT_BOX:
+    this_io_num = _create_from_coords_hilbert(coords, dim, n_entities, 0);
+    break;
+  case FVM_IO_NUM_SFC_HILBERT_CUBE:
+    this_io_num = _create_from_coords_hilbert(coords, dim, n_entities, 1);
+    break;
+  default:
+    assert(0);
   }
 
   return this_io_num;

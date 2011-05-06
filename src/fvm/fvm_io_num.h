@@ -22,7 +22,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2009  EDF
+  Copyright (C) 2004-2010  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -73,9 +73,24 @@ extern "C" {
 
 typedef struct _fvm_io_num_t fvm_io_num_t;
 
+/* Space-filling curve types */
+
+typedef enum {
+
+  FVM_IO_NUM_SFC_MORTON_BOX,    /* Morton (Z) curve in bounding box */
+  FVM_IO_NUM_SFC_MORTON_CUBE,   /* Morton (Z) curve in bounding cube */
+  FVM_IO_NUM_SFC_HILBERT_BOX,   /* Peano-Hilbert curve in bounding box */
+  FVM_IO_NUM_SFC_HILBERT_CUBE,  /* Peano-Hilbert curve in bounding cube */
+
+} fvm_io_num_sfc_t;
+
 /*=============================================================================
  * Static global variables
  *============================================================================*/
+
+/* Names of space-filling curve types */
+
+extern const char  *fvm_io_num_sfc_type_name[];
 
 /*=============================================================================
  * Public function prototypes
@@ -193,26 +208,27 @@ fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
                              fvm_lnum_t        n_entities);
 
 /*----------------------------------------------------------------------------
- * Creation of an I/O numbering structure based on coordinates.
+ * Creation of an I/O numbering structure based on a space-filling curve.
  *
- * The ordering is based on a Morton code, and it is expected that
- * entities are unique (i.e. not duplicated on 2 or more ranks).
- * In the case that 2 entities have a same Morton code, their global
+ * It is expected that entities are unique (i.e. not duplicated on 2 or
+ * more ranks). If 2 entities have a same Morton codeor Hilbert, their global
  * number will be determined by lexicographical ordering of coordinates.
  *
  * parameters:
  *   coords     <-- pointer to entity coordinates (interlaced)
  *   dim        <-- spatial dimension
  *   n_entities <-- number of entities considered
+ *   sfc_type   <-- type of space-filling curve (Morton or Hilbert)
  *
  * returns:
  *  pointer to I/O numbering structure
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_coords(const fvm_coord_t  coords[],
-                              int                dim,
-                              size_t             n_entities);
+fvm_io_num_create_from_sfc(const fvm_coord_t  coords[],
+                           int                dim,
+                           size_t             n_entities,
+                           fvm_io_num_sfc_t   sfc_type);
 
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure based on a simple accumulation

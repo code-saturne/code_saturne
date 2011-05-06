@@ -100,7 +100,9 @@ class ScriptRunningModel(Model):
         """
         Set partition type.
         """
-        self.isInList(run, ('default', 'scotch', 'metis', 'morton sfc'))
+        self.isInList(run, ('default', 'scotch', 'metis',
+                            'morton sfc', 'morton sfc cube',
+                            'hilbert sfc', 'hilbert sfc cube'))
         if run == 'default':
             node = self.node_mgt.xmlGetNode('partition_type')
             if node:

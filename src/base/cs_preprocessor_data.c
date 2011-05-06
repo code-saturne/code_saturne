@@ -177,7 +177,8 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
-static cs_bool_t  _use_sfc = true;
+static cs_bool_t        _use_sfc = true;
+static fvm_io_num_sfc_t _sfc_type = FVM_IO_NUM_SFC_MORTON_BOX;
 
 static _mesh_reader_t *_cs_glob_mesh_reader = NULL;
 
@@ -1766,6 +1767,9 @@ _cell_rank_by_sfc(const _mesh_reader_t     *mr,
   fvm_io_num_t *cell_io_num = NULL;
   const fvm_gnum_t *cell_num = NULL;
 
+  bft_printf(_(" Partitioning by space-filling curve: %s.\n"),
+             fvm_io_num_sfc_type_name[_sfc_type]);
+
   n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
   block_size = mr->cell_bi.block_size;
   rank_step = mr->cell_bi.rank_step;
@@ -1774,7 +1778,10 @@ _cell_rank_by_sfc(const _mesh_reader_t     *mr,
 
   _precompute_cell_center(mr, cell_center, comm);
 
-  cell_io_num = fvm_io_num_create_from_coords(cell_center, 3, n_cells);
+  cell_io_num = fvm_io_num_create_from_sfc(cell_center,
+                                           3,
+                                           n_cells,
+                                           _sfc_type);
 
   BFT_FREE(cell_center);
 
@@ -3734,13 +3741,16 @@ _clean_groups(cs_mesh_t  *mesh)
  *
  * Fortran interface :
  *
- * SUBROUTINE ALGDOM (IOPT)
+ * subroutine algdom (iopt)
  * *****************
  *
- * INTEGER          IOPT        : <-> : Choice of the partitioning base
+ * integer          iopt        : <-> : choice of the partitioning base
  *                                        0: query
  *                                        1: initial numbering
- *                                        2: space-filling curve (default)
+ *                                        2: Morton curve (bounding box)
+ *                                        3: Morton curve (bounding cube)
+ *                                        4: Hilbert curve (bounding box)
+ *                                        5: Hilbert curve (bounding cube)
  *----------------------------------------------------------------------------*/
 
 void
@@ -3835,13 +3845,16 @@ CS_PROCF(ledevi, LEDEVI)(const cs_int_t   *ndim,
  * partitioning file is present.
  *
  *  0 : query
- *  1 : partition based on initial numbering
- *  2 : partition based on space-filling curve (default)
+ *  1 : based on initial numbering
+ *  2 : based on Morton space-filling curve in bounding box
+ *  3 : based on Morton space-filling curve in bounding cube
+ *  4 : based on Hilbert space-filling curve in bounding box
+ *  5 : based on Hilbert space-filling curve in bounding cube (default)
  *
  * choice <-- of partitioning algorithm.
  *
  * returns:
- *   1 or 2 according to the selected algorithm.
+ *   1 to 5 according to the selected algorithm.
  *----------------------------------------------------------------------------*/
 
 int
@@ -3849,21 +3862,23 @@ cs_preprocessor_data_part_choice(int choice)
 {
   int retval = 0;
 
-  if (choice < 0 || choice > 2)
+  if (choice < 0 || choice > 5)
     bft_error(__FILE__, __LINE__,0,
               _("The algorithm selection indicator for domain partitioning\n"
                 "can take the following values:\n"
-                "  1: partition based on initial numbering\n"
-                "  2: partition based on space-filling curve\n"
+                "  1:   partition based on initial numbering\n"
+                "  2-5: partition based on space-filling curve\n"
                 "and not %d."), choice);
 
   if (choice == 1)
     _use_sfc = false;
-  else if (choice == 2)
+  else if (choice >= 2) {
     _use_sfc = true;
+    _sfc_type = choice - 2;
+  }
 
   if (_use_sfc == true)
-    retval = 2;
+    retval = _sfc_type + 2;
   else
     retval = 1;
 

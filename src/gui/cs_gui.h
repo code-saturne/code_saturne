@@ -599,6 +599,16 @@ void CS_PROCF (memui1, MEMUI1) (const int *const ncharb);
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
+ * Return value of partitioning option.
+ *
+ * returns:
+ *   id of selected (or default) partitioning type (0-3)
+ *----------------------------------------------------------------------------*/
+
+int
+cs_gui_get_sfc_partition_type(void);
+
+/*-----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables
  *----------------------------------------------------------------------------*/
 

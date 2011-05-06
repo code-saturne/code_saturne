@@ -305,7 +305,10 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelPartitType.addItem(self.tr("Default"), 'default')
         self.modelPartitType.addItem(self.tr("Scotch"), 'scotch')
         self.modelPartitType.addItem(self.tr("Metis"), 'metis')
-        self.modelPartitType.addItem(self.tr("Morton curve"), 'morton sfc')
+        self.modelPartitType.addItem(self.tr("Morton curve (bounding box)"), 'morton sfc')
+        self.modelPartitType.addItem(self.tr("Morton curve (bounding cube)"), 'morton sfc cube')
+        self.modelPartitType.addItem(self.tr("Hilbert curve (bounding box)"), 'hilbert sfc')
+        self.modelPartitType.addItem(self.tr("Hilbert curve (bounding cube)"), 'hilbert sfc cube')
 
         self.modelCSOUT1.addItem(self.tr("to standard output"), 'stdout')
         self.modelCSOUT1.addItem(self.tr("to listing"), 'listing')
