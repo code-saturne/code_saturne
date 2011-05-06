@@ -2301,7 +2301,7 @@ cs_sles_initialize(void)
   cs_glob_sles_base_matrix
     = cs_matrix_create(cs_glob_sles_base_matrix_struct);
 
-  cs_glob_sles_native_matrix_struct
+  cs_glob_sles_native_matrix
     = cs_matrix_create(cs_glob_sles_native_matrix_struct);
 
 #if defined(HAVE_MPI)
