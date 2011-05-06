@@ -1854,7 +1854,7 @@ _gmres(const char             *var_name,
         /* compute h(k,i) = <w,vi> = <dk,vi> */
         _h_matrix[ii*krylov_size + kk]
           = _dot_product(n_rows, dk, (_krylov_vectors + kk*n_rows));
-        
+
         /* compute w = dk <- w - h(i,k)*vi */
         cblas_daxpy(n_rows,
                     -_h_matrix[ii*krylov_size+kk],
@@ -1867,7 +1867,7 @@ _gmres(const char             *var_name,
       _h_matrix[ii*krylov_size + ii + 1] = dot_prod;
 
       if (dot_prod < epsi) scaltest = 1;
-        
+
       if (   (l_iter + 1)%check_freq == 0
           || l_iter == krylov_size - 2
           || scaltest == 1) {
@@ -1880,9 +1880,9 @@ _gmres(const char             *var_name,
                            _givens_coeff,
                            l_old_iter,
                            l_iter + 1);
-                        
+
         l_old_iter = l_iter + 1;
-        
+
         /* solve diag sup system */
         _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
 
@@ -1902,7 +1902,7 @@ _gmres(const char             *var_name,
                     1);
 
 #else
-        
+
         for (jj = 0; jj < n_rows; jj++) {
           fk[jj] = cblas_ddot(l_iter + 1,
                               _krylov_vectors + jj,
@@ -1924,16 +1924,16 @@ _gmres(const char             *var_name,
 
         for (jj = 0; jj < n_rows; jj++)
           fk[jj] = vx[jj] + gk[jj];
-        
+
         cs_matrix_vector_multiply(rotation_mode, a, fk, bk);
-        
+
         /* compute residue = | Ax - b |_1 */
 
         residue = 0.;
         for (jj = 0; jj < n_rows; jj++)
           residue += pow(rhs[jj] - bk[jj], 2);
 
-#if defined(HAVE_MPI)        
+#if defined(HAVE_MPI)
 
         if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
           MPI_Allreduce(&residue, &_residue, 1, MPI_DOUBLE, MPI_SUM,
@@ -1950,7 +1950,7 @@ _gmres(const char             *var_name,
                                 n_iter,
                                 residue,
                                 convergence);
-        
+
       }
 
       n_iter++;
