@@ -158,13 +158,27 @@ def main(argv, pkg):
         print(run_id)
         return 0
 
+    # Use alternate compute (back-end) package if defined
+
+    config = ConfigParser.ConfigParser()
+    config.read([pkg.get_configfile()])
+
+    pkg_compute = None
+    if config.has_option('install', 'compute_versions'):
+        compute_versions = config.get('install', 'compute_versions').split(':')
+        if compute_versions[0]:
+            pkg_compute = pkg.get_alternate_version(compute_versions[0])
+
     # Values in case and associated domain set from parameters
 
-    d = cs_case_domain.domain(pkg, param=param)
+    d = cs_case_domain.domain(pkg, package_compute=pkg_compute, param=param)
 
     # Now handle case for the corresponding calculation domain(s).
 
-    c = cs_case.case(pkg, casedir, d)
+    c = cs_case.case(pkg,
+                     package_compute=pkg_compute,
+                     case_dir=casedir,
+                     domains=d)
 
     # Now run case
 

@@ -21,13 +21,13 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
+import ConfigParser
 import os
 import os.path
 import sys
 
 import cs_config
 
-from cs_exec_environment import *
 from cs_case_domain import *
 from cs_case import *
 
@@ -80,6 +80,17 @@ def coupling(package,
     use_syrthes = False
     use_neptune = False
 
+    # Use alternate compute (back-end) package if defined
+
+    config = ConfigParser.ConfigParser()
+    config.read([package.get_configfile()])
+
+    package_compute = None
+    if config.has_option('install', 'compute_versions'):
+        compute_versions = config.get('install', 'compute_versions').split(':')
+        if compute_versions[0]:
+            package_compute = pkg.get_alternate_version(compute_versions[0])
+
     # Initialize code domains
     sat_domains = []
     syr_domains = []
@@ -109,6 +120,7 @@ def coupling(package,
                 raise RunCaseError(err_str)
 
             dom = domain(package,
+                         package_compute = package_compute,
                          name = d.get('domain'),
                          param = param,
                          n_procs_weight = d.get('n_procs_weight'),
@@ -171,6 +183,7 @@ def coupling(package,
                 raise RunCaseError(err_str)
 
             dom = domain(package,
+                         package_compute = package_compute,
                          name = d.get('domain'),
                          param = param,
                          n_procs_weight = d.get('n_procs_weight'),
@@ -192,9 +205,10 @@ def coupling(package,
     # Now handle case for the corresponding calculation domain(s).
 
     c = case(package,
-             casedir,
-             sat_domains + nep_domains,
-             syr_domains)
+             package_compute = package_compute,
+             case_dir = casedir,
+             domains = sat_domains + nep_domains,
+             syr_domains = syr_domains)
 
     msg = ' Coupling execution between: \n'
     if use_saturne == True:

@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 2010 EDF S.A., France
+#     Copyright (C) 2010-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -55,11 +55,20 @@ class package:
         self.scratchdir = 'tmp_Saturne'
         self.srcdir = 'src_saturne'
 
+        self.cc="@CC@"
+        self.cxx="@CXX@"
+        self.fc="@FC@"
         self.ld = "@CS_LD@"
-        self.cppflags = "@CPPFLAGS@ @PLE_CPPFLAGS@"
-        self.ldflags = "@PLE_LDFLAGS@"
-        self.libs = "-lsaturne -lmei -lfvm_filters -lfvm -lbft @PLE_LIBS@"
+
+        self.cppflags = "-DHAVE_CONFIG_H @CS_CPPFLAGS@"
+        self.cflags="@CS_CFLAGS@"
+        self.cxxflags="@CS_CXXFLAGS@"
+        self.fcflags="@CS_FCFLAGS@"
+        self.fcmodinclude="@FCMODINCLUDE@"
+        self.ldflags = "@CS_LDFLAGS@"
+        self.libs = "-lsaturne -lmei -lfvm_filters -lfvm -lbft @CS_LIBS@"
         self.deplibs = "@LDFLAGS@ @LIBS@ @FCLIBS@"
+        self.rpath="@LDRPATH@"
 
         self.prefix = "@prefix@"
         self.exec_prefix = "@exec_prefix@"
@@ -75,6 +84,10 @@ class package:
         self.pdfdir = "@pdfdir@"
         self.sysconfdir = "@sysconfdir@"
         self.syrthes_prefix = "@syrthes_prefix@"
+
+        self.mpi_type = "@mpi_type@"
+        self.mpi_bindir = "@mpi_bindir@"
+        self.mpi_libdir = "@mpi_libdir@"
 
     def get_preprocessor(self):
 
@@ -110,5 +123,36 @@ class package:
 
         runcasedir = "@pkgdatadir@"
         return os.path.join(runcasedir, script)
+
+    def get_alternate_version(self, version):
+        """
+        Return alternate version package object
+        """
+
+        pkg = None
+
+        # Determine path (by absolute or local name)
+        pythondir = os.path.normpath(version)
+        prefix = os.path.normpath(self.exec_prefix)
+        if not os.path.isabs(pythondir):
+            if self.pkgpythondir.find(prefix) > -1:
+                postfix = self.pkgpythondir[len(prefix)+1:]
+                prefix = os.path.split(prefix)[0]
+                pythondir = os.path.normpath(os.path.join(prefix,
+                                                          version,
+                                                          postfix))
+
+        # load alternate package
+        if os.path.isdir(pythondir):
+            import sys
+            sys.path.insert(0, pythondir)
+            import cs_package
+            reload(cs_package)
+            pkg = cs_package.package()
+            sys.path.pop(0)
+        else:
+            raise ImportError("Alternative version '" + pythondir + "' not found.")
+
+        return pkg
 
 #-------------------------------------------------------------------------------

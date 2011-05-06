@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     # Syntax is as follows:
     #
-    # mpi_env = mpi_environment()
+    # mpi_env = mpi_environment(case.package_compute)
     #
     # Some fields may need to be modified in case of incorrect defaults
     # (due to the wide variety of MPI implementations and build options,

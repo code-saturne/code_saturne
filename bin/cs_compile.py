@@ -27,7 +27,7 @@ import tempfile
 
 from optparse import OptionParser
 
-from cs_config import build, build_syrthes
+from cs_config import build_syrthes
 
 from cs_exec_environment import run_command
 
@@ -66,6 +66,10 @@ def process_cmd_line(argv, pkg):
                       metavar="<dest_dir>",
                       help="choose executable file directory")
 
+    parser.add_option("--version", dest="version", type="string",
+                      metavar="<version>",
+                      help="select installed version")
+
     parser.add_option("--opt-libs", dest="opt_libs", type="string",
                       metavar="<libs>",
                       help="optional libraries")
@@ -79,6 +83,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(keep_going=False)
     parser.set_defaults(src_dir=os.getcwd())
     parser.set_defaults(dest_dir=os.getcwd())
+    parser.set_defaults(version="")
     parser.set_defaults(opt_libs="")
     parser.set_defaults(log_name=None)
     parser.set_defaults(link_syrthes=False)
@@ -104,11 +109,12 @@ def process_cmd_line(argv, pkg):
         sys.exit(1)
 
     return options.test_mode, options.force_link, options.keep_going, \
-           src_dir, dest_dir, options.opt_libs, options.link_syrthes
+           src_dir, dest_dir, options.version, options.opt_libs, \
+           options.link_syrthes
 
 #-------------------------------------------------------------------------------
 
-def so_dirs_path(flags):
+def so_dirs_path(flags, rpath):
     """
     Assemble path for shared libraries in nonstandard directories.
     """
@@ -120,7 +126,7 @@ def so_dirs_path(flags):
     for arg in args:
         if arg[0:2] == '-L' and arg[0:10] != '-L/usr/lib' and arg[0:6] != '-L/lib':
             if first == True:
-                retval = " " + build.rpath + ":" + arg[2:]
+                retval = " " + rpath + ":" + arg[2:]
                 first = False
             else:
                 retval = retval + ":" + arg[2:]
@@ -136,6 +142,8 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
     Compilation and link function.
     """
     retval = 0
+
+    # Determine executable name
 
     exec_name = pkg.solver
     if destdir != None:
@@ -160,14 +168,12 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
     for f in c_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = build.cc
+        cmd = pkg.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.includedir
         cmd = cmd + " " + pkg.cppflags
-        cmd = cmd + " -DHAVE_CONFIG_H"
-        cmd = cmd + " " + build.cppflags
-        cmd = cmd + " " + build.cflags
+        cmd = cmd + " " + pkg.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -175,14 +181,12 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
     for f in cxx_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = build.cxx
+        cmd = pkg.cxx
         if len(hxx_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.includedir
         cmd = cmd + " " + pkg.cppflags
-        cmd = cmd + " -DHAVE_CONFIG_H"
-        cmd = cmd + " " + build.cppflags
-        cmd = cmd + " " + build.cxxflags
+        cmd = cmd + " " + pkg.cxxflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -195,14 +199,14 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
     for f in f_files:
         if (retval != 0 and not keep_going):
             break
-        cmd = build.fc
+        cmd = pkg.fc
         cmd = cmd + " -I" + srcdir
-        if build.fcmodinclude != "-I":
-            cmd += " " + build.fcmodinclude + srcdir
+        if pkg.fcmodinclude != "-I":
+            cmd += " " + pkg.fcmodinclude + srcdir
         cmd = cmd + " -I" + pkg.includedir
-        if build.fcmodinclude != "-I":
-            cmd += " " + build.fcmodinclude + pkg.includedir
-        cmd = cmd + " " + build.fcflags
+        if pkg.fcmodinclude != "-I":
+            cmd += " " + pkg.fcmodinclude + pkg.includedir
+        cmd = cmd + " " + pkg.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -213,15 +217,12 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if (len(c_files) + len(cxx_files) + len(f_files)) > 0:
           cmd = cmd + " *.o"
         cmd = cmd + " -L" + pkg.libdir
-        cmd = cmd + " " + pkg.ldflags
-        cmd = cmd + " " + pkg.libs
         if optlibs != None:
             if len(optlibs) > 0:
                 cmd = cmd + " " + optlibs
-        cmd = cmd + " " + build.ldflags + " " + build.libs
-        cmd = cmd + " " + pkg.deplibs
-        if build.rpath != "":
-            cmd = cmd + " " + so_dirs_path(cmd)
+        cmd = cmd + " " + pkg.ldflags + " " + pkg.libs + " " + pkg.deplibs
+        if pkg.rpath != "":
+            cmd = cmd + " " + so_dirs_path(cmd, pkg.rpath)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
@@ -289,7 +290,7 @@ def compile_and_link_syrthes(pkg, srcdir, destdir,
 
     if retval == 0:
         # Link with Code_Saturne C compiler
-        cmd = build.cc
+        cmd = pkg.cc
         cmd = cmd + " -o " + exec_name
         if (len(f_files)) > 0:
           cmd = cmd + " *.o"
@@ -297,7 +298,7 @@ def compile_and_link_syrthes(pkg, srcdir, destdir,
         cmd = cmd + " -lsyrcs"
         cmd = cmd + " " + build_syrthes.ldflags
         cmd = cmd + " " + build_syrthes.libs
-        if build.rpath != "":
+        if pkg.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
@@ -323,8 +324,11 @@ def main(argv, pkg):
     Main function.
     """
 
-    test_mode, force_link, keep_going, \
-        src_dir, dest_dir, opt_libs, link_syrthes = process_cmd_line(argv, pkg)
+    test_mode, force_link, keep_going, src_dir, dest_dir, \
+        version, opt_libs, link_syrthes = process_cmd_line(argv, pkg)
+
+    if (version):
+        pkg = pkg.get_alternate_version(version)
 
     if test_mode == True:
         dest_dir = None

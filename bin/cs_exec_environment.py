@@ -31,8 +31,6 @@ python_version = sys.version[:3]
 
 from optparse import OptionParser
 
-from cs_config import mpi_lib
-
 #===============================================================================
 # Utility functions
 #===============================================================================
@@ -473,7 +471,7 @@ MPI_MPMD_execve     = (1<<3)
 
 class mpi_environment:
 
-    def __init__(self, resource_info=None, wdir = None):
+    def __init__(self, pkg, resource_info=None, wdir = None):
         """
         Returns MPI environment info.
         """
@@ -483,8 +481,8 @@ class mpi_environment:
         # but in the case of srun, which uses a -n<n_procs> instead
         # of -n <n_procs> syntax, setting it to ' -n' will be enough.
 
-        self.type = mpi_lib.type
-        self.bindir = mpi_lib.bindir
+        self.type = pkg.mpi_type
+        self.bindir = pkg.mpi_bindir
 
         self.gen_hostsfile = None
         self.del_hostsfile = None
@@ -504,7 +502,7 @@ class mpi_environment:
 
         init_method = self.__init_other__
 
-        if len(mpi_lib.type) > 0:
+        if len(pkg.mpi_type) > 0:
             mpi_env_by_type = {'MPICH2':self.__init_mpich2__,
                                'MPICH1':self.__init_mpich1__,
                                'OpenMPI':self.__init_openmpi__,
@@ -513,12 +511,12 @@ class mpi_environment:
                                'BGP_MPI':self.__init_bgp__,
                                'HP_MPI':self.__init_hp_mpi__,
                                'MPIBULL2':self.__init_mpibull2__}
-            if mpi_lib.type in mpi_env_by_type:
-                init_method = mpi_env_by_type[mpi_lib.type]
+            if pkg.mpi_type in mpi_env_by_type:
+                init_method = mpi_env_by_type[pkg.mpi_type]
 
         p = os.getenv('PATH').split(':')
-        if len(mpi_lib.bindir) > 0:
-            p.insert(0, mpi_lib.bindir)
+        if len(self.bindir) > 0:
+            p.insert(0, self.bindir)
 
         init_method(p, resource_info, wdir)
 
@@ -594,7 +592,7 @@ class mpi_environment:
                     elif basename == 'mpiexec.gforker':
                         pm = 'gforker'
                     # Set launcher name
-                    if d == mpi_lib.bindir:
+                    if d == self.bindir:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
@@ -615,7 +613,7 @@ class mpi_environment:
             # If a setup seems necessary, check paths
             if mpd_setup:
                 if os.path.isfile(os.path.join(d, 'mpdboot')):
-                    if d == mpi_lib.bindir:
+                    if d == self.bindir:
                         self.mpiboot = os.path.join(d, 'mpdboot')
                         self.mpihalt = os.path.join(d, 'mpdallexit')
                         mpdtrace = os.path.join(d, 'mpdtrace')
@@ -725,7 +723,7 @@ class mpi_environment:
             for name in launcher_names:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    if d == mpi_lib.bindir:
+                    if d == self.bindir:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
@@ -773,7 +771,7 @@ class mpi_environment:
             for name in launcher_names:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    if d == mpi_lib.bindir:
+                    if d == self.bindir:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
@@ -833,7 +831,7 @@ class mpi_environment:
             for name in launcher_names:
                 absname = os.path.join(d, name)
                 if os.path.isfile(absname):
-                    if d == mpi_lib.bindir:
+                    if d == self.bindir:
                         self.mpiexec = absname
                     else:
                         self.mpiexec = name
@@ -842,7 +840,7 @@ class mpi_environment:
                 break
 
         if os.path.isfile(os.path.join(d, 'lamboot')):
-            if d == mpi_lib.bindir:
+            if d == self.bindir:
                 self.mpiboot = os.path.join(d, 'lamboot')
                 self.mpihalt = os.path.join(d, 'lamhalt')
             else:
@@ -950,7 +948,7 @@ class mpi_environment:
             if not os.path.isabs(self.mpiexec):
                 absname = os.path.join(d, self.mpiexec)
                 if os.path.isfile(absname):
-                    if d == mpi_lib.bindir:
+                    if d == self.bindir:
                         self.mpiexec = absname
                     break
 
@@ -1062,7 +1060,7 @@ class exec_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, wdir=None, n_procs=None):
+    def __init__(self, pkg, wdir=None, n_procs=None):
         """
         Returns Execution environment.
         """
@@ -1083,15 +1081,17 @@ class exec_environment:
         # Associate default launcher and associated options based on
         # known MPI types, use default otherwise
 
-        self.mpi_env = mpi_environment(self.resources, wdir)
+        self.mpi_env = mpi_environment(pkg, self.resources, wdir)
 
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
 
-    e = exec_environment()
+    import cs_package
+    pkg = cs_package.package()
+    e = exec_environment(pkg)
 
-    mpi_env = mpi_environment()
+    mpi_env = mpi_environment(pkg)
 
     print('mpi_env.bindir =        ', mpi_env.bindir)
     print('mpi_env.mpiexec =       ', mpi_env.mpiexec)

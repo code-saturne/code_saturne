@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009-2010 EDF S.A., France
+#   Copyright (C) 2009-2011 EDF S.A., France
 #
 #   The Code_Saturne CFD tool is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -113,6 +113,19 @@ else
 CS_LD=$(CC)
 endif
 
+CSCPPFLAGS = $(PLE_CPPFLAGS) $(CGNS_CPPFLAGS) $(MED_CPPFLAGS) $(HDF5_CPPFLAGS) \
+$(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS) $(BLAS_CPPFLAGS)
+
+CSCFLAGS = $(CFLAGS) $(CFLAGS_DBG) $(CFLAGS_OPT)
+CSCXXFLAGS = $(CXXFLAGS) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
+CSFCFLAGS = $(FCFLAGS) $(FCFLAGS_DBG) $(FCFLAGS_OPT)
+
+CSLDFLAGS = $(PLE_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
+$(MPI_LDFLAGS) $(LIBXML2_LDFLAGS) $(BLAS_LDFLAGS)
+
+CSLIBS = $(PLE_LIBS) $(CGNS_LIBS) $(MED_LIBS) $(HDF5_LIBS) \
+$(MPI_LIBS) $(LIBXML2_LIBS) $(BLAS_LIBS)
+
 edit_python = sed \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g'
@@ -132,18 +145,30 @@ edit_config = sed \
 	-e 's|@pdfdir[@]|$(pdfdir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
 	-e 's|@syrthes_prefix[@]|$(syrthes_prefix)|g' \
+	-e 's|@mpi_type[@]|$(mpi_type)|g' \
+	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \
+	-e 's|@mpi_libdir[@]|$(mpi_libdir)|g' \
 	-e 's|@CC[@]|$(CC)|g' \
 	-e 's|@CS_LD[@]|$(CS_LD)|g' \
-	-e 's|@PYTHON[@]|$(PYTHON)|g' \
-	-e 's|@PYUIC4[@]|$(PYUIC4)|g' \
-	-e 's|@PYRCC4[@]|$(PYRCC4)|g' \
+	-e 's|@CXX[@]|$(CXX)|g' \
+	-e 's|@FC[@]|$(FC)|g' \
+	-e 's|@CS_CPPFLAGS[@]|$(CSCPPFLAGS)|g' \
+	-e 's|@CS_CFLAGS[@]|$(CSCFLAGS)|g' \
+	-e 's|@CS_CXXFLAGS[@]|$(CSCXXFLAGS)|g' \
+	-e 's|@CS_FCFLAGS[@]|$(CSFCFLAGS)|g' \
+	-e 's|@CS_LDFLAGS[@]|$(CSLDFLAGS)|g' \
+	-e 's|@CS_LIBS[@]|$(CSLIBS)|g' \
 	-e 's|@PLE_CPPFLAGS[@]|$(PLE_CPPFLAGS)|g' \
 	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
 	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \
-	-e 's|@CPPFLAGS[@]|$(CPPFLAGS)|g' \
 	-e 's|@LDFLAGS[@]|$(LDFLAGS)|g' \
 	-e 's|@LIBS[@]|$(LIBS)|g' \
 	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
+	-e 's|@FCMODINCLUDE[@]|$(FCMODINCLUDE)|g' \
+	-e 's|@LDRPATH[@]|$(LDRPATH)|g' \
+	-e 's|@PYTHON[@]|$(PYTHON)|g' \
+	-e 's|@PYUIC4[@]|$(PYUIC4)|g' \
+	-e 's|@PYRCC4[@]|$(PYRCC4)|g' \
 	-e 's|@USE_NLS[@]|$(USE_NLS)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_TARNAME[@]|$(PACKAGE_TARNAME)|g' \

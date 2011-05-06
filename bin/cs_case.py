@@ -27,7 +27,6 @@ import os.path
 import sys
 import stat
 
-from cs_config import mpi_lib, build
 import cs_exec_environment
 
 from cs_case_domain import *
@@ -68,14 +67,20 @@ class case:
     #---------------------------------------------------------------------------
 
     def __init__(self,
-                 package,
-                 case_dir,
-                 domains,
+                 package,                     # main package
+                 package_compute = None,      # package for compute environment
+                 case_dir = None,
+                 domains = None,
                  syr_domains = None):
 
         # Package specific information
 
         self.package = package
+
+        if package_compute:
+            self.package_compute = package_compute
+        else:
+            self.package_compute = self.package
 
         # Ensure we have tuples or lists to simplify later tests
 
@@ -506,14 +511,14 @@ class case:
             cmd += ' ' + arg
         s.write('  Command        : ' + cmd + '\n')
         s.write(dhline)
-        s.write('  Solver path    : ' + self.package.exec_prefix + '\n')
+        s.write('  Package path   : ' + self.package.exec_prefix + '\n')
         s.write(hline)
         if homard_prefix != None:
             s.write('  HOMARD          : ' + homard_prefix + '\n')
             s.write(hline)
-        s.write('  MPI path       : ' + mpi_lib.bindir + '\n')
-        if len(mpi_lib.type) > 0:
-            s.write('  MPI type       : ' + mpi_lib.type + '\n')
+        s.write('  MPI path       : ' + self.package_compute.mpi_bindir + '\n')
+        if len(self.package.mpi_type) > 0:
+            s.write('  MPI type       : ' + self.package_compute.mpi_type + '\n')
         s.write(hline)
         s.write('  User           : ' + exec_env.user  + '\n')
         s.write(hline)
@@ -638,10 +643,10 @@ class case:
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
-        if len(mpi_lib.bindir) > 0:
-            s.write('export PATH='+ mpi_lib.bindir + ':$PATH\n')
-        if len(mpi_lib.libdir) > 0:
-            s.write('export LD_LIBRARY_PATH='+ mpi_lib.libdir \
+        if len(self.package_compute.mpi_bindir) > 0:
+            s.write('export PATH='+ self.package_compute.mpi_bindir + ':$PATH\n')
+        if len(self.package_compute.mpi_libdir) > 0:
+            s.write('export LD_LIBRARY_PATH='+ self.package_compute.mpi_libdir \
                         + ':$LD_LIBRARY_PATH\n')
         s.write('\n')
 
@@ -952,7 +957,7 @@ class case:
 
         e.close()
 
-        cmd = build.cc + ' -o ' + o_path + ' -g ' + e_path
+        cmd = self.package.cc + ' -o ' + o_path + ' -g ' + e_path
 
         sys.stdout.write('\n'
                          'Generating MPMD launcher:\n\n')
@@ -1030,10 +1035,10 @@ fi
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
-        if len(mpi_lib.bindir) > 0:
-            s.write('export PATH='+ mpi_lib.bindir + ':$PATH\n')
-        if len(mpi_lib.libdir) > 0:
-            s.write('export LD_LIBRARY_PATH='+ mpi_lib.libdir \
+        if len(self.package_compute.mpi_bindir) > 0:
+            s.write('export PATH='+ self.package_compute.mpi_bindir + ':$PATH\n')
+        if len(self.package_compute.mpi_libdir) > 0:
+            s.write('export LD_LIBRARY_PATH='+ self.package_compute.mpi_libdir \
                         + ':$LD_LIBRARY_PATH\n')
         s.write('\n')
 
@@ -1248,7 +1253,8 @@ fi
 
         # Determine execution environment.
 
-        exec_env = cs_exec_environment.exec_environment(self.exec_dir,
+        exec_env = cs_exec_environment.exec_environment(self.package_compute,
+                                                        self.exec_dir,
                                                         n_procs)
 
         # Set user MPI environment if required.

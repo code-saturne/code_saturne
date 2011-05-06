@@ -82,7 +82,7 @@ class base_domain:
     #---------------------------------------------------------------------------
 
     def __init__(self,
-                 package,
+                 package,                 # main package
                  name = None,             # domain name
                  n_procs_weight = None,   # recommended number of processes
                  n_procs_min = 1,         # min. number of processes
@@ -342,7 +342,8 @@ class domain(base_domain):
     #---------------------------------------------------------------------------
 
     def __init__(self,
-                 package,
+                 package,                     # main package
+                 package_compute = None,      # package for compute environment
                  name = None,                 # domain name
                  n_procs_weight = None,       # recommended number of processes
                  n_procs_min = None,          # min. number of processes
@@ -350,6 +351,7 @@ class domain(base_domain):
                  n_procs_partition = None,    # n. processes for partitioner
                  logging_args = None,         # command-line options for logging
                  param = None,                # XML parameters file
+                 prefix = None,               # installation prefix
                  lib_add = None,              # linker command-line options
                  adaptation = None):          # HOMARD adaptation script
 
@@ -359,6 +361,13 @@ class domain(base_domain):
                              n_procs_min,
                              n_procs_max)
 
+        # Compute package if different from front-end
+
+        if package_compute:
+            self.package_compute = package_compute
+        else:
+            self.package_compute = self.package
+
         # Directories, and files in case structure
 
         self.restart_input = None
@@ -367,7 +376,7 @@ class domain(base_domain):
 
         # Default executable
 
-        self.solver_path = self.package.get_solver()
+        self.solver_path = self.package_compute.get_solver()
 
         # Preprocessor options
 
@@ -402,6 +411,7 @@ class domain(base_domain):
         self.user_input_files = None
         self.user_scratch_files = None
 
+        self.prefix = prefix
         self.lib_add = lib_add
 
         # MPI IO (if available: options are: 'off', 'eo', 'ip')
@@ -593,7 +603,7 @@ class domain(base_domain):
             log_name = os.path.join(self.exec_dir, 'compile.log')
             log = open(log_name, 'w')
 
-            retval = cs_compile.compile_and_link(self.package,
+            retval = cs_compile.compile_and_link(self.package_compute,
                                                  exec_src,
                                                  self.exec_dir,
                                                  self.lib_add,
@@ -605,10 +615,10 @@ class domain(base_domain):
 
             if retval == 0:
                 self.solver_path = os.path.join(self.exec_dir,
-                                                self.package.solver)
+                                                self.package_compute.solver)
             else:
                 # In case of error, copy source to results directory now,
-                # as no calculation is possible, then rais exception
+                # as no calculation is possible, then raise exception
                 for f in [self.package.srcdir, 'compile.log']:
                     self.copy_result(f)
                 raise RunCaseError('Compile or link error.')
@@ -855,7 +865,11 @@ class domain(base_domain):
 
         w_str = None
 
-        partitioner = self.package.get_partitioner()
+        if self.partition_n_procs < 2:
+            partitioner = self.package.get_partitioner()
+        else:
+            partitioner = self.package_compute.get_partitioner()
+
         if not os.path.isfile(partitioner):
             if self.n_procs > 1:
                 w_str = \
@@ -940,7 +954,7 @@ class domain(base_domain):
         # Working directory and executable path
 
         wd = self.exec_dir
-        exec_path = self.package.get_partitioner()
+        exec_path = self.package_compute.get_partitioner()
 
         # Build kernel command-line arguments
 

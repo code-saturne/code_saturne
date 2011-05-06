@@ -1,3 +1,18 @@
+* 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow selection of an alternate build for compute tasks.
+  modified files:
+    Makefile.am
+    bin/cs_case_coupling.py
+    bin/cs_case_domain.py
+    bin/cs_case.py
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/cs_exec_environment.py
+    bin/cs_package.py.in
+    bin/cs_run.py
+    bin/runcase_coupling.in
+    extras/code_saturne.cfg
+
 * 05/05/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Added GMRES to linear solvers.
   modified files:

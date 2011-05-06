@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne Kernel, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 2009-2010 EDF S.A., France
+#     Copyright (C) 2009-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -35,19 +35,6 @@ from optparse import OptionParser
 
 # Build tools, option, and libraries
 #-----------------------------------
-
-class build:
-    cc="@CC@"
-    cxx="@CXX@"
-    fc="@FC@"
-    cppflags="@CGNS_CPPFLAGS@ @HDF5_CPPFLAGS@ @MED_CPPFLAGS@ @MPI_CPPFLAGS@ @LIBXML2_CPPFLAGS@ @BLAS_CPPFLAGS@"
-    cflags="@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@"
-    cxxflags="@CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@"
-    fcflags="@FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@"
-    fcmodinclude="@FCMODINCLUDE@"
-    ldflags="@CGNS_LDFLAGS@ @MED_LDFLAGS@ @HDF5_LDFLAGS@ @MPI_LDFLAGS@ @LIBXML2_LDFLAGS@ @BLAS_LDFLAGS@"
-    libs="@CGNS_LIBS@ @MED_LIBS@ @HDF5_LIBS@ @MPI_LIBS@ @LIBXML2_LIBS@ @BLAS_LIBS@"
-    rpath="@LDRPATH@"
 
 class build_syrthes:
     cc="@SYRTHES_CC@"
@@ -217,15 +204,6 @@ class config:
         for lib in self.optlibs:
             self.libs[lib].print_config()
 
-
-# Optional MPI library info
-#--------------------------
-
-class mpi_lib:
-    type = "@mpi_type@"
-    bindir = "@mpi_bindir@"
-    libdir = "@mpi_libdir@"
-
 #-------------------------------------------------------------------------------
 
 def process_cmd_line(argv):
@@ -326,7 +304,7 @@ def process_cmd_line(argv):
 
 #-------------------------------------------------------------------------------
 
-def get_config():
+def get_config(pkg):
     """
     Get the configuration information.
     """
@@ -345,15 +323,15 @@ Compilers and associated options:
 """
 
     return msg \
-        % { 'cc':build.cc, 'cxx': build.cxx, 'fc':build.fc,
-            'cppflags':build.cppflags, 'cflags':build.cflags,
-            'cxxflags':build.cxxflags,
-            'fcflags':build.fcflags, 'ldflags':build.ldflags,
-            'libs':build.libs, 'rpath':build.rpath }
+        % { 'cc':pkg.cc, 'cxx': pkg.cxx, 'fc':pkg.fc,
+            'cppflags':pkg.cppflags, 'cflags':pkg.cflags,
+            'cxxflags':pkg.cxxflags,
+            'fcflags':pkg.fcflags, 'ldflags':pkg.ldflags,
+            'libs':pkg.libs, 'rpath':pkg.rpath }
 
 #-------------------------------------------------------------------------------
 
-def get_config_mpi():
+def get_config_mpi(pkg):
     """
     Get the configuration information.
     """
@@ -365,8 +343,8 @@ MPI library information:
 """
 
     return msg \
-        % { 'mpi_type':mpi_lib.type, 'mpi_bindir':mpi_lib.bindir,
-            'mpi_libdir':mpi_lib.libdir }
+        % { 'mpi_type':pkg.mpi_type, 'mpi_bindir':pkg.mpi_bindir,
+            'mpi_libdir':pkg.mpi_libdir }
 
 #-------------------------------------------------------------------------------
 # Main
@@ -377,7 +355,7 @@ def get_config_syrthes():
     Get the configuration information.
     """
     msg = """\
-Compilers and associated options for SYRTHES build:
+Compilers and associated options for SYRTHES pkg:
   cc = %(cc)s
   fc = %(fc)s
   cppflags = %(cppflags)s
@@ -388,10 +366,10 @@ Compilers and associated options for SYRTHES build:
 """
 
     return msg \
-        % { 'cc':build_syrthes.cc, 'fc':build_syrthes.fc,
-            'cppflags':build_syrthes.cppflags, 'cflags':build_syrthes.cflags,
-            'fcflags':build_syrthes.fcflags, 'ldflags':build_syrthes.ldflags,
-            'libs':build_syrthes.libs }
+        % { 'cc':pkg_syrthes.cc, 'fc':build_syrthes.fc,
+            'cppflags':pkg_syrthes.cppflags, 'cflags':build_syrthes.cflags,
+            'fcflags':pkg_syrthes.fcflags, 'ldflags':build_syrthes.ldflags,
+            'libs':pkg_syrthes.libs }
 
 #-------------------------------------------------------------------------------
 
@@ -404,15 +382,15 @@ def main(argv, pkg):
 
     cfg = config()
 
-    if opts.print_cc  == True: print(build.cc)
-    if opts.print_cxx == True: print(build.cxx)
-    if opts.print_fc  == True: print(build.fc)
+    if opts.print_cc  == True: print(pkg.cc)
+    if opts.print_cxx == True: print(pkg.cxx)
+    if opts.print_fc  == True: print(pkg.fc)
 
-    if opts.print_cflags   == True: print(build.cflags)
-    if opts.print_cxxflags == True: print(build.cxxflags)
-    if opts.print_fcflags  == True: print(build.fcflags)
+    if opts.print_cflags   == True: print(pkg.cflags)
+    if opts.print_cxxflags == True: print(pkg.cxxflags)
+    if opts.print_fcflags  == True: print(pkg.fcflags)
 
-    if opts.print_rpath == True: print(build.rpath)
+    if opts.print_rpath == True: print(pkg.rpath)
 
     if opts.print_python  == True: print(cfg.python)
     if opts.print_pyuic4  == True: print(cfg.pyuic4)
@@ -424,37 +402,31 @@ def main(argv, pkg):
 
     if opts.cppflags is not None:
         if opts.cppflags == "saturne":
-            import cs_package
-            pkg = cs_package.package()
-            print(pkg.cppflags + "-I" + pkg.includedir)
+            print("@CPPFLAGS@ @PLE_CPPFLAGS@ -I" + pkg.includedir)
         else:
             print(cfg.libs[opts.cppflags].cppflags)
 
     if opts.ldflags is not None:
         if opts.ldflags == "saturne":
-            import cs_package
-            pkg = cs_package.package()
-            print(pkg.ldflags + "-L" + pkg.libdir)
+            print("@PLE_LDFLAGS@ -L" + pkg.libdir)
         else:
             print(cfg.libs[opts.ldflags].ldflags)
 
     if opts.libs is not None:
         if opts.libs == "saturne":
-            import cs_package
-            pkg = cs_package.package()
-            print(pkg.libs)
+            print("-lsaturne -lmei -lfvm_filters -lfvm -lbft @PLE_LIBS@")
         else:
             print(cfg.libs[opts.libs].libs)
 
     if opts.deplibs is not None:
         if opts.deplibs == "saturne":
-            import cs_package
-            pkg = cs_package.package()
-            print(pkg.deplibs)
+            print("@LDFLAGS@ @LIBS@ @FCLIBS@")
         else:
             print(cfg.libs[opts.deplibs].deplibs)
 
 if __name__ == '__main__':
     import sys
+    import cs_package
+    pkg = cs_package.package()
     main(sys.argv[1:], pkg)
 
