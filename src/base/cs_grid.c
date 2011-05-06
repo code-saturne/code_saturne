@@ -179,7 +179,8 @@ struct _cs_grid_t {
 
   cs_real_t        *xa0ij;
 
-  cs_matrix_t      *matrix;         /* Associated matrix structure */
+  cs_matrix_structure_t   *matrix_struct;  /* Associated matrix structure */
+  cs_matrix_t             *matrix;         /* Associated matrix */
 
 #if defined(HAVE_MPI)
 
@@ -2283,16 +2284,18 @@ cs_grid_create_from_shared(fvm_lnum_t             n_cells,
                                                     - cell_cen[ii*3 + kk]);
   }
 
-  g->matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                               true,
-                               false, /* No periodicity here yet */
-                               n_cells,
-                               n_cells_ext,
-                               n_faces,
-                               NULL,
-                               face_cell,
-                               halo,
-                               numbering);
+  g->matrix_struct = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                                true,
+                                                n_cells,
+                                                n_cells_ext,
+                                                n_faces,
+                                                NULL,
+                                                face_cell,
+                                                halo,
+                                                numbering);
+
+
+  g->matrix = cs_matrix_create(g->matrix_struct);
 
   return g;
 }
@@ -2336,6 +2339,7 @@ cs_grid_destroy(cs_grid_t **grid)
     BFT_FREE(g->xa0ij);
 
     cs_matrix_destroy(&(g->matrix));
+    cs_matrix_structure_destroy(&(g->matrix_struct));
 
 #if defined(HAVE_MPI)
     BFT_FREE(g->merge_cell_idx);
@@ -2769,16 +2773,17 @@ cs_grid_coarsen(const cs_grid_t   *f,
   }
 #endif
 
-  c->matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                               true,
-                               false, /* No periodicity here yet */
-                               c->n_cells,
-                               c->n_cells_ext,
-                               c->n_faces,
-                               NULL,
-                               c->face_cell,
-                               c->halo,
-                               NULL);
+  c->matrix_struct = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                                true,
+                                                c->n_cells,
+                                                c->n_cells_ext,
+                                                c->n_faces,
+                                                NULL,
+                                                c->face_cell,
+                                                c->halo,
+                                                NULL);
+
+  c->matrix = cs_matrix_create(c->matrix_struct);
 
   /* Return new (coarse) grid */
 

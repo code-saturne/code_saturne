@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-05-04 18:33+0200\n"
+"POT-Creation-Date: 2011-05-06 15:22+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4134,15 +4134,14 @@ msgstr ""
 "x = sqrt(x)\n"
 "-----------\n"
 
-#, c-format
 msgid ""
 "\n"
-"Matrix construction / destruction (%s)\n"
-"---------------------------------\n"
+"Matrix structure construction / destruction (%s)\n"
+"------------------------------------------------\n"
 msgstr ""
 "\n"
-"Construction / Destruction d'une matrice (%s)\n"
-"----------------------------------------\n"
+"Construction / Destruction d'une structure de matrice (%s)\n"
+"-----------------------------------------------------\n"
 
 #, c-format
 msgid "  (calls: %d)\n"
@@ -4262,16 +4261,6 @@ msgstr "CSR, sym coeffs"
 #, c-format
 msgid ""
 "\n"
-"Phase %d:\n"
-"  "
-msgstr ""
-"\n"
-"Phase %d :\n"
-"  "
-
-#, c-format
-msgid ""
-"\n"
 "First face with boundary condition definition error\n"
 "  (out of %llu)\n"
 "  has boundary condition type %d, center (%g, %g, %g)\n"
@@ -4288,10 +4277,6 @@ msgstr "Faces avec erreur de C.L."
 
 msgid "Faces with valid B.C.'s"
 msgstr "Faces avec C.L. valides"
-
-#, c-format
-msgid "Phase %d, "
-msgstr "Phase %d,"
 
 msgid "BC type"
 msgstr "Type de CL"
@@ -6684,17 +6669,6 @@ msgstr "  Résolution sur le niveau le plus grossier\n"
 msgid "  Multigrid cycle: ascent\n"
 msgstr "  Cycle multigrille : remontée\n"
 
-msgid "Multigrid"
-msgstr "Multigrille"
-
-#, c-format
-msgid "Multigrid [%s]:\n"
-msgstr "Multigrille [%s]:\n"
-
-#, c-format
-msgid "Multigrid [%s]: cycle %4d\n"
-msgstr "Multigrille [%s] : cycle %4d\n"
-
 #, c-format
 msgid ""
 "\n"
@@ -6746,6 +6720,17 @@ msgstr ""
 "   nombre de maillages grossiers :                        %d\n"
 "   nombre de cellules dans le maillage le plus grossier : %llu\n"
 "\n"
+
+msgid "Multigrid"
+msgstr "Multigrille"
+
+#, c-format
+msgid "Multigrid [%s]:\n"
+msgstr "Multigrille [%s]:\n"
+
+#, c-format
+msgid "Multigrid [%s]: cycle %4d\n"
+msgstr "Multigrille [%s] : cycle %4d\n"
 
 msgid "vectorization"
 msgstr "vectorisation"
@@ -7510,6 +7495,9 @@ msgstr "Jacobi"
 
 msgid "Bi-CGstab"
 msgstr "Bi-CGstab"
+
+msgid "GMRES"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9663,3 +9651,15 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+
+#~ msgid ""
+#~ "\n"
+#~ "Phase %d:\n"
+#~ "  "
+#~ msgstr ""
+#~ "\n"
+#~ "Phase %d :\n"
+#~ "  "
+
+#~ msgid "Phase %d, "
+#~ msgstr "Phase %d,"

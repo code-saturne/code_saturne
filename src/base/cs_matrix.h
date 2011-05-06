@@ -73,6 +73,10 @@ typedef enum {
 
 } cs_matrix_type_t;
 
+/* Structure associated with opaque matrix structure object */
+
+typedef struct _cs_matrix_structure_t cs_matrix_structure_t;
+
 /* Structure associated with opaque matrix object */
 
 typedef struct _cs_matrix_t cs_matrix_t;
@@ -108,32 +112,56 @@ extern const char  *cs_matrix_type_fullname[];
  * connectivity argument is NULL, the matrix will be purely diagonal.
  *
  * parameters:
- *   type        --> Type of matrix considered
- *   have_diag   --> Indicates if the diagonal structure contains nonzeroes
- *   periodic    --> Indicates if periodicity is present
- *   n_cells     --> Local number of cells
- *   n_cells_ext --> Local number of cells + ghost cells sharing a face
- *   n_faces     --> Local number of internal faces
- *   cell_num    --> Global cell numbers (1 to n)
- *   face_cell   --> Face -> cells connectivity (1 to n)
- *   halo        --> Halo structure associated with cells, or NULL
- *   numbering   --> vectorization or thread-related numbering info, or NULL
+ *   type        <-- Type of matrix considered
+ *   have_diag   <-- Indicates if the diagonal structure contains nonzeroes
+ *   n_cells     <-- Local number of cells
+ *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
+ *   n_faces     <-- Local number of internal faces
+ *   cell_num    <-- Global cell numbers (1 to n)
+ *   face_cell   <-- Face -> cells connectivity (1 to n)
+ *   halo        <-- Halo structure associated with cells, or NULL
+ *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ *
+ * returns:
+ *   pointer to created matrix structure;
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_structure_t *
+cs_matrix_structure_create(cs_matrix_type_t       type,
+                           cs_bool_t              have_diag,
+                           cs_int_t               n_cells,
+                           cs_int_t               n_cells_ext,
+                           cs_int_t               n_faces,
+                           const fvm_gnum_t      *cell_num,
+                           const cs_int_t        *face_cell,
+                           const cs_halo_t       *halo,
+                           const cs_numbering_t  *numbering);
+
+/*----------------------------------------------------------------------------
+ * Destroy a matrix structure.
+ *
+ * parameters:
+ *   ms <-> Pointer to matrix structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_structure_destroy(cs_matrix_structure_t  **ms);
+
+/*----------------------------------------------------------------------------
+ * Create a matrix container using a given structure.
+ *
+ * Note that the matrix container maps to the assigned structure,
+ * so it must be destroyed before that structure.
+ *
+ * parameters:
+ *   ms <-- Associated matrix structure
  *
  * returns:
  *   pointer to created matrix structure;
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t *
-cs_matrix_create(cs_matrix_type_t       type,
-                 cs_bool_t              have_diag,
-                 cs_bool_t              periodic,
-                 cs_int_t               n_cells,
-                 cs_int_t               n_cells_ext,
-                 cs_int_t               n_faces,
-                 const fvm_gnum_t      *cell_num,
-                 const cs_int_t        *face_cell,
-                 const cs_halo_t       *halo,
-                 const cs_numbering_t  *numbering);
+cs_matrix_create(const cs_matrix_structure_t  *ms);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.

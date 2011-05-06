@@ -164,6 +164,9 @@ static cs_sles_info_t **cs_glob_sles_systems = NULL; /* System info array */
   products may not be amortized).
 */
 
+cs_matrix_structure_t *cs_glob_sles_base_matrix_struct = NULL;
+cs_matrix_structure_t *cs_glob_sles_native_matrix_struct = NULL;
+
 cs_matrix_t *cs_glob_sles_base_matrix = NULL;
 cs_matrix_t *cs_glob_sles_native_matrix = NULL;
 
@@ -2270,34 +2273,36 @@ void
 cs_sles_initialize(void)
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_bool_t  periodic = false;
 
   assert(mesh != NULL);
 
-  if (mesh->n_init_perio > 0)
-    periodic = true;
+  cs_glob_sles_base_matrix_struct
+    = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                 true,
+                                 mesh->n_cells,
+                                 mesh->n_cells_with_ghosts,
+                                 mesh->n_i_faces,
+                                 mesh->global_cell_num,
+                                 mesh->i_face_cells,
+                                 mesh->halo,
+                                 mesh->i_face_numbering);
 
-  cs_glob_sles_base_matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                                              true,
-                                              periodic,
-                                              mesh->n_cells,
-                                              mesh->n_cells_with_ghosts,
-                                              mesh->n_i_faces,
-                                              mesh->global_cell_num,
-                                              mesh->i_face_cells,
-                                              mesh->halo,
-                                              mesh->i_face_numbering);
+  cs_glob_sles_native_matrix_struct
+    = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                 true,
+                                 mesh->n_cells,
+                                 mesh->n_cells_with_ghosts,
+                                 mesh->n_i_faces,
+                                 mesh->global_cell_num,
+                                 mesh->i_face_cells,
+                                 mesh->halo,
+                                 mesh->i_face_numbering);
 
-  cs_glob_sles_native_matrix = cs_matrix_create(CS_MATRIX_NATIVE,
-                                                true,
-                                                periodic,
-                                                mesh->n_cells,
-                                                mesh->n_cells_with_ghosts,
-                                                mesh->n_i_faces,
-                                                mesh->global_cell_num,
-                                                mesh->i_face_cells,
-                                                mesh->halo,
-                                                mesh->i_face_numbering);
+  cs_glob_sles_base_matrix
+    = cs_matrix_create(cs_glob_sles_base_matrix_struct);
+
+  cs_glob_sles_native_matrix_struct
+    = cs_matrix_create(cs_glob_sles_native_matrix_struct);
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
@@ -2332,6 +2337,9 @@ cs_sles_finalize(void)
 
   cs_matrix_destroy(&cs_glob_sles_native_matrix);
   cs_matrix_destroy(&cs_glob_sles_base_matrix);
+
+  cs_matrix_structure_destroy(&cs_glob_sles_native_matrix_struct);
+  cs_matrix_structure_destroy(&cs_glob_sles_base_matrix_struct);
 }
 
 #if defined(HAVE_MPI)

@@ -1,4 +1,14 @@
 * 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Separate matrix structure from container.
+  modified files:
+    po/fr.po
+    src/base/cs_benchmark.c
+    src/base/cs_grid.c
+    src/base/cs_matrix.c
+    src/base/cs_matrix.h
+    src/base/cs_sles.c
+
+* 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow normal exit of multigrid in case of detected divergence.
   modified files:
     src/base/cs_multigrid.c

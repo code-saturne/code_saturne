@@ -771,7 +771,7 @@ _matrix_creation_test(int                    n_runs,
   double wt, cpu;
   int    run_id;
 
-  cs_matrix_t  *m = NULL;
+  cs_matrix_structure_t  *ms = NULL;
 
   if (n_runs < 1)
     return;
@@ -781,24 +781,24 @@ _matrix_creation_test(int                    n_runs,
   _timer_start(&wt, &cpu);
 
   for (run_id = 0; run_id < n_runs; run_id++) {
-    m = cs_matrix_create(type,
-                         true,
-                         false,
-                         n_cells,
-                         n_cells_ext,
-                         n_faces,
-                         cell_num,
-                         face_cell,
-                         halo,
-                         numbering);
-    cs_matrix_destroy(&m);
+    ms = cs_matrix_structure_create(type,
+                                    true,
+                                    n_cells,
+                                    n_cells_ext,
+                                    n_faces,
+                                    cell_num,
+                                    face_cell,
+                                    halo,
+                                    numbering);
+    cs_matrix_structure_destroy(&ms);
   }
 
   _timer_stop(n_runs, &wt, &cpu);
 
   bft_printf(_("\n"
-               "Matrix construction / destruction (%s)\n"
-               "---------------------------------\n"), _(type_name));
+               "Matrix structure construction / destruction (%s)\n"
+               "------------------------------------------------\n"),
+             _(type_name));
 
   bft_printf(_("  (calls: %d)\n"), n_runs);
 
@@ -843,6 +843,7 @@ _matrix_assignment_test(int                    n_runs,
   double wt, cpu;
   int    run_id;
 
+  cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
 
   if (n_runs < 1)
@@ -850,16 +851,17 @@ _matrix_assignment_test(int                    n_runs,
 
   /* Count assignment overhead */
 
-  m = cs_matrix_create(type,
-                       true,
-                       false,
-                       n_cells,
-                       n_cells_ext,
-                       n_faces,
-                       cell_num,
-                       face_cell,
-                       halo,
-                       numbering);
+  ms = cs_matrix_structure_create(type,
+                                  true,
+                                  n_cells,
+                                  n_cells_ext,
+                                  n_faces,
+                                  cell_num,
+                                  face_cell,
+                                  halo,
+                                  numbering);
+
+  m = cs_matrix_create(ms);
 
   _timer_start(&wt, &cpu);
 
@@ -873,6 +875,7 @@ _matrix_assignment_test(int                    n_runs,
   _timer_stop(n_runs, &wt, &cpu);
 
   cs_matrix_destroy(&m);
+  cs_matrix_structure_destroy(&ms);
 
   bft_printf(_("\n"
                "Matrix value assignment (%s)\n"
@@ -928,6 +931,7 @@ _matrix_vector_test(int                    n_runs,
   long   n_ops, n_ops_glob;
 
   double test_sum = 0.0;
+  cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
 
   if (n_runs < 1)
@@ -941,16 +945,17 @@ _matrix_vector_test(int                    n_runs,
     n_ops_glob = (  cs_glob_mesh->n_g_cells
                   + cs_glob_mesh->n_g_i_faces*2);
 
-  m = cs_matrix_create(type,
-                       true,
-                       false,
-                       n_cells,
-                       n_cells_ext,
-                       n_faces,
-                       cell_num,
-                       face_cell,
-                       halo,
-                       numbering);
+  ms = cs_matrix_structure_create(type,
+                                  true,
+                                  n_cells,
+                                  n_cells_ext,
+                                  n_faces,
+                                  cell_num,
+                                  face_cell,
+                                  halo,
+                                  numbering);
+
+  m = cs_matrix_create(ms);
 
   cs_matrix_set_coefficients(m,
                              sym_coeffs,
@@ -1073,6 +1078,7 @@ _matrix_vector_test(int                    n_runs,
   /* (Matrix - diagonal).vector product */
 
   cs_matrix_destroy(&m);
+  cs_matrix_structure_destroy(&ms);
 
   n_ops = n_faces*2;
 
@@ -1082,16 +1088,17 @@ _matrix_vector_test(int                    n_runs,
     n_ops_glob = (  cs_glob_mesh->n_g_cells
                   + cs_glob_mesh->n_g_i_faces*2);
 
-  m = cs_matrix_create(type,
-                       false,
-                       false,
-                       n_cells,
-                       n_cells_ext,
-                       n_faces,
-                       cell_num,
-                       face_cell,
-                       halo,
-                       numbering);
+  ms = cs_matrix_structure_create(type,
+                                  false,
+                                  n_cells,
+                                  n_cells_ext,
+                                  n_faces,
+                                  cell_num,
+                                  face_cell,
+                                  halo,
+                                  numbering);
+
+  m = cs_matrix_create(ms);
 
   cs_matrix_set_coefficients(m,
                              sym_coeffs,
@@ -1122,6 +1129,7 @@ _matrix_vector_test(int                    n_runs,
   _print_stats(n_ops, n_ops_glob, wt, cpu);
 
   cs_matrix_destroy(&m);
+  cs_matrix_structure_destroy(&ms);
 
 }
 

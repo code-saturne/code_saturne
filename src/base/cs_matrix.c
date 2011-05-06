@@ -231,6 +231,7 @@ typedef struct _cs_matrix_struct_csr_t {
 
   /* Pointers to structure arrays and info (row_index, col_id) */
 
+  cs_bool_t         have_diag;        /* Has non-zero diagonal */
   cs_bool_t         direct_assembly;  /* True if each value corresponds to
                                          a unique face ; false if multiple
                                          faces contribute to the same
@@ -245,29 +246,6 @@ typedef struct _cs_matrix_struct_csr_t {
                                          direct access to diagonal terms */
 
 } cs_matrix_struct_csr_t;
-
-/* CSR_SYM (Symmetric Compressed Sparse Row) matrix structure representation */
-/*---------------------------------------------------------------------------*/
-
-typedef struct _cs_matrix_struct_csr_sym_t {
-
-  cs_int_t          n_rows;           /* Local number of rows */
-  cs_int_t          n_cols;           /* Local number of columns
-                                         (> n_rows in case of ghost cells) */
-  cs_int_t          n_cols_max;       /* Maximum number of nonzero values
-                                         on a given row */
-
-  /* Pointers to structure arrays and info (row_index, col_id) */
-
-  cs_bool_t         direct_assembly;  /* True if each value corresponds to
-                                         a unique face ; false if multiple
-                                         faces contribute to the same
-                                         value (i.e. we have split faces) */
-
-  cs_int_t         *row_index;        /* Row index (0 to n-1) */
-  cs_int_t         *col_id;           /* Column id (0 to n-1) */
-
-} cs_matrix_struct_csr_sym_t;
 
 /* CSR matrix coefficients representation */
 /*----------------------------------------*/
@@ -284,6 +262,30 @@ typedef struct _cs_matrix_coeff_csr_t {
 
 } cs_matrix_coeff_csr_t;
 
+/* CSR_SYM (Symmetric Compressed Sparse Row) matrix structure representation */
+/*---------------------------------------------------------------------------*/
+
+typedef struct _cs_matrix_struct_csr_sym_t {
+
+  cs_int_t          n_rows;           /* Local number of rows */
+  cs_int_t          n_cols;           /* Local number of columns
+                                         (> n_rows in case of ghost cells) */
+  cs_int_t          n_cols_max;       /* Maximum number of nonzero values
+                                         on a given row */
+
+  /* Pointers to structure arrays and info (row_index, col_id) */
+
+  cs_bool_t         have_diag;        /* Has non-zero diagonal */
+  cs_bool_t         direct_assembly;  /* True if each value corresponds to
+                                         a unique face ; false if multiple
+                                         faces contribute to the same
+                                         value (i.e. we have split faces) */
+
+  cs_int_t         *row_index;        /* Row index (0 to n-1) */
+  cs_int_t         *col_id;           /* Column id (0 to n-1) */
+
+} cs_matrix_struct_csr_sym_t;
+
 /* symmetric CSR matrix coefficients representation */
 /*--------------------------------------------------*/
 
@@ -293,15 +295,12 @@ typedef struct _cs_matrix_coeff_csr_sym_t {
 
 } cs_matrix_coeff_csr_sym_t;
 
-/* Structure associated with Matrix (representation-independent part) */
-/*--------------------------------------------------------------------*/
+/* Matrix structure (representation-independent part) */
+/*----------------------------------------------------*/
 
-struct _cs_matrix_t {
+struct _cs_matrix_structure_t {
 
   cs_matrix_type_t       type;         /* Matrix storage and definition type */
-
-  cs_bool_t              periodic;     /* Periodicity indicator */
-  cs_bool_t              have_diag;    /* Has non-zero diagonal */
 
   cs_int_t               n_cells;      /* Local number of cells */
   cs_int_t               n_cells_ext;  /* Local number of participating cells
@@ -309,14 +308,7 @@ struct _cs_matrix_t {
   cs_int_t               n_faces;      /* Local Number of mesh faces
                                           (necessary to affect coefficients) */
 
-  /* Pointer to possibly shared data */
-
-  const void            *structure;    /* Matrix structure */
-
-  /* Pointer to private data */
-
-  void                  *_structure;   /* Matrix structure */
-  void                  *coeffs;       /* Matrix coefficients */
+  void                  *structure;    /* Matrix structure */
 
   /* Pointers to shared arrays from mesh structure
      (face->cell connectivity for coefficient assignment,
@@ -328,6 +320,39 @@ struct _cs_matrix_t {
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
+};
+
+/* Structure associated with Matrix (representation-independent part) */
+/*--------------------------------------------------------------------*/
+
+struct _cs_matrix_t {
+
+  cs_matrix_type_t       type;         /* Matrix storage and definition type */
+
+  cs_int_t               n_cells;      /* Local number of cells */
+  cs_int_t               n_cells_ext;  /* Local number of participating cells
+                                          (cells + ghost cells sharing a face) */
+  cs_int_t               n_faces;      /* Local Number of mesh faces
+                                          (necessary to affect coefficients) */
+
+  /* Pointer to shared structure */
+
+  const void            *structure;    /* Matrix structure */
+
+  /* Pointers to shared arrays from mesh structure
+     (face->cell connectivity for coefficient assignment,
+     local->local cell numbering for future info or renumbering,
+     and halo) */
+
+  const cs_int_t        *face_cell;    /* Face -> cells connectivity (1 to n) */
+  const fvm_gnum_t      *cell_num;     /* Global cell numbers */
+  const cs_halo_t       *halo;         /* Parallel or periodic halo */
+  const cs_numbering_t  *numbering;    /* Vectorization or thread-related
+                                          numbering information */
+
+  /* Pointer to private data */
+
+  void                  *coeffs;       /* Matrix coefficients */
 
   /* Function pointers */
 
@@ -703,7 +728,7 @@ _set_coeffs_native(cs_matrix_t      *matrix,
 
   /* Map or copy values */
 
-  if (da != NULL && matrix->have_diag == true) {
+  if (da != NULL) {
 
     if (mc->_da == NULL)
       mc->da = da;
@@ -1412,7 +1437,6 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
  *
  * parameters:
  *   have_diag   <-- Indicates if the diagonal is nonzero
- *                   (forced to true for symmetric variant)
  *   n_cells     <-- Local number of participating cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of faces
@@ -1447,6 +1471,7 @@ _create_struct_csr(cs_bool_t         have_diag,
   ms->n_cols = n_cells_ext;
 
   ms->direct_assembly = true;
+  ms->have_diag = have_diag;
 
   BFT_MALLOC(ms->row_index, ms->n_rows + 1, cs_int_t);
   ms->row_index = ms->row_index;
@@ -1880,7 +1905,7 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 
   /* Copy diagonal values */
 
-  if (matrix->have_diag == true) {
+  if (ms->have_diag == true) {
 
     if (ms->diag_index == NULL) {
 
@@ -1985,7 +2010,7 @@ _get_diagonal_csr(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
 
-  if (matrix->have_diag == true) {
+  if (ms->have_diag == true) {
 
     if (ms->diag_index == NULL) {
 
@@ -2340,6 +2365,7 @@ _create_struct_csr_sym(cs_bool_t         have_diag,
   ms->n_rows = n_cells;
   ms->n_cols = n_cells_ext;
 
+  ms->have_diag = have_diag;
   ms->direct_assembly = true;
 
   BFT_MALLOC(ms->row_index, ms->n_rows + 1, cs_int_t);
@@ -2637,7 +2663,7 @@ _set_coeffs_csr_sym(cs_matrix_t      *matrix,
 
   /* Copy diagonal values */
 
-  if (matrix->have_diag == true) {
+  if (ms->have_diag == true) {
 
     const cs_int_t *_diag_index = ms->row_index;
 
@@ -2725,7 +2751,7 @@ _get_diagonal_csr_sym(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
 
-  if (matrix->have_diag == true) {
+  if (ms->have_diag == true) {
 
     /* As structure is symmetric, diagonal values appear first,
        so diag_index == row_index */
@@ -2920,7 +2946,6 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
  * parameters:
  *   type        <-- Type of matrix considered
  *   have_diag   <-- Indicates if the diagonal structure contains nonzeroes
- *   periodic    <-- Indicates if periodicity is present
  *   n_cells     <-- Local number of cells
  *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
  *   n_faces     <-- Local number of internal faces
@@ -2933,55 +2958,49 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
  *   pointer to created matrix structure;
  *----------------------------------------------------------------------------*/
 
-cs_matrix_t *
-cs_matrix_create(cs_matrix_type_t       type,
-                 cs_bool_t              have_diag,
-                 cs_bool_t              periodic,
-                 cs_int_t               n_cells,
-                 cs_int_t               n_cells_ext,
-                 cs_int_t               n_faces,
-                 const fvm_gnum_t      *cell_num,
-                 const cs_int_t        *face_cell,
-                 const cs_halo_t       *halo,
-                 const cs_numbering_t  *numbering)
+cs_matrix_structure_t *
+cs_matrix_structure_create(cs_matrix_type_t       type,
+                           cs_bool_t              have_diag,
+                           cs_int_t               n_cells,
+                           cs_int_t               n_cells_ext,
+                           cs_int_t               n_faces,
+                           const fvm_gnum_t      *cell_num,
+                           const cs_int_t        *face_cell,
+                           const cs_halo_t       *halo,
+                           const cs_numbering_t  *numbering)
 {
-  cs_matrix_t *m;
+  cs_matrix_structure_t *ms;
 
-  BFT_MALLOC(m, 1, cs_matrix_t);
+  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
 
-  m->type = type;
-  m->periodic = periodic;
-  m->have_diag = have_diag;
+  ms->type = type;
 
-  m->n_cells = n_cells;
-  m->n_cells_ext = n_cells_ext;
-  m->n_faces = n_faces;
+  ms->n_cells = n_cells;
+  ms->n_cells_ext = n_cells_ext;
+  ms->n_faces = n_faces;
 
   /* Define Structure */
 
-  switch(m->type) {
+  switch(ms->type) {
   case CS_MATRIX_NATIVE:
-    m->_structure = _create_struct_native(n_cells,
+    ms->structure = _create_struct_native(n_cells,
                                           n_cells_ext,
                                           n_faces,
                                           face_cell);
-    m->coeffs = _create_coeff_native();
     break;
   case CS_MATRIX_CSR:
-    m->_structure = _create_struct_csr(have_diag,
+    ms->structure = _create_struct_csr(have_diag,
                                        n_cells,
                                        n_cells_ext,
                                        n_faces,
                                        face_cell);
-    m->coeffs = _create_coeff_csr();
     break;
   case CS_MATRIX_CSR_SYM:
-    m->_structure = _create_struct_csr_sym(have_diag,
+    ms->structure = _create_struct_csr_sym(have_diag,
                                            n_cells,
                                            n_cells_ext,
                                            n_faces,
                                            face_cell);
-    m->coeffs = _create_coeff_csr_sym();
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -2991,14 +3010,115 @@ cs_matrix_create(cs_matrix_type_t       type,
     break;
   }
 
-  m->structure = m->_structure;
-
   /* Set pointers to structures shared from mesh here */
 
-  m->face_cell = face_cell;
-  m->cell_num = cell_num;
-  m->halo = halo;
-  m->numbering = numbering;
+  ms->face_cell = face_cell;
+  ms->cell_num = cell_num;
+  ms->halo = halo;
+  ms->numbering = numbering;
+
+  return ms;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a matrix structure.
+ *
+ * parameters:
+ *   ms <-> Pointer to matrix structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
+{
+  if (ms != NULL && *ms != NULL) {
+
+    cs_matrix_structure_t *_ms = *ms;
+
+    switch(_ms->type) {
+    case CS_MATRIX_NATIVE:
+      {
+        cs_matrix_struct_native_t *structure = _ms->structure;
+        _destroy_struct_native(&structure);
+      }
+      break;
+    case CS_MATRIX_CSR:
+      {
+        cs_matrix_struct_csr_t *structure = _ms->structure;
+        _destroy_struct_csr(&structure);
+      }
+      break;
+    case CS_MATRIX_CSR_SYM:
+      {
+        cs_matrix_struct_csr_sym_t *structure = _ms->structure;
+        _destroy_struct_csr_sym(&structure);
+      }
+      break;
+    default:
+      assert(0);
+      break;
+    }
+    _ms->structure = NULL;
+
+    /* Now free main structure */
+
+    BFT_FREE(*ms);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Create a matrix container using a given structure.
+ *
+ * Note that the matrix container maps to the assigned structure,
+ * so it must be destroyed before that structure.
+ *
+ * parameters:
+ *   ms <-- Associated matrix structure
+ *
+ * returns:
+ *   pointer to created matrix structure;
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create(const cs_matrix_structure_t  *ms)
+{
+  cs_matrix_t *m;
+
+  BFT_MALLOC(m, 1, cs_matrix_t);
+
+  m->type = ms->type;
+
+  /* Map shared structure */
+
+  m->n_cells = ms->n_cells;
+  m->n_cells_ext = ms->n_cells_ext;
+  m->n_faces = ms->n_faces;
+
+  m->structure = ms->structure;
+
+  m->face_cell = ms->face_cell;
+  m->cell_num = ms->cell_num;
+  m->halo = ms->halo;
+  m->numbering = ms->numbering;
+
+  /* Define coefficients */
+
+  switch(m->type) {
+  case CS_MATRIX_NATIVE:
+    m->coeffs = _create_coeff_native();
+    break;
+  case CS_MATRIX_CSR:
+    m->coeffs = _create_coeff_csr();
+    break;
+  case CS_MATRIX_CSR_SYM:
+    m->coeffs = _create_coeff_csr_sym();
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Handling of matrixes in %s format\n"
+                "is not operational yet."),
+              _(cs_matrix_type_name[m->type]));
+    break;
+  }
 
   /* Set function pointers here */
 
@@ -3085,34 +3205,30 @@ cs_matrix_destroy(cs_matrix_t **matrix)
     switch(m->type) {
     case CS_MATRIX_NATIVE:
       {
-        cs_matrix_struct_native_t *_structure = m->_structure;
         cs_matrix_coeff_native_t *coeffs = m->coeffs;
-        _destroy_struct_native(&_structure);
         _destroy_coeff_native(&coeffs);
-        m->structure = NULL; m->coeffs = NULL;
       }
       break;
     case CS_MATRIX_CSR:
       {
-        cs_matrix_struct_csr_t *_structure = m->_structure;
         cs_matrix_coeff_csr_t *coeffs = m->coeffs;
-        _destroy_struct_csr(&_structure);
         _destroy_coeff_csr(&coeffs);
-        m->structure = NULL; m->coeffs = NULL;
+        m->coeffs = NULL;
       }
       break;
     case CS_MATRIX_CSR_SYM:
       {
-        cs_matrix_struct_csr_sym_t *_structure = m->_structure;
         cs_matrix_coeff_csr_sym_t *coeffs = m->coeffs;
-        _destroy_struct_csr_sym(&_structure);
         _destroy_coeff_csr_sym(&coeffs);
-        m->structure = NULL; m->coeffs = NULL;
+        m->coeffs = NULL;
       }
       break;
     default:
+      assert(0);
       break;
     }
+
+    m->coeffs = NULL;
 
     /* Now free main structure */
 
@@ -3250,15 +3366,18 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
 
   /* Update distant ghost cells */
 
-  if (matrix->halo != NULL)
+  if (matrix->halo != NULL) {
+
     cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
 
-  /* Synchronize periodic values */
+    /* Synchronize periodic values */
 
-  if (matrix->periodic) {
-    if (rotation_mode == CS_PERIO_ROTA_IGNORE)
-      bft_error(__FILE__, __LINE__, 0, _cs_glob_perio_ignore_error_str);
-    cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
+    if (matrix->halo->n_transforms > 0) {
+      if (rotation_mode == CS_PERIO_ROTA_IGNORE)
+        bft_error(__FILE__, __LINE__, 0, _cs_glob_perio_ignore_error_str);
+      cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
+    }
+
   }
 
   /* Now call local matrix.vector product */
@@ -3324,15 +3443,18 @@ cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
 {
   /* Update distant ghost cells */
 
-  if (matrix->halo != NULL)
+  if (matrix->halo != NULL) {
+
     cs_halo_sync_var(matrix->halo, CS_HALO_STANDARD, x);
 
-  /* Synchronize periodic values */
+    /* Synchronize periodic values */
 
-  if (matrix->periodic) {
-    if (rotation_mode == CS_PERIO_ROTA_IGNORE)
-      bft_error(__FILE__, __LINE__, 0, _cs_glob_perio_ignore_error_str);
-    cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
+    if (matrix->halo->n_transforms > 0) {
+      if (rotation_mode == CS_PERIO_ROTA_IGNORE)
+        bft_error(__FILE__, __LINE__, 0, _cs_glob_perio_ignore_error_str);
+      cs_perio_sync_var_scal(matrix->halo, CS_HALO_STANDARD, rotation_mode, x);
+    }
+
   }
 
   /* Now call local matrix.vector product */
