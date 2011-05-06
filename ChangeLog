@@ -1,4 +1,10 @@
 * 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow normal exit of multigrid in case of detected divergence.
+  modified files:
+    src/base/cs_multigrid.c
+    src/base/cs_multigrid.h
+
+* 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow selection of an alternate build for compute tasks.
   modified files:
     Makefile.am

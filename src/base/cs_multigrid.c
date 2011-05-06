@@ -1028,6 +1028,7 @@ _abort_on_divergence(cs_multigrid_t    *mg,
  *   descent_smoother_type <-- Type of smoother for descent (PCG, Jacobi, ...)
  *   ascent_smoother_type  <-- Type of smoother for ascent (PCG, Jacobi, ...)
  *   coarse_solver_type    <-- Type of solver (PCG, Jacobi, ...)
+ *   abort_on_divergence   <-- Call errorhandler if devergence is detected
  *   symmetric             <-- Symmetric coefficients indicator
  *   poly_degree           <-- Preconditioning polynomial degree (0: diagonal)
  *   rotation_mode         <-- Halo update option for rotational periodicity
@@ -1046,7 +1047,7 @@ _abort_on_divergence(cs_multigrid_t    *mg,
  *   aux_size              <-- Number of elements in aux_vectors
  *   aux_vectors           --- Optional working area (allocation otherwise)
  *
- * Returns
+ * returns:
  *   1 if converged, 0 if not converged, -1 if not converged and maximum
  *   cycle number reached, -2 if divergence is detected.
  *----------------------------------------------------------------------------*/
@@ -1056,6 +1057,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                  cs_sles_type_t      descent_smoother_type,
                  cs_sles_type_t      ascent_smoother_type,
                  cs_sles_type_t      coarse_solver_type,
+                 cs_bool_t           abort_on_divergence,
                  cs_bool_t           symmetric,
                  int                 poly_degree,
                  cs_perio_rota_t     rotation_mode,
@@ -1233,13 +1235,12 @@ _multigrid_cycle(cs_multigrid_t     *mg,
     cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
 #endif
 
-    if (c_cvg == -2)
-      _abort_on_divergence(mg, level,
-                           symmetric, rotation_mode, cycle_id,
-                           _initial_residue, _residue,
-                           rhs, vx, _rhs, _vx);
-
     n_level_iter[level] += n_iter;
+
+    if (c_cvg == -2) {
+      end_cycle = true;
+      break;
+    }
 
     /* Restrict residue
        TODO: get residue from cs_sles_solve(). This optimisation would
@@ -1276,11 +1277,6 @@ _multigrid_cycle(cs_multigrid_t     *mg,
       /* If converged or cycle limit reached, break from descent loop */
 
       if (cvg != 0) {
-        if (cvg == -2)
-          _abort_on_divergence(mg, level,
-                               symmetric, rotation_mode, cycle_id,
-                               initial_residue, *residue,
-                               rhs, vx, _rhs, _vx);
         end_cycle = true;
         break;
       }
@@ -1356,13 +1352,14 @@ _multigrid_cycle(cs_multigrid_t     *mg,
     cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
 #endif
 
-    if (c_cvg == -2)
-      _abort_on_divergence(mg, level,
-                           symmetric, rotation_mode, cycle_id,
-                           _initial_residue, _residue,
-                           rhs, vx, _rhs, _vx);
-
     n_level_iter[level] += n_iter;
+
+    if (c_cvg == -2)
+      end_cycle = true;
+
+  }
+
+  if (end_cycle == false) {
 
     /* Ascent */
     /*--------*/
@@ -1437,18 +1434,21 @@ _multigrid_cycle(cs_multigrid_t     *mg,
         cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
 #endif
 
-        if (c_cvg == -2)
-          _abort_on_divergence(mg, level,
-                               symmetric, rotation_mode, cycle_id,
-                               _initial_residue, _residue,
-                               rhs, vx, _rhs, _vx);
-
         n_level_iter[level] += n_iter;
+
+        if (c_cvg == -2)
+          break;
       }
 
     } /* End loop on levels (ascent) */
 
-  } /* End of test on end_cycle */
+  } /* End of tests on end_cycle */
+
+  if (c_cvg == -2 && abort_on_divergence)
+    _abort_on_divergence(mg, level,
+                         symmetric, rotation_mode, cycle_id,
+                         _initial_residue, _residue,
+                         rhs, vx, _rhs, _vx);
 
   /* Free memory */
 
@@ -1462,225 +1462,6 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   BFT_FREE(_rhs_vx_val);
 
   return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Sparse linear system resolution using multigrid.
- *
- * parameters:
- *   var_name              <-- Variable name
- *   descent_smoother_type <-- Type of smoother for descent (PCG, Jacobi, ...)
- *   ascent_smoother_type  <-- Type of smoother for ascent (PCG, Jacobi, ...)
- *   coarse_solver_type    <-- Type of solver (PCG, Jacobi, ...)
- *   symmetric             <-- Symmetric coefficients indicator
- *   poly_degree           <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode         <-- Halo update option for rotational periodicity
- *   verbosity             <-- Verbosity level
- *   n_max_cycles          <-- Maximum number of cycles
- *   n_max_iter_descent    <-- Maximum nb. of iterations for descent phases
- *   n_max_iter_ascent     <-- Maximum nb. of iterations for ascent phases
- *   n_max_iter_coarse     <-- Maximum nb. of iterations for coarsest solution
- *   precision             <-- Precision limit
- *   r_norm                <-- Residue normalization
- *   n_cycles              --> Number of cycles
- *   n_iter                --> Number of iterations
- *   residue               <-> Residue
- *   rhs                   <-- Right hand side
- *   vx                    --> System solution
- *   aux_size              <-- Number of elements in aux_vectors
- *   aux_vectors           --- Optional working area (allocation otherwise)
- *----------------------------------------------------------------------------*/
-
-static void
-_multigrid_solve(const char         *var_name,
-                 cs_sles_type_t      descent_smoother_type,
-                 cs_sles_type_t      ascent_smoother_type,
-                 cs_sles_type_t      coarse_solver_type,
-                 cs_bool_t           symmetric,
-                 int                 poly_degree,
-                 cs_perio_rota_t     rotation_mode,
-                 int                 verbosity,
-                 int                 n_max_cycles,
-                 int                 n_max_iter_descent,
-                 int                 n_max_iter_ascent,
-                 int                 n_max_iter_coarse,
-                 double              precision,
-                 double              r_norm,
-                 int                *n_cycles,
-                 int                *n_iter,
-                 double             *residue,
-                 const cs_real_t    *rhs,
-                 cs_real_t          *vx,
-                 size_t              aux_size,
-                 void               *aux_vectors)
-{
-  int ii;
-  unsigned _n_iter[3] = {0, 0, 0};
-
-  fvm_lnum_t n_cells = 0;
-
-  cs_multigrid_t *mg = NULL;
-  cs_multigrid_info_t *mg_info = NULL;
-  double  wt_start = 0.0, wt_stop = 0.0;
-  double  cpu_start = 0.0, cpu_stop = 0.0;
-
-  wt_start =bft_timer_wtime();
-  cpu_start =bft_timer_cpu_time();
-  mg = _find_or_add_system(var_name);
-  mg_info = &(mg->info);
-
-  cs_grid_get_info(mg->grid_hierarchy[0],
-                   NULL,
-                   NULL,
-                   NULL,
-                   &n_cells,
-                   NULL,
-                   NULL,
-                   NULL);
-
-  /* Initialize number of iterations and residue,
-     check for immediate return,
-     solve sparse linear system using multigrid algorithm. */
-
-  *n_cycles = 0;
-  *n_iter = 0;
-
-  if (cs_sles_needs_solving(var_name,
-                            _("Multigrid"),
-                            n_cells,
-                            verbosity,
-                            r_norm,
-                            residue,
-                            rhs) != 0) {
-
-    int cycle_id = 1, cvg = 0;
-    double it_count_num = 0.0;
-
-    int *n_max_iter = NULL;
-    int *n_level_iter = NULL;
-    size_t  _aux_size = n_cells * 6;
-    cs_real_t *_aux_vectors = aux_vectors;
-
-    BFT_MALLOC(n_max_iter, mg->n_levels * 2, int);
-    BFT_MALLOC(n_level_iter, mg->n_levels, int);
-
-    if (_aux_size <= aux_size)
-      BFT_MALLOC(_aux_vectors, _aux_size, cs_real_t);
-    else
-      _aux_size = aux_size;
-
-    for (ii = 0; ii < mg->n_levels; ii++) {
-      n_max_iter[ii*2] = n_max_iter_descent;
-      n_max_iter[ii*2 + 1] = n_max_iter_ascent;
-      n_level_iter[ii] = 0;
-    }
-    n_max_iter[(mg->n_levels-1)*2]     = n_max_iter_coarse;
-    n_max_iter[(mg->n_levels-1)*2 + 1] = n_max_iter_coarse;
-
-    if (verbosity == 2) /* More detailed headers later if > 2 */
-      bft_printf(_("Multigrid [%s]:\n"), var_name);
-
-    /* Cycle to solution */
-
-    while (cvg == 0) {
-
-      if (verbosity > 2)
-        bft_printf(_("Multigrid [%s]: cycle %4d\n"),
-                   var_name, cycle_id);
-
-      cvg = _multigrid_cycle(mg,
-                             descent_smoother_type,
-                             ascent_smoother_type,
-                             coarse_solver_type,
-                             symmetric,
-                             poly_degree,
-                             rotation_mode,
-                             verbosity,
-                             cycle_id,
-                             n_max_cycles,
-                             n_max_iter,
-                             precision,
-                             r_norm,
-                             n_level_iter,
-                             residue,
-                             rhs,
-                             vx,
-                             aux_size,
-                             _aux_vectors);
-
-      cycle_id++;
-      *n_cycles += 1;
-    }
-
-    _n_iter[0] = n_level_iter[0];
-    _n_iter[1] = n_level_iter[mg->n_levels - 1];
-
-    for (ii = 0; ii < mg->n_levels; ii++)
-      _n_iter[2] += n_level_iter[ii];
-
-    /* Estimate "equivalent" iterations */
-
-    for (ii = 0; ii < mg->n_levels; ii++) {
-      fvm_gnum_t n_g_cells = cs_grid_get_n_g_cells(mg->grid_hierarchy[ii]);
-      it_count_num += n_g_cells * n_level_iter[ii];
-      _n_iter[2] += n_level_iter[ii];
-    }
-
-    *n_iter = (cs_int_t)(  it_count_num
-                         / cs_grid_get_n_g_cells(mg->grid_hierarchy[0]));
-
-    if (_aux_vectors != aux_vectors)
-      BFT_FREE(_aux_vectors);
-    BFT_FREE(n_level_iter);
-    BFT_FREE(n_max_iter);
-  }
-
-  /* Update statistics */
-
-  wt_stop =bft_timer_wtime();
-  cpu_stop =bft_timer_cpu_time();
-
-  /* Update stats on number of iterations (last, min, max, total) */
-
-  mg_info->type[0] = descent_smoother_type;
-  mg_info->type[1] = ascent_smoother_type;
-  mg_info->type[2] = coarse_solver_type;
-
-  for (ii = 0; ii < 3; ii++)
-    mg_info->n_iterations[0][ii] = _n_iter[ii];
-
-  mg_info->n_cycles[2] += *n_cycles;
-
-  if (mg_info->n_solves > 0) {
-    if (mg_info->n_cycles[0] > (unsigned)(*n_cycles))
-      mg_info->n_cycles[0] = *n_cycles;
-    if (mg_info->n_cycles[1] < (unsigned)(*n_cycles))
-      mg_info->n_cycles[1] = *n_cycles;
-    for (ii = 0; ii < 3; ii++) {
-      if (mg_info->n_iterations[1][ii] > _n_iter[ii])
-        mg_info->n_iterations[1][ii] = _n_iter[ii];
-      if (mg_info->n_iterations[2][ii] < _n_iter[ii])
-        mg_info->n_iterations[2][ii] = _n_iter[ii];
-    }
-  }
-  else {
-    mg_info->n_cycles[0] = *n_cycles;
-    mg_info->n_cycles[1] = *n_cycles;
-    for (ii = 0; ii < 3; ii++) {
-      mg_info->n_iterations[1][ii] = _n_iter[ii];
-      mg_info->n_iterations[2][ii] = _n_iter[ii];
-    }
-  }
-
-  for (ii = 0; ii < 3; ii++)
-    mg_info->n_iterations_tot[ii] += _n_iter[ii];
-
-  /* Update number of resolutions and timing data */
-
-  mg_info->n_solves += 1;
-
-  mg_info->wt_tot[1] += (wt_stop - wt_start);
-  mg_info->cpu_tot[1] += (cpu_stop - cpu_start);
 }
 
 /*============================================================================
@@ -2047,27 +1828,28 @@ void CS_PROCF(resmgr, RESMGR)
   if (_ireslp < 0 || _ireslp > 2)
     _ireslp = 3;
 
-  _multigrid_solve(var_name,
-                   type[_iresds],
-                   type[_iresas],
-                   type[_ireslp],
-                   symmetric,
-                   *ipol,
-                   rotation_mode,
-                   *iwarnp,
-                   *ncymxp,
-                   *nitmds,
-                   *nitmas,
-                   *nitmap,
-                   *epsilp,
-                   *rnorm,
-                   ncyclf,
-                   niterf,
-                   residu,
-                   rhs,
-                   vx,
-                   0,
-                   NULL);
+  cs_multigrid_solve(var_name,
+                     type[_iresds],
+                     type[_iresas],
+                     type[_ireslp],
+                     true,
+                     symmetric,
+                     *ipol,
+                     rotation_mode,
+                     *iwarnp,
+                     *ncymxp,
+                     *nitmds,
+                     *nitmas,
+                     *nitmap,
+                     *epsilp,
+                     *rnorm,
+                     ncyclf,
+                     niterf,
+                     residu,
+                     rhs,
+                     vx,
+                     0,
+                     NULL);
 
   cs_base_string_f_to_c_free(&var_name);
 }
@@ -2115,6 +1897,235 @@ cs_multigrid_finalize(void)
   cs_glob_multigrid_n_max_systems = 0;
 
   cs_grid_finalize();
+}
+
+/*----------------------------------------------------------------------------
+ * Sparse linear system resolution using multigrid.
+ *
+ * parameters:
+ *   var_name              <-- Variable name
+ *   descent_smoother_type <-- Type of smoother for descent (PCG, Jacobi, ...)
+ *   ascent_smoother_type  <-- Type of smoother for ascent (PCG, Jacobi, ...)
+ *   coarse_solver_type    <-- Type of solver (PCG, Jacobi, ...)
+ *   abort_on_divergence   <-- Call errorhandler if devergence is detected
+ *   symmetric             <-- Symmetric coefficients indicator
+ *   poly_degree           <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode         <-- Halo update option for rotational periodicity
+ *   verbosity             <-- Verbosity level
+ *   n_max_cycles          <-- Maximum number of cycles
+ *   n_max_iter_descent    <-- Maximum nb. of iterations for descent phases
+ *   n_max_iter_ascent     <-- Maximum nb. of iterations for ascent phases
+ *   n_max_iter_coarse     <-- Maximum nb. of iterations for coarsest solution
+ *   precision             <-- Precision limit
+ *   r_norm                <-- Residue normalization
+ *   n_cycles              --> Number of cycles
+ *   n_iter                --> Number of iterations
+ *   residue               <-> Residue
+ *   rhs                   <-- Right hand side
+ *   vx                    --> System solution
+ *   aux_size              <-- Number of elements in aux_vectors
+ *   aux_vectors           --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   cycle number reached, -2 if divergence is detected.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_multigrid_solve(const char         *var_name,
+                   cs_sles_type_t      descent_smoother_type,
+                   cs_sles_type_t      ascent_smoother_type,
+                   cs_sles_type_t      coarse_solver_type,
+                   cs_bool_t           abort_on_divergence,
+                   cs_bool_t           symmetric,
+                   int                 poly_degree,
+                   cs_perio_rota_t     rotation_mode,
+                   int                 verbosity,
+                   int                 n_max_cycles,
+                   int                 n_max_iter_descent,
+                   int                 n_max_iter_ascent,
+                   int                 n_max_iter_coarse,
+                   double              precision,
+                   double              r_norm,
+                   int                *n_cycles,
+                   int                *n_iter,
+                   double             *residue,
+                   const cs_real_t    *rhs,
+                   cs_real_t          *vx,
+                   size_t              aux_size,
+                   void               *aux_vectors)
+{
+  int ii;
+  unsigned _n_iter[3] = {0, 0, 0};
+
+  int cvg = 0;
+  fvm_lnum_t n_cells = 0;
+
+  cs_multigrid_t *mg = NULL;
+  cs_multigrid_info_t *mg_info = NULL;
+  double  wt_start = 0.0, wt_stop = 0.0;
+  double  cpu_start = 0.0, cpu_stop = 0.0;
+
+  wt_start =bft_timer_wtime();
+  cpu_start =bft_timer_cpu_time();
+  mg = _find_or_add_system(var_name);
+  mg_info = &(mg->info);
+
+  cs_grid_get_info(mg->grid_hierarchy[0],
+                   NULL,
+                   NULL,
+                   NULL,
+                   &n_cells,
+                   NULL,
+                   NULL,
+                   NULL);
+
+  /* Initialize number of iterations and residue,
+     check for immediate return,
+     solve sparse linear system using multigrid algorithm. */
+
+  *n_cycles = 0;
+  *n_iter = 0;
+
+  if (cs_sles_needs_solving(var_name,
+                            _("Multigrid"),
+                            n_cells,
+                            verbosity,
+                            r_norm,
+                            residue,
+                            rhs) != 0) {
+
+    int cycle_id = 1;
+    double it_count_num = 0.0;
+
+    int *n_max_iter = NULL;
+    int *n_level_iter = NULL;
+    size_t  _aux_size = n_cells * 6;
+    cs_real_t *_aux_vectors = aux_vectors;
+
+    BFT_MALLOC(n_max_iter, mg->n_levels * 2, int);
+    BFT_MALLOC(n_level_iter, mg->n_levels, int);
+
+    if (_aux_size <= aux_size)
+      BFT_MALLOC(_aux_vectors, _aux_size, cs_real_t);
+    else
+      _aux_size = aux_size;
+
+    for (ii = 0; ii < mg->n_levels; ii++) {
+      n_max_iter[ii*2] = n_max_iter_descent;
+      n_max_iter[ii*2 + 1] = n_max_iter_ascent;
+      n_level_iter[ii] = 0;
+    }
+    n_max_iter[(mg->n_levels-1)*2]     = n_max_iter_coarse;
+    n_max_iter[(mg->n_levels-1)*2 + 1] = n_max_iter_coarse;
+
+    if (verbosity == 2) /* More detailed headers later if > 2 */
+      bft_printf(_("Multigrid [%s]:\n"), var_name);
+
+    /* Cycle to solution */
+
+    while (cvg == 0) {
+
+      if (verbosity > 2)
+        bft_printf(_("Multigrid [%s]: cycle %4d\n"),
+                   var_name, cycle_id);
+
+      cvg = _multigrid_cycle(mg,
+                             descent_smoother_type,
+                             ascent_smoother_type,
+                             coarse_solver_type,
+                             abort_on_divergence,
+                             symmetric,
+                             poly_degree,
+                             rotation_mode,
+                             verbosity,
+                             cycle_id,
+                             n_max_cycles,
+                             n_max_iter,
+                             precision,
+                             r_norm,
+                             n_level_iter,
+                             residue,
+                             rhs,
+                             vx,
+                             aux_size,
+                             _aux_vectors);
+
+      cycle_id++;
+      *n_cycles += 1;
+    }
+
+    _n_iter[0] = n_level_iter[0];
+    _n_iter[1] = n_level_iter[mg->n_levels - 1];
+
+    for (ii = 0; ii < mg->n_levels; ii++)
+      _n_iter[2] += n_level_iter[ii];
+
+    /* Estimate "equivalent" iterations */
+
+    for (ii = 0; ii < mg->n_levels; ii++) {
+      fvm_gnum_t n_g_cells = cs_grid_get_n_g_cells(mg->grid_hierarchy[ii]);
+      it_count_num += n_g_cells * n_level_iter[ii];
+      _n_iter[2] += n_level_iter[ii];
+    }
+
+    *n_iter = (cs_int_t)(  it_count_num
+                         / cs_grid_get_n_g_cells(mg->grid_hierarchy[0]));
+
+    if (_aux_vectors != aux_vectors)
+      BFT_FREE(_aux_vectors);
+    BFT_FREE(n_level_iter);
+    BFT_FREE(n_max_iter);
+  }
+
+  /* Update statistics */
+
+  wt_stop =bft_timer_wtime();
+  cpu_stop =bft_timer_cpu_time();
+
+  /* Update stats on number of iterations (last, min, max, total) */
+
+  mg_info->type[0] = descent_smoother_type;
+  mg_info->type[1] = ascent_smoother_type;
+  mg_info->type[2] = coarse_solver_type;
+
+  for (ii = 0; ii < 3; ii++)
+    mg_info->n_iterations[0][ii] = _n_iter[ii];
+
+  mg_info->n_cycles[2] += *n_cycles;
+
+  if (mg_info->n_solves > 0) {
+    if (mg_info->n_cycles[0] > (unsigned)(*n_cycles))
+      mg_info->n_cycles[0] = *n_cycles;
+    if (mg_info->n_cycles[1] < (unsigned)(*n_cycles))
+      mg_info->n_cycles[1] = *n_cycles;
+    for (ii = 0; ii < 3; ii++) {
+      if (mg_info->n_iterations[1][ii] > _n_iter[ii])
+        mg_info->n_iterations[1][ii] = _n_iter[ii];
+      if (mg_info->n_iterations[2][ii] < _n_iter[ii])
+        mg_info->n_iterations[2][ii] = _n_iter[ii];
+    }
+  }
+  else {
+    mg_info->n_cycles[0] = *n_cycles;
+    mg_info->n_cycles[1] = *n_cycles;
+    for (ii = 0; ii < 3; ii++) {
+      mg_info->n_iterations[1][ii] = _n_iter[ii];
+      mg_info->n_iterations[2][ii] = _n_iter[ii];
+    }
+  }
+
+  for (ii = 0; ii < 3; ii++)
+    mg_info->n_iterations_tot[ii] += _n_iter[ii];
+
+  /* Update number of resolutions and timing data */
+
+  mg_info->n_solves += 1;
+
+  mg_info->wt_tot[1] += (wt_stop - wt_start);
+  mg_info->cpu_tot[1] += (cpu_stop - cpu_start);
+
+  return cvg;
 }
 
 /*----------------------------------------------------------------------------*/

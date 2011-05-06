@@ -37,6 +37,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_sles.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -154,6 +155,62 @@ cs_multigrid_initialize(void);
 
 void
 cs_multigrid_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Sparse linear system resolution using multigrid.
+ *
+ * parameters:
+ *   var_name              <-- Variable name
+ *   descent_smoother_type <-- Type of smoother for descent (PCG, Jacobi, ...)
+ *   ascent_smoother_type  <-- Type of smoother for ascent (PCG, Jacobi, ...)
+ *   coarse_solver_type    <-- Type of solver (PCG, Jacobi, ...)
+ *   abort_on_divergence   <-- Call errorhandler if devergence is detected
+ *   symmetric             <-- Symmetric coefficients indicator
+ *   poly_degree           <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode         <-- Halo update option for rotational periodicity
+ *   verbosity             <-- Verbosity level
+ *   n_max_cycles          <-- Maximum number of cycles
+ *   n_max_iter_descent    <-- Maximum nb. of iterations for descent phases
+ *   n_max_iter_ascent     <-- Maximum nb. of iterations for ascent phases
+ *   n_max_iter_coarse     <-- Maximum nb. of iterations for coarsest solution
+ *   precision             <-- Precision limit
+ *   r_norm                <-- Residue normalization
+ *   n_cycles              --> Number of cycles
+ *   n_iter                --> Number of iterations
+ *   residue               <-> Residue
+ *   rhs                   <-- Right hand side
+ *   vx                    --> System solution
+ *   aux_size              <-- Number of elements in aux_vectors
+ *   aux_vectors           --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   cycle number reached, -2 if divergence is detected.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_multigrid_solve(const char         *var_name,
+                   cs_sles_type_t      descent_smoother_type,
+                   cs_sles_type_t      ascent_smoother_type,
+                   cs_sles_type_t      coarse_solver_type,
+                   cs_bool_t           abort_on_divergence,
+                   cs_bool_t           symmetric,
+                   int                 poly_degree,
+                   cs_perio_rota_t     rotation_mode,
+                   int                 verbosity,
+                   int                 n_max_cycles,
+                   int                 n_max_iter_descent,
+                   int                 n_max_iter_ascent,
+                   int                 n_max_iter_coarse,
+                   double              precision,
+                   double              r_norm,
+                   int                *n_cycles,
+                   int                *n_iter,
+                   double             *residue,
+                   const cs_real_t    *rhs,
+                   cs_real_t          *vx,
+                   size_t              aux_size,
+                   void               *aux_vectors);
 
 /*----------------------------------------------------------------------------*/
 
