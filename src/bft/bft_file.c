@@ -1671,6 +1671,8 @@ bft_file_listdir(const char  *pathname)
   }
   dirnames[n_ent] = NULL;
 
+  closedir(d);
+
   qsort(dirnames, n_ent, sizeof(char *), &_bft_file_compare_names);
 
 #endif /* defined(HAVE_SYS_TYPES_H) && defined(HAVE_DIRENT_H) */

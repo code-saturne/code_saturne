@@ -1,4 +1,9 @@
 * 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix memory leak.
+  modified file:
+    src/bft/bft_file.c
+
+* 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix memory leak due to wrong structure being used.
   modified file:
     src/base/cs_matrix.c
