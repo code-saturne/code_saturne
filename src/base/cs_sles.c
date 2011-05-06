@@ -1589,11 +1589,11 @@ _bi_cgstab(const char             *var_name,
 
 static void
 _givens_rot_update(cs_real_t    *restrict a,
-		   int                    a_size,
-		   cs_real_t    *restrict b,
-		   cs_real_t    *restrict givens_coeff, 
-		   int                    update_rank, 
-		   int                    end_update)
+                   int                    a_size,
+                   cs_real_t    *restrict b,
+                   cs_real_t    *restrict givens_coeff,
+                   int                    update_rank,
+                   int                    end_update)
 {
   int i, j;
   cs_real_t _aux;
@@ -1601,17 +1601,17 @@ _givens_rot_update(cs_real_t    *restrict a,
 
   for (i = 0; i < update_rank; ++i) {
     for (j = update_rank; j < end_update; ++j) {
-      
+
       _aux =   givens_coeff[i]*a[j*a_size + i]
              + givens_coeff[i + a_size] * a[j*a_size + i+1];
-      
+
       a[j*a_size + i+1] =   givens_coeff[i] * a[i+1 + j*a_size]
                           - givens_coeff[i + a_size] * a[j*a_size + i];
 
       a[j*a_size + i] = _aux;
     }
   }
-   
+
   for (i = update_rank; i < end_update; ++i) {
 
     norm = pow(a[i*a_size + i], 2) + pow(a[i*a_size + i+1], 2);
@@ -1632,7 +1632,7 @@ _givens_rot_update(cs_real_t    *restrict a,
       else
         a[i+1 + j*a_size] =   givens_coeff[i]*a[i+1 + j*a_size]
                             - givens_coeff[a_size + i]*a[i + j*a_size];
-      
+
       a[j*a_size + i] = _aux;
     }
   }
@@ -1664,11 +1664,11 @@ _givens_rot_update(cs_real_t    *restrict a,
  *----------------------------------------------------------------------------*/
 
 static int
-_solve_diag_sup_halo(cs_real_t  *restrict a, 
-		     int                  a_size,
-		     int                  alloc_size,    
-		     cs_real_t  *restrict b, 
-		     cs_real_t  *restrict x)
+_solve_diag_sup_halo(cs_real_t  *restrict a,
+                     int                  a_size,
+                     int                  alloc_size,
+                     cs_real_t  *restrict b,
+                     cs_real_t  *restrict x)
 {
   int i, j;
 
@@ -1719,7 +1719,7 @@ _gmres(const char             *var_name,
        cs_real_t              *restrict vx,
        size_t                  aux_size,
        void                   *aux_vectors)
-{  
+{
   int cvg;
   char *sles_name;
   int check_freq, l_iter, l_old_iter, scaltest;
@@ -1739,12 +1739,12 @@ _gmres(const char             *var_name,
 #pragma disjoint(*rhs, *vx, *_krylov_vectors, *_h_matrix, \
   *_givens_coeff, *_beta, *dk, *gk, *bk, *fk, *ad_inv, *krk)
 #endif
-  
+
   sles_name = _(cs_sles_type_name[CS_SLES_GMRES]);
 
   /* Preliminary calculations */
   /*--------------------------*/
-  
+
   n_cols = cs_matrix_get_n_columns(a);
   n_rows = cs_matrix_get_n_rows(a);
 
@@ -1755,11 +1755,11 @@ _gmres(const char             *var_name,
 
 #if defined(HAVE_MPI)
   if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-    MPI_Allreduce(&krylov_size, 
-                  &_krylov_size, 
-                  1, 
-                  MPI_INT, 
-                  MPI_MIN, 
+    MPI_Allreduce(&krylov_size,
+                  &_krylov_size,
+                  1,
+                  MPI_INT,
+                  MPI_MIN,
                   _cs_sles_mpi_reduce_comm);
     krylov_size = _krylov_size;
   }
@@ -1772,15 +1772,15 @@ _gmres(const char             *var_name,
   {
     size_t  n_wa = 5;
     size_t  wa_size = n_cols < krylov_size? krylov_size:n_cols;
-    size_t _aux_size = wa_size*n_wa 
-                       + (krylov_size-1)*(n_rows + krylov_size) 
+    size_t _aux_size = wa_size*n_wa
+                       + (krylov_size-1)*(n_rows + krylov_size)
                        + 3*krylov_size;
 
     if (aux_vectors == NULL || aux_size < _aux_size)
       BFT_MALLOC(_aux_vectors, _aux_size, cs_real_t);
     else
       _aux_vectors = aux_vectors;
-   
+
     dk = _aux_vectors;
     gk = _aux_vectors + wa_size;
     ad_inv = _aux_vectors + 2*wa_size;
@@ -1788,33 +1788,33 @@ _gmres(const char             *var_name,
     fk = _aux_vectors + 4*wa_size;
     _krylov_vectors = _aux_vectors + 5*wa_size;
     _h_matrix = _aux_vectors + 5*wa_size + (krylov_size - 1)*n_rows;
-    _givens_coeff =   _aux_vectors + 5*wa_size 
+    _givens_coeff =   _aux_vectors + 5*wa_size
                     + (krylov_size - 1)*(n_rows + krylov_size);
-    _beta =   _aux_vectors + 5*wa_size 
+    _beta =   _aux_vectors + 5*wa_size
             + (krylov_size - 1)*(n_rows + krylov_size) + 2*krylov_size;
   }
 
-  for (ii = 0; ii < krylov_size*(krylov_size - 1); ii++) 
+  for (ii = 0; ii < krylov_size*(krylov_size - 1); ii++)
     _h_matrix[ii] = 0.;
-  
+
   cs_matrix_get_diagonal(a, ad_inv);
-  
+
   for (ii = 0; ii < n_rows; ii++)
-    ad_inv[ii] = 1./ad_inv[ii]; 
+    ad_inv[ii] = 1./ad_inv[ii];
 
   cvg = 0;
 
   while (cvg == 0) {
-    
+
     /* compute  rk <- a*vx (vx = x0) */
 
     cs_matrix_vector_multiply(rotation_mode, a, vx, dk);
-    
+
     /* compute  rk <- rhs - rk (r0 = b-A*x0) */
 
     for (ii = 0; ii < n_rows; ii++)
       dk[ii] = rhs[ii] - dk[ii];
-    
+
     /* beta = ||r0|| */
     beta = sqrt(_dot_product(n_rows, dk, dk));
     dot_prod = beta;
@@ -1822,7 +1822,7 @@ _gmres(const char             *var_name,
     _beta[0] = beta;
     for (ii = 1; ii < krylov_size; ii++)
       _beta[ii] = 0.;
-       
+
     /* Lap */
 
     l_iter = 0;
@@ -1834,45 +1834,45 @@ _gmres(const char             *var_name,
       krk = _krylov_vectors + ii*n_rows;
 
       for (jj = 0; jj < n_rows; jj++)
-	krk[jj] = dk[jj]/dot_prod;
+        krk[jj] = dk[jj]/dot_prod;
 
       _polynomial_preconditionning(n_rows,
-				   poly_degree,
-				   rotation_mode,
-				   ad_inv,
-				   ax,
-				   krk,
-				   gk,
-				   dk);
-      
+                                   poly_degree,
+                                   rotation_mode,
+                                   ad_inv,
+                                   ax,
+                                   krk,
+                                   gk,
+                                   dk);
+
       /* compute w=dk <- A*vj */
-     
+
       cs_matrix_vector_multiply(rotation_mode, a, gk, dk);
-      
+
       for (kk = 0; kk < ii + 1; kk++) {
 
-	/* compute h(k,i) = <w,vi> = <dk,vi> */
-	_h_matrix[ii*krylov_size + kk]
+        /* compute h(k,i) = <w,vi> = <dk,vi> */
+        _h_matrix[ii*krylov_size + kk]
           = _dot_product(n_rows, dk, (_krylov_vectors + kk*n_rows));
-	
-	/* compute w = dk <- w - h(i,k)*vi */
-	cblas_daxpy(n_rows,
-                    -_h_matrix[ii*krylov_size+kk], 
-                    (_krylov_vectors + kk*n_rows), 
+        
+        /* compute w = dk <- w - h(i,k)*vi */
+        cblas_daxpy(n_rows,
+                    -_h_matrix[ii*krylov_size+kk],
+                    (_krylov_vectors + kk*n_rows),
                     1, dk, 1);
       }
-         
+
       /* compute h(i+1,i) = sqrt<w,w> */
       dot_prod = sqrt(_dot_product(n_rows, dk, dk));
       _h_matrix[ii*krylov_size + ii + 1] = dot_prod;
 
       if (dot_prod < epsi) scaltest = 1;
-	
-      if (   (l_iter + 1)%check_freq == 0 
+        
+      if (   (l_iter + 1)%check_freq == 0
           || l_iter == krylov_size - 2
           || scaltest == 1) {
 
-	  /* H matrix to diagonal sup matrix */
+          /* H matrix to diagonal sup matrix */
 
         _givens_rot_update(_h_matrix,
                            krylov_size,
@@ -1880,9 +1880,9 @@ _gmres(const char             *var_name,
                            _givens_coeff,
                            l_old_iter,
                            l_iter + 1);
-			  
+                        
         l_old_iter = l_iter + 1;
-	  
+        
         /* solve diag sup system */
         _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
 
@@ -1902,7 +1902,7 @@ _gmres(const char             *var_name,
                     1);
 
 #else
-	  
+        
         for (jj = 0; jj < n_rows; jj++) {
           fk[jj] = cblas_ddot(l_iter + 1,
                               _krylov_vectors + jj,
@@ -1920,20 +1920,20 @@ _gmres(const char             *var_name,
                                      fk,
                                      gk,
                                      bk);
-  
-   
+
+
         for (jj = 0; jj < n_rows; jj++)
           fk[jj] = vx[jj] + gk[jj];
-	
+        
         cs_matrix_vector_multiply(rotation_mode, a, fk, bk);
-	  
+        
         /* compute residue = | Ax - b |_1 */
 
         residue = 0.;
         for (jj = 0; jj < n_rows; jj++)
           residue += pow(rhs[jj] - bk[jj], 2);
 
-#if defined(HAVE_MPI)	 
+#if defined(HAVE_MPI)        
 
         if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
           MPI_Allreduce(&residue, &_residue, 1, MPI_DOUBLE, MPI_SUM,
@@ -1945,21 +1945,21 @@ _gmres(const char             *var_name,
 
         residue = sqrt(residue);
 
-        cvg = _convergence_test(sles_name, 
-                                var_name, 
-                                n_iter, 
-                                residue, 
+        cvg = _convergence_test(sles_name,
+                                var_name,
+                                n_iter,
+                                residue,
                                 convergence);
-	  
-      }
         
+      }
+
       n_iter++;
       l_iter++;
-     
-      if (cvg == 1 || l_iter == krylov_size - 1 || scaltest == 1) { 
-	for (jj = 0; jj < n_rows; jj++)
+
+      if (cvg == 1 || l_iter == krylov_size - 1 || scaltest == 1) {
+        for (jj = 0; jj < n_rows; jj++)
           vx[jj] = fk[jj];
-	break;
+        break;
       }
     }
   }
@@ -2586,7 +2586,7 @@ cs_sles_solve(const char         *var_name,
                          aux_vectors);
         break;
       case CS_SLES_GMRES:
-   	cvg = _gmres(var_name,
+           cvg = _gmres(var_name,
                      _a,
                      _ax,
                      poly_degree,
@@ -2596,7 +2596,7 @@ cs_sles_solve(const char         *var_name,
                      vx,
                      aux_size,
                      aux_vectors);
-	break;
+        break;
       default:
         break;
       }
