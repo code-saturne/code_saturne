@@ -815,9 +815,9 @@ iuvwk  = 1
 itrava = 1
 if (nterup.gt.1) then
   iximpa = idbra1
-  iuvwk  = iximpa + ncelet*ndim*nphas
-  itrava = iuvwk  + ncelet*ndim*nphas
-  idbra1 = itrava + ncelet*ndim*nphas
+  iuvwk  = iximpa + ncelet*ndim
+  itrava = iuvwk  + ncelet*ndim
+  idbra1 = itrava + ncelet*ndim
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 

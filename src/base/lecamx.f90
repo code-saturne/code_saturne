@@ -169,7 +169,7 @@ integer          ierror, irtyp,  itysup, nbval
 integer          nberro, inierr, ivers
 integer          ilu   , ilecec, ideblu, iannul, ierrch
 integer          impamx
-integer          nfmtph, nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
+integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
 integer          numflu(nvarmx)
 integer          jturb , jtytur, jale
@@ -190,7 +190,6 @@ write(nfecra,1000)
 !  --->  On code en chaine le numero des phases et scalaires
 
 !     Nombre max pour les formats choisis
-nfmtph = 99
 nfmtsc = 9999
 nfmtfl = 9999
 nfmtmo = 9999
@@ -206,14 +205,10 @@ CINDFC='YY'
 CINDFL='YYYY'
 
 !     Codage en chaine de caracteres du numero de la phase
-!       Aller jusqu'a NPHAS suffirait
 WRITE(CPHASE,'(I2.2)') 1
 
 
 !     Avertissement
-if(nphsmx.gt.nfmtph) then
-  write(nfecra,8000)nfmtph,nphsmx
-endif
 if(nscamx.gt.nfmtsc) then
   write(nfecra,8001)nfmtsc,nscamx
 endif
@@ -298,9 +293,11 @@ if (nberro.ne.0) then
   call csexit (1)
 endif
 
-!  ---> On previent si des parametres sont differents
-if ( jphas .ne.nphas ) then
-  write(nfecra,8210) jphas, nphas
+
+!  ---> On ne sait relire que des calculs monophasiques
+if (jphas.ne.1) then
+  write(nfecra,8205) jphas
+  call csexit(1)
 endif
 
 !     Modele de turbulence
@@ -2593,27 +2590,6 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 8000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@      Le nombre de phases    maximal NPHSMX supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTPH = ',I10                                       ,/,&
-'@      On a ici un nombre de phases    maximal superieur     ',/,&
-'@        NPHSMX = ',I10                                       ,/,&
-'@      Si le nombre de phases effectif est superieur, elles  ',/,&
-'@        ne seront pas relues.                               ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme lecamx.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2733,28 +2709,17 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8210 format(                                                           &
+ 8205 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : LECTURE DU FICHIER SUITE AUXILIAIRE         ',/,&
+'@ @@ ATTENTION : LECTURE DU FICHIER SUITE PRINCIPAL          ',/,&
 '@    =========                                               ',/,&
-'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
+'@      DONNEES AMONT MULTIPHASIQUES                          ',/,&
 '@                                                            ',/,&
-'@    Le nombre de phases a ete modifie.                      ',/,&
-'@    Le calcul peut etre execute.                            ',/,&
+'@  Nombre de phases (amont) : ',I10                           ,/,&
 '@                                                            ',/,&
-'@    Il est cependant conseille de verifier                  ',/,&
-'@      les dimensions suivantes dans usini1 :                ',/,&
-'@                                                            ',/,&
-'@               NPHAS                                        ',/,&
-'@  AMONT : ',I10                                              ,/,&
-'@  ACTUEL: ',I10                                              ,/,&
-'@                                                            ',/,&
-'@    Verifier que le fichier suite auxiliaire utilise        ',/,&
-'@      correspond bien au cas traite                         ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -2860,27 +2825,6 @@ return
 
 #else
 
- 8000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING:       WHEN READING THE AUXILIARY RESTART FILE  ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@      The maximum number of phases NPHSMX supported by      ',/,&
-'@        the writing format of the restart file is           ',/,&
-'@        NFMTPH = ',I10                                       ,/,&
-'@      There is here a greater number of phases              ',/,&
-'@        NPHSMX = ',I10                                       ,/,&
-'@       If the effectif number of phases is greater, these   ',/,&
-'@        will not be reread.                                 ',/,&
-'@                                                            ',/,&
-'@    The run will continue.                                  ',/,&
-'@                                                            ',/,&
-'@    Check the subroutine lecamx.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3000,28 +2944,17 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 8210 format(                                                           &
+ 8205 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING: WHEN READING THE AUXILIARY RESTART FILE        ',/,&
-'@    =======                                                 ',/,&
-'@      PREVIOUS and PRESENT DATA ARE INCOHERENT              ',/,&
+'@ @@ WARNING : WHEN READING THE MAIN RESTARTING FILE       ',/,  &
+'@    =========                                               ',/,&
+'@      CHECKPOINT DATA ARE MULTIPHASE                        ',/,&
 '@                                                            ',/,&
-'@    The number of phases has been modified.                 ',/,&
-'@    The run can be executed.                                ',/,&
+'@  Number of phases (checkpoint) : ',I10                      ,/,&
 '@                                                            ',/,&
-'@    However, it is advised to verify                        ',/,&
-'@      the following dimensions in usini1 :                  ',/,&
-'@                                                            ',/,&
-'@               NPHAS                                        ',/,&
-'@  PREVIOUS : ',I10                                           ,/,&
-'@  PRESENT  : ',I10                                           ,/,&
-'@                                                            ',/,&
-'@    Verify that the auxiliary restart file being used       ',/,&
-'@      corresponds  to the present case.                     ',/,&
-'@                                                            ',/,&
-'@    The run will continue...                                ',/,&
+'@    The computation cannot be executed.                     ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

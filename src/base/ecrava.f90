@@ -146,7 +146,7 @@ integer          ii    , ivers , idtm  , idtcm
 integer          iclvar, iclvaf, iptsna, iptsta, iptsca
 integer          ierror, nberro, irtyp , itysup, nbval
 integer          nbctm , ipcefj, ipcla1, ipcla2, ipcla3
-integer          nfmtph, nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
+integer          nfmtsc, nfmtfl, nfmtmo, nfmtch, nfmtcl
 integer          nfmtst
 integer          nbflu , ilecec, iecr
 integer          ifait (nvarmx)
@@ -189,9 +189,8 @@ idebra = idbra0
 !  --->  On code en chaine le numero des phases et scalaires
 !        ----------------------------------------------------
 
-!     Nombre de phases, de scalaires, de flux, de moments et de charbons
+!     Nombre de scalaires, de flux, de moments et de charbons
 !       max pour les formats choisis
-nfmtph = 99
 nfmtsc = 9999
 nfmtfl = 9999
 nfmtmo = 9999
@@ -235,12 +234,9 @@ do imom = min(nbmomt,nfmtmo)+1,nbmomt
   cmom(imom) = cindfm
 enddo
 
-!     Verifications pour les formats et les numero de phase
-!       et de scalaire en chaine.
+!     Verifications pour les formats et les numeros
+!       de scalaire en chaine.
 !     Avertissement (certaines infos passent a la trappe)
-if(nphsmx.gt.nfmtph) then
-  write(nfecra,7000)nfmtph,nphsmx
-endif
 if(nscamx.gt.nfmtsc) then
   write(nfecra,7001)nfmtsc,nscamx
 endif
@@ -2294,27 +2290,6 @@ return
  2000 format(/,3X,'** Ecriture du fichier suite auxiliaire',/,    &
            3X,'   ------------------------------------ ',/)
 
- 7000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      Le nombre de phases    maximal NPHSMX supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTPH = ',I10                                       ,/,&
-'@      On a ici un nombre de phases    maximal superieur     ',/,&
-'@        NPHSMX = ',I10                                       ,/,&
-'@      Si le nombre de phases effectif est superieur, elles  ',/,&
-'@        ne seront pas relues.                               ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme ecrava.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2516,27 +2491,6 @@ return
  2000 format(/,3X,'** Writing the auxilliary restart file',/,     &
          3X,'   -----------------------------------',/)
 
- 7000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: WHILE WRITING THE RESTART FILE                 ',/,&
-'@    ========                                                ',/,&
-'@                                                            ',/,&
-'@      The maximum number of phases NPHSMX handled by the    ',/,&
-'@        restart file writing format is                      ',/,&
-'@        NFMTPH = ',I10                                       ,/,&
-'@      The current maximum number of phases is greater.      ',/,&
-'@        NPHSMX = ',I10                                       ,/,&
-'@      If the effective number of phases is greater, they    ',/,&
-'@        will not be read.                                   ',/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
-'@                                                            ',/,&
-'@    Refer to the subroutine ecrava.                         ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

@@ -209,10 +209,6 @@ endif
 
 ! --- Dimensions
 
-if(nphas.lt.0.or.nphas.gt.nphsmx) then
-  WRITE(NFECRA,2000)'NPHAS ',NPHSMX,NPHAS
-  iok = iok + 1
-endif
 if(nscal.lt.0.or.nscal.gt.nscamx) then
   WRITE(NFECRA,2000)'NSCAL ',NSCAMX,NSCAL
   iok = iok + 1
@@ -658,10 +654,9 @@ endif
 !     necessitant un traitement particulier dans gradmc,
 !     pour lequel on fait certaines hypotheses
 if(imrgra.eq.1.or.imrgra.eq.2.or.imrgra.eq.3) then
-  if((nphas.gt.1).or.                                             &
-     ((abs(extrag(ipr)-1.d0).gt.epzero).and.                   &
-      (abs(extrag(ipr)     ).gt.epzero)  )) then
-    write(nfecra,2207) imrgra, nphas, extrag(ipr)
+  if( (abs(extrag(ipr)-1.d0).gt.epzero).and.                   &
+      (abs(extrag(ipr)     ).gt.epzero)  ) then
+    write(nfecra,2207) imrgra, extrag(ipr)
     iok = iok + 1
   endif
 endif
@@ -894,11 +889,6 @@ endif
 
 if (ivrtex.ne.0 .and.ivrtex.ne.1) then
   WRITE(NFECRA,2200) 'IVRTEX ',IVRTEX
-  iok = iok + 1
-endif
-! On impose qu'il n'y ait qu'une seule phase
-if (ivrtex.eq.1 .and. nphas.gt.1) then
-  write(nfecra,2605)nphas,ivrtex
   iok = iok + 1
 endif
 iphas = 1
@@ -1142,16 +1132,6 @@ jj = iu
 if((abs(thetav(jj)-1.0d0).gt.epzero).and.                       &
      ((idtvar.ne.0).or.(ipucou.eq.1))) then
   write(nfecra,2204) thetav(jj),idtvar,ipucou
-endif
-
-! --- Prise en compte de la pression hydrostatique
-
-!     IPHYDR et ICALHY sont testes dans varpos
-!       (valeur 0 ou 1)
-
-if (iphydr.eq.1.and.nphas.gt.1) then
-  write(nfecra,2202) iphydr,nphas
-  iok = iok +1
 endif
 
 ! --- Champ de vitesse fige
@@ -2594,23 +2574,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2202 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LA PRISE EN COMPTE EXPLICITE DE LA PRESSION             ',/,&
-'@    HYDROSTATIQUE N''EST IMPLANTEE QUE POUR LE MONOPHASIQUE ',/,&
-'@    IPHYDR VAUT ICI ',I10                                    ,/,&
-'@    ET NPHAS        ',I10                                    ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 ! 2203 format(
 !     &'@                                                            ',/,
 !     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -2697,12 +2660,10 @@ endif
 '@    =========                                               ',/,&
 '@    L''UTILISATION DE LA METHODE DE CALCUL DE GRADIENT PAR  ',/,&
 '@      MOINDRES CARRES EST IMPOSSIBLE AVEC                   ',/,&
-'@        NPHAS SUPERIEUR A 1   OU                            ',/,&
 '@        EXTRAG(IPR) DIFFERENT DE 0 ET 1                     ',/,&
 '@                                                            ',/,&
 '@    ON A ICI                                                ',/,&
 '@        IMRGRA         = ',I10                               ,/,&
-'@        NPHAS          = ',I10                               ,/,&
 '@        EXTRAG(IPR) = ',E14.5                                ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
@@ -3107,24 +3068,6 @@ endif
 '@    =========                                               ',/,&
 '@    LE MODELE DE TURBULENCE K-OMEGA SST N''EST PAS          ',/,&
 '@     COMPATIBLE AVEC LE LAGRANGIEN EN COUPLAGE INVERSE      ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2605 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LA METHODE DES VORTEX NE PEUT ETRE ACTIVEE QUE POUR UN  ',/,&
-'@    CALCUL MONOPHASIQUE.                                    ',/,&
-'@    ON A ICI                                                ',/,&
-'@    NPHAS =',I10                                             ,/,&
-'@    IVRETX=',I10                                             ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
@@ -5051,23 +4994,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2202 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@    HYDROSTATIQUE PRESSURE ONLY VALID FOR SINGLE PHASE FLOW ',/,&
-'@    IPHYDR HAS VLAUE ',I10                                   ,/,&
-'@    AND NPHAS        ',I10                                   ,/,&
-'@                                                            ',/,&
-'@   The calculation could NOT run.                           ',/,&
-'@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
 ! 2203 format(
 !     &'@                                                            ',/,
 !     &'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,
@@ -5154,12 +5080,10 @@ endif
 '@    =========                                               ',/,&
 '@    L''UTILISATION DE LA METHODE DE CALCUL DE GRADIENT PAR  ',/,&
 '@      MOINDRES CARRES EST IMPOSSIBLE AVEC                   ',/,&
-'@        NPHAS SUPERIEUR A 1   or                            ',/,&
 '@        EXTRAG(IPR) DIFFERENT DE 0 ET 1                     ',/,&
 '@                                                            ',/,&
 '@    ON A ICI                                                ',/,&
 '@        IMRGRA         = ',I10                               ,/,&
-'@        NPHAS          = ',I10                               ,/,&
 '@        EXTRAG(IPR) = ',E14.5                                ,/,&
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
@@ -5564,24 +5488,6 @@ endif
 '@    =========                                               ',/,&
 '@    THE K-OMEGA SST TURBULENCE MODEL IS NOT COMPATIBLE WITH ',/,&
 '@    TWO-WAY COUPLING IN LAGRANGIAN MODELLING                ',/,&
-'@                                                            ',/,&
-'@   The calculation could NOT run.                           ',/,&
-'@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2605 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@    Synthetic Vortex method for LES inlet is not compatible ',/,&
-'@    with mutiphase option                                   ',/,&
-'@    we have here                                            ',/,&
-'@    NPHAS =',I10                                             ,/,&
-'@    IVRETX=',I10                                             ,/,&
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&

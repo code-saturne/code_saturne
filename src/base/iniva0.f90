@@ -150,7 +150,7 @@ idebra = idbra0
 !     du pas de temps variable avant passage dans les C.L.
 
 if ( ippmod(icompf).ge.0 ) then
-  do ifac = 1, nfabor*nphas
+  do ifac = 1, nfabor
     ia(iisymp+ifac-1) = 1
   enddo
 endif

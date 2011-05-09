@@ -323,9 +323,7 @@ ifac0 = imodif
 ! --> ieos = 2: Perfect gas with variable Gamma
 ! --> ieos = 3: Van Der Waals
 
-do iiph = 1, nphas
-  ieos = 1
-enddo
+ieos = 1
 
 
 ! Warning: once the thermodynamic law has been chosen,

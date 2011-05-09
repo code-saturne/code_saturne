@@ -120,7 +120,7 @@ integer          iok   , ncelok, nfaiok, nfabok, nsomok
 integer          ierror, irtyp,  itysup, nbval
 integer          nberro, ilecec
 integer          iturph, jturph, itytph, jtytph
-integer          nfmtph, nfmtsc, nfmtru
+integer          nfmtsc, nfmtru
 integer          jturb, jtytur, jale
 integer          impamo
 double precision d2s3, d2s3xk
@@ -148,27 +148,16 @@ nfmtru = 36
 
 !  --->  On code en chaine le numero des phases et scalaires
 
-!     Nombre de phases, de scalaires max pour les formats choisis
-nfmtph = 99
+!     Nombre de scalaires max pour les formats choisis
 nfmtsc = 9999
 
 !     Indefini a 2 caracteres
 CINDFP='YY'
 
 !     Codage en chaine de caracteres du numero de la phase
-!       Aller jusqu'a NPHAS suffirait
-!       On suppose que les phases ont le meme numero en suite de calcul
-do iphas = 1, min(nphas,nfmtph)
-  WRITE(CPHASE,'(I2.2)') IPHAS
-enddo
-do iphas = min(nphas,nfmtph)+1,nphas
- cphase = cindfp
-enddo
+WRITE(CPHASE,'(I2.2)') 1
 
 !     Avertissement
-if(nphsmx.gt.nfmtph) then
-  write(nfecra,8000)nfmtph,nphsmx
-endif
 if(nscamx.gt.nfmtsc) then
   write(nfecra,8001)nfmtsc,nscamx
 endif
@@ -267,14 +256,20 @@ if (nberro.ne.0) then
   call csexit (1)
 endif
 
+!  ---> On ne sait relire que des calculs monophasiques
+
+if (jphas.ne.1) then
+  write(nfecra,8205) jphas
+  call csexit(1)
+endif
+
 !  ---> On previent si des parametres sont differents
 
 if ( jvar  .ne.nvar   .or. jscal .ne.nscal  .or.                  &
-     jscaus.ne.nscaus .or. jscapp.ne.nscapp .or.                  &
-     jphas .ne.nphas                                 ) then
+     jscaus.ne.nscaus .or. jscapp.ne.nscapp ) then
   write(nfecra,8210)                                              &
-         jvar, jscal, jscaus, jscapp, jphas,                      &
-         nvar, nscal, nscaus, nscapp, nphas
+         jvar, jscal, jscaus, jscapp,                             &
+         nvar, nscal, nscaus, nscapp
 endif
 
 ! ---> Fin de la lecture des dimensions
@@ -390,16 +385,14 @@ nberro=nberro+ierror
 
 !     Modeles de turbulence
 
-do iphas = 1, min(nphas,jphas)
-  RUBRIQ = 'modele_turbulence_phase'//CPHASE
-  itysup = 0
-  nbval  = 1
-  irtyp  = 1
-  call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              jturb,ierror)
-  nberro=nberro+ierror
-  jtytur=jturb/10
-enddo
+RUBRIQ = 'modele_turbulence_phase'//CPHASE
+itysup = 0
+nbval  = 1
+irtyp  = 1
+call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
+            jturb,ierror)
+nberro=nberro+ierror
+jtytur=jturb/10
 
 ! --->  Stop si erreur
 if (nberro.ne.0) then
@@ -437,10 +430,8 @@ write(nfecra,2410) ntpabs
 write(nfecra,2411) ttpabs
 
 ! --->  Donnees modifiees
-do iphas = 1, min(nphas,jphas)
-   if (iturb .ne. jturb)                            &
-        write(nfecra,8410) iturb, jturb
-enddo
+if (iturb .ne. jturb)                            &
+    write(nfecra,8410) iturb, jturb
 
 ! --->  Si le calcul precedent etait en ALE, on DOIT relire les
 !         coordonnees des noeuds dans le fichier auxiliaire
@@ -477,33 +468,31 @@ nberro=nberro+ierror
 !       les infos existantes dans le fichier suite.
 !       Pour les nouvelles phases : deja fait par defaut dans INIVA0
 
-do iphas = 1, min(jphas,nphas)
-
-   iturph = iturb
-   jturph = jturb
-   itytph = itytur
-   jtytph = jtytur
+iturph = iturb
+jturph = jturb
+itytph = itytur
+jtytph = jtytur
 
 !     Vitesse
 
-   itysup = 1
-   nbval  = 1
-   irtyp  = 2
+itysup = 1
+nbval  = 1
+irtyp  = 2
 
-   RUBRIQ = 'vitesse_u_ce_phase'//CPHASE
-   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-               rtp(1,iu),ierror)
-   nberro=nberro+ierror
+RUBRIQ = 'vitesse_u_ce_phase'//CPHASE
+call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
+     rtp(1,iu),ierror)
+nberro=nberro+ierror
 
-   RUBRIQ = 'vitesse_v_ce_phase'//CPHASE
-   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-               rtp(1,iv),ierror)
-   nberro=nberro+ierror
+RUBRIQ = 'vitesse_v_ce_phase'//CPHASE
+call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
+     rtp(1,iv),ierror)
+nberro=nberro+ierror
 
-   RUBRIQ = 'vitesse_w_ce_phase'//CPHASE
-   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-               rtp(1,iw),ierror)
-   nberro=nberro+ierror
+RUBRIQ = 'vitesse_w_ce_phase'//CPHASE
+call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
+     rtp(1,iw),ierror)
+nberro=nberro+ierror
 
 
 
@@ -517,443 +506,440 @@ do iphas = 1, min(jphas,nphas)
 !   -- Le nouveau calcul est en k-epsilon
 
 
-   if (itytph.eq.2) then
+if (itytph.eq.2) then
 
-!     * k-e ou v2f -> k-e
+  !     * k-e ou v2f -> k-e
 
-    if(jtytph.eq.2 .or. jturph.eq.50) then
+  if(jtytph.eq.2 .or. jturph.eq.50) then
 
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ik),ierror)
-      nberro=nberro+ierror
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ik),ierror)
+    nberro=nberro+ierror
 
-      RUBRIQ = 'eps_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iep),ierror)
-      nberro=nberro+ierror
+    RUBRIQ = 'eps_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,iep),ierror)
+    nberro=nberro+ierror
 
-!     * rij -> k-e
+    !     * rij -> k-e
 
-    elseif(jtytph.eq.3) then
+  elseif(jtytph.eq.3) then
 
-       ikiph  = ik
-       ieiph  = iep
+    ikiph  = ik
+    ieiph  = iep
 
-       itysup = 1
-       nbval  = 1
-       irtyp  = 2
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
 
-       RUBRIQ = 'R11_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ikiph),ierror)
-       nberro=nberro+ierror
+    RUBRIQ = 'R11_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ikiph),ierror)
+    nberro=nberro+ierror
 
-!            La variable epsilon sert de tableau de travail
-       RUBRIQ = 'R22_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ieiph),ierror)
-       nberro=nberro+ierror
+    !            La variable epsilon sert de tableau de travail
+    RUBRIQ = 'R22_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
 
-       do iel = 1, ncel
-         rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,ieiph)
-       enddo
+    do iel = 1, ncel
+      rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,ieiph)
+    enddo
 
-       RUBRIQ = 'R33_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ieiph),ierror)
-       nberro=nberro+ierror
+    RUBRIQ = 'R33_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
 
-       do iel = 1, ncel
-         rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,ieiph))
-       enddo
+    do iel = 1, ncel
+      rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,ieiph))
+    enddo
 
-       RUBRIQ = 'eps_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ieiph),ierror)
-       nberro=nberro+ierror
+    RUBRIQ = 'eps_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
 
-!     * k-omega -> k-e
+    !     * k-omega -> k-e
 
-    else if(jturph.eq.60) then
+  else if(jturph.eq.60) then
 
-      ikiph = ik
-      ieiph = iep
+    ikiph = ik
+    ieiph = iep
 
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ikiph),ierror)
-      nberro=nberro+ierror
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ikiph),ierror)
+    nberro=nberro+ierror
 
-      RUBRIQ = 'omega_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ieiph),ierror)
-      nberro=nberro+ierror
-!           On transforme ensuite omega en epsilon
-      do iel = 1, ncel
-        rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ikiph)
-      enddo
+    RUBRIQ = 'omega_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
+    !           On transforme ensuite omega en epsilon
+    do iel = 1, ncel
+      rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ikiph)
+    enddo
 
-    endif
-!         Rq : laminaire -> k-e  (On ne fait rien, deja fait dans iniva0)
+  endif
+  !         Rq : laminaire -> k-e  (On ne fait rien, deja fait dans iniva0)
 
 
-!   -- Le nouveau calcul est en Rij-epsilon
+  !   -- Le nouveau calcul est en Rij-epsilon
 
-  elseif(itytph.eq.3) then
+elseif(itytph.eq.3) then
 
-!     * k-e ou v2f -> rij
+  !     * k-e ou v2f -> rij
 
-    if (jtytph.eq.2 .or. jturph.eq.50) then
+  if (jtytph.eq.2 .or. jturph.eq.50) then
 
-       ir11ip=ir11
-       ir22ip=ir22
-       ir33ip=ir33
-       ir12ip=ir12
-       ir13ip=ir13
-       ir23ip=ir23
+    ir11ip=ir11
+    ir22ip=ir22
+    ir33ip=ir33
+    ir12ip=ir12
+    ir13ip=ir13
+    ir23ip=ir23
 
-       itysup = 1
-       nbval  = 1
-       irtyp  = 2
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
 
-       RUBRIQ = 'k_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ir11ip),ierror)
-       nberro=nberro+ierror
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ir11ip),ierror)
+    nberro=nberro+ierror
 
-       d2s3 = 2.d0/3.d0
-       do iel = 1, ncel
-          d2s3xk = rtp(iel,ir11ip)*d2s3
-          rtp(iel,ir11ip) = d2s3xk
-          rtp(iel,ir22ip) = d2s3xk
-          rtp(iel,ir33ip) = d2s3xk
-          rtp(iel,ir12ip) = 0.d0
-          rtp(iel,ir13ip) = 0.d0
-          rtp(iel,ir23ip) = 0.d0
-       enddo
+    d2s3 = 2.d0/3.d0
+    do iel = 1, ncel
+      d2s3xk = rtp(iel,ir11ip)*d2s3
+      rtp(iel,ir11ip) = d2s3xk
+      rtp(iel,ir22ip) = d2s3xk
+      rtp(iel,ir33ip) = d2s3xk
+      rtp(iel,ir12ip) = 0.d0
+      rtp(iel,ir13ip) = 0.d0
+      rtp(iel,ir23ip) = 0.d0
+    enddo
 
-       RUBRIQ = 'eps_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,iep),ierror)
-       nberro=nberro+ierror
+    RUBRIQ = 'eps_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,iep),ierror)
+    nberro=nberro+ierror
 
-!     * rij -> rij
+    !     * rij -> rij
 
-    elseif(jtytph.eq.3) then
+  elseif(jtytph.eq.3) then
 
-     do ii   = 1, 7
+    do ii   = 1, 7
       if (ii  .eq.1) then
-         RUBRIQ = 'R11_ce_phase'//CPHASE
-         ivar = ir11
+        RUBRIQ = 'R11_ce_phase'//CPHASE
+        ivar = ir11
       elseif (ii  .eq.2) then
-         RUBRIQ = 'R22_ce_phase'//CPHASE
-         ivar = ir22
+        RUBRIQ = 'R22_ce_phase'//CPHASE
+        ivar = ir22
       elseif (ii  .eq.3) then
-         RUBRIQ = 'R33_ce_phase'//CPHASE
-         ivar = ir33
+        RUBRIQ = 'R33_ce_phase'//CPHASE
+        ivar = ir33
       elseif (ii  .eq.4) then
-         RUBRIQ = 'R12_ce_phase'//CPHASE
-         ivar = ir12
+        RUBRIQ = 'R12_ce_phase'//CPHASE
+        ivar = ir12
       elseif (ii  .eq.5) then
-         RUBRIQ = 'R13_ce_phase'//CPHASE
-         ivar = ir13
+        RUBRIQ = 'R13_ce_phase'//CPHASE
+        ivar = ir13
       elseif (ii  .eq.6) then
-         RUBRIQ = 'R23_ce_phase'//CPHASE
-         ivar = ir23
+        RUBRIQ = 'R23_ce_phase'//CPHASE
+        ivar = ir23
       elseif (ii  .eq.7) then
-         RUBRIQ = 'eps_ce_phase'//CPHASE
-         ivar = iep
+        RUBRIQ = 'eps_ce_phase'//CPHASE
+        ivar = iep
       endif
       itysup = 1
       nbval  = 1
       irtyp  = 2
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ivar),ierror)
+           rtp(1,ivar),ierror)
       nberro=nberro+ierror
-     enddo
-
-!     * k-omega -> rij
-
-    else if (jturph.eq.60) then
-
-      ir11ip=ir11
-      ir22ip=ir22
-      ir33ip=ir33
-      ir12ip=ir12
-      ir13ip=ir13
-      ir23ip=ir23
-      ieiph =iep
-
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-
-      RUBRIQ = 'k_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rtp(1,ir11ip),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'omega_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-           rtp(1,ieiph),ierror)
-      nberro=nberro+ierror
-!     On transforme ensuite omega en epsilon
-      do iel = 1, ncel
-        rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ir11ip)
-      enddo
-
-      d2s3 = 2.d0/3.d0
-      do iel = 1, ncel
-        d2s3xk = rtp(iel,ir11ip)*d2s3
-        rtp(iel,ir11ip) = d2s3xk
-        rtp(iel,ir22ip) = d2s3xk
-        rtp(iel,ir33ip) = d2s3xk
-        rtp(iel,ir12ip) = 0.d0
-        rtp(iel,ir13ip) = 0.d0
-        rtp(iel,ir23ip) = 0.d0
-      enddo
-
-    endif
-!       Rq : laminaire -> rij   (On ne fait rien, deja fait dans iniva0)
-
-!   -- Le nouveau calcul est en v2f
-
-  elseif(iturph.eq.50) then
-
-!     * k-e -> v2f
-
-    if(jtytph.eq.2) then
-
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-
-      RUBRIQ = 'k_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ik),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'eps_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iep),ierror)
-      nberro=nberro+ierror
-!     On laisse pour phi et fb les initialisations de iniva0
-
-!     * rij -> v2f
-
-    elseif(jtytph.eq.3) then
-
-       ikiph  = ik
-       ieiph  = iep
-
-       itysup = 1
-       nbval  = 1
-       irtyp  = 2
-
-       RUBRIQ = 'R11_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ikiph),ierror)
-       nberro=nberro+ierror
-
-!            La variable epsilon sert de tableau de travail
-       RUBRIQ = 'R22_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ieiph),ierror)
-       nberro=nberro+ierror
-
-       do iel = 1, ncel
-         rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,ieiph)
-       enddo
-
-       RUBRIQ = 'R33_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ieiph),ierror)
-       nberro=nberro+ierror
-
-       do iel = 1, ncel
-         rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,ieiph))
-       enddo
-
-       RUBRIQ = 'eps_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ieiph),ierror)
-       nberro=nberro+ierror
-!     On laisse pour phi et fb l'initialisations de iniva0
-!     (le v2 qui intervient dans phi n'est pas vraiment une composante de Rij
-!      et qui plus est, on ne saurait pas quelle composante prendre ...)
-
-!     * v2f -> v2f
-
-    elseif(jturph.eq.50) then
-
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-
-      RUBRIQ = 'k_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ik),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'eps_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iep),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'phi_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iphi),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'fb_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ifb),ierror)
-      nberro=nberro+ierror
-!     * k-omega -> v2f
-
-    else if(jturph.eq.60) then
-
-      ikiph = ik
-      ieiph = iep
-
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-
-      RUBRIQ = 'k_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ikiph),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'omega_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ieiph),ierror)
-      nberro=nberro+ierror
-!           On transforme ensuite omega en epsilon
-      do iel = 1, ncel
-        rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ikiph)
-      enddo
-!     On laisse pour phi et fb l'initialisations de iniva0
-
-
-    endif
-!         Rq : laminaire -> v2f  (On ne fait rien, deja fait dans iniva0)
-
-
-!   -- Le nouveau calcul est en k-omega
-
-   else if (iturph.eq.60) then
-
-!     * k-e ou v2f -> k-omega
-
-    if(jtytph.eq.2 .or. jturph.eq.50) then
-
-      ikiph  = ik
-      iomgip = iomg
-
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-
-      RUBRIQ = 'k_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ikiph),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'eps_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iomgip),ierror)
-      nberro=nberro+ierror
-!           On transforme ensuite epsilon en omega
-      do iel = 1, ncel
-        rtp(iel,iomgip) = rtp(iel,iomgip)/cmu/rtp(iel,ikiph)
-      enddo
-
-!     * rij -> k-omega
-
-    elseif(jtytph.eq.3) then
-
-      ikiph  = ik
-      iomgip = iomg
-
-       itysup = 1
-       nbval  = 1
-       irtyp  = 2
-
-       RUBRIQ = 'R11_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,ikiph),ierror)
-       nberro=nberro+ierror
-
-!            La variable omega sert de tableau de travail
-       RUBRIQ = 'R22_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,iomgip),ierror)
-       nberro=nberro+ierror
-
-       do iel = 1, ncel
-         rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,iomgip)
-       enddo
-
-       RUBRIQ = 'R33_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,iomgip),ierror)
-       nberro=nberro+ierror
-
-       do iel = 1, ncel
-         rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,iomgip))
-       enddo
-
-       RUBRIQ = 'eps_ce_phase'//CPHASE
-       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,iomgip),ierror)
-       nberro=nberro+ierror
-!           On transforme ensuite epsilon en omega
-      do iel = 1, ncel
-        rtp(iel,iomgip) = rtp(iel,iomgip)/cmu/rtp(iel,ikiph)
-      enddo
-
-!     * k-omega -> k-omega
-
-    else if(jturph.eq.60) then
-
-      ikiph = ik
-      iomgip= iomg
-
-      itysup = 1
-      nbval  = 1
-      irtyp  = 2
-
-      RUBRIQ = 'k_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ikiph),ierror)
-      nberro=nberro+ierror
-
-      RUBRIQ = 'omega_ce_phase'//CPHASE
-      call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iomgip),ierror)
-      nberro=nberro+ierror
-
-    endif
-!         Rq : laminaire -> k-omega  (On ne fait rien, deja fait dans iniva0)
-
-
-!   -- Le nouveau calcul est en laminaire, longueur de melange ou LES
-!           --> rien a lire
+    enddo
+
+    !     * k-omega -> rij
+
+  else if (jturph.eq.60) then
+
+    ir11ip=ir11
+    ir22ip=ir22
+    ir33ip=ir33
+    ir12ip=ir12
+    ir13ip=ir13
+    ir23ip=ir23
+    ieiph =iep
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ir11ip),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'omega_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
+    !     On transforme ensuite omega en epsilon
+    do iel = 1, ncel
+      rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ir11ip)
+    enddo
+
+    d2s3 = 2.d0/3.d0
+    do iel = 1, ncel
+      d2s3xk = rtp(iel,ir11ip)*d2s3
+      rtp(iel,ir11ip) = d2s3xk
+      rtp(iel,ir22ip) = d2s3xk
+      rtp(iel,ir33ip) = d2s3xk
+      rtp(iel,ir12ip) = 0.d0
+      rtp(iel,ir13ip) = 0.d0
+      rtp(iel,ir23ip) = 0.d0
+    enddo
 
   endif
+  !       Rq : laminaire -> rij   (On ne fait rien, deja fait dans iniva0)
 
-enddo
-!    Fin de la boucle sur les phases communes
+  !   -- Le nouveau calcul est en v2f
+
+elseif(iturph.eq.50) then
+
+  !     * k-e -> v2f
+
+  if(jtytph.eq.2) then
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ik),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'eps_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,iep),ierror)
+    nberro=nberro+ierror
+    !     On laisse pour phi et fb les initialisations de iniva0
+
+    !     * rij -> v2f
+
+  elseif(jtytph.eq.3) then
+
+    ikiph  = ik
+    ieiph  = iep
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'R11_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ikiph),ierror)
+    nberro=nberro+ierror
+
+    !            La variable epsilon sert de tableau de travail
+    RUBRIQ = 'R22_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
+
+    do iel = 1, ncel
+      rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,ieiph)
+    enddo
+
+    RUBRIQ = 'R33_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
+
+    do iel = 1, ncel
+      rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,ieiph))
+    enddo
+
+    RUBRIQ = 'eps_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
+    !     On laisse pour phi et fb l'initialisations de iniva0
+    !     (le v2 qui intervient dans phi n'est pas vraiment une composante de Rij
+    !      et qui plus est, on ne saurait pas quelle composante prendre ...)
+
+    !     * v2f -> v2f
+
+  elseif(jturph.eq.50) then
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ik),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'eps_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,iep),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'phi_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,iphi),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'fb_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ifb),ierror)
+    nberro=nberro+ierror
+    !     * k-omega -> v2f
+
+  else if(jturph.eq.60) then
+
+    ikiph = ik
+    ieiph = iep
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ikiph),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'omega_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ieiph),ierror)
+    nberro=nberro+ierror
+    !           On transforme ensuite omega en epsilon
+    do iel = 1, ncel
+      rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ikiph)
+    enddo
+    !     On laisse pour phi et fb l'initialisations de iniva0
+
+
+  endif
+  !         Rq : laminaire -> v2f  (On ne fait rien, deja fait dans iniva0)
+
+
+  !   -- Le nouveau calcul est en k-omega
+
+else if (iturph.eq.60) then
+
+  !     * k-e ou v2f -> k-omega
+
+  if(jtytph.eq.2 .or. jturph.eq.50) then
+
+    ikiph  = ik
+    iomgip = iomg
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ikiph),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'eps_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,iomgip),ierror)
+    nberro=nberro+ierror
+    !           On transforme ensuite epsilon en omega
+    do iel = 1, ncel
+      rtp(iel,iomgip) = rtp(iel,iomgip)/cmu/rtp(iel,ikiph)
+    enddo
+
+    !     * rij -> k-omega
+
+  elseif(jtytph.eq.3) then
+
+    ikiph  = ik
+    iomgip = iomg
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'R11_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,ikiph),ierror)
+    nberro=nberro+ierror
+
+    !            La variable omega sert de tableau de travail
+    RUBRIQ = 'R22_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,iomgip),ierror)
+    nberro=nberro+ierror
+
+    do iel = 1, ncel
+      rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,iomgip)
+    enddo
+
+    RUBRIQ = 'R33_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,iomgip),ierror)
+    nberro=nberro+ierror
+
+    do iel = 1, ncel
+      rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,iomgip))
+    enddo
+
+    RUBRIQ = 'eps_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
+         rtp(1,iomgip),ierror)
+    nberro=nberro+ierror
+    !           On transforme ensuite epsilon en omega
+    do iel = 1, ncel
+      rtp(iel,iomgip) = rtp(iel,iomgip)/cmu/rtp(iel,ikiph)
+    enddo
+
+    !     * k-omega -> k-omega
+
+  else if(jturph.eq.60) then
+
+    ikiph = ik
+    iomgip= iomg
+
+    itysup = 1
+    nbval  = 1
+    irtyp  = 2
+
+    RUBRIQ = 'k_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,ikiph),ierror)
+    nberro=nberro+ierror
+
+    RUBRIQ = 'omega_ce_phase'//CPHASE
+    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+         rtp(1,iomgip),ierror)
+    nberro=nberro+ierror
+
+  endif
+  !         Rq : laminaire -> k-omega  (On ne fait rien, deja fait dans iniva0)
+
+
+  !   -- Le nouveau calcul est en laminaire, longueur de melange ou LES
+  !           --> rien a lire
+
+endif
 
 if (nberro.ne.0) then
    write(nfecra,9510)
@@ -1134,27 +1120,6 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 8000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@                                                            ',/,&
-'@      Le nombre de phases    maximal NPHSMX supporte pas le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTPH = ',I10                                       ,/,&
-'@      On a ici un nombre de phases    maximal superieur     ',/,&
-'@        NPHSMX = ',I10                                       ,/,&
-'@      Si le nombre de phases effectif est superieur, elles  ',/,&
-'@        ne seront pas relues.                               ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme lecamp.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1176,6 +1141,20 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 8205 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : LECTURE DU FICHIER SUITE PRINCIPAL          ',/,&
+'@    =========                                               ',/,&
+'@      DONNEES AMONT MULTIPHASIQUES                          ',/,&
+'@                                                            ',/,&
+'@  Nombre de phases (amont) : ',I10                           ,/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  8210 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1184,14 +1163,13 @@ return
 '@    =========                                               ',/,&
 '@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
 '@                                                            ',/,&
-'@    Le nombre de variables, de scalaires ou de phases a ete ',/,&
-'@      modifie.                                              ',/,&
+'@    Le nombre de variables ou de scalaires a ete modifie.   ',/,&
 '@    Le calcul peut etre execute.                            ',/,&
 '@                                                            ',/,&
 '@    Il est cependant conseille de verifier                  ',/,&
 '@      les dimensions suivantes dans usini1 :                ',/,&
 '@                                                            ',/,&
-'@                NVAR     NSCAL    NSCAUS    NSCAPP     NPHAS',/,&
+'@                NVAR     NSCAL    NSCAUS    NSCAPP          ',/,&
 '@  AMONT : ',5I10                                             ,/,&
 '@  ACTUEL: ',5I10                                             ,/,&
 '@                                                            ',/,&
@@ -1231,27 +1209,6 @@ return
 
 #else
 
- 8000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING :   WHEN READING THE MAIN RESTART FILE          ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      The maximum number of phases NPHSMX supported         ',/,&
-'@        by the restart file writing format is               ',/,&
-'@        NFMTPH = ',I10                                       ,/,&
-'@      Here is the maximum number of phases larger           ',/,&
-'@        NPHSMX = ',I10                                       ,/,&
-'@      If the actual number of phases is more than NFMTPH,   ',/,&
-'@        some of them might not be read.                     ',/,&
-'@                                                            ',/,&
-'@    The calculation will be run.                            ',/,&
-'@                                                            ',/,&
-'@    See the sub-routine lecamp.                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  8001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1272,6 +1229,20 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 8205 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : WHEN READING THE MAIN RESTARTING FILE       ',/,  &
+'@    =========                                               ',/,&
+'@      CHECKPOINT DATA ARE MULTIPHASE                        ',/,&
+'@                                                            ',/,&
+'@  Number of phases (checkpoint) : ',I10                      ,/,&
+'@                                                            ',/,&
+'@    The computation cannot be executed.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  8210 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1280,13 +1251,13 @@ return
 '@    =========                                               ',/,&
 '@      THE RESTART AND CHECKPOINT DATA ARE DIFFERENT         ',/,&
 '@                                                            ',/,&
-'@    The number of variables, scalars or phases has changed. ',/,&
+'@    The number of variables or scalars has changed.         ',/,&
 '@    The calculation will be run.                            ',/,&
 '@                                                            ',/,&
 '@    However, it is strongly advised to check                ',/,&
 '@      the following dimensions in usini1 :                  ',/,&
 '@                                                            ',/,&
-'@                NVAR     NSCAL    NSCAUS    NSCAPP     NPHAS',/,&
+'@                NVAR     NSCAL    NSCAUS    NSCAPP          ',/,&
 '@ PREVIOUS:',5I10                                             ,/,&
 '@ CURRENT :',5I10                                             ,/,&
 '@                                                            ',/,&

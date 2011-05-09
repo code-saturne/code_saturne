@@ -196,7 +196,7 @@ endif
 
 write(nfecra,1500)
 write(nfecra,1510) nprfml,nfml
-write(nfecra,1520) nphas,nvar,nscal,nscaus,nscapp,                &
+write(nfecra,1520) nvar,nscal,nscaus,nscapp,                &
                    nproce,nprofa,nprofb
 
 write(nfecra,9900)
@@ -214,7 +214,6 @@ write(nfecra,9900)
 '       NFML   = ',4X,I10,    ' (Nb de familles              )',/)
  1520 format(                                                           &
 ' --- Physique'                                                ,/,&
-'       NPHAS  = ',4X,I10,    ' (Nb de phases                )',/,&
 '       NVAR   = ',4X,I10,    ' (Nb de variables             )',/,&
 '       NSCAL  = ',4X,I10,    ' (Nb de scalaires             )',/,&
 '       NSCAUS = ',4X,I10,    ' (Nb de scalaires utilisateur )',/,&
@@ -235,7 +234,6 @@ write(nfecra,9900)
 '       NFML   = ',4X,I10,    ' (Nb families                 )',/)
  1520 format(                                                           &
 ' --- Physics'                                                 ,/,&
-'       NPHAS  = ',4X,I10,    ' (Nb phases                   )',/,&
 '       NVAR   = ',4X,I10,    ' (Nb variables                )',/,&
 '       NSCAL  = ',4X,I10,    ' (Nb scalars                  )',/,&
 '       NSCAUS = ',4X,I10,    ' (Nb user scalars             )',/,&

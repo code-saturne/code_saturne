@@ -1,4 +1,17 @@
 * 09/05/2011 - David Monfort <david.monfort@edf.fr>
+  Removing the dependency to the number of phases (step 12).
+  Complete previous steps where some changes were missing.
+  modified routines:
+    src/base/ecrava.f90
+    src/base/impini.f90
+    src/base/iniva0.f90
+    src/base/lecamp.f90
+    src/base/lecamx.f90
+    src/base/tridim.f90
+    src/base/verini.f90
+    users/cfbl/uscfth.f90
+
+* 09/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 11).
   Loops on the number of phases and tests on the phase number have been
   suppressed.
