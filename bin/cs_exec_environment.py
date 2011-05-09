@@ -417,6 +417,8 @@ class resource_info(batch_info):
             if s != None:
                 hosts_list = s.split(' ')
 
+        return hosts_list
+
     #---------------------------------------------------------------------------
 
     def get_hosts_file(self, wdir = None):
@@ -488,7 +490,6 @@ class mpi_environment:
         self.del_hostsfile = None
         self.mpiboot = None
         self.mpihalt = None
-        self.mpiexec_opts = None
         self.mpiexec = None
         self.mpiexec_opts = None
         self.mpiexec_n = None
@@ -502,7 +503,7 @@ class mpi_environment:
 
         init_method = self.__init_other__
 
-        if len(pkg.mpi_type) > 0:
+        if len(self.type) > 0:
             mpi_env_by_type = {'MPICH2':self.__init_mpich2__,
                                'MPICH1':self.__init_mpich1__,
                                'OpenMPI':self.__init_openmpi__,
@@ -511,8 +512,8 @@ class mpi_environment:
                                'BGP_MPI':self.__init_bgp__,
                                'HP_MPI':self.__init_hp_mpi__,
                                'MPIBULL2':self.__init_mpibull2__}
-            if pkg.mpi_type in mpi_env_by_type:
-                init_method = mpi_env_by_type[pkg.mpi_type]
+            if self.type in mpi_env_by_type:
+                init_method = mpi_env_by_type[self.type]
 
         p = os.getenv('PATH').split(':')
         if len(self.bindir) > 0:
@@ -1097,6 +1098,7 @@ if __name__ == '__main__':
     print('mpi_env.mpiexec =       ', mpi_env.mpiexec)
     print('mpi_env.mpiexec_args =  ', mpi_env.mpiexec_args)
     print('mpi_env.mpiexec_exe =   ', mpi_env.mpiexec_exe)
+    print('mpi_env.mpiexec_opts =  ', mpi_env.mpiexec_opts)
     print('mpi_env.mpiexec_n =     ', mpi_env.mpiexec_n)
     print('mpi_env.gen_hostsfile = ', mpi_env.gen_hostsfile)
     print('mpi_env.del_hostsfile = ', mpi_env.del_hostsfile)

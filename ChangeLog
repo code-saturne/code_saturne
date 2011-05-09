@@ -1,3 +1,8 @@
+* 09/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor fixes to environment execution handling.
+  modified file:
+    bin/cs_exec_environment.py
+
 * 09/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 10).
   Likewise step 8 and 9 but for arrays allocated in mem*** subroutines. 
