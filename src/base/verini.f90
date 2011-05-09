@@ -454,7 +454,7 @@ enddo
 indest = 0
 do iphas = 1, nphas
   do iest = 1, nestmx
-    iiesca = iescal(iest,iphas)
+    iiesca = iescal(iest)
     if(iiesca.gt.0) then
       indest = 1
     endif
@@ -1313,7 +1313,7 @@ endif
 
 do iphas = 1, nphas
   do iest = 1, nestmx
-    iiesca = iescal(iest,iphas)
+    iiesca = iescal(iest)
     if (iiesca.ne.0.and.iiesca.ne.1.and.iiesca.ne.2) then
       write(nfecra,2664) iest,iest,iiesca,            &
                          iespre,iesder,iescor,iestot

@@ -216,9 +216,9 @@ if  (ippmod(icompf).lt.0) then
     ro0iph = ro0
     p0iph  = p0
     pr0iph = pred0
-    xxp0   = xyzp0(1,iphas)
-    xyp0   = xyzp0(2,iphas)
-    xzp0   = xyzp0(3,iphas)
+    xxp0   = xyzp0(1)
+    xyp0   = xyzp0(2)
+    xzp0   = xyzp0(3)
     do iel = 1, ncel
       if (propce(iel,iiptot).gt.-0.5d0*rinfin) then
         rtp(iel,ipriph) = propce(iel,iiptot)                      &

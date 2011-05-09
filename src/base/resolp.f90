@@ -969,12 +969,12 @@ do 100 isweep = 1, nswmpr
 ! --- Calcul d'indicateur, avec prise en compte
 !       du volume (norme L2) ou non
 
-    if(iescal(iesder,iphas).gt.0) then
-      iesdep = ipproc(iestim(iesder,iphas))
+    if(iescal(iesder).gt.0) then
+      iesdep = ipproc(iestim(iesder))
       do iel = 1, ncel
         propce(iel,iesdep) = abs(smbr(iel))/volume(iel)
       enddo
-      if(iescal(iesder,iphas).eq.2) then
+      if(iescal(iesder).eq.2) then
         do iel = 1, ncel
           propce(iel,iesdep) =                                    &
             propce(iel,iesdep)*sqrt(volume(iel))
@@ -1083,12 +1083,12 @@ do 100 isweep = 1, nswmpr
 ! --- Calcul d'indicateur, avec prise en compte
 !       du volume (norme L2) ou non
 
-    if(iescal(iesder,iphas).gt.0) then
-      iesdep = ipproc(iestim(iesder,iphas))
+    if(iescal(iesder).gt.0) then
+      iesdep = ipproc(iestim(iesder))
       do iel = 1, ncel
         propce(iel,iesdep) = abs(smbr(iel))/volume(iel)
       enddo
-      if(iescal(iesder,iphas).eq.2) then
+      if(iescal(iesder).eq.2) then
         do iel = 1, ncel
           propce(iel,iesdep) =                                    &
             propce(iel,iesdep)*sqrt(volume(iel))

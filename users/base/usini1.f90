@@ -653,7 +653,7 @@ integer nphmax, nesmax
 integer iespre, iesder, iescor, iestot
 integer nphas , iihmpu, nfecra
 integer idtvar, ipucou, iphydr, ialgce
-integer iescal(nesmax,nphmax)
+integer iescal(nesmax)
 integer iverif, icwfps
 
 double precision cwfthr
@@ -770,9 +770,9 @@ iphydr = 0
 
 iphas = 1
 !       div(rho u) -Gamma
-iescal(iescor,iphas) = 0
+iescal(iescor) = 0
 !       resolution precision for the momentum
-iescal(iestot,iphas) = 0
+iescal(iestot) = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -1230,7 +1230,7 @@ omegaz = 0.d0
 !                    the calculation is based on a
 !                    reduced pressure P*=Ptot-ro0*g.(x-xref)
 !                    (except in compressible case)
-!       xyzp0(3,.) : coordinates of the reference point for
+!       xyzp0(3)   : coordinates of the reference point for
 !                    the total pressure (where it is equal to p0)
 
 !     In general, it is not necessary to furnish a reference point xyz0.
@@ -1339,9 +1339,9 @@ t0 = 1000.d0 + 273.15d0
 p0 = 1.01325d5
 ! We only specify XYZ0 if we explicitely fix Dirichlet conditions
 ! for the pressure.
-! xyzp0(1,iphas) = 0.d0
-! xyzp0(2,iphas) = 0.d0
-! xyzp0(3,iphas) = 0.d0
+! xyzp0(1) = 0.d0
+! xyzp0(2) = 0.d0
+! xyzp0(3) = 0.d0
 
 
 ! --- irovar, ivivar: density and viscosity constant or not ?

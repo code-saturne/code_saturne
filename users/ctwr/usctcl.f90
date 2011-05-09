@@ -269,9 +269,9 @@ do ilelt = 1, nlelt
   iphas = 1
   icodcl(ifac,ipr) = 1
   rcodcl(ifac,ipr,1) =                                     &
-    ro0*(  gx*(cdgfbo(1,ifac)-xyzp0(1,iphas))              &
-                + gy*(cdgfbo(2,ifac)-xyzp0(2,iphas))              &
-                + gz*(cdgfbo(3,ifac)-xyzp0(3,iphas)))
+    ro0*(  gx*(cdgfbo(1,ifac)-xyzp0(1))              &
+                + gy*(cdgfbo(2,ifac)-xyzp0(2))              &
+                + gz*(cdgfbo(3,ifac)-xyzp0(3)))
 
 enddo
 

@@ -471,7 +471,7 @@ do iphas = 1, nphas
 ! 3.  PREPARATION DES GRANDEURS TURBULENTES
 !=========================================================================
 
-  itytu0 = iturcp(numcpl,iphas)/10
+  itytu0 = iturcp(numcpl)/10
 
 
 !=========================================================================
@@ -773,7 +773,7 @@ do iphas = 1, nphas
 !          3.1.4.   Transfert de k-eps vers v2f
 !=======================================================================
 
-    elseif (iturcp(numcpl,iphas).eq.50) then
+    elseif (iturcp(numcpl).eq.50) then
 
 !   ATTENTION: CAS NON PRIS EN COMPTE (ARRET DU CALCUL DANS CSCINI.F)
 
@@ -781,7 +781,7 @@ do iphas = 1, nphas
 !          3.1.5.   Transfert de k-eps vers k-omega
 !=======================================================================
 
-    elseif (iturcp(numcpl,iphas).eq.60) then
+    elseif (iturcp(numcpl).eq.60) then
 
 !           Energie turbulente
 !           -----------------
@@ -1040,7 +1040,7 @@ do iphas = 1, nphas
 !          3.2.4. Transfert de Rij-epsilon vers v2f
 !=======================================================================
 
-    elseif (iturcp(numcpl,iphas).eq.50) then
+    elseif (iturcp(numcpl).eq.50) then
 
 !    ATTENTION: CAS NON PRIS EN COMPTE (ARRET DU CALCUL DANS CSCINI.F)
 
@@ -1048,7 +1048,7 @@ do iphas = 1, nphas
 !          3.2.5. Transfert de Rij-epsilon vers k-omega
 !=======================================================================
 
-    elseif (iturcp(numcpl,iphas).eq.60) then
+    elseif (iturcp(numcpl).eq.60) then
 
 !           Energie turbulente
 !           ------------------
@@ -1351,7 +1351,7 @@ do iphas = 1, nphas
 !          3.3.2. Transfert de variable à "iso-modèle"
 !=======================================================================
 
-    if (iturcp(numcpl,iphas).eq.50) then
+    if (iturcp(numcpl).eq.50) then
 
 !           Energie turbulente
 !           ------------------
@@ -1395,7 +1395,7 @@ do iphas = 1, nphas
 
     elseif (itytu0.eq.2) then
     elseif (itytu0.eq.3) then
-    elseif (iturcp(numcpl,iphas).eq.60) then
+    elseif (iturcp(numcpl).eq.60) then
     endif
 
 !==============================================================================
@@ -1555,7 +1555,7 @@ do iphas = 1, nphas
 !          3.4.2. Transfert de variable à "iso-modèle"
 !=======================================================================
 
-    if (iturcp(numcpl,iphas).eq.60) then
+    if (iturcp(numcpl).eq.60) then
 
 !           Energie turbulente
 !           ------------------
@@ -1720,7 +1720,7 @@ do iphas = 1, nphas
 !          3.3.4. Transfert de k-omega vers v2f
 !=======================================================================
 
-    elseif (iturcp(numcpl,iphas).eq.50) then
+    elseif (iturcp(numcpl).eq.50) then
 
 !  ATTENTION: CAS NON PRIS EN COMPTE. ARRET DU CALCUL DANS CSCINI.F
 

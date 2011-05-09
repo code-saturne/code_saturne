@@ -48,13 +48,13 @@ module cplsat
   integer   nbcpmx
   parameter(nbcpmx=10)
 
-  ! iturcp(nbcpmx,nphsmx) : modele de turbulence de l'instance distante
-  ! imajcp(nbcpmx)        : indice de mise a jour de la localisation du couplage
-  ! icormx(nbcpmx)        : indice de presence de calcul en repere relatif
-  ! nvarcp(nbcpmx)        : nombre de variables a envoyer/recevoir
-  ! nvarto(nbcpmx)        : taille des tableaux d'echange
+  ! iturcp(nbcpmx) : modele de turbulence de l'instance distante
+  ! imajcp(nbcpmx) : indice de mise a jour de la localisation du couplage
+  ! icormx(nbcpmx) : indice de presence de calcul en repere relatif
+  ! nvarcp(nbcpmx) : nombre de variables a envoyer/recevoir
+  ! nvarto(nbcpmx) : taille des tableaux d'echange
 
-  integer, save :: iturcp(nbcpmx,nphsmx), imajcp(nbcpmx), icormx(nbcpmx)
+  integer, save :: iturcp(nbcpmx), imajcp(nbcpmx), icormx(nbcpmx)
   integer, save :: nvarcp(nbcpmx), nvarto(nbcpmx)
 
   !=============================================================================

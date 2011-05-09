@@ -397,9 +397,9 @@ if (ineedf.eq.1 .and. iterns.eq.1) then
     pfac = coefb(ifac,iclipr)*(extrag(ipriph)*pfac1               &
          +(1.d0-extrag(ipriph))*pfac)                             &
          +(1.d0-coefb(ifac,iclipr))*pfac                          &
-         + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1,iphas))         &
-         + gy*(cdgfbo(2,ifac)-xyzp0(2,iphas))                     &
-         + gz*(cdgfbo(3,ifac)-xyzp0(3,iphas)) )                   &
+         + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1))         &
+         + gy*(cdgfbo(2,ifac)-xyzp0(2))                     &
+         + gz*(cdgfbo(3,ifac)-xyzp0(3)) )                   &
          - pred0
 ! on ne rajoute pas P0, pour garder un maximum de precision
 !     &         + P0
@@ -1118,8 +1118,8 @@ endif
 !      S'IL DOIT ETRE CALCULE
 
 if (iappel.eq.1) then
-  if(iescal(iespre,iphas).gt.0) then
-    iesprp = ipproc(iestim(iespre,iphas))
+  if(iescal(iespre).gt.0) then
+    iesprp = ipproc(iestim(iespre))
     do iel = 1, ncel
       propce(iel,iesprp) =  0.d0
     enddo
@@ -1131,7 +1131,7 @@ endif
 !      (SI ON FAIT UN DEUXIEME APPEL, ALORS IL DOIT ETRE CALCULE)
 
 if(iappel.eq.2) then
-  iestop = ipproc(iestim(iestot,iphas))
+  iestop = ipproc(iestim(iestot))
   do iel = 1, ncel
     propce(iel,iestop) = 0.d0
   enddo
@@ -1507,7 +1507,7 @@ do isou = 1, 3
 
   if(iappel.eq.1) then
 
-    iescap = iescal(iespre,iphas)
+    iescap = iescal(iespre)
 
 ! ---> FIN DE LA CONSTRUCTION ET DE LA RESOLUTION DU SYSTEME
 
@@ -1627,8 +1627,8 @@ do isou = 1, 3
 
 ! --->  ESTIMATEUR SUR LA VITESSE PREDITE : ON SOMME SUR LES COMPOSANTES
 
-    if(iescal(iespre,iphas).gt.0) then
-      iesprp = ipproc(iestim(iespre,iphas))
+    if(iescal(iespre).gt.0) then
+      iesprp = ipproc(iestim(iespre))
       do iel = 1, ncel
         propce(iel,iesprp) =  propce(iel,iesprp) + dam(iel)
       enddo
@@ -1661,7 +1661,7 @@ do isou = 1, 3
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
-    iestop = ipproc(iestim(iestot,iphas))
+    iestop = ipproc(iestim(iestot))
     do iel = 1, ncel
       propce(iel,iestop) =                                        &
            propce(iel,iestop)+ (smbr(iel)/volume(iel))**2
@@ -1738,13 +1738,13 @@ if(iappel.eq.1) then
 ! --->  ESTIMATEUR SUR LA VITESSE PREDITE : ON PREND LA RACINE (NORME)
 !         SANS OU AVEC VOLUME (ET DANS CE CAS C'EST LA NORME L2)
 
-  if(iescal(iespre,iphas).gt.0) then
-    iesprp = ipproc(iestim(iespre,iphas))
-    if(iescal(iespre,iphas).eq.1) then
+  if(iescal(iespre).gt.0) then
+    iesprp = ipproc(iestim(iespre))
+    if(iescal(iespre).eq.1) then
       do iel = 1, ncel
         propce(iel,iesprp) =  sqrt(propce(iel,iesprp)            )
       enddo
-    elseif(iescal(iespre,iphas).eq.2) then
+    elseif(iescal(iespre).eq.2) then
       do iel = 1, ncel
         propce(iel,iesprp) =  sqrt(propce(iel,iesprp)*volume(iel))
       enddo
@@ -1770,12 +1770,12 @@ elseif (iappel.eq.2) then
 ! --->  ESTIMATEUR SUR NAVIER-STOKES TOTAL : ON PREND LA RACINE (NORME)
 !         SANS OU AVEC VOLUME (ET DANS CE CAS C'EST LA NORME L2)
 
-  iestop = ipproc(iestim(iestot,iphas))
-  if(iescal(iestot,iphas).eq.1) then
+  iestop = ipproc(iestim(iestot))
+  if(iescal(iestot).eq.1) then
     do iel = 1, ncel
       propce(iel,iestop) = sqrt(propce(iel,iestop)            )
     enddo
-  elseif(iescal(iestot,iphas).eq.2) then
+  elseif(iescal(iestot).eq.2) then
     do iel = 1, ncel
       propce(iel,iestop) = sqrt(propce(iel,iestop)*volume(iel))
     enddo

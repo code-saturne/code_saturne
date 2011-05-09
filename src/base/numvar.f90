@@ -103,7 +103,7 @@ module numvar
                    ivisct, ivisla, ivista, &
                    icp   , icpa  , itsnsa, &
                    itstua, itssca(nscamx),                 &
-                   iestim(nestmx,nphsmx)         , ifluma(nvarmx), &
+                   iestim(nestmx)         , ifluma(nvarmx), &
                    ifluaa(nvarmx), ismago, icour , &
                    ifour , iprtot, ivisma(3)
 

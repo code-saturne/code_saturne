@@ -674,7 +674,7 @@ nberro=nberro+ierror
       nbval  = 3
       irtyp  = 2
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  xyzp0(1,iphas),ierror)
+                  xyzp0(1),ierror)
       nberro=nberro+ierror
     endif
 

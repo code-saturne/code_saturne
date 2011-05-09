@@ -262,7 +262,7 @@ do iphas = 1, nphas
                        p0    ,pred0 ,               &
                        t0    ,                             &
                        irovar,ivivar,               &
-                       (xyzp0(ii,iphas),ii=1,3)
+                       (xyzp0(ii),ii=1,3)
 enddo
 
 if (ippmod(iphpar).ge.1) write(nfecra,2030) diftl0
@@ -1474,7 +1474,7 @@ write(nfecra,9900)
 iiesca = 0
 do iphas = 1, nphas
   do iest = 1, nestmx
-    if(iescal(iest,iphas).gt.0) then
+if(iescal(iest).gt.0) then
       iiesca = 1
     endif
   enddo
@@ -1485,7 +1485,7 @@ if(iiesca.gt.0) then
   do iphas = 1, nphas
     write(nfecra,4821)
     do iest = 1, nestmx
-      write(nfecra,4822)iest, iescal(iest,iphas)
+      write(nfecra,4822)iest, iescal(iest)
     enddo
     write(nfecra,4823)
   enddo

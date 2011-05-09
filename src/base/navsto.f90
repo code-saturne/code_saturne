@@ -1035,7 +1035,7 @@ endif
 
 do iphas = 1, nphas
 
-  if(iescal(iescor,iphas).gt.0.or.iescal(iestot,iphas).gt.0) then
+  if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
 ! ---> REPERAGE DES VARIABLES
 
@@ -1074,7 +1074,7 @@ do iphas = 1, nphas
 
 !  -- Pression
 
-    if(iescal(iestot,iphas).gt.0) then
+    if(iescal(iestot).gt.0) then
 
       if (irangp.ge.0.or.iperio.eq.1) then
         call synsca(rtp(1,ipriph))
@@ -1125,7 +1125,7 @@ do iphas = 1, nphas
 ! ---> CALCUL DE L'ESTIMATEUR CORRECTION : DIVERGENCE DE ROM * U (N + 1)
 !                                          - GAMMA
 
-    if(iescal(iescor,iphas).gt.0) then
+    if(iescal(iescor).gt.0) then
       init = 1
       call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,            &
                                    ifacel,ifabor,esflum,esflub,w1)
@@ -1138,13 +1138,13 @@ do iphas = 1, nphas
         enddo
       endif
 
-      if(iescal(iescor,iphas).eq.2) then
-        iescop = ipproc(iestim(iescor,iphas))
+      if(iescal(iescor).eq.2) then
+        iescop = ipproc(iestim(iescor))
         do iel = 1, ncel
           propce(iel,iescop) =  abs(w1(iel))
         enddo
-      elseif(iescal(iescor,iphas).eq.1) then
-        iescop = ipproc(iestim(iescor,iphas))
+      elseif(iescal(iescor).eq.1) then
+        iescop = ipproc(iestim(iescor))
         do iel = 1, ncel
           propce(iel,iescop) =  abs(w1(iel)) / volume(iel)
         enddo
@@ -1154,7 +1154,7 @@ do iphas = 1, nphas
 
 ! ---> CALCUL DE L'ESTIMATEUR TOTAL
 
-    if(iescal(iestot,iphas).gt.0) then
+    if(iescal(iestot).gt.0) then
 
 !   INITIALISATION DE TRAV AVEC LE TERME INSTATIONNAIRE
 
@@ -1268,9 +1268,9 @@ do iphas = 1, nphas
     ro0iph = ro0
     p0iph  = p0
     pr0iph = pred0
-    xxp0   = xyzp0(1,iphas)
-    xyp0   = xyzp0(2,iphas)
-    xzp0   = xyzp0(3,iphas)
+    xxp0   = xyzp0(1)
+    xyp0   = xyzp0(2)
+    xzp0   = xyzp0(3)
     do iel=1,ncel
       propce(iel,ipproc(iprtot))= rtp(iel,ipr)      &
            + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                     &

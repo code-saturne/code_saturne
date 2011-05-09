@@ -665,7 +665,7 @@ if(ipass.eq.3) then
   do iphas = 1, nphas
     do iest = 1, nestmx
       iprop              = iprop + 1
-      iestim(iest,iphas) = iprop
+      iestim(iest) = iprop
     enddo
   enddo
 
@@ -841,9 +841,9 @@ if(ipass.eq.3) then
     endif
 
     do iest = 1, nestmx
-      if(iescal(iest,iphas).gt.0) then
+      if(iescal(iest).gt.0) then
         iprop                      = iprop + 1
-        ipproc(iestim(iest,iphas)) = iprop
+        ipproc(iestim(iest)) = iprop
         ipppst                     = ipppst + 1
         ipppro(iprop)              = ipppst
       endif

@@ -269,9 +269,9 @@ if( ntcabs.le.2 .and. isuite.eq.0 .and. iphydr.eq.0               &
     ro0iph = ro0
     p0iph  = p0
     pr0iph = pred0
-    xxp0   = xyzp0(1,iphas)
-    xyp0   = xyzp0(2,iphas)
-    xzp0   = xyzp0(3,iphas)
+    xxp0   = xyzp0(1)
+    xyp0   = xyzp0(2)
+    xzp0   = xyzp0(3)
     do iel = 1, ncel
       rtp(iel,ipr) = pr0iph
       propce(iel,iiptot) = p0iph                                &

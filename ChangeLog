@@ -1,4 +1,33 @@
 * 09/05/2011 - David Monfort <david.monfort@edf.fr>
+  Removing the dependency to the number of phases (step 9).
+  Likewise step 8 for remaining arrays defined in Fortran modules. 
+  modified routines:
+    src/base/condli.f90
+    src/base/cplsat.f90
+    src/base/cscini.f90
+    src/base/cscpfb.f90
+    src/base/cstphy.f90
+    src/base/ecrava.f90
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/inivar.f90
+    src/base/lecamx.f90
+    src/base/memnav.f90
+    src/base/modini.f90
+    src/base/navsto.f90
+    src/base/numvar.f90
+    src/base/optcal.f90
+    src/base/preduv.f90
+    src/base/resolp.f90
+    src/base/tridim.f90
+    src/base/typecl.f90
+    src/base/varpos.f90
+    src/base/verini.f90
+    src/cfbl/cfini1.f90
+    users/base/usini1.f90
+    users/ctwr/usctcl.f90
+
+* 09/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 8).
   All mono-dimensional arrays depending on the number of phases now are
   simple pointers. Especially, pointers from cstphy, numvar, optcal,

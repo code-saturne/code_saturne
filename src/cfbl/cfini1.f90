@@ -215,17 +215,17 @@ endif
 !     Interdits en compressible
 
 do iphas = 1, nphas
-  if( (iescal(iespre,iphas).ne.0) .or.                            &
-      (iescal(iesder,iphas).ne.0) .or.                            &
-      (iescal(iescor,iphas).ne.0) .or.                            &
-      (iescal(iestot,iphas).ne.0) ) then
+  if( (iescal(iespre).ne.0) .or.                            &
+      (iescal(iesder).ne.0) .or.                            &
+      (iescal(iescor).ne.0) .or.                            &
+      (iescal(iestot).ne.0) ) then
     write(nfecra,4000)
     call csexit (1)
   endif
-!       IESCAL(IESPRE,IPHAS) = 0
-!       IESCAL(IESDER,IPHAS) = 0
-!       IESCAL(IESCOR,IPHAS) = 0
-!       IESCAL(IESTOT,IPHAS) = 0
+!       IESCAL(IESPRE) = 0
+!       IESCAL(IESDER) = 0
+!       IESCAL(IESCOR) = 0
+!       IESCAL(IESTOT) = 0
 enddo
 
 
@@ -413,7 +413,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Imposer IESCAL(.,.) = 0 dans usini1.                      ',/,&
+'@  Imposer IESCAL(.) = 0 dans usini1.                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

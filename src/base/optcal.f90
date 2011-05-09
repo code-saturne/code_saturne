@@ -403,7 +403,7 @@ module optcal
   ! Type des conditions limites et index min et max
   !                 des sous listes defaces de bord
 
-  integer, save :: idebty(ntypmx,nphsmx), ifinty(ntypmx,nphsmx)
+  integer, save :: idebty(ntypmx), ifinty(ntypmx)
 
   !  itrbrb = 1 traitement precis de la temperature au bord, voir condli
   !             (utilise pour couplage syrthes)
@@ -427,7 +427,7 @@ module optcal
 
   !   Calcul des estimateurs
 
-  integer, save :: iescal(nestmx,nphsmx)
+  integer, save :: iescal(nestmx)
 
   !   Calcul des moyennes temporelles (calcul des moments)
 

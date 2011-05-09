@@ -79,7 +79,7 @@ module cstphy
   integer, save ::          ixyzp0
   double precision, save :: ro0    , viscl0,     &
                             p0     , pred0 ,     &
-                            xyzp0(3,nphsmx), t0    ,     &
+                            xyzp0(3), t0    ,     &
                             cp0
 
   ! Turbulence

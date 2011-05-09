@@ -391,10 +391,10 @@ do iphas = 1, min(nphas,jphas)
     nbval  = 3
     irtyp  = 2
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                xyzp0(1,iphas),ierror)
+                xyzp0(1),ierror)
     nberro = nberro+ierror
     if (ierror.eq.0) then
-      write(nfecra,7000) (xyzp0(ii,iphas),ii=1,3)
+      write(nfecra,7000) (xyzp0(ii),ii=1,3)
       ixyzp0 = 1
     endif
   endif

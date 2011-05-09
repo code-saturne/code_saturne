@@ -235,14 +235,14 @@ endif
 
 do iphas = 1, nphas
   do ii = 1, ntypmx
-   ifinty(ii,iphas) = 0
+   ifinty(ii) = 0
  enddo
 enddo
 
 do iphas = 1, nphas
   do ifac = 1, nfabor
     ityp = itypfb(ifac,iphas)
-    ifinty(ityp,iphas) = ifinty(ityp,iphas) + 1
+    ifinty(ityp) = ifinty(ityp) + 1
   enddo
 enddo
 
@@ -251,14 +251,14 @@ enddo
 
 do iphas = 1, nphas
   do ii = 1, ntypmx
-    idebty(ii,iphas) = 1
+    idebty(ii) = 1
   enddo
 enddo
 
 do iphas = 1, nphas
   do ii = 1, ntypmx-1
     do jj = ii+1, ntypmx
-      idebty(jj,iphas) = idebty(jj,iphas) + ifinty(ii,iphas)
+      idebty(jj) = idebty(jj) + ifinty(ii)
     enddo
   enddo
 enddo
@@ -267,16 +267,16 @@ enddo
 
 do iphas = 1, nphas
   do ii = 1, ntypmx
-    ifinty(ii,iphas) = idebty(ii,iphas)-1
+    ifinty(ii) = idebty(ii)-1
   enddo
 enddo
 
 do iphas = 1, nphas
   do ifac = 1, nfabor
     ityp = itypfb(ifac,iphas)
-    ifin = ifinty(ityp,iphas)+1
+    ifin = ifinty(ityp)+1
     itrifb(ifin,iphas) = ifac
-    ifinty(ityp,iphas) = ifin
+    ifinty(ityp) = ifin
   enddo
 enddo
 
@@ -285,18 +285,18 @@ enddo
 iok = 0
 do iphas = 1, nphas
   do ii = 1, ntypmx-1
-    if(ifinty(ii,iphas).ge.idebty(ii+1,iphas)) then
+    if(ifinty(ii).ge.idebty(ii+1)) then
       if (iok.eq.0) iok = ii
     endif
   enddo
   if (irangp.ge.0) call parcmx(iok)
   if (iok.gt.0) then
     ii = iok
-    if(ifinty(ii,iphas).ge.idebty(ii+1,iphas)) then
-      write(nfecra,2020) (ifinty(jj,iphas),jj=1,ntypmx)
-      write(nfecra,2030) (idebty(jj,iphas),jj=1,ntypmx)
+    if(ifinty(ii).ge.idebty(ii+1)) then
+      write(nfecra,2020) (ifinty(jj),jj=1,ntypmx)
+      write(nfecra,2030) (idebty(jj),jj=1,ntypmx)
       write(nfecra,2040) (itypfb(jj,iphas),jj=1,nfabor)
-      write(nfecra,2098) ii,ifinty(ii,iphas),ii+1,idebty(ii+1,iphas)
+      write(nfecra,2098) ii,ifinty(ii),ii+1,idebty(ii+1)
     else
       write(nfecra,2099) ii,ii+1
     endif
@@ -308,7 +308,7 @@ iok = 0
 do iphas = 1, nphas
   isum = 0
   do ii = 1, ntypmx
-    isum = isum + ifinty(ii,iphas) - idebty(ii,iphas) + 1
+    isum = isum + ifinty(ii) - idebty(ii) + 1
   enddo
   if (irangp.ge.0) call parcpt (isum)
   if(isum.ne.nfbrgb) then
@@ -338,7 +338,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
     if ( ippmod(icompf).lt.0 ) then
 
       ii = ientre
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Entree           ', ii, inb
@@ -346,7 +346,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
       write(nfecra,6020) 'Inlet            ', ii, inb
 #endif
       ii = iparoi
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Paroi lisse      ', ii, inb
@@ -354,7 +354,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
       write(nfecra,6020) 'Smooth wall      ', ii, inb
 #endif
       ii = iparug
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
@@ -362,7 +362,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
       write(nfecra,6020) 'Rough wall       ', ii, inb
 #endif
       ii = isymet
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Symetrie         ', ii, inb
@@ -370,7 +370,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
       write(nfecra,6020) 'Symmetry         ', ii, inb
 #endif
       ii = isolib
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Sortie libre     ', ii, inb
@@ -380,7 +380,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 
       if (nbrcpl.ge.1) then
         ii = icscpl
-        inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+        inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
         write(nfecra,6020) 'Couplage sat/sat ', ii, inb
@@ -390,7 +390,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
       endif
 
       ii = iindef
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Indefini         ', ii, inb
@@ -406,7 +406,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
             ii.ne.isolib .and. &
             ii.ne.icscpl .and. &
             ii.ne.iindef ) then
-          inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+          inb = ifinty(ii)-idebty(ii)+1
           if (irangp.ge.0) call parcpt (inb)
           if(inb.gt.0) then
 #if defined(_CS_LANG_FR)
@@ -421,7 +421,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
     else
 
       ii = ieqhcf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Entree sub. enth.', ii, inb
@@ -430,7 +430,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
       ii = ierucf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Entree subsonique', ii, inb
@@ -439,7 +439,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
       ii = iesicf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Entree/Sortie imp', ii, inb
@@ -448,7 +448,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
       ii = isopcf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Sortie subsonique', ii, inb
@@ -457,7 +457,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
       ii = isspcf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Sortie supersoniq', ii, inb
@@ -466,7 +466,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
       ii = iparoi
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Paroi lisse      ', ii, inb
@@ -475,7 +475,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
       ii = iparug
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
@@ -484,7 +484,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
       ii = isymet
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Symetrie         ', ii, inb
@@ -493,7 +493,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
 
       ii = iindef
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
       write(nfecra,6020) 'Indefini         ', ii, inb
@@ -511,7 +511,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
             ii.ne.iparug .and. &
             ii.ne.isymet .and. &
             ii.ne.iindef ) then
-          inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+          inb = ifinty(ii)-idebty(ii)+1
           if (irangp.ge.0) call parcpt (inb)
           if(inb.gt.0) then
 #if defined(_CS_LANG_FR)
@@ -563,9 +563,9 @@ do iphas = 1, nphas
   ro0iph = ro0
   p0iph  = p0
   pr0iph = pred0
-  xxp0   = xyzp0(1,iphas)
-  xyp0   = xyzp0(2,iphas)
-  xzp0   = xyzp0(3,iphas)
+  xxp0   = xyzp0(1)
+  xyp0   = xyzp0(2)
+  xzp0   = xyzp0(3)
   ipriph = ipr
   iuiph  = iu
   iviph  = iv
@@ -608,8 +608,8 @@ do iphas = 1, nphas
 
   ifrslb = 0
 
-  ideb = idebty(isolib,iphas)
-  ifin = ifinty(isolib,iphas)
+  ideb = idebty(isolib)
+  ifin = ifinty(isolib)
 
   do ii = ideb, ifin
     ifac = itrifb(ii,iphas)
@@ -711,8 +711,8 @@ do iphas = 1, nphas
 ! ---> La pression a un traitement Neumann, le reste Dirichlet
 !                                           sera traite plus tard.
 
-  ideb = idebty(ientre,iphas)
-  ifin = ifinty(ientre,iphas)
+  ideb = idebty(ientre)
+  ifin = ifinty(ientre)
 
   do ivar = 1, nvar
     if (ivar.eq.ipriph) then
@@ -850,12 +850,12 @@ do iphas = 1, nphas
 
   if (ixyzp0.eq.2) then
     ixyzp0 = 1
-    xxp0 = xyzref(1) - xyzp0(1,iphas)
-    xyp0 = xyzref(2) - xyzp0(2,iphas)
-    xzp0 = xyzref(3) - xyzp0(3,iphas)
-    xyzp0(1,iphas) = xyzref(1)
-    xyzp0(2,iphas) = xyzref(2)
-    xyzp0(3,iphas) = xyzref(3)
+    xxp0 = xyzref(1) - xyzp0(1)
+    xyp0 = xyzref(2) - xyzp0(2)
+    xzp0 = xyzref(3) - xyzp0(3)
+    xyzp0(1) = xyzref(1)
+    xyzp0(2) = xyzref(2)
+    xyzp0(3) = xyzref(3)
     if (ippmod(icompf).lt.0) then
       iiptot = ipproc(iprtot)
       do iel = 1, ncelet
@@ -883,9 +883,9 @@ do iphas = 1, nphas
 !     La pression totale doit etre recalee en Xref a la valeur
 !     Po + rho_0*g.(Xref-X0)
   if (itbslb.gt.0) then
-    xxp0 = xyzp0(1,iphas)
-    xyp0 = xyzp0(2,iphas)
-    xzp0 = xyzp0(3,iphas)
+    xxp0 = xyzp0(1)
+    xyp0 = xyzp0(2)
+    xzp0 = xyzp0(3)
     pref = p0                                              &
          + ro0iph*( gx*(xyzref(1)-xxp0)                           &
                   + gy*(xyzref(2)-xyp0)                           &
@@ -896,8 +896,8 @@ do iphas = 1, nphas
 
 ! ---> Entree/Sortie libre
 
-  ideb = idebty(isolib,iphas)
-  ifin = ifinty(isolib,iphas)
+  ideb = idebty(isolib)
+  ifin = ifinty(isolib)
 
   do ivar = 1, nvar
     if (ivar.eq.ipriph) then
@@ -932,8 +932,8 @@ do iphas = 1, nphas
 ! ---> Les vecteurs et tenseurs ont un traitement particulier
 !        le reste Neumann sera traite plus tard
 
-  ideb = idebty(isymet,iphas)
-  ifin = ifinty(isymet,iphas)
+  ideb = idebty(isymet)
+  ifin = ifinty(isymet)
 
   do ivar = 1, nvar
     if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph.or.      &
@@ -971,8 +971,8 @@ do iphas = 1, nphas
 ! ---> La vitesse et les grandeurs turbulentes ont le code 5
 !        le reste Neumann sera traite plus tard
 
-  ideb = idebty(iparoi,iphas)
-  ifin = ifinty(iparoi,iphas)
+  ideb = idebty(iparoi)
+  ifin = ifinty(iparoi)
 
   do ivar = 1, nvar
     if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
@@ -1030,8 +1030,8 @@ do iphas = 1, nphas
 !      la rugosite est stockee dans rcodcl(..,..,3)
 !      le reste Neumann sera traite plus tard (idem paroi lisse)
 
-  ideb = idebty(iparug,iphas)
-  ifin = ifinty(iparug,iphas)
+  ideb = idebty(iparug)
+  ifin = ifinty(iparug)
 
   do ivar = 1, nvar
     if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
@@ -1107,8 +1107,8 @@ do iphas = 1, nphas
 !     Dirichlet si l'utilisateur fournit une valeur, sinon on utilise
 !     Neumann homogene si le flux de masse est sortant (erreur sinon).
 
-  ideb = idebty(ientre,iphas)
-  ifin = ifinty(ientre,iphas)
+  ideb = idebty(ientre)
+  ifin = ifinty(ientre)
 
   iok = 0
   do ivar = 1, nvar
@@ -1173,8 +1173,8 @@ do iphas = 1, nphas
 
 ! ---> Sortie ISOLIB
 
-  ideb = idebty(isolib,iphas)
-  ifin = ifinty(isolib,iphas)
+  ideb = idebty(isolib)
+  ifin = ifinty(isolib)
 
   do ivar = 1, nvar
     do ii = ideb, ifin
@@ -1205,8 +1205,8 @@ do iphas = 1, nphas
 !        traite plus haut
 !        le reste Neumann
 
-  ideb = idebty(isymet,iphas)
-  ifin = ifinty(isymet,iphas)
+  ideb = idebty(isymet)
+  ifin = ifinty(isymet)
 
   do ivar = 1, nvar
     do ii = ideb, ifin
@@ -1227,8 +1227,8 @@ do iphas = 1, nphas
 !        traite plus haut
 !        le reste Neumann
 
-  ideb = idebty(iparoi,iphas)
-  ifin = ifinty(iparoi,iphas)
+  ideb = idebty(iparoi)
+  ifin = ifinty(iparoi)
 
   do ivar = 1, nvar
     do ii = ideb, ifin
@@ -1249,8 +1249,8 @@ do iphas = 1, nphas
 !        traite plus haut
 !        le reste Neumann
 
-  ideb = idebty(iparug,iphas)
-  ifin = ifinty(iparug,iphas)
+  ideb = idebty(iparug)
+  ifin = ifinty(iparug)
 
   do ivar = 1, nvar
     do ii = ideb, ifin
@@ -1331,8 +1331,8 @@ do iphas = 1, nphas
     enddo
 
     do ii = 1, ntypmx
-      ideb = idebty(ii,iphas)
-      ifin = ifinty(ii,iphas)
+      ideb = idebty(ii)
+      ifin = ifinty(ii)
       do jj = ideb, ifin
         ifac = itrifb(jj,iphas)
         flumty(ii) = flumty(ii) + propfb(ifac,iflmab)
@@ -1345,7 +1345,7 @@ do iphas = 1, nphas
     if (ippmod(icompf).lt.0 ) then
 
       ii = ientre
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1356,7 +1356,7 @@ do iphas = 1, nphas
       write(nfecra,7020) 'Inlet            ',ii,inb,flumty(ii)
 #endif
       ii = iparoi
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1367,7 +1367,7 @@ do iphas = 1, nphas
       write(nfecra,7020) 'Smooth wall      ',ii,inb,flumty(ii)
 #endif
       ii = iparug
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1378,7 +1378,7 @@ do iphas = 1, nphas
       write(nfecra,7020) 'Rough wall       ',ii,inb,flumty(ii)
 #endif
       ii = isymet
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1390,7 +1390,7 @@ do iphas = 1, nphas
 #endif
 
       ii = isolib
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1403,7 +1403,7 @@ do iphas = 1, nphas
 
       if (nbrcpl.ge.1) then
         ii = icscpl
-        inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+        inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) then
           call parcpt (inb)
           call parsom (flumty(ii))
@@ -1416,7 +1416,7 @@ do iphas = 1, nphas
       endif
 
       ii = iindef
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1435,7 +1435,7 @@ do iphas = 1, nphas
             ii.ne.isolib .and.                                    &
             ii.ne.icscpl .and.                                    &
             ii.ne.iindef ) then
-          inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+          inb = ifinty(ii)-idebty(ii)+1
           if (irangp.ge.0) then
             call parcpt (inb)
             call parsom (flumty(ii))
@@ -1453,7 +1453,7 @@ do iphas = 1, nphas
     else
 
       ii = ieqhcf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1465,7 +1465,7 @@ do iphas = 1, nphas
 #endif
 
       ii = ierucf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1477,7 +1477,7 @@ do iphas = 1, nphas
 #endif
 
       ii = iesicf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1489,7 +1489,7 @@ do iphas = 1, nphas
 #endif
 
       ii = isopcf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1501,7 +1501,7 @@ do iphas = 1, nphas
 #endif
 
       ii = isspcf
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1513,7 +1513,7 @@ do iphas = 1, nphas
 #endif
 
       ii = iparoi
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1525,7 +1525,7 @@ do iphas = 1, nphas
 #endif
 
       ii = isymet
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1537,7 +1537,7 @@ do iphas = 1, nphas
 #endif
 
       ii = iindef
-      inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+      inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
@@ -1557,7 +1557,7 @@ do iphas = 1, nphas
             ii.ne.iparoi .and. &
             ii.ne.isymet .and. &
             ii.ne.iindef) then
-          inb = ifinty(ii,iphas)-idebty(ii,iphas)+1
+          inb = ifinty(ii)-idebty(ii)+1
           if (irangp.ge.0) then
             call parcpt (inb)
             call parsom (flumty(ii))

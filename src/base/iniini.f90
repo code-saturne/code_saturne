@@ -1026,8 +1026,8 @@ imvisf = 0
 
 do ii = 1, ntypmx
   do iphas = 1, nphsmx
-    idebty(ii,iphas) = 0
-    ifinty(ii,iphas) = 0
+    idebty(ii) = 0
+    ifinty(ii) = 0
   enddo
 enddo
 
@@ -1078,10 +1078,10 @@ enddo
 
 !     On evalue l'estimateur IEST selon les valeurs de IESCAL
 
-!        IESCAL(IEST,IPHAS) = 0 : l'estimateur IEST n'est pas calcule
-!        IESCAL(IEST,IPHAS) = 1 : l'estimateur IEST   est     calcule,
+!        IESCAL(IEST) = 0 : l'estimateur IEST n'est pas calcule
+!        IESCAL(IEST) = 1 : l'estimateur IEST   est     calcule,
 !                         sans contribution du volume  (on prend abs(I))
-!        IESCAL(IEST,IPHAS) = 2 : l'estimateur IEST   est     calcule,
+!        IESCAL(IEST) = 2 : l'estimateur IEST   est     calcule,
 !                         avec contribution du volume ("norme L2")
 !                         soit abs(I)*SQRT(Volume_cellule),
 !                         sauf pour IESCOR : on calcule abs(I)*Volume_cellule
@@ -1090,7 +1090,7 @@ enddo
 
 do iphas = 1, nphsmx
   do iest = 1, nestmx
-    iescal(iest,iphas) = 0
+    iescal(iest) = 0
   enddo
 enddo
 
@@ -1226,9 +1226,9 @@ do iphas = 1, nphsmx
   viscl0 = -grand*10.d0
   p0     = 1.013d5
   pred0  = 0.d0
-  xyzp0(1,iphas)= -rinfin
-  xyzp0(2,iphas)= -rinfin
-  xyzp0(3,iphas)= -rinfin
+  xyzp0(1)= -rinfin
+  xyzp0(2)= -rinfin
+  xyzp0(3)= -rinfin
   ixyzp0 = -1
   t0     = 0.d0
   cp0    = -grand*10.d0

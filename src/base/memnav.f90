@@ -128,7 +128,7 @@ enddo
 
 iescat = 0
 do iphas = 1, nphas
-  if(iescal(iestot,iphas).gt.0) then
+  if(iescal(iestot).gt.0) then
     iescat = 1
   endif
 enddo

@@ -127,8 +127,8 @@ do iphas = 1, nphas
     ichrvr(ipppro(ipproc(ifour))) = 0
   endif
   do iest = 1, nestmx
-    if(iescal(iest,iphas).gt.0) then
-      ipp = ipppro(ipproc(iestim(iest,iphas)))
+    if(iescal(iest).gt.0) then
+      ipp = ipppro(ipproc(iestim(iest)))
       if(                     ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
     endif
   enddo
@@ -338,28 +338,28 @@ do iphas = 1, nphas
       NOMVAR(IPPPRO(IPPROC(ICP   ))) = 'ChalSp'
     endif
   endif
-  if(iescal(iespre,iphas).gt.0) then
-    ipp = ipppro(ipproc(iestim(iespre,iphas)))
+  if(iescal(iespre).gt.0) then
+    ipp = ipppro(ipproc(iestim(iespre)))
     IF(NOMVAR(IPP) .EQ.' ') THEN
-      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsPre',IESCAL(IESPRE,IPHAS)
+      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsPre',IESCAL(IESPRE)
     endif
   endif
-  if(iescal(iesder,iphas).gt.0) then
-    ipp = ipppro(ipproc(iestim(iesder,iphas)))
+  if(iescal(iesder).gt.0) then
+    ipp = ipppro(ipproc(iestim(iesder)))
     IF(NOMVAR(IPP) .EQ.' ') THEN
-      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsDer',IESCAL(IESDER,IPHAS)
+      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsDer',IESCAL(IESDER)
     endif
   endif
-  if(iescal(iescor,iphas).gt.0) then
-    ipp = ipppro(ipproc(iestim(iescor,iphas)))
+  if(iescal(iescor).gt.0) then
+    ipp = ipppro(ipproc(iestim(iescor)))
     IF(NOMVAR(IPP) .EQ.' ') THEN
-      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsCor',IESCAL(IESCOR,IPHAS)
+      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsCor',IESCAL(IESCOR)
     endif
   endif
-  if(iescal(iestot,iphas).gt.0) then
-    ipp = ipppro(ipproc(iestim(iestot,iphas)))
+  if(iescal(iestot).gt.0) then
+    ipp = ipppro(ipproc(iestim(iestot)))
     IF(NOMVAR(IPP) .EQ.' ') THEN
-      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsTot',IESCAL(IESTOT,IPHAS)
+      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsTot',IESCAL(IESTOT)
     endif
   endif
 
@@ -446,20 +446,20 @@ do iphas = 1, nphas
   if (ilisvr(ipp).eq.-999 .or. idtvar.lt.0) ilisvr(ipp) = 0
   ipp = ipppro(ipproc(ifour))
   if (ilisvr(ipp).eq.-999 .or. idtvar.lt.0) ilisvr(ipp) = 0
-  if(iescal(iespre,iphas).gt.0) then
-    ipp = ipppro(ipproc(iestim(iespre,iphas)))
+  if(iescal(iespre).gt.0) then
+    ipp = ipppro(ipproc(iestim(iespre)))
     if(                     ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
   endif
-  if(iescal(iesder,iphas).gt.0) then
-    ipp = ipppro(ipproc(iestim(iesder,iphas)))
+  if(iescal(iesder).gt.0) then
+    ipp = ipppro(ipproc(iestim(iesder)))
     if(                     ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
   endif
-  if(iescal(iescor,iphas).gt.0) then
-    ipp = ipppro(ipproc(iestim(iescor,iphas)))
+  if(iescal(iescor).gt.0) then
+    ipp = ipppro(ipproc(iestim(iescor)))
     if(                     ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
   endif
-  if(iescal(iestot,iphas).gt.0) then
-    ipp = ipppro(ipproc(iestim(iestot,iphas)))
+  if(iescal(iestot).gt.0) then
+    ipp = ipppro(ipproc(iestim(iestot)))
     if(                     ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
   endif
 enddo
@@ -1274,10 +1274,10 @@ endif
 
 do iphas = 1, nphas
   do ii = 1, 3
-    if (xyzp0(ii,iphas).gt.-0.5d0*rinfin) then
+    if (xyzp0(ii).gt.-0.5d0*rinfin) then
       ixyzp0 = 1
     else
-      xyzp0(ii,iphas) = 0.d0
+      xyzp0(ii) = 0.d0
     endif
   enddo
 enddo
