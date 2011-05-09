@@ -589,8 +589,8 @@ if(ippmod(iphpar).ge.1) then
   do iscal = 1, nscal
     if((    thetss(iscal)       .gt.0.d0 ).or.                    &
        (    isso2t(iscal)       .gt.0    ).or.                    &
-       (    thetvs(iphas)       .gt.0.d0 ).or.                    &
-       (    ivsext(iphas)       .gt.0    )    ) istop = 1
+       (    thetvs(iscal)       .gt.0.d0 ).or.                    &
+       (    ivsext(iscal)       .gt.0    )    ) istop = 1
   enddo
 
   if(istop.ne.0) then
