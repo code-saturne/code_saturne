@@ -1313,7 +1313,7 @@ write(nfecra,9900)
 '       NTERUP = ',4X,I10,  ' (n : avec n sweep sur navsto    ',/,&
 '                ',14X,     '      pour couplage vites/pressio',/)
  4111 format(                                                           &
-'  -- Phase continue : ',I10                                   ,/,&
+'  -- Phase continue : '                                       ,/,&
                                                                 /,&
 '       IREVMC = ',4X,I10,    ' (Mode de reconstruction vites)',/)
  4112 format(                                                           &
@@ -1396,7 +1396,7 @@ write(nfecra,9900)
 '       NTERUP = ',4X,I10,  ' (n: n sweeps on navsto for'      ,/,&
 '                ',14X,     '     velocity/pressure coupling )',/)
  4111 format(                                                           &
-'  -- Continuous phase: ',I10                                  ,/,&
+'  -- Continuous phase: '                                      ,/,&
                                                                 /,&
 '       IREVMC = ',4X,I10,    ' (Velocity reconstruction mode)',/)
  4112 format(                                                           &
