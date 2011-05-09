@@ -97,9 +97,7 @@ subroutine usctcl &
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -164,7 +162,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -262,7 +260,7 @@ do ilelt = 1, nlelt
 
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas) = isolib
+    itypfb(ifac) = isolib
   enddo
 
 !       On impose un profil de pression sur toutes les faces
@@ -291,7 +289,7 @@ do ilelt = 1, nlelt
 !                  FLUX NUL SUR LES SCALAIRES
 
   do iphas = 1, nphas
-   itypfb(ifac,iphas)   = iparoi
+   itypfb(ifac)   = iparoi
   enddo
 
 enddo
@@ -310,7 +308,7 @@ do ilelt = 1, nlelt
 !          SYMETRIES
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas)   = isymet
+    itypfb(ifac) = isymet
   enddo
 
 enddo

@@ -159,7 +159,7 @@ integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp, numtra
 integer          iscal
 
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izfppp(nfabor)
@@ -674,7 +674,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
     volmp = 0.d0
     do ifac=1,nfabor
 
-      if ( itypfb(ifac,iphas).eq. isolib ) then
+      if ( itypfb(ifac).eq. isolib ) then
 
         iel = ifabor(ifac)
 

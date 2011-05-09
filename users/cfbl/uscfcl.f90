@@ -126,9 +126,7 @@ subroutine uscfcl &
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -191,7 +189,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -293,7 +291,7 @@ do ilelt = 1, nlelt
   izone = 1
   izfppp(ifac) = izone
 
-  itypfb(ifac,iphas) = iesicf
+  itypfb(ifac) = iesicf
 
 !   - Vitesse
   rcodcl(ifac,iu,1) = 5.0d0
@@ -431,7 +429,7 @@ do ilelt = 1, nlelt
   izone = 2
   izfppp(ifac) = izone
 
-  itypfb(ifac,iphas) = isspcf
+  itypfb(ifac) = isspcf
 
 enddo
 
@@ -457,7 +455,7 @@ do ilelt = 1, nlelt
   izone = 3
   izfppp(ifac) = izone
 
-  itypfb(ifac,iphas) = ieqhcf
+  itypfb(ifac) = ieqhcf
 
 !   - Densite de debit massique (en kg/(m2 s))
   rcodcl(ifac,irun,1) = 5.d5
@@ -490,7 +488,7 @@ do ilelt = 1, nlelt
   izone = 4
   izfppp(ifac) = izone
 
-  itypfb(ifac,iphas) = ierucf
+  itypfb(ifac) = ierucf
 
 !   - Vitesse d'entree
   rcodcl(ifac,iu,1) = 5.0d0
@@ -605,7 +603,7 @@ do ilelt = 1, nlelt
   izone = 5
   izfppp(ifac) = izone
 
-  itypfb(ifac,iphas) = isopcf
+  itypfb(ifac) = isopcf
 
   ! Pressure (in Pa)
   rcodcl(ifac,ipr,1) = 5.d5
@@ -625,7 +623,7 @@ do ilelt = 1, nlelt
   izone = 7
   izfppp(ifac) = izone
 
-  itypfb(ifac,iphas) = iparoi
+  itypfb(ifac) = iparoi
 
 
 ! --- Sliding wall
@@ -684,7 +682,7 @@ do ilelt = 1, nlelt
   izone = 8
   izfppp(ifac) = izone
 
-  itypfb(ifac,iphas) = isymet
+  itypfb(ifac) = isymet
 
 enddo
 

@@ -197,7 +197,7 @@ epsrgp = epsrgr(ir11ip)
 climgp = climgr(ir11ip)
 extrap = extrag(ir11ip)
 
-iismph = iisymp     +nfabor*(iphas-1)
+iismph = iisymp
 
 imaspe = 2
 

@@ -142,7 +142,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iterns , icvrge
 
-integer          isostd(nfabor+1,nphas)
+integer          isostd(nfabor+1)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -150,9 +150,9 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3,nphas)
-double precision trava(ncelet,ndim,nphas),ximpa(ncelet,ndim,nphas)
-double precision uvwk(ncelet,ndim,nphas)
+double precision frcxt(ncelet,3)
+double precision trava(ncelet,ndim),ximpa(ncelet,ndim)
+double precision uvwk(ncelet,ndim)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
 double precision dam(ncelet), xam(nfac,2)
@@ -161,7 +161,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet), w10(ncelet)
-double precision dfrcxt(ncelet,3,nphas)
+double precision dfrcxt(ncelet,3)
 double precision frchy(ncelet,ndim), dfrchy(ncelet,ndim)
 double precision coefu(nfabor,3)
 double precision esflum(nfac), esflub(nfabor)
@@ -230,7 +230,7 @@ if(nterup.gt.1) then
 !     La boucle sur NCELET est une securite au cas
 !       ou on utiliserait UVWK par erreur a ITERNS = 1
       do iel = 1,ncelet
-        uvwk(iel,isou,iphas) = rtp(iel,ivar)
+        uvwk(iel,isou) = rtp(iel,ivar)
       enddo
     enddo
 
@@ -266,7 +266,7 @@ if(nterup.gt.1) then
 ! (cette derniere vaut la pression a l'iteration precedente)
     if(iterns.gt.1) then
       if (irangp.ge.0.or.iperio.eq.1) then
-        call synvec(uvwk(1,1,iphas), uvwk(1,2,iphas), uvwk(1,3,iphas))
+        call synvec(uvwk(1,1), uvwk(1,2), uvwk(1,3))
         !==========
         call synsca(rtpa(1,ipriph))
         !==========
@@ -340,7 +340,7 @@ if( iprco.le.0 ) then
     iccocg = 1
     iflmb0 = 1
     if (iale.eq.1) iflmb0 = 0
-    iismph = iisymp+nfabor*(iphas-1)
+    iismph = iisymp
     nswrgp = nswrgr(iuiph)
     imligp = imligr(iuiph)
     iwarnp = iwarni(iuiph)
@@ -617,7 +617,7 @@ do iphas = 1, nphas
   iflmab = ipprob(ifluma(iuiph))
   ipcrom = ipproc(irom  )
   ipbrom = ipprob(irom  )
-  iismph = iisymp+nfabor*(iphas-1)
+  iismph = iisymp
 
 
 
@@ -783,7 +783,7 @@ do iphas = 1, nphas
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
    trav(1,1)       , trav(1,2)       , trav(1,3) ,                &
 !        ---------         ---------         ---------
@@ -818,11 +818,11 @@ do iphas = 1, nphas
         do iel = 1, ncel
           dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
           rtp(iel,iuiph) = rtp(iel,iuiph)                         &
-               +dtsrom*(dfrcxt(iel,1,iphas)-trav(iel,1) )
+               +dtsrom*(dfrcxt(iel,1)-trav(iel,1) )
           rtp(iel,iviph) = rtp(iel,iviph)                         &
-               +dtsrom*(dfrcxt(iel,2,iphas)-trav(iel,2) )
+               +dtsrom*(dfrcxt(iel,2)-trav(iel,2) )
           rtp(iel,iwiph) = rtp(iel,iwiph)                         &
-               +dtsrom*(dfrcxt(iel,3,iphas)-trav(iel,3) )
+               +dtsrom*(dfrcxt(iel,3)-trav(iel,3) )
         enddo
       else
         do iel = 1, ncel
@@ -830,33 +830,33 @@ do iphas = 1, nphas
           iii = itpuco-1+iel
           rtp(iel,iuiph) = rtp(iel,iuiph)                         &
                +unsrom*ra(iii         )                           &
-               *(dfrcxt(iel,1,iphas)-trav(iel,1) )
+               *(dfrcxt(iel,1)-trav(iel,1) )
           rtp(iel,iviph) = rtp(iel,iviph)                         &
                +unsrom*ra(iii+ncelet  )                           &
-               *(dfrcxt(iel,2,iphas)-trav(iel,2) )
+               *(dfrcxt(iel,2)-trav(iel,2) )
           rtp(iel,iwiph) = rtp(iel,iwiph)                         &
                +unsrom*ra(iii+2*ncelet)                           &
-               *(dfrcxt(iel,3,iphas)-trav(iel,3) )
+               *(dfrcxt(iel,3)-trav(iel,3) )
         enddo
       endif
 !     mise a jour des forces exterieures pour le calcul des gradients
       do iel=1,ncel
-        frcxt(iel,1,iphas) = frcxt(iel,1,iphas)                   &
-             + dfrcxt(iel,1,iphas)
-        frcxt(iel,2,iphas) = frcxt(iel,2,iphas)                   &
-             + dfrcxt(iel,2,iphas)
-        frcxt(iel,3,iphas) = frcxt(iel,3,iphas)                   &
-             + dfrcxt(iel,3,iphas)
+        frcxt(iel,1) = frcxt(iel,1)                   &
+             + dfrcxt(iel,1)
+        frcxt(iel,2) = frcxt(iel,2)                   &
+             + dfrcxt(iel,2)
+        frcxt(iel,3) = frcxt(iel,3)                   &
+             + dfrcxt(iel,3)
       enddo
       if (irangp.ge.0.or.iperio.eq.1) then
-        call synvec(frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas))
+        call synvec(frcxt(1,1), frcxt(1,2), frcxt(1,3))
         !==========
       endif
 !     mise a jour des Dirichlets de pression en sortie dans COEFA
       iclipr = iclrtp(ipriph,icoef)
       iclipf = iclrtp(ipriph,icoeff)
       do ifac = 1,nfabor
-        if (isostd(ifac,iphas).eq.1)                              &
+        if (isostd(ifac).eq.1)                              &
              coefa(ifac,iclipr) = coefa(ifac,iclipr)              &
              + coefa(ifac,iclipf)
       enddo
@@ -1050,7 +1050,7 @@ do iphas = 1, nphas
 
     ipcrom = ipproc(irom  )
     ipbrom = ipprob(irom  )
-    iismph = iisymp+nfabor*(iphas-1)
+    iismph = iisymp
 
 
 
@@ -1212,9 +1212,9 @@ if(nterup.gt.1) then
   do iphas = 1,nphas
     xnrmu = 0.d0
     do iel = 1,ncel
-      xdu = rtp(iel,iuiph) - uvwk(iel,1,iphas)
-      xdv = rtp(iel,iviph) - uvwk(iel,2,iphas)
-      xdw = rtp(iel,iwiph) - uvwk(iel,3,iphas)
+      xdu = rtp(iel,iuiph) - uvwk(iel,1)
+      xdv = rtp(iel,iviph) - uvwk(iel,2)
+      xdw = rtp(iel,iwiph) - uvwk(iel,3)
       xnrmu = xnrmu +(xdu**2 + xdv**2 + xdw**2)     &
                                   * volume(iel)
     enddo

@@ -167,7 +167,7 @@ idebra = idbra0
 
 do iphas = 1, nphas
   do ifac = 1, nfabor
-    ia(iitypf-1+ifac+nfabor*(iphas-1)) = 0
+    ia(iitypf-1+ifac) = 0
   enddo
 enddo
 

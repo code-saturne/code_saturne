@@ -98,7 +98,6 @@ subroutine raysol &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! i  ! --> ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -164,7 +163,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iphas
 
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)

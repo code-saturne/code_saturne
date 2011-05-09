@@ -381,9 +381,7 @@ subroutine usebuc &
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
 ! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -446,7 +444,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -502,7 +500,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
 !   Type of pre-defined boundary condidition (see above)
-  itypfb(ifac,iphas) = ientre
+  itypfb(ifac) = ientre
 
 !   Zone number (arbitrary number between 1 and n)
   izone = 1
@@ -609,7 +607,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
 !   Type of pre-defined boundary condidition (see above)
-  itypfb(ifac,iphas) = ientre
+  itypfb(ifac) = ientre
 
 !   Zone number (arbitrary number between 1 and n)
   izone = 2
@@ -663,7 +661,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
 !   Type de condition aux limites pour les variables standard
-  itypfb(ifac,iphas)   = iparoi
+  itypfb(ifac)   = iparoi
 
 !   Zone number (arbitrary number between 1 and n)
   izone = 4
@@ -683,7 +681,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
 !   Type de condition aux limites pour les variables standard
-  itypfb(ifac,iphas)   = isolib
+  itypfb(ifac)   = isolib
 
 !   Zone number (arbitrary number between 1 and n)
   izone = 5
@@ -704,7 +702,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
 !   Type de condition aux limites pour les variables standard
-  itypfb(ifac,iphas)   = isymet
+  itypfb(ifac)   = isymet
 
 !   Zone number (arbitrary number between 1 and n)
   izone = 6

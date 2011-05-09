@@ -65,7 +65,6 @@ subroutine cptsvc &
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! iscala           ! e  ! <-- ! numero du scalaire associe                     !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
@@ -122,7 +121,7 @@ integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
 integer          iscal  , iscala
 
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          ia(*)
@@ -294,7 +293,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   do ifac = 1, nfabor
     ra(icoefa+ifac-1) = zero
     ra(icoefb+ifac-1) = 1.d0
-    if ( itypfb(ifac,iphas).eq.ientre ) then
+    if ( itypfb(ifac).eq.ientre ) then
       ra(icoefa+ifac-1) = zero
       ra(icoefb+ifac-1) = zero
       if (ivarsc.eq.0) ra(icoefa+ifac-1) = 1.d0

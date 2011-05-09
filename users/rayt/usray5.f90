@@ -114,7 +114,6 @@ subroutine usray5 &
 ! iphas            ! i  ! <-- ! current phase number                           !
 ! iappel           ! i  ! <-- ! current subroutine call number                 !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !

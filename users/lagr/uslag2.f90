@@ -145,7 +145,7 @@ integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          maxelt, lstelt(maxelt)
-integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
+integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          ia(*)
 
@@ -265,7 +265,7 @@ enddo
 
 ! ---> Third zone numbered izone=3 ( = inlet phase 1)
 do ifac = 1, nfabor
-  if(itypfb(ifac,1).eq.ientre) then
+  if(itypfb(ifac).eq.ientre) then
     izone        = 4
     ifrlag(ifac) = izone
   endif

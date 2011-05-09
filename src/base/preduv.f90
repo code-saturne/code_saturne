@@ -182,9 +182,9 @@ double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision frcxt(ncelet,3,nphas), dfrcxt(ncelet,3,nphas)
-double precision trava(ncelet,ndim,nphas)
-double precision ximpa(ncelet,ndim,nphas),uvwk(ncelet,ndim,nphas)
+double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
+double precision trava(ncelet,ndim)
+double precision ximpa(ncelet,ndim),uvwk(ncelet,ndim)
 double precision tpucou(ncelet,ndim), trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
@@ -299,9 +299,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 
 ! variation de force (utilise dans resolp)
     drom = (propce(iel,ipcrom)-ro0iph)
-    dfrcxt(iel,1,iphas) = drom*gx - frcxt(iel,1,iphas)
-    dfrcxt(iel,2,iphas) = drom*gy - frcxt(iel,2,iphas)
-    dfrcxt(iel,3,iphas) = drom*gz - frcxt(iel,3,iphas)
+    dfrcxt(iel,1) = drom*gx - frcxt(iel,1)
+    dfrcxt(iel,2) = drom*gy - frcxt(iel,2)
+    dfrcxt(iel,3) = drom*gz - frcxt(iel,3)
   enddo
 !     Ajout eventuel des pertes de charges
   if (ncepdp.gt.0) then
@@ -316,13 +316,13 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cpdc12 = ckupdc(ielpdc,4)
       cpdc13 = ckupdc(ielpdc,5)
       cpdc23 = ckupdc(ielpdc,6)
-      dfrcxt(iel,1,iphas) = dfrcxt(iel,1,iphas)                   &
+      dfrcxt(iel,1) = dfrcxt(iel,1)                   &
            -propce(iel,ipcrom)*(                                  &
            cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
-      dfrcxt(iel,2,iphas) = dfrcxt(iel,2,iphas)                   &
+      dfrcxt(iel,2) = dfrcxt(iel,2)                   &
            -propce(iel,ipcrom)*(                                  &
            cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
-      dfrcxt(iel,3,iphas) = dfrcxt(iel,3,iphas)                   &
+      dfrcxt(iel,3) = dfrcxt(iel,3)                   &
            -propce(iel,ipcrom)*(                                  &
            cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
     enddo
@@ -333,14 +333,14 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
       cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
       cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
-      dfrcxt(iel,1,iphas) = dfrcxt(iel,1,iphas) - 2.d0*propce(iel,ipcrom)*cx
-      dfrcxt(iel,2,iphas) = dfrcxt(iel,2,iphas) - 2.d0*propce(iel,ipcrom)*cy
-      dfrcxt(iel,3,iphas) = dfrcxt(iel,3,iphas) - 2.d0*propce(iel,ipcrom)*cz
+      dfrcxt(iel,1) = dfrcxt(iel,1) - 2.d0*propce(iel,ipcrom)*cx
+      dfrcxt(iel,2) = dfrcxt(iel,2) - 2.d0*propce(iel,ipcrom)*cy
+      dfrcxt(iel,3) = dfrcxt(iel,3) - 2.d0*propce(iel,ipcrom)*cz
     enddo
   endif
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(dfrcxt(1,1,iphas), dfrcxt(1,2,iphas), dfrcxt(1,3,iphas))
+    call synvec(dfrcxt(1,1), dfrcxt(1,2), dfrcxt(1,3))
     !==========
   endif
 
@@ -367,7 +367,7 @@ call grdcel                                                       &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
@@ -455,7 +455,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 
   imaspe = 1
 
-  iismph = iisymp+nfabor*(iphas-1)
+  iismph = iisymp
 
   call inimas                                                     &
   !==========
@@ -510,9 +510,9 @@ if(iappel.eq.1) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(iel,1) = (frcxt(iel,1,iphas) - w1(iel)) * volume(iel)
-      trav(iel,2) = (frcxt(iel,2,iphas) - w2(iel)) * volume(iel)
-      trav(iel,3) = (frcxt(iel,3,iphas) - w3(iel)) * volume(iel)
+      trav(iel,1) = (frcxt(iel,1) - w1(iel)) * volume(iel)
+      trav(iel,2) = (frcxt(iel,2) - w2(iel)) * volume(iel)
+      trav(iel,3) = (frcxt(iel,3) - w3(iel)) * volume(iel)
     enddo
   else
     do iel = 1, ncel
@@ -528,13 +528,13 @@ elseif(iappel.eq.2) then
   if (iphydr.eq.1) then
     do iel = 1, ncel
       trav(iel,1) =                                               &
-           trav(iel,1) + ( frcxt(iel,1,iphas) -                   &
+           trav(iel,1) + ( frcxt(iel,1) -                   &
                            w1(iel) )*volume(iel)
       trav(iel,2) =                                               &
-           trav(iel,2) + ( frcxt(iel,2,iphas) -                   &
+           trav(iel,2) + ( frcxt(iel,2) -                   &
                            w2(iel) )*volume(iel)
       trav(iel,3) =                                               &
-           trav(iel,3) + ( frcxt(iel,3,iphas) -                   &
+           trav(iel,3) + ( frcxt(iel,3) -                   &
                            w3(iel) )*volume(iel)
     enddo
   else
@@ -590,7 +590,7 @@ if(iterns.eq.1) then
       else
         do ii = 1, ndim
           do iel = 1, ncel
-            trava(iel,ii,iphas)  =                                &
+            trava(iel,ii)  =                                &
                  - thets*propce(iel,iptsna+ii-1)
           enddo
         enddo
@@ -609,7 +609,7 @@ if(iterns.eq.1) then
       if(nterup.gt.1) then
         do ii = 1, ndim
           do iel = 1, ncel
-            trava(iel,ii,iphas)  = 0.d0
+            trava(iel,ii)  = 0.d0
           enddo
         enddo
       endif
@@ -685,12 +685,12 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
     else
       do iel = 1, ncel
         romvom = -propce(iel,ipcrom)*volume(iel)*d2s3
-        trava(iel,1,iphas) =                                      &
-        trava(iel,1,iphas) + w1(iel) * romvom
-        trava(iel,2,iphas) =                                      &
-        trava(iel,2,iphas) + w2(iel) * romvom
-        trava(iel,3,iphas) =                                      &
-        trava(iel,3,iphas) + w3(iel) * romvom
+        trava(iel,1) =                                      &
+        trava(iel,1) + w1(iel) * romvom
+        trava(iel,2) =                                      &
+        trava(iel,2) + w2(iel) * romvom
+        trava(iel,3) =                                      &
+        trava(iel,3) + w3(iel) * romvom
       enddo
     endif
   endif
@@ -771,9 +771,9 @@ if (ivisse.eq.1.and.iterns.eq.1) then
   else
     if(nterup.gt.1) then
       do iel = 1, ncel
-        trava(iel,1,iphas) = trava(iel,1,iphas) + trav(iel,1)
-        trava(iel,2,iphas) = trava(iel,2,iphas) + trav(iel,2)
-        trava(iel,3,iphas) = trava(iel,3,iphas) + trav(iel,3)
+        trava(iel,1) = trava(iel,1) + trav(iel,1)
+        trava(iel,2) = trava(iel,2) + trav(iel,2)
+        trava(iel,3) = trava(iel,3) + trav(iel,3)
         trav(iel,1)  = w7(iel)
         trav(iel,2)  = w8(iel)
         trav(iel,3)  = w9(iel)
@@ -830,9 +830,9 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
 !     Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
     if(nterup.gt.1) then
       do iel = 1, ncel
-        trava(iel,1,iphas) = trava(iel,1,iphas) + trav(iel,1)
-        trava(iel,2,iphas) = trava(iel,2,iphas) + trav(iel,2)
-        trava(iel,3,iphas) = trava(iel,3,iphas) + trav(iel,3)
+        trava(iel,1) = trava(iel,1) + trav(iel,1)
+        trava(iel,2) = trava(iel,2) + trav(iel,2)
+        trava(iel,3) = trava(iel,3) + trav(iel,3)
         trav(iel,1)  = w7(iel)
         trav(iel,2)  = w8(iel)
         trav(iel,3)  = w9(iel)
@@ -899,9 +899,9 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
     else
       if(nterup.gt.1) then
         do iel = 1, ncel
-          trava(iel,1,iphas) = trava(iel,1,iphas) + trav(iel,1)
-          trava(iel,2,iphas) = trava(iel,2,iphas) + trav(iel,2)
-          trava(iel,3,iphas) = trava(iel,3,iphas) + trav(iel,3)
+          trava(iel,1) = trava(iel,1) + trav(iel,1)
+          trava(iel,2) = trava(iel,2) + trav(iel,2)
+          trava(iel,3) = trava(iel,3) + trav(iel,3)
           trav(iel,1)  = w7(iel)
           trav(iel,2)  = w8(iel)
           trav(iel,3)  = w9(iel)
@@ -968,9 +968,9 @@ if (icorio.eq.1.and.iphydr.eq.0) then
           cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
           cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
           romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
-          trava(iel,1,iphas) = trava(iel,1,iphas) + romvom*cx
-          trava(iel,2,iphas) = trava(iel,2,iphas) + romvom*cy
-          trava(iel,3,iphas) = trava(iel,3,iphas) + romvom*cz
+          trava(iel,1) = trava(iel,1) + romvom*cx
+          trava(iel,2) = trava(iel,2) + romvom*cy
+          trava(iel,3) = trava(iel,3) + romvom*cz
         enddo
 
       endif
@@ -1024,7 +1024,7 @@ if(itytur.eq.3.and.iterns.eq.1) then
 !       si on itere sur navsto       : TRAVA
       else
         do iel = 1, ncel
-          trava(iel,isou,iphas) = trava(iel,isou,iphas) - w1(iel)
+          trava(iel,isou) = trava(iel,isou) - w1(iel)
         enddo
       endif
     endif
@@ -1217,7 +1217,7 @@ do isou = 1, 3
 !     On conserve la partie implicite pour les autres iter sur navsto
   if(iterns.eq.1.and.nterup.gt.1) then
     do iel = 1, ncel
-      ximpa(iel,isou,iphas) = drtp(iel)
+      ximpa(iel,isou) = drtp(iel)
     enddo
   endif
 
@@ -1232,7 +1232,7 @@ do isou = 1, 3
   if(iterns.eq.1) then
     if(nterup.gt.1) then
       do iel = 1, ncel
-        trava(iel,isou,iphas) = trava(iel,isou,iphas)             &
+        trava(iel,isou) = trava(iel,isou)             &
                + drtp(iel)*rtpa(iel,ivar)
       enddo
     else
@@ -1263,8 +1263,8 @@ do isou = 1, 3
 !       si on itere sur navsto : TRAVA
       else
         do iel = 1, ncel
-          trava(iel,isou,iphas) =                                 &
-          trava(iel,isou,iphas) + w7(iel)
+          trava(iel,isou) =                                 &
+          trava(iel,isou) + w7(iel)
         enddo
       endif
     endif
@@ -1282,7 +1282,7 @@ do isou = 1, 3
   if(iterns.eq.1) then
     if(nterup.gt.1) then
       do iel = 1, ncel
-        trava(iel,isou,iphas) = trava(iel,isou,iphas)             &
+        trava(iel,isou) = trava(iel,isou)             &
                +iconv(ivar)*w1(iel)*rtpa(iel,ivar)
       enddo
     else
@@ -1316,7 +1316,7 @@ do isou = 1, 3
       thetap = thetav(ivar)
       if(iterns.gt.1) then
         do iel = 1, ncel
-          rovsdt(iel) = rovsdt(iel) -ximpa(iel,isou,iphas)*thetap
+          rovsdt(iel) = rovsdt(iel) -ximpa(iel,isou)*thetap
         enddo
       else
         do iel = 1, ncel
@@ -1327,7 +1327,7 @@ do isou = 1, 3
       if(iterns.gt.1) then
         do iel = 1, ncel
           rovsdt(iel) = rovsdt(iel)                               &
-               + max(-ximpa(iel,isou,iphas),zero)
+               + max(-ximpa(iel,isou),zero)
         enddo
       else
         do iel = 1, ncel
@@ -1380,7 +1380,7 @@ do isou = 1, 3
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(ivar),&
     icetsm , itypsm(1,ivar) ,                                     &
     volume , rtpa(1,ivar) , smacel(1,ivar) ,smacel(1,ipr) ,&
-    trava(1,isou,iphas) , rovsdt , w1 )
+    trava(1,isou) , rovsdt , w1 )
     endif
 
 !     A la premiere iter sur navsto, on ajoute la partie Gamma uinj
@@ -1402,8 +1402,8 @@ do isou = 1, 3
 !       si on itere sur navsto : TRAVA
         else
           do iel = 1,ncel
-            trava(iel,isou,iphas) =                               &
-            trava(iel,isou,iphas) + w1(iel)
+            trava(iel,isou) =                               &
+            trava(iel,isou) + w1(iel)
           enddo
         endif
       endif
@@ -1426,7 +1426,7 @@ do isou = 1, 3
 !       Si on   itere     sur navsto : tout existe
     else
       do iel = 1, ncel
-        smbr(iel) =  trav(iel,isou) + trava(iel,isou,iphas)       &
+        smbr(iel) =  trav(iel,isou) + trava(iel,isou)       &
              + thetp1*propce(iel,iptsna+isou-1)
       enddo
     endif
@@ -1440,7 +1440,7 @@ do isou = 1, 3
 !       Si on   itere     sur navsto : TRAVA existe
     else
       do iel = 1, ncel
-        smbr(iel) =  trav(iel,isou) + trava(iel,isou,iphas)
+        smbr(iel) =  trav(iel,isou) + trava(iel,isou)
       enddo
     endif
   endif
@@ -1550,7 +1550,7 @@ do isou = 1, 3
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    ia     ,                                                       &
-   rtpa(1,ivar)    , uvwk(1,isou,iphas) ,                         &
+   rtpa(1,ivar)    , uvwk(1,isou) ,                         &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      flumas , flumab ,                            &
@@ -1698,7 +1698,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 
   imaspe = 1
 
-  iismph = iisymp+nfabor*(iphas-1)
+  iismph = iisymp
 
   call inimas                                                     &
   !==========

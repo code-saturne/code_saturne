@@ -121,7 +121,7 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3)
 double precision ra(*)
 
 ! Local variables
@@ -1120,7 +1120,7 @@ nberro=nberro+ierror
     nbval  = 1
     irtyp  = 1
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iisymp+nfabor*(iphas-1)),ierror)
+                ia(iisymp),ierror)
     nberro=nberro+ierror
 
   enddo
@@ -1548,17 +1548,17 @@ nberro=nberro+ierror
 
       rubriq = 'force_ext_ce_x_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  frcxt(1,1,iphas),ierror)
+                  frcxt(1,1),ierror)
       nberro=nberro+ierror
 
       rubriq = 'force_ext_ce_y_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  frcxt(1,2,iphas),ierror)
+                  frcxt(1,2),ierror)
       nberro=nberro+ierror
 
       rubriq = 'force_ext_ce_z_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  frcxt(1,3,iphas),ierror)
+                  frcxt(1,3),ierror)
       nberro=nberro+ierror
     enddo
 

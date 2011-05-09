@@ -205,7 +205,7 @@ integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          kface  , nbpt   , isuivi
 
-integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
+integer          itypfb(nfabor) , itrifb(nfabor)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          indep(nbpmax)
 integer          ia(*)

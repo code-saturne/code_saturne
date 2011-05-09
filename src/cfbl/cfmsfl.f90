@@ -311,7 +311,7 @@ if(itsqdm.ne.0) then
     inc    = 1
     iccocg = 1
     iflmb0 = 1
-    iismph = iisymp+nfabor*(iphas-1)
+    iismph = iisymp
     nswrgp = nswrgr(iuiph)
     imligp = imligr(iuiph)
     iwarnp = iwarni(iuiph)
@@ -641,7 +641,7 @@ inc    = 0
 iccocg = 1
 ivar0  = 0
 iflmb0 = 1
-iismph = iisymp+nfabor*(iphas-1)
+iismph = iisymp
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
 iwarnp = iwarni(ivar)

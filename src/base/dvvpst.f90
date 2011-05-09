@@ -465,7 +465,7 @@ else if  (numtyp .eq. -2) then
 
 !       Calcul des valeurs de la variable sur les faces de bord
 
-      iyplbp = iyplbr+(iphas-1)*nfabor
+      iyplbp = iyplbr
       do iloc = 1, nfbrps
         ifac = lstfbr(iloc)
         trafbr(1 + (iloc-1)*idimt) = ra(iyplbp+ifac-1)

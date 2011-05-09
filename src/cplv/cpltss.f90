@@ -165,7 +165,7 @@ integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
 integer          iscal
 
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izfppp(nfabor)

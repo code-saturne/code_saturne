@@ -152,7 +152,7 @@ integer          iphas
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          isostd(nfabor+1,nphas)
+integer          isostd(nfabor+1)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -160,7 +160,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision frcxt(ncelet,3,nphas), dfrcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
 double precision tpucou(ncelet,ndim), trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
@@ -172,7 +172,7 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision frchy(ncelet,ndim), dfrchy(ncelet,ndim)
-double precision coefu(nfabor,3), trava(ncelet,ndim,nphas)
+double precision coefu(nfabor,3), trava(ncelet,ndim)
 double precision ra(*)
 
 ! Local variables
@@ -230,7 +230,7 @@ icliup = iclrtp(iuiph ,icoef)
 iclivp = iclrtp(iviph ,icoef)
 icliwp = iclrtp(iwiph ,icoef)
 
-iismph = iisymp+nfabor*(iphas-1)
+iismph = iisymp
 
 ! --- Grandeurs physiques
 ipcrom = ipproc(irom  )
@@ -277,25 +277,25 @@ if(irnpnw.ne.1) then
     do iel = 1, ncel
       unsvom = -1.d0/volume(iel)
       trav(iel,1) = trav(iel,1)*unsvom                            &
-           + frcxt(iel,1,iphas)                                   &
-           + dfrcxt(iel,1,iphas)
+           + frcxt(iel,1)                                   &
+           + dfrcxt(iel,1)
       trav(iel,2) = trav(iel,2)*unsvom                            &
-           + frcxt(iel,2,iphas)                                   &
-           + dfrcxt(iel,2,iphas)
+           + frcxt(iel,2)                                   &
+           + dfrcxt(iel,2)
       trav(iel,3) = trav(iel,3)*unsvom                            &
-           + frcxt(iel,3,iphas)                                   &
-           + dfrcxt(iel,3,iphas)
+           + frcxt(iel,3)                                   &
+           + dfrcxt(iel,3)
     enddo
   else
     if(isno2t.gt.0) then
       do iel = 1, ncel
         unsvom = -1.d0/volume(iel)
         romro0 = propce(iel,ipcrom)-ro0iph
-        trav(iel,1) = (trav(iel,1)+trava(iel,1,iphas))*unsvom     &
+        trav(iel,1) = (trav(iel,1)+trava(iel,1))*unsvom     &
              + romro0*gx
-        trav(iel,2) = (trav(iel,2)+trava(iel,2,iphas))*unsvom     &
+        trav(iel,2) = (trav(iel,2)+trava(iel,2))*unsvom     &
              + romro0*gy
-        trav(iel,3) = (trav(iel,3)+trava(iel,3,iphas))*unsvom     &
+        trav(iel,3) = (trav(iel,3)+trava(iel,3))*unsvom     &
              + romro0*gz
       enddo
     else
@@ -412,7 +412,7 @@ if (iphydr.eq.1) then
 !     on resout une equation de Poisson avec des conditions de
 !     flux nul partout
 !     Ce n'est utile que si on a des faces de sortie
-  ifcsor = isostd(nfabor+1,iphas)
+  ifcsor = isostd(nfabor+1)
   if (irangp.ge.0) then
     call parcmx (ifcsor)
   endif
@@ -559,7 +559,7 @@ call grdcel                                                       &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr)  ,         &
    trav(1,1) , trav(1,2) , trav(1,3) ,                            &
 !        ---------   ---------   ---------
@@ -569,9 +569,9 @@ call grdcel                                                       &
 
 if (iphydr.eq.1) then
   do iel = 1, ncel
-    trav(iel,1) = trav(iel,1) - frcxt(iel,1,iphas)
-    trav(iel,2) = trav(iel,2) - frcxt(iel,2,iphas)
-    trav(iel,3) = trav(iel,3) - frcxt(iel,3,iphas)
+    trav(iel,1) = trav(iel,1) - frcxt(iel,1)
+    trav(iel,2) = trav(iel,2) - frcxt(iel,2)
+    trav(iel,3) = trav(iel,3) - frcxt(iel,3)
   enddo
 endif
 
@@ -654,7 +654,7 @@ if (iphydr.eq.1) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    coefb(1,iclipr) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -669,7 +669,7 @@ if (iphydr.eq.1) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    coefb(1,iclipr) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -712,7 +712,7 @@ if(arakph.gt.0.d0) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
@@ -743,7 +743,7 @@ if(arakph.gt.0.d0) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    ia     ,                                                       &
-   frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    coefb(1,iclipf) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -779,7 +779,7 @@ if(arakph.gt.0.d0) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1)     , tpucou(1,2)     , tpucou(1,3)     ,          &
@@ -810,7 +810,7 @@ if(arakph.gt.0.d0) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    ia     ,                                                       &
-   frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    coefb(1,iclipf) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -850,26 +850,26 @@ if (iphydr.eq.1) then
     coefa(ifac,iclipf) = 0.d0
   enddo
   if (indhyd.eq.1) then
-    ifac0 = isostd(nfabor+1,iphas)
+    ifac0 = isostd(nfabor+1)
     if (ifac0.le.0) then
       phydr0 = 0.d0
     else
       iel0 = ifabor(ifac0)
       phydr0 = rtp(iel0,ipriph)                                   &
-           +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(iel0,1,iphas) &
-           +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(iel0,2,iphas) &
-           +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(iel0,3,iphas)
+           +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(iel0,1) &
+           +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(iel0,2) &
+           +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(iel0,3)
     endif
     if (irangp.ge.0) then
       call parsom (phydr0)
     endif
     do ifac=1,nfabor
-      if (isostd(ifac,iphas).eq.1) then
+      if (isostd(ifac).eq.1) then
         iel=ifabor(ifac)
         coefa(ifac,iclipf) = rtp(iel,ipriph)                      &
-             +(cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(iel,1,iphas)  &
-             +(cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(iel,2,iphas)  &
-             +(cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(iel,3,iphas)  &
+             +(cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(iel,1)  &
+             +(cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(iel,2)  &
+             +(cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(iel,3)  &
              - phydr0
       endif
     enddo
@@ -1005,7 +1005,7 @@ do 100 isweep = 1, nswmpr
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
@@ -1023,7 +1023,7 @@ do 100 isweep = 1, nswmpr
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
@@ -1118,7 +1118,7 @@ do 100 isweep = 1, nswmpr
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
@@ -1141,7 +1141,7 @@ do 100 isweep = 1, nswmpr
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    drtp            , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
@@ -1159,7 +1159,7 @@ do 100 isweep = 1, nswmpr
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
@@ -1182,7 +1182,7 @@ do 100 isweep = 1, nswmpr
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    drtp            , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
@@ -1237,7 +1237,7 @@ do 100 isweep = 1, nswmpr
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
@@ -1255,7 +1255,7 @@ do 100 isweep = 1, nswmpr
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1,iphas),dfrcxt(1,2,iphas),dfrcxt(1,3,iphas),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &

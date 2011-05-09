@@ -92,9 +92,7 @@ subroutine usatcl &
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfppp(nfabor)   ! te ! --> ! boundary face zone number                      !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -156,7 +154,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -287,7 +285,7 @@ do ilelt = 1, nlelt
 
 !     - Assign inlet boundary conditions
   do iphas = 1, nphas
-    itypfb(ifac,iphas) = ientre
+    itypfb(ifac) = ientre
   enddo
 
 enddo
@@ -323,7 +321,7 @@ do ilelt = 1, nlelt
 
   do iphas = 1, nphas
 
-    itypfb(ifac,iphas) = ientre
+    itypfb(ifac) = ientre
 
     rcodcl(ifac,iu,1) = xuent
     rcodcl(ifac,iv,1) = xvent
@@ -386,7 +384,7 @@ do ilelt = 1, nlelt
   !         free outlet face (isolib)
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas)   = isolib
+    itypfb(ifac)   = isolib
   enddo
 
 enddo
@@ -410,7 +408,7 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas)   = iparug
+    itypfb(ifac)   = iparug
 
 !     Roughness for velocity: rugd
     rcodcl(ifac,iu,3) = rugd
@@ -451,7 +449,7 @@ do ilelt = 1, nlelt
   izfppp(ifac) = izone
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas)   = isymet
+    itypfb(ifac)   = isymet
   enddo
 
 

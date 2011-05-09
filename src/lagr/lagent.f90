@@ -84,7 +84,6 @@ subroutine lagent &
 ! itycel           ! te ! <-- ! connectivite cellules -> faces                 !
 ! (ncelet+1)       !    !     !    pointeur du tableau icocel                  !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! itrifb(nfabor    ! te ! <-- ! tab d'indirection pour tri des faces           !
 !  nphas)          !    !     !                                                !
 ! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
@@ -153,7 +152,7 @@ integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
+integer          itypfb(nfabor) , itrifb(nfabor)
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          ia(*)

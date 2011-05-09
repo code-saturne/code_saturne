@@ -169,16 +169,16 @@ integer          nvar   , nscal  , nphas
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)
-integer          isostd(nfabor+1,nphas)
+integer          isostd(nfabor+1)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision frcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision uetbor(nfabor,nphas), visvdr(ncelet,nphas)
+double precision uetbor(nfabor), visvdr(ncelet)
 double precision hbord(nfabor),thbord(nfabor)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
@@ -273,7 +273,7 @@ idebra = idbra0
 
 if(mod(ipstdv,ipstyp).eq.0) then
   do iphas = 1, nphas
-    iyplbp = iyplbr+(iphas-1)*nfabor
+    iyplbp = iyplbr
     do ifac = 1, nfabor
       ra(iyplbp+ifac-1) = 0.d0
     enddo
@@ -818,7 +818,7 @@ do iphas = 1, nphas
 !     VISVDR pour lui redonner une valeur correcte.
   if(itytur.eq.4.and.idries.eq.1) then
     do iel=1,ncel
-      visvdr(iel,iphas) = -999.d0
+      visvdr(iel) = -999.d0
     enddo
   endif
 
@@ -865,7 +865,7 @@ do iphas = 1, nphas
 !===============================================================================
 !   On a besoin de COEFU et de RIJIPB
 
-  iismph = iisymp     +nfabor*(iphas-1)
+  iismph = iisymp
   do ifac = 1, nfabor
     ia(iismph+ifac-1) = 1
   enddo

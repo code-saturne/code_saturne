@@ -215,7 +215,7 @@ elseif(abs(icdpar).eq.1) then
 !       La distance a la paroi vaut 0 en paroi
 !         par definition et obeit a un flux nul ailleurs
 
-  iityph = iitypf+(iphas-1)*nfabor
+  iityph = iitypf
   do ifac = 1, nfabor
     if(ia(iityph+ifac-1).eq.iparoi .or.                           &
        ia(iityph+ifac-1).eq.iparug) then

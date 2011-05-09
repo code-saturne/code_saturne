@@ -68,9 +68,7 @@ subroutine csc2cl &
 !                  !    !     !  value for scalars k, eps, scal in addition to !
 !                  !    !     !  the usual Neumann                             !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -129,7 +127,7 @@ integer          nfbcpl , nfbncp
 
 integer          icodcl(nfabor,nvar)
 integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -293,7 +291,7 @@ do ivar = 1, nvcp
 
 
       do iphas = 1, nphas
-        itypfb(ifac,iphas)  = icscpl
+        itypfb(ifac)  = icscpl
       enddo
 
       if (ivar.eq.ipr) then
@@ -381,7 +379,7 @@ do ivar = 1, nvcp
       gradi = (w1(iel)*xipf+w2(iel)*yipf+w3(iel)*zipf)/ipf
 
       do iphas = 1, nphas
-        itypfb(ifac,iphas)  = icscpl
+        itypfb(ifac)  = icscpl
       enddo
 
       if(ivar.ne.ipr) then
@@ -405,7 +403,7 @@ do ivar = 1, nvcp
     ifac = lfbncp(ipt)
 
     do iphas = 1, nphas
-      itypfb(ifac,iphas)  = icscpl
+      itypfb(ifac)  = icscpl
     enddo
 
     icodcl(ifac,ivar  ) = 3

@@ -73,7 +73,6 @@ subroutine lagcel &
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
 !  nphas)          !    !     !                                                !
 ! icocel           ! te ! --> ! connectivite cellules -> faces                 !
@@ -143,7 +142,7 @@ integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
+integer          itypfb(nfabor) , itrifb(nfabor)
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          ibord(nbpmax)

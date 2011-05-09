@@ -304,7 +304,6 @@ subroutine usalcl &
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ialtyb (nfabor)  ! ia ! --> ! boundary face types for mesh velocity          !
 ! impale(nnod)     ! ia ! <-- ! indicator for fixed node displacement          !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -364,7 +363,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itypfb(nfabor,nphas), ialtyb(nfabor)
+integer          itypfb(nfabor), ialtyb(nfabor)
 integer          impale(nnod)
 integer          ia(*)
 

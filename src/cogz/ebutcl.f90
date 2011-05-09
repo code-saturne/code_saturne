@@ -66,9 +66,7 @@ subroutine ebutcl &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -135,7 +133,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -309,7 +307,7 @@ do ifac = 1, nfabor
 
 !      ELEMENT ADJACENT A LA FACE DE BORD
 
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
 
 ! ----  Traitement automatique de la turbulence
 
@@ -401,7 +399,7 @@ iphas  = 1
 frmel = 0.d0
 tgf   = 0.d0
 do ifac = 1, nfabor
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
     izone = izfppp(ifac)
     if ( ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.1 ) then
       frmel = max(fment(izone),frmel)
@@ -421,7 +419,7 @@ endif
 !  presentes sur le proc local. Ca suffit pour le traitement qui suit.
 do ifac = 1, nfabor
   izone = izfppp(ifac)
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
     if ( ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.1 ) then
       fment(izone) = frmel
     endif
@@ -494,7 +492,7 @@ do ifac = 1, nfabor
 
 !      ELEMENT ADJACENT A LA FACE DE BORD
 
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
 
 ! ----  Traitement automatique des scalaires physiques particulieres
 

@@ -94,9 +94,7 @@ subroutine usetcl &
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
 ! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -155,7 +153,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -393,7 +391,7 @@ do i=1,nbelec
 
     iel = ifabor(ifac)
 
-    itypfb(ifac,iphas) = iparoi
+    itypfb(ifac) = iparoi
 
 !     - Zone number
     izone = i
@@ -437,7 +435,7 @@ if ( ntfref .eq. 0 ) then
 
     iphas = 1
 
-    if ( itypfb(ifac,iphas) .eq. iparoi ) then
+    if ( itypfb(ifac) .eq. iparoi ) then
 
       if (icodcl(ifac,isca(ipotr)) .eq. 1 ) then
 

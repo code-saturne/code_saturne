@@ -70,9 +70,7 @@ subroutine stdtcl &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! iznfbr           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !                                                !
 ! ilzfbr(nbzfmx    ! te ! <-- ! tableau de travail                             !
@@ -136,7 +134,7 @@ integer          nvar   , nscal  , nphas  , nbzfmx
 
 integer          iqimp(nozfmx), icalke(nozfmx)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          iznfbr(nfabor), ilzfbr(nbzfmx)
 integer          ia(*)
 
@@ -439,7 +437,7 @@ do ifac = 1, nfabor
 
   if (izone .gt. 0) then
 
-    if ( itypfb(ifac,iphas).eq.ientre ) then
+    if ( itypfb(ifac).eq.ientre ) then
 
 ! ----  Traitement automatique de la turbulence
 

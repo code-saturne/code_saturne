@@ -68,7 +68,6 @@ subroutine distpr &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! --> ! tab des distances a la paroi                   !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
@@ -118,7 +117,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 integer          ia(*)
 
 double precision distpa(ncelet), viscf (nfac)  , viscb (nfabor)
@@ -185,8 +184,8 @@ enddo
 ndircp = 0
 
 do ifac = 1, nfabor
-  if(itypfb(ifac,iphas).eq.iparoi .or.                            &
-     itypfb(ifac,iphas).eq.iparug) then
+  if(itypfb(ifac).eq.iparoi .or.                            &
+     itypfb(ifac).eq.iparug) then
     coefad(ifac) = 0.0d0
     coefbd(ifac) = 0.0d0
     ndircp = 1

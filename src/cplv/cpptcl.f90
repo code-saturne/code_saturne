@@ -66,9 +66,7 @@ subroutine cpptcl &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -134,7 +132,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -397,7 +395,7 @@ do ifac = 1, nfabor
 
 !      ELEMENT ADJACENT A LA FACE DE BORD
 
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
 
 ! ----  Traitement automatique de la turbulence
 
@@ -587,7 +585,7 @@ do ifac = 1, nfabor
 
 !      ELEMENT ADJACENT A LA FACE DE BORD
 
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
 
 ! ----  Traitement automatique des scalaires physiques particulieres
 

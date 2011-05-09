@@ -66,9 +66,7 @@ subroutine lwctcl &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -133,7 +131,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -307,7 +305,7 @@ do ifac = 1, nfabor
 
 !      ELEMENT ADJACENT A LA FACE DE BORD
 
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
 
 ! ----  Traitement automatique de la turbulence
 
@@ -399,7 +397,7 @@ iphas  = 1
 !      FRMEL = 0.D0
 !      TGF   = 0.D0
 !      DO IFAC = 1, NFABOR
-!        IF ( ITYPFB(IFAC,IPHAS).EQ.IENTRE ) THEN
+!        IF ( ITYPFB(IFAC).EQ.IENTRE ) THEN
 !          IZONE = IZFPPP(IFAC)
 !          IF ( IPPMOD(ICOEBU).EQ.0 .OR. IPPMOD(ICOEBU).EQ.1 ) THEN
 !            FRMEL = MAX(FMENT(IZONE),FRMEL)
@@ -419,7 +417,7 @@ iphas  = 1
 !  presentes sur le proc local. Ca suffit pour le traitement qui suit.
 !     DO IFAC = 1, NFABOR
 !        IZONE = IZFPPP(IFAC)
-!        IF ( ITYPFB(IFAC,IPHAS).EQ.IENTRE ) THEN
+!        IF ( ITYPFB(IFAC).EQ.IENTRE ) THEN
 !          IF ( IPPMOD(ICOEBU).EQ.0 .OR. IPPMOD(ICOEBU).EQ.1 ) THEN
 !            FMENT(IZONE) = FRMEL
 !          ENDIF
@@ -487,7 +485,7 @@ do ifac = 1, nfabor
 
 !      ELEMENT ADJACENT A LA FACE DE BORD
 
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
 
 ! ----  Traitement automatique des scalaires physiques particulieres
 
@@ -562,7 +560,7 @@ do ifac = 1, nfabor
 
 !      ELEMENT ADJACENT A LA FACE DE BORD
 
-  if ( itypfb(ifac,iphas).eq.ientre ) then
+  if ( itypfb(ifac).eq.ientre ) then
 
     if ( fment(izone) .lt. fmin ) then
      fmin= fment(izone)

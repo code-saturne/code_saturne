@@ -167,7 +167,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision frcxt(ncelet,3,nphas), dfrcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
 double precision tpucou(ncelet,ndim), trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
@@ -237,7 +237,7 @@ ipcvst = ipproc(ivisct)
 
 !     Indicateur flux de bord Rusanov
 if(iifbru.gt.0) then
-  iifru = iifbru+(iphas-1)*nfabor
+  iifru = iifbru+nfabor
 else
   iifru = 1
 endif
@@ -272,9 +272,9 @@ if (iphydr.eq.1) then
       rtprom = rtpa(iel,isca(irho))
     endif
 
-    dfrcxt(iel,1,iphas) = rtprom*gx - frcxt(iel,1,iphas)
-    dfrcxt(iel,2,iphas) = rtprom*gy - frcxt(iel,2,iphas)
-    dfrcxt(iel,3,iphas) = rtprom*gz - frcxt(iel,3,iphas)
+    dfrcxt(iel,1) = rtprom*gx - frcxt(iel,1)
+    dfrcxt(iel,2) = rtprom*gy - frcxt(iel,2)
+    dfrcxt(iel,3) = rtprom*gz - frcxt(iel,3)
   enddo
 !     Ajout eventuel des pertes de charges
   if (ncepdp.gt.0) then
@@ -289,17 +289,17 @@ if (iphydr.eq.1) then
       cpdc12 = ckupdc(ielpdc,4)
       cpdc13 = ckupdc(ielpdc,5)
       cpdc23 = ckupdc(ielpdc,6)
-      dfrcxt(iel,1,iphas) = dfrcxt(iel,1,iphas)                   &
+      dfrcxt(iel,1) = dfrcxt(iel,1)                   &
  -rtp(iel,isca(irho))*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
-      dfrcxt(iel,2,iphas) = dfrcxt(iel,2,iphas)                   &
+      dfrcxt(iel,2) = dfrcxt(iel,2)                   &
  -rtp(iel,isca(irho))*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
-      dfrcxt(iel,3,iphas) = dfrcxt(iel,3,iphas)                   &
+      dfrcxt(iel,3) = dfrcxt(iel,3)                   &
  -rtp(iel,isca(irho))*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
     enddo
   endif
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(dfrcxt(1,1,iphas), dfrcxt(1,2,iphas), dfrcxt(1,3,iphas))
+    call synvec(dfrcxt(1,1), dfrcxt(1,2), dfrcxt(1,3))
     !==========
   endif
 
@@ -326,7 +326,7 @@ call grdcel                                                       &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    rtp(1,ipriph)   , coefa(1,iclrtp(ipriph,icoef))  ,             &
                      coefb(1,iclrtp(ipriph,icoef))  ,             &
    w1     , w2     , w3     ,                                     &
@@ -337,9 +337,9 @@ call grdcel                                                       &
 
 if (iphydr.eq.1) then
   do iel = 1, ncel
-    trav(iel,1) = ( frcxt(iel,1,iphas) - w1(iel) )*volume(iel)
-    trav(iel,2) = ( frcxt(iel,2,iphas) - w2(iel) )*volume(iel)
-    trav(iel,3) = ( frcxt(iel,3,iphas) - w3(iel) )*volume(iel)
+    trav(iel,1) = ( frcxt(iel,1) - w1(iel) )*volume(iel)
+    trav(iel,2) = ( frcxt(iel,2) - w2(iel) )*volume(iel)
+    trav(iel,3) = ( frcxt(iel,3) - w3(iel) )*volume(iel)
   enddo
 else
   do iel = 1, ncel

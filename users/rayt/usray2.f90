@@ -144,7 +144,6 @@ subroutine usray2 &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iphas            ! i  ! <-- ! current phase number                           !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icodcl           ! ia ! <-- ! boundary condition code                        !
@@ -225,7 +224,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , iphas
 
-integer          itypfb(nfabor,*)
+integer          itypfb(nfabor)
 integer          maxelt, lstelt(maxelt)
 integer          ia(*)
 
@@ -396,7 +395,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac,iphas).eq.iparoi ) then
+  if ( itypfb(ifac).eq.iparoi ) then
 
 !      zone number
     izfrdp(ifac) = 51
@@ -427,7 +426,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac,iphas).eq.iparug ) then
+  if ( itypfb(ifac).eq.iparug ) then
 
 !      zone number
     izfrdp(ifac) = 52
@@ -463,7 +462,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac,iphas).eq.iparoi ) then
+  if ( itypfb(ifac).eq.iparoi ) then
 
 !      zone number
     izfrdp(ifac) = 53
@@ -510,7 +509,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac,iphas).eq.iparoi ) then
+  if ( itypfb(ifac).eq.iparoi ) then
 
 !      zone number
     izfrdp(ifac) = 54
@@ -559,7 +558,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac,iphas).eq.iparoi ) then
+  if ( itypfb(ifac).eq.iparoi ) then
 
 !      zone number
     izfrdp(ifac) = 55
@@ -586,15 +585,15 @@ enddo
 
 do ifac = 1, nfabor
 
-  if     ( itypfb(ifac,iphas).eq.isolib                  ) then
+  if     ( itypfb(ifac).eq.isolib                  ) then
     izfrdp(ifac) = 61
-  elseif ( itypfb(ifac,iphas).eq.ientre.and.                      &
+  elseif ( itypfb(ifac).eq.ientre.and.                      &
            cdgfbo(2,ifac)    .gt.0.d0                    ) then
     izfrdp(ifac) = 62
-  elseif ( itypfb(ifac,iphas).eq.ientre.and.                      &
+  elseif ( itypfb(ifac).eq.ientre.and.                      &
            cdgfbo(2,ifac)    .le.0.d0                    ) then
     izfrdp(ifac) = 63
-  elseif ( itypfb(ifac,iphas).eq.isymet                  ) then
+  elseif ( itypfb(ifac).eq.isymet                  ) then
     izfrdp(ifac) = 64
 
 
@@ -604,8 +603,8 @@ do ifac = 1, nfabor
 !      Verification that all boundary faces have been treated.
 !       ------------------------------------
 
-  elseif ( itypfb(ifac,iphas).eq.iparoi .or.                      &
-           itypfb(ifac,iphas).eq.iparug     ) then
+  elseif ( itypfb(ifac).eq.iparoi .or.                      &
+           itypfb(ifac).eq.iparug     ) then
     if (izfrdp(ifac) .eq. -1) then
       write(nfecra,1000)ifac
       iok = iok + 1

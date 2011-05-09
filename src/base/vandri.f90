@@ -55,7 +55,6 @@ subroutine vandri &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
 ! (ncelet)         !    !     !    (rij et echo de paroi      )                !
@@ -100,12 +99,12 @@ implicit none
 
 integer          ndim, ncelet , ncel   , nfac   , nfabor, nphas
 integer          iphas
-integer          itypfb(nfabor,nphas),ifabor(nfabor)
+integer          itypfb(nfabor),ifabor(nfabor)
 integer          ifapat(ncelet)
 integer          ia(*)
 
 double precision xyzcen(ndim,ncelet),cdgfbo(ndim,nfabor)
-double precision uetbor(nfabor,nphas), visvdr(ncelet,nphas)
+double precision uetbor(nfabor), visvdr(ncelet)
 double precision yplusc(ncelet)
 double precision propce(ncelet,*)
 double precision ra(*)
@@ -132,7 +131,7 @@ if(abs(icdpar).eq.2) then
       yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
            +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2             &
            +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
-      yplus = uetbor(ifac,iphas) * yminpa/ viscos
+      yplus = uetbor(ifac) * yminpa/ viscos
       propce(iel,ipcvst) = propce(iel,ipcvst)*                    &
            (1.0d0-exp(-yplus/cdries))**2
     enddo
@@ -142,14 +141,14 @@ if(abs(icdpar).eq.2) then
   else
     write(nfecra,1000)
     do ifac = 1, nfabor
-      if(itypfb(ifac,iphas).eq.iparoi .or.                        &
-         itypfb(ifac,iphas).eq.iparug ) then
+      if(itypfb(ifac).eq.iparoi .or.                        &
+         itypfb(ifac).eq.iparug ) then
         iel = ifabor(ifac)
         viscos = propce(iel,ipcvis)/propce(iel,ipcrom)
         yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2           &
              +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2           &
              +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
-        yplus = uetbor(ifac,iphas) * yminpa/ viscos
+        yplus = uetbor(ifac) * yminpa/ viscos
         propce(iel,ipcvst) = propce(iel,ipcvst)*                  &
              (1.0d0-exp(-yplus/cdries))**2
       endif
@@ -169,8 +168,8 @@ endif
 !     qui avait ete amortie dans clptur et qui a servi a calculer
 !     les conditions aux limites
 do iel = 1, ncel
-  if (visvdr(iel,iphas).gt.-900.d0)                               &
-       propce(iel,ipcvst) = visvdr(iel,iphas)
+  if (visvdr(iel).gt.-900.d0)                               &
+       propce(iel,ipcvst) = visvdr(iel)
 enddo
 
 !--------

@@ -140,7 +140,7 @@ integer          nvar   , nscal  , nphas
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
+integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep)
 integer          ia(*)
 

@@ -74,7 +74,7 @@ module pointe
                    ixlmt1 , ircpt1 , idtpt1
 
   !... Auxiliaires accessibles directement dans ia, ra
-  !     tous ces tableaux sont (dimension, nphas)
+  !     tous ces tableaux sont (dimension)
 
   ! Pointeur Dimension       Description
   ! iitypf ! nfabor                  ! type des faces de bord
@@ -105,13 +105,13 @@ module pointe
   !... Auxiliaires accessibles directement dans ia, ra
   !    pour la perodicite
 
-  ! Pointeur Dimension                 |   Description
-  ! idudxy ! (ncelet-ncel,3,3,nphas)   ! sauvegarde du gradient de la
-  !        !                           ! vitesse en cas de rotation
-  ! iwdudx ! (ncelet-ncel,3,3,nphas)   ! tableau de travail lie a dudxyz
-  ! idrdxy ! (ncelet-ncel,6,3,nphas)   ! sauvegarde du gradient de rij
-  !        !                           ! en cas de rotation
-  ! iwdrdx ! (ncelet-ncel,6,3,nphas)   ! tableau de travail lie a drdxyz
+  ! Pointeur Dimension           |   Description
+  ! idudxy ! (ncelet-ncel,3,3)   ! sauvegarde du gradient de la
+  !        !                     ! vitesse en cas de rotation
+  ! iwdudx ! (ncelet-ncel,3,3)   ! tableau de travail lie a dudxyz
+  ! idrdxy ! (ncelet-ncel,6,3)   ! sauvegarde du gradient de rij
+  !        !                     ! en cas de rotation
+  ! iwdrdx ! (ncelet-ncel,6,3)   ! tableau de travail lie a drdxyz
 
   integer, save :: idudxy, idrdxy, iwdudx, iwdrdx
 

@@ -139,7 +139,7 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision frcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3)
 double precision ra(*)
 
 ! Local variables
@@ -1103,7 +1103,7 @@ if (nfabok.eq.1) then
     nbval  = 1
     irtyp  = 1
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iisymp+nfabor*(iphas-1)),ierror)
+                ia(iisymp),ierror)
     nberro = nberro+ierror
 
   enddo
@@ -1748,17 +1748,17 @@ if(iphydr.eq.1) then
 
     RUBRIQ = 'force_ext_ce_x_phase'//CPHASE
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                frcxt(1,1,iphas),ierror)
+                frcxt(1,1),ierror)
     nberro=nberro+ierror
 
     RUBRIQ = 'force_ext_ce_y_phase'//CPHASE
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                frcxt(1,2,iphas),ierror)
+                frcxt(1,2),ierror)
     nberro=nberro+ierror
 
     RUBRIQ = 'force_ext_ce_z_phase'//CPHASE
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                frcxt(1,3,iphas),ierror)
+                frcxt(1,3),ierror)
     nberro=nberro+ierror
   enddo
 

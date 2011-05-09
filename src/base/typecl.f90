@@ -54,7 +54,6 @@ subroutine typecl &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
 !  nphas)          !    !     !                                                !
 ! icodcl           ! te ! <-- ! code de condition limites aux faces            !
@@ -133,8 +132,8 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
 integer          icodcl(nfabor,nvar)
-integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
-integer          isostd(nfabor+1,nphas)
+integer          itypfb(nfabor) , itrifb(nfabor)
+integer          isostd(nfabor+1)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -142,7 +141,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision frcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefu(nfabor,3)
@@ -213,9 +212,9 @@ iok = 0
 
 do iphas = 1, nphas
   do ifac = 1, nfabor
-    ityp = itypfb(ifac,iphas)
+    ityp = itypfb(ifac)
     if(ityp.le.0.or.ityp.gt.ntypmx) then
-      itypfb(ifac,iphas) = 0
+      itypfb(ifac) = 0
       iok = iok + 1
     endif
   enddo
@@ -241,7 +240,7 @@ enddo
 
 do iphas = 1, nphas
   do ifac = 1, nfabor
-    ityp = itypfb(ifac,iphas)
+    ityp = itypfb(ifac)
     ifinty(ityp) = ifinty(ityp) + 1
   enddo
 enddo
@@ -273,9 +272,9 @@ enddo
 
 do iphas = 1, nphas
   do ifac = 1, nfabor
-    ityp = itypfb(ifac,iphas)
+    ityp = itypfb(ifac)
     ifin = ifinty(ityp)+1
-    itrifb(ifin,iphas) = ifac
+    itrifb(ifin) = ifac
     ifinty(ityp) = ifin
   enddo
 enddo
@@ -295,7 +294,7 @@ do iphas = 1, nphas
     if(ifinty(ii).ge.idebty(ii+1)) then
       write(nfecra,2020) (ifinty(jj),jj=1,ntypmx)
       write(nfecra,2030) (idebty(jj),jj=1,ntypmx)
-      write(nfecra,2040) (itypfb(jj,iphas),jj=1,nfabor)
+      write(nfecra,2040) (itypfb(jj),jj=1,nfabor)
       write(nfecra,2098) ii,ifinty(ii),ii+1,idebty(ii+1)
     else
       write(nfecra,2099) ii,ii+1
@@ -540,8 +539,8 @@ endif
 do iphas = 1, nphas
   do ivar=1, nvar
      do ifac = 1, nfabor
-        if((itypfb(ifac,iphas) .ne. isolib) .and. &
-           (itypfb(ifac,iphas) .ne. ientre) .and. &
+        if((itypfb(ifac) .ne. isolib) .and. &
+           (itypfb(ifac) .ne. ientre) .and. &
            (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
            rcodcl(ifac,ivar,1) = 0.d0
        endif
@@ -612,7 +611,7 @@ do iphas = 1, nphas
   ifin = ifinty(isolib)
 
   do ii = ideb, ifin
-    ifac = itrifb(ii,iphas)
+    ifac = itrifb(ii)
     if (icodcl(ifac,ipriph).eq.0) then
       d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
            + (cdgfbo(2,ifac)-xyp0)**2  &
@@ -656,7 +655,7 @@ do iphas = 1, nphas
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   frcxt(1,1,iphas), frcxt(1,2,iphas), frcxt(1,3,iphas),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
@@ -718,7 +717,7 @@ do iphas = 1, nphas
     if (ivar.eq.ipriph) then
       if(iprnew.eq.1) then
         do ii = ideb, ifin
-          ifac = itrifb(ii,iphas)
+          ifac = itrifb(ii)
           if(icodcl(ifac,ivar).eq.0) then
             icodcl(ifac,ivar)   = 3
             rcodcl(ifac,ivar,1) = 0.d0
@@ -745,14 +744,14 @@ do iphas = 1, nphas
 !     0 -> pas une face de sortie standard (i.e. pas sortie ou sortie avec CL
 !                                                de pression modifiee)
 !     1 -> face de sortie libre avec CL de pression automatique.
-!     le numero de la face de reference est stocke dans ISOSTD(NFABOR+1,IPHAS)
+!     le numero de la face de reference est stocke dans ISOSTD(NFABOR+1)
 !     qui est d'abord initialise a -1 (i.e. pas de face de sortie std)
-    isostd(nfabor+1,iphas) = -1
+    isostd(nfabor+1) = -1
     do ifac = 1,nfabor
-      isostd(ifac,iphas) = 0
-      if ((itypfb(ifac,iphas).eq.isolib).and.                     &
+      isostd(ifac) = 0
+      if ((itypfb(ifac).eq.isolib).and.                     &
            (icodcl(ifac,ipriph).eq.0)) then
-        isostd(ifac,iphas) = 1
+        isostd(ifac) = 1
       endif
     enddo
   endif
@@ -778,7 +777,7 @@ do iphas = 1, nphas
       xyzref(2) = cdgfbo(2,ifrslb)
       xyzref(3) = cdgfbo(3,ifrslb)
       xyzref(4) = coefu(ifrslb,1) ! coefup
-      if (iphydr.eq.1) isostd(nfabor+1,iphas) = ifrslb
+      if (iphydr.eq.1) isostd(nfabor+1) = ifrslb
     endif
 
     ! Broadcast coefup and pressure reference
@@ -903,7 +902,7 @@ do iphas = 1, nphas
     if (ivar.eq.ipriph) then
       if(iprnew.eq.1) then
         do ii = ideb, ifin
-          ifac = itrifb(ii,iphas)
+          ifac = itrifb(ii)
           if(icodcl(ifac,ivar).eq.0) then
             icodcl(ifac,ivar)   = 1
             rcodcl(ifac,ivar,1) = coefu(ifac,1) + pref
@@ -914,7 +913,7 @@ do iphas = 1, nphas
       endif
     elseif(ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
       do ii = ideb, ifin
-        ifac = itrifb(ii,iphas)
+        ifac = itrifb(ii)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 9
           rcodcl(ifac,ivar,1) = 0.d0
@@ -942,7 +941,7 @@ do iphas = 1, nphas
            ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip)    &
                                                           ) ) then
       do ii = ideb, ifin
-        ifac = itrifb(ii,iphas)
+        ifac = itrifb(ii)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 4
 !         rcodcl(ifac,ivar,1) = Modifie eventuellement par l'ALE
@@ -953,7 +952,7 @@ do iphas = 1, nphas
     elseif(ivar.eq.ipriph) then
       if(iprnew.eq.1) then
         do ii = ideb, ifin
-          ifac = itrifb(ii,iphas)
+          ifac = itrifb(ii)
           if(icodcl(ifac,ivar).eq.0) then
             icodcl(ifac,ivar)   = 3
             rcodcl(ifac,ivar,1) = 0.d0
@@ -977,7 +976,7 @@ do iphas = 1, nphas
   do ivar = 1, nvar
     if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
       do ii = ideb, ifin
-        ifac = itrifb(ii,iphas)
+        ifac = itrifb(ii)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 5
 !         rcodcl(ifac,ivar,1) = Utilisateur
@@ -1000,7 +999,7 @@ do iphas = 1, nphas
        ( iturb.eq.70.and.                                  &
           (ivar.eq.inuiph)                    )    ) then
       do ii = ideb, ifin
-        ifac = itrifb(ii,iphas)
+        ifac = itrifb(ii)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 5
           rcodcl(ifac,ivar,1) = 0.d0
@@ -1011,7 +1010,7 @@ do iphas = 1, nphas
     elseif(ivar.eq.ipriph) then
       if(iprnew.eq.1) then
         do ii = ideb, ifin
-          ifac = itrifb(ii,iphas)
+          ifac = itrifb(ii)
           if(icodcl(ifac,ivar).eq.0) then
             icodcl(ifac,ivar)   = 3
             rcodcl(ifac,ivar,1) = 0.d0
@@ -1036,7 +1035,7 @@ do iphas = 1, nphas
   do ivar = 1, nvar
     if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
       do ii = ideb, ifin
-        ifac = itrifb(ii,iphas)
+        ifac = itrifb(ii)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 6
 !         rcodcl(ifac,ivar,1) = Utilisateur
@@ -1059,7 +1058,7 @@ do iphas = 1, nphas
        ( iturb.eq.70.and.                                  &
           (ivar.eq.inuiph)                    )    ) then
       do ii = ideb, ifin
-        ifac = itrifb(ii,iphas)
+        ifac = itrifb(ii)
         if(icodcl(ifac,ivar).eq.0) then
           icodcl(ifac,ivar)   = 6
           rcodcl(ifac,ivar,1) = 0.d0
@@ -1070,7 +1069,7 @@ do iphas = 1, nphas
     elseif(ivar.eq.ipriph) then
       if(iprnew.eq.1) then
         do ii = ideb, ifin
-          ifac = itrifb(ii,iphas)
+          ifac = itrifb(ii)
           if(icodcl(ifac,ivar).eq.0) then
             icodcl(ifac,ivar)   = 3
             rcodcl(ifac,ivar,1) = 0.d0
@@ -1113,13 +1112,13 @@ do iphas = 1, nphas
   iok = 0
   do ivar = 1, nvar
     do ii = ideb, ifin
-      ifac = itrifb(ii,iphas)
+      ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
 
         if (ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph)      &
              then
           if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
-            itypfb(ifac,iphas) = - abs(itypfb(ifac,iphas))
+            itypfb(ifac) = - abs(itypfb(ifac))
             if (iok.eq.0.or.iok.eq.2) iok = iok + 1
           else
             icodcl(ifac,ivar) = 1
@@ -1137,7 +1136,7 @@ do iphas = 1, nphas
             rcodcl(ifac,ivar,2) = rinfin
             rcodcl(ifac,ivar,3) = 0.d0
           else
-            itypfb(ifac,iphas) = - abs(itypfb(ifac,iphas))
+            itypfb(ifac) = - abs(itypfb(ifac))
             if (iok.lt.2) iok = iok + 2
           endif
         else
@@ -1178,7 +1177,7 @@ do iphas = 1, nphas
 
   do ivar = 1, nvar
     do ii = ideb, ifin
-      ifac = itrifb(ii,iphas)
+      ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
 
          if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
@@ -1210,7 +1209,7 @@ do iphas = 1, nphas
 
   do ivar = 1, nvar
     do ii = ideb, ifin
-      ifac = itrifb(ii,iphas)
+      ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 3
         rcodcl(ifac,ivar,1) = 0.d0
@@ -1232,7 +1231,7 @@ do iphas = 1, nphas
 
   do ivar = 1, nvar
     do ii = ideb, ifin
-      ifac = itrifb(ii,iphas)
+      ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 3
         rcodcl(ifac,ivar,1) = 0.d0
@@ -1254,7 +1253,7 @@ do iphas = 1, nphas
 
   do ivar = 1, nvar
     do ii = ideb, ifin
-      ifac = itrifb(ii,iphas)
+      ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 3
         rcodcl(ifac,ivar,1) = 0.d0
@@ -1334,7 +1333,7 @@ do iphas = 1, nphas
       ideb = idebty(ii)
       ifin = ifinty(ii)
       do jj = ideb, ifin
-        ifac = itrifb(jj,iphas)
+        ifac = itrifb(jj)
         flumty(ii) = flumty(ii) + propfb(ifac,iflmab)
       enddo
     enddo

@@ -69,7 +69,6 @@ subroutine raydom &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -137,7 +136,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 integer          izfrad(nfabor)
 integer          ia(*)
 
@@ -239,7 +238,7 @@ unspi = 1.d0/pi
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  ,                                    &
-   itypfb(1,iphas),                                              &
+   itypfb ,                                                      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -344,7 +343,7 @@ unspi = 1.d0/pi
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas , iappel ,                            &
-   itypfb(1,iphas),                                              &
+   itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -422,7 +421,7 @@ unspi = 1.d0/pi
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  , iappel ,                           &
-   itypfb(1,iphas),                                              &
+   itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -459,7 +458,7 @@ unspi = 1.d0/pi
     if (cofrua(ifac).le.xlimit) then
       iok = iok + 1
       cofrmn = min(cofrmn,cofrua(ifac))
-      write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac,iphas)
+      write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac)
     endif
   enddo
 
@@ -477,7 +476,7 @@ unspi = 1.d0/pi
       if (cofrub(ifac).le.xlimit) then
         iok = iok + 1
         cofrmn = min(cofrmn,cofrub(ifac))
-        write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac,iphas)
+        write(nfecra,3000)ifac,izfrad(ifac),itypfb(ifac)
       endif
     enddo
 
@@ -522,7 +521,7 @@ unspi = 1.d0/pi
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,iphas),                                              &
+   itypfb ,                                                      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -537,7 +536,7 @@ unspi = 1.d0/pi
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,iphas),                                              &
+   itypfb ,                                                      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -907,7 +906,7 @@ unspi = 1.d0/pi
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  , iappel ,                           &
-   itypfb(1,iphas),                                              &
+   itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -930,7 +929,7 @@ unspi = 1.d0/pi
     if (propfb(ifac,ipprob(ifnet)).le.xlimit) then
       iok = iok + 1
       flunmn = min(flunmn,propfb(ifac,ipprob(ifnet)))
-      write(nfecra,4000)ifac,izfrad(ifac),itypfb(ifac,iphas)
+      write(nfecra,4000)ifac,izfrad(ifac),itypfb(ifac)
     endif
   enddo
 

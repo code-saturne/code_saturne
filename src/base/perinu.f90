@@ -118,7 +118,7 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
 double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
-double precision dudxyz(ncelet-ncel,3,3,nphas)
+double precision dudxyz(ncelet-ncel,3,3)
 double precision ra(*)
 
 ! Local variables

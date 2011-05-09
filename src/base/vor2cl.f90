@@ -64,9 +64,7 @@ subroutine vor2cl &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! irepvo           ! te ! <-- ! numero de l'entree associe a chaque            !
 !     (nfabor)     !    !     ! face de bord (=0 si pas de vortex)             !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -129,7 +127,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          irepvo(nfabor)
 integer          ia(*)
 
@@ -197,7 +195,7 @@ do ifac = 1, nfabor
     icvor2(ient) = icvor2(ient) + 1
       do iphas = 1, nphas
 
-      itypfb(ifac,iphas) = ientre
+      itypfb(ifac) = ientre
       ii = ia(iifagl+(ient-1)*icvmax+icvor2(ient)-1)
 
       xu = ra(iuvort+(ient-1)*icvmax+ii-1)

@@ -237,9 +237,9 @@ endif
 
 
 iitypf = idebia
-iitrif = iitypf + nfabor *nphas
-iisymp = iitrif + nfabor *nphas
-ifinia = iisymp + nfabor *nphas
+iitrif = iitypf + nfabor
+iisymp = iitrif + nfabor
+ifinia = iisymp + nfabor
 do iphas = 1, nphas
   if(idpar2.eq.1) then
     iifapa = ifinia
@@ -261,12 +261,12 @@ else
 endif
 
 iisstd = ifinia
-ifinia = iisstd + (nfabor+1)*nphas*iphydr
+ifinia = iisstd + (nfabor+1)*iphydr
 
 if(ippmod(icompf).ge.0) then
   iifbet = ifinia
-  iifbru = iifbet + nfabor*nphas
-  ifinia = iifbru + nfabor*nphas
+  iifbru = iifbet + nfabor
+  ifinia = iifbru + nfabor
 else
   iifbet = 0
   iifbru = 0
@@ -290,12 +290,12 @@ itpuco = icocib + ncelbr *9 * iicoci
 idipar = itpuco + ncelet *ndim*ipucou
 iyppar = idipar + ncelet *idpar1
 idudxy = iyppar + ncelet *iypar1
-iwdudx = idudxy + (ncelet-ncel) * 3 * 3 * nphas * iipero
-idrdxy = iwdudx + (ncelet-ncel) * 3 * 3 * nphas * iipero
-iwdrdx = idrdxy + (ncelet-ncel) * 6 * 3 * nphas * iipero*iiirij
-ifrcx  = iwdrdx + (ncelet-ncel) * 6 * 3 * nphas * iipero*iiirij
-iyplbr = ifrcx  + ncelet*ndim*nphas*iphydr
-iforbr = iyplbr + nfabor*nphas*iiyplb
+iwdudx = idudxy + (ncelet-ncel) * 3 * 3 * iipero
+idrdxy = iwdudx + (ncelet-ncel) * 3 * 3 * iipero
+iwdrdx = idrdxy + (ncelet-ncel) * 6 * 3 * iipero*iiirij
+ifrcx  = iwdrdx + (ncelet-ncel) * 6 * 3 * iipero*iiirij
+iyplbr = ifrcx  + ncelet*ndim*iphydr
+iforbr = iyplbr + nfabor*iiyplb
 ifinra = iforbr + nfabor*ndim*iiforb
 
 !     On rajoute des tableaux pour le k-omega SST si necessaire

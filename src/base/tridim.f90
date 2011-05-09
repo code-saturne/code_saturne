@@ -120,7 +120,7 @@ implicit none
 integer          idbia0 , idbra0 , itrale
 integer          nvar   , nscal  , nphas
 
-integer          isostd(nfabor+1,nphas)
+integer          isostd(nfabor+1)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -128,7 +128,7 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision frcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3)
 double precision ra(*)
 
 ! Local variables
@@ -417,11 +417,11 @@ if(ipass.eq.1) then
 
     do iphas = 1, nphas
       if(irangp.ge.0) then
-        call parcve (frcxt(1,1,iphas))
+        call parcve (frcxt(1,1))
         !==========
-        call parcve (frcxt(1,2,iphas))
+        call parcve (frcxt(1,2))
         !==========
-        call parcve (frcxt(1,3,iphas))
+        call parcve (frcxt(1,3))
         !==========
       endif
       if(iperio.eq.1) then
@@ -430,9 +430,9 @@ if(ipass.eq.1) then
         call percve                                               &
         !==========
     ( idimte , itenso ,                                           &
-      frcxt(1,1,iphas),frcxt(1,1,iphas),frcxt(1,1,iphas),         &
-      frcxt(1,2,iphas),frcxt(1,2,iphas),frcxt(1,2,iphas),         &
-      frcxt(1,3,iphas),frcxt(1,3,iphas),frcxt(1,3,iphas) )
+      frcxt(1,1),frcxt(1,1),frcxt(1,1),         &
+      frcxt(1,2),frcxt(1,2),frcxt(1,2),         &
+      frcxt(1,3),frcxt(1,3),frcxt(1,3) )
       endif
 
     enddo
@@ -1371,7 +1371,7 @@ do while (iterns.le.nterup)
       !               et s'il y a des parois (si pas de paroi, pas de y+)
       if(abs(icdpar).eq.1.and.infpar.gt.0) then
 
-        iismph = iisymp+nfabor*(iphas-1)
+        iismph = iisymp
 
         !     On doit conserver la memoire de memcli a cause de RA(IUETBO)
         !       dans DISTYP

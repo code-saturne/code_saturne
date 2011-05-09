@@ -75,9 +75,7 @@ subroutine raycli &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
 ! isothm(nfabor    ! te ! <-- ! type de condition de paroi                     !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -148,7 +146,7 @@ integer          nvar   , nscal  , nphas
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          ia(*)
 integer          izfrad(nfabor),isothm(nfabor)
 
@@ -322,8 +320,8 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
       do ifac = 1,nfabor
         propfb(ifac,ipprob(itparo)) = tint(ifac)
         propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
-        if ( itypfb(ifac,iphas).eq.iparoi .or.                   &
-             itypfb(ifac,iphas).eq.iparug ) then
+        if ( itypfb(ifac).eq.iparoi .or.                   &
+             itypfb(ifac).eq.iparug ) then
           propfb(ifac,ipprob(itparo)) = tint(ifac)
           propfb(ifac,ipprob(iqinci)) = stephn*tint(ifac)**4
         else
@@ -466,8 +464,8 @@ endif
 
 !--> Si en paroi ISOTHM non renseignee : stop
     do ifac = 1, nfabor
-      if( (itypfb(ifac,iphas).eq.iparoi  .or.                    &
-           itypfb(ifac,iphas).eq.iparug) .and.                   &
+      if( (itypfb(ifac).eq.iparoi  .or.                    &
+           itypfb(ifac).eq.iparug) .and.                   &
            isothm(ifac)  .eq.-1    ) then
         iok = iok + 1
         write(nfecra,2110) ifac,izfrad(ifac)
@@ -476,8 +474,8 @@ endif
 
 !--> Si ISOTHM renseignee en non paroi : stop
     do ifac = 1, nfabor
-      if( itypfb(ifac,iphas).ne.iparoi .and.                     &
-          itypfb(ifac,iphas).ne.iparug .and.                     &
+      if( itypfb(ifac).ne.iparoi .and.                     &
+          itypfb(ifac).ne.iparug .and.                     &
           isothm(ifac)  .ne.-1         ) then
         iok = iok + 1
         write(nfecra,2111)                                        &
@@ -646,7 +644,7 @@ endif
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,iphas) ,                                             &
+   itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -664,7 +662,7 @@ endif
 
    mode   ,                                                       &
 
-   itypfb(1,iphas) ,                                             &
+   itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -728,7 +726,7 @@ endif
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  ,                                    &
-   itypfb(1,iphas) ,                                             &
+   itypfb ,                                                      &
 
    icodcl , isothm , izfrad ,                                     &
 
@@ -817,7 +815,7 @@ endif
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,iphas) ,                                             &
+   itypfb ,                                                      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -836,7 +834,7 @@ endif
 
    mode   ,                                                       &
 
-   itypfb(1,iphas) ,                                             &
+   itypfb ,                                                      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -867,7 +865,7 @@ endif
  ( idebia , idebra ,                                              &
    nvar   , nscal  , iphas  ,                                    &
    mode   ,                                                       &
-   itypfb(1,iphas) ,                                             &
+   itypfb ,                                                      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -885,7 +883,7 @@ endif
 
    mode   ,                                                       &
 
-   itypfb(1,iphas) ,                                             &
+   itypfb ,                                                      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

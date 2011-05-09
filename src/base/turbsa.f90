@@ -135,7 +135,7 @@ integer          iphas
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          ia(*)
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -501,7 +501,7 @@ dsa0   = -999.d0
 
 iclvar = iclrtp(inuiph,icoef)
 do ifac = 1, nfabor
-  if ( itypfb(ifac,iphas).eq.iparug ) then
+  if ( itypfb(ifac).eq.iparug ) then
     ipatrg = 1
     cofbnu = coefb(ifac,iclvar)
     ! Roughness of the wall
@@ -764,11 +764,11 @@ if( idiff(ivar).ge. 1 ) then
     surfn = surfbn(ifac)
 
     ! Smooth wall
-    if(    itypfb(ifac,iphas).eq.iparoi) then
+    if(    itypfb(ifac).eq.iparoi) then
       viscb(ifac) = dsigma * propce(iel,ipcvis)*surfn/distb(ifac)
 
     ! Rough wall
-    elseif(itypfb(ifac,iphas).eq.iparug) then
+    elseif(itypfb(ifac).eq.iparug) then
 
       rom = propce(iel,ipcrom)
       ! dsa0 is recomputed in case of many different roughness

@@ -99,7 +99,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iappel
 
-integer          isostd(nfabor+1,nphas)
+integer          isostd(nfabor+1)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)

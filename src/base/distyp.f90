@@ -72,7 +72,6 @@ subroutine distyp &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
 ! (nfabor     )    !    !     ! (transmis mais non utilise)                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -134,11 +133,11 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , iphas
 
-integer          itypfb(nfabor,nphas),isympa(nfabor)
+integer          itypfb(nfabor),isympa(nfabor)
 integer          ia(*)
 
 double precision distpa(ncelet),propce(ncelet,*)
-double precision uetbor(nfabor,nphas)
+double precision uetbor(nfabor)
 double precision disty(ncelet)
 double precision dam(ncelet)  , xam(nfac,2)
 double precision smbdp(ncelet), rovsdp(ncelet)
@@ -219,8 +218,8 @@ endif
 !       par definition et obeit a un flux nul ailleurs
 
 do ifac = 1, nfabor
-  if(itypfb(ifac,iphas).eq.iparoi .or.                            &
-     itypfb(ifac,iphas).eq.iparug ) then
+  if(itypfb(ifac).eq.iparoi .or.                            &
+     itypfb(ifac).eq.iparug ) then
     coefax(ifac) = 0.0d0
     coefbx(ifac) = 0.0d0
   else
@@ -282,7 +281,7 @@ enddo
 !       par definition et obeit a un flux nul ailleurs
 
 do ifac = 1, nfabor
-  if (itypfb(ifac,iphas).eq.iparoi .or. itypfb(ifac,iphas).eq.iparug) then
+  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
     xnorme = max(surfbn(ifac),epzero**2)
     coefax(ifac) = -surfbo(1,ifac)/xnorme
     coefbx(ifac) = 0.d0
@@ -364,10 +363,10 @@ call divmas                                                       &
 !     Dirichlet en u*/nu aux parois, et flux nul ailleurs
 
 do ifac = 1, nfabor
-  if(itypfb(ifac,iphas).eq.iparoi .or.                            &
-     itypfb(ifac,iphas).eq.iparug) then
+  if(itypfb(ifac).eq.iparoi .or.                            &
+     itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
-    coefax(ifac) = uetbor(ifac,iphas)                             &
+    coefax(ifac) = uetbor(ifac)                             &
                   *propce(iel,ipcrom)/propce(iel,ipcvis)
     coefbx(ifac) = 0.0d0
   else
@@ -472,8 +471,8 @@ timey = 0.d0
 xusnmx = -grand
 xusnmn =  grand
 do ifac = 1, nfabor
-  if(itypfb(ifac,iphas).eq.iparoi .or.                            &
-     itypfb(ifac,iphas).eq.iparug) then
+  if(itypfb(ifac).eq.iparoi .or.                            &
+     itypfb(ifac).eq.iparug) then
     xusnmx = max(xusnmx,coefax(ifac))
     xusnmn = min(xusnmn,coefax(ifac))
   endif
@@ -501,8 +500,8 @@ endif
 xnorm0 = 0.d0
 infpar = 0
 do ifac = 1, nfabor
-  if(itypfb(ifac,iphas).eq.iparoi .or.                            &
-     itypfb(ifac,iphas).eq.iparug) then
+  if(itypfb(ifac).eq.iparoi .or.                            &
+     itypfb(ifac).eq.iparug) then
     infpar = infpar+1
     xnorm0 = xnorm0 + coefax(ifac)**2
   endif

@@ -282,8 +282,8 @@ elseif ( ippmod(icompf).ge.0 ) then
 !     Marqueur de flux conductif impose au bord (0 = non)
   do iphas = 1, nphas
     do ifac = 1, nfabor
-      ia(iifbru+ifac-1+(iphas-1)*nfabor) = 0
-      ia(iifbet+ifac-1+(iphas-1)*nfabor) = 0
+      ia(iifbru+ifac-1) = 0
+      ia(iifbet+ifac-1) = 0
     enddo
   enddo
 

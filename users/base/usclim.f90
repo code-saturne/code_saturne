@@ -276,7 +276,7 @@ subroutine usclim &
 !                                 rcodcl(ifac, ivar, 2) = rinfin
 !                                 rcodcl(ifac, ivar, 3) = 0.d0)
 !        Especially, one may have for example:
-!        -> set itypfb(ifac, iphas) = iparoi which prescribes default wall
+!        -> set itypfb(ifac) = iparoi which prescribes default wall
 !        conditions for all variables at face ifac,
 !        -> and define IN ADDITION for variable ivar on this face specific
 !        conditions by specifying icodcl(ifac, ivar) and the 3 rcodcl values.
@@ -325,8 +325,7 @@ subroutine usclim &
 !         entering the subroutine.
 
 
-!       Note how to access some variables (for phase    'iphas'
-!                                              variable 'ivar'
+!       Note how to access some variables (for variable 'ivar'
 !                                              scalar   'iscal'):
 
 ! Cell values  (let iel = ifabor(ifac))
@@ -367,9 +366,7 @@ subroutine usclim &
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -428,7 +425,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -513,7 +510,7 @@ do ilelt = 1, nlelt
 
   do iphas = 1, nphas
 
-    itypfb(ifac,iphas) = ientre
+    itypfb(ifac) = ientre
 
     rcodcl(ifac,iu,1) = 1.1d0
     rcodcl(ifac,iv,1) = 1.1d0
@@ -612,7 +609,7 @@ do ilelt = 1, nlelt
 
   do iphas = 1, nphas
 
-    itypfb(ifac,iphas) = ientre
+    itypfb(ifac) = ientre
 
     rcodcl(ifac,iu,1) = 1.1d0
     rcodcl(ifac,iv,1) = 1.1d0
@@ -700,7 +697,7 @@ do ilelt = 1, nlelt
   !         free outlet face (isolib)
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas)   = isolib
+    itypfb(ifac)   = isolib
   enddo
 
 enddo
@@ -717,7 +714,7 @@ do ilelt = 1, nlelt
   !       zero flux for scalars
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas)   = iparoi
+    itypfb(ifac)   = iparoi
   enddo
 
   ! If sliding wall with velocity u(1) = 1:
@@ -759,7 +756,7 @@ do ilelt = 1, nlelt
   !       zero flux for scalars
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas)   = iparug
+    itypfb(ifac)   = iparug
 
     ! Roughness for velocity: 1cm
     rcodcl(ifac,iu,3) = 0.01d0
@@ -800,7 +797,7 @@ do ilelt = 1, nlelt
   ! Symmetries
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas)   = isymet
+    itypfb(ifac)   = isymet
   enddo
 
 enddo
@@ -824,7 +821,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas) = iparoi
+    itypfb(ifac) = iparoi
   enddo
 
   iphas = 1
@@ -863,7 +860,7 @@ do ilelt = 1, nlelt
 ! CAUTION: the value of itypfb must be assigned to iindef
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas) = iindef
+    itypfb(ifac) = iindef
   enddo
 
   do ii = 1, nvar
@@ -895,7 +892,7 @@ do ilelt = 1, nlelt
 !          these integers are defined in paramx.h
 
   do iphas = 1, nphas
-    itypfb(ifac,iphas) = 89
+    itypfb(ifac) = 89
   enddo
 
   do ii = 1, nvar

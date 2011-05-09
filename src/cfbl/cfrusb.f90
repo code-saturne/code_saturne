@@ -195,7 +195,7 @@ runb  = 0.5d0*(coefa(ifac,iclr)*und+rtp(iel,irhiph)*uni)          &
 !       et l'energie (div(rho u E)) ainsi que les termes en
 !       grad(P) et div(u P)
 
-ia(iifbru+ifac-1+(iphas-1)*nfabor) = 1
+ia(iifbru+ifac-1) = 1
 
 !     Flux de masse
 propfb(ifac,iflmab) = runb*surfbn(ifac)

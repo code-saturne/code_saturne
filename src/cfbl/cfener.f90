@@ -206,14 +206,14 @@ endif
 
 ! --- Indicateur flux de bord Rusanov
 if(iifbru.gt.0) then
-  iifru = iifbru+(iphas-1)*nfabor
+  iifru = iifbru
 else
   iifru = 1
 endif
 
 ! --- Indicateur flux conductif de bord imposé
 if(iifbet.gt.0) then
-  iifbe = iifbet+(iphas-1)*nfabor
+  iifbe = iifbet
 else
   iifbe = 1
 endif

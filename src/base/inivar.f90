@@ -106,7 +106,7 @@ integer          ia(*)
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
-double precision frcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3)
 double precision ra(*)
 
 ! Local variables

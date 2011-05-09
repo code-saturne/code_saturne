@@ -70,9 +70,7 @@ subroutine attycl &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -136,7 +134,7 @@ integer          nvar   , nscal  , nphas
 integer          nbmetd , nbmett , nbmetm
 
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor), iprofm(nozppm)
 integer          ia(*)
 
@@ -239,12 +237,12 @@ do ifac = 1, nfabor
 !     ete  specifiee par utilisateur.
 
       if (vs.gt.0) then
-        if (itypfb(ifac,iphas).eq.0) itypfb(ifac,iphas) = isolib
+        if (itypfb(ifac).eq.0) itypfb(ifac) = isolib
       else
-        if (itypfb(ifac,iphas).eq.0) itypfb(ifac,iphas) = ientre
+        if (itypfb(ifac).eq.0) itypfb(ifac) = ientre
       endif
 
-      if (itypfb(ifac,iphas).eq.ientre) then
+      if (itypfb(ifac).eq.ientre) then
 
         if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0)             &
            rcodcl(ifac,iu,1) = xuent

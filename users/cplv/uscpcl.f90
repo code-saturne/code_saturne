@@ -380,9 +380,7 @@ subroutine uscpcl &
 !                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
 !                  !    !     !         inflowing possibly blocked             !
 ! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -446,7 +444,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -539,7 +537,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
 !   Kind of boundary conditions for standard variables
-  itypfb(ifac,iphas) = ientre
+  itypfb(ifac) = ientre
 
 !   zone's number (from 1 to n)
   izone = 1
@@ -656,7 +654,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
 !   Kind of boundary conditions for standard variables
-  itypfb(ifac,iphas) = ientre
+  itypfb(ifac) = ientre
 
 !   zone's number (from 1 to n)
   izone = 2
@@ -741,7 +739,7 @@ do ilelt = 1, nlelt
 !                 NUL SCALAR FLUX
 
 !   Kind of boundary conditions for standard variables
-  itypfb(ifac,iphas)   = iparoi
+  itypfb(ifac)   = iparoi
 
 
 !   zone's number (from 1 to n)
@@ -765,7 +763,7 @@ do ilelt = 1, nlelt
 !          OUTLET : NUL FLUX for SPEED & SCALARS, FIXED PRESSURE
 
 !   Kind of boundary conditions for standard variables
-  itypfb(ifac,iphas)   = isolib
+  itypfb(ifac)   = isolib
 
 !   zone's number (from 1 to n)
   izone = 4
@@ -787,7 +785,7 @@ do ilelt = 1, nlelt
 !          SYMETRIES
 
 !   Kind of boundary conditions for standard variables
-  itypfb(ifac,iphas)   = isymet
+  itypfb(ifac)   = isymet
 
 !   zone's number (from 1 to n)
   izone = 5

@@ -69,7 +69,6 @@ subroutine usray4 &
 !                  !    !     ! mode = 1 enthaly -> temperature                !
 !                  !    !     ! mode =-1 temperature -> enthaly                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !

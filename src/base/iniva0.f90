@@ -109,7 +109,7 @@ integer          ia(*)
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
-double precision frcxt(ncelet,3,nphas)
+double precision frcxt(ncelet,3)
 double precision ra(*)
 
 ! Local variables
@@ -508,8 +508,8 @@ enddo
 
 do iphas = 1, nphas
   do ifac = 1, nfabor
-    ia(iitypf-1+ifac+nfabor*(iphas-1)) = 0
-    ia(iitrif-1+ifac+nfabor*(iphas-1)) = 0
+    ia(iitypf-1+ifac) = 0
+    ia(iitrif-1+ifac) = 0
   enddo
 enddo
 
@@ -521,7 +521,7 @@ enddo
 !     inversible dans les configurations 2D).
 do iphas = 1, nphas
   do ifac = 1, nfabor
-    ia(iisymp-1+ifac+nfabor*(iphas-1)) = 0
+    ia(iisymp-1+ifac) = 0
   enddo
 enddo
 
@@ -653,9 +653,9 @@ enddo
 if(iphydr.eq.1) then
   do iphas = 1, nphas
     do iel = 1, ncel
-      frcxt(iel,1,iphas) = 0.d0
-      frcxt(iel,2,iphas) = 0.d0
-      frcxt(iel,3,iphas) = 0.d0
+      frcxt(iel,1) = 0.d0
+      frcxt(iel,2) = 0.d0
+      frcxt(iel,3) = 0.d0
     enddo
   enddo
 endif

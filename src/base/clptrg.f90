@@ -155,7 +155,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision coefu(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision uetbor(nfabor,nphas), visvdr(ncelet,nphas)
+double precision uetbor(nfabor), visvdr(ncelet)
 double precision hbord(nfabor),thbord(nfabor)
 double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision w4(ncelet),w5(ncelet),w6(ncelet)
@@ -332,7 +332,7 @@ if ( ippmod(icompf) .ge. 0 ) then
 endif
 
 ! --- Post traitement de Yplus
-iyplbp = iyplbr+(iphas-1)*nfabor
+iyplbp = iyplbr
 
 
 ! MIN ET MAX DE LA VITESSE TANGENTIELLE EN PAROI
@@ -608,12 +608,12 @@ do ifac = 1, nfabor
 ! (car une cellule peut avoir plusieurs faces de paroi)
 
     if(itytur.eq.4.and.idries.eq.1) then
-      uetbor(ifac,iphas) = uet
-      if (visvdr(iel,iphas).lt.-900.d0) then
+      uetbor(ifac) = uet
+      if (visvdr(iel).lt.-900.d0) then
         propce(iel,ipcvst) = propce(iel,ipcvst)
 ! NB amortissement de van Driest a revoir en rugueux :
 !    &             *(1.D0-EXP(-YPLUS/CDRIES))**2
-        visvdr(iel,iphas) = propce(iel,ipcvst)
+        visvdr(iel) = propce(iel,ipcvst)
         visctc = propce(iel,ipcvst)
       endif
     endif

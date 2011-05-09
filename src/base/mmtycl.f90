@@ -55,7 +55,6 @@ subroutine mmtycl &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! icodcl           ! te ! <-- ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -115,7 +114,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 integer          icodcl(nfabor,nvar)
 integer          ia(*)
 
@@ -177,13 +176,13 @@ do ifac = 1, nfabor
     vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)
     vitboz = omegax*cdgfbo(2,ifac) - omegay*cdgfbo(1,ifac)
 
-    if (itypfb(ifac,iphas).eq.isymet) then
+    if (itypfb(ifac).eq.isymet) then
       rcodcl(ifac,iuiph,1) = vitbox
       rcodcl(ifac,iviph,1) = vitboy
       rcodcl(ifac,iwiph,1) = vitboz
     endif
 
-    if (itypfb(ifac,iphas).eq.iparoi) then
+    if (itypfb(ifac).eq.iparoi) then
       ! Si une des composantes de vitesse de glissement a ete
       !    modifiee par l'utilisateur, on ne fixe que la vitesse
       !    normale

@@ -65,9 +65,7 @@ subroutine cfxtcl &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
-!  (nfabor, nphas) !    !     !                                                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -134,7 +132,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -234,10 +232,10 @@ do iphas = 1, nphas
 
   icalgm = 0
   do ifac = 1, nfabor
-    if ( ( itypfb(ifac,iphas).eq.iesicf ) .or.                    &
-         ( itypfb(ifac,iphas).eq.isopcf ) .or.                    &
-         ( itypfb(ifac,iphas).eq.ierucf ) .or.                    &
-         ( itypfb(ifac,iphas).eq.ieqhcf ) ) then
+    if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
+         ( itypfb(ifac).eq.isopcf ) .or.                    &
+         ( itypfb(ifac).eq.ierucf ) .or.                    &
+         ( itypfb(ifac).eq.ieqhcf ) ) then
       icalgm = 1
     endif
   enddo
@@ -278,7 +276,7 @@ do iphas = 1, nphas
 !       ON BOUCLE SUR TOUTES LES FACES DE PAROI
 !===============================================================================
 
-    if ( itypfb(ifac,iphas).eq.iparoi) then
+    if ( itypfb(ifac).eq.iparoi) then
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
 !       verifier ceux que l'utilisateur a modifies. On les remet a zero
@@ -395,7 +393,7 @@ do iphas = 1, nphas
 !           Les flux en grad epsilon sup et énergie cinétique doivent
 !             être nuls puisque tout est pris par le terme de
 !             diffusion d'energie.
-        ia(iifbet+ifac-1+(iphas-1)*nfabor) = 1
+        ia(iifbet+ifac-1) = 1
 
 !           Flux nul pour la reconstruction éventuelle de température
         icodcl(ifac,itkiph) = 3
@@ -411,7 +409,7 @@ do iphas = 1, nphas
 !           Les flux en grad epsilon sup et énergie cinétique doivent
 !             être nuls puisque tout est pris par le terme de
 !             diffusion d'energie.
-        ia(iifbet+ifac-1+(iphas-1)*nfabor) = 1
+        ia(iifbet+ifac-1) = 1
 
 !           Flux nul pour la reconstruction éventuelle de température
         icodcl(ifac,itkiph) = 3
@@ -428,7 +426,7 @@ do iphas = 1, nphas
 !       ON BOUCLE SUR TOUTES LES FACES DE SYMETRIE
 !===============================================================================
 
-    elseif ( itypfb(ifac,iphas).eq.isymet ) then
+    elseif ( itypfb(ifac).eq.isymet ) then
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
 !       verifier ceux que l'utilisateur a modifies. On les remet a zero
@@ -486,7 +484,7 @@ do iphas = 1, nphas
 !     4.1 Entree/sortie imposée (par exemple : entree supersonique)
 !===============================================================================
 
-    elseif ( itypfb(ifac,iphas).eq.iesicf ) then
+    elseif ( itypfb(ifac).eq.iesicf ) then
 
 !     On a
 !       - la vitesse,
@@ -545,7 +543,7 @@ do iphas = 1, nphas
 !     4.2 Sortie supersonique
 !===============================================================================
 
-    elseif ( itypfb(ifac,iphas).eq.isspcf ) then
+    elseif ( itypfb(ifac).eq.isspcf ) then
 
 !     On impose un Dirichlet égal à la valeur interne pour rho u E
 !       (on impose des Dirichlet déduit pour les autres variables).
@@ -599,7 +597,7 @@ do iphas = 1, nphas
 !     4.3 Sortie a pression imposee
 !===============================================================================
 
-    elseif ( itypfb(ifac,iphas).eq.isopcf ) then
+    elseif ( itypfb(ifac).eq.isopcf ) then
 
 !       Sortie subsonique a priori (si c'est supersonique dans le
 !         domaine, ce n'est pas pour autant que c'est supersonique
@@ -653,7 +651,7 @@ do iphas = 1, nphas
 !     4.4 Entree à rho et U imposes
 !===============================================================================
 
-    elseif ( itypfb(ifac,iphas).eq.ierucf ) then
+    elseif ( itypfb(ifac).eq.ierucf ) then
 
 !       Entree subsonique a priori (si c'est supersonique dans le
 !         domaine, ce n'est pas pour autant que c'est supersonique
@@ -707,7 +705,7 @@ do iphas = 1, nphas
 !     4.5 Entree à rho*U et rho*U*H imposes
 !===============================================================================
 
-    elseif ( itypfb(ifac,iphas).eq.ieqhcf ) then
+    elseif ( itypfb(ifac).eq.ieqhcf ) then
 
 !       Entree subsonique a priori (si c'est supersonique dans le
 !         domaine, ce n'est pas pour autant que c'est supersonique
@@ -766,11 +764,11 @@ do iphas = 1, nphas
 !     TYPE DE C    .L. (DIRICHLET NEUMANN)
 !===============================================================================
 
-    if ( ( itypfb(ifac,iphas).eq.iesicf ) .or.                    &
-         ( itypfb(ifac,iphas).eq.isspcf ) .or.                    &
-         ( itypfb(ifac,iphas).eq.isopcf ) .or.                    &
-         ( itypfb(ifac,iphas).eq.ierucf ) .or.                    &
-         ( itypfb(ifac,iphas).eq.ieqhcf ) ) then
+    if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
+         ( itypfb(ifac).eq.isspcf ) .or.                    &
+         ( itypfb(ifac).eq.isopcf ) .or.                    &
+         ( itypfb(ifac).eq.ierucf ) .or.                    &
+         ( itypfb(ifac).eq.ieqhcf ) ) then
 
 !===============================================================================
 !     6.1 Flux de bord Rusanov ou simplement flux de masse
@@ -778,7 +776,7 @@ do iphas = 1, nphas
 !===============================================================================
 
 !     Sortie supersonique :
-      if ( itypfb(ifac,iphas).eq.isspcf ) then
+      if ( itypfb(ifac).eq.isspcf ) then
 
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 !       (toutes les variables sont connues)
@@ -790,7 +788,7 @@ do iphas = 1, nphas
 
 !     Entree subsonique
 
-      else if ( itypfb(ifac,iphas).eq.ierucf ) then
+      else if ( itypfb(ifac).eq.ierucf ) then
 
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 
@@ -855,10 +853,10 @@ do iphas = 1, nphas
 !-------------------------------------------------------------------------------
 
 !       Entree sortie imposee : Neumann
-      if ( itypfb(ifac,iphas).eq.iesicf ) then
+      if ( itypfb(ifac).eq.iesicf ) then
         icodcl(ifac,ipriph)   = 3
 !       Entree subsonique
-      else if ( itypfb(ifac,iphas).eq.ierucf ) then
+      else if ( itypfb(ifac).eq.ierucf ) then
         icodcl(ifac,ipriph)   = 3
         rcodcl(ifac,ipriph,3) = 0.d0
 !       Autres entrees/sorties : Dirichlet

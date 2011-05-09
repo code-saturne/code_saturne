@@ -54,7 +54,6 @@ subroutine altycl &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-!  (nfabor, nphas) !    !     !                                                !
 ! ialtyb(nfabor    ! te ! <-- ! type des faces de bord pour l'ale              !
 ! icodcl           ! te ! <-- ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
@@ -116,7 +115,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 
-integer          itypfb(nfabor,nphas)
+integer          itypfb(nfabor)
 integer          ialtyb(nfabor), icodcl(nfabor,nvar)
 integer          impale(nnod)
 integer          ia(*)
@@ -336,14 +335,14 @@ do ifac = 1, nfabor
 
   if (ialtyb(ifac).eq.ivimpo) then
 
-    if ( itypfb(ifac,iphas).eq.isymet ) then
+    if ( itypfb(ifac).eq.isymet ) then
       rcodcl(ifac,iuiph,1) = rcodcl(ifac,iuma,1)
       rcodcl(ifac,iviph,1) = rcodcl(ifac,ivma,1)
       rcodcl(ifac,iwiph,1) = rcodcl(ifac,iwma,1)
     endif
 
-    if ( itypfb(ifac,iphas).eq.iparoi .or.                        &
-         itypfb(ifac,iphas).eq.iparug ) then
+    if ( itypfb(ifac).eq.iparoi .or.                        &
+         itypfb(ifac).eq.iparug ) then
 ! Si une des composantes de vitesse de glissement a ete
 !    modifiee par l'utilisateur, on ne fixe que la vitesse
 !    normale

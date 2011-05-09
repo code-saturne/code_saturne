@@ -134,8 +134,8 @@ iw6    =       iw5    + ncelet
 icoefu =       iw6    + ncelet
 irijip =       icoefu + nfabor*ndim
 iuetbo =       irijip + nfabor*6*irij
-ivsvdr =       iuetbo + nfabor*nphas*iiuetb
-ifinra =       ivsvdr + ncelet*nphas*iiuetb
+ivsvdr =       iuetbo + nfabor*iiuetb
+ifinra =       ivsvdr + ncelet*iiuetb
 
 ihbord =       ifinra
 if(isvhb.gt.0) then

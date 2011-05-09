@@ -299,7 +299,7 @@ subroutine uscplc &
 !                                 RCODCL(IFAC,IVAR,2) = RINFIN
 !                                 RCODCL(IFAC,IVAR,3) = 0.D0)
 !        En particulier, on peut par exemple
-!        -> donner ITYPFB(IFAC,IPHAS) = IPAROI
+!        -> donner ITYPFB(IFAC) = IPAROI
 !        qui impose les conditions de paroi par defaut pour toutes
 !        les variables sur la face IFAC,
 !        -> et preciser EN OUTRE pour la variable IVAR sur cette
@@ -477,7 +477,7 @@ integer          nvar   , nscal  , nphas
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
-integer          itrifb(nfabor,nphas), itypfb(nfabor,nphas)
+integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -569,7 +569,7 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
 
 !   Type de condition aux limites pour les variables standard
-  itypfb(ifac,iphas) = ientre
+  itypfb(ifac) = ientre
 
 !   Numero de zone (on les numerote de 1 a n)
   izone = 1
@@ -698,7 +698,7 @@ do ilelt = 1, nlelt
 !                  FLUX NUL SUR LES SCALAIRES
 
 !   Type de condition aux limites pour les variables standard
-  itypfb(ifac,iphas)   = iparoi
+  itypfb(ifac)   = iparoi
 
 
 !   Numero de zone (on les numerote de 1 a n)
@@ -723,7 +723,7 @@ do ilelt = 1, nlelt
 !                sur la premiere face de sortie libre (ISOLIB)
 
 !   Type de condition aux limites pour les variables standard
-  itypfb(ifac,iphas)   = isolib
+  itypfb(ifac)   = isolib
 
 !   Numero de zone (on les numerote de 1 a n)
   izone = 3
@@ -746,7 +746,7 @@ do ilelt = 1, nlelt
 !          SYMETRIES
 
 !   Type de condition aux limites pour les variables standard
-  itypfb(ifac,iphas)   = isymet
+  itypfb(ifac)   = isymet
 
 !   Numero de zone (on les numerote de 1 a n)
   izone = 4
