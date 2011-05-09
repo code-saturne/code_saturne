@@ -232,7 +232,7 @@ if( nswrgp.gt.1 ) then
   !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
-   ipr(1) , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+   ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &

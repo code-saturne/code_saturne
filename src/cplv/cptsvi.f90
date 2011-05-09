@@ -134,7 +134,7 @@ do icla = 1, nclacp
 enddo
 
 iphas = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 ! Calcul de F1 et F2 sur l'ensemble des charbons
 

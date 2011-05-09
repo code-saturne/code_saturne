@@ -150,19 +150,19 @@ d2s3 = 2.d0 / 3.d0
 
 if (idistu.eq.1) then
 
-  if (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                  &
-       .or. iturb(iphas).eq.60) then
+  if (itytur.eq.2 .or. iturb.eq.50                  &
+       .or. iturb.eq.60) then
     do iel = 1,ncel
-      w1(iel) = rtp(iel,ik(iphas))
+      w1(iel) = rtp(iel,ik)
     enddo
-  else if (itytur(iphas).eq.3) then
+  else if (itytur.eq.3) then
     do iel = 1,ncel
-      w1(iel) = 0.5d0 * ( rtp(iel,ir11(iphas))                    &
-                        + rtp(iel,ir22(iphas))                    &
-                        + rtp(iel,ir33(iphas)) )
+      w1(iel) = 0.5d0 * ( rtp(iel,ir11)                    &
+                        + rtp(iel,ir22)                    &
+                        + rtp(iel,ir33) )
     enddo
   else
-    write(nfecra,9000) iilagr, idistu, iturb(iphas)
+    write(nfecra,9000) iilagr, idistu, iturb
     call csexit (1)
     !==========
   endif
@@ -197,9 +197,9 @@ do npt = npar1,npar2
 
   tu = sqrt( d2s3*w1(iel) )
 
-  ettp(npt,juf) = rtp(iel,iu(iphas)) + vagaus(npt,1)*tu
-  ettp(npt,jvf) = rtp(iel,iv(iphas)) + vagaus(npt,2)*tu
-  ettp(npt,jwf) = rtp(iel,iw(iphas)) + vagaus(npt,3)*tu
+  ettp(npt,juf) = rtp(iel,iu) + vagaus(npt,1)*tu
+  ettp(npt,jvf) = rtp(iel,iv) + vagaus(npt,2)*tu
+  ettp(npt,jwf) = rtp(iel,iw) + vagaus(npt,3)*tu
 
 enddo
 

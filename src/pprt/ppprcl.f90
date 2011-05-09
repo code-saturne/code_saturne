@@ -290,10 +290,10 @@ elseif ( ippmod(icompf).ge.0 ) then
 !     Flux de Rusanov au bord pour Qdm et E
   do iphas = 1, nphas
     do ifac = 1, nfabor
-      propfb(ifac,ipprob(ifbrhu(iphas))) = 0.d0
-      propfb(ifac,ipprob(ifbrhv(iphas))) = 0.d0
-      propfb(ifac,ipprob(ifbrhw(iphas))) = 0.d0
-      propfb(ifac,ipprob(ifbene(iphas))) = 0.d0
+      propfb(ifac,ipprob(ifbrhu)) = 0.d0
+      propfb(ifac,ipprob(ifbrhv)) = 0.d0
+      propfb(ifac,ipprob(ifbrhw)) = 0.d0
+      propfb(ifac,ipprob(ifbene)) = 0.d0
     enddo
   enddo
 

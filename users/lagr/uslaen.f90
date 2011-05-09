@@ -318,11 +318,11 @@ endif
         do iel = 1, ncel
           if ( statis(iel,ilpd1).gt.seuil .and. npst.gt.0 ) then
             tracel(iel) = statis(iel,ivarl1)                      &
-                        / ( dble(npst) *ro0(iphas) *volume(iel) )
+                        / ( dble(npst) *ro0 *volume(iel) )
           else if ( statis(iel,ilpd1).gt.seuil .and.              &
                   iplas.ge.idstnt                  ) then
             tracel(iel) = statis(iel,ivarl1)                      &
-                        / ( ro0(iphas) *volume(iel) )
+                        / ( ro0 *volume(iel) )
           else
             tracel(iel) = zero
           endif

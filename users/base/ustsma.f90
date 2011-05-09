@@ -103,7 +103,7 @@ subroutine ustsma &
 !                  global index number of the corresponding cell
 !                  (icestm(ieltsm) in [1;ncel])
 
-!  smacel(ieltsm,ipr(iphas)): value of the injection mass rate gamma (kg/m3/s)
+!  smacel(ieltsm,ipr): value of the injection mass rate gamma (kg/m3/s)
 !                             in the ieltsm cell with mass source term
 
 !  itypsm(ieltsm,ivar): type of treatment for variable ivar in the
@@ -115,7 +115,7 @@ subroutine ustsma &
 !  smacel(ieltsm,ivar): specified value for variable ivar associated
 !                       to the injected mass in the ieltsm cell with
 !                       a mass source term
-!                                  except for ivar=ipr(iphas)
+!                                  except for ivar=ipr
 
 !
 ! Remarks
@@ -123,7 +123,7 @@ subroutine ustsma &
 !
 ! - if itypsm(ieltsm,ivar)=0, smacel(ieltsm,ivar) is not used
 
-! - if smacel(ieltsm,ipr(iphas))<0, mass is removed from the system,
+! - if smacel(ieltsm,ipr)<0, mass is removed from the system,
 !     therefore Code_Saturna automatically considers f_i=f^(n+1),
 !     whatever the values of itypsm or smacel specified by the user
 
@@ -382,47 +382,47 @@ elseif(iappel.eq.3) then
 
     call keendb                                                   &
     !==========
-      ( vent2, dh, ro0(iphas), viscl0(iphas), cmu, xkappa,        &
+      ( vent2, dh, ro0, viscl0, cmu, xkappa,        &
         ustar2, xkent, xeent )
 
     flucel = 0.d0
     do ieltsm = 1, ncesmp
-      smacel(ieltsm,ipr(iphas)) = 30000.d0
-      itypsm(ieltsm,iv(iphas)) = 1
-      smacel(ieltsm,iv(iphas)) = vent
-      if (itytur(iphas).eq.2) then
-        itypsm(ieltsm,ik(iphas)) = 1
-        smacel(ieltsm,ik(iphas)) = xkent
-        itypsm(ieltsm,iep(iphas)) = 1
-        smacel(ieltsm,iep(iphas)) = xeent
-      else if (itytur(iphas).eq.3) then
-        itypsm(ieltsm,ir11(iphas)) = 1
-        itypsm(ieltsm,ir12(iphas)) = 1
-        itypsm(ieltsm,ir13(iphas)) = 1
-        itypsm(ieltsm,ir22(iphas)) = 1
-        itypsm(ieltsm,ir23(iphas)) = 1
-        itypsm(ieltsm,ir33(iphas)) = 1
-        smacel(ieltsm,ir11(iphas)) = 2.d0/3.d0*xkent
-        smacel(ieltsm,ir12(iphas)) = 0.d0
-        smacel(ieltsm,ir13(iphas)) = 0.d0
-        smacel(ieltsm,ir22(iphas)) = 2.d0/3.d0*xkent
-        smacel(ieltsm,ir23(iphas)) = 0.d0
-        smacel(ieltsm,ir33(iphas)) = 2.d0/3.d0*xkent
-        itypsm(ieltsm,iep(iphas)) = 1
-        smacel(ieltsm,iep(iphas)) = xeent
-      else if (iturb(iphas).eq.50) then
-        itypsm(ieltsm,ik(iphas)) = 1
-        smacel(ieltsm,ik(iphas)) = xkent
-        itypsm(ieltsm,iep(iphas)) = 1
-        smacel(ieltsm,iep(iphas)) = xeent
-        itypsm(ieltsm,iphi(iphas)) = 1
-        smacel(ieltsm,iphi(iphas)) = 2.d0/3.d0
+      smacel(ieltsm,ipr) = 30000.d0
+      itypsm(ieltsm,iv) = 1
+      smacel(ieltsm,iv) = vent
+      if (itytur.eq.2) then
+        itypsm(ieltsm,ik) = 1
+        smacel(ieltsm,ik) = xkent
+        itypsm(ieltsm,iep) = 1
+        smacel(ieltsm,iep) = xeent
+      else if (itytur.eq.3) then
+        itypsm(ieltsm,ir11) = 1
+        itypsm(ieltsm,ir12) = 1
+        itypsm(ieltsm,ir13) = 1
+        itypsm(ieltsm,ir22) = 1
+        itypsm(ieltsm,ir23) = 1
+        itypsm(ieltsm,ir33) = 1
+        smacel(ieltsm,ir11) = 2.d0/3.d0*xkent
+        smacel(ieltsm,ir12) = 0.d0
+        smacel(ieltsm,ir13) = 0.d0
+        smacel(ieltsm,ir22) = 2.d0/3.d0*xkent
+        smacel(ieltsm,ir23) = 0.d0
+        smacel(ieltsm,ir33) = 2.d0/3.d0*xkent
+        itypsm(ieltsm,iep) = 1
+        smacel(ieltsm,iep) = xeent
+      else if (iturb.eq.50) then
+        itypsm(ieltsm,ik) = 1
+        smacel(ieltsm,ik) = xkent
+        itypsm(ieltsm,iep) = 1
+        smacel(ieltsm,iep) = xeent
+        itypsm(ieltsm,iphi) = 1
+        smacel(ieltsm,iphi) = 2.d0/3.d0
 ! There is no mass source term in the equation for f_bar
-      else if (iturb(iphas).eq.60) then
-        itypsm(ieltsm,ik(iphas)) = 1
-        smacel(ieltsm,ik(iphas)) = xkent
-        itypsm(ieltsm,iomg(iphas))= 1
-        smacel(ieltsm,iomg(iphas))= xeent/cmu/xkent
+      else if (iturb.eq.60) then
+        itypsm(ieltsm,ik) = 1
+        smacel(ieltsm,ik) = xkent
+        itypsm(ieltsm,iomg)= 1
+        smacel(ieltsm,iomg)= xeent/cmu/xkent
       endif
       if(nscal.gt.0) then
         do ii = 1, nscal
@@ -431,14 +431,14 @@ elseif(iappel.eq.3) then
         enddo
       endif
       flucel = flucel+                                            &
-                volume(icetsm(ieltsm))*smacel(ieltsm,ipr(iphas))
+                volume(icetsm(ieltsm))*smacel(ieltsm,ipr)
     enddo
 
     if (irangp.ge.0) then
       call parsom (flucel)
     endif
 
-    if (iwarni(ipr(iphas)).ge.1) then
+    if (iwarni(ipr).ge.1) then
       write(nfecra,1000) flucel
     endif
 
@@ -484,16 +484,16 @@ elseif(iappel.eq.3) then
 
       flucel = 0.d0
       do ieltsm = 1, ncesmp
-        smacel(ieltsm,ipr(iphas)) = gamma
+        smacel(ieltsm,ipr) = gamma
         flucel = flucel+                                          &
-                volume(icetsm(ieltsm))*smacel(ieltsm,ipr(iphas))
+                volume(icetsm(ieltsm))*smacel(ieltsm,ipr)
       enddo
 
       if (irangp.ge.0) then
         call parsom (flucel)
       endif
 
-      if (iwarni(ipr(iphas)).ge.1) then
+      if (iwarni(ipr).ge.1) then
         write(nfecra,2000) flucel, vtot
       endif
 

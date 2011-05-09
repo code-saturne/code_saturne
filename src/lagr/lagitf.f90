@@ -188,19 +188,19 @@ else if ( ippmod(icod3p).ge.0 .or.                                &
     tempf(iel) = propce(iel,ipproc(itemp)) - tkelvi
   enddo
 
-else if ( iscsth(iscalt(iphas)).eq.-1 ) then
+else if ( iscsth(iscalt).eq.-1 ) then
   do iel = 1,ncel
-    tempf(iel) = rtp(iel,isca(iscalt(iphas)))
+    tempf(iel) = rtp(iel,isca(iscalt))
   enddo
 
-else if ( iscsth(iscalt(iphas)).eq.1 ) then
+else if ( iscsth(iscalt).eq.1 ) then
   do iel = 1,ncel
-    tempf(iel) = rtp(iel,isca(iscalt(iphas))) - tkelvi
+    tempf(iel) = rtp(iel,isca(iscalt)) - tkelvi
   enddo
 
-else if ( iscsth(iscalt(iphas)).eq.2 ) then
+else if ( iscsth(iscalt).eq.2 ) then
   do iel = 1,ncel
-    call usthht (mode, rtp(iel,isca(iscalt(iphas))), tempf(iel))
+    call usthht (mode, rtp(iel,isca(iscalt)), tempf(iel))
     !==========
   enddo
 endif
@@ -215,25 +215,25 @@ do npt = 1,nbpart
 
     iel = itepa(npt,jisor)
 
-    if (itytur(iphas).eq.2 .or. itytur(iphas).eq.3 .or.           &
-         iturb(iphas).eq.50 .or. iturb(iphas).eq.60 ) then
+    if (itytur.eq.2 .or. itytur.eq.3 .or.           &
+         iturb.eq.50 .or. iturb.eq.60 ) then
 
-      if ( itytur(iphas).eq.2 .or. iturb(iphas).eq.50 ) then
+      if ( itytur.eq.2 .or. iturb.eq.50 ) then
 
-        energ  = rtp(iel,ik(iphas))
-        dissip = rtp(iel,iep(iphas))
+        energ  = rtp(iel,ik)
+        dissip = rtp(iel,iep)
 
-      else if ( itytur(iphas).eq.3 ) then
+      else if ( itytur.eq.3 ) then
 
-        energ  = 0.5d0 * ( rtp(iel,ir11(iphas))                   &
-                         + rtp(iel,ir22(iphas))                   &
-                         + rtp(iel,ir33(iphas)) )
-        dissip = rtp(iel,iep(iphas))
+        energ  = 0.5d0 * ( rtp(iel,ir11)                   &
+                         + rtp(iel,ir22)                   &
+                         + rtp(iel,ir33) )
+        dissip = rtp(iel,iep)
 
-      else if (iturb(iphas).eq.60) then
+      else if (iturb.eq.60) then
 
-        energ  = rtp(iel,ik(iphas))
-        dissip = cmu*rtp(iel,ik(iphas))*rtp(iel,iomg(iphas))
+        energ  = rtp(iel,ik)
+        dissip = cmu*rtp(iel,ik)*rtp(iel,iomg)
 
       endif
 

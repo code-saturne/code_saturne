@@ -206,7 +206,7 @@ idebra = idbra0
 
 und0 = 1.d0
 
-ivart = isca(iscalt(iphas))
+ivart = isca(iscalt)
 
 
 tpmax = -grand

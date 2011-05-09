@@ -130,12 +130,12 @@ double precision ra(*)
 character*80     chaine
 integer          idebia, idebra
 integer          ifac, ivar, icode
-integer          nstoni        , nstvit(nphsmx), nstopp(nphsmx)
-integer          nstoke(nphsmx), nstosc, nstovf
-integer          nstuvw(nphsmx), nstoup(nphsmx), nstuke(nphsmx)
-integer          nstrij(nphsmx), nsurij(nphsmx), nstov2(nphsmx)
-integer          nstuv2(nphsmx), nstokw(nphsmx), nstukw(nphsmx)
-integer          nstunu(nphsmx), nstonu(nphsmx)
+integer          nstoni        , nstvit, nstopp
+integer          nstoke, nstosc, nstovf
+integer          nstuvw, nstoup, nstuke
+integer          nstrij, nsurij, nstov2
+integer          nstuv2, nstokw, nstukw
+integer          nstunu, nstonu
 integer          nstusc
 integer          iis, icodcu, icodcv, icodcw, icodck, icodce
 integer          icodcn
@@ -214,20 +214,20 @@ nstosc = 0
 nstovf = 0
 nstusc = 0
 do iphas = 1, nphas
-  nstvit(iphas) = 0
-  nstopp(iphas) = 0
-  nstoke(iphas) = 0
-  nstrij(iphas) = 0
-  nstov2(iphas) = 0
-  nstokw(iphas) = 0
-  nstuvw(iphas) = 0
-  nstoup(iphas) = 0
-  nstuke(iphas) = 0
-  nsurij(iphas) = 0
-  nstuv2(iphas) = 0
-  nstukw(iphas) = 0
-  nstunu(iphas) = 0
-  nstonu(iphas) = 0
+  nstvit = 0
+  nstopp = 0
+  nstoke = 0
+  nstrij = 0
+  nstov2 = 0
+  nstokw = 0
+  nstuvw = 0
+  nstoup = 0
+  nstuke = 0
+  nsurij = 0
+  nstuv2 = 0
+  nstukw = 0
+  nstunu = 0
+  nstonu = 0
 enddo
 
 
@@ -271,41 +271,41 @@ endif
 do iphas = 1, nphas
 
 ! --- Reperage des variables dans RTP
-  ipriph = ipr(iphas)
-  iuiph  = iu (iphas)
-  iviph  = iv (iphas)
-  iwiph  = iw (iphas)
-  if(itytur(iphas).eq.2) then
-    ikiph  = ik (iphas)
-    iepiph = iep(iphas)
-  elseif(itytur(iphas).eq.3) then
-    ir11ip = ir11(iphas)
-    ir22ip = ir22(iphas)
-    ir33ip = ir33(iphas)
-    ir12ip = ir12(iphas)
-    ir13ip = ir13(iphas)
-    ir23ip = ir23(iphas)
-    iepiph = iep(iphas)
-  elseif(iturb(iphas).eq.50) then
-    ikiph  = ik  (iphas)
-    iepiph = iep (iphas)
-    iphiph = iphi(iphas)
-    ifbiph = ifb(iphas)
-  elseif(iturb(iphas).eq.60) then
-    ikiph  = ik  (iphas)
-    iomgip = iomg(iphas)
-  elseif(iturb(iphas).eq.70) then
-    inuiph = inusa(iphas)
+  ipriph = ipr
+  iuiph  = iu
+  iviph  = iv
+  iwiph  = iw
+  if(itytur.eq.2) then
+    ikiph  = ik
+    iepiph = iep
+  elseif(itytur.eq.3) then
+    ir11ip = ir11
+    ir22ip = ir22
+    ir33ip = ir33
+    ir12ip = ir12
+    ir13ip = ir13
+    ir23ip = ir23
+    iepiph = iep
+  elseif(iturb.eq.50) then
+    ikiph  = ik
+    iepiph = iep
+    iphiph = iphi
+    ifbiph = ifb
+  elseif(iturb.eq.60) then
+    ikiph  = ik
+    iomgip = iomg
+  elseif(iturb.eq.70) then
+    inuiph = inusa
   endif
 
   ippprp = ipprtp(ipriph)
   ippuip = ipprtp(iuiph )
   ippvip = ipprtp(iviph )
   ippwip = ipprtp(iwiph )
-  if(itytur(iphas).eq.2) then
+  if(itytur.eq.2) then
     ippkip = ipprtp(ikiph )
     ippepp = ipprtp(iepiph)
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
     ipp11p = ipprtp(ir11ip)
     ipp22p = ipprtp(ir22ip)
     ipp33p = ipprtp(ir33ip)
@@ -313,15 +313,15 @@ do iphas = 1, nphas
     ipp13p = ipprtp(ir13ip)
     ipp23p = ipprtp(ir23ip)
     ippepp = ipprtp(iepiph)
-  elseif(iturb(iphas).eq.50) then
+  elseif(iturb.eq.50) then
     ippkip = ipprtp(ikiph )
     ippepp = ipprtp(iepiph)
     ippphp = ipprtp(iphiph)
     ippfbp = ipprtp(ifbiph)
-  elseif(iturb(iphas).eq.60) then
+  elseif(iturb.eq.60) then
     ippkip = ipprtp(ikiph )
     ippomg = ipprtp(iomgip)
-  elseif(iturb(iphas).eq.70) then
+  elseif(iturb.eq.70) then
     ippnup = ipprtp(inuiph )
   endif
 
@@ -338,7 +338,7 @@ do iphas = 1, nphas
         chaine=nomvar(ippuip)
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,iuiph)
-        nstvit(iphas) = nstvit(iphas) + 1
+        nstvit = nstvit + 1
     endif
     if(icodcv.ne. 1.and.                 icodcv.ne. 3.and.        &
        icodcv.ne. 4.and.icodcv.ne. 5.and.icodcv.ne. 6.and.        &
@@ -346,7 +346,7 @@ do iphas = 1, nphas
         chaine=nomvar(ippvip )
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,iviph)
-        nstvit(iphas) = nstvit(iphas) + 1
+        nstvit = nstvit + 1
     endif
     if(icodcw.ne. 1.and.                 icodcw.ne. 3.and.        &
        icodcw.ne. 4.and.icodcw.ne. 5.and.icodcv.ne. 6.and.        &
@@ -354,7 +354,7 @@ do iphas = 1, nphas
         chaine=nomvar(ippwip)
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,iwiph)
-        nstvit(iphas) = nstvit(iphas) + 1
+        nstvit = nstvit + 1
     endif
 
 ! --- verification que la rugosite est initialisee si icodl=6
@@ -362,7 +362,7 @@ do iphas = 1, nphas
         CHAINE='RUGOSITV'
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,iuiph)
-        nstvit(iphas) = nstvit(iphas) + 1
+        nstvit = nstvit + 1
     endif
 
 ! --- on interdit les parois rugueuses en compressible
@@ -370,7 +370,7 @@ do iphas = 1, nphas
         chaine=nomvar(ippuip)
       write(nfecra,1015)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),  &
            icodcl(ifac,iuiph),ippmod(icompf)
-      nstvit(iphas) = nstvit(iphas) + 1
+      nstvit = nstvit + 1
     endif
 
   enddo
@@ -383,13 +383,13 @@ do iphas = 1, nphas
         chaine=nomvar(ippprp)
       write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),  &
                         icodcl(ifac,ipriph)
-      nstopp(iphas) = nstopp(iphas) + 1
+      nstopp = nstopp + 1
     endif
 
   enddo
 
 ! --- Conditions admissibles pour k et epsilon
-  if (itytur(iphas).eq.2) then
+  if (itytur.eq.2) then
 
     do ifac = 1, nfabor
 
@@ -407,13 +407,13 @@ do iphas = 1, nphas
         chaine=nomvar(ippepp)
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,iepiph)
-        nstoke(iphas) = nstoke(iphas) + 1
+        nstoke = nstoke + 1
       endif
 
     enddo
 
 ! --- Conditions admissibles pour Rij et epsilon
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
 
     ivar = ir11ip
     do ifac = 1, nfabor
@@ -423,7 +423,7 @@ do iphas = 1, nphas
         chaine=nomvar(ipp11p)
         write(nfecra,1010)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
-        nstrij(iphas) = nstrij(iphas) + 1
+        nstrij = nstrij + 1
       endif
     enddo
 
@@ -435,7 +435,7 @@ do iphas = 1, nphas
         chaine=nomvar(ipp22p)
         write(nfecra,1010)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
-        nstrij(iphas) = nstrij(iphas) + 1
+        nstrij = nstrij + 1
       endif
     enddo
 
@@ -447,7 +447,7 @@ do iphas = 1, nphas
         chaine=nomvar(ipp33p)
         write(nfecra,1010)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
-        nstrij(iphas) = nstrij(iphas) + 1
+        nstrij = nstrij + 1
       endif
     enddo
 
@@ -459,7 +459,7 @@ do iphas = 1, nphas
         chaine=nomvar(ipp12p)
         write(nfecra,1010)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
-        nstrij(iphas) = nstrij(iphas) + 1
+        nstrij = nstrij + 1
       endif
     enddo
 
@@ -471,7 +471,7 @@ do iphas = 1, nphas
         chaine=nomvar(ipp13p)
         write(nfecra,1010)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
-        nstrij(iphas) = nstrij(iphas) + 1
+        nstrij = nstrij + 1
       endif
     enddo
 
@@ -483,7 +483,7 @@ do iphas = 1, nphas
         chaine=nomvar(ipp23p)
         write(nfecra,1010)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
-        nstrij(iphas) = nstrij(iphas) + 1
+        nstrij = nstrij + 1
       endif
     enddo
 
@@ -494,12 +494,12 @@ do iphas = 1, nphas
         chaine=nomvar(ippepp)
         write(nfecra,1010)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),icode
-        nstrij(iphas) = nstrij(iphas) + 1
+        nstrij = nstrij + 1
       endif
     enddo
 
 ! --- Conditions admissibles pour k, epsilon, phi et f_barre
-  elseif (iturb(iphas).eq.50) then
+  elseif (iturb.eq.50) then
 
     do ifac = 1, nfabor
 
@@ -531,14 +531,14 @@ do iphas = 1, nphas
         chaine=nomvar(ippfbp)
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,ifbiph)
-        nstov2(iphas) = nstov2(iphas) + 1
+        nstov2 = nstov2 + 1
 
       endif
 
     enddo
 
 ! --- Conditions admissibles pour k et omega
-  elseif (iturb(iphas).eq.60) then
+  elseif (iturb.eq.60) then
 
     do ifac = 1, nfabor
 
@@ -556,13 +556,13 @@ do iphas = 1, nphas
         chaine=nomvar(ippomg)
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,iomgip)
-        nstokw(iphas) = nstokw(iphas) + 1
+        nstokw = nstokw + 1
       endif
 
     enddo
 
 ! --- Conditions admissibles pour Spalart-Allmaras
-  elseif (iturb(iphas).eq.70) then
+  elseif (iturb.eq.70) then
 
     do ifac = 1, nfabor
 
@@ -573,7 +573,7 @@ do iphas = 1, nphas
         chaine=nomvar(ippnup)
         write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
                           icodcl(ifac,inuiph )
-        nstonu(iphas) = nstonu(iphas) + 1
+        nstonu = nstonu + 1
       endif
 
     enddo
@@ -633,41 +633,41 @@ endif
 do iphas = 1, nphas
 
 ! --- Reperage des variables dans RTP
-  ipriph = ipr(iphas)
-  iuiph  = iu (iphas)
-  iviph  = iv (iphas)
-  iwiph  = iw (iphas)
-  if(itytur(iphas).eq.2) then
-    ikiph  = ik (iphas)
-    iepiph = iep(iphas)
-  elseif(itytur(iphas).eq.3) then
-    ir11ip = ir11(iphas)
-    ir22ip = ir22(iphas)
-    ir33ip = ir33(iphas)
-    ir12ip = ir12(iphas)
-    ir13ip = ir13(iphas)
-    ir23ip = ir23(iphas)
-    iepiph = iep(iphas)
-  elseif(iturb(iphas).eq.50) then
-    ikiph  = ik  (iphas)
-    iepiph = iep (iphas)
-    iphiph = iphi(iphas)
-    ifbiph = ifb(iphas)
-  elseif(iturb(iphas).eq.60) then
-    ikiph  = ik  (iphas)
-    iomgip = iomg(iphas)
-  elseif(iturb(iphas).eq.70) then
-    inuiph = inusa(iphas)
+  ipriph = ipr
+  iuiph  = iu
+  iviph  = iv
+  iwiph  = iw
+  if(itytur.eq.2) then
+    ikiph  = ik
+    iepiph = iep
+  elseif(itytur.eq.3) then
+    ir11ip = ir11
+    ir22ip = ir22
+    ir33ip = ir33
+    ir12ip = ir12
+    ir13ip = ir13
+    ir23ip = ir23
+    iepiph = iep
+  elseif(iturb.eq.50) then
+    ikiph  = ik
+    iepiph = iep
+    iphiph = iphi
+    ifbiph = ifb
+  elseif(iturb.eq.60) then
+    ikiph  = ik
+    iomgip = iomg
+  elseif(iturb.eq.70) then
+    inuiph = inusa
   endif
 
   ippprp = ipprtp(ipriph)
   ippuip = ipprtp(iuiph )
   ippvip = ipprtp(iviph )
   ippwip = ipprtp(iwiph )
-  if(itytur(iphas).eq.2) then
+  if(itytur.eq.2) then
     ippkip = ipprtp(ikiph )
     ippepp = ipprtp(iepiph)
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
     ipp11p = ipprtp(ir11ip)
     ipp22p = ipprtp(ir22ip)
     ipp33p = ipprtp(ir33ip)
@@ -675,15 +675,15 @@ do iphas = 1, nphas
     ipp13p = ipprtp(ir13ip)
     ipp23p = ipprtp(ir23ip)
     ippepp = ipprtp(iepiph)
-  elseif(iturb(iphas).eq.50) then
+  elseif(iturb.eq.50) then
     ippkip = ipprtp(ikiph )
     ippepp = ipprtp(iepiph)
     ippphp = ipprtp(iphiph)
     ippfbp = ipprtp(ifbiph)
-  elseif(iturb(iphas).eq.60) then
+  elseif(iturb.eq.60) then
     ippkip = ipprtp(ikiph )
     ippomg = ipprtp(iomgip)
-  elseif(iturb(iphas).eq.70) then
+  elseif(iturb.eq.70) then
     ippnup = ipprtp(inuiph)
   endif
 
@@ -705,7 +705,7 @@ do iphas = 1, nphas
                                 icodcv.ne.icodcw ) then
         write(nfecra,1020)ifac,iprfml(ifmfbr(ifac),1),            &
                           icodcu,icodcv,icodcw
-        nstuvw(iphas) = nstuvw(iphas) + 1
+        nstuvw = nstuvw + 1
       endif
     endif
 
@@ -723,7 +723,7 @@ do iphas = 1, nphas
 !              WRITE(NFECRA,1030)
 !     &          IFAC,IPRFML(IFMFBR(IFAC),1),CHAINE(1:8),IPHAS,
 !     &          ICODCL(IFAC,IPRIPH),ICODCU,ICODCV,ICODCW
-!              NSTOUP(IPHAS) = NSTOUP(IPHAS) + 1
+!              NSTOUP = NSTOUP + 1
 !            ENDIF
 !          ENDIF
 
@@ -731,7 +731,7 @@ do iphas = 1, nphas
 
 ! --- Coherence vitesse turbulence
 
-  if(itytur(iphas).eq.2) then
+  if(itytur.eq.2) then
 
     do ifac = 1, nfabor
 
@@ -753,7 +753,7 @@ do iphas = 1, nphas
         write(nfecra,1030)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
           icodcl(ifac,iepiph),icodcu,icodcv,icodcw
-        nstuke(iphas) = nstuke(iphas) + 1
+        nstuke = nstuke + 1
       endif
 
       if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
@@ -768,12 +768,12 @@ do iphas = 1, nphas
         write(nfecra,1030)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
           icodcl(ifac,iepiph),icodcu,icodcv,icodcw
-        nstuke(iphas) = nstuke(iphas) + 1
+        nstuke = nstuke + 1
       endif
 
     enddo
 
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
 
     do ifac = 1, nfabor
 
@@ -803,7 +803,7 @@ do iphas = 1, nphas
           icor11,icor22,icor33,                                   &
           icor12,icor13,icor23,                                   &
           icodce,icodcu,icodcv,icodcw
-        nsurij(iphas) = nsurij(iphas) + 1
+        nsurij = nsurij + 1
       endif
 
       if(  (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.    &
@@ -821,7 +821,7 @@ do iphas = 1, nphas
           icor11,icor22,icor33,                                   &
           icor12,icor13,icor23,                                   &
           icodce,icodcu,icodcv,icodcw
-        nsurij(iphas) = nsurij(iphas) + 1
+        nsurij = nsurij + 1
       endif
 
       if(  (icodcu.eq.4 .or. icodcv.eq.4 .or. icodcw.eq.4 .or.    &
@@ -839,12 +839,12 @@ do iphas = 1, nphas
           icor11,icor22,icor33,                                   &
           icor12,icor13,icor23,                                   &
           icodce,icodcu,icodcv,icodcw
-        nsurij(iphas) = nsurij(iphas) + 1
+        nsurij = nsurij + 1
       endif
 
     enddo
 
-  elseif(iturb(iphas).eq.50 ) then
+  elseif(iturb.eq.50 ) then
 
     do ifac = 1, nfabor
 
@@ -878,7 +878,7 @@ do iphas = 1, nphas
         write(nfecra,1030)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
           icodcl(ifac,ifbiph),icodcu,icodcv,icodcw
-        nstuv2(iphas) = nstuv2(iphas) + 1
+        nstuv2 = nstuv2 + 1
 
       if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
            icodck.eq.6 .or. icodce.eq.6 .or. icodcp.eq.6 .or.     &
@@ -902,7 +902,7 @@ do iphas = 1, nphas
         write(nfecra,1030)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
           icodcl(ifac,ifbiph),icodcu,icodcv,icodcw
-        nstuv2(iphas) = nstuv2(iphas) + 1
+        nstuv2 = nstuv2 + 1
 
       endif
 
@@ -910,7 +910,7 @@ do iphas = 1, nphas
 
     enddo
 
-  elseif(iturb(iphas).eq.60 ) then
+  elseif(iturb.eq.60 ) then
 
     do ifac = 1, nfabor
 
@@ -932,7 +932,7 @@ do iphas = 1, nphas
         write(nfecra,1030)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
           icodcl(ifac,iomgip),icodcu,icodcv,icodcw
-        nstukw(iphas) = nstukw(iphas) + 1
+        nstukw = nstukw + 1
       endif
 
       if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
@@ -947,12 +947,12 @@ do iphas = 1, nphas
         write(nfecra,1030)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
           icodcl(ifac,iomgip),icodcu,icodcv,icodcw
-        nstukw(iphas) = nstukw(iphas) + 1
+        nstukw = nstukw + 1
       endif
 
     enddo
 
-  elseif(iturb(iphas).eq.70 ) then
+  elseif(iturb.eq.70 ) then
 
     do ifac = 1, nfabor
 
@@ -969,7 +969,7 @@ do iphas = 1, nphas
         write(nfecra,1030)                                        &
           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),iphas,          &
           icodcl(ifac,inuiph),icodcu,icodcv,icodcw
-        nstunu(iphas) = nstunu(iphas) + 1
+        nstunu = nstunu + 1
       endif
 
       if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
@@ -997,10 +997,10 @@ enddo
 if( nscal.ge.1 ) then
   do iis = 1, nscal
     iphas = 1
-    if(itytur(iphas).eq.2.or.itytur(iphas).eq.3) then
+    if(itytur.eq.2.or.itytur.eq.3) then
       ivar  = isca(iis)
       do ifac = 1, nfabor
-        icodcu = icodcl(ifac,iu(iphas))
+        icodcu = icodcl(ifac,iu)
         if(icodcl(ifac,ivar).eq.5.and.icodcu.ne.5) then
           chaine=nomvar(ipprtp(ivar))
           write(nfecra,1050) ifac,iprfml(ifmfbr(ifac),1),         &
@@ -1026,18 +1026,18 @@ if( nstoni.gt.0 .or. nstosc.gt.0 .or. nstovf.gt.0 .or.            &
 endif
 
 do iphas = 1, nphas
-  if( nstvit(iphas).gt.0 .or. nstopp(iphas).gt.0 .or.             &
-      nstoke(iphas).gt.0 .or. nstrij(iphas).gt.0 .or.             &
-      nstov2(iphas).gt.0 .or. nstonu(iphas).gt.0 .or.             &
-      nstuvw(iphas).gt.0 .or. nstoup(iphas).gt.0 .or.             &
-      nstuke(iphas).gt.0 .or. nsurij(iphas).gt.0 .or.             &
-      nstuv2(iphas).gt.0 .or. nstunu(iphas).gt.0       ) then
-    write (nfecra,1902)        nstvit(iphas),nstopp(iphas),       &
-                               nstoke(iphas),nstrij(iphas),       &
-                               nstov2(iphas),nstonu(iphas),       &
-                               nstuvw(iphas),nstoup(iphas),       &
-                               nstuke(iphas),nsurij(iphas),       &
-                               nstuv2(iphas),nstunu(iphas)
+  if( nstvit.gt.0 .or. nstopp.gt.0 .or.             &
+      nstoke.gt.0 .or. nstrij.gt.0 .or.             &
+      nstov2.gt.0 .or. nstonu.gt.0 .or.             &
+      nstuvw.gt.0 .or. nstoup.gt.0 .or.             &
+      nstuke.gt.0 .or. nsurij.gt.0 .or.             &
+      nstuv2.gt.0 .or. nstunu.gt.0       ) then
+    write (nfecra,1902)        nstvit,nstopp,       &
+                               nstoke,nstrij,       &
+                               nstov2,nstonu,       &
+                               nstuvw,nstoup,       &
+                               nstuke,nsurij,       &
+                               nstuv2,nstunu
     iok = 1
   endif
 enddo

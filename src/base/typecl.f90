@@ -154,13 +154,13 @@ character        chaine*80
 integer          idebia, idebra
 integer          ifac, ivar, iel
 integer          iok, inc, iccocg, ideb, ifin, inb, isum, iwrnp
-integer          ifrslb(nphsmx), itbslb(nphsmx)
+integer          ifrslb, itbslb
 integer          ityp, ii, jj, iphas, iwaru, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          ipriph, iuiph, iviph, iwiph
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip,ir23ip
 integer          ikiph , iepiph, iphiph, ifbiph, iomgip,inuiph
-integer          iprnew, kphas, iii
+integer          iprnew, iii
 integer          irangd, iclipr, iiptot
 integer          ifadir
 double precision pref, epsrgp, climgp, extrap, coefup
@@ -325,7 +325,7 @@ endif
 ! ---> On ecrit les types de faces avec la borne inf et sup et le nb
 !       pour chaque type de face trouve (tjrs pour les types par defaut)
 
-if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
+if(ipass.eq.0.or.iwarni(iu).ge.2) then
 
   ipass = 1
 
@@ -560,49 +560,42 @@ enddo
 ! --- Boucle sur les phases : debut
 do iphas = 1, nphas
 
-  ro0iph = ro0  (iphas)
-  p0iph  = p0   (iphas)
-  pr0iph = pred0(iphas)
+  ro0iph = ro0
+  p0iph  = p0
+  pr0iph = pred0
   xxp0   = xyzp0(1,iphas)
   xyp0   = xyzp0(2,iphas)
   xzp0   = xyzp0(3,iphas)
-  ipriph = ipr (iphas)
-  iuiph  = iu  (iphas)
-  iviph  = iv  (iphas)
-  iwiph  = iw  (iphas)
-  if(itytur(iphas).eq.2) then
-    ikiph  = ik(iphas)
-    iepiph = iep(iphas)
-  elseif(itytur(iphas).eq.3) then
-    ir11ip = ir11(iphas)
-    ir22ip = ir22(iphas)
-    ir33ip = ir33(iphas)
-    ir12ip = ir12(iphas)
-    ir13ip = ir13(iphas)
-    ir23ip = ir23(iphas)
-    iepiph = iep(iphas)
-  elseif(iturb(iphas).eq.50) then
-    ikiph  = ik(iphas)
-    iepiph = iep(iphas)
-    iphiph = iphi(iphas)
-    ifbiph = ifb(iphas)
-  elseif(iturb(iphas).eq.60) then
-    ikiph  = ik (iphas)
-    iomgip = iomg(iphas)
-  elseif(iturb(iphas).eq.70) then
-    inuiph  = inusa(iphas)
+  ipriph = ipr
+  iuiph  = iu
+  iviph  = iv
+  iwiph  = iw
+  if(itytur.eq.2) then
+    ikiph  = ik
+    iepiph = iep
+  elseif(itytur.eq.3) then
+    ir11ip = ir11
+    ir22ip = ir22
+    ir33ip = ir33
+    ir12ip = ir12
+    ir13ip = ir13
+    ir23ip = ir23
+    iepiph = iep
+  elseif(iturb.eq.50) then
+    ikiph  = ik
+    iepiph = iep
+    iphiph = iphi
+    ifbiph = ifb
+  elseif(iturb.eq.60) then
+    ikiph  = ik
+    iomgip = iomg
+  elseif(iturb.eq.70) then
+    inuiph  = inusa
   endif
 
 ! Check if the pressure (unique) has not been handled already
 
   iprnew = 1
-  if(iphas.gt.1) then
-    do kphas = 1, iphas-1
-      if(ipr(iphas).eq.ipr(kphas)) then
-        iprnew = 0
-      endif
-    enddo
-  endif
 
 ! ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
 ! itbslb = max of ifrslb on all ranks, standard outlet face presence indicator
@@ -613,7 +606,7 @@ do iphas = 1, nphas
 
   d0min = rinfin
 
-  ifrslb(iphas) = 0
+  ifrslb = 0
 
   ideb = idebty(isolib,iphas)
   ifin = ifinty(isolib,iphas)
@@ -625,26 +618,26 @@ do iphas = 1, nphas
            + (cdgfbo(2,ifac)-xyp0)**2  &
            + (cdgfbo(3,ifac)-xzp0)**2
       if (d0.lt.d0min) then
-        ifrslb(iphas) = ifac
+        ifrslb = ifac
         d0min = d0
       endif
     endif
   enddo
 
-  ! If we have free outlet faces, irangd and itbslb(iphas) will
+  ! If we have free outlet faces, irangd and itbslb will
   ! contain respectively the rank having the boundary face whose
   ! center is closest to xyzp0, and the local number of that face
-  ! on that rank (also equal to ifrslb(iphas) on that rank).
-  ! If we do not have free outlet faces, than itbslb(iphas) = 0
+  ! on that rank (also equal to ifrslb on that rank).
+  ! If we do not have free outlet faces, than itbslb = 0
   ! (as it was initialized that way on all ranks).
 
-  itbslb(iphas) = ifrslb(iphas)
+  itbslb = ifrslb
   irangd = irangp
   if (irangp.ge.0) then
-    call parfpt(itbslb(iphas), irangd, d0min)
+    call parfpt(itbslb, irangd, d0min)
   endif
 
-  if ((itbslb(iphas).gt.0) .and. (iprnew.eq.1)) then
+  if ((itbslb.gt.0) .and. (iprnew.eq.1)) then
 
     inc = 1
     iccocg = 1
@@ -775,17 +768,17 @@ do iphas = 1, nphas
 !     We also retrieve the coordinates of the reference point, so as to
 !     calculate pref later on.
 
-  if (itbslb(iphas).gt.0) then
+  if (itbslb.gt.0) then
 
     ! If irangd is the local rank, we assign PI' to coefup
     ! (this is always the case in serial mode)
 
     if (irangp.eq.irangd) then
-      xyzref(1) = cdgfbo(1,ifrslb(iphas))
-      xyzref(2) = cdgfbo(2,ifrslb(iphas))
-      xyzref(3) = cdgfbo(3,ifrslb(iphas))
-      xyzref(4) = coefu(ifrslb(iphas),1) ! coefup
-      if (iphydr.eq.1) isostd(nfabor+1,iphas) = ifrslb(iphas)
+      xyzref(1) = cdgfbo(1,ifrslb)
+      xyzref(2) = cdgfbo(2,ifrslb)
+      xyzref(3) = cdgfbo(3,ifrslb)
+      xyzref(4) = coefu(ifrslb,1) ! coefup
+      if (iphydr.eq.1) isostd(nfabor+1,iphas) = ifrslb
     endif
 
     ! Broadcast coefup and pressure reference
@@ -801,9 +794,9 @@ do iphas = 1, nphas
     ! If the user has not specified anything, we set ixyzp0 to 2 so as
     ! to update the reference point.
 
-    if (ixyzp0(iphas).eq.-1) ixyzp0(iphas) = 2
+    if (ixyzp0.eq.-1) ixyzp0 = 2
 
-  elseif (ixyzp0(iphas).lt.0) then
+  elseif (ixyzp0.lt.0) then
 
     ! If there are no outlet faces, we search for possible Dirichlets
     ! specified by the user so as to locate the reference point.
@@ -831,7 +824,7 @@ do iphas = 1, nphas
     if (ifadir.gt.0) then
 
       ! on met ixyzp0 a 2 pour mettre a jour le point de reference
-      ixyzp0(iphas) = 2
+      ixyzp0 = 2
 
       if (irangp.eq.irangd) then
         xyzref(1) = cdgfbo(1,ifadir)
@@ -855,8 +848,8 @@ do iphas = 1, nphas
 !   La pression totale dans PROPCE est aussi decalee (c'est a priori
 !   inutile sauf si l'utilisateur l'utilise dans ustsns par exemple)
 
-  if (ixyzp0(iphas).eq.2) then
-    ixyzp0(iphas) = 1
+  if (ixyzp0.eq.2) then
+    ixyzp0 = 1
     xxp0 = xyzref(1) - xyzp0(1,iphas)
     xyp0 = xyzref(2) - xyzp0(2,iphas)
     xzp0 = xyzref(3) - xyzp0(3,iphas)
@@ -864,13 +857,13 @@ do iphas = 1, nphas
     xyzp0(2,iphas) = xyzref(2)
     xyzp0(3,iphas) = xyzref(3)
     if (ippmod(icompf).lt.0) then
-      iiptot = ipproc(iprtot(iphas))
+      iiptot = ipproc(iprtot)
       do iel = 1, ncelet
         propce(iel,iiptot) = propce(iel,iiptot)       &
              - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
       enddo
     endif
-    if (itbslb(iphas).gt.0) then
+    if (itbslb.gt.0) then
       write(nfecra,8000)xxp0,xyp0,xzp0
       do ifac = 1, nfabor
         coefu(ifac,1) = coefu(ifac,1)                             &
@@ -880,20 +873,20 @@ do iphas = 1, nphas
     else
       write(nfecra,8001)xxp0,xyp0,xzp0
     endif
-  elseif (ixyzp0(iphas).eq.-1) then
+  elseif (ixyzp0.eq.-1) then
 !     Il n'y a pas de sorties ni de Dirichlet et l'utilisateur n'a
 !     rien specifie -> on met IXYZP0 a 0 pour ne plus y toucher, tout
 !     en differenciant du cas =1 qui necessitera une ecriture en suite
-    ixyzp0(iphas) = 0
+    ixyzp0 = 0
   endif
 
 !     La pression totale doit etre recalee en Xref a la valeur
 !     Po + rho_0*g.(Xref-X0)
-  if (itbslb(iphas).gt.0) then
+  if (itbslb.gt.0) then
     xxp0 = xyzp0(1,iphas)
     xyp0 = xyzp0(2,iphas)
     xzp0 = xyzp0(3,iphas)
-    pref = p0(iphas)                                              &
+    pref = p0                                              &
          + ro0iph*( gx*(xyzref(1)-xxp0)                           &
                   + gy*(xyzref(2)-xyp0)                           &
                   + gz*(xyzref(3)-xzp0) )                         &
@@ -944,7 +937,7 @@ do iphas = 1, nphas
 
   do ivar = 1, nvar
     if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph.or.      &
-       ( itytur(iphas).eq.3.and.                                  &
+       ( itytur.eq.3.and.                                  &
           (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
            ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip)    &
                                                           ) ) then
@@ -993,18 +986,18 @@ do iphas = 1, nphas
         endif
       enddo
     elseif (                                                      &
-       ( itytur(iphas).eq.2.and.                                  &
+       ( itytur.eq.2.and.                                  &
           (ivar.eq.ikiph  .or.ivar.eq.iepiph) ).or.               &
-       ( itytur(iphas).eq.3.and.                                  &
+       ( itytur.eq.3.and.                                  &
           (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
            ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip.or. &
            ivar.eq.iepiph)                    ).or.               &
-       ( iturb(iphas).eq.50.and.                                  &
+       ( iturb.eq.50.and.                                  &
           (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
            ivar.eq.ifbiph)                    ).or.               &
-       ( iturb(iphas).eq.60.and.                                  &
+       ( iturb.eq.60.and.                                  &
           (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
-       ( iturb(iphas).eq.70.and.                                  &
+       ( iturb.eq.70.and.                                  &
           (ivar.eq.inuiph)                    )    ) then
       do ii = ideb, ifin
         ifac = itrifb(ii,iphas)
@@ -1052,18 +1045,18 @@ do iphas = 1, nphas
         endif
       enddo
     elseif (                                                      &
-       ( itytur(iphas).eq.2.and.                                  &
+       ( itytur.eq.2.and.                                  &
           (ivar.eq.ikiph  .or.ivar.eq.iepiph) ).or.               &
-       ( itytur(iphas).eq.3.and.                                  &
+       ( itytur.eq.3.and.                                  &
           (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
            ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip.or. &
            ivar.eq.iepiph)                    ).or.               &
-       ( iturb(iphas).eq.50.and.                                  &
+       ( iturb.eq.50.and.                                  &
           (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
            ivar.eq.ifbiph)                    ).or.               &
-       ( iturb(iphas).eq.60.and.                                  &
+       ( iturb.eq.60.and.                                  &
           (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
-       ( iturb(iphas).eq.70.and.                                  &
+       ( iturb.eq.70.and.                                  &
           (ivar.eq.inuiph)                    )    ) then
       do ii = ideb, ifin
         ifac = itrifb(ii,iphas)
@@ -1309,7 +1302,7 @@ enddo
 
 iwaru = -1
 do iphas = 1, nphas
-  iuiph  = iu(iphas)
+  iuiph  = iu
   iwaru = max(iwarni(iuiph),iwaru)
 enddo
 if (irangp.ge.0) call parcmx(iwaru)
@@ -1321,10 +1314,10 @@ endif
 
 do iphas = 1, nphas
 
-  iuiph  = iu(iphas)
+  iuiph  = iu
   iflmab = ipprob(ifluma(iuiph))
 
-  iwrnp = iwarni(iu(iphas))
+  iwrnp = iwarni(iu)
   if (irangp.ge.0) call parcmx (iwrnp)
                    !==========
 

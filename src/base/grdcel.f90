@@ -137,10 +137,10 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          idimte , itenso
-integer          iiu(nphsmx),iiv(nphsmx),iiw(nphsmx)
-integer          iitytu(nphsmx)
-integer          iir11(nphsmx),iir22(nphsmx),iir33(nphsmx)
-integer          iir12(nphsmx),iir13(nphsmx),iir23(nphsmx)
+integer          iiu,iiv,iiw
+integer          iitytu
+integer          iir11,iir22,iir33
+integer          iir12,iir13,iir23
 integer          imlini
 
 double precision climin

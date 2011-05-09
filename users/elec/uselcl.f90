@@ -263,20 +263,20 @@ do ilelt = 1, nlelt
 !      - Zone localization for a given face
   izfppp(ifac) = izone
 
-  rcodcl(ifac,iu(iphas),1) = 0.d0
-  rcodcl(ifac,iv(iphas),1) = 0.d0
-  rcodcl(ifac,iw(iphas),1) = 0.d0
+  rcodcl(ifac,iu,1) = 0.d0
+  rcodcl(ifac,iv,1) = 0.d0
+  rcodcl(ifac,iw,1) = 0.d0
 
 !         Turbulence
 
 !     (ITYTUR est un indicateur qui vaut ITURB/10)
-  if (itytur(iphas).eq.2 .or. itytur(iphas).eq.3                  &
-       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
-       .or. iturb(iphas).eq.70) then
+  if (itytur.eq.2 .or. itytur.eq.3                  &
+       .or. iturb.eq.50 .or. iturb.eq.60            &
+       .or. iturb.eq.70) then
 
-    uref2 = rcodcl(ifac,iu(iphas),1)**2                           &
-           +rcodcl(ifac,iv(iphas),1)**2                           &
-           +rcodcl(ifac,iw(iphas),1)**2
+    uref2 = rcodcl(ifac,iu,1)**2                           &
+           +rcodcl(ifac,iv,1)**2                           &
+           +rcodcl(ifac,iw,1)**2
     uref2 = max(uref2,1.d-12)
 
 !   Turbulence example computed using equations valid for a pipe.
@@ -302,46 +302,46 @@ do ilelt = 1, nlelt
 !     standard laws for a circular pipe
 !     (their initialization is not needed here but is good practice).
 
-    rhomoy = propfb(ifac,ipprob(irom(iphas)))
+    rhomoy = propfb(ifac,ipprob(irom))
     ustar2 = 0.d0
     xkent  = epzero
     xeent  = epzero
 
     call keendb                                                   &
     !==========
-     ( uref2, dhy, rhomoy, viscl0(iphas), cmu, xkappa,            &
+     ( uref2, dhy, rhomoy, viscl0, cmu, xkappa,            &
        ustar2, xkent, xeent )
 
-    if (itytur(iphas).eq.2) then
+    if (itytur.eq.2) then
 
-      rcodcl(ifac,ik(iphas),1)  = xkent
-      rcodcl(ifac,iep(iphas),1) = xeent
+      rcodcl(ifac,ik,1)  = xkent
+      rcodcl(ifac,iep,1) = xeent
 
-    elseif(itytur(iphas).eq.3) then
+    elseif(itytur.eq.3) then
 
-      rcodcl(ifac,ir11(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir22(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir33(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir12(iphas),1) = 0.d0
-      rcodcl(ifac,ir13(iphas),1) = 0.d0
-      rcodcl(ifac,ir23(iphas),1) = 0.d0
-      rcodcl(ifac,iep(iphas),1)  = xeent
+      rcodcl(ifac,ir11,1) = d2s3*xkent
+      rcodcl(ifac,ir22,1) = d2s3*xkent
+      rcodcl(ifac,ir33,1) = d2s3*xkent
+      rcodcl(ifac,ir12,1) = 0.d0
+      rcodcl(ifac,ir13,1) = 0.d0
+      rcodcl(ifac,ir23,1) = 0.d0
+      rcodcl(ifac,iep,1)  = xeent
 
-    elseif (iturb(iphas).eq.50) then
+    elseif (iturb.eq.50) then
 
-      rcodcl(ifac,ik(iphas),1)   = xkent
-      rcodcl(ifac,iep(iphas),1)  = xeent
-      rcodcl(ifac,iphi(iphas),1) = d2s3
-      rcodcl(ifac,ifb(iphas),1)  = 0.d0
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iep,1)  = xeent
+      rcodcl(ifac,iphi,1) = d2s3
+      rcodcl(ifac,ifb,1)  = 0.d0
 
-    elseif (iturb(iphas).eq.60) then
+    elseif (iturb.eq.60) then
 
-      rcodcl(ifac,ik(iphas),1)   = xkent
-      rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-    elseif (iturb(iphas).eq.70) then
+    elseif (iturb.eq.70) then
 
-      rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
     endif
 

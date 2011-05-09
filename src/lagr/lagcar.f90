@@ -206,7 +206,7 @@ d3s444 = 0.44d0 * 3.d0 / 4.d0
 if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
   iromf = ipproc(irom1)
 else
-  iromf = ipproc(irom(iphas))
+  iromf = ipproc(irom)
 endif
 
 ! Calcul de la masse volumique
@@ -229,7 +229,7 @@ do ip = 1,nbpart
     iel = itepa(ip,jisor)
 
     rom  = propce(iel,iromf)
-    xnul = propce(iel,ipproc(iviscl(iphas))) / rom
+    xnul = propce(iel,ipproc(iviscl)) / rom
 
     uvwr = sqrt( ( ettp(ip,juf) -ettp(ip,jup) )*                  &
                  ( ettp(ip,juf) -ettp(ip,jup) )                   &
@@ -277,10 +277,10 @@ do ip = 1,nbpart
 
 !     CP fluide
 
-      if (icp(iphas).gt.0) then
-        xcp = propce( 1,ipproc(icp(iphas)) )
+      if (icp.gt.0) then
+        xcp = propce( 1,ipproc(icp) )
       else
-        xcp = cp0(iphas)
+        xcp = cp0
       endif
 
 !     CALCUL DU NUSSELT LOCAL
@@ -295,7 +295,7 @@ do ip = 1,nbpart
            ippmod(ieljou).ge.0      ) then
         ivt = ihm
       else
-        ivt = iscalt(iphas)
+        ivt = iscalt
       endif
 
 ! a priori en combustion gaz ou CP, la diffusvite est toujours constante
@@ -351,25 +351,25 @@ enddo
 
 if (idistu.eq.1) then
 
-  if (itytur(iphas).eq.2 .or. iturb(iphas).eq.50) then
+  if (itytur.eq.2 .or. iturb.eq.50) then
     do iel = 1,ncel
-      energi(iel) = rtp(iel,ik(iphas))
-      dissip(iel) = rtp(iel,iep(iphas))
+      energi(iel) = rtp(iel,ik)
+      dissip(iel) = rtp(iel,iep)
     enddo
-  else if (itytur(iphas).eq.3) then
+  else if (itytur.eq.3) then
     do iel = 1,ncel
-      energi(iel) = 0.5d0*( rtp(iel,ir11(iphas))                  &
-                           +rtp(iel,ir22(iphas))                  &
-                           +rtp(iel,ir33(iphas)) )
-      dissip(iel) = rtp(iel,iep(iphas))
+      energi(iel) = 0.5d0*( rtp(iel,ir11)                  &
+                           +rtp(iel,ir22)                  &
+                           +rtp(iel,ir33) )
+      dissip(iel) = rtp(iel,iep)
     enddo
-  else if (iturb(iphas).eq.60) then
+  else if (iturb.eq.60) then
     do iel = 1,ncel
-      energi(iel) = rtp(iel,ik(iphas))
-      dissip(iel) = cmu*energi(iel)*rtp(iel,iomg(iphas))
+      energi(iel) = rtp(iel,ik)
+      dissip(iel) = cmu*energi(iel)*rtp(iel,iomg)
     enddo
   else
-    write(nfecra,2000) iilagr, idistu, iturb(iphas)
+    write(nfecra,2000) iilagr, idistu, iturb
     call csexit (1)
 !              ======
   endif
@@ -401,9 +401,9 @@ if (idistu.eq.1) then
           upart = statis(iel,ilvx) / statis(iel,ilpd)
           vpart = statis(iel,ilvy) / statis(iel,ilpd)
           wpart = statis(iel,ilvz) / statis(iel,ilpd)
-          uflui = rtp(iel,iu(iphas))
-          vflui = rtp(iel,iv(iphas))
-          wflui = rtp(iel,iw(iphas))
+          uflui = rtp(iel,iu)
+          vflui = rtp(iel,iv)
+          wflui = rtp(iel,iw)
         endif
       endif
 
@@ -444,14 +444,14 @@ if (idistu.eq.1) then
 !                    ======
         endif
 
-        if (itytur(iphas).eq.3) then
-          r11 = rtp(iel,ir11(iphas))
-          r22 = rtp(iel,ir22(iphas))
-          r33 = rtp(iel,ir33(iphas))
+        if (itytur.eq.3) then
+          r11 = rtp(iel,ir11)
+          r22 = rtp(iel,ir22)
+          r33 = rtp(iel,ir33)
           ktil = 3.d0 * ( r11*bb1 + r22*bb2 + r33*bb3  )          &
                / (2.d0 * (bb1+bb2+bb3) )
-        else if (itytur(iphas).eq.2 .or. iturb(iphas).eq.50       &
-                                    .or. iturb(iphas).eq.60) then
+        else if (itytur.eq.2 .or. iturb.eq.50       &
+                                    .or. iturb.eq.60) then
           ktil = energi(iel)
         endif
 
@@ -558,9 +558,9 @@ do id = 1,3
           vpmy = statis(iel,ilvy) / statis(iel,ilpd)
           vpmz = statis(iel,ilvz) / statis(iel,ilpd)
 
-          uflui = rtp(iel,iu(iphas))
-          vflui = rtp(iel,iv(iphas))
-          wflui = rtp(iel,iw(iphas))
+          uflui = rtp(iel,iu)
+          vflui = rtp(iel,iv)
+          wflui = rtp(iel,iw)
 
           piil(ip,id) = gradpr(iel,id)                            &
                        +gradvf(iel,igvx) * (vpmx-uflui)           &

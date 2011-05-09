@@ -47,7 +47,7 @@ subroutine viswal &
 ! CALCUL DE LA VISCOSITE "TURBULENTE" POUR
 !          UN MODELE LES WALE
 
-! PROPCE(1,IVISCT(IPHAS)) = ROM * (CWALE*L)**2 *
+! PROPCE(1,IVISCT) = ROM * (CWALE*L)**2 *
 !   [(Sijd.Sijd)**(3/2)] / [(Sij.Sij)**(5/2) + (Sijd.Sijd)**(5/4)]
 !
 ! avec
@@ -164,14 +164,14 @@ idebra = idbra0
 
 
 ! --- Numero des variables (dans RTP)
-iuiph = iu(iphas)
-iviph = iv(iphas)
-iwiph = iw(iphas)
+iuiph = iu
+iviph = iv
+iwiph = iw
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
-ipcrom = ipproc(irom  (iphas))
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
+ipcrom = ipproc(irom  )
 
 ! --- Rang des c.l. des variables dans COEFA COEFB
 !        (c.l. std, i.e. non flux)
@@ -179,9 +179,9 @@ ipcliu = iclrtp(iuiph,icoef)
 ipcliv = iclrtp(iviph,icoef)
 ipcliw = iclrtp(iwiph,icoef)
 ! --- Pour le calcul de la viscosite de sous-maille
-xfil   = xlesfl(iphas)
-xa     = ales(iphas)
-xb     = bles(iphas)
+xfil   = xlesfl
+xa     = ales
+xb     = bles
 deux   = 2.d0
 radeux = sqrt(deux)
 tiers  = 1.d0/3.d0
@@ -255,7 +255,7 @@ kdelta(3,1) = 0
 kdelta(3,2) = 0
 kdelta(3,3) = 1
 
-coef = cwale(iphas)**2 * radeux
+coef = cwale**2 * radeux
 
 do iel = 1, ncel
 

@@ -187,23 +187,23 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Variables
-iuiph  = iu  (iphas)
-iviph  = iv  (iphas)
-iwiph  = iw  (iphas)
-if(itytur(iphas).eq.3) then
-  ir11ip = ir11(iphas)
-  ir22ip = ir22(iphas)
-  ir33ip = ir33(iphas)
-  ir12ip = ir12(iphas)
-  ir13ip = ir13(iphas)
-  ir23ip = ir23(iphas)
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+if(itytur.eq.3) then
+  ir11ip = ir11
+  ir22ip = ir22
+  ir33ip = ir33
+  ir12ip = ir12
+  ir13ip = ir13
+  ir23ip = ir23
 endif
 
 ! --- Conditions aux limites
 iclu   = iclrtp(iuiph ,icoef)
 iclv   = iclrtp(iviph ,icoef)
 iclw   = iclrtp(iwiph ,icoef)
-if(itytur(iphas).eq.3) then
+if(itytur.eq.3) then
   icl11  = iclrtp(ir11ip,icoef)
   icl22  = iclrtp(ir22ip,icoef)
   icl33  = iclrtp(ir33ip,icoef)
@@ -256,7 +256,7 @@ do ifac = 1, nfabor
     upy = coefu(ifac,2)
     upz = coefu(ifac,3)
 
-    if (itytur(iphas).eq.3) then
+    if (itytur.eq.3) then
 
 ! ---> VITESSE TANGENTIELLE RELATIVE
 
@@ -374,7 +374,7 @@ do ifac = 1, nfabor
 ! 3. CONDITIONS SUR RIJ (PARTIELLEMENT IMPLICITES)
 !===============================================================================
 
-    if (itytur(iphas).eq.3) then
+    if (itytur.eq.3) then
 
       do isou = 1, 6
 
@@ -407,7 +407,7 @@ do ifac = 1, nfabor
         endif
 
 !     IMPLICITATION PARTIELLE EVENTUELLE DES CL
-        if (iclsyr(iphas).eq.1) then
+        if (iclsyr.eq.1) then
           do ii = 1, 6
             if (ii.ne.isou) then
               coefa(ifac,iclvar) = coefa(ifac,iclvar) +           &

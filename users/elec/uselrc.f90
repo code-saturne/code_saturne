@@ -297,12 +297,12 @@ if ( ippmod(ielarc).ge.1 ) then
     cdtj= 2.0d2
 
     do iel = 1, ncel
-      if(propce(iel,ipproc(irom(1))).ne.0.d0)                     &
+      if(propce(iel,ipproc(irom)).ne.0.d0)                     &
            delhsh =  propce(iel,ipcefj) * dt(iel)                 &
-           /propce(iel,ipproc(irom(1)))
+           /propce(iel,ipproc(irom))
 
       if(delhsh.ne.0.d0) then
-        dtjm= rtp(iel,isca(iscalt(1)))/delhsh
+        dtjm= rtp(iel,isca(iscalt))/delhsh
       else
         dtjm= dtj
       endif
@@ -525,12 +525,12 @@ if ( ippmod(ielarc).ge.1 ) then
     cdtj= 2.0d2
 
     do iel = 1, ncel
-      if(propce(iel,ipproc(irom(1))).ne.0.d0)                     &
+      if(propce(iel,ipproc(irom)).ne.0.d0)                     &
            delhsh =  propce(iel,ipcefj) * dt(iel)                 &
-           /propce(iel,ipproc(irom(1)))
+           /propce(iel,ipproc(irom))
 
       if(delhsh.ne.0.d0) then
-        dtjm= rtp(iel,isca(iscalt(1)))/delhsh
+        dtjm= rtp(iel,isca(iscalt))/delhsh
       else
         dtjm= dtj
       endif

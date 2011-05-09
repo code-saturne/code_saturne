@@ -60,14 +60,14 @@ subroutine useliv &
 !     PROPCE (at the center of the cells), PROPFA (for internal faces),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL ,IPHAS)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
 !      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
 
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
+!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC,IPHAS)
 !      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 ! Thermodynamic properties and transport coefficients modification
@@ -246,7 +246,7 @@ if ( isuite.eq.0 ) then
 
   if ( ippmod(ielarc).ge.1 ) then
     mode = -1
-    tinit = t0(iphas)
+    tinit = t0
     coefe(1) = 1.d0
     if ( ngazg .gt. 1 ) then
       do iesp = 2, ngazg
@@ -256,7 +256,7 @@ if ( isuite.eq.0 ) then
     call elthht(mode,ngazg,coefe,hinit,tinit)
   else
     mode = -1
-    tinit = t0(iphas)
+    tinit = t0
     call usthht(mode,hinit,tinit)
   endif
 

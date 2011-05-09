@@ -194,26 +194,26 @@ double precision surfn, nu0, dsa0, hssa
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr (iphas)
-iuiph  = iu  (iphas)
-iviph  = iv  (iphas)
-iwiph  = iw  (iphas)
-inuiph = inusa(iphas)
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+inuiph = inusa
 
 icliup = iclrtp(iuiph,icoef)
 iclivp = iclrtp(iviph,icoef)
 icliwp = iclrtp(iwiph,icoef)
 
-ipcrom = ipproc(irom  (iphas))
-ipcvst = ipproc(ivisct(iphas))
-ipcvis = ipproc(iviscl(iphas))
+ipcrom = ipproc(irom  )
+ipcvst = ipproc(ivisct)
+ipcvis = ipproc(iviscl)
 iflmas = ipprof(ifluma(iuiph))
 iflmab = ipprob(ifluma(iuiph))
-ipbrom = ipprob(irom  (iphas))
+ipbrom = ipprob(irom  )
 
 ! S pour source, V pour variable
 !terme source grandeur turbulente
-thets  = thetst(iphas)
+thets  = thetst
 
 ivar   = inuiph
 thetv  = thetav(ivar)
@@ -224,20 +224,20 @@ ipcvto = ipcvst
 ipcvlo = ipcvis
 
 
-if(isto2t(iphas).gt.0) then
-  if (iroext(iphas).gt.0) then
-    ipcroo = ipproc(iroma(iphas))
-    ipbroo = ipprob(iroma(iphas))
+if(isto2t.gt.0) then
+  if (iroext.gt.0) then
+    ipcroo = ipproc(iroma)
+    ipbroo = ipprob(iroma)
   endif
-  if(iviext(iphas).gt.0) then
-    ipcvto = ipproc(ivista(iphas))
-    ipcvlo = ipproc(ivisla(iphas))
+  if(iviext.gt.0) then
+    ipcvto = ipproc(ivista)
+    ipcvlo = ipproc(ivisla)
   endif
 endif
 
 ! extrapolation des TS?
-if(isto2t(iphas).gt.0) then
-  iptsta = ipproc(itstua(iphas))
+if(isto2t.gt.0) then
+  iptsta = ipproc(itstua)
 else
   iptsta = 0
 endif
@@ -571,7 +571,7 @@ enddo
 !===============================================================================
 
 !     Si on extrapole les T.S.
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
 
   do iel = 1, ncel
 
@@ -643,13 +643,13 @@ if (ncesmp.gt.0) then
   call catsma                                                     &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t(iphas) , thetv        ,   &
+                                 isto2t , thetv        ,   &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
    smbrsa , w2     , w4 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t(iphas).gt.0) then
+  if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta ) = propce(iel,iptsta ) + w4(iel)
     enddo
@@ -665,7 +665,7 @@ endif
 !     ON LIBERE                       W4
 
 !     Finalisation des termes sources
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
 !                               (1+thetas)* PROPCE^n
@@ -708,7 +708,7 @@ endif
 !----------------------------------
 ! --- Termes sources utilisateurs?
 !... Implicitation des TS?
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
     tinssa(iel) = tinssa(iel) -dam(iel)*thetv
   enddo

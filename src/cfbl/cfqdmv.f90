@@ -217,23 +217,23 @@ iclik = 0
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr(iphas)
-iuiph  = iu(iphas)
-iviph  = iv(iphas)
-iwiph  = iw(iphas)
-if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50                     &
-     .or. iturb(iphas).eq.60) then
-  ikiph  = ik(iphas)
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+if(itytur.eq.2 .or. iturb.eq.50                     &
+     .or. iturb.eq.60) then
+  ikiph  = ik
 endif
 
-if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50                     &
-     .or. iturb(iphas).eq.60) then
+if(itytur.eq.2 .or. iturb.eq.50                     &
+     .or. iturb.eq.60) then
   iclik  = iclrtp(ikiph ,icoef)
 endif
 
-ipcrom = ipproc(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom  )
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
 
 !     Indicateur flux de bord Rusanov
 if(iifbru.gt.0) then
@@ -266,10 +266,10 @@ if (iphydr.eq.1) then
 
 ! variation de force (utilise dans resolp)
 
-    if(igrdpp(iphas).gt.0) then
-      rtprom = rtp(iel,isca(irho(iphas)))
+    if(igrdpp.gt.0) then
+      rtprom = rtp(iel,isca(irho))
     else
-      rtprom = rtpa(iel,isca(irho(iphas)))
+      rtprom = rtpa(iel,isca(irho))
     endif
 
     dfrcxt(iel,1,iphas) = rtprom*gx - frcxt(iel,1,iphas)
@@ -290,11 +290,11 @@ if (iphydr.eq.1) then
       cpdc13 = ckupdc(ielpdc,5)
       cpdc23 = ckupdc(ielpdc,6)
       dfrcxt(iel,1,iphas) = dfrcxt(iel,1,iphas)                   &
- -rtp(iel,isca(irho(iphas)))*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
+ -rtp(iel,isca(irho))*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
       dfrcxt(iel,2,iphas) = dfrcxt(iel,2,iphas)                   &
- -rtp(iel,isca(irho(iphas)))*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
+ -rtp(iel,isca(irho))*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
       dfrcxt(iel,3,iphas) = dfrcxt(iel,3,iphas)                   &
- -rtp(iel,isca(irho(iphas)))*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
+ -rtp(iel,isca(irho))*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
     enddo
   endif
 
@@ -344,10 +344,10 @@ if (iphydr.eq.1) then
 else
   do iel = 1, ncel
 
-    if(igrdpp(iphas).gt.0) then
-      rtprom = rtp(iel,isca(irho(iphas)))
+    if(igrdpp.gt.0) then
+      rtprom = rtp(iel,isca(irho))
     else
-      rtprom = rtpa(iel,isca(irho(iphas)))
+      rtprom = rtpa(iel,isca(irho))
     endif
 
     trav(iel,1) = ( rtprom*gx - w1(iel) )*volume(iel)
@@ -428,9 +428,9 @@ endif
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
-  trav(iel,1) =  trav(iel,1) - propfb(ifac,ipprob(ifbrhu(iphas)))
-  trav(iel,2) =  trav(iel,2) - propfb(ifac,ipprob(ifbrhv(iphas)))
-  trav(iel,3) =  trav(iel,3) - propfb(ifac,ipprob(ifbrhw(iphas)))
+  trav(iel,1) =  trav(iel,1) - propfb(ifac,ipprob(ifbrhu))
+  trav(iel,2) =  trav(iel,2) - propfb(ifac,ipprob(ifbrhv))
+  trav(iel,3) =  trav(iel,3) - propfb(ifac,ipprob(ifbrhw))
 enddo
 
 
@@ -438,8 +438,8 @@ enddo
 !      NB : ON NE PREND PAS LE GRADIENT DE (RHO K), MAIS
 !           CA COMPLIQUERAIT LA GESTION DES CL ...
 
-if( (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                   &
-     .or. iturb(iphas).eq.60) .and.igrhok(iphas).eq.1) then
+if( (itytur.eq.2 .or. iturb.eq.50                   &
+     .or. iturb.eq.60) .and.igrhok.eq.1) then
   iccocg = 1
   inc    = 1
   nswrgp = nswrgr(ikiph)
@@ -467,7 +467,7 @@ if( (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                   &
 
   d2s3 = 2.d0/3.d0
   do iel = 1, ncel
-    romvom = -rtp(iel,isca(irho(iphas)))*volume(iel)*d2s3
+    romvom = -rtp(iel,isca(irho))*volume(iel)*d2s3
     trav(iel,1) = trav(iel,1) + w1(iel) * romvom
     trav(iel,2) = trav(iel,2) + w2(iel) * romvom
     trav(iel,3) = trav(iel,3) + w3(iel) * romvom
@@ -498,7 +498,7 @@ endif
 
 ! ---> TERMES DE GRADIENT TRANSPOSE
 
-if (ivisse(iphas).eq.1) then
+if (ivisse.eq.1) then
 
   call vissec                                                     &
   !==========
@@ -542,7 +542,7 @@ endif
 
 ! ---> - DIVERGENCE DE RIJ
 
-if(itytur(iphas).eq.3 ) then
+if(itytur.eq.3 ) then
 
   do isou = 1, 3
 
@@ -586,7 +586,7 @@ if( idiff(iuiph).ge. 1 ) then
 ! --- Si la vitesse doit etre diffusee, on calcule la viscosite
 !       pour le second membre (selon Rij ou non)
 
-  if (itytur(iphas).eq.3) then
+  if (itytur.eq.3) then
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis)
     enddo
@@ -611,7 +611,7 @@ if( idiff(iuiph).ge. 1 ) then
 !     En Rij avec irijnu = 1, on calcule la viscosite increment
 !       de la matrice dans VISCFI, VISCBI
 
-  if(itytur(iphas).eq.3 .and. irijnu(iphas).eq.1) then
+  if(itytur.eq.3 .and. irijnu.eq.1) then
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis) + propce(iel,ipcvst)
     enddo
@@ -638,7 +638,7 @@ else
     viscb(ifac) = 0.d0
   enddo
 
-  if(itytur(iphas).eq.3.and.irijnu(iphas).eq.1) then
+  if(itytur.eq.3.and.irijnu.eq.1) then
     do ifac = 1, nfac
       viscfi(ifac) = 0.d0
     enddo
@@ -749,10 +749,10 @@ do isou = 1, 3
   if (ncesmp.gt.0) then
     iterns = 1
     call catsma ( ncelet , ncel , ncesmp , iterns ,               &
-                  isno2t(iphas), thetav(ivar),                    &
+                  isno2t, thetav(ivar),                    &
                   icetsm , itypsm(1,ivar)  ,                      &
                   volume , rtp(1,ivar) , smacel(1,ivar) ,         &
-                  smacel(1,ipr(iphas)) , smbr , rovsdt , w1)
+                  smacel(1,ipr) , smbr , rovsdt , w1)
   endif
 
 

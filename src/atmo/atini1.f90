@@ -85,8 +85,8 @@ integer          iphas, ii, isc, jj, ipp
 
 if ( ippmod(iatmos).ge.1 ) then
   do iphas = 1, nphas
-    if(iscalt(iphas).ne.-1) then
-      write(nfecra,1000)iscalt(iphas)
+    if(iscalt.ne.-1) then
+      write(nfecra,1000)iscalt
       call csexit (1)
       !==========
     endif
@@ -111,8 +111,8 @@ iphas = 1
 rair = 287.d0
 
 ! ---> Masse volumique et viscosite
-irovar(iphas) = 0
-ivivar(iphas) = 0
+irovar = 0
+ivivar = 0
 
 !===============================================================================
 ! 2. VARIABLES TRANSPORTEES pour IPPMOD(IATMOS) = 1 or 2
@@ -124,12 +124,12 @@ ivivar(iphas) = 0
 if ( ippmod(iatmos).eq.1 ) then
 
   iscsth(itempp) = 1
-  iscalt(iphas) = itempp
+  iscalt = itempp
   scamin(itempp)   = 0.d0
   scamax(itempp)   = +grand
 
 !  for the dry atmosphere case, non constant density
-  irovar(iphas) = 1
+  irovar = 1
 
 ! --> Donnees physiques ou numeriques propres aux scalaires
 
@@ -138,7 +138,7 @@ if ( ippmod(iatmos).eq.1 ) then
     jj = iscapp(isc)
 
     if (iscavr(jj).le.0) then
-      visls0(jj) = viscl0(iphas)
+      visls0(jj) = viscl0
     endif
 
     blencv(isca(jj)) = 1.d0
@@ -162,10 +162,10 @@ if ( ippmod(iatmos).eq.2 ) then
   iscsth(itotwt) = 0
   iscsth(intdrp) = 0
 
-  iscalt(iphas) = itempl
+  iscalt = itempl
 
 !  for the humid atmosphere case, non constant density
-  irovar(iphas) = 1
+  irovar = 1
 
 
   ipp = ipprtp(isca(itempl))
@@ -213,8 +213,8 @@ endif
 if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
 
   do iphas = 1, nphas
-    if (itytur(iphas).eq.2) then
-      ideuch(iphas) = 0
+    if (itytur.eq.2) then
+      ideuch = 0
     endif
   enddo
 

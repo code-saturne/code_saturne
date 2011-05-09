@@ -292,13 +292,13 @@ ierr   = 0
 
 ! Rank of the variables in their associated arrays
 if(iccfth.ge.0.or.iccfth.le.-2) then
-  ipriph = ipr(iphas)
-  irhiph = isca(irho  (iphas))
-  itkiph = isca(itempk(iphas))
-  ieniph = isca(ienerg(iphas))
-  iuiph = iu(iphas)
-  iviph = iv(iphas)
-  iwiph = iw(iphas)
+  ipriph = ipr
+  irhiph = isca(irho  )
+  itkiph = isca(itempk)
+  ieniph = isca(ienerg)
+  iuiph = iu
+  iviph = iv
+  iwiph = iw
   iclp = iclrtp(ipriph,icoef)
   iclr = iclrtp(irhiph,icoef)
   iclt = iclrtp(itkiph,icoef)
@@ -324,7 +324,7 @@ ifac0 = imodif
 ! --> ieos = 3: Van Der Waals
 
 do iiph = 1, nphas
-  ieos(iiph) = 1
+  ieos = 1
 enddo
 
 
@@ -336,7 +336,7 @@ enddo
 ! 2. Perfect gas
 !===============================================================================
 
-if(ieos(iphas).eq.1) then
+if(ieos.eq.1) then
 
 !===============================================================================
 ! 2.1. Parameters to be completed by the user
@@ -371,7 +371,7 @@ if(ieos(iphas).eq.1) then
     !   constant is not saved. A ''save'' instruction and a test would
     !   be sufficient to avoid computing gamagp at each call if necessary.
 
-    gamagp = 1.d0 + rr/(xmasml*cp0(iphas)-rr)
+    gamagp = 1.d0 + rr/(xmasml*cp0-rr)
 
     if(gamagp.lt.1.d0) then
       write(nfecra,1010) gamagp
@@ -395,8 +395,8 @@ if(ieos(iphas).eq.1) then
     !   the user subroutine ''usini1''. The value for the isochoric
     !   specific heat Cv0 is calculated in a subsequent section (from Cp0)
 
-    icp(iphas) = 0
-    icv(iphas) = 0
+    icp = 0
+    icv = 0
 
 
 ! --- Default initializations (before uscfxi)
@@ -406,12 +406,12 @@ if(ieos(iphas).eq.1) then
 
   elseif(iccfth.eq.0) then
 
-    cv0(iphas) = cp0(iphas) - rr/xmasml
+    cv0 = cp0 - rr/xmasml
 
     if ( isuite .eq. 0 ) then
       do iel = 1, ncel
-        rtp(iel,irhiph) = p0(iphas)*xmasml/(rr*t0(iphas))
-        rtp(iel,ieniph) = cv0(iphas)*t0(iphas)
+        rtp(iel,irhiph) = p0*xmasml/(rr*t0)
+        rtp(iel,ieniph) = cv0*t0
       enddo
     endif
 
@@ -495,7 +495,7 @@ if(ieos(iphas).eq.1) then
       ! Temperature
       sorti1(iel) = xmasml*rtp(iel,ipriph)/(rr*rtp(iel,irhiph))
       ! Total energy
-      sorti2(iel) = cv0(iphas)*sorti1(iel)                        &
+      sorti2(iel) = cv0*sorti1(iel)                        &
            + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
                                        + rtp(iel,iwiph)**2 )
     enddo
@@ -531,7 +531,7 @@ if(ieos(iphas).eq.1) then
       ! Density
       sorti1(iel) = xmasml*rtp(iel,ipriph)/(rr*rtp(iel,itkiph))
       ! Total energy
-      sorti2(iel) = cv0(iphas)*rtp(iel,itkiph)                    &
+      sorti2(iel) = cv0*rtp(iel,itkiph)                    &
            + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
                                        + rtp(iel,iwiph)**2 )
     enddo
@@ -579,7 +579,7 @@ if(ieos(iphas).eq.1) then
       ! Pressure
       sorti1(iel) = rtp(iel,irhiph)*rtp(iel,itkiph)*rr/xmasml
       ! Total energy
-      sorti2(iel) = cv0(iphas)*rtp(iel,itkiph)                    &
+      sorti2(iel) = cv0*rtp(iel,itkiph)                    &
            + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
                                        + rtp(iel,iwiph)**2 )
     enddo
@@ -980,7 +980,7 @@ if(ieos(iphas).eq.1) then
 
     ! Energie totale
     coefa(ifac,icle) =                                            &
-         cv0(iphas)*coefa(ifac,iclt)                              &
+         cv0*coefa(ifac,iclt)                              &
          + 0.5d0*( coefa(ifac,iclu)**2                            &
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
 
@@ -998,7 +998,7 @@ if(ieos(iphas).eq.1) then
 
     ! Total energy
     coefa(ifac,icle) =                                            &
-         cv0(iphas)*coefa(ifac,iclt)                              &
+         cv0*coefa(ifac,iclt)                              &
          + 0.5d0*( coefa(ifac,iclu)**2                            &
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
 
@@ -1034,7 +1034,7 @@ if(ieos(iphas).eq.1) then
                                        *coefa(ifac,iclt)
 
     ! Total energy
-    coefa(ifac,icle) = cv0(iphas) * coefa(ifac,iclt)              &
+    coefa(ifac,icle) = cv0 * coefa(ifac,iclt)              &
          + 0.5d0*( coefa(ifac,iclu)**2                            &
                  + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2 )
 
@@ -1069,7 +1069,7 @@ if(ieos(iphas).eq.1) then
 
 ! This section requires further checking and testing
 
-elseif(ieos(iphas).eq.2) then
+elseif(ieos.eq.2) then
 
 !===============================================================================
 
@@ -1109,8 +1109,8 @@ elseif(ieos(iphas).eq.2) then
 
       ! Calculation of the equivalent gamma of the mixture at cell centers
       do iel = 1, ncel
-        gamagr(iel) = propce(iel,ipproc(icp(iphas)))              &
-           / ( propce(iel,ipproc(icp(iphas))) - rr/xmasmr(iel) )
+        gamagr(iel) = propce(iel,ipproc(icp))              &
+           / ( propce(iel,ipproc(icp)) - rr/xmasmr(iel) )
       enddo
 
     endif
@@ -1145,10 +1145,10 @@ elseif(ieos(iphas).eq.2) then
 
   if(iccfth.eq.-1) then
 
-    icp(iphas) = 1
-    cp0(iphas) = epzero
-    icv(iphas) = 1
-    cv0(iphas) = epzero
+    icp = 1
+    cp0 = epzero
+    icv = 1
+    cv0 = epzero
 
 
 ! Default initializations
@@ -1156,12 +1156,12 @@ elseif(ieos(iphas).eq.2) then
   elseif(iccfth.eq.0) then
 
     do iel = 1, ncel
-      propce(iel,ipproc(icp(iphas))) = cp0(iphas)
-      propce(iel,ipproc(icv(iphas))) =                            &
-           cp0(iphas) - rr/xmasmr(iel)
-      rtp(iel,irhiph) = p0(iphas)*xmasmr(iel)/rr/t0(iphas)
+      propce(iel,ipproc(icp)) = cp0
+      propce(iel,ipproc(icv)) =                            &
+           cp0 - rr/xmasmr(iel)
+      rtp(iel,irhiph) = p0*xmasmr(iel)/rr/t0
       rtp(iel,ieniph) =                                           &
-           propce(iel,ipproc(icv(iphas)))*t0(iphas)
+           propce(iel,ipproc(icv))*t0
     enddo
 
 
@@ -1176,7 +1176,7 @@ elseif(ieos(iphas).eq.2) then
            xmasmr(iel)/rr*rtp(iel,ipriph)/rtp(iel,irhiph)
 
       ! Total energy
-      sorti2(iel) = propce(iel,ipproc(icv(iphas)))*sorti1(iel)    &
+      sorti2(iel) = propce(iel,ipproc(icv))*sorti1(iel)    &
     + 0.5d0*( rtp(iel,iuiph)**2                                   &
            + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 )
 
@@ -1203,7 +1203,7 @@ elseif(ieos(iphas).eq.2) then
 
       ! Total energy
       sorti2(iel) =                                               &
-           propce(iel,ipproc(icv(iphas)))*rtp(iel,itkiph)         &
+           propce(iel,ipproc(icv))*rtp(iel,itkiph)         &
     + 0.5d0*( rtp(iel,iuiph)**2                                   &
            + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 )
 
@@ -1256,7 +1256,7 @@ elseif(ieos(iphas).eq.2) then
 
       ! Total energy
       sorti2(iel) =                                               &
-           propce(iel,ipproc(icv(iphas)))*rtp(iel,itkiph)         &
+           propce(iel,ipproc(icv))*rtp(iel,itkiph)         &
     + 0.5d0*( rtp(iel,iuiph)**2                                   &
            + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 )
 
@@ -1359,7 +1359,7 @@ elseif(ieos(iphas).eq.2) then
 
     do iel = 1, ncel
 
-      sorti1(iel) = propce(iel,ipproc(icp(iphas)))-rr/xmasmr(iel)
+      sorti1(iel) = propce(iel,ipproc(icp))-rr/xmasmr(iel)
 
     enddo
 
@@ -1649,7 +1649,7 @@ elseif(ieos(iphas).eq.2) then
                                         /coefa(ifac,iclr)
 
     ! Total energy
-    coefa(ifac,icle) = propce(iel,ipproc(icv(iphas)))             &
+    coefa(ifac,icle) = propce(iel,ipproc(icv))             &
                * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
@@ -1666,7 +1666,7 @@ elseif(ieos(iphas).eq.2) then
                                        /coefa(ifac,iclt)
 
     ! Total energy
-    coefa(ifac,icle) = propce(iel,ipproc(icv(iphas)))             &
+    coefa(ifac,icle) = propce(iel,ipproc(icv))             &
                * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
@@ -1700,7 +1700,7 @@ elseif(ieos(iphas).eq.2) then
                                        *coefa(ifac,iclt)
 
     ! Total energy
-    coefa(ifac,icle) = propce(iel,ipproc(icv(iphas)))             &
+    coefa(ifac,icle) = propce(iel,ipproc(icv))             &
                * coefa(ifac,iclt) + 0.5d0*( coefa(ifac,iclu)**2   &
                     + coefa(ifac,iclv)**2 + coefa(ifac,iclw)**2)
 
@@ -1878,7 +1878,7 @@ endif
 '@     by setting a minimum value for the density variable in',/, &
 '@     the GUI or in the user subroutine ''usini1'' (set the ',/, &
 '@     scamin value associated to the variable ',/,               &
-'@     isca(irho(iphas)).',/,                                     &
+'@     isca(irho).',/,                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)

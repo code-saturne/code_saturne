@@ -57,7 +57,7 @@ subroutine fuphyv &
 !  (une routine specifique est dediee a cela : usvist)
 
 
-!  Il FAUT AVOIR PRECISE ICP(IPHAS) = 1
+!  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
 !    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
@@ -79,8 +79,8 @@ subroutine fuphyv &
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
 !      - dans usini1 :
-!             . la masse volumique (initialisee a RO0(IPHAS))
-!             . la viscosite       (initialisee a VISCL0(IPHAS))
+!             . la masse volumique (initialisee a RO0)
+!             . la viscosite       (initialisee a VISCL0)
 !      - dans usppiv :
 !             . les variables de calcul  (initialisees a 0 par defaut
 !             ou a la valeur donnee dans usiniv)
@@ -114,7 +114,7 @@ subroutine fuphyv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -166,7 +166,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -407,9 +407,9 @@ enddo
 !         qu'on a relu la masse volumique dans le fichier suite.
 
 iphas = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
-if (ipass.gt.1.or.(isuite.eq.1.and.initro(iphas).eq.1)) then
+if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
   srrom1 = srrom
 else
   srrom1 = 0.d0
@@ -443,9 +443,9 @@ do iel = 1, ncel
 !===============================================================================
 
 iphas = 1
-ibrom(iphas) = 1
-ipbrom = ipprob(irom(iphas))
-ipcrom = ipproc(irom(iphas))
+ibrom = 1
+ipbrom = ipprob(irom)
+ipcrom = ipproc(irom)
 
 ! ---> Masse volumique au bord pour toutes les facettes
 !      Les facettes d'entree seront recalculees.
@@ -468,7 +468,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
         x2tot  = qimpfl(izone) / qtotz
         x2sro2 = x2tot / rho0fl
         wmolme = (1.d0 + xsi) / (wmole(io2) + xsi * wmole(in2) )
-        unsro1 = (wmolme * rr * timpat(izone)) / p0(iphas)
+        unsro1 = (wmolme * rr * timpat(izone)) / p0
         x1sro1 = (1.d0 - x2tot) * unsro1
         propfb(ifac,ipbrom) = 1.d0 / (x1sro1 + x2sro2)
       endif

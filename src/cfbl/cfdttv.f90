@@ -151,7 +151,7 @@ idebra = idbra0
 
 iphas   = 1
 
-iscal  = irho(iphas)
+iscal  = irho
 ivar   = isca(iscal)
 
 !===============================================================================

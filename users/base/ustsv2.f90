@@ -58,16 +58,16 @@ subroutine ustsv2 &
 ! -----
 ! The routine is called for both phi and f_bar. It is therefore necessary
 ! to test the value of the variable ivar to separate the treatments of the
-! ivar=iphi(iphas) or ivar=ifb(iphas).
+! ivar=iphi or ivar=ifb.
 !
 ! The additional source term is decomposed into an explicit part (crvexp) and
 ! an implicit part (crvimp) that must be provided here.
 ! The resulting equation solved by the code are as follows:
 !
-! For f_bar (ivar=ifb(iphas)):
+! For f_bar (ivar=ifb):
 !  volume*div(grad(f_bar))= ( volume*f_bar + ..... + crvimp*f_bar + crvexp )/L^2
 !
-! For phi (ivar=iphi(iphas))
+! For phi (ivar=iphi)
 !  rho*volume*d(phi)/dt + .... = crvimp*phi + crvexp
 
 !
@@ -225,11 +225,11 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Index numbers of variables f_bar and phi for the current phase iphas
-ifbiph = ifb (iphas)
-iphiph = iphi(iphas)
+ifbiph = ifb
+iphiph = iphi
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 if(iwarni(ifbiph).ge.1) then
   write(nfecra,1000)
@@ -252,7 +252,7 @@ endif
 ! ---  For f_bar
 !      ---------
 
-if(ivar.eq.ifb(1)) then
+if(ivar.eq.ifb) then
 
   xx  = 2.d0
 
@@ -270,7 +270,7 @@ if(ivar.eq.ifb(1)) then
 ! ---  For phi
 !      -------
 
-elseif(ivar.eq.iphi(1)) then
+elseif(ivar.eq.iphi) then
 
   ff  = 3.d0
   tau = 4.d0
@@ -278,7 +278,7 @@ elseif(ivar.eq.iphi(1)) then
 !   -- Explicit source term
 
   do iel = 1, ncel
-    crvexp(iel) = propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,ifb(iphas))
+    crvexp(iel) = propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,ifb)
   enddo
 
 !    -- Implicit source term

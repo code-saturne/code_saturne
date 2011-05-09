@@ -126,14 +126,14 @@ double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 idebia = idbia0
 idebra = idbra0
 
-iuiph  = iu(iphas)
-iviph  = iv(iphas)
-iwiph  = iw(iphas)
-ipcrom = ipproc(irom  (iphas))
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+ipcrom = ipproc(irom  )
 
 ipcroo = ipcrom
-if(iroext(iphas).gt.0.and.isno2t(iphas).gt.0) then
-  ipcroo = ipproc(iroma (iphas))
+if(iroext.gt.0.and.isno2t.gt.0) then
+  ipcroo = ipproc(iroma )
 endif
 
 !     La diagonale est toujours "implicite"

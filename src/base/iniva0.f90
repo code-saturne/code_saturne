@@ -170,16 +170,16 @@ enddo
 do iphas = 1, nphas
 
 !     Masse volumique
-  iirom  = ipproc(irom  (iphas))
-  iiromb = ipprob(irom  (iphas))
-  ro0iph = ro0   (iphas)
+  iirom  = ipproc(irom  )
+  iiromb = ipprob(irom  )
+  ro0iph = ro0
 
 !     Masse volumique aux cellules (et au pdt precedent si ordre2 ou icalhy)
   do iel = 1, ncel
     propce(iel,iirom)  = ro0iph
   enddo
-  if(iroext(iphas).gt.0.or.icalhy.eq.1) then
-    iiroma = ipproc(iroma (iphas))
+  if(iroext.gt.0.or.icalhy.eq.1) then
+    iiroma = ipproc(iroma )
     do iel = 1, ncel
       propce(iel,iiroma) = propce(iel,iirom)
     enddo
@@ -188,24 +188,24 @@ do iphas = 1, nphas
   do ifac = 1, nfabor
     propfb(ifac,iiromb) = ro0iph
   enddo
-  if(iroext(iphas).gt.0) then
-    iiroma = ipprob(iroma (iphas))
+  if(iroext.gt.0) then
+    iiroma = ipprob(iroma )
     do ifac = 1, nfabor
       propfb(ifac,iiroma) = propfb(ifac,iiromb)
     enddo
   endif
 
 !     Viscosite moleculaire
-  iivisl = ipproc(iviscl(iphas))
-  iivist = ipproc(ivisct(iphas))
-  visiph = viscl0(iphas)
+  iivisl = ipproc(iviscl)
+  iivist = ipproc(ivisct)
+  visiph = viscl0
 
 !     Viscosite moleculaire aux cellules (et au pdt precedent si ordre2)
   do iel = 1, ncel
     propce(iel,iivisl) = visiph
   enddo
-  if(iviext(iphas).gt.0) then
-    iivisa = ipproc(ivisla(iphas))
+  if(iviext.gt.0) then
+    iivisa = ipproc(ivisla)
     do iel = 1, ncel
       propce(iel,iivisa) = propce(iel,iivisl)
     enddo
@@ -214,21 +214,21 @@ do iphas = 1, nphas
   do iel = 1, ncel
     propce(iel,iivist) = 0.d0
   enddo
-  if(iviext(iphas).gt.0) then
-    iivisa = ipproc(ivista(iphas))
+  if(iviext.gt.0) then
+    iivisa = ipproc(ivista)
     do iel = 1, ncel
       propce(iel,iivisa) = propce(iel,iivist)
     enddo
   endif
 
 !     Chaleur massique aux cellules (et au pdt precedent si ordre2)
-  if(icp(iphas).gt.0) then
-    iicp = ipproc(icp(iphas))
+  if(icp.gt.0) then
+    iicp = ipproc(icp)
     do iel = 1, ncel
-      propce(iel,iicp) = cp0(iphas)
+      propce(iel,iicp) = cp0
     enddo
-    if(icpext(iphas).gt.0) then
-      iicpa  = ipproc(icpa(iphas))
+    if(icpext.gt.0) then
+      iicpa  = ipproc(icpa)
       do iel = 1, ncel
         propce(iel,iicpa ) = propce(iel,iicp)
       enddo
@@ -239,7 +239,7 @@ do iphas = 1, nphas
 !  si l'utilisateur n'a pas fait d'initialisation personnelle
 ! Non valable en compressible
   if (ippmod(icompf).lt.0) then
-    iiptot = ipproc(iprtot(iphas))
+    iiptot = ipproc(iprtot)
     do iel = 1, ncel
       propce(iel,iiptot) = - rinfin
     enddo
@@ -257,7 +257,7 @@ do iscal = 1, nscal
     do iel = 1, ncel
       propce(iel,iiviss) = visls0(iscal)
     enddo
-    if(ivsext(iphas).gt.0) then
+    if(ivsext(iscal).gt.0) then
       iivisa = ipproc(ivissa(iscal))
       do iel = 1, ncel
         propce(iel,iivisa) = propce(iel,iiviss)
@@ -294,7 +294,7 @@ enddo
 !     On met la pression P* a PRED0
 do iphas = 1, nphas
   do iel = 1, ncel
-    rtp(iel,ipr(iphas)) = pred0(iphas)
+    rtp(iel,ipr) = pred0
   enddo
 enddo
 
@@ -318,19 +318,19 @@ endif
 
 do iphas = 1, nphas
 
-  if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50) then
+  if(itytur.eq.2 .or. iturb.eq.50) then
 
-    ikiph  = ik (iphas)
-    ieiph  = iep(iphas)
+    ikiph  = ik
+    ieiph  = iep
 
     xcmu = cmu
-    if (iturb(iphas).eq.50) xcmu = cv2fmu
+    if (iturb.eq.50) xcmu = cv2fmu
 
 
-    if (uref(iphas).ge.0.d0) then
+    if (uref.ge.0.d0) then
       do iel = 1, ncel
-        rtp(iel,ikiph) = 1.5d0*(0.02d0*uref(iphas))**2
-        rtp(iel,ieiph) = rtp(iel,ikiph)**1.5d0*xcmu/almax(iphas)
+        rtp(iel,ikiph) = 1.5d0*(0.02d0*uref)**2
+        rtp(iel,ieiph) = rtp(iel,ikiph)**1.5d0*xcmu/almax
       enddo
 
       iclip = 1
@@ -346,28 +346,28 @@ do iphas = 1, nphas
       enddo
     endif
 
-    if (iturb(iphas).eq.50) then
-      iphiph = iphi(iphas)
-      ifbiph = ifb (iphas)
+    if (iturb.eq.50) then
+      iphiph = iphi
+      ifbiph = ifb
       do iel = 1, ncel
         rtp(iel,iphiph) = 2.d0/3.d0
         rtp(iel,ifbiph) = 0.d0
       enddo
     endif
 
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
 
-    ir11ip = ir11(iphas)
-    ir22ip = ir22(iphas)
-    ir33ip = ir33(iphas)
-    ir12ip = ir12(iphas)
-    ir13ip = ir13(iphas)
-    ir23ip = ir23(iphas)
-    ieiph  = iep (iphas)
+    ir11ip = ir11
+    ir22ip = ir22
+    ir33ip = ir33
+    ir12ip = ir12
+    ir13ip = ir13
+    ir23ip = ir23
+    ieiph  = iep
 
-    if (uref(iphas).ge.0.d0) then
+    if (uref.ge.0.d0) then
 
-      trii   = (0.02d0*uref(iphas))**2
+      trii   = (0.02d0*uref)**2
 
       do iel = 1, ncel
         rtp(iel,ir11ip) = trii
@@ -378,7 +378,7 @@ do iphas = 1, nphas
         rtp(iel,ir23ip) = 0.d0
         xxk = 0.5d0*(rtp(iel,ir11ip)+                             &
                      rtp(iel,ir22ip)+rtp(iel,ir33ip))
-        rtp(iel,ieiph) = xxk**1.5d0*cmu/almax(iphas)
+        rtp(iel,ieiph) = xxk**1.5d0*cmu/almax
       enddo
       iclip = 1
       iphass = iphas
@@ -400,17 +400,17 @@ do iphas = 1, nphas
 
     endif
 
-  elseif(iturb(iphas).eq.60) then
+  elseif(iturb.eq.60) then
 
-    ikiph   = ik  (iphas)
-    iomgip  = iomg(iphas)
+    ikiph   = ik
+    iomgip  = iomg
 
-    if (uref(iphas).ge.0.d0) then
+    if (uref.ge.0.d0) then
 
       do iel = 1, ncel
-        rtp(iel,ikiph ) = 1.5d0*(0.02d0*uref(iphas))**2
+        rtp(iel,ikiph ) = 1.5d0*(0.02d0*uref)**2
 !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX et omega=eps/Cmu/k
-        rtp(iel,iomgip) = rtp(iel,ikiph)**0.5d0/almax(iphas)
+        rtp(iel,iomgip) = rtp(iel,ikiph)**0.5d0/almax
       enddo
 !     pas la peine de clipper, les valeurs sont forcement positives
 
@@ -423,14 +423,14 @@ do iphas = 1, nphas
 
     endif
 
-  elseif(iturb(iphas).eq.70) then
+  elseif(iturb.eq.70) then
 
-    inuiph  = inusa(iphas)
+    inuiph  = inusa
 
-    if (uref(iphas).ge.0.d0) then
+    if (uref.ge.0.d0) then
 
       do iel = 1, ncel
-        rtp(iel,inuiph ) = sqrt(1.5d0)*(0.02d0*uref(iphas))*almax(iphas)
+        rtp(iel,inuiph ) = sqrt(1.5d0)*(0.02d0*uref)*almax
 !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX
 !     et nusa=Cmu*k**2/eps
       enddo
@@ -565,8 +565,8 @@ enddo
 do iphas = 1, nphas
 
 !     les termes sources de Navier Stokes
-  if(isno2t(iphas).gt.0) then
-    iptsna = ipproc(itsnsa(iphas))
+  if(isno2t.gt.0) then
+    iptsna = ipproc(itsnsa)
     do ii = 1, ndim
       do iel = 1, ncel
         propce(iel,iptsna+ii-1) = 0.d0
@@ -575,13 +575,13 @@ do iphas = 1, nphas
   endif
 
 !     les termes sources turbulents
-  if(isto2t(iphas).gt.0) then
-    if(itytur(iphas).eq.2) jj = 2
-    if(itytur(iphas).eq.3) jj = 7
-    if(iturb(iphas).eq.50) jj = 4
-    if(iturb(iphas).eq.60) jj = 2
-    if(iturb(iphas).eq.70) jj = 1
-    iptsta = ipproc(itstua(iphas))
+  if(isto2t.gt.0) then
+    if(itytur.eq.2) jj = 2
+    if(itytur.eq.3) jj = 7
+    if(iturb.eq.50) jj = 4
+    if(iturb.eq.60) jj = 2
+    if(iturb.eq.70) jj = 1
+    iptsta = ipproc(itstua)
     do ii = 1, jj
       do iel = 1, ncel
         propce(iel,iptsta+ii-1) = 0.d0
@@ -624,9 +624,9 @@ enddo
 !===============================================================================
 
 do iphas = 1, nphas
-  if(iturb(iphas).eq.41) then
+  if(iturb.eq.41) then
     do iel = 1, ncel
-      propce(iel,ipproc(ismago(iphas))) = 0.d0
+      propce(iel,ipproc(ismago)) = 0.d0
     enddo
   endif
 enddo
@@ -639,9 +639,9 @@ enddo
 !     on suppose qu'il faut le (re)calculer : on init le tab a -1.
 
 do iphas = 1, nphas
-  if(iifapa(iphas).gt.0) then
+  if(iifapa.gt.0) then
     do iel = 1, ncel
-      ia(iifapa(iphas)-1+ iel) = -1
+      ia(iifapa-1+ iel) = -1
     enddo
   endif
 enddo

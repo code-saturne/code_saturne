@@ -96,8 +96,8 @@ ipass = ipass + 1
 
 iok1 = 0
 do iphas = 1, nphas
-  if(ncetsm(iphas).gt.ncelet .or. ncetsm(iphas).lt.0) then
-    write(nfecra,1000) ncetsm(iphas)
+  if(ncetsm.gt.ncelet .or. ncetsm.lt.0) then
+    write(nfecra,1000) ncetsm
     iok1 = 1
   endif
 enddo
@@ -108,7 +108,7 @@ endif
 !---> CALCUL DU NOMBRE DE CELLULES AVEC TSM TOTAL
 
 do iphas = 1, nphas
-  nctsmt(iphas) = ncetsm(iphas)
+  nctsmt = ncetsm
 enddo
 if (irangp.ge.0) then
   call parism(nphas,nctsmt)
@@ -117,11 +117,11 @@ endif
 !---> QUELQUES MESSAGES
 
 do iphas = 1, nphas
-  if(nctsmt(iphas).eq.0) then
-    write(nfecra,2000) nctsmt(iphas)
+  if(nctsmt.eq.0) then
+    write(nfecra,2000) nctsmt
     write(nfecra,3000)
   else
-    write(nfecra,2001) nctsmt(iphas)
+    write(nfecra,2001) nctsmt
     write(nfecra,3000)
   endif
 enddo
@@ -133,12 +133,12 @@ ifinra = idebra
 
 do iphas = 1, nphas
 
-  iicesm(iphas) = ifinia
-  iitpsm(iphas) = iicesm(iphas) + ncetsm(iphas)
-  ifinia        = iitpsm(iphas) + ncetsm(iphas)*nvar
+  iicesm = ifinia
+  iitpsm = iicesm + ncetsm
+  ifinia        = iitpsm + ncetsm*nvar
 
-  ismace(iphas) = ifinra
-  ifinra        = ismace(iphas) + ncetsm(iphas)*nvar
+  ismace = ifinra
+  ifinra        = ismace + ncetsm*nvar
 
 enddo
 

@@ -59,7 +59,7 @@ subroutine ebuphy &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -109,7 +109,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -173,8 +173,8 @@ enddo
 ! ---> Positions des variables, coefficients
 
 iphas = 1
-ipcrom = ipproc(irom(iphas))
-ipbrom = ipprob(irom(iphas))
+ipcrom = ipproc(irom)
+ipbrom = ipprob(irom)
 ipctem = ipproc(itemp)
 ipcfue = ipproc(iym(1))
 ipcoxy = ipproc(iym(2))
@@ -334,10 +334,10 @@ do iel = 1, ncel
 
 ! ---> Masse volumique du melange
 
-  if (ipass.gt.1.or.(isuite.eq.1.and.initro(iphas).eq.1)) then
+  if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
     propce(iel,ipcrom) = srrom*propce(iel,ipcrom)                 &
                        + (1.d0-srrom)*                            &
-                         ( p0(iphas)/(rr*temsmm) )
+                         ( p0/(rr*temsmm) )
   endif
 
 ! ---> Fractions massiques des especes globales
@@ -365,7 +365,7 @@ enddo
 ! --> Masse volumique au bord
 
 iphas = 1
-ibrom(iphas) = 1
+ibrom = 1
 
 ! ---- Masse volumique au bord pour toutes les facettes
 !      Les facettes d'entree seront recalculees apres
@@ -376,7 +376,7 @@ ibrom(iphas) = 1
 !      masse volumique ci-dessus, pas la peine de la reprojeter aux
 !      faces.
 
-if (ipass.gt.1.or.(isuite.eq.1.and.initro(iphas).eq.1)) then
+if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
 
   do ifac = 1, nfabor
     iel = ifabor(ifac)
@@ -412,7 +412,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
         enddo
        masmg = 1.d0/nbmol
        temsmm = tkent(izone)/masmg
-       propfb(ifac,ipbrom) = p0(iphas)/(rr*temsmm)
+       propfb(ifac,ipbrom) = p0/(rr*temsmm)
       endif
     endif
   enddo

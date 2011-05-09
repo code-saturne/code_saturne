@@ -208,7 +208,7 @@ grav(3) = gz
 if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
   iromf = ipproc(irom1)
 else
-  iromf = ipproc(irom(iphas))
+  iromf = ipproc(irom)
 endif
 
 !===============================================================================
@@ -237,13 +237,13 @@ do id = 1,3
          +grav(id)+fextla(ip,id)       ) * taup(ip)
 
       if (nor.eq.1) then
-        if (id.eq.1) vitf = rtpa(iel,iu(iphas))
-        if (id.eq.2) vitf = rtpa(iel,iv(iphas))
-        if (id.eq.3) vitf = rtpa(iel,iw(iphas))
+        if (id.eq.1) vitf = rtpa(iel,iu)
+        if (id.eq.2) vitf = rtpa(iel,iv)
+        if (id.eq.3) vitf = rtpa(iel,iw)
       else
-        if (id.eq.1) vitf = rtp(iel,iu(iphas))
-        if (id.eq.2) vitf = rtp(iel,iv(iphas))
-        if (id.eq.3) vitf = rtp(iel,iw(iphas))
+        if (id.eq.1) vitf = rtp(iel,iu)
+        if (id.eq.2) vitf = rtp(iel,iv)
+        if (id.eq.3) vitf = rtp(iel,iw)
       endif
       auxl(ip,id+3) = piil(ip,id) * tlag(ip,id) + vitf
 

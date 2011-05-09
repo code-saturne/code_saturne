@@ -198,7 +198,7 @@ double precision vitbox, vitboy, vitboz
 ! 1.  INITIALISATION
 !===============================================================================
 
-if(iwarni(iu(1)).ge.1) then
+if(iwarni(iu).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -219,10 +219,10 @@ if(nterup.gt.1) then
 
   do iphas = 1, nphas
 
-    iuiph   = iu (iphas)
-    iviph   = iv (iphas)
-    iwiph   = iw (iphas)
-    ipriph  = ipr(iphas)
+    iuiph   = iu
+    iviph   = iv
+    iwiph   = iw
+    ipriph  = ipr
     do isou = 1, 3
       if(isou.eq.1) ivar = iuiph
       if(isou.eq.2) ivar = iviph
@@ -236,18 +236,18 @@ if(nterup.gt.1) then
 
 ! Calcul de la norme L2 de la vitesse
     if(iterns.eq.1) then
-      xnrmu0(iphas) = 0.d0
-      iuiph   = iu (iphas)
-      iviph   = iv (iphas)
-      iwiph   = iw (iphas)
+      xnrmu0 = 0.d0
+      iuiph   = iu
+      iviph   = iv
+      iwiph   = iw
       do iel = 1, ncel
-        xnrmu0(iphas) = xnrmu0(iphas) +(rtpa(iel,iuiph)**2        &
+        xnrmu0 = xnrmu0 +(rtpa(iel,iuiph)**2        &
                                       + rtpa(iel,iviph)**2        &
                                       + rtpa(iel,iwiph)**2)       &
                                       * volume(iel)
       enddo
       if(irangp.ge.0) then
-        call parsom (xnrmu0(iphas))
+        call parsom (xnrmu0)
         !==========
       endif
 ! En cas de couplage entre deux instances de Code_Saturne, on calcule
@@ -255,11 +255,11 @@ if(nterup.gt.1) then
 ! Necessaire pour que l'une des instances ne stoppe pas plus tot que les autres
 ! (il faudrait quand meme verifier les options numeriques, ...)
       do numcpl = 1, nbrcpl
-        call tbrcpl ( numcpl, 1, 1, xnrmu0(iphas), xnrdis )
+        call tbrcpl ( numcpl, 1, 1, xnrmu0, xnrdis )
         !==========
-        xnrmu0(iphas) = xnrmu0(iphas) + xnrdis
+        xnrmu0 = xnrmu0 + xnrdis
       enddo
-      xnrmu0(iphas) = sqrt(xnrmu0(iphas))
+      xnrmu0 = sqrt(xnrmu0)
     endif
 
 ! On assure la periodicite ou le parallelisme de UVWK et la pression
@@ -285,7 +285,7 @@ endif
 do iphas = 1, nphas
 
   iappel = 1
-  iuiph  = iu(iphas)
+  iuiph  = iu
   iflmas = ipprof(ifluma(iuiph))
   iflmab = ipprob(ifluma(iuiph))
   iph    = iphas
@@ -294,15 +294,15 @@ do iphas = 1, nphas
   !==========
  ( idebia , idebra , iappel ,                                     &
    nvar   , nscal  , nphas  , iterns ,                            &
-   ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+   ncepdc   , ncetsm   ,                            &
    iph    ,                                                       &
-   ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
-   ia(iitpsm(iphas))        ,                                     &
+   ia(iicepd)        , ia(iicesm)       ,           &
+   ia(iitpsm)        ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    propfa(1,iflmas), propfb(1,iflmab),                            &
    tslagr , coefa  , coefb  ,                                     &
-   ra(ickupd(iphas))        , ra(ismace(iphas))        ,  frcxt , &
+   ra(ickupd)        , ra(ismace)        ,  frcxt , &
    trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      ,  trav  , &
    viscf  , viscb  , viscfi , viscbi ,                            &
    dam    , xam    ,                                              &
@@ -322,9 +322,9 @@ if( iprco.le.0 ) then
 
   do iphas = 1, nphas
 
-    iuiph  = iu(iphas)
-    iviph  = iv(iphas)
-    iwiph  = iw(iphas)
+    iuiph  = iu
+    iviph  = iv
+    iwiph  = iw
 
     icliup = iclrtp(iuiph ,icoef)
     iclivp = iclrtp(iviph ,icoef)
@@ -332,8 +332,8 @@ if( iprco.le.0 ) then
 
     iflmas = ipprof(ifluma(iuiph))
     iflmab = ipprob(ifluma(iuiph))
-    ipcrom = ipproc(irom  (iphas))
-    ipbrom = ipprob(irom  (iphas))
+    ipcrom = ipproc(irom  )
+    ipbrom = ipprob(irom  )
 
     init   = 1
     inc    = 1
@@ -403,10 +403,10 @@ if( iprco.le.0 ) then
 
     do iphas = 1, nphas
 
-      iflmas = ipprof(ifluma(iu(iphas)))
-      iflmab = ipprob(ifluma(iu(iphas)))
-      ipcrom = ipproc(irom  (iphas))
-      ipbrom = ipprob(irom  (iphas))
+      iflmas = ipprof(ifluma(iu))
+      iflmab = ipprob(ifluma(iu))
+      ipcrom = ipproc(irom  )
+      ipbrom = ipprob(irom  )
 
       init   = 0
       inc    = 1
@@ -502,10 +502,10 @@ if( iprco.le.0 ) then
 
     do iphas = 1, nphas
 
-      iflmas = ipprof(ifluma(iu(iphas)))
-      iflmab = ipprob(ifluma(iu(iphas)))
-      ipcrom = ipproc(irom  (iphas))
-      ipbrom = ipprob(irom  (iphas))
+      iflmas = ipprof(ifluma(iu))
+      iflmab = ipprob(ifluma(iu))
+      ipcrom = ipproc(irom  )
+      ipbrom = ipprob(irom  )
 
       do ifac = 1, nfac
         iel1 = ifacel(1,ifac)
@@ -540,7 +540,7 @@ endif
 ! 3.  ETAPE DE PRESSION/CONTINUITE ( VITESSE/PRESSION )
 !===============================================================================
 
-if(iwarni(iu(1)).ge.1) then
+if(iwarni(iu).ge.1) then
   write(nfecra,1200)
 endif
 
@@ -551,20 +551,20 @@ iph   = iphas
 
 ! --- Pas de temps scalaire ou pas
 idtsca = 0
-if ((ipucou.eq.1).or.(ncpdct(iphas).gt.0)) idtsca = 1
+if ((ipucou.eq.1).or.(ncpdct.gt.0)) idtsca = 1
 
 call resolp                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+   ncepdc   , ncetsm   ,                            &
    iph    ,                                                       &
-   ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
-   ia(iitpsm(iphas))        , isostd , idtsca ,                   &
+   ia(iicepd)        , ia(iicesm)       ,           &
+   ia(iitpsm)        , isostd , idtsca ,                   &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
+   ra(ickupd)        , ra(ismace)        ,          &
    frcxt  , dfrcxt , ra(itpuco)      , trav   ,                   &
    viscf  , viscb  , viscfi , viscbi ,                            &
    dam    , xam    ,                                              &
@@ -581,11 +581,11 @@ call resolp                                                       &
 ! Ca ne sert qu'aux tests bien sur
 
 if(nphas.gt.1) then
-  iflms1 = ipprof(ifluma(iu(1    )))
-  iflmb1 = ipprob(ifluma(iu(1    )))
+  iflms1 = ipprof(ifluma(iu))
+  iflmb1 = ipprob(ifluma(iu))
   do iphas = 2, nphas
-    iflmas = ipprof(ifluma(iu(iphas)))
-    iflmab = ipprob(ifluma(iu(iphas)))
+    iflmas = ipprof(ifluma(iu))
+    iflmab = ipprob(ifluma(iu))
     do ifac = 1, nfac
       propfa(ifac,iflmas) = propfa(ifac,iflms1)
     enddo
@@ -602,10 +602,10 @@ endif
 
 do iphas = 1, nphas
 
-  ipriph = ipr(iphas)
-  iuiph  = iu(iphas)
-  iviph  = iv(iphas)
-  iwiph  = iw(iphas)
+  ipriph = ipr
+  iuiph  = iu
+  iviph  = iv
+  iwiph  = iw
 
   iclipr = iclrtp(ipriph,icoef)
   iclipf = iclrtp(ipriph,icoeff)
@@ -615,8 +615,8 @@ do iphas = 1, nphas
 
   iflmas = ipprof(ifluma(iuiph))
   iflmab = ipprob(ifluma(iuiph))
-  ipcrom = ipproc(irom  (iphas))
-  ipbrom = ipprob(irom  (iphas))
+  ipcrom = ipproc(irom  )
+  ipbrom = ipprob(irom  )
   iismph = iisymp+nfabor*(iphas-1)
 
 
@@ -647,7 +647,7 @@ do iphas = 1, nphas
 !         se rapproche beaucoup de IREVMC=0.
 
 
-  if( irevmc(iphas).eq.1 ) then
+  if( irevmc.eq.1 ) then
 
 !     On a besoin de trois tableaux de travail
     iflint = idebra
@@ -718,7 +718,7 @@ do iphas = 1, nphas
       rtp(iel,iwiph) = rtp(iel,iwiph) + w3(iel)
     enddo
 
-  elseif( irevmc(iphas).eq.2 ) then
+  elseif( irevmc.eq.2 ) then
 
 !     On calcule la vitesse corrigee directement a partir du flux de masse
 !       corrige    .
@@ -897,10 +897,10 @@ if (iale.eq.1) then
 
   do iphas = 1, nphas
 
-    iflmas = ipprof(ifluma(iu(iphas)))
-    iflmab = ipprob(ifluma(iu(iphas)))
-    ipcrom = ipproc(irom  (iphas))
-    ipbrom = ipprob(irom  (iphas))
+    iflmas = ipprof(ifluma(iu))
+    iflmab = ipprob(ifluma(iu))
+    ipcrom = ipproc(irom  )
+    ipbrom = ipprob(irom  )
 
     init   = 0
     inc    = 1
@@ -997,10 +997,10 @@ if (imobil.eq.1) then
 
   do iphas = 1, nphas
 
-    iflmas = ipprof(ifluma(iu(iphas)))
-    iflmab = ipprob(ifluma(iu(iphas)))
-    ipcrom = ipproc(irom  (iphas))
-    ipbrom = ipprob(irom  (iphas))
+    iflmas = ipprof(ifluma(iu))
+    iflmab = ipprob(ifluma(iu))
+    ipcrom = ipproc(irom  )
+    ipbrom = ipprob(irom  )
 
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
@@ -1039,17 +1039,17 @@ do iphas = 1, nphas
 
 ! ---> REPERAGE DES VARIABLES
 
-    ipriph = ipr(iphas)
-    iuiph  = iu(iphas)
-    iviph  = iv(iphas)
-    iwiph  = iw(iphas)
+    ipriph = ipr
+    iuiph  = iu
+    iviph  = iv
+    iwiph  = iw
 
     icliup = iclrtp(iuiph ,icoef)
     iclivp = iclrtp(iviph ,icoef)
     icliwp = iclrtp(iwiph ,icoef)
 
-    ipcrom = ipproc(irom  (iphas))
-    ipbrom = ipprob(irom  (iphas))
+    ipcrom = ipproc(irom  )
+    ipbrom = ipprob(irom  )
     iismph = iisymp+nfabor*(iphas-1)
 
 
@@ -1130,10 +1130,10 @@ do iphas = 1, nphas
       call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,            &
                                    ifacel,ifabor,esflum,esflub,w1)
 
-      if (ncetsm(iphas).gt.0) then
-        igamm1 = ismace(iphas)+(ipriph-1)*ncetsm(iphas)-1
-        do iitsm = 1, ncetsm(iphas)
-          iel = ia(iicesm(iphas)+iitsm-1)
+      if (ncetsm.gt.0) then
+        igamm1 = ismace+(ipriph-1)*ncetsm-1
+        do iitsm = 1, ncetsm
+          iel = ia(iicesm+iitsm-1)
           w1(iel) = w1(iel)-volume(iel)*ra(igamm1+iitsm)
         enddo
       endif
@@ -1175,15 +1175,15 @@ do iphas = 1, nphas
       !==========
  ( idebia , idebra , iappel ,                                     &
    nvar   , nscal  , nphas  , iterns ,                            &
-   ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+   ncepdc   , ncetsm   ,                            &
    iph    ,                                                       &
-   ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
-   ia(iitpsm(iphas))        ,                                     &
+   ia(iicepd)        , ia(iicesm)       ,           &
+   ia(iitpsm)        ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  ,                                     &
-   ra(ickupd(iphas))        , ra(ismace(iphas))        , frcxt  , &
+   ra(ickupd)        , ra(ismace)        , frcxt  , &
    trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      , trav   , &
    viscf  , viscb  , viscfi , viscbi ,                            &
    dam    , xam    ,                                              &
@@ -1210,28 +1210,28 @@ if(nterup.gt.1) then
   icvrge = 1
 
   do iphas = 1,nphas
-    xnrmu(iphas) = 0.d0
+    xnrmu = 0.d0
     do iel = 1,ncel
       xdu = rtp(iel,iuiph) - uvwk(iel,1,iphas)
       xdv = rtp(iel,iviph) - uvwk(iel,2,iphas)
       xdw = rtp(iel,iwiph) - uvwk(iel,3,iphas)
-      xnrmu(iphas) = xnrmu(iphas) +(xdu**2 + xdv**2 + xdw**2)     &
+      xnrmu = xnrmu +(xdu**2 + xdv**2 + xdw**2)     &
                                   * volume(iel)
     enddo
 ! --->    TRAITEMENT DU PARALLELISME
 
-    if(irangp.ge.0) call parsom (xnrmu(iphas))
+    if(irangp.ge.0) call parsom (xnrmu)
                                 !==========
 ! -- >    TRAITEMENT DU COUPLAGE ENTRE DEUX INSTANCES DE CODE_SATURNE
     do numcpl = 1, nbrcpl
-      call tbrcpl ( numcpl, 1, 1, xnrmu(iphas), xnrdis )
+      call tbrcpl ( numcpl, 1, 1, xnrmu, xnrdis )
       !==========
-      xnrmu(iphas) = xnrmu(iphas) + xnrdis
+      xnrmu = xnrmu + xnrdis
     enddo
-    xnrmu(iphas) = sqrt(xnrmu(iphas))
+    xnrmu = sqrt(xnrmu)
 
 ! Indicateur de convergence du point fixe
-    if(xnrmu(iphas).ge.epsup(iphas)*xnrmu0(iphas)) icvrge = 0
+    if(xnrmu.ge.epsup*xnrmu0) icvrge = 0
 
   enddo
 
@@ -1244,11 +1244,11 @@ endif
 !  (ISTAT vaut toujours 0 pour la pression)
 
 do iphas = 1, nphas
-  ipriph  = ipr(iphas)
-  if (idircl(ipr(iphas)).eq.1) then
-    ndircp = ndircl(ipr(iphas))
+  ipriph  = ipr
+  if (idircl(ipr).eq.1) then
+    ndircp = ndircl(ipr)
   else
-    ndircp = ndircl(ipr(iphas))-1
+    ndircp = ndircl(ipr)-1
   endif
   if(ndircp.le.0) then
     call prmoy0                                                   &
@@ -1265,14 +1265,14 @@ do iphas = 1, nphas
 ! En compressible, la pression resolue est deja la pression totale
 
   if (ippmod(icompf).lt.0) then
-    ro0iph = ro0  (iphas)
-    p0iph  = p0   (iphas)
-    pr0iph = pred0(iphas)
+    ro0iph = ro0
+    p0iph  = p0
+    pr0iph = pred0
     xxp0   = xyzp0(1,iphas)
     xyp0   = xyzp0(2,iphas)
     xzp0   = xyzp0(3,iphas)
     do iel=1,ncel
-      propce(iel,ipproc(iprtot(iphas)))= rtp(iel,ipr(iphas))      &
+      propce(iel,ipproc(iprtot))= rtp(iel,ipr)      &
            + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                     &
                     + gy*(xyzcen(2,iel)-xyp0)                     &
                     + gz*(xyzcen(3,iel)-xzp0) )                   &
@@ -1289,15 +1289,15 @@ enddo
 
 do iphas = 1, nphas
 
-  ipriph = ipr(iphas)
-  iuiph  = iu(iphas)
-  iviph  = iv(iphas)
-  iwiph  = iw(iphas)
+  ipriph = ipr
+  iuiph  = iu
+  iviph  = iv
+  iwiph  = iw
 
   iflmas = ipprof(ifluma(iuiph))
   iflmab = ipprob(ifluma(iuiph))
-  ipcrom = ipproc(irom  (iphas))
-  ipbrom = ipprob(irom  (iphas))
+  ipcrom = ipproc(irom  )
+  ipbrom = ipprob(irom  )
 
   if (iwarni(iuiph).ge.1) then
 
@@ -1388,8 +1388,8 @@ do iphas = 1, nphas
     if(nterup.gt.1) then
       if(icvrge.eq.0) then
         write(nfecra,2600) iterns
-        write(nfecra,2601) xnrmu(iphas),                          &
-                           xnrmu0(iphas), epsup(iphas)
+        write(nfecra,2601) xnrmu,                          &
+                           xnrmu0, epsup
         write(nfecra,2001)
         if(iterns.eq.nterup) then
           write(nfecra,2603)
@@ -1397,8 +1397,8 @@ do iphas = 1, nphas
         endif
       else
         write(nfecra,2602) iterns
-        write(nfecra,2601) xnrmu(iphas),                          &
-                           xnrmu0(iphas), epsup(iphas)
+        write(nfecra,2601) xnrmu,                          &
+                           xnrmu0, epsup
         write(nfecra,2001)
       endif
     endif

@@ -353,11 +353,11 @@ idebra = idbra0
 
 ! In this case:
 
-! - replace iscalt(iphas) by the number iscal of the required scalar,
+! - replace iscalt by the number iscal of the required scalar,
 !   iscal having an allowed range of 1 to nscal.
 
-! - set ipccp to 0 independently of the value of icp(iphas) and assign
-!   1 to cp0iph (instead of cp0(iphas)).
+! - set ipccp to 0 independently of the value of icp and assign
+!   1 to cp0iph (instead of cp0).
 
 !===============================================================================
 
@@ -395,24 +395,24 @@ if (inpdt0.eq.0) then
 
   iphas = 1   ! We only consider phase 1 in this example
 
-  iscal = iscalt(iphas)         ! temperature scalar number
+  iscal = iscalt         ! temperature scalar number
   ivar =  isca(iscal)           ! temperature variable number
   iclvar = iclrtp(ivar,icoef)   ! boundary condition number
 
   ! Physical quantity numbers
-  ipcrom = ipproc(irom(iphas))
-  ipcvst = ipproc(ivisct(iphas))
+  ipcrom = ipproc(irom)
+  ipcvst = ipproc(ivisct)
   iflmas = ipprof(ifluma(ivar))
   iflmab = ipprob(ifluma(ivar))
 
   ! We save in ipccp a flag allowing to determein if the specific heat is
   ! constant (= cp0) or variable. It will be used to compute balances
   ! (xbilvl is in Joules).
-  if (icp(iphas).gt.0) then
-    ipccp  = ipproc(icp   (iphas))
+  if (icp.gt.0) then
+    ipccp  = ipproc(icp   )
   else
     ipccp  = 0
-    cp0iph = cp0(iphas)
+    cp0iph = cp0
   endif
 
   ! We save in ipcvsl a flag allowing to determine if the diffusivity is
@@ -451,7 +451,7 @@ if (inpdt0.eq.0) then
     call synsca(dt)
     !==========
 
-    ! update Cp if variable (otherwise cp0(iphas) is used)
+    ! update Cp if variable (otherwise cp0 is used)
     if (ipccp.gt.0) then
       call synsca(propce(1,ipccp))
       !==========
@@ -661,15 +661,15 @@ if (inpdt0.eq.0) then
 
   ! In case of a mass source term, add contribution from Gamma*Tn+1
 
-  ncesmp=ncetsm(iphas)
+  ncesmp=ncetsm
   if (ncesmp.gt.0) then
-    icesmp = iicesm(iphas)
-    ismacp = ismace(iphas)
-    itpsmp = iitpsm(iphas)
+    icesmp = iicesm
+    ismacp = ismace
+    itpsmp = iitpsm
     do ieltsm = 1, ncesmp
       iel = ia(icesmp+ieltsm-1)
       xrtp  = rtp (iel,ivar)
-      xgamma = ra( ismacp+ieltsm+ncesmp*(ipr(iphas)-1)-1)
+      xgamma = ra( ismacp+ieltsm+ncesmp*(ipr-1)-1)
       if (ipccp.gt.0) then
         xbildv =   xbildv                                     &
                  - volume(iel) * propce(iel,ipccp) * dt(iel)  &
@@ -924,16 +924,16 @@ if (inpdt0.eq.0) then
 
   ! We separate mass injections from suctions for better generality
 
-  ncesmp = ncetsm(iphas)
+  ncesmp = ncetsm
   if (ncesmp.gt.0) then
-    icesmp = iicesm(iphas)
-    ismacp = ismace(iphas)
-    itpsmp = iitpsm(iphas)
+    icesmp = iicesm
+    ismacp = ismace
+    itpsmp = iitpsm
     do ieltsm = 1, ncesmp
       ! depending on the type of injection we use the 'smacell' value
       ! or the ambient temperature
       iel = ia(icesmp+ieltsm-1)
-      xgamma = ra( ismacp+ieltsm+ncesmp*(ipr(iphas)-1)-1)
+      xgamma = ra( ismacp+ieltsm+ncesmp*(ipr-1)-1)
       if (     ia(itpsmp+ieltsm+ncesmp*(ivar-1)-1).eq.0  &
           .or. xgamma.lt.0.d0) then
         xrtp = rtp (iel,ivar)
@@ -1067,7 +1067,7 @@ if (iutile.eq.0) return
 ! ----------------------------------------------
 
 iphas = 1
-iscal = iscalt(iphas)
+iscal = iscalt
 
 if (ttcabs .ge. 12.d0) then
 
@@ -1150,23 +1150,23 @@ if (ntcabs.eq.ntmabs) then
       ! the point and then send it to other processes.
       if (irangp.eq.irangv) then
         xabs = xyzcen(2,iel)
-        xu   = rtp(iel,iu(iphas))
-        xv   = rtp(iel,iv(iphas))
-        xw   = rtp(iel,iw(iphas))
+        xu   = rtp(iel,iu)
+        xv   = rtp(iel,iv)
+        xw   = rtp(iel,iw)
         xk   = 0.d0
         xeps = 0.d0
-        if (     itytur(iphas).eq.2 .or. iturb(iphas).eq.50    &
-            .or. iturb(iphas).eq.60) then
-          xk = rtp(iel,ik(iphas))
-        elseif (itytur(iphas).eq.3) then
-          xk = (  rtp(iel,ir11(iphas)) + rtp(iel,ir22(iphas))  &
-                + rtp(iel,ir33(iphas))) / 2.d0
+        if (     itytur.eq.2 .or. iturb.eq.50    &
+            .or. iturb.eq.60) then
+          xk = rtp(iel,ik)
+        elseif (itytur.eq.3) then
+          xk = (  rtp(iel,ir11) + rtp(iel,ir22)  &
+                + rtp(iel,ir33)) / 2.d0
         endif
-        if (     itytur(iphas).eq.2 .or. itytur(iphas).eq.3    &
-            .or. iturb(iphas).eq.50) then
-          xeps = rtp(iel,iep(iphas))
-        elseif (iturb(iphas).eq.60) then
-          xeps = cmu*rtp(iel,ik(iphas))*rtp(iel,iomg(iphas))
+        if (     itytur.eq.2 .or. itytur.eq.3    &
+            .or. iturb.eq.50) then
+          xeps = rtp(iel,iep)
+        elseif (iturb.eq.60) then
+          xeps = cmu*rtp(iel,ik)*rtp(iel,iomg)
         endif
       else
         xabs = 0.d0
@@ -1456,9 +1456,9 @@ xyz(1) = 0.d0
 xyz(2) = 0.d0
 xyz(3) = 0.d0
 do iel = 1, ncel
-  xyz(1) = xyz(1)+rtp(iel,iu(1))
-  xyz(2) = xyz(2)+rtp(iel,iv(1))
-  xyz(3) = xyz(3)+rtp(iel,iw(1))
+  xyz(1) = xyz(1)+rtp(iel,iu)
+  xyz(2) = xyz(2)+rtp(iel,iv)
+  xyz(3) = xyz(3)+rtp(iel,iw)
 enddo
 ! global sum
 if (irangp.ge.0) then
@@ -1475,13 +1475,13 @@ write(nfecra,5110) xyz(1), xyz(2), xyz(3)
 
 ! local values
 nbr = 3
-xyz(1) = rtp(1,iu(1))
-xyz(2) = rtp(1,iv(1))
-xyz(3) = rtp(1,iw(1))
+xyz(1) = rtp(1,iu)
+xyz(2) = rtp(1,iv)
+xyz(3) = rtp(1,iw)
 do iel = 1, ncel
-  xyz(1) = max(xyz(1),rtp(iel,iu(1)))
-  xyz(2) = max(xyz(2),rtp(iel,iv(1)))
-  xyz(3) = max(xyz(3),rtp(iel,iw(1)))
+  xyz(1) = max(xyz(1),rtp(iel,iu))
+  xyz(2) = max(xyz(2),rtp(iel,iv))
+  xyz(3) = max(xyz(3),rtp(iel,iw))
 enddo
 ! global maximum
 if (irangp.ge.0) then
@@ -1498,13 +1498,13 @@ write(nfecra,5120) xyz(1), xyz(2), xyz(3)
 
 ! local values
 nbr = 3
-xyz(1) = rtp(1,iu(1))
-xyz(2) = rtp(1,iv(1))
-xyz(3) = rtp(1,iw(1))
+xyz(1) = rtp(1,iu)
+xyz(2) = rtp(1,iv)
+xyz(3) = rtp(1,iw)
 do iel = 1, ncel
-  xyz(1) = min(xyz(1),rtp(iel,iu(1)))
-  xyz(2) = min(xyz(2),rtp(iel,iv(1)))
-  xyz(3) = min(xyz(3),rtp(iel,iw(1)))
+  xyz(1) = min(xyz(1),rtp(iel,iu))
+  xyz(2) = min(xyz(2),rtp(iel,iv))
+  xyz(3) = min(xyz(3),rtp(iel,iw))
 enddo
 ! global minimum
 if (irangp.ge.0) then
@@ -1543,9 +1543,9 @@ write(nfecra,5140) irangv, itab(1), itab(2), itab(3)
 ! local values
 irangv = 0
 nbr = 3
-xyz(1) = rtp(1,iu(1))
-xyz(2) = rtp(1,iv(1))
-xyz(3) = rtp(1,iw(1))
+xyz(1) = rtp(1,iu)
+xyz(2) = rtp(1,iv)
+xyz(3) = rtp(1,iw)
 ! broadcast from rank irangv to all others
 if (irangp.ge.0) then
   call parbcr(irangv, nbr, xyz)

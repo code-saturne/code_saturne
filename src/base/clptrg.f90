@@ -254,40 +254,40 @@ und0   = 1.d0
 deuxd0 = 2.d0
 
 ! --- Variables
-iuiph  = iu  (iphas)
-iviph  = iv  (iphas)
-iwiph  = iw  (iphas)
-if(itytur(iphas).eq.2) then
-  ikiph  = ik  (iphas)
-  iepiph = iep (iphas)
-elseif(itytur(iphas).eq.3) then
-  ir11ip = ir11(iphas)
-  ir22ip = ir22(iphas)
-  ir33ip = ir33(iphas)
-  ir12ip = ir12(iphas)
-  ir13ip = ir13(iphas)
-  ir23ip = ir23(iphas)
-  iepiph = iep (iphas)
-elseif(iturb(iphas).eq.50) then
-  ikiph  = ik  (iphas)
-  iepiph = iep (iphas)
-  iphiph = iphi(iphas)
-  ifbiph = ifb (iphas)
-elseif(iturb(iphas).eq.60) then
-  ikiph  = ik  (iphas)
-  iomgip = iomg(iphas)
-elseif(iturb(iphas).eq.70) then
-  inuiph = inusa(iphas)
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+if(itytur.eq.2) then
+  ikiph  = ik
+  iepiph = iep
+elseif(itytur.eq.3) then
+  ir11ip = ir11
+  ir22ip = ir22
+  ir33ip = ir33
+  ir12ip = ir12
+  ir13ip = ir13
+  ir23ip = ir23
+  iepiph = iep
+elseif(iturb.eq.50) then
+  ikiph  = ik
+  iepiph = iep
+  iphiph = iphi
+  ifbiph = ifb
+elseif(iturb.eq.60) then
+  ikiph  = ik
+  iomgip = iomg
+elseif(iturb.eq.70) then
+  inuiph = inusa
 endif
 
 ! --- Conditions aux limites
 iclu   = iclrtp(iuiph ,icoef)
 iclv   = iclrtp(iviph ,icoef)
 iclw   = iclrtp(iwiph ,icoef)
-if(itytur(iphas).eq.2) then
+if(itytur.eq.2) then
   iclk   = iclrtp(ikiph ,icoef)
   iclep  = iclrtp(iepiph,icoef)
-elseif(itytur(iphas).eq.3) then
+elseif(itytur.eq.3) then
   icl11  = iclrtp(ir11ip,icoef)
   icl22  = iclrtp(ir22ip,icoef)
   icl33  = iclrtp(ir33ip,icoef)
@@ -295,15 +295,15 @@ elseif(itytur(iphas).eq.3) then
   icl13  = iclrtp(ir13ip,icoef)
   icl23  = iclrtp(ir23ip,icoef)
   iclep  = iclrtp(iepiph,icoef)
-elseif(iturb(iphas).eq.50) then
+elseif(iturb.eq.50) then
   iclk   = iclrtp(ikiph ,icoef)
   iclep  = iclrtp(iepiph,icoef)
   iclphi = iclrtp(iphiph,icoef)
   iclfb  = iclrtp(ifbiph,icoef)
-elseif(iturb(iphas).eq.60) then
+elseif(iturb.eq.60) then
   iclk   = iclrtp(ikiph ,icoef)
   iclomg = iclrtp(iomgip,icoef)
-elseif(iturb(iphas).eq.70) then
+elseif(iturb.eq.70) then
   iclnu  = iclrtp(inuiph,icoef)
 endif
 
@@ -312,11 +312,11 @@ iclvf  = iclrtp(iviph ,icoeff)
 iclwf  = iclrtp(iwiph ,icoeff)
 
 ! --- Grandeurs physiques
-ipcrom = ipproc(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
-if(icp(iphas).gt.0) then
-  ipccp  = ipproc(icp   (iphas))
+ipcrom = ipproc(irom  )
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
+if(icp.gt.0) then
+  ipccp  = ipproc(icp   )
 else
   ipccp = 0
 endif
@@ -324,8 +324,8 @@ endif
 ! --- Compressible
 
 if ( ippmod(icompf) .ge. 0 ) then
-  if(icv(iphas).gt.0) then
-    ipccv  = ipproc(icv   (iphas))
+  if(icv.gt.0) then
+    ipccv  = ipproc(icv   )
   else
     ipccv = 0
   endif
@@ -356,7 +356,7 @@ iuiptn = 0
 
 !     En v2f on met directement u=0 donc UIPTMX et UIPTMN vaudront
 !     forcement 0
-if (iturb(iphas).eq.50) then
+if (iturb.eq.50) then
   uiptmx = 0.d0
   uiptmn = 0.d0
 endif
@@ -432,7 +432,7 @@ do ifac = 1, nfabor
       ty  = ty/txn
       tz  = tz/txn
 
-    elseif(itytur(iphas).eq.3) then
+    elseif(itytur.eq.3) then
 
 !      SI LA VITESSE EST NULLE, LE VECTEUR T EST NORMAL ET QCQUE
 !        ON EN A BESOIN POUR LE CHGT DE REPERE DE RIJ
@@ -471,7 +471,7 @@ do ifac = 1, nfabor
 
 ! ---> ON COMPLETE EVENTUELLEMENT POUR LE RIJ-EPSILON
 
-    if (itytur(iphas).eq.3) then
+    if (itytur.eq.3) then
 
 !     --> T2 = RN X T (OU X EST LE PRODUIT VECTORIEL)
 
@@ -552,15 +552,15 @@ do ifac = 1, nfabor
 ! PSEUDO DECALAGE DE LA PAROI de RUGD ((DISTBF+RUGD)/RUGD):
    uet = utau/log(yplus+1.d0)*xkappa
 
-    if (ideuch(iphas).eq.0) then
+    if (ideuch.eq.0) then
       uk = uet
     else
 ! Si IDEUCH=1 ou 2 on calcule uk et uet
 
-      if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50               &
-           .or. iturb(iphas).eq.60) then
+      if(itytur.eq.2 .or. iturb.eq.50               &
+           .or. iturb.eq.60) then
         ek = rtp(iel,ikiph)
-      elseif(itytur(iphas).eq.3) then
+      elseif(itytur.eq.3) then
         ek = 0.5d0*                                               &
                (rtp(iel,ir11ip)+rtp(iel,ir22ip)+rtp(iel,ir33ip))
       endif
@@ -591,7 +591,7 @@ do ifac = 1, nfabor
 
   endif
 
-    if(ideuch(iphas).eq.0) then
+    if(ideuch.eq.0) then
       uk = uet
     endif
 
@@ -607,12 +607,12 @@ do ifac = 1, nfabor
 ! On n'amortit pas mu_t une seconde fois si on l'a deja fait
 ! (car une cellule peut avoir plusieurs faces de paroi)
 
-    if(itytur(iphas).eq.4.and.idries(iphas).eq.1) then
+    if(itytur.eq.4.and.idries.eq.1) then
       uetbor(ifac,iphas) = uet
       if (visvdr(iel,iphas).lt.-900.d0) then
         propce(iel,ipcvst) = propce(iel,ipcvst)
 ! NB amortissement de van Driest a revoir en rugueux :
-!    &             *(1.D0-EXP(-YPLUS/CDRIES(IPHAS)))**2
+!    &             *(1.D0-EXP(-YPLUS/CDRIES))**2
         visvdr(iel,iphas) = propce(iel,ipcvst)
         visctc = propce(iel,ipcvst)
       endif
@@ -636,10 +636,10 @@ do ifac = 1, nfabor
 !               de facon conditionnelle   --> Coef RCFLUX
 
 ! On traite tous les modeles de la meme maniere (a revisiter)
-    if (itytur(iphas).eq.2 .or. iturb(iphas).eq.60 .or.        &
-         iturb(iphas).eq.0 .or. iturb(iphas).eq.10 .or.        &
-        itytur(iphas).eq.3 .or. itytur(iphas).eq.4 .or.        &
-         iturb(iphas).eq.70        ) then
+    if (itytur.eq.2 .or. iturb.eq.60 .or.        &
+         iturb.eq.0 .or. iturb.eq.10 .or.        &
+        itytur.eq.3 .or. itytur.eq.4 .or.        &
+         iturb.eq.70        ) then
 
 ! Pseudo decalage de la paroi de la distance RUGD :
 ! modified for non neutral boundary layer (cfnnu)
@@ -696,7 +696,7 @@ do ifac = 1, nfabor
       coefb(ifac,iclwf)  = 0.d0
 
 
-    elseif(iturb(iphas).eq.50) then
+    elseif(iturb.eq.50) then
 
 !     Avec ces conditions, pas besoin de calculer UIPTMX, UIPTMN
 !     et IUIPTN qui sont nuls (valeur d'initialisation)
@@ -716,7 +716,7 @@ do ifac = 1, nfabor
 !===============================================================================
 
     ydep = distbf*0.5d0+rugd
-    if (itytur(iphas).eq.2) then
+    if (itytur.eq.2) then
 
       coefa(ifac,iclk)   = uk**2/sqrcmu*cfnnk
       coefb(ifac,iclk)   = 0.d0
@@ -728,7 +728,7 @@ do ifac = 1, nfabor
 ! 5. CONDITIONS AUX LIMITES SUR RIJ ET EPSILON
 !===============================================================================
 
-    elseif (itytur(iphas).eq.3) then
+    elseif (itytur.eq.3) then
 
 ! ---> TENSEUR RIJ (PARTIELLEMENT IMPLICITE)
 
@@ -774,7 +774,7 @@ do ifac = 1, nfabor
           kk = 3
         endif
 
-        if (iclptr(iphas).eq.1) then
+        if (iclptr.eq.1) then
           do ii = 1, 6
             if(ii.ne.isou) then
               coefa(ifac,iclvar) = coefa(ifac,iclvar) +           &
@@ -807,7 +807,7 @@ do ifac = 1, nfabor
 ! 6. CONDITIONS AUX LIMITES SUR K, EPSILON, F_BARRE ET PHI
 !===============================================================================
 
-    elseif (iturb(iphas).eq.50) then
+    elseif (iturb.eq.50) then
 
       coefa(ifac,iclk) = 0.d0
       coefb(ifac,iclk) = 0.d0
@@ -823,7 +823,7 @@ do ifac = 1, nfabor
 ! 7. CONDITIONS AUX LIMITES SUR K ET OMEGA
 !===============================================================================
 
-    elseif (iturb(iphas).eq.60) then
+    elseif (iturb.eq.60) then
 
 !     on est toujours hors de la sous couche visqeuse
         coefa(ifac,iclk)   = uk**2/sqrcmu
@@ -836,7 +836,7 @@ do ifac = 1, nfabor
 ! 7.1 CONDITIONS AUX LIMITES SUR NUSA dE SPALART ALLMARAS
 !===============================================================================
 
-    elseif (iturb(iphas).eq.70) then
+    elseif (iturb.eq.70) then
         dsa0 = rugd
         coefa(ifac,iclnu)   = 0.d0
         coefb(ifac,iclnu)   = dsa0/(dsa0+distbf)
@@ -883,7 +883,7 @@ do ifac = 1, nfabor
           elseif(ihcp.eq.2) then
             cpp = propce(iel,ipccp )
           elseif(ihcp.eq.1) then
-            cpp = cp0(iphas)
+            cpp = cp0
           endif
           hint = cpp
 
@@ -911,29 +911,29 @@ do ifac = 1, nfabor
               if(ipccp.gt.0) then
                 prdtl = prdtl*propce(iel,ipccp )
               else
-                prdtl = prdtl*cp0(iphas)
+                prdtl = prdtl*cp0
               endif
               if(ipccv.gt.0) then
                 prdtl = prdtl/propce(iel,ipccv )
               else
-                prdtl = prdtl/cv0(iphas)
+                prdtl = prdtl/cv0
               endif
             endif
           endif
 
 !          CAS TURBULENT
-          if (iturb(iphas).ne.0) then
+          if (iturb.ne.0) then
             if ( ippmod(icompf) .ge. 0 ) then
 !                 En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
               if(ipccp.gt.0) then
-                cpscv = propce(iel,ipproc(icp(iphas)))
+                cpscv = propce(iel,ipproc(icp))
               else
-                cpscv = cp0(iphas)
+                cpscv = cp0
               endif
               if(ipccv.gt.0) then
-                cpscv = cpscv/propce(iel,ipproc(icv(iphas)))
+                cpscv = cpscv/propce(iel,ipproc(icv))
               else
-                cpscv = cpscv/cv0(iphas)
+                cpscv = cpscv/cv0
               endif
               hint = hint*(rkl+cpscv*visctc/sigmas(ll))/distbf
             else
@@ -944,7 +944,7 @@ do ifac = 1, nfabor
             hint  = hint*rkl/distbf
           endif
 
-          if(iturb(iphas).ne.0.and.icodcl(ifac,ivar).eq.6)then
+          if(iturb.ne.0.and.icodcl(ifac,ivar).eq.6)then
 
 ! Loi rugueuse, on recalcule le coefficient d'echange fluide - paroi
             rugt=rcodcl(ifac,iviph,3)
@@ -1004,7 +1004,7 @@ do ifac = 1, nfabor
 !            IF(IPCCP.GT.0) THEN
 !              CPR = PROPCE(IEL,IPCCP )
 !            ELSE
-!              CPR = CP0(IPHAS)
+!              CPR = CP0
 !            ENDIF
 !         puisque HINT = VISLS / DISTBR
 !                      = lambda/(CP * distance)
@@ -1022,7 +1022,7 @@ do ifac = 1, nfabor
 !               Si on rayonne et que
 !                  le scalaire est la variable energetique
 
-            if (iirayo.ge.1 .and. ll.eq.iscalt(iphas)) then
+            if (iirayo.ge.1 .and. ll.eq.iscalt) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 
@@ -1032,7 +1032,7 @@ do ifac = 1, nfabor
                 if(ipccp.gt.0) then
                   propfb(ifac,ipprob(ihconv)) = hflui*propce(iel,ipccp )
                 else
-                  propfb(ifac,ipprob(ihconv)) = hflui*cp0(iphas)
+                  propfb(ifac,ipprob(ihconv)) = hflui*cp0
                 endif
 
 !                  Si on resout en energie (compressible)
@@ -1041,7 +1041,7 @@ do ifac = 1, nfabor
                 if(ipccv.gt.0) then
                   propfb(ifac,ipprob(ihconv)) = hflui*propce(iel,ipccv )
                 else
-                  propfb(ifac,ipprob(ihconv)) = hflui*cv0(iphas)
+                  propfb(ifac,ipprob(ihconv)) = hflui*cv0
                 endif
 
 !                Si on resout en temperature

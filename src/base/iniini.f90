@@ -517,21 +517,21 @@ ncofab = 0
 ! --- Variables de calcul resolues (RTP, RTPA)
 
 do iphas = 1, nphsmx
-  ipr   (iphas) = 0
-  iu    (iphas) = 0
-  iv    (iphas) = 0
-  iw    (iphas) = 0
-  ik    (iphas) = 0
-  iep   (iphas) = 0
-  ir11  (iphas) = 0
-  ir22  (iphas) = 0
-  ir33  (iphas) = 0
-  ir12  (iphas) = 0
-  ir13  (iphas) = 0
-  ir23  (iphas) = 0
-  iphi  (iphas) = 0
-  ifb   (iphas) = 0
-  inusa (iphas) = 0
+  ipr    = 0
+  iu     = 0
+  iv     = 0
+  iw     = 0
+  ik     = 0
+  iep    = 0
+  ir11   = 0
+  ir22   = 0
+  ir33   = 0
+  ir12   = 0
+  ir13   = 0
+  ir23   = 0
+  iphi   = 0
+  ifb    = 0
+  inusa  = 0
 enddo
 
 do iscal = 1, nscamx
@@ -553,13 +553,13 @@ do iprop  = 1, npromx
 enddo
 
 do iphas = 1, nphsmx
-  irom  (iphas) = 0
-  iviscl(iphas) = 0
-  ivisct(iphas) = 0
-  icour (iphas) = 0
-  ifour (iphas) = 0
-  icp   (iphas) = 0
-  iprtot(iphas) = 0
+  irom   = 0
+  iviscl = 0
+  ivisct = 0
+  icour  = 0
+  ifour  = 0
+  icp    = 0
+  iprtot = 0
 enddo
 
 do iscal = 1, nscamx
@@ -616,16 +616,16 @@ iitrif = 0
 iisymp = 0
 
 do iphas = 1, nphsmx
-  iifapa(iphas) = 0
-  ncepdc(iphas) = 0
-  iicepd(iphas) = 0
-  ickupd(iphas) = 0
-  ncetsm(iphas) = 0
-  iicesm(iphas) = 0
-  iitpsm(iphas) = 0
-  ismace(iphas) = 0
-  is2kw (iphas) = 0
-  idvukw(iphas) = 0
+  iifapa = 0
+  ncepdc = 0
+  iicepd = 0
+  ickupd = 0
+  ncetsm = 0
+  iicesm = 0
+  iitpsm = 0
+  ismace = 0
+  is2kw  = 0
+  idvukw = 0
 enddo
 
 ! --- Auxiliaires pour la periodicite
@@ -670,7 +670,7 @@ enddo
 !     Cette variable conditionne toutes les autres de maniere automatique,
 !     pour definir des schemas coherents dans modini.
 do iphas = 1, nphsmx
-  ischtp(iphas) = -999
+  ischtp = -999
 enddo
 
 !   -- Variables
@@ -691,8 +691,8 @@ do iphas = 1, nphsmx
 !     = 1 Standard d'ordre 1 (THETFL = -999 inutile)
 !     = 0 Explicite (THETFL = 0)
 !     = 2 Ordre deux (THETFL = 0.5)
-  istmpf(iphas) = -999
-  thetfl(iphas) =-999.d0
+  istmpf = -999
+  thetfl =-999.d0
 
 !   -- Termes sources Navier Stokes
 !     Pour les termes sources explicites en std, I..EXT definit
@@ -709,8 +709,8 @@ do iphas = 1, nphsmx
 !     > 0 utilisation du thetav
 !     Noter cpdt que le TS d'acc. masse n'est pas regi par I..EXT
 !       (il suit bilsc2)
-  isno2t(iphas) = -999
-  thetsn(iphas) =-999.d0
+  isno2t = -999
+  thetsn =-999.d0
 !   -- Termes sources Grandeurs turbulentes
 !     Pour les termes sources explicites en std, I..EXT definit
 !       l'extrapolation -theta ancien + (1+theta) nouveau
@@ -726,8 +726,8 @@ do iphas = 1, nphsmx
 !     > 0 utilisation du thetav
 !     Noter cpdt que le TS d'acc. masse n'est pas regi par I..EXT
 !       (il suit bilsc2)
-  isto2t(iphas) = -999
-  thetst(iphas) =-999.d0
+  isto2t = -999
+  thetst =-999.d0
 
 !    -- Proprietes physiques
 !     I..EXT definit l'extrapolation -theta ancien + (1+theta) nouveau
@@ -741,24 +741,24 @@ do iphas = 1, nphsmx
 !       fichier suite portant les valeurs adaptees)
 
 !     Masse volumique
-  iroext(iphas) = -999
-  thetro(iphas) = -999.d0
-  initro(iphas) = 0
+  iroext = -999
+  thetro = -999.d0
+  initro = 0
 !     Viscosite totale
-  iviext(iphas) = -999
-  thetvi(iphas) = -999.d0
-  initvi(iphas) = 0
+  iviext = -999
+  thetvi = -999.d0
+  initvi = 0
 !     Chaleur specifique
-  icpext(iphas) = -999
-  thetcp(iphas) = -999.d0
-  initcp(iphas) = 0
+  icpext = -999
+  thetcp = -999.d0
+  initcp = 0
 
 !   -- Convergence point fixe vitesse pression
-  epsup (iphas) = 1.d-5
+  epsup  = 1.d-5
 
 !   -- Tab de travail pour normes de navsto
-  xnrmu0(iphas) = 0.d0
-  xnrmu (iphas) = 0.d0
+  xnrmu0 = 0.d0
+  xnrmu  = 0.d0
 
 enddo
 
@@ -957,32 +957,32 @@ iptlro = 0
 !     On suppose qu'il n'y a pas de temperature
 
 do iphas = 1, nphsmx
-  iturb (iphas) =-999
-  itytur(iphas) =-999
-  iscalt(iphas) =-1
+  iturb  =-999
+  itytur =-999
+  iscalt =-1
 ! Parfois, IGRHOK=1 donne des vecteurs non physiques en paroi
-!        IGRHOK(IPHAS) = 1
-  igrhok(iphas) = 0
-  igrake(iphas) = 1
-  ideuch(iphas) =-999
-  ilogpo(iphas) = 1
-  iclkep(iphas) = 0
-  ikecou(iphas) =-999
-  irijnu(iphas) = 0
-  irijrb(iphas) = 0
-  irijec(iphas) = 0
-  igrari(iphas) = 1
-  idifre(iphas) = 1
-  iclsyr(iphas) = 0
-  iclptr(iphas) = 0
-  idries(iphas) =-1
+!        IGRHOK = 1
+  igrhok = 0
+  igrake = 1
+  ideuch =-999
+  ilogpo = 1
+  iclkep = 0
+  ikecou =-999
+  irijnu = 0
+  irijrb = 0
+  irijec = 0
+  igrari = 1
+  idifre = 1
+  iclsyr = 0
+  iclptr = 0
+  idries =-1
 enddo
 
 
 ! --- Viscosite secondaire
 
 do iphas = 1, nphsmx
-  ivisse(iphas) = 1
+  ivisse = 1
 enddo
 
 ! --- Stokes
@@ -990,8 +990,8 @@ enddo
 
 iprco  = 1
 do iphas = 1, nphsmx
-  irevmc(iphas) = 0
-  arak  (iphas) = 1.d0
+  irevmc = 0
+  arak   = 1.d0
 enddo
 !     indicateur developpeur temporaire sur le test de conv resolp
 irnpnw = 1
@@ -1097,13 +1097,13 @@ enddo
 ! --- Somme de NCEPDC (pour les calculs paralleles)
 
 do iphas = 1, nphsmx
-  ncpdct(iphas) = 0
+  ncpdct = 0
 enddo
 
 ! --- Somme de NCETSM (pour les calculs paralleles)
 
 do iphas = 1, nphsmx
-  nctsmt(iphas) = 0
+  nctsmt = 0
 enddo
 
 ! --- Somme de NFPT1D (pour les calculs paralleles)
@@ -1220,18 +1220,18 @@ omegaz = 0.d0
 !         symetrie.
 
 do iphas = 1, nphsmx
-  irovar(iphas) = -1
-  ivivar(iphas) = -1
-  ro0   (iphas) = -grand*10.d0
-  viscl0(iphas) = -grand*10.d0
-  p0    (iphas) = 1.013d5
-  pred0 (iphas) = 0.d0
+  irovar = -1
+  ivivar = -1
+  ro0    = -grand*10.d0
+  viscl0 = -grand*10.d0
+  p0     = 1.013d5
+  pred0  = 0.d0
   xyzp0(1,iphas)= -rinfin
   xyzp0(2,iphas)= -rinfin
   xyzp0(3,iphas)= -rinfin
-  ixyzp0(iphas) = -1
-  t0    (iphas) = 0.d0
-  cp0   (iphas) = -grand*10.d0
+  ixyzp0 = -1
+  t0     = 0.d0
+  cp0    = -grand*10.d0
 enddo
 
 ! --- Turbulence
@@ -1239,7 +1239,7 @@ enddo
 !     modifie sa valeur dans modini (10.88 avec les lois de paroi invariantes,
 !     1/kappa sinon)
 do iphas = 1, nphsmx
-  ypluli(iphas) = -grand*10.d0
+  ypluli = -grand*10.d0
 enddo
 xkappa  = 0.42d0
 cstlog  = 5.2d0
@@ -1280,14 +1280,14 @@ cssge2  = 1.83d0
 
 !   pour la LES
 do iphas = 1, nphsmx
-  xlesfl(iphas) = 2.d0
-  ales(iphas)   = 1.d0
-  bles(iphas)   = 1.d0/3.d0
-  csmago(iphas) = 0.065d0
-  cwale(iphas)  = 0.25d0
-  xlesfd(iphas) = 1.5d0
-  smagmx(iphas) = 10.d0*csmago(iphas)
-  cdries(iphas) = 26.d0
+  xlesfl = 2.d0
+  ales   = 1.d0
+  bles   = 1.d0/3.d0
+  csmago = 0.065d0
+  cwale  = 0.25d0
+  xlesfd = 1.5d0
+  smagmx = 10.d0*csmago
+  cdries = 26.d0
 enddo
 
 !   pour le v2f phi-model
@@ -1324,20 +1324,20 @@ csaw3    = 2.d0
 !   echelle de longueur negative, recalculee par la suite
 !    ou entree par l'utilisateur
 do iphas = 1, nphsmx
-  almax(iphas)   = -grand*10.d0
+  almax   = -grand*10.d0
 enddo
 
 !   vitesse de reference pour l'initialisation de la turbulence
 !    doit etre entree par l'utilisateur, sauf s'il initialise lui-meme
 !    la turbulence.
 do iphas = 1, nphsmx
-  uref(iphas)    = -grand*10.d0
+  uref    = -grand*10.d0
 enddo
 
 !   longueur caracteristique pour le modele de longueur de melange
 !    doit etre entree par l'utilisateur
 do iphas = 1, nphsmx
-  xlomlg(iphas)    = -grand*10.d0
+  xlomlg    = -grand*10.d0
 enddo
 
 ! --- Scalaires

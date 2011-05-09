@@ -191,39 +191,39 @@ idebra = idbra0
 
 epz2 = epzero**2
 
-ipriph = ipr (iphas)
-ikiph  = ik  (iphas)
-iomgip = iomg(iphas)
+ipriph = ipr
+ikiph  = ik
+iomgip = iomg
 
 iclikp = iclrtp(ikiph ,icoef)
 iclomg = iclrtp(iomgip,icoef)
 
-ipcrom = ipproc(irom  (iphas))
-ipcvst = ipproc(ivisct(iphas))
-ipcvis = ipproc(iviscl(iphas))
+ipcrom = ipproc(irom  )
+ipcvst = ipproc(ivisct)
+ipcvis = ipproc(iviscl)
 iflmas = ipprof(ifluma(ikiph))
 iflmab = ipprob(ifluma(ikiph))
-ipbrom = ipprob(irom  (iphas))
+ipbrom = ipprob(irom  )
 
-thets  = thetst(iphas)
+thets  = thetst
 
 ipcroo = ipcrom
 ipbroo = ipbrom
 ipcvto = ipcvst
 ipcvlo = ipcvis
-if(isto2t(iphas).gt.0) then
-  if (iroext(iphas).gt.0) then
-    ipcroo = ipproc(iroma(iphas))
-    ipbroo = ipprob(iroma(iphas))
+if(isto2t.gt.0) then
+  if (iroext.gt.0) then
+    ipcroo = ipproc(iroma)
+    ipbroo = ipprob(iroma)
   endif
-  if(iviext(iphas).gt.0) then
-    ipcvto = ipproc(ivista(iphas))
-    ipcvlo = ipproc(ivisla(iphas))
+  if(iviext.gt.0) then
+    ipcvto = ipproc(ivista)
+    ipcvlo = ipproc(ivisla)
   endif
 endif
 
-if(isto2t(iphas).gt.0) then
-  iptsta = ipproc(itstua(iphas))
+if(isto2t.gt.0) then
+  iptsta = ipproc(itstua)
 else
   iptsta = 0
 endif
@@ -301,7 +301,7 @@ enddo
 
 if(abs(icdpar).eq.2) then
   do iel = 1, ncel
-    ifacpt = ia(iifapa(iphas)-1+iel)
+    ifacpt = ia(iifapa-1+iel)
     w2(iel) =                                                     &
          (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2                      &
          +(cdgfbo(2,ifacpt)-xyzcen(2,iel))**2                     &
@@ -355,7 +355,7 @@ enddo
 !      En sortie de l'etape on conserve W1,W2,XF1,TINSTK,TINSTW
 !===============================================================================
 
-if(igrake(iphas).eq.1) then
+if(igrake.eq.1) then
 
 ! --- Terme de gravite G = BETA*G*GRAD(SCA)/PRDTUR/RHO
 !     Ici on calcule   G =-G*GRAD(RHO)/PRDTUR/RHO
@@ -402,8 +402,8 @@ if(igrake(iphas).eq.1) then
 !        TINSTK=MIN(P,C1*EPS)+G et TINSTW=P+(1-CE3)*G
 !        On conserve G dans W2 pour la phase de couplage des termes sources
 
-  if(iscalt(iphas).gt.0.and.nscal.ge.iscalt(iphas)) then
-    prdtur = sigmas(iscalt(iphas))
+  if(iscalt.gt.0.and.nscal.ge.iscalt) then
+    prdtur = sigmas(iscalt)
   else
     prdtur = 1.d0
   endif
@@ -504,7 +504,7 @@ enddo
 !===============================================================================
 
 !     Si on extrapole les T.S.
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
 
   do iel = 1, ncel
 
@@ -577,7 +577,7 @@ endif
 
 !     Ceci ne sert a rien si IKECOU n'est pas egal a 1
 
-if (ikecou(iphas).eq.1) then
+if (ikecou.eq.1) then
 
   do iel = 1, ncel
     w5 (iel) = 0.d0
@@ -774,7 +774,7 @@ if (ncesmp.gt.0) then
   call catsma                                                     &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t(iphas) , thetav(ivar) ,   &
+                                 isto2t , thetav(ivar) ,   &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
    smbrk  , w7     , tinstk )
@@ -782,13 +782,13 @@ if (ncesmp.gt.0) then
   call catsma                                                     &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t(iphas) , thetav(ivar) ,   &
+                                 isto2t , thetav(ivar) ,   &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
    smbrw  , w8     , tinstw )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t(iphas).gt.0) then
+  if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta  ) = propce(iel,iptsta  ) + tinstk(iel)
       propce(iel,iptsta+1) = propce(iel,iptsta+1) + tinstw(iel)
@@ -804,7 +804,7 @@ if (ncesmp.gt.0) then
 endif
 
 !     Finalisation des termes sources
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     smbrk(iel) = smbrk(iel) + thetp1 * propce(iel,iptsta)
@@ -820,7 +820,7 @@ endif
 !===============================================================================
 
 !     Ordre 2 non pris en compte
-if(ikecou(iphas).eq.1) then
+if(ikecou.eq.1) then
 
   do iel = 1, ncel
 
@@ -872,7 +872,7 @@ endif
 
 !     on enleve la convection/diffusion au temps n a SMBRK et SMBRW
 !     s'ils ont ete calcules
-if (ikecou(iphas).eq.1) then
+if (ikecou.eq.1) then
   do iel = 1, ncel
     smbrk(iel) = smbrk(iel) - w5(iel)
     smbrw(iel) = smbrw(iel) - w6(iel)
@@ -900,7 +900,7 @@ if (ncesmp.gt.0) then
 endif
 
 ! --- Termes sources utilisateurs
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetak = thetav(ikiph)
   thetaw = thetav(iomgip)
   do iel = 1, ncel
@@ -936,7 +936,7 @@ endif
 
 ! Si IKECOU=0, on implicite plus fortement k et omega
 
-if(ikecou(iphas).eq.0)then
+if(ikecou.eq.0)then
   do iel=1,ncel
     xw    = rtpa(iel,iomgip)
     xxf1  = xf1(iel)

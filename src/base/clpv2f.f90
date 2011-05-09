@@ -93,7 +93,7 @@ double precision xphi, vmin, vmax, var
 !===============================================================================
 
 
-iphiph = iphi(iphas)
+iphiph = iphi
 
 !===============================================================================
 !  ---> Stockage Min et Max pour listing

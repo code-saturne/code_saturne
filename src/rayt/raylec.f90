@@ -103,7 +103,7 @@ double precision propfb(nfabor,*)
 ! Local variables
 
 character        rubriq*64
-character        cphase(nphsmx)*2
+character        cphase*2
 character        ficsui*32
 integer          idebia, idebra
 integer          iok

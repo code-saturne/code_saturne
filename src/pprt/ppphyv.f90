@@ -56,7 +56,7 @@ subroutine ppphyv &
 !  (une routine specifique ppvist devra etre creee)
 
 
-!  Il FAUT AVOIR PRECISE ICP(IPHAS) = 1
+!  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
 !    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
@@ -78,8 +78,8 @@ subroutine ppphyv &
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
 !      - dans usini1 :
-!             . la masse volumique (initialisee a RO0(IPHAS))
-!             . la viscosite       (initialisee a VISCL0(IPHAS))
+!             . la masse volumique (initialisee a RO0)
+!             . la viscosite       (initialisee a VISCL0)
 !      - dans usppiv :
 !             . les variables de calcul  (initialisees a 0 par defaut
 !             ou a la valeur donnee dans usiniv)
@@ -108,7 +108,7 @@ subroutine ppphyv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -155,7 +155,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)

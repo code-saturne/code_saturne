@@ -135,7 +135,7 @@ d2s3 = 2.d0/3.d0
 
 
 iphas  = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 ixckcl = isca(ifhtf)
 ipcte1 = ipproc(itemp1)
 

@@ -59,8 +59,8 @@ subroutine ustsri &
 ! -----
 ! The routine is called for each variable Rij and epsilon. It is therefore
 ! necessary to test the value of the variable ivar to separate the treatments
-! of the variables ivar=ir11(iphas), ir22(iphas), ir33(iphas), ir12(iphas),
-! ir13(iphas), ir23(iphas), or iep(iphas).
+! of the variables ivar=ir11, ir22, ir33, ir12,
+! ir13, ir23, or iep.
 !
 ! The additional source term is decomposed into an explicit part (crvexp) and
 ! an implicit part (crvimp) that must be provided here.
@@ -233,11 +233,11 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Index numbers of variables R11 and epsilon for the current phase iphas
-ir11ip = ir11(iphas)
-ieiph  = iep (iphas)
+ir11ip = ir11
+ieiph  = iep
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 if(iwarni(ir11ip).ge.1) then
   write(nfecra,1000)
@@ -262,7 +262,7 @@ endif
 ! ---  For R11
 !      -------
 
-if(ivar.eq.ir11(1)) then
+if(ivar.eq.ir11) then
 
   ff  = 3.d0
   tau = 4.d0
@@ -284,7 +284,7 @@ if(ivar.eq.ir11(1)) then
 ! ---  For epsilon
 !      -----------
 
-elseif(ivar.eq.iep(1)) then
+elseif(ivar.eq.iep) then
 
   xx  = 2.d0
 

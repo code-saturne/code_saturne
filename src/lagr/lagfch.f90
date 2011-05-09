@@ -282,18 +282,18 @@ do ip = 1,nbpart
 
       tempf = propce(iel,ipproc(itemp)) - tkelvi
 
-    else if ( iscsth(iscalt(iphas)).eq.-1 ) then
-      tempf = rtp(iel,isca(iscalt(iphas)))
+    else if ( iscsth(iscalt).eq.-1 ) then
+      tempf = rtp(iel,isca(iscalt))
 
-    else if ( iscsth(iscalt(iphas)).eq.1 ) then
-      tempf = rtp(iel,isca(iscalt(iphas))) - tkelvi
+    else if ( iscsth(iscalt).eq.1 ) then
+      tempf = rtp(iel,isca(iscalt)) - tkelvi
 
-    else if ( iscsth(iscalt(iphas)).eq.2 ) then
+    else if ( iscsth(iscalt).eq.2 ) then
       mode = 1
-      call usthht (mode, rtp(iel,isca(iscalt(iphas))), tempf)
+      call usthht (mode, rtp(iel,isca(iscalt)), tempf)
       !==========
     else
-      tempf = t0(iphas)
+      tempf = t0
     endif
 
 ! FORCE :

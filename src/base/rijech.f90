@@ -167,18 +167,18 @@ vnm = 0.d0
 idebia = idbia0
 idebra = idbra0
 
-ir11ip = ir11(iphas)
-ir22ip = ir22(iphas)
-ir33ip = ir33(iphas)
-ir12ip = ir12(iphas)
-ir13ip = ir13(iphas)
-ir23ip = ir23(iphas)
-ieiph  = iep (iphas)
+ir11ip = ir11
+ir22ip = ir22
+ir33ip = ir33
+ir12ip = ir12
+ir13ip = ir13
+ir23ip = ir23
+ieiph  = iep
 
-ipcrom = ipproc(irom  (iphas))
+ipcrom = ipproc(irom  )
 ipcroo = ipcrom
-if(isto2t(iphas).gt.0.and.iroext(iphas).gt.0) then
-  ipcroo = ipproc(iroma(iphas))
+if(isto2t.gt.0.and.iroext.gt.0) then
+  ipcroo = ipproc(iroma)
 endif
 
 deltij = 1.0d0
@@ -200,7 +200,7 @@ if(abs(icdpar).eq.2) then
 !     On connait la face de paroi correspondante
 
     do iel = 1, ncel
-      ifacpt = ia(iifapa(iphas)-1+iel)
+      ifacpt = ia(iifapa-1+iel)
       unssur = 1.d0/surfbn(ifacpt)
       w2(iel)= surfbo(1,ifacpt)*unssur
       w3(iel)= surfbo(2,ifacpt)*unssur
@@ -478,7 +478,7 @@ enddo
 
 if(abs(icdpar).eq.2) then
   do iel = 1 , ncel
-    ifacpt = ia(iifapa(iphas)-1+iel)
+    ifacpt = ia(iifapa-1+iel)
     distxn =                                                      &
           (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2                     &
          +(cdgfbo(2,ifacpt)-xyzcen(2,iel))**2                     &

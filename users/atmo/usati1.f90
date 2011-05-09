@@ -94,8 +94,8 @@ imeteo = 1
 !   For each phase
 
 do iphas = 1, nphas
-  irovar(iphas) = 0
-  ivivar(iphas) = 0
+  irovar = 0
+  ivivar = 0
 enddo
 
 !----

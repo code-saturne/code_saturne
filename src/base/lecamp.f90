@@ -106,7 +106,7 @@ double precision ra(*)
 
 character        rubriq*64,rubrik*64,car4*4
 character        cindfp*2
-character        cphase(nphsmx)*2
+character        cphase*2
 character        ficsui*32
 
 integer          idebia, idebra
@@ -121,7 +121,7 @@ integer          ierror, irtyp,  itysup, nbval
 integer          nberro, ilecec
 integer          iturph, jturph, itytph, jtytph
 integer          nfmtph, nfmtsc, nfmtru
-integer          jturb(nphsmx), jtytur(nphsmx), jale
+integer          jturb, jtytur, jale
 integer          impamo
 double precision d2s3, d2s3xk
 
@@ -159,10 +159,10 @@ CINDFP='YY'
 !       Aller jusqu'a NPHAS suffirait
 !       On suppose que les phases ont le meme numero en suite de calcul
 do iphas = 1, min(nphas,nfmtph)
-  WRITE(CPHASE(IPHAS),'(I2.2)') IPHAS
+  WRITE(CPHASE,'(I2.2)') IPHAS
 enddo
 do iphas = min(nphas,nfmtph)+1,nphas
- cphase(iphas) = cindfp
+ cphase = cindfp
 enddo
 
 !     Avertissement
@@ -391,14 +391,14 @@ nberro=nberro+ierror
 !     Modeles de turbulence
 
 do iphas = 1, min(nphas,jphas)
-  RUBRIQ = 'modele_turbulence_phase'//CPHASE(IPHAS)
+  RUBRIQ = 'modele_turbulence_phase'//CPHASE
   itysup = 0
   nbval  = 1
   irtyp  = 1
   call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              jturb(iphas),ierror)
+              jturb,ierror)
   nberro=nberro+ierror
-  jtytur(iphas)=jturb(iphas)/10
+  jtytur=jturb/10
 enddo
 
 ! --->  Stop si erreur
@@ -438,8 +438,8 @@ write(nfecra,2411) ttpabs
 
 ! --->  Donnees modifiees
 do iphas = 1, min(nphas,jphas)
-   if (iturb(iphas) .ne. jturb(iphas))                            &
-        write(nfecra,8410) iturb(iphas), jturb(iphas)
+   if (iturb .ne. jturb)                            &
+        write(nfecra,8410) iturb, jturb
 enddo
 
 ! --->  Si le calcul precedent etait en ALE, on DOIT relire les
@@ -463,12 +463,12 @@ nberro = 0
 ! --->  Pression
 !     (a priori une seule (non fonction du nombre de phases))
 
-RUBRIQ = 'pression_ce_phase'//CPHASE(1)
+RUBRIQ = 'pression_ce_phase'//CPHASE
 itysup = 1
 nbval  = 1
 irtyp  = 2
 call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            rtp(1,ipr(1)),ierror)
+            rtp(1,ipr),ierror)
 nberro=nberro+ierror
 
 
@@ -479,10 +479,10 @@ nberro=nberro+ierror
 
 do iphas = 1, min(jphas,nphas)
 
-   iturph = iturb(iphas)
-   jturph = jturb(iphas)
-   itytph = itytur(iphas)
-   jtytph = jtytur(iphas)
+   iturph = iturb
+   jturph = jturb
+   itytph = itytur
+   jtytph = jtytur
 
 !     Vitesse
 
@@ -490,19 +490,19 @@ do iphas = 1, min(jphas,nphas)
    nbval  = 1
    irtyp  = 2
 
-   RUBRIQ = 'vitesse_u_ce_phase'//CPHASE(IPHAS)
+   RUBRIQ = 'vitesse_u_ce_phase'//CPHASE
    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-               rtp(1,iu(iphas)),ierror)
+               rtp(1,iu),ierror)
    nberro=nberro+ierror
 
-   RUBRIQ = 'vitesse_v_ce_phase'//CPHASE(IPHAS)
+   RUBRIQ = 'vitesse_v_ce_phase'//CPHASE
    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-               rtp(1,iv(iphas)),ierror)
+               rtp(1,iv),ierror)
    nberro=nberro+ierror
 
-   RUBRIQ = 'vitesse_w_ce_phase'//CPHASE(IPHAS)
+   RUBRIQ = 'vitesse_w_ce_phase'//CPHASE
    call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,      &
-               rtp(1,iw(iphas)),ierror)
+               rtp(1,iw),ierror)
    nberro=nberro+ierror
 
 
@@ -527,34 +527,34 @@ do iphas = 1, min(jphas,nphas)
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'k_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ik(iphas)),ierror)
+                  rtp(1,ik),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'eps_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iep(iphas)),ierror)
+                  rtp(1,iep),ierror)
       nberro=nberro+ierror
 
 !     * rij -> k-e
 
     elseif(jtytph.eq.3) then
 
-       ikiph  = ik (iphas)
-       ieiph  = iep(iphas)
+       ikiph  = ik
+       ieiph  = iep
 
        itysup = 1
        nbval  = 1
        irtyp  = 2
 
-       RUBRIQ = 'R11_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R11_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ikiph),ierror)
        nberro=nberro+ierror
 
 !            La variable epsilon sert de tableau de travail
-       RUBRIQ = 'R22_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R22_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ieiph),ierror)
        nberro=nberro+ierror
@@ -563,7 +563,7 @@ do iphas = 1, min(jphas,nphas)
          rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,ieiph)
        enddo
 
-       RUBRIQ = 'R33_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R33_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ieiph),ierror)
        nberro=nberro+ierror
@@ -572,7 +572,7 @@ do iphas = 1, min(jphas,nphas)
          rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,ieiph))
        enddo
 
-       RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'eps_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ieiph),ierror)
        nberro=nberro+ierror
@@ -581,19 +581,19 @@ do iphas = 1, min(jphas,nphas)
 
     else if(jturph.eq.60) then
 
-      ikiph = ik (iphas)
-      ieiph = iep(iphas)
+      ikiph = ik
+      ieiph = iep
 
       itysup = 1
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'k_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rtp(1,ikiph),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'omega_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'omega_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rtp(1,ieiph),ierror)
       nberro=nberro+ierror
@@ -614,18 +614,18 @@ do iphas = 1, min(jphas,nphas)
 
     if (jtytph.eq.2 .or. jturph.eq.50) then
 
-       ir11ip=ir11(iphas)
-       ir22ip=ir22(iphas)
-       ir33ip=ir33(iphas)
-       ir12ip=ir12(iphas)
-       ir13ip=ir13(iphas)
-       ir23ip=ir23(iphas)
+       ir11ip=ir11
+       ir22ip=ir22
+       ir33ip=ir33
+       ir12ip=ir12
+       ir13ip=ir13
+       ir23ip=ir23
 
        itysup = 1
        nbval  = 1
        irtyp  = 2
 
-       RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'k_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ir11ip),ierror)
        nberro=nberro+ierror
@@ -641,9 +641,9 @@ do iphas = 1, min(jphas,nphas)
           rtp(iel,ir23ip) = 0.d0
        enddo
 
-       RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'eps_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-                   rtp(1,iep(iphas)),ierror)
+                   rtp(1,iep),ierror)
        nberro=nberro+ierror
 
 !     * rij -> rij
@@ -652,26 +652,26 @@ do iphas = 1, min(jphas,nphas)
 
      do ii   = 1, 7
       if (ii  .eq.1) then
-         RUBRIQ = 'R11_ce_phase'//CPHASE(IPHAS)
-         ivar = ir11(iphas)
+         RUBRIQ = 'R11_ce_phase'//CPHASE
+         ivar = ir11
       elseif (ii  .eq.2) then
-         RUBRIQ = 'R22_ce_phase'//CPHASE(IPHAS)
-         ivar = ir22(iphas)
+         RUBRIQ = 'R22_ce_phase'//CPHASE
+         ivar = ir22
       elseif (ii  .eq.3) then
-         RUBRIQ = 'R33_ce_phase'//CPHASE(IPHAS)
-         ivar = ir33(iphas)
+         RUBRIQ = 'R33_ce_phase'//CPHASE
+         ivar = ir33
       elseif (ii  .eq.4) then
-         RUBRIQ = 'R12_ce_phase'//CPHASE(IPHAS)
-         ivar = ir12(iphas)
+         RUBRIQ = 'R12_ce_phase'//CPHASE
+         ivar = ir12
       elseif (ii  .eq.5) then
-         RUBRIQ = 'R13_ce_phase'//CPHASE(IPHAS)
-         ivar = ir13(iphas)
+         RUBRIQ = 'R13_ce_phase'//CPHASE
+         ivar = ir13
       elseif (ii  .eq.6) then
-         RUBRIQ = 'R23_ce_phase'//CPHASE(IPHAS)
-         ivar = ir23(iphas)
+         RUBRIQ = 'R23_ce_phase'//CPHASE
+         ivar = ir23
       elseif (ii  .eq.7) then
-         RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
-         ivar = iep(iphas)
+         RUBRIQ = 'eps_ce_phase'//CPHASE
+         ivar = iep
       endif
       itysup = 1
       nbval  = 1
@@ -685,24 +685,24 @@ do iphas = 1, min(jphas,nphas)
 
     else if (jturph.eq.60) then
 
-      ir11ip=ir11(iphas)
-      ir22ip=ir22(iphas)
-      ir33ip=ir33(iphas)
-      ir12ip=ir12(iphas)
-      ir13ip=ir13(iphas)
-      ir23ip=ir23(iphas)
-      ieiph =iep (iphas)
+      ir11ip=ir11
+      ir22ip=ir22
+      ir33ip=ir33
+      ir12ip=ir12
+      ir13ip=ir13
+      ir23ip=ir23
+      ieiph =iep
 
       itysup = 1
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'k_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
            rtp(1,ir11ip),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'omega_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'omega_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
            rtp(1,ieiph),ierror)
       nberro=nberro+ierror
@@ -737,14 +737,14 @@ do iphas = 1, min(jphas,nphas)
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'k_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ik(iphas)),ierror)
+                  rtp(1,ik),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'eps_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iep(iphas)),ierror)
+                  rtp(1,iep),ierror)
       nberro=nberro+ierror
 !     On laisse pour phi et fb les initialisations de iniva0
 
@@ -752,20 +752,20 @@ do iphas = 1, min(jphas,nphas)
 
     elseif(jtytph.eq.3) then
 
-       ikiph  = ik (iphas)
-       ieiph  = iep(iphas)
+       ikiph  = ik
+       ieiph  = iep
 
        itysup = 1
        nbval  = 1
        irtyp  = 2
 
-       RUBRIQ = 'R11_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R11_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ikiph),ierror)
        nberro=nberro+ierror
 
 !            La variable epsilon sert de tableau de travail
-       RUBRIQ = 'R22_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R22_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ieiph),ierror)
        nberro=nberro+ierror
@@ -774,7 +774,7 @@ do iphas = 1, min(jphas,nphas)
          rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,ieiph)
        enddo
 
-       RUBRIQ = 'R33_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R33_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ieiph),ierror)
        nberro=nberro+ierror
@@ -783,7 +783,7 @@ do iphas = 1, min(jphas,nphas)
          rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,ieiph))
        enddo
 
-       RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'eps_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ieiph),ierror)
        nberro=nberro+ierror
@@ -799,42 +799,42 @@ do iphas = 1, min(jphas,nphas)
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'k_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ik(iphas)),ierror)
+                  rtp(1,ik),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'eps_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iep(iphas)),ierror)
+                  rtp(1,iep),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'phi_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'phi_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,iphi(iphas)),ierror)
+                  rtp(1,iphi),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'fb_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'fb_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  rtp(1,ifb(iphas)),ierror)
+                  rtp(1,ifb),ierror)
       nberro=nberro+ierror
 !     * k-omega -> v2f
 
     else if(jturph.eq.60) then
 
-      ikiph = ik (iphas)
-      ieiph = iep(iphas)
+      ikiph = ik
+      ieiph = iep
 
       itysup = 1
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'k_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rtp(1,ikiph),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'omega_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'omega_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rtp(1,ieiph),ierror)
       nberro=nberro+ierror
@@ -857,19 +857,19 @@ do iphas = 1, min(jphas,nphas)
 
     if(jtytph.eq.2 .or. jturph.eq.50) then
 
-      ikiph  = ik  (iphas)
-      iomgip = iomg(iphas)
+      ikiph  = ik
+      iomgip = iomg
 
       itysup = 1
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'k_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rtp(1,ikiph),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'eps_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rtp(1,iomgip),ierror)
       nberro=nberro+ierror
@@ -882,20 +882,20 @@ do iphas = 1, min(jphas,nphas)
 
     elseif(jtytph.eq.3) then
 
-      ikiph  = ik  (iphas)
-      iomgip = iomg(iphas)
+      ikiph  = ik
+      iomgip = iomg
 
        itysup = 1
        nbval  = 1
        irtyp  = 2
 
-       RUBRIQ = 'R11_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R11_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,ikiph),ierror)
        nberro=nberro+ierror
 
 !            La variable omega sert de tableau de travail
-       RUBRIQ = 'R22_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R22_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,iomgip),ierror)
        nberro=nberro+ierror
@@ -904,7 +904,7 @@ do iphas = 1, min(jphas,nphas)
          rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,iomgip)
        enddo
 
-       RUBRIQ = 'R33_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'R33_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,iomgip),ierror)
        nberro=nberro+ierror
@@ -913,7 +913,7 @@ do iphas = 1, min(jphas,nphas)
          rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,iomgip))
        enddo
 
-       RUBRIQ = 'eps_ce_phase'//CPHASE(IPHAS)
+       RUBRIQ = 'eps_ce_phase'//CPHASE
        call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
                    rtp(1,iomgip),ierror)
        nberro=nberro+ierror
@@ -926,19 +926,19 @@ do iphas = 1, min(jphas,nphas)
 
     else if(jturph.eq.60) then
 
-      ikiph = ik  (iphas)
-      iomgip= iomg(iphas)
+      ikiph = ik
+      iomgip= iomg
 
       itysup = 1
       nbval  = 1
       irtyp  = 2
 
-      RUBRIQ = 'k_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'k_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rtp(1,ikiph),ierror)
       nberro=nberro+ierror
 
-      RUBRIQ = 'omega_ce_phase'//CPHASE(IPHAS)
+      RUBRIQ = 'omega_ce_phase'//CPHASE
       call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
                   rtp(1,iomgip),ierror)
       nberro=nberro+ierror

@@ -191,52 +191,52 @@ double precision cmueta, sqrcmu, xs
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr (iphas)
-iuiph  = iu  (iphas)
-iviph  = iv  (iphas)
-iwiph  = iw  (iphas)
-ikiph  = ik  (iphas)
-ieiph  = iep (iphas)
-iphiph = iphi(iphas)
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+ikiph  = ik
+ieiph  = iep
+iphiph = iphi
 
 icliup = iclrtp(iuiph,icoef)
 iclivp = iclrtp(iviph,icoef)
 icliwp = iclrtp(iwiph,icoef)
 
-ipcrom = ipproc(irom  (iphas))
-ipcvst = ipproc(ivisct(iphas))
-ipcvis = ipproc(iviscl(iphas))
+ipcrom = ipproc(irom  )
+ipcvst = ipproc(ivisct)
+ipcvis = ipproc(iviscl)
 iflmas = ipprof(ifluma(iuiph))
 iflmab = ipprob(ifluma(iuiph))
-ipbrom = ipprob(irom  (iphas))
+ipbrom = ipprob(irom  )
 
-thets  = thetst(iphas)
+thets  = thetst
 
 ipcroo = ipcrom
 ipbroo = ipbrom
 ipcvto = ipcvst
 ipcvlo = ipcvis
-if(isto2t(iphas).gt.0) then
-  if (iroext(iphas).gt.0) then
-    ipcroo = ipproc(iroma(iphas))
-    ipbroo = ipprob(iroma(iphas))
+if(isto2t.gt.0) then
+  if (iroext.gt.0) then
+    ipcroo = ipproc(iroma)
+    ipbroo = ipprob(iroma)
   endif
-  if(iviext(iphas).gt.0) then
-    ipcvto = ipproc(ivista(iphas))
-    ipcvlo = ipproc(ivisla(iphas))
+  if(iviext.gt.0) then
+    ipcvto = ipproc(ivista)
+    ipcvlo = ipproc(ivisla)
   endif
 endif
 
-if(isto2t(iphas).gt.0) then
-  iptsta = ipproc(itstua(iphas))
+if(isto2t.gt.0) then
+  iptsta = ipproc(itstua)
 else
   iptsta = 0
 endif
 
 if(iwarni(ikiph).ge.1) then
-  if (iturb(iphas).eq.20) then
+  if (iturb.eq.20) then
     write(nfecra,1000)
-  else if (iturb(iphas).eq.21) then
+  else if (iturb.eq.21) then
     write(nfecra,1001)
   else
     write(nfecra,1002)
@@ -432,7 +432,7 @@ call ustske                                                       &
 ! VISCT sera faite ulterieurement.
 ! A ce stade, TINSTK contient S**2
 d2s3 = 2.d0/3.d0
-if (iturb(iphas).eq.21) then
+if (iturb.eq.21) then
   do iel = 1, ncel
     rom   = propce(iel,ipcroo)
     visct = propce(iel,ipcvto)
@@ -459,7 +459,7 @@ endif
 !                                       W7 , W8, DAM, W9
 !===============================================================================
 
-if (igrake(iphas).eq.1 .and. ippmod(iatmos).ge.1) then
+if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
 
     !  Calcul du terme de gravite pour la version atmospherique
 
@@ -476,7 +476,7 @@ if (igrake(iphas).eq.1 .and. ippmod(iatmos).ge.1) then
    tinstk , tinste ,                                              &
    ra     )
 
-else if (igrake(iphas).eq.1) then
+else if (igrake.eq.1) then
 
 ! --- Terme de gravite G = BETA*G*GRAD(SCA)/PRDTUR/RHO
 !     Ici on calcule   G =-G*GRAD(RHO)/PRDTUR/RHO
@@ -522,8 +522,8 @@ else if (igrake(iphas).eq.1) then
 !      Production et terme de gravite
 !        TINSTK=P+G et TINSTE=P+(1-CE3)*G
 
-  if(iscalt(iphas).gt.0.and.nscal.ge.iscalt(iphas)) then
-    prdtur = sigmas(iscalt(iphas))
+  if(iscalt.gt.0.and.nscal.ge.iscalt) then
+    prdtur = sigmas(iscalt)
   else
     prdtur = 1.d0
   endif
@@ -531,7 +531,7 @@ else if (igrake(iphas).eq.1) then
 !     En production lineaire, on multiplie tout de suite le terme
 !     de gravite par VISCT, car le reste est deja multiplie.
 !     Dans les autres cas, la multiplication est faite plus tard.
-  if (iturb(iphas).eq.21) then
+  if (iturb.eq.21) then
     do iel = 1, ncel
       gravke = -(w4(iel)*gx+w5(iel)*gy+w6(iel)*gz)/               &
            (propce(iel,ipcroo)*prdtur)
@@ -561,7 +561,7 @@ endif
 
 !     En V2F, on stocke TINSTK dans PRDV2F qui sera complete plus loin pour
 !     contenir le terme de production complet
-if (iturb(iphas).eq.50) then
+if (iturb.eq.50) then
   do iel = 1, ncel
     prdv2f(iel) = tinstk(iel)
   enddo
@@ -596,7 +596,7 @@ call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
 !     Si on extrapole les termes sources et rho  , il faut ici rho^n
 !                                        et visct, il faut ici visct^n
 
-if (iturb(iphas).eq.20) then
+if (iturb.eq.20) then
 
   do iel = 1, ncel
 
@@ -615,7 +615,7 @@ if (iturb(iphas).eq.20) then
 
   enddo
 
-else if (iturb(iphas).eq.21) then
+else if (iturb.eq.21) then
 
   do iel = 1, ncel
 
@@ -633,7 +633,7 @@ else if (iturb(iphas).eq.21) then
 
   enddo
 
-else if (iturb(iphas).eq.50) then
+else if (iturb.eq.50) then
 
   do iel = 1, ncel
 
@@ -682,7 +682,7 @@ endif
 !===============================================================================
 
 !     Si on extrapole les T.S.
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
 
   do iel = 1, ncel
 
@@ -758,7 +758,7 @@ endif
 
 !     Ceci ne sert a rien si IKECOU n'est pas egal a 1
 
-if (ikecou(iphas).eq.1) then
+if (ikecou.eq.1) then
 
   do iel = 1, ncel
     w7 (iel) = 0.d0
@@ -953,7 +953,7 @@ if (ncesmp.gt.0) then
   call catsma                                                     &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t(iphas) , thetav(ivar) ,   &
+                                 isto2t , thetav(ivar) ,   &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
    smbrk  , w2     , w4 )
@@ -961,13 +961,13 @@ if (ncesmp.gt.0) then
   call catsma                                                     &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t(iphas) , thetav(ivar) ,   &
+                                 isto2t , thetav(ivar) ,   &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
    smbre  , w3     , w5 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t(iphas).gt.0) then
+  if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta  ) = propce(iel,iptsta  ) + w4(iel)
       propce(iel,iptsta+1) = propce(iel,iptsta+1) + w5(iel)
@@ -985,7 +985,7 @@ endif
 !     ON LIBERE                       W4, W5, W6, TINSTE
 
 !     Finalisation des termes sources
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     smbrk(iel) = smbrk(iel) + thetp1 * propce(iel,iptsta)
@@ -1003,9 +1003,9 @@ endif
 !===============================================================================
 
 !     Ordre 2 non pris en compte
-if(ikecou(iphas).eq.1) then
+if(ikecou.eq.1) then
 
-  if (iturb(iphas).eq.20) then
+  if (iturb.eq.20) then
 
     do iel = 1, ncel
 
@@ -1043,7 +1043,7 @@ if(ikecou(iphas).eq.1) then
     enddo
 
 !     Dans verini on bloque la combinaison ITURB=21/IKECOU=1
-  else if (iturb(iphas).eq.21) then
+  else if (iturb.eq.21) then
 
     WRITE(NFECRA,*)'IKECOU=1 NON VALIDE EN K-EPS PROD LIN'
     call csexit (1)
@@ -1051,7 +1051,7 @@ if(ikecou(iphas).eq.1) then
 !  en fait le v2f est meilleur avec IKECOU=0, on bloque donc la combinaison
 !  ITURB=50/IKECOU=1 au niveau de verini. Ces lignes sont donc inaccessibles.
 !  On les laisse au cas ou .....
-  else if (iturb(iphas).eq.50) then
+  else if (iturb.eq.50) then
 
     do iel = 1, ncel
 
@@ -1134,7 +1134,7 @@ endif
 
 !     on enleve la convection/diffusion au temps n a SMBRK et SMBRE
 !     si on les avait calcules
-if (ikecou(iphas).eq.1) then
+if (ikecou.eq.1) then
   do iel = 1, ncel
     smbrk(iel) = smbrk(iel) - w7(iel)
     smbre(iel) = smbre(iel) - w8(iel)
@@ -1162,7 +1162,7 @@ if (ncesmp.gt.0) then
 endif
 
 ! --- Termes sources utilisateurs
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetak = thetav(ikiph)
   thetae = thetav(ieiph)
   do iel = 1, ncel
@@ -1198,8 +1198,8 @@ endif
 
 ! Si IKECOU=0, on implicite plus fortement k et eps
 
-if(ikecou(iphas).eq.0)then
-  if(itytur(iphas).eq.2)then
+if(ikecou.eq.0)then
+  if(itytur.eq.2)then
     do iel=1,ncel
       xeps = rtpa(iel,ieiph )
       xk   = rtpa(iel,ikiph )
@@ -1212,7 +1212,7 @@ if(ikecou(iphas).eq.0)then
       tinste(iel) = tinste(iel) +                                 &
            ce2*rom*volume(iel)/ttke
     enddo
-  else if(iturb(iphas).eq.50)then
+  else if(iturb.eq.50)then
     do iel=1,ncel
       xeps = rtpa(iel,ieiph )
       xk   = rtpa(iel,ikiph )

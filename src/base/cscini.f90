@@ -154,14 +154,14 @@ do numcpl = 1, nbrcpl
 
   do iphas = 1, nphas
 
-    call tbicpl(numcpl, 1, 1, iturb(iphas), iturcp(numcpl,iphas))
+    call tbicpl(numcpl, 1, 1, iturb, iturcp(numcpl,iphas))
     !==========
 
-    if (iturb(iphas).eq.50.and.iturcp(numcpl,iphas).ne.50) then
+    if (iturb.eq.50.and.iturcp(numcpl,iphas).ne.50) then
       write(nfecra,1000) numcpl
       call csexit(1)
       !==========
-    elseif (itytur(iphas).eq.4.and.                               &
+    elseif (itytur.eq.4.and.                               &
             iturcp(numcpl,iphas)/10.ne.4) then
       write(nfecra,1001) numcpl
       call csexit(1)

@@ -143,12 +143,12 @@ inc = 0
 iccocg = 1
 
 do isou = 1,6
-  if(isou.eq.1) ipiph  = ir11(iphas)
-  if(isou.eq.2) ipiph  = ir22(iphas)
-  if(isou.eq.3) ipiph  = ir33(iphas)
-  if(isou.eq.4) ipiph  = ir12(iphas)
-  if(isou.eq.5) ipiph  = ir13(iphas)
-  if(isou.eq.6) ipiph  = ir23(iphas)
+  if(isou.eq.1) ipiph  = ir11
+  if(isou.eq.2) ipiph  = ir22
+  if(isou.eq.3) ipiph  = ir33
+  if(isou.eq.4) ipiph  = ir12
+  if(isou.eq.5) ipiph  = ir13
+  if(isou.eq.6) ipiph  = ir23
 
 
 ! On ne reconstruit pas et on ne limite pas car

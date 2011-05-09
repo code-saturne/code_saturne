@@ -183,8 +183,8 @@ enddo
 ! les coordonnees des faces ou il doit ensuite utiliser des vortex
 
 iphas  = 1
-ipcvis = ipproc(iviscl(iphas))
-ipcrom = ipproc(irom(iphas))
+ipcvis = ipproc(iviscl)
+ipcrom = ipproc(irom)
 do ifac = 1, nfabor
   ient = irepvo(ifac)
   if(ient.ne.0) then

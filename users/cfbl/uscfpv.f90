@@ -61,10 +61,10 @@ subroutine uscfpv &
 ! At the very first time step (not at restart), the only variables that
 ! have been initialized are those provided:
 !   - in the GUI and in the user subroutines 'usini1' and 'uscfx2'; ex.:
-!     . the density             (set to ro0(iphas))
-!     . the molecular viscosity (set to viscl0(iphas))
-!     . the volumetric molecular viscosity (set to viscv0(iphas))
-!     . the molecular thermal conductivity (set to visls0(itempk(iphas)))
+!     . the density             (set to ro0)
+!     . the molecular viscosity (set to viscl0)
+!     . the volumetric molecular viscosity (set to viscv0)
+!     . the molecular thermal conductivity (set to visls0(itempk))
 !   - in the user subroutines 'usiniv' and 'uscfxi'; ex.:
 !     . the unknown variables (null by default)
 
@@ -85,7 +85,7 @@ subroutine uscfpv &
 ! The turbulent viscosity ** must not ** be modified here (to modify this
 ! variable, use the user subroutine 'usvist')
 
-! To set a variable isobaric specific heat, the integer icp(iphas) must
+! To set a variable isobaric specific heat, the integer icp must
 ! have been set to 1: the value for icp is set automatically in the
 ! subroutine 'uscfth', depending on the thermodynamics laws selected
 ! by the user.
@@ -257,12 +257,12 @@ do iphas = 1, nphas
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk(iphas))
+  ivart = isca(itempk)
 
 ! --- Rank 'ipcvis' of the molecular dynamic viscosity of the current phase
 !     iphas in the array 'propce' (physical properties at the cell centers)
 
-  ipcvis = ipproc(iviscl(iphas))
+  ipcvis = ipproc(iviscl)
 
 ! --- User-defined coefficients for the selected law.
 !     The values hereafter are provided as a mere example. They
@@ -312,13 +312,13 @@ do iphas = 1, nphas
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk(iphas))
+  ivart = isca(itempk)
 
 ! --- Rank 'ipcvsv' of the molecular dynamic viscosity of the current phase
 !     iphas in the array 'propce' (physical properties at the cell centers)
 
-  if(iviscv(iphas).gt.0) then
-    ipcvsv = ipproc(iviscv(iphas))
+  if(iviscv.gt.0) then
+    ipcvsv = ipproc(iviscv)
   else
     ipcvsv = 0
   endif
@@ -326,7 +326,7 @@ do iphas = 1, nphas
 ! --- Stop if the viscosity has not been defined as variable
 
   if(ipcvsv.le.0) then
-    write(nfecra,2000) iviscv(iphas)
+    write(nfecra,2000) iviscv
     call csexit (1)
   endif
 
@@ -384,14 +384,14 @@ do iphas = 1, nphas
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk(iphas))
+  ivart = isca(itempk)
 
 ! --- Rank 'ipcpp' of the isobaric specific heat for the current phase
 !     iphas in the array 'propce' (physical properties at the cell
 !     centers)
 
-  if(icp(iphas).gt.0) then
-    ipccp  = ipproc(icp   (iphas))
+  if(icp.gt.0) then
+    ipccp  = ipproc(icp   )
   else
     ipccp  = 0
   endif
@@ -400,11 +400,11 @@ do iphas = 1, nphas
 !     been defined as variable
 
   if(ipccp.le.0) then
-    write(nfecra,1000) icp(iphas)
+    write(nfecra,1000) icp
     call csexit (1)
   endif
-  if(icv(iphas).le.0) then
-    write(nfecra,1001) icv(iphas)
+  if(icv.le.0) then
+    write(nfecra,1001) icv
     call csexit (1)
   endif
 
@@ -438,7 +438,7 @@ do iphas = 1, nphas
    iccfth , imodif , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   propce(1, ipproc(icv(iphas)) )    , w1     , w2     , w3     )
+   propce(1, ipproc(icv) )    , w1     , w2     , w3     )
 
 enddo
 ! --- End of the loop on iphas
@@ -465,14 +465,14 @@ do iphas = 1, nphas
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk(iphas))
+  ivart = isca(itempk)
 
 ! --- Rank 'ipcvsl' of the olecular thermal conductivity for the current
 !     phase iphas in the array 'propce' (physical properties at the cell
 !     centers)
 
-  if(ivisls(itempk(iphas)).gt.0) then
-    ipcvsl = ipproc(ivisls(itempk(iphas)))
+  if(ivisls(itempk).gt.0) then
+    ipcvsl = ipproc(ivisls(itempk))
   else
     ipcvsl = 0
   endif
@@ -482,7 +482,7 @@ do iphas = 1, nphas
 
   if(ipcvsl.le.0) then
     write(nfecra,1010)                                            &
-      itempk(iphas), itempk(iphas), ivisls(itempk(iphas))
+      itempk, itempk, ivisls(itempk)
     call csexit (1)
   endif
 
@@ -545,7 +545,7 @@ do ii = 1, nscaus
 
   ith = 0
   do iphas = 1, nphas
-    if (iscal.eq.itempk(iphas)) ith = 1
+    if (iscal.eq.itempk) ith = 1
   enddo
 
 ! --- If the variable represents the variance of the fluctuations of
@@ -561,7 +561,7 @@ do ii = 1, nscaus
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk(iphas))
+  ivart = isca(itempk)
 
 ! --- Rank 'ipcvsl' of the molecular diffusivity of the current scalar iscal
 !     in the array 'propce' (physical properties at the cell centers)

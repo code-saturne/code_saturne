@@ -166,7 +166,7 @@ idebra = idbra0
 
 
 ! --- Variables
-ipriph = ipr(iphas)
+ipriph = ipr
 
 
 
@@ -212,7 +212,7 @@ if (ical.eq.0) then
   return
 endif
 
-if ( mod(ntcabs,ntlist).eq.0 .or. iwarni(iu(1)) .ge.0 )           &
+if ( mod(ntcabs,ntlist).eq.0 .or. iwarni(iu) .ge.0 )           &
      write(nfecra,1000)
 
 #if defined(_CS_LANG_FR)

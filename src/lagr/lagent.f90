@@ -865,9 +865,9 @@ do ii = 1,nfrlag
 
 !             si vitesse du fluide vu :
         else if (iuslag(nc,nb,ijuvw).eq.-1) then
-          ettp(ip,jup) = rtpa(iel,iu(iphas))
-          ettp(ip,jvp) = rtpa(iel,iv(iphas))
-          ettp(ip,jwp) = rtpa(iel,iw(iphas))
+          ettp(ip,jup) = rtpa(iel,iu)
+          ettp(ip,jvp) = rtpa(iel,iv)
+          ettp(ip,jwp) = rtpa(iel,iw)
 
 !             si profil de vitesse impose :
         else if (iuslag(nc,nb,ijuvw).eq.2) then
@@ -901,9 +901,9 @@ do ii = 1,nfrlag
 
 !-->Vitesse du fluide vu
 
-        ettp(ip,juf) = rtpa(iel,iu(iphas))
-        ettp(ip,jvf) = rtpa(iel,iv(iphas))
-        ettp(ip,jwf) = rtpa(iel,iw(iphas))
+        ettp(ip,juf) = rtpa(iel,iu)
+        ettp(ip,jvf) = rtpa(iel,iv)
+        ettp(ip,jwf) = rtpa(iel,iw)
 
 !--> TEMPS DE SEJOUR
 
@@ -1017,19 +1017,19 @@ do ii = 1,nfrlag
               ettp(ip,jtf) = propce(iel,ipproc(itemp)) -tkelvi
 
 ! Kelvin
-            else if ( iscsth(iscalt(iphas)).eq.1 ) then
+            else if ( iscsth(iscalt).eq.1 ) then
 
-              ettp(ip,jtf) = rtpa(iel,isca(iscalt(iphas))) -tkelvi
+              ettp(ip,jtf) = rtpa(iel,isca(iscalt)) -tkelvi
 
 ! Celsius
-            else if ( iscsth(iscalt(iphas)).eq.-1 ) then
+            else if ( iscsth(iscalt).eq.-1 ) then
 
-              ettp(ip,jtf) = rtpa(iel,isca(iscalt(iphas)))
+              ettp(ip,jtf) = rtpa(iel,isca(iscalt))
 
-            else if ( iscsth(iscalt(iphas)).eq.2 ) then
+            else if ( iscsth(iscalt).eq.2 ) then
 
               mode = 1
-              call usthht(mode, rtpa(iel,isca(iscalt(iphas))),    &
+              call usthht(mode, rtpa(iel,isca(iscalt)),    &
                           ettp(ip,jtf))
 
             endif

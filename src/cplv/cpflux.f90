@@ -159,7 +159,7 @@ enddo
 ! --- Calcul de la masse volumique du melange gazeux
 
 iphas  = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 ! ---- W1 = Somme (X2i)
 !      W2 = Somme (X2i/Rho2i)
@@ -245,7 +245,7 @@ enddo
 ! --- Calcul de l'integrale de GMDEV1 et GMDEV2 pour chaque charbon
 
 iphas = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 do icla = 1, nclacp
   ipcgd1 = ipproc(igmdv1(icla))
   ipcgd2 = ipproc(igmdv2(icla))
@@ -449,18 +449,18 @@ if ( ippmod(icp3pl) .eq. 1 ) then
   do iel = 1, ncel
     if ( ivisls(ihm).gt.0 ) then
       ipcvsl = ipproc(ivisls(ihm))
-      if ( icp(iphas).gt.0 ) then
-        ipccp   = ipproc(icp(iphas))
+      if ( icp.gt.0 ) then
+        ipccp   = ipproc(icp)
         w1(iel) = propce(iel,ipcvsl) * propce(iel,ipccp)
       else
-        w1(iel) = propce(iel,ipcvsl) * cp0(iphas)
+        w1(iel) = propce(iel,ipcvsl) * cp0
       endif
     else
-      if ( icp(iphas).gt.0 ) then
-        ipccp   = ipproc(icp(iphas))
+      if ( icp.gt.0 ) then
+        ipccp   = ipproc(icp)
         w1(iel) = visls0(ihm) * propce(iel,ipccp)
       else
-        w1(iel) = visls0(ihm) * cp0(iphas)
+        w1(iel) = visls0(ihm) * cp0
       endif
     endif
   enddo

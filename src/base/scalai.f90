@@ -269,10 +269,10 @@ call iasize('scalai',ifinia)
     if ( ippmod(icompf).ge.0 ) then
 
       do iphas = 1, nphas
-        if ( iscal.eq.irho(iphas) .or.                            &
-             iscal.eq.itempk(iphas) ) then
+        if ( iscal.eq.irho .or.                            &
+             iscal.eq.itempk ) then
           ispecf = 1
-        elseif ( iscal.eq.ienerg(iphas) ) then
+        elseif ( iscal.eq.ienerg ) then
           ispecf = 2
         endif
       enddo
@@ -289,12 +289,12 @@ call iasize('scalai',ifinia)
         !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+   ncepdc   , ncetsm   ,                            &
    iscal  ,                                                       &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+   coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
@@ -355,12 +355,12 @@ call iasize('scalai',ifinia)
       !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
+   ncepdc , ncetsm ,                                &
    iisc   , itspdv ,                                              &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
-   coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+   coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
@@ -542,12 +542,12 @@ if(nscaus.gt.0) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
+   ncepdc , ncetsm ,                                &
    iisc   , itspdv ,                                              &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
-   coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+   coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &

@@ -179,10 +179,10 @@ character*8      cnom
 integer          idebia, idebra
 integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, iok
 integer          itenso, idimte, iphydp
-integer          iiu(nphsmx),iiv(nphsmx),iiw(nphsmx)
-integer          iitytu(nphsmx)
-integer          iir11(nphsmx),iir22(nphsmx),iir33(nphsmx)
-integer          iir12(nphsmx),iir13(nphsmx),iir23(nphsmx)
+integer          iiu,iiv,iiw
+integer          iitytu
+integer          iir11,iir22,iir33
+integer          iir12,iir13,iir23
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision difx,dify,difz,djfx,djfy,djfz
 double precision pif,pjf,pip,pjp,pir,pjr,pipr,pjpr

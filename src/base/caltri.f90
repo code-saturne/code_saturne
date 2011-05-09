@@ -526,7 +526,7 @@ do iphas = 1, nphas
   !===========
 ( idbia2 , idbra1 ,                                              &
   nvar   , nscal  , nphas  ,                                     &
-  ncepdc(iphas) , iphas  , iappel ,                              &
+  ncepdc , iphas  , iappel ,                              &
   maxelt , ia(ils),                                              &
   ia(idbia1),                                                    &
   ia     ,                                                       &
@@ -550,7 +550,7 @@ call mempdc                                                       &
 
 do iphas = 1, nphas
 
-  if(ncpdct(iphas).gt.0) then
+  if(ncpdct.gt.0) then
 
     iappel = 2
 
@@ -558,7 +558,7 @@ do iphas = 1, nphas
       call uikpdc &
       !==========
     ( iappel, ncelet, ncepdc,                  &
-      ia(iicepd(iphas)), ra(ickupd(iphas)), ra(irtpa) )
+      ia(iicepd), ra(ickupd), ra(irtpa) )
     endif
 
     ils    = ifinia
@@ -569,13 +569,13 @@ do iphas = 1, nphas
     !===========
   ( ifnia2 , ifinra ,                                              &
     nvar   , nscal  , nphas  ,                                     &
-    ncepdc(iphas) , iphas  , iappel ,                              &
+    ncepdc , iphas  , iappel ,                              &
     maxelt , ia(ils),                                              &
-    ia(iicepd(iphas)),                                             &
+    ia(iicepd),                                             &
     ia     ,                                                       &
     ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
     ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-    ra(icoefa) , ra(icoefb) , ra(ickupd(iphas)) ,                  &
+    ra(icoefa) , ra(icoefb) , ra(ickupd) ,                  &
     ra     )
 
   endif
@@ -595,15 +595,15 @@ do iphas = 1, nphas
   call  ustsma                                                    &
   !===========
  ( idbia2 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  , ncepdc(iphas)   ,                   &
-   ncetsm(iphas) ,   iphas  , iappel ,                            &
+   nvar   , nscal  , nphas  , ncepdc   ,                   &
+   ncetsm ,   iphas  , iappel ,                            &
    maxelt , ia(ils),                                              &
-   ia(iicepd(iphas)) ,                                            &
+   ia(iicepd) ,                                            &
    ia(idbia1) , ia(idbia1),                                       &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  ,                                      &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(ickupd(iphas))       , ra(idbra1),&
+   ra(icoefa) , ra(icoefb) , ra(ickupd)       , ra(idbra1),&
    ra     )
 
 enddo
@@ -622,7 +622,7 @@ call memtsm                                                       &
 
 do iphas = 1, nphas
 
-  if(nctsmt(iphas).gt.0) then
+  if(nctsmt.gt.0) then
 
     ils    = ifinia
     ifnia2 = ils + maxelt
@@ -632,15 +632,15 @@ do iphas = 1, nphas
     call  ustsma                                                  &
     !===========
  ( ifnia2 , ifinra ,                                              &
-   nvar   , nscal  , nphas  , ncepdc(iphas)   ,                   &
-   ncetsm(iphas) ,   iphas  , iappel ,                            &
+   nvar   , nscal  , nphas  , ncepdc   ,                   &
+   ncetsm ,   iphas  , iappel ,                            &
    maxelt , ia(ils),                                              &
-   ia(iicepd(iphas)) ,                                            &
-   ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
+   ia(iicepd) ,                                            &
+   ia(iicesm) , ia(iitpsm),                         &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  ,                                      &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(ickupd(iphas)), ra(ismace(iphas)),&
+   ra(icoefa) , ra(icoefb) , ra(ickupd), ra(ismace),&
    ra     )
 
   endif

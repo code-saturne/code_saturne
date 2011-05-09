@@ -112,10 +112,10 @@ iw9    =       iw8    + ncelet
 
 imemph = 0
 do iphas =1, nphas
-  if(iturb(iphas).eq.41)  imemph = 1
+  if(iturb.eq.41)  imemph = 1
 enddo
 do iphas =1, nphas
-  if(iturb(iphas).eq.42)  imemph = 2
+  if(iturb.eq.42)  imemph = 2
 enddo
 
 if(imemph.eq.1) then

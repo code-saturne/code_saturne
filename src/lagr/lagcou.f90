@@ -270,8 +270,8 @@ if (ltsdyn.eq.1) then
 ! 4. TERMES SOURCES SUR LA TURBULENCE
 !===============================================================================
 
-  if (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                  &
-       .or. iturb(iphas).eq.60 ) then
+  if (itytur.eq.2 .or. iturb.eq.50                  &
+       .or. iturb.eq.60 ) then
 ! En v2f (ITURB=50) les TS lagrangiens influent uniquement sur k et eps
 ! (difficile d'ecrire quoi que ce soit sur v2, qui perd son sens de
 !  "composante de Rij")
@@ -300,7 +300,7 @@ if (ltsdyn.eq.1) then
 
     enddo
 
-  else if (itytur(iphas).eq.3) then
+  else if (itytur.eq.3) then
 
     do npt = 1,nbpart
 
@@ -336,25 +336,25 @@ if (ltsdyn.eq.1) then
     do iel = 1,ncel
 
       tslag(iel,itsr11) = tslag(iel,itsr11)                       &
-                 - 2.d0 * rtp(iel,iu(iphas)) * tslag(iel,itsvx)
+                 - 2.d0 * rtp(iel,iu) * tslag(iel,itsvx)
 
       tslag(iel,itsr12) = tslag(iel,itsr12)                       &
-                        - rtp(iel,iu(iphas)) * tslag(iel,itsvy)   &
-                        - rtp(iel,iv(iphas)) * tslag(iel,itsvx)
+                        - rtp(iel,iu) * tslag(iel,itsvy)   &
+                        - rtp(iel,iv) * tslag(iel,itsvx)
 
       tslag(iel,itsr13) = tslag(iel,itsr13)                       &
-                        - rtp(iel,iu(iphas)) * tslag(iel,itsvz)   &
-                        - rtp(iel,iw(iphas)) * tslag(iel,itsvx)
+                        - rtp(iel,iu) * tslag(iel,itsvz)   &
+                        - rtp(iel,iw) * tslag(iel,itsvx)
 
       tslag(iel,itsr22) = tslag(iel,itsr22)                       &
-                 - 2.d0 * rtp(iel,iv(iphas)) * tslag(iel,itsvy)
+                 - 2.d0 * rtp(iel,iv) * tslag(iel,itsvy)
 
       tslag(iel,itsr23) = tslag(iel,itsr23)                       &
-                        - rtp(iel,iv(iphas)) * tslag(iel,itsvz)   &
-                        - rtp(iel,iw(iphas)) * tslag(iel,itsvy)
+                        - rtp(iel,iv) * tslag(iel,itsvz)   &
+                        - rtp(iel,iw) * tslag(iel,itsvy)
 
       tslag(iel,itsr33) = tslag(iel,itsr33)                       &
-                 - 2.d0 * rtp(iel,iw(iphas)) * tslag(iel,itsvz)
+                 - 2.d0 * rtp(iel,iw) * tslag(iel,itsvz)
 
     enddo
 
@@ -460,7 +460,7 @@ endif
 
 do iel = 1,ncel
 
-  mf   = volume(iel) * propce(iel,ipproc(irom(iphas)))
+  mf   = volume(iel) * propce(iel,ipproc(irom))
   tauv = volp(iel) / volume(iel)
   taum = volm(iel) / mf
 

@@ -170,7 +170,7 @@ if (iperot.gt.0) then
 endif
 iiirij = 0
 do iphas = 1, nphas
-  if(itytur(iphas).eq.3) then
+  if(itytur.eq.3) then
     iiirij = 1
   endif
 enddo
@@ -200,8 +200,8 @@ endif
 iypar1 = 0
 if(ineedy.eq.1.and.abs(icdpar).eq.1) then
   do iphas = 1, nphas
-    if(itytur(iphas).eq.4) then
-      if(idries(iphas).eq.1) then
+    if(itytur.eq.4) then
+      if(idries.eq.1) then
         iypar1 = 1
       endif
     endif
@@ -242,11 +242,11 @@ iisymp = iitrif + nfabor *nphas
 ifinia = iisymp + nfabor *nphas
 do iphas = 1, nphas
   if(idpar2.eq.1) then
-    iifapa(iphas) = ifinia
-    ifinia        = iifapa(iphas) + ncelet
+    iifapa = ifinia
+    ifinia        = iifapa + ncelet
   else
 !         cette valeur nulle est utilisee dans les tests
-    iifapa(iphas) = 0
+    iifapa = 0
   endif
 enddo
 
@@ -304,11 +304,11 @@ ifinra = iforbr + nfabor*ndim*iiforb
 !     Les pointeurs IS2KW et IDVUKW sont fonction de IPHAS
 
 do iphas = 1, nphas
-  is2kw(iphas)  = ifinra
-  idvukw(iphas) = ifinra
-  if (iturb(iphas).eq.60) then
-    idvukw(iphas) = is2kw(iphas)  + ncelet
-    ifinra        = idvukw(iphas) + ncelet
+  is2kw  = ifinra
+  idvukw = ifinra
+  if (iturb.eq.60) then
+    idvukw = is2kw  + ncelet
+    ifinra        = idvukw + ncelet
   endif
 enddo
 
@@ -360,51 +360,51 @@ enddo
 
 do iphas = 1, nphas
 
-  ivar = ipr   (iphas)
+  ivar = ipr
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  ivar = iu    (iphas)
+  ivar = iu
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  ivar = iv    (iphas)
+  ivar = iv
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  ivar = iw    (iphas)
+  ivar = iw
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
 
-  if    (itytur(iphas).eq.2) then
-    ivar = ik    (iphas)
+  if    (itytur.eq.2) then
+    ivar = ik
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iep   (iphas)
+    ivar = iep
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  elseif(itytur(iphas).eq.3) then
-    ivar = ir11  (iphas)
+  elseif(itytur.eq.3) then
+    ivar = ir11
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir22  (iphas)
+    ivar = ir22
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir33  (iphas)
+    ivar = ir33
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir12  (iphas)
+    ivar = ir12
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir13  (iphas)
+    ivar = ir13
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir23  (iphas)
+    ivar = ir23
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iep   (iphas)
+    ivar = iep
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  elseif(iturb(iphas).eq.50) then
-    ivar = ik    (iphas)
+  elseif(iturb.eq.50) then
+    ivar = ik
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iep   (iphas)
+    ivar = iep
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iphi  (iphas)
+    ivar = iphi
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ifb   (iphas)
+    ivar = ifb
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  elseif(iturb(iphas).eq.60) then
-    ivar = ik    (iphas)
+  elseif(iturb.eq.60) then
+    ivar = ik
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iomg  (iphas)
+    ivar = iomg
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  elseif(iturb(iphas).eq.70) then
-    ivar = inusa (iphas)
+  elseif(iturb.eq.70) then
+    ivar = inusa
     ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
   endif
 
@@ -472,9 +472,9 @@ endif
 
 !     Vecteur vitesse chrono
 do iphas = 1, nphas
-  ippu = ipprtp(iu(iphas))
-  ippv = ipprtp(iv(iphas))
-  ippw = ipprtp(iw(iphas))
+  ippu = ipprtp(iu)
+  ippv = ipprtp(iv)
+  ippw = ipprtp(iw)
   if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.                 &
     ichrvr(ippw).eq.1) then
     ichrvr(ippv) = 0

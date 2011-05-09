@@ -194,9 +194,9 @@ if ( isuite.eq.0 ) then
 ! --- Velocity components
 
   do iel = 1, ncel
-    rtp(iel,iu(iphas)) = 0.d0
-    rtp(iel,iv(iphas)) = 0.d0
-    rtp(iel,iw(iphas)) = 0.d0
+    rtp(iel,iu) = 0.d0
+    rtp(iel,iv) = 0.d0
+    rtp(iel,iw) = 0.d0
   enddo
 
 
@@ -242,7 +242,7 @@ if ( isuite.eq.0 ) then
   if(iutile.eq.1) then
     iccfth = iccfth*2
     do iel = 1, ncel
-      rtp(iel,ipr        (iphas) ) = p0(iphas)
+      rtp(iel,ipr         ) = p0
     enddo
   endif
 
@@ -251,7 +251,7 @@ if ( isuite.eq.0 ) then
   if(iutile.eq.1) then
     iccfth = iccfth*3
     do iel = 1, ncel
-      rtp(iel,isca(irho  (iphas))) = ro0(iphas)
+      rtp(iel,isca(irho  )) = ro0
     enddo
   endif
 
@@ -260,7 +260,7 @@ if ( isuite.eq.0 ) then
   if(iutile.eq.1) then
     iccfth = iccfth*5
     do iel = 1, ncel
-      rtp(iel,isca(itempk(iphas))) = t0(iphas)
+      rtp(iel,isca(itempk)) = t0
     enddo
   endif
 
@@ -269,7 +269,7 @@ if ( isuite.eq.0 ) then
   if(iutile.eq.1) then
     iccfth = iccfth*7
     do iel = 1, ncel
-      rtp(iel,isca(ienerg(iphas))) = cv0(iphas)*t0(iphas)
+      rtp(iel,isca(ienerg)) = cv0*t0
     enddo
   endif
 

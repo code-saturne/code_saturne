@@ -100,40 +100,40 @@ if ( ippmod(icompf).ge.0 ) then
 
 !  Proprietes des phases : CV s'il est variable
   do iphas = 1, nphas
-    if(icv(iphas).ne.0) then
+    if(icv.ne.0) then
       iprop         = iprop + 1
-      icv   (iphas) = iprop
+      icv    = iprop
     endif
   enddo
 
 !  Proprietes des phases : Viscosite en volume
   do iphas = 1, nphas
-    if(iviscv(iphas).ne.0) then
+    if(iviscv.ne.0) then
       iprop         = iprop + 1
-      iviscv(iphas) = iprop
+      iviscv = iprop
     endif
   enddo
 
 !   Flux de masse specifique pour la vitesse (si on en veut un)
   do iphas = 1, nphas
-    if(iflmau(iphas).gt.0) then
+    if(iflmau.gt.0) then
       iprop         = iprop + 1
-      ifluma(iu  (iphas)) = iprop
-      ifluma(iv  (iphas)) = iprop
-      ifluma(iw  (iphas)) = iprop
+      ifluma(iu  ) = iprop
+      ifluma(iv  ) = iprop
+      ifluma(iw  ) = iprop
     endif
   enddo
 
 !    Flux de Rusanov au bord pour Qdm et E
   do iphas = 1, nphas
     iprop         = iprop + 1
-    ifbrhu(iphas) = iprop
+    ifbrhu = iprop
     iprop         = iprop + 1
-    ifbrhv(iphas) = iprop
+    ifbrhv = iprop
     iprop         = iprop + 1
-    ifbrhw(iphas) = iprop
+    ifbrhw = iprop
     iprop         = iprop + 1
-    ifbene(iphas) = iprop
+    ifbene = iprop
   enddo
 
 
@@ -157,16 +157,16 @@ if ( ippmod(icompf).ge.0 ) then
 
   do iphas = 1, nphas
 
-    if(icv(iphas).gt.0) then
+    if(icv.gt.0) then
       iprop                 = iprop + 1
-      ipproc(icv   (iphas)) = iprop
+      ipproc(icv   ) = iprop
       ipppst                = ipppst + 1
       ipppro(iprop)         = ipppst
     endif
 
-    if(iviscv(iphas).gt.0) then
+    if(iviscv.gt.0) then
       iprop                 = iprop + 1
-      ipproc(iviscv(iphas)) = iprop
+      ipproc(iviscv) = iprop
       ipppst                = ipppst + 1
       ipppro(iprop)         = ipppst
     endif
@@ -183,13 +183,13 @@ if ( ippmod(icompf).ge.0 ) then
 
   do iphas = 1, nphas
     iprop                 = iprop + 1
-    ipprob(ifbrhu(iphas)) = iprop
+    ipprob(ifbrhu) = iprop
     iprop                 = iprop + 1
-    ipprob(ifbrhv(iphas)) = iprop
+    ipprob(ifbrhv) = iprop
     iprop                 = iprop + 1
-    ipprob(ifbrhw(iphas)) = iprop
+    ipprob(ifbrhw) = iprop
     iprop                 = iprop + 1
-    ipprob(ifbene(iphas)) = iprop
+    ipprob(ifbene) = iprop
   enddo
 
   nprofb = iprop
@@ -201,9 +201,9 @@ if ( ippmod(icompf).ge.0 ) then
   iprop = nprofa
 
   do iphas = 1, nphas
-    if(iflmau(iphas).gt.0) then
+    if(iflmau.gt.0) then
       iprop                     = iprop + 1
-      ipprof(ifluma(iu(iphas))) = iprop
+      ipprof(ifluma(iu)) = iprop
     endif
   enddo
 
@@ -229,8 +229,8 @@ if ( ippmod(icompf).ge.0 ) then
   do iphas = 1, nphas
 
     !-->  chaleur specifique a volume constant
-    if(icv   (iphas).gt.0) then
-      ipp = ipppro(ipproc(icv   (iphas)))
+    if(icv   .gt.0) then
+      ipp = ipppro(ipproc(icv   ))
       nomvar(ipp)   = 'Specific Heat Cst Vol'
       ichrvr(ipp)   = 0
       ilisvr(ipp)   = 0
@@ -238,8 +238,8 @@ if ( ippmod(icompf).ge.0 ) then
     endif
 
     !-->  viscosite laminaire
-    if(iviscv(iphas).gt.0) then
-      ipp = ipppro(ipproc(iviscv(iphas)))
+    if(iviscv.gt.0) then
+      ipp = ipppro(ipproc(iviscv))
       nomvar(ipp)   = 'Volume Viscosity'
       ichrvr(ipp)   = 0
       ilisvr(ipp)   = 0

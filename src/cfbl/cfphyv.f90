@@ -58,7 +58,7 @@ subroutine cfphyv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -105,7 +105,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -167,10 +167,10 @@ call uscfpv                                                       &
 if(ipass.eq.0) then
   ipass = ipass + 1
   do iphas = 1, nphas
-    if((ivisls(itempk(iphas)).gt.0.or.                            &
-        icp(iphas).gt.0.or.icv(iphas).gt.0).and.iuscfp.eq.0) then
+    if((ivisls(itempk).gt.0.or.                            &
+        icp.gt.0.or.icv.gt.0).and.iuscfp.eq.0) then
       write(nfecra,1000)                                          &
-           ivisls(itempk(iphas)),icp(iphas),icv(iphas)
+           ivisls(itempk),icp,icv
       call csexit (1)
       !==========
     endif
@@ -187,58 +187,58 @@ endif
 !     le moment, on est en gaz parfait avec CV constant : si quelqu'un
 !     essaye du CV variable, ce serait dommage que cela lui explose à la
 !     figure pour de mauvaises raisons.
-! Si IVISLS(IENERG(IPHAS)).EQ.0, on a forcement IVISLS(ITEMPK(IPHAS)).EQ.0
-!     et ICV(IPHAS).EQ.0, par construction de IVISLS(IENERG(IPHAS)) dans
+! Si IVISLS(IENERG).EQ.0, on a forcement IVISLS(ITEMPK).EQ.0
+!     et ICV.EQ.0, par construction de IVISLS(IENERG) dans
 !     le sous-programme cfvarp
 
 do iphas = 1, nphas
 
-  if(ivisls(ienerg(iphas)).gt.0) then
+  if(ivisls(ienerg).gt.0) then
 
-    if(ivisls(itempk(iphas)).gt.0) then
+    if(ivisls(itempk).gt.0) then
 
       do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg(iphas)))) =               &
-             propce(iel,ipproc(ivisls(itempk(iphas))))
+        propce(iel,ipproc(ivisls(ienerg))) =               &
+             propce(iel,ipproc(ivisls(itempk)))
       enddo
 
     else
       do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg(iphas)))) =               &
-             visls0(itempk(iphas))
+        propce(iel,ipproc(ivisls(ienerg))) =               &
+             visls0(itempk)
       enddo
 
     endif
 
-    if(icv(iphas).gt.0) then
+    if(icv.gt.0) then
 
       do iel = 1, ncel
-        if(propce(iel,ipproc(icv(iphas))).le.0.d0) then
-          write(nfecra,2000)iel,propce(iel,ipproc(icv(iphas)))
+        if(propce(iel,ipproc(icv)).le.0.d0) then
+          write(nfecra,2000)iel,propce(iel,ipproc(icv))
           call csexit (1)
           !==========
         endif
       enddo
 
       do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg(iphas)))) =               &
-             propce(iel,ipproc(ivisls(ienerg(iphas))))            &
-             / propce(iel,ipproc(icv(iphas)))
+        propce(iel,ipproc(ivisls(ienerg))) =               &
+             propce(iel,ipproc(ivisls(ienerg)))            &
+             / propce(iel,ipproc(icv))
       enddo
 
     else
 
       do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg(iphas)))) =               &
-             propce(iel,ipproc(ivisls(ienerg(iphas))))            &
-             / cv0(iphas)
+        propce(iel,ipproc(ivisls(ienerg))) =               &
+             propce(iel,ipproc(ivisls(ienerg)))            &
+             / cv0
       enddo
 
     endif
 
   else
 
-    visls0(ienerg(iphas)) = visls0(itempk(iphas))/cv0(iphas)
+    visls0(ienerg) = visls0(itempk)/cv0
 
   endif
 
@@ -256,19 +256,19 @@ enddo
 
 do iphas = 1, nphas
 
-  iirom  = ipproc(irom  (iphas))
-  iiromb = ipprob(irom  (iphas))
+  iirom  = ipproc(irom  )
+  iiromb = ipprob(irom  )
 
   do iel = 1, ncel
-    propce(iel,iirom)  = rtpa(iel,isca(irho(iphas)))
+    propce(iel,iirom)  = rtpa(iel,isca(irho))
   enddo
 
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     propfb(ifac,iiromb) =                                         &
-         coefa(ifac,iclrtp(isca(irho(iphas)),icoef))              &
-         + coefb(ifac,iclrtp(isca(irho(iphas)),icoef))            &
-         * rtpa(iel,isca(irho(iphas)))
+         coefa(ifac,iclrtp(isca(irho),icoef))              &
+         + coefb(ifac,iclrtp(isca(irho),icoef))            &
+         * rtpa(iel,isca(irho))
   enddo
 
 enddo

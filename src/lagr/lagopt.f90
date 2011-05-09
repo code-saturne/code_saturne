@@ -487,8 +487,8 @@ if (iphyla.eq.1) then
     write(nfecra,1033) impvar
     iok = iok + 1
   endif
-  if (itpvar.eq.1 .and. iscalt(iphas).eq.-1) then
-    write(nfecra,1034) itpvar, iscalt(iphas)
+  if (itpvar.eq.1 .and. iscalt.eq.-1) then
+    write(nfecra,1034) itpvar, iscalt
     iok = iok + 1
   endif
 else
@@ -688,14 +688,14 @@ if (idistu.lt.0 .or. idistu.gt.1) then
   iok = iok + 1
 endif
 
-if (idistu.eq.1 .and. itytur(iphas).ne.2 .and. itytur(iphas).ne.3       &
-     .and.  iturb(iphas).ne.50 .and. iturb(iphas).ne.60 ) then
-  write(nfecra,2011) iilagr, idistu, iturb(iphas)
+if (idistu.eq.1 .and. itytur.ne.2 .and. itytur.ne.3       &
+     .and.  iturb.ne.50 .and. iturb.ne.60 ) then
+  write(nfecra,2011) iilagr, idistu, iturb
   iok = iok + 1
-else if (idistu.eq.0 .and. iturb(iphas).ne.0 .and.                   &
-         itytur(iphas).ne.2 .and. itytur(iphas).ne.3                    &
-     .and.  iturb(iphas).ne.50 .and. iturb(iphas).ne.60) then
-  write(nfecra,2012) iilagr, idistu, iturb(iphas)
+else if (idistu.eq.0 .and. iturb.ne.0 .and.                   &
+         itytur.ne.2 .and. itytur.ne.3                    &
+     .and.  iturb.ne.50 .and. iturb.ne.60) then
+  write(nfecra,2012) iilagr, idistu, iturb
   iok = iok + 1
 endif
 
@@ -1641,15 +1641,15 @@ if (ltsdyn.eq.1) then
   itsli  = itsvz + 1
   irf    = itsli
 
-  if (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                  &
-       .or. iturb(iphas).eq.60) then
+  if (itytur.eq.2 .or. iturb.eq.50                  &
+       .or. iturb.eq.60) then
 ! K-eps, v2f et k-omega
     ntersl = ntersl + 1
 
     itske  = irf    + 1
     irf    = itske
 
-  else if (itytur(iphas).eq.3) then
+  else if (itytur.eq.3) then
 ! RIJ
     ntersl = ntersl + 6
 
@@ -1661,7 +1661,7 @@ if (ltsdyn.eq.1) then
     itsr33 = itsr23 + 1
     irf    = itsr33
   else
-    write(nfecra,3010) iilagr, ltsdyn, iturb(iphas)
+    write(nfecra,3010) iilagr, ltsdyn, iturb
     call csexit (1)
     !==========
   endif

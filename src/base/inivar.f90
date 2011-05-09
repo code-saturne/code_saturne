@@ -211,11 +211,11 @@ endif
 
 if  (ippmod(icompf).lt.0) then
   do iphas = 1, nphas
-    ipriph = ipr(iphas)
-    iiptot = ipproc(iprtot(iphas))
-    ro0iph = ro0  (iphas)
-    p0iph  = p0   (iphas)
-    pr0iph = pred0(iphas)
+    ipriph = ipr
+    iiptot = ipproc(iprtot)
+    ro0iph = ro0
+    p0iph  = p0
+    pr0iph = pred0
     xxp0   = xyzp0(1,iphas)
     xyp0   = xyzp0(2,iphas)
     xzp0   = xyzp0(3,iphas)
@@ -277,10 +277,10 @@ endif
 if(iusini.eq.1.or.isuite.eq.1) then
 
   do iphas = 1, nphas
-    if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50) then
+    if(itytur.eq.2 .or. iturb.eq.50) then
 
-      ikiph  = ik (iphas)
-      ieiph  = iep(iphas)
+      ikiph  = ik
+      ieiph  = iep
 
       xekmin = rtp(1,ikiph)
       xepmin = rtp(1,ieiph)
@@ -308,8 +308,8 @@ if(iusini.eq.1.or.isuite.eq.1) then
       endif
 
 !     En v2-f, on verifie aussi que phi est compris entre 0 et 2
-      if (iturb(iphas).eq.50) then
-        iphiph = iphi(iphas)
+      if (iturb.eq.50) then
+        iphiph = iphi
 
         xphmin = rtp(1,iphiph)
         xphmax = rtp(1,iphiph)
@@ -333,12 +333,12 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
       endif
 
-    elseif(itytur(iphas).eq.3) then
+    elseif(itytur.eq.3) then
 
-      ir11ip = ir11(iphas)
-      ir22ip = ir22(iphas)
-      ir33ip = ir33(iphas)
-      ieiph  = iep (iphas)
+      ir11ip = ir11
+      ir22ip = ir22
+      ir33ip = ir33
+      ieiph  = iep
 
       x11min = rtp(1,ir11ip)
       x22min = rtp(1,ir22ip)
@@ -373,10 +373,10 @@ if(iusini.eq.1.or.isuite.eq.1) then
         iok = iok + 1
       endif
 
-    elseif(iturb(iphas).eq.60) then
+    elseif(iturb.eq.60) then
 
-      ikiph   = ik  (iphas)
-      iomgip  = iomg(iphas)
+      ikiph   = ik
+      iomgip  = iomg
 
       xekmin = rtp(1,ikiph )
       xomgmn = rtp(1,iomgip)
@@ -397,9 +397,9 @@ if(iusini.eq.1.or.isuite.eq.1) then
         iok = iok + 1
       endif
 
-    elseif(iturb(iphas).eq.70) then
+    elseif(iturb.eq.70) then
 
-      inuiph  = inusa(iphas)
+      inuiph  = inusa
 
       xnumin = rtp(1,inuiph)
       do iel = 1, ncel
@@ -422,10 +422,10 @@ if(iusini.eq.1.or.isuite.eq.1) then
 else
 
   do iphas = 1, nphas
-    if (iturb(iphas).ne.0 .and. iturb(iphas).ne.10                &
-         .and. itytur(iphas).ne.4) then
-      if (uref(iphas).lt.0.d0) then
-        write(nfecra,3039) uref(iphas)
+    if (iturb.ne.0 .and. iturb.ne.10                &
+         .and. itytur.ne.4) then
+      if (uref.lt.0.d0) then
+        write(nfecra,3039) uref
         iok = iok + 1
       endif
     endif

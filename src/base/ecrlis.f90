@@ -104,7 +104,7 @@ double precision ra(*)
 ! Local variables
 
 integer          ii, jj, ic, icel, ipp, ira, ivrtp, iok
-integer          iphas, kphas, iprnew, ipuvw
+integer          iphas, iprnew, ipuvw
 integer          icmin, icmax
 integer          nbrval
 integer          idivdt, ixmsdt, idebia, idebra, ifinra, iel
@@ -176,7 +176,7 @@ enddo
 do ipp = 2, nvppmx
   iok = 1
   do iphas = 1, nphas
-    if(ipp.eq.ipprtp(ipr(iphas))) then
+    if(ipp.eq.ipprtp(ipr)) then
       iok = 0
     endif
   enddo
@@ -198,21 +198,11 @@ do ipp = 2, nvppmx
 enddo
 
 do iphas = 1, nphas
-  iprnew = 1
-  if(iphas.gt.1) then
-    do kphas = 1, iphas-1
-      if(ipr(iphas).eq.ipr(kphas)) then
-        iprnew = 0
-      endif
-    enddo
+  ipp = ipprtp(ipr)
+  if(dervar(ipp).lt.epzero) then
+    dervar(ipp) = -1.d0
   endif
-  if(iprnew.eq.1) then
-    ipp = ipprtp(ipr(iphas))
-    if(dervar(ipp).lt.epzero) then
-      dervar(ipp) = -1.d0
-    endif
-    dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
-  endif
+  dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
 enddo
 
 
@@ -338,15 +328,15 @@ do ipp = 2, nvppmx
     ic=ic+16
     ipuvw = 0
     do iphas = 1, nphas
-      if(ipp.eq.ipprtp(ipr(iphas)) .or.                           &
-         ipp.eq.ipprtp(iu (iphas)) .or.                           &
-         ipp.eq.ipprtp(iv (iphas)) .or.                           &
-         ipp.eq.ipprtp(iw (iphas)) ) then
+      if(ipp.eq.ipprtp(ipr) .or.                           &
+         ipp.eq.ipprtp(iu ) .or.                           &
+         ipp.eq.ipprtp(iv ) .or.                           &
+         ipp.eq.ipprtp(iw ) ) then
         ipuvw = 1
       endif
 !   En v2f on ne clippe jamais f_barrre, on ne l'affiche donc pas
-      if (iturb(iphas).eq.50) then
-        if (ipp.eq.ipprtp(ifb(iphas))) ipuvw = 1
+      if (iturb.eq.50) then
+        if (ipp.eq.ipprtp(ifb)) ipuvw = 1
       endif
     enddo
 !   En ALE on ne clippe pas la vitesse de maillage
@@ -391,15 +381,15 @@ write(nfecra,1160)
 do ipp = 2, nvppmx
   ipuvw = 0
   do iphas = 1, nphas
-    if(ipp.eq.ipprtp(ipr(iphas)) .or.                             &
-       ipp.eq.ipprtp(iu (iphas)) .or.                             &
-       ipp.eq.ipprtp(iv (iphas)) .or.                             &
-       ipp.eq.ipprtp(iw (iphas)) ) then
+    if(ipp.eq.ipprtp(ipr) .or.                             &
+       ipp.eq.ipprtp(iu ) .or.                             &
+       ipp.eq.ipprtp(iv ) .or.                             &
+       ipp.eq.ipprtp(iw ) ) then
       ipuvw = 1
     endif
 !   En v2f on ne clippe jamais f_barrre, on ne l'affiche donc pas
-    if (iturb(iphas).eq.50) then
-      if (ipp.eq.ipprtp(ifb(iphas))) ipuvw = 1
+    if (iturb.eq.50) then
+      if (ipp.eq.ipprtp(ifb)) ipuvw = 1
     endif
 !   En ALE on ne clippe pas la vitesse de maillage
     if (iale.eq.1) then
@@ -409,7 +399,7 @@ do ipp = 2, nvppmx
     endif
 !   Compressible
     if(ippmod(icompf).ge.0) then
-      if(ipp.eq.ipprtp(isca(itempk(iphas)))) then
+      if(ipp.eq.ipprtp(isca(itempk))) then
         ipuvw = 1
       endif
     endif

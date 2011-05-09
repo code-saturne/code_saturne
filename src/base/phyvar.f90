@@ -124,7 +124,7 @@ integer          idebia, idebra
 integer          ivar  , iel   , ifac  , iscal , iphas , iph
 integer          ii    , iok   , iok1  , iok2  , iisct
 integer          nphmx , nn
-integer          ibrom(nphsmx) , ipcrom, ipbrom, ipcvst
+integer          ibrom , ipcrom, ipbrom, ipcvst
 integer          ikiph , ieiph , ir11ip, ir22ip, ir33ip
 integer          inuiph
 integer          ipccp , ipcvis, iphiph, ipcvma
@@ -176,7 +176,7 @@ if(iperot.gt.0) then
 
   do iphas = 1, nphas
 
-    if(itytur(iphas).eq.3) then
+    if(itytur.eq.3) then
 
       iph = iphas
       call perinr                                                 &
@@ -204,7 +204,7 @@ endif
 
 nphmx = nphsmx
 do iphas = 1, nphsmx
-  ibrom(iphas) = 0
+  ibrom = 0
 enddo
 
 
@@ -255,9 +255,9 @@ call usphyv &
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 
 do iphas = 1, nphas
-  if (ibrom(iphas).eq.0) then
-    ipcrom = ipproc(irom(iphas))
-    ipbrom = ipprob(irom(iphas))
+  if (ibrom.eq.0) then
+    ipcrom = ipproc(irom)
+    ipbrom = ipprob(irom)
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       propfb(ifac,ipbrom) = propce(iel ,ipcrom)
@@ -276,16 +276,16 @@ if(ntcabs.eq.ntpabs+1) then
 !     Masse volumique aux cellules et aux faces de bord
   iok1 = 0
   do iphas = 1, nphas
-    if(irovar(iphas).eq.0) then
-      ipcrom = ipproc(irom(iphas))
-      ipbrom = ipprob(irom(iphas))
+    if(irovar.eq.0) then
+      ipcrom = ipproc(irom)
+      ipbrom = ipprob(irom)
       do iel = 1, ncel
-        if( abs(propce(iel ,ipcrom)-ro0   (iphas)).gt.epzero) then
+        if( abs(propce(iel ,ipcrom)-ro0   ).gt.epzero) then
           iok1 = 1
         endif
       enddo
       do ifac = 1, nfabor
-        if( abs(propfb(ifac,ipbrom)-ro0   (iphas)).gt.epzero) then
+        if( abs(propfb(ifac,ipbrom)-ro0   ).gt.epzero) then
           iok1 = 1
         endif
       enddo
@@ -298,10 +298,10 @@ if(ntcabs.eq.ntpabs+1) then
 !     Viscosite moleculaire aux cellules
   iok2 = 0
   do iphas = 1, nphas
-    if(ivivar(iphas).eq.0) then
-      ipcvis = ipproc(iviscl(iphas))
+    if(ivivar.eq.0) then
+      ipcvis = ipproc(iviscl)
       do iel = 1, ncel
-        if( abs(propce(iel ,ipcvis)-viscl0(iphas)).gt.epzero) then
+        if( abs(propce(iel ,ipcvis)-viscl0).gt.epzero) then
           iok2 = 1
         endif
       enddo
@@ -328,18 +328,18 @@ endif
 ! --- Boucle sur les phases : Debut
 do iphas = 1, nphas
 
-  if     (iturb(iphas).eq. 0) then
+  if     (iturb.eq. 0) then
 
 ! 3.1 LAMINAIRE
 ! ==============
 
-    ipcvst = ipproc(ivisct(iphas))
+    ipcvst = ipproc(ivisct)
 
     do iel = 1, ncel
       propce(iel,ipcvst) = 0.d0
     enddo
 
-  elseif (iturb(iphas).eq.10) then
+  elseif (iturb.eq.10) then
 
 ! 3.2 LONGUEUR DE MELANGE
 ! ========================
@@ -349,25 +349,25 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
+   ncepdc , ncetsm ,                                &
    iph    ,                                                       &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
+   coefa  , coefb  , ra(ickupd), ra(ismace),        &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
    ra     )
 
-  elseif (itytur(iphas).eq.2) then
+  elseif (itytur.eq.2) then
 
 ! 3.3 K-EPSILON
 ! ==============
 
-    ikiph  = ik(iphas)
-    ieiph  = iep(iphas)
-    ipcvst = ipproc(ivisct(iphas))
-    ipcrom = ipproc(irom  (iphas))
+    ikiph  = ik
+    ieiph  = iep
+    ipcvst = ipproc(ivisct)
+    ipcrom = ipproc(irom  )
 
     do iel = 1, ncel
       xk = rtp(iel,ikiph)
@@ -375,17 +375,17 @@ do iphas = 1, nphas
       propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
     enddo
 
-  elseif (itytur(iphas).eq.3) then
+  elseif (itytur.eq.3) then
 
 ! 3.4 Rij-EPSILON
 ! ================
 
-    ir11ip = ir11(iphas)
-    ir22ip = ir22(iphas)
-    ir33ip = ir33(iphas)
-    ieiph  = iep(iphas)
-    ipcvst = ipproc(ivisct(iphas))
-    ipcrom = ipproc(irom  (iphas))
+    ir11ip = ir11
+    ir22ip = ir22
+    ir33ip = ir33
+    ieiph  = iep
+    ipcvst = ipproc(ivisct)
+    ipcrom = ipproc(irom  )
 
     do iel = 1, ncel
       xk = 0.5d0*(rtp(iel,ir11ip)+rtp(iel,ir22ip)+rtp(iel,ir33ip))
@@ -393,7 +393,7 @@ do iphas = 1, nphas
       propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
     enddo
 
-  elseif (iturb(iphas).eq.40) then
+  elseif (iturb.eq.40) then
 
 ! 3.5 LES Smagorinsky
 ! ===================
@@ -404,18 +404,18 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
+   ncepdc , ncetsm ,                                &
    iph    ,                                                       &
-   ia(iicepd(iphas)) ,                                            &
-   ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
+   ia(iicepd) ,                                            &
+   ia(iicesm) , ia(iitpsm),                         &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
+   coefa  , coefb  , ra(ickupd), ra(ismace),        &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
    ra     )
 
-  elseif(iturb(iphas).eq.41) then
+  elseif(iturb.eq.41) then
 
 ! 3.6 LES dynamique
 ! =================
@@ -426,19 +426,19 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
+   ncepdc , ncetsm ,                                &
    iph    ,                                                       &
-   ia(iicepd(iphas)) ,                                            &
-   ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
+   ia(iicepd) ,                                            &
+   ia(iicesm) , ia(iitpsm),                         &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
-   propce(1,ipproc(ismago(iphas))) ,                              &
+   coefa  , coefb  , ra(ickupd), ra(ismace),        &
+   propce(1,ipproc(ismago)) ,                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     , w10    , xmij   , &
    ra     )
 
-  elseif (iturb(iphas).eq.42) then
+  elseif (iturb.eq.42) then
 
 ! 3.7 LES WALE
 ! ============
@@ -449,28 +449,28 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
+   ncepdc , ncetsm ,                                &
    iph    ,                                                       &
-   ia(iicepd(iphas)) ,                                            &
-   ia(iicesm(iphas)) , ia(iitpsm(iphas)),                         &
+   ia(iicepd) ,                                            &
+   ia(iicesm) , ia(iitpsm),                         &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
+   coefa  , coefb  , ra(ickupd), ra(ismace),        &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
    w9     , w10    , w11    , w12    ,                            &
    ra     )
 
-  elseif (iturb(iphas).eq.50) then
+  elseif (iturb.eq.50) then
 
 ! 3.8 v2f phi-model
 ! =================
-    ikiph  = ik(iphas)
-    ieiph  = iep(iphas)
-    iphiph = iphi(iphas)
-    ipcvis = ipproc(iviscl(iphas))
-    ipcvst = ipproc(ivisct(iphas))
-    ipcrom = ipproc(irom  (iphas))
+    ikiph  = ik
+    ieiph  = iep
+    iphiph = iphi
+    ipcvis = ipproc(iviscl)
+    ipcvst = ipproc(ivisct)
+    ipcrom = ipproc(irom  )
 
     do iel = 1, ncel
       xk = rtp(iel,ikiph)
@@ -484,7 +484,7 @@ do iphas = 1, nphas
            *rtp(iel,ikiph)
     enddo
 
-  elseif (iturb(iphas).eq.60) then
+  elseif (iturb.eq.60) then
 
 ! 3.9 K-OMEGA SST
 ! ===============
@@ -494,28 +494,28 @@ do iphas = 1, nphas
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas) , ncetsm(iphas) ,                                &
+   ncepdc , ncetsm ,                                &
    iph    ,                                                       &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
-   ra(is2kw(iphas)), ra(idvukw(iphas)),                           &
+   coefa  , coefb  , ra(ickupd), ra(ismace),        &
+   ra(is2kw), ra(idvukw),                           &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
    ra     )
 
-  elseif (iturb(iphas).eq.70) then
+  elseif (iturb.eq.70) then
 
 ! 3.10 SPALART -ALLMARAS
 ! ======================
 
     cv13 = csav1**3
 
-    inuiph = inusa(iphas)
-    ipcvst = ipproc(ivisct(iphas))
-    ipcrom = ipproc(irom  (iphas))
-    ipcvis = ipproc(iviscl(iphas))
+    inuiph = inusa
+    ipcvst = ipproc(ivisct)
+    ipcrom = ipproc(irom  )
+    ipcvis = ipproc(iviscl)
 
     do iel = 1, ncel
       xrom = propce(iel,ipcrom)
@@ -541,12 +541,12 @@ do iphas = 1, nphas
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+   ncepdc   , ncetsm   ,                            &
    iph    ,                                                       &
-   ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
+   coefa  , coefb  , ra(ickupd), ra(ismace),        &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     ,                            &
    ra     )
@@ -563,9 +563,9 @@ do iphas = 1, nphas
 ! La diffusivite turbulente des scalaires (mu_t/sigma), elle, sera clippee a 0
 ! dans covofi
 
-  if (iturb(iphas).eq.41) then
-    ipcvis = ipproc(iviscl(iphas))
-    ipcvst = ipproc(ivisct(iphas))
+  if (iturb.eq.41) then
+    ipcvis = ipproc(iviscl)
+    ipcvst = ipproc(ivisct)
     iclipc = 0
     do iel = 1, ncel
       vistot = propce(iel,ipcvis) + propce(iel,ipcvst)
@@ -574,7 +574,7 @@ do iphas = 1, nphas
         iclipc = iclipc + 1
       endif
     enddo
-    if(iwarni(iu(iphas)).ge.1) then
+    if(iwarni(iu).ge.1) then
       if(irangp.ge.0) then
         call parcpt(iclipc)
         !==========
@@ -633,11 +633,11 @@ iok = 0
 do iphas = 1, nphas
 
 ! Rang des variables dans PROPCE
-  ipcrom = ipproc(irom(iphas))
-  ipcvis = ipproc(iviscl(iphas))
-  ipcvst = ipproc(ivisct(iphas))
-  if(icp(iphas).gt.0) then
-    ipccp  = ipproc(icp   (iphas))
+  ipcrom = ipproc(irom)
+  ipcvis = ipproc(iviscl)
+  ipcvst = ipproc(ivisct)
+  if(icp.gt.0) then
+    ipccp  = ipproc(icp   )
     nn     = 4
   else
     ipccp = 0
@@ -645,7 +645,7 @@ do iphas = 1, nphas
   endif
 
 ! Rang des variables dans PROPFB
-  ipbrom = ipprob(irom(iphas))
+  ipbrom = ipprob(irom)
 
 ! Min et max sur les cellules
   do ii = 1, nn
@@ -687,17 +687,17 @@ do iphas = 1, nphas
 ! Impressions
   iok1 = 0
   do ii = 1, nn
-    if(ii.eq.1) chaine = nomvar(ipppro(ipproc(irom  (iphas))))
-    if(ii.eq.2) chaine = nomvar(ipppro(ipproc(iviscl(iphas))))
-    if(ii.eq.3) chaine = nomvar(ipppro(ipproc(ivisct(iphas))))
-    if(ii.eq.4) chaine = nomvar(ipppro(ipproc(icp   (iphas))))
-    if(iwarni(iu(iphas)).ge.1.or.ipass.eq.1.or.                   &
+    if(ii.eq.1) chaine = nomvar(ipppro(ipproc(irom  )))
+    if(ii.eq.2) chaine = nomvar(ipppro(ipproc(iviscl)))
+    if(ii.eq.3) chaine = nomvar(ipppro(ipproc(ivisct)))
+    if(ii.eq.4) chaine = nomvar(ipppro(ipproc(icp   )))
+    if(iwarni(iu).ge.1.or.ipass.eq.1.or.                   &
                                           varmn(ii).lt.0.d0)then
       if(iok1.eq.0) then
         write(nfecra,3010)
         iok1 = 1
       endif
-      if ((ii.ne.3).or.(iturb(iphas).ne.0))                       &
+      if ((ii.ne.3).or.(iturb.ne.0))                       &
            write(nfecra,3011)chaine(1:8),varmn(ii),varmx(ii)
     endif
   enddo
@@ -707,7 +707,7 @@ do iphas = 1, nphas
 
 ! Masse volumique definie
   ii = 1
-  chaine = nomvar(ipppro(ipproc(irom  (iphas))))
+  chaine = nomvar(ipppro(ipproc(irom  )))
   if (varmn(ii).lt.0.d0) then
     write(nfecra,9011)chaine(1:8),varmn(ii)
     iok = iok + 1
@@ -715,7 +715,7 @@ do iphas = 1, nphas
 
 ! Viscosite moleculaire definie
   ii = 2
-  chaine = nomvar(ipppro(ipproc(iviscl(iphas))))
+  chaine = nomvar(ipppro(ipproc(iviscl)))
   if (varmn(ii).lt.0.d0) then
     write(nfecra,9011)chaine(1:8),varmn(ii)
     iok = iok + 1
@@ -725,16 +725,16 @@ do iphas = 1, nphas
 ! on ne clippe pas mu_t en modele LES dynamique, car on a fait
 ! un clipping sur la viscosite totale
   ii = 3
-  chaine = nomvar(ipppro(ipproc(ivisct(iphas))))
-  if (varmn(ii).lt.0.d0.and.iturb(iphas).ne.41) then
+  chaine = nomvar(ipppro(ipproc(ivisct)))
+  if (varmn(ii).lt.0.d0.and.iturb.ne.41) then
     write(nfecra,9012)varmn(ii)
     iok = iok + 1
   endif
 
 ! Chaleur specifique definie
-  if(icp(iphas).gt.0) then
+  if(icp.gt.0) then
     ii = 4
-    chaine = nomvar(ipppro(ipproc(icp   (iphas))))
+    chaine = nomvar(ipppro(ipproc(icp   )))
     if (varmn(ii).lt.0.d0) then
       iisct = 0
       do iscal = 1, nscal
@@ -883,7 +883,7 @@ endif
 
 do iphas = 1, nphas
 
-  ipcrom = ipproc(irom(iphas))
+  ipcrom = ipproc(irom)
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(propce(1,ipcrom))
@@ -937,7 +937,7 @@ enddo
 '@                                          LA MASSE VOLUMIQUE',/,&
 '@                                                            ',/,&
 '@  On a indique dans usini1 que la masse volumique etait     ',/,&
-'@     constante (IROVAR(IPHAS)=0) mais on a modifie ses      ',/,&
+'@     constante (IROVAR=0) mais on a modifie ses      ',/,&
 '@     valeurs aux cellules ou aux faces de bord dans usphyv. ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
@@ -956,7 +956,7 @@ enddo
 '@                                    LA VISCOSITE MOLECULAIRE',/,&
 '@                                                            ',/,&
 '@  On a indique dans usini1 que la viscosite moleculaire     ',/,&
-'@     etait constante (IVIVAR(IPHAS)=0) mais on a modifie ses',/,&
+'@     etait constante (IVIVAR=0) mais on a modifie ses',/,&
 '@     valeurs aux cellules dans usphyv.                      ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
@@ -976,7 +976,7 @@ enddo
 '@                                    LA VISCOSITE MOLECULAIRE',/,&
 '@                                                            ',/,&
 '@  En compressible la viscosite moleculaire est constante par',/,&
-'@     defaut (IVIVAR(IPHAS)=0) et la valeur de IVIVAR n''a   ',/,&
+'@     defaut (IVIVAR=0) et la valeur de IVIVAR n''a   ',/,&
 '@     pas ete modifiee dans uscfx1. Pourtant, on a modifie   ',/,&
 '@     les valeurs de la viscosite moleculaire dans uscfpv.   ',/,&
 '@                                                            ',/,&
@@ -1118,7 +1118,7 @@ enddo
 '@    INCOHERENCY BETWEEN USPHYV AND USINI1 FOR THE DENSITY   ',/,&
 '@                                                            ',/,&
 '@  The density has been declared constant in usini1          ',/,&
-'@     (IROVAR(IPHAS)=0) but its value has been modified      ',/,&
+'@     (IROVAR=0) but its value has been modified      ',/,&
 '@     in cells of at boundary faces in usphyv.               ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
@@ -1137,7 +1137,7 @@ enddo
 '@                                     THE MOLECULAR VISCOSITY',/,&
 '@                                                            ',/,&
 '@  The molecular viscosity has been declared constant in     ',/,&
-'@     usini1 (IVIVAR(IPHAS)=0) but its value has been        ',/,&
+'@     usini1 (IVIVAR=0) but its value has been        ',/,&
 '@     modified in cells or at boundary faces in usphyv.      ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
@@ -1156,7 +1156,7 @@ enddo
 '@                                     THE MOLECULAR VISCOSITY',/,&
 '@                                                            ',/,&
 '@  In the compressible module, the molecular viscosity is    ',/,&
-'@     constant by default (IVIVAR(IPHAS)=0) and the value    ',/,&
+'@     constant by default (IVIVAR=0) and the value    ',/,&
 '@     of IVIVAR  has not been modified in uscfx1. Yet, its   ',/,&
 '@     value has been modified in uscfpv.                     ',/,&
 '@                                                            ',/,&

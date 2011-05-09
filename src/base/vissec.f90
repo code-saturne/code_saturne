@@ -180,18 +180,18 @@ double precision romf, d2s3m, vecfac
 idebia = idbia0
 idebra = idbra0
 
-iuiph  = iu(iphas)
-iviph  = iv(iphas)
-iwiph  = iw(iphas)
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
 
-ipcrom = ipproc(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom  )
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
 
 
 if(ippmod(icompf).ge.0) then
-  if(iviscv(iphas).gt.0) then
-    ipcvsv = ipproc(iviscv(iphas))
+  if(iviscv.gt.0) then
+    ipcvsv = ipproc(iviscv)
   else
     ipcvsv = 0
   endif
@@ -202,26 +202,26 @@ endif
 
 iflmas = ipprof(ifluma(iuiph))
 
-ipbrom = ipprob(irom  (iphas))
+ipbrom = ipprob(irom  )
 iflmab = ipprob(ifluma(iuiph))
 
 
 !     Si on extrapole les termes sources, on prend les prop a l'instant n
-if(isno2t(iphas).gt.0) then
-  if(iroext(iphas).gt.0) then
-    ipcrom = ipproc(iroma (iphas))
-    ipbrom = ipprob(iroma (iphas))
+if(isno2t.gt.0) then
+  if(iroext.gt.0) then
+    ipcrom = ipproc(iroma )
+    ipbrom = ipprob(iroma )
   endif
-  if(iviext(iphas).gt.0) then
-    ipcvis = ipproc(ivisla(iphas))
-    ipcvst = ipproc(ivista(iphas))
+  if(iviext.gt.0) then
+    ipcvis = ipproc(ivisla)
+    ipcvst = ipproc(ivista)
   endif
 !     Il faudrait aussi faire quelque chose pour le flux de masse, non ?
 endif
 
 ! --- Calcul de la viscosite totale
 
-if (itytur(iphas).eq.3) then
+if (itytur.eq.3) then
   do iel = 1, ncel
     vistot(iel) = propce(iel,ipcvis)
   enddo
@@ -381,12 +381,12 @@ if(ipcvsv.gt.0) then
   enddo
 elseif(ipcvsv.eq.0) then
   do iel = 1, ncel
-    w4(iel) = ( viscv0(iphas)      + d2s3m*vistot(iel) )          &
+    w4(iel) = ( viscv0      + d2s3m*vistot(iel) )          &
             * w1(iel)/volume(iel)
   enddo
 else
 
-  if( itytur(iphas).eq.4) then
+  if( itytur.eq.4) then
     do iel = 1, ncel
       w4(iel) = d2s3m*propce(iel,ipcvis)*w1(iel)/volume(iel)
     enddo

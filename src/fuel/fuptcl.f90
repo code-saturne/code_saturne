@@ -179,8 +179,8 @@ idebia = idbia0
 idebra = idbra0
 
 iphas  = 1
-ipbrom = ipprob(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
+ipbrom = ipprob(irom  )
+ipcvis = ipproc(iviscl)
 
 d2s3   = 2.d0 / 3.d0
 
@@ -238,9 +238,9 @@ enddo
 do ifac = 1, nfabor
   izone = izfppp(ifac)
   qcalc(izone) = qcalc(izone) - propfb(ifac,ipbrom) *             &
-      ( rcodcl(ifac,iu(iphas),1)*surfbo(1,ifac) +                 &
-        rcodcl(ifac,iv(iphas),1)*surfbo(2,ifac) +                 &
-        rcodcl(ifac,iw(iphas),1)*surfbo(3,ifac) )
+      ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +                 &
+        rcodcl(ifac,iv,1)*surfbo(2,ifac) +                 &
+        rcodcl(ifac,iw,1)*surfbo(3,ifac) )
 enddo
 
 if(irangp .ge. 0) then
@@ -275,9 +275,9 @@ do ifac = 1, nfabor
   if ( iqimp(izone) .eq. 1 ) then
     qimpc(izone) = qimpat(izone) + qimpfl(izone)
     qisqc = qimpc(izone) / qcalc(izone)
-    rcodcl(ifac,iu(iphas),1) = rcodcl(ifac,iu(iphas),1)*qisqc
-    rcodcl(ifac,iv(iphas),1) = rcodcl(ifac,iv(iphas),1)*qisqc
-    rcodcl(ifac,iw(iphas),1) = rcodcl(ifac,iw(iphas),1)*qisqc
+    rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
+    rcodcl(ifac,iv,1) = rcodcl(ifac,iv,1)*qisqc
+    rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
   endif
 enddo
 
@@ -300,9 +300,9 @@ enddo
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier usfucl, et en particulier                        ',/,&
-'@    - que le vecteur  RCODCL(IFAC,IU(IPHAS),1),             ',/,&
-'@                      RCODCL(IFAC,IV(IPHAS),1),             ',/,&
-'@                      RCODCL(IFAC,IW(IPHAS),1) qui determine',/,&
+'@    - que le vecteur  RCODCL(IFAC,IU,1),             ',/,&
+'@                      RCODCL(IFAC,IV,1),             ',/,&
+'@                      RCODCL(IFAC,IW,1) qui determine',/,&
 '@      la direction de la vitesse est non nul et n''est pas  ',/,&
 '@      uniformement perpendiculaire aux face d''entree       ',/,&
 '@    - que la surface de l''entree n''est pas nulle (ou que  ',/,&
@@ -405,9 +405,9 @@ do ifac = 1, nfabor
 !            de reference et de l'intensite turvulente
 !            adaptes a l'entree courante si ICALKE = 2
 
-      uref2 = rcodcl(ifac,iu(iphas),1)**2                         &
-            + rcodcl(ifac,iv(iphas),1)**2                         &
-            + rcodcl(ifac,iw(iphas),1)**2
+      uref2 = rcodcl(ifac,iu,1)**2                         &
+            + rcodcl(ifac,iv,1)**2                         &
+            + rcodcl(ifac,iw,1)**2
       uref2 = max(uref2,1.d-12)
       rhomoy = propfb(ifac,ipbrom)
       iel    = ifabor(ifac)
@@ -429,36 +429,36 @@ do ifac = 1, nfabor
         ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
       endif
 
-      if (itytur(iphas).eq.2) then
+      if (itytur.eq.2) then
 
-        rcodcl(ifac,ik(iphas),1)  = xkent
-        rcodcl(ifac,iep(iphas),1) = xeent
+        rcodcl(ifac,ik,1)  = xkent
+        rcodcl(ifac,iep,1) = xeent
 
-      elseif (itytur(iphas).eq.3) then
+      elseif (itytur.eq.3) then
 
-        rcodcl(ifac,ir11(iphas),1) = d2s3*xkent
-        rcodcl(ifac,ir22(iphas),1) = d2s3*xkent
-        rcodcl(ifac,ir33(iphas),1) = d2s3*xkent
-        rcodcl(ifac,ir12(iphas),1) = 0.d0
-        rcodcl(ifac,ir13(iphas),1) = 0.d0
-        rcodcl(ifac,ir23(iphas),1) = 0.d0
-        rcodcl(ifac,iep(iphas),1)  = xeent
+        rcodcl(ifac,ir11,1) = d2s3*xkent
+        rcodcl(ifac,ir22,1) = d2s3*xkent
+        rcodcl(ifac,ir33,1) = d2s3*xkent
+        rcodcl(ifac,ir12,1) = 0.d0
+        rcodcl(ifac,ir13,1) = 0.d0
+        rcodcl(ifac,ir23,1) = 0.d0
+        rcodcl(ifac,iep,1)  = xeent
 
-      elseif (iturb(iphas).eq.50) then
+      elseif (iturb.eq.50) then
 
-        rcodcl(ifac,ik(iphas),1)   = xkent
-        rcodcl(ifac,iep(iphas),1)  = xeent
-        rcodcl(ifac,iphi(iphas),1) = d2s3
-        rcodcl(ifac,ifb(iphas),1)  = 0.d0
+        rcodcl(ifac,ik,1)   = xkent
+        rcodcl(ifac,iep,1)  = xeent
+        rcodcl(ifac,iphi,1) = d2s3
+        rcodcl(ifac,ifb,1)  = 0.d0
 
-      elseif (iturb(iphas).eq.60) then
+      elseif (iturb.eq.60) then
 
-        rcodcl(ifac,ik(iphas),1)   = xkent
-        rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+        rcodcl(ifac,ik,1)   = xkent
+        rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-      elseif (iturb(iphas).eq.70) then
+      elseif (iturb.eq.70) then
 
-        rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+        rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
       endif
 

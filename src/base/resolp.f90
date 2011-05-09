@@ -214,13 +214,13 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Impressions
-ipp    = ipprtp(ipr(iphas))
+ipp    = ipprtp(ipr)
 
 ! --- Variables
-ipriph = ipr(iphas)
-iuiph  = iu (iphas)
-iviph  = iv (iphas)
-iwiph  = iw (iphas)
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
 
 ! --- Conditions aux limites
 !     (ICLRTP(IPRIPH,ICOEFF) pointe vers ICLRTP(IPRIPH,ICOEF) si IPHYDR=0)
@@ -233,17 +233,17 @@ icliwp = iclrtp(iwiph ,icoef)
 iismph = iisymp+nfabor*(iphas-1)
 
 ! --- Grandeurs physiques
-ipcrom = ipproc(irom  (iphas ))
+ipcrom = ipproc(irom  )
 if(icalhy.eq.1) then
-  ipcroa = ipproc(iroma(iphas))
+  ipcroa = ipproc(iroma)
 else
   ipcroa = 0
 endif
-ipbrom = ipprob(irom  (iphas ))
+ipbrom = ipprob(irom  )
 iflmas = ipprof(ifluma(ipriph))
 iflmab = ipprob(ifluma(ipriph))
 
-ro0iph = ro0(iphas)
+ro0iph = ro0
 
 ! --- Options de resolution
 isym  = 1
@@ -263,7 +263,7 @@ else
   ipol   = (iresol(ipriph)-ireslp)/1000
 endif
 
-arakph = arak(iphas)
+arakph = arak
 
 isqrt = 1
 
@@ -287,7 +287,7 @@ if(irnpnw.ne.1) then
            + dfrcxt(iel,3,iphas)
     enddo
   else
-    if(isno2t(iphas).gt.0) then
+    if(isno2t.gt.0) then
       do iel = 1, ncel
         unsvom = -1.d0/volume(iel)
         romro0 = propce(iel,ipcrom)-ro0iph
@@ -383,22 +383,22 @@ if(irnpnw.ne.1) then
 
   endif
 
-  call prodsc(ncelet,ncel,isqrt,w1,w1,rnormp(iphas))
+  call prodsc(ncelet,ncel,isqrt,w1,w1,rnormp)
 
   if(iwarni(ipriph).ge.2) then
     chaine = nomvar(ipp)
-    write(nfecra,1300)chaine(1:16) ,rnormp(iphas)
+    write(nfecra,1300)chaine(1:16) ,rnormp
   endif
-  dervar(ipp) = rnormp(iphas)
+  dervar(ipp) = rnormp
   nbivar(ipp) = 0
 
 else
 
   if(iwarni(ipriph).ge.2) then
     chaine = nomvar(ipp)
-    write(nfecra,1300)chaine(1:16) ,rnormp(iphas)
+    write(nfecra,1300)chaine(1:16) ,rnormp
   endif
-  dervar(ipp) = rnormp(iphas)
+  dervar(ipp) = rnormp
   nbivar(ipp) = 0
 
 endif
@@ -961,7 +961,7 @@ do 100 isweep = 1, nswmpr
 
 !  Test a modifier eventuellement
 ! (il faut qu'il soit plus strict que celui de gradco)
-  if( residu .le. 10.d0*epsrsm(ipriph)*rnormp(iphas) ) then
+  if( residu .le. 10.d0*epsrsm(ipriph)*rnormp ) then
 ! --- Si convergence, calcul de l'indicateur
 !                     mise a jour du flux de masse et sortie
 
@@ -1060,12 +1060,12 @@ do 100 isweep = 1, nswmpr
  ( chaine(1:16)    , isym   , ipol   , ireslp , nitmap , imgrp  , &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
-   epsilp , rnormp(iphas)   , residu ,                            &
+   epsilp , rnormp   , residu ,                            &
    dam    , xam    , smbr   , drtp   )
 
   nbivar(ipp) = nbivar(ipp) + niterf
-  if(abs(rnormp(iphas)).gt.0.d0) then
-    resvar(ipp) = residu/rnormp(iphas)
+  if(abs(rnormp).gt.0.d0) then
+    resvar(ipp) = residu/rnormp
   else
     resvar(ipp) = 0.d0
   endif

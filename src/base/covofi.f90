@@ -218,17 +218,17 @@ else
 endif
 
 ! --- Numero des variables de calcul
-if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50) then
-  ikiph  = ik  (iphas)
-  ieiph  = iep (iphas)
-elseif(itytur(iphas).eq.3) then
-  ir11ip = ir11(iphas)
-  ir22ip = ir22(iphas)
-  ir33ip = ir33(iphas)
-  ieiph  = iep (iphas)
-elseif(iturb(iphas).eq.60) then
-  ikiph  = ik  (iphas)
-  iomgip = iomg(iphas)
+if(itytur.eq.2 .or. iturb.eq.50) then
+  ikiph  = ik
+  ieiph  = iep
+elseif(itytur.eq.3) then
+  ir11ip = ir11
+  ir22ip = ir22
+  ir33ip = ir33
+  ieiph  = iep
+elseif(iturb.eq.60) then
+  ikiph  = ik
+  iomgip = iomg
 endif
 
 ! --- Numero des conditions aux limites
@@ -236,8 +236,8 @@ iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
 ! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom  (iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom  )
+ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(ivar ))
 iflmab = ipprob(ifluma(ivar ))
 if(ivisls(iscal).gt.0) then
@@ -360,10 +360,10 @@ endif
 
 if ( iirayo.ge.1 ) then
 
-  if (iscal.eq.iscalt(iphas)) then
+  if (iscal.eq.iscalt) then
     call raysca                    &
     !==========
-  ( iscalt(iphas),ncelet,ncel,     &
+  ( iscalt,ncelet,ncel,     &
     smbrs, rovsdt,volume,propce )
   endif
 
@@ -418,20 +418,20 @@ if (iilagr.eq.2 .and. ltsthe.eq.1)  then
 
 !    --> Temperature  :
 
-    if (icp(iphas).eq.0) then
+    if (icp.eq.0) then
 
 !       --> Cp constant
 
       do iel = 1,ncel
-        smbrs (iel) = smbrs(iel)  + tslagr(iel,itste)/cp0(iphas)
+        smbrs (iel) = smbrs(iel)  + tslagr(iel,itste)/cp0
         rovsdt(iel) = rovsdt(iel) + max(tslagr(iel,itsti),zero)
       enddo
 
-    else if (icp(iphas).gt.0) then
+    else if (icp.gt.0) then
 
 !       --> Cp variable
 
-      iicp = ipproc(icp(iphas))
+      iicp = ipproc(icp)
       do iel = 1,ncel
         smbrs (iel) = smbrs(iel) + tslagr(iel,itste)              &
                                  / propce(iel,iicp)
@@ -456,7 +456,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isso2t(iscal) , thetv  ,   &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr(iphas)), &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr), &
    smbrs , rovsdt , w1)
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
@@ -507,8 +507,8 @@ enddo
 
 if (itspdv.eq.1) then
 
-  if(itytur(iphas).eq.2.or.itytur(iphas).eq.3                     &
-       .or.iturb(iphas).eq.50 .or. iturb(iphas).eq.60) then
+  if(itytur.eq.2.or.itytur.eq.3                     &
+       .or.iturb.eq.50 .or. iturb.eq.60) then
 
 ! Remarque : on a prevu la possibilite de scalaire associe non
 !  variable de calcul, mais des adaptations sont requises
@@ -557,7 +557,7 @@ if (itspdv.eq.1) then
     if (isso2t(iscal).gt.0) then
 !         On prend la viscosite a l'instant n, meme si elle est extrapolee
       ipcvso = ipcvst
-      if(iviext(iphas).gt.0) ipcvso = ipproc(ivista(iphas))
+      if(iviext.gt.0) ipcvso = ipproc(ivista)
       do iel = 1, ncel
         propce(iel,iptsca) = propce(iel,iptsca)                   &
              + 2.d0*max(propce(iel,ipcvso),zero)                  &
@@ -582,14 +582,14 @@ if (itspdv.eq.1) then
       thetap = 1.d0
     endif
     do iel = 1, ncel
-      if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50) then
+      if(itytur.eq.2 .or. iturb.eq.50) then
         xk     = rtpa(iel,ikiph)
         xe     = rtpa(iel,ieiph)
-      elseif(itytur(iphas).eq.3) then
+      elseif(itytur.eq.3) then
         xk     =                                                  &
         0.5d0*(rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))
         xe     = rtpa(iel,ieiph)
-      elseif(iturb(iphas).eq.60) then
+      elseif(iturb.eq.60) then
         xk     = rtpa(iel,ikiph)
         xe     = cmu*xk*rtpa(iel,iomgip)
       endif

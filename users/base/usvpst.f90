@@ -253,7 +253,7 @@ if (ipart .eq. -1) then
 
   iphas = 1   ! We only consider phase 1 in this example
 
-  if (itytur(iphas) .eq. 3) then
+  if (itytur .eq. 3) then
 
     ! Initialize variable name
     do ii = 1, 32
@@ -268,9 +268,9 @@ if (ipart .eq. -1) then
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      tracel(iloc) = 0.5d0*(  rtp(iel,ir11(iphas)) &
-                            + rtp(iel,ir22(iphas)) &
-                            + rtp(iel,ir33(iphas)) )
+      tracel(iloc) = 0.5d0*(  rtp(iel,ir11) &
+                            + rtp(iel,ir22) &
+                            + rtp(iel,ir33) )
     enddo
 
     ! Values are not interlaced (dimension 1 here, so no effect).
@@ -390,7 +390,7 @@ else if  (ipart .eq. -2) then
   call psteva(ipart, namevr, idimt, ientla, ivarpr,    &
   !==========
               ntcabs, ttcabs, rvoid, rvoid,            &
-              propfb(1,ipprob(irom(iphas))))
+              propfb(1,ipprob(irom)))
 
 
   ! 1.2.2 Output of the domain number in parallel
@@ -470,7 +470,7 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
   ! first. This also applies for periodicity.
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iu(iphas)), rtp(1,iv(iphas)), rtp(1,iw(iphas)))
+    call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
     !==========
   endif
 
@@ -481,12 +481,12 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     jj = ifacel(2, ifac)
     pnd = pond(ifac)
 
-    trafac(1 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iu(iphas))   &
-                                   + (1.d0 - pnd) * rtp(jj,iu(iphas))
-    trafac(2 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iv(iphas))   &
-                                   + (1.d0 - pnd) * rtp(jj,iv(iphas))
-    trafac(3 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iw(iphas))   &
-                                   + (1.d0 - pnd) * rtp(jj,iw(iphas))
+    trafac(1 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iu)   &
+                                   + (1.d0 - pnd) * rtp(jj,iu)
+    trafac(2 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iv)   &
+                                   + (1.d0 - pnd) * rtp(jj,iv)
+    trafac(3 + (iloc-1)*idimt)  =            pnd  * rtp(ii,iw)   &
+                                   + (1.d0 - pnd) * rtp(jj,iw)
 
   enddo
 
@@ -498,9 +498,9 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    trafbr(1 + (iloc-1)*idimt) = rtp(ii, iu(iphas))
-    trafbr(2 + (iloc-1)*idimt) = rtp(ii, iv(iphas))
-    trafbr(3 + (iloc-1)*idimt) = rtp(ii, iw(iphas))
+    trafbr(1 + (iloc-1)*idimt) = rtp(ii, iu)
+    trafbr(2 + (iloc-1)*idimt) = rtp(ii, iv)
+    trafbr(3 + (iloc-1)*idimt) = rtp(ii, iw)
 
   enddo
 
@@ -533,7 +533,7 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
   iphas = 1   ! We only consider phase 1 in this example
 
   ! Variable number
-  ivar = ipr(iphas)
+  ivar = ipr
 
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
@@ -581,7 +581,7 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
 
   iphas = 1   ! We only consider phase 1 in this example
 
-  if (iscalt(iphas) .gt. 0) then
+  if (iscalt .gt. 0) then
 
     ! Initialize variable name
     do ii = 1, 32
@@ -605,7 +605,7 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
 
     ! Compute variable values on boundary faces.
 
-    ivar = isca(iscalt(iphas))
+    ivar = isca(iscalt)
     iclt = iclrtp(ivar,icoef)
 
     do iloc = 1, nfbrps
@@ -773,7 +773,7 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
   iphas = 1   ! We only consider phase 1 in this example
 
   ! Variable number
-  ivar = iu(iphas)
+  ivar = iu
 
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
@@ -781,7 +781,7 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
   ! first. This also applies for periodicity.
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iu(iphas)), rtp(1,iv(iphas)), rtp(1,iw(iphas)))
+    call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
     !==========
   endif
 
@@ -792,12 +792,12 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
     jj = ifacel(2, ifac)
     pnd = pond(ifac)
 
-    trafac(iloc) =                       pnd  * rtp(ii, iu(iphas))   &
-                               + (1.d0 - pnd) * rtp(jj, iu(iphas))
-    trafac(iloc + nfacps)    =           pnd  * rtp(ii, iv(iphas))   &
-                               + (1.d0 - pnd) * rtp(jj, iv(iphas))
-    trafac(iloc + 2*nfacps)  =           pnd  * rtp(ii, iw(iphas))   &
-                               + (1.d0 - pnd) * rtp(jj, iw(iphas))
+    trafac(iloc) =                       pnd  * rtp(ii, iu)   &
+                               + (1.d0 - pnd) * rtp(jj, iu)
+    trafac(iloc + nfacps)    =           pnd  * rtp(ii, iv)   &
+                               + (1.d0 - pnd) * rtp(jj, iv)
+    trafac(iloc + 2*nfacps)  =           pnd  * rtp(ii, iw)   &
+                               + (1.d0 - pnd) * rtp(jj, iw)
   enddo
 
   ! Compute variable values on boundary faces.
@@ -808,9 +808,9 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
     ifac = lstfbr(iloc)
     ii = ifabor(ifac)
 
-    trafbr(iloc )           = rtp(ii, iu(iphas))
-    trafbr(iloc + nfbrps)   = rtp(ii, iv(iphas))
-    trafbr(iloc + 2*nfbrps) = rtp(ii, iw(iphas))
+    trafbr(iloc )           = rtp(ii, iu)
+    trafbr(iloc + nfbrps)   = rtp(ii, iv)
+    trafbr(iloc + 2*nfbrps) = rtp(ii, iw)
   enddo
 
   ! Values are defined on the work array, not on the parent.
@@ -842,7 +842,7 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
   iphas = 1   ! We only consider phase 1 in this example
 
   ! Variable number
-  ivar = ipr(iphas)
+  ivar = ipr
 
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.

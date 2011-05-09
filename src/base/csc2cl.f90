@@ -239,7 +239,7 @@ do ivar = 1, nvcp
       yopf = dofcpl(2,ipt)
       zopf = dofcpl(3,ipt)
 
-      if (ivar.eq.ipr(1)) then
+      if (ivar.eq.ipr) then
 
         ! --- We want to prescribe a Direchlet for pressure so as to conserve
         !     the pressure gradient through the coupling and remain consistent
@@ -247,7 +247,7 @@ do ivar = 1, nvcp
 
         xip = rtp(iel,ivar) + (w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip)
 
-      else if (ivar.eq.iu(1).or.ivar.eq.iv(1).or.ivar.eq.iw(1)) then
+      else if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
 
         ! --- For all other variables, we want to prescribe a Dirichlet matching
         !     the convective fluxes at the center. We resrve a choice between
@@ -286,7 +286,7 @@ do ivar = 1, nvcp
       ! -- We need alpha_ij for centered interpolation and flumab for decentering
 
       pondj = pndcpl(ipt)
-      flumab = propfb(ifac,ipprob(ifluma(iu(1))))
+      flumab = propfb(ifac,ipprob(ifluma(iu)))
 
       ! Information received from distant instance at J'/O'
       xjp = rvcpfb(ipt,ivar)
@@ -296,12 +296,12 @@ do ivar = 1, nvcp
         itypfb(ifac,iphas)  = icscpl
       enddo
 
-      if (ivar.eq.ipr(1)) then
+      if (ivar.eq.ipr) then
 
         icodcl(ifac,ivar  ) = 1
-        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip + p0(1)
+        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip + p0
 
-      else if (ivar.eq.iu(1).or.ivar.eq.iv(1).or.ivar.eq.iw(1)) then
+      else if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
 
         icodcl(ifac,ivar  ) = 1
 
@@ -384,7 +384,7 @@ do ivar = 1, nvcp
         itypfb(ifac,iphas)  = icscpl
       enddo
 
-      if(ivar.ne.ipr(1)) then
+      if(ivar.ne.ipr) then
         icodcl(ifac,ivar  ) = 1
         rcodcl(ifac,ivar,1) = 0.5d0*(xip+xjp)
       else

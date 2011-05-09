@@ -169,9 +169,9 @@ do ifac = 1, nfabor
 
   do iphas = 1, nphas
 
-    iuiph = iu(iphas)
-    iviph = iv(iphas)
-    iwiph = iw(iphas)
+    iuiph = iu
+    iviph = iv
+    iwiph = iw
 
     vitbox = omegay*cdgfbo(3,ifac) - omegaz*cdgfbo(2,ifac)
     vitboy = omegaz*cdgfbo(1,ifac) - omegax*cdgfbo(3,ifac)

@@ -181,7 +181,7 @@ idebra = idbra0
 !     On calcule le rapport
 do iel = 1, ncel
   if(abs(mijmij(iel)).le.epzero) then
-    w1(iel) = smagmx(iphas)**2
+    w1(iel) = smagmx**2
   else
     w1(iel) = mijlij(iel)/mijmij(iel)
   endif

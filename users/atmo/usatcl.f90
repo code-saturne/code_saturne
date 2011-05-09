@@ -325,41 +325,41 @@ do ilelt = 1, nlelt
 
     itypfb(ifac,iphas) = ientre
 
-    rcodcl(ifac,iu(iphas),1) = xuent
-    rcodcl(ifac,iv(iphas),1) = xvent
-    rcodcl(ifac,iw(iphas),1) = 0.d0
+    rcodcl(ifac,iu,1) = xuent
+    rcodcl(ifac,iv,1) = xvent
+    rcodcl(ifac,iw,1) = 0.d0
 
     ! itytur is a flag equal to iturb/10
-    if    (itytur(iphas).eq.2) then
+    if    (itytur.eq.2) then
 
-      rcodcl(ifac,ik(iphas),1)  = xkent
-      rcodcl(ifac,iep(iphas),1) = xeent
+      rcodcl(ifac,ik,1)  = xkent
+      rcodcl(ifac,iep,1) = xeent
 
-    elseif(itytur(iphas).eq.3) then
+    elseif(itytur.eq.3) then
 
-      rcodcl(ifac,ir11(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir22(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir33(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir12(iphas),1) = 0.d0
-      rcodcl(ifac,ir13(iphas),1) = 0.d0
-      rcodcl(ifac,ir23(iphas),1) = 0.d0
-      rcodcl(ifac,iep(iphas),1)  = xeent
+      rcodcl(ifac,ir11,1) = d2s3*xkent
+      rcodcl(ifac,ir22,1) = d2s3*xkent
+      rcodcl(ifac,ir33,1) = d2s3*xkent
+      rcodcl(ifac,ir12,1) = 0.d0
+      rcodcl(ifac,ir13,1) = 0.d0
+      rcodcl(ifac,ir23,1) = 0.d0
+      rcodcl(ifac,iep,1)  = xeent
 
-    elseif(iturb(iphas).eq.50) then
+    elseif(iturb.eq.50) then
 
-      rcodcl(ifac,ik(iphas),1)   = xkent
-      rcodcl(ifac,iep(iphas),1)  = xeent
-      rcodcl(ifac,iphi(iphas),1) = d2s3
-      rcodcl(ifac,ifb(iphas),1)  = 0.d0
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iep,1)  = xeent
+      rcodcl(ifac,iphi,1) = d2s3
+      rcodcl(ifac,ifb,1)  = 0.d0
 
-    elseif(iturb(iphas).eq.60) then
+    elseif(iturb.eq.60) then
 
-      rcodcl(ifac,ik(iphas),1)   = xkent
-      rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-    elseif(iturb(iphas).eq.70) then
+    elseif(iturb.eq.70) then
 
-      rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
     endif
 
@@ -413,16 +413,16 @@ do ilelt = 1, nlelt
     itypfb(ifac,iphas)   = iparug
 
 !     Roughness for velocity: rugd
-    rcodcl(ifac,iu(iphas),3) = rugd
+    rcodcl(ifac,iu,3) = rugd
 
 !     Roughness for scalars (if required):
-!   rcodcl(ifac,iv(iphas),3) = rugd
+!   rcodcl(ifac,iv,3) = rugd
 
 
-    if(iscalt(iphas).ne.-1) then
+    if(iscalt.ne.-1) then
 
     ! If temperature prescribed to 20 with a rough wall law (scalar ii=1)
-    ! (with thermal roughness specified in rcodcl(ifac,iv(iphas),3)) :
+    ! (with thermal roughness specified in rcodcl(ifac,iv,3)) :
     ! ii = 1
     ! icodcl(ifac, isca(ii))    = 6
     ! rcodcl(ifac, isca(ii),1)  = 293.15d0

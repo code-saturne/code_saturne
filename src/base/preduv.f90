@@ -235,13 +235,13 @@ double precision cx    , cy    , cz
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr(iphas)
-iuiph  = iu(iphas)
-iviph  = iv(iphas)
-iwiph  = iw(iphas)
-if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50                     &
-     .or. iturb(iphas).eq.60) then
-  ikiph  = ik(iphas)
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+if(itytur.eq.2 .or. iturb.eq.50                     &
+     .or. iturb.eq.60) then
+  ikiph  = ik
 endif
 
 iclipr = iclrtp(ipriph,icoef)
@@ -249,32 +249,32 @@ icliup = iclrtp(iuiph ,icoef)
 iclivp = iclrtp(iviph ,icoef)
 icliwp = iclrtp(iwiph ,icoef)
 
-if(itytur(iphas).eq.2 .or. iturb(iphas).eq.50                     &
-     .or. iturb(iphas).eq.60) then
+if(itytur.eq.2 .or. iturb.eq.50                     &
+     .or. iturb.eq.60) then
   iclik  = iclrtp(ikiph ,icoef)
 else
   iclik = 0
 endif
 
-ro0iph = ro0(iphas)
+ro0iph = ro0
 
 !     Reperage de rho au bord
-ipbrom = ipprob(irom  (iphas))
+ipbrom = ipprob(irom  )
 !     Reperage de rho courant (ie en cas d'extrapolation rho^n+1/2)
-ipcrom = ipproc(irom  (iphas))
+ipcrom = ipproc(irom  )
 !     Reperage de rho^n en cas d'extrapolation
-if(iroext(iphas).gt.0) then
-  ipcroa = ipproc(iroma(iphas))
+if(iroext.gt.0) then
+  ipcroa = ipproc(iroma)
 else
   ipcroa = 0
 endif
 
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
 !     Theta relatif aux termes sources explicites
-thets  = thetsn(iphas)
-if(isno2t(iphas).gt.0) then
-  iptsna = ipproc(itsnsa(iphas))
+thets  = thetsn
+if(isno2t.gt.0) then
+  iptsna = ipproc(itsnsa)
 else
   iptsna = 0
 endif
@@ -397,12 +397,12 @@ if (ineedf.eq.1 .and. iterns.eq.1) then
     pfac = coefb(ifac,iclipr)*(extrag(ipriph)*pfac1               &
          +(1.d0-extrag(ipriph))*pfac)                             &
          +(1.d0-coefb(ifac,iclipr))*pfac                          &
-         + ro0(iphas)*(gx*(cdgfbo(1,ifac)-xyzp0(1,iphas))         &
+         + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1,iphas))         &
          + gy*(cdgfbo(2,ifac)-xyzp0(2,iphas))                     &
          + gz*(cdgfbo(3,ifac)-xyzp0(3,iphas)) )                   &
-         - pred0(iphas)
+         - pred0
 ! on ne rajoute pas P0, pour garder un maximum de precision
-!     &         + P0(IPHAS)
+!     &         + P0
     do isou = 1, 3
       ra(iforbr+(ifac-1)*ndim + isou-1) =                         &
            ra(iforbr+(ifac-1)*ndim + isou-1)                      &
@@ -577,7 +577,7 @@ endif
 if(iterns.eq.1) then
 
 !       Si on   extrapole     les T.S. : -theta*valeur precedente
-    if(isno2t(iphas).gt.0) then
+    if(isno2t.gt.0) then
 !         S'il n'y a qu'une    iter : TRAV  incremente
       if(nterup.eq.1) then
         do ii = 1, ndim
@@ -628,9 +628,9 @@ if(iterns.eq.1) then
 !       doit l'extrapoler en temps ; il va dans TRAVA si on n'extrapole
 !       pas mais qu'on itere sur navsto. Il va dans TRAV si on
 !       n'extrapole pas et qu'on n'itere pas sur navsto.
-if( (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                   &
-     .or. iturb(iphas).eq.60)                                     &
-       .and.igrhok(iphas).eq.1.and.iterns.eq.1)then
+if( (itytur.eq.2 .or. iturb.eq.50                   &
+     .or. iturb.eq.60)                                     &
+       .and.igrhok.eq.1.and.iterns.eq.1)then
   iccocg = 1
   inc    = 1
   nswrgp = nswrgr(ikiph)
@@ -659,11 +659,11 @@ if( (itytur(iphas).eq.2 .or. iturb(iphas).eq.50                   &
   d2s3 = 2.d0/3.d0
 
 !     Si on extrapole les termes source en temps : PROPCE
-  if(isno2t(iphas).gt.0) then
+  if(isno2t.gt.0) then
 !       Calcul de rho^n grad k^n      si rho non extrapole
 !                 rho^n grad k^n si rho     extrapole
     ipcroo = ipcrom
-    if(iroext(iphas).gt.0) ipcroo = ipcroa
+    if(iroext.gt.0) ipcroo = ipcroa
     do iel = 1, ncel
       romvom = -propce(iel,ipcroo)*volume(iel)*d2s3
       propce(iel,iptsna  )=propce(iel,iptsna  )+w1(iel)*romvom
@@ -723,7 +723,7 @@ endif
 !       si on extrapole il va dans PROPCE,
 !       sinon si on itere sur navsto dans TRAVA
 !             sinon                  dans TRAV
-if (ivisse(iphas).eq.1.and.iterns.eq.1) then
+if (ivisse.eq.1.and.iterns.eq.1) then
 
 !     On utilise temporairement TRAV comme tableau de travail.
 !     Son contenu est stocke dans W7, W8 et W9 jusqu'apres vissec
@@ -754,7 +754,7 @@ if (ivisse(iphas).eq.1.and.iterns.eq.1) then
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes de gradient transpose et
 !       TRAV retrouve sa valeur
-  if(isno2t(iphas).gt.0) then
+  if(isno2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsna  ) = propce(iel,iptsna  ) + trav(iel,1)
       propce(iel,iptsna+1) = propce(iel,iptsna+1) + trav(iel,2)
@@ -882,7 +882,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes extradiagonaux et
 !       TRAV retrouve sa valeur
-    if(isno2t(iphas).gt.0) then
+    if(isno2t.gt.0) then
       do iel = 1, ncel
         propce(iel,iptsna  ) = propce(iel,iptsna  ) + trav(iel,1)
         propce(iel,iptsna+1) = propce(iel,iptsna+1) + trav(iel,2)
@@ -932,7 +932,7 @@ if (icorio.eq.1.and.iphydr.eq.0) then
   if (iterns.eq.1) then
 
     ! Si on extrapole les termes source en temps :
-    if(isno2t(iphas).gt.0) then
+    if(isno2t.gt.0) then
 
       do iel = 1, ncel
         cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
@@ -982,7 +982,7 @@ endif
 
 ! ---> - DIVERGENCE DE RIJ
 
-if(itytur(iphas).eq.3.and.iterns.eq.1) then
+if(itytur.eq.3.and.iterns.eq.1) then
 
   do isou = 1, 3
 
@@ -1009,7 +1009,7 @@ if(itytur(iphas).eq.3.and.iterns.eq.1) then
 
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes de divergence
-    if(isno2t(iphas).gt.0) then
+    if(isno2t.gt.0) then
       do iel = 1, ncel
         propce(iel,iptsna+isou-1 ) =                              &
         propce(iel,iptsna+isou-1 ) - w1(iel)
@@ -1043,7 +1043,7 @@ if( idiff(iuiph).ge. 1 ) then
 ! --- Si la vitesse doit etre diffusee, on calcule la viscosite
 !       pour le second membre (selon Rij ou non)
 
-  if (itytur(iphas).eq.3) then
+  if (itytur.eq.3) then
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis)
     enddo
@@ -1069,7 +1069,7 @@ if( idiff(iuiph).ge. 1 ) then
 !     En Rij avec irijnu = 1, on calcule la viscosite increment
 !       de la matrice dans VISCFI, VISCBI
 
-  if(itytur(iphas).eq.3.and.irijnu(iphas).eq.1) then
+  if(itytur.eq.3.and.irijnu.eq.1) then
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis)                                &
                             + idifft(iuiph)*propce(iel,ipcvst)
@@ -1097,7 +1097,7 @@ else
     viscb(ifac) = 0.d0
   enddo
 
-  if(itytur(iphas).eq.3.and.irijnu(iphas).eq.1) then
+  if(itytur.eq.3.and.irijnu.eq.1) then
     do ifac = 1, nfac
       viscfi(ifac) = 0.d0
     enddo
@@ -1248,7 +1248,7 @@ do isou = 1, 3
   if(iterns.eq.1) then
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes explicites
-    if(isno2t(iphas).gt.0) then
+    if(isno2t.gt.0) then
       do iel = 1, ncel
         propce(iel,iptsna+isou-1 ) =                              &
         propce(iel,iptsna+isou-1 ) + w7(iel)
@@ -1312,7 +1312,7 @@ do isou = 1, 3
 ! ---> TERMES SOURCES UTILISATEUR
 
   if(iappel.eq.1) then
-    if(isno2t(iphas).gt.0) then
+    if(isno2t.gt.0) then
       thetap = thetav(ivar)
       if(iterns.gt.1) then
         do iel = 1, ncel
@@ -1344,7 +1344,7 @@ do isou = 1, 3
 !  Au second appel, on n'a pas besoin de rovsdt
   if(iappel.eq.1) then
     if (ncepdp.gt.0) then
-      if(isno2t(iphas).gt.0) then
+      if(isno2t.gt.0) then
         thetap = thetav(ivar)
       else
         thetap = 1.d0
@@ -1370,16 +1370,16 @@ do isou = 1, 3
     if(nterup.eq.1) then
       call catsma                                                 &
       !==========
-  ( ncelet , ncel , ncesmp , iterns , isno2t(iphas), thetav(ivar),&
+  ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(ivar),&
     icetsm , itypsm(1,ivar) ,                                     &
-    volume , rtpa(1,ivar) , smacel(1,ivar) ,smacel(1,ipr(iphas)) ,&
+    volume , rtpa(1,ivar) , smacel(1,ivar) ,smacel(1,ipr) ,&
     trav(1,isou)        , rovsdt , w1 )
     else
       call catsma                                                 &
       !==========
-  ( ncelet , ncel , ncesmp , iterns , isno2t(iphas), thetav(ivar),&
+  ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(ivar),&
     icetsm , itypsm(1,ivar) ,                                     &
-    volume , rtpa(1,ivar) , smacel(1,ivar) ,smacel(1,ipr(iphas)) ,&
+    volume , rtpa(1,ivar) , smacel(1,ivar) ,smacel(1,ipr) ,&
     trava(1,isou,iphas) , rovsdt , w1 )
     endif
 
@@ -1387,7 +1387,7 @@ do isou = 1, 3
     if(iterns.eq.1) then
 !     Si on extrapole les termes source en temps :
 !       PROPCE recoit les termes explicites
-      if(isno2t(iphas).gt.0) then
+      if(isno2t.gt.0) then
         do iel = 1,ncel
           propce(iel,iptsna+isou-1 ) =                            &
           propce(iel,iptsna+isou-1 ) + w1(iel)
@@ -1415,7 +1415,7 @@ do isou = 1, 3
 ! ---> INITIALISATION DU SECOND MEMBRE
 
 !     Si on extrapole les TS
-  if(isno2t(iphas).gt.0) then
+  if(isno2t.gt.0) then
     thetp1 = 1.d0 + thets
 !       Si on n'itere pas sur navsto : TRAVA n'existe pas
     if(nterup.eq.1) then
@@ -1567,7 +1567,7 @@ do isou = 1, 3
 !     TPUCOU POUR LA PHASE D'IMPLICITATION
 !     Attention, il faut regarder s'il y a des pdc sur un proc quelconque,
 !       pas uniquement en local.
-    if((ncpdct(iphas).gt.0).and.(ipucou.eq.0)) then
+    if((ncpdct.gt.0).and.(ipucou.eq.0)) then
       do iel = 1,ncel
         tpucou(iel,isou) = dt(iel)
       enddo
@@ -1726,7 +1726,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 !     Calcul de la norme
 !       RNORMP qui servira dans resolp
   isqrt = 1
-  call prodsc(ncelet,ncel,isqrt,xnormp,xnormp,rnormp(iphas))
+  call prodsc(ncelet,ncel,isqrt,xnormp,xnormp,rnormp)
 
 endif
 

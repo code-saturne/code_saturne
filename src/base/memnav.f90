@@ -121,7 +121,7 @@ idebra = idbra0
 
 irij = 0
 do iphas = 1, nphas
-  if(itytur(iphas).eq.3.and.irijnu(iphas).eq.1) then
+  if(itytur.eq.3.and.irijnu.eq.1) then
     irij = 1
   endif
 enddo

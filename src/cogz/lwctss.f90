@@ -205,8 +205,8 @@ ivar = isca(iscal)
 iphas = 1
 
 ! ---
-ipcrom = ipproc(irom(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom)
+ipcvst = ipproc(ivisct)
 
 ! --- Numero des grandeurs physiques (voir usclim)
 do idirac = 1, ndirac
@@ -349,34 +349,34 @@ if ( ivar.eq.isca(icoyfp)) then
 
 ! ---- TURBULENCE
 
-  if (itytur(iphas).eq.2) then
+  if (itytur.eq.2) then
 
     do iel = 1, ncel
-      w10(iel) = rtpa(iel,ik(iphas))
-      w11(iel) = rtpa(iel,iep(iphas))
+      w10(iel) = rtpa(iel,ik)
+      w11(iel) = rtpa(iel,iep)
     enddo
 
-  elseif (itytur(iphas).eq.3) then
+  elseif (itytur.eq.3) then
 
     do iel = 1, ncel
-      w10(iel) = ( rtpa(iel,ir11(iphas))                          &
-                  +rtpa(iel,ir22(iphas))                          &
-                  +rtpa(iel,ir33(iphas)) ) / 2.d0
-      w11(iel) = rtpa(iel,iep(iphas))
+      w10(iel) = ( rtpa(iel,ir11)                          &
+                  +rtpa(iel,ir22)                          &
+                  +rtpa(iel,ir33) ) / 2.d0
+      w11(iel) = rtpa(iel,iep)
     enddo
 
-  elseif (iturb(iphas).eq.50) then
+  elseif (iturb.eq.50) then
 
     do iel = 1, ncel
-      w10(iel) = rtpa(iel,ik(iphas))
-      w11(iel) = rtpa(iel,iep(iphas))
+      w10(iel) = rtpa(iel,ik)
+      w11(iel) = rtpa(iel,iep)
     enddo
 
-  elseif (iturb(iphas).eq.60) then
+  elseif (iturb.eq.60) then
 
     do iel = 1, ncel
-      w10(iel) = rtpa(iel,ik(iphas))
-      w11(iel) = cmu*rtpa(iel,ik(iphas))*rtpa(iel,iomg(iphas))
+      w10(iel) = rtpa(iel,ik)
+      w11(iel) = cmu*rtpa(iel,ik)*rtpa(iel,iomg)
     enddo
 
   endif

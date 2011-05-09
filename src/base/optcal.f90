@@ -55,7 +55,7 @@ module optcal
   !    =1 variable, =0 constant
   !     sert lors des lectures de fichier suite pour eviter d'ecraser
   !     la valeur fournie par la valeur de l'ancien calcul.
-  integer, save :: irovar(nphsmx), ivivar(nphsmx)
+  integer, save :: irovar, ivivar
 
   ! Schema en temps
 
@@ -129,17 +129,17 @@ module optcal
   !  xnrmu0 : norme de u(0)
 
   integer, save ::          nterup,                                         &
-                            ischtp(nphsmx), istmpf(nphsmx),                 &
-                            isno2t(nphsmx), isto2t(nphsmx), isso2t(nscamx), &
-                            iroext(nphsmx),                                 &
-                            iviext(nphsmx), icpext(nphsmx), ivsext(nscamx), &
-                            initro(nphsmx), initvi(nphsmx),                 &
-                            initcp(nphsmx), initvs(nscamx)
-  double precision, save :: thetav(nvarmx), thetsn(nphsmx), thetst(nphsmx), &
+                            ischtp, istmpf,                 &
+                            isno2t, isto2t, isso2t(nscamx), &
+                            iroext,                                 &
+                            iviext, icpext, ivsext(nscamx), &
+                            initro, initvi,                 &
+                            initcp, initvs(nscamx)
+  double precision, save :: thetav(nvarmx), thetsn, thetst, &
                             thetss(nscamx),                                 &
-                            thetfl(nphsmx), thetro(nphsmx), thetvi(nphsmx), &
-                            thetcp(nphsmx), thetvs(nscamx), epsup (nphsmx), &
-                            xnrmu0(nphsmx), xnrmu (nphsmx)
+                            thetfl, thetro, thetvi, &
+                            thetcp, thetvs(nscamx), epsup , &
+                            xnrmu0, xnrmu
 
   ! Schema convectif
 
@@ -360,17 +360,17 @@ module optcal
   !         = 0 sans methode des vortex
   !         = 1 avec methode des vortex
 
-  integer, save :: iturb(nphsmx) , itytur(nphsmx),                 &
-                   ideuch(nphsmx), ilogpo(nphsmx), iclkep(nphsmx), &
-                   igrhok(nphsmx), igrake(nphsmx),                 &
-                   iscalt(nphsmx), ikecou(nphsmx),                 &
-                   irijnu(nphsmx), irijrb(nphsmx), irijec(nphsmx), &
-                   igrari(nphsmx), idifre(nphsmx), iclsyr(nphsmx), &
-                   iclptr(nphsmx), idries(nphsmx), ivrtex
+  integer, save :: iturb , itytur,                 &
+                   ideuch, ilogpo, iclkep, &
+                   igrhok, igrake,                 &
+                   iscalt, ikecou,                 &
+                   irijnu, irijrb, irijec, &
+                   igrari, idifre, iclsyr, &
+                   iclptr, idries, ivrtex
 
   ! ivisse prise en compte de -2/3 grad(mu div(u)) + div(mu (grad_t(u)))
 
-  integer, save :: ivisse(nphsmx)
+  integer, save :: ivisse
 
   ! Stokes
   !   irevmc
@@ -385,8 +385,8 @@ module optcal
   !   relaxv relaxation des variables (1 pas de relax)
   !   rnormp normalisation pour la convergence de resolp
 
-  integer, save ::          irevmc(nphsmx), iprco , irnpnw
-  double precision, save :: rnormp(nphsmx), arak(nphsmx)
+  integer, save ::          irevmc, iprco , irnpnw
+  double precision, save :: rnormp, arak
 
   ! ipucou algorithme couplage instationnaire vitesse/pression
 
@@ -460,7 +460,7 @@ module optcal
   ! Indicateur pertes de charge global (ie somme sur les processeurs
   !   de ncepdc)
 
-  integer, save :: ncpdct(nphsmx)
+  integer, save :: ncpdct
 
   ! Indicateur module thermique 1d global (ie somme sur les processeurs
   !   de nfpt1d)
@@ -470,7 +470,7 @@ module optcal
   ! Indicateur termes sources de masse global (ie somme sur les processeurs
   !   de ncetsm)
 
-  integer, save :: nctsmt(nphsmx)
+  integer, save :: nctsmt
 
   ! Indicateur de passage dans l'initialisation des
   !                       variables par l'utilisateur

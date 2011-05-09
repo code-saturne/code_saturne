@@ -189,7 +189,7 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
-iturb(iphas) = 20
+iturb = 20
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -207,12 +207,12 @@ iturb(iphas) = 20
 
 !     Caution:    complete usphyv with the law defining Cp
 !     =========   if and only if variable Cp has been selected here
-!                 (with icp(iphas)=1)
+!                 (with icp=1)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
-icp(iphas) = 0
+icp = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -986,23 +986,23 @@ dtref  = 0.01d0
 !   On the other hand, if specific physics are NOT activated:
 
 !     If a USER scalar represents the temperature or enthalpy (of phase iphas):
-!       we define the number of this scalar in iscalt(iphas) and
-!       we set iscsth(iscalt(iphas)) = 1 if it is the temperature
-!          or  iscsth(iscalt(iphas)) = 2 if it is the enthalpy.
+!       we define the number of this scalar in iscalt and
+!       we set iscsth(iscalt) = 1 if it is the temperature
+!          or  iscsth(iscalt) = 2 if it is the enthalpy.
 
 !     If no scalar represents the temperature or enthalpy (of phase iphas)
-!       we set iscalt(iphas) = -1
-!       and we do not define iscsth(iscalt(iphas)).
+!       we set iscalt = -1
+!       and we do not define iscsth(iscalt).
 
 
 !     For the radiative module when used without specific physics, if we
 !      have chosen to solve in temperature (that is if
-!      iscsth(iscalt(iphas)) = 1), the fluid temperature is considered to
+!      iscsth(iscalt) = 1), the fluid temperature is considered to
 !      be in degrees KELVIN (be careful for boundary conditions an expression
 !      of physical properties depending on temperature).
 !      Nonetheless, even though it is not recommended, if we wish for the
 !      fluid solver to work with a temperature in degrees Celsius, we must set
-!      iscsth(iscalt(iphas)) = -1.
+!      iscsth(iscalt) = -1.
 !      This choice is a source of user errors. Indeed, the boundary conditions
 !      for the fluid temperature will then be in degrees Celsius, while the
 !      boundary conditions for radiation in usray2 must still be in Kelvin.
@@ -1021,12 +1021,12 @@ if (nmodpp.eq.0) then
   !   or -1 if there is none.
   ! When the choice is done by the Code_Saturne GUI, the scalar representing
   !   the temperature or enthalpy is always the first.
-  iscalt(iphas) = -1
+  iscalt = -1
 
 ! If there is a temperature or enthalpy variable:
-  if (iscalt(iphas).gt.0) then
+  if (iscalt.gt.0) then
     ! we indicate if it is the temperature (=1) or the enthalpy (=2).
-    iscsth(iscalt(iphas)) = 1
+    iscsth(iscalt) = 1
   endif
 
 endif
@@ -1050,7 +1050,7 @@ iccvfg = 0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
-if (itytur(iphas).eq.4) then
+if (itytur.eq.4) then
   ivrtex = 0
 endif
 
@@ -1074,7 +1074,7 @@ endif
 !         blencv(ivar) = 1.0d0 to use a second-order scheme in space for
 !         convection. For temperature or enthalpy in particular, we
 !         may thus choose in this case:
-!          blencv(isca(iscalt(iphas))) = 1.0d0
+!          blencv(isca(iscalt)) = 1.0d0
 
 !       For non-user scalars relative to specific physics (coal, combustion,
 !         electric arcs: see usppmo) implicitly defined by the model,
@@ -1086,9 +1086,9 @@ endif
 
 iphas = 1
 
-blencv(iu(iphas)) = 1.0d0
-blencv(iv(iphas)) = 1.0d0
-blencv(iw(iphas)) = 1.0d0
+blencv(iu) = 1.0d0
+blencv(iv) = 1.0d0
+blencv(iw) = 1.0d0
 if (nscaus.ge.1) then
   do ii = 1, nscaus
     blencv(isca(ii)) = 1.0d0
@@ -1117,9 +1117,9 @@ iutile = 0
 if (iutile.eq.1) then
 
   iphas = 1
-  iresol(iu(iphas)) = 2
-  iresol(iv(iphas)) = 2
-  iresol(iw(iphas)) = 2
+  iresol(iu) = 2
+  iresol(iv) = 2
+  iresol(iw) = 2
   if (nscaus.ge.1) then
     do ii = 1, nscaus
       iresol(isca(ii)) = 2
@@ -1148,7 +1148,7 @@ endif
 ! mltmst = 4    ! number of ranks over which merging takes place
 
 iphas = 1
-imgr(ipr(iphas)) = 1
+imgr(ipr) = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -1160,14 +1160,14 @@ imgr(ipr(iphas)) = 1
 !     For difficult cases, a stabilization may be obtained by not
 !     reconstructing the convective and diffusive flux for variables
 !     of the turbulence model, that is
-!       in k-epsilon: if (itytur(iphas).eq.2) then
-!          ircflu(ik(iphas))   = 0 and ircflu(iep(iphas))  = 0
-!       in Rij-epsilon: if (itytur(iphas).eq.3) then
-!          ircflu(ir11(iphas)) = 0,    ircflu(ir22(iphas)) = 0,
-!          ircflu(ir33(iphas)) = 0,
-!          ircflu(ir12(iphas)) = 0,    ircflu(ir23(iphas)) = 0,
-!          ircflu(ir23(iphas)) = 0,
-!                                  and ircflu(iep(iphas))  = 0
+!       in k-epsilon: if (itytur.eq.2) then
+!          ircflu(ik)   = 0 and ircflu(iep)  = 0
+!       in Rij-epsilon: if (itytur.eq.3) then
+!          ircflu(ir11) = 0,    ircflu(ir22) = 0,
+!          ircflu(ir33) = 0,
+!          ircflu(ir12) = 0,    ircflu(ir23) = 0,
+!          ircflu(ir23) = 0,
+!                                  and ircflu(iep)  = 0
 !     (note that variable itytur is equal to iturb/10)
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
@@ -1179,9 +1179,9 @@ iutile = 0
 if (iutile.eq.1) then
 
   iphas = 1
-  if (iturb(iphas).eq.20) then
-    ircflu(ik(iphas))   = 0
-    ircflu(iep(iphas))  = 0
+  if (iturb.eq.20) then
+    ircflu(ik)   = 0
+    ircflu(iep)  = 0
   endif
 
 endif
@@ -1327,16 +1327,16 @@ omegaz = 0.d0
 
 iphas = 1
 
-ro0(iphas)    = 0.235d0
-viscl0(iphas) = 0.84d-6
-cp0(iphas)    = 1219.d0
+ro0    = 0.235d0
+viscl0 = 0.84d-6
+cp0    = 1219.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 iphas = 1
 
-t0(iphas) = 1000.d0 + 273.15d0
-p0(iphas) = 1.01325d5
+t0 = 1000.d0 + 273.15d0
+p0 = 1.01325d5
 ! We only specify XYZ0 if we explicitely fix Dirichlet conditions
 ! for the pressure.
 ! xyzp0(1,iphas) = 0.d0
@@ -1367,8 +1367,8 @@ p0(iphas) = 1.01325d5
 
 if (nmodpp.eq.0) then
   iphas = 1
-  irovar(iphas) = 0
-  ivivar(iphas) = 0
+  irovar = 0
+  ivivar = 0
 endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
@@ -1427,7 +1427,7 @@ endif
 !     When no specific physics has been activated
 !       (coal, combustion, electric arcs) and if a user scalar represents
 !       the temperature or enthalpy:
-!       visls0(iscalt(iphas)) = Lambda/Cp
+!       visls0(iscalt) = Lambda/Cp
 
 !     Here, as an example, we assign to viscl0 the viscosity of the
 !       carrier phase, which is fitting for passive tracers which
@@ -1446,7 +1446,7 @@ if (nscaus.gt.0) then
     ! For scalars which are not variances
     if (iscavr(jj).le.0) then
       ! We define the diffusivity
-      visls0(jj) = viscl0(iphas)
+      visls0(jj) = viscl0
     endif
   enddo
 
@@ -1461,7 +1461,7 @@ endif
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
-uref(iphas)    = 1.d0
+uref    = 1.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -1475,7 +1475,7 @@ uref(iphas)    = 1.d0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 iphas = 1
-almax(iphas) = -grand
+almax = -grand
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
@@ -1511,14 +1511,14 @@ if (iutile.eq.1) then
   ! First moment: <u>
   imom  = 1
   iphas = 1
-  idfmom(1,imom) =  iu(iphas)
+  idfmom(1,imom) =  iu
   ntdmom(imom)   =  1000
   ! Second moment: <rho u v>
   imom  = 2
   iphas = 1
-  idfmom(1,imom) = -irom(iphas)
-  idfmom(2,imom) =  iu(iphas)
-  idfmom(3,imom) =  iv(iphas)
+  idfmom(1,imom) = -irom
+  idfmom(2,imom) =  iu
+  idfmom(3,imom) =  iv
   imoold(imom)   = -1
   ntdmom(imom)   =  10000
 
@@ -1695,10 +1695,10 @@ if (iutile.eq.1) then
     iwarni(ii) = 1
   enddo
 
-  iwarni(ipr(iphas)) = 2
-  iwarni(iu(iphas)) = 2
-  iwarni(iv(iphas)) = 2
-  iwarni(iw(iphas)) = 2
+  iwarni(ipr) = 2
+  iwarni(iu) = 2
+  iwarni(iv) = 2
+  iwarni(iw) = 2
 
 endif
 
@@ -1820,7 +1820,7 @@ xyzcap(3,4) = 0.01d0
 iphas = 1
 
 ! pressure variable
-ipp = ipprtp(ipr   (iphas))
+ipp = ipprtp(ipr   )
 nomvar(ipp)   = 'Pressure'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -1830,7 +1830,7 @@ if (icorio.eq.1) then
 endif
 
 ! variable v1x
-ipp = ipprtp(iu    (iphas))
+ipp = ipprtp(iu    )
 nomvar(ipp)   = 'VelocityX'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -1840,7 +1840,7 @@ if (icorio.eq.1) then
 endif
 
 ! v1y variable
-ipp = ipprtp(iv    (iphas))
+ipp = ipprtp(iv    )
 nomvar(ipp)   = 'VelocityY'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -1850,7 +1850,7 @@ if (icorio.eq.1) then
 endif
 
 ! v1z variable
-ipp = ipprtp(iw    (iphas))
+ipp = ipprtp(iw    )
 nomvar(ipp)   = 'VelocityZ'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
@@ -1859,123 +1859,123 @@ if (icorio.eq.1) then
   nomvar(ipp)   = 'Rel VelocityZ'
 endif
 
-if (itytur(iphas).eq.2) then
+if (itytur.eq.2) then
 
   ! turbulent kinetic energy
-  ipp = ipprtp(ik    (iphas))
+  ipp = ipprtp(ik    )
   nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
-  ipp = ipprtp(iep   (iphas))
+  ipp = ipprtp(iep   )
   nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-elseif (itytur(iphas).eq.3) then
+elseif (itytur.eq.3) then
 
   ! Reynolds stresses
-  ipp = ipprtp(ir11  (iphas))
+  ipp = ipprtp(ir11  )
   nomvar(ipp)   = 'R11'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir22  (iphas))
+  ipp = ipprtp(ir22  )
   nomvar(ipp)   = 'R22'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir33  (iphas))
+  ipp = ipprtp(ir33  )
   nomvar(ipp)   = 'R33'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir12  (iphas))
+  ipp = ipprtp(ir12  )
   nomvar(ipp)   = 'R12'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir13  (iphas))
+  ipp = ipprtp(ir13  )
   nomvar(ipp)   = 'R13'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! Reynolds stresses
-  ipp = ipprtp(ir23  (iphas))
+  ipp = ipprtp(ir23  )
   nomvar(ipp)   = 'R23'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
-  ipp = ipprtp(iep   (iphas))
+  ipp = ipprtp(iep   )
   nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-elseif (iturb(iphas).eq.50) then
+elseif (iturb.eq.50) then
 
   ! turbulent kinetic energy
-  ipp = ipprtp(ik    (iphas))
+  ipp = ipprtp(ik    )
   nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! turbulent dissipation
-  ipp = ipprtp(iep   (iphas))
+  ipp = ipprtp(iep   )
   nomvar(ipp)   = 'Turb Dissipation'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! phi
-  ipp = ipprtp(iphi  (iphas))
+  ipp = ipprtp(iphi  )
   nomvar(ipp)   = 'Phi'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! f_bar
-  ipp = ipprtp(ifb   (iphas))
+  ipp = ipprtp(ifb   )
   nomvar(ipp)   = 'f_bar'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-elseif (iturb(iphas).eq.60) then
+elseif (iturb.eq.60) then
 
   ! turbulent kinetic energy
-  ipp = ipprtp(ik    (iphas))
+  ipp = ipprtp(ik    )
   nomvar(ipp)   = 'Turb Kinetic Energy'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
   ! omega
-  ipp = ipprtp(iomg  (iphas))
+  ipp = ipprtp(iomg  )
   nomvar(ipp)   = 'Omega'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1
 
-elseif (iturb(iphas).eq.70) then
+elseif (iturb.eq.70) then
 
   ! Spalart-Allmaras variable (viscosity-like)
-  ipp = ipprtp(inusa (iphas))
+  ipp = ipprtp(inusa )
   nomvar(ipp)   = 'NuTilda'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -2023,15 +2023,15 @@ iphas = 1
 
 ! Density variable (output for post-processing only if variable or
 !                   in the case of specific physics)
-ipp = ipppro(ipproc(irom  (iphas)))
+ipp = ipppro(ipproc(irom  ))
 nomvar(ipp)   = 'Density'
-ichrvr(ipp)   = max(irovar(iphas),nmodpp)
+ichrvr(ipp)   = max(irovar,nmodpp)
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! specific heat
-if (icp   (iphas).gt.0) then
-  ipp = ipppro(ipproc(icp   (iphas)))
+if (icp   .gt.0) then
+  ipp = ipppro(ipproc(icp   ))
   nomvar(ipp)   = 'Specific Heat'
   ichrvr(ipp)   = 0
   ilisvr(ipp)   = 0
@@ -2039,28 +2039,28 @@ if (icp   (iphas).gt.0) then
 endif
 
 ! laminar viscosity
-ipp = ipppro(ipproc(iviscl(iphas)))
+ipp = ipppro(ipproc(iviscl))
 nomvar(ipp)   = 'Laminar Viscosity'
 ichrvr(ipp)   = 0
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = 0
 
 ! turbulent viscosity
-ipp = ipppro(ipproc(ivisct(iphas)))
+ipp = ipppro(ipproc(ivisct))
 nomvar(ipp)   = 'Turb Viscosity'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 1
 ihisvr(ipp,1) = -1
 
 ! Courant number
-ipp = ipppro(ipproc(icour(iphas)))
+ipp = ipppro(ipproc(icour))
 nomvar(ipp)   = 'CFL'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 0
 ihisvr(ipp,1) = -1
 
 ! Fourier number
-ipp = ipppro(ipproc(ifour(iphas)))
+ipp = ipppro(ipproc(ifour))
 nomvar(ipp)   = 'Fourier Number'
 ichrvr(ipp)   = 1
 ilisvr(ipp)   = 0
@@ -2068,8 +2068,8 @@ ihisvr(ipp,1) = -1
 
 ! 'csmago' variable for dynamic L.E.S. models
 !    (square of the Samgorinsky "constant")
-if (ismago(iphas).gt.0) then
-  ipp = ipppro(ipproc(ismago(iphas)))
+if (ismago.gt.0) then
+  ipp = ipppro(ipproc(ismago))
   nomvar(ipp)   = 'Csdyn2'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
@@ -2088,7 +2088,7 @@ endif
 
 ! total pressure (not defined in compressible case)
 if (ippmod(icompf).lt.0) then
-  ipp = ipppro(ipproc(iprtot(iphas)))
+  ipp = ipppro(ipproc(iprtot))
   nomvar(ipp)   = 'Total Pressure'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1

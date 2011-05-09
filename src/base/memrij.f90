@@ -117,7 +117,7 @@ idebra = idbra0
 
 jgrari = 0
 do iphas = 1, nphas
-  if(igrari(iphas).eq.1) then
+  if(igrari.eq.1) then
     jgrari = 1
   endif
 enddo
@@ -126,7 +126,7 @@ enddo
 icobx = 0
 if(abs(icdpar).eq.1) then
   do iphas = 1, nphas
-    if(irijec(iphas).eq.1) then
+    if(irijec.eq.1) then
       icobx = 1
     endif
   enddo

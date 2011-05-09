@@ -59,13 +59,13 @@ subroutine usphyv &
 !    (a specifi subroutine is dedicated to that: usvist)
 
 
-! icp(iphas) = 1 must have been specified
+! icp = 1 must have been specified
 !                ========================
 !    in usini1 if we wish to define a varible specific heat
 !    cp for phase iphas (otherwise: memory overwrite).
 
 
-! ivisls(iphas) = 1 must have been specified
+! ivisls = 1 must have been specified
 !                   ========================
 !    in usini1 if we wish to define a variable viscosity
 !    viscls for phase iphas (otherwise: memory overwrite).
@@ -79,8 +79,8 @@ subroutine usphyv &
 !    Thus, AT THE FIRST TIME STEP (non-restart case), the only
 !    values initialized before this call are those defined
 !      - in usini1 :
-!             . density    (initialized at ro0(iphas))
-!             . viscosity  (initialized at viscl0(iphas))
+!             . density    (initialized at ro0)
+!             . viscosity  (initialized at viscl0)
 !      - in usiniv :
 !             . calculation variables (initialized at 0 by defaut
 !             or to the value given in the GUI or in usiniv)
@@ -121,7 +121,7 @@ subroutine usphyv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! i  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -164,7 +164,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -252,10 +252,10 @@ if(iutile.eq.1) then
     !       (and of its boundary conditions)
     !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-    if (iscalt(iphas).gt.0) then
-      ivart = isca(iscalt(iphas))
+    if (iscalt.gt.0) then
+      ivart = isca(iscalt)
     else
-      write(nfecra,9010) iscalt(iphas)
+      write(nfecra,9010) iscalt
       call csexit (1)
     endif
 
@@ -267,8 +267,8 @@ if(iutile.eq.1) then
     !     in 'propce', physical properties at element centers:       'ipcrom'
     !     in 'propfb', physical properties at boundary face centers: 'ipbrom'
 
-    ipcrom = ipproc(irom(iphas))
-    ipbrom = ipprob(irom(iphas))
+    ipcrom = ipproc(irom)
+    ipbrom = ipprob(irom)
 
     ! --- Coefficients of laws chosen by the user
     !       Values given here are fictitious
@@ -295,7 +295,7 @@ if(iutile.eq.1) then
     !   at the center of adjacent cells. This is the recommended approach.
     ! To be in this case, nothing needs to be done:
     !   do not prescribe a value for propfb(ifac, ipbrom) and
-    !   do not modify ibrom(iphas)
+    !   do not modify ibrom
 
     ! For users who do not wish to follow this recommendation, we
     !   note that the boundary temperature may be fictitious, simply
@@ -316,7 +316,7 @@ if(iutile.eq.1) then
     ! at ALL boundary faces.
     !    ===
 
-    ! ibrom(iphas) = 1
+    ! ibrom = 1
     ! do ifac = 1, nfabor
     !   iel = ifabor(ifac)
     !   xrtp = coefa(ifac, iclvar)+rtp(iel, ivart)*coefb(ifac, iclvar)
@@ -325,7 +325,7 @@ if(iutile.eq.1) then
 
     ! ifabor(ifac) is the cell adjacent to the boundary face
 
-    ! Caution: ibrom(iphas) = 1 is necessary for the law to be taken
+    ! Caution: ibrom = 1 is necessary for the law to be taken
     !                           into account.
 
   enddo ! --- Loop on phases
@@ -353,17 +353,17 @@ if(iutile.eq.1) then
     ! --- Number of the thermal variable for the current phase 'iphas'
     !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-    if (iscalt(iphas).gt.0) then
-      ivart = isca(iscalt(iphas))
+    if (iscalt.gt.0) then
+      ivart = isca(iscalt)
     else
-      write(nfecra,9010) iscalt(iphas)
+      write(nfecra,9010) iscalt
       call csexit(1)
     endif
 
     ! --- Rank of molecular dynamic viscosity for current phase 'iphas'
     !     in 'propce', physical properties at element centers: 'ipcvis'
 
-    ipcvis = ipproc(iviscl(iphas))
+    ipcvis = ipproc(iviscl)
 
     ! --- Coefficients of laws chosen by the user
     !       Values given here are fictitious
@@ -409,18 +409,18 @@ if(iutile.eq.1) then
     ! --- Number of the thermal variable for the current phase 'iphas'
     !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-    if (iscalt(iphas).gt.0) then
-      ivart = isca(iscalt(iphas))
+    if (iscalt.gt.0) then
+      ivart = isca(iscalt)
     else
-      write(nfecra,9010) iscalt(iphas)
+      write(nfecra,9010) iscalt
       call csexit (1)
     endif
 
     ! --- Rank of the specific heat for current phase 'iphas'
     !     in 'propce', physical properties at element centers: 'ipccp'
 
-    if(icp(iphas).gt.0) then
-      ipccp  = ipproc(icp   (iphas))
+    if(icp.gt.0) then
+      ipccp  = ipproc(icp   )
     else
       ipccp  = 0
     endif
@@ -428,7 +428,7 @@ if(iutile.eq.1) then
     ! --- Stop if Cp is not variable
 
     if(ipccp.le.0) then
-      write(nfecra,1000) icp(iphas)
+      write(nfecra,1000) icp
       call csexit (1)
     endif
 
@@ -473,18 +473,18 @@ if(iutile.eq.1) then
     ! --- Number of the thermal variable for the current phase 'iphas'
     !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-    if (iscalt(iphas).gt.0) then
-      ivart = isca(iscalt(iphas))
+    if (iscalt.gt.0) then
+      ivart = isca(iscalt)
     else
-      write(nfecra,9010) iscalt(iphas)
+      write(nfecra,9010) iscalt
       call csexit (1)
     endif
 
     ! --- Rank of Lambda/Cp of the thermal variable for current phase 'iphas'
     !     in 'propce', physical properties at element centers: 'ipcvsl'
 
-    if(ivisls(iscalt(iphas)).gt.0) then
-      ipcvsl = ipproc(ivisls(iscalt(iphas)))
+    if(ivisls(iscalt).gt.0) then
+      ipcvsl = ipproc(ivisls(iscalt))
     else
       ipcvsl = 0
     endif
@@ -493,15 +493,15 @@ if(iutile.eq.1) then
 
     if(ipcvsl.le.0) then
       write(nfecra,1010)                                          &
-           iscalt(iphas), iscalt(iphas), ivisls(iscalt(iphas))
+           iscalt, iscalt, ivisls(iscalt)
       call csexit (1)
     endif
 
     ! --- Rank of the specific heat for current phase 'iphas'
     !     in 'propce', physical properties at element centers: 'ipccp'
 
-    if(icp(iphas).gt.0) then
-      ipccp  = ipproc(icp   (iphas))
+    if(icp.gt.0) then
+      ipccp  = ipproc(icp   )
     else
       ipccp  = 0
     endif
@@ -518,18 +518,18 @@ if(iutile.eq.1) then
     !--------------------------------------
     ! law    Lambda/Cp = {t * (t * (al * t +  bl) + cl) + dl} / Cp
     ! so     propce(iel,ipcvsl) &
-    !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)/cp0(iphas)
+    !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)/cp0
 
     ! We assume Cp has been defined previously.
 
     if(ipccp.le.0) then
 
-      ! --- If Cp is uniform, we use cp0(iphas)
+      ! --- If Cp is uniform, we use cp0
       do iel = 1, ncel
         xrtp = rtp(iel,ivart)
         propce(iel,ipcvsl) =                                      &
              (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
-             /cp0(iphas)
+             /cp0
       enddo
 
     else
@@ -574,7 +574,7 @@ if(iutile.eq.1) then
     ! --- If it is a thermal variable, it has already been handled above
     ith = 0
     do iphas = 1, nphas
-      if (iscal.eq.iscalt(iphas)) ith = 1
+      if (iscal.eq.iscalt) ith = 1
     enddo
 
     ! --- If the variable is a fluctuation, its diffusivity is the same
@@ -592,10 +592,10 @@ if(iutile.eq.1) then
       !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
       iphas = 1
-      if (iscalt(iphas).gt.0) then
-        ivart = isca(iscalt(iphas))
+      if (iscalt.gt.0) then
+        ivart = isca(iscalt)
       else
-        write(nfecra,9010) iscalt(iphas)
+        write(nfecra,9010) iscalt
         call csexit (1)
       endif
 
@@ -697,7 +697,7 @@ endif ! --- Test on 'iutile'
 '@    La variable dont dependent les proprietes physiques ne  ',/,&
 '@      semble pas etre une variable de calcul.               ',/,&
 '@    En effet, on cherche a utiliser la temperature alors que',/,&
-'@      ISCALT(IPHAS) = ',I10                                  ,/,&
+'@      ISCALT = ',I10                                  ,/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
 '@    Verifier le codage de usphyv (et le test lors de la     ',/,&
@@ -758,7 +758,7 @@ endif ! --- Test on 'iutile'
 '@    The variable on which physical properties depend does',/,   &
 '@      seem to be a calculation variable.',/,                    &
 '@    Indeed, we are trying to use the temperature while',/,      &
-'@      iscalt(iphas) = ',i10                                  ,/,&
+'@      iscalt = ',i10                                  ,/,&
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
 '@',/,                                                            &

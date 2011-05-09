@@ -204,11 +204,11 @@ do ifac = 1, nfabor
       xv = ra(ivvort+(ient-1)*icvmax+ii-1)
       xw = ra(iwvort+(ient-1)*icvmax+ii-1)
 
-      rcodcl(ifac,iu(iphas),1) = xu*dir3(1,ient)+xv*dir1(1,ient)  &
+      rcodcl(ifac,iu,1) = xu*dir3(1,ient)+xv*dir1(1,ient)  &
                                + xw*dir2(1,ient)
-      rcodcl(ifac,iv(iphas),1) = xu*dir3(2,ient)+xv*dir1(2,ient)  &
+      rcodcl(ifac,iv,1) = xu*dir3(2,ient)+xv*dir1(2,ient)  &
                                + xw*dir2(2,ient)
-      rcodcl(ifac,iw(iphas),1) = xu*dir3(3,ient)+xv*dir1(3,ient)  &
+      rcodcl(ifac,iw,1) = xu*dir3(3,ient)+xv*dir1(3,ient)  &
                                + xw*dir2(3,ient)
     enddo
 

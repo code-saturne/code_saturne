@@ -176,7 +176,7 @@ ipcpro = ipproc(iym(3))
 ipctsc = ipproc(itsc)
 ipctem = ipproc(itemp)
 iphas = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 ipcmam = ipproc(imam)
 
 ! ---> Initialisation
@@ -207,7 +207,7 @@ ipass = ipass + 1
 
 if ( (ipass.le.1 .and. isuite.eq.0 ) .or.                         &
      (ipass.le.1 .and. isuite.eq.1                                &
-                 .and. initro(iphas).ne.1) ) then
+                 .and. initro.ne.1) ) then
   fmin = 4.405286343612334e-02
   fmax = 5.506607929515418e-02
 endif
@@ -335,11 +335,11 @@ do iel =1, ncel
 !     ---> Calcul de la masse volumique en 1 et 2
 
       if ( ipass.gt.1 .or.                                        &
-          (isuite.eq.1.and.initro(iphas).eq.1) ) then
-        rhol(idirac) = p0(iphas) * maml(idirac)                   &
+          (isuite.eq.1.and.initro.eq.1) ) then
+        rhol(idirac) = p0 * maml(idirac)                   &
              / (rr*teml(idirac))
       else
-        rhol(idirac) = ro0(iphas)
+        rhol(idirac) = ro0
       endif
 
 ! ---> Calcul du terme source en 1 et 2 du scalaire YFM
@@ -401,9 +401,9 @@ do iel =1, ncel
 !---> Masse volumique du melange
 
     if ( ipass.gt.1 .or.                                          &
-        (isuite.eq.1.and.initro(iphas).eq.1) ) then
+        (isuite.eq.1.and.initro.eq.1) ) then
       propce(iel,ipcrom) = srrom*propce(iel,ipcrom)               &
-                          +(1.d0-srrom)*(p0(iphas)/(rr*temsmm))
+                          +(1.d0-srrom)*(p0/(rr*temsmm))
     endif
 
   else
@@ -548,11 +548,11 @@ do iel =1, ncel
 ! ---> Calcul de la masse volumique en 1 et 2
 
       if ( ipass.gt.1 .or.                                        &
-          (isuite.eq.1.and.initro(iphas).eq.1) ) then
-        rhol(idirac) = p0(iphas) * maml(idirac)                   &
+          (isuite.eq.1.and.initro.eq.1) ) then
+        rhol(idirac) = p0 * maml(idirac)                   &
              /(rr*teml(idirac))
       else
-        rhol(idirac) = ro0(iphas)
+        rhol(idirac) = ro0
       endif
 
 ! ---> Calcul du terme source en 1 et 2 du scalaire YFM
@@ -633,9 +633,9 @@ do iel =1, ncel
 ! ---> Masse volumique du melange
 
     if ( ipass.gt.1 .or.                                          &
-        (isuite.eq.1.and.initro(iphas).eq.1) ) then
+        (isuite.eq.1.and.initro.eq.1) ) then
       propce(iel,ipcrom) = srrom * propce(iel,ipcrom)             &
-           + (1.d0-srrom) * (p0(iphas)/(rr*temsmm))
+           + (1.d0-srrom) * (p0/(rr*temsmm))
     endif
 
   endif

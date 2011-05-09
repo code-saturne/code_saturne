@@ -61,14 +61,14 @@ subroutine atiniv &
 !     PROPCE (prop au centre), PROPFA (aux faces internes),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL ,IPHAS)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
 !      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
 
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
+!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC,IPHAS)
 !      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 ! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
@@ -179,7 +179,7 @@ if (isuite.eq.0) then
     ! The thermal scalar is potential temperature
     iphas = 1
     do iel = 1, ncel
-      rtp(iel,isca(iscalt(iphas))) = t0(iphas)
+      rtp(iel,isca(iscalt)) = t0
     enddo
   endif
 

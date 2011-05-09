@@ -185,27 +185,27 @@ double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr (iphas)
-iuiph  = iu  (iphas)
-iviph  = iv  (iphas)
-iwiph  = iw  (iphas)
-ir11ip = ir11(iphas)
-ir22ip = ir22(iphas)
-ir33ip = ir33(iphas)
-ir12ip = ir12(iphas)
-ir13ip = ir13(iphas)
-ir23ip = ir23(iphas)
-ieiph  = iep (iphas)
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+ir11ip = ir11
+ir22ip = ir22
+ir33ip = ir33
+ir12ip = ir12
+ir13ip = ir13
+ir23ip = ir23
+ieiph  = iep
 
 icliup = iclrtp(iuiph,icoef)
 iclivp = iclrtp(iviph,icoef)
 icliwp = iclrtp(iwiph,icoef)
 
-ipcrom = ipproc(irom  (iphas))
-ipbrom = ipprob(irom  (iphas))
+ipcrom = ipproc(irom  )
+ipbrom = ipprob(irom  )
 
 if(iwarni(ieiph).ge.1) then
-  if (iturb(iphas).eq.30) then
+  if (iturb.eq.30) then
     write(nfecra,1000)
   else
     write(nfecra,1001)
@@ -223,7 +223,7 @@ endif
 !     W10 = P12 , W11 = P13 , W9 = P23
 !===============================================================================
 
-if (iturb(iphas).eq.30) then
+if (iturb.eq.30) then
 ! INITIALISATIONS DE W7 ... W12
 
   do ii = 1 , 6
@@ -460,7 +460,7 @@ endif
 ! 3.  CALCUL DU GRADIENT DE ROM POUR LES TERMES DE GRAVITE
 !===============================================================================
 
-if(igrari(iphas).eq.1) then
+if(igrari.eq.1) then
 
 ! Conditions aux limites : Dirichlet ROMB
 !   On utilise VISCB pour stocker le coefb relatif a ROM
@@ -485,9 +485,9 @@ if(igrari(iphas).eq.1) then
 !     Si on extrapole les termes sources et rho, on utilise cpdt rho^n
   ipcroo = ipcrom
   ipbroo = ipbrom
-  if(isto2t(iphas).gt.0.and.iroext(iphas).gt.0) then
-    ipcroo = ipproc(iroma(iphas))
-    ipbroo = ipprob(iroma(iphas))
+  if(isto2t.gt.0.and.iroext.gt.0) then
+    ipcroo = ipproc(iroma)
+    ipbroo = ipprob(iroma)
   endif
 
   call grdcel                                                     &
@@ -545,7 +545,7 @@ do isou = 1, 6
   endif
 
   !     Rij-epsilon standard (LRR)
-  if (iturb(iphas).eq.30) then
+  if (iturb.eq.30) then
     call resrij                                                   &
     !==========
  ( idebia , idebra ,                                              &

@@ -58,7 +58,7 @@ subroutine ustsns &
 ! -----
 ! The routine is called for each velocity component. It is therefore necessary
 ! to test the value of the variable ivar to separate the treatments of the
-! components iu(iphas), iv(iphas) or iw(iphas).
+! components iu, iv or iw.
 !
 ! The additional source term is decomposed into an explicit part (crvexp) and
 ! an implicit part (crvimp) that must be provided here.
@@ -210,7 +210,7 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
-ipcrom = ipproc(irom  (iphas))
+ipcrom = ipproc(irom  )
 
 
 !===============================================================================
@@ -248,7 +248,7 @@ if(iutile.eq.0) return
 ! ----------------------------------------------
 
 iphas=1
-if (ivar.eq.iu(1)) then
+if (ivar.eq.iu) then
 
   ckp  = 10.d0
   qdm  = 100.d0

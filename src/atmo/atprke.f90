@@ -152,7 +152,7 @@ idebra = idbra0
 if (ippmod(iatmos).eq.1) then
 
 
-  itpp = isca(iscalt(iphas))
+  itpp = isca(iscalt)
   icltpp = iclrtp(itpp,icoef)
 
 ! ---- Options de calcul:
@@ -188,8 +188,8 @@ if (ippmod(iatmos).eq.1) then
 !      Production et terme de gravite
 !         TINSTK=P+G et TINSTE=P+(1-CE3)*G
 
-  if(iscalt(iphas).gt.0.and.nscal.ge.iscalt(iphas)) then
-    prdtur = sigmas(iscalt(iphas))
+  if(iscalt.gt.0.and.nscal.ge.iscalt) then
+    prdtur = sigmas(iscalt)
   else
     prdtur = 1.d0
   endif
@@ -197,7 +197,7 @@ if (ippmod(iatmos).eq.1) then
 !     En production lineaire, on multiplie tout de suite le terme
 !     de gravite par VISCT, car le reste est deja multiplie.
 !     Dans les autres cas, la multiplication est faite plus tard.
-  if (iturb(iphas).eq.21) then
+  if (iturb.eq.21) then
     do iel = 1, ncel
       gravke =   (w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
                / (rtp(iel,itpp)*prdtur)

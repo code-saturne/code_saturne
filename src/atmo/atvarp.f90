@@ -134,7 +134,7 @@ enddo
 
 ! ---- Cp est constant
 iphas      = 1
-icp(iphas) = 0
+icp = 0
 
 return
 end subroutine

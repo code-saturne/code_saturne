@@ -137,16 +137,16 @@ double precision aa, bb
 idebia = idbia0
 idebra = idbra0
 
-ir11ip = ir11(iphas)
-ir22ip = ir22(iphas)
-ir33ip = ir33(iphas)
-ir12ip = ir12(iphas)
-ir13ip = ir13(iphas)
-ir23ip = ir23(iphas)
-ieiph  = iep (iphas)
+ir11ip = ir11
+ir22ip = ir22
+ir33ip = ir33
+ir12ip = ir12
+ir13ip = ir13
+ir23ip = ir23
+ieiph  = iep
 
-if(iscalt(iphas).gt.0.and.nscal.ge.iscalt(iphas)) then
-  prdtur = sigmas(iscalt(iphas))
+if(iscalt.gt.0.and.nscal.ge.iscalt) then
+  prdtur = sigmas(iscalt)
 else
   prdtur = 1.d0
 endif

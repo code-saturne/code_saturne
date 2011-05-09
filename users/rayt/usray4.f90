@@ -153,7 +153,7 @@ integer          iel , ifac , iscal
 idebia = idbia0
 idebra = idbra0
 
-iscal = iscalt(iphas)
+iscal = iscalt
 
 !===============================================================================
 !  2.1 - Tempearature in kelvin for cells

@@ -68,14 +68,14 @@ subroutine usativ &
 !     PROPCE (prop au centre), PROPFA (aux faces internes),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL ,IPHAS)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
 !      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
 
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
+!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC,IPHAS)
 !      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 
@@ -230,52 +230,52 @@ if (isuite.eq.0) then
    (nbmetd, nbmetm,                                               &
     zdprom, tmprom, epprom, zent  , ttcabs, xeent )
 
-    rtp(iel,iu(iphas))=xuent
-    rtp(iel,iv(iphas))=xvent
-    rtp(iel,iw(iphas))=0.d0
+    rtp(iel,iu)=xuent
+    rtp(iel,iv)=xvent
+    rtp(iel,iw)=0.d0
 
 !     ITYTUR est un indicateur qui vaut ITURB/10
-    if    (itytur(iphas).eq.2) then
+    if    (itytur.eq.2) then
 
-      rtp(iel,ik(iphas))  = xkent
-      rtp(iel,iep(iphas)) = xeent
+      rtp(iel,ik)  = xkent
+      rtp(iel,iep) = xeent
 
-    elseif(itytur(iphas).eq.3) then
+    elseif(itytur.eq.3) then
 
-      rtp(iel,ir11(iphas)) = d2s3*xkent
-      rtp(iel,ir22(iphas)) = d2s3*xkent
-      rtp(iel,ir33(iphas)) = d2s3*xkent
-      rtp(iel,ir12(iphas)) = 0.d0
-      rtp(iel,ir13(iphas)) = 0.d0
-      rtp(iel,ir23(iphas)) = 0.d0
-      rtp(iel,iep(iphas))  = xeent
+      rtp(iel,ir11) = d2s3*xkent
+      rtp(iel,ir22) = d2s3*xkent
+      rtp(iel,ir33) = d2s3*xkent
+      rtp(iel,ir12) = 0.d0
+      rtp(iel,ir13) = 0.d0
+      rtp(iel,ir23) = 0.d0
+      rtp(iel,iep)  = xeent
 
-    elseif(iturb(iphas).eq.50) then
+    elseif(iturb.eq.50) then
 
-      rtp(iel,ik(iphas))   = xkent
-      rtp(iel,iep(iphas))  = xeent
-      rtp(iel,iphi(iphas)) = d2s3
-      rtp(iel,ifb(iphas))  = 0.d0
+      rtp(iel,ik)   = xkent
+      rtp(iel,iep)  = xeent
+      rtp(iel,iphi) = d2s3
+      rtp(iel,ifb)  = 0.d0
 
-    elseif(iturb(iphas).eq.60) then
+    elseif(iturb.eq.60) then
 
-      rtp(iel,ik(iphas))   = xkent
-      rtp(iel,iomg(iphas)) = xeent/cmu/xkent
+      rtp(iel,ik)   = xkent
+      rtp(iel,iomg) = xeent/cmu/xkent
 
-    elseif(iturb(iphas).eq.70) then
+    elseif(iturb.eq.70) then
 
-      rtp(iel,inusa(iphas)) = cmu*xkent**2/xeent
+      rtp(iel,inusa) = cmu*xkent**2/xeent
 
     endif
 
-    if (iscalt(iphas).ge.0) then
+    if (iscalt.ge.0) then
 ! On suppose que le scalaire est la temperature potentielle :
       call intprf                                                 &
       !==========
    (nbmett, nbmetm,                                               &
     ztprom, tmprom, tpprom, zent  , ttcabs, tpent )
 
-      rtp(iel,isca(iscalt(iphas))) = tpent
+      rtp(iel,isca(iscalt)) = tpent
 
     endif
   enddo

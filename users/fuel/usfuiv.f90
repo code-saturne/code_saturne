@@ -58,7 +58,7 @@ subroutine usfuiv &
 ! Physical properties are stored in PROPCE(cell center)
 !  PROPFA(inner face) and PROPFB(boundary face)
 !  e.g.
-!  PROPCE(IEL, IPPROC(IROM  (IPHAS))) is ROM(IEL,IPHAS) mean density kg/m3
+!  PROPCE(IEL, IPPROC(IROM  )) is ROM(IEL,IPHAS) mean density kg/m3
 !  PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) is FLUMAS(IFAC,IVAR) convective flux
 !                                                        of variable IVAR
 !  PROPFB(......                      .................................
@@ -274,45 +274,45 @@ if ( isuite.eq.0 ) then
 
 ! ---- TURBULENCE
 
-  if (itytur(iphas).eq.2) then
+  if (itytur.eq.2) then
 
     do iel = 1, ncel
-      rtp(iel,ik(iphas))  = xkent
-      rtp(iel,iep(iphas)) = xeent
+      rtp(iel,ik)  = xkent
+      rtp(iel,iep) = xeent
     enddo
 
-  elseif (itytur(iphas).eq.3) then
+  elseif (itytur.eq.3) then
 
     do iel = 1, ncel
-      rtp(iel,ir11(iphas)) = d2s3*xkent
-      rtp(iel,ir22(iphas)) = d2s3*xkent
-      rtp(iel,ir33(iphas)) = d2s3*xkent
-      rtp(iel,ir12(iphas)) = 0.d0
-      rtp(iel,ir13(iphas)) = 0.d0
-      rtp(iel,ir23(iphas)) = 0.d0
-      rtp(iel,iep(iphas))  = xeent
+      rtp(iel,ir11) = d2s3*xkent
+      rtp(iel,ir22) = d2s3*xkent
+      rtp(iel,ir33) = d2s3*xkent
+      rtp(iel,ir12) = 0.d0
+      rtp(iel,ir13) = 0.d0
+      rtp(iel,ir23) = 0.d0
+      rtp(iel,iep)  = xeent
     enddo
 
-  elseif (iturb(iphas).eq.50) then
+  elseif (iturb.eq.50) then
 
     do iel = 1, ncel
-      rtp(iel,ik(iphas))   = xkent
-      rtp(iel,iep(iphas))  = xeent
-      rtp(iel,iphi(iphas)) = d2s3
-      rtp(iel,ifb(iphas))  = 0.d0
+      rtp(iel,ik)   = xkent
+      rtp(iel,iep)  = xeent
+      rtp(iel,iphi) = d2s3
+      rtp(iel,ifb)  = 0.d0
     enddo
 
-  elseif (iturb(iphas).eq.60) then
+  elseif (iturb.eq.60) then
 
     do iel = 1, ncel
-      rtp(iel,ik(iphas))   = xkent
-      rtp(iel,iomg(iphas)) = xeent/cmu/xkent
+      rtp(iel,ik)   = xkent
+      rtp(iel,iomg) = xeent/cmu/xkent
     enddo
 
-  elseif (iturb(iphas).eq.70) then
+  elseif (iturb.eq.70) then
 
     do iel = 1, ncel
-      rtp(iel,inusa(iphas)) = cmu*xkent**2/xeent
+      rtp(iel,inusa) = cmu*xkent**2/xeent
     enddo
 
   endif
@@ -322,8 +322,8 @@ if ( isuite.eq.0 ) then
 
 ! ---- Computation of H1INIT and  H2INIT
 
-  t1init = t0(iphas)
-  t2init = t0(iphas)
+  t1init = t0
+  t2init = t0
 
 ! ------ Transported variables for droplets
 

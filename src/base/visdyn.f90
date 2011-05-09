@@ -49,7 +49,7 @@ subroutine visdyn &
 
 ! SMAGO = LijMij/MijMij
 
-! PROPCE(1,IVISCT(IPHAS)) = ROM * SMAGO  * L**2 * SQRT ( 2 * Sij.Sij )
+! PROPCE(1,IVISCT) = ROM * SMAGO  * L**2 * SQRT ( 2 * Sij.Sij )
 !       Sij = (DUi/Dxj + DUj/Dxi)/2
 
 ! On dispose des types de faces de bord au pas de temps
@@ -169,13 +169,13 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Numero des variables (dans RTP)
-iuiph = iu(iphas)
-iviph = iv(iphas)
-iwiph = iw(iphas)
+iuiph = iu
+iviph = iv
+iwiph = iw
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvst = ipproc(ivisct(iphas))
-ipcrom = ipproc(irom  (iphas))
+ipcvst = ipproc(ivisct)
+ipcrom = ipproc(irom  )
 
 ! --- Rang des c.l. des variables dans COEFA COEFB
 !        (c.l. std, i.e. non flux)
@@ -184,13 +184,13 @@ ipcliv = iclrtp(iviph,icoef)
 ipcliw = iclrtp(iwiph,icoef)
 
 ! --- Pour le calcul de la viscosite de sous-maille
-xfil   = xlesfl(iphas)
-xfil2  = xlesfd(iphas)
-xa     = ales(iphas)
-xb     = bles(iphas)
+xfil   = xlesfl
+xfil2  = xlesfd
+xa     = ales
+xb     = bles
 deux   = 2.d0
 radeux = sqrt(deux)
-xsmgmx = smagmx(iphas)
+xsmgmx = smagmx
 
 !===============================================================================
 ! 2.  CALCUL DES GRADIENTS DE VITESSE ET DE

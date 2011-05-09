@@ -55,7 +55,7 @@ subroutine ctphyv &
 !  (une routine specifique est dediee a cela : usvist)
 
 
-!  Il FAUT AVOIR PRECISE ICP(IPHAS) = 1
+!  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
 !    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
@@ -77,8 +77,8 @@ subroutine ctphyv &
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
 !      - dans usini1 :
-!             . la masse volumique (initialisee a RO0(IPHAS))
-!             . la viscosite       (initialisee a VISCL0(IPHAS))
+!             . la masse volumique (initialisee a RO0)
+!             . la viscosite       (initialisee a VISCL0)
 !      - dans usiniv :
 !             . les variables de calcul  (initialisees a 0 par defaut
 !             ou a la valeur donnee dans usiniv)
@@ -109,7 +109,7 @@ subroutine ctphyv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -156,7 +156,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -223,7 +223,7 @@ do iphas = 1, nphas
 ! --- Rang de la masse volumique de la phase courante IPHAS
 !     dans PROPCE, prop. physiques au centre des elements       : IPCROM
 
-  ipcrom = ipproc(irom(iphas))
+  ipcrom = ipproc(irom)
 
 ! --- Coefficients des lois choisis et imposes par l'utilisateur
 !       Les valeurs donnees ici sont fictives
@@ -294,8 +294,8 @@ do iphas = 1, nphas
 ! --- Rang de la chaleur specifique de la phase courante IPHAS
 !     dans PROPCE, prop. physiques au centre des elements       : IPCCP
 
-  if(icp(iphas).gt.0) then
-    ipccp  = ipproc(icp   (iphas))
+  if(icp.gt.0) then
+    ipccp  = ipproc(icp   )
   else
     ipccp  = 0
   endif
@@ -303,7 +303,7 @@ do iphas = 1, nphas
 ! --- Stop si CP n'est pas variable
 
   if(ipccp.le.0) then
-    write(nfecra,1000) icp(iphas)
+    write(nfecra,1000) icp
     call csexit (1)
   endif
 

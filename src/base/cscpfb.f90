@@ -164,7 +164,7 @@ call rasize('cscpfb',ifinra)
 d2s3 = 2.d0/3.d0
 
 iphas = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 if (icormx(numcpl).eq.1) then
 
@@ -227,7 +227,7 @@ do iphas = 1, nphas
 
   if (iphas.eq.1) then
 
-    ipriph = ipr(iphas)
+    ipriph = ipr
 
 ! --- Calcul du gradient de la pression pour interpolation
 
@@ -337,9 +337,9 @@ do iphas = 1, nphas
 ! 2.  PREPARATION DE LA VITESSE
 !=========================================================================
 
-  iuiph = iu(iphas)
-  iviph = iv(iphas)
-  iwiph = iw(iphas)
+  iuiph = iu
+  iviph = iv
+  iwiph = iw
 
 ! --- Calcul du gradient de la vitesse pour interpolation
 
@@ -478,7 +478,7 @@ do iphas = 1, nphas
 !       3.1 Turbulence dans l'instance locale : modèles k-epsilon
 !=========================================================================
 
-  if (itytur(iphas).eq.2) then
+  if (itytur.eq.2) then
 
 !=======================================================================
 !          3.1.1. INTERPOLATION EN J'
@@ -486,7 +486,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de k en J'
 
-    ikiph  = ik(iphas)
+    ikiph  = ik
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,ikiph))
       !==========
@@ -557,7 +557,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de epsilon en J'
 
-    iepiph  = iep(iphas)
+    iepiph  = iep
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,iepiph))
@@ -637,7 +637,7 @@ do iphas = 1, nphas
 !           Energie turbulente
 !           ------------------
       ipos = ipos + 1
-      ikiph  = ik(iphas)
+      ikiph  = ik
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
@@ -646,7 +646,7 @@ do iphas = 1, nphas
 !           Dissipation turbulente
 !           ----------------------
       ipos = ipos + 1
-      iepiph = iep(iphas)
+      iepiph = iep
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
@@ -674,9 +674,9 @@ do iphas = 1, nphas
 
 !           Termes R12,R13,R23
 
-      iuiph = iu(iphas)
-      iviph = iv(iphas)
-      iwiph = iw(iphas)
+      iuiph = iu
+      iviph = iv
+      iwiph = iw
 
 !           La synchronisation des halos a deja ete faite plus haut
 
@@ -763,7 +763,7 @@ do iphas = 1, nphas
 !           Dissipation turbulente
 !           ----------------------
       ipos = ipos + 1
-      iepiph = iep(iphas)
+      iepiph = iep
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav2 + ipt -1)
@@ -786,7 +786,7 @@ do iphas = 1, nphas
 !           Energie turbulente
 !           -----------------
       ipos = ipos + 1
-      ikiph  = ik(iphas)
+      ikiph  = ik
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav1 + ipt -1)
@@ -795,7 +795,7 @@ do iphas = 1, nphas
 !           Omega
 !           -----
       ipos = ipos + 1
-      iomiph = iomg(iphas)
+      iomiph = iomg
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav2 + ipt-1)/cmu                  &
@@ -809,7 +809,7 @@ do iphas = 1, nphas
 !       3.2 Turbulence dans l'instance locale : modèle Rij-epsilon
 !=========================================================================
 
-  elseif (itytur(iphas).eq.3) then
+  elseif (itytur.eq.3) then
 
 !=======================================================================
 !          3.2.1. INTERPOLATION EN J'
@@ -820,19 +820,19 @@ do iphas = 1, nphas
     if (irangp.ge.0.or.iperio.eq.1) then
       call synten &
       !==========
-    ( rtp(1,ir11(iphas)), rtp(1,ir12(iphas)), rtp(1,ir13(iphas)),  &
-      rtp(1,ir12(iphas)), rtp(1,ir22(iphas)), rtp(1,ir23(iphas)),  &
-      rtp(1,ir13(iphas)), rtp(1,ir23(iphas)), rtp(1,ir33(iphas)) )
+    ( rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),  &
+      rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),  &
+      rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
     endif
 
     do isou = 1, 6
 
-      if (isou.eq.1) ivar = ir11(iphas)
-      if (isou.eq.2) ivar = ir22(iphas)
-      if (isou.eq.3) ivar = ir33(iphas)
-      if (isou.eq.4) ivar = ir12(iphas)
-      if (isou.eq.5) ivar = ir13(iphas)
-      if (isou.eq.6) ivar = ir23(iphas)
+      if (isou.eq.1) ivar = ir11
+      if (isou.eq.2) ivar = ir22
+      if (isou.eq.3) ivar = ir33
+      if (isou.eq.4) ivar = ir12
+      if (isou.eq.5) ivar = ir13
+      if (isou.eq.6) ivar = ir23
 
       inc    = 1
       iccocg = 1
@@ -907,7 +907,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de epsilon en J'
 
-    iepiph  = iep(iphas)
+    iepiph  = iep
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,iepiph))
@@ -1005,7 +1005,7 @@ do iphas = 1, nphas
 !           Dissipation turbulente
 !           ----------------------
       ipos = ipos + 1
-      iepiph = iep(iphas)
+      iepiph = iep
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
@@ -1020,7 +1020,7 @@ do iphas = 1, nphas
 !           Energie turbulente
 !           ------------------
       ipos = ipos + 1
-      ikiph = ik(iphas)
+      ikiph = ik
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
@@ -1030,7 +1030,7 @@ do iphas = 1, nphas
 !           Dissipation turbulente
 !           ----------------------
       ipos = ipos + 1
-      iepiph = iep(iphas)
+      iepiph = iep
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
@@ -1053,7 +1053,7 @@ do iphas = 1, nphas
 !           Energie turbulente
 !           ------------------
       ipos = ipos + 1
-      ikiph = ik(iphas)
+      ikiph = ik
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
@@ -1063,7 +1063,7 @@ do iphas = 1, nphas
 !           Omega
 !           -----
       ipos = ipos + 1
-      iomiph = iomg(iphas)
+      iomiph = iomg
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav7 + ipt-1)/cmu                  &
@@ -1076,7 +1076,7 @@ do iphas = 1, nphas
 !       3.3 Turbulence dans l'instance locale : modèle v2f (phi-model)
 !==============================================================================
 
-  elseif (iturb(iphas).eq.50) then
+  elseif (iturb.eq.50) then
 
 !=======================================================================
 !          3.3.1. INTERPOLATION EN J'
@@ -1084,7 +1084,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de k en J'
 
-    ikiph  = ik(iphas)
+    ikiph  = ik
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,ikiph))
@@ -1156,7 +1156,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de epsilon en J'
 
-    iepiph  = iep(iphas)
+    iepiph  = iep
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,iepiph))
@@ -1228,7 +1228,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de Phi en J'
 
-    iphiph = iphi(iphas)
+    iphiph = iphi
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,iphiph))
@@ -1277,7 +1277,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de F-barre en J'
 
-    ifbiph = ifb(iphas)
+    ifbiph = ifb
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,ifbiph))
@@ -1356,7 +1356,7 @@ do iphas = 1, nphas
 !           Energie turbulente
 !           ------------------
       ipos = ipos + 1
-      ikiph  = ik(iphas)
+      ikiph  = ik
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
@@ -1365,7 +1365,7 @@ do iphas = 1, nphas
 !           Dissipation turbulente
 !           ----------------------
       ipos = ipos + 1
-      iepiph = iep(iphas)
+      iepiph = iep
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
@@ -1374,7 +1374,7 @@ do iphas = 1, nphas
 !           Phi
 !           ---
       ipos = ipos + 1
-      iphiph = iphi(iphas)
+      iphiph = iphi
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav3 + ipt-1)
@@ -1383,7 +1383,7 @@ do iphas = 1, nphas
 !           F-barre
 !           -------
       ipos = ipos + 1
-      ifbiph = ifb(iphas)
+      ifbiph = ifb
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav4 + ipt-1)
@@ -1402,7 +1402,7 @@ do iphas = 1, nphas
 !       3.4 Turbulence dans l'instance locale : modèle omega SST
 !==============================================================================
 
-  elseif (iturb(iphas).eq.60) then
+  elseif (iturb.eq.60) then
 
 !=======================================================================
 !          3.4.1. INTERPOLATION EN J'
@@ -1410,7 +1410,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de k en J'
 
-    ikiph  = ik(iphas)
+    ikiph  = ik
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,ikiph))
@@ -1482,7 +1482,7 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de omega en J'
 
-    iomiph  = iomg(iphas)
+    iomiph  = iomg
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(rtp(1,iomiph))
@@ -1560,7 +1560,7 @@ do iphas = 1, nphas
 !           Energie turbulente
 !           ------------------
       ipos = ipos + 1
-      ikiph  = ik(iphas)
+      ikiph  = ik
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
@@ -1569,7 +1569,7 @@ do iphas = 1, nphas
 !           Omega
 !           -----
       ipos = ipos + 1
-      iomiph = iomg(iphas)
+      iomiph = iomg
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
@@ -1583,7 +1583,7 @@ do iphas = 1, nphas
 !           Energie turbulente
 !           ------------------
       ipos = ipos + 1
-      ikiph  = ik(iphas)
+      ikiph  = ik
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
@@ -1592,7 +1592,7 @@ do iphas = 1, nphas
 !           Omega
 !           -----
       ipos = ipos + 1
-      iomiph = iomg(iphas)
+      iomiph = iomg
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
@@ -1621,9 +1621,9 @@ do iphas = 1, nphas
 
 !           Termes R12,R13,R23
 
-      iuiph = iu(iphas)
-      iviph = iv(iphas)
-      iwiph = iw(iphas)
+      iuiph = iu
+      iviph = iv
+      iwiph = iw
 
       do isou = 1, 3
 
@@ -1708,7 +1708,7 @@ do iphas = 1, nphas
 !           Dissipation turbulente
 !           ----------------------
       ipos = ipos + 1
-      iepiph = iep(iphas)
+      iepiph = iep
 
       do ipt = 1, nptdis
         rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &

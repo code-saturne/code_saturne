@@ -365,7 +365,7 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
 
   do iphas = 1, nphas
 
-    if(ia(iifapa(iphas)).le.0) then
+    if(ia(iifapa).le.0) then
 
 ! ON FERA ATTENTION EN PARALLELISME OU PERIODICITE
 !    (UNE PAROI PEUT ETRE PLUS PROCHE EN TRAVERSANT UN BORD ...)
@@ -374,7 +374,7 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
         w1(iel) = grand
       enddo
 
-      iuiph = iu(iphas)
+      iuiph = iu
 
       do ifac = 1, nfabor
         icodcu = icodcl(ifac,iuiph)
@@ -386,7 +386,7 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
              +(cdgfbo(3,ifac)-xyzcen(3,iel))**2
             if(w1(iel).gt.xdis) then
               w1(iel) = xdis
-              ia(iifapa(iphas)-1+iel) = ifac
+              ia(iifapa-1+iel) = ifac
             endif
           enddo
         endif
@@ -396,12 +396,12 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
 
     iok = 0
     do iel = 1, ncel
-      if(ia(iifapa(iphas)-1+iel).le.0)then
+      if(ia(iifapa-1+iel).le.0)then
         iok = iok + 1
       endif
     enddo
     if(iok.gt.0) then
-      write(nfecra,1000) irijec(iphas), idries(iphas)
+      write(nfecra,1000) irijec, idries
       iok1 = 1
     endif
 
@@ -430,37 +430,37 @@ endif
 do iphas = 1, nphas
 
 ! --- Variables
-  ro0iph = ro0  (iphas)
-  p0iph  = p0   (iphas)
-  pr0iph = pred0(iphas)
+  ro0iph = ro0
+  p0iph  = p0
+  pr0iph = pred0
   xxp0   = xyzp0(1,iphas)
   xyp0   = xyzp0(2,iphas)
   xzp0   = xyzp0(3,iphas)
-  ipriph = ipr (iphas)
-  iuiph  = iu  (iphas)
-  iviph  = iv  (iphas)
-  iwiph  = iw  (iphas)
-  if(itytur(iphas).eq.2) then
-    ikiph  = ik  (iphas)
-    iepiph = iep (iphas)
-  elseif(itytur(iphas).eq.3) then
-    ir11ip = ir11(iphas)
-    ir22ip = ir22(iphas)
-    ir33ip = ir33(iphas)
-    ir12ip = ir12(iphas)
-    ir13ip = ir13(iphas)
-    ir23ip = ir23(iphas)
-    iepiph = iep (iphas)
-  elseif(iturb(iphas).eq.50) then
-    ikiph  = ik  (iphas)
-    iepiph = iep (iphas)
-    iphiph = iphi(iphas)
-    ifbiph = ifb (iphas)
-  elseif(iturb(iphas).eq.60) then
-    ikiph  = ik  (iphas)
-    iomgip = iomg(iphas)
-  elseif(iturb(iphas).eq.70) then
-    inuiph = inusa(iphas)
+  ipriph = ipr
+  iuiph  = iu
+  iviph  = iv
+  iwiph  = iw
+  if(itytur.eq.2) then
+    ikiph  = ik
+    iepiph = iep
+  elseif(itytur.eq.3) then
+    ir11ip = ir11
+    ir22ip = ir22
+    ir33ip = ir33
+    ir12ip = ir12
+    ir13ip = ir13
+    ir23ip = ir23
+    iepiph = iep
+  elseif(iturb.eq.50) then
+    ikiph  = ik
+    iepiph = iep
+    iphiph = iphi
+    ifbiph = ifb
+  elseif(iturb.eq.60) then
+    ikiph  = ik
+    iomgip = iomg
+  elseif(iturb.eq.70) then
+    inuiph = inusa
   endif
 
 ! --- Conditions aux limites
@@ -468,10 +468,10 @@ do iphas = 1, nphas
   iclu   = iclrtp(iuiph ,icoef)
   iclv   = iclrtp(iviph ,icoef)
   iclw   = iclrtp(iwiph ,icoef)
-  if(itytur(iphas).eq.2) then
+  if(itytur.eq.2) then
     iclk   = iclrtp(ikiph ,icoef)
     iclep  = iclrtp(iepiph,icoef)
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
     icl11  = iclrtp(ir11ip,icoef)
     icl22  = iclrtp(ir22ip,icoef)
     icl33  = iclrtp(ir33ip,icoef)
@@ -479,15 +479,15 @@ do iphas = 1, nphas
     icl13  = iclrtp(ir13ip,icoef)
     icl23  = iclrtp(ir23ip,icoef)
     iclep  = iclrtp(iepiph,icoef)
-  elseif(iturb(iphas).eq.50) then
+  elseif(iturb.eq.50) then
     iclk   = iclrtp(ikiph ,icoef)
     iclep  = iclrtp(iepiph,icoef)
     iclphi = iclrtp(iphiph,icoef)
     iclfb  = iclrtp(ifbiph,icoef)
-  elseif(iturb(iphas).eq.60) then
+  elseif(iturb.eq.60) then
     iclk   = iclrtp(ikiph ,icoef)
     iclomg = iclrtp(iomgip,icoef)
-  elseif(iturb(iphas).eq.70) then
+  elseif(iturb.eq.70) then
     iclnu  = iclrtp(inuiph,icoef)
   endif
 
@@ -496,17 +496,17 @@ do iphas = 1, nphas
   iclwf  = iclrtp(iwiph ,icoeff)
 
 ! --- Grandeurs physiques
-  ipcvis = ipproc(iviscl(iphas))
-  ipcvst = ipproc(ivisct(iphas))
-  if(icp(iphas).gt.0) then
-    ipccp  = ipproc(icp   (iphas))
+  ipcvis = ipproc(iviscl)
+  ipcvst = ipproc(ivisct)
+  if(icp.gt.0) then
+    ipccp  = ipproc(icp   )
   else
     ipccp = 0
   endif
 ! --- Compressible
   if ( ippmod(icompf).ge.0 ) then
-    if(icv(iphas).gt.0) then
-      ipccv  = ipproc(icv   (iphas))
+    if(icv.gt.0) then
+      ipccv  = ipproc(icv   )
     else
       ipccv = 0
     endif
@@ -566,8 +566,8 @@ do iphas = 1, nphas
 !     Si un scalaire est couple a SYRTHES ou au module 1D
   if(isvtb.ne.0) then
 !         si ce n'est pas la variable thermique, ca ne va pas.
-    if(isvtb.ne.iscalt(iphas)) then
-      write(nfecra,8000)isvtb,iscalt(iphas)
+    if(isvtb.ne.iscalt) then
+      write(nfecra,8000)isvtb,iscalt
       call csexit (1)
       !==========
 !         sinon, on calcule le gradient.
@@ -581,7 +581,7 @@ do iphas = 1, nphas
 !       (il y a forcement une variable energetique)
 !       on en calcule le gradient
   if(iirayo.ge.1) then
-    iscat = iscalt(iphas)
+    iscat = iscalt
   endif
 
 !     S'il y a un scalaire dont il faut calculer le gradient
@@ -730,7 +730,7 @@ do iphas = 1, nphas
 ! ---> CONSTRUCTION DU TENSEUR DE REYNOLDS AU CENTRE DES FACES DE BORD
 
   if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
-                         .and.itytur(iphas).eq.3) then
+                         .and.itytur.eq.3) then
 
 
     do isou = 1 , 6
@@ -743,7 +743,7 @@ do iphas = 1, nphas
       if(isou.eq.6) ivar = ir23ip
 
 
-      if(ntcabs.gt.1.and.irijrb(iphas).eq.1) then
+      if(ntcabs.gt.1.and.irijrb.eq.1) then
 
 ! CALCUL DU GRADIENT CELLULE DE Rij EN I
 
@@ -816,7 +816,7 @@ do iphas = 1, nphas
 !     Plus loin, dans vandri, la viscosite sur les cellules
 !     de paroi sera amortie une seconde fois. On se sert alors de
 !     VISVDR pour lui redonner une valeur correcte.
-  if(itytur(iphas).eq.4.and.idries(iphas).eq.1) then
+  if(itytur.eq.4.and.idries.eq.1) then
     do iel=1,ncel
       visvdr(iel,iphas) = -999.d0
     enddo
@@ -923,7 +923,7 @@ do iphas = 1, nphas
 
   enddo
 
-  if (mod(ntcabs,ntlist).eq.0 .or. iwarni(iu(1)).ge. 0) then
+  if (mod(ntcabs,ntlist).eq.0 .or. iwarni(iu).ge. 0) then
     isocpt(1) = isoent
     isocpt(2) = isorti
     if (irangp.ge.0) then
@@ -961,7 +961,7 @@ do iphas = 1, nphas
 ! --- Grandeurs geometriques
       distbf = distb(ifac)
 
-      if (itytur(iphas).eq.3) then
+      if (itytur.eq.3) then
         hint =   visclc         /distbf
       else
         hint = ( visclc+visctc )/distbf
@@ -1080,22 +1080,22 @@ do iphas = 1, nphas
 
 ! ---> K-EPSILON ET K-OMEGA
 
-  if(itytur(iphas).eq.2 .or. iturb(iphas).eq.60) then
+  if(itytur.eq.2 .or. iturb.eq.60) then
 
     do ii = 1, 2
 
 !     Pour le k-omega, on met les valeurs sigma_k2 et sigma_w2 car ce terme
 !     ne concerne en pratique que les entrees (pas de pb en paroi ou en flux
 !     nul)
-      if(ii.eq.1 .and. itytur(iphas).eq.2) then
+      if(ii.eq.1 .and. itytur.eq.2) then
         ivar   = ikiph
         iclvar = iclk
         sigma  = sigmak
-      elseif(ii.eq.1 .and. iturb(iphas).eq.60) then
+      elseif(ii.eq.1 .and. iturb.eq.60) then
         ivar   = ikiph
         iclvar = iclk
         sigma  = ckwsk2
-      elseif (itytur(iphas).eq.2) then
+      elseif (itytur.eq.2) then
         ivar   = iepiph
         iclvar = iclep
         sigma  = sigmae
@@ -1137,7 +1137,7 @@ do iphas = 1, nphas
 ! ---> RIJ-EPSILON
 !         (ATTENTION, PAS DE VISCT)
 
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
 
 !   --> RIJ
 
@@ -1231,7 +1231,7 @@ do iphas = 1, nphas
 
 ! ---> SPALART ALLMARAS
 
-  elseif(iturb(iphas).eq.70) then
+  elseif(iturb.eq.70) then
 
     ivar   = inuiph
     iclvar = iclnu
@@ -1266,7 +1266,7 @@ do iphas = 1, nphas
 
 ! ---> V2F
 
-  elseif(iturb(iphas).eq.50) then
+  elseif(iturb.eq.50) then
 
 !   --> K, EPSILON ET PHI
     do ii = 1, 3
@@ -1418,7 +1418,7 @@ do iphas = 1, nphas
         elseif(ihcp.eq.2) then
           cpp = propce(iel,ipccp )
         elseif(ihcp.eq.1) then
-          cpp = cp0(iphas)
+          cpp = cp0
         endif
         hint = cpp
 
@@ -1430,7 +1430,7 @@ do iphas = 1, nphas
         endif
 
 ! --- Cas turbulent
-        if (iturb(iphas).ne.0) then
+        if (iturb.ne.0) then
           hint = hint*(rkl+visctc/sigmas(ii))/distbf
 !     Cas laminaire
         else
@@ -1491,7 +1491,7 @@ do iphas = 1, nphas
 !            IF(IPCCP.GT.0) THEN
 !              CPR = PROPCE(IEL,IPCCP )
 !            ELSE
-!              CPR = CP0(IPHAS)
+!              CPR = CP0
 !            ENDIF
 !         puisque HINT = VISLS / DISTBR
 !                      = lambda/(CP * distance)
@@ -1507,7 +1507,7 @@ do iphas = 1, nphas
 !               Si on rayonne et que
 !                  le scalaire est la variable energetique
 
-          if (iirayo.ge.1 .and. ii.eq.iscalt(iphas)) then
+          if (iirayo.ge.1 .and. ii.eq.iscalt) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 
@@ -1517,7 +1517,7 @@ do iphas = 1, nphas
               if(ipccp.gt.0) then
                 propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
               else
-                propfb(ifac,ipprob(ihconv)) = hint*cp0(iphas)
+                propfb(ifac,ipprob(ihconv)) = hint*cp0
               endif
 !                  Si on resout en energie (compressible)
             elseif(iscsth(ii).eq.3) then
@@ -1525,7 +1525,7 @@ do iphas = 1, nphas
               if(ipccv.gt.0) then
                 propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
               else
-                propfb(ifac,ipprob(ihconv)) = hint*cv0(iphas)
+                propfb(ifac,ipprob(ihconv)) = hint*cv0
               endif
 !                  Si on resout en temperature
             elseif(abs(iscsth(ii)).eq.1) then
@@ -1555,7 +1555,7 @@ do iphas = 1, nphas
 
 !--> Rayonnement :
 
-          if (iirayo.ge.1 .and. ii.eq.iscalt(iphas)) then
+          if (iirayo.ge.1 .and. ii.eq.iscalt) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 
@@ -1565,14 +1565,14 @@ do iphas = 1, nphas
               if(ipccp.gt.0) then
                 propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
               else
-                propfb(ifac,ipprob(ihconv)) = hint*cp0(iphas)
+                propfb(ifac,ipprob(ihconv)) = hint*cp0
               endif
             elseif(iscsth(ii).eq.3) then
 !                    Si Cv variable
               if(ipccv.gt.0) then
                 propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
               else
-                propfb(ifac,ipprob(ihconv)) = hint*cv0(iphas)
+                propfb(ifac,ipprob(ihconv)) = hint*cv0
               endif
 !                Si on resout en temperature
             elseif(abs(iscsth(ii)).eq.1) then
@@ -1680,9 +1680,9 @@ if (ineedf.eq.1) then
   iphas = 1
   do ifac = 1, nfabor
     iel = ifabor(ifac)
-    visclc = propce(iel,ipproc(iviscl(iphas)))
-    visctc = propce(iel,ipproc(ivisct(iphas)))
-    if (itytur(iphas).eq.3) then
+    visclc = propce(iel,ipproc(iviscl))
+    visctc = propce(iel,ipproc(ivisct))
+    if (itytur.eq.3) then
       vistot = visclc
     else
       vistot = visclc + visctc
@@ -1743,7 +1743,7 @@ endif
 '@    =========                                               ',/,&
 '@     Le scalaire ',I10   ,' est couple a SYRTHES            ',/,&
 '@      mais n''est pas la variable energetique               ',/,&
-'@         ISCALT(IPHAS) = ',I10                               ,/,&
+'@         ISCALT = ',I10                               ,/,&
 '@                                                            ',/,&
 '@     Le calcul ne sera pas execute.                         ',/,&
 '@                                                            ',/,&
@@ -1791,7 +1791,7 @@ endif
 '@    ========                                                ',/,&
 '@     The scalar ',I10   ,' is coupled with SYRTHES          ',/,&
 '@      but is not the energy variable                        ',/,&
-'@         ISCALT(IPHAS) = ',I10                               ,/,&
+'@         ISCALT = ',I10                               ,/,&
 '@                                                            ',/,&
 '@     The calculation will not be run.                       ',/,&
 '@                                                            ',/,&

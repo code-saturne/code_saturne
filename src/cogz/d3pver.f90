@@ -101,8 +101,8 @@ iphas = 1
 
 ! --> Masse volumique
 
-if( ro0(iphas).lt.0d0) then
-  WRITE(NFECRA,3000)'RO0   ', RO0(IPHAS)
+if( ro0.lt.0d0) then
+  WRITE(NFECRA,3000)'RO0   ', RO0
   iok = iok + 1
 endif
 

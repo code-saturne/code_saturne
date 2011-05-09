@@ -86,8 +86,8 @@ double precision wmolme
 !     L'utilisateur ne doit pas y avoir touche.
 
 do iphas = 1, nphas
-  if(iscalt(iphas).ne.-1) then
-    write(nfecra,1000)iscalt(iphas)
+  if(iscalt.ne.-1) then
+    write(nfecra,1000)iscalt
     call csexit (1)
     !==========
   endif
@@ -205,7 +205,7 @@ if ( ippmod(icod3p).eq.1 .or.                                     &
 
   iphas = 1
 
-  iscalt(iphas) = ihm
+  iscalt = ihm
   iscsth(ihm) = 2
 
 endif
@@ -225,7 +225,7 @@ do isc = 1, nscapp
 ! ---- En combustion on considere que la viscosite turbulente domine
 !      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
-    visls0(jj) = viscl0(iphas)
+    visls0(jj) = viscl0
 
   endif
 
@@ -555,7 +555,7 @@ endif
       ippmod(icoebu).ne.-1 .or.                                   &
       ippmod(icolwc).ne.-1     ) then
    wmolme = wmolg(2)
-   ro0(iphas) = p0(iphas)*wmolme / (rr*t0(iphas))
+   ro0 = p0*wmolme / (rr*t0)
  endif
 
 ! On met les constantes a -GRAND pour obliger l'utilisateur a les definir
@@ -584,8 +584,8 @@ nmaxf = 9
 nmaxh = 9
 
 ! ---> Masse volumique variable et viscosite constante (pour les suites)
-irovar(iphas) = 1
-ivivar(iphas) = 0
+irovar = 1
+ivivar = 0
 
 !===============================================================================
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR

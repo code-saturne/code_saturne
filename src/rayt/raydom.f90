@@ -214,8 +214,8 @@ unspi = 1.d0/pi
 
 !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
 
-  iscat = iscalt(iphas)
-  ivart = isca(iscalt(iphas))
+  iscat = iscalt
+  ivart = isca(iscalt)
 
 !===============================================================================
 ! 3.1 COEFFICIENT D'ABSORPTION DU MILIEU SEMI-TRANSPARENT
@@ -994,13 +994,13 @@ unspi = 1.d0/pi
 !    Attention : il faut conserver W9 dans la suite de la routine,
 !    car son contenu est utilise plus loin
 
-    if (icp(iphas).gt.0) then
+    if (icp.gt.0) then
       do iel = 1,ncel
-        w9(iel) = 1.d0/propce(iel,ipproc(icp(iphas)))
+        w9(iel) = 1.d0/propce(iel,ipproc(icp))
       enddo
     else
       do iel = 1,ncel
-        w9(iel) = 1.d0/cp0(iphas)
+        w9(iel) = 1.d0/cp0
       enddo
     endif
 

@@ -194,22 +194,22 @@ endif
 iphas = 1
 
 ! --- Numero des variables de calcul
-if ( itytur(iphas).eq.2 .or. iturb(iphas).eq.50 ) then
-  ikiph  = ik  (iphas)
-  ieiph  = iep (iphas)
-elseif ( itytur(iphas).eq.3 ) then
-  ir11ip = ir11(iphas)
-  ir22ip = ir22(iphas)
-  ir33ip = ir33(iphas)
-  ieiph  = iep (iphas)
-elseif ( iturb(iphas).eq.60 ) then
-  ikiph  = ik  (iphas)
-  iomgip = iomg(iphas)
+if ( itytur.eq.2 .or. iturb.eq.50 ) then
+  ikiph  = ik
+  ieiph  = iep
+elseif ( itytur.eq.3 ) then
+  ir11ip = ir11
+  ir22ip = ir22
+  ir33ip = ir33
+  ieiph  = iep
+elseif ( iturb.eq.60 ) then
+  ikiph  = ik
+  iomgip = iomg
 endif
 
 ! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom)
+ipcvst = ipproc(ivisct)
 
 
 !===============================================================================
@@ -217,8 +217,8 @@ ipcvst = ipproc(ivisct(iphas))
 !    ET DE DISSIPATION
 !===============================================================================
 
-if ( itytur(iphas).eq.2 .or. itytur(iphas).eq.3                   &
-     .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60) then
+if ( itytur.eq.2 .or. itytur.eq.3                   &
+     .or. iturb.eq.50 .or. iturb.eq.60) then
 
   inc = 1
   iccocg = 1
@@ -327,14 +327,14 @@ if ( itytur(iphas).eq.2 .or. itytur(iphas).eq.3                   &
    ra     )
 
   do iel = 1, ncel
-    if ( itytur(iphas).eq.2 .or. iturb(iphas).eq.50 ) then
+    if ( itytur.eq.2 .or. iturb.eq.50 ) then
       xk = rtpa(iel,ikiph)
       xe = rtpa(iel,ieiph)
-    elseif ( itytur(iphas).eq.3 ) then
+    elseif ( itytur.eq.3 ) then
       xk =                                                        &
        0.5d0*(rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))
       xe = rtpa(iel,ieiph)
-    elseif ( iturb(iphas).eq.60 ) then
+    elseif ( iturb.eq.60 ) then
       xk = rtpa(iel,ikiph)
       xe = cmu*xk*rtpa(iel,iomgip)
     endif

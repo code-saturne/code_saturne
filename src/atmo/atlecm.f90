@@ -277,8 +277,8 @@ endif
 if (imode.eq.1) then
   iphas = 1
   phprom(1, itp)=pmer(itp)
-  psol=p0(iphas)
-  rscp=rair/cp0(iphas)
+  psol=p0
+  rscp=rair/cp0
 
   do k=2, nbmett
     tmoy=0.5*(ttprom(k-1, itp)+ttprom(k, itp))+tkelvi
@@ -299,7 +299,7 @@ if (imode.eq.1) then
   do k=1, nbmett
     ! rhum=rair*(1.d0+(rvsra-1.d0)*qvprom(k, itp)*ih2o)
 
-    !   if ((iscalt(iphas).eq.-1).or.(iphysi.eq.0)) then
+    !   if ((iscalt.eq.-1).or.(iphysi.eq.0)) then
     ! Constant density
     !     rprom(k, itp)=pmer/(tprom(k, itp)+tkelvi)/rhum
     !   else

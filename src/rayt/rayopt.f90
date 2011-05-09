@@ -218,7 +218,7 @@ if(ippmod(iphpar).ge.2) then
 !        On cherche s'il y a un scalaire thermique
       iscaok = 0
       do iiscal = 1, nscal
-        if (iiscal.eq.iscalt(iphas)) then
+        if (iiscal.eq.iscalt) then
           iscaok = 1
 !           Et on regarde si on a dit enthalpie
           if (iscsth(iiscal).ne.2) then
@@ -241,7 +241,7 @@ else
 !        On cherche s'il y a un scalaire thermique
       iscaok = 0
       do iiscal = 1, nscal
-        if (iiscal.eq.iscalt(iphas)) then
+        if (iiscal.eq.iscalt) then
           iscaok = 1
 
 !           Et on regarde si on a dit temp C, K ou enthalpie

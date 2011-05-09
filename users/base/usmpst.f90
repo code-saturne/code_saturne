@@ -191,8 +191,8 @@ if (ipart.eq.3) then
 
       iphas = 1
 
-      v2 =   rtp(ii, iu(iphas))**2 + rtp(ii, iv(iphas))**2        &
-           + rtp(ii, iw(iphas))**2
+      v2 =   rtp(ii, iu)**2 + rtp(ii, iv)**2        &
+           + rtp(ii, iw)**2
       if (v2 .ge. vmin2) then
         ncelps = ncelps + 1
         lstcel(ncelps) = ii
@@ -212,12 +212,12 @@ if (ipart.eq.3) then
       ii = ifacel(1, ifac)
       jj = ifacel(2, ifac)
 
-      v2 =   rtp(ii, iu(iphas))**2   &
-           + rtp(ii, iv(iphas))**2   &
-           + rtp(ii, iw(iphas))**2
-      w2 =   rtp(jj, iu(iphas))**2   &
-           + rtp(jj, iv(iphas))**2   &
-           + rtp(jj, iw(iphas))**2
+      v2 =   rtp(ii, iu)**2   &
+           + rtp(ii, iv)**2   &
+           + rtp(ii, iw)**2
+      w2 =   rtp(jj, iu)**2   &
+           + rtp(jj, iv)**2   &
+           + rtp(jj, iw)**2
 
       if (v2 .ge. vmin2 .or. w2 .ge. vmin2) then
         nfacps = nfacps + 1
@@ -237,9 +237,9 @@ if (ipart.eq.3) then
 
       ii = ifabor(ifac)
 
-      v2 =   rtp(ii, iu(iphas))**2   &
-           + rtp(ii, iv(iphas))**2   &
-           + rtp(ii, iw(iphas))**2
+      v2 =   rtp(ii, iu)**2   &
+           + rtp(ii, iv)**2   &
+           + rtp(ii, iw)**2
 
       if (v2 .ge. vmin2) then
         nfbrps = nfbrps + 1
@@ -270,12 +270,12 @@ else if (ipart.eq.4) then
     ii = ifacel(1, ifac)
     jj = ifacel(2, ifac)
 
-    v2 =   rtp(ii, iu(iphas))**2   &
-         + rtp(ii, iv(iphas))**2   &
-         + rtp(ii, iw(iphas))**2
-    w2 =   rtp(jj, iu(iphas))**2   &
-         + rtp(jj, iv(iphas))**2   &
-         + rtp(jj, iw(iphas))**2
+    v2 =   rtp(ii, iu)**2   &
+         + rtp(ii, iv)**2   &
+         + rtp(ii, iw)**2
+    w2 =   rtp(jj, iu)**2   &
+         + rtp(jj, iv)**2   &
+         + rtp(jj, iw)**2
 
     if (     (v2 .ge. vmin2 .and. w2 .lt. vmin2)         &
         .or. (v2 .lt. vmin2 .and. w2 .ge. vmin2)) then
@@ -294,9 +294,9 @@ else if (ipart.eq.4) then
 
     ii = ifabor(ifac)
 
-    v2 =   rtp(ii, iu(iphas))**2   &
-         + rtp(ii, iv(iphas))**2   &
-         + rtp(ii, iw(iphas))**2
+    v2 =   rtp(ii, iu)**2   &
+         + rtp(ii, iv)**2   &
+         + rtp(ii, iw)**2
 
     if (v2 .ge. vmin2) then
       nfbrps = nfbrps + 1

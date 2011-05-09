@@ -137,12 +137,12 @@ double precision delta
 idebia = idbia0
 idebra = idbra0
 
-iflmas = ipprof(ifluma(iu(1)))
-iflmab = ipprob(ifluma(iu(1)))
-iclp = iclrtp(ipr(1),icoef)
-iclu = iclrtp(iu(1),icoef)
-iclv = iclrtp(iv(1),icoef)
-iclw = iclrtp(iw(1),icoef)
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
+iclp = iclrtp(ipr,icoef)
+iclu = iclrtp(iu,icoef)
+iclv = iclrtp(iv,icoef)
+iclw = iclrtp(iw,icoef)
 
 !===============================================================================
 ! 2.  CALCUL DES EFFORTS SUR LES STRUCTURES
@@ -271,7 +271,7 @@ do istr = 1, nbstru
   enddo
 enddo
 if (nbstru.gt.0) then
-  delta = sqrt(delta)/almax(iphas)/nbstru
+  delta = sqrt(delta)/almax/nbstru
   if (delta.lt.epalim) icvint = 1
 endif
 
@@ -324,7 +324,7 @@ call astcv2(ntcast, icv)
 !       revenir a une valeur anterieure
 if (itrfin.ne.-1) then
   do ii = 1, nvar
-    if (ii.eq.ipr(1) .and. nterup.gt.1) then
+    if (ii.eq.ipr .and. nterup.gt.1) then
       do iel = 1, ncelet
         rtpa(iel,ii) = xprale(iel)
       enddo

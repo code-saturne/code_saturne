@@ -81,8 +81,8 @@ integer          iphas, iok
 !     L'utilisateur ne doit pas y avoir touche.
 
 do iphas = 1, nphas
-  if(iscalt(iphas).ne.-1) then
-    write(nfecra,1000)iscalt(iphas)
+  if(iscalt.ne.-1) then
+    write(nfecra,1000)iscalt
     call csexit (1)
     !==========
   endif
@@ -104,24 +104,24 @@ enddo
 
 do iphas = 1, nphas
 
-  if(  (abs(scamin(irho  (iphas))+grand).gt.epzero).or.           &
-       (abs(scamin(ienerg(iphas))+grand).gt.epzero).or.           &
-       (abs(scamin(itempk(iphas))+grand).gt.epzero).or.           &
-       (abs(scamax(irho  (iphas))-grand).gt.epzero).or.           &
-       (abs(scamax(ienerg(iphas))-grand).gt.epzero).or.           &
-       (abs(scamax(itempk(iphas))-grand).gt.epzero) ) then
+  if(  (abs(scamin(irho  )+grand).gt.epzero).or.           &
+       (abs(scamin(ienerg)+grand).gt.epzero).or.           &
+       (abs(scamin(itempk)+grand).gt.epzero).or.           &
+       (abs(scamax(irho  )-grand).gt.epzero).or.           &
+       (abs(scamax(ienerg)-grand).gt.epzero).or.           &
+       (abs(scamax(itempk)-grand).gt.epzero) ) then
     write(nfecra,2000)                                            &
-         scamin(irho  (iphas)),scamax(irho  (iphas)),             &
-         scamin(ienerg(iphas)),scamax(ienerg(iphas)),             &
-         scamin(itempk(iphas)),scamax(itempk(iphas))
+         scamin(irho  ),scamax(irho  ),             &
+         scamin(ienerg),scamax(ienerg),             &
+         scamin(itempk),scamax(itempk)
     call csexit (1)
   endif
-!        SCAMIN(IRHO  (IPHAS))   = -GRAND
-!        SCAMAX(IRHO  (IPHAS))   =  GRAND
-!        SCAMIN(IENERG(IPHAS))   = -GRAND
-!        SCAMAX(IENERG(IPHAS))   =  GRAND
-!        SCAMIN(ITEMPK(IPHAS))   = -GRAND
-!        SCAMAX(ITEMPK(IPHAS))   =  GRAND
+!        SCAMIN(IRHO  )   = -GRAND
+!        SCAMAX(IRHO  )   =  GRAND
+!        SCAMIN(IENERG)   = -GRAND
+!        SCAMAX(IENERG)   =  GRAND
+!        SCAMIN(ITEMPK)   = -GRAND
+!        SCAMAX(ITEMPK)   =  GRAND
 
 enddo
 
@@ -136,11 +136,11 @@ enddo
 
 do iphas = 1, nphas
 
-  iscsth(irho  (iphas)) = 0
-  iscsth(ienerg(iphas)) = 3
-  iscsth(itempk(iphas)) = 0
+  iscsth(irho  ) = 0
+  iscsth(ienerg) = 3
+  iscsth(itempk) = 0
 
-  iscalt(iphas) = ienerg(iphas)
+  iscalt = ienerg
 
 enddo
 
@@ -175,19 +175,19 @@ enddo
 
 do iphas = 1, nphas
 
-  ipp = ipprtp(isca(irho  (iphas)))
+  ipp = ipprtp(isca(irho  ))
   NOMVAR(IPP)  = 'Rho'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
-  ipp = ipprtp(isca(ienerg(iphas)))
+  ipp = ipprtp(isca(ienerg))
   NOMVAR(IPP)  = 'EnergieT'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
   ihisvr(ipp,1)= -1
 
-  ipp = ipprtp(isca(itempk(iphas)))
+  ipp = ipprtp(isca(itempk))
   NOMVAR(IPP)  = 'Temp K'
   ichrvr(ipp)  = 1
   ilisvr(ipp)  = 1
@@ -240,12 +240,12 @@ do iphas = 1, nphas
 ! --> Conditions aux limites prenant en compte l'equilibre hydrostatique
 !     (oui = 1 , non = 0)
 
-  icfgrp(iphas) = 1
+  icfgrp = 1
 
 
 ! ---> Masse volumique variable et viscosite constante (pour les suites)
-  irovar(iphas) = 1
-  ivivar(iphas) = 0
+  irovar = 1
+  ivivar = 0
 
 enddo
 
@@ -267,26 +267,26 @@ call uscfx1
 
 do iphas = 1, nphas
 
-  idiff(isca(irho(iphas))) = 1
+  idiff(isca(irho)) = 1
 
 ! --> Implicitation du terme de convection de l'equation de masse
 !     (oui = 1 , non = 0)
 !     On choisit 0 ; c'est la seule option qui a ete testee. Elle
 !       facilite le codage pour le respect du flux de masse au bord.
 
-  iconv(isca(irho(iphas))) = 0
+  iconv(isca(irho)) = 0
 
 ! --> Prise en compte de la pression predite pour resoudre Navier-Stokes
 !     (oui = 1 , non = 0)
 
-  igrdpp(iphas) = 0
+  igrdpp = 0
 
 ! --> Prediction de pression par une equation d'evolution
 
 !     ATTENTION   PAS ENCORE IMPLEMENTE
-!========   LAISSER IPPRED(IPHAS) = 0
+!========   LAISSER IPPRED = 0
 
-  ippred(iphas) = 0
+  ippred = 0
 
 
 enddo
@@ -297,8 +297,8 @@ enddo
 
 iok = 0
 do iphas = 1, nphas
-  if(icfgrp(iphas).ne.0.and.icfgrp(iphas).ne.1) then
-    WRITE(NFECRA,5000)'ICFGRP',ICFGRP(IPHAS)
+  if(icfgrp.ne.0.and.icfgrp.ne.1) then
+    WRITE(NFECRA,5000)'ICFGRP',ICFGRP
     iok = 1
   endif
 enddo

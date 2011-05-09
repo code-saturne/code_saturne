@@ -73,10 +73,10 @@ implicit none
 ! Arguments
 
 integer          nphjmx, nphas
-integer          ju(nphjmx),jv(nphjmx),jw(nphjmx)
-integer          jtytur(nphjmx)
-integer          jr11(nphjmx),jr22(nphjmx),jr33(nphjmx)
-integer          jr12(nphjmx),jr13(nphjmx),jr23(nphjmx)
+integer          ju,jv,jw
+integer          jtytur
+integer          jr11,jr22,jr33
+integer          jr12,jr13,jr23
 
 ! Local variables
 
@@ -88,29 +88,29 @@ integer          iphas
 ! Recuperation des COMMON de "optcal"
 
 do iphas = 1, nphas
-  jtytur(iphas) = itytur(iphas)
+  jtytur = itytur
 enddo
 
 ! Recuperation des COMMON de "numvar"
 
 do iphas = 1, nphas
-  ju  (iphas) = iu  (iphas)
-  jv  (iphas) = iv  (iphas)
-  jw  (iphas) = iw  (iphas)
-  if(itytur(iphas).eq.3) then
-    jr11(iphas) = ir11(iphas)
-    jr22(iphas) = ir22(iphas)
-    jr33(iphas) = ir33(iphas)
-    jr12(iphas) = ir12(iphas)
-    jr13(iphas) = ir13(iphas)
-    jr23(iphas) = ir23(iphas)
+  ju   = iu
+  jv   = iv
+  jw   = iw
+  if(itytur.eq.3) then
+    jr11 = ir11
+    jr22 = ir22
+    jr33 = ir33
+    jr12 = ir12
+    jr13 = ir13
+    jr23 = ir23
   else
-    jr11(iphas) = 0
-    jr22(iphas) = 0
-    jr33(iphas) = 0
-    jr12(iphas) = 0
-    jr13(iphas) = 0
-    jr23(iphas) = 0
+    jr11 = 0
+    jr22 = 0
+    jr33 = 0
+    jr12 = 0
+    jr13 = 0
+    jr23 = 0
   endif
 enddo
 

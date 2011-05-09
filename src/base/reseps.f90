@@ -197,18 +197,18 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
 endif
 
-iuiph  = iu(iphas)
-ir11ip = ir11(iphas)
-ir22ip = ir22(iphas)
-ir33ip = ir33(iphas)
-ir12ip = ir12(iphas)
-ir13ip = ir13(iphas)
-ir23ip = ir23(iphas)
-ieiph  = iep (iphas)
+iuiph  = iu
+ir11ip = ir11
+ir22ip = ir22
+ir33ip = ir33
+ir12ip = ir12
+ir13ip = ir13
+ir23ip = ir23
+ieiph  = iep
 
-ipcrom = ipproc(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom  )
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(iuiph))
 iflmab = ipprob(ifluma(iuiph))
 
@@ -216,22 +216,22 @@ iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
 !     Constante Ce2, qui vaut CE2 pour ITURB=30 et CSSGE2 pour ITRUB=31
-if (iturb(iphas).eq.30) then
+if (iturb.eq.30) then
   ceps2 = ce2
 else
   ceps2 = cssge2
 endif
 
 !     S pour Source, V pour Variable
-thets  = thetst(iphas)
+thets  = thetst
 thetv  = thetav(ivar )
 
 ipcroo = ipcrom
-if(isto2t(iphas).gt.0.and.iroext(iphas).gt.0) then
-  ipcroo = ipproc(iroma(iphas))
+if(isto2t.gt.0.and.iroext.gt.0) then
+  ipcroo = ipproc(iroma)
 endif
-if(isto2t(iphas).gt.0) then
-  iptsta = ipproc(itstua(iphas))
+if(isto2t.gt.0) then
+  iptsta = ipproc(itstua)
 else
   iptsta = 0
 endif
@@ -270,7 +270,7 @@ call ustsri                                                       &
    ra     )
 
 !     Si on extrapole les T.S.
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
 !       Sauvegarde pour echange
     tuexpe = propce(iel,iptsta+isou-1)
@@ -327,13 +327,13 @@ if (ncesmp.gt.0) then
 !       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
   call catsma                                                     &
   !==========
- ( ncelet , ncel   , ncesmp , iiun   , isto2t(iphas) , thetv ,    &
+ ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,    &
    icetsm , itpsmp ,                                              &
    volume , rtpa(1,ivar) , smcelp , gamma  ,                      &
    smbr   ,  rovsdt , w1 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t(iphas).gt.0) then
+  if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) =                                 &
       propce(iel,iptsta+isou-1) + w1(iel)
@@ -389,7 +389,7 @@ do iel = 1, ncel
 enddo
 ! ---> Calcul de la trace de la production, suivant qu'on est en
 !     Rij standard ou en SSG (utilisation de PRODUC ou GRDVIT)
-if (iturb(iphas).eq.30) then
+if (iturb.eq.30) then
   do iel = 1, ncel
     w9(iel) = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
   enddo
@@ -419,7 +419,7 @@ do iel = 1, ncel
 enddo
 
 !     Si on extrapole les T.S : PROPCE
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
     propce(iel,iptsta+isou-1) =                                   &
     propce(iel,iptsta+isou-1) + w1(iel)
@@ -440,7 +440,7 @@ enddo
 
 ! ---> Matrice
 
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetap = thetv
 else
   thetap = 1.d0
@@ -455,7 +455,7 @@ enddo
 ! 7. TERMES DE GRAVITE
 !===============================================================================
 
-if(igrari(iphas).eq.1) then
+if(igrari.eq.1) then
 
   do iel = 1, ncel
     w7(iel) = 0.d0
@@ -473,7 +473,7 @@ if(igrari(iphas).eq.1) then
    ra     )
 
 !     Si on extrapole les T.S. : PROPCE
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
      propce(iel,iptsta+isou-1) =                                  &
      propce(iel,iptsta+isou-1) + w7(iel)
@@ -493,7 +493,7 @@ endif
 !     RIJ STANDARD
 !===============================================================================
 
-if (iturb(iphas).eq.30) then
+if (iturb.eq.30) then
 
 ! ---> Calcul du grad(Eps)
 
@@ -549,7 +549,7 @@ if (iturb(iphas).eq.30) then
                                    ifacel,ifabor,viscf,viscb,w4)
 
 !     Si on extrapole les termes sources
-  if(isto2t(iphas).gt.0) then
+  if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) =                                 &
            propce(iel,iptsta+isou-1) + w4(iel)
@@ -576,7 +576,7 @@ if (iturb(iphas).eq.30) then
 !     La synchronisation des halos du gradient de epsilon a ete faite dans
 !       grdcel. Pas utile de recommencer.
 
-  if (idifre(iphas).eq.1) then
+  if (idifre.eq.1) then
 
     do iel = 1, ncel
       trrij  = w8(iel)
@@ -626,7 +626,7 @@ if (iturb(iphas).eq.30) then
        ifacel,ifabor,viscf,viscb,w1)
 
 !     Si on extrapole les termes sources
-    if(isto2t(iphas).gt.0) then
+    if(isto2t.gt.0) then
       do iel = 1, ncel
         propce(iel,iptsta+isou-1) =                               &
              propce(iel,iptsta+isou-1) + w1(iel)
@@ -714,7 +714,7 @@ endif
 ! 9. RESOLUTION
 !===============================================================================
 
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+isou-1)

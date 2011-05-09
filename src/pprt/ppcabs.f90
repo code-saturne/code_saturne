@@ -259,7 +259,7 @@ if ( ippmod(icp3pl).ge.0 ) then
 !         3./2. ROM/(ROM2*D2)
 
       propce(iel,ipproc(icak(ipck))) =                            &
-                         1.5d0*propce(iel,ipproc(irom(iphas)))    &
+                         1.5d0*propce(iel,ipproc(irom))    &
                        / ( propce(iel,ipproc(irom2(icla)))*d2)
 
     enddo
@@ -282,7 +282,7 @@ if ( ippmod(icfuel).ge.0 ) then
 !         3./2. ROM/(ROM2*D2)
 
       propce(iel,ipproc(icak(ipck))) =                            &
-                         1.5d0*propce(iel,ipproc(irom(iphas)))    &
+                         1.5d0*propce(iel,ipproc(irom))    &
                  / ( propce(iel,ipproc(irom3(icla)))              &
                     *propce(iel,ipproc(idiam3(icla))) )
 

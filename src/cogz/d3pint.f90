@@ -269,7 +269,7 @@ if ( iirayo.gt.0 ) then
 endif
 
 iphas = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 do icel = 1, ncel
 
@@ -474,10 +474,10 @@ do icel = 1, ncel
 
 ! ---> Calcul de la masse volumique
 
-  if (ipass.gt.1.or.(isuite.eq.1.and.initro(iphas).eq.1)) then
+  if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
     propce(icel,ipcrom) = srrom*propce(icel,ipcrom)               &
                         + (1.d0-srrom)*                           &
-                        ( p0(iphas)/(rr*temsmm) )
+                        ( p0/(rr*temsmm) )
   endif
 
 enddo

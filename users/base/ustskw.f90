@@ -233,11 +233,11 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Index numbers of variables k and omega for the current phase iphas
-ikiph  = ik (iphas)
-iomgip = iomg(iphas)
+ikiph  = ik
+iomgip = iomg
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 if(iwarni(ikiph).ge.1) then
   write(nfecra,1000)

@@ -105,7 +105,7 @@ if (irangp.ge.0) then
 endif
 
 pmoy = pmoy / voltot
-pr0iph = pred0(iphas)
+pr0iph = pred0
 do iel = 1, ncel
   pvar(iel) = pvar(iel) - pmoy + pr0iph
 enddo

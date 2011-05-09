@@ -299,7 +299,7 @@ if (numtyp .eq. -1) then
 
     ineeyp = 0
     do iphas = 1, nphas
-      if(itytur(iphas).eq.4.and.idries(iphas).eq.1) then
+      if(itytur.eq.4.and.idries.eq.1) then
         ineeyp = 1
       endif
     enddo
@@ -324,7 +324,7 @@ if (numtyp .eq. -1) then
   if (icorio.eq.1) then
 
     iphas = 1
-    ipcrom = ipproc(irom(iphas))
+    ipcrom = ipproc(irom)
     omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
     NAMEVR = 'Pressure'
@@ -342,7 +342,7 @@ if (numtyp .eq. -1) then
 
       daxis2 = daxis2 / omgnrm**2
 
-      tracel(iloc) = rtp(iel,ipr(iphas))                          &
+      tracel(iloc) = rtp(iel,ipr)                          &
           + 0.5d0*propce(iel,ipcrom)*omgnrm**2*daxis2
 
     enddo
@@ -361,13 +361,13 @@ if (numtyp .eq. -1) then
 
       iel = lstcel(iloc)
 
-      tracel(1 + (iloc-1)*idimt) = rtp(iel,iu(iphas)) &
+      tracel(1 + (iloc-1)*idimt) = rtp(iel,iu) &
           + (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))
 
-      tracel(2 + (iloc-1)*idimt) = rtp(iel,iv(iphas)) &
+      tracel(2 + (iloc-1)*idimt) = rtp(iel,iv) &
           + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))
 
-      tracel(3 + (iloc-1)*idimt) = rtp(iel,iw(iphas)) &
+      tracel(3 + (iloc-1)*idimt) = rtp(iel,iw) &
           + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))
 
     enddo
@@ -382,7 +382,7 @@ if (numtyp .eq. -1) then
   if (imobil.eq.1) then
 
     iphas = 1
-    ipcrom = ipproc(irom(iphas))
+    ipcrom = ipproc(irom)
     omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
     NAMEVR = 'Rel Pressure'
@@ -400,7 +400,7 @@ if (numtyp .eq. -1) then
 
       daxis2 = daxis2 / omgnrm**2
 
-      tracel(iloc) = rtp(iel,ipr(iphas))                          &
+      tracel(iloc) = rtp(iel,ipr)                          &
           - 0.5d0*propce(iel,ipcrom)*omgnrm**2*daxis2
 
     enddo
@@ -419,13 +419,13 @@ if (numtyp .eq. -1) then
 
       iel = lstcel(iloc)
 
-      tracel(1 + (iloc-1)*idimt) = rtp(iel,iu(iphas)) &
+      tracel(1 + (iloc-1)*idimt) = rtp(iel,iu) &
           - (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))
 
-      tracel(2 + (iloc-1)*idimt) = rtp(iel,iv(iphas)) &
+      tracel(2 + (iloc-1)*idimt) = rtp(iel,iv) &
           - (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))
 
-      tracel(3 + (iloc-1)*idimt) = rtp(iel,iw(iphas)) &
+      tracel(3 + (iloc-1)*idimt) = rtp(iel,iw) &
           - (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))
 
     enddo
@@ -597,8 +597,8 @@ else if  (numtyp .eq. -2) then
 !       Phase
     do iphas = 1, nphas
 
-      if(iscalt(iphas).gt.0 .and. nscal.gt.0 .and.                &
-           iscalt(iphas).le.nscal) then
+      if(iscalt.gt.0 .and. nscal.gt.0 .and.                &
+           iscalt.le.nscal) then
 
 !       Initialisation
         do ii = 1, 32
@@ -613,7 +613,7 @@ else if  (numtyp .eq. -2) then
 
 !       Numero de la variable
 
-        iscal  = iscalt(iphas)
+        iscal  = iscalt
         ivar   = isca(iscal)
         iclvar = iclrtp(ivar,icoef)
 
@@ -718,7 +718,7 @@ else if  (numtyp .eq. -2) then
         else
           ipcvsl = 0
         endif
-        ipcvst = ipproc(ivisct(iphas))
+        ipcvst = ipproc(ivisct)
         iflmab = ipprob(ifluma(ivar))
 
         do iloc = 1, nfbrps
@@ -747,11 +747,11 @@ else if  (numtyp .eq. -2) then
 
 !          Pour la temperature, on multiplie par CP
         if(abs(iscsth(iscal)).eq.1) then
-          if(icp(iphas).gt.0) then
-            ipccp  = ipproc(icp   (iphas))
+          if(icp.gt.0) then
+            ipccp  = ipproc(icp   )
           else
             ipccp  = 0
-            cp0iph = cp0(iphas)
+            cp0iph = cp0
           endif
           do iloc = 1, nfbrps
             ifac = lstfbr(iloc)

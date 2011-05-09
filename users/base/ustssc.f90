@@ -252,7 +252,7 @@ iiscvr = iscavr(iscal)
 iphas = 1
 
 ! --- Index number of the density in the propce array
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)

@@ -76,11 +76,11 @@ module cstphy
   !   t0     : temperature        de reference
   !   cp0    : chaleur specifique de reference
 
-  integer, save ::          ixyzp0(nphsmx)
-  double precision, save :: ro0(nphsmx)    , viscl0(nphsmx),     &
-                            p0 (nphsmx)    , pred0 (nphsmx),     &
-                            xyzp0(3,nphsmx), t0    (nphsmx),     &
-                            cp0(nphsmx)
+  integer, save ::          ixyzp0
+  double precision, save :: ro0    , viscl0,     &
+                            p0     , pred0 ,     &
+                            xyzp0(3,nphsmx), t0    ,     &
+                            cp0
 
   ! Turbulence
   !   ivisls = 0 : viscosite laminaire constante = visls0
@@ -121,7 +121,7 @@ module cstphy
   !   volmax : volume de controle maximal
   !   voltot : volume total du domaine
 
-  double precision, save :: xkappa , cstlog , ypluli(nphsmx)  ,             &
+  double precision, save :: xkappa , cstlog , ypluli  ,             &
                             apow   , bpow   , cpow   , dpow   ,             &
                             cmu    , cmu025 , ce1    , ce2    , ce4    ,    &
                             sigmak , sigmae ,                               &
@@ -136,12 +136,12 @@ module cstphy
                             csab1  , csab2  , csasig , csav1  , csaw1  ,    &
                             csaw2  , csaw3  ,                               &
                             volmin , volmax , voltot ,                      &
-                            almax (nphsmx)  , uref  (nphsmx),               &
-                            xlomlg(nphsmx)  ,                               &
-                            xlesfl(nphsmx)  , ales  (nphsmx), bles(nphsmx), &
-                            csmago(nphsmx)  , cdries(nphsmx),               &
-                            xlesfd(nphsmx)  , smagmx(nphsmx),               &
-                            cwale(nphsmx)
+                            almax   , uref  ,               &
+                            xlomlg  ,                               &
+                            xlesfl  , ales  , bles, &
+                            csmago  , cdries,               &
+                            xlesfd  , smagmx,               &
+                            cwale
 
 
   ! Constantes pour les scalaires

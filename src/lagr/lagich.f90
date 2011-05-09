@@ -212,7 +212,7 @@ endif
 if ( ippmod(icp3pl).ge.0 ) then
   iromf = ipproc(irom1)
 else
-  iromf = ipproc(irom(iphas))
+  iromf = ipproc(irom)
 endif
 
 !===============================================================================

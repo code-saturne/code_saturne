@@ -133,12 +133,12 @@ integer          ilstfa
 idebia = idbia0
 idebra = idbra0
 
-iflmas = ipprof(ifluma(iu(1)))
-iflmab = ipprob(ifluma(iu(1)))
-iclp = iclrtp(ipr(1),icoef)
-iclu = iclrtp(iu(1),icoef)
-iclv = iclrtp(iv(1),icoef)
-iclw = iclrtp(iw(1),icoef)
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
+iclp = iclrtp(ipr,icoef)
+iclu = iclrtp(iu,icoef)
+iclv = iclrtp(iv,icoef)
+iclw = iclrtp(iw,icoef)
 
 !===============================================================================
 ! 2. PREDICTION DU DEPLACEMENT DES STRUCTURES
@@ -282,7 +282,7 @@ if (italim.eq.1) then
     enddo
     if (nterup.gt.1) then
       do iel = 1, ncelet
-        xprale(iel) = rtpa(iel,ipr(1))
+        xprale(iel) = rtpa(iel,ipr)
       enddo
     endif
   endif

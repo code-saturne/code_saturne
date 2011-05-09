@@ -61,14 +61,14 @@ subroutine cfiniv &
 !     PROPCE (prop au centre), PROPFA (aux faces internes),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  (IPHAS))) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL(IPHAS))) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   (IPHAS))) designe CP    (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL ,IPHAS)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
 !      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
 
-!      PROPFB(IFAC,IPPROB(IROM  (IPHAS))) designe ROMB  (IFAC,IPHAS)
+!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC,IPHAS)
 !      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 ! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
@@ -187,7 +187,7 @@ if ( isuite.eq.0 ) then
 
 !     ON MET LA TEMPERATURE A T0
       do iel = 1, ncel
-        rtp(iel,isca(itempk((iphas)))) = t0(iphas)
+        rtp(iel,isca(itempk)) = t0
       enddo
 
 !     On initialise Cv, rho et l'energie
@@ -203,26 +203,26 @@ if ( isuite.eq.0 ) then
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )
 
 !     On initialise la diffusivite thermique
-      visls0(ienerg(iphas)) = visls0(itempk(iphas))/cv0(iphas)
+      visls0(ienerg) = visls0(itempk)/cv0
 
-      if(ivisls(ienerg(iphas)).gt.0) then
-        if(ivisls(itempk(iphas)).gt.0) then
-          if(icv(iphas).gt.0) then
+      if(ivisls(ienerg).gt.0) then
+        if(ivisls(itempk).gt.0) then
+          if(icv.gt.0) then
             do iel = 1, ncel
-              propce(iel,ipproc(ivisls(ienerg(iphas)))) =         &
-                 propce(iel,ipproc(ivisls(itempk(iphas))))        &
-                 / propce(iel,ipproc(icv(iphas)))
+              propce(iel,ipproc(ivisls(ienerg))) =         &
+                 propce(iel,ipproc(ivisls(itempk)))        &
+                 / propce(iel,ipproc(icv))
             enddo
           else
             do iel = 1, ncel
-              propce(iel,ipproc(ivisls(ienerg(iphas)))) =         &
-           propce(iel,ipproc(ivisls(itempk(iphas)))) / cv0(iphas)
+              propce(iel,ipproc(ivisls(ienerg))) =         &
+           propce(iel,ipproc(ivisls(itempk))) / cv0
             enddo
           endif
         else
           do iel = 1, ncel
-              propce(iel,ipproc(ivisls(ienerg(iphas)))) =         &
-           visls0(itempk(iphas)) / propce(iel,ipproc(icv(iphas)))
+              propce(iel,ipproc(ivisls(ienerg))) =         &
+           visls0(itempk) / propce(iel,ipproc(icv))
           enddo
         endif
       endif
@@ -245,19 +245,19 @@ if ( isuite.eq.0 ) then
 
     do iphas = 1, nphas
 
-      iirom  = ipproc(irom  (iphas))
-      iiromb = ipprob(irom  (iphas))
+      iirom  = ipproc(irom  )
+      iiromb = ipprob(irom  )
 
       do iel = 1, ncel
-        propce(iel,iirom)  = rtp(iel,isca(irho(iphas)))
+        propce(iel,iirom)  = rtp(iel,isca(irho))
       enddo
 
       do ifac = 1, nfabor
         iel = ifabor(ifac)
         propfb(ifac,iiromb) =                                     &
-            coefa(ifac,iclrtp(isca(irho(iphas)),icoef))           &
-          + coefb(ifac,iclrtp(isca(irho(iphas)),icoef))           &
-                    * rtp(iel,isca(irho(iphas)))
+            coefa(ifac,iclrtp(isca(irho),icoef))           &
+          + coefb(ifac,iclrtp(isca(irho),icoef))           &
+                    * rtp(iel,isca(irho))
       enddo
 
     enddo
@@ -266,9 +266,9 @@ if ( isuite.eq.0 ) then
 
     do iphas = 1, nphas
 
-      if(iviscv(iphas).gt.0) then
+      if(iviscv.gt.0) then
         do iel = 1, ncel
-          propce(iel,ipproc(iviscv(iphas))) = viscv0(iphas)
+          propce(iel,ipproc(iviscv)) = viscv0
         enddo
       endif
 

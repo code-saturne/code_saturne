@@ -160,7 +160,7 @@ endif
 ! ---- Cp est variable ; pas sur que ce soit indispensable pour le verre
 !                              mais pour le moment c'est comme ca.
 iphas      = 1
-icp(iphas) = 1
+icp = 1
 
 return
 end subroutine

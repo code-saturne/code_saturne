@@ -267,9 +267,9 @@ do ilelt = 1, nlelt
 
 !       On impose un profil de pression sur toutes les faces
   iphas = 1
-  icodcl(ifac,ipr(iphas)) = 1
-  rcodcl(ifac,ipr(iphas),1) =                                     &
-    ro0(iphas)*(  gx*(cdgfbo(1,ifac)-xyzp0(1,iphas))              &
+  icodcl(ifac,ipr) = 1
+  rcodcl(ifac,ipr,1) =                                     &
+    ro0*(  gx*(cdgfbo(1,ifac)-xyzp0(1,iphas))              &
                 + gy*(cdgfbo(2,ifac)-xyzp0(2,iphas))              &
                 + gz*(cdgfbo(3,ifac)-xyzp0(3,iphas)))
 

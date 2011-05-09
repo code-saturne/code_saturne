@@ -184,23 +184,23 @@ lmo = 999.d0
 q0 = 0.d0
 e0 = 0.d0
 
-rugd = rcodcl(ifac,iu(iphas),3)
+rugd = rcodcl(ifac,iu,3)
 distbf = yplus*rugd
-rugt = rcodcl(ifac,iv(iphas),3)
+rugt = rcodcl(ifac,iv,3)
 actu = xkappa/log((distbf+rugd)/rugd)
 actt = xkappa/log((distbf+rugt)/rugt)
 
 ! prise en compte de l'humidite dans le rapport r/cp
 !if ( ippmod(iatmos).eq.2 ) then
-!   rscp1=(rair/cp0(iphas))*(1.+(rvsra-cpvcpa)*qvs(ifac))
-!   rscp2=(rair/cp0(iphas))*(1.+(rvsra-cpvcpa)*qv(iel))
+!   rscp1=(rair/cp0)*(1.+(rvsra-cpvcpa)*qvs(ifac))
+!   rscp2=(rair/cp0)*(1.+(rvsra-cpvcpa)*qv(iel))
 !else
-    rscp1 = rair/cp0(iphas)
-    rscp2 = rair/cp0(iphas)
+    rscp1 = rair/cp0
+    rscp2 = rair/cp0
 !endif
 
-  tpot1 = rcodcl(ifac,isca(iscalt(iphas)),1)
-  tpot2 = rtp(iel,isca(iscalt(iphas)))
+  tpot1 = rcodcl(ifac,isca(iscalt),1)
+  tpot2 = rtp(iel,isca(iscalt))
 
 !     .........    ............................................
 !     3.2 - compute virtual potential temperature at two levels
@@ -218,7 +218,7 @@ actt = xkappa/log((distbf+rugt)/rugt)
 !     .........    .....................................
 
 ! NB: rib =0 if thermal flux conditions are imposed and tpot1 not defined
-if (abs(utau).le.epzero.or.icodcl(ifac,isca(iscalt(iphas))).eq.3) then
+if (abs(utau).le.epzero.or.icodcl(ifac,isca(iscalt)).eq.3) then
  rib = 0.d0
 else
  rib = 2.d0*gredu*distbf*(tpotv2-tpotv1)/(tpotv1+tpotv2)/utau/utau
@@ -272,7 +272,7 @@ endif
 if (abs(gredu*q0).le.epzero) then
   lmo = -99999.d0
 else
-  lmo = -uet**3*(t0(iphas)+tkelvi)/(xkappa*abs(gredu)*q0)
+  lmo = -uet**3*(t0+tkelvi)/(xkappa*abs(gredu)*q0)
 endif
 
 !     ---------------------------------------

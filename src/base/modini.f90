@@ -115,16 +115,16 @@ do ii = 2, nvppmx
   endif
 enddo
 do iphas = 1, nphas
-  ipp = ipppro(ipproc(irom(iphas)))
+  ipp = ipppro(ipproc(irom))
   if(                       ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
-  ipp = ipppro(ipproc(ivisct(iphas)))
-  if( (iturb(iphas).eq.10 .or. itytur(iphas).eq.2                 &
-       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
-       .or. iturb(iphas).eq.70 )                                  &
+  ipp = ipppro(ipproc(ivisct))
+  if( (iturb.eq.10 .or. itytur.eq.2                 &
+       .or. iturb.eq.50 .or. iturb.eq.60            &
+       .or. iturb.eq.70 )                                  &
        .and.ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
   if (idtvar.lt.0) then
-    ichrvr(ipppro(ipproc(icour(iphas)))) = 0
-    ichrvr(ipppro(ipproc(ifour(iphas)))) = 0
+    ichrvr(ipppro(ipproc(icour))) = 0
+    ichrvr(ipppro(ipproc(ifour))) = 0
   endif
   do iest = 1, nestmx
     if(iescal(iest,iphas).gt.0) then
@@ -203,14 +203,14 @@ if(ipucou.ne.1) then
   ihisvr(ipptz,1) = 0
 endif
 do iphas = 1, nphas
-  ipp = ipppro(ipproc(ivisct(iphas)))
-  if( (iturb(iphas).eq.10 .or. itytur(iphas).eq.2                 &
-       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
-       .or. iturb(iphas).eq.70 )                                  &
+  ipp = ipppro(ipproc(ivisct))
+  if( (iturb.eq.10 .or. itytur.eq.2                 &
+       .or. iturb.eq.50 .or. iturb.eq.60            &
+       .or. iturb.eq.70 )                                  &
        .and.ihisvr(ipp,1).eq.-999) ihisvr(ipp,1) = -1
   if (idtvar.lt.0) then
-    ihisvr(ipppro(ipproc(icour(iphas))),1) = 0
-    ihisvr(ipppro(ipproc(ifour(iphas))),1) = 0
+    ihisvr(ipppro(ipproc(icour)),1) = 0
+    ihisvr(ipppro(ipproc(ifour)),1) = 0
   endif
 enddo
 if(nbmomt.gt.0) then
@@ -252,90 +252,90 @@ endif
 
 do iphas = 1, nphas
 
-  IF(NOMVAR(IPPRTP(IPR   (IPHAS))) .EQ.' ') THEN
-    NOMVAR(IPPRTP(IPR   (IPHAS))) = 'Pres'
+  IF(NOMVAR(IPPRTP(IPR   )) .EQ.' ') THEN
+    NOMVAR(IPPRTP(IPR   )) = 'Pres'
   endif
-  IF(NOMVAR(IPPRTP(IU    (IPHAS))) .EQ.' ') THEN
-    NOMVAR(IPPRTP(IU    (IPHAS))) = 'VitesX'
+  IF(NOMVAR(IPPRTP(IU    )) .EQ.' ') THEN
+    NOMVAR(IPPRTP(IU    )) = 'VitesX'
   endif
-  IF(NOMVAR(IPPRTP(IV    (IPHAS))) .EQ.' ') THEN
-    NOMVAR(IPPRTP(IV    (IPHAS))) = 'VitesY'
+  IF(NOMVAR(IPPRTP(IV    )) .EQ.' ') THEN
+    NOMVAR(IPPRTP(IV    )) = 'VitesY'
   endif
-  IF(NOMVAR(IPPRTP(IW    (IPHAS))) .EQ.' ') THEN
-    NOMVAR(IPPRTP(IW    (IPHAS))) = 'VitesZ'
+  IF(NOMVAR(IPPRTP(IW    )) .EQ.' ') THEN
+    NOMVAR(IPPRTP(IW    )) = 'VitesZ'
   endif
-  if(itytur(iphas).eq.2) then
-    IF(NOMVAR(IPPRTP(IK    (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IK    (IPHAS))) = 'EnTurb'
+  if(itytur.eq.2) then
+    IF(NOMVAR(IPPRTP(IK    )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IK    )) = 'EnTurb'
     endif
-    IF(NOMVAR(IPPRTP(IEP   (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IEP   (IPHAS))) = 'Dissip'
+    IF(NOMVAR(IPPRTP(IEP   )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IEP   )) = 'Dissip'
     endif
-  elseif(itytur(iphas).eq.3) then
-    IF(NOMVAR(IPPRTP(IR11  (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IR11  (IPHAS))) =  'R11'
+  elseif(itytur.eq.3) then
+    IF(NOMVAR(IPPRTP(IR11  )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IR11  )) =  'R11'
     endif
-    IF(NOMVAR(IPPRTP(IR22  (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IR22  (IPHAS))) = 'R22'
+    IF(NOMVAR(IPPRTP(IR22  )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IR22  )) = 'R22'
     endif
-    IF(NOMVAR(IPPRTP(IR33  (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IR33  (IPHAS))) = 'R33'
+    IF(NOMVAR(IPPRTP(IR33  )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IR33  )) = 'R33'
     endif
-    IF(NOMVAR(IPPRTP(IR12  (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IR12  (IPHAS))) = 'R12'
+    IF(NOMVAR(IPPRTP(IR12  )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IR12  )) = 'R12'
     endif
-    IF(NOMVAR(IPPRTP(IR13  (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IR13  (IPHAS))) = 'R13'
+    IF(NOMVAR(IPPRTP(IR13  )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IR13  )) = 'R13'
     endif
-    IF(NOMVAR(IPPRTP(IR23  (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IR23  (IPHAS))) = 'R23'
+    IF(NOMVAR(IPPRTP(IR23  )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IR23  )) = 'R23'
     endif
-    IF(NOMVAR(IPPRTP(IEP   (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IEP   (IPHAS))) = 'Dissip'
+    IF(NOMVAR(IPPRTP(IEP   )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IEP   )) = 'Dissip'
     endif
-  elseif(iturb(iphas).eq.50) then
-    IF(NOMVAR(IPPRTP(IK    (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IK    (IPHAS))) = 'EnTurb'
+  elseif(iturb.eq.50) then
+    IF(NOMVAR(IPPRTP(IK    )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IK    )) = 'EnTurb'
     endif
-    IF(NOMVAR(IPPRTP(IEP   (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IEP   (IPHAS))) = 'Dissip'
+    IF(NOMVAR(IPPRTP(IEP   )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IEP   )) = 'Dissip'
     endif
-    IF(NOMVAR(IPPRTP(IPHI  (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IPHI  (IPHAS))) = 'phi'
+    IF(NOMVAR(IPPRTP(IPHI  )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IPHI  )) = 'phi'
     endif
-    IF(NOMVAR(IPPRTP(IFB   (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IFB   (IPHAS))) = 'fbarre'
+    IF(NOMVAR(IPPRTP(IFB   )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IFB   )) = 'fbarre'
     endif
-  elseif(iturb(iphas).eq.60) then
-    IF(NOMVAR(IPPRTP(IK    (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IK    (IPHAS))) = 'EnTurb'
+  elseif(iturb.eq.60) then
+    IF(NOMVAR(IPPRTP(IK    )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IK    )) = 'EnTurb'
     endif
-    IF(NOMVAR(IPPRTP(IOMG  (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(IOMG  (IPHAS))) = 'Omega'
+    IF(NOMVAR(IPPRTP(IOMG  )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IOMG  )) = 'Omega'
     endif
-  elseif(iturb(iphas).eq.70) then
-    IF(NOMVAR(IPPRTP(INUSA (IPHAS))) .EQ.' ') THEN
-      NOMVAR(IPPRTP(INUSA (IPHAS))) = 'NuTild'
+  elseif(iturb.eq.70) then
+    IF(NOMVAR(IPPRTP(INUSA )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(INUSA )) = 'NuTild'
     endif
   endif
 
-  IF(NOMVAR(IPPPRO(IPPROC(IROM  (IPHAS)))) .EQ.' ') THEN
-    NOMVAR(IPPPRO(IPPROC(IROM  (IPHAS)))) = 'MasVol'
+  IF(NOMVAR(IPPPRO(IPPROC(IROM  ))) .EQ.' ') THEN
+    NOMVAR(IPPPRO(IPPROC(IROM  ))) = 'MasVol'
   endif
-  IF(NOMVAR(IPPPRO(IPPROC(IVISCT(IPHAS)))) .EQ.' ') THEN
-    NOMVAR(IPPPRO(IPPROC(IVISCT(IPHAS)))) = 'VisTur'
+  IF(NOMVAR(IPPPRO(IPPROC(IVISCT))) .EQ.' ') THEN
+    NOMVAR(IPPPRO(IPPROC(IVISCT))) = 'VisTur'
   endif
-  IF(NOMVAR(IPPPRO(IPPROC(IVISCL(IPHAS)))) .EQ.' ') THEN
-    NOMVAR(IPPPRO(IPPROC(IVISCL(IPHAS)))) = 'VisMol'
+  IF(NOMVAR(IPPPRO(IPPROC(IVISCL))) .EQ.' ') THEN
+    NOMVAR(IPPPRO(IPPROC(IVISCL))) = 'VisMol'
   endif
-  if (ismago(iphas).gt.0) then
-    IF(NOMVAR(IPPPRO(IPPROC(ISMAGO(IPHAS)))) .EQ.' ') THEN
-      NOMVAR(IPPPRO(IPPROC(ISMAGO(IPHAS)))) = 'Csdyn2'
+  if (ismago.gt.0) then
+    IF(NOMVAR(IPPPRO(IPPROC(ISMAGO))) .EQ.' ') THEN
+      NOMVAR(IPPPRO(IPPROC(ISMAGO))) = 'Csdyn2'
     endif
   endif
-  if(icp   (iphas).gt.0) then
-    IF(NOMVAR(IPPPRO(IPPROC(ICP   (IPHAS)))) .EQ.' ') THEN
-      NOMVAR(IPPPRO(IPPROC(ICP   (IPHAS)))) = 'ChalSp'
+  if(icp   .gt.0) then
+    IF(NOMVAR(IPPPRO(IPPROC(ICP   ))) .EQ.' ') THEN
+      NOMVAR(IPPPRO(IPPROC(ICP   ))) = 'ChalSp'
     endif
   endif
   if(iescal(iespre,iphas).gt.0) then
@@ -431,20 +431,20 @@ endif
 ! ---> Sorties listing
 
 do iphas = 1, nphas
-  ipp = ipppro(ipproc(irom  (iphas)))
-  if(irovar(iphas).eq.1.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-  ipp = ipppro(ipproc(ivisct(iphas)))
-  if( (iturb(iphas).eq.10 .or. itytur(iphas).eq.2                 &
-       .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60            &
-       .or. iturb(iphas).eq.70 )                                  &
+  ipp = ipppro(ipproc(irom  ))
+  if(irovar.eq.1.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
+  ipp = ipppro(ipproc(ivisct))
+  if( (iturb.eq.10 .or. itytur.eq.2                 &
+       .or. iturb.eq.50 .or. iturb.eq.60            &
+       .or. iturb.eq.70 )                                  &
        .and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
-  if (inusa(iphas) .gt. 0) then
-    ipp = ipppro(ipproc(inusa(iphas)))
-    if(iturb(iphas).eq.70.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
+  if (inusa .gt. 0) then
+    ipp = ipppro(ipproc(inusa))
+    if(iturb.eq.70.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
   endif
-  ipp = ipppro(ipproc(icour(iphas)))
+  ipp = ipppro(ipproc(icour))
   if (ilisvr(ipp).eq.-999 .or. idtvar.lt.0) ilisvr(ipp) = 0
-  ipp = ipppro(ipproc(ifour(iphas)))
+  ipp = ipppro(ipproc(ifour))
   if (ilisvr(ipp).eq.-999 .or. idtvar.lt.0) ilisvr(ipp) = 0
   if(iescal(iespre,iphas).gt.0) then
     ipp = ipppro(ipproc(iestim(iespre,iphas)))
@@ -514,69 +514,69 @@ call indsui(isuite)
 do iphas = 1, nphas
 
 !   -- Flux de masse
-  if(abs(thetfl(iphas)+999.d0).gt.epzero) then
-    write(nfecra,1001) istmpf(iphas)
+  if(abs(thetfl+999.d0).gt.epzero) then
+    write(nfecra,1001) istmpf
     iok = iok + 1
-  elseif(istmpf(iphas).eq.0) then
-    thetfl(iphas) = 0.d0
-  elseif(istmpf(iphas).eq.2) then
-    thetfl(iphas) = 0.5d0
+  elseif(istmpf.eq.0) then
+    thetfl = 0.d0
+  elseif(istmpf.eq.2) then
+    thetfl = 0.5d0
   endif
 
 !    -- Proprietes physiques
-  if(abs(thetro(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) 'IROEXT',IROEXT(IPHAS),'THETRO'
+  if(abs(thetro+999.d0).gt.epzero) then
+    WRITE(NFECRA,1011) 'IROEXT',IROEXT,'THETRO'
     iok = iok + 1
-  elseif(iroext(iphas).eq.0) then
-    thetro(iphas) = 0.0d0
-  elseif(iroext(iphas).eq.1) then
-    thetro(iphas) = 0.5d0
-  elseif(iroext(iphas).eq.2) then
-    thetro(iphas) = 1.d0
+  elseif(iroext.eq.0) then
+    thetro = 0.0d0
+  elseif(iroext.eq.1) then
+    thetro = 0.5d0
+  elseif(iroext.eq.2) then
+    thetro = 1.d0
   endif
-  if(abs(thetvi(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) 'IVIEXT',IVIEXT(IPHAS),'THETVI'
+  if(abs(thetvi+999.d0).gt.epzero) then
+    WRITE(NFECRA,1011) 'IVIEXT',IVIEXT,'THETVI'
     iok = iok + 1
-  elseif(iviext(iphas).eq.0) then
-    thetvi(iphas) = 0.0d0
-  elseif(iviext(iphas).eq.1) then
-    thetvi(iphas) = 0.5d0
-  elseif(iviext(iphas).eq.2) then
-    thetvi(iphas) = 1.d0
+  elseif(iviext.eq.0) then
+    thetvi = 0.0d0
+  elseif(iviext.eq.1) then
+    thetvi = 0.5d0
+  elseif(iviext.eq.2) then
+    thetvi = 1.d0
   endif
-  if(abs(thetcp(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) 'ICPEXT',ICPEXT(IPHAS),'THETCP'
+  if(abs(thetcp+999.d0).gt.epzero) then
+    WRITE(NFECRA,1011) 'ICPEXT',ICPEXT,'THETCP'
     iok = iok + 1
-  elseif(icpext(iphas).eq.0) then
-    thetcp(iphas) = 0.0d0
-  elseif(icpext(iphas).eq.1) then
-    thetcp(iphas) = 0.5d0
-  elseif(icpext(iphas).eq.2) then
-    thetcp(iphas) = 1.d0
+  elseif(icpext.eq.0) then
+    thetcp = 0.0d0
+  elseif(icpext.eq.1) then
+    thetcp = 0.5d0
+  elseif(icpext.eq.2) then
+    thetcp = 1.d0
   endif
 
 !    -- Termes sources NS
-  if(abs(thetsn(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) 'ISNO2T',ISNO2T(IPHAS),'THETSN'
+  if(abs(thetsn+999.d0).gt.epzero) then
+    WRITE(NFECRA,1011) 'ISNO2T',ISNO2T,'THETSN'
     iok = iok + 1
-  elseif(isno2t(iphas).eq.1) then
-    thetsn(iphas) = 0.5d0
-  elseif(isno2t(iphas).eq.2) then
-    thetsn(iphas) = 1.d0
-  elseif(isno2t(iphas).eq.0) then
-    thetsn(iphas) = 0.d0
+  elseif(isno2t.eq.1) then
+    thetsn = 0.5d0
+  elseif(isno2t.eq.2) then
+    thetsn = 1.d0
+  elseif(isno2t.eq.0) then
+    thetsn = 0.d0
   endif
 
 !    -- Termes sources grandeurs turbulentes
-  if(abs(thetst(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) 'ISTO2T',ISTO2T(IPHAS),'THETST'
+  if(abs(thetst+999.d0).gt.epzero) then
+    WRITE(NFECRA,1011) 'ISTO2T',ISTO2T,'THETST'
     iok = iok + 1
-  elseif(isto2t(iphas).eq.1) then
-    thetst(iphas) = 0.5d0
-  elseif(isto2t(iphas).eq.2) then
-    thetst(iphas) = 1.d0
-  elseif(isto2t(iphas).eq.0) then
-    thetst(iphas) = 0.d0
+  elseif(isto2t.eq.1) then
+    thetst = 0.5d0
+  elseif(isto2t.eq.2) then
+    thetst = 1.d0
+  elseif(isto2t.eq.0) then
+    thetst = 0.d0
   endif
 
 enddo
@@ -612,106 +612,106 @@ enddo
 do iphas = 1, nphas
 
 !     Vitesse pression (la pression est prise sans interp)
-  if(abs(thetav(iu (iphas))+999.d0).gt.epzero.or.                 &
-     abs(thetav(iv (iphas))+999.d0).gt.epzero.or.                 &
-     abs(thetav(iw (iphas))+999.d0).gt.epzero.or.                 &
-     abs(thetav(ipr(iphas))+999.d0).gt.epzero) then
+  if(abs(thetav(iu )+999.d0).gt.epzero.or.                 &
+     abs(thetav(iv )+999.d0).gt.epzero.or.                 &
+     abs(thetav(iw )+999.d0).gt.epzero.or.                 &
+     abs(thetav(ipr)+999.d0).gt.epzero) then
     WRITE(NFECRA,1031) 'VITESSE-PRESSION ','THETAV'
     iok = iok + 1
-  elseif(ischtp(iphas).eq.1) then
-    thetav(iu (iphas)) = 1.d0
-    thetav(iv (iphas)) = 1.d0
-    thetav(iw (iphas)) = 1.d0
-    thetav(ipr(iphas)) = 1.d0
-  elseif(ischtp(iphas).eq.2) then
-    thetav(iu (iphas)) = 0.5d0
-    thetav(iv (iphas)) = 0.5d0
-    thetav(iw (iphas)) = 0.5d0
-    thetav(ipr(iphas)) = 1.d0
+  elseif(ischtp.eq.1) then
+    thetav(iu ) = 1.d0
+    thetav(iv ) = 1.d0
+    thetav(iw ) = 1.d0
+    thetav(ipr) = 1.d0
+  elseif(ischtp.eq.2) then
+    thetav(iu ) = 0.5d0
+    thetav(iv ) = 0.5d0
+    thetav(iw ) = 0.5d0
+    thetav(ipr) = 1.d0
   endif
 
 !     Turbulence (en k-eps : ordre 1)
-  if(itytur(iphas).eq.2) then
-    if(abs(thetav(ik (iphas))+999.d0).gt.epzero.or.               &
-       abs(thetav(iep(iphas))+999.d0).gt.epzero) then
+  if(itytur.eq.2) then
+    if(abs(thetav(ik )+999.d0).gt.epzero.or.               &
+       abs(thetav(iep)+999.d0).gt.epzero) then
       WRITE(NFECRA,1031) 'VARIABLES   K-EPS','THETAV'
       iok = iok + 1
-    elseif(ischtp(iphas).eq.1) then
-      thetav(ik (iphas)) = 1.d0
-      thetav(iep(iphas)) = 1.d0
-    elseif(ischtp(iphas).eq.2) then
+    elseif(ischtp.eq.1) then
+      thetav(ik ) = 1.d0
+      thetav(iep) = 1.d0
+    elseif(ischtp.eq.2) then
 !     pour le moment, on ne peut pas passer par ici (cf varpos)
-      thetav(ik (iphas)) = 0.5d0
-      thetav(iep(iphas)) = 0.5d0
+      thetav(ik ) = 0.5d0
+      thetav(iep) = 0.5d0
     endif
-  elseif(itytur(iphas).eq.3) then
-    if(abs(thetav(ir11(iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(ir22(iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(ir33(iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(ir12(iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(ir13(iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(ir23(iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(iep (iphas))+999.d0).gt.epzero) then
+  elseif(itytur.eq.3) then
+    if(abs(thetav(ir11)+999.d0).gt.epzero.or.              &
+       abs(thetav(ir22)+999.d0).gt.epzero.or.              &
+       abs(thetav(ir33)+999.d0).gt.epzero.or.              &
+       abs(thetav(ir12)+999.d0).gt.epzero.or.              &
+       abs(thetav(ir13)+999.d0).gt.epzero.or.              &
+       abs(thetav(ir23)+999.d0).gt.epzero.or.              &
+       abs(thetav(iep )+999.d0).gt.epzero) then
       WRITE(NFECRA,1031) 'VARIABLES  RIJ-EP','THETAV'
       iok = iok + 1
-    elseif(ischtp(iphas).eq.1) then
-      thetav(ir11(iphas)) = 1.d0
-      thetav(ir22(iphas)) = 1.d0
-      thetav(ir33(iphas)) = 1.d0
-      thetav(ir12(iphas)) = 1.d0
-      thetav(ir13(iphas)) = 1.d0
-      thetav(ir23(iphas)) = 1.d0
-      thetav(iep (iphas)) = 1.d0
-    elseif(ischtp(iphas).eq.2) then
-      thetav(ir11(iphas)) = 0.5d0
-      thetav(ir22(iphas)) = 0.5d0
-      thetav(ir33(iphas)) = 0.5d0
-      thetav(ir12(iphas)) = 0.5d0
-      thetav(ir13(iphas)) = 0.5d0
-      thetav(ir23(iphas)) = 0.5d0
-      thetav(iep (iphas)) = 0.5d0
+    elseif(ischtp.eq.1) then
+      thetav(ir11) = 1.d0
+      thetav(ir22) = 1.d0
+      thetav(ir33) = 1.d0
+      thetav(ir12) = 1.d0
+      thetav(ir13) = 1.d0
+      thetav(ir23) = 1.d0
+      thetav(iep ) = 1.d0
+    elseif(ischtp.eq.2) then
+      thetav(ir11) = 0.5d0
+      thetav(ir22) = 0.5d0
+      thetav(ir33) = 0.5d0
+      thetav(ir12) = 0.5d0
+      thetav(ir13) = 0.5d0
+      thetav(ir23) = 0.5d0
+      thetav(iep ) = 0.5d0
     endif
-  elseif(iturb(iphas).eq.50) then
-    if(abs(thetav(ik  (iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(iep (iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(iphi(iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(ifb (iphas))+999.d0).gt.epzero) then
+  elseif(iturb.eq.50) then
+    if(abs(thetav(ik  )+999.d0).gt.epzero.or.              &
+       abs(thetav(iep )+999.d0).gt.epzero.or.              &
+       abs(thetav(iphi)+999.d0).gt.epzero.or.              &
+       abs(thetav(ifb )+999.d0).gt.epzero) then
       WRITE(NFECRA,1031) 'VARIABLES     V2F','THETAV'
       iok = iok + 1
-    elseif(ischtp(iphas).eq.1) then
-      thetav(ik  (iphas)) = 1.d0
-      thetav(iep (iphas)) = 1.d0
-      thetav(iphi(iphas)) = 1.d0
-      thetav(ifb (iphas)) = 1.d0
-    elseif(ischtp(iphas).eq.2) then
+    elseif(ischtp.eq.1) then
+      thetav(ik  ) = 1.d0
+      thetav(iep ) = 1.d0
+      thetav(iphi) = 1.d0
+      thetav(ifb ) = 1.d0
+    elseif(ischtp.eq.2) then
 !     pour le moment, on ne peut pas passer par ici (cf varpos)
-      thetav(ik  (iphas)) = 0.5d0
-      thetav(iep (iphas)) = 0.5d0
-      thetav(iphi(iphas)) = 0.5d0
-      thetav(ifb (iphas)) = 0.5d0
+      thetav(ik  ) = 0.5d0
+      thetav(iep ) = 0.5d0
+      thetav(iphi) = 0.5d0
+      thetav(ifb ) = 0.5d0
     endif
-  elseif(iturb(iphas).eq.60) then
-    if(abs(thetav(ik  (iphas))+999.d0).gt.epzero.or.              &
-       abs(thetav(iomg(iphas))+999.d0).gt.epzero ) then
+  elseif(iturb.eq.60) then
+    if(abs(thetav(ik  )+999.d0).gt.epzero.or.              &
+       abs(thetav(iomg)+999.d0).gt.epzero ) then
       WRITE(NFECRA,1031) 'VARIABLES K-OMEGA','THETAV'
       iok = iok + 1
-    elseif(ischtp(iphas).eq.1) then
-      thetav(ik  (iphas)) = 1.d0
-      thetav(iomg(iphas)) = 1.d0
-    elseif(ischtp(iphas).eq.2) then
+    elseif(ischtp.eq.1) then
+      thetav(ik  ) = 1.d0
+      thetav(iomg) = 1.d0
+    elseif(ischtp.eq.2) then
 !     pour le moment, on ne peut pas passer par ici (cf varpos)
-      thetav(ik  (iphas)) = 0.5d0
-      thetav(iomg(iphas)) = 0.5d0
+      thetav(ik  ) = 0.5d0
+      thetav(iomg) = 0.5d0
     endif
-  elseif(iturb(iphas).eq.70) then
-    if(abs(thetav(inusa(iphas))+999.d0).gt.epzero) then
+  elseif(iturb.eq.70) then
+    if(abs(thetav(inusa)+999.d0).gt.epzero) then
       WRITE(NFECRA,1031) 'VARIABLE NU_tilde de SA','THETAV'
       iok = iok + 1
-    elseif(ischtp(iphas).eq.1) then
-      thetav(inusa(iphas)) = 1.d0
-    elseif(ischtp(iphas).eq.2) then
+    elseif(ischtp.eq.1) then
+      thetav(inusa) = 1.d0
+    elseif(ischtp.eq.2) then
 !     pour le moment, on ne peut pas passer par ici (cf varpos)
-      thetav(inusa(iphas)) = 0.5d0
+      thetav(inusa) = 0.5d0
     endif
   endif
 
@@ -724,9 +724,9 @@ do iscal = 1, nscal
   if(abs(thetav(ivar)+999.d0).gt.epzero) then
     WRITE(NFECRA,1041) 'SCALAIRE',ISCAL,'THETAV'
     iok = iok + 1
-  elseif(ischtp(iphas).eq.1) then
+  elseif(ischtp.eq.1) then
     thetav(ivar) = 1.d0
-  elseif(ischtp(iphas).eq.2) then
+  elseif(ischtp.eq.2) then
     thetav(ivar) = 0.5d0
   endif
 enddo
@@ -739,11 +739,11 @@ if (iale.eq.1) then
      abs(thetav(iwma)+999.d0).gt.epzero) then
     WRITE(NFECRA,1032) 'THETAV'
     iok = iok + 1
-  elseif(ischtp(iphas).eq.1) then
+  elseif(ischtp.eq.1) then
     thetav(iuma) = 1.d0
     thetav(ivma) = 1.d0
     thetav(iwma) = 1.d0
-  elseif(ischtp(iphas).eq.2) then
+  elseif(ischtp.eq.2) then
 !     pour le moment, on ne peut pas passer par ici (cf varpos)
     thetav(iuma) = 0.5d0
     thetav(ivma) = 0.5d0
@@ -757,12 +757,12 @@ endif
 !                  0 (ie avec) sinon
 
 do iphas = 1, nphas
-  if(itytur(iphas).eq.4) then
-    ii = iu(iphas)
+  if(itytur.eq.4) then
+    ii = iu
     if(isstpc(ii).eq.-999) isstpc(ii) = 1
-    ii = iv(iphas)
+    ii = iv
     if(isstpc(ii).eq.-999) isstpc(ii) = 1
-    ii = iw(iphas)
+    ii = iw
     if(isstpc(ii).eq.-999) isstpc(ii) = 1
     do jj = 1, nscal
       ii = isca(jj)
@@ -785,11 +785,11 @@ enddo
 !   (en particulier, en L.E.S. toutes les variables sont donc en centre)
 
 do iphas = 1, nphas
-  ii = iu(iphas)
+  ii = iu
   if(abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
-  ii = iv(iphas)
+  ii = iv
   if(abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
-  ii = iw(iphas)
+  ii = iw
   if(abs(blencv(ii)+999.d0).lt.epzero) blencv(ii) = 1.d0
 enddo
 do jj = 1, nscaus
@@ -820,20 +820,20 @@ enddo
 !     Attention aux tests dans verini
 
 do iphas = 1, nphas
-  if(ischtp(iphas).eq.2) then
-    ii = ipr(iphas)
+  if(ischtp.eq.2) then
+    ii = ipr
     if(nswrsm(ii).eq.-999) nswrsm(ii) = 5
     if(abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
     if(abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
-    ii = iu(iphas)
+    ii = iu
     if(nswrsm(ii).eq.-999) nswrsm(ii) = 10
     if(abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
     if(abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
-    ii = iv(iphas)
+    ii = iv
     if(nswrsm(ii).eq.-999) nswrsm(ii) = 10
     if(abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
     if(abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
-    ii = iw(iphas)
+    ii = iw
     if(nswrsm(ii).eq.-999) nswrsm(ii) = 10
     if(abs(epsrsm(ii)+999.d0).lt.epzero) epsrsm(ii) = 1.d-5
     if(abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
@@ -844,7 +844,7 @@ do iphas = 1, nphas
       if(abs(epsilo(ii)+999.d0).lt.epzero) epsilo(ii) = 1.d-5
     enddo
   endif
-  ii = ipr(iphas)
+  ii = ipr
   if(nswrsm(ii).eq.-999) nswrsm(ii) = 2
 enddo
 
@@ -899,30 +899,30 @@ do iphas = 1, nphas
 !      etant entendu que ces coefs ne servent pas
 !      s'ils servaient, attention dans le cas a plusieurs phases avec
 !      une seule pression : celle ci prend le coef de la derniere phase
-  cdtvar(iv (iphas)) = cdtvar(iu(iphas))
-  cdtvar(iw (iphas)) = cdtvar(iu(iphas))
-  cdtvar(ipr(iphas)) = cdtvar(iu(iphas))
+  cdtvar(iv ) = cdtvar(iu)
+  cdtvar(iw ) = cdtvar(iu)
+  cdtvar(ipr) = cdtvar(iu)
 
-  if(itytur(iphas).eq.2) then
-    cdtvar(iep (iphas)) = cdtvar(ik  (iphas))
-  elseif(itytur(iphas).eq.3) then
-    cdtvar(ir22(iphas)) = cdtvar(ir11(iphas))
-    cdtvar(ir33(iphas)) = cdtvar(ir11(iphas))
-    cdtvar(ir12(iphas)) = cdtvar(ir11(iphas))
-    cdtvar(ir13(iphas)) = cdtvar(ir11(iphas))
-    cdtvar(ir23(iphas)) = cdtvar(ir11(iphas))
-    cdtvar(iep (iphas)) = cdtvar(ir11(iphas))
-  elseif(iturb(iphas).eq.50) then
-    cdtvar(iep (iphas)) = cdtvar(ik  (iphas))
+  if(itytur.eq.2) then
+    cdtvar(iep ) = cdtvar(ik  )
+  elseif(itytur.eq.3) then
+    cdtvar(ir22) = cdtvar(ir11)
+    cdtvar(ir33) = cdtvar(ir11)
+    cdtvar(ir12) = cdtvar(ir11)
+    cdtvar(ir13) = cdtvar(ir11)
+    cdtvar(ir23) = cdtvar(ir11)
+    cdtvar(iep ) = cdtvar(ir11)
+  elseif(iturb.eq.50) then
+    cdtvar(iep ) = cdtvar(ik  )
 
-    cdtvar(iphi(iphas)) = cdtvar(ik  (iphas))
+    cdtvar(iphi) = cdtvar(ik  )
 !     CDTVAR(IFB) est en fait inutile car pas de temps dans l'eq de f_barre
-    cdtvar(ifb (iphas)) = cdtvar(ik  (iphas))
-  elseif(iturb(iphas).eq.60) then
-    cdtvar(iomg(iphas)) = cdtvar(ik  (iphas))
-  elseif(iturb(iphas).eq.70) then
+    cdtvar(ifb ) = cdtvar(ik  )
+  elseif(iturb.eq.60) then
+    cdtvar(iomg) = cdtvar(ik  )
+  elseif(iturb.eq.70) then
 ! cdtvar est à 1.0 par defaut dans iniini.f90
-    cdtvar(inusa(iphas))= cdtvar(inusa(iphas))
+    cdtvar(inusa)= cdtvar(inusa)
   endif
 
 enddo
@@ -936,14 +936,14 @@ enddo
 !        prevenir dans la section verification.
 
 do iphas = 1, nphas
-  if(ideuch(iphas).eq.-999) then
-    if(iturb(iphas).eq. 0.or.                                     &
-       iturb(iphas).eq.10.or.                                     &
-       itytur(iphas).eq.4.or.                                     &
-       iturb(iphas).eq.70) then
-      ideuch(iphas) = 0
+  if(ideuch.eq.-999) then
+    if(iturb.eq. 0.or.                                     &
+       iturb.eq.10.or.                                     &
+       itytur.eq.4.or.                                     &
+       iturb.eq.70) then
+      ideuch = 0
     else
-      ideuch(iphas) = 1
+      ideuch = 1
     endif
   endif
 
@@ -958,12 +958,12 @@ do iphas = 1, nphas
   ! forcement de calculer u* de maniere totalement satisfaisante).
   ! Idem en Spalart-Allmaras.
 
-  if (ypluli(iphas).lt.-grand) then
-    if (ideuch(iphas).eq.2 .or. itytur(iphas).eq.4 .or.           &
-        iturb(iphas).eq.70    ) then
-      ypluli(iphas) = 10.88d0
+  if (ypluli.lt.-grand) then
+    if (ideuch.eq.2 .or. itytur.eq.4 .or.           &
+        iturb.eq.70    ) then
+      ypluli = 10.88d0
     else
-      ypluli(iphas) = 1.d0/xkappa
+      ypluli = 1.d0/xkappa
     endif
   endif
 enddo
@@ -971,16 +971,16 @@ enddo
 
 ! ---> Van Driest
 do iphas = 1, nphas
-  if(idries(iphas).eq.-1) then
+  if(idries.eq.-1) then
 !   On met 1 en supposant qu'en periodicite ou parallele on utilise le
 !     mode de calcul de la distance a la paroi qui les prend en charge
 !     (ICDPAR=+/-1, valeur par defaut)
-    if(iturb(iphas).eq.40) then
-      idries(iphas) = 1
-    elseif(iturb(iphas).eq.41) then
-      idries(iphas) = 0
-    elseif(iturb(iphas).eq.42) then
-      idries(iphas) = 0
+    if(iturb.eq.40) then
+      idries = 1
+    elseif(iturb.eq.41) then
+      idries = 0
+    elseif(iturb.eq.42) then
+      idries = 0
     endif
   endif
 enddo
@@ -1020,8 +1020,8 @@ if(nscal.gt.0) then
 
 !         On couple le scalaire temperature de la premiere phase
       do iphas = 1, nphas
-        if(iscalt(iphas).gt.0.and.iscalt(iphas).le.nscal) then
-          icpsyr(iscalt(iphas)) = 1
+        if(iscalt.gt.0.and.iscalt.le.nscal) then
+          icpsyr(iscalt) = 1
           goto 100
         endif
       enddo
@@ -1062,7 +1062,7 @@ if(nscal.gt.0) then
   do ii = 1, nscal
     if(iscsth(ii).eq.-10)then
       iphas = 1
-      if(ii.ne.iscalt(iphas)) then
+      if(ii.ne.iscalt) then
         iscsth(ii) = 0
       endif
     endif
@@ -1101,7 +1101,7 @@ enddo
 !      on avertit (dans verini).
 ikw = 0
 do iphas = 1, nphas
-  if (iturb(iphas).eq.60) ikw = 1
+  if (iturb.eq.60) ikw = 1
 enddo
 if (icdpar.eq.-999) then
   icdpar = -1
@@ -1117,9 +1117,9 @@ if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
 
 ineedy = 0
 do iphas = 1, nphas
-  if((iturb(iphas).eq.30.and.irijec(iphas).eq.1).or.              &
-     (itytur(iphas).eq.4.and.idries(iphas).eq.1).or.              &
-      iturb(iphas).eq.60.or.iturb(iphas).eq.70      ) then
+  if((iturb.eq.30.and.irijec.eq.1).or.              &
+     (itytur.eq.4.and.idries.eq.1).or.              &
+      iturb.eq.60.or.iturb.eq.70      ) then
     ineedy = 1
   endif
 enddo
@@ -1136,7 +1136,7 @@ endif
 
 !     Warning : non initialise => comme la vitesse
 if(iwarny.eq.-999) then
-  iwarny = iwarni(iu(1))
+  iwarny = iwarni(iu)
 endif
 
 
@@ -1146,14 +1146,14 @@ endif
 !     Dans verini on bloquera le v2f et le k-eps prod lin si IKECOU.NE.0
 !     On bloquera aussi le stationnaire si IKECOU.NE.0
 do iphas = 1, nphas
-  if (ikecou(iphas).eq.-999) then
+  if (ikecou.eq.-999) then
     if (idtvar.lt.0) then
-      ikecou(iphas) = 0
-    else if (iturb(iphas).eq.21 .or. iturb(iphas).eq.50           &
-        .or. iturb(iphas).eq.60 ) then
-      ikecou(iphas) = 0
+      ikecou = 0
+    else if (iturb.eq.21 .or. iturb.eq.50           &
+        .or. iturb.eq.60 ) then
+      ikecou = 0
     else
-      ikecou(iphas) = 1
+      ikecou = 1
     endif
   endif
 enddo
@@ -1163,34 +1163,34 @@ if (idtvar.lt.0) then
   relxsp = 1.d0-relxst
   if (relxsp.le.epzero) relxsp = relxst
   do iphas = 1, nphas
-    if (abs(relaxv(ipr(iphas))+999.d0).le.epzero)                 &
-         relaxv(ipr(iphas)) = relxsp
+    if (abs(relaxv(ipr)+999.d0).le.epzero)                 &
+         relaxv(ipr) = relxsp
   enddo
   do ii = 1, nvarmx
     if (abs(relaxv(ii)+999.d0).le.epzero) relaxv(ii) = relxst
   enddo
 else
   do iphas = 1, nphas
-    if ( ikecou(iphas).eq.0) then
-      if (itytur(iphas).eq.2 .or. itytur(iphas).eq.5) then
-        if (abs(relaxv(ik(iphas))+999.d0).lt.epzero)              &
-             relaxv(ik(iphas)) = 0.7d0
-        if (abs(relaxv(iep(iphas))+999.d0).lt.epzero)             &
-             relaxv(iep(iphas)) = 0.7d0
-      else if (itytur(iphas).eq.6) then
-        if (abs(relaxv(ik(iphas))+999.d0).lt.epzero)              &
-             relaxv(ik(iphas)) = 0.7d0
-        if (abs(relaxv(iomg(iphas))+999.d0).lt.epzero)            &
-             relaxv(iomg(iphas)) = 0.7d0
+    if ( ikecou.eq.0) then
+      if (itytur.eq.2 .or. itytur.eq.5) then
+        if (abs(relaxv(ik)+999.d0).lt.epzero)              &
+             relaxv(ik) = 0.7d0
+        if (abs(relaxv(iep)+999.d0).lt.epzero)             &
+             relaxv(iep) = 0.7d0
+      else if (itytur.eq.6) then
+        if (abs(relaxv(ik)+999.d0).lt.epzero)              &
+             relaxv(ik) = 0.7d0
+        if (abs(relaxv(iomg)+999.d0).lt.epzero)            &
+             relaxv(iomg) = 0.7d0
       endif
     endif
-    if(iturb(iphas).eq.70) then
-      if(abs(relaxv(inusa(iphas))+999.d0).lt.epzero) then
-        relaxv(inusa(iphas)) = 1.D0
+    if(iturb.eq.70) then
+      if(abs(relaxv(inusa)+999.d0).lt.epzero) then
+        relaxv(inusa) = 1.D0
       endif
     endif
-    if (abs(relaxv(ipr(iphas))+999.d0).lt.epzero)                 &
-             relaxv(ipr(iphas)) = 1.d0
+    if (abs(relaxv(ipr)+999.d0).lt.epzero)                 &
+             relaxv(ipr) = 1.d0
   enddo
 endif
 
@@ -1203,7 +1203,7 @@ if (idtvar.lt.0) then
     istat(ii) = 0
   enddo
   do iphas = 1, nphas
-    arak(iphas) = arak(iphas)/max(relaxv(iu(iphas)),epzero)
+    arak = arak/max(relaxv(iu),epzero)
   enddo
 endif
 
@@ -1275,7 +1275,7 @@ endif
 do iphas = 1, nphas
   do ii = 1, 3
     if (xyzp0(ii,iphas).gt.-0.5d0*rinfin) then
-      ixyzp0(iphas) = 1
+      ixyzp0 = 1
     else
       xyzp0(ii,iphas) = 0.d0
     endif

@@ -82,8 +82,8 @@ subroutine uselph &
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
 !      - dans usini1 :
-!             . la masse volumique (initialisee a RO0(IPHAS))
-!             . la viscosite       (initialisee a VISCL0(IPHAS))
+!             . la masse volumique (initialisee a RO0)
+!             . la viscosite       (initialisee a VISCL0)
 !      - dans usiniv/useliv :
 !             . les variables de calcul  (initialisees a 0 par defaut
 !             ou a l
@@ -128,7 +128,7 @@ subroutine uselph &
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -175,7 +175,7 @@ integer          nvar   , nscal  , nphas
 integer          nphmx
 
 integer          maxelt, lstelt(maxelt)
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -288,11 +288,11 @@ if ( ippmod(ieljou).ge.1 ) then
 
 !       On n'utilisera donc PAS les variables
 !          =====================
-!                                CP0(IPHAS), VISLS0(ISCALT(IPHAS))
+!                                CP0, VISLS0(ISCALT)
 !                                VISLS0(IPOTR) et VISLS0(IPOTI)
 
 !       Informatiquement, ceci se traduit par le fait que
-!                                ICP(IPHAS)>0, IVISLS(ISCALT(IPHAS))>0,
+!                                ICP>0, IVISLS(ISCALT)>0,
 !                                IVISLS(IPOTR)>0 et IVISLS(IPOTI)>0
 
 
@@ -346,7 +346,7 @@ if ( ippmod(ieljou).ge.1 ) then
     srrom1 = 0.d0
   endif
 
-  ipcrom = ipproc(irom(iphas))
+  ipcrom = ipproc(irom)
   do iel = 1, ncel
     rhonp1 = rom0 /                                               &
             (1.d0+ dilar * (propce(iel,ipproc(itemp))-temp0) )
@@ -370,7 +370,7 @@ if ( ippmod(ieljou).ge.1 ) then
 !          (Choudhary)
 !      Plard (HE-25/94/017) ; limite a 1173K par C Delalondre
 
-  ipcvis = ipproc(iviscl(iphas))
+  ipcvis = ipproc(iviscl)
   aa     = 10425.d0
   bb     =   500.d0
   cc     =-6.0917d0
@@ -399,7 +399,7 @@ if ( ippmod(ieljou).ge.1 ) then
 !        CP = 1381 (Choudhary)
 !          coherent avec Plard (HE-25/94/017)
 
-  ipccp  = ipproc(icp(iphas))
+  ipccp  = ipproc(icp)
   do iel = 1, ncel
     propce(iel,ipccp) = 1381.d0
   enddo
@@ -421,7 +421,7 @@ if ( ippmod(ieljou).ge.1 ) then
 
 !          Plard (HE-25/94/017)
 
-  ipcvsl = ipproc(ivisls(iscalt(iphas)))
+  ipcvsl = ipproc(ivisls(iscalt))
 
   do iel = 1, ncel
     xbr = 85.25d0                                                 &

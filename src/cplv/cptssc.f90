@@ -239,8 +239,8 @@ chaine = nomvar(ipprtp(ivar))
 iphas = 1
 
 ! --- Numero des grandeurs physiques (voir usclim)
-ipcrom = ipproc(irom(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom)
+ipcvst = ipproc(ivisct)
 
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES POUR LES VARIABLES RELATIVES
@@ -457,18 +457,18 @@ if ( ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)) ) then
   do iel = 1, ncel
     if ( ivisls(ihm).gt.0 ) then
       ipcvsl = ipproc(ivisls(ihm))
-      if ( icp(iphas).gt.0 ) then
-        ipccp   = ipproc(icp(iphas))
+      if ( icp.gt.0 ) then
+        ipccp   = ipproc(icp)
         w1(iel) = propce(iel,ipcvsl) * propce(iel,ipccp)
       else
-        w1(iel) = propce(iel,ipcvsl) * cp0(iphas)
+        w1(iel) = propce(iel,ipcvsl) * cp0
       endif
     else
-      if ( icp(iphas).gt.0 ) then
-        ipccp   = ipproc(icp(iphas))
+      if ( icp.gt.0 ) then
+        ipccp   = ipproc(icp)
         w1(iel) = visls0(ihm) * propce(iel,ipccp)
       else
-        w1(iel) = visls0(ihm) * cp0(iphas)
+        w1(iel) = visls0(ihm) * cp0
       endif
     endif
   enddo
@@ -1171,7 +1171,7 @@ if ( ieqco2 .ge. 1 ) then
      if ( xden .ne. 0.d0 ) then
 
        tauchi = 1.d0/xden
-       tautur = rtpa(iel,ik(iphas))/rtpa(iel,iep(iphas))
+       tautur = rtpa(iel,ik)/rtpa(iel,iep)
 
        x2 = 0.d0
        do icla = 1, nclacp

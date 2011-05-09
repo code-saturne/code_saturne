@@ -158,8 +158,8 @@ if(iappel.eq.1) then
 !       en suite de calcul, les deux ont ete relus.
 
   do iphas = 1, nphas
-    if(istmpf(iphas).eq.2) then
-      iuiph  = iu(iphas)
+    if(istmpf.eq.2) then
+      iuiph  = iu
       iflmas = ipprof(ifluma(iuiph))
       iflmab = ipprob(ifluma(iuiph))
       iflmsa = ipprof(ifluaa(iuiph))
@@ -184,25 +184,25 @@ if(iappel.eq.1) then
 !       Pour RHO, on le fait en double si ICALHY = 1 (et sur NCELET)
 !     Au debut du calcul les flux nouveau et ancien ont ete initialises inivar
   do iphas = 1, nphas
-    if(iroext(iphas).gt.0) then
-      ipcrom = ipproc(irom  (iphas))
-      ipcroa = ipproc(iroma (iphas))
+    if(iroext.gt.0) then
+      ipcrom = ipproc(irom  )
+      ipcroa = ipproc(iroma )
       do iel = 1, ncelet
         propce(iel,ipcroa) = propce(iel,ipcrom)
       enddo
-      ipbrom = ipprob(irom  (iphas))
-      ipbroa = ipprob(iroma (iphas))
+      ipbrom = ipprob(irom  )
+      ipbroa = ipprob(iroma )
       do ifac = 1, nfabor
         propfb(ifac,ipbroa) = propfb(ifac,ipbrom)
       enddo
     endif
   enddo
   do iphas = 1, nphas
-    if(iviext(iphas).gt.0) then
-      ipcvis = ipproc(iviscl(iphas))
-      ipcvst = ipproc(ivisct(iphas))
-      ipcvsa = ipproc(ivisla(iphas))
-      ipcvta = ipproc(ivista(iphas))
+    if(iviext.gt.0) then
+      ipcvis = ipproc(iviscl)
+      ipcvst = ipproc(ivisct)
+      ipcvsa = ipproc(ivisla)
+      ipcvta = ipproc(ivista)
       do iel = 1, ncel
         propce(iel,ipcvsa) = propce(iel,ipcvis)
         propce(iel,ipcvta) = propce(iel,ipcvst)
@@ -210,10 +210,10 @@ if(iappel.eq.1) then
     endif
   enddo
   do iphas = 1, nphas
-    if(icpext(iphas).gt.0) then
-      if(icp   (iphas).gt.0) then
-        iicp   = ipproc(icp   (iphas))
-        iicpa  = ipproc(icpa  (iphas))
+    if(icpext.gt.0) then
+      if(icp   .gt.0) then
+        iicp   = ipproc(icp   )
+        iicpa  = ipproc(icpa  )
         do iel = 1, ncel
           propce(iel,iicpa ) = propce(iel,iicp  )
         enddo
@@ -258,16 +258,16 @@ elseif(iappel.eq.2) then
 !       ne comportait pas grandeur requise.
 
   do iphas = 1, nphas
-    if(initro(iphas).ne.1) then
-      initro(iphas) = 1
-      if(iroext(iphas).gt.0) then
-        ipcrom = ipproc(irom  (iphas))
-        ipcroa = ipproc(iroma (iphas))
+    if(initro.ne.1) then
+      initro = 1
+      if(iroext.gt.0) then
+        ipcrom = ipproc(irom  )
+        ipcroa = ipproc(iroma )
         do iel = 1, ncelet
           propce(iel,ipcroa) = propce(iel,ipcrom)
         enddo
-        ipbrom = ipprob(irom  (iphas))
-        ipbroa = ipprob(iroma (iphas))
+        ipbrom = ipprob(irom  )
+        ipbroa = ipprob(iroma )
         do ifac = 1, nfabor
           propfb(ifac,ipbroa) = propfb(ifac,ipbrom)
         enddo
@@ -275,13 +275,13 @@ elseif(iappel.eq.2) then
     endif
   enddo
   do iphas = 1, nphas
-    if(initvi(iphas).ne.1) then
-      initvi(iphas) = 1
-      if(iviext(iphas).gt.0) then
-        ipcvis = ipproc(iviscl(iphas))
-        ipcvst = ipproc(ivisct(iphas))
-        ipcvsa = ipproc(ivisla(iphas))
-        ipcvta = ipproc(ivista(iphas))
+    if(initvi.ne.1) then
+      initvi = 1
+      if(iviext.gt.0) then
+        ipcvis = ipproc(iviscl)
+        ipcvst = ipproc(ivisct)
+        ipcvsa = ipproc(ivisla)
+        ipcvta = ipproc(ivista)
         do iel = 1, ncel
           propce(iel,ipcvsa) = propce(iel,ipcvis)
           propce(iel,ipcvta) = propce(iel,ipcvst)
@@ -290,12 +290,12 @@ elseif(iappel.eq.2) then
     endif
   enddo
   do iphas = 1, nphas
-    if(initcp(iphas).ne.1) then
-      initcp(iphas) = 1
-      if(icpext(iphas).gt.0) then
-        if(icp   (iphas).gt.0) then
-          iicp   = ipproc(icp   (iphas))
-          iicpa  = ipproc(icpa  (iphas))
+    if(initcp.ne.1) then
+      initcp = 1
+      if(icpext.gt.0) then
+        if(icp   .gt.0) then
+          iicp   = ipproc(icp   )
+          iicpa  = ipproc(icpa  )
           do iel = 1, ncel
             propce(iel,iicpa ) = propce(iel,iicp  )
           enddo
@@ -337,18 +337,18 @@ elseif(iappel.eq.2) then
 !     Le calcul pour Rho est fait sur NCELET afin d'economiser un echange.
 
   do iphas = 1, nphas
-    if(iroext(iphas).gt.0) then
-      ipcrom = ipproc(irom  (iphas))
-      ipcroa = ipproc(iroma (iphas))
-      theta  = thetro(iphas)
+    if(iroext.gt.0) then
+      ipcrom = ipproc(irom  )
+      ipcroa = ipproc(iroma )
+      theta  = thetro
       do iel = 1, ncelet
         xmasvo = propce(iel,ipcrom)
         propce(iel,ipcrom) = (1.d0+theta) * propce(iel,ipcrom)    &
                            -       theta  * propce(iel,ipcroa)
         propce(iel,ipcroa) = xmasvo
       enddo
-      ipbrom = ipprob(irom  (iphas))
-      ipbroa = ipprob(iroma (iphas))
+      ipbrom = ipprob(irom  )
+      ipbroa = ipprob(iroma )
       do ifac = 1, nfabor
         xmasvo = propfb(ifac,ipbrom)
         propfb(ifac,ipbrom) = (1.d0+theta) * propfb(ifac,ipbrom)  &
@@ -356,12 +356,12 @@ elseif(iappel.eq.2) then
         propfb(ifac,ipbroa) = xmasvo
       enddo
     endif
-    if(iviext(iphas).gt.0) then
-      ipcvis = ipproc(iviscl(iphas))
-      ipcvst = ipproc(ivisct(iphas))
-      ipcvsa = ipproc(ivisla(iphas))
-      ipcvta = ipproc(ivista(iphas))
-      theta  = thetvi(iphas)
+    if(iviext.gt.0) then
+      ipcvis = ipproc(iviscl)
+      ipcvst = ipproc(ivisct)
+      ipcvsa = ipproc(ivisla)
+      ipcvta = ipproc(ivista)
+      theta  = thetvi
       do iel = 1, ncel
         viscos = propce(iel,ipcvis)
         propce(iel,ipcvis) = (1.d0+theta) * propce(iel,ipcvis)    &
@@ -373,11 +373,11 @@ elseif(iappel.eq.2) then
         propce(iel,ipcvta) = viscos
       enddo
     endif
-    if(icpext(iphas).gt.0) then
-      if(icp(iphas).gt.0) then
-        iicp   = ipproc(icp   (iphas))
-        iicpa  = ipproc(icpa  (iphas))
-        theta  = thetcp(iphas)
+    if(icpext.gt.0) then
+      if(icp.gt.0) then
+        iicp   = ipproc(icp   )
+        iicpa  = ipproc(icpa  )
+        theta  = thetcp
         do iel = 1, ncel
           varcp  = propce(iel,iicp  )
           propce(iel,iicp  ) = (1.d0+theta) * propce(iel,iicp  )  &
@@ -437,13 +437,13 @@ elseif(iappel.eq.3) then
 !     - a toutes les iterations sauf la derniere si ISTMPF.EQ.0
 
   do iphas = 1, nphas
-    iuiph  = iu(iphas)
+    iuiph  = iu
     iflmas = ipprof(ifluma(iuiph))
     iflmab = ipprob(ifluma(iuiph))
-    if(istmpf(iphas).eq.2) then
+    if(istmpf.eq.2) then
       iflmsa = ipprof(ifluaa(iuiph))
       iflmba = ipprob(ifluaa(iuiph))
-      theta  = thetfl(iphas)
+      theta  = thetfl
       aa = 1.d0/(2.d0-theta)
       bb = (1.d0-theta)/(2.d0-theta)
       do ifac = 1 , nfac
@@ -454,7 +454,7 @@ elseif(iappel.eq.3) then
         propfb(ifac,iflmab) = aa * propfb(ifac,iflmab)            &
                             + bb * propfb(ifac,iflmba)
       enddo
-    elseif(istmpf(iphas).eq.0) then
+    elseif(istmpf.eq.0) then
       iflmsa = ipprof(ifluaa(iuiph))
       iflmba = ipprob(ifluaa(iuiph))
       do ifac = 1 , nfac
@@ -496,13 +496,13 @@ elseif(iappel.eq.4) then
 !          aussi pour impliciter le flux de masse)
 
   do iphas = 1, nphas
-    iuiph  = iu(iphas)
+    iuiph  = iu
     iflmas = ipprof(ifluma(iuiph))
     iflmab = ipprob(ifluma(iuiph))
-    if(istmpf(iphas).eq.2) then
+    if(istmpf.eq.2) then
       iflmsa = ipprof(ifluaa(iuiph))
       iflmba = ipprob(ifluaa(iuiph))
-      theta  = thetfl(iphas)
+      theta  = thetfl
       aa = 1.d0/(2.d0-theta)
       bb = (1.d0-theta)/(2.d0-theta)
       do ifac = 1 , nfac
@@ -513,7 +513,7 @@ elseif(iappel.eq.4) then
         propfb(ifac,iflmab) = aa * propfb(ifac,iflmab)            &
                             + bb * propfb(ifac,iflmba)
       enddo
-    elseif(istmpf(iphas).eq.0) then
+    elseif(istmpf.eq.0) then
       iflmsa = ipprof(ifluaa(iuiph))
       iflmba = ipprob(ifluaa(iuiph))
       do ifac = 1 , nfac
@@ -550,8 +550,8 @@ elseif(iappel.eq.5) then
 !       de sorte que les deux flux contiennent la meme chose
 
   do iphas = 1, nphas
-    if(istmpf(iphas).eq.0) then
-      iuiph  = iu(iphas)
+    if(istmpf.eq.0) then
+      iuiph  = iu
       iflmas = ipprof(ifluma(iuiph))
       iflmab = ipprob(ifluma(iuiph))
       iflmsa = ipprof(ifluaa(iuiph))
@@ -571,32 +571,32 @@ elseif(iappel.eq.5) then
 !     Le calcul pour Rho est fait sur NCELET afin d'economiser un echange.
 
   do iphas = 1, nphas
-    if(iroext(iphas).gt.0) then
-      ipcrom = ipproc(irom  (iphas))
-      ipcroa = ipproc(iroma (iphas))
+    if(iroext.gt.0) then
+      ipcrom = ipproc(irom  )
+      ipcroa = ipproc(iroma )
       do iel = 1, ncelet
         propce(iel,ipcrom) = propce(iel,ipcroa)
       enddo
-      ipbrom = ipprob(irom  (iphas))
-      ipbroa = ipprob(iroma (iphas))
+      ipbrom = ipprob(irom  )
+      ipbroa = ipprob(iroma )
       do ifac = 1, nfabor
         propfb(ifac,ipbrom) = propfb(ifac,ipbroa)
       enddo
     endif
-    if(iviext(iphas).gt.0) then
-      ipcvis = ipproc(iviscl(iphas))
-      ipcvst = ipproc(ivisct(iphas))
-      ipcvsa = ipproc(ivisla(iphas))
-      ipcvta = ipproc(ivista(iphas))
+    if(iviext.gt.0) then
+      ipcvis = ipproc(iviscl)
+      ipcvst = ipproc(ivisct)
+      ipcvsa = ipproc(ivisla)
+      ipcvta = ipproc(ivista)
       do iel = 1, ncel
         propce(iel,ipcvis) = propce(iel,ipcvsa)
         propce(iel,ipcvst) = propce(iel,ipcvta)
       enddo
     endif
-    if(icpext(iphas).gt.0) then
-      if(icp(iphas).gt.0) then
-        iicp   = ipproc(icp   (iphas))
-        iicpa  = ipproc(icpa  (iphas))
+    if(icpext.gt.0) then
+      if(icp.gt.0) then
+        iicp   = ipproc(icp   )
+        iicpa  = ipproc(icpa  )
         do iel = 1, ncel
           propce(iel,iicp  ) = propce(iel,iicpa )
         enddo

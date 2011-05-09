@@ -226,9 +226,9 @@ do inbcou = 1, nbccou
       iel   = ifabor(ifac)
       energ = tfluid(iloc)
       cvt   = energ                                               &
-             -(0.5d0*( rtp(iel,iu(iphas))**2                      &
-                      +rtp(iel,iv(iphas))**2                      &
-                      +rtp(iel,iw(iphas))**2)                     &
+             -(0.5d0*( rtp(iel,iu)**2                      &
+                      +rtp(iel,iv)**2                      &
+                      +rtp(iel,iw)**2)                     &
                + wa(iepsel+iel-1)           )
        if (ncv.eq.ncelet) then
          tfluid(iloc) = cvt/cv(iel)

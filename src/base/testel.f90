@@ -141,11 +141,11 @@ enddo
 !===============================================================================
 
 iphas = 1
-iuiph = iu(iphas)
-iviph = iv(iphas)
-iwiph = iw(iphas)
+iuiph = iu
+iviph = iv
+iwiph = iw
 
-ivar   = ipr(iphas)
+ivar   = ipr
 ipclip = iclrtp(ivar,icoef)
 
 do iel = 1, ncelet

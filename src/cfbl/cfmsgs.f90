@@ -174,13 +174,13 @@ iphas  = 1
 !     Masse volumique
 ivar   = isca(iscal)
 !     Vitesses
-iuiph  = iu(iphas)
-iviph  = iv(iphas)
-iwiph  = iw(iphas)
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
 
 !     Masse volumique dans PROPCE
-iirom  = ipproc(irom  (iphas))
-iiromb = ipprob(irom  (iphas))
+iirom  = ipproc(irom  )
+iiromb = ipprob(irom  )
 
 ! ---> Initialisation du flux de masse
 
@@ -463,7 +463,7 @@ call iasize('cfmsgs',ifinia)
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
    icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr(iphas)),                         &
+   smacel(1,ivar0), smacel(1,ipr),                         &
    w10   , w1     , w2 )
       do iel = 1, ncel
         w10(iel) = w10(iel) + w2(iel)
@@ -475,7 +475,7 @@ call iasize('cfmsgs',ifinia)
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
    icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr(iphas)),                         &
+   smacel(1,ivar0), smacel(1,ipr),                         &
    w11   , w1     , w2 )
       do iel = 1, ncel
         w11(iel) = w11(iel) + w2(iel)
@@ -487,7 +487,7 @@ call iasize('cfmsgs',ifinia)
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
    icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr(iphas)),                         &
+   smacel(1,ivar0), smacel(1,ipr),                         &
    w12   , w1     , w2 )
       do iel = 1, ncel
         w12(iel) = w12(iel) + w2(iel)

@@ -124,7 +124,7 @@ do iphas = 1, nphas
   ! Specify if the hydrostatic equilibrium must be accounted for
   !     (yes = 1 , no = 0)
 
-  icfgrp(iphas) = 1
+  icfgrp = 1
 
 enddo
 

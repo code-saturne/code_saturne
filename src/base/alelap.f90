@@ -149,8 +149,8 @@ ipcvmx = ipproc(ivisma(1))
 ipcvmy = ipproc(ivisma(2))
 ipcvmz = ipproc(ivisma(3))
 ! Flux de masse necessaire pour l'appel mais non utilise (ICONV=0)
-iflmas = ipprof(ifluma(iu(1)))
-iflmab = ipprob(ifluma(iu(1)))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 
 if(iwarni(iuma).ge.1) then
   write(nfecra,1000)

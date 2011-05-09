@@ -160,7 +160,7 @@ iphas = 1
 ! 1. CALCUL DE :  - (GRADIENT DE PRESSION)/ROM
 !===============================================================================
 
-ipriph = ipr(iphas)
+ipriph = ipr
 iclipr = iclrtp(ipriph,icoef)
 
 ! Calcul du gradient de pression
@@ -193,7 +193,7 @@ call grdcel                                                       &
 if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
   iromf = ipproc(irom1)
 else
-  iromf = ipproc(irom(iphas))
+  iromf = ipproc(irom)
 endif
 
 ! Calcul de -Grad P / Rom
@@ -211,9 +211,9 @@ enddo
 
 if (modcpl.gt.0 .and. iplas.ge.modcpl) then
 
-  iuiph = iu(iphas)
-  iviph = iv(iphas)
-  iwiph = iw(iphas)
+  iuiph = iu
+  iviph = iv
+  iwiph = iw
   ipcliu = iclrtp(iuiph,icoef)
   ipcliv = iclrtp(iviph,icoef)
   ipcliw = iclrtp(iwiph,icoef)

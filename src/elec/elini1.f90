@@ -84,8 +84,8 @@ integer          isc , iphas , ivar
 iok = 0
 
 do iphas = 1, nphas
-  if(iscalt(iphas).ne.-1) then
-    write(nfecra,1000)iscalt(iphas)
+  if(iscalt.ne.-1) then
+    write(nfecra,1000)iscalt
     iok = iok + 1
   endif
 enddo
@@ -157,7 +157,7 @@ enddo
 
 !     Pour l'enthalpie
 iphas = 1
-iscalt(iphas) = ihm
+iscalt = ihm
 iscsth(ihm)   = 2
 
 ! 1.4 Donnees physiques ou numeriques propres aux scalaires ELECTRIQUES
@@ -427,8 +427,8 @@ dpot = 0.d0
 coejou = 1.d0
 
 ! ---> Masse volumique variable et viscosite variable (pour les suites)
-irovar(iphas) = 1
-ivivar(iphas) = 1
+irovar = 1
+ivivar = 1
 
 !===============================================================================
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR

@@ -246,66 +246,66 @@ do ifac = 1, nfabor
 
       if (itypfb(ifac,iphas).eq.ientre) then
 
-        if (rcodcl(ifac,iu(iphas),1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iu(iphas),1) = xuent
-        if (rcodcl(ifac,iv(iphas),1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iv(iphas),1) = xvent
-        if (rcodcl(ifac,iw(iphas),1).gt.rinfin*0.5d0)             &
-           rcodcl(ifac,iw(iphas),1) = 0.d0
+        if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0)             &
+           rcodcl(ifac,iu,1) = xuent
+        if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0)             &
+           rcodcl(ifac,iv,1) = xvent
+        if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0)             &
+           rcodcl(ifac,iw,1) = 0.d0
 
-        if    (itytur(iphas).eq.2) then
+        if    (itytur.eq.2) then
 
-          if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)           &
-             rcodcl(ifac,ik(iphas),1) = xkent
-          if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)          &
-             rcodcl(ifac,iep(iphas),1) = xeent
+          if (rcodcl(ifac,ik,1).gt.rinfin*0.5d0)           &
+             rcodcl(ifac,ik,1) = xkent
+          if (rcodcl(ifac,iep,1).gt.rinfin*0.5d0)          &
+             rcodcl(ifac,iep,1) = xeent
 
-        elseif(itytur(iphas).eq.3) then
+        elseif(itytur.eq.3) then
 
-          if (rcodcl(ifac,ir11(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,ir11(iphas),1) = d2s3*xkent
-          if (rcodcl(ifac,ir22(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,ir22(iphas),1) = d2s3*xkent
-          if (rcodcl(ifac,ir33(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,ir33(iphas),1) = d2s3*xkent
-          if (rcodcl(ifac,ir12(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,ir12(iphas),1) = 0.d0
-          if (rcodcl(ifac,ir13(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,ir13(iphas),1) = 0.d0
-          if (rcodcl(ifac,ir23(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,ir23(iphas),1) = 0.d0
-          if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)          &
-             rcodcl(ifac,iep(iphas),1) = xeent
+          if (rcodcl(ifac,ir11,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,ir11,1) = d2s3*xkent
+          if (rcodcl(ifac,ir22,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,ir22,1) = d2s3*xkent
+          if (rcodcl(ifac,ir33,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,ir33,1) = d2s3*xkent
+          if (rcodcl(ifac,ir12,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,ir12,1) = 0.d0
+          if (rcodcl(ifac,ir13,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,ir13,1) = 0.d0
+          if (rcodcl(ifac,ir23,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,ir23,1) = 0.d0
+          if (rcodcl(ifac,iep,1).gt.rinfin*0.5d0)          &
+             rcodcl(ifac,iep,1) = xeent
 
-        elseif(iturb(iphas).eq.50) then
+        elseif(iturb.eq.50) then
 
-          if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)           &
-             rcodcl(ifac,ik(iphas),1) = xkent
-          if (rcodcl(ifac,iep(iphas),1).gt.rinfin*0.5d0)          &
-             rcodcl(ifac,iep(iphas),1) = xeent
-          if (rcodcl(ifac,iphi(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,iphi(iphas),1) = d2s3
-          if (rcodcl(ifac,ifb(iphas),1).gt.rinfin*0.5d0)          &
-             rcodcl(ifac,ifb(iphas),1) = 0.d0
+          if (rcodcl(ifac,ik,1).gt.rinfin*0.5d0)           &
+             rcodcl(ifac,ik,1) = xkent
+          if (rcodcl(ifac,iep,1).gt.rinfin*0.5d0)          &
+             rcodcl(ifac,iep,1) = xeent
+          if (rcodcl(ifac,iphi,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,iphi,1) = d2s3
+          if (rcodcl(ifac,ifb,1).gt.rinfin*0.5d0)          &
+             rcodcl(ifac,ifb,1) = 0.d0
 
-        elseif(iturb(iphas).eq.60) then
+        elseif(iturb.eq.60) then
 
-          if (rcodcl(ifac,ik(iphas),1).gt.rinfin*0.5d0)           &
-             rcodcl(ifac,ik(iphas),1) = xkent
-          if (rcodcl(ifac,iomg(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+          if (rcodcl(ifac,ik,1).gt.rinfin*0.5d0)           &
+             rcodcl(ifac,ik,1) = xkent
+          if (rcodcl(ifac,iomg,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-        elseif(iturb(iphas).eq.70) then
+        elseif(iturb.eq.70) then
 
-          if (rcodcl(ifac,inusa(iphas),1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+          if (rcodcl(ifac,inusa,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
         endif
 
-        if (iscalt(iphas).ne.-1) then
+        if (iscalt.ne.-1) then
 
-          if (rcodcl(ifac,isca(iscalt(iphas)),1).gt.rinfin*0.5d0) &
-           rcodcl(ifac,isca(iscalt(iphas)),1) = tpent
+          if (rcodcl(ifac,isca(iscalt),1).gt.rinfin*0.5d0) &
+           rcodcl(ifac,isca(iscalt),1) = tpent
 
         endif
 

@@ -177,15 +177,15 @@ idebia = idbia0
 idebra = idbra0
 
 iphas   = 1
-iuiph   = iu(iphas)
+iuiph   = iu
 iflmas  = ipprof(ifluma(iuiph))
 iflmab  = ipprob(ifluma(iuiph))
-ipcvis  = ipproc(iviscl(iphas))
-ipcvst  = ipproc(ivisct(iphas))
-ipcrom  = ipproc(irom  (iphas))
-ipbrom  = ipprob(irom  (iphas))
-ipccou  = ipproc(icour (iphas))
-ipcfou  = ipproc(ifour (iphas))
+ipcvis  = ipproc(iviscl)
+ipcvst  = ipproc(ivisct)
+ipcrom  = ipproc(irom  )
+ipbrom  = ipprob(irom  )
+ipccou  = ipproc(icour )
+ipcfou  = ipproc(ifour )
 
 if(ntlist.gt.0) then
   modntl = mod(ntcabs,ntlist)
@@ -303,11 +303,11 @@ if (idtvar.ge.0) then
       coefbr(ifac) = 0.d0
     enddo
 
-    nswrgp = nswrgr(ipr(iphas))
-    imligp = imligr(ipr(iphas))
-    iwarnp = iwarni(ipr(iphas))
-    epsrgp = epsrgr(ipr(iphas))
-    climgp = climgr(ipr(iphas))
+    nswrgp = nswrgr(ipr)
+    imligp = imligr(ipr)
+    iwarnp = iwarni(ipr)
+    epsrgp = epsrgr(ipr)
+    climgp = climgr(ipr)
     extrap = 0.d0
     iphydp = 0
 

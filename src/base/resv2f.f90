@@ -181,16 +181,16 @@ double precision xk, xe, xnu, xrom, ttke, ttmin, llke, llmin
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr (iphas)
-iuiph  = iu  (iphas)
-ikiph  = ik(iphas)
-ieiph  = iep(iphas)
-iphiph = iphi(iphas)
-ifbiph = ifb(iphas)
+ipriph = ipr
+iuiph  = iu
+ikiph  = ik
+ieiph  = iep
+iphiph = iphi
+ifbiph = ifb
 
-ipcrom = ipproc(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom  )
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(iuiph))
 iflmab = ipprob(ifluma(iuiph))
 
@@ -198,8 +198,8 @@ iclikp = iclrtp(ikiph,icoef)
 iclphi = iclrtp(iphiph,icoef)
 iclfbp = iclrtp(ifbiph,icoef)
 
-if(isto2t(iphas).gt.0) then
-  iptsta = ipproc(itstua(iphas))
+if(isto2t.gt.0) then
+  iptsta = ipproc(itstua)
 else
   iptsta = 0
 endif
@@ -286,17 +286,17 @@ if(iwarni(ivar).ge.1) then
 endif
 
 !     S pour Source, V pour Variable
-thets  = thetst(iphas)
+thets  = thetst
 thetv  = thetav(ivar )
 
 ipcroo = ipcrom
 ipcvlo = ipcvis
-if(isto2t(iphas).gt.0) then
-  if (iroext(iphas).gt.0) then
-    ipcroo = ipproc(iroma(iphas))
+if(isto2t.gt.0) then
+  if (iroext.gt.0) then
+    ipcroo = ipproc(iroma)
   endif
-  if(iviext(iphas).gt.0) then
-    ipcvlo = ipproc(ivisla(iphas))
+  if(iviext.gt.0) then
+    ipcvlo = ipproc(ivisla)
   endif
 endif
 
@@ -334,7 +334,7 @@ call ustsv2                                                       &
    ra     )
 
 !     Si on extrapole les T.S.
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
 !       Sauvegarde pour echange
     tuexpe = propce(iel,iptsta+2)
@@ -444,7 +444,7 @@ do iel = 1, ncel
            -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
 enddo
 !     Si on extrapole les T.S : PROPCE
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     propce(iel,iptsta+2) =                                   &
@@ -466,7 +466,7 @@ enddo
 
 ! ---> Matrice
 
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetap = thetv
 else
   thetap = 1.d0
@@ -543,17 +543,17 @@ if(iwarni(ivar).ge.1) then
 endif
 
 !     S pour Source, V pour Variable
-thets  = thetst(iphas)
+thets  = thetst
 thetv  = thetav(ivar )
 
 ipcroo = ipcrom
 ipcvso = ipcvst
-if(isto2t(iphas).gt.0) then
-  if (iroext(iphas).gt.0) then
-    ipcroo = ipproc(iroma(iphas))
+if(isto2t.gt.0) then
+  if (iroext.gt.0) then
+    ipcroo = ipproc(iroma)
   endif
-  if(iviext(iphas).gt.0) then
-    ipcvso = ipproc(ivista(iphas))
+  if(iviext.gt.0) then
+    ipcvso = ipproc(ivista)
   endif
 endif
 
@@ -591,7 +591,7 @@ call ustsv2                                                       &
    ra     )
 
 !     Si on extrapole les T.S.
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
 !       Sauvegarde pour echange
     tuexpe = propce(iel,iptsta+3)
@@ -624,13 +624,13 @@ if (ncesmp.gt.0) then
 !       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
   call catsma                                                     &
   !==========
- ( ncelet , ncel   , ncesmp , iiun   , isto2t(iphas) , thetv ,    &
+ ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,    &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
    smbr   ,  rovsdt , w2 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t(iphas).gt.0) then
+  if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+3) =                                 &
       propce(iel,iptsta+3) + w2(iel)
@@ -689,7 +689,7 @@ do iel = 1, ncel
 enddo
 
 !     Si on extrapole les T.S : PROPCE
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     propce(iel,iptsta+3) =                                   &
@@ -711,7 +711,7 @@ enddo
 
 ! ---> Matrice
 
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetap = thetv
 else
   thetap = 1.d0
@@ -768,7 +768,7 @@ enddo
 ! 4.6 RESOLUTION EFFECTIVE DE L'EQUATION DE PHI
 !===============================================================================
 
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+3)
@@ -828,7 +828,7 @@ call codits                                                       &
    call clpv2f                                                    &
    !==========
  ( ncelet , ncel   , nvar   , nphas  ,                            &
-   iphas  , iwarni(iphi(iphas)) ,                                 &
+   iphas  , iwarni(iphi) ,                                 &
    propce , rtp    )
 
 !--------

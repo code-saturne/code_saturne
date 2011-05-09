@@ -53,13 +53,13 @@ module numvar
   ! nscapp                     nbre de scalaires physique particuliere
   ! iuma, ivma, iwma           Vitesse de maillage en ALE
 
-  integer, save :: ipr(nphsmx) ,                                   &
-                   iu(nphsmx)  , iv(nphsmx)    , iw(nphsmx)  ,     &
-                   ik(nphsmx)  , iep(nphsmx)   ,                   &
-                   ir11(nphsmx), ir22(nphsmx)  , ir33(nphsmx),     &
-                   ir12(nphsmx), ir13(nphsmx)  , ir23(nphsmx),     &
-                   iphi(nphsmx), ifb(nphsmx)   , iomg(nphsmx),     &
-                   inusa(nphsmx),                                  &
+  integer, save :: ipr ,                                   &
+                   iu  , iv    , iw  ,     &
+                   ik  , iep   ,                   &
+                   ir11, ir22  , ir33,     &
+                   ir12, ir13  , ir23,     &
+                   iphi, ifb   , iomg,     &
+                   inusa,                                  &
                    isca(nscamx), iscapp(nscamx),                   &
                    nscaus      , nscapp        ,                   &
                    iuma        , ivma          , iwma
@@ -99,13 +99,13 @@ module numvar
   ! ivisma : Viscosite de maillage en ALE (eventuellement orthotrope)
 
   integer, save :: ipproc(npromx), ipprof(npromx), ipprob(npromx), &
-                   irom  (nphsmx), iroma (nphsmx), iviscl(nphsmx), &
-                   ivisct(nphsmx), ivisla(nphsmx), ivista(nphsmx), &
-                   icp   (nphsmx), icpa  (nphsmx), itsnsa(nphsmx), &
-                   itstua(nphsmx), itssca(nscamx),                 &
+                   irom  , iroma , iviscl, &
+                   ivisct, ivisla, ivista, &
+                   icp   , icpa  , itsnsa, &
+                   itstua, itssca(nscamx),                 &
                    iestim(nestmx,nphsmx)         , ifluma(nvarmx), &
-                   ifluaa(nvarmx), ismago(nphsmx), icour (nphsmx), &
-                   ifour (nphsmx), iprtot(nphsmx), ivisma(3)
+                   ifluaa(nvarmx), ismago, icour , &
+                   ifour , iprtot, ivisma(3)
 
   ! Position des conditions aux limites
   !  (position dans coefa et coefb des coef (coef. coef.f) relatifs a

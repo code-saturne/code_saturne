@@ -133,7 +133,7 @@ double precision xdis   , xloc   , xtau
 idebia = idbia0
 idebra = idbra0
 
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 xtau = 100.d0*dtref
 

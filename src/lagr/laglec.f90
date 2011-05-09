@@ -566,13 +566,13 @@ if (iphyla.eq.1 .and. itpvar.eq.1) then
                 ippmod(ielarc).ge.0 .or.                          &
                 ippmod(ieljou).ge.0      ) then
          ettp(ip,jtf) = propce(iel,ipproc(itemp)) -tkelvi
-      else if ( iscsth(iscalt(iphas)).eq.1 ) then
-         ettp(ip,jtf) = rtpa(iel,isca(iscalt(iphas))) -tkelvi
-      else if ( iscsth(iscalt(iphas)).eq.-1 ) then
-         ettp(ip,jtf) = rtpa(iel,isca(iscalt(iphas)))
-      else if ( iscsth(iscalt(iphas)).eq.2 ) then
+      else if ( iscsth(iscalt).eq.1 ) then
+         ettp(ip,jtf) = rtpa(iel,isca(iscalt)) -tkelvi
+      else if ( iscsth(iscalt).eq.-1 ) then
+         ettp(ip,jtf) = rtpa(iel,isca(iscalt))
+      else if ( iscsth(iscalt).eq.2 ) then
          mode = 1
-         call usthht(mode, rtpa(iel,isca(iscalt(iphas))),         &
+         call usthht(mode, rtpa(iel,isca(iscalt)),         &
                      ettp(ip,jtf))
       endif
     enddo
@@ -1022,10 +1022,10 @@ if (isuist.eq.1) then
       IF (JTYTUR.EQ.3) CAR8 = 'Rij-eps'
       IF (JTURB.EQ.50) CAR8 = 'v2f'
       IF (JTURB.EQ.60) CAR8 = 'k-omega'
-      IF (ITYTUR(IPHAS).EQ.2) KAR8 = 'k-eps'
-      IF (ITYTUR(IPHAS).EQ.3) KAR8 = 'Rij-eps'
-      IF (ITURB(IPHAS).EQ.50) KAR8 = 'v2f'
-      IF (ITURB(IPHAS).EQ.60) KAR8 = 'k-omega'
+      IF (ITYTUR.EQ.2) KAR8 = 'k-eps'
+      IF (ITYTUR.EQ.3) KAR8 = 'Rij-eps'
+      IF (ITURB.EQ.50) KAR8 = 'v2f'
+      IF (ITURB.EQ.60) KAR8 = 'k-omega'
       write (nfecra,9330) ficmls,                                 &
                           jsttio, mstits, car8,                   &
                           isttio, nstits, kar8
@@ -1073,10 +1073,10 @@ if (isuist.eq.1) then
       NOMTSL(ITSVY) = 'terme_source_vitesseY'
       NOMTSL(ITSVZ) = 'terme_source_vitesseZ'
       NOMTSL(ITSLI) = 'terme_source_vitesse_implicite'
-      if (itytur(iphas).eq.2 .or. iturb(iphas).eq.50              &
-           .or. iturb(iphas).eq.60) then
+      if (itytur.eq.2 .or. iturb.eq.50              &
+           .or. iturb.eq.60) then
         NOMTSL(ITSKE) = 'terme_source_turbulence_keps'
-      else if (itytur(iphas).eq.3) then
+      else if (itytur.eq.3) then
         NOMTSL(ITSR11) = 'terme_source_turbulence_R11'
         NOMTSL(ITSR12) = 'terme_source_turbulence_R12'
         NOMTSL(ITSR13) = 'terme_source_turbulence_R13'

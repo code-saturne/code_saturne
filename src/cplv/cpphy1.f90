@@ -417,10 +417,10 @@ do iel = 1, ncel
 
   propce(iel,ipproc(immel)) = 1.d0 / wmolme
 
-! ---- On ne met pas la pression mecanique RTP(IEL,IPR(IPHAS))
-!      mais P0(IPHAS)
+! ---- On ne met pas la pression mecanique RTP(IEL,IPR)
+!      mais P0
 
-  rom1(iel) = p0(iphas) / (wmolme*rr*propce(iel,ipcte1))
+  rom1(iel) = p0 / (wmolme*rr*propce(iel,ipcte1))
 enddo
 
 !===============================================================================

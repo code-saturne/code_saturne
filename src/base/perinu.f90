@@ -142,9 +142,9 @@ inc = 0
 iccocg = 1
 
 do isou = 1,3
-  if(isou.eq.1) ipiph  = iu(iphas)
-  if(isou.eq.2) ipiph  = iv(iphas)
-  if(isou.eq.3) ipiph  = iw(iphas)
+  if(isou.eq.1) ipiph  = iu
+  if(isou.eq.2) ipiph  = iv
+  if(isou.eq.3) ipiph  = iw
 
 
 ! On ne reconstruit pas et on ne limite pas car

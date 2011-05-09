@@ -127,7 +127,7 @@ enddo
 ! ---- Bien que l on soit en enthalpie on conserve un CP constant
 
 iphas = 1
-icp(iphas)    = 0
+icp    = 0
 
 
 return

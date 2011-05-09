@@ -127,7 +127,7 @@ iphas = 1
 !       constant  : ivisls = 0
 !       variable  : ivisls = 1
 
-ivisls(itempk(iphas)) = 0
+ivisls(itempk) = 0
 
 !       Reference molecular thermal conductivity
 !       visls0 = lambda0  (molecular thermal conductivity, W/(m K))
@@ -135,7 +135,7 @@ ivisls(itempk(iphas)) = 0
 !       WARNING: visls0 must be strictly positive
 !         (set a realistic value here even if conductivity is variable)
 
-visls0(itempk(iphas)) = 3.d-2
+visls0(itempk) = 3.d-2
 
 !       If the molecular thermal conductivity is variable, its values
 !         must be provided in the user subroutine 'uscfpv'
@@ -149,8 +149,8 @@ visls0(itempk(iphas)) = 3.d-2
 !       iviscv = 0 : uniform  in space and constant in time
 !              = 1 : variable in space and time
 
-iviscv(iphas) = 0
-viscv0(iphas) = 0.d0
+iviscv = 0
+viscv0 = 0.d0
 
 !       If the volumetric molecular viscosity is variable, its values
 !         must be provided in the user subroutine 'uscfpv'

@@ -66,7 +66,7 @@ subroutine elphyv &
 !  (une routine specifique est dediee a cela : usvist)
 
 
-!  Il FAUT AVOIR PRECISE ICP(IPHAS) = 1
+!  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
 !    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
@@ -88,8 +88,8 @@ subroutine elphyv &
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
 !      - dans usini1 :
-!             . la masse volumique (initialisee a RO0(IPHAS))
-!             . la viscosite       (initialisee a VISCL0(IPHAS))
+!             . la masse volumique (initialisee a RO0)
+!             . la viscosite       (initialisee a VISCL0)
 !      - dans usiniv :
 !             . les variables de calcul  (initialisees a 0 par defaut
 !             ou a la valeur donnee dans usiniv)
@@ -120,7 +120,7 @@ subroutine elphyv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -168,7 +168,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -247,11 +247,11 @@ endif
 
 !       On n'utilisera donc PAS les variables
 !          =====================
-!                                CP0(IPHAS), VISLS0(ISCALT(IPHAS))
+!                                CP0, VISLS0(ISCALT)
 !                                VISLS0(IPOTR) et VISLS0(IPOTI)
 
 !       Informatiquement, ceci se traduit par le fait que
-!                                ICP(IPHAS)>0, IVISLS(ISCALT(IPHAS))>0,
+!                                ICP>0, IVISLS(ISCALT)>0,
 !                                IVISLS(IPOTR)>0 et IVISLS(IPOTI)>0
 
 !       Les verifications ont ete faites dans elveri
@@ -261,10 +261,10 @@ endif
 !       n'en avoir qu'une seule (modif dans varpos pour definir
 !       IVISLS(IPOTI) = IVISLS(IPOTR)) et economiser NCEL reels .
 
-!      IPCROM = IPPROC(IROM(IPHAS))
-!      IPCVIS = IPPROC(IVISCL(IPHAS))
-!      IPCCP  = IPPROC(ICP(IPHAS))
-!      IPCVSL = IPPROC(IVISLS(ISCALT(IPHAS)))
+!      IPCROM = IPPROC(IROM)
+!      IPCVIS = IPPROC(IVISCL)
+!      IPCCP  = IPPROC(ICP)
+!      IPCVSL = IPPROC(IVISLS(ISCALT))
 !      IPCSIR = IPPROC(IVISLS(IPOTR))
 !      IPCSII = IPPROC(IVISLS(IPOTI))
 
@@ -315,13 +315,13 @@ if ( ippmod(ielarc).ge.1 ) then
 
 !      Pointeurs pour les differentes variables
 
-  ipcrom = ipproc(irom(iphas))
-  ipcvis = ipproc(iviscl(iphas))
-  if(icp(iphas).gt.0) then
-    ipccp  = ipproc(icp(iphas))
+  ipcrom = ipproc(irom)
+  ipcvis = ipproc(iviscl)
+  if(icp.gt.0) then
+    ipccp  = ipproc(icp)
   endif
-  if(ivisls(iscalt(iphas)).gt.0) then
-    ipcvsl = ipproc(ivisls(iscalt(iphas)))
+  if(ivisls(iscalt).gt.0) then
+    ipcvsl = ipproc(ivisls(iscalt))
   endif
   if ( ivisls(ipotr).gt.0 ) then
     ipcsig = ipproc(ivisls(ipotr))
@@ -496,7 +496,7 @@ if ( ippmod(ielarc).ge.1 ) then
 !       Chaleur specifique J/(kg degres)
 !       ================================
 
-    if(icp(iphas).gt.0) then
+    if(icp.gt.0) then
 
       propce(iel,ipccp) = 0.d0
       do iesp = 1, ngazg
@@ -509,7 +509,7 @@ if ( ippmod(ielarc).ge.1 ) then
 !       Lambda/Cp en kg/(m s)
 !       ---------------------
 
-    if(ivisls(iscalt(iphas)).gt.0) then
+    if(ivisls(iscalt).gt.0) then
 
       do iesp1=1,ngazg
         do iesp2=1,ngazg
@@ -544,9 +544,9 @@ if ( ippmod(ielarc).ge.1 ) then
 
       if(ipccp.le.0) then
 
-! --- Si CP est uniforme, on utilise CP0(IPHAS)
+! --- Si CP est uniforme, on utilise CP0
 
-        propce(iel,ipcvsl) = propce(iel,ipcvsl)/cp0(iphas)
+        propce(iel,ipcvsl) = propce(iel,ipcvsl)/cp0
 
       else
 
@@ -596,7 +596,7 @@ if ( ippmod(ielarc).ge.1 ) then
 
 ! --- Si il s'agit de l'enthalpie son cas a deja ete traite plus haut
     ith = 0
-    if (iscal.eq.iscalt(iphas)) ith = 1
+    if (iscal.eq.iscalt) ith = 1
 
 ! --- Si il s'agit de Potentiel (IPOTR), son cas a deja ete traite
     if (iscal.eq.ipotr) ith = 1
@@ -642,7 +642,7 @@ if ( ippmod(ielion).ge.1  ) then
 !       Masse volumique
 !       ---------------
 
-  ipcrom = ipproc(irom(iphas))
+  ipcrom = ipproc(irom)
   do iel = 1, ncel
     propce(iel,ipcrom) = 1.d0
   enddo
@@ -650,7 +650,7 @@ if ( ippmod(ielion).ge.1  ) then
 !       VISCOSITE
 !       =========
 
-  ipcvis = ipproc(iviscl(iphas))
+  ipcvis = ipproc(iviscl)
   do iel = 1, ncel
     propce(iel,ipcvis) = 1.d-2
   enddo
@@ -658,9 +658,9 @@ if ( ippmod(ielion).ge.1  ) then
 !       CHALEUR SPECIFIQUE VARIABLE J/(kg degres)
 !       =========================================
 
-  if(icp(iphas).gt.0) then
+  if(icp.gt.0) then
 
-    ipccp  = ipproc(icp   (iphas))
+    ipccp  = ipproc(icp   )
 
     do iel = 1, ncel
       propce(iel,ipccp ) = 1000.d0
@@ -671,16 +671,16 @@ if ( ippmod(ielion).ge.1  ) then
 !       Lambda/CP  VARIABLE en kg/(m s)
 !       ===============================
 
-  if (ivisls(iscalt(iphas)).gt.0) then
+  if (ivisls(iscalt).gt.0) then
 
-    ipcvsl = ipproc(ivisls(iscalt(iphas)))
+    ipcvsl = ipproc(ivisls(iscalt))
 
     if(ipccp.le.0) then
 
-! --- Si CP est uniforme, on utilise CP0(IPHAS)
+! --- Si CP est uniforme, on utilise CP0
 
       do iel = 1, ncel
-        propce(iel,ipcvsl) = 1.d0/cp0(iphas)
+        propce(iel,ipcvsl) = 1.d0/cp0
       enddo
 
     else
@@ -704,7 +704,7 @@ if ( ippmod(ielion).ge.1  ) then
 
 ! --- Si il s'agit de l'enthqlpie son cas a deja ete traite plus haut
     ith = 0
-    if (iscal.eq.iscalt(iphas)) ith = 1
+    if (iscal.eq.iscalt) ith = 1
 
 ! --- Si la variable est une fluctuation, sa diffusivite est
 !       la meme que celle du scalaire auquel elle est rattachee :

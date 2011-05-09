@@ -159,19 +159,19 @@ endif
 
 ! --> Rho et viscosite variables
 iphas = 1
-if(irovar(iphas).ne.1) then
-  write(nfecra,2010)irovar(iphas)
+if(irovar.ne.1) then
+  write(nfecra,2010)irovar
   iok = iok + 1
 endif
-if(ivivar(iphas).ne.1) then
-  write(nfecra,2011)ivivar(iphas)
+if(ivivar.ne.1) then
+  write(nfecra,2011)ivivar
   iok = iok + 1
 endif
 
 ! --> Cp et visls (ihm) variables
 iphas = 1
-if(icp(iphas).le.0) then
-  WRITE(NFECRA,2012)'       ICP(1)',    ICP(IPHAS),               &
+if(icp.le.0) then
+  WRITE(NFECRA,2012)'       ICP(1)',    ICP,               &
                     '       ICP(1)','la chaleur massique     ',   &
                     '       ICP(1)'
   iok = iok + 1

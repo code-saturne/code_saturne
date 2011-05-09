@@ -328,9 +328,9 @@ endif
 ! On se base uniquement sur ITYPFB, a l'utilisateur de gere les choses
 !   s'il rentre en CL non standards.
 iphas = 1
-iuiph = iu(iphas)
-iviph = iv(iphas)
-iwiph = iw(iphas)
+iuiph = iu
+iviph = iv
+iwiph = iw
 
 do ifac = 1, nfabor
 

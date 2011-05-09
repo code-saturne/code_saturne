@@ -184,30 +184,30 @@ module ppincl
   !--> POINTEURS COMPRESSIBLE
 
   ! ---- Variables transportees par phase
-  integer, save :: irho(nphsmx), ienerg(nphsmx), itempk(nphsmx)
+  integer, save :: irho, ienerg, itempk
   ! ---- Proprietes supplementaires par phase
-  integer, save :: icv(nphsmx), iviscv(nphsmx), ieos(nphsmx)
+  integer, save :: icv, iviscv, ieos
 
   !     COMMON complete plus bas
 
   ! ---- Aliases pour les conditions aux limites
-  integer, save :: irun(nphsmx), irunh(nphsmx)
+  integer, save :: irun, irunh
 
   ! ---- Proprietes supplementaires par phase
-  double precision, save :: cv0(nphsmx), viscv0(nphsmx)
+  double precision, save :: cv0, viscv0
 
   ! ---- Prediction de pression par une equation d'evolution
-  integer, save :: ippred(nphsmx)
+  integer, save :: ippred
   ! ---- Flux de masse specifique pour la vitesse
-  integer, save :: iflmau(nphsmx)
+  integer, save :: iflmau
   ! ---- Utilisation de la pression predite pour resoudre Navier-Stokes
-  integer, save :: igrdpp(nphsmx)
+  integer, save :: igrdpp
   ! --- Conditions aux limites prenant en compte l'equilibre hydrostatique
-  integer, save :: icfgrp(nphsmx)
+  integer, save :: icfgrp
 
   ! ---- Flux de bord convectifs QDM et energie (numero de PROPFB)
-  integer, save ::           ifbrhu(nphsmx) , ifbrhv(nphsmx) ,               &
-                             ifbrhw(nphsmx) , ifbene(nphsmx)
+  integer, save ::           ifbrhu , ifbrhv ,               &
+                             ifbrhw , ifbene
 
   !--> POINTEURS AEROREFRIGERANTS
 

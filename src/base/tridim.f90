@@ -157,7 +157,7 @@ integer          icofbr
 integer          ntrela
 
 integer          isvhb , isvtb
-integer          iphas , kphas , ii    , jj    , ippcp , ientha, ippcv
+integer          iphas , ii    , jj    , ippcp , ientha, ippcv
 integer          ikiph , ieiph , iomiph
 integer          iuiph , iviph , iwiph , ipriph, iphiph, iphass
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
@@ -198,7 +198,7 @@ save             infpar
 ! 1.  INITIALISATION
 !===============================================================================
 
-if(iwarni(iu(1)).ge.1) then
+if(iwarni(iu).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -233,8 +233,8 @@ endif
 
 if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
   iphas = 1
-  isvhb = iscalt(iphas)
-  isvtb = iscalt(iphas)
+  isvhb = iscalt
+  isvtb = iscalt
 endif
 
 !     Si la distance a la paroi doit etre mise a jour, on l'initialise a GRAND
@@ -261,34 +261,24 @@ endif
 if( ntcabs.le.2 .and. isuite.eq.0 .and. iphydr.eq.0               &
                 .and. ippmod(icompf).lt.0           ) then
 
-  if(iwarni(ipr(1)).ge.2) then
+  if(iwarni(ipr).ge.2) then
     write(nfecra,2000) ntcabs
   endif
   do iphas = 1, nphas
-    iprnew = 1
-    if(iphas.gt.1) then
-      do kphas = 1, iphas-1
-        if(ipr(iphas).eq.ipr(kphas)) then
-          iprnew = 0
-        endif
-      enddo
-    endif
-    if(iprnew.eq.1) then
-      iiptot = ipproc(iprtot(iphas))
-      ro0iph = ro0  (iphas)
-      p0iph  = p0   (iphas)
-      pr0iph = pred0(iphas)
-      xxp0   = xyzp0(1,iphas)
-      xyp0   = xyzp0(2,iphas)
-      xzp0   = xyzp0(3,iphas)
-      do iel = 1, ncel
-        rtp(iel,ipr(iphas)) = pr0iph
-        propce(iel,iiptot) = p0iph                                &
-             + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
-                      + gy*(xyzcen(2,iel)-xyp0)                   &
-                      + gz*(xyzcen(3,iel)-xzp0) )
-      enddo
-    endif
+    iiptot = ipproc(iprtot)
+    ro0iph = ro0
+    p0iph  = p0
+    pr0iph = pred0
+    xxp0   = xyzp0(1,iphas)
+    xyp0   = xyzp0(2,iphas)
+    xzp0   = xyzp0(3,iphas)
+    do iel = 1, ncel
+      rtp(iel,ipr) = pr0iph
+      propce(iel,iiptot) = p0iph                                &
+           + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
+                    + gy*(xyzcen(2,iel)-xyp0)                   &
+                    + gz*(xyzcen(3,iel)-xzp0) )
+    enddo
   enddo
 endif
 
@@ -345,9 +335,9 @@ if(iperio.eq.1) then
 
   do iphas = 1, nphas
 
-    iuiph = iu(iphas)
-    iviph = iv(iphas)
-    iwiph = iw(iphas)
+    iuiph = iu
+    iviph = iv
+    iwiph = iw
     idimte = 1
     itenso = 0
     call percve                                                   &
@@ -363,15 +353,15 @@ if(iperio.eq.1) then
 
   do iphas = 1, nphas
 
-    if(itytur(iphas).eq.3) then
+    if(itytur.eq.3) then
       idimte = 2
       itenso = 0
-      ir11ip = ir11(iphas)
-      ir22ip = ir22(iphas)
-      ir33ip = ir33(iphas)
-      ir12ip = ir12(iphas)
-      ir13ip = ir13(iphas)
-      ir23ip = ir23(iphas)
+      ir11ip = ir11
+      ir22ip = ir22
+      ir33ip = ir33
+      ir12ip = ir12
+      ir13ip = ir13
+      ir23ip = ir23
       call percve                                                 &
       !==========
     ( idimte , itenso ,                                           &
@@ -391,12 +381,12 @@ if(iperio.eq.1) then
 
   do ivar = 1, nvar
     do iphas = 1, nphas
-      if(ivar.ne.iu(iphas).and.ivar.ne.iv(iphas).and.             &
-                               ivar.ne.iw(iphas).and.             &
-         (itytur(iphas).ne.3.or.                                  &
-          (ivar.ne.ir11(iphas).and.ivar.ne.ir22(iphas).and.       &
-           ivar.ne.ir33(iphas).and.ivar.ne.ir12(iphas).and.       &
-           ivar.ne.ir13(iphas).and.ivar.ne.ir23(iphas)))) then
+      if(ivar.ne.iu.and.ivar.ne.iv.and.             &
+                               ivar.ne.iw.and.             &
+         (itytur.ne.3.or.                                  &
+          (ivar.ne.ir11.and.ivar.ne.ir22.and.       &
+           ivar.ne.ir33.and.ivar.ne.ir12.and.       &
+           ivar.ne.ir13.and.ivar.ne.ir23))) then
 
         idimte = 0
         itenso = 0
@@ -417,7 +407,7 @@ endif
 ! 4.  POUR IPHYDR ON DOIT COMMUNIQUER FRCXT AU PREMIER PASSAGE
 !     (FRCXT SERT DANS TYPECL)
 !     SI ICALHY=1, ON COMMUNIQUE AUSSI RHO POUR REMPLIR
-!     PROPCE(1,IPPROC(IROMA(IPHAS)))
+!     PROPCE(1,IPPROC(IROMA))
 !===============================================================================
 
 if(ipass.eq.1) then
@@ -453,7 +443,7 @@ if(ipass.eq.1) then
   if (icalhy.eq.1) then
 
     do iphas = 1, nphas
-      ipcrom = ipproc(irom  (iphas))
+      ipcrom = ipproc(irom  )
       if(irangp.ge.0) then
         call parcve (propce(1,ipcrom))
         !==========
@@ -490,8 +480,8 @@ enddo
 
 if (icalhy.eq.1) then
   do iphas = 1, nphas
-    ipcrom = ipproc(irom  (iphas))
-    ipcroa = ipproc(iroma (iphas))
+    ipcrom = ipproc(irom  )
+    ipcroa = ipproc(iroma )
     do iel = 1, ncelet
       propce(iel,ipcroa) = propce(iel,ipcrom)
     enddo
@@ -591,7 +581,7 @@ if (nbrcpl.gt.0) call cscloc
 !        (VISCOSITES ET MASSE VOLUMIQUE)
 !===============================================================================
 
-if(iwarni(iu(1)).ge.1) then
+if(iwarni(iu).ge.1) then
   write(nfecra,1010)
 endif
 
@@ -638,7 +628,7 @@ endif
 
 do iphas = 1, nphas
 
-  if (ncpdct(iphas).gt.0) then
+  if (ncpdct.gt.0) then
 
     iappel = 3
 
@@ -646,7 +636,7 @@ do iphas = 1, nphas
       call uikpdc &
       !==========
     ( iappel, ncelet, ncepdc,             &
-      ia(iicepd(iphas)), ra(ickupd(iphas)), rtpa )
+      ia(iicepd), ra(ickupd), rtpa )
     endif
 
     ils    = idebia
@@ -657,12 +647,12 @@ do iphas = 1, nphas
     !==========
   ( idbia1 , idebra ,                                              &
     nvar   , nscal  , nphas  ,                                     &
-    ncepdc(iphas) , iphas  , iappel ,                              &
+    ncepdc , iphas  , iappel ,                              &
     maxelt , ia(ils),                                              &
-    ia(iicepd(iphas)) ,                                            &
+    ia(iicepd) ,                                            &
     ia     ,                                                       &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-    coefa  , coefb  , ra(ickupd(iphas)) ,                          &
+    coefa  , coefb  , ra(ickupd) ,                          &
     ra     )
 
   endif
@@ -677,30 +667,30 @@ do iphas = 1, nphas
 !    ON Y PASSE MEME S'IL N'Y A PAS DE TSM SUR LE PROC COURANT AU CAS OU
 !    UN UTILISATEUR DECIDERAIT D'AVOIR UN TSM DEPENDANT DE
 !    VALEURS GLOBALES OU MAX.
-  if(nctsmt(iphas).gt.0) then
+  if(nctsmt.gt.0) then
 
     ils    = idebia
     idbia1 = ils + maxelt
     call iasize('tridim',idbia1)
 
 !     Mise a zero du tableau de type de TS masse et source
-    do ii = 1, ncetsm(iphas)*nvar
-      ia(iitpsm(iphas)+ii-1) = 0
-      ra(ismace(iphas)+ii-1) = 0.d0
+    do ii = 1, ncetsm*nvar
+      ia(iitpsm+ii-1) = 0
+      ra(ismace+ii-1) = 0.d0
     enddo
 
     iappel = 3
     call  ustsma                                                  &
 !         ============
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdc(iphas)   ,                   &
-   ncetsm(iphas)   , iphas  , iappel ,                            &
+   nvar   , nscal  , nphas  , ncepdc   ,                   &
+   ncetsm   , iphas  , iappel ,                            &
    maxelt , ia(ils),                                              &
-   ia(iicepd(iphas)) ,                                            &
-   ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,                        &
+   ia(iicepd) ,                                            &
+   ia(iicesm) , ia(iitpsm) ,                        &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , ra(ickupd(iphas)), ra(ismace(iphas)),        &
+   coefa  , coefb  , ra(ickupd), ra(ismace),        &
    ra     )
 
   endif
@@ -712,7 +702,7 @@ enddo
 !     CALCUL DU PAS DE TEMPS SI VARIABLE
 !===============================================================================
 
-if(iwarni(iu(1)).ge.1) then
+if(iwarni(iu).ge.1) then
   write(nfecra,1020)
 endif
 
@@ -731,12 +721,12 @@ call dttvar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdc(iphas)   , ncetsm(iphas)   ,                            &
-   iwarni(iu(1))   ,                                              &
-   ia(iicepd(iphas)), ia(iicesm(iphas)), ia(iitpsm(iphas)) ,      &
+   ncepdc   , ncetsm   ,                            &
+   iwarni(iu)   ,                                                 &
+   ia(iicepd), ia(iicesm), ia(iitpsm) ,      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)),       &
+   coefa  , coefb  , ra(ickupd) , ra(ismace),       &
    ra(iviscf)      , ra(iviscb)      , ra(idam)      ,            &
    ra(icofbd)      , ra(iw1)         , ra(iw2)       , ra(iw3)   ,&
    ra(icofbr)      , ra(igrarx)      , ra(igrary)    , ra(igrarz),&
@@ -752,7 +742,7 @@ endif
 ! 9.  CHARGEMENT ET TRADUCTION DES CONDITIONS AUX LIMITES
 !===============================================================================
 
-if(iwarni(iu(1)).ge.1) then
+if(iwarni(iu).ge.1) then
   write(nfecra,1030)
 endif
 
@@ -1208,14 +1198,14 @@ do while (iterns.le.nterup)
   if(isvtb.gt.0) then
     iphas = 1
   endif
-  if(icp(iphas).gt.0) then
-    ippcp = ipproc(icp(iphas))
+  if(icp.gt.0) then
+    ippcp = ipproc(icp)
     ncp   = ncelet
     cpcst = 0.d0
   else
     ippcp = ifinra
     ncp   = 1
-    cpcst = cp0(iphas)
+    cpcst = cp0
   endif
 
   ! En compressible et si on couple ave l'energie
@@ -1224,14 +1214,14 @@ do while (iterns.le.nterup)
   if ( ippmod(icompf).ge.0 .and. ientha .eq. 2 ) then
 
     iphas = 1
-    if(icv(iphas).gt.0) then
-      ippcv = ipproc(icv(iphas))
+    if(icv.gt.0) then
+      ippcv = ipproc(icv)
       ncv   = ncelet
       cvcst = 0.d0
     else
       ippcv = ifinra
       ncv   = 1
-      cvcst = cv0(iphas)
+      cvcst = cv0
     endif
   else
     ippcv = ifinra
@@ -1374,7 +1364,7 @@ do while (iterns.le.nterup)
 
     !     On calcule y+ si on en a besoin
 
-    if( (itytur(iphas).eq.4.and.idries(iphas).eq.1)                 &
+    if( (itytur.eq.4.and.idries.eq.1)                 &
          .or. (iilagr.ge.1 .and. iroule.eq.2) ) then
 
       !       On calcule si on a demande ce mode de calcul
@@ -1421,12 +1411,12 @@ do while (iterns.le.nterup)
 
     endif
 
-    if (itytur(iphas).eq.4 .and. idries(iphas).eq.1) then
+    if (itytur.eq.4 .and. idries.eq.1) then
 
       !     Pas d'amortissement si pas de paroi
       if(infpar.gt.0) then
-        if(iifapa(iphas).gt.0) then
-          iiifap = iifapa(iphas)
+        if(iifapa.gt.0) then
+          iiifap = iifapa
         else
           iiifap = ifinib
         endif
@@ -1518,7 +1508,7 @@ do while (iterns.le.nterup)
     ! Le module compressible n'est pas compatible avec la boucle U/P
     if ( ippmod(icompf).ge.0 ) then
 
-      if(iwarni(iu(1)).ge.1) then
+      if(iwarni(iu).ge.1) then
         write(nfecra,1080)
       endif
 
@@ -1535,20 +1525,20 @@ do while (iterns.le.nterup)
 
       do iphas = 1, nphas
 
-        iscal = irho(iphas)
+        iscal = irho
 
         call cfmsvl &
         !==========
       ( ifinia , ifinra ,                                              &
         nvar   , nscal  , nphas  ,                                     &
-        ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+        ncepdc   , ncetsm   ,                            &
         iscal  ,                                                       &
-        ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
-        ia(iitpsm(iphas))        ,                                     &
+        ia(iicepd)        , ia(iicesm)       ,           &
+        ia(iitpsm)        ,                                     &
         ia     ,                                                       &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
         coefa  , coefb  ,                                              &
-        ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
+        ra(ickupd)        , ra(ismace)        ,          &
         ra(iviscf) , ra(iviscb)  ,                                     &
         ra(idam  ) , ra(ixam  )  ,                                     &
         ra(idrtp ) , ra(ismbr )  , ra(irovsd) ,                        &
@@ -1568,7 +1558,7 @@ do while (iterns.le.nterup)
 ! 13. RESOLUTION QUANTITE DE MOUVEMENT ET MASSE (INCOMPRESSIBLE)
 !===============================================================================
 
-    if(iwarni(iu(1)).ge.1) then
+    if(iwarni(iu).ge.1) then
       write(nfecra,1040)
     endif
 
@@ -1589,7 +1579,7 @@ do while (iterns.le.nterup)
 
       do iphas = 1, nphas
 
-        iuiph  = iu(iphas)
+        iuiph  = iu
         iflmas = ipprof(ifluma(iuiph))
         iflmab = ipprob(ifluma(iuiph))
         iph    = iphas
@@ -1598,15 +1588,15 @@ do while (iterns.le.nterup)
         !==========
       ( ifinia , ifinra ,                                              &
         nvar   , nscal  , nphas  ,                                     &
-        ncepdc(iphas)   , ncetsm(iphas)   ,                            &
+        ncepdc   , ncetsm   ,                            &
         iph    ,                                                       &
-        ia(iicepd(iphas))        , ia(iicesm(iphas))       ,           &
-        ia(iitpsm(iphas))        ,                                     &
+        ia(iicepd)        , ia(iicesm)       ,           &
+        ia(iitpsm)        ,                                     &
         ia     ,                                                       &
         dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
         propfa(1,iflmas), propfb(1,iflmab),                            &
         coefa  , coefb  ,                                              &
-        ra(ickupd(iphas))        , ra(ismace(iphas))        ,          &
+        ra(ickupd)        , ra(ismace)        ,          &
         frcxt  , ra(idfrcx)      , ra(itpuco)      , ra(igrdp)       , &
         ra(iviscf) , ra(iviscb)  , ra(ivisfi) , ra(ivisbi)  ,          &
         ra(idam  ) , ra(ixam  )  ,                                     &
@@ -1645,7 +1635,7 @@ do while (iterns.le.nterup)
       !     En parallele, l'echange est fait au debut de navsto.
       if(nterup.gt.1) then
         do iphas = 1, nphas
-          ipriph  = ipr(iphas)
+          ipriph  = ipr
           do iel = 1, ncel
             rtpa(iel,ipriph) = rtp(iel,ipriph)
           enddo
@@ -1672,13 +1662,13 @@ do while (iterns.le.nterup)
 
       endif
 
-      !     Si ISTMPF(IPHAS).EQ.0 (explicite) on ne traite pas le flux de
+      !     Si ISTMPF.EQ.0 (explicite) on ne traite pas le flux de
       !       masse a la derniere iteration
       !     Sinon on traite le flux de masse a toutes les iterations
 
       !     On teste le flux de masse de la phase 1 (toutes les phases sont
       !     necessairement traitees de la meme facon, cf. VERINI)
-      if( (istmpf(1).eq.0.and.inslst.eq.0) .or. istmpf(1).ne.0) then
+      if( (istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
         iappel = 3
         call schtmp &
         !==========
@@ -1733,11 +1723,11 @@ if (iccvfg.eq.0) then
 
   ! --- On libere les tableaux IFLALF, IFLALB ICOALE et IPRALE
 
-  !     On ne passe dans SCHTMP que si ISTMPF(IPHAS).EQ.0 (explicite)
+  !     On ne passe dans SCHTMP que si ISTMPF.EQ.0 (explicite)
   !     On teste le flux de masse de la phase 1 (toutes les phases sont
   !     necessairement traitees de la meme facon, cf. VERINI)
   !     pour conserver
-  if( istmpf(1).eq.0 ) then
+  if( istmpf.eq.0 ) then
     iappel = 4
     call schtmp &
     !==========
@@ -1755,10 +1745,10 @@ if (iccvfg.eq.0) then
 !===============================================================================
 
   iok = 0
-  if(iwarni(iu(1)).ge.1) then
+  if(iwarni(iu).ge.1) then
     do iphas = 1, nphas
-      if( itytur(iphas).eq.2 .or. itytur(iphas).eq.3              &
-           .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60 ) then
+      if( itytur.eq.2 .or. itytur.eq.3              &
+           .or. iturb.eq.50 .or. iturb.eq.60 ) then
         iok = 1
       endif
     enddo
@@ -1775,15 +1765,15 @@ if (iccvfg.eq.0) then
     idbia1 = idebia
     idbra1 = idebra
     iprv2f = idebra
-    if (iturb(iphas).eq.50) then
+    if (iturb.eq.50) then
       idbra1 = iprv2f + ncelet
 !     Pas la peine de tester les depassements de tableaux puisqu'on
 !     passe juste apres dans MEMKEP
     endif
 
-    if( (itytur(iphas).eq.2) .or. (iturb(iphas).eq.50) ) then
+    if( (itytur.eq.2) .or. (iturb.eq.50) ) then
 
-      ikiph  = ik  (iphas)
+      ikiph  = ik
 
       call memkep &
       !==========
@@ -1809,13 +1799,13 @@ if (iccvfg.eq.0) then
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      ncepdc(iphas) , ncetsm(iphas) ,                                &
+      ncepdc , ncetsm ,                                &
       iphas  ,                                                       &
-      ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+      ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
       ia     ,                                                       &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
-      coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+      coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
       ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
       ra(idam  ) , ra(ixam  ) ,                                      &
       ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
@@ -1823,9 +1813,9 @@ if (iccvfg.eq.0) then
       ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
       ra     )
 
-      if( iturb(iphas).eq.50 )  then
+      if( iturb.eq.50 )  then
 
-        iphiph  = iphi(iphas)
+        iphiph  = iphi
 
         call memv2f &
         !==========
@@ -1851,12 +1841,12 @@ if (iccvfg.eq.0) then
         !==========
       ( ifinia , ifinra ,                                              &
         nvar   , nscal  , nphas  ,                                     &
-        ncepdc(iphas) , ncetsm(iphas) ,                                &
+        ncepdc , ncetsm ,                                &
         iphas  ,                                                       &
-        ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+        ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
         ia     ,                                                       &
         ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
-        coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+        coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
         ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
         ra(idam  ) , ra(ixam  ) ,                                      &
         ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
@@ -1868,9 +1858,9 @@ if (iccvfg.eq.0) then
       endif
 
       !  RELAXATION DE K ET EPSILON SI IKECOU=0 EN INSTATIONNAIRE
-      if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
-        ikiph  = ik (iphas)
-        ieiph  = iep(iphas)
+      if (ikecou.eq.0 .and. idtvar.ge.0) then
+        ikiph  = ik
+        ieiph  = iep
         relaxk = relaxv(ikiph)
         relaxe = relaxv(ieiph)
         do iel = 1,ncel
@@ -1879,15 +1869,15 @@ if (iccvfg.eq.0) then
         enddo
       endif
 
-    else if(itytur(iphas).eq.3) then
+    else if(itytur.eq.3) then
 
-      ir11ip = ir11(iphas)
+      ir11ip = ir11
 
       call memrij &
       !==========
     ( idebia , idebra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      iturb(iphas) ,                                                 &
+      iturb ,                                                 &
       idtr   , iviscf , iviscb , icoefx ,                            &
       idam   , ixam   , idrtp  ,                                     &
       ismbr  , irovsd , igrdvt , iprodu , igrarx , igrary , igrarz , &
@@ -1909,13 +1899,13 @@ if (iccvfg.eq.0) then
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      ncepdc(iphas) , ncetsm(iphas) ,                                &
+      ncepdc , ncetsm ,                                &
       iphas  ,                                                       &
-      ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+      ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
       ia     ,                                                       &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
-      coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+      coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
       ra(iviscf) , ra(iviscb) , ra(icoefx),                          &
       ra(idam  ) , ra(ixam  ) ,                                      &
       ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(igrdvt) ,            &
@@ -1924,9 +1914,9 @@ if (iccvfg.eq.0) then
       ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
       ra     )
 
-    else if( iturb(iphas).eq.60 ) then
+    else if( iturb.eq.60 ) then
 
-      ikiph  = ik  (iphas)
+      ikiph  = ik
 
       call memkom &
       !==========
@@ -1952,14 +1942,14 @@ if (iccvfg.eq.0) then
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      ncepdc(iphas) , ncetsm(iphas) ,                                &
+      ncepdc , ncetsm ,                                &
       iphas  ,                                                       &
-      ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+      ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
       ia     ,                                                       &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
-      coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
-      ra(is2kw(iphas)), ra(idvukw(iphas)),                           &
+      coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
+      ra(is2kw), ra(idvukw),                           &
       ra(iviscf) , ra(iviscb) ,                                      &
       ra(idam  ) , ra(ixam  ) ,                                      &
       ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
@@ -1968,9 +1958,9 @@ if (iccvfg.eq.0) then
       ra     )
 
       !  RELAXATION DE K ET OMEGA SI IKECOU=0
-      if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
-        ikiph   = ik  (iphas)
-        iomiph  = iomg(iphas)
+      if (ikecou.eq.0 .and. idtvar.ge.0) then
+        ikiph   = ik
+        iomiph  = iomg
         relaxk = relaxv(ikiph )
         relaxw = relaxv(iomiph)
         do iel = 1,ncel
@@ -1979,9 +1969,9 @@ if (iccvfg.eq.0) then
         enddo
       endif
 
-    else if( iturb(iphas).eq.70 ) then
+    else if( iturb.eq.70 ) then
 
-      inuiph = inusa (iphas)
+      inuiph = inusa
 
       call memspa &
       !==========
@@ -2007,13 +1997,13 @@ if (iccvfg.eq.0) then
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
-      ncepdc(iphas) , ncetsm(iphas) ,                                &
+      ncepdc , ncetsm ,                                &
       iphas  ,                                                       &
-      ia(iicepd(iphas)) , ia(iicesm(iphas)) , ia(iitpsm(iphas)) ,    &
+      ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
       ia     ,                                                       &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
       tslagr   ,                                                     &
-      coefa  , coefb  , ra(ickupd(iphas)) , ra(ismace(iphas)) ,      &
+      coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
       ia(iitypf) ,                                                   &
       ra(iviscf) , ra(iviscb) ,                                      &
       ra(idam  ) , ra(ixam  ) ,                                      &
@@ -2024,7 +2014,7 @@ if (iccvfg.eq.0) then
 
       !  RELAXATION DE NUSA
       if (idtvar.ge.0) then
-        inuiph = inusa(iphas)
+        inuiph = inusa
         relaxn = relaxv(inuiph)
         do iel = 1,ncel
           rtp(iel,inuiph) = relaxn*rtp(iel,inuiph)+(1.d0-relaxn)*rtpa(iel,inuiph)
@@ -2047,7 +2037,7 @@ endif  ! Fin si calcul sur champ de vitesse fige SUITE
 
 if (nscal.ge.1 .and. iirayo.gt.0) then
 
-  if(iwarni(iu(1)).ge.1 .and. mod(ntcabs,nfreqr).eq.0) then
+  if(iwarni(iu).ge.1 .and. mod(ntcabs,nfreqr).eq.0) then
     write(nfecra,1070)
   endif
 
@@ -2089,7 +2079,7 @@ endif
 
 if (nscal.ge.1) then
 
-  if(iwarni(iu(1)).ge.1) then
+  if(iwarni(iu).ge.1) then
     write(nfecra,1060)
   endif
 

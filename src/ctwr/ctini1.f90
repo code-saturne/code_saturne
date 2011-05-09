@@ -81,8 +81,8 @@ integer iphas, ii, jj, isc, ipp
 !     L'utilisateur ne doit pas y avoir touche.
 
 do iphas = 1, nphas
-  if(iscalt(iphas).ne.-1) then
-    write(nfecra,1000)iscalt(iphas)
+  if(iscalt.ne.-1) then
+    write(nfecra,1000)iscalt
     call csexit (1)
     !==========
   endif
@@ -104,10 +104,10 @@ iscsth(itemp4) = 1
 iscsth(ihumid) = 0
 
 iphas = 1
-iscalt(iphas) = itemp4
+iscalt = itemp4
 
-irovar(iphas) = 1
-ivivar(iphas) = 0
+irovar = 1
+ivivar = 0
 
 ! --> Donnees physiques ou numeriques propres aux scalaires
 
@@ -116,7 +116,7 @@ do isc = 1, nscapp
   jj = iscapp(isc)
 
   if (iscavr(jj).le.0) then
-    visls0(jj) = viscl0(iphas)
+    visls0(jj) = viscl0
   endif
 
   blencv(isca(jj)) = 1.d0

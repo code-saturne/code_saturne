@@ -198,7 +198,7 @@ grav(3) = gz
 if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
   iromf = ipproc(irom1)
 else
-  iromf = ipproc(irom(iphas))
+  iromf = ipproc(irom)
 endif
 
 !===============================================================================
@@ -217,9 +217,9 @@ do id = 1,3
 
       rom = propce(iel,iromf)
 
-      if (id.eq.1) vitf = rtpa(iel,iu(iphas))
-      if (id.eq.2) vitf = rtpa(iel,iv(iphas))
-      if (id.eq.3) vitf = rtpa(iel,iw(iphas))
+      if (id.eq.1) vitf = rtpa(iel,iu)
+      if (id.eq.2) vitf = rtpa(iel,iv)
+      if (id.eq.3) vitf = rtpa(iel,iw)
 
 !---> (2.1) Calcul preliminaires :
 !     ----------------------------
@@ -371,19 +371,19 @@ do id = 1,3
 
           tempf = propce(iel,ipproc(itemp))
 
-        else if ( iscsth(iscalt(iphas)).eq.-1 ) then
-          tempf = rtpa(iel,isca(iscalt(iphas)))
+        else if ( iscsth(iscalt).eq.-1 ) then
+          tempf = rtpa(iel,isca(iscalt))
 
-        else if ( iscsth(iscalt(iphas)).eq.1 ) then
-          tempf = rtpa(iel,isca(iscalt(iphas)))
+        else if ( iscsth(iscalt).eq.1 ) then
+          tempf = rtpa(iel,isca(iscalt))
 
-        else if ( iscsth(iscalt(iphas)).eq.2 ) then
+        else if ( iscsth(iscalt).eq.2 ) then
           mode = 1
-          call usthht(mode,rtpa(iel,isca(iscalt(iphas))),tempf)
+          call usthht(mode,rtpa(iel,isca(iscalt)),tempf)
           !==========
           tempf = tempf+tkelvi
         else
-          tempf = t0(iphas)
+          tempf = t0
         endif
 
         ddbr  = sqrt( 2.d0*kboltz*tempf                           &

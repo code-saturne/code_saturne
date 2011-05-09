@@ -97,10 +97,10 @@ module pointe
 
   integer, save :: iitypf        , iitrif        ,                 &
                    iisymp        , iyplbr        ,                 &
-                   iifapa(nphsmx), ncepdc(nphsmx),                 &
-                   iicepd(nphsmx), ickupd(nphsmx), ncetsm(nphsmx), &
-                   iicesm(nphsmx), iitpsm(nphsmx), ismace(nphsmx), &
-                   is2kw (nphsmx), idvukw(nphsmx)
+                   iifapa, ncepdc,                 &
+                   iicepd, ickupd, ncetsm, &
+                   iicesm, iitpsm, ismace, &
+                   is2kw , idvukw
 
   !... Auxiliaires accessibles directement dans ia, ra
   !    pour la perodicite

@@ -361,20 +361,20 @@ subroutine uscplc &
 !               Soit        IEL = IFABOR(IFAC)
 
 ! * Masse vol                       phase IPHAS, cellule      IEL  :
-!                  PROPCE(IEL ,IPPROC(IROM (IPHAS)))
+!                  PROPCE(IEL ,IPPROC(IROM ))
 ! * Viscosite moleculaire dynamique phase IPHAS, cellule      IEL  :
-!                  PROPCE(IEL ,IPPROC(IVISCL(IPHAS)))
+!                  PROPCE(IEL ,IPPROC(IVISCL))
 ! * Viscosite turbulente  dynamique phase IPHAS, cellule      IEL  :
-!                  PROPCE(IEL ,IPPROC(IVISCT(IPHAS)))
+!                  PROPCE(IEL ,IPPROC(IVISCT))
 ! * Chaleur specifique              phase IPHAS, cellule      IEL  :
-!                  PROPCE(IEL ,IPPROC(ICP   (IPHAS)))
+!                  PROPCE(IEL ,IPPROC(ICP   ))
 ! * Diffusivite lambda           scalaire ISCAL, cellule      IEL  :
 !                  PROPCE(IEL ,IPPROC(IVISLS(ISCAL)))
 
 ! Valeurs aux faces de bord
 
 ! * Masse vol                      phase IPHAS, face de bord IFAC :
-!                  PROPFB(IFAC,IPPROB(IROM (IPHAS)))
+!                  PROPFB(IFAC,IPPROB(IROM ))
 ! * Flux de masse relatif a la variable  IVAR , face de bord IFAC :
 !      (i.e. le flux de masse servant a la convection de IVAR)
 !                  PROPFB(IFAC,IPPROB(IFLUMA(IVAR )))
@@ -591,9 +591,9 @@ do ilelt = 1, nlelt
 !        L'utilisateur donne donc ici uniquement
 !          la direction du vecteur vitesse
 
-  rcodcl(ifac,iu(iphas),1) = 0.d0
-  rcodcl(ifac,iv(iphas),1) = 0.d0
-  rcodcl(ifac,iw(iphas),1) = 5.d0
+  rcodcl(ifac,iu,1) = 0.d0
+  rcodcl(ifac,iv,1) = 0.d0
+  rcodcl(ifac,iw,1) = 5.d0
 
 ! ------ Traitement de la turbulence
 
@@ -621,9 +621,9 @@ do ilelt = 1, nlelt
 !           l'intensite turbulente et de lois standards en conduite
 !           circulaire (leur initialisation est inutile mais plus
 !           propre)
-    uref2 = rcodcl(ifac,iu(iphas),1)**2                           &
-           +rcodcl(ifac,iv(iphas),1)**2                           &
-           +rcodcl(ifac,iw(iphas),1)**2
+    uref2 = rcodcl(ifac,iu,1)**2                           &
+           +rcodcl(ifac,iv,1)**2                           &
+           +rcodcl(ifac,iw,1)**2
     uref2 = max(uref2,1.d-12)
     xkent  = epzero
     xeent  = epzero
@@ -634,36 +634,36 @@ do ilelt = 1, nlelt
         xkent, xeent )
 
 !     (ITYTUR est un indicateur qui vaut ITURB/10)
-    if    (itytur(iphas).eq.2) then
+    if    (itytur.eq.2) then
 
-      rcodcl(ifac,ik(iphas),1)  = xkent
-      rcodcl(ifac,iep(iphas),1) = xeent
+      rcodcl(ifac,ik,1)  = xkent
+      rcodcl(ifac,iep,1) = xeent
 
-    elseif(itytur(iphas).eq.3) then
+    elseif(itytur.eq.3) then
 
-      rcodcl(ifac,ir11(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir22(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir33(iphas),1) = d2s3*xkent
-      rcodcl(ifac,ir12(iphas),1) = 0.d0
-      rcodcl(ifac,ir13(iphas),1) = 0.d0
-      rcodcl(ifac,ir23(iphas),1) = 0.d0
-      rcodcl(ifac,iep(iphas),1)  = xeent
+      rcodcl(ifac,ir11,1) = d2s3*xkent
+      rcodcl(ifac,ir22,1) = d2s3*xkent
+      rcodcl(ifac,ir33,1) = d2s3*xkent
+      rcodcl(ifac,ir12,1) = 0.d0
+      rcodcl(ifac,ir13,1) = 0.d0
+      rcodcl(ifac,ir23,1) = 0.d0
+      rcodcl(ifac,iep,1)  = xeent
 
-    elseif (iturb(iphas).eq.50) then
+    elseif (iturb.eq.50) then
 
-      rcodcl(ifac,ik(iphas),1)   = xkent
-      rcodcl(ifac,iep(iphas),1)  = xeent
-      rcodcl(ifac,iphi(iphas),1) = d2s3
-      rcodcl(ifac,ifb(iphas),1)  = 0.d0
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iep,1)  = xeent
+      rcodcl(ifac,iphi,1) = d2s3
+      rcodcl(ifac,ifb,1)  = 0.d0
 
-    elseif (iturb(iphas).eq.60) then
+    elseif (iturb.eq.60) then
 
-      rcodcl(ifac,ik(iphas),1)   = xkent
-      rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+      rcodcl(ifac,ik,1)   = xkent
+      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-    elseif (iturb(iphas).eq.70) then
+    elseif (iturb.eq.70) then
 
-      rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
     endif
 

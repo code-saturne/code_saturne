@@ -96,10 +96,10 @@ double precision epz2
 
 !===============================================================================
 
-iikiph = ik(iphas)
-iieiph = iep(iphas)
-iivisc = ipproc(iviscl(iphas))
-iiromc = ipproc(irom(iphas))
+iikiph = ik
+iieiph = iep
+iivisc = ipproc(iviscl)
+iiromc = ipproc(irom)
 
 
 ! Une petite valeur pour eviter des valeurs exactement nulles.
@@ -142,12 +142,12 @@ enddo
 !       ou dans le cas ICLKEP = 1
 !===============================================================================
 
-if (iwarnk.ge.2.or.iclkep(iphas).eq.1) then
+if (iwarnk.ge.2.or.iclkep.eq.1) then
 
   if(iclip.eq.1) then
 
-    xkm = 1296.d0*sqrt(cmu)/almax(iphas)**2
-    xepm = 46656.d0*cmu/almax(iphas)**4
+    xkm = 1296.d0*sqrt(cmu)/almax**2
+    xepm = 46656.d0*cmu/almax**4
     iclpke = 0
     do iel=1,ncel
       xk = rtp(iel,iikiph)
@@ -155,7 +155,7 @@ if (iwarnk.ge.2.or.iclkep(iphas).eq.1) then
       xkmin = xkm*(propce(iel,iivisc)/propce(iel,iiromc))**2
       xepmin = xepm*(propce(iel,iivisc)/propce(iel,iiromc))**3
       if(xk.le.xkmin.or.xe.le.xepmin) then
-        if(iclkep(iphas).eq.1) then
+        if(iclkep.eq.1) then
           rtp(iel,iikiph)  = xkmin
           rtp(iel,iieiph) = xepmin
         endif
@@ -165,16 +165,16 @@ if (iwarnk.ge.2.or.iclkep(iphas).eq.1) then
 
   elseif(iclip.eq.0) then
 
-    xkmin = 1296.d0*sqrt(cmu)/almax(iphas)**2*                    &
-            (viscl0(iphas)/ro0(iphas))**2
-    xepmin = 46656.d0*cmu/almax(iphas)**4*                        &
-            (viscl0(iphas)/ro0(iphas))**3
+    xkmin = 1296.d0*sqrt(cmu)/almax**2*                    &
+            (viscl0/ro0)**2
+    xepmin = 46656.d0*cmu/almax**4*                        &
+            (viscl0/ro0)**3
     iclpke = 0
     do iel=1,ncel
       xk = rtp(iel,iikiph)
       xe = rtp(iel,iieiph)
       if(xk.le.xkmin.or.xe.le.xepmin) then
-        if(iclkep(iphas).eq.1) then
+        if(iclkep.eq.1) then
           rtp(iel,iikiph)  = xkmin
           rtp(iel,iieiph) = xepmin
         endif
@@ -202,7 +202,7 @@ if (iwarnk.ge.2.or.iclkep(iphas).eq.1) then
 
 ! ---  Stockage nb de clippings pour listing
 
-  if(iclkep(iphas).eq.1) then
+  if(iclkep.eq.1) then
     iclpmn(ipprtp(iikiph)) = iclpke
     iclpmn(ipprtp(iieiph)) = iclpke
   endif
@@ -213,7 +213,7 @@ endif
 ! ---> Clipping "standard" ICLKEP = 0
 !===============================================================================
 
-if(iclkep(iphas).eq.0) then
+if(iclkep.eq.0) then
 
   iclpk2 = 0
   iclpe2 = 0

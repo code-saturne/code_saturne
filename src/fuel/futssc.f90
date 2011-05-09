@@ -233,8 +233,8 @@ chaine = nomvar(ipprtp(ivar))
 iphas = 1
 
 ! --- Numero des grandeurs physiques (voir usclim)
-ipcrom = ipproc(irom(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom)
+ipcvst = ipproc(ivisct)
 
 ! --- Temperature phase gaz
 
@@ -610,7 +610,7 @@ if ( ieqco2 .ge. 1 ) then
        xo2e  = xo2t-0.5d0*anmr
 
        tauchi = 1.d0/(xkp*sqh2o*(0.5d0*(xo2t+xo2e))**0.25d0)
-       tautur = rtpa(iel,ik(iphas))/rtpa(iel,iep(iphas))
+       tautur = rtpa(iel,ik)/rtpa(iel,iep)
 
        x2 = 0.d0
        do icla = 1,nclafu

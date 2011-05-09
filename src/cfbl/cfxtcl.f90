@@ -178,13 +178,13 @@ idebra = idbra0
 
 do iphas = 1, nphas
 
-  ipriph = ipr   (iphas)
-  iuiph  = iu    (iphas)
-  iviph  = iv    (iphas)
-  iwiph  = iw    (iphas)
-  irhiph = isca(irho  (iphas))
-  ieniph = isca(ienerg(iphas))
-  itkiph = isca(itempk(iphas))
+  ipriph = ipr
+  iuiph  = iu
+  iviph  = iv
+  iwiph  = iw
+  irhiph = isca(irho  )
+  ieniph = isca(ienerg)
+  itkiph = isca(itempk)
   iclp   = iclrtp(ipriph,icoef)
   iclr   = iclrtp(irhiph,icoef)
   iclu   = iclrtp(iuiph ,icoef)
@@ -252,7 +252,7 @@ do iphas = 1, nphas
    coefa  , coefb  ,                                              &
    w1     , w2     , w6     , w4     )
 
-    if(ieos(iphas).eq.1) then
+    if(ieos.eq.1) then
       gammag = w6(1)
     else
 !     Gamma doit etre passe a cfrusb ; s'il est variable
@@ -299,7 +299,7 @@ do iphas = 1, nphas
 !       Si la gravite est predominante : pression hydrostatique
 !         (approximatif et surtout explicite en rho)
 
-      if(icfgrp(iphas).eq.1) then
+      if(icfgrp.eq.1) then
 
         icodcl(ifac,ipriph) = 3
         hint = dt(iel)/distb(ifac)
@@ -379,11 +379,11 @@ do iphas = 1, nphas
 !               ce qui rend le choix du profil délicat.
 
         icodcl(ifac,ieniph) = 5
-        if(icv(iphas).eq.0) then
+        if(icv.eq.0) then
           rcodcl(ifac,ieniph,1) =                                 &
-               cv0(iphas)*rcodcl(ifac,itkiph,1)
+               cv0*rcodcl(ifac,itkiph,1)
         else
-          rcodcl(ifac,ieniph,1) = propce(iel,ipproc(icv(iphas)))  &
+          rcodcl(ifac,ieniph,1) = propce(iel,ipproc(icv))  &
                *rcodcl(ifac,itkiph,1)
         endif
         rcodcl(ifac,ieniph,1) = rcodcl(ifac,ieniph,1)             &
@@ -719,8 +719,8 @@ do iphas = 1, nphas
 !       ensuite pour lisser.
 
 !     Si rho et u ne sont pas donnés, erreur
-      if(rcodcl(ifac,irun (iphas),1).lt.-rinfin*0.5d0.or.         &
-         rcodcl(ifac,irunh(iphas),1).lt.-rinfin*0.5d0) then
+      if(rcodcl(ifac,irun ,1).lt.-rinfin*0.5d0.or.         &
+         rcodcl(ifac,irunh,1).lt.-rinfin*0.5d0) then
         write(nfecra,1300)
         call csexit (1)
       endif
@@ -739,8 +739,8 @@ do iphas = 1, nphas
 
 !     A coder
 
-!     Noter que IRUN(IPHAS)  = ISCA(IRHO (IPHAS))
-!            et IRUNH(IPHAS) = ISCA(IENER(IPHAS))
+!     Noter que IRUN  = ISCA(IRHO )
+!            et IRUNH = ISCA(IENER)
 !     (aliases pour simplifier uscfcl)
 
       write(nfecra,1301)
@@ -890,27 +890,27 @@ do iphas = 1, nphas
 !       que l'utilisateur a donné une valeur dans RCODCL
 
       if(propfb(ifac,iflmab).ge.0.d0) then
-        if(itytur(iphas).eq.2) then
-          icodcl(ifac,ik (iphas)) = 3
-          icodcl(ifac,iep(iphas)) = 3
-        elseif(itytur(iphas).eq.3) then
-          icodcl(ifac,ir11(iphas)) = 3
-          icodcl(ifac,ir22(iphas)) = 3
-          icodcl(ifac,ir33(iphas)) = 3
-          icodcl(ifac,ir12(iphas)) = 3
-          icodcl(ifac,ir13(iphas)) = 3
-          icodcl(ifac,ir23(iphas)) = 3
-          icodcl(ifac,iep (iphas)) = 3
-        elseif(iturb(iphas).eq.50) then
-          icodcl(ifac,ik  (iphas)) = 3
-          icodcl(ifac,iep (iphas)) = 3
-          icodcl(ifac,iphi(iphas)) = 3
-          icodcl(ifac,ifb (iphas)) = 3
-        elseif(iturb(iphas).eq.60) then
-          icodcl(ifac,ik  (iphas)) = 3
-          icodcl(ifac,iomg(iphas)) = 3
-        elseif(iturb(iphas).eq.70) then
-          icodcl(ifac,inusa(iphas)) = 3
+        if(itytur.eq.2) then
+          icodcl(ifac,ik ) = 3
+          icodcl(ifac,iep) = 3
+        elseif(itytur.eq.3) then
+          icodcl(ifac,ir11) = 3
+          icodcl(ifac,ir22) = 3
+          icodcl(ifac,ir33) = 3
+          icodcl(ifac,ir12) = 3
+          icodcl(ifac,ir13) = 3
+          icodcl(ifac,ir23) = 3
+          icodcl(ifac,iep ) = 3
+        elseif(iturb.eq.50) then
+          icodcl(ifac,ik  ) = 3
+          icodcl(ifac,iep ) = 3
+          icodcl(ifac,iphi) = 3
+          icodcl(ifac,ifb ) = 3
+        elseif(iturb.eq.60) then
+          icodcl(ifac,ik  ) = 3
+          icodcl(ifac,iomg) = 3
+        elseif(iturb.eq.70) then
+          icodcl(ifac,inusa) = 3
         endif
         if(nscaus.gt.0) then
           do ii = 1, nscaus
@@ -918,68 +918,68 @@ do iphas = 1, nphas
           enddo
         endif
       else
-        if(itytur(iphas).eq.2) then
-          if(rcodcl(ifac,ik (iphas),1).gt.0.d0.and.               &
-             rcodcl(ifac,iep(iphas),1).gt.0.d0) then
-            icodcl(ifac,ik (iphas)) = 1
-            icodcl(ifac,iep(iphas)) = 1
+        if(itytur.eq.2) then
+          if(rcodcl(ifac,ik ,1).gt.0.d0.and.               &
+             rcodcl(ifac,iep,1).gt.0.d0) then
+            icodcl(ifac,ik ) = 1
+            icodcl(ifac,iep) = 1
           else
-            icodcl(ifac,ik (iphas)) = 3
-            icodcl(ifac,iep(iphas)) = 3
+            icodcl(ifac,ik ) = 3
+            icodcl(ifac,iep) = 3
           endif
-        elseif(itytur(iphas).eq.3) then
-          if(rcodcl(ifac,ir11(iphas),1).gt.0.d0.and.              &
-             rcodcl(ifac,ir22(iphas),1).gt.0.d0.and.              &
-             rcodcl(ifac,ir33(iphas),1).gt.0.d0.and.              &
-             rcodcl(ifac,ir12(iphas),1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,ir13(iphas),1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,ir23(iphas),1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,iep (iphas),1).gt.0.d0) then
-            icodcl(ifac,ir11(iphas)) = 1
-            icodcl(ifac,ir22(iphas)) = 1
-            icodcl(ifac,ir33(iphas)) = 1
-            icodcl(ifac,ir12(iphas)) = 1
-            icodcl(ifac,ir13(iphas)) = 1
-            icodcl(ifac,ir23(iphas)) = 1
-            icodcl(ifac,iep (iphas)) = 1
+        elseif(itytur.eq.3) then
+          if(rcodcl(ifac,ir11,1).gt.0.d0.and.              &
+             rcodcl(ifac,ir22,1).gt.0.d0.and.              &
+             rcodcl(ifac,ir33,1).gt.0.d0.and.              &
+             rcodcl(ifac,ir12,1).gt.-rinfin*0.5d0.and.     &
+             rcodcl(ifac,ir13,1).gt.-rinfin*0.5d0.and.     &
+             rcodcl(ifac,ir23,1).gt.-rinfin*0.5d0.and.     &
+             rcodcl(ifac,iep ,1).gt.0.d0) then
+            icodcl(ifac,ir11) = 1
+            icodcl(ifac,ir22) = 1
+            icodcl(ifac,ir33) = 1
+            icodcl(ifac,ir12) = 1
+            icodcl(ifac,ir13) = 1
+            icodcl(ifac,ir23) = 1
+            icodcl(ifac,iep ) = 1
           else
-            icodcl(ifac,ir11(iphas)) = 3
-            icodcl(ifac,ir22(iphas)) = 3
-            icodcl(ifac,ir33(iphas)) = 3
-            icodcl(ifac,ir12(iphas)) = 3
-            icodcl(ifac,ir13(iphas)) = 3
-            icodcl(ifac,ir23(iphas)) = 3
-            icodcl(ifac,iep (iphas)) = 3
+            icodcl(ifac,ir11) = 3
+            icodcl(ifac,ir22) = 3
+            icodcl(ifac,ir33) = 3
+            icodcl(ifac,ir12) = 3
+            icodcl(ifac,ir13) = 3
+            icodcl(ifac,ir23) = 3
+            icodcl(ifac,iep ) = 3
           endif
-        elseif(iturb(iphas).eq.50) then
-          if(rcodcl(ifac,ik  (iphas),1).gt.0.d0.and.              &
-             rcodcl(ifac,iep (iphas),1).gt.0.d0.and.              &
-             rcodcl(ifac,iphi(iphas),1).gt.0.d0.and.              &
-             rcodcl(ifac,ifb (iphas),1).gt.-rinfin*0.5d0 ) then
-            icodcl(ifac,ik  (iphas)) = 1
-            icodcl(ifac,iep (iphas)) = 1
-            icodcl(ifac,iphi(iphas)) = 1
-            icodcl(ifac,ifb (iphas)) = 1
+        elseif(iturb.eq.50) then
+          if(rcodcl(ifac,ik  ,1).gt.0.d0.and.              &
+             rcodcl(ifac,iep ,1).gt.0.d0.and.              &
+             rcodcl(ifac,iphi,1).gt.0.d0.and.              &
+             rcodcl(ifac,ifb ,1).gt.-rinfin*0.5d0 ) then
+            icodcl(ifac,ik  ) = 1
+            icodcl(ifac,iep ) = 1
+            icodcl(ifac,iphi) = 1
+            icodcl(ifac,ifb ) = 1
           else
-            icodcl(ifac,ik  (iphas)) = 3
-            icodcl(ifac,iep (iphas)) = 3
-            icodcl(ifac,iphi(iphas)) = 3
-            icodcl(ifac,ifb (iphas)) = 3
+            icodcl(ifac,ik  ) = 3
+            icodcl(ifac,iep ) = 3
+            icodcl(ifac,iphi) = 3
+            icodcl(ifac,ifb ) = 3
           endif
-        elseif(iturb(iphas).eq.60) then
-         if(rcodcl(ifac,ik  (iphas),1).gt.0.d0.and.               &
-            rcodcl(ifac,iomg(iphas),1).gt.0.d0 ) then
-            icodcl(ifac,ik  (iphas)) = 1
-            icodcl(ifac,iomg(iphas)) = 1
+        elseif(iturb.eq.60) then
+         if(rcodcl(ifac,ik  ,1).gt.0.d0.and.               &
+            rcodcl(ifac,iomg,1).gt.0.d0 ) then
+            icodcl(ifac,ik  ) = 1
+            icodcl(ifac,iomg) = 1
           else
-            icodcl(ifac,ik  (iphas)) = 3
-            icodcl(ifac,iomg(iphas)) = 3
+            icodcl(ifac,ik  ) = 3
+            icodcl(ifac,iomg) = 3
           endif
-        elseif(iturb(iphas).eq.70) then
-         if(rcodcl(ifac,inusa(iphas),1).gt.0.d0) then
-            icodcl(ifac,inusa(iphas)) = 1
+        elseif(iturb.eq.70) then
+         if(rcodcl(ifac,inusa,1).gt.0.d0) then
+            icodcl(ifac,inusa) = 1
           else
-            icodcl(ifac,inusa(iphas)) = 3
+            icodcl(ifac,inusa) = 3
           endif
         endif
         if(nscaus.gt.0) then

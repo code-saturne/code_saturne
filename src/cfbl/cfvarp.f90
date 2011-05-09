@@ -88,31 +88,31 @@ if ( ippmod(icompf).ge.0 ) then
 
 ! ---- Masse volumique
     iprop = iprop + 1
-    irho(iphas) = iscapp(iprop)
+    irho = iscapp(iprop)
 !     Alias pour les C.L.
-    irun(iphas) = irho(iphas)
+    irun = irho
 
 ! ---- Energie totale
     iprop = iprop + 1
-    ienerg(iphas) = iscapp(iprop)
+    ienerg = iscapp(iprop)
 !     Alias pour les C.L.
-    irunh(iphas) = ienerg(iphas)
+    irunh = ienerg
 
 ! ---- Temperature (post)
     iprop = iprop + 1
-    itempk(iphas) = iscapp(iprop)
+    itempk = iscapp(iprop)
 
 ! ---- Viscosite dynamique de reference relative au scalaire IRHO
-    ivisls(irho  (iphas)) = 0
-    visls0(irho  (iphas)) = epzero
+    ivisls(irho  ) = 0
+    visls0(irho  ) = epzero
 
 ! ---- Viscosite dynamique de reference relative au scalaire ITEMPK
-    ivisls(itempk(iphas)) = 0
-    visls0(itempk(iphas)) = epzero
+    ivisls(itempk) = 0
+    visls0(itempk) = epzero
 
 ! ---- Initialisation par defaut de la viscosite en volume (cste)
-    iviscv(iphas) = 0
-    viscv0(iphas) = 0.d0
+    iviscv = 0
+    viscv0 = 0.d0
 
 
 !===============================================================================
@@ -120,8 +120,8 @@ if ( ippmod(icompf).ge.0 ) then
 !===============================================================================
 
 ! --> Cv constant ou variable (par defaut : constant)
-    icv(iphas) = 0
-    cv0(iphas) = 0.d0
+    icv = 0
+    cv0 = 0.d0
 
     iccfth = -1
     imodif = 0
@@ -138,9 +138,9 @@ if ( ippmod(icompf).ge.0 ) then
 ! --> Utilisation d'un flux de masse specifique pour la vitesse
 
 !     ATTENTION   PAS ENCORE IMPLEMENTE
-!========   LAISSER IFLMAU(IPHAS) = 0
+!========   LAISSER IFLMAU = 0
 
-    iflmau(iphas) = 0
+    iflmau = 0
 
   enddo
 
@@ -159,13 +159,13 @@ if ( ippmod(icompf).ge.0 ) then
 
 ! ---- Viscosite dynamique de reference relative au scalaire IENERG
   do iphas = 1, nphas
-    if(ivisls(itempk(iphas)).gt.0 .or. icv(iphas).gt.0) then
-      ivisls(ienerg(iphas)) = 1
+    if(ivisls(itempk).gt.0 .or. icv.gt.0) then
+      ivisls(ienerg) = 1
     else
-      ivisls(ienerg(iphas)) = 0
+      ivisls(ienerg) = 0
     endif
 
-    visls0(ienerg(iphas)) = epzero
+    visls0(ienerg) = epzero
 
   enddo
 
@@ -173,13 +173,13 @@ if ( ippmod(icompf).ge.0 ) then
 
   do iphas = 1, nphas
 
-    if(visls0(itempk(iphas)).le.0.d0) then
-      write(nfecra,1000) visls0(itempk(iphas))
+    if(visls0(itempk).le.0.d0) then
+      write(nfecra,1000) visls0(itempk)
       iok = 1
     endif
 
-    if(viscv0(iphas).lt.0.d0) then
-      write(nfecra,2000) viscv0(iphas)
+    if(viscv0.lt.0.d0) then
+      write(nfecra,2000) viscv0
       iok = 1
     endif
 

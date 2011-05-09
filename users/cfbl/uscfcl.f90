@@ -296,9 +296,9 @@ do ilelt = 1, nlelt
   itypfb(ifac,iphas) = iesicf
 
 !   - Vitesse
-  rcodcl(ifac,iu(iphas),1) = 5.0d0
-  rcodcl(ifac,iv(iphas),1) = 0.0d0
-  rcodcl(ifac,iw(iphas),1) = 0.0d0
+  rcodcl(ifac,iu,1) = 5.0d0
+  rcodcl(ifac,iv,1) = 0.0d0
+  rcodcl(ifac,iw,1) = 0.0d0
 
 !   - Pression, Masse Volumique, Temperature, Energie Totale Specifique
 
@@ -311,23 +311,23 @@ do ilelt = 1, nlelt
 !       (elles sont calculees par les lois thermodynamiques dans uscfth)
 
 !     Pression (en Pa)
-  rcodcl(ifac,ipr(iphas),1) = 5.d5
+  rcodcl(ifac,ipr,1) = 5.d5
 
 !     Masse Volumique (en kg/m3)
-!        RCODCL(IFAC,ISCA(IRHO  (IPHAS)),1) = 1.D0
+!        RCODCL(IFAC,ISCA(IRHO  ),1) = 1.D0
 
 !     Temperature (en K)
-  rcodcl(ifac,isca(itempk(iphas)),1) = 300.d0
+  rcodcl(ifac,isca(itempk),1) = 300.d0
 
 !     Energie Totale Specifique (en J/kg)
-!        RCODCL(IFAC,ISCA(IENERG(IPHAS)),1) = 355.D3
+!        RCODCL(IFAC,ISCA(IENERG),1) = 355.D3
 
 
 !   - Turbulence
 
-  uref2 = rcodcl(ifac,iu(iphas),1)**2                             &
-         +rcodcl(ifac,iv(iphas),1)**2                             &
-         +rcodcl(ifac,iw(iphas),1)**2
+  uref2 = rcodcl(ifac,iu,1)**2                             &
+         +rcodcl(ifac,iv,1)**2                             &
+         +rcodcl(ifac,iw,1)**2
   uref2 = max(uref2,1.d-12)
 
 
@@ -352,46 +352,46 @@ do ilelt = 1, nlelt
   dhyd   = 0.075d0
 
 !         Vitesse de frottement (au carre = USTAR2)
-  rhomoy = rtp(iel,isca(irho(iphas)))
+  rhomoy = rtp(iel,isca(irho))
   ustar2 = 0.d0
   xkent  = epzero
   xeent  = epzero
 
   call keendb                                                     &
   !==========
-    ( uref2, dhyd, rhomoy, viscl0(iphas), cmu, xkappa,            &
+    ( uref2, dhyd, rhomoy, viscl0, cmu, xkappa,            &
       ustar2, xkent, xeent )
 
-  if    (itytur(iphas).eq.2) then
+  if    (itytur.eq.2) then
 
-    rcodcl(ifac,ik(iphas),1)  = xkent
-    rcodcl(ifac,iep(iphas),1) = xeent
+    rcodcl(ifac,ik,1)  = xkent
+    rcodcl(ifac,iep,1) = xeent
 
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
 
-    rcodcl(ifac,ir11(iphas),1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir22(iphas),1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir33(iphas),1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir12(iphas),1) = 0.d0
-    rcodcl(ifac,ir13(iphas),1) = 0.d0
-    rcodcl(ifac,ir23(iphas),1) = 0.d0
-    rcodcl(ifac,iep(iphas),1)  = xeent
+    rcodcl(ifac,ir11,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir22,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir33,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir12,1) = 0.d0
+    rcodcl(ifac,ir13,1) = 0.d0
+    rcodcl(ifac,ir23,1) = 0.d0
+    rcodcl(ifac,iep,1)  = xeent
 
-  elseif(iturb(iphas).eq.50) then
+  elseif(iturb.eq.50) then
 
-    rcodcl(ifac,ik(iphas),1)   = xkent
-    rcodcl(ifac,iep(iphas),1)  = xeent
-    rcodcl(ifac,iphi(iphas),1) = d2s3
-    rcodcl(ifac,ifb(iphas),1)  = 0.d0
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,iphi,1) = d2s3
+    rcodcl(ifac,ifb,1)  = 0.d0
 
-  elseif(iturb(iphas).eq.60) then
+  elseif(iturb.eq.60) then
 
-    rcodcl(ifac,ik(iphas),1)   = xkent
-    rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-  elseif(iturb(iphas).eq.70) then
+  elseif(iturb.eq.70) then
 
-    rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
   endif
 
@@ -460,10 +460,10 @@ do ilelt = 1, nlelt
   itypfb(ifac,iphas) = ieqhcf
 
 !   - Densite de debit massique (en kg/(m2 s))
-  rcodcl(ifac,irun(iphas),1) = 5.d5
+  rcodcl(ifac,irun,1) = 5.d5
 
 !   - Densite de debit enthalpique (en J/(m2 s))
-  rcodcl(ifac,irunh(iphas),1) = 5.d5
+  rcodcl(ifac,irunh,1) = 5.d5
 
 
 !     Condition non disponible dans la version presente
@@ -493,19 +493,19 @@ do ilelt = 1, nlelt
   itypfb(ifac,iphas) = ierucf
 
 !   - Vitesse d'entree
-  rcodcl(ifac,iu(iphas),1) = 5.0d0
-  rcodcl(ifac,iv(iphas),1) = 0.0d0
-  rcodcl(ifac,iw(iphas),1) = 0.0d0
+  rcodcl(ifac,iu,1) = 5.0d0
+  rcodcl(ifac,iv,1) = 0.0d0
+  rcodcl(ifac,iw,1) = 0.0d0
 
 !   - Masse Volumique (en kg/m3)
-  rcodcl(ifac,isca(irho  (iphas)),1) = 1.d0
+  rcodcl(ifac,isca(irho  ),1) = 1.d0
 
 
 !   - Turbulence
 
-  uref2 = rcodcl(ifac,iu(iphas),1)**2                             &
-         +rcodcl(ifac,iv(iphas),1)**2                             &
-         +rcodcl(ifac,iw(iphas),1)**2
+  uref2 = rcodcl(ifac,iu,1)**2                             &
+         +rcodcl(ifac,iv,1)**2                             &
+         +rcodcl(ifac,iw,1)**2
   uref2 = max(uref2,1.d-12)
 
 
@@ -533,46 +533,46 @@ do ilelt = 1, nlelt
 !           et de k et epsilon en entree (XKENT et XEENT) a partir
 !           de lois standards en conduite circulaire
 !           (leur initialisation est inutile mais plus propre)
-  rhomoy = propfb(ifac,ipprob(irom(iphas)))
+  rhomoy = propfb(ifac,ipprob(irom))
   ustar2 = 0.d0
   xkent  = epzero
   xeent  = epzero
 
   call keendb                                                     &
   !==========
-    ( uref2, dhyd, rhomoy, viscl0(iphas), cmu, xkappa,            &
+    ( uref2, dhyd, rhomoy, viscl0, cmu, xkappa,            &
       ustar2, xkent, xeent )
 
-  if    (itytur(iphas).eq.2) then
+  if    (itytur.eq.2) then
 
-    rcodcl(ifac,ik(iphas),1)  = xkent
-    rcodcl(ifac,iep(iphas),1) = xeent
+    rcodcl(ifac,ik,1)  = xkent
+    rcodcl(ifac,iep,1) = xeent
 
-  elseif(itytur(iphas).eq.3) then
+  elseif(itytur.eq.3) then
 
-    rcodcl(ifac,ir11(iphas),1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir22(iphas),1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir33(iphas),1) = 2.d0/3.d0*xkent
-    rcodcl(ifac,ir12(iphas),1) = 0.d0
-    rcodcl(ifac,ir13(iphas),1) = 0.d0
-    rcodcl(ifac,ir23(iphas),1) = 0.d0
-    rcodcl(ifac,iep(iphas),1)  = xeent
+    rcodcl(ifac,ir11,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir22,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir33,1) = 2.d0/3.d0*xkent
+    rcodcl(ifac,ir12,1) = 0.d0
+    rcodcl(ifac,ir13,1) = 0.d0
+    rcodcl(ifac,ir23,1) = 0.d0
+    rcodcl(ifac,iep,1)  = xeent
 
-  elseif(iturb(iphas).eq.50) then
+  elseif(iturb.eq.50) then
 
-    rcodcl(ifac,ik(iphas),1)   = xkent
-    rcodcl(ifac,iep(iphas),1)  = xeent
-    rcodcl(ifac,iphi(iphas),1) = d2s3
-    rcodcl(ifac,ifb(iphas),1)  = 0.d0
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,iphi,1) = d2s3
+    rcodcl(ifac,ifb,1)  = 0.d0
 
-  elseif(iturb(iphas).eq.60) then
+  elseif(iturb.eq.60) then
 
-    rcodcl(ifac,ik(iphas),1)   = xkent
-    rcodcl(ifac,iomg(iphas),1) = xeent/cmu/xkent
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-  elseif(iturb(iphas).eq.70) then
+  elseif(iturb.eq.70) then
 
-    rcodcl(ifac,inusa(iphas),1) = cmu*xkent**2/xeent
+    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
   endif
 
@@ -608,7 +608,7 @@ do ilelt = 1, nlelt
   itypfb(ifac,iphas) = isopcf
 
   ! Pressure (in Pa)
-  rcodcl(ifac,ipr(iphas),1) = 5.d5
+  rcodcl(ifac,ipr,1) = 5.d5
 
 enddo
 
@@ -638,7 +638,7 @@ do ilelt = 1, nlelt
 
   iutile = 0
   if(iutile.eq.1) then
-    rcodcl(ifac,iu(iphas),1) = 1.d0
+    rcodcl(ifac,iu,1) = 1.d0
   endif
 
 ! --- Prescribed temperature
@@ -651,8 +651,8 @@ do ilelt = 1, nlelt
 
   iutile = 0
   if(iutile.eq.1) then
-    icodcl(ifac,isca(itempk(iphas)))   = 5
-    rcodcl(ifac,isca(itempk(iphas)),1) = 20.d0 + 273.15d0
+    icodcl(ifac,isca(itempk))   = 5
+    rcodcl(ifac,isca(itempk),1) = 20.d0 + 273.15d0
   endif
 
 ! --- Prescribed flux
@@ -665,8 +665,8 @@ do ilelt = 1, nlelt
 
   iutile = 0
   if(iutile.eq.1) then
-    icodcl(ifac,isca(itempk(iphas)))   = 3
-    rcodcl(ifac,isca(itempk(iphas)),3) = 1000.d0
+    icodcl(ifac,isca(itempk))   = 3
+    rcodcl(ifac,isca(itempk),3) = 1000.d0
   endif
 
 enddo

@@ -755,11 +755,11 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
     RUBRIQ = 'modele_turbulence_termes_sources'
     irtyp  = 1
     call ecrsui(impvls,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                iturb(iphas),ierror)
+                iturb,ierror)
     if(ierror.ne.0) then
       write(nfecra,9520)                                          &
   'modele_turbulence_termes_sources                            ', &
-      'ITURB',ITURB(IPHAS)
+      'ITURB',ITURB
     endif
 
 !       On donne des labels au different TS pour les noms de rubriques
@@ -770,10 +770,10 @@ if ( (istala.eq.1 .and. iplas.ge.idstnt) .or.                     &
       NOMTSL(ITSVY) = 'terme_source_vitesseY'
       NOMTSL(ITSVZ) = 'terme_source_vitesseZ'
       NOMTSL(ITSLI) = 'terme_source_vitesse_implicite'
-      if (itytur(iphas).eq.2 .or. iturb(iphas).eq.50              &
-           .or. iturb(iphas).eq.60) then
+      if (itytur.eq.2 .or. iturb.eq.50              &
+           .or. iturb.eq.60) then
         NOMTSL(ITSKE) = 'terme_source_turbulence_keps'
-      else if (itytur(iphas).eq.3) then
+      else if (itytur.eq.3) then
         NOMTSL(ITSR11) = 'terme_source_turbulence_R11'
         NOMTSL(ITSR12) = 'terme_source_turbulence_R12'
         NOMTSL(ITSR13) = 'terme_source_turbulence_R13'

@@ -104,7 +104,7 @@ do isc = 1, nscapp
 enddo
 
 iphas      = 1
-icp(iphas) = 1
+icp = 1
 
 return
 end subroutine

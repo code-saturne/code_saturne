@@ -300,7 +300,7 @@ idebra = idbra0
 ! 1. IVAR: number of the thermal variable
 !===============================================================================
 
-ivar = isca(iscalt(iphas))
+ivar = isca(iscalt)
 
 !===============================================================================
 !  2. Min and max values for the wall temperatures (clipping otherwise)

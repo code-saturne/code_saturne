@@ -93,11 +93,11 @@ iok1 = 0
 do iphas = 1, nphas
 
   iok = 0
-  if(ncepdc(iphas).gt.ncelet .or. ncepdc(iphas).lt.0) then
+  if(ncepdc.gt.ncelet .or. ncepdc.lt.0) then
     iok = 1
   endif
   if(iok.ne.0) then
-    write(nfecra,1000) ncepdc(iphas)
+    write(nfecra,1000) ncepdc
     iok1 = 1
   endif
 enddo
@@ -109,7 +109,7 @@ endif
 !---> CALCUL DU NOMBRE DE CELLULES AVEC PDC TOTAL
 
 do iphas = 1, nphas
-  ncpdct(iphas) = ncepdc(iphas)
+  ncpdct = ncepdc
 enddo
 if (irangp.ge.0) then
   call parism(nphas,ncpdct)
@@ -118,11 +118,11 @@ endif
 !---> QUELQUES MESSAGES
 
 do iphas = 1, nphas
-  if(ncpdct(iphas).eq.0) then
-    write(nfecra,2000) ncpdct(iphas)
+  if(ncpdct.eq.0) then
+    write(nfecra,2000) ncpdct
     write(nfecra,3000)
   else
-    write(nfecra,2001) ncpdct(iphas)
+    write(nfecra,2001) ncpdct
     write(nfecra,3000)
   endif
 enddo
@@ -134,11 +134,11 @@ ifinra = idebra
 
 do iphas = 1, nphas
 
-  iicepd(iphas) = ifinia
-  ifinia        = iicepd(iphas) + ncepdc(iphas)
+  iicepd = ifinia
+  ifinia        = iicepd + ncepdc
 
-  ickupd(iphas) = ifinra
-  ifinra        = ickupd(iphas) + ncepdc(iphas)*6
+  ickupd = ifinra
+  ifinra        = ickupd + ncepdc*6
 
 enddo
 
@@ -149,7 +149,7 @@ enddo
 if (ipucou.eq.0) then
   iok=0
   do iphas = 1, nphas
-    if (ncpdct(iphas).gt.0) iok = 1
+    if (ncpdct.gt.0) iok = 1
   enddo
   if (iok.eq.1) then
     itpuco = ifinra

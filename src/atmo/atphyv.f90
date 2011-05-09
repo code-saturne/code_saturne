@@ -54,7 +54,7 @@ subroutine atphyv &
 !        ========
 !  (une routine specifique est dediee a cela : usvist)
 
-!  Il FAUT AVOIR PRECISE ICP(IPHAS) = 1
+!  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
 !    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
@@ -76,8 +76,8 @@ subroutine atphyv &
 !    Ainsi, AU PREMIER PAS DE TEMPS (calcul non suite), les seules
 !    grandeurs initialisees avant appel sont celles donnees
 !      - dans usini1 :
-!             . la masse volumique (initialisee a RO0(IPHAS))
-!             . la viscosite       (initialisee a VISCL0(IPHAS))
+!             . la masse volumique (initialisee a RO0)
+!             . la viscosite       (initialisee a VISCL0)
 !      - dans usiniv :
 !             . les variables de calcul  (initialisees a 0 par defaut
 !             ou a la valeur donnee dans usiniv)
@@ -111,7 +111,7 @@ subroutine atphyv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -158,7 +158,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -221,10 +221,10 @@ do iphas = 1, nphas
 !       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
 !          IVART = ISCA(2)
 
-  if (iscalt(iphas).gt.0) then
-    ivart = isca(iscalt(iphas))
+  if (iscalt.gt.0) then
+    ivart = isca(iscalt)
   else
-    write(nfecra,9010) iscalt(iphas)
+    write(nfecra,9010) iscalt
     call csexit (1)
   endif
 
@@ -236,8 +236,8 @@ do iphas = 1, nphas
 !     dans PROPCE, prop. physiques au centre des elements       : IPCROM
 !     dans PROPFB, prop. physiques au centre des faces de bord  : IPBROM
 
-  ipcrom = ipproc(irom(iphas))
-  ipbrom = ipprob(irom(iphas))
+  ipcrom = ipproc(irom)
+  ipbrom = ipprob(irom)
   ipctem = ipproc(itempc)
 
 ! From potential temperature, compute:
@@ -260,14 +260,14 @@ do iphas = 1, nphas
 !   ---------------------------------------
 !   law: T = theta * (p/psol) ** (Rair/Cp0)
 
-    propce(iel, ipctem) = xrtp*(pp/p0(iphas))**(rair/cp0(iphas))
+    propce(iel, ipctem) = xrtp*(pp/p0)**(rair/cp0)
     propce(iel, ipctem) = propce(iel, ipctem) - tkelvi
 
 !   Density in cell centers:
 !   ------------------------
 !   law:    RHO       =   P / ( Rair * T(K) )
 
-    propce(iel,ipcrom) = pp/(rair*xrtp)*(p0(iphas)/pp)**(rair/cp0(iphas))
+    propce(iel,ipcrom) = pp/(rair*xrtp)*(p0/pp)**(rair/cp0)
 
   enddo
 
@@ -291,7 +291,7 @@ enddo
 '@    La variable dont dependent les proprietes physiques ne  ',/,&
 '@      semble pas etre une variable de calcul.               ',/,&
 '@    En effet, on cherche a utiliser la temperature alors que',/,&
-'@      ISCALT(IPHAS) = ',I10                                  ,/,&
+'@      ISCALT = ',I10                                  ,/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
 '@    Verifier le codage de usphyv (et le test lors de la     ',/,&

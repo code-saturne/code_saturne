@@ -318,9 +318,9 @@ elseif(iappel.eq.3) then
 
     do ielpdc = 1, ncepdp
       iel=icepdc(ielpdc)
-      vit = sqrt(  rtpa(iel,iu(iphas))**2                         &
-                 + rtpa(iel,iv(iphas))**2                         &
-                 + rtpa(iel,iw(iphas))**2)
+      vit = sqrt(  rtpa(iel,iu)**2                         &
+                 + rtpa(iel,iv)**2                         &
+                 + rtpa(iel,iw)**2)
       ckupdc(ielpdc,1) = 10.d0*vit
       ckupdc(ielpdc,2) =  0.d0*vit
       ckupdc(ielpdc,3) =  0.d0*vit
@@ -351,9 +351,9 @@ elseif(iappel.eq.3) then
 
     do ielpdc = 1, ncepdp
       iel=icepdc(ielpdc)
-      vit = sqrt(  rtpa(iel,iu(iphas))**2                         &
-                 + rtpa(iel,iv(iphas))**2                         &
-                 + rtpa(iel,iw(iphas))**2)
+      vit = sqrt(  rtpa(iel,iu)**2                         &
+                 + rtpa(iel,iv)**2                         &
+                 + rtpa(iel,iw)**2)
       ckupdc(ielpdc,1) = (cosalp**2*ck1 + sinalp**2*ck2)*vit
       ckupdc(ielpdc,2) = (sinalp**2*ck1 + cosalp**2*ck2)*vit
       ckupdc(ielpdc,3) =  0.d0

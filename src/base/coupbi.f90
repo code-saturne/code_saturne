@@ -158,10 +158,10 @@ do inbcou = 1, nbccou
       ll = isca(iscal)
       if (ippmod(icompf).ge.0) then
         iphas = 1
-        if (iscal.eq.ienerg(iphas)) then
-          ll = isca(itempk(iphas))
+        if (iscal.eq.ienerg) then
+          ll = isca(itempk)
         else
-          write(nfecra,9000)ienerg(iphas),iscal
+          write(nfecra,9000)ienerg,iscal
           call csexit (1)
         endif
       endif

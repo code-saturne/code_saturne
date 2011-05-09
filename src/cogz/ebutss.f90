@@ -197,7 +197,7 @@ chaine = nomvar(ipprtp(ivar))
 iphas = 1
 
 ! --- Numero des grandeurs physiques (voir usclim)
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 
 
 !===============================================================================
@@ -214,34 +214,34 @@ if ( ivar.eq.isca(iygfm) ) then
 
 ! ---> Calcul de K et Epsilon en fonction du modele de turbulence
 
-  if (itytur(iphas).eq.2) then
+  if (itytur.eq.2) then
 
     do iel = 1, ncel
-      w1(iel) = rtpa(iel,ik(iphas))
-      w2(iel) = rtpa(iel,iep(iphas))
+      w1(iel) = rtpa(iel,ik)
+      w2(iel) = rtpa(iel,iep)
     enddo
 
-  elseif (itytur(iphas).eq.3) then
+  elseif (itytur.eq.3) then
 
     do iel = 1, ncel
-      w1(iel) = 0.5d0 *( rtpa(iel,ir11(iphas))                    &
-                        +rtpa(iel,ir22(iphas))                    &
-                        +rtpa(iel,ir33(iphas)) )
-      w2(iel) = rtpa(iel,iep(iphas))
+      w1(iel) = 0.5d0 *( rtpa(iel,ir11)                    &
+                        +rtpa(iel,ir22)                    &
+                        +rtpa(iel,ir33) )
+      w2(iel) = rtpa(iel,iep)
     enddo
 
-  elseif (iturb(iphas).eq.50) then
+  elseif (iturb.eq.50) then
 
     do iel = 1, ncel
-      w1(iel) = rtpa(iel,ik(iphas))
-      w2(iel) = rtpa(iel,iep(iphas))
+      w1(iel) = rtpa(iel,ik)
+      w2(iel) = rtpa(iel,iep)
     enddo
 
-  elseif (iturb(iphas).eq.60) then
+  elseif (iturb.eq.60) then
 
     do iel = 1, ncel
-      w1(iel) = rtpa(iel,ik(iphas))
-      w2(iel) = cmu*rtpa(iel,ik(iphas))*rtpa(iel,iomg(iphas))
+      w1(iel) = rtpa(iel,ik)
+      w2(iel) = cmu*rtpa(iel,ik)*rtpa(iel,iomg)
     enddo
 
   endif

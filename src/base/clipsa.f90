@@ -94,7 +94,7 @@ double precision epz2
 
 !===============================================================================
 
-inuiph = inusa(iphas)
+inuiph = inusa
 
 
 ! Une petite valeur pour eviter des valeurs exactement nulles.

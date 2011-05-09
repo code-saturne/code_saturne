@@ -59,7 +59,7 @@ subroutine d3pphy &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -116,7 +116,7 @@ integer          iinpdf
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -303,7 +303,7 @@ if ( ippmod(icod3p).eq.1 ) then
   !==========
  ( ncelet,ncel, ia(iinpdf),                                       &
    dirmin,dirmax,fdeb,ffin,hrec,                                  &
-   rtp(1,isca(ifm)),rtp(1,isca(ihm)),rtp(1,ipr(1)),               &
+   rtp(1,isca(ifm)),rtp(1,isca(ihm)),rtp(1,ipr),               &
    propce,                                                        &
    w1 )
 
@@ -313,7 +313,7 @@ else
   !==========
  ( ncelet,ncel, ia(iinpdf),                                       &
    dirmin,dirmax,fdeb,ffin,hrec,                                  &
-   rtp(1,isca(ifm)),w2,rtp(1,ipr(1)),                             &
+   rtp(1,isca(ifm)),w2,rtp(1,ipr),                             &
    propce,                                                        &
    w1 )
 
@@ -328,9 +328,9 @@ endif
 ! --> Masse volumique au bord
 
 iphas = 1
-ibrom(iphas) = 1
-ipbrom = ipprob(irom(iphas))
-ipcrom = ipproc(irom(iphas))
+ibrom = 1
+ipbrom = ipprob(irom)
+ipcrom = ipproc(irom)
 
 ! ---- Masse volumique au bord pour toutes les facettes
 !      Les facettes d'entree seront recalculees apres
@@ -342,7 +342,7 @@ ipcrom = ipproc(irom(iphas))
 !      masse volumique dans d3pint, pas la peine de la reprojeter aux
 !      faces.
 
-if ( ipass.gt.1.or.(isuite.eq.1.and.initro(iphas).eq.1)) then
+if ( ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
 
   do ifac = 1, nfabor
     iel = ifabor(ifac)
@@ -365,7 +365,7 @@ if(ipass.gt.1 .or. isuite.eq.1 ) then
       if ( ientfu(izone).eq.1 .or. ientox(izone).eq.1 ) then
         temsmm = tinfue/wmolg(1)
         if ( ientox(izone).eq.1 ) temsmm = tinoxy/wmolg(2)
-        propfb(ifac,ipbrom) = p0(iphas)/(rr*temsmm)
+        propfb(ifac,ipbrom) = p0/(rr*temsmm)
       endif
     endif
   enddo

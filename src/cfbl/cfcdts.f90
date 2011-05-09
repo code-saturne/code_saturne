@@ -266,11 +266,11 @@ if(iperio.eq.1) then
   iinvpe = 1
 
   do iphas = 1, nphas
-    if(ivar.eq.iu(iphas).or.ivar.eq.iv(iphas).or.                 &
-                            ivar.eq.iw(iphas).or.                 &
-       ivar.eq.ir11(iphas).or.ivar.eq.ir12(iphas).or.             &
-       ivar.eq.ir13(iphas).or.ivar.eq.ir22(iphas).or.             &
-       ivar.eq.ir23(iphas).or.ivar.eq.ir33(iphas)) then
+    if(ivar.eq.iu.or.ivar.eq.iv.or.                 &
+                            ivar.eq.iw.or.                 &
+       ivar.eq.ir11.or.ivar.eq.ir12.or.             &
+       ivar.eq.ir13.or.ivar.eq.ir22.or.             &
+       ivar.eq.ir23.or.ivar.eq.ir33) then
 
 !    Pour la vitesse et les tensions de Reynolds
 !      seules seront echangees les informations sur les faces periodiques

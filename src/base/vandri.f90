@@ -117,9 +117,9 @@ double precision yplus , yminpa, viscos
 
 !===============================================================================
 
-ipcrom = ipproc(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom  )
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
 
 !     Calcul direct de la distance a la paroi (non compatible parall/perio)
 if(abs(icdpar).eq.2) then
@@ -134,7 +134,7 @@ if(abs(icdpar).eq.2) then
            +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
       yplus = uetbor(ifac,iphas) * yminpa/ viscos
       propce(iel,ipcvst) = propce(iel,ipcvst)*                    &
-           (1.0d0-exp(-yplus/cdries(iphas)))**2
+           (1.0d0-exp(-yplus/cdries))**2
     enddo
 !     En parallele, on n'amortit que la premiere maille de paroi :
 !     dangereux mais a priori inutile (car l'utilisation de
@@ -151,7 +151,7 @@ if(abs(icdpar).eq.2) then
              +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
         yplus = uetbor(ifac,iphas) * yminpa/ viscos
         propce(iel,ipcvst) = propce(iel,ipcvst)*                  &
-             (1.0d0-exp(-yplus/cdries(iphas)))**2
+             (1.0d0-exp(-yplus/cdries))**2
       endif
     enddo
 endif
@@ -161,7 +161,7 @@ elseif(abs(icdpar).eq.1) then
   do iel = 1, ncel
     yplus = yplusc(iel)
     propce(iel,ipcvst) = propce(iel,ipcvst)*                      &
-           (1.0d0-exp(-yplus/cdries(iphas)))**2
+           (1.0d0-exp(-yplus/cdries))**2
   enddo
 endif
 

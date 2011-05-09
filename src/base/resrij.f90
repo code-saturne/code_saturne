@@ -200,17 +200,17 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
 endif
 
-iuiph  = iu  (iphas)
-ir11ip = ir11(iphas)
-ir22ip = ir22(iphas)
-ir33ip = ir33(iphas)
-ir12ip = ir12(iphas)
-ir13ip = ir13(iphas)
-ir23ip = ir23(iphas)
-ieiph  = iep (iphas)
+iuiph  = iu
+ir11ip = ir11
+ir22ip = ir22
+ir33ip = ir33
+ir12ip = ir12
+ir13ip = ir13
+ir23ip = ir23
+ieiph  = iep
 
-ipcrom = ipproc(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
+ipcrom = ipproc(irom  )
+ipcvis = ipproc(iviscl)
 iflmas = ipprof(ifluma(iuiph))
 iflmab = ipprob(ifluma(iuiph))
 
@@ -225,16 +225,16 @@ d1s3 = 1.d0/3.d0
 d2s3 = 2.d0/3.d0
 
 !     S pour Source, V pour Variable
-thets  = thetst(iphas)
+thets  = thetst
 thetv  = thetav(ivar )
 
 ipcroo = ipcrom
-if(isto2t(iphas).gt.0.and.iroext(iphas).gt.0) then
-  ipcroo = ipproc(iroma(iphas))
+if(isto2t.gt.0.and.iroext.gt.0) then
+  ipcroo = ipproc(iroma)
 endif
 iptsta = 0
-if(isto2t(iphas).gt.0) then
-  iptsta = ipproc(itstua(iphas))
+if(isto2t.gt.0) then
+  iptsta = ipproc(itstua)
 endif
 
 do iel = 1, ncel
@@ -273,7 +273,7 @@ call ustsri                                                       &
    ra     )
 
 !     Si on extrapole les T.S.
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
 !       Sauvegarde pour echange
     tuexpr = propce(iel,iptsta+isou-1)
@@ -318,13 +318,13 @@ if (ncesmp.gt.0) then
 !       On incremente SMBR par -Gamma RTPA et ROVSDT par Gamma (*theta)
   call catsma                                                     &
   !==========
- ( ncelet , ncel   , ncesmp , iiun   , isto2t(iphas) , thetv  ,   &
+ ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,   &
    icetsm , itpsmp ,                                              &
    volume , rtpa(1,ivar) , smcelp , gamma  ,                      &
    smbr   ,  rovsdt , w1 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
-  if(isto2t(iphas).gt.0) then
+  if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) =                                 &
       propce(iel,iptsta+isou-1) + w1(iel)
@@ -399,7 +399,7 @@ enddo
 
 
 !     Si on extrapole les TS
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
 
   isoluc = 1
 
@@ -489,7 +489,7 @@ endif
 ! 6. TERMES D'ECHO DE PAROI
 !===============================================================================
 
-if(irijec(iphas).eq.1) then
+if(irijec.eq.1) then
 
   do iel = 1, ncel
     w7(iel) = 0.d0
@@ -508,7 +508,7 @@ if(irijec(iphas).eq.1) then
    ra     )
 
 !     Si on extrapole les T.S. : PROPCE
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
      propce(iel,iptsta+isou-1) =                                  &
      propce(iel,iptsta+isou-1) + w7(iel)
@@ -527,7 +527,7 @@ endif
 ! 7. TERMES DE GRAVITE
 !===============================================================================
 
-if(igrari(iphas).eq.1) then
+if(igrari.eq.1) then
 
   do iel = 1, ncel
     w7(iel) = 0.d0
@@ -545,7 +545,7 @@ if(igrari(iphas).eq.1) then
    ra     )
 
 !     Si on extrapole les T.S. : PROPCE
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
      propce(iel,iptsta+isou-1) =                                  &
      propce(iel,iptsta+isou-1) + w7(iel)
@@ -619,7 +619,7 @@ call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
                                    ifacel,ifabor,viscf,viscb,w4)
 
 !     Si on extrapole les termes sources
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   do iel = 1, ncel
     propce(iel,iptsta+isou-1) =                                   &
     propce(iel,iptsta+isou-1) + w4(iel)
@@ -647,7 +647,7 @@ endif
 !       un tenseur ...).
 !     A modifier eventuellement.
 
-if (idifre(iphas).eq.1) then
+if (idifre.eq.1) then
 
   do iel = 1, ncel
     trrij = w8(iel)
@@ -700,7 +700,7 @@ if (idifre(iphas).eq.1) then
        ifacel,ifabor,viscf,viscb,w1)
 
 !     Si on extrapole les termes sources
-  if(isto2t(iphas).gt.0) then
+  if(isto2t.gt.0) then
     do iel = 1, ncel
       propce(iel,iptsta+isou-1) =                                 &
       propce(iel,iptsta+isou-1) + w1(iel)
@@ -754,7 +754,7 @@ endif
 ! 10. RESOLUTION
 !===============================================================================
 
-if(isto2t(iphas).gt.0) then
+if(isto2t.gt.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
     smbr(iel) = smbr(iel) + thetp1*propce(iel,iptsta+isou-1)

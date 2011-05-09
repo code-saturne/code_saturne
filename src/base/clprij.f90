@@ -99,13 +99,13 @@ double precision vmin, vmax, var, rijmin, varrel, und0, epz2
 !===============================================================================
 
 
-ir11ip = ir11(iphas)
-ir22ip = ir22(iphas)
-ir33ip = ir33(iphas)
-ir12ip = ir12(iphas)
-ir13ip = ir13(iphas)
-ir23ip = ir23(iphas)
-iepip  = iep(iphas)
+ir11ip = ir11
+ir22ip = ir22
+ir33ip = ir33
+ir12ip = ir12
+ir13ip = ir13
+ir23ip = ir23
+iepip  = iep
 
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 

@@ -137,7 +137,7 @@ endif
 
 !     Le nombre de phases maximal est donne par NPHSMX dans paramx.h
 !     On teste la valeur donnee par l'utilisateur avant de completer
-!       les tableaux dimensionnes a NPHSMX (ex. ITURB(NPHSMX)).
+!       les tableaux dimensionnes a NPHSMX (ex. ITURB).
 
 nphas = 1
 
@@ -435,9 +435,9 @@ if(iihmpr.eq.1) then
   call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, imgrpr)
   !==========
   iphas = 1
-  extrag(ipr(iphas)) = extrap
-  if (idtvar.ge.0) relaxv(ipr(iphas)) = relaxp
-  imgr(ipr(iphas)) = imgrpr
+  extrag(ipr) = extrap
+  if (idtvar.ge.0) relaxv(ipr) = relaxp
+  imgr(ipr) = imgrpr
 
 !     Gravite, prop. phys
   call csphys                                                     &
@@ -457,8 +457,8 @@ if(iihmpr.eq.1) then
 
 !     Init turb (uref, almax) si necessaire (modele RANS)
   iphas = 1
-  if (itytur(iphas).eq.2 .or. itytur(iphas).eq.3 .or.             &
-      itytur(iphas).eq.5 .or. itytur(iphas).eq.6 ) then
+  if (itytur.eq.2 .or. itytur.eq.3 .or.             &
+      itytur.eq.5 .or. itytur.eq.6 ) then
     call cstini(uref, almax)
     !==========
   endif

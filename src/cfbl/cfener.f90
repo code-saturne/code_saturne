@@ -194,8 +194,8 @@ iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
 ! --- Numero des grandeurs physiques
-ipcrom = ipproc(irom  (iphas))
-ipcvst = ipproc(ivisct(iphas))
+ipcrom = ipproc(irom  )
+ipcvst = ipproc(ivisct)
 iflmas = ipprof(ifluma(ivar ))
 iflmab = ipprob(ifluma(ivar ))
 if(ivisls(iscal).gt.0) then
@@ -288,7 +288,7 @@ enddo
 !     TERMES DE SOURCE DE MASSE
 !     =========================
 
-!     GAMMA(IEL) = SMACEL(IEL,IPR(IPHAS))
+!     GAMMA(IEL) = SMACEL(IEL,IPR)
 
 !     Terme implicite : GAMMA*VOLUME
 !                                                        n
@@ -297,10 +297,10 @@ enddo
 if (ncesmp.gt.0) then
   iterns = 1
   call catsma ( ncelet , ncel , ncesmp , iterns ,                 &
-                isno2t(iphas), thetav(ivar),                      &
+                isno2t, thetav(ivar),                      &
                 icetsm , itypsm(1,ivar) ,                         &
                 volume , rtpa(1,ivar) , smacel(1,ivar) ,          &
-                smacel(1,ipr(iphas)) , smbrs , rovsdt , w1)
+                smacel(1,ipr) , smbrs , rovsdt , w1)
 endif
 
 !                                     __    n+1
@@ -332,7 +332,7 @@ enddo
 !     TERME DE DISSIPATION VISQUEUSE  : >  ((SIGMA *U).n)  *S
 !     ==============================    --               ij  ij
 
-if( idiff(iu(iphas)).ge. 1 ) then
+if( idiff(iu).ge. 1 ) then
 !                             ^^^
   call cfdivs                                                     &
   !==========
@@ -343,7 +343,7 @@ if( idiff(iu(iphas)).ge. 1 ) then
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rtp(1,iu(iphas)), rtp(1,iv(iphas)), rtp(1,iw(iphas)), &
+   smbrs  , rtp(1,iu), rtp(1,iv), rtp(1,iw), &
 !        ------
    w9     ,                                                       &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
@@ -357,13 +357,13 @@ endif
 !     ==============================      --  RHO ij   pr     ij  ij
 
 
-if(igrdpp(iphas).gt.0) then
+if(igrdpp.gt.0) then
   do iel = 1, ncel
-    w9(iel) = rtp(iel,isca(irho(iphas)))
+    w9(iel) = rtp(iel,isca(irho))
   enddo
 else
   do iel = 1, ncel
-    w9(iel) = rtpa(iel,isca(irho(iphas)))
+    w9(iel) = rtpa(iel,isca(irho))
   enddo
 endif
 
@@ -373,12 +373,12 @@ endif
 !   Calcul du gradient de P/RHO
 
 !      do iel = 1, ncel
-!        w7(iel) = rtp(iel,ipr(iphas))/w9(iel)
+!        w7(iel) = rtp(iel,ipr)/w9(iel)
 !      enddo
 
 ! Rq : A defaut de connaitre les parametres pour P/RHO on prend ceux de P
 
-!      iii = ipr(iphas)
+!      iii = ipr
 !      inc = 1
 !      iccocg = 1
 !      nswrgp = nswrgr(iii)
@@ -483,9 +483,9 @@ do ifac = 1, nfac
   iel1 = ifacel(1,ifac)
   iel2 = ifacel(2,ifac)
   viscf(ifac) =                                                   &
-     - rtp(iel1,ipr(iphas))/w9(iel1)                              &
+     - rtp(iel1,ipr)/w9(iel1)                              &
      *0.5d0*( propfa(ifac,iflmas) +abs(propfa(ifac,iflmas)) )     &
-     - rtp(iel2,ipr(iphas))/w9(iel2)                              &
+     - rtp(iel2,ipr)/w9(iel2)                              &
      *0.5d0*( propfa(ifac,iflmas) -abs(propfa(ifac,iflmas)) )
 enddo
 
@@ -501,13 +501,13 @@ if(iifbru.gt.0) then
 
       iel = ifabor(ifac)
       viscb(ifac) = - propfb(ifac,iflmab)                         &
-    * ( coefa(ifac,iclrtp(ipr(iphas),icoef))                      &
-      + coefb(ifac,iclrtp(ipr(iphas),icoef))*rtp(iel,ipr(iphas)) )&
-    / ( coefa(ifac,iclrtp(isca(irho(iphas)),icoef))               &
-      + coefb(ifac,iclrtp(isca(irho(iphas)),icoef))*w9(iel) )
+    * ( coefa(ifac,iclrtp(ipr,icoef))                      &
+      + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )&
+    / ( coefa(ifac,iclrtp(isca(irho),icoef))               &
+      + coefb(ifac,iclrtp(isca(irho),icoef))*w9(iel) )
 
     else
-      viscb(ifac) = - propfb(ifac,ipprob(ifbene(iphas)))
+      viscb(ifac) = - propfb(ifac,ipprob(ifbene))
     endif
   enddo
 
@@ -516,10 +516,10 @@ else
 
     iel = ifabor(ifac)
     viscb(ifac) = - propfb(ifac,iflmab)                           &
-    * ( coefa(ifac,iclrtp(ipr(iphas),icoef))                      &
-      + coefb(ifac,iclrtp(ipr(iphas),icoef))*rtp(iel,ipr(iphas)) )&
-    / ( coefa(ifac,iclrtp(isca(irho(iphas)),icoef))               &
-      + coefb(ifac,iclrtp(isca(irho(iphas)),icoef))*w9(iel) )
+    * ( coefa(ifac,iclrtp(ipr,icoef))                      &
+      + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )&
+    / ( coefa(ifac,iclrtp(isca(irho),icoef))               &
+      + coefb(ifac,iclrtp(isca(irho),icoef))*w9(iel) )
 
   enddo
 endif
@@ -535,9 +535,9 @@ call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
 
 do iel = 1, ncel
   smbrs(iel) = smbrs(iel) + w9(iel)*volume(iel)                   &
-                           *( gx*rtp(iel,iu(iphas))               &
-                            + gy*rtp(iel,iv(iphas))               &
-                            + gz*rtp(iel,iw(iphas)) )
+                           *( gx*rtp(iel,iu)               &
+                            + gy*rtp(iel,iv)               &
+                            + gz*rtp(iel,iw) )
 enddo
 
 !                                       Kij*Sij           LAMBDA   Cp   MUT
@@ -551,23 +551,23 @@ if( idiff(ivar).ge. 1 ) then
     w1(iel) = propce(iel,ipcvst)/sigmas(iscal)
   enddo
 !     CP*MUT/SIGMAS
-  if(icp(iphas).gt.0) then
+  if(icp.gt.0) then
     do iel = 1, ncel
-      w1(iel) = w1(iel)*propce(iel,ipproc(icp(iphas)))
+      w1(iel) = w1(iel)*propce(iel,ipproc(icp))
     enddo
   else
     do iel = 1, ncel
-      w1(iel) = w1(iel)*cp0(iphas)
+      w1(iel) = w1(iel)*cp0
     enddo
   endif
 !     (CP/CV)*MUT/SIGMAS
-  if(icv(iphas).gt.0) then
+  if(icv.gt.0) then
     do iel = 1, ncel
-      w1(iel) = w1(iel)/propce(iel,ipproc(icv(iphas)))
+      w1(iel) = w1(iel)/propce(iel,ipproc(icv))
     enddo
   else
     do iel = 1, ncel
-      w1(iel) = w1(iel)/cv0(iphas)
+      w1(iel) = w1(iel)/cv0
     enddo
   endif
 !     (CP/CV)*MUT/SIGMAS+LAMBDA/CV
@@ -614,14 +614,14 @@ if( idiff(ivar).ge. 1 ) then
 
 
 do iel = 1, ncel
-  w7(iel) =0.5d0*( rtp(iel,iu(iphas))**2                          &
-                  +rtp(iel,iv(iphas))**2                          &
-                  +rtp(iel,iw(iphas))**2 ) + w9(iel)
+  w7(iel) =0.5d0*( rtp(iel,iu)**2                          &
+                  +rtp(iel,iv)**2                          &
+                  +rtp(iel,iw)**2 ) + w9(iel)
 enddo
 
 ! Rq : A defaut de connaitre les parametres, on prend ceux de la Vitesse
 
-iii = iu(iphas)
+iii = iu
 inc = 1
 iccocg = 1
 nswrgp = nswrgr(iii)
@@ -727,15 +727,15 @@ enddo
         iel = ifabor(ifac)
 
         flux = viscb(ifac)*( w9(iel) - ra(iwb +ifac-1)            &
-           + 0.5d0*( rtp(iel,iu(iphas))**2 -                      &
-   ( coefa(ifac,iclrtp(iu(iphas),icoef))                          &
-   + coefb(ifac,iclrtp(iu(iphas),icoef))*rtp(iel,iu(iphas)) )**2  &
-                   + rtp(iel,iv(iphas))**2 -                      &
-   ( coefa(ifac,iclrtp(iv(iphas),icoef))                          &
-   + coefb(ifac,iclrtp(iv(iphas),icoef))*rtp(iel,iv(iphas)) )**2  &
-                   + rtp(iel,iw(iphas))**2 -                      &
-   ( coefa(ifac,iclrtp(iw(iphas),icoef))                          &
-   + coefb(ifac,iclrtp(iw(iphas),icoef))*rtp(iel,iw(iphas)) )**2))
+           + 0.5d0*( rtp(iel,iu)**2 -                      &
+   ( coefa(ifac,iclrtp(iu,icoef))                          &
+   + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2  &
+                   + rtp(iel,iv)**2 -                      &
+   ( coefa(ifac,iclrtp(iv,icoef))                          &
+   + coefb(ifac,iclrtp(iv,icoef))*rtp(iel,iv) )**2  &
+                   + rtp(iel,iw)**2 -                      &
+   ( coefa(ifac,iclrtp(iw,icoef))                          &
+   + coefb(ifac,iclrtp(iw,icoef))*rtp(iel,iw) )**2))
 
         smbrs(iel) = smbrs(iel) - flux
 
@@ -751,15 +751,15 @@ enddo
       iel = ifabor(ifac)
 
       flux = viscb(ifac)*( w9(iel) - ra(iwb +ifac-1)              &
-           + 0.5d0*( rtp(iel,iu(iphas))**2 -                      &
-   ( coefa(ifac,iclrtp(iu(iphas),icoef))                          &
-   + coefb(ifac,iclrtp(iu(iphas),icoef))*rtp(iel,iu(iphas)) )**2  &
-                   + rtp(iel,iv(iphas))**2 -                      &
-   ( coefa(ifac,iclrtp(iv(iphas),icoef))                          &
-   + coefb(ifac,iclrtp(iv(iphas),icoef))*rtp(iel,iv(iphas)) )**2  &
-                   + rtp(iel,iw(iphas))**2 -                      &
-   ( coefa(ifac,iclrtp(iw(iphas),icoef))                          &
-   + coefb(ifac,iclrtp(iw(iphas),icoef))*rtp(iel,iw(iphas)) )**2))
+           + 0.5d0*( rtp(iel,iu)**2 -                      &
+   ( coefa(ifac,iclrtp(iu,icoef))                          &
+   + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2  &
+                   + rtp(iel,iv)**2 -                      &
+   ( coefa(ifac,iclrtp(iv,icoef))                          &
+   + coefb(ifac,iclrtp(iv,icoef))*rtp(iel,iv) )**2  &
+                   + rtp(iel,iw)**2 -                      &
+   ( coefa(ifac,iclrtp(iw,icoef))                          &
+   + coefb(ifac,iclrtp(iw,icoef))*rtp(iel,iw) )**2))
 
       smbrs(iel) = smbrs(iel) - flux
 
@@ -881,18 +881,18 @@ endif
    iccfth , imodif , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rtp(1,ipr(iphas)) , rtp(1,isca(itempk(iphas))) , w8     , w9 )
+   rtp(1,ipr) , rtp(1,isca(itempk)) , w8     , w9 )
 
 !===============================================================================
 ! 7. COMMUNICATION DE LA PRESSION, DE L'ENERGIE ET DE LA TEMPERATURE
 !===============================================================================
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtp(1,ipr(iphas)))
+  call synsca(rtp(1,ipr))
   !==========
   call synsca(rtp(1,ivar))
   !==========
-  call synsca(rtp(1,isca(itempk(iphas))))
+  call synsca(rtp(1,isca(itempk)))
   !==========
 endif
 

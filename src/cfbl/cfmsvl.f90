@@ -208,8 +208,8 @@ iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
 
 ! --- Flux de masse associe a l'energie
-iflmas = ipprof(ifluma(isca(ienerg(iphas))))
-iflmab = ipprob(ifluma(isca(ienerg(iphas))))
+iflmas = ipprof(ifluma(isca(ienerg)))
+iflmab = ipprob(ifluma(isca(ienerg)))
 
 chaine = nomvar(ippvar)
 
@@ -237,7 +237,7 @@ enddo
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    smbrs(iel) = smbrs(iel) + smacel(iel,ipr(iphas))*volume(iel)
+    smbrs(iel) = smbrs(iel) + smacel(iel,ipr)*volume(iel)
   enddo
 endif
 
@@ -613,7 +613,7 @@ endif
 ! On utilise l'equation d'etat P    =P(rho   ,e )
 
 ! --- Calcul de P au centre des cellules et actualisation de RTP
-if(igrdpp(iphas).gt.0) then
+if(igrdpp.gt.0) then
 
   iccfth = 24
   imodif = 0
@@ -623,14 +623,14 @@ if(igrdpp(iphas).gt.0) then
    iccfth , imodif , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   rtp(1,ipr(iphas))        , w8     , w9     , w10    )
+   rtp(1,ipr)        , w8     , w9     , w10    )
 
 !===============================================================================
 ! 9. COMMUNICATION DE LA PRESSION
 !===============================================================================
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ipr(iphas)))
+    call synsca(rtp(1,ipr))
     !==========
   endif
 

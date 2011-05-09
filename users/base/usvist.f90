@@ -190,14 +190,14 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Number associated to variables (in RTP)
-iuiph = iu(iphas)
-iviph = iv(iphas)
-iwiph = iw(iphas)
+iuiph = iu
+iviph = iv
+iwiph = iw
 
 ! --- Physical quantity numbers in PROPCE (physical quantities defined
 !     at each cell center)
-ipcvst = ipproc(ivisct(iphas))
-ipcrom = ipproc(irom  (iphas))
+ipcvst = ipproc(ivisct)
+ipcrom = ipproc(irom  )
 
 ! --- Boundary condition number associated to variables in COEFA and COEFB
 !      JB=>?  (c.l. std, i.e. non flux)

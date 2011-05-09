@@ -184,8 +184,8 @@ idebra = idbra0
 
 ipass  = ipass + 1
 
-ipcrom = ipproc(irom  (iphas))
-ipcvis = ipproc(iviscl(iphas))
+ipcrom = ipproc(irom  )
+ipcvis = ipproc(iviscl)
 
 !===============================================================================
 ! 2. AU PREMIER PAS DE TEMPS

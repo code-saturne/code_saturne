@@ -83,8 +83,8 @@ double precision wmolme
 !     L'utilisateur ne doit pas y avoir touche.
 
 do iphas = 1, nphas
-  if(iscalt(iphas).ne.-1) then
-    write(nfecra,1000)iscalt(iphas)
+  if(iscalt.ne.-1) then
+    write(nfecra,1000)iscalt
     call csexit (1)
     !==========
   endif
@@ -189,7 +189,7 @@ enddo
 ! ---- On resout en enthalpie avec un CP constant (Cf. cpvarp)
 
 iphas = 1
-iscalt(iphas) = ihm
+iscalt = ihm
 iscsth(ihm) = 2
 
 ! --> Donnees physiques ou numeriques propres aux scalaires CP
@@ -203,7 +203,7 @@ do isc = 1, nscapp
 !        En combustion on considere que la viscosite turbulente domine
 !        ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
-    visls0(jj) = viscl0(iphas)
+    visls0(jj) = viscl0
 
   endif
 
@@ -556,7 +556,7 @@ wmolme = ( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)             &
           +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))           &
         /(oxyo2(1)+oxyn2(1)+oxyh2o(1)+oxyco2(1))
 
-ro0(iphas) = p0(iphas)*wmolme / (rr*t0(iphas))
+ro0 = p0*wmolme / (rr*t0)
 
 ! ---- Initialisation pour la masse volumique du coke
 
@@ -580,8 +580,8 @@ srrom = -grand
 diftl0 =-grand
 
 ! ---> Masse volumique variable et viscosite constante (pour les suites)
-irovar(iphas) = 1
-ivivar(iphas) = 0
+irovar = 1
+ivivar = 0
 
 !===============================================================================
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR

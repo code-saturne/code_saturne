@@ -207,7 +207,7 @@ ipcpro = ipproc(iym(3))
 ipctsc = ipproc(itsc)
 ipctem = ipproc(itemp)
 iphas = 1
-ipcrom = ipproc(irom(iphas))
+ipcrom = ipproc(irom)
 ipcmam = ipproc(imam)
 
 !      IF ( IIRAYO.GT.0 ) THEN
@@ -356,11 +356,11 @@ coyfpp=coyfp(iel)
 ! ---> Calcul de la masse volumique pour chaque pic
 
       if ( ipass.gt.1 .or.                                        &
-          (isuite.eq.1.and.initro(iphas).eq.1) ) then
-        rhol(idirac) = p0(iphas) * maml(idirac)                   &
+          (isuite.eq.1.and.initro.eq.1) ) then
+        rhol(idirac) = p0 * maml(idirac)                   &
              / (rr*teml(idirac))
       else
-        rhol(idirac) = ro0(iphas)
+        rhol(idirac) = ro0
       endif
 
 ! ---> Calcul du terme source du scalaire YFM pour chaque pic
@@ -420,9 +420,9 @@ coyfpp=coyfp(iel)
 ! ---> Masse volumique du melange
 
     if ( ipass.gt.1.or.                                           &
-        (isuite.eq.1.and.initro(iphas).eq.1) ) then
+        (isuite.eq.1.and.initro.eq.1) ) then
       propce(iel,ipcrom) = srrom*propce(iel,ipcrom)               &
-           +(1.d0-srrom)*(p0(iphas)/(rr*temsmm))
+           +(1.d0-srrom)*(p0/(rr*temsmm))
     endif
 
   else
@@ -744,11 +744,11 @@ coyfpp=coyfp(iel)
 ! ---> Calcul de la masse volumique  pour chaque pic
 
     if ( ipass.gt.1.or.                                           &
-        (isuite.eq.1.and.initro(iphas).eq.1)) then
-      rhol(idirac) = p0(iphas) * maml(idirac)                     &
+        (isuite.eq.1.and.initro.eq.1)) then
+      rhol(idirac) = p0 * maml(idirac)                     &
            /(rr*teml(idirac))
     else
-      rhol(idirac) = ro0(iphas)
+      rhol(idirac) = ro0
     endif
 
 ! ---> Calcul du terme source du scalaire YFM  pour chaque pic
@@ -829,9 +829,9 @@ coyfpp=coyfp(iel)
 ! ---> Masse volumique du melange
 
   if ( ipass.gt.1 .or.                                            &
-      (isuite.eq.1.and.initro(iphas).eq.1) ) then
+      (isuite.eq.1.and.initro.eq.1) ) then
     propce(iel,ipcrom) = srrom * propce(iel,ipcrom)               &
-         + (1.d0-srrom) * (p0(iphas)/(rr*temsmm))
+         + (1.d0-srrom) * (p0/(rr*temsmm))
   endif
 
 ! de passage ou non par la PDF

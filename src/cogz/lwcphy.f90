@@ -58,7 +58,7 @@ subroutine lwcphy &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
-!   (nphmx   )     !    !     !                                                !
+!        !    !     !                                                !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -107,7 +107,7 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          nphmx
 
-integer          ibrom(nphmx)
+integer          ibrom
 integer          izfppp(nfabor)
 integer          ia(*)
 
@@ -159,8 +159,8 @@ enddo
 ! ---> Positions des variables, coefficients
 
 iphas = 1
-ipcrom = ipproc(irom(iphas))
-ipbrom = ipprob(irom(iphas))
+ipcrom = ipproc(irom)
+ipbrom = ipprob(irom)
 
 !===============================================================================
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES MOYENNES
@@ -210,7 +210,7 @@ endif
 ! --> Masse volumique au bord
 
 iphas = 1
-ibrom(iphas) = 1
+ibrom = 1
 
 ! ---- Masse volumique au bord pour toutes les facettes
 !      Les facettes d'entree seront recalculees.
@@ -242,7 +242,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
         enddo
        masmg = 1.d0/nbmol
        temsmm = tkent(izone)/masmg
-       propfb(ifac,ipbrom) = p0(iphas)/(rr*temsmm)
+       propfb(ifac,ipbrom) = p0/(rr*temsmm)
       endif
     endif
   enddo

@@ -165,16 +165,16 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Numero des variables (dans RTP)
-iuiph  = iu  (iphas)
-iviph  = iv  (iphas)
-iwiph  = iw  (iphas)
-ikiph  = ik  (iphas)
-iomgip = iomg(iphas)
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+ikiph  = ik
+iomgip = iomg
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
-ipcrom = ipproc(irom  (iphas))
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
+ipcrom = ipproc(irom  )
 
 ! --- Rang des c.l. des variables dans COEFA COEFB
 !        (c.l. std, i.e. non flux)
@@ -296,7 +296,7 @@ enddo
 
 if(abs(icdpar).eq.2) then
   do iel = 1 , ncel
-    ifacpt = ia(iifapa(iphas)-1+iel)
+    ifacpt = ia(iifapa-1+iel)
     if (ifacpt.gt.0) then
       w1(iel) =                                                   &
             (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2                   &

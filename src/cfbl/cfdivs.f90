@@ -172,14 +172,14 @@ double precision vecfac, visttt
 idebia = idbia0
 idebra = idbra0
 
-iuiph  = iu(iphas)
-iviph  = iv(iphas)
-iwiph  = iw(iphas)
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
 
-ipcvis = ipproc(iviscl(iphas))
-ipcvst = ipproc(ivisct(iphas))
-if(iviscv(iphas).gt.0) then
-  ipcvsv = ipproc(iviscv(iphas))
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
+if(iviscv.gt.0) then
+  ipcvsv = ipproc(iviscv)
 else
   ipcvsv = 0
 endif
@@ -187,7 +187,7 @@ endif
 
 ! --- Calcul de la viscosite totale
 
-if (itytur(iphas).eq.3 ) then
+if (itytur.eq.3 ) then
   do iel = 1, ncel
     vistot(iel) = propce(iel,ipcvis)
   enddo
@@ -308,7 +308,7 @@ do isou = 1, 3
 
     if    (isou.eq.1) then
       do iel = 1, ncelet
-        visttt = viscv0(iphas) - 2.d0/3.d0*vistot(iel)
+        visttt = viscv0 - 2.d0/3.d0*vistot(iel)
         w4(iel) = vistot(iel)*( 2.d0*w1(iel)*ux(iel)              &
                                    + w2(iel)*uy(iel)              &
                                    + w3(iel)*uz(iel) )            &
@@ -321,7 +321,7 @@ do isou = 1, 3
 
     elseif(isou.eq.2) then
       do iel = 1, ncelet
-        visttt = viscv0(iphas) - 2.d0/3.d0*vistot(iel)
+        visttt = viscv0 - 2.d0/3.d0*vistot(iel)
         w4(iel) = vistot(iel)*w1(iel)*uy(iel)                     &
                      + visttt*w2(iel)*ux(iel)
         w5(iel) = vistot(iel)*(      w1(iel)*ux(iel)              &
@@ -334,7 +334,7 @@ do isou = 1, 3
 
     elseif(isou.eq.3) then
       do iel = 1, ncelet
-        visttt = viscv0(iphas) - 2.d0/3.d0*vistot(iel)
+        visttt = viscv0 - 2.d0/3.d0*vistot(iel)
         w4(iel) = vistot(iel)*w1(iel)*uz(iel)                     &
                      + visttt*w3(iel)*ux(iel)
         w5(iel) = vistot(iel)*w2(iel)*uz(iel)                     &

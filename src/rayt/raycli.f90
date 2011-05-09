@@ -280,7 +280,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
       if (iihmpr.eq.1) then
 
 !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
-        ivart = isca(iscalt(iphas))
+        ivart = isca(iscalt)
 
         call uiray2                                               &
         !==========
@@ -340,8 +340,8 @@ endif
 !===============================================================================
 
 !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
-  iscat = iscalt(iphas)
-  ivart = isca(iscalt(iphas))
+  iscat = iscalt
+  ivart = isca(iscalt)
 
 !===============================================================================
 ! 3.1 DONNEES SUR LES FACES FRONTIERES
@@ -909,11 +909,11 @@ endif
 
       else if (isothm(ifac).eq.iprefl) then
 
-        if (icp(iphas).gt.0) then
+        if (icp.gt.0) then
           iel = ifabor(ifac)
-          cpp = propce(iel,ipproc(icp(iphas)))
+          cpp = propce(iel,ipproc(icp))
         else
-          cpp = cp0(iphas)
+          cpp = cp0
         endif
 
         rcodcl(ifac,ivart,1) = tbord(ifac)
