@@ -168,6 +168,15 @@ class batch_info:
                 self.job_id = os.getenv('JOB_ID')
                 self.queue = os.getenv('QUEUE')
 
+        if self.batch_type == None:
+            s = os.getenv('SLURM_JOBID') # SLURM
+            if s != None:
+                self.batch_type = 'SLURM'
+                self.submit_dir = os.getenv('SLURM_SUBMIT_DIR')
+                self.job_name = os.getenv('SLURM_JOB_NAME')
+                self.job_id = os.getenv('SLURM_JOBID')
+                self.queue = os.getenv('SLURM_PARTITION')
+
     #---------------------------------------------------------------------------
 
     def get_remaining_time(self):
@@ -213,9 +222,8 @@ class resource_info(batch_info):
         # Check for resource manager
 
         # Test for SLURM (Simple Linux Utility for Resource Management).
-        # We assume that SLURM_NPROCS is available across SLURM
-        # versions. Note that we could also use SLURM_CPUS_PER_TASK
-        # to determine Open MP behavior when that is ready.
+        # Note that we could also use SLURM_CPUS_PER_TASK to
+        # determine Open MP behavior when that is ready.
 
         s = os.getenv('SLURM_NPROCS')
         if s != None:
@@ -224,9 +232,25 @@ class resource_info(batch_info):
             s = os.getenv('SLURM_NNODES')
             if s != None:
                 self.n_nodes = int(s)
+        else:
+            s = os.getenv('SLURM_NNODES')
+            if s != None:
+                self.manager = 'SLURM'
+                self.n_nodes = int(s)
                 s = os.getenv('SLURM_TASKS_PER_NODE')
                 if s != None:
-                    self.n_procs = self.n_nodes * int(s)
+                    # Syntax may be similar to SLURM_TASKS_PER_NODE=2(x3),1"
+                    # indicating three nodes will each execute 2 tasks and
+                    # the  fourth node will execute 1 task.
+                    self.n_procs = 0
+                    for s0 in s.split(','):
+                        i = s0.find('(')
+                        if i > -1:
+                            self.n_procs += int(s0[0:i])*int(s0[i+2:-1])
+                        else:
+                            self.n_procs += int(s0)
+                else;
+                    self.n_procs = self.n_nodes
 
         # Test for Platform LSF.
 
@@ -383,18 +407,25 @@ class resource_info(batch_info):
         # Check for resource manager and eventual hostsfile
 
         elif self.manager == 'SLURM':
-            hosts_list = []
             s = os.getenv('SLURM_NODELIST')
             if s != None:
-                node_list = s.split(' ')
-                tasks_per_node = 1
-                t = os.getenv('SLURM_TASKS_PER_NODE')
-                if t != None:
-                    tasks_per_node = int(t)
-                for i in range(len(node_list)):
-                    host = node_list[i]
-                    for j in range(tasks_per_node):
-                        hosts_list.append(host)
+                hosts_list = []
+                # List uses a compact representation
+                for s0 in s.split(','):
+                    i = s0.find('[')
+                    if i > -1:
+                        basename = s0[0:i]
+                        for s1 in s0[i+1:-1].split(','):
+                            s2 = s1.split('-')
+                            if len(s2) > 1:
+                                for j in range(int(s2[0]), int(s2[1])+1):
+                                    hosts_list.append[basename + str(j)]
+                            else:
+                                hosts_list.append[s2[0]]
+                    else:
+                        hosts_list.append[s0]
+            else:
+                hosts_list = get_command_output('srun hostname -s').split()
 
         elif self.manager == 'LSF':
             s = os.getenv('LSB_MCPU_HOSTS')

@@ -435,6 +435,101 @@ class BatchRunningModel(Model):
                     batch_lines[i] = ch
 
 
+    def parseBatchSLURM(self):
+        """
+        Parse SLURM batch file lines
+        """
+        batch_lines = self.parent.batch_lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:7] == '#SBATCH':
+                batch_args = self.preParse(batch_lines[i][7:])
+                if batch_args[0:2] == '--':
+                    tok = batch_args.split('=')
+                    if len(tok) < 2:
+                        continue
+                    kw = tok[0] + '='
+                    val = tok[1].split(',')[0].strip()
+                elif batch_args[0] == '-':
+                    kw = batch_args[0:2]
+                    val = batch_args[2:].split(',')[0].strip()
+                else:
+                    continue
+                if kw == '--job-name=' or kw == '-J':
+                    self.dictValues['job_name'] = val
+                elif kw == '--ntasks=' or kw == '-n':
+                    self.dictValues['job_procs'] = val
+                elif kw == '--nodes=' or kw == '-N':
+                    self.dictValues['job_nodes'] = val
+                elif kw == '--ntasks-per-node=':
+                    self.dictValues['job_ppn'] = val
+                elif kw == '--time=' or kw == '-t':
+                    wt0 = val.split('-')
+                    if len(wt0) == 2:
+                        th = int(wt0[0])*3600*24
+                        wt = wt0[1].split(':')
+                    else:
+                        th = 0
+                        wt = wt0[0].split(':')
+                    if len(wt) == 3:
+                        self.dictValues['job_walltime'] \
+                            = th + int(wt[0])*3600 + int(wt[1])*60 + int(wt[2])
+                    elif len(wt) == 2:
+                        self.dictValues['job_walltime'] \
+                            = th + int(wt[0])*60 + int(wt[1])
+                    elif len(wt) == 1:
+                        self.dictValues['job_walltime'] \
+                            = th + int(wt[0])
+                elif kw == '--partition' or kw == '-p':
+                    self.dictValues['job_class'] = val
+
+
+    def updateBatchSLURM(self):
+        """
+        Update the SLURM batch file from dictionary self.dictValues.
+        """
+        batch_lines = self.parent.batch_lines
+
+        batch_lines = self.parent.batch_lines
+
+        for i in range(len(batch_lines)):
+            if batch_lines[i][0:7] == '#SBATCH':
+                batch_args = self.preParse(batch_lines[i][7:])
+                if batch_args[0:2] == '--':
+                    tok = batch_args.split('=')
+                    if len(tok) < 2:
+                        continue
+                    kw = tok[0] + '='
+                    val = tok[1].split(',')[0].strip()
+                elif batch_args[0] == '-':
+                    kw = batch_args[0:2]
+                    val = batch_args[2:].split(',')[0].strip()
+                if kw == '--job-name=' or kw == '-J':
+                    val = str(self.dictValues['job_name'])
+                elif kw == '--ntasks=' or kw == '-n':
+                    val = str(self.dictValues['job_procs'])
+                elif kw == '--nodes=' or kw == '-N':
+                    val = str(self.dictValues['job_nodes'])
+                elif kw == '--ntasks-per-node=':
+                    val = self.dictValues['job_ppn']
+                elif kw == '--time=' or kw == '-t':
+                    wt = self.dictValues['job_walltime']
+                    if wt > 86400: # 3600*24
+                        val = '%d-%d:%02d:%02d' % (wt/86400,
+                                                   (wt%86400)/3600,
+                                                   (wt%3600)/60,
+                                                   wt%60)
+                    else:
+                        val = '%d:%02d:%02d' % (wt/3600,
+                                                (wt%3600)/60,
+                                                wt%60)
+                elif kw == '--partition=' or kw == '-p':
+                    val = self.dictValues['job_class']
+                else:
+                    continue
+                batch_lines[i] = '#SBATCH ' + kw + str(val) + '\n'
+
+
     def readBatchFile(self):
         """
         Fill self.dictValues reading the batch file.
@@ -485,6 +580,8 @@ class BatchRunningModel(Model):
             self.parseBatchPBS()
         elif self.case['batch_type'][0:3] == 'SGE':
             self.parseBatchSGE()
+        elif self.case['batch_type'][0:5] == 'SLURM':
+            self.parseBatchSLURM()
 
     def updateBatchFile(self, keyword=None):
         """
@@ -511,6 +608,8 @@ class BatchRunningModel(Model):
                 self.updateBatchPBS()
             elif batch_type[0:3] == 'SGE':
                 self.updateBatchSGE()
+            elif batch_type[0:5] == 'SLURM':
+                self.updateBatchSLURM()
 
 
     def _getRegex(self, word):

@@ -1,4 +1,13 @@
 * 09/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added SLURM batch system support.
+  added file:
+   extras/batch/batch.SLURM
+  modified files:
+    bin/cs_exec_environment.py
+    gui/Pages/BatchRunningModel.py
+    gui/Pages/BatchRunningView.py
+
+* 09/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor fixes to environment execution handling.
   modified file:
     bin/cs_exec_environment.py

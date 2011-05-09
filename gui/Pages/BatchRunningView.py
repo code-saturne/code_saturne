@@ -802,6 +802,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             cmd = 'bsub < ' + batch + ' ' + self.case['batch'] + ' &'
         elif key[0:3] == 'PBS' or key[0:3] == 'SGE':
             cmd = 'qsub ' + batch
+        elif key[0:5] == 'SLURM':
+            cmd = 'sbatch ' + batch
         else:
             pass
 
@@ -843,7 +845,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
             if self.case['batch_type'][0:3] == 'CCC':
                 output = self.getCommandOutput('class')
-                ignore = True
                 for l in output[1:]:
                     if len(l) == 0:
                         break
@@ -881,6 +882,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 output = self.getCommandOutput('qconf -sc')
                 for l in output:
                     if l[0:1] != '#':
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:5] == 'SLURM':
+                output = self.getCommandOutput('sinfo -s')
+                for l in output[1:]:
+                    if len(l) == 0:
+                        break
+                    else:
                         self.class_list.append(l.split(' ')[0])
 
         except Exception:
@@ -1009,6 +1018,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.groupBoxJob.setTitle("PBS job parameters")
         elif self.case['batch_type'][0:3] == 'SGE':
             self.groupBoxJob.setTitle("Sun Grid Engine job parameters")
+        if self.case['batch_type'][0:5] == 'SLURM':
+            self.groupBoxJob.setTitle("SLURM job parameters")
         else:
             self.groupBoxJob.setTitle("Batch job parameters")
 
