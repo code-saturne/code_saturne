@@ -229,7 +229,7 @@ else
 endif
 
 if(iwarni(ikiph).ge.1) then
-  write(nfecra,1000)iphas
+  write(nfecra,1000)
 endif
 
 
@@ -1207,15 +1207,15 @@ iclpmn(ipprtp(iomgip)) = iclipw
 #if defined(_CS_LANG_FR)
 
  1000 format(/,                                                   &
-'   ** PHASE ',I4,' RESOLUTION DU K-OMEGA                     ',/,&
-'      ----------------------------------                     ',/)
+'   ** RESOLUTION DU K-OMEGA                     ',/,&
+'      ---------------------                     ',/)
  1100 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
 
 #else
 
  1000 format(/,                                                   &
-'   ** PHASE ',I4,' SOLVING K-OMEGA'                           ,/,&
-'      ----------------------------'                           ,/)
+'   ** SOLVING K-OMEGA'                           ,/,&
+'      ---------------'                           ,/)
  1100 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
 
 #endif

@@ -221,7 +221,7 @@ inuiph = inusa (iphas)
 ipcrom = ipproc(irom(iphas))
 
 if(iwarni(inuiph).ge.1) then
-  write(nfecra,1000) iphas
+  write(nfecra,1000)
 endif
 
 !===============================================================================
@@ -256,7 +256,7 @@ enddo
 ! Formats
 !--------
 
- 1000 format(' User source terms for Spalart-Allmaras, phase ',I4,/)
+ 1000 format(' User source terms for Spalart-Allmaras',/)
 
 !----
 ! End

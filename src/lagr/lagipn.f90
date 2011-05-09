@@ -162,7 +162,7 @@ if (idistu.eq.1) then
                         + rtp(iel,ir33(iphas)) )
     enddo
   else
-    write(nfecra,9000) iilagr, idistu, iphas, iturb(iphas)
+    write(nfecra,9000) iilagr, idistu, iturb(iphas)
     call csexit (1)
     !==========
   endif
@@ -221,7 +221,7 @@ enddo
 '@   Le module Lagrangien a ete active avec IILAGR = ',I10     ,/,&
 '@     et la dispersion turbulente est prise en compte        ',/,&
 '@                                     avec IDISTU = ',I10     ,/,&
-'@   Le modele de turbulence active pour la phase ',I6         ,/,&
+'@   Le modele de turbulence                                  ',/,&
 '@     correspond a ITURB  = ',I10                             ,/,&
 '@   Or, les seuls traitements de la turbulence compatibles   ',/,&
 '@     avec le module Lagrangien et la dispersion turbulente  ',/,&

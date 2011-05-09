@@ -401,8 +401,7 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
       endif
     enddo
     if(iok.gt.0) then
-      write(nfecra,1000) iphas,iphas,irijec(iphas),               &
-                               iphas,idries(iphas)
+      write(nfecra,1000) irijec(iphas), idries(iphas)
       iok1 = 1
     endif
 
@@ -568,7 +567,7 @@ do iphas = 1, nphas
   if(isvtb.ne.0) then
 !         si ce n'est pas la variable thermique, ca ne va pas.
     if(isvtb.ne.iscalt(iphas)) then
-      write(nfecra,8000)isvtb,iphas,iscalt(iphas)
+      write(nfecra,8000)isvtb,iscalt(iphas)
       call csexit (1)
       !==========
 !         sinon, on calcule le gradient.
@@ -932,7 +931,7 @@ do iphas = 1, nphas
       call parism(ncpt, isocpt)
     endif
     if (isocpt(2).gt.0 .and. (iwarni(iuiph).ge.2.or.isocpt(1).gt.0)) then
-      write(nfecra,3010)iphas, isocpt(1), isocpt(2)
+      write(nfecra,3010) isocpt(1), isocpt(2)
     endif
   endif
 
@@ -1713,12 +1712,11 @@ endif
 '@    =========                                               ',/,&
 '@      INCOHERENCE ENTRE OPTIONS DE CALCUL ET COND. LIM.     ',/,&
 '@                                                            ',/,&
-'@    Pour la phase ',I10   ,'                                ',/,&
 '@      la prise en compte des termes d''echo de paroi        ',/,&
 '@      du modele de turbulence Rij-epsilon est activee       ',/,&
-'@      IRIJEC(',I10   ,') = ',I10,'                          ',/,&
+'@      IRIJEC = ',I10,'                                      ',/,&
 '@      Ou bien l amortissement de la viscosite turbulente    ',/,&
-'@      est active IDRIES(',I10   ,') = ',I10,'en LES         ',/,&
+'@      est active IDRIES = ',I10,'en LES                     ',/,&
 '@    mais aucune face de bord de type paroi n''est detectee. ',/,&
 '@    L''incoherence indiquee ci-dessus n''est pas bloquante  ',/,&
 '@      mais peut resulter d''une erreur lors de la           ',/,&
@@ -1735,7 +1733,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  3010 format(                                                           &
- 'Phase ',I4,' debit entrant retenu en ',I10   ,                  &
+ 'Debit entrant retenu en ',I10   ,                  &
                                       ' faces de sortie sur ',I10)
  8000 format(                                                           &
 '@                                                            ',/,&
@@ -1744,7 +1742,6 @@ endif
 '@ @@ ATTENTION : COND. LIM.                                  ',/,&
 '@    =========                                               ',/,&
 '@     Le scalaire ',I10   ,' est couple a SYRTHES            ',/,&
-'@     Il est relatif a la phase ',I10                         ,/,&
 '@      mais n''est pas la variable energetique               ',/,&
 '@         ISCALT(IPHAS) = ',I10                               ,/,&
 '@                                                            ',/,&
@@ -1763,12 +1760,11 @@ endif
 '@    =========                                               ',/,&
 '@      INCOHERENCY BETWEEN CALCULATION OPTIONS AND BOUND COND',/,&
 '@                                                            ',/,&
-'@    For phase ',I10   ,'                                    ',/,&
 '@      The wall-echo terms of the Rij-epsilon turbulence     ',/,&
 '@      model are taken into account                          ',/,&
-'@      IRIJEC(',I10   ,') = ',I10,'                          ',/,&
+'@      IRIJEC = ',I10,'                                      ',/,&
 '@      Or the Van Driest damping of the turbulent viscosity  ',/,&
-'@      is active IDRIES(',I10   ,') = ',I10,'in LES          ',/,&
+'@      is active IDRIES = ',I10,'in LES                      ',/,&
 '@    but no wall boundary face is detected.                  ',/,&
 '@    This incoherency is not blocking but may result from    ',/,&
 '@      an error during the boundary conditions               ',/,&
@@ -1785,7 +1781,7 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  3010 format(                                                           &
- 'Phase ',I4,' incoming flow detained for ', I10   ,              &
+ 'Incoming flow detained for ', I10   ,              &
                                           ' outlet faces on ',I10)
  8000 format(                                                           &
 '@                                                            ',/,&
@@ -1794,7 +1790,6 @@ endif
 '@ @@ WARNING: BOUNDARY CONDITIONS                            ',/,&
 '@    ========                                                ',/,&
 '@     The scalar ',I10   ,' is coupled with SYRTHES          ',/,&
-'@     It is relative to phase ',I10                           ,/,&
 '@      but is not the energy variable                        ',/,&
 '@         ISCALT(IPHAS) = ',I10                               ,/,&
 '@                                                            ',/,&

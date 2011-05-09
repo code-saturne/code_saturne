@@ -1762,7 +1762,7 @@ if(iappel.eq.1) then
     enddo
     if (irangp.ge.0) call parmax (rnorm)
                                !==========
-    write(nfecra,1100) iphas, rnorm
+    write(nfecra,1100) rnorm
   endif
 
 elseif (iappel.eq.2) then
@@ -1789,12 +1789,12 @@ endif
 #if defined(_CS_LANG_FR)
 
  1100 format(/,                                                   &
- 1X,'Phase ',I4,' : Vitesse maximale apres prediction ',E12.4)
+ 1X,'Vitesse maximale apres prediction ',E12.4)
 
 #else
 
  1100 format(/,                                                   &
- 1X,'Phase ',I4,' : Maximum velocity after prediction ',E12.4)
+ 1X,'Maximum velocity after prediction ',E12.4)
 
 #endif
 

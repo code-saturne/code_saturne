@@ -82,7 +82,7 @@ integer          iphas, iok
 
 do iphas = 1, nphas
   if(iscalt(iphas).ne.-1) then
-    write(nfecra,1000)iphas,iscalt(iphas)
+    write(nfecra,1000)iscalt(iphas)
     call csexit (1)
     !==========
   endif
@@ -298,7 +298,7 @@ enddo
 iok = 0
 do iphas = 1, nphas
   if(icfgrp(iphas).ne.0.and.icfgrp(iphas).ne.1) then
-    WRITE(NFECRA,5000)IPHAS,'ICFGRP',ICFGRP(IPHAS)
+    WRITE(NFECRA,5000)'ICFGRP',ICFGRP(IPHAS)
     iok = 1
   endif
 enddo
@@ -323,7 +323,7 @@ endif
 '@                                                            ',/,&
 '@  L''utilisateur ne doit pas la renseigner dans usini1, or  ',/,&
 '@    elle a ete affectee comme suit :                        ',/,&
-'@    ISCALT(',I10   ,') = ',I10                               ,/,&
+'@    ISCALT = ',I10                                           ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -425,7 +425,6 @@ endif
 '@    =========                                               ',/,&
 '@    PHYSIQUE PARTICULIERE (COMPRESSIBLE) DEMANDEE           ',/,&
 '@                                                            ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1                ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&

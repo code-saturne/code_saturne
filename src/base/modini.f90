@@ -253,138 +253,113 @@ endif
 do iphas = 1, nphas
 
   IF(NOMVAR(IPPRTP(IPR   (IPHAS))) .EQ.' ') THEN
-    WRITE(NOMVAR(IPPRTP(IPR   (IPHAS))),'(A6,I2.2)')'PresPh',IPHAS
+    NOMVAR(IPPRTP(IPR   (IPHAS))) = 'Pres'
   endif
   IF(NOMVAR(IPPRTP(IU    (IPHAS))) .EQ.' ') THEN
-    WRITE(NOMVAR(IPPRTP(IU    (IPHAS))),'(A6,I2.2)')'VitesX',IPHAS
+    NOMVAR(IPPRTP(IU    (IPHAS))) = 'VitesX'
   endif
   IF(NOMVAR(IPPRTP(IV    (IPHAS))) .EQ.' ') THEN
-    WRITE(NOMVAR(IPPRTP(IV    (IPHAS))),'(A6,I2.2)')'VitesY',IPHAS
+    NOMVAR(IPPRTP(IV    (IPHAS))) = 'VitesY'
   endif
   IF(NOMVAR(IPPRTP(IW    (IPHAS))) .EQ.' ') THEN
-    WRITE(NOMVAR(IPPRTP(IW    (IPHAS))),'(A6,I2.2)')'VitesZ',IPHAS
+    NOMVAR(IPPRTP(IW    (IPHAS))) = 'VitesZ'
   endif
   if(itytur(iphas).eq.2) then
     IF(NOMVAR(IPPRTP(IK    (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IK    (IPHAS))),'(A6,I2.2)')            &
-                                                    'EnTurb',IPHAS
+      NOMVAR(IPPRTP(IK    (IPHAS))) = 'EnTurb'
     endif
     IF(NOMVAR(IPPRTP(IEP   (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IEP   (IPHAS))),'(A6,I2.2)')            &
-                                                    'Dissip',IPHAS
+      NOMVAR(IPPRTP(IEP   (IPHAS))) = 'Dissip'
     endif
   elseif(itytur(iphas).eq.3) then
     IF(NOMVAR(IPPRTP(IR11  (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IR11  (IPHAS))),'(A6,I2.2)')            &
-                                                    'R11pha',IPHAS
+      NOMVAR(IPPRTP(IR11  (IPHAS))) =  'R11'
     endif
     IF(NOMVAR(IPPRTP(IR22  (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IR22  (IPHAS))),'(A6,I2.2)')            &
-                                                    'R22pha',IPHAS
+      NOMVAR(IPPRTP(IR22  (IPHAS))) = 'R22'
     endif
     IF(NOMVAR(IPPRTP(IR33  (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IR33  (IPHAS))),'(A6,I2.2)')            &
-                                                    'R33pha',IPHAS
+      NOMVAR(IPPRTP(IR33  (IPHAS))) = 'R33'
     endif
     IF(NOMVAR(IPPRTP(IR12  (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IR12  (IPHAS))),'(A6,I2.2)')            &
-                                                    'R12pha',IPHAS
+      NOMVAR(IPPRTP(IR12  (IPHAS))) = 'R12'
     endif
     IF(NOMVAR(IPPRTP(IR13  (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IR13  (IPHAS))),'(A6,I2.2)')            &
-                                                    'R13pha',IPHAS
+      NOMVAR(IPPRTP(IR13  (IPHAS))) = 'R13'
     endif
     IF(NOMVAR(IPPRTP(IR23  (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IR23  (IPHAS))),'(A6,I2.2)')            &
-                                                    'R23pha',IPHAS
+      NOMVAR(IPPRTP(IR23  (IPHAS))) = 'R23'
     endif
     IF(NOMVAR(IPPRTP(IEP   (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IEP   (IPHAS))),'(A6,I2.2)')            &
-                                                    'Dissip',IPHAS
+      NOMVAR(IPPRTP(IEP   (IPHAS))) = 'Dissip'
     endif
   elseif(iturb(iphas).eq.50) then
     IF(NOMVAR(IPPRTP(IK    (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IK    (IPHAS))),'(A6,I2.2)')            &
-                                                    'EnTurb',IPHAS
+      NOMVAR(IPPRTP(IK    (IPHAS))) = 'EnTurb'
     endif
     IF(NOMVAR(IPPRTP(IEP   (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IEP   (IPHAS))),'(A6,I2.2)')            &
-                                                    'Dissip',IPHAS
+      NOMVAR(IPPRTP(IEP   (IPHAS))) = 'Dissip'
     endif
     IF(NOMVAR(IPPRTP(IPHI  (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IPHI  (IPHAS))),'(A6,I2.2)')            &
-                                                    'phipha',IPHAS
+      NOMVAR(IPPRTP(IPHI  (IPHAS))) = 'phi'
     endif
     IF(NOMVAR(IPPRTP(IFB   (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IFB   (IPHAS))),'(A6,I2.2)')            &
-                                                    'fbarre',IPHAS
+      NOMVAR(IPPRTP(IFB   (IPHAS))) = 'fbarre'
     endif
   elseif(iturb(iphas).eq.60) then
     IF(NOMVAR(IPPRTP(IK    (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IK    (IPHAS))),'(A6,I2.2)')            &
-                                                    'EnTurb',IPHAS
+      NOMVAR(IPPRTP(IK    (IPHAS))) = 'EnTurb'
     endif
     IF(NOMVAR(IPPRTP(IOMG  (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(IOMG  (IPHAS))),'(A5,I2.2)')            &
-                                                    'Omega',IPHAS
+      NOMVAR(IPPRTP(IOMG  (IPHAS))) = 'Omega'
     endif
   elseif(iturb(iphas).eq.70) then
     IF(NOMVAR(IPPRTP(INUSA (IPHAS))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPRTP(INUSA (IPHAS))),'(A6,I2.2)')            &
-                                                    'NuTild',IPHAS
+      NOMVAR(IPPRTP(INUSA (IPHAS))) = 'NuTild'
     endif
   endif
 
   IF(NOMVAR(IPPPRO(IPPROC(IROM  (IPHAS)))) .EQ.' ') THEN
-    WRITE(NOMVAR(IPPPRO(IPPROC(IROM  (IPHAS)))),'(A6,I2.2)')      &
-                                                    'MasVol',IPHAS
+    NOMVAR(IPPPRO(IPPROC(IROM  (IPHAS)))) = 'MasVol'
   endif
   IF(NOMVAR(IPPPRO(IPPROC(IVISCT(IPHAS)))) .EQ.' ') THEN
-    WRITE(NOMVAR(IPPPRO(IPPROC(IVISCT(IPHAS)))),'(A6,I2.2)')      &
-                                                    'VisTur',IPHAS
+    NOMVAR(IPPPRO(IPPROC(IVISCT(IPHAS)))) = 'VisTur'
   endif
   IF(NOMVAR(IPPPRO(IPPROC(IVISCL(IPHAS)))) .EQ.' ') THEN
-    WRITE(NOMVAR(IPPPRO(IPPROC(IVISCL(IPHAS)))),'(A6,I2.2)')      &
-                                                    'VisMol',IPHAS
+    NOMVAR(IPPPRO(IPPROC(IVISCL(IPHAS)))) = 'VisMol'
   endif
   if (ismago(iphas).gt.0) then
     IF(NOMVAR(IPPPRO(IPPROC(ISMAGO(IPHAS)))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPPRO(IPPROC(ISMAGO(IPHAS)))),'(A6,I2.2)')    &
-                                                    'Csdyn2',IPHAS
+      NOMVAR(IPPPRO(IPPROC(ISMAGO(IPHAS)))) = 'Csdyn2'
     endif
   endif
   if(icp   (iphas).gt.0) then
     IF(NOMVAR(IPPPRO(IPPROC(ICP   (IPHAS)))) .EQ.' ') THEN
-      WRITE(NOMVAR(IPPPRO(IPPROC(ICP   (IPHAS)))),'(A6,I2.2)')    &
-                                                    'ChalSp',IPHAS
+      NOMVAR(IPPPRO(IPPROC(ICP   (IPHAS)))) = 'ChalSp'
     endif
   endif
   if(iescal(iespre,iphas).gt.0) then
     ipp = ipppro(ipproc(iestim(iespre,iphas)))
     IF(NOMVAR(IPP) .EQ.' ') THEN
-      WRITE(NOMVAR(IPP),'(A5,I1,I2.2)')                           &
-                             'EsPre',IESCAL(IESPRE,IPHAS),IPHAS
+      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsPre',IESCAL(IESPRE,IPHAS)
     endif
   endif
   if(iescal(iesder,iphas).gt.0) then
     ipp = ipppro(ipproc(iestim(iesder,iphas)))
     IF(NOMVAR(IPP) .EQ.' ') THEN
-      WRITE(NOMVAR(IPP),'(A5,I1,I2.2)')                           &
-                             'EsDer',IESCAL(IESDER,IPHAS),IPHAS
+      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsDer',IESCAL(IESDER,IPHAS)
     endif
   endif
   if(iescal(iescor,iphas).gt.0) then
     ipp = ipppro(ipproc(iestim(iescor,iphas)))
     IF(NOMVAR(IPP) .EQ.' ') THEN
-      WRITE(NOMVAR(IPP),'(A5,I1,I2.2)')                           &
-                             'EsCor',IESCAL(IESCOR,IPHAS),IPHAS
+      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsCor',IESCAL(IESCOR,IPHAS)
     endif
   endif
   if(iescal(iestot,iphas).gt.0) then
     ipp = ipppro(ipproc(iestim(iestot,iphas)))
     IF(NOMVAR(IPP) .EQ.' ') THEN
-      WRITE(NOMVAR(IPP),'(A5,I1,I2.2)')                           &
-                             'EsTot',IESCAL(IESTOT,IPHAS),IPHAS
+      WRITE(NOMVAR(IPP),'(A5,I1)') 'EsTot',IESCAL(IESTOT,IPHAS)
     endif
   endif
 
@@ -540,7 +515,7 @@ do iphas = 1, nphas
 
 !   -- Flux de masse
   if(abs(thetfl(iphas)+999.d0).gt.epzero) then
-    write(nfecra,1001) iphas,istmpf(iphas)
+    write(nfecra,1001) istmpf(iphas)
     iok = iok + 1
   elseif(istmpf(iphas).eq.0) then
     thetfl(iphas) = 0.d0
@@ -550,7 +525,7 @@ do iphas = 1, nphas
 
 !    -- Proprietes physiques
   if(abs(thetro(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) IPHAS,'IROEXT',IROEXT(IPHAS),'THETRO'
+    WRITE(NFECRA,1011) 'IROEXT',IROEXT(IPHAS),'THETRO'
     iok = iok + 1
   elseif(iroext(iphas).eq.0) then
     thetro(iphas) = 0.0d0
@@ -560,7 +535,7 @@ do iphas = 1, nphas
     thetro(iphas) = 1.d0
   endif
   if(abs(thetvi(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) IPHAS,'IVIEXT',IVIEXT(IPHAS),'THETVI'
+    WRITE(NFECRA,1011) 'IVIEXT',IVIEXT(IPHAS),'THETVI'
     iok = iok + 1
   elseif(iviext(iphas).eq.0) then
     thetvi(iphas) = 0.0d0
@@ -570,7 +545,7 @@ do iphas = 1, nphas
     thetvi(iphas) = 1.d0
   endif
   if(abs(thetcp(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) IPHAS,'ICPEXT',ICPEXT(IPHAS),'THETCP'
+    WRITE(NFECRA,1011) 'ICPEXT',ICPEXT(IPHAS),'THETCP'
     iok = iok + 1
   elseif(icpext(iphas).eq.0) then
     thetcp(iphas) = 0.0d0
@@ -582,7 +557,7 @@ do iphas = 1, nphas
 
 !    -- Termes sources NS
   if(abs(thetsn(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) IPHAS,'ISNO2T',ISNO2T(IPHAS),'THETSN'
+    WRITE(NFECRA,1011) 'ISNO2T',ISNO2T(IPHAS),'THETSN'
     iok = iok + 1
   elseif(isno2t(iphas).eq.1) then
     thetsn(iphas) = 0.5d0
@@ -594,7 +569,7 @@ do iphas = 1, nphas
 
 !    -- Termes sources grandeurs turbulentes
   if(abs(thetst(iphas)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1011) IPHAS,'ISTO2T',ISTO2T(IPHAS),'THETST'
+    WRITE(NFECRA,1011) 'ISTO2T',ISTO2T(IPHAS),'THETST'
     iok = iok + 1
   elseif(isto2t(iphas).eq.1) then
     thetst(iphas) = 0.5d0
@@ -641,7 +616,7 @@ do iphas = 1, nphas
      abs(thetav(iv (iphas))+999.d0).gt.epzero.or.                 &
      abs(thetav(iw (iphas))+999.d0).gt.epzero.or.                 &
      abs(thetav(ipr(iphas))+999.d0).gt.epzero) then
-    WRITE(NFECRA,1031) IPHAS,'VITESSE-PRESSION ','THETAV'
+    WRITE(NFECRA,1031) 'VITESSE-PRESSION ','THETAV'
     iok = iok + 1
   elseif(ischtp(iphas).eq.1) then
     thetav(iu (iphas)) = 1.d0
@@ -659,7 +634,7 @@ do iphas = 1, nphas
   if(itytur(iphas).eq.2) then
     if(abs(thetav(ik (iphas))+999.d0).gt.epzero.or.               &
        abs(thetav(iep(iphas))+999.d0).gt.epzero) then
-      WRITE(NFECRA,1031) IPHAS,'VARIABLES   K-EPS','THETAV'
+      WRITE(NFECRA,1031) 'VARIABLES   K-EPS','THETAV'
       iok = iok + 1
     elseif(ischtp(iphas).eq.1) then
       thetav(ik (iphas)) = 1.d0
@@ -677,7 +652,7 @@ do iphas = 1, nphas
        abs(thetav(ir13(iphas))+999.d0).gt.epzero.or.              &
        abs(thetav(ir23(iphas))+999.d0).gt.epzero.or.              &
        abs(thetav(iep (iphas))+999.d0).gt.epzero) then
-      WRITE(NFECRA,1031) IPHAS,'VARIABLES  RIJ-EP','THETAV'
+      WRITE(NFECRA,1031) 'VARIABLES  RIJ-EP','THETAV'
       iok = iok + 1
     elseif(ischtp(iphas).eq.1) then
       thetav(ir11(iphas)) = 1.d0
@@ -701,7 +676,7 @@ do iphas = 1, nphas
        abs(thetav(iep (iphas))+999.d0).gt.epzero.or.              &
        abs(thetav(iphi(iphas))+999.d0).gt.epzero.or.              &
        abs(thetav(ifb (iphas))+999.d0).gt.epzero) then
-      WRITE(NFECRA,1031) IPHAS,'VARIABLES     V2F','THETAV'
+      WRITE(NFECRA,1031) 'VARIABLES     V2F','THETAV'
       iok = iok + 1
     elseif(ischtp(iphas).eq.1) then
       thetav(ik  (iphas)) = 1.d0
@@ -718,7 +693,7 @@ do iphas = 1, nphas
   elseif(iturb(iphas).eq.60) then
     if(abs(thetav(ik  (iphas))+999.d0).gt.epzero.or.              &
        abs(thetav(iomg(iphas))+999.d0).gt.epzero ) then
-      WRITE(NFECRA,1031) IPHAS,'VARIABLES K-OMEGA','THETAV'
+      WRITE(NFECRA,1031) 'VARIABLES K-OMEGA','THETAV'
       iok = iok + 1
     elseif(ischtp(iphas).eq.1) then
       thetav(ik  (iphas)) = 1.d0
@@ -730,7 +705,7 @@ do iphas = 1, nphas
     endif
   elseif(iturb(iphas).eq.70) then
     if(abs(thetav(inusa(iphas))+999.d0).gt.epzero) then
-      WRITE(NFECRA,1031) IPHAS,'VARIABLE NU_tilde de SA','THETAV'
+      WRITE(NFECRA,1031) 'VARIABLE NU_tilde de SA','THETAV'
       iok = iok + 1
     elseif(ischtp(iphas).eq.1) then
       thetav(inusa(iphas)) = 1.d0
@@ -747,7 +722,7 @@ do iscal = 1, nscal
   iphas = 1
   ivar  = isca(iscal)
   if(abs(thetav(ivar)+999.d0).gt.epzero) then
-    WRITE(NFECRA,1041) IPHAS,'SCALAIRE',ISCAL,'THETAV'
+    WRITE(NFECRA,1041) 'SCALAIRE',ISCAL,'THETAV'
     iok = iok + 1
   elseif(ischtp(iphas).eq.1) then
     thetav(ivar) = 1.d0
@@ -1445,7 +1420,7 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',   I10,' ISTMPF = ',   I10                       ,/,&
+'@    ISTMPF = ',   I10                                        ,/,&
 '@    THETFL SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
 '@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
 '@                                                            ',/,&
@@ -1461,7 +1436,7 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',   I10,' ',A6,' = ',   I10                       ,/,&
+'@    ',A6,' = ',   I10                                        ,/,&
 '@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
 '@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
 '@                                                            ',/,&
@@ -1493,7 +1468,7 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',   I10,' ',A17                                   ,/,&
+'@    ',A17                                                    ,/,&
 '@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
 '@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
 '@                                                            ',/,&
@@ -1525,7 +1500,7 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',   I10,' ',A8,' ',I10                            ,/,&
+'@    ',A8,' ',I10                                             ,/,&
 '@    ',A6,' SERA INITIALISE AUTOMATIQUEMENT.                 ',/,&
 '@    NE PAS LE MODIFIER DANS usini1.                         ',/,&
 '@                                                            ',/,&
@@ -1619,7 +1594,7 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
 '@    ========                                                ',/,&
-'@    PHASE ',   I10,' ISTMPF = ',   I10                       ,/,&
+'@    ISTMPF = ',   I10                                        ,/,&
 '@    THETFL WILL BE AUTOMATICALLY INITIALIZED.               ',/,&
 '@    DO NOT MODIFY IT IN usini1.                             ',/,&
 '@                                                            ',/,&
@@ -1635,7 +1610,7 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
 '@    ========                                                ',/,&
-'@    PHASE ',   I10,' ',A6,' = ',   I10                       ,/,&
+'@    ',A6,' = ',   I10                                        ,/,&
 '@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
 '@    DO NOT MODIFY IT IN usini1.                             ',/,&
 '@                                                            ',/,&
@@ -1667,7 +1642,7 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
 '@    ========                                                ',/,&
-'@    PHASE ',   I10,' ',A17                                   ,/,&
+'@    ',A17                                                    ,/,&
 '@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
 '@    DO NOT MODIFY IT IN usini1.                             ',/,&
 '@                                                            ',/,&
@@ -1699,7 +1674,7 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
 '@    ========                                                ',/,&
-'@    PHASE ',   I10,' ',A8,' ',I10                            ,/,&
+'@    ',A8,' ',I10                                             ,/,&
 '@    ',A6,' WILL BE INITIALIZED AUTOMATICALLY                ',/,&
 '@    DO NOT MODIFY IT IN usini1.                             ',/,&
 '@                                                            ',/,&

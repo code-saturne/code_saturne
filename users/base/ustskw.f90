@@ -240,7 +240,7 @@ iomgip = iomg(iphas)
 ipcrom = ipproc(irom(iphas))
 
 if(iwarni(ikiph).ge.1) then
-  write(nfecra,1000) iphas
+  write(nfecra,1000)
 endif
 
 !===============================================================================
@@ -280,7 +280,7 @@ enddo
 ! Formats
 !--------
 
- 1000 format(' User source terms for k and omega, phase ',I4,/)
+ 1000 format(' User source terms for k and omega',/)
 
 !----
 ! End

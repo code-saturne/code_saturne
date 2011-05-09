@@ -257,8 +257,7 @@ write(nfecra,2010) gx,gy,gz
 write(nfecra,2011) omegax, omegay, omegaz, icorio
 
 do iphas = 1, nphas
-    write(nfecra,2020) iphas,                                     &
-                       ro0   (iphas),viscl0(iphas),               &
+    write(nfecra,2020) ro0   (iphas),viscl0(iphas),               &
                        cp0   (iphas),icp   (iphas),               &
                        p0    (iphas),pred0 (iphas),               &
                        t0    (iphas),                             &
@@ -288,7 +287,7 @@ write(nfecra,9900)
 '       OMEGAZ = ', E14.5,    ' (Composante z du vecteur rot.)',/,&
 '       ICORIO = ', I10,      ' (Termes source de Coriolis   )',/)
  2020 format(                                                           &
-'  -- Phase : ',I10                                            ,/,&
+'  -- Phase continue : '                                       ,/,&
                                                                 /,&
 '       RO0    = ', E14.5,    ' (Masse volumique     de ref. )',/,&
 '       VISCL0 = ', E14.5,    ' (Visc. molec. dynam. de ref. )',/,&
@@ -322,7 +321,7 @@ write(nfecra,9900)
 '       OMEGAZ = ', E14.5,    ' (Rotation vector z component )',/,&
 '       ICORIO = ', I10,      ' (Coriolis source terms       )',/)
  2020 format(                                                           &
-'  -- Phase: ',I10                                             ,/,&
+'  -- Continuous phase: '                                      ,/,&
                                                                 /,&
 '       RO0    = ', E14.5,    ' (Reference density           )',/,&
 '       VISCL0 = ', E14.5,    ' (Ref. molecular dyn. visc.   )',/,&
@@ -349,7 +348,7 @@ write(nfecra,2510)
 !   - Modeles
 
 do iphas = 1, nphas
-  write(nfecra,2515)iphas,                                        &
+  write(nfecra,2515)                                              &
     iturb(iphas),ideuch(iphas),ypluli(iphas),ilogpo(iphas),       &
     igrhok(iphas),iscalt(iphas)
   if(iturb(iphas).eq.10) then
@@ -481,7 +480,7 @@ write(nfecra,9900)
 ' ** TURBULENCE                                               ',/,&
 '    ----------                                               ',/)
  2515 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
+' --- Phase continue : '                                       ,/,&
                                                                 /,&
 '   - Communs                                                 ',/,&
 '       ITURB  = ',4X,I10,    ' (Modele de turbulence        )',/,&
@@ -669,7 +668,7 @@ write(nfecra,9900)
 ' ** TURBULENCE'                                               ,/,&
 '    ----------'                                               ,/)
  2515 format(                                                           &
-' --- Phase: ',I10                                             ,/,&
+' --- Continuous phase: '                                      ,/,&
                                                                 /,&
 '   - Commons                                                 ',/,&
 '       ITURB  = ',4X,I10,    ' (Turbulence model            )',/,&
@@ -856,7 +855,7 @@ write(nfecra,9900)
 
 write(nfecra,2610)
 do iphas = 1, nphas
-  write(nfecra,2620) iphas, ivisse(iphas)
+  write(nfecra,2620) ivisse(iphas)
 enddo
 
 write(nfecra,9900)
@@ -869,7 +868,7 @@ write(nfecra,9900)
 ' ** VISCOSITE SECONDAIRE                                     ',/,&
 '    --------------------                                     ',/)
  2620 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
+' --- Phase continue : ',I10                                   ,/,&
 '       IVISSE = ',4X,I10,    ' (1 : pris en compte          )',/)
 
 #else
@@ -879,7 +878,7 @@ write(nfecra,9900)
 ' ** SECONDARY VISCOSITY'                                      ,/,&
 '    -------------------'                                      ,/)
  2620 format(                                                           &
-' --- Phase: ',I10                                             ,/,&
+' --- Continuous phase: ',I10                                  ,/,&
 '       IVISSE = ',4X,I10,    ' (1: accounted for            )',/)
 
 #endif
@@ -964,7 +963,7 @@ endif
 if (ippmod(icompf).ge.0) then
   write(nfecra,2700)
   do iphas = 1, nphas
-    write(nfecra,2710) iphas,                                     &
+    write(nfecra,2710)                                            &
          icv(iphas),                                              &
          iviscv(iphas),viscv0(iphas),                             &
          icfgrp(iphas)
@@ -981,7 +980,7 @@ endif
 ' ** COMPRESSIBLE : donnees complementaires                   ',/,&
 '    ------------                                             ',/)
  2710 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
+' --- Phase continue : '                                       ,/,&
 '       ICV    = ',4X,I10,    ' (0 : Cv cst ; 1 : variable   )',/,&
 '       IVISCV = ',4X,I10,    ' (0 : kappa cst ; 1 : variable ',/,&
 '                                kappa : viscosite en volume  ',/,&
@@ -997,7 +996,7 @@ endif
 ' ** COMPRESSIBLE: additional data'                            ,/,&
 '    ------------                                             ',/)
  2710 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
+' --- Continuous phase : '                                     ,/,&
 '       ICV    = ',4X,I10,    ' (0: Cv cst; 1: variable      )',/,&
 '       IVISCV = ',4X,I10,    ' (0: kappa cst; 1: variable'    ,/,&
 '                                kappa: volume viscosity'      ,/,&
@@ -1072,7 +1071,7 @@ else
 
   write(nfecra,3060)
   do iphas = 1, nphas
-    write(nfecra,3061) iphas, ischtp(iphas)
+    write(nfecra,3061) ischtp(iphas)
   enddo
   write(nfecra,3062)
 
@@ -1151,7 +1150,6 @@ write(nfecra,9900)
  3060 format(                                                           &
 ' --- Ordre du schema en temps de base'                          )
  3061 format(                                                           &
-'     Phase : ',I10                                            ,/,&
 '       ISCHTP = ',4X,I10,    ' (1 : ordre 1 ; 2 : ordre 2   )'  )
  3062 format(                                                           &
 '                                                             '  )
@@ -1226,7 +1224,6 @@ write(nfecra,9900)
  3060 format(                                                           &
 ' --- Order of base time stepping scheme'                        )
  3061 format(                                                           &
-'     Phase: ',I10                                             ,/,&
 '       ISCHTP = ',4X,I10,    ' (1: order 1; 2: order 2      )'  )
  3062 format(                                                           &
 '                                                             '  )
@@ -1256,8 +1253,7 @@ write(nfecra,9900)
 
 write(nfecra,4110) iphydr,icalhy,iprco,ipucou,nterup
 do iphas = 1, nphas
-  write(nfecra,4111)iphas,                                        &
-                    irevmc(iphas)
+  write(nfecra,4111) irevmc(iphas)
   if (idtvar.ge.0) then
     write(nfecra,4112) relaxv(ipr(iphas)),arak(iphas)
   else
@@ -1317,7 +1313,7 @@ write(nfecra,9900)
 '       NTERUP = ',4X,I10,  ' (n : avec n sweep sur navsto    ',/,&
 '                ',14X,     '      pour couplage vites/pressio',/)
  4111 format(                                                           &
-'  -- Phase : ',I10                                            ,/,&
+'  -- Phase continue : ',I10                                   ,/,&
                                                                 /,&
 '       IREVMC = ',4X,I10,    ' (Mode de reconstruction vites)',/)
  4112 format(                                                           &
@@ -1400,7 +1396,7 @@ write(nfecra,9900)
 '       NTERUP = ',4X,I10,  ' (n: n sweeps on navsto for'      ,/,&
 '                ',14X,     '     velocity/pressure coupling )',/)
  4111 format(                                                           &
-'  -- Phase: ',I10                                             ,/,&
+'  -- Continuous phase: ',I10                                  ,/,&
                                                                 /,&
 '       IREVMC = ',4X,I10,    ' (Velocity reconstruction mode)',/)
  4112 format(                                                           &
@@ -1487,7 +1483,7 @@ enddo
 if(iiesca.gt.0) then
   write(nfecra,4820)
   do iphas = 1, nphas
-    write(nfecra,4821)iphas
+    write(nfecra,4821)
     do iest = 1, nestmx
       write(nfecra,4822)iest, iescal(iest,iphas)
     enddo
@@ -1575,8 +1571,6 @@ endif
 ' ** ESTIMATEURS D''ERREUR POUR NAVIER-STOKES'                 ,/,&
 '    ----------------------------------------'                 ,/)
  4821 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
-                                                                /,&
 '----------------------------------------'                     ,/,&
 ' Estimateur      IESCAL (mode de calcul)'                     ,/,&
 '----------------------------------------'                       )
@@ -1737,8 +1731,6 @@ endif
 ' ** ERROR ESTIMATORS FOR NAVIER-STOKES'                       ,/,&
 '    ----------------------------------'                       ,/)
  4821 format(                                                           &
-' --- Phase: ',I10                                             ,/,&
-                                                                /,&
 '------------------------------------------'                   ,/,&
 ' Estimateur      IESCAL (calculation mode)'                   ,/,&
 '------------------------------------------'                     )

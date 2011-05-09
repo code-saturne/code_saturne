@@ -97,7 +97,7 @@ ipass = ipass + 1
 iok1 = 0
 do iphas = 1, nphas
   if(ncetsm(iphas).gt.ncelet .or. ncetsm(iphas).lt.0) then
-    write(nfecra,1000) iphas, ncetsm(iphas)
+    write(nfecra,1000) ncetsm(iphas)
     iok1 = 1
   endif
 enddo
@@ -118,10 +118,10 @@ endif
 
 do iphas = 1, nphas
   if(nctsmt(iphas).eq.0) then
-    write(nfecra,2000) iphas, nctsmt(iphas)
+    write(nfecra,2000) nctsmt(iphas)
     write(nfecra,3000)
   else
-    write(nfecra,2001) iphas, nctsmt(iphas)
+    write(nfecra,2001) nctsmt(iphas)
     write(nfecra,3000)
   endif
 enddo
@@ -156,14 +156,13 @@ call rasize('memtsm',ifinra)
 
  1000 format(/,' SORTIE DANS MEMTSM CAR LA DIMENSIONS DU TABLEAU ',/,   &
          '   RELATIF AUX SOURCES DE MASSE EST INCORRECTE ',/,     &
-         '   PHASE ',I10,/,                                 &
          '   NCETSM = ',I10)
 
  2000 format(                                                           &
- /,'PHASE ',I6,' : TRAITEMENT DES SOURCES DE MASSE NON ACTIVE ',/,&
+ /,'TRAITEMENT DES SOURCES DE MASSE NON ACTIVE ',/,&
    '                 NCETSM = ',I10,/)
  2001 format(                                                           &
- /,'PHASE ',I6,' : TRAITEMENT DES SOURCES DE MASSE ACTIVE ',/,    &
+ /,'TRAITEMENT DES SOURCES DE MASSE ACTIVE ',/,    &
    '                 SUR  UN TOTAL DE ',I10,' CELLULES')
 
  3000 format(                                                           &
@@ -173,14 +172,13 @@ call rasize('memtsm',ifinra)
 
  1000 format(/,' ABORT IN MEMTSM BECAUSE THE DIMENSION OF THE ARRAY ',/,&
          '   RELATIVE TO THE MASS SOURCE TERMS IS INCORRECT ',/,  &
-         '   PHASE ',I10,/,                                 &
          '   NCETSM = ',I10)
 
  2000 format(                                                           &
- /,'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT NOT ACTIVATED ',/, &
+ /,'MASS SOURCE TERMS TREATMENT NOT ACTIVATED ',/, &
    '                 NCETSM = ',I10,/)
  2001 format(                                                           &
- /,'PHASE ',I6,' : MASS SOURCE TERMS TREATMENT ACTIVATED ',/,     &
+ /,'MASS SOURCE TERMS TREATMENT ACTIVATED ',/,     &
    '                 ON A TOTAL OF ',I10,' CELLS')
 
  3000 format(                                                           &

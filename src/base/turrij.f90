@@ -206,9 +206,9 @@ ipbrom = ipprob(irom  (iphas))
 
 if(iwarni(ieiph).ge.1) then
   if (iturb(iphas).eq.30) then
-    write(nfecra,1000) iphas
+    write(nfecra,1000)
   else
-    write(nfecra,1001) iphas
+    write(nfecra,1001)
   endif
 endif
 
@@ -635,20 +635,20 @@ call clprij                                                       &
 #if defined(_CS_LANG_FR)
 
  1000 format(/,                                                   &
-'   ** PHASE ',I4,' RESOLUTION DU Rij-EPSILON LRR             ',/,&
-'      ------------------------------------------             ',/)
+'   ** RESOLUTION DU Rij-EPSILON LRR             ',/,&
+'      -----------------------------             ',/)
  1001 format(/,                                                   &
-'   ** PHASE ',I4,' RESOLUTION DU Rij-EPSILON SSG             ',/,&
-'      ------------------------------------------             ',/)
+'   ** RESOLUTION DU Rij-EPSILON SSG             ',/,&
+'      -----------------------------             ',/)
 
 #else
 
  1000 format(/,                                                   &
-'   ** PHASE ',I4,' SOLVING Rij-EPSILON LRR'                   ,/,&
-'      ------------------------------------'                   ,/)
+'   ** SOLVING Rij-EPSILON LRR'                   ,/,&
+'      -----------------------'                   ,/)
  1001 format(/,                                                   &
-'   ** PHASE ',I4,' SOLVING Rij-EPSILON SSG'                   ,/,&
-'      ------------------------------------'                   ,/)
+'   ** SOLVING Rij-EPSILON SSG'                   ,/,&
+'      -----------------------'                   ,/)
 
 #endif
 

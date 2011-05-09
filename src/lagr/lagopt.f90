@@ -488,7 +488,7 @@ if (iphyla.eq.1) then
     iok = iok + 1
   endif
   if (itpvar.eq.1 .and. iscalt(iphas).eq.-1) then
-    write(nfecra,1034) itpvar, iphas, iphas, iscalt(iphas)
+    write(nfecra,1034) itpvar, iscalt(iphas)
     iok = iok + 1
   endif
 else
@@ -690,12 +690,12 @@ endif
 
 if (idistu.eq.1 .and. itytur(iphas).ne.2 .and. itytur(iphas).ne.3       &
      .and.  iturb(iphas).ne.50 .and. iturb(iphas).ne.60 ) then
-  write(nfecra,2011) iilagr, idistu, iphas, iturb(iphas)
+  write(nfecra,2011) iilagr, idistu, iturb(iphas)
   iok = iok + 1
 else if (idistu.eq.0 .and. iturb(iphas).ne.0 .and.                   &
          itytur(iphas).ne.2 .and. itytur(iphas).ne.3                    &
      .and.  iturb(iphas).ne.50 .and. iturb(iphas).ne.60) then
-  write(nfecra,2012) iilagr, idistu, iphas, iturb(iphas)
+  write(nfecra,2012) iilagr, idistu, iturb(iphas)
   iok = iok + 1
 endif
 
@@ -1661,7 +1661,7 @@ if (ltsdyn.eq.1) then
     itsr33 = itsr23 + 1
     irf    = itsr33
   else
-    write(nfecra,3010) iilagr, ltsdyn, iphas, iturb(iphas)
+    write(nfecra,3010) iilagr, ltsdyn, iturb(iphas)
     call csexit (1)
     !==========
   endif
@@ -1967,10 +1967,9 @@ endif
 '@    L''INDICATEUR SUR L''EQUATION DE LA TEMPERATURE DES     ',/,&
 '@       PARTICULES EST ACTIVE (ITPVAR = ',I10,'),'            ,/,&
 '@       ALORS QU''AUCUN SCALAIRE THERMIQUE N''EST DISPONIBLE ',/,&
-'@       POUR LA PHASE CONTINUE IPHAS = ',I10,' (LAGOPT).     ',/,&
 '@                                                            ',/,&
 '@     ISCALT DEVRAIT ETRE UN ENTIER SUPERIEUR OU EGAL 1      ',/,&
-'@       IL VAUT ICI ISCALT(',I10   ,') = ',I10                ,/,&
+'@       IL VAUT ICI ISCALT = ',I10                            ,/,&
 '@                                                            ',/,&
 '@  La valeur de ISCALT est renseignee automatiquement        ',/,&
 '@    si une physique particuliere est activee dans USPPMO.   ',/,&
@@ -2535,7 +2534,7 @@ endif
 '@   Le module lagrangien a ete active avec IILAGR = ',I10     ,/,&
 '@     et la dispersion turbulente est prise en compte        ',/,&
 '@                                     avec IDISTU = ',I10     ,/,&
-'@   Le modele de turbulence active pour la phase ',I6         ,/,&
+'@   Le modele de turbulence                                  ',/,&
 '@     correspond a ITURB  = ',I10                             ,/,&
 '@   Or, les seuls traitements de la turbulence compatibles   ',/,&
 '@     avec le module Lagrangien et la dispersion turbulente  ',/,&
@@ -2562,7 +2561,7 @@ endif
 '@   Le module lagrangien a ete active avec IILAGR = ',I10     ,/,&
 '@     et la dispersion turbulente n''est pas prise en compte ',/,&
 '@                                     avec IDISTU = ',I10     ,/,&
-'@   Le modele de turbulence active pour la phase ',I6         ,/,&
+'@   Le modele de turbulence                                  ',/,&
 '@     correspond a ITURB  = ',I10                             ,/,&
 '@   Or, les seuls traitements de la turbulence compatibles   ',/,&
 '@     avec le module lagrangien sont : calcul laminaire,     ',/,&
@@ -3369,7 +3368,7 @@ endif
 '@   Le module lagrangien a ete active avec IILAGR = ',I10     ,/,&
 '@     et le couplage inverse sur la dynamique est pris en    ',/,&
 '@                              compte avec LTSDYN = ',I10     ,/,&
-'@   Le modele de turbulence active pour la phase ',I6         ,/,&
+'@   Le modele de turbulence                                  ',/,&
 '@     correspond a ITURB  = ',I10                             ,/,&
 '@   Or, les seuls traitements de la turbulence compatibles   ',/,&
 '@     avec le module Lagrangien et le couplage inverse sur   ',/,&

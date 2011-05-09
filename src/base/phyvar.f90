@@ -694,7 +694,7 @@ do iphas = 1, nphas
     if(iwarni(iu(iphas)).ge.1.or.ipass.eq.1.or.                   &
                                           varmn(ii).lt.0.d0)then
       if(iok1.eq.0) then
-        write(nfecra,3010)iphas
+        write(nfecra,3010)
         iok1 = 1
       endif
       if ((ii.ne.3).or.(iturb(iphas).ne.0))                       &
@@ -727,7 +727,7 @@ do iphas = 1, nphas
   ii = 3
   chaine = nomvar(ipppro(ipproc(ivisct(iphas))))
   if (varmn(ii).lt.0.d0.and.iturb(iphas).ne.41) then
-    write(nfecra,9012)iphas,varmn(ii)
+    write(nfecra,9012)varmn(ii)
     iok = iok + 1
   endif
 
@@ -901,7 +901,6 @@ enddo
  1000 format(                                                           &
 ' Nb de clippings de la viscosite totale (mu+mu_t>0) :',I10,/)
  3010 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
 ' ---------------------------------                           ',/,&
 ' Propriete  Valeur min  Valeur max                           ',/,&
 ' ---------------------------------                           '  )
@@ -1011,7 +1010,7 @@ enddo
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
 '@    =========                                               ',/,&
-'@    LA VISCOSITE TURBULENTE DE LA PHASE ',I10                ,/,&
+'@    LA VISCOSITE TURBULENTE                                 ',/,&
 '@                           N A PAS ETE CORRECTEMENT DEFINIE.',/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
@@ -1084,7 +1083,6 @@ enddo
  1000 format(                                                           &
 ' Nb of clippings for the effective viscosity (mu+mu_t>0):',I10,/)
  3010 format(                                                           &
-' --- Phase: ',I10                                             ,/,&
 ' ---------------------------------                           ',/,&
 ' Property   Min. value  Max. value                           ',/,&
 ' ---------------------------------                           '  )
@@ -1192,7 +1190,7 @@ enddo
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE PHYSICAL QUANTITIES COMPUTATION   ',/,&
 '@    ========                                                ',/,&
-'@    THE TURBULENT VISCOSITY OF PHASE ',I10 ,' HAS NOT BEEN  ',/,&
+'@    THE TURBULENT VISCOSITY OF PHASE                        ',/,&
 '@                                          CORRECTLY DEFINED.',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&

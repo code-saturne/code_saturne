@@ -234,11 +234,11 @@ endif
 
 do iphas = 1, nphas
   if(irovar(iphas).ne.0.and.irovar(iphas).ne.1) then
-    WRITE(NFECRA,2201)IPHAS, 'IROVAR',IROVAR(IPHAS)
+    WRITE(NFECRA,2201)'IROVAR',IROVAR(IPHAS)
     iok = iok + 1
   endif
   if(ivivar(iphas).ne.0.and.ivivar(iphas).ne.1) then
-    WRITE(NFECRA,2201)IPHAS, 'IVIVAR',IVIVAR(IPHAS)
+    WRITE(NFECRA,2201)'IVIVAR',IVIVAR(IPHAS)
     iok = iok + 1
   endif
 enddo
@@ -271,7 +271,7 @@ enddo
 !     Extrap de rho : necessairement rho variable
 do iphas = 1, nphas
   if(irovar(iphas).eq.0.and.iroext(iphas).gt.0) then
-    write(nfecra,2005)iphas,iroext(iphas),irovar(iphas)
+    write(nfecra,2005)iroext(iphas),irovar(iphas)
     iok = iok + 1
   endif
 enddo
@@ -282,8 +282,8 @@ enddo
 do iphas = 1, nphas
   if(abs(thetav(iv(iphas))-thetav(iu(iphas))).gt.epzero.or.       &
      abs(thetav(iw(iphas))-thetav(iu(iphas))).gt.epzero) then
-    write(nfecra,2111) iphas,thetav(iu(iphas)),thetav(iv(iphas)), &
-                             thetav(iw(iphas))
+    write(nfecra,2111) thetav(iu(iphas)),thetav(iv(iphas)), &
+                       thetav(iw(iphas))
     iok = iok + 1
   endif
 enddo
@@ -298,7 +298,7 @@ do iphas = 1, nphas
   if(abs(thetav(jj)-1.0d0).gt.epzero) then
     ipp    = ipprtp(jj)
     chaine=nomvar(ipp)
-    write(nfecra,2112) iphas,thetav(jj)
+    write(nfecra,2112) thetav(jj)
     iok = iok + 1
   endif
 enddo
@@ -313,11 +313,11 @@ itests = istmpf(1)
 do iphas = 1, nphas
 
   if(abs(testth-thetfl(iphas)).gt.epzero) then
-    write(nfecra,2113) iphas,testth,thetfl(iphas)
+    write(nfecra,2113) testth,thetfl(iphas)
     iok = iok + 1
   endif
   if(itests.ne.istmpf(iphas)) then
-    write(nfecra,2114) iphas,itests,istmpf(iphas)
+    write(nfecra,2114) itests,istmpf(iphas)
     iok = iok + 1
   endif
 enddo
@@ -335,16 +335,16 @@ do iphas = 1, nphas
       ipp    = ipprtp(jj)
       chaine=nomvar(ipp)
       if(abs(thetav(jj)-0.5d0).gt.epzero) then
-        write(nfecra,2121) iphas,chaine(1:8),thetav(jj)
+        write(nfecra,2121) chaine(1:8),thetav(jj)
       endif
       if (blencv(jj).lt.0.95d0) then
-        write(nfecra,2127) iphas,chaine(1:8),blencv(jj)
+        write(nfecra,2127) chaine(1:8),blencv(jj)
         iok = iok + 1
       elseif(abs(blencv(jj)-1.d0).gt.epzero) then
-        write(nfecra,2122) iphas,chaine(1:8),blencv(jj)
+        write(nfecra,2122) chaine(1:8),blencv(jj)
       endif
       if(isstpc(jj).eq.0) then
-        write(nfecra,2123) iphas,chaine(1:8),isstpc(jj)
+        write(nfecra,2123) chaine(1:8),isstpc(jj)
       endif
     enddo
   endif
@@ -357,7 +357,7 @@ do iphas = 1, nphas
       chaine=nomvar(ipp)
       iiidef = 10
       if(nswrsm(jj).ne.iiidef) then
-        write(nfecra,2125) iphas,chaine(1:8),iiidef,nswrsm(jj)
+        write(nfecra,2125) chaine(1:8),iiidef,nswrsm(jj)
       endif
     enddo
     jj = ipr(iphas)
@@ -365,7 +365,7 @@ do iphas = 1, nphas
     chaine=nomvar(ipp)
     iiidef = 5
     if(nswrsm(jj).ne.iiidef) then
-      write(nfecra,2125) iphas,chaine(1:8),iiidef,nswrsm(jj)
+      write(nfecra,2125) chaine(1:8),iiidef,nswrsm(jj)
     endif
   endif
 enddo
@@ -376,22 +376,22 @@ do ii = 1, nscal
     ipp   = ipprtp(jj)
     chaine=nomvar(ipp)
     if(abs(thetav(jj)-0.5d0).gt.epzero) then
-      write(nfecra,2121) iphas,chaine(1:8),thetav(jj)
+      write(nfecra,2121) chaine(1:8),thetav(jj)
     endif
     if (blencv(jj).lt.0.95d0) then
-      write(nfecra,2127) iphas,chaine(1:8),blencv(jj)
+      write(nfecra,2127) chaine(1:8),blencv(jj)
       iok = iok + 1
     elseif(abs(blencv(jj)-1.d0).gt.epzero) then
-      write(nfecra,2122) iphas,chaine(1:8),blencv(jj)
+      write(nfecra,2122) chaine(1:8),blencv(jj)
     endif
     if(isstpc(jj).eq.1) then
-      write(nfecra,2124) iphas,chaine(1:8),isstpc(jj)
+      write(nfecra,2124) chaine(1:8),isstpc(jj)
     endif
   endif
   if(itytur(iphas).eq.4.or.ischtp(iphas).eq.2) then
     iiidef = 10
     if(nswrsm(jj).ne.iiidef) then
-      write(nfecra,2125) iphas,chaine(1:8),iiidef,nswrsm(jj)
+      write(nfecra,2125) chaine(1:8),iiidef,nswrsm(jj)
     endif
   endif
 enddo
@@ -407,7 +407,7 @@ do iphas = 1, nphas
         iroext(iphas).ne.0.or.                                    &
         iviext(iphas).ne.0.or.                                    &
         icpext(iphas).ne.0   ) ) then
-    write(nfecra,2131) iphas,thetav(jj),                          &
+    write(nfecra,2131) thetav(jj),                          &
          istmpf(iphas),isno2t(iphas),isto2t(iphas),               &
          iroext(iphas),iviext(iphas),icpext(iphas)
   endif
@@ -418,7 +418,7 @@ do iphas = 1, nphas
         iroext(iphas).ne.1.or.                                    &
         iviext(iphas).ne.1.or.                                    &
         icpext(iphas).ne.1   ) ) then
-    write(nfecra,2132) iphas,thetav(jj),                          &
+    write(nfecra,2132) thetav(jj),                          &
          istmpf(iphas),isno2t(iphas),isto2t(iphas),               &
          iroext(iphas),iviext(iphas),icpext(iphas)
   endif
@@ -426,10 +426,10 @@ enddo
 do iscal = 1, nscal
   iphas = 1
   if(isso2t(iscal).ne.isno2t(iphas))then
-    write(nfecra,2133) iscal,isso2t(iscal),iphas,isno2t(iphas)
+    write(nfecra,2133) iscal,isso2t(iscal),isno2t(iphas)
   endif
   if(ivsext(iscal).ne.iviext(iphas))then
-    write(nfecra,2134) iscal,ivsext(iscal),iphas,iviext(iphas)
+    write(nfecra,2134) iscal,ivsext(iscal),iviext(iphas)
   endif
 enddo
 
@@ -437,7 +437,7 @@ enddo
 !       variables en (en espace) si on les extrapole (en temps) (...)
 do iphas = 1, nphas
   if( icpext(iphas).gt.0 .and. icp(iphas).le.0 ) then
-    write(nfecra,2135) iphas, icpext(iphas), icp(iphas)
+    write(nfecra,2135) icpext(iphas), icp(iphas)
     iok = iok + 1
   endif
 enddo
@@ -492,7 +492,7 @@ do iphas = 1, nphas
      if(indest.eq.1.or.ipucou.eq.1.or.                            &
         iphydr.eq.1.or.icalhy.eq.1.or.                            &
         idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
-       write(nfecra,2140) iphas,                                  &
+       write(nfecra,2140)                                         &
             thetav(iuiph),thetav(iviph),thetav(iwiph),            &
             isno2t(iphas),thetsn(iphas),                          &
             iroext(iphas),thetro(iphas),                          &
@@ -533,7 +533,7 @@ do iphas = 1, nphas
        (    isto2t(iphas)       .gt.0    ).or.                    &
        (abs(thetav(ik (iphas))-1.0d0).gt.epzero).or.              &
        (abs(thetav(iep(iphas))-1.0d0).gt.epzero) ) then
-      write(nfecra,2142)iphas,iturb(iphas),ikecou(iphas),         &
+      write(nfecra,2142)iturb(iphas),ikecou(iphas),         &
            thetst(iphas),isto2t(iphas),                           &
            thetav(ik (iphas)),thetav(iep(iphas))
       iok = iok + 1
@@ -546,7 +546,7 @@ do iphas = 1, nphas
        (abs(thetav(iep (iphas))-1.0d0).gt.epzero).or.             &
        (abs(thetav(iphi(iphas))-1.0d0).gt.epzero).or.             &
        (abs(thetav(ifb (iphas))-1.0d0).gt.epzero) ) then
-      write(nfecra,2143)iphas,iturb(iphas),ikecou(iphas),         &
+      write(nfecra,2143)iturb(iphas),ikecou(iphas),         &
            thetst(iphas),isto2t(iphas),                           &
            thetav(ik  (iphas)),thetav(iep (iphas)),               &
            thetav(iphi(iphas)),thetav(ifb (iphas))
@@ -558,7 +558,7 @@ do iphas = 1, nphas
        (    isto2t(iphas)       .gt.0    ).or.                    &
        (abs(thetav(ik  (iphas))-1.0d0).gt.epzero).or.             &
        (abs(thetav(iomg(iphas))-1.0d0).gt.epzero) ) then
-      write(nfecra,2144)iphas,iturb(iphas),ikecou(iphas),         &
+      write(nfecra,2144)iturb(iphas),ikecou(iphas),         &
            thetst(iphas),isto2t(iphas),                           &
            thetav(ik  (iphas)),thetav(iomg(iphas))
       iok = iok + 1
@@ -568,7 +568,7 @@ do iphas = 1, nphas
     if((    thetst(iphas)       .gt.0.d0 ).or.                    &
        (    isto2t(iphas)       .gt.0    ).or.                    &
        (abs(thetav(inusa(iphas))-1.0d0).gt.epzero) ) then
-      write(nfecra,2145)iphas,iturb(iphas),                       &
+      write(nfecra,2145)iturb(iphas),                       &
            thetst(iphas),isto2t(iphas),                           &
            thetav(inusa  (iphas))
       iok = iok + 1
@@ -618,8 +618,8 @@ if(iilagr .eq. 2) then
       (    isno2t(iphas)       .gt.0    ).or.                     &
        (    thetst(iphas)       .gt.0.d0 ).or.                    &
        (    isto2t(iphas)       .gt.0    ) ) then
-      write(nfecra,2147)iphas,thetsn(iphas),isno2t(iphas),        &
-                              thetst(iphas),isto2t(iphas)
+      write(nfecra,2147)thetsn(iphas),isno2t(iphas),        &
+                        thetst(iphas),isto2t(iphas)
       iok = iok + 1
     endif
   enddo
@@ -862,7 +862,7 @@ endif
 if(iecaux.eq.0.or.ileaux.eq.0) then
   do iphas = 1, nphas
     if(itytur(iphas).eq.4) then
-      write(nfecra,2420) iphas,iturb(iphas),ileaux,iecaux
+      write(nfecra,2420) iturb(iphas),ileaux,iecaux
     endif
   enddo
 endif
@@ -934,7 +934,7 @@ do iphas = 1, nphas
        itrbph.ne.21.and.itrbph.ne.30.and.itrbph.ne.31.and.        &
        itrbph.ne.40.and.itrbph.ne.41.and.itrbph.ne.42.and.        &
        itrbph.ne.50.and.itrbph.ne.60.and.itrbph.ne.70  ) then
-    WRITE(NFECRA,2600) IPHAS,'ITURB  ',ITRBPH
+    WRITE(NFECRA,2600) 'ITURB  ',ITRBPH
     iok = iok + 1
   endif
 
@@ -969,7 +969,7 @@ endif
 if(nscal.ge.1) then
   do iphas = 1, nphas
     if(iscalt(iphas).gt.nscal) then
-      write(nfecra,2610)iphas,                                    &
+      write(nfecra,2610)                                          &
                  'NUMERO DU SCALAIRE TEMPERATURE ',ISCALT(IPHAS), &
                  'NOMBRE DE SCALAIRES            ',NSCAL
       iok = iok + 1
@@ -980,7 +980,7 @@ if(nscal.ge.1) then
          (nvar.lt. 8+nscal.and.iturb(iphas).eq.50).or.            &
          (nvar.lt. 6+nscal.and.iturb(iphas).eq.60).or.            &
          (nvar.lt. 5+nscal.and.iturb(iphas).eq.70)      ) then
-      write(nfecra,2610)iphas,                                    &
+      write(nfecra,2610)                                          &
                  'NOMBRE DE VARIABLES            ',NVAR,          &
                  'NOMBRE DE SCALAIRES            ',NSCAL
       iok = iok + 1
@@ -991,17 +991,17 @@ endif
 do iphas = 1, nphas
 
   if(ideuch(iphas).lt.0.or.ideuch(iphas).gt.2) then
-    WRITE(NFECRA,2211)IPHAS, 'IDEUCH',IDEUCH(IPHAS)
+    WRITE(NFECRA,2211)'IDEUCH',IDEUCH(IPHAS)
     iok = iok + 1
   endif
   if (ideuch(iphas).ne.0 .and.                                    &
        (iturb(iphas).eq.0 .or. iturb(iphas).eq.10 .or.            &
        itytur(iphas).eq.4 .or. iturb(iphas).eq.7 )) then
-     write(nfecra,2209)iphas,iturb(iphas),ideuch(iphas)
+     write(nfecra,2209)iturb(iphas),ideuch(iphas)
      iok = iok + 1
   endif
   if(ilogpo(iphas).ne.0.and.ilogpo(iphas).ne.1) then
-    WRITE(NFECRA,2201)IPHAS, 'ILOGPO',ILOGPO(IPHAS)
+    WRITE(NFECRA,2201)'ILOGPO',ILOGPO(IPHAS)
     iok = iok + 1
   endif
 
@@ -1012,7 +1012,7 @@ do iphas = 1, nphas
     if( (nvar.le.5.and.itytur(iphas).eq.2) .or.                   &
         (nvar.le.7.and.iturb(iphas).eq.50) .or.                   &
         (nvar.le.5.and.iturb(iphas).eq.60)     ) then
-      write(nfecra,2610)iphas,                                    &
+      write(nfecra,2610)                                          &
                  'NOMBRE DE VARIABLES            ',NVAR,          &
                  'OPTION POUR LA TURBULENCE      ',ITURB(IPHAS)
       iok = iok + 1
@@ -1020,32 +1020,32 @@ do iphas = 1, nphas
 !     Le choix de ICLKEP n'est possible qu'en k-eps ou v2f
     if (iturb(iphas).ne.60) then
       if(iclkep(iphas).ne.0.and.iclkep(iphas).ne.1) then
-        WRITE(NFECRA,2201) IPHAS,'ICLKEP',ICLKEP(IPHAS)
+        WRITE(NFECRA,2201)'ICLKEP',ICLKEP(IPHAS)
         iok = iok + 1
       endif
     endif
     if(ikecou(iphas).ne.0.and.ikecou(iphas).ne.1) then
-      WRITE(NFECRA,2201)IPHAS, 'IKECOU',IKECOU(IPHAS)
+      WRITE(NFECRA,2201)'IKECOU',IKECOU(IPHAS)
       iok = iok + 1
     endif
 !     En k-eps a prod lin et en v2f on force IKECOU a 0
     if (ikecou(iphas).eq.1 .and.                                  &
          (iturb(iphas).eq.21 .or. iturb(iphas).eq.50)) then
-      write(nfecra,2208)iphas,iturb(iphas),ikecou(iphas)
+      write(nfecra,2208)iturb(iphas),ikecou(iphas)
       iok = iok + 1
     endif
 !     En stationnaire on force IKECOU a 0
     if (ikecou(iphas).ne.0.and.idtvar.lt.0) then
-      write(nfecra,2210)iphas,ikecou(iphas)
+      write(nfecra,2210)ikecou(iphas)
       iok = iok + 1
     endif
 
     if(igrhok(iphas).ne.0.and.igrhok(iphas).ne.1) then
-      WRITE(NFECRA,2201)IPHAS, 'IGRHOK',IGRHOK(IPHAS)
+      WRITE(NFECRA,2201)'IGRHOK',IGRHOK(IPHAS)
       iok = iok + 1
     endif
     if(igrake(iphas).ne.0.and.igrake(iphas).ne.1) then
-      WRITE(NFECRA,2201)IPHAS, 'IGRAKE',IGRAKE(IPHAS)
+      WRITE(NFECRA,2201)'IGRAKE',IGRAKE(IPHAS)
       iok = iok + 1
     endif
 !        IF( IGRAKE.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
@@ -1055,9 +1055,9 @@ do iphas = 1, nphas
     if(nscal.gt.0) then
       if(iscalt(iphas).le.0.and.                                  &
            (gx**2+gy**2+gz**2).ge.epzero**2) then
-        write(nfecra,2621) iphas,gx,gy,gz,iscalt(iphas)
+        write(nfecra,2621) gx,gy,gz,iscalt(iphas)
         if(igrake(iphas).eq.1) then
-          WRITE(NFECRA,2622)IPHAS, 'IGRAKE',IGRAKE(IPHAS)
+          WRITE(NFECRA,2622)'IGRAKE',IGRAKE(IPHAS)
         endif
 !MO            IOK = IOK + 1
       endif
@@ -1075,12 +1075,12 @@ do iphas = 1, nphas
     endif
     if ( (abs(relaxv(ikiph)+999.d0).gt.epzero .or.                &
           abs(relaxv(ieiph)+999.d0).gt.epzero ) .and.             &
-          ikecou(iphas).ne.0) write(nfecra,2623) iphas,           &
+          ikecou(iphas).ne.0) write(nfecra,2623)                  &
             relaxv(ikiph),relaxv(ieiph)
     if (ikecou(iphas).eq.0 .and. idtvar.ge.0) then
       if(relaxv(ikiph).gt.1.d0.or.relaxv(ikiph).lt.0.d0 .or.      &
          relaxv(ieiph).gt.1.d0.or.relaxv(ieiph).lt.0.d0) then
-        write(nfecra,2624) iphas,relaxv(ikiph),relaxv(ieiph)
+        write(nfecra,2624) relaxv(ikiph),relaxv(ieiph)
         iok = iok + 1
       endif
     endif
@@ -1091,33 +1091,33 @@ do iphas = 1, nphas
 
   if(itytur(iphas).eq.3) then
     if(nvar.le.10) then
-      write(nfecra,2610)iphas,                                    &
+      write(nfecra,2610)                                          &
                  'NOMBRE DE VARIABLES            ',NVAR,          &
                  'OPTION POUR LA TURBULENCE      ',ITURB(IPHAS)
       iok = iok + 1
     endif
     if(irijnu(iphas).ne.0.and.irijnu(iphas).ne.1) then
-      WRITE(NFECRA,2201)IPHAS,'IRIJNU',IRIJNU(IPHAS)
+      WRITE(NFECRA,2201)'IRIJNU',IRIJNU(IPHAS)
       iok = iok + 1
     endif
     if(irijrb(iphas).ne.0.and.irijrb(iphas).ne.1) then
-      WRITE(NFECRA,2201)IPHAS, 'IRIJRB',IRIJRB(IPHAS)
+      WRITE(NFECRA,2201)'IRIJRB',IRIJRB(IPHAS)
       iok = iok + 1
     endif
     if (iturb(iphas).eq.30) then
 !     echo de paroi et implicitation speciale de la diffusion de epsilon
 !     seulement en Rij standard
       if(irijec(iphas).ne.0.and.irijec(iphas).ne.1) then
-        WRITE(NFECRA,2201)IPHAS, 'IRIJEC',IRIJEC(IPHAS)
+        WRITE(NFECRA,2201)'IRIJEC',IRIJEC(IPHAS)
         iok = iok + 1
       endif
       if(idifre(iphas).ne.0.and.idifre(iphas).ne.1) then
-        WRITE(NFECRA,2201)IPHAS, 'IDIFRE',IDIFRE(IPHAS)
+        WRITE(NFECRA,2201)'IDIFRE',IDIFRE(IPHAS)
         iok = iok + 1
       endif
     endif
     if(igrari(iphas).ne.0.and.igrari(iphas).ne.1) then
-      WRITE(NFECRA,2201)IPHAS, 'IGRARI',IGRARI(IPHAS)
+      WRITE(NFECRA,2201)'IGRARI',IGRARI(IPHAS)
       iok = iok + 1
     endif
 !        IF( IGRARI.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
@@ -1125,19 +1125,19 @@ do iphas = 1, nphas
 !          IOK = IOK + 1
 !        ENDIF
     if(iclsyr(iphas).ne.0.and.iclsyr(iphas).ne.1) then
-      WRITE(NFECRA,2201) IPHAS,'ICLSYR',ICLSYR(IPHAS)
+      WRITE(NFECRA,2201)'ICLSYR',ICLSYR(IPHAS)
       iok = iok + 1
     endif
     if(iclptr(iphas).ne.0.and.iclptr(iphas).ne.1) then
-      WRITE(NFECRA,2201)IPHAS, 'ICLPTR',ICLPTR(IPHAS)
+      WRITE(NFECRA,2201)'ICLPTR',ICLPTR(IPHAS)
       iok = iok + 1
     endif
     if(nscal.gt.0) then
       if(iscalt(iphas).le.0.and.                                  &
            (gx**2+gy**2+gz**2).ge.epzero**2) then
-        write(nfecra,2621)iphas,gx,gy,gz,iscalt(iphas)
+        write(nfecra,2621)gx,gy,gz,iscalt(iphas)
         if(igrari(iphas).eq.1) then
-          WRITE(NFECRA,2622)IPHAS, 'IGRARI',IGRARI(IPHAS)
+          WRITE(NFECRA,2622)'IGRARI',IGRARI(IPHAS)
         endif
 !MO            IOK = IOK + 1
       endif
@@ -1148,17 +1148,17 @@ do iphas = 1, nphas
 
   if(itytur(iphas).eq.4) then
     if(idries(iphas).ne.1.and.idries(iphas).ne.0) then
-      WRITE(NFECRA,2201) IPHAS,'IDRIES',IDRIES(IPHAS)
+      WRITE(NFECRA,2201)'IDRIES',IDRIES(IPHAS)
       iok = iok + 1
     endif
     if(idries(iphas).ne.0.and.(iturb(iphas).eq.41.or.iturb(iphas).eq.42)) then
-      write(nfecra,2630) iphas,idries(iphas),iturb(iphas)
+      write(nfecra,2630) idries(iphas),iturb(iphas)
       iok = iok + 1
     endif
 !         La reduction du voisinage etendu peut degrader
 !         les resultats du modele dynamique en LES
     if(iturb(iphas).eq.41.and.imrgra.eq.3) then
-      write(nfecra,2607) iphas, iturb(iphas), imrgra
+      write(nfecra,2607) iturb(iphas), imrgra
     endif
   endif
 
@@ -1175,18 +1175,18 @@ if(iprco.eq.1) then
   do iphas = 1, nphas
     if(irevmc(iphas).ne.0.and.irevmc(iphas).ne.1.and.             &
                               irevmc(iphas).ne.2) then
-      WRITE(NFECRA,2211) IPHAS,'IREVMC',IREVMC(IPHAS)
+      WRITE(NFECRA,2211) 'IREVMC',IREVMC(IPHAS)
       iok = iok + 1
     endif
     arakfr = arak(iphas)
     if (idtvar.lt.0) arakfr=arakfr*relaxv(iu(iphas))
     if(arakfr.gt.1.d0 .or. arakfr.lt.0.d0) then
-      WRITE(NFECRA,2640) IPHAS,'ARAK  ',ARAKFR
+      WRITE(NFECRA,2640) 'ARAK  ',ARAKFR
       iok = iok + 1
     endif
     if( relaxv(ipr(iphas)).gt.1d0 .or.                            &
         relaxv(ipr(iphas)).lt.0d0     ) then
-      write(nfecra,2625) iphas,relaxv(ipr(iphas))
+      write(nfecra,2625) relaxv(ipr(iphas))
       iok = iok + 1
     endif
   enddo
@@ -1315,7 +1315,7 @@ do iphas = 1, nphas
   do iest = 1, nestmx
     iiesca = iescal(iest,iphas)
     if (iiesca.ne.0.and.iiesca.ne.1.and.iiesca.ne.2) then
-      write(nfecra,2664) iphas,iest,iest,iphas,iiesca,            &
+      write(nfecra,2664) iest,iest,iiesca,            &
                          iespre,iesder,iescor,iestot
       iok = iok + 1
     endif
@@ -1446,11 +1446,11 @@ do iphas = 1, nphas
 ! --- Constantes physiques de chaque phase
 
   if(ro0(iphas)   .lt.0d0) then
-    WRITE(NFECRA,2511)IPHAS,'RO0   ', RO0(IPHAS)
+    WRITE(NFECRA,2511)'RO0   ', RO0(IPHAS)
     iok = iok + 1
   endif
   if(viscl0(iphas).lt.0d0) then
-    WRITE(NFECRA,2511)IPHAS,'VISCL0', VISCL0(IPHAS)
+    WRITE(NFECRA,2511)'VISCL0', VISCL0(IPHAS)
     iok = iok + 1
   endif
 
@@ -1465,13 +1465,13 @@ do iphas = 1, nphas
        .or.iturb(iphas).eq.50.or.iturb(iphas).eq.60               &
        .or.iturb(iphas).eq.70) then
     if(uref(iphas)  .lt.0.d0) then
-      write(nfecra,4100)iphas, uref(iphas)
+      write(nfecra,4100) uref(iphas)
     endif
   endif
 
   if(iturb(iphas).eq.10) then
     if(xlomlg(iphas).le.0.d0) then
-      WRITE(NFECRA,2511)IPHAS,'XLOMLG', XLOMLG(IPHAS)
+      WRITE(NFECRA,2511)'XLOMLG', XLOMLG(IPHAS)
       iok = iok + 1
     endif
   endif
@@ -1479,36 +1479,36 @@ do iphas = 1, nphas
 !     LES
   if(itytur(iphas).eq.4) then
     if(xlesfl(iphas).lt.0.d0) then
-      WRITE(NFECRA,2511) IPHAS,'XLESFL', XLESFL(IPHAS)
+      WRITE(NFECRA,2511) 'XLESFL', XLESFL(IPHAS)
       iok = iok + 1
     endif
     if(ales  (iphas).lt.0.d0) then
-      WRITE(NFECRA,2511) IPHAS,'ALES  ', ALES(IPHAS)
+      WRITE(NFECRA,2511) 'ALES  ', ALES(IPHAS)
       iok = iok + 1
     endif
     if(bles  (iphas).lt.0.d0) then
-      WRITE(NFECRA,2511) IPHAS,'BLES  ', BLES(IPHAS)
+      WRITE(NFECRA,2511) 'BLES  ', BLES(IPHAS)
       iok = iok + 1
     endif
     if(csmago(iphas).lt.0.d0) then
-      WRITE(NFECRA,2511)IPHAS, 'CSMAGO', CSMAGO(IPHAS)
+      WRITE(NFECRA,2511) 'CSMAGO', CSMAGO(IPHAS)
       iok = iok + 1
     endif
     if(cwale(iphas).lt.0.d0) then
-      WRITE(NFECRA,2511)IPHAS, 'CWALE', CWALE(IPHAS)
+      WRITE(NFECRA,2511) 'CWALE', CWALE(IPHAS)
       iok = iok + 1
     endif
     if(idries(iphas).eq.1.and.cdries(iphas).lt.0) then
-      WRITE(NFECRA,2511) IPHAS,'CDRIES', CDRIES(IPHAS)
+      WRITE(NFECRA,2511) 'CDRIES', CDRIES(IPHAS)
       iok = iok + 1
     endif
     if(iturb(iphas).eq.41) then
       if(xlesfd(iphas).lt.0.d0) then
-        WRITE(NFECRA,2511) IPHAS,'XLESFD', XLESFD(IPHAS)
+        WRITE(NFECRA,2511) 'XLESFD', XLESFD(IPHAS)
         iok = iok + 1
       endif
       if(smagmx(iphas).lt.0.d0) then
-        WRITE(NFECRA,2511) IPHAS,'SMAGMX', SMAGMX(IPHAS)
+        WRITE(NFECRA,2511) 'SMAGMX', SMAGMX(IPHAS)
         iok = iok + 1
       endif
     endif
@@ -1651,7 +1651,7 @@ if(nscal.gt.0) then
           endif
         enddo
         if (iisct.eq.1) then
-          WRITE(NFECRA,2511)IPHAS,'CP0   ',CP0(IPHAS)
+          WRITE(NFECRA,2511)'CP0   ',CP0(IPHAS)
           iok = iok + 1
         endif
       endif
@@ -1693,7 +1693,7 @@ endif
 if(iperot.gt.0) then
   do iphas = 1, nphas
     if(itytur(iphas).eq.3) then
-      write(nfecra,5009)iperio,iturb(iphas),iphas
+      write(nfecra,5009)iperio,iturb(iphas)
 !            IOK = IOK + 1
     endif
   enddo
@@ -1708,7 +1708,7 @@ if(iperot.gt.0) then
     if( (abs(thetav(iuiph)-0.5d0).lt.1.d-3).or.                   &
         (abs(thetav(iviph)-0.5d0).lt.1.d-3).or.                   &
         (abs(thetav(iwiph)-0.5d0).lt.1.d-3)) then
-      write(nfecra,5010)iperio,iphas,                             &
+      write(nfecra,5010)iperio,                                   &
         thetav(iuiph),thetav(iviph),thetav(iwiph)
 !            IOK = IOK + 1
     endif
@@ -1779,7 +1779,7 @@ endif
 if(ippmod(icompf).ge.0) then
   do iphas = 1, nphas
     if(t0(iphas).le.0.d0.or.p0(iphas).le.0.d0) then
-      write(nfecra,8000)iphas,t0(iphas),p0(iphas)
+      write(nfecra,8000)t0(iphas),p0(iphas)
       iok = iok + 1
     endif
   enddo
@@ -1996,7 +1996,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ON DEMANDE UNE EXTRAPOLATION TEMPORELLE DE RHO AVEC     ',/,&
 '@      IROEXT(IPHAS) = ',I10                                  ,/,&
 '@    CECI EST INCOMPATIBLE AVEC RHO CONSTANT                 ',/,&
@@ -2042,7 +2041,7 @@ endif
 '@    =========                                               ',/,&
 '@   INCOMPATIBILITE POUR LE SCHEMA EN TEMPS                  ',/,&
 '@                                                            ',/,&
-'@   Schema en temps pour la vitesse phase ',I10               ,/,&
+'@   Schema en temps pour la vitesse phase                    ',/,&
 '@      THETA n''a pas la meme valeur pour les 3 composantes  ',/,&
 '@                                                            ',/,&
 '@ Parametre THETAV              U          V          W      ',/,&
@@ -2064,7 +2063,7 @@ endif
 '@                                                            ',/,&
 '@  LE PARAMETRE THETAV POUR LA PRESSION DOIT VALOIR 1        ',/,&
 '@                                                            ',/,&
-'@  Pour la phase ', I10,' il vaut ici ',E14.5                 ,/,&
+'@  Il vaut ici ',E14.5                                        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
@@ -2080,7 +2079,7 @@ endif
 '@    =========                                               ',/,&
 '@   DONNEES NON ADMISSIBLES POUR LE SCHEMA EN TEMPS          ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   LE PARAMETRE THETFL DU SCHEMA EN TEMPS POUR LE FLUX DE   ',/,&
 '@     MASSE EST DIFFERENT DE CELUI DE LA PHASE 1 ',E14.5      ,/,&
 '@     THETFL A ETE IMPOSE ICI A ',E14.5                       ,/,&
@@ -2099,7 +2098,6 @@ endif
 '@    =========                                               ',/,&
 '@   DONNEES NON ADMISSIBLES POUR LE SCHEMA EN TEMPS          ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,'                                         ',/,&
 '@   LE PARAMETRE ISTMPF DU SCHEMA EN TEMPS POUR LE FLUX DE   ',/,&
 '@     MASSE EST DIFFERENT DE CELUI DE LA PHASE 1 ',I10        ,/,&
 '@     ISTMPF A ETE IMPOSE ICI A ',I10                         ,/,&
@@ -2118,7 +2116,7 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE THETAV DU SCHEMA ',/,&
 '@     EN TEMPS DE LA VARIABLE ',A8  ,' EST 0.5               ',/,&
 '@     THETAV A ETE IMPOSE ICI A ',E14.5                       ,/,&
@@ -2138,7 +2136,7 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE BLENCV DU SCHEMA ',/,&
 '@     CONVECTIF DE LA VARIABLE ',A8  ,' EST 1.0              ',/,&
 '@     BLENCV A ETE IMPOSE ICI A ',E14.5                       ,/,&
@@ -2158,7 +2156,7 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE ISSTPC DU SCHEMA ',/,&
 '@     CONVECTIF DE LA VARIABLE ',A8  ,' EST 1                ',/,&
 '@     ISSTPC A ETE IMPOSE ICI A ',I10                         ,/,&
@@ -2178,7 +2176,7 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE ISSTPC DU SCHEMA ',/,&
 '@     CONVECTIF DE LA VARIABLE ',A8  ,' EST 0                ',/,&
 '@     ISSTPC A ETE IMPOSE ICI A ',I10                         ,/,&
@@ -2198,7 +2196,7 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' ORDRE 2 EN TEMPS OU LES                 ',/,&
+'@   ORDRE 2 EN TEMPS OU LES                                  ',/,&
 '@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE NSWRSM POUR      ',/,&
 '@     LA VARIABLE ',A8  ,' EST  ',I10                        ,/, &
 '@     NSWRSM A ETE IMPOSE ICI A ',I10                         ,/,&
@@ -2218,7 +2216,7 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE BLENCV DU SCHEMA ',/,&
 '@     CONVECTIF DE LA VARIABLE ',A8  ,' EST 1.0              ',/,&
 '@     BLENCV A ETE IMPOSE ICI A ',E14.5                       ,/,&
@@ -2237,7 +2235,6 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX DU SCHEMA EN TEMPS                                 ',/,&
 '@                                                            ',/,&
-'@     PHASE ',I10                                             ,/,&
 '@     LE SCHEMA EN TEMPS POUR LA VITESSE EST D ORDRE 1       ',/,&
 '@       (THETAV = ',E10.2 ,')                                ',/,&
 '@     CERTAINS TERMES SONT CEPENDANT PRIS A L''ORDRE 2 AVEC  ',/,&
@@ -2261,7 +2258,6 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX DU SCHEMA EN TEMPS                                 ',/,&
 '@                                                            ',/,&
-'@     PHASE ',I10                                             ,/,&
 '@     LE SCHEMA EN TEMPS POUR LA VITESSE EST D ORDRE 2       ',/,&
 '@       (THETAV = ',E10.2 ,')                                ',/,&
 '@     CERTAINS TERMES SONT CEPENDANT PRIS A L''ORDRE 1 AVEC  ',/,&
@@ -2286,7 +2282,7 @@ endif
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS                    ',/,&
 '@                                                            ',/,&
 '@   SCALAIRE ',I10,' ISSO2T = ',I10                           ,/,&
-'@     EST DIFFERENT DE ISNO2T DE LA PHASE IPHAS = ',I10       ,/,&
+'@     EST DIFFERENT DE ISNO2T                                ',/,&
 '@     ISNO2T(IPHAS) = ',I10                                   ,/,&
 '@                                                            ',/,&
 '@  Le calcul sera execute                                    ',/,&
@@ -2305,7 +2301,7 @@ endif
 '@   CHOIX NON STANDARD DU SCHEMA EN TEMPS                    ',/,&
 '@                                                            ',/,&
 '@   SCALAIRE ',I10,' IVSEXT = ',I10                           ,/,&
-'@     EST DIFFERENT DE IVIEXT DE LA PHASE IPHAS = ',I10       ,/,&
+'@     EST DIFFERENT DE IVIEXT                                ',/,&
 '@     IVIEXT(IPHAS) = ',I10                                   ,/,&
 '@                                                            ',/,&
 '@  Le calcul sera execute                                    ',/,&
@@ -2323,7 +2319,6 @@ endif
 '@    =========                                               ',/,&
 '@   CHOIX INCOMPATIBLE POUR LE SCHEMA EN TEMPS               ',/,&
 '@                                                            ',/,&
-'@   Phase IPHAS = ',I10                                       ,/,&
 '@     La  chaleur massique est extrapolee en temps avec      ',/,&
 '@       ICPEXT(IPHAS) = ',I10                                 ,/,&
 '@     Pour cela, elle doit etre variable, or                 ',/,&
@@ -2395,8 +2390,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Pour la phase ',I10   ,' on souhaite utiliser un schema en',/,&
-'@    temps d''ordre 2 :                                      ',/,&
+'@  On souhaite utiliser un schema en temps d''ordre 2 :      ',/,&
 '@      U,V,W : THETA = ',3E12.4                               ,/,&
 '@      Termes sources Navier-Stokes: ISNO2T = ',I10           ,/,&
 '@                                    THETSN = ',E12.4         ,/,&
@@ -2453,7 +2447,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Pour la phase ',I10   ,' avec le modele de turbulence     ',/,&
+'@  Avec le modele de turbulence                              ',/,&
 '@    k-epsilon (ITURB = ',I10 ,') couple (IKECOU = ',I10,') :',/,&
 '@    la version courante ne permet pas de traiter les        ',/,&
 '@    equations du modele k-epsilon a l''ordre 2 en temps avec',/,&
@@ -2478,7 +2472,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Pour la phase ',I10   ,' avec le modele de turbulence     ',/,&
+'@  Avec le modele de turbulence                              ',/,&
 '@    v2f (ITURB = ',I10   ,') couple (IKECOU = ',I10,    ') :',/,&
 '@    la version courante ne permet pas de traiter les        ',/,&
 '@    equations du modele v2f a l''ordre 2 en temps avec      ',/,&
@@ -2505,7 +2499,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Pour la phase ',I10   ,' avec le modele de turbulence     ',/,&
+'@  Avec le modele de turbulence                              ',/,&
 '@    k-omega (ITURB = ',I10   ,') couple (IKECOU = ',I10,') :',/,&
 '@    la version courante ne permet pas de traiter les        ',/,&
 '@    equations du modele k-omega a l''ordre 2 en temps avec  ',/,&
@@ -2530,7 +2524,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Pour la phase ',I10   ,' avec le modele de turbulence     ',/,&
+'@  Avec le modele de turbulence                              ',/,&
 '@    Spallart-Allmaras (ITURB = ',I10   ,')                  ',/,&
 '@    la version courante ne permet pas de traiter les        ',/,&
 '@    l''ordre 2 en temps.                                    ',/,&
@@ -2574,7 +2568,7 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10   ,' les termes sources provenant du module   ',/,&
+'@  Les termes sources provenant du module                    ',/,&
 '@    Lagrangien ne sont pas traites a l''ordre 2 en temps    ',/,&
 '@    dans la version courante malgre le choix utilisateur    ',/,&
 '@    suivant :                                               ',/,&
@@ -2711,7 +2705,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1                ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -2844,7 +2837,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    EN K-EPS PROD LIN (ITURB=21) ET EN V2F (ITURB=50)       ',/,&
 '@    IKECOU DOIT ETRE EGAL A 0                               ',/,&
 '@    ITURB  VAUT ICI ',I10                                    ,/,&
@@ -2865,7 +2857,6 @@ endif
 '@    LE MODELE DE PAROI A DEUX ECHELLES (IDEUCH=1 OU 2)      ',/,&
 '@    EST INCOMPATIBLE AVEC UN CALCUL EN LAMINAIRE, EN        ',/,&
 '@    LONGUEUR DE MELANGE, EN SPALART-ALLMARAS OU EN L.E.S.   ',/,&
-'@    POUR LA PHASE ',I10                                      ,/,&
 '@    ON A ICI ITURB=',I10                                     ,/,&
 '@         ET IDEUCH=',I10                                     ,/,&
 '@                                                            ',/,&
@@ -2884,7 +2875,6 @@ endif
 '@    L''ALGORITHME STATIONNAIRE EST INCOMPATIBLE AVEC LE     ',/,&
 '@    COUPLAGE DES TERMES SOURCES EN K-EPS, V2F OU K-OMEGA    ',/,&
 '@                                                            ',/,&
-'@    POUR LA PHASE   ',I10                                    ,/,&
 '@    ON A ICI IKECOU=',I10                                    ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
@@ -2899,7 +2889,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0, 1 OU 2             ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -3086,7 +3075,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE    ',I10                                           ,/,&
 '@    RISQUE DE PERTE D''INFORMATION EN CALCUL SUITE          ',/,&
 '@                                                            ',/,&
 '@  Le calcul sera engage.                                    ',/,&
@@ -3140,7 +3128,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN REEL POSITIF                        ',/,&
 '@    IL VAUT ICI ',E14.5                                      ,/,&
 '@                                                            ',/,&
@@ -3222,7 +3209,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0, 10, 20, 21, 30, 31,',/,&
 '@    40, 41, 42, 50, OU 60'                                   ,/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
@@ -3295,7 +3281,6 @@ endif
 '@    CALCUL DES GRADIENTS PAR MOINDRE CARRES, POUR UN        ',/,&
 '@    CALCUL EN L.E.S AVEC LE MODELE DYNAMIQUE.               ',/,&
 '@    MODELE DYNAMIQUE.                                       ',/,&
-'@      PHASE  ',I10                                           ,/,&
 '@      ITURB =',I10                                           ,/,&
 '@      IMRGRA=',I10                                           ,/,&
 '@                                                            ',/,&
@@ -3319,7 +3304,7 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10   ,' : DONNEES INCOHERENTES                 ',/,&
+'@    DONNEES INCOHERENTES                                    ',/,&
 '@    ',A31,I10                                                ,/,&
 '@    ',A31,I10                                                ,/,&
 '@                                                            ',/,&
@@ -3338,7 +3323,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@  ON DEMANDE LA PRISE EN COMPTE DE L''ACCELERATION DE LA    ',/,&
 '@    PESANTEUR ',3E14.5                                       ,/,&
 '@    SANS RESOLUTION D''UNE VARIABLE TEMPERATURE OU ENERGIE  ',/,&
@@ -3363,7 +3347,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@  ON DEMANDE LA PRISE EN COMPTE DES TERMES DE GRAVITE DANS  ',/,&
 '@    LES EQUATIONS DE LA TURBULENCE (',A6,' = ',I10   ,')    ',/,&
 '@    SANS RESOLUTION D''UNE VARIABLE TEMPERATURE OU ENERGIE  ',/,&
@@ -3386,7 +3369,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@ Le coefficient RELAXV des variables de la turbulence a ete ',/,&
 '@ modifie alors que IKECOU ne vaut pas 0. Il vaut ici        ',/,&
@@ -3404,7 +3386,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@ Le coefficient RELAXV des variables de la turbulence doit  ',/,&
 '@ etre un reel compris entre 0 et 1. Il vaut ici :           ',/,&
@@ -3423,7 +3404,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@ Le coefficient RELAXV de la pression doit etre un reel     ',/,&
 '@ compris entre 0 et 1. Il vaut ici : ',E12.4                 ,/,&
@@ -3440,7 +3420,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@  On demande la prise en compte de l''amortissement de      ',/,&
 '@    Van Driest (IDRIES(IPHAS) = ', I10,')'                   ,/,&
@@ -3459,7 +3438,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN REEL INCLUS DANS L''INTERVALLE [0;1]',/,&
 '@    IL VAUT ICI ',E14.5                                      ,/,&
 '@                                                            ',/,&
@@ -3579,10 +3557,10 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Pour la phase ',I10   ,' l''indicateur IESCAL relatif a   ',/,&
+'@  L''indicateur IESCAL relatif a                            ',/,&
 '@    l''estimateur d''erreur numero IEST = ',I10   ,' pour   ',/,&
 '@    Navier-Stokes doit etre un entier egal a 0, 1 ou 2.     ',/,&
-'@  Il vaut ici : IESCAL(',I10  ,',',I10   ,') = ',I10         ,/,&
+'@  Il vaut ici : IESCAL(',I10  ,') = ',I10                    ,/,&
 '@                                                            ',/,&
 '@  Rq. : les valeurs possibles de IEST sont :                ',/,&
 '@        IESPRE = ',I10                                       ,/,&
@@ -3757,7 +3735,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ENTREE DES DONNEES                          ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    LA VITESSE DE REFERENCE UREF N''A PAS ETE INITIALISEE   ',/,&
 '@    OU A ETE MAL INITIALISEE (VALEUR NEGATIVE).             ',/,&
 '@    ELLE VAUT ICI ',E14.5                                    ,/,&
@@ -4100,7 +4077,6 @@ endif
 '@    par IPERIO = ',I10,   ')                                ',/,&
 '@    et certaines periodicites sont de rotation.             ',/,&
 '@  L''indicateur ITURB(IPHAS) a ete positionne a ',I10        ,/,&
-'@    pour la phase IPHAS = ',I10   ,' dans usini1.           ',/,&
 '@                                                            ',/,&
 '@  Le calcul peut etre execute.                              ',/,&
 '@    Les defauts eventuels evoques proviennent de la prise en',/,&
@@ -4126,7 +4102,7 @@ endif
 '@    par IPERIO = ',I10,   ')                                ',/,&
 '@    et certaines periodicites sont de rotation.             ',/,&
 '@  Les indicateurs THETAV des trois composantes Ux, Uy, Uz   ',/,&
-'@    de la vitesse pour la phase IPHAS = ',I10                ,/,&
+'@    de la vitesse                                           ',/,&
 '@    ont ete positionnes (dans usini1 ou par defaut suite aux',/,&
 '@    options de calcul selectionnees) aux valeurs suivantes :',/,&
 '@    THETAV(IU(IPHAS))  THETAV(IV(IPHAS))  THETAV(IW(IPHAS)) ',/,&
@@ -4296,7 +4272,6 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========   MODULE COMPRESSIBLE                         ',/,&
 '@                                                            ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    T0 ET P0 DOIVENT ETRE DES REELS STRICTEMENT POSITIFS    ',/,&
 '@    ILS VALENT ICI :                                        ',/,&
 '@                   T0 = ',E14.5                              ,/,&
@@ -4516,7 +4491,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    TEMPORAL EXTRAPOLATION OF DENSITY RHO REQUESTED,        ',/,&
 '@      BUT IROEXT(IPHAS) = ',I10                              ,/,&
 '@    THIS IS INCOMPATIBLE WITH RHO = CONSTANT                ',/,&
@@ -4562,7 +4536,7 @@ endif
 '@    =========                                               ',/,&
 '@   INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME           ',/,&
 '@                                                            ',/,&
-'@   TIME DISCRETISATION SCHEME for velocity phase ',I10       ,/,&
+'@   TIME DISCRETISATION SCHEME for velocity                  ',/,&
 '@      THETA DOES NOT HAVE SAME VALUE FOR ALL 3 COMPONENTS   ',/,&
 '@                                                            ',/,&
 '@ Parameter THETAV              U          V          W      ',/,&
@@ -4584,7 +4558,7 @@ endif
 '@                                                            ',/,&
 '@  PARAMETER THETAV FOR PRESSURE MUST BE EQUAL TO    1       ',/,&
 '@                                                            ',/,&
-'@  for   phase ', I10,' but has value ',E14.5                 ,/,&
+'@  It has value ',E14.5                                       ,/,&
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
@@ -4600,7 +4574,7 @@ endif
 '@    =========                                               ',/,&
 '@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME            ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' IN L.E.S.                               ',/,&
+'@  IN L.E.S.                                                 ',/,&
 '@    PARAMETER THETFL FOR TIME DISCRETISATION FOR MASS FLUX  ',/,&
 '@     IS DIFFERENT FROM THAT OF PHASE 1 ',E14.5               ,/,&
 '@     THETFL WAS SET AT         ',E14.5                       ,/,&
@@ -4619,7 +4593,6 @@ endif
 '@    =========                                               ',/,&
 '@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME            ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,'                                         ',/,&
 '@   PARAMETER ISTMPF IN SCHEME EN TEMPS POUR LE FLUX DE      ',/,&
 '@     MASSE  IS DIFFERENT FROM THAT  OF  PHASE 1',I10        ,/, &
 '@     ISTMPF IS NOW IMPOSED AS  ',I10                         ,/,&
@@ -4638,7 +4611,7 @@ endif
 '@    =========                                               ',/,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' IN L.E.S.                               ',/,&
+'@   IN L.E.S.                                                ',/,&
 '@   RECOMMENDED VALUE FOR PARAMETER THETAV IN TIME-SCHEME    ',/,&
 '@   FOR VARIABLE               ',A8  ,' IS 0.5               ',/,&
 '@     THETAV IS NOW IMPOSED AT  ',E14.5                       ,/,&
@@ -4658,7 +4631,7 @@ endif
 '@    =========                                               ',/,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' WITH L.E.S.                             ',/,&
+'@   WITH L.E.S.                                              ',/,&
 '@   THE VALUE RECOMMANDED FOR THE PARAMETER BLENCV  ',/,   &
 '@   FOR CONVECTION OF VARIABLE ',A8  ,' EST 1.0              ',/,&
 '@     BLENCV IS NOW IMPOSED AS ',E14.5                        ,/,&
@@ -4678,7 +4651,7 @@ endif
 '@    =========                                               ',/,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   THE VALUE RECOMMANDED FOR THE PARAMETER ISSTPC IN SCHEME ',/,&
 '@     CONVECTION OF VARIABLE ',A8  ,' IS    1                ',/,&
 '@     ISSTPC IS NOW IMPOSED AS  ',I10                         ,/,&
@@ -4698,7 +4671,7 @@ endif
 '@    =========                                               ',/,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   THE VALUE RECOMMANDED FOR THE PARAMETER ISSTPC IN SCHEME ',/,&
 '@     CONVECTION OF VARIABLE   ',A8  ,' IS  0                ',/,&
 '@     ISSTPC IS NOW IMPOSED AS  ',I10                         ,/,&
@@ -4718,7 +4691,7 @@ endif
 '@    =========                                               ',/,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' ORDRE 2 EN TEMPS or the                 ',/,&
+'@   ORDRE 2 EN TEMPS or the                                  ',/,&
 '@   THE VALUE RECOMMANDED FOR THE PARAMETER NSWRSM FOR       ',/,&
 '@        VARIABLE ',A8  ,' IS    ',I10                        ,/,&
 '@     NSWRSM IS NOW IMPOSED AS  ',I10                         ,/,&
@@ -4738,7 +4711,7 @@ endif
 '@    =========                                               ',/,&
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME                    ',/,&
 '@                                                            ',/,&
-'@   PHASE ',I10   ,' EN L.E.S.                               ',/,&
+'@   EN L.E.S.                                                ',/,&
 '@   THE VALUE RECOMMANDED FOR THE PARAMETER BLENCV IN        ',/,&
 '@     CONVECTION OF VARIABLE   ',A8  ,' IS  1.0              ',/,&
 '@     BLENCV IS NOW IMPOSED AS  ',E14.5                       ,/,&
@@ -4757,7 +4730,6 @@ endif
 '@    =========                                               ',/,&
 '@   CHOICE OF TIME-SCHEME                                    ',/,&
 '@                                                            ',/,&
-'@     PHASE ',I10                                             ,/,&
 '@     TIME-SCHEME FOR VELOCITY IS FIRST ORDER                ',/,&
 '@       (THETAV = ',E10.2 ,')                                ',/,&
 '@     CERTAIN TERMES ARE HOWEVER SECOND ORDER IN TIME WITH   ',/,&
@@ -4781,7 +4753,6 @@ endif
 '@    =========                                               ',/,&
 '@   CHOICE OF TIME-SCHEME                                    ',/,&
 '@                                                            ',/,&
-'@     PHASE ',I10                                             ,/,&
 '@     TIME-SCHEME FOR VELOCITY IS SECOND ORDER               ',/,&
 '@       (THETAV = ',E10.2 ,')                                ',/,&
 '@     CERTAIN TERMES ARE HOWEVER FIRST ORDER IN TIME  WITH   ',/,&
@@ -4806,7 +4777,7 @@ endif
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME                    ',/,&
 '@                                                            ',/,&
 '@   SCALAR   ',I10,' ISSO2T = ',I10                           ,/,&
-'@       IS DIFFERENT FROM ISNO2T IN PHASE IPHAS = ',I10       ,/,&
+'@       IS DIFFERENT FROM ISNO2T                             ',/,&
 '@     ISNO2T(IPHAS) = ',I10                                   ,/,&
 '@                                                            ',/,&
 '@  computation will go on                                    ',/,&
@@ -4825,7 +4796,7 @@ endif
 '@   NON-STANDARD CHOICE WITH  TIME-SCHEME                    ',/,&
 '@                                                            ',/,&
 '@   SCALAIRE ',I10,' IVSEXT = ',I10                           ,/,&
-'@       IS DIFFERENT FROM IVIEXT IN PHASE IPHAS = ',I10       ,/,&
+'@       IS DIFFERENT FROM IVIEXT                             ',/,&
 '@     IVIEXT(IPHAS) = ',I10                                   ,/,&
 '@                                                            ',/,&
 '@  computation will go on                                    ',/,&
@@ -4843,7 +4814,6 @@ endif
 '@    =========                                               ',/,&
 '@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME            ',/,&
 '@                                                            ',/,&
-'@   Phase IPHAS = ',I10                                       ,/,&
 '@     Specific heat is extrapolated in time with             ',/,&
 '@       ICPEXT(IPHAS) = ',I10                                 ,/,&
 '@    in which case it should be variable, or                 ',/,&
@@ -4915,8 +4885,7 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@  for phase ',I10   ,' a second ordre time-scheme was       ',/,&
-'@    requested        :                                      ',/,&
+'@  A second ordre time-scheme was requested:                 ',/,&
 '@      U,V,W : THETA = ',3E12.4                               ,/,&
 '@     Source terme in Navier-Stokes: ISNO2T = ',I10           ,/,&
 '@                                    THETSN = ',E12.4         ,/,&
@@ -4973,7 +4942,7 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@  for phase ',I10   ,' with the k-epsilon turbulence        ',/,&
+'@  With the k-epsilon turbulence                             ',/,&
 '@  model (ITURB = ',I10 ,') solved coupled(IKECOU = ',I10,'):',/,&
 '@    the current version does not allow second order         ',/,&
 '@    in time resolution of k-epsilon equations in a coupled  ',/,&
@@ -4998,7 +4967,7 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@  for phase ',I10   ,' with the   V2F     turbulence        ',/,&
+'@  With the   V2F     turbulence                             ',/,&
 '@  model (ITURB = ',I10 ,') solved coupled(IKECOU = ',I10,'):',/,&
 '@    the current version does not allow second order         ',/,&
 '@    in time resolution of V2F equations in a coupled        ',/,&
@@ -5025,7 +4994,7 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@  for phase ',I10   ,' with the k-omega   turbulence        ',/,&
+'@  With the k-omega   turbulence                             ',/,&
 '@  model (ITURB = ',I10 ,') solved coupled(IKECOU = ',I10,'):',/,&
 '@    the current version does not allow second order         ',/,&
 '@    in time resolution of k-omega equations in a coupled    ',/,&
@@ -5050,7 +5019,7 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@  for phase ',I10   ,' with the Spalart-Allmaras            ',/,&
+'@  With the Spalart-Allmaras                                 ',/,&
 '@  turbulence model (ITURB = ',I10 ,')                       ',/,&
 '@    the current version does not allow second order         ',/,&
 '@    in time resolution.                                     ',/,&
@@ -5093,7 +5062,7 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@  Phase ',I10   ,' the source terms stemming from the       ',/,&
+'@  The source terms stemming from the                        ',/,&
 '@    Lagrangien module will not be computed as second order  ',/,&
 '@    in this version, despite user settings chosen below     ',/,&
 '@                                                            ',/,&
@@ -5230,7 +5199,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' MUST BE AN INTEGER EQUAL  0  OR 1                ',/,&
 '@   IT HAS VALUE ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -5363,7 +5331,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    EN K-EPS PROD LIN (ITURB=21) ET EN V2F (ITURB=50)       ',/,&
 '@    IKECOU DOIT ETRE EGAL A 0                               ',/,&
 '@    ITURB  IS EQUAL ',I10                                    ,/,&
@@ -5384,7 +5351,6 @@ endif
 '@    2u*scales version of WALL FUNCTION (IDEUCH=1 or 2)      ',/,&
 '@    EST INCOMPATIBLE AVEC UN CALCUL EN LAMINAIRE, EN        ',/,&
 '@    LONGUEUR DE MELANGE or EN L.E.S.                        ',/,&
-'@    POUR LA PHASE ',I10                                      ,/,&
 '@    ON A ICI ITURB=',I10                                     ,/,&
 '@         ET IDEUCH=',I10                                     ,/,&
 '@                                                            ',/,&
@@ -5403,7 +5369,6 @@ endif
 '@    SOLVE STEADY-STATE EQN. OPTION IS NOT COMPATIBLE WITH   ',/,&
 '@    COUPLING OF SOURCES TERMES IN K-EPS, V2F or K-OMEGA    ',/, &
 '@                                                            ',/,&
-'@    FOR THE PHASE   ',I10                                    ,/,&
 '@    WE HAVE  IKECOU=',I10                                    ,/,&
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
@@ -5418,7 +5383,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' MUST BE AN INTEGER EGAL A 0, 1 or 2             ',/, &
 '@   IT HAS VALUE ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -5605,7 +5569,6 @@ endif
 '@                                                            ',/,&
 '@ @@   WARNING :      WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE    ',I10                                           ,/,&
 '@    RISQUE DE PERTE D''INFORMATION EN CALCUL SUITE          ',/,&
 '@                                                            ',/,&
 '@  The calculation will run.                                  ',/&
@@ -5659,7 +5622,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE A POSITIVE REAL                        ',/,&
 '@   IT HAS VALUE ',E14.5                                      ,/,&
 '@                                                            ',/,&
@@ -5741,7 +5703,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' MUST BE AN INTEGER EGAL A 0, 10, 20, 21, 30, 31,',/, &
 '@    40, 41, 42, 50, or 60'                                   ,/,&
 '@   IT HAS VALUE ',I10                                        ,/,&
@@ -5814,7 +5775,6 @@ endif
 '@   for the caculation of the gradients by least squares.    ',/,&
 '@   However this will also be applied to the averaging in    ',/,&
 '@    the LES Dynamic model (also selected)                   ',/,&
-'@      PHASE  ',I10                                           ,/,&
 '@      ITURB =',I10                                           ,/,&
 '@      IMRGRA=',I10                                           ,/,&
 '@                                                            ',/,&
@@ -5838,7 +5798,7 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10   ,' : DONNEES INCOHERENTES                 ',/,&
+'@    DONNEES INCOHERENTES                                    ',/,&
 '@    ',A31,I10                                                ,/,&
 '@    ',A31,I10                                                ,/,&
 '@                                                            ',/,&
@@ -5857,7 +5817,6 @@ endif
 '@                                                            ',/,&
 '@ @@   WARNING :      WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@  Gravity is taken into account                             ',/,&
 '@             ',3E14.5                                        ,/,&
 '@    without solving for temperature or energy               ',/,&
@@ -5882,7 +5841,6 @@ endif
 '@                                                            ',/,&
 '@ @@   WARNING :      WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@     Gravity is taken into account                          ',/,&
 '@   in the turbulence source terms  (',A6,' = ',I10   ,')    ',/,&
 '@    without solving for temperature or energy               ',/,&
@@ -5905,7 +5863,6 @@ endif
 '@                                                            ',/,&
 '@ @@   WARNING :      WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@ Coefficient RELAXV for turbulence variables was modified   ',/,&
 '@ although IKECOU is not = 0.      It is in fact to          ',/,&
@@ -5923,7 +5880,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@ LCoefficient RELAXV for turbulence variables must          ',/,&
 '@ be a REAL comprised between 0 and 1. IT IS EQUAL :         ',/,&
@@ -5942,7 +5898,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@ Coefficient RELAXV for the pressure must be a REAL         ',/,&
 '@ between  0 et 1. It  IS EQUAL : ',E12.4                     ,/,&
@@ -5959,7 +5914,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@                                                            ',/,&
 '@   Van Driest near wall damping was selected                ',/,&
 '@    Van Driest (IDRIES(IPHAS) = ', I10,')'                   ,/,&
@@ -5978,7 +5932,6 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' must be a REAL number in the range  [0;1]        ',/,&
 '@   IT HAS VALUE ',E14.5                                      ,/,&
 '@                                                            ',/,&
@@ -6097,10 +6050,10 @@ endif
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
 '@                                                            ',/,&
-'@   phase ',I10   ,' flag IESCAL related to                  ',/,&
+'@   Flag IESCAL related to                                   ',/,&
 '@   error estimate number IEST = ',I10   ,' for              ',/,&
 '@    Navier-Stokes MUST BE AN INTEGER egal to 0, 1 or 2.     ',/,&
-'@  It IS EQUAL : IESCAL(',I10  ,',',I10   ,') = ',I10         ,/,&
+'@  It IS EQUAL : IESCAL(',I10  ,') = ',I10                    ,/,&
 '@                                                            ',/,&
 '@  Rq. : the possible values of IEST are    :                ',/,&
 '@        IESPRE = ',I10                                       ,/,&
@@ -6275,7 +6228,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ENTREE DES DONNEES                          ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    REFERENCE VELOCITY  UREF WAS NOT DEFINED                ',/,&
 '@    or is ill defined  (NEGATIVE value ? ).                 ',/,&
 '@   It IS EQUAL ',E14.5                                       ,/,&
@@ -6637,7 +6589,6 @@ endif
 '@    and IPERIO = ',I10,   ')                                ',/,&
 '@    and some periodic boundaries involve rotation           ',/,&
 '@      Flag for turb ITURB(IPHAS) is = ',I10                  ,/,&
-'@      phase IPHAS = ',I10   ,' in usini1.                   ',/,&
 '@                                                            ',/,&
 '@    Job can run.                                            ',/,&
 '@                                                            ',/,&
@@ -6663,7 +6614,7 @@ endif
 '@                                                            ',/,&
 '@    and IPERIO = ',I10,   ')                                ',/,&
 '@  Flags  THETAV for 3 velocity components      Ux, Uy, Uz   ',/,&
-'@    of velocity for       phase IPHAS = ',I10                ,/,&
+'@    of velocity                                             ',/,&
 '@    are selected  (in usini1 or by default                  ',/,&
 '@    with the following values :'                             ,/,&
 '@    THETAV(IU(IPHAS))  THETAV(IV(IPHAS))  THETAV(IW(IPHAS)) ',/,&
@@ -6850,7 +6801,6 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
 '@               COMPRESSIBLE FLOW MODULE                     ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    T0 AND  P0 MUST BE STRICTLY POSITIVE REAL NUMBERS       ',/,&
 '@    Here they have values:                                  ',/,&
 '@                   T0 = ',E14.5                              ,/,&

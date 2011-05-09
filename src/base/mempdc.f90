@@ -97,7 +97,7 @@ do iphas = 1, nphas
     iok = 1
   endif
   if(iok.ne.0) then
-    write(nfecra,1000) iphas, ncepdc(iphas)
+    write(nfecra,1000) ncepdc(iphas)
     iok1 = 1
   endif
 enddo
@@ -119,10 +119,10 @@ endif
 
 do iphas = 1, nphas
   if(ncpdct(iphas).eq.0) then
-    write(nfecra,2000) iphas, ncpdct(iphas)
+    write(nfecra,2000) ncpdct(iphas)
     write(nfecra,3000)
   else
-    write(nfecra,2001) iphas, ncpdct(iphas)
+    write(nfecra,2001) ncpdct(iphas)
     write(nfecra,3000)
   endif
 enddo
@@ -173,15 +173,14 @@ call rasize('mempdc',ifinra)
 
  1000 format(/,' SORTIE DANS MEMPDC CAR LES DIMENSIONS DES TABLEAUX ',/,&
          '   RELATIFS AUX PERTES DE CHARGES SONT INCORRECTES ',/, &
-         '   PHASE ',I10,/,                                 &
          '     NCEPDC = ',I10)
 
  2000 format(/,                                                   &
- 'PHASE ',I6,' : TRAITEMENT DES PERTES DE CHARGES NON ACTIVE ',/, &
+ 'TRAITEMENT DES PERTES DE CHARGES NON ACTIVE ',/, &
  '                 NCEPDC = ',I10,/)
  2001 format(                                                           &
  /,/,                                                       &
- 'PHASE ',I6,' : TRAITEMENT DES PERTES DE CHARGES ACTIVE ',/,     &
+ 'TRAITEMENT DES PERTES DE CHARGES ACTIVE ',/,     &
  '                 SUR  UN TOTAL DE NCEPDC = ',I10,' CELLULES',/)
 
  3000 format(                                                           &
@@ -191,14 +190,13 @@ call rasize('mempdc',ifinra)
 
  1000 format(/,' ABORT IN MEMPDC BECAUSE THE DIMENSION OF THE ARRAYS',/,&
          '   RELATIVE TO THE HEAD LOSS IS INCORRECT ',/,    &
-         '   PHASE ',I10,/,                                 &
          '     NCEPDC = ',I10)
 
  2000 format(                                                           &
- /,'PHASE ',I6,' : HEAD LOSS TREATMENT NOT ACTIVATED ',/,   &
+ /,'HEAD LOSS TREATMENT NOT ACTIVATED ',/,   &
    '                 NCEPDC = ',I10,/)
  2001 format(                                                           &
- /,'PHASE ',I6,' : HEAD LOSS TERMS TREATMENT ACTIVATED ',/,     &
+ /,'HEAD LOSS TERMS TREATMENT ACTIVATED ',/,     &
  '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/)
 
 

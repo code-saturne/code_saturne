@@ -209,7 +209,7 @@ d1s4 = 1.0d0/4.0d0
 d3s2 = 3.0d0/2.0d0
 
 if(iwarni(iphiph).ge.1) then
-  write(nfecra,1000)iphas
+  write(nfecra,1000)
 endif
 
 !===============================================================================
@@ -838,15 +838,15 @@ call codits                                                       &
 #if defined(_CS_LANG_FR)
 
  1000    format(/,                                                &
-'   ** PHASE ',I4,' RESOLUTION DU V2F (PHI ET F_BARRE)        ',/,&
-'      -----------------------------------------------        ',/)
+'   ** RESOLUTION DU V2F (PHI ET F_BARRE)        ',/,&
+'      ----------------------------------        ',/)
  1100    format(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
 
 #else
 
  1000    format(/,                                                &
-'   ** PHASE ',I4,' SOLVING V2F (PHI AND F_BAR)'               ,/,&
-'      ----------------------------------------'               ,/)
+'   ** SOLVING V2F (PHI AND F_BAR)'               ,/,&
+'      ---------------------------'               ,/)
  1100    format(/,'           SOLVING VARIABLE ',A8                  ,/)
 
 #endif

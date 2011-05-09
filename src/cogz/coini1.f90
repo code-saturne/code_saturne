@@ -87,7 +87,7 @@ double precision wmolme
 
 do iphas = 1, nphas
   if(iscalt(iphas).ne.-1) then
-    write(nfecra,1000)iphas,iscalt(iphas)
+    write(nfecra,1000)iscalt(iphas)
     call csexit (1)
     !==========
   endif
@@ -653,7 +653,7 @@ endif
 '@                                                            ',/,&
 '@  L''utilisateur ne doit pas la renseigner dans usini1, or  ',/,&
 '@    elle a ete affectee comme suit :                        ',/,&
-'@    ISCALT(',I10   ,') = ',I10                               ,/,&
+'@    ISCALT = ',I10                                           ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&

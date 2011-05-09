@@ -103,7 +103,7 @@ write(nfecra,1000)
 do iphas = 1, nphas
   if (almax(iphas).le.0.d0) then
     almax(iphas) = voltot**.333d0
-    write(nfecra,1100) iphas,almax(iphas)
+    write(nfecra,1100) almax(iphas)
     write(nfecra,1102)
     if(itytur(iphas).eq.2.or.itytur(iphas).eq.3                   &
          .or. iturb(iphas).eq.50 .or. iturb(iphas).eq.60          &
@@ -120,7 +120,6 @@ enddo
  1000 format(                                                           &
 '                                                             '  )
  1100 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
 '       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )'  )
  1101 format(                                                           &
 '       ALMAX est la longueur utilisee pour initialiser       ',/,&
@@ -133,7 +132,6 @@ enddo
  1000 format(                                                           &
 '                                                             '  )
  1100 format(                                                           &
-' --- Phase: ',I10                                             ,/,&
 '       ALMAX  = ', E14.5,    ' (Characteristic length       )'  )
  1101 format(                                                           &
 '       ALMAX is the length used to initialize the turbulence.'  )

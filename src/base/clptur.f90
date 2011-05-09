@@ -1281,15 +1281,15 @@ if(iwarni(iuiph).ge.0) then
        (ntlast.ge.0     .and.ntcabs.ge.ntmabs-1).or.              &
        (ntlast.eq.ntcabs.and.iwarni(iuiph).ge.2)    ) then
     iaff = iaff + 1
-    write(nfecra,2010) iphas,                                     &
+    write(nfecra,2010) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
          iuiptn,inlami,inlami+inturb
     if (iturb(iphas).eq. 0)                                       &
-         write(nfecra,2020)  iphas,ntlast,ypluli(iphas)
+         write(nfecra,2020)  ntlast,ypluli(iphas)
     if (iturb(iphas).eq.50)                                       &
-         write(nfecra,2030)  iphas,ntlast,ypluli(iphas)
+         write(nfecra,2030)  ntlast,ypluli(iphas)
     if (itytur(iphas).eq.2.or.itytur(iphas).eq.3)                 &
-         write(nfecra,2040)  iphas,ntlast,ypluli(iphas)
+         write(nfecra,2040)  ntlast,ypluli(iphas)
     if (iwarni(iuiph).lt.2) then
       write(nfecra,2050)
     else
@@ -1297,7 +1297,7 @@ if(iwarni(iuiph).ge.0) then
     endif
 
   else if (modntl.eq.0 .or. iwarni(iuiph).ge.2) then
-    write(nfecra,2010) iphas,                                     &
+    write(nfecra,2010) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
          iuiptn,inlami,inlami+inturb
   endif
@@ -1317,7 +1317,7 @@ endif
  3X,'** CONDITIONS AUX LIMITES EN PAROI LISSE',/,           &
  '   ----------------------------------------',/,           &
  '------------------------------------------------------------',/,&
- ' Phase ',I6,'                            Minimum     Maximum',/,&
+ '                                         Minimum     Maximum',/,&
  '------------------------------------------------------------',/,&
  '   Vitesse rel. en paroi    uiptn : ',2E12.5                 ,/,&
  '   Vitesse de frottement    uet   : ',2E12.5                 ,/,&
@@ -1336,7 +1336,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : RAFFINEMENT INSUFFISANT DU MAILLAGE EN PAROI',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    Le maillage semble insuffisamment raffine en paroi      ',/,&
 '@      pour pouvoir realiser un calcul laminaire.            ',/,&
 '@                                                            ',/,&
@@ -1357,7 +1356,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : RAFFINEMENT INSUFFISANT DU MAILLAGE EN PAROI',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    Le maillage semble insuffisamment raffine en paroi      ',/,&
 '@      pour pouvoir realiser un calcul v2f.                  ',/,&
 '@                                                            ',/,&
@@ -1378,7 +1376,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : MAILLAGE TROP FIN EN PAROI                  ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    Le maillage semble trop raffine en paroi pour utiliser  ',/,&
 '@      un modele de turbulence haut Reynolds.                ',/,&
 '@                                                            ',/,&
@@ -1415,7 +1412,7 @@ endif
  3X,'** BOUNDARY CONDITIONS FOR SMOOTH WALLS',/,            &
  '   ---------------------------------------',/,            &
  '------------------------------------------------------------',/,&
- ' Phase ',I6,'                            Minimum     Maximum',/,&
+ '                                         Minimum     Maximum',/,&
  '------------------------------------------------------------',/,&
  '   Rel velocity at the wall uiptn : ',2E12.5                 ,/,&
  '   Friction velocity        uet   : ',2E12.5                 ,/,&
@@ -1434,7 +1431,6 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: MESH NOT ENOUGH REFINED AT THE WALL            ',/,&
 '@    ========                                                ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    The mesh does not seem to be enough refined at the wall ',/,&
 '@      to be able to run a laminar simulation.               ',/,&
 '@                                                            ',/,&
@@ -1455,7 +1451,6 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: MESH NOT ENOUGH REFINED AT THE WALL            ',/,&
 '@    ========                                                ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    The mesh does not seem to be enough refined at the wall ',/,&
 '@      to be able to run a v2f simulation.                   ',/,&
 '@                                                            ',/,&
@@ -1476,7 +1471,6 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: MESH TOO REFINED AT THE WALL                   ',/,&
 '@    ========                                                ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    The mesh seems to be too refined at the wall to use     ',/,&
 '@      a high-Reynolds turbulence model.                     ',/,&
 '@                                                            ',/,&

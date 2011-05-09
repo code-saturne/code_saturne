@@ -235,11 +235,11 @@ endif
 
 if(iwarni(ikiph).ge.1) then
   if (iturb(iphas).eq.20) then
-    write(nfecra,1000)iphas
+    write(nfecra,1000)
   else if (iturb(iphas).eq.21) then
-    write(nfecra,1001)iphas
+    write(nfecra,1001)
   else
-    write(nfecra,1002)iphas
+    write(nfecra,1002)
   endif
 endif
 
@@ -1435,27 +1435,27 @@ call clipke                                                       &
 #if defined(_CS_LANG_FR)
 
  1000 format(/,                                                   &
-'   ** PHASE ',I4,' RESOLUTION DU K-EPSILON                   ',/,&
-'      ------------------------------------                   ',/)
+'   ** RESOLUTION DU K-EPSILON                   ',/,&
+'      -----------------------                   ',/)
  1001 format(/,                                                   &
-'   ** PHASE ',I4,' RESOLUTION DU K-EPSILON A PROD LINEAIRE   ',/,&
-'      ----------------------------------------------------   ',/)
+'   ** RESOLUTION DU K-EPSILON A PROD LINEAIRE   ',/,&
+'      ---------------------------------------   ',/)
  1002 format(/,                                                   &
-'   ** PHASE ',I4,' RESOLUTION DU V2F (K ET EPSILON)          ',/,&
-'      ---------------------------------------------          ',/)
+'   ** RESOLUTION DU V2F (K ET EPSILON)          ',/,&
+'      --------------------------------          ',/)
  1100 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
 
 #else
 
  1000 format(/,                                                   &
-'   ** PHASE ',I4,' SOLVING K-EPSILON'                         ,/,&
-'      ------------------------------'                         ,/)
+'   ** SOLVING K-EPSILON'                         ,/,&
+'      -----------------'                         ,/)
  1001 format(/,                                                   &
-'   ** PHASE ',I4,' SOLVING K-EPSILON WITH LINEAR PROD'        ,/,&
-'      -----------------------------------------------'        ,/)
+'   ** SOLVING K-EPSILON WITH LINEAR PROD'        ,/,&
+'      ----------------------------------'        ,/)
  1002 format(/,                                                   &
-'   ** PHASE ',I4,' SOLVING V2F (K AND EPSILON)'               ,/,&
-'      ----------------------------------------'               ,/)
+'   ** SOLVING V2F (K AND EPSILON)'               ,/,&
+'      ---------------------------'               ,/)
  1100 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
 #endif
 

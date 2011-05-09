@@ -303,7 +303,7 @@ do iphas = 1, nphas
 ! --- Stop si CP n'est pas variable
 
   if(ipccp.le.0) then
-    write(nfecra,1000) iphas, iphas, icp(iphas)
+    write(nfecra,1000) icp(iphas)
     call csexit (1)
   endif
 
@@ -388,9 +388,8 @@ enddo
 '@    =========                                               ',/,&
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
-'@    Pour la phase ',I10                                      ,/,&
 '@      usini1 indique que la chaleur specifique est uniforme ',/,&
-'@        ICP(',I10   ,') = ',I10   ,' alors que              ',/,&
+'@        ICP = ',I10   ,' alors que                          ',/,&
 '@      usphyv impose une chaleur specifique variable.        ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&

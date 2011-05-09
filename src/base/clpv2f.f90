@@ -128,7 +128,7 @@ if (iwaphi.ge.2) then
   enddo
   if(irangp.ge.0) call parcpt(nclpmx)
                   !==========
-  if (nclpmx.gt.0) write(nfecra,1000) iphas,nclpmx
+  if (nclpmx.gt.0) write(nfecra,1000) nclpmx
 endif
 
 !==============================================================================
@@ -153,13 +153,13 @@ iclpmn(ipp) = nclpmn
 
 #if defined(_CS_LANG_FR)
 
- 1000 format('ATTENTION VARIABLE PHI, PHASE ',I3,/,               &
+ 1000 format('ATTENTION VARIABLE PHI'                             &
      'VALEUR MAXIMALE PHYSIQUE DE 2 DEPASSEE SUR ',I10,           &
      ' CELLULES')
 
 #else
 
- 1000 format('WARNING VARIABLE PHI, PHASE ',I3,/,                 &
+ 1000 format('WARNING VARIABLE PHI'                               &
      'MAXIMUM PHYSICAL VALUE OF 2 EXCEEDED FOR ',I10,             &
      ' CELLS')
 

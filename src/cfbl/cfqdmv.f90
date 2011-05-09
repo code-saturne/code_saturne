@@ -828,7 +828,7 @@ if (iwarni(iuiph).ge.2) then
   enddo
   if (irangp.ge.0) call parmax (rnorm)
                              !==========
-  write(nfecra,1100) iphas, rnorm
+  write(nfecra,1100) rnorm
 endif
 
 
@@ -837,7 +837,7 @@ endif
 !--------
 
  1100 format(/,                                                   &
- 1X,'Phase ',I4,' : Vitesse maximale apres qdm ',E12.4)
+ 1X,'Vitesse maximale apres qdm ',E12.4)
 !----
 ! FIN
 !----

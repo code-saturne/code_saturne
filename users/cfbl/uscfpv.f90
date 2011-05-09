@@ -326,7 +326,7 @@ do iphas = 1, nphas
 ! --- Stop if the viscosity has not been defined as variable
 
   if(ipcvsv.le.0) then
-    write(nfecra,2000) iphas, iphas, iviscv(iphas)
+    write(nfecra,2000) iviscv(iphas)
     call csexit (1)
   endif
 
@@ -400,11 +400,11 @@ do iphas = 1, nphas
 !     been defined as variable
 
   if(ipccp.le.0) then
-    write(nfecra,1000) iphas, iphas, icp(iphas)
+    write(nfecra,1000) icp(iphas)
     call csexit (1)
   endif
   if(icv(iphas).le.0) then
-    write(nfecra,1001) iphas, iphas, icv(iphas)
+    write(nfecra,1001) icv(iphas)
     call csexit (1)
   endif
 
@@ -627,10 +627,9 @@ endif
 '@    =======',/,                                                 &
 '@     The data is inconsistent',/,                               &
 '@',/,                                                            &
-'@     For phase ',i10,/,                                         &
 '@       in the GUI or in the user subroutine ''usini1'', the',/, &
 '@         isobaric specific heat is declared as a property',/,   &
-'@         uniform in space: icp(',i10   ,') = ',i10   ,/,        &
+'@         uniform in space: icp = ',i10   ,/,                    &
 '@       in the user subroutine ''uscfpv'', however, it is',/,    &
 '@         assumed to be potentially non uniform in space.',/,    &
 '@',/,                                                            &
@@ -649,10 +648,9 @@ endif
 '@    =======',/,                                                 &
 '@     The data is inconsistent',/,                               &
 '@',/,                                                            &
-'@     For phase ',i10,/,                                         &
 '@       in the GUI or in the user subroutine ''usini1'', the',/, &
 '@         isochoric specific heat is declared as a property',/,  &
-'@         uniform in space: icv(',i10   ,') = ',i10   ,/,        &
+'@         uniform in space: icv = ',i10   ,/,                    &
 '@       in the user subroutine ''uscfpv'', however, it is',/,    &
 '@         assumed to be potentially non uniform in space.',/,    &
 '@@',/,                                                           &
@@ -693,10 +691,9 @@ endif
 '@    =======',/,                                                 &
 '@     The data is inconsistent',/,                               &
 '@',/,                                                            &
-'@     For phase ',i10,/,                                         &
 '@       in the user subroutine ''uscfx2'', the molecular',/,     &
 '@         volumetric viscosity is declared as a property',/,     &
-'@         uniform in space: iviscv(',i10   ,') = ',i10   ,/,     &
+'@         uniform in space: iviscv = ',i10,/,                    &
 '@       in the user subroutine ''uscfpv'', however, it is',/,    &
 '@         assumed to be potentially non uniform in space.',/,    &
 '@@',/,                                                           &

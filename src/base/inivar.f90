@@ -303,7 +303,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
                      iphass , iclip  , iwarni(ikiph) ,            &
                      propce , rtp    )
       else
-        write(nfecra,3020) iphas,xekmin,xepmin
+        write(nfecra,3020) xekmin,xepmin
         iok = iok + 1
       endif
 
@@ -327,7 +327,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
 !     Par coherence avec clpv2f, on ne clippe qu'a zero et pas a 2
 !              IF(XPHMIN.LT.0.D0 .OR. XPHMAX.GT.2.D0) THEN
         if(xphmin.lt.0.d0) then
-          write(nfecra,3021) iphas,xphmin,xphmax
+          write(nfecra,3021) xphmin,xphmax
           iok = iok + 1
         endif
 
@@ -369,7 +369,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
                      iphass , iclip  ,                            &
                      propce , rtp    , rtp    )
       else
-        write(nfecra,3030) iphas,x11min,x22min,x33min,xepmin
+        write(nfecra,3030) x11min,x22min,x33min,xepmin
         iok = iok + 1
       endif
 
@@ -393,7 +393,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
 !     En k-omega on clippe seulement a 0
       if(xekmin.lt.0.d0 .or. xomgmn.lt.0.d0) then
-        write(nfecra,3031) iphas,xekmin,xomgmn
+        write(nfecra,3031) xekmin,xomgmn
         iok = iok + 1
       endif
 
@@ -412,7 +412,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
 !     En Spalart-Allmaras on clippe seulement a 0
       if(xnumin.lt.0.d0 ) then
-        write(nfecra,3032) iphas,xnumin
+        write(nfecra,3032) xnumin
         iok = iok + 1
       endif
 
@@ -425,7 +425,7 @@ else
     if (iturb(iphas).ne.0 .and. iturb(iphas).ne.10                &
          .and. itytur(iphas).ne.4) then
       if (uref(iphas).lt.0.d0) then
-        write(nfecra,3039) iphas,uref(iphas)
+        write(nfecra,3039) uref(iphas)
         iok = iok + 1
       endif
     endif
@@ -847,7 +847,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Phase                       = ',I4                         ,/,&
 '@   Valeur minimale de k       = ',E14.5                      ,/,&
 '@   Valeur minimale de epsilon = ',E14.5                      ,/,&
 '@                                                            ',/,&
@@ -870,7 +869,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Phase                       = ',I4                         ,/,&
 '@   Valeur minimale de phi     = ',E14.5                      ,/,&
 '@   Valeur maximale de phi     = ',E14.5                      ,/,&
 '@                                                            ',/,&
@@ -892,7 +890,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Phase                       = ',I4                         ,/,&
 '@   Valeur minimale de R11     = ',E14.5                      ,/,&
 '@   Valeur minimale de R22     = ',E14.5                      ,/,&
 '@   Valeur minimale de R33     = ',E14.5                      ,/,&
@@ -917,7 +914,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Phase                       = ',I4                         ,/,&
 '@   Valeur minimale de k       = ',E14.5                      ,/,&
 '@   Valeur minimale de omega   = ',E14.5                      ,/,&
 '@                                                            ',/,&
@@ -940,7 +936,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Phase                       = ',I4                         ,/,&
 '@   Valeur minimale de nu      = ',E14.5                      ,/,&
 '@                                                            ',/,&
 '@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
@@ -958,7 +953,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    LA VITESSE DE REFERENCE UREF N''A PAS ETE INITIALISEE   ',/,&
 '@    OU A ETE MAL INITIALISEE (VALEUR NEGATIVE).             ',/,&
 '@    ELLE VAUT ICI ',E14.5                                    ,/,&
@@ -1153,7 +1147,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Phase                     = ',I4                           ,/,&
 '@   Minimum value of k       = ',E14.5                        ,/,&
 '@   Minimum value of epsilon = ',E14.5                        ,/,&
 '@                                                            ',/,&
@@ -1176,7 +1169,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Phase                 = ',I4                               ,/,&
 '@   Minimum value of phi = ',E14.5                            ,/,&
 '@   Maximum value of phi = ',E14.5                            ,/,&
 '@                                                            ',/,&
@@ -1198,7 +1190,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Phase                     = ',I4                           ,/,&
 '@   Minimum value of R11     = ',E14.5                        ,/,&
 '@   Minimum value of R22     = ',E14.5                        ,/,&
 '@   Minimum value of R33     = ',E14.5                        ,/,&
@@ -1223,7 +1214,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Phase                     = ',I4                           ,/,&
 '@   Minimum value of k       = ',E14.5                        ,/,&
 '@   Minimum value of omega   = ',E14.5                        ,/,&
 '@                                                            ',/,&
@@ -1246,7 +1236,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
-'@  Phase                     = ',I4                           ,/,&
 '@   Minimum value of nu      = ',E14.5                        ,/,&
 '@                                                            ',/,&
 '@  Verify the initialization (usiniv and/or interface),      ',/,&
@@ -1264,7 +1253,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
 '@    ========                                                ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    THE REFERENCE VELOCITY UREF HAS NOT BEEN INITIALIZED    ',/,&
 '@    OR HAS NOT BEEN CORRECTLY INITIALIZED (NEGATIVE VALUE)  ',/,&
 '@    ITS VALUE IS ',E14.5                                     ,/,&

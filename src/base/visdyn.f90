@@ -584,7 +584,7 @@ if(iwarni(iuiph).ge.1) then
   endif
   smagmy = smagmy / voltot
   write(nfecra,1000) iclipc
-  write(nfecra,2001) iphas
+  write(nfecra,2001)
   write(nfecra,2002) smagma, smagmn, smagmy
   write(nfecra,2003)
 
@@ -599,7 +599,6 @@ endif
  1000 format(                                                           &
 ' Nb Clipping Constante Smagorinsky par valeurs maximales ',I10,/)
  2001 format(                                                           &
-' --- Phase : ',I10                                            ,/,&
 ' --- Informations sur la constante de Smagorinsky^2          ',/,&
 ' ----------------------------------                          ',/,&
 ' Valeur moy  Valeur min  Valeur max                          ',/,&
@@ -614,7 +613,6 @@ endif
  1000 format(                                                           &
 ' Nb of clipping of the Smagorinsky constant by max values',I10,/)
  2001 format(                                                           &
-' --- Phase: ',I10                                             ,/,&
 ' --- Informations on the squared Smagorinsky constant'        ,/,&
 ' --------------------------------'                            ,/,&
 ' Mean value  Min value  Max value'                            ,/,&

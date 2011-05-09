@@ -364,9 +364,7 @@ endif
 ! --->  Donnees modifiees
 do iphas = 1, min(nphas,jphas)
   if (iturb(iphas) .ne. jturb(iphas))                             &
-       write(nfecra,8220) iphas,iturb(iphas),                     &
-                          iphas,jturb(iphas),                     &
-                          iphas
+       write(nfecra,8220) iturb(iphas), jturb(iphas)
 enddo
 
 CAR54 =' Fin de la lecture des options                        '
@@ -396,7 +394,7 @@ do iphas = 1, min(nphas,jphas)
                 xyzp0(1,iphas),ierror)
     nberro = nberro+ierror
     if (ierror.eq.0) then
-      write(nfecra,7000) iphas,(xyzp0(ii,iphas),ii=1,3)
+      write(nfecra,7000) (xyzp0(ii,iphas),ii=1,3)
       ixyzp0(iphas) = 1
     endif
   endif
@@ -2615,7 +2613,6 @@ return
 #if defined(_CS_LANG_FR)
 
  7000 format(/,                                                   &
-'   PHASE ',I4,' :                                            ',/,&
 '   Mise a jour du point de reference pour la pression totale ',/,&
 '     par relecture du fichier suite                          ',/,&
 '    XYZP0 = ',       E14.5,        E14.5,        E14.5        ,/)
@@ -2623,7 +2620,6 @@ return
 #else
 
  7000 format(/,                                                   &
-'   PHASE ',I4,' :                                            ',/,&
 '   Apdatation of the reference point for the total pressure  ',/,&
 '       by reading the restart file                           ',/,&
 '    XYZP0 = ',       E14.5,        E14.5,        E14.5        ,/)
@@ -2805,13 +2801,13 @@ return
 '@                                                            ',/,&
 '@ @@ ATTENTION : LECTURE DU FICHIER SUITE AUXILIAIRE         ',/,&
 '@    =========                                               ',/,&
-'@      REPRISE  DE CALCUL           AVEC ITURB(',I3,') = ',I4 ,/,&
-'@      A PARTIR D''UN CALCUL REALISE AVEC ITURB(',I3,') = ',I4,/,&
+'@      REPRISE  DE CALCUL           AVEC ITURB = ',I4         ,/,&
+'@      A PARTIR D''UN CALCUL REALISE AVEC ITURB = ',I4        ,/,&
 '@                                                            ',/,&
 '@    Le modele de turbulence a ete modifie.                  ',/,&
 '@                                                            ',/,&
 '@    Il est conseille cependant de                           ',/,&
-'@      verifier la valeur de ITURB(',I2,') dans usini1       ',/,&
+'@      verifier la valeur de ITURB dans usini1               ',/,&
 '@                                                            ',/,&
 '@    Verifier que le fichier suite auxiliaire utilise        ',/,&
 '@      correspond bien au cas traite                         ',/,&
@@ -3072,13 +3068,13 @@ return
 '@                                                            ',/,&
 '@ @@ WARNING: WHEN READING THE AUXILIARY RESTART FILE        ',/,&
 '@    =======                                                 ',/,&
-'@      THE RUN RESTARTED            WITH ITURB(',I3,') = ',I4 ,/,&
-'@      FROM RUN CONDUCTED WITH           ITURB(',I3,') = ',I4 ,/,&
+'@      THE RUN RESTARTED            WITH ITURB = ',I4         ,/,&
+'@      FROM RUN CONDUCTED WITH           ITURB = ',I4         ,/,&
 '@                                                            ',/,&
 '@    The Turbulence model has been modified.                 ',/,&
 '@                                                            ',/,&
 '@    It is advised however in this case to                   ',/,&
-'@      verify the value of ITURB(',I2,') in usini1           ',/,&
+'@      verify the value of ITURB in usini1                   ',/,&
 '@                                                            ',/,&
 '@    Verify that the auxiliary restart file being used       ',/,&
 '@      corresponds  to the present case.                     ',/,&

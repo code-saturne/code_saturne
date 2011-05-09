@@ -1118,7 +1118,7 @@ if(iwarni(iuiph).ge.0) then
   endif
 
   if (modntl.eq.0 .or. iwarni(iuiph).ge.2) then
-    write(nfecra,2010) iphas,                                     &
+    write(nfecra,2010) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
          iuiptn
   endif
@@ -1138,7 +1138,7 @@ endif
  3X,'** CONDITIONS AUX LIMITES EN PAROI RUGUEUSE',/,        &
  '   -------------------------------------------',/,        &
  '------------------------------------------------------------',/,&
- ' Phase ',I6,'                            Minimum     Maximum',/,&
+ '                                         Minimum     Maximum',/,&
  '------------------------------------------------------------',/,&
  '   Vitesse rel. en paroi    uiptn : ',2E12.5                 ,/,&
  '   Vitesse de frottement    uet   : ',2E12.5                 ,/,&

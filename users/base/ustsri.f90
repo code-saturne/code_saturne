@@ -240,7 +240,7 @@ ieiph  = iep (iphas)
 ipcrom = ipproc(irom(iphas))
 
 if(iwarni(ir11ip).ge.1) then
-  write(nfecra,1000) iphas
+  write(nfecra,1000)
 endif
 
 !===============================================================================
@@ -304,7 +304,7 @@ endif
 ! Formats
 !--------
 
- 1000 format(' User source terms for Rij and epsilon, phase ',I4,/)
+ 1000 format(' User source terms for Rij and epsilon',/)
 
 !----
 ! End

@@ -101,7 +101,7 @@ iphas = 1
 ! --> Masse volumique
 
 if( ro0(iphas).lt.0d0) then
-  WRITE(NFECRA,3000)IPHAS,'RO0   ', RO0(IPHAS)
+  WRITE(NFECRA,3000)'RO0   ', RO0(IPHAS)
   iok = iok + 1
 endif
 
@@ -147,7 +147,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN REEL POSITIF                        ',/,&
 '@    IL VAUT ICI ',E14.5                                      ,/,&
 '@                                                            ',/,&

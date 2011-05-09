@@ -1079,7 +1079,7 @@ if(ipass.eq.4) then
       endif
     else if( itytur(iphas).eq.2.or.iturb(iphas).eq.50             &
          .or.iturb(iphas).ne.60) then
-      write(nfecra,8132) iphas,iturb(iphas),isto2t(iphas)
+      write(nfecra,8132) iturb(iphas),isto2t(iphas)
       iok = iok + 1
     endif
   enddo
@@ -1122,7 +1122,7 @@ if(ipass.eq.4) then
   do iphas = 1, nphas
     ivisph = ivisse(iphas)
     if (ivisph.ne.0.and.ivisph.ne.1) then
-      WRITE(NFECRA,8022) IPHAS,'IVISSE ',IVISPH
+      WRITE(NFECRA,8022) 'IVISSE ',IVISPH
       iok = iok + 1
     endif
   enddo
@@ -1132,72 +1132,72 @@ if(ipass.eq.4) then
 
 !     Schema en temps global.
     if(ischtp(iphas).ne. 1.and.ischtp(iphas).ne.2) then
-      WRITE(NFECRA,8101) IPHAS,'ISCHTP',ISCHTP(IPHAS)
+      WRITE(NFECRA,8101) 'ISCHTP',ISCHTP(IPHAS)
       iok = iok + 1
     endif
     if(ischtp(iphas).eq. 2.and.idtvar.ne.0) then
-      write(nfecra,8111) iphas,ischtp(iphas),idtvar
+      write(nfecra,8111) ischtp(iphas),idtvar
       iok = iok + 1
     endif
     if(ischtp(iphas).eq. 2.and.itytur(iphas).eq.2) then
-      write(nfecra,8112) iphas,ischtp(iphas),iturb(iphas)
+      write(nfecra,8112) ischtp(iphas),iturb(iphas)
       iok = iok + 1
     endif
     if(ischtp(iphas).eq.1.and.itytur(iphas).eq.4) then
-      write(nfecra,8113) iphas,ischtp(iphas),iturb(iphas)
+      write(nfecra,8113) ischtp(iphas),iturb(iphas)
     endif
     if(ischtp(iphas).eq. 2.and.iturb(iphas).eq.50) then
-      write(nfecra,8114) iphas,ischtp(iphas),iturb(iphas)
+      write(nfecra,8114) ischtp(iphas),iturb(iphas)
       iok = iok + 1
     endif
     if(ischtp(iphas).eq. 2.and.iturb(iphas).eq.60) then
-      write(nfecra,8115) iphas,ischtp(iphas),iturb(iphas)
+      write(nfecra,8115) ischtp(iphas),iturb(iphas)
       iok = iok + 1
     endif
     if(ischtp(iphas).eq. 2.and.iturb(iphas).eq.70) then
-      write(nfecra,8116) iphas,ischtp(iphas),iturb(iphas)
+      write(nfecra,8116) ischtp(iphas),iturb(iphas)
       iok = iok + 1
     endif
 
 !     Schema en temps pour le flux de masse
     if(istmpf(iphas).ne. 2.and.istmpf(iphas).ne.0.and.            &
        istmpf(iphas).ne. 1) then
-      WRITE(NFECRA,8121) IPHAS,'ISTMPF',ISTMPF(IPHAS)
+      WRITE(NFECRA,8121) 'ISTMPF',ISTMPF(IPHAS)
       iok = iok + 1
     endif
 
 !     Schema en temps pour les termes sources de NS
     if(isno2t(iphas).ne.0.and.                                    &
        isno2t(iphas).ne. 1.and.isno2t(iphas).ne.2) then
-      WRITE(NFECRA,8131) IPHAS,'ISNO2T',ISNO2T(IPHAS)
+      WRITE(NFECRA,8131) 'ISNO2T',ISNO2T(IPHAS)
       iok = iok + 1
     endif
 !     Schema en temps pour les termes sources des grandeurs
 !     turbulentes
     if(isto2t(iphas).ne.0.and.                                    &
        isto2t(iphas).ne. 1.and.isto2t(iphas).ne.2) then
-      WRITE(NFECRA,8131) IPHAS,'ISTO2T',ISTO2T(IPHAS)
+      WRITE(NFECRA,8131) 'ISTO2T',ISTO2T(IPHAS)
       iok = iok + 1
     endif
 
 !     Schema en temps pour la masse volumique
     if(iroext(iphas).ne.0.and.                                    &
        iroext(iphas).ne. 1.and.iroext(iphas).ne.2) then
-      WRITE(NFECRA,8131) IPHAS,'IROEXT',IROEXT(IPHAS)
+      WRITE(NFECRA,8131) 'IROEXT',IROEXT(IPHAS)
       iok = iok + 1
     endif
 
 !     Schema en temps pour la viscosite
     if(iviext(iphas).ne.0.and.                                    &
        iviext(iphas).ne. 1.and.iviext(iphas).ne.2) then
-      WRITE(NFECRA,8131) IPHAS,'IVIEXT',IVIEXT(IPHAS)
+      WRITE(NFECRA,8131) 'IVIEXT',IVIEXT(IPHAS)
       iok = iok + 1
     endif
 
 !     Schema en temps pour la chaleur specifique
     if(icpext(iphas).ne.0.and.                                    &
        icpext(iphas).ne. 1.and.icpext(iphas).ne.2) then
-      WRITE(NFECRA,8131) IPHAS,'ICPEXT',ICPEXT(IPHAS)
+      WRITE(NFECRA,8131) 'ICPEXT',ICPEXT(IPHAS)
       iok = iok + 1
     endif
 
@@ -2625,7 +2625,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1                ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -2641,7 +2640,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 1 ou 2                ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -2655,7 +2653,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    AVEC UN SCHEMA EN TEMPS D ORDRE 2 : ISCHTP = ', I10      ,/,&
 '@    IL FAUT UTILISER UN PAS DE TEMPS CONSTANT ET UNIFORME   ',/,&
@@ -2671,7 +2669,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 2 (ISCHTP = ',I10   ,/,&
 '@    EN K-EPSILON (ITURB = ',I10,' )'                         ,/,&
@@ -2689,7 +2687,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION :       A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 1 (ISCHTP = ',I10   ,/,&
 '@    EN LES (ITURB = ',I10,' )'                               ,/,&
@@ -2704,7 +2702,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 2 (ISCHTP = ',I10   ,/,&
 '@    EN V2F       (ITURB = ',I10,' )'                         ,/,&
@@ -2722,7 +2720,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 2 (ISCHTP = ',I10   ,/,&
 '@    EN K-OMEGA   (ITURB = ',I10,' )'                         ,/,&
@@ -2740,7 +2738,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 2 (ISCHTP = ',I10   ,/,&
 '@    EN SPALART   (ITURB = ',I10,' )'                         ,/,&
@@ -2758,7 +2756,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A  0, 1 OU 2            ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
@@ -2773,7 +2771,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0, 1 OU 2             ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
@@ -2788,7 +2786,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@                                                            ',/,&
 '@  Avec le modele de turbulence choisi, ITURB = ',I10         ,/,&
@@ -3643,7 +3641,6 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' MUST BE AN INTEGER EQUAL TO 0 OR 1               ',/,&
 '@    HERE IT IS  ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -3659,7 +3656,6 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
 '@    =========                                               ',/,&
-'@    PHASE ',I10                                              ,/,&
 '@    ',A6,' MUST BE AN INTEGER EQUAL TO 1 OR 2               ',/,&
 '@    HERE IT IS  ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -3673,7 +3669,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR PHASE'  ,I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    WITH A SECOND ORDER SCHEME IN TIME: ISCHTP = ', I10      ,/,&
 '@    IT IS NECESSARY TO USE A CONSTANT AND UNIFORM TIME STEP ',/,&
@@ -3689,7 +3685,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR PHASE'  ,I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    A 2ND ORDER SCHEME HAS BEEN IMPOSED    (ISCHTP = ',I10   ,/,&
 '@    WITH K-EPSILON (ITURB = ',I10,' )'                       ,/,&
@@ -3707,7 +3703,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   :     AT THE INITIAL DATA FOR PHASE   ',I10    ,/,&
+'@ @@ WARNING   :      AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    A 1st ORDER SCHEME HAS BEEN IMPOSSED   (ISCHTP = ',I10   ,/,&
 '@    FOR LES (ITURB = ',I10,' )'                              ,/,&
@@ -3722,7 +3718,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    A 2nd ORDER SCHEME HAS BEEN IMPOSED    (ISCHTP = ',I10   ,/,&
 '@    FOR V2F       (ITURB = ',I10,' )'                        ,/,&
@@ -3740,7 +3736,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    A 2nd ORDER SCHEME HAS BEEN IMPOSED    (ISCHTP = ',I10   ,/,&
 '@    FOR K-OMEGA   (ITURB = ',I10,' )'                        ,/,&
@@ -3758,7 +3754,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    A 2nd ORDER SCHEME HAS BEEN IMPOSED    (ISCHTP = ',I10   ,/,&
 '@    FOR SPALART   (ITURB = ',I10,' )'                        ,/,&
@@ -3776,7 +3772,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    ',A6,' MUST BE AN INTEGER EQUAL TO 0, 1 OR 2            ',/,&
 '@    HERE IT IS  ',I10                                        ,/,&
@@ -3791,7 +3787,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    ',A6,' MUST BE AN INTEGER EQUAL TO 0, 1 OR 2            ',/,&
 '@    HERE IT IS  ',I10                                        ,/,&
@@ -3806,7 +3802,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@                                                            ',/,&
 '@  With the chosen turbulence model   , ITURB = ',I10         ,/,&

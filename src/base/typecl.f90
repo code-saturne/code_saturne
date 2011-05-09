@@ -292,7 +292,6 @@ do iphas = 1, nphas
   if (irangp.ge.0) call parcmx(iok)
   if (iok.gt.0) then
     ii = iok
-    write(nfecra,2010) iphas
     if(ifinty(ii,iphas).ge.idebty(ii+1,iphas)) then
       write(nfecra,2020) (ifinty(jj,iphas),jj=1,ntypmx)
       write(nfecra,2030) (idebty(jj,iphas),jj=1,ntypmx)
@@ -313,7 +312,7 @@ do iphas = 1, nphas
   enddo
   if (irangp.ge.0) call parcpt (isum)
   if(isum.ne.nfbrgb) then
-    write(nfecra,3099) iphas, isum, nfbrgb
+    write(nfecra,3099) isum, nfbrgb
     iok = iok + 1
   endif
 enddo
@@ -334,7 +333,7 @@ if(ipass.eq.0.or.iwarni(iu(1)).ge.2) then
 
   do iphas = 1, nphas
 
-    write(nfecra,6011)iphas
+    write(nfecra,6011)
 
     if ( ippmod(icompf).lt.0 ) then
 
@@ -872,14 +871,14 @@ do iphas = 1, nphas
       enddo
     endif
     if (itbslb(iphas).gt.0) then
-      write(nfecra,8000)iphas,xxp0,xyp0,xzp0
+      write(nfecra,8000)xxp0,xyp0,xzp0
       do ifac = 1, nfabor
         coefu(ifac,1) = coefu(ifac,1)                             &
              - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
       enddo
       coefup = coefup - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
     else
-      write(nfecra,8001)iphas,xxp0,xyp0,xzp0
+      write(nfecra,8001)xxp0,xyp0,xzp0
     endif
   elseif (ixyzp0(iphas).eq.-1) then
 !     Il n'y a pas de sorties ni de Dirichlet et l'utilisateur n'a
@@ -1348,7 +1347,7 @@ do iphas = 1, nphas
     enddo
 
 
-    write(nfecra,7011) iphas
+    write(nfecra,7011)
 
     if (ippmod(icompf).lt.0 ) then
 
@@ -1595,7 +1594,6 @@ enddo
 
 #if defined(_CS_LANG_FR)
 
- 2010 format(/,' PHASE  : ',I10)
  2020 format(/,'   IFINTY : ',I10)
  2030 format(/,'   IDEBTY : ',I10)
  2040 format(/,'   ITYPFB : ',I10)
@@ -1644,7 +1642,6 @@ enddo
 '@    =========                                               ',/,&
 '@    PROBLEME DE TRI DES FACES DE BORD                       ',/,&
 '@                                                            ',/,&
-'@    Phase          ',I10                                     ,/,&
 '@      nombre de faces classees par type = ',I10              ,/,&
 '@      nombre de faces de bord  NFABOR   = ',I10              ,/,&
 '@                                                            ',/,&
@@ -1660,7 +1657,6 @@ enddo
  '   ** INFORMATIONS SUR LE TYPE DE FACES DE BORD',/,             &
  '      -----------------------------------------',/)
  6011 format (                                                    &
-'   Phase : ',I4,                                               /,&
 '---------------------------------------------------------------',&
 '----------',                                                     &
                                                                 /,&
@@ -1723,7 +1719,6 @@ enddo
  '   ** INFORMATIONS SUR LE FLUX DE MASSE AU BORD',/,             &
  '      -----------------------------------------',/)
  7011 format (                                                    &
-'   Phase : ',I4,                                               /,&
 '---------------------------------------------------------------',&
                                                                 /,&
 'Type de bord           Code    Nb faces           Flux de masse',&
@@ -1736,12 +1731,10 @@ enddo
                                                                 /)
 
  8000 format(/,                                                   &
-'PHASE ',I4,' :                                               ',/,&
 'Faces de bord d''entree/sortie libre detectees               ',/,&
 'Mise a jour du point de reference pour la pression totale    ',/,&
 ' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
  8001 format(/,                                                   &
-'PHASE ',I4,' :                                               ',/,&
 'Faces de bord a Dirichlet de pression impose detectees       ',/,&
 'Mise a jour du point de reference pour la pression totale    ',/,&
 ' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
@@ -1750,7 +1743,6 @@ enddo
 
 #else
 
- 2010 format(/,' PHASE  : ',I10)
  2020 format(/,'   IFINTY : ',I10)
  2030 format(/,'   IDEBTY : ',I10)
  2040 format(/,'   ITYPFB : ',I10)
@@ -1800,7 +1792,6 @@ enddo
 '@    ========'                                                ,/,&
 '@    PROBLEM WITH ORDERING OF BOUNDARY FACES'                 ,/,&
 '@'                                                            ,/,&
-'@    Phase          ',I10                                     ,/,&
 '@      number of faces classified by type = ',I10             ,/,&
 '@      number of boundary faces (NFABOR)  = ',I10             ,/,&
 '@'                                                            ,/,&
@@ -1816,7 +1807,6 @@ enddo
  '   ** INFORMATION ON BOUNDARY FACES TYPE',/,                    &
  '      ----------------------------------',/)
  6011 format (                                                    &
-'   Phase : ',I4,                                               /,&
 '---------------------------------------------------------------',&
 '----------',                                                     &
                                                                 /,&
@@ -1879,7 +1869,6 @@ enddo
  '   ** BOUNDARY MASS FLOW INFORMATION',/,                        &
  '      ------------------------------',/)
  7011 format (                                                    &
-'   Phase : ',I4,                                               /,&
 '---------------------------------------------------------------',&
                                                                 /,&
 'Boundary type          Code    Nb faces           Mass flow'   , &
@@ -1892,12 +1881,10 @@ enddo
                                                                 /)
 
  8000 format(/,                                                   &
-'PHASE ',I4,' :'                                               ,/,&
 'Boundary faces with free inlet/outlet detected'               ,/,&
 'Update of reference point for total pressure'                 ,/,&
 ' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
  8001 format(/,                                                   &
-'PHASE ',I4,' :'                                               ,/,&
 'Boundary faces with pressure Dirichlet condition detected'    ,/,&
 'Update of reference point for total pressure'                 ,/,&
 ' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)

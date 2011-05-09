@@ -439,7 +439,7 @@ elseif(iappel.eq.3) then
     endif
 
     if (iwarni(ipr(iphas)).ge.1) then
-      write(nfecra,1000) iphas, flucel
+      write(nfecra,1000) flucel
     endif
 
   endif
@@ -478,7 +478,7 @@ elseif(iappel.eq.3) then
       if (vtot.gt.0.d0) then
         gamma = -80000.d0/vtot
       else
-        write(nfecra,9000) iphas, vtot
+        write(nfecra,9000) vtot
         call csexit (1)
       endif
 
@@ -494,7 +494,7 @@ elseif(iappel.eq.3) then
       endif
 
       if (iwarni(ipr(iphas)).ge.1) then
-        write(nfecra,2000) iphas, flucel, vtot
+        write(nfecra,2000) flucel, vtot
       endif
 
     endif
@@ -509,16 +509,13 @@ endif
 ! Formats
 !--------
 
- 1000 format(/,'PHASE ',I3,                                             &
-         ' : mass rate generated in the domain: ',E14.5,/)
+ 1000 format(/,'Mass rate generated in the domain: ',E14.5,/)
 
- 2000 format(/,'PHASE ',I3,                                             &
-         ' : mass flux rate generated in the domain: ',E14.5,/,         &
-'                         distributed on the volume: ',E14.5)
+ 2000 format(/,'Mass flux rate generated in the domain: ',E14.5,/,         &
+               '                         distributed on the volume: ',E14.5)
 
- 9000 format(/,'PHASE ',I3,                                             &
-         ' : error in ustsma                ',/,                        &
-'   the volume of the mass suction area is = ',E14.5,/)
+ 9000 format(/,'Error in ustsma                ',/,                        &
+               '   the volume of the mass suction area is = ',E14.5,/)
 
 !----
 ! End

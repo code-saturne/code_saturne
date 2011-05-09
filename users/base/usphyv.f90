@@ -428,7 +428,7 @@ if(iutile.eq.1) then
     ! --- Stop if Cp is not variable
 
     if(ipccp.le.0) then
-      write(nfecra,1000) iphas, iphas, icp(iphas)
+      write(nfecra,1000) icp(iphas)
       call csexit (1)
     endif
 
@@ -657,9 +657,8 @@ endif ! --- Test on 'iutile'
 '@    =========                                               ',/,&
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
-'@    Pour la phase ',I10                                      ,/,&
 '@      usini1 indique que la chaleur specifique est uniforme ',/,&
-'@        ICP(',I10   ,') = ',I10   ,' alors que              ',/,&
+'@        ICP = ',I10   ,' alors que                          ',/,&
 '@      usphyv impose une chaleur specifique variable.        ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
@@ -720,9 +719,8 @@ endif ! --- Test on 'iutile'
 '@    =======',/,                                                 &
 '@    Inconsistent calculation data',/,                           &
 '@',/,                                                            &
-'@    For phase', i10,/,                                          &
 '@      usini1 specifies that the specific heat is uniform',/,    &
-'@        icp(',i10   ,') = ',i10   ,' while',/,                  &
+'@        icp = ',i10   ,' while',/,                              &
 '@      usphyv prescribes a variable specific heat.',/,           &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &

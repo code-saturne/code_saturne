@@ -1301,7 +1301,7 @@ do iphas = 1, nphas
 
   if (iwarni(iuiph).ge.1) then
 
-    write(nfecra,2000)iphas
+    write(nfecra,2000)
 
     rnorm = -1.d0
     do iel = 1, ncel
@@ -1419,7 +1419,6 @@ enddo
 '   ** RESOLUTION POUR LA PRESSION CONTINUITE                 ',/,&
 '      --------------------------------------                 ',/)
  2000 format(/,' APRES PRESSION CONTINUITE',/,                    &
-'  -- Phase : ',I10                                            ,/,&
 '-------------------------------------------------------------'  )
  2100 format(                                                           &
 ' Pression max.',E12.4   ,' (max. de la valeur absolue)       ',/)
@@ -1450,7 +1449,6 @@ enddo
 '   ** SOLVING CONTINUITY PRESSURE'                            ,/,&
 '      ---------------------------'                            ,/)
  2000 format(/,' AFTER CONTINUITY PRESSURE',/,                    &
-'  -- Phase : ',I10                                            ,/,&
 '-------------------------------------------------------------'  )
  2100 format(                                                           &
 ' Max. pressure',E12.4   ,' (max. absolute value)'             ,/)

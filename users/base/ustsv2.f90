@@ -232,7 +232,7 @@ iphiph = iphi(iphas)
 ipcrom = ipproc(irom(iphas))
 
 if(iwarni(ifbiph).ge.1) then
-  write(nfecra,1000) iphas
+  write(nfecra,1000)
 endif
 
 !===============================================================================
@@ -294,7 +294,7 @@ endif
 ! Formats
 !--------
 
- 1000 format(' User source terms for phi and f_bar, phase ',I4,/)
+ 1000 format(' User source terms for phi and f_bar',/)
 
 !----
 ! End

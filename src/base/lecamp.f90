@@ -439,9 +439,7 @@ write(nfecra,2411) ttpabs
 ! --->  Donnees modifiees
 do iphas = 1, min(nphas,jphas)
    if (iturb(iphas) .ne. jturb(iphas))                            &
-        write(nfecra,8410) iphas,iturb(iphas),                    &
-                           iphas,jturb(iphas),                    &
-                           iphas
+        write(nfecra,8410) iturb(iphas), jturb(iphas)
 enddo
 
 ! --->  Si le calcul precedent etait en ALE, on DOIT relire les
@@ -1206,8 +1204,8 @@ return
 '@ @@ ATTENTION : LECTURE DU FICHIER SUITE PRINCIPAL          ',/,&
 '@    =========                                               ',/,&
 '@                                                            ',/,&
-'@      REPRISE  DE CALCUL           AVEC ITURB(',I3,') = ',I4 ,/,&
-'@      A PARTIR D''UN CALCUL REALISE AVEC ITURB(',I3,') = ',I4,/,&
+'@      REPRISE  DE CALCUL           AVEC ITURB = ',I4         ,/,&
+'@      A PARTIR D''UN CALCUL REALISE AVEC ITURB = ',I4        ,/,&
 '@                                                            ',/,&
 '@    Le modele de turbulence en temps a ete modifie.         ',/,&
 '@    Le calcul peut etre execute.                            ',/,&
@@ -1301,8 +1299,8 @@ return
 '@ @@ WARNING : WHEN READING THE MAIN RESTART FILE            ',/,&
 '@    =========                                               ',/,&
 '@                                                            ',/,&
-'@    THE CURRENT CALCULATION USES ITURB(',I3,') = ',I4        ,/,&
-'@    BUT RESTARTS FROM ANOTHER ONE USING ITURB(',I3,') = ',I4 ,/,&
+'@    THE CURRENT CALCULATION USES ITURB = ',I4                ,/,&
+'@    BUT RESTARTS FROM ANOTHER ONE USING ITURB = ',I4         ,/,&
 '@                                                            ',/,&
 '@    The turbulence model has changed.                       ',/,&
 '@    The computation can be executed.                        ',/,&

@@ -458,12 +458,7 @@ else if  (numtyp .eq. -2) then
       enddo
 
 !       Nom de la variable
-      if(nphas.gt.1) then
-        write(namevr,1000)iphas
- 1000         format('YplusPhase',I2.2)
-      else
-        NAMEVR = 'Yplus'
-      endif
+      NAMEVR = 'Yplus'
 
 !       Dimension de la variable (3 = vecteur, 1=scalaire)
       idimt = 1
@@ -611,12 +606,7 @@ else if  (numtyp .eq. -2) then
         enddo
 
 !       Nom de la variable
-        if(nphas.gt.1) then
-          write(namevr,2000)iphas
- 2000           format('Flux th. entrant W.m-2 Phase',I2.2)
-        else
-          NAMEVR = 'Flux thermique entrant W.m-2'
-        endif
+        NAMEVR = 'Flux thermique entrant W.m-2'
 
 !       Dimension de la variable (3 = vecteur, 1=scalaire)
         idimt = 1

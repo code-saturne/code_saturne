@@ -174,12 +174,12 @@ if ( ippmod(icompf).ge.0 ) then
   do iphas = 1, nphas
 
     if(visls0(itempk(iphas)).le.0.d0) then
-      write(nfecra,1000) iphas, visls0(itempk(iphas))
+      write(nfecra,1000) visls0(itempk(iphas))
       iok = 1
     endif
 
     if(viscv0(iphas).lt.0.d0) then
-      write(nfecra,2000) iphas, viscv0(iphas)
+      write(nfecra,2000) viscv0(iphas)
       iok = 1
     endif
 
@@ -200,7 +200,7 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========   MODULE COMPRESSIBLE                         ',/,&
 '@                                                            ',/,&
-'@    LA CONDUCTIVITE THERMIQUE (PHASE ',I6,') DOIT ETRE      ',/,&
+'@    LA CONDUCTIVITE THERMIQUE DOIT ETRE                     ',/,&
 '@    UN REEL POSITIF STRICTEMENT                             ',/,&
 '@    ELLE A POUR VALEUR ',E12.4                               ,/,&
 '@                                                            ',/,&
@@ -217,9 +217,7 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========   MODULE COMPRESSIBLE                         ',/,&
 '@                                                            ',/,&
-'@    LA CONDUCTIVITE THERMIQUE (PHASE ',I6,') DOIT ETRE      ',/,&
-'@                                                            ',/,&
-'@    LA VISCOSITE EN VOLUME (PHASE ',I6,') DOIT ETRE         ',/,&
+'@    LA VISCOSITE EN VOLUME DOIT ETRE                        ',/,&
 '@    UN REEL POSITIF                                         ',/,&
 '@    ELLE A POUR VALEUR ',E12.4                               ,/,&
 '@                                                            ',/,&

@@ -360,7 +360,7 @@ if (iappel.eq.1) then
   endif
 
   if (iok.ne.0) then
-    write (nfecra,1100) iphas
+    write (nfecra,1100)
     call csexit (1)
     !==========
   endif
@@ -443,7 +443,7 @@ else if (iappel.eq.2) then
 
 
   if (iok.ne.0) then
-    write (nfecra,2100) iphas
+    write (nfecra,2100)
     call csexit (1)
     !==========
   endif
@@ -476,7 +476,6 @@ endif
 '@ @@ WARNING: Radiative transfer (usray5)                    ',/,&
 '@    ========                                                ',/,&
 '@    Boundary conditions are unknown for some faces          ',/,&
-'@     (Phase ',I10   ,')                                     ',/,&
 '@                                                            ',/,&
 '@    The calculation stops.                                  ',/,&
 '@                                                            ',/,&
@@ -506,7 +505,6 @@ endif
 '@ @@ WARNING: Radiative transfer (usray5)                    ',/,&
 '@    ========                                                ',/,&
 '@    Net radiation flux is unknown for some faces            ',/,&
-'@     (Phase ',I10   ,')                                     ',/,&
 '@                                                            ',/,&
 '@    The calculation stops.                                  ',/,&
 '@                                                            ',/,&

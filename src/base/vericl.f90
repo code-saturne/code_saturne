@@ -703,7 +703,7 @@ do iphas = 1, nphas
 
       if( icodcu.ne.icodcv .or. icodcu.ne.icodcw .or.             &
                                 icodcv.ne.icodcw ) then
-        write(nfecra,1020)ifac,iprfml(ifmfbr(ifac),1),iphas,      &
+        write(nfecra,1020)ifac,iprfml(ifmfbr(ifac),1),            &
                           icodcu,icodcv,icodcw
         nstuvw(iphas) = nstuvw(iphas) + 1
       endif
@@ -1032,7 +1032,7 @@ do iphas = 1, nphas
       nstuvw(iphas).gt.0 .or. nstoup(iphas).gt.0 .or.             &
       nstuke(iphas).gt.0 .or. nsurij(iphas).gt.0 .or.             &
       nstuv2(iphas).gt.0 .or. nstunu(iphas).gt.0       ) then
-    write (nfecra,1902) iphas, nstvit(iphas),nstopp(iphas),       &
+    write (nfecra,1902)        nstvit(iphas),nstopp(iphas),       &
                                nstoke(iphas),nstrij(iphas),       &
                                nstov2(iphas),nstonu(iphas),       &
                                nstuvw(iphas),nstoup(iphas),       &
@@ -1076,7 +1076,7 @@ endif
  1020 format(                                                           &
 '@                                                            ',/,&
 '@ INCOHERENCE COND. LIM. COMPOSANTES DE LA VITESSE           ',/,&
-'@   FACE ',I10   ,'; PROPRIETE 1:',I10   ,'; PHASE  ',I10     ,/,&
+'@   FACE ',I10   ,'; PROPRIETE 1:',I10                        ,/,&
 '@     ICODCL VITESSE  ',3I10                                  ,/,&
 '@                                                            '  )
  1030 format(                                                           &
@@ -1132,7 +1132,6 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
 '@    =========                                               ',/,&
-'@                 POUR LA PHASE ',I10                         ,/,&
 '@                                                            ',/,&
 '@         Conditions aux limites non prevues :               ',/,&
 '@             sur la vitesse                       : ',I10    ,/,&
@@ -1182,7 +1181,7 @@ endif
  1020 format(                                                           &
 '@                                                            ',/,&
 '@ INCOHERENCY BOUNDARY CONDITIONS VELOCITY COMPONENT         ',/,&
-'@   FACE ',I10   ,'; PROPERTY 1:',I10   ,'; PHASE  ',I10      ,/,&
+'@   FACE ',I10   ,'; PROPERTY 1:',I10                         ,/,&
 '@     ICODCL VELOCITY ',3I10                                  ,/,&
 '@                                                            '  )
  1030 format(                                                           &
@@ -1238,7 +1237,6 @@ endif
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT DURING THE BOUNDARY CONDITIONS VERIF.    ',/,&
 '@    ========                                                ',/,&
-'@                 FOR PHASE ',I10                             ,/,&
 '@                                                            ',/,&
 '@         Unexpeted boundary conditions:                     ',/,&
 '@             on the velocity                      : ',I10    ,/,&
