@@ -1,4 +1,9 @@
 * 09/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Robustness improvement for batch handling by the GUI.
+  modified file:
+    gui/Pages/BatchRunningModel.py
+
+* 09/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Added SLURM batch system support.
   added file:
    extras/batch/batch.SLURM

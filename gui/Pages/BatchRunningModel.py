@@ -110,6 +110,8 @@ class BatchRunningModel(Model):
             if batch_lines[i][0:5] == '#MSUB':
                 batch_args = self.preParse(batch_lines[i][5:])
                 tok = batch_args.split()
+                if len(tok) < 2:
+                    continue
                 kw = tok[0]
                 val = tok[1].split(',')[0].strip()
                 if kw == '-r':
@@ -134,6 +136,8 @@ class BatchRunningModel(Model):
             if batch_lines[i][0:5] == '#MSUB':
                 batch_args = self.preParse(batch_lines[i][5:])
                 tok = batch_args.split()
+                if len(tok) < 2:
+                    continue
                 kw = tok[0]
                 if kw == '-r':
                     val = str(self.dictValues['job_name'])
