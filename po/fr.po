@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2010-12-20 12:07+0100\n"
+"POT-Creation-Date: 2011-05-02 09:32+0200\n"
 "PO-Revision-Date: 2010-01-11 12:50+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -280,15 +280,15 @@ msgstr ""
 "\n"
 " ----> Définir rasize au moins égale à %d réels)."
 
-#: src/base/cs_base.c:1091
+#: src/base/cs_base.c:1120
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:1092
+#: src/base/cs_base.c:1121
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1096
+#: src/base/cs_base.c:1125
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -298,22 +298,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:1159
+#: src/base/cs_base.c:1188
 #, c-format
 msgid "  %s %12.3f %cb\n"
 msgstr "  %s %12.3f %co\n"
 
-#: src/base/cs_base.c:1164
+#: src/base/cs_base.c:1193
 #, c-format
 msgid "                             local minimum: %12.3f %cb  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1167
+#: src/base/cs_base.c:1196
 #, c-format
 msgid "                             local maximum: %12.3f %cb  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1207
+#: src/base/cs_base.c:1236
 #, c-format
 msgid ""
 "\n"
@@ -332,7 +332,7 @@ msgstr ""
 "   Mémoire de travail maximale locale demandée %12.3f %co\n"
 "                                      utilisée %12.3f %co\n"
 
-#: src/base/cs_base.c:1244
+#: src/base/cs_base.c:1273
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -340,7 +340,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:1258
+#: src/base/cs_base.c:1287
 #, c-format
 msgid ""
 "\n"
@@ -349,12 +349,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:1260
+#: src/base/cs_base.c:1289
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:1265
+#: src/base/cs_base.c:1294
 #, c-format
 msgid ""
 "\n"
@@ -363,12 +363,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:1274
+#: src/base/cs_base.c:1303
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:1285
+#: src/base/cs_base.c:1314
 #, c-format
 msgid ""
 "\n"
@@ -377,52 +377,52 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:1288
+#: src/base/cs_base.c:1317
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:1380
+#: src/base/cs_base.c:1409
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:1382
+#: src/base/cs_base.c:1411
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:1390
+#: src/base/cs_base.c:1419
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:1392
+#: src/base/cs_base.c:1421
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:1396
+#: src/base/cs_base.c:1425
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:1399
+#: src/base/cs_base.c:1428
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:1402
+#: src/base/cs_base.c:1431
 msgid "User:              "
 msgstr "Utilisateur :      "
 
-#: src/base/cs_base.c:1406
+#: src/base/cs_base.c:1435
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
-#: src/base/cs_base.c:1409
+#: src/base/cs_base.c:1438
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
 
-#: src/base/cs_base.c:1412
+#: src/base/cs_base.c:1441
 msgid "OpenMP threads:    "
 msgstr "Threads OpenMP:    "
 
-#: src/base/cs_base.c:1442
+#: src/base/cs_base.c:1471
 #, c-format
 msgid ""
 "\n"
@@ -2659,12 +2659,12 @@ msgid ""
 " Be careful. It may produce mesh with a poor quality.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:761
+#: src/base/cs_join_update.c:750
 #, c-format
 msgid "  Add %d new vertices from the single elements sync.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:1536
+#: src/base/cs_join_update.c:1525
 #, c-format
 msgid ""
 "  Cannot find the first corresponding vertex between the face connectivity "
@@ -2672,7 +2672,7 @@ msgid ""
 "  Current global face number: %u\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:1698
+#: src/base/cs_join_update.c:1687
 #, c-format
 msgid ""
 "  Face %d (%u): Edge with two different descriptions: (%d, %d) [%u, %u]\n"
@@ -2680,47 +2680,47 @@ msgid ""
 "  Impossible to continue the mesh update after the merge operation.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:2486
+#: src/base/cs_join_update.c:2475
 #, c-format
 msgid "  Join Face connectivity %d (%u): "
 msgstr ""
 
-#: src/base/cs_join_update.c:2517
+#: src/base/cs_join_update.c:2506
 msgid "  Cannot achieve to reorient the current joined face.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3099 src/base/cs_join_update.c:3151
+#: src/base/cs_join_update.c:3088 src/base/cs_join_update.c:3140
 #, c-format
 msgid ""
 "  Cannot achieve to reorient the current joined face with face %d (selected "
 "face).\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3421
+#: src/base/cs_join_update.c:3410
 #, c-format
 msgid ""
 " Incoherency found before interior face orientation checking.\n"
 " Join face %d (%u) and related faces [%d, %d]\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:3613
+#: src/base/cs_join_update.c:3602
 #, c-format
 msgid "  Delete %d local vertices not used in mesh definition.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4068
+#: src/base/cs_join_update.c:4057
 #, c-format
 msgid ""
 "  Warning: Face %d (%u) has more than two ancestors.\n"
 "  Old faces implied:"
 msgstr ""
 
-#: src/base/cs_join_update.c:4087
+#: src/base/cs_join_update.c:4076
 #, c-format
 msgid "  Warning: Face %d (%u) has no ancestor.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4098
+#: src/base/cs_join_update.c:4087
 #, c-format
 msgid ""
 "\n"
@@ -2729,14 +2729,14 @@ msgid ""
 "    Number of border faces to add  : %9d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4125
+#: src/base/cs_join_update.c:4114
 #, c-format
 msgid ""
 " There are %u undefined faces with no ancestor.\n"
 " Cannot continue the joining algorithm.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4133
+#: src/base/cs_join_update.c:4122
 #, c-format
 msgid ""
 "\n"
@@ -2744,34 +2744,34 @@ msgid ""
 "     Global number of border faces to add: %10llu\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4141
+#: src/base/cs_join_update.c:4130
 #, c-format
 msgid "     Global number of multiple border faces: %10llu\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4348
+#: src/base/cs_join_update.c:4337
 #, c-format
 msgid "  Clean border face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4370
+#: src/base/cs_join_update.c:4359
 #, c-format
 msgid ""
 "\n"
 "  Degenerate connectivity for %d final local boundary faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4409
+#: src/base/cs_join_update.c:4398
 #, c-format
 msgid "  Clean interior face %d. New number of vertices: %d\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4431
+#: src/base/cs_join_update.c:4420
 #, c-format
 msgid "  Degenerate connectivity for %d final local interior faces.\n"
 msgstr ""
 
-#: src/base/cs_join_update.c:4481
+#: src/base/cs_join_update.c:4470
 #, c-format
 msgid ""
 "\n"
@@ -2912,7 +2912,7 @@ msgstr ""
 "avec une synchronisation de halo externe, précédée d'une sauvegarde\n"
 "et suivie d'une restoration du halo de rotation."
 
-#: src/base/cs_matrix.c:2011
+#: src/base/cs_matrix.c:2008
 msgid ""
 "Assigning non-symmetric matrix coefficients to a matrix\n"
 "in a symmetric CSR format."
@@ -2920,7 +2920,7 @@ msgstr ""
 "Affectation de coefficients matriciels non symétriques\n"
 "à une matrice en stockage CSR symmétrique."
 
-#: src/base/cs_matrix.c:2616
+#: src/base/cs_matrix.c:2611
 #, c-format
 msgid ""
 "Handling of matrixes in %s format\n"
@@ -2929,9 +2929,9 @@ msgstr ""
 "La gestion des matrices au format %s \n"
 "n'est pas encore opérationnelle."
 
-#: src/base/cs_matrix.c:2752 src/base/cs_matrix.c:2769
-#: src/base/cs_matrix.c:2795 src/base/cs_matrix.c:2815
-#: src/base/cs_matrix.c:2837
+#: src/base/cs_matrix.c:2747 src/base/cs_matrix.c:2764
+#: src/base/cs_matrix.c:2790 src/base/cs_matrix.c:2810
+#: src/base/cs_matrix.c:2832
 msgid "The matrix is not defined."
 msgstr "La matrice n'est pas définie."
 
@@ -3132,7 +3132,7 @@ msgstr ""
 "                       Y : %14.7e %14.7e\n"
 "                       Z : %14.7e %14.7e\n"
 
-#: src/base/cs_mesh.c:1097
+#: src/base/cs_mesh.c:1096
 msgid ""
 "\n"
 " Global definition of the number of elements (cells, vertices, faces...)\n"
@@ -3140,7 +3140,7 @@ msgstr ""
 "\n"
 " Définition globale du nombre d'éléments (cellules, sommets, faces...)\n"
 
-#: src/base/cs_mesh.c:1183
+#: src/base/cs_mesh.c:1184
 msgid ""
 "\n"
 " Halo construction with extended neighborhood\n"
@@ -3152,11 +3152,11 @@ msgstr ""
 " ==========================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:1190
+#: src/base/cs_mesh.c:1191
 msgid " Periodicities combination\n"
 msgstr " Composition des périodicités\n"
 
-#: src/base/cs_mesh.c:1199
+#: src/base/cs_mesh.c:1200
 msgid ""
 "\n"
 " Halo construction with standard neighborhood\n"
@@ -3168,27 +3168,27 @@ msgstr ""
 " ============================================\n"
 "\n"
 
-#: src/base/cs_mesh.c:1227
+#: src/base/cs_mesh.c:1228
 msgid " Definition of periodic couples\n"
 msgstr " Définition des couples périodiques\n"
 
-#: src/base/cs_mesh.c:1249
+#: src/base/cs_mesh.c:1250
 msgid " Interface creation\n"
 msgstr " Création de l'interface\n"
 
-#: src/base/cs_mesh.c:1282
+#: src/base/cs_mesh.c:1283
 msgid " Halo creation\n"
 msgstr " Création des halos\n"
 
-#: src/base/cs_mesh.c:1287
+#: src/base/cs_mesh.c:1288
 msgid " Halo definition\n"
 msgstr " Définition des halos\n"
 
-#: src/base/cs_mesh.c:1311
+#: src/base/cs_mesh.c:1312
 msgid " Extended neighborhood structures definition\n"
 msgstr " Définition des structures pour le voisinage étendu\n"
 
-#: src/base/cs_mesh.c:1338
+#: src/base/cs_mesh.c:1339
 #, c-format
 msgid ""
 "\n"
@@ -3197,7 +3197,7 @@ msgstr ""
 "\n"
 " Création de la connectivité étendue (%.3g s)\n"
 
-#: src/base/cs_mesh.c:1489
+#: src/base/cs_mesh.c:1490
 #, c-format
 msgid ""
 " %s\n"
