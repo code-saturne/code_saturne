@@ -111,12 +111,8 @@ iw8    =       iw7    + ncelet
 iw9    =       iw8    + ncelet
 
 imemph = 0
-do iphas =1, nphas
-  if(iturb.eq.41)  imemph = 1
-enddo
-do iphas =1, nphas
-  if(iturb.eq.42)  imemph = 2
-enddo
+if(iturb.eq.41)  imemph = 1
+if(iturb.eq.42)  imemph = 2
 
 if(imemph.eq.1) then
   iw10   = iw9  + ncelet

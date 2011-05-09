@@ -183,19 +183,17 @@ if ( isuite.eq.0 ) then
 
 ! ----- Initialisations par defaut
 
-    do iphas = 1, nphas
-
 !     ON MET LA TEMPERATURE A T0
-      do iel = 1, ncel
-        rtp(iel,isca(itempk)) = t0
-      enddo
+    do iel = 1, ncel
+      rtp(iel,isca(itempk)) = t0
+    enddo
 
 !     On initialise Cv, rho et l'energie
-      iccfth = 0
-      imodif = 1
+    iccfth = 0
+    imodif = 1
 
-      call uscfth                                                 &
-      !==========
+    call uscfth                                                 &
+    !==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
@@ -203,31 +201,29 @@ if ( isuite.eq.0 ) then
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )
 
 !     On initialise la diffusivite thermique
-      visls0(ienerg) = visls0(itempk)/cv0
+    visls0(ienerg) = visls0(itempk)/cv0
 
-      if(ivisls(ienerg).gt.0) then
-        if(ivisls(itempk).gt.0) then
-          if(icv.gt.0) then
-            do iel = 1, ncel
-              propce(iel,ipproc(ivisls(ienerg))) =         &
+    if(ivisls(ienerg).gt.0) then
+      if(ivisls(itempk).gt.0) then
+        if(icv.gt.0) then
+          do iel = 1, ncel
+            propce(iel,ipproc(ivisls(ienerg))) =         &
                  propce(iel,ipproc(ivisls(itempk)))        &
                  / propce(iel,ipproc(icv))
-            enddo
-          else
-            do iel = 1, ncel
-              propce(iel,ipproc(ivisls(ienerg))) =         &
-           propce(iel,ipproc(ivisls(itempk))) / cv0
-            enddo
-          endif
+          enddo
         else
           do iel = 1, ncel
-              propce(iel,ipproc(ivisls(ienerg))) =         &
-           visls0(itempk) / propce(iel,ipproc(icv))
+            propce(iel,ipproc(ivisls(ienerg))) =         &
+                 propce(iel,ipproc(ivisls(itempk))) / cv0
           enddo
         endif
+      else
+        do iel = 1, ncel
+          propce(iel,ipproc(ivisls(ienerg))) =         &
+               visls0(itempk) / propce(iel,ipproc(icv))
+        enddo
       endif
-
-    enddo
+    endif
 
 ! ----- On donne la main a l'utilisateur
 
@@ -243,36 +239,28 @@ if ( isuite.eq.0 ) then
 
 ! ----- Initialisation des proprietes physiques ROM et ROMB
 
-    do iphas = 1, nphas
+    iirom  = ipproc(irom  )
+    iiromb = ipprob(irom  )
 
-      iirom  = ipproc(irom  )
-      iiromb = ipprob(irom  )
+    do iel = 1, ncel
+      propce(iel,iirom)  = rtp(iel,isca(irho))
+    enddo
 
-      do iel = 1, ncel
-        propce(iel,iirom)  = rtp(iel,isca(irho))
-      enddo
-
-      do ifac = 1, nfabor
-        iel = ifabor(ifac)
-        propfb(ifac,iiromb) =                                     &
-            coefa(ifac,iclrtp(isca(irho),icoef))           &
-          + coefb(ifac,iclrtp(isca(irho),icoef))           &
-                    * rtp(iel,isca(irho))
-      enddo
-
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      propfb(ifac,iiromb) =                                     &
+           coefa(ifac,iclrtp(isca(irho),icoef))           &
+           + coefb(ifac,iclrtp(isca(irho),icoef))           &
+           * rtp(iel,isca(irho))
     enddo
 
 ! ----- Initialisation de la viscosite en volume
 
-    do iphas = 1, nphas
-
-      if(iviscv.gt.0) then
-        do iel = 1, ncel
-          propce(iel,ipproc(iviscv)) = viscv0
-        enddo
-      endif
-
-    enddo
+    if(iviscv.gt.0) then
+      do iel = 1, ncel
+        propce(iel,ipproc(iviscv)) = viscv0
+      enddo
+    endif
 
   endif
 
@@ -282,22 +270,18 @@ else
 
 ! ----- Initialisations par defaut
 
-    do iphas = 1, nphas
+    !     On initialise Cv
 
-!     On initialise Cv
+    iccfth = 0
+    imodif = 1
 
-      iccfth = 0
-      imodif = 1
-
-      call uscfth                                                 &
-      !==========
+    call uscfth                                                 &
+    !==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )
-
-    enddo
 
   endif
 

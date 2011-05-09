@@ -165,10 +165,8 @@ idebra = idbra0
 
 !      RINFIN : VALEUR INFINIE
 
-do iphas = 1, nphas
-  do ifac = 1, nfabor
-    ia(iitypf-1+ifac) = 0
-  enddo
+do ifac = 1, nfabor
+  ia(iitypf-1+ifac) = 0
 enddo
 
 ! Pour toutes les variables, on initialise RCODCL(1)a RINFIN

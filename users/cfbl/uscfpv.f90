@@ -250,28 +250,25 @@ idebra = idbra0
 !    The same treatment is applied for all values of iphas.
 !===============================================================================
 
-! --- Loop on iphas
-do iphas = 1, nphas
-
 ! --- Rank of the temperature of the current phase iphas in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk)
+ivart = isca(itempk)
 
 ! --- Rank 'ipcvis' of the molecular dynamic viscosity of the current phase
 !     iphas in the array 'propce' (physical properties at the cell centers)
 
-  ipcvis = ipproc(iviscl)
+ipcvis = ipproc(iviscl)
 
 ! --- User-defined coefficients for the selected law.
 !     The values hereafter are provided as a mere example. They
 !     are physically meaningless.
 
-  varam = -3.4016d-9
-  varbm =  6.2332d-7
-  varcm = -4.5577d-5
-  vardm =  1.6935d-3
+varam = -3.4016d-9
+varbm =  6.2332d-7
+varcm = -4.5577d-5
+vardm =  1.6935d-3
 
 ! --- Molecular dynamic viscosity mu at the cell centres, kg/(m s)
 !     In this example, mu is provided as a function of the temperature T:
@@ -279,15 +276,11 @@ do iphas = 1, nphas
 !     that is:
 !       propce(iel,ipcvis) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
-  do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipcvis) =                                          &
-                       xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
-  enddo
-
-
+do iel = 1, ncel
+  xrtp = rtp(iel,ivart)
+  propce(iel,ipcvis) =                                          &
+       xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 enddo
-! --- End of the loop on iphas
 
 
 ! --- Discard the following test so that the code do not stop
@@ -305,39 +298,36 @@ endif
 !    The same treatment is applied for all values of iphas.
 !===============================================================================
 
-! --- Loop on iphas
-do iphas = 1, nphas
-
 ! --- Rank of the temperature for the current phase iphas in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk)
+ivart = isca(itempk)
 
 ! --- Rank 'ipcvsv' of the molecular dynamic viscosity of the current phase
 !     iphas in the array 'propce' (physical properties at the cell centers)
 
-  if(iviscv.gt.0) then
-    ipcvsv = ipproc(iviscv)
-  else
-    ipcvsv = 0
-  endif
+if(iviscv.gt.0) then
+  ipcvsv = ipproc(iviscv)
+else
+  ipcvsv = 0
+endif
 
 ! --- Stop if the viscosity has not been defined as variable
 
-  if(ipcvsv.le.0) then
-    write(nfecra,2000) iviscv
-    call csexit (1)
-  endif
+if(ipcvsv.le.0) then
+  write(nfecra,2000) iviscv
+  call csexit (1)
+endif
 
 ! --- User-defined coefficients for the selected law.
 !     The values provided hereafter are provided as a mere example. They
 !     are physically meaningless.
 
-  varam = -3.4016d-9
-  varbm =  6.2332d-7
-  varcm = -4.5577d-5
-  vardm =  1.6935d-3
+varam = -3.4016d-9
+varbm =  6.2332d-7
+varcm = -4.5577d-5
+vardm =  1.6935d-3
 
 ! --- Molecular dynamic volumetric viscosity kappa at the cell centres, kg/(m s)
 !     In this example, kappa is provided as a function of the temperature T:
@@ -345,15 +335,11 @@ do iphas = 1, nphas
 !     that is:
 !       propce(iel,ipcvsv) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
-  do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipcvsv) =                                          &
-                       xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
-  enddo
-
+do iel = 1, ncel
+  xrtp = rtp(iel,ivart)
+  propce(iel,ipcvsv) =                                          &
+       xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 enddo
-! --- End of the loop on iphas
-
 
 ! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
@@ -377,43 +363,40 @@ endif
 ! Indeed, this variable needs to be computed from the isobaric specific heat
 ! using the thermodynamics laws.
 
-! --- Loop on iphas
-do iphas = 1, nphas
-
 ! --- Rank of the temperature for the current phase iphas in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk)
+ivart = isca(itempk)
 
 ! --- Rank 'ipcpp' of the isobaric specific heat for the current phase
 !     iphas in the array 'propce' (physical properties at the cell
 !     centers)
 
-  if(icp.gt.0) then
-    ipccp  = ipproc(icp   )
-  else
-    ipccp  = 0
-  endif
+if(icp.gt.0) then
+  ipccp  = ipproc(icp   )
+else
+  ipccp  = 0
+endif
 
 ! --- Stop if the iobaric or iochoric specific heat (cp or cv) has not
 !     been defined as variable
 
-  if(ipccp.le.0) then
-    write(nfecra,1000) icp
-    call csexit (1)
-  endif
-  if(icv.le.0) then
-    write(nfecra,1001) icv
-    call csexit (1)
-  endif
+if(ipccp.le.0) then
+  write(nfecra,1000) icp
+  call csexit (1)
+endif
+if(icv.le.0) then
+  write(nfecra,1001) icv
+  call csexit (1)
+endif
 
 ! --- User-defined coefficients for the selected law.
 !     The values provided hereafter are provided as a mere example. They
 !     are physically meaningless.
 
-  varac = 0.00001d0
-  varbc = 1000.0d0
+varac = 0.00001d0
+varbc = 1000.0d0
 
 ! --- Isobaric specific heat cp at the cell centres, J/(kg degree)
 !     In this example, cp is provided as a function of the temperature T:
@@ -421,27 +404,24 @@ do iphas = 1, nphas
 !     that is:
 !       propce(iel,ipccp ) =    varac*xrtp+varbc
 
-  do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipccp ) = varac*xrtp + varbc
-  enddo
+do iel = 1, ncel
+  xrtp = rtp(iel,ivart)
+  propce(iel,ipccp ) = varac*xrtp + varbc
+enddo
 
 ! --- The isochoric specific heat is deduced from the isobaric specific
 !     heat using the subroutine 'uscfth'.
 
-  iccfth = 432
-  imodif = 0
+iccfth = 432
+imodif = 0
 
-  call uscfth                                                     &
-  !==========
+call uscfth                                                     &
+!==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , imodif , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    propce(1, ipproc(icv) )    , w1     , w2     , w3     )
-
-enddo
-! --- End of the loop on iphas
 
 ! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
@@ -458,42 +438,39 @@ endif
 !    The same treatment is applied for all values of iphas.
 !===============================================================================
 
-! --- Loop on iphas
-do iphas = 1, nphas
-
 ! --- Rank of the temperature for the current phase iphas in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
-  ivart = isca(itempk)
+ivart = isca(itempk)
 
 ! --- Rank 'ipcvsl' of the olecular thermal conductivity for the current
 !     phase iphas in the array 'propce' (physical properties at the cell
 !     centers)
 
-  if(ivisls(itempk).gt.0) then
-    ipcvsl = ipproc(ivisls(itempk))
-  else
-    ipcvsl = 0
-  endif
+if(ivisls(itempk).gt.0) then
+  ipcvsl = ipproc(ivisls(itempk))
+else
+  ipcvsl = 0
+endif
 
 ! --- Stop if the molecular thermal conductivity has not
 !     been defined as variable
 
-  if(ipcvsl.le.0) then
-    write(nfecra,1010)                                            &
-      itempk, itempk, ivisls(itempk)
-    call csexit (1)
-  endif
+if(ipcvsl.le.0) then
+  write(nfecra,1010)                                            &
+       itempk, itempk, ivisls(itempk)
+  call csexit (1)
+endif
 
 ! --- User-defined coefficients for the selected law.
 !     The values provided hereafter are provided as a mere example. They
 !     are physically meaningless.
 
-  varal = -3.3283d-7
-  varbl =  3.6021d-5
-  varcl =  1.2527d-4
-  vardl =  0.58923d0
+varal = -3.3283d-7
+varbl =  3.6021d-5
+varcl =  1.2527d-4
+vardl =  0.58923d0
 
 ! --- Molecular thermal conductivity lambda at the cell centres, W/(m degree)
 !     In this example, lambda is provided as a function of the temperature T:
@@ -501,16 +478,11 @@ do iphas = 1, nphas
 !     that is:
 !       propce(iel,ipcvsl) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
 
-  do iel = 1, ncel
-    xrtp = rtp(iel,ivart)
-    propce(iel,ipcvsl) =                                          &
-         (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
-  enddo
-
-
+do iel = 1, ncel
+  xrtp = rtp(iel,ivart)
+  propce(iel,ipcvsl) =                                          &
+       (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
 enddo
-! --- End of the loop on iphas
-
 
 ! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
@@ -544,9 +516,7 @@ do ii = 1, nscaus
 !     so that it will be skipped.
 
   ith = 0
-  do iphas = 1, nphas
-    if (iscal.eq.itempk) ith = 1
-  enddo
+  if (iscal.eq.itempk) ith = 1
 
 ! --- If the variable represents the variance of the fluctuations of
 !     another scalar variable (iscavr <= 0), it is simply skipped.

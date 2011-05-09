@@ -268,14 +268,12 @@ call iasize('scalai',ifinia)
 
     if ( ippmod(icompf).ge.0 ) then
 
-      do iphas = 1, nphas
-        if ( iscal.eq.irho .or.                            &
-             iscal.eq.itempk ) then
-          ispecf = 1
-        elseif ( iscal.eq.ienerg ) then
-          ispecf = 2
-        endif
-      enddo
+      if ( iscal.eq.irho .or.                            &
+           iscal.eq.itempk ) then
+        ispecf = 1
+      elseif ( iscal.eq.ienerg ) then
+        ispecf = 2
+      endif
 
 ! ---> Masse volumique : deja resolue
 ! ---> Temperature     : n'est pas une variable transportee

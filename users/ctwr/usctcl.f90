@@ -259,9 +259,7 @@ do ilelt = 1, nlelt
 !                sur la premiere face de sortie libre (ISOLIB)
 
 
-  do iphas = 1, nphas
-    itypfb(ifac) = isolib
-  enddo
+  itypfb(ifac) = isolib
 
 !       On impose un profil de pression sur toutes les faces
   iphas = 1
@@ -288,9 +286,7 @@ do ilelt = 1, nlelt
 !                  FROTTEMENT POUR LES VITESSES (+GRANDEURS TURB)
 !                  FLUX NUL SUR LES SCALAIRES
 
-  do iphas = 1, nphas
-   itypfb(ifac)   = iparoi
-  enddo
+  itypfb(ifac)   = iparoi
 
 enddo
 
@@ -307,9 +303,7 @@ do ilelt = 1, nlelt
 
 !          SYMETRIES
 
-  do iphas = 1, nphas
-    itypfb(ifac) = isymet
-  enddo
+  itypfb(ifac) = isymet
 
 enddo
 

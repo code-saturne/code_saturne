@@ -80,13 +80,11 @@ integer iphas, ii, jj, isc, ipp
 !===============================================================================
 !     L'utilisateur ne doit pas y avoir touche.
 
-do iphas = 1, nphas
-  if(iscalt.ne.-1) then
-    write(nfecra,1000)iscalt
-    call csexit (1)
-    !==========
-  endif
-enddo
+if(iscalt.ne.-1) then
+  write(nfecra,1000)iscalt
+  call csexit (1)
+  !==========
+endif
 do ii = 1, nscapp
   if(iscsth(iscapp(ii)).ne.-10) then
     write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))
@@ -123,21 +121,17 @@ do isc = 1, nscapp
 
 enddo
 
-do iphas = 1, nphas
+ipp = ipprtp(isca(itemp4))
+NOMVAR(IPP)  = 'Temperature'
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
 
-  ipp = ipprtp(isca(itemp4))
-  NOMVAR(IPP)  = 'Temperature'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-  ipp = ipprtp(isca(ihumid))
-  NOMVAR(IPP)  = 'Humidite'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-enddo
+ipp = ipprtp(isca(ihumid))
+NOMVAR(IPP)  = 'Humidite'
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
 
 !===============================================================================
 ! 2. ON DONNE LA MAIN A L'UTLISATEUR

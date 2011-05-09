@@ -209,10 +209,6 @@ if (imeteo.eq.0) return
 
 !===============================================================================
 
-! --- Boucle sur les phases : debut
-do iphas = 1, nphas
-
-
 !   Positions des variables, coefficients
 !   -------------------------------------
 
@@ -221,59 +217,55 @@ do iphas = 1, nphas
 !       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
 !          IVART = ISCA(2)
 
-  if (iscalt.gt.0) then
-    ivart = isca(iscalt)
-  else
-    write(nfecra,9010) iscalt
-    call csexit (1)
-  endif
+if (iscalt.gt.0) then
+  ivart = isca(iscalt)
+else
+  write(nfecra,9010) iscalt
+  call csexit (1)
+endif
 
 ! --- Position des conditions limites de la variable IVART
 
-  iclvar = iclrtp(ivart,icoef)
+iclvar = iclrtp(ivart,icoef)
 
 ! --- Rang de la masse volumique de la phase courante IPHAS
 !     dans PROPCE, prop. physiques au centre des elements       : IPCROM
 !     dans PROPFB, prop. physiques au centre des faces de bord  : IPBROM
 
-  ipcrom = ipproc(irom)
-  ipbrom = ipprob(irom)
-  ipctem = ipproc(itempc)
+ipcrom = ipproc(irom)
+ipbrom = ipprob(irom)
+ipctem = ipproc(itempc)
 
 ! From potential temperature, compute:
 ! - Temperature in Celsius
 ! - Density
 ! ----------------------
 
-  do iel = 1, ncel
+do iel = 1, ncel
 
-    xrtp = rtp(iel,ivart) !  The thermal scalar is potential temperature
+  xrtp = rtp(iel,ivart) !  The thermal scalar is potential temperature
 
-!   Pressure profile from meteo file:
-    zent=xyzcen(3,iel)
-    call intprf &
-!   ===========
+  !   Pressure profile from meteo file:
+  zent=xyzcen(3,iel)
+  call intprf &
+  !===========
   ( nbmett, nbmetm,                                            &
     ra(iztmet) , ra(itmmet) , ra(iphmet) , zent, ttcabs, pp )
 
-!   Temperature in Celsius in cell centers:
-!   ---------------------------------------
-!   law: T = theta * (p/psol) ** (Rair/Cp0)
+  !   Temperature in Celsius in cell centers:
+  !   ---------------------------------------
+  !   law: T = theta * (p/psol) ** (Rair/Cp0)
 
-    propce(iel, ipctem) = xrtp*(pp/p0)**(rair/cp0)
-    propce(iel, ipctem) = propce(iel, ipctem) - tkelvi
+  propce(iel, ipctem) = xrtp*(pp/p0)**(rair/cp0)
+  propce(iel, ipctem) = propce(iel, ipctem) - tkelvi
 
-!   Density in cell centers:
-!   ------------------------
-!   law:    RHO       =   P / ( Rair * T(K) )
+  !   Density in cell centers:
+  !   ------------------------
+  !   law:    RHO       =   P / ( Rair * T(K) )
 
-    propce(iel,ipcrom) = pp/(rair*xrtp)*(p0/pp)**(rair/cp0)
-
-  enddo
+  propce(iel,ipcrom) = pp/(rair*xrtp)*(p0/pp)**(rair/cp0)
 
 enddo
-! --- Boucle sur les phases : fin
-
 
 
 !===============================================================================

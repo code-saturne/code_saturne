@@ -1,3 +1,78 @@
+* 09/05/2011 - David Monfort <david.monfort@edf.fr>
+  Removing the dependency to the number of phases (step 11).
+  Loops on the number of phases and tests on the phase number have been
+  suppressed.
+  modified routines:
+    src/atmo/atini1.f90
+    src/atmo/atphyv.f90
+    src/atmo/attycl.f90
+    src/base/caltri.f90
+    src/base/codits.f90
+    src/base/condli.f90
+    src/base/csc2cl.f90
+    src/base/cscini.f90
+    src/base/cscpfb.f90
+    src/base/dvvpst.f90
+    src/base/ecrava.f90
+    src/base/ecrlis.f90
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/initi2.f90
+    src/base/iniva0.f90
+    src/base/inivar.f90
+    src/base/lecamx.f90
+    src/base/memcli.f90
+    src/base/memnav.f90
+    src/base/mempdc.f90
+    src/base/memphy.f90
+    src/base/memrij.f90
+    src/base/memtri.f90
+    src/base/memtsm.f90
+    src/base/mmtycl.f90
+    src/base/modini.f90
+    src/base/navsto.f90
+    src/base/pergra.f90
+    src/base/phyvar.f90
+    src/base/precli.f90
+    src/base/scalai.f90
+    src/base/schtmp.f90
+    src/base/tridim.f90
+    src/base/turbke.f90
+    src/base/turbkw.f90
+    src/base/turrij.f90
+    src/base/typecl.f90
+    src/base/varpos.f90
+    src/base/vericl.f90
+    src/base/verini.f90
+    src/base/vor2cl.f90
+    src/cfbl/cfcdts.f90
+    src/cfbl/cfini1.f90
+    src/cfbl/cfiniv.f90
+    src/cfbl/cfphyv.f90
+    src/cfbl/cfprop.f90
+    src/cfbl/cfvarp.f90
+    src/cfbl/cfxtcl.f90
+    src/cogz/coini1.f90
+    src/cplv/cpini1.f90
+    src/cplv/cplin1.f90
+    src/ctwr/ctini1.f90
+    src/ctwr/ctphyv.f90
+    src/elec/elini1.f90
+    src/fuel/fuini1.f90
+    src/pprt/ppprcl.f90
+    users/atmo/usatcl.f90
+    users/atmo/usati1.f90
+    users/base/usclim.f90
+    users/base/uskpdc.f90
+    users/base/usphyv.f90
+    users/base/uspt1d.f90
+    users/base/ustsma.f90
+    users/base/usvist.f90
+    users/cfbl/uscfpv.f90
+    users/cfbl/uscfth.f90
+    users/cfbl/uscfx1.f90
+    users/ctwr/usctcl.f90
+
 * 09/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Robustness improvement for batch handling by the GUI.
   modified file:

@@ -84,13 +84,11 @@ integer          iphas, ii, isc, jj, ipp
 !     L'utilisateur ne doit pas y avoir touche.
 
 if ( ippmod(iatmos).ge.1 ) then
-  do iphas = 1, nphas
-    if(iscalt.ne.-1) then
-      write(nfecra,1000)iscalt
-      call csexit (1)
-      !==========
-    endif
-  enddo
+  if(iscalt.ne.-1) then
+    write(nfecra,1000)iscalt
+    call csexit (1)
+    !==========
+  endif
 
   do ii = 1, nscapp
     if(iscsth(iscapp(ii)).ne.-10) then
@@ -212,11 +210,9 @@ endif
 
 if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
 
-  do iphas = 1, nphas
-    if (itytur.eq.2) then
-      ideuch = 0
-    endif
-  enddo
+  if (itytur.eq.2) then
+    ideuch = 0
+  endif
 
 endif
 
@@ -226,9 +222,7 @@ endif
 
 if (nscal.gt.0) then
   do ii = 1, nscal
-    do iphas = 1, nphas
-        sigmas(ii) = 0.7d0
-    enddo
+    sigmas(ii) = 0.7d0
   enddo
 endif
 

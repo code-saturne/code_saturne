@@ -152,23 +152,19 @@ do numcpl = 1, nbrcpl
   ! modeles RANS et laminaires, sauf pour le modele v2f (dans ce cas
   ! il n'y a que du couplage mono-modele)
 
-  do iphas = 1, nphas
+  call tbicpl(numcpl, 1, 1, iturb, iturcp(numcpl))
+  !==========
 
-    call tbicpl(numcpl, 1, 1, iturb, iturcp(numcpl))
+  if (iturb.eq.50.and.iturcp(numcpl).ne.50) then
+    write(nfecra,1000) numcpl
+    call csexit(1)
     !==========
-
-    if (iturb.eq.50.and.iturcp(numcpl).ne.50) then
-      write(nfecra,1000) numcpl
-      call csexit(1)
-      !==========
-    elseif (itytur.eq.4.and.                               &
-            iturcp(numcpl)/10.ne.4) then
-      write(nfecra,1001) numcpl
-      call csexit(1)
-      !==========
-    endif
-
-  enddo
+  elseif (itytur.eq.4.and.                               &
+       iturcp(numcpl)/10.ne.4) then
+    write(nfecra,1001) numcpl
+    call csexit(1)
+    !==========
+  endif
 
 enddo
 

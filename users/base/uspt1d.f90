@@ -269,15 +269,13 @@ endif
 !     An exact similarity is necessary to continue with the previous computation.
 !===============================================================================
 if (iappel.eq.2) then
-  if (iphas.eq.1) then
-    do ii = 1, nfpt1d
-      ifac = ifpt1d(ii)
-      nppt1d(ii) = 8
-      eppt1d(ii) = 0.01144d0
-      rgpt1d(ii) = 1.d0
-      tppt1d(ii) = 25.d0
-    enddo
-  endif
+  do ii = 1, nfpt1d
+    ifac = ifpt1d(ii)
+    nppt1d(ii) = 8
+    eppt1d(ii) = 0.01144d0
+    rgpt1d(ii) = 1.d0
+    tppt1d(ii) = 25.d0
+  enddo
 endif
 !===============================================================================
 ! Padding of the wall exterior boundary conditions:
@@ -298,23 +296,21 @@ endif
 !                 (ii)th border face with the 1-D thermal module (s)
 !===============================================================================
 if (iappel.eq.3) then
-  if (iphas.eq.1) then
-    do ii = 1, nfpt1d
-      iclt1d(ii) = 1
-      ! Physical parameters
-      ifac = ifpt1d(ii)
-      if (cdgfbo(2,ifac).le.0.025d0) then
-        iclt1d(ii) = 3
-        fept1d(ii) = -1.d4
-      else
-        iclt1d(ii) = 3
-        fept1d(ii) =  1.d4
-      endif
-      xlmt1d(ii) = 31.5d0
-      rcpt1d(ii) = 3.5d6
-      dtpt1d(ii) = 0.3d0
-    enddo
-  endif
+  do ii = 1, nfpt1d
+    iclt1d(ii) = 1
+    ! Physical parameters
+    ifac = ifpt1d(ii)
+    if (cdgfbo(2,ifac).le.0.025d0) then
+      iclt1d(ii) = 3
+      fept1d(ii) = -1.d4
+    else
+      iclt1d(ii) = 3
+      fept1d(ii) =  1.d4
+    endif
+    xlmt1d(ii) = 31.5d0
+    rcpt1d(ii) = 3.5d6
+    dtpt1d(ii) = 0.3d0
+  enddo
 endif
 
 !===============================================================================

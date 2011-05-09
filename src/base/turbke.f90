@@ -1179,7 +1179,7 @@ endif
 ! --- PRISE EN COMPTE DES TERMES LAGRANGIEN : COUPLAGE RETOUR
 
 !     Ordre 2 non pris en compte
-if (iilagr.eq.2 .and. ltsdyn.eq.1 .and. iphas.eq.1) then
+if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
   do iel = 1,ncel
 

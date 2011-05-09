@@ -234,21 +234,18 @@ if(iappel.eq.1.or.iappel.eq.2) then
 
 !       Ce test permet de desactiver l'exemple
   if(1.eq.0) then
-    if(iphas.eq.1) then
-      ielpdc = 0
 
-      CALL GETCEL('X <= 6.0 and X >= 4.0 and Y >= 2.0 and'//      &
-                  'Y <= 8.0',NLELT,LSTELT)
+    ielpdc = 0
 
-      do ilelt = 1, nlelt
-        iel = lstelt(ilelt)
-        ielpdc = ielpdc + 1
-        if (iappel.eq.2) icepdc(ielpdc) = iel
-      enddo
+    CALL GETCEL('X <= 6.0 and X >= 4.0 and Y >= 2.0 and'//      &
+         'Y <= 8.0',NLELT,LSTELT)
 
-    else
-      ielpdc = 0
-    endif
+    do ilelt = 1, nlelt
+      iel = lstelt(ilelt)
+      ielpdc = ielpdc + 1
+      if (iappel.eq.2) icepdc(ielpdc) = iel
+    enddo
+
   endif
 
 
@@ -308,62 +305,57 @@ elseif(iappel.eq.3) then
     enddo
   enddo
 
-  if(iphas.eq.1) then
+  ! --- Tenseur diagonal
+  !   Exemple de pertes de charges dans la direction x
 
-! --- Tenseur diagonal
-!   Exemple de pertes de charges dans la direction x
+  iutile = 0
+  if (iutile.eq.0) return
 
-    iutile = 0
-    if (iutile.eq.0) return
+  do ielpdc = 1, ncepdp
+    iel=icepdc(ielpdc)
+    vit = sqrt(  rtpa(iel,iu)**2                         &
+         + rtpa(iel,iv)**2                         &
+         + rtpa(iel,iw)**2)
+    ckupdc(ielpdc,1) = 10.d0*vit
+    ckupdc(ielpdc,2) =  0.d0*vit
+    ckupdc(ielpdc,3) =  0.d0*vit
+  enddo
 
-    do ielpdc = 1, ncepdp
-      iel=icepdc(ielpdc)
-      vit = sqrt(  rtpa(iel,iu)**2                         &
-                 + rtpa(iel,iv)**2                         &
-                 + rtpa(iel,iw)**2)
-      ckupdc(ielpdc,1) = 10.d0*vit
-      ckupdc(ielpdc,2) =  0.d0*vit
-      ckupdc(ielpdc,3) =  0.d0*vit
-    enddo
+  ! --- Tenseur 3x3
+  !   Exemple de pertes de charges a ALPHA = 45 degres x,y
+  !      la direction x resiste par ck1 et y par ck2
+  !      ck2 nul represente des ailettes comme ceci :  ///////
+  !      dans le repere de calcul X Y
 
-! --- Tenseur 3x3
-!   Exemple de pertes de charges a ALPHA = 45 degres x,y
-!      la direction x resiste par ck1 et y par ck2
-!      ck2 nul represente des ailettes comme ceci :  ///////
-!      dans le repere de calcul X Y
+  !                 Y|    /y
+  !                  |  /
+  !                  |/
+  !                  \--------------- X
+  !                   \ / ALPHA
+  !                    \
+  !                     \ x
 
-!                 Y|    /y
-!                  |  /
-!                  |/
-!                  \--------------- X
-!                   \ / ALPHA
-!                    \
-!                     \ x
+  iutile = 0
+  if (iutile.eq.0) return
 
-    iutile = 0
-    if (iutile.eq.0) return
+  alpha  = pi/4.d0
+  cosalp = cos(alpha)
+  sinalp = sin(alpha)
+  ck1 = 10.d0
+  ck2 =  0.d0
 
-    alpha  = pi/4.d0
-    cosalp = cos(alpha)
-    sinalp = sin(alpha)
-    ck1 = 10.d0
-    ck2 =  0.d0
-
-    do ielpdc = 1, ncepdp
-      iel=icepdc(ielpdc)
-      vit = sqrt(  rtpa(iel,iu)**2                         &
-                 + rtpa(iel,iv)**2                         &
-                 + rtpa(iel,iw)**2)
-      ckupdc(ielpdc,1) = (cosalp**2*ck1 + sinalp**2*ck2)*vit
-      ckupdc(ielpdc,2) = (sinalp**2*ck1 + cosalp**2*ck2)*vit
-      ckupdc(ielpdc,3) =  0.d0
-      ckupdc(ielpdc,4) = cosalp*sinalp*(-ck1+ck2)*vit
-      ckupdc(ielpdc,5) =  0.d0
-      ckupdc(ielpdc,6) =  0.d0
-    enddo
-
-  endif
-
+  do ielpdc = 1, ncepdp
+    iel=icepdc(ielpdc)
+    vit = sqrt(  rtpa(iel,iu)**2                         &
+         + rtpa(iel,iv)**2                         &
+         + rtpa(iel,iw)**2)
+    ckupdc(ielpdc,1) = (cosalp**2*ck1 + sinalp**2*ck2)*vit
+    ckupdc(ielpdc,2) = (sinalp**2*ck1 + cosalp**2*ck2)*vit
+    ckupdc(ielpdc,3) =  0.d0
+    ckupdc(ielpdc,4) = cosalp*sinalp*(-ck1+ck2)*vit
+    ckupdc(ielpdc,5) =  0.d0
+    ckupdc(ielpdc,6) =  0.d0
+  enddo
 
 !-------------------------------------------------------------------------------
 

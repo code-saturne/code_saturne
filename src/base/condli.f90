@@ -272,11 +272,9 @@ idebra = idbra0
 !     On le remplit dans clptur
 
 if(mod(ipstdv,ipstyp).eq.0) then
-  do iphas = 1, nphas
-    iyplbp = iyplbr
-    do ifac = 1, nfabor
-      ra(iyplbp+ifac-1) = 0.d0
-    enddo
+  iyplbp = iyplbr
+  do ifac = 1, nfabor
+    ra(iyplbp+ifac-1) = 0.d0
   enddo
 endif
 
@@ -363,49 +361,45 @@ iok1 = 0
 
 if(ineedy.eq.1.and.abs(icdpar).eq.2) then
 
-  do iphas = 1, nphas
+  if(ia(iifapa).le.0) then
 
-    if(ia(iifapa).le.0) then
+    ! ON FERA ATTENTION EN PARALLELISME OU PERIODICITE
+    !    (UNE PAROI PEUT ETRE PLUS PROCHE EN TRAVERSANT UN BORD ...)
 
-! ON FERA ATTENTION EN PARALLELISME OU PERIODICITE
-!    (UNE PAROI PEUT ETRE PLUS PROCHE EN TRAVERSANT UN BORD ...)
-
-      do iel = 1, ncel
-        w1(iel) = grand
-      enddo
-
-      iuiph = iu
-
-      do ifac = 1, nfabor
-        icodcu = icodcl(ifac,iuiph)
-        if( icodcu.eq.5 .or. icodcu.eq.6 ) then
-          do iel = 1, ncel
-            xdis =                                                &
-              (cdgfbo(1,ifac)-xyzcen(1,iel))**2                   &
-             +(cdgfbo(2,ifac)-xyzcen(2,iel))**2                   &
-             +(cdgfbo(3,ifac)-xyzcen(3,iel))**2
-            if(w1(iel).gt.xdis) then
-              w1(iel) = xdis
-              ia(iifapa-1+iel) = ifac
-            endif
-          enddo
-        endif
-      enddo
-
-    endif
-
-    iok = 0
     do iel = 1, ncel
-      if(ia(iifapa-1+iel).le.0)then
-        iok = iok + 1
+      w1(iel) = grand
+    enddo
+
+    iuiph = iu
+
+    do ifac = 1, nfabor
+      icodcu = icodcl(ifac,iuiph)
+      if( icodcu.eq.5 .or. icodcu.eq.6 ) then
+        do iel = 1, ncel
+          xdis =                                                &
+               (cdgfbo(1,ifac)-xyzcen(1,iel))**2                   &
+               +(cdgfbo(2,ifac)-xyzcen(2,iel))**2                   &
+               +(cdgfbo(3,ifac)-xyzcen(3,iel))**2
+          if(w1(iel).gt.xdis) then
+            w1(iel) = xdis
+            ia(iifapa-1+iel) = ifac
+          endif
+        enddo
       endif
     enddo
-    if(iok.gt.0) then
-      write(nfecra,1000) irijec, idries
-      iok1 = 1
-    endif
 
+  endif
+
+  iok = 0
+  do iel = 1, ncel
+    if(ia(iifapa-1+iel).le.0)then
+      iok = iok + 1
+    endif
   enddo
+  if(iok.gt.0) then
+    write(nfecra,1000) irijec, idries
+    iok1 = 1
+  endif
 
 endif
 
@@ -426,91 +420,88 @@ endif
 !        ET REPERAGE DES VARIABLES
 !===============================================================================
 
-! --- Boucle sur les phases : debut
-do iphas = 1, nphas
-
 ! --- Variables
-  ro0iph = ro0
-  p0iph  = p0
-  pr0iph = pred0
-  xxp0   = xyzp0(1)
-  xyp0   = xyzp0(2)
-  xzp0   = xyzp0(3)
-  ipriph = ipr
-  iuiph  = iu
-  iviph  = iv
-  iwiph  = iw
-  if(itytur.eq.2) then
-    ikiph  = ik
-    iepiph = iep
-  elseif(itytur.eq.3) then
-    ir11ip = ir11
-    ir22ip = ir22
-    ir33ip = ir33
-    ir12ip = ir12
-    ir13ip = ir13
-    ir23ip = ir23
-    iepiph = iep
-  elseif(iturb.eq.50) then
-    ikiph  = ik
-    iepiph = iep
-    iphiph = iphi
-    ifbiph = ifb
-  elseif(iturb.eq.60) then
-    ikiph  = ik
-    iomgip = iomg
-  elseif(iturb.eq.70) then
-    inuiph = inusa
-  endif
+ro0iph = ro0
+p0iph  = p0
+pr0iph = pred0
+xxp0   = xyzp0(1)
+xyp0   = xyzp0(2)
+xzp0   = xyzp0(3)
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+if(itytur.eq.2) then
+  ikiph  = ik
+  iepiph = iep
+elseif(itytur.eq.3) then
+  ir11ip = ir11
+  ir22ip = ir22
+  ir33ip = ir33
+  ir12ip = ir12
+  ir13ip = ir13
+  ir23ip = ir23
+  iepiph = iep
+elseif(iturb.eq.50) then
+  ikiph  = ik
+  iepiph = iep
+  iphiph = iphi
+  ifbiph = ifb
+elseif(iturb.eq.60) then
+  ikiph  = ik
+  iomgip = iomg
+elseif(iturb.eq.70) then
+  inuiph = inusa
+endif
 
 ! --- Conditions aux limites
-  iclpr  = iclrtp(ipriph,icoef)
-  iclu   = iclrtp(iuiph ,icoef)
-  iclv   = iclrtp(iviph ,icoef)
-  iclw   = iclrtp(iwiph ,icoef)
-  if(itytur.eq.2) then
-    iclk   = iclrtp(ikiph ,icoef)
-    iclep  = iclrtp(iepiph,icoef)
-  elseif(itytur.eq.3) then
-    icl11  = iclrtp(ir11ip,icoef)
-    icl22  = iclrtp(ir22ip,icoef)
-    icl33  = iclrtp(ir33ip,icoef)
-    icl12  = iclrtp(ir12ip,icoef)
-    icl13  = iclrtp(ir13ip,icoef)
-    icl23  = iclrtp(ir23ip,icoef)
-    iclep  = iclrtp(iepiph,icoef)
-  elseif(iturb.eq.50) then
-    iclk   = iclrtp(ikiph ,icoef)
-    iclep  = iclrtp(iepiph,icoef)
-    iclphi = iclrtp(iphiph,icoef)
-    iclfb  = iclrtp(ifbiph,icoef)
-  elseif(iturb.eq.60) then
-    iclk   = iclrtp(ikiph ,icoef)
-    iclomg = iclrtp(iomgip,icoef)
-  elseif(iturb.eq.70) then
-    iclnu  = iclrtp(inuiph,icoef)
-  endif
+iclpr  = iclrtp(ipriph,icoef)
+iclu   = iclrtp(iuiph ,icoef)
+iclv   = iclrtp(iviph ,icoef)
+iclw   = iclrtp(iwiph ,icoef)
+if(itytur.eq.2) then
+  iclk   = iclrtp(ikiph ,icoef)
+  iclep  = iclrtp(iepiph,icoef)
+elseif(itytur.eq.3) then
+  icl11  = iclrtp(ir11ip,icoef)
+  icl22  = iclrtp(ir22ip,icoef)
+  icl33  = iclrtp(ir33ip,icoef)
+  icl12  = iclrtp(ir12ip,icoef)
+  icl13  = iclrtp(ir13ip,icoef)
+  icl23  = iclrtp(ir23ip,icoef)
+  iclep  = iclrtp(iepiph,icoef)
+elseif(iturb.eq.50) then
+  iclk   = iclrtp(ikiph ,icoef)
+  iclep  = iclrtp(iepiph,icoef)
+  iclphi = iclrtp(iphiph,icoef)
+  iclfb  = iclrtp(ifbiph,icoef)
+elseif(iturb.eq.60) then
+  iclk   = iclrtp(ikiph ,icoef)
+  iclomg = iclrtp(iomgip,icoef)
+elseif(iturb.eq.70) then
+  iclnu  = iclrtp(inuiph,icoef)
+endif
 
-  icluf  = iclrtp(iuiph ,icoeff)
-  iclvf  = iclrtp(iviph ,icoeff)
-  iclwf  = iclrtp(iwiph ,icoeff)
+icluf  = iclrtp(iuiph ,icoeff)
+iclvf  = iclrtp(iviph ,icoeff)
+iclwf  = iclrtp(iwiph ,icoeff)
 
 ! --- Grandeurs physiques
-  ipcvis = ipproc(iviscl)
-  ipcvst = ipproc(ivisct)
-  if(icp.gt.0) then
-    ipccp  = ipproc(icp   )
-  else
-    ipccp = 0
-  endif
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
+if(icp.gt.0) then
+  ipccp  = ipproc(icp   )
+else
+  ipccp = 0
+endif
 ! --- Compressible
-  if ( ippmod(icompf).ge.0 ) then
-    if(icv.gt.0) then
-      ipccv  = ipproc(icv   )
-    else
-      ipccv = 0
-    endif
+if ( ippmod(icompf).ge.0 ) then
+  if(icv.gt.0) then
+    ipccv  = ipproc(icv   )
+  else
+    ipccv = 0
   endif
+endif
 
 
 
@@ -561,50 +552,50 @@ do iphas = 1, nphas
 !  On recherche l'unique scalaire qui convient pour la phase courante
 !     (ce peut etre T, H, ou E (en compressible))
 
-  iscat = 0
+iscat = 0
 
 !     Si un scalaire est couple a SYRTHES ou au module 1D
-  if(isvtb.ne.0) then
-!         si ce n'est pas la variable thermique, ca ne va pas.
-    if(isvtb.ne.iscalt) then
-      write(nfecra,8000)isvtb,iscalt
-      call csexit (1)
-      !==========
-!         sinon, on calcule le gradient.
-    else
-      iscat = isvtb
-    endif
+if(isvtb.ne.0) then
+  !         si ce n'est pas la variable thermique, ca ne va pas.
+  if(isvtb.ne.iscalt) then
+    write(nfecra,8000)isvtb,iscalt
+    call csexit (1)
+    !==========
+    !         sinon, on calcule le gradient.
+  else
+    iscat = isvtb
   endif
+endif
 
 
 !     S'il y a du rayonnement
 !       (il y a forcement une variable energetique)
 !       on en calcule le gradient
-  if(iirayo.ge.1) then
-    iscat = iscalt
-  endif
+if(iirayo.ge.1) then
+  iscat = iscalt
+endif
 
 !     S'il y a un scalaire dont il faut calculer le gradient
 !       ... on le calcule.
-  if (iscat .gt. 0) then
+if (iscat .gt. 0) then
 
-    ivar   = isca(iscat)
+  ivar   = isca(iscat)
 
-    if (ntcabs.gt.1 .and. itbrrb.eq.1) then
+  if (ntcabs.gt.1 .and. itbrrb.eq.1) then
 
-      inc = 1
-      iccocg = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
-      icliva = iclrtp(ivar,icoef)
-      iphydp = 0
+    inc = 1
+    iccocg = 1
+    nswrgp = nswrgr(ivar)
+    imligp = imligr(ivar)
+    iwarnp = iwarni(ivar)
+    epsrgp = epsrgr(ivar)
+    climgp = climgr(ivar)
+    extrap = extrag(ivar)
+    icliva = iclrtp(ivar,icoef)
+    iphydp = 0
 
-      call grdcel                                                 &
-      !==========
+    call grdcel                                                 &
+    !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
@@ -618,25 +609,24 @@ do iphas = 1, nphas
    w4     , w5     , w6     ,                                     &
    ra     )
 
-      do ifac = 1 , nfabor
-        iel = ifabor(ifac)
-        thbord(ifac)       =                                                 &
-          w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac)  &
-        + rtpa(iel,ivar)
-      enddo
+    do ifac = 1 , nfabor
+      iel = ifabor(ifac)
+      thbord(ifac)       =                                                 &
+           w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac)  &
+           + rtpa(iel,ivar)
+    enddo
 
-    else
+  else
 
-      do ifac = 1 , nfabor
-        iel = ifabor(ifac)
-        thbord(ifac) = rtpa(iel,ivar)
-      enddo
-
-    endif
+    do ifac = 1 , nfabor
+      iel = ifabor(ifac)
+      thbord(ifac) = rtpa(iel,ivar)
+    enddo
 
   endif
 
-! --- La boucle sur les phases continue
+endif
+
 !===============================================================================
 ! 6.  CONSTRUCTION DE LA VITESSE ET DU TENSEUR DE REYNOLDS
 !        AU CENTRE DES FACES DE BORD (OBTENUS PAR Fi + II'.GRAD(Fi))
@@ -645,54 +635,54 @@ do iphas = 1, nphas
 
 ! ---> INDICATEUR SYMETRIES OU PAROIS TURBULENTES
 
-  iclsym = 0
-  ipatur = 0
-  ipatrg = 0
-  do ifac = 1, nfabor
-    if ( icodcl(ifac,iuiph).eq.4 ) then
-      iclsym = 1
-    elseif ( icodcl(ifac,iuiph).eq.5 ) then
-      ipatur = 1
-    elseif ( icodcl(ifac,iuiph).eq.6 ) then
-      ipatrg = 1
-    endif
-    if (iclsym.ne.0.and.ipatur.ne.0.and.ipatrg.ne.0 ) goto 100
-  enddo
- 100    continue
-
-  if (irangp.ge.0) then
-     call parcmx(iclsym)
-     call parcmx(ipatur)
-     call parcmx(ipatrg)
+iclsym = 0
+ipatur = 0
+ipatrg = 0
+do ifac = 1, nfabor
+  if ( icodcl(ifac,iuiph).eq.4 ) then
+    iclsym = 1
+  elseif ( icodcl(ifac,iuiph).eq.5 ) then
+    ipatur = 1
+  elseif ( icodcl(ifac,iuiph).eq.6 ) then
+    ipatrg = 1
   endif
+  if (iclsym.ne.0.and.ipatur.ne.0.and.ipatrg.ne.0 ) goto 100
+enddo
+100 continue
+
+if (irangp.ge.0) then
+  call parcmx(iclsym)
+  call parcmx(ipatur)
+  call parcmx(ipatrg)
+endif
 
 
 ! ---> CONSTRUCTION DE LA VITESSE AU CENTRE DES FACES DE BORD
 
-  if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
+if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
 
 
-    do isou = 1, 3
+  do isou = 1, 3
 
-      if(isou.eq.1) ivar = iuiph
-      if(isou.eq.2) ivar = iviph
-      if(isou.eq.3) ivar = iwiph
+    if(isou.eq.1) ivar = iuiph
+    if(isou.eq.2) ivar = iviph
+    if(isou.eq.3) ivar = iwiph
 
-      if(ntcabs.gt.1) then
+    if(ntcabs.gt.1) then
 
-        iccocg = 1
-        inc    = 1
-        nswrgp = nswrgr(ivar)
-        imligp = imligr(ivar)
-        iwarnp = iwarni(ivar)
-        epsrgp = epsrgr(ivar)
-        climgp = climgr(ivar)
-        extrap = extrag(ivar)
-        icliva = iclrtp(ivar,icoef)
-        iphydp = 0
+      iccocg = 1
+      inc    = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+      icliva = iclrtp(ivar,icoef)
+      iphydp = 0
 
-        call grdcel                                               &
-        !==========
+      call grdcel                                               &
+      !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
@@ -706,60 +696,60 @@ do iphas = 1, nphas
    w4     , w5     , w6     ,                                     &
    ra     )
 
-        do ifac = 1, nfabor
-          iel = ifabor(ifac)
-          coefu(ifac,isou) =                                                  &
-            w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac) &
-          + rtpa(iel,ivar)
-        enddo
+      do ifac = 1, nfabor
+        iel = ifabor(ifac)
+        coefu(ifac,isou) =                                                  &
+             w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac) &
+             + rtpa(iel,ivar)
+      enddo
 
-      else
+    else
 
-        do ifac = 1, nfabor
-          iel = ifabor(ifac)
-          coefu(ifac,isou) = rtpa(iel,ivar)
-        enddo
+      do ifac = 1, nfabor
+        iel = ifabor(ifac)
+        coefu(ifac,isou) = rtpa(iel,ivar)
+      enddo
 
-      endif
+    endif
 
-    enddo
+  enddo
 
-  endif
+endif
 
 
 ! ---> CONSTRUCTION DU TENSEUR DE REYNOLDS AU CENTRE DES FACES DE BORD
 
-  if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
-                         .and.itytur.eq.3) then
+if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
+     .and.itytur.eq.3) then
 
 
-    do isou = 1 , 6
+  do isou = 1 , 6
 
-      if(isou.eq.1) ivar = ir11ip
-      if(isou.eq.2) ivar = ir22ip
-      if(isou.eq.3) ivar = ir33ip
-      if(isou.eq.4) ivar = ir12ip
-      if(isou.eq.5) ivar = ir13ip
-      if(isou.eq.6) ivar = ir23ip
+    if(isou.eq.1) ivar = ir11ip
+    if(isou.eq.2) ivar = ir22ip
+    if(isou.eq.3) ivar = ir33ip
+    if(isou.eq.4) ivar = ir12ip
+    if(isou.eq.5) ivar = ir13ip
+    if(isou.eq.6) ivar = ir23ip
 
 
-      if(ntcabs.gt.1.and.irijrb.eq.1) then
+    if(ntcabs.gt.1.and.irijrb.eq.1) then
 
-! CALCUL DU GRADIENT CELLULE DE Rij EN I
+      ! CALCUL DU GRADIENT CELLULE DE Rij EN I
 
-        inc = 1
-        iccocg = 1
-        nswrgp = nswrgr(ivar)
-        imligp = imligr(ivar)
-        iwarnp = iwarni(ivar)
-        epsrgp = epsrgr(ivar)
-        climgp = climgr(ivar)
-        extrap = extrag(ivar)
-        icliva = iclrtp(ivar,icoef)
-        iphydp = 0
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+      icliva = iclrtp(ivar,icoef)
+      iphydp = 0
 
-        call grdcel                                               &
-        !==========
+      call grdcel                                               &
+      !==========
  ( idebia , idebra ,                                              &
    nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
@@ -774,33 +764,32 @@ do iphas = 1, nphas
    ra     )
 
 
-! CALCUL DE LA VALEUR EN I' DE Rij
+      ! CALCUL DE LA VALEUR EN I' DE Rij
 
-        do ifac = 1 , nfabor
-          iel = ifabor(ifac)
-          rijipb(ifac,isou) =                                                 &
-            w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac) &
-          + rtpa(iel,ivar)
-        enddo
+      do ifac = 1 , nfabor
+        iel = ifabor(ifac)
+        rijipb(ifac,isou) =                                                 &
+             w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac) &
+             + rtpa(iel,ivar)
+      enddo
 
 
-!   AU PREMIER PAS DE TEMPS, ON NE CONNAIT PAS COEFA ET COEFB
-!   (ILS SONT ANNULES DANS CONDLI), LE CALCUL DE RI' EST SIMPLIFIE
+      !   AU PREMIER PAS DE TEMPS, ON NE CONNAIT PAS COEFA ET COEFB
+      !   (ILS SONT ANNULES DANS CONDLI), LE CALCUL DE RI' EST SIMPLIFIE
 
-      else
+    else
 
-        do ifac = 1 , nfabor
-          iel = ifabor(ifac)
-          rijipb(ifac,isou) = rtpa(iel,ivar)
-        enddo
+      do ifac = 1 , nfabor
+        iel = ifabor(ifac)
+        rijipb(ifac,isou) = rtpa(iel,ivar)
+      enddo
 
-      endif
+    endif
 
-    enddo
+  enddo
 
-  endif
+endif
 
-! --- La boucle sur les phases continues
 !===============================================================================
 ! 7.  TURBULENCE EN PAROI : TOUTES LES VARIABLES CONCERNEES PAR PHASE
 !       (U,V,W,K,EPSILON,RIJ,TEMPERATURE)
@@ -816,17 +805,17 @@ do iphas = 1, nphas
 !     Plus loin, dans vandri, la viscosite sur les cellules
 !     de paroi sera amortie une seconde fois. On se sert alors de
 !     VISVDR pour lui redonner une valeur correcte.
-  if(itytur.eq.4.and.idries.eq.1) then
-    do iel=1,ncel
-      visvdr(iel) = -999.d0
-    enddo
-  endif
+if(itytur.eq.4.and.idries.eq.1) then
+  do iel=1,ncel
+    visvdr(iel) = -999.d0
+  enddo
+endif
 
-  if (ipatur.ne.0) then
+if (ipatur.ne.0) then
 
-! Smooth wall laws
-    call clptur                                                   &
-    !==========
+  ! Smooth wall laws
+  call clptur                                                   &
+  !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iphas  , isvhb  ,                                              &
@@ -838,13 +827,13 @@ do iphas = 1, nphas
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
-  endif
+endif
 
-  if (ipatrg.ne.0) then
+if (ipatrg.ne.0) then
 
-! Rough wall laws
-    call clptrg                                                   &
-    !==========
+  ! Rough wall laws
+  call clptrg                                                   &
+  !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iphas  , isvhb  ,                                              &
@@ -856,24 +845,23 @@ do iphas = 1, nphas
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
-  endif
+endif
 
-! --- La boucle sur les phases continue
 !===============================================================================
 ! 7.  SYMETRIES POUR LES VECTEURS ET TENSEURS
 !       (U,V,W,RIJ)
 !===============================================================================
 !   On a besoin de COEFU et de RIJIPB
 
-  iismph = iisymp
-  do ifac = 1, nfabor
-    ia(iismph+ifac-1) = 1
-  enddo
+iismph = iisymp
+do ifac = 1, nfabor
+  ia(iismph+ifac-1) = 1
+enddo
 
-  if (iclsym.ne.0) then
+if (iclsym.ne.0) then
 
-    call clsyvt                                                   &
-    !==========
+  call clsyvt                                                   &
+  !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    iphas  ,                                                       &
@@ -884,142 +872,141 @@ do iphas = 1, nphas
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
-  endif
+endif
 
-! --- La boucle sur les phases continue
 !===============================================================================
 ! 8.  VITESSE : SORTIE, DIRICHLET, NEUMANN
 !===============================================================================
 
 ! ---> SORTIE : SI FLUX ENTRANT, ON "BLOQUE" A L'INFINI AVAL
 
-  isoent = 0
-  isorti = 0
-  do ifac = 1, nfabor
+isoent = 0
+isorti = 0
+do ifac = 1, nfabor
 
-    flumbf = propfb(ifac,ipprob(ifluma(iuiph)))
+  flumbf = propfb(ifac,ipprob(ifluma(iuiph)))
 
-    if( icodcl(ifac,iuiph).eq.9 ) then
+  if( icodcl(ifac,iuiph).eq.9 ) then
 
-      isorti = isorti + 1
-      if( flumbf.lt.-epzero) then
-        coefa(ifac,iclu) = 0.d0
-        coefb(ifac,iclu) = 0.d0
-        coefa(ifac,iclv) = 0.d0
-        coefb(ifac,iclv) = 0.d0
-        coefa(ifac,iclw) = 0.d0
-        coefb(ifac,iclw) = 0.d0
-        isoent = isoent + 1
-      else
-        coefa(ifac,iclu) = 0.d0
-        coefb(ifac,iclu) = 1.d0
-        coefa(ifac,iclv) = 0.d0
-        coefb(ifac,iclv) = 1.d0
-        coefa(ifac,iclw) = 0.d0
-        coefb(ifac,iclw) = 1.d0
-      endif
-
+    isorti = isorti + 1
+    if( flumbf.lt.-epzero) then
+      coefa(ifac,iclu) = 0.d0
+      coefb(ifac,iclu) = 0.d0
+      coefa(ifac,iclv) = 0.d0
+      coefb(ifac,iclv) = 0.d0
+      coefa(ifac,iclw) = 0.d0
+      coefb(ifac,iclw) = 0.d0
+      isoent = isoent + 1
+    else
+      coefa(ifac,iclu) = 0.d0
+      coefb(ifac,iclu) = 1.d0
+      coefa(ifac,iclv) = 0.d0
+      coefb(ifac,iclv) = 1.d0
+      coefa(ifac,iclw) = 0.d0
+      coefb(ifac,iclw) = 1.d0
     endif
 
-  enddo
-
-  if (mod(ntcabs,ntlist).eq.0 .or. iwarni(iu).ge. 0) then
-    isocpt(1) = isoent
-    isocpt(2) = isorti
-    if (irangp.ge.0) then
-      ncpt = 2
-      call parism(ncpt, isocpt)
-    endif
-    if (isocpt(2).gt.0 .and. (iwarni(iuiph).ge.2.or.isocpt(1).gt.0)) then
-      write(nfecra,3010) isocpt(1), isocpt(2)
-    endif
   endif
+
+enddo
+
+if (mod(ntcabs,ntlist).eq.0 .or. iwarni(iu).ge. 0) then
+  isocpt(1) = isoent
+  isocpt(2) = isorti
+  if (irangp.ge.0) then
+    ncpt = 2
+    call parism(ncpt, isocpt)
+  endif
+  if (isocpt(2).gt.0 .and. (iwarni(iuiph).ge.2.or.isocpt(1).gt.0)) then
+    write(nfecra,3010) isocpt(1), isocpt(2)
+  endif
+endif
 
 ! ---> DIRICHLET ET FLUX
 
-  do ii = 1, 3
+do ii = 1, 3
 
-    if(ii.eq.1) then
-      ivar   = iuiph
-      iclvar = iclu
-    elseif(ii.eq.2) then
-      ivar   = iviph
-      iclvar = iclv
-    elseif(ii.eq.3) then
-      ivar   = iwiph
-      iclvar = iclw
+  if(ii.eq.1) then
+    ivar   = iuiph
+    iclvar = iclu
+  elseif(ii.eq.2) then
+    ivar   = iviph
+    iclvar = iclv
+  elseif(ii.eq.3) then
+    ivar   = iwiph
+    iclvar = iclw
+  endif
+
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    ! --- Proprietes physiques
+    visclc = propce(iel,ipcvis)
+    visctc = propce(iel,ipcvst)
+
+    ! --- Grandeurs geometriques
+    distbf = distb(ifac)
+
+    if (itytur.eq.3) then
+      hint =   visclc         /distbf
+    else
+      hint = ( visclc+visctc )/distbf
     endif
 
-    do ifac = 1, nfabor
-
-      iel = ifabor(ifac)
-
-! --- Proprietes physiques
-      visclc = propce(iel,ipcvis)
-      visctc = propce(iel,ipcvst)
-
-! --- Grandeurs geometriques
-      distbf = distb(ifac)
-
-      if (itytur.eq.3) then
-        hint =   visclc         /distbf
+    !      C.L DE TYPE DIRICHLET
+    if( icodcl(ifac,ivar).eq.1 ) then
+      hext = rcodcl(ifac,ivar,2)
+      if(abs(hext).gt.rinfin*0.5d0) then
+        pimp = rcodcl(ifac,ivar,1)
+        coefa(ifac,iclvar) = pimp
+        coefb(ifac,iclvar) = 0.d0
       else
-        hint = ( visclc+visctc )/distbf
+        pimp = rcodcl(ifac,ivar,1)
+        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+        coefb(ifac,iclvar) = hint     /(hint +hext)
       endif
 
-!      C.L DE TYPE DIRICHLET
-      if( icodcl(ifac,ivar).eq.1 ) then
-        hext = rcodcl(ifac,ivar,2)
-        if(abs(hext).gt.rinfin*0.5d0) then
-          pimp = rcodcl(ifac,ivar,1)
-          coefa(ifac,iclvar) = pimp
-          coefb(ifac,iclvar) = 0.d0
-        else
-          pimp = rcodcl(ifac,ivar,1)
-          coefa(ifac,iclvar) = hext*pimp/(hint +hext)
-          coefb(ifac,iclvar) = hint     /(hint +hext)
-        endif
-
-!      C.L DE TYPE FLUX
-      elseif( icodcl(ifac,ivar).eq.3 ) then
-        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
-        coefb(ifac,iclvar) = 1.d0
-      endif
-
-    enddo
+      !      C.L DE TYPE FLUX
+    elseif( icodcl(ifac,ivar).eq.3 ) then
+      coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+      coefb(ifac,iclvar) = 1.d0
+    endif
 
   enddo
+
+enddo
 
 ! ---> COEFAF ET COEFBF
 !       POUR TOUS LES CODES SAUF 4, 5 ET 6 TRAITES SEPAREMENT
 
-  do ii = 1, 3
+do ii = 1, 3
 
-    if(ii.eq.1) then
-      ivar   = iuiph
-      iclvar = iclu
-      iclvaf = icluf
-    elseif(ii.eq.2) then
-      ivar   = iviph
-      iclvar = iclv
-      iclvaf = iclvf
-    elseif(ii.eq.3) then
-      ivar   = iwiph
-      iclvar = iclw
-      iclvaf = iclwf
-    endif
+  if(ii.eq.1) then
+    ivar   = iuiph
+    iclvar = iclu
+    iclvaf = icluf
+  elseif(ii.eq.2) then
+    ivar   = iviph
+    iclvar = iclv
+    iclvaf = iclvf
+  elseif(ii.eq.3) then
+    ivar   = iwiph
+    iclvar = iclw
+    iclvaf = iclwf
+  endif
 
-    if(iclvaf.ne.iclvar) then
-      do ifac = 1, nfabor
-        if( icodcl(ifac,ivar).eq.1.or.icodcl(ifac,ivar).eq.3.or.  &
-            icodcl(ifac,ivar).eq.9                          ) then
-          coefa(ifac,iclvaf) = coefa(ifac,iclvar)
-          coefb(ifac,iclvaf) = coefb(ifac,iclvar)
-        endif
-      enddo
-    endif
+  if(iclvaf.ne.iclvar) then
+    do ifac = 1, nfabor
+      if( icodcl(ifac,ivar).eq.1.or.icodcl(ifac,ivar).eq.3.or.  &
+           icodcl(ifac,ivar).eq.9                          ) then
+        coefa(ifac,iclvaf) = coefa(ifac,iclvar)
+        coefb(ifac,iclvaf) = coefb(ifac,iclvar)
+      endif
+    enddo
+  endif
 
-  enddo
+enddo
 
 
 ! --- La boucle sur les phases continue
@@ -1027,50 +1014,50 @@ do iphas = 1, nphas
 ! 9.  PRESSION : DIRICHLET, NEUMANN
 !===============================================================================
 
-  do ifac = 1, nfabor
+do ifac = 1, nfabor
 
-    iel = ifabor(ifac)
+  iel = ifabor(ifac)
 
-! --- Grandeurs geometriques
-    distbf = distb(ifac)
+  ! --- Grandeurs geometriques
+  distbf = distb(ifac)
 
-! ON MET UN FLUX EN DT.GRAD P (W/m2) DANS USCLIM
-    hint = dt(iel)/distbf
+  ! ON MET UN FLUX EN DT.GRAD P (W/m2) DANS USCLIM
+  hint = dt(iel)/distbf
 
-! On doit remodifier la valeur du  Dirichlet de pression de manière
-!  à retrouver P*. Car dans typecl.F on a travaillé avec la pression
-! totale fournie par l'utilisateur :  Ptotale= P*+ rho.g.r
-! En compressible, on laisse RCODCL tel quel
+  ! On doit remodifier la valeur du  Dirichlet de pression de manière
+  !  à retrouver P*. Car dans typecl.F on a travaillé avec la pression
+  ! totale fournie par l'utilisateur :  Ptotale= P*+ rho.g.r
+  ! En compressible, on laisse RCODCL tel quel
 
-!      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+  !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
 
-    if( icodcl(ifac,ipriph).eq.1 ) then
-      hext = rcodcl(ifac,ipriph,2)
-      if ( ippmod(icompf).ge.0 ) then
-        pimp = rcodcl(ifac,ipriph,1)
-      else
-        pimp = rcodcl(ifac,ipriph,1)                              &
-             - ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
-                      + gy*(cdgfbo(2,ifac)-xyp0)                  &
-                      + gz*(cdgfbo(3,ifac)-xzp0) )                &
-             + pr0iph - p0iph
-      endif
-      if( abs(hext).gt.rinfin*0.5d0 ) then
-        coefa(ifac,iclpr) = pimp
-        coefb(ifac,iclpr) = 0.d0
-      else
-        coefa(ifac,iclpr) = hext*pimp/(hint +hext)
-        coefb(ifac,iclpr) = hint     /(hint +hext)
-      endif
+  if( icodcl(ifac,ipriph).eq.1 ) then
+    hext = rcodcl(ifac,ipriph,2)
+    if ( ippmod(icompf).ge.0 ) then
+      pimp = rcodcl(ifac,ipriph,1)
+    else
+      pimp = rcodcl(ifac,ipriph,1)                              &
+           - ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
+           + gy*(cdgfbo(2,ifac)-xyp0)                  &
+           + gz*(cdgfbo(3,ifac)-xzp0) )                &
+           + pr0iph - p0iph
     endif
-
-!      C.L DE TYPE FLUX
-    if( icodcl(ifac,ipriph).eq.3 ) then
-      coefa(ifac,iclpr) = -rcodcl(ifac,ipriph,3)/hint
-      coefb(ifac,iclpr) = 1.d0
+    if( abs(hext).gt.rinfin*0.5d0 ) then
+      coefa(ifac,iclpr) = pimp
+      coefb(ifac,iclpr) = 0.d0
+    else
+      coefa(ifac,iclpr) = hext*pimp/(hint +hext)
+      coefb(ifac,iclpr) = hint     /(hint +hext)
     endif
+  endif
 
-  enddo
+  !      C.L DE TYPE FLUX
+  if( icodcl(ifac,ipriph).eq.3 ) then
+    coefa(ifac,iclpr) = -rcodcl(ifac,ipriph,3)/hint
+    coefb(ifac,iclpr) = 1.d0
+  endif
+
+enddo
 
 
 ! --- La boucle sur les phases continue
@@ -1080,272 +1067,272 @@ do iphas = 1, nphas
 
 ! ---> K-EPSILON ET K-OMEGA
 
-  if(itytur.eq.2 .or. iturb.eq.60) then
+if(itytur.eq.2 .or. iturb.eq.60) then
 
-    do ii = 1, 2
+  do ii = 1, 2
 
-!     Pour le k-omega, on met les valeurs sigma_k2 et sigma_w2 car ce terme
-!     ne concerne en pratique que les entrees (pas de pb en paroi ou en flux
-!     nul)
-      if(ii.eq.1 .and. itytur.eq.2) then
-        ivar   = ikiph
-        iclvar = iclk
-        sigma  = sigmak
-      elseif(ii.eq.1 .and. iturb.eq.60) then
-        ivar   = ikiph
-        iclvar = iclk
-        sigma  = ckwsk2
-      elseif (itytur.eq.2) then
-        ivar   = iepiph
-        iclvar = iclep
-        sigma  = sigmae
-      else
-        ivar   = iomgip
-        iclvar = iclomg
-        sigma  = ckwsw2
-      endif
-
-      do ifac = 1, nfabor
-
-        iel = ifabor(ifac)
-
-! --- Proprietes physiques
-        visclc = propce(iel,ipcvis)
-        visctc = propce(iel,ipcvst)
-        flumbf = propfb(ifac,ipprob(ifluma(ikiph)))
-
-! --- Grandeurs geometriques
-        distbf = distb(ifac)
-
-        hint = (visclc+visctc/sigma)/distbf
-
-!      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
-        if(icodcl(ifac,ivar).eq.1) then
-          hext = rcodcl(ifac,ivar,2)
-          pimp = rcodcl(ifac,ivar,1)
-          coefa(ifac,iclvar) = hext*pimp/(hint +hext)
-          coefb(ifac,iclvar) = hint     /(hint +hext)
-!      C.L DE TYPE FLUX
-        elseif(icodcl(ifac,ivar).eq.3)then
-          coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
-          coefb(ifac,iclvar) = 1.d0
-        endif
-      enddo
-
-    enddo
-
-! ---> RIJ-EPSILON
-!         (ATTENTION, PAS DE VISCT)
-
-  elseif(itytur.eq.3) then
-
-!   --> RIJ
-
-    do isou = 1, 6
-
-      if(isou.eq.1) then
-        ivar   = ir11ip
-        iclvar = icl11
-      elseif(isou.eq.2) then
-        ivar   = ir22ip
-        iclvar = icl22
-      elseif(isou.eq.3) then
-        ivar   = ir33ip
-        iclvar = icl33
-      elseif(isou.eq.4) then
-        ivar   = ir12ip
-        iclvar = icl12
-      elseif(isou.eq.5) then
-        ivar   = ir13ip
-        iclvar = icl13
-      elseif(isou.eq.6) then
-        ivar   = ir23ip
-        iclvar = icl23
-      endif
-
-      do ifac = 1, nfabor
-
-        iel = ifabor(ifac)
-
-! --- Proprietes physiques
-        visclc = propce(iel,ipcvis)
-        flumbf = propfb(ifac,ipprob(ifluma(ir11ip)))
-
-! --- Grandeurs geometriques
-        distbf = distb(ifac)
-
-        if(icodcl(ifac,ivar).eq.1) then
-          hint = visclc/distbf
-
-          hext = rcodcl(ifac,ivar,2)
-          pimp = rcodcl(ifac,ivar,1)
-          coefa(ifac,iclvar) = hext*pimp/(hint +hext)
-          coefb(ifac,iclvar) = hint     /(hint +hext)
-
-        elseif(icodcl(ifac,ivar).eq.3)then
-
-          hint = visclc/distbf
-
-          coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
-          coefb(ifac,iclvar) = 1.d0
-
-        endif
-
-      enddo
-
-    enddo
-
-
-!   --> EPSILON
-
-    ivar   = iepiph
-    iclvar = iclep
+    !     Pour le k-omega, on met les valeurs sigma_k2 et sigma_w2 car ce terme
+    !     ne concerne en pratique que les entrees (pas de pb en paroi ou en flux
+    !     nul)
+    if(ii.eq.1 .and. itytur.eq.2) then
+      ivar   = ikiph
+      iclvar = iclk
+      sigma  = sigmak
+    elseif(ii.eq.1 .and. iturb.eq.60) then
+      ivar   = ikiph
+      iclvar = iclk
+      sigma  = ckwsk2
+    elseif (itytur.eq.2) then
+      ivar   = iepiph
+      iclvar = iclep
+      sigma  = sigmae
+    else
+      ivar   = iomgip
+      iclvar = iclomg
+      sigma  = ckwsw2
+    endif
 
     do ifac = 1, nfabor
 
       iel = ifabor(ifac)
 
-! --- Proprietes physiques
+      ! --- Proprietes physiques
       visclc = propce(iel,ipcvis)
-      flumbf = propfb(ifac,ipprob(ifluma(iepiph)))
+      visctc = propce(iel,ipcvst)
+      flumbf = propfb(ifac,ipprob(ifluma(ikiph)))
 
-! --- Grandeurs geometriques
+      ! --- Grandeurs geometriques
       distbf = distb(ifac)
 
-      hint = visclc/distbf
+      hint = (visclc+visctc/sigma)/distbf
 
-!      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
-      if( icodcl(ifac,ivar).eq.1) then
+      !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+      if(icodcl(ifac,ivar).eq.1) then
         hext = rcodcl(ifac,ivar,2)
         pimp = rcodcl(ifac,ivar,1)
         coefa(ifac,iclvar) = hext*pimp/(hint +hext)
         coefb(ifac,iclvar) = hint     /(hint +hext)
-!      C.L DE TYPE FLUX
-      elseif(                                                     &
-          icodcl(ifac,ivar).eq.3)then
-        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
-        coefb(ifac,iclvar) = 1.d0
-      endif
-
-    enddo
-
-! ---> SPALART ALLMARAS
-
-  elseif(iturb.eq.70) then
-
-    ivar   = inuiph
-    iclvar = iclnu
-
-    do ifac = 1, nfabor
-
-      iel = ifabor(ifac)
-
-! --- Proprietes physiques
-      visclc = propce(iel,ipcvis)
-      flumbf = propfb(ifac,ipprob(ifluma(inuiph)))
-
-! --- Grandeurs geometriques
-      distbf = distb(ifac)
-      hint = visclc/distbf
-
-!      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
-      if( icodcl(ifac,ivar).eq.1) then
-        hext = rcodcl(ifac,ivar,2)
-        pimp = rcodcl(ifac,ivar,1)
-        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
-        coefb(ifac,iclvar) = hint     /(hint +hext)
-!      C.L DE TYPE FLUX
-      elseif(                                                     &
-        icodcl(ifac,ivar).eq.3)then
-        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
-        coefb(ifac,iclvar) = 1.d0
-      endif
-
-    enddo
-
-
-! ---> V2F
-
-  elseif(iturb.eq.50) then
-
-!   --> K, EPSILON ET PHI
-    do ii = 1, 3
-
-      if(ii.eq.1) then
-        ivar   = ikiph
-        iclvar = iclk
-        sigma  = sigmak
-      elseif(ii.eq.2) then
-        ivar   = iepiph
-        iclvar = iclep
-        sigma  = sigmae
-      else
-        ivar   = iphiph
-        iclvar = iclphi
-        sigma  = sigmak
-      endif
-
-      do ifac = 1, nfabor
-
-        iel = ifabor(ifac)
-
-! --- Proprietes physiques
-        visclc = propce(iel,ipcvis)
-        visctc = propce(iel,ipcvst)
-        flumbf = propfb(ifac,ipprob(ifluma(ikiph)))
-
-! --- Grandeurs geometriques
-        distbf = distb(ifac)
-
-        hint = (visclc+visctc/sigma)/distbf
-
-!      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
-        if(icodcl(ifac,ivar).eq.1) then
-          hext = rcodcl(ifac,ivar,2)
-          pimp = rcodcl(ifac,ivar,1)
-          coefa(ifac,iclvar) = hext*pimp/(hint +hext)
-          coefb(ifac,iclvar) = hint     /(hint +hext)
-!      C.L DE TYPE FLUX
-
-        elseif(icodcl(ifac,ivar).eq.3)then
-          coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
-          coefb(ifac,iclvar) = 1.d0
-        endif
-      enddo
-
-    enddo
-
-!   --> FB
-
-    ivar   = ifbiph
-    iclvar = iclfb
-
-    do ifac = 1, nfabor
-
-! --- Proprietes physiques
-      visclc = 1.d0
-      flumbf = propfb(ifac,ipprob(ifluma(ifbiph)))
-
-! --- Grandeurs geometriques
-      distbf = distb(ifac)
-
-      hint = visclc/distbf
-
-!      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
-      if( icodcl(ifac,ivar).eq.1) then
-        hext = rcodcl(ifac,ivar,2)
-        pimp = rcodcl(ifac,ivar,1)
-        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
-        coefb(ifac,iclvar) = hint     /(hint +hext)
-!      C.L DE TYPE FLUX
+        !      C.L DE TYPE FLUX
       elseif(icodcl(ifac,ivar).eq.3)then
         coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
         coefb(ifac,iclvar) = 1.d0
       endif
+    enddo
+
+  enddo
+
+  ! ---> RIJ-EPSILON
+  !         (ATTENTION, PAS DE VISCT)
+
+elseif(itytur.eq.3) then
+
+  !   --> RIJ
+
+  do isou = 1, 6
+
+    if(isou.eq.1) then
+      ivar   = ir11ip
+      iclvar = icl11
+    elseif(isou.eq.2) then
+      ivar   = ir22ip
+      iclvar = icl22
+    elseif(isou.eq.3) then
+      ivar   = ir33ip
+      iclvar = icl33
+    elseif(isou.eq.4) then
+      ivar   = ir12ip
+      iclvar = icl12
+    elseif(isou.eq.5) then
+      ivar   = ir13ip
+      iclvar = icl13
+    elseif(isou.eq.6) then
+      ivar   = ir23ip
+      iclvar = icl23
+    endif
+
+    do ifac = 1, nfabor
+
+      iel = ifabor(ifac)
+
+      ! --- Proprietes physiques
+      visclc = propce(iel,ipcvis)
+      flumbf = propfb(ifac,ipprob(ifluma(ir11ip)))
+
+      ! --- Grandeurs geometriques
+      distbf = distb(ifac)
+
+      if(icodcl(ifac,ivar).eq.1) then
+        hint = visclc/distbf
+
+        hext = rcodcl(ifac,ivar,2)
+        pimp = rcodcl(ifac,ivar,1)
+        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+        coefb(ifac,iclvar) = hint     /(hint +hext)
+
+      elseif(icodcl(ifac,ivar).eq.3)then
+
+        hint = visclc/distbf
+
+        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+        coefb(ifac,iclvar) = 1.d0
+
+      endif
 
     enddo
 
-  endif
+  enddo
+
+
+  !   --> EPSILON
+
+  ivar   = iepiph
+  iclvar = iclep
+
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    ! --- Proprietes physiques
+    visclc = propce(iel,ipcvis)
+    flumbf = propfb(ifac,ipprob(ifluma(iepiph)))
+
+    ! --- Grandeurs geometriques
+    distbf = distb(ifac)
+
+    hint = visclc/distbf
+
+    !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+    if( icodcl(ifac,ivar).eq.1) then
+      hext = rcodcl(ifac,ivar,2)
+      pimp = rcodcl(ifac,ivar,1)
+      coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+      coefb(ifac,iclvar) = hint     /(hint +hext)
+      !      C.L DE TYPE FLUX
+    elseif(                                                     &
+         icodcl(ifac,ivar).eq.3)then
+      coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+      coefb(ifac,iclvar) = 1.d0
+    endif
+
+  enddo
+
+  ! ---> SPALART ALLMARAS
+
+elseif(iturb.eq.70) then
+
+  ivar   = inuiph
+  iclvar = iclnu
+
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    ! --- Proprietes physiques
+    visclc = propce(iel,ipcvis)
+    flumbf = propfb(ifac,ipprob(ifluma(inuiph)))
+
+    ! --- Grandeurs geometriques
+    distbf = distb(ifac)
+    hint = visclc/distbf
+
+    !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+    if( icodcl(ifac,ivar).eq.1) then
+      hext = rcodcl(ifac,ivar,2)
+      pimp = rcodcl(ifac,ivar,1)
+      coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+      coefb(ifac,iclvar) = hint     /(hint +hext)
+      !      C.L DE TYPE FLUX
+    elseif(                                                     &
+         icodcl(ifac,ivar).eq.3)then
+      coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+      coefb(ifac,iclvar) = 1.d0
+    endif
+
+  enddo
+
+
+  ! ---> V2F
+
+elseif(iturb.eq.50) then
+
+  !   --> K, EPSILON ET PHI
+  do ii = 1, 3
+
+    if(ii.eq.1) then
+      ivar   = ikiph
+      iclvar = iclk
+      sigma  = sigmak
+    elseif(ii.eq.2) then
+      ivar   = iepiph
+      iclvar = iclep
+      sigma  = sigmae
+    else
+      ivar   = iphiph
+      iclvar = iclphi
+      sigma  = sigmak
+    endif
+
+    do ifac = 1, nfabor
+
+      iel = ifabor(ifac)
+
+      ! --- Proprietes physiques
+      visclc = propce(iel,ipcvis)
+      visctc = propce(iel,ipcvst)
+      flumbf = propfb(ifac,ipprob(ifluma(ikiph)))
+
+      ! --- Grandeurs geometriques
+      distbf = distb(ifac)
+
+      hint = (visclc+visctc/sigma)/distbf
+
+      !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+      if(icodcl(ifac,ivar).eq.1) then
+        hext = rcodcl(ifac,ivar,2)
+        pimp = rcodcl(ifac,ivar,1)
+        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+        coefb(ifac,iclvar) = hint     /(hint +hext)
+        !      C.L DE TYPE FLUX
+
+      elseif(icodcl(ifac,ivar).eq.3)then
+        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+        coefb(ifac,iclvar) = 1.d0
+      endif
+    enddo
+
+  enddo
+
+  !   --> FB
+
+  ivar   = ifbiph
+  iclvar = iclfb
+
+  do ifac = 1, nfabor
+
+    ! --- Proprietes physiques
+    visclc = 1.d0
+    flumbf = propfb(ifac,ipprob(ifluma(ifbiph)))
+
+    ! --- Grandeurs geometriques
+    distbf = distb(ifac)
+
+    hint = visclc/distbf
+
+    !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+    if( icodcl(ifac,ivar).eq.1) then
+      hext = rcodcl(ifac,ivar,2)
+      pimp = rcodcl(ifac,ivar,1)
+      coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+      coefb(ifac,iclvar) = hint     /(hint +hext)
+      !      C.L DE TYPE FLUX
+    elseif(icodcl(ifac,ivar).eq.3)then
+      coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+      coefb(ifac,iclvar) = 1.d0
+    endif
+
+  enddo
+
+endif
 
 ! --- La boucle sur les phases continue
 !===============================================================================
@@ -1353,248 +1340,246 @@ do iphas = 1, nphas
 !                     : DIRICHLET, NEUMANN
 !===============================================================================
 
-  if(nscal.ge.1) then
+if(nscal.ge.1) then
 
-    do ii = 1, nscal
+  do ii = 1, nscal
 
-      ivar   = isca(ii)
-      iclvar = iclrtp(ivar,icoef)
-      iclvaf = iclrtp(ivar,icoeff)
+    ivar   = isca(ii)
+    iclvar = iclrtp(ivar,icoef)
+    iclvaf = iclrtp(ivar,icoeff)
 
-      isvhbl = 0
-      if(ii.eq.isvhb) then
-        isvhbl = isvhb
-      endif
+    isvhbl = 0
+    if(ii.eq.isvhb) then
+      isvhbl = isvhb
+    endif
 
-      if(ivisls(ii).gt.0) then
-        ipcvsl = ipproc(ivisls(ii))
+    if(ivisls(ii).gt.0) then
+      ipcvsl = ipproc(ivisls(ii))
+    else
+      ipcvsl = 0
+    endif
+
+    ! --- Indicateur de prise en compte de Cp ou non
+    !       (selon si le scalaire (scalaire associe pour une fluctuation)
+    !        doit etre ou non traite comme une temperature)
+    !      Si le scalaire est une variance et que le
+    !        scalaire associe n'est pas resolu, on suppose alors qu'il
+    !        doit etre traite comme un scalaire passif (defaut IHCP = 0)
+    ihcp = 0
+    if(iscavr(ii).le.nscal) then
+      if(iscavr(ii).gt.0) then
+        iscal = iscavr(ii)
       else
-        ipcvsl = 0
+        iscal = ii
       endif
-
-! --- Indicateur de prise en compte de Cp ou non
-!       (selon si le scalaire (scalaire associe pour une fluctuation)
-!        doit etre ou non traite comme une temperature)
-!      Si le scalaire est une variance et que le
-!        scalaire associe n'est pas resolu, on suppose alors qu'il
-!        doit etre traite comme un scalaire passif (defaut IHCP = 0)
-      ihcp = 0
-      if(iscavr(ii).le.nscal) then
-        if(iscavr(ii).gt.0) then
-          iscal = iscavr(ii)
+      if(iscsth(iscal).eq.0.or.iscsth(iscal).eq.2             &
+           .or.iscsth(iscal).eq.3) then
+        ihcp = 0
+      elseif(abs(iscsth(iscal)).eq.1) then
+        if(ipccp.gt.0) then
+          ihcp = 2
         else
-          iscal = ii
-        endif
-        if(iscsth(iscal).eq.0.or.iscsth(iscal).eq.2             &
-                             .or.iscsth(iscal).eq.3) then
-          ihcp = 0
-        elseif(abs(iscsth(iscal)).eq.1) then
-          if(ipccp.gt.0) then
-            ihcp = 2
-          else
-            ihcp = 1
-          endif
+          ihcp = 1
         endif
       endif
+    endif
 
-! --- Boucle sur les faces
-      do ifac = 1, nfabor
+    ! --- Boucle sur les faces
+    do ifac = 1, nfabor
 
-        iel = ifabor(ifac)
+      iel = ifabor(ifac)
 
-! --- Proprietes physiques
-        visctc = propce(iel,ipcvst)
-        flumbf = propfb(ifac,ipprob(ifluma(ivar)))
+      ! --- Proprietes physiques
+      visctc = propce(iel,ipcvst)
+      flumbf = propfb(ifac,ipprob(ifluma(ivar)))
 
-! --- Grandeurs geometriques
-        distbf = distb(ifac)
+      ! --- Grandeurs geometriques
+      distbf = distb(ifac)
 
-! --- Prise en compte de Cp ou CV
-!      (dans le Cas compressible IHCP=0)
+      ! --- Prise en compte de Cp ou CV
+      !      (dans le Cas compressible IHCP=0)
 
+      cpp = 1.d0
+      if(ihcp.eq.0) then
         cpp = 1.d0
-        if(ihcp.eq.0) then
-          cpp = 1.d0
-        elseif(ihcp.eq.2) then
-          cpp = propce(iel,ipccp )
-        elseif(ihcp.eq.1) then
-          cpp = cp0
-        endif
-        hint = cpp
+      elseif(ihcp.eq.2) then
+        cpp = propce(iel,ipccp )
+      elseif(ihcp.eq.1) then
+        cpp = cp0
+      endif
+      hint = cpp
 
-! --- Viscosite variable ou non
-        if (ipcvsl.le.0) then
-          rkl = visls0(ii)
+      ! --- Viscosite variable ou non
+      if (ipcvsl.le.0) then
+        rkl = visls0(ii)
+      else
+        rkl = propce(iel,ipcvsl)
+      endif
+
+      ! --- Cas turbulent
+      if (iturb.ne.0) then
+        hint = hint*(rkl+visctc/sigmas(ii))/distbf
+        !     Cas laminaire
+      else
+        hint  = hint*rkl/distbf
+      endif
+
+      ! --->  C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+
+      if( icodcl(ifac,ivar).eq.1) then
+        hext = rcodcl(ifac,ivar,2)
+        if(abs(hext).ge.rinfin*0.5d0) then
+          pimp = rcodcl(ifac,ivar,1)
+          coefa(ifac,iclvar) = pimp
+          coefb(ifac,iclvar) = 0.d0
         else
-          rkl = propce(iel,ipcvsl)
+          pimp = rcodcl(ifac,ivar,1)
+          coefa(ifac,iclvar) = hext*pimp/(hint+hext)
+          coefb(ifac,iclvar) = hint     /(hint+hext)
         endif
 
-! --- Cas turbulent
-        if (iturb.ne.0) then
-          hint = hint*(rkl+visctc/sigmas(ii))/distbf
-!     Cas laminaire
-        else
-          hint  = hint*rkl/distbf
+        !     On utilise le Dirichlet pour les calculs de gradients
+        !       et pour les flux de bord.
+
+        if(iclvaf.ne.iclvar) then
+          coefa(ifac,iclvaf) = coefa(ifac,iclvar)
+          coefb(ifac,iclvaf) = coefb(ifac,iclvar)
         endif
 
-! --->  C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+        ! ---> COUPLAGE : on stocke le hint (lambda/d      en temperature,
+        !                                    lambda/(cp d) en enthalpie,
+        !                                    lambda/(cv d) en energie)
 
-        if( icodcl(ifac,ivar).eq.1) then
-          hext = rcodcl(ifac,ivar,2)
-          if(abs(hext).ge.rinfin*0.5d0) then
-            pimp = rcodcl(ifac,ivar,1)
-            coefa(ifac,iclvar) = pimp
-            coefb(ifac,iclvar) = 0.d0
-          else
-            pimp = rcodcl(ifac,ivar,1)
-            coefa(ifac,iclvar) = hext*pimp/(hint+hext)
-            coefb(ifac,iclvar) = hint     /(hint+hext)
-          endif
-
-!     On utilise le Dirichlet pour les calculs de gradients
-!       et pour les flux de bord.
-
-          if(iclvaf.ne.iclvar) then
-            coefa(ifac,iclvaf) = coefa(ifac,iclvar)
-            coefb(ifac,iclvaf) = coefb(ifac,iclvar)
-          endif
-
-! ---> COUPLAGE : on stocke le hint (lambda/d      en temperature,
-!                                    lambda/(cp d) en enthalpie,
-!                                    lambda/(cv d) en energie)
-
-          if (isvhbl .gt. 0) then
-            hbord(ifac) = hint
-          endif
+        if (isvhbl .gt. 0) then
+          hbord(ifac) = hint
+        endif
 
 
-!--> Rayonnement :
+        !--> Rayonnement :
 
-!      On stocke le coefficient d'echange lambda/distance
-!      (ou son equivalent en turbulent) quelle que soit la
-!      variable thermique transportee (temperature ou enthalpie)
-!      car on l'utilise pour realiser des bilans aux parois qui
-!      sont faits en temperature (on cherche la temperature de
-!      paroi quelle que soit la variable thermique transportee pour
-!      ecrire des eps sigma T4).
+        !      On stocke le coefficient d'echange lambda/distance
+        !      (ou son equivalent en turbulent) quelle que soit la
+        !      variable thermique transportee (temperature ou enthalpie)
+        !      car on l'utilise pour realiser des bilans aux parois qui
+        !      sont faits en temperature (on cherche la temperature de
+        !      paroi quelle que soit la variable thermique transportee pour
+        !      ecrire des eps sigma T4).
 
-!     donc :
+        !     donc :
 
-!       lorsque la variable transportee est la temperature
-!         ABS(ISCSTH(II)).EQ.1 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT
-!         puisque HINT = VISLS * CP / DISTBR
-!                      = lambda/distance en W/(m2 K)
+        !       lorsque la variable transportee est la temperature
+        !         ABS(ISCSTH(II)).EQ.1 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT
+        !         puisque HINT = VISLS * CP / DISTBR
+        !                      = lambda/distance en W/(m2 K)
 
-!       lorsque la variable transportee est l'enthalpie
-!         ISCSTH(II).EQ.2 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT*CPR
-!         avec
-!            IF(IPCCP.GT.0) THEN
-!              CPR = PROPCE(IEL,IPCCP )
-!            ELSE
-!              CPR = CP0
-!            ENDIF
-!         puisque HINT = VISLS / DISTBR
-!                      = lambda/(CP * distance)
+        !       lorsque la variable transportee est l'enthalpie
+        !         ISCSTH(II).EQ.2 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT*CPR
+        !         avec
+        !            IF(IPCCP.GT.0) THEN
+        !              CPR = PROPCE(IEL,IPCCP )
+        !            ELSE
+        !              CPR = CP0
+        !            ENDIF
+        !         puisque HINT = VISLS / DISTBR
+        !                      = lambda/(CP * distance)
 
-!       lorsque la variable transportee est l'energie
-!         ISCSTH(II).EQ.3 :
-!         on procede comme pour l'enthalpie avec CV au lieu de CP
-!         (rq : il n'y a pas d'hypothèse, sf en non orthogonal :
-!               le flux est le bon et le coef d'echange aussi)
+        !       lorsque la variable transportee est l'energie
+        !         ISCSTH(II).EQ.3 :
+        !         on procede comme pour l'enthalpie avec CV au lieu de CP
+        !         (rq : il n'y a pas d'hypothèse, sf en non orthogonal :
+        !               le flux est le bon et le coef d'echange aussi)
 
-!      De meme plus bas et de meme dans clptur.
+        !      De meme plus bas et de meme dans clptur.
 
-!               Si on rayonne et que
-!                  le scalaire est la variable energetique
+        !               Si on rayonne et que
+        !                  le scalaire est la variable energetique
 
-          if (iirayo.ge.1 .and. ii.eq.iscalt) then
+        if (iirayo.ge.1 .and. ii.eq.iscalt) then
 
-!                On calcule le coefficient d'echange en W/(m2 K)
+          !                On calcule le coefficient d'echange en W/(m2 K)
 
-!                  Si on resout en enthalpie
-            if(iscsth(ii).eq.2) then
-!                    Si Cp variable
-              if(ipccp.gt.0) then
-                propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
-              else
-                propfb(ifac,ipprob(ihconv)) = hint*cp0
-              endif
-!                  Si on resout en energie (compressible)
-            elseif(iscsth(ii).eq.3) then
-!                    Si Cv variable
-              if(ipccv.gt.0) then
-                propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
-              else
-                propfb(ifac,ipprob(ihconv)) = hint*cv0
-              endif
-!                  Si on resout en temperature
-            elseif(abs(iscsth(ii)).eq.1) then
-              propfb(ifac,ipprob(ihconv)) = hint
+          !                  Si on resout en enthalpie
+          if(iscsth(ii).eq.2) then
+            !                    Si Cp variable
+            if(ipccp.gt.0) then
+              propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
+            else
+              propfb(ifac,ipprob(ihconv)) = hint*cp0
             endif
-
-!                On recupere le flux h(Ti'-Tp) (sortant ou
-!                             negatif si gain pour le fluide) en W/m2
-
-            propfb(ifac,ipprob(ifconv)) =                       &
-                 hint*( (1.d0-coefb(ifac,iclvaf))*thbord(ifac)  &
-                       - coefa(ifac,iclvaf))
-
-          endif
-
-! --->  C.L DE TYPE FLUX
-
-        elseif(icodcl(ifac,ivar).eq.3)then
-          coefa(ifac,iclvaf)  = -rcodcl(ifac,ivar,3)/hint
-          coefb(ifac,iclvaf)  = 1.d0
-          if(iclvar.ne.iclvaf) then
-            coefa(ifac,iclvar)  = 0.d0
-            coefb(ifac,iclvar)  = 1.d0
-          endif
-          if (isvhbl .gt. 0) hbord(ifac) = hint
-
-
-!--> Rayonnement :
-
-          if (iirayo.ge.1 .and. ii.eq.iscalt) then
-
-!                On calcule le coefficient d'echange en W/(m2 K)
-
-!                Si on resout en enthalpie
-            if(iscsth(ii).eq.2) then
-!                  Si Cp variable
-              if(ipccp.gt.0) then
-                propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
-              else
-                propfb(ifac,ipprob(ihconv)) = hint*cp0
-              endif
-            elseif(iscsth(ii).eq.3) then
-!                    Si Cv variable
-              if(ipccv.gt.0) then
-                propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
-              else
-                propfb(ifac,ipprob(ihconv)) = hint*cv0
-              endif
-!                Si on resout en temperature
-            elseif(abs(iscsth(ii)).eq.1) then
-              propfb(ifac,ipprob(ihconv)) = hint
+            !                  Si on resout en energie (compressible)
+          elseif(iscsth(ii).eq.3) then
+            !                    Si Cv variable
+            if(ipccv.gt.0) then
+              propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
+            else
+              propfb(ifac,ipprob(ihconv)) = hint*cv0
             endif
-
-!              On recupere le flux h(Ti'-Tp) (sortant ou
-!                             negatif si gain pour le fluide)
-
-            propfb(ifac,ipprob(ifconv)) = rcodcl(ifac,ivar,3)
+            !                  Si on resout en temperature
+          elseif(abs(iscsth(ii)).eq.1) then
+            propfb(ifac,ipprob(ihconv)) = hint
           endif
+
+          !                On recupere le flux h(Ti'-Tp) (sortant ou
+          !                             negatif si gain pour le fluide) en W/m2
+
+          propfb(ifac,ipprob(ifconv)) =                       &
+               hint*( (1.d0-coefb(ifac,iclvaf))*thbord(ifac)  &
+               - coefa(ifac,iclvaf))
 
         endif
 
-      enddo
+        ! --->  C.L DE TYPE FLUX
+
+      elseif(icodcl(ifac,ivar).eq.3)then
+        coefa(ifac,iclvaf)  = -rcodcl(ifac,ivar,3)/hint
+        coefb(ifac,iclvaf)  = 1.d0
+        if(iclvar.ne.iclvaf) then
+          coefa(ifac,iclvar)  = 0.d0
+          coefb(ifac,iclvar)  = 1.d0
+        endif
+        if (isvhbl .gt. 0) hbord(ifac) = hint
+
+
+        !--> Rayonnement :
+
+        if (iirayo.ge.1 .and. ii.eq.iscalt) then
+
+          !                On calcule le coefficient d'echange en W/(m2 K)
+
+          !                Si on resout en enthalpie
+          if(iscsth(ii).eq.2) then
+            !                  Si Cp variable
+            if(ipccp.gt.0) then
+              propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
+            else
+              propfb(ifac,ipprob(ihconv)) = hint*cp0
+            endif
+          elseif(iscsth(ii).eq.3) then
+            !                    Si Cv variable
+            if(ipccv.gt.0) then
+              propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
+            else
+              propfb(ifac,ipprob(ihconv)) = hint*cv0
+            endif
+            !                Si on resout en temperature
+          elseif(abs(iscsth(ii)).eq.1) then
+            propfb(ifac,ipprob(ihconv)) = hint
+          endif
+
+          !              On recupere le flux h(Ti'-Tp) (sortant ou
+          !                             negatif si gain pour le fluide)
+
+          propfb(ifac,ipprob(ifconv)) = rcodcl(ifac,ivar,3)
+        endif
+
+      endif
 
     enddo
 
-  endif
+  enddo
 
-enddo
-! --- Boucle sur les phases : fin
+endif
+
 !===============================================================================
 ! 13.  VITESSE DE MAILLAGE EN ALE : DIRICHLET, NEUMANN
 !===============================================================================

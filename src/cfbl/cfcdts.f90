@@ -265,9 +265,7 @@ if(iperio.eq.1) then
 
   iinvpe = 1
 
-  do iphas = 1, nphas
-    if(ivar.eq.iu.or.ivar.eq.iv.or.                 &
-                            ivar.eq.iw.or.                 &
+  if(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw.or.     &
        ivar.eq.ir11.or.ivar.eq.ir12.or.             &
        ivar.eq.ir13.or.ivar.eq.ir22.or.             &
        ivar.eq.ir23.or.ivar.eq.ir33) then
@@ -276,17 +274,16 @@ if(iperio.eq.1) then
 !      seules seront echangees les informations sur les faces periodiques
 !      de translation dans percom ; on ne touche pas aux informations
 !      relatives aux faces de periodicite de rotation.
-      idimte = 0
-      itenso = 1
+    idimte = 0
+    itenso = 1
 
 !      Lors de la resolution par increments, on echangera egalement les
 !      informations relatives aux faces de periodicite de translation.
 !      Pour les faces de periodicite de rotation, l'increment sera
 !      annule dans percom (iinvpe=2).
-      iinvpe = 2
+    iinvpe = 2
 
-    endif
-  enddo
+  endif
 
 endif
 

@@ -88,13 +88,11 @@ double precision wmolme
 !===============================================================================
 !     L'utilisateur ne doit pas y avoir touche.
 
-do iphas = 1, nphas
-  if(iscalt.ne.-1) then
-    write(nfecra,1000)iscalt
-    call csexit (1)
-    !==========
-  endif
-enddo
+if(iscalt.ne.-1) then
+  write(nfecra,1000)iscalt
+  call csexit (1)
+  !==========
+endif
 do ii = 1, nscapp
   if(iscsth(iscapp(ii)).ne.-10) then
     write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))

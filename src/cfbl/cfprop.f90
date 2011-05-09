@@ -99,42 +99,34 @@ if ( ippmod(icompf).ge.0 ) then
   iprop = ipropp
 
 !  Proprietes des phases : CV s'il est variable
-  do iphas = 1, nphas
-    if(icv.ne.0) then
-      iprop         = iprop + 1
-      icv    = iprop
-    endif
-  enddo
+  if(icv.ne.0) then
+    iprop         = iprop + 1
+    icv    = iprop
+  endif
 
 !  Proprietes des phases : Viscosite en volume
-  do iphas = 1, nphas
-    if(iviscv.ne.0) then
-      iprop         = iprop + 1
-      iviscv = iprop
-    endif
-  enddo
+  if(iviscv.ne.0) then
+    iprop         = iprop + 1
+    iviscv = iprop
+  endif
 
 !   Flux de masse specifique pour la vitesse (si on en veut un)
-  do iphas = 1, nphas
-    if(iflmau.gt.0) then
-      iprop         = iprop + 1
-      ifluma(iu  ) = iprop
-      ifluma(iv  ) = iprop
-      ifluma(iw  ) = iprop
-    endif
-  enddo
+  if(iflmau.gt.0) then
+    iprop         = iprop + 1
+    ifluma(iu  ) = iprop
+    ifluma(iv  ) = iprop
+    ifluma(iw  ) = iprop
+  endif
 
 !    Flux de Rusanov au bord pour Qdm et E
-  do iphas = 1, nphas
-    iprop         = iprop + 1
-    ifbrhu = iprop
-    iprop         = iprop + 1
-    ifbrhv = iprop
-    iprop         = iprop + 1
-    ifbrhw = iprop
-    iprop         = iprop + 1
-    ifbene = iprop
-  enddo
+  iprop         = iprop + 1
+  ifbrhu = iprop
+  iprop         = iprop + 1
+  ifbrhv = iprop
+  iprop         = iprop + 1
+  ifbrhw = iprop
+  iprop         = iprop + 1
+  ifbene = iprop
 
 
 ! ----  Nb de variables algebriques (ou d'etat)
@@ -155,23 +147,19 @@ if ( ippmod(icompf).ge.0 ) then
 
   iprop = nproce
 
-  do iphas = 1, nphas
+  if(icv.gt.0) then
+    iprop                 = iprop + 1
+    ipproc(icv   ) = iprop
+    ipppst                = ipppst + 1
+    ipppro(iprop)         = ipppst
+  endif
 
-    if(icv.gt.0) then
-      iprop                 = iprop + 1
-      ipproc(icv   ) = iprop
-      ipppst                = ipppst + 1
-      ipppro(iprop)         = ipppst
-    endif
-
-    if(iviscv.gt.0) then
-      iprop                 = iprop + 1
-      ipproc(iviscv) = iprop
-      ipppst                = ipppst + 1
-      ipppro(iprop)         = ipppst
-    endif
-
-  enddo
+  if(iviscv.gt.0) then
+    iprop                 = iprop + 1
+    ipproc(iviscv) = iprop
+    ipppst                = ipppst + 1
+    ipppro(iprop)         = ipppst
+  endif
 
   nproce = iprop
 
@@ -181,16 +169,14 @@ if ( ippmod(icompf).ge.0 ) then
 
   iprop = nprofb
 
-  do iphas = 1, nphas
-    iprop                 = iprop + 1
-    ipprob(ifbrhu) = iprop
-    iprop                 = iprop + 1
-    ipprob(ifbrhv) = iprop
-    iprop                 = iprop + 1
-    ipprob(ifbrhw) = iprop
-    iprop                 = iprop + 1
-    ipprob(ifbene) = iprop
-  enddo
+  iprop                 = iprop + 1
+  ipprob(ifbrhu) = iprop
+  iprop                 = iprop + 1
+  ipprob(ifbrhv) = iprop
+  iprop                 = iprop + 1
+  ipprob(ifbrhw) = iprop
+  iprop                 = iprop + 1
+  ipprob(ifbene) = iprop
 
   nprofb = iprop
 
@@ -200,12 +186,10 @@ if ( ippmod(icompf).ge.0 ) then
 
   iprop = nprofa
 
-  do iphas = 1, nphas
-    if(iflmau.gt.0) then
-      iprop                     = iprop + 1
-      ipprof(ifluma(iu)) = iprop
-    endif
-  enddo
+  if(iflmau.gt.0) then
+    iprop                     = iprop + 1
+    ipprof(ifluma(iu)) = iprop
+  endif
 
   nprofa = iprop
 
@@ -226,27 +210,23 @@ if ( ippmod(icompf).ge.0 ) then
 !     NB : Seuls les 8 premiers caracteres du nom seront repris dans le
 !          listing le plus detaille
 
-  do iphas = 1, nphas
+  !-->  chaleur specifique a volume constant
+  if(icv   .gt.0) then
+    ipp = ipppro(ipproc(icv   ))
+    nomvar(ipp)   = 'Specific Heat Cst Vol'
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = 0
+  endif
 
-    !-->  chaleur specifique a volume constant
-    if(icv   .gt.0) then
-      ipp = ipppro(ipproc(icv   ))
-      nomvar(ipp)   = 'Specific Heat Cst Vol'
-      ichrvr(ipp)   = 0
-      ilisvr(ipp)   = 0
-      ihisvr(ipp,1) = 0
-    endif
-
-    !-->  viscosite laminaire
-    if(iviscv.gt.0) then
-      ipp = ipppro(ipproc(iviscv))
-      nomvar(ipp)   = 'Volume Viscosity'
-      ichrvr(ipp)   = 0
-      ilisvr(ipp)   = 0
-      ihisvr(ipp,1) = 0
-    endif
-
-  enddo
+  !-->  viscosite laminaire
+  if(iviscv.gt.0) then
+    ipp = ipppro(ipproc(iviscv))
+    nomvar(ipp)   = 'Volume Viscosity'
+    ichrvr(ipp)   = 0
+    ilisvr(ipp)   = 0
+    ihisvr(ipp,1) = 0
+  endif
 
 endif
 

@@ -84,35 +84,33 @@ if ( ippmod(icompf).ge.0 ) then
 
   iprop =0
 
-  do iphas = 1, nphas
-
 ! ---- Masse volumique
-    iprop = iprop + 1
-    irho = iscapp(iprop)
+  iprop = iprop + 1
+  irho = iscapp(iprop)
 !     Alias pour les C.L.
-    irun = irho
+  irun = irho
 
 ! ---- Energie totale
-    iprop = iprop + 1
-    ienerg = iscapp(iprop)
+  iprop = iprop + 1
+  ienerg = iscapp(iprop)
 !     Alias pour les C.L.
-    irunh = ienerg
+  irunh = ienerg
 
 ! ---- Temperature (post)
-    iprop = iprop + 1
-    itempk = iscapp(iprop)
+  iprop = iprop + 1
+  itempk = iscapp(iprop)
 
 ! ---- Viscosite dynamique de reference relative au scalaire IRHO
-    ivisls(irho  ) = 0
-    visls0(irho  ) = epzero
+  ivisls(irho  ) = 0
+  visls0(irho  ) = epzero
 
 ! ---- Viscosite dynamique de reference relative au scalaire ITEMPK
-    ivisls(itempk) = 0
-    visls0(itempk) = epzero
+  ivisls(itempk) = 0
+  visls0(itempk) = epzero
 
 ! ---- Initialisation par defaut de la viscosite en volume (cste)
-    iviscv = 0
-    viscv0 = 0.d0
+  iviscv = 0
+  viscv0 = 0.d0
 
 
 !===============================================================================
@@ -120,15 +118,15 @@ if ( ippmod(icompf).ge.0 ) then
 !===============================================================================
 
 ! --> Cv constant ou variable (par defaut : constant)
-    icv = 0
-    cv0 = 0.d0
+  icv = 0
+  cv0 = 0.d0
 
-    iccfth = -1
-    imodif = 0
-    ii     = 1
-    dblpre(1) = 0.d0
-    call uscfth                                                   &
-    !==========
+  iccfth = -1
+  imodif = 0
+  ii     = 1
+  dblpre(1) = 0.d0
+  call uscfth                                                   &
+  !==========
  ( ii , ii , ii ,                                                 &
    iccfth , imodif  , iphas   ,                                   &
    dblpre , dblpre , dblpre , dblpre , dblpre , dblpre ,          &
@@ -140,10 +138,7 @@ if ( ippmod(icompf).ge.0 ) then
 !     ATTENTION   PAS ENCORE IMPLEMENTE
 !========   LAISSER IFLMAU = 0
 
-    iflmau = 0
-
-  enddo
-
+  iflmau = 0
 
 !===============================================================================
 ! 3. ON REDONNE LA MAIN A L'UTILISATEUR
@@ -158,32 +153,25 @@ if ( ippmod(icompf).ge.0 ) then
 !===============================================================================
 
 ! ---- Viscosite dynamique de reference relative au scalaire IENERG
-  do iphas = 1, nphas
-    if(ivisls(itempk).gt.0 .or. icv.gt.0) then
-      ivisls(ienerg) = 1
-    else
-      ivisls(ienerg) = 0
-    endif
+  if(ivisls(itempk).gt.0 .or. icv.gt.0) then
+    ivisls(ienerg) = 1
+  else
+    ivisls(ienerg) = 0
+  endif
 
-    visls0(ienerg) = epzero
-
-  enddo
+  visls0(ienerg) = epzero
 
   iok = 0
 
-  do iphas = 1, nphas
+  if(visls0(itempk).le.0.d0) then
+    write(nfecra,1000) visls0(itempk)
+    iok = 1
+  endif
 
-    if(visls0(itempk).le.0.d0) then
-      write(nfecra,1000) visls0(itempk)
-      iok = 1
-    endif
-
-    if(viscv0.lt.0.d0) then
-      write(nfecra,2000) viscv0
-      iok = 1
-    endif
-
-  enddo
+  if(viscv0.lt.0.d0) then
+    write(nfecra,2000) viscv0
+    iok = 1
+  endif
 
   if(iok.gt.0) call csexit (1)
 

@@ -243,92 +243,89 @@ idebra = idbra0
 iutile = 0
 if(iutile.eq.1) then
 
-  do iphas = 1, nphas ! Loop on phases
+  ! Position of variables, coefficients
+  ! -----------------------------------
 
-    ! Position of variables, coefficients
-    ! -----------------------------------
+  ! --- Number of the thermal variable for the current phase 'iphas'
+  !       (and of its boundary conditions)
+  !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-    ! --- Number of the thermal variable for the current phase 'iphas'
-    !       (and of its boundary conditions)
-    !       To use user scalar 2 instead, write 'ivart = isca(2)'
+  if (iscalt.gt.0) then
+    ivart = isca(iscalt)
+  else
+    write(nfecra,9010) iscalt
+    call csexit (1)
+  endif
 
-    if (iscalt.gt.0) then
-      ivart = isca(iscalt)
-    else
-      write(nfecra,9010) iscalt
-      call csexit (1)
-    endif
+  ! --- Position of boundary conditions for variable 'ivart'
 
-    ! --- Position of boundary conditions for variable 'ivart'
+  iclvar = iclrtp(ivart,icoef)
 
-    iclvar = iclrtp(ivart,icoef)
+  ! --- Rank of density for current phase 'iphas'
+  !     in 'propce', physical properties at element centers:       'ipcrom'
+  !     in 'propfb', physical properties at boundary face centers: 'ipbrom'
 
-    ! --- Rank of density for current phase 'iphas'
-    !     in 'propce', physical properties at element centers:       'ipcrom'
-    !     in 'propfb', physical properties at boundary face centers: 'ipbrom'
+  ipcrom = ipproc(irom)
+  ipbrom = ipprob(irom)
 
-    ipcrom = ipproc(irom)
-    ipbrom = ipprob(irom)
+  ! --- Coefficients of laws chosen by the user
+  !       Values given here are fictitious
 
-    ! --- Coefficients of laws chosen by the user
-    !       Values given here are fictitious
+  vara  = -4.0668d-3
+  varb  = -5.0754d-2
+  varc  =  1000.9d0
 
-    vara  = -4.0668d-3
-    varb  = -5.0754d-2
-    varc  =  1000.9d0
+  ! Density at cell centers
+  !------------------------
+  ! law                    rho  = t  * ( a *  t +  b) +   c
+  ! so      propce(iel, ipcrom) = xrtp * (vara*xrtp+varb) + varc
 
-    ! Density at cell centers
-    !------------------------
-    ! law                    rho  = t  * ( a *  t +  b) +   c
-    ! so      propce(iel, ipcrom) = xrtp * (vara*xrtp+varb) + varc
-
-    do iel = 1, ncel
-      xrtp = rtp(iel,ivart)
-      propce(iel,ipcrom) = xrtp * (vara*xrtp+varb) + varc
-    enddo
+  do iel = 1, ncel
+    xrtp = rtp(iel,ivart)
+    propce(iel,ipcrom) = xrtp * (vara*xrtp+varb) + varc
+  enddo
 
 
-    ! Density at boundary faces
-    !---------------------------
+  ! Density at boundary faces
+  !---------------------------
 
-    ! By default, the value of rho at the boundary is the value taken
-    !   at the center of adjacent cells. This is the recommended approach.
-    ! To be in this case, nothing needs to be done:
-    !   do not prescribe a value for propfb(ifac, ipbrom) and
-    !   do not modify ibrom
+  ! By default, the value of rho at the boundary is the value taken
+  !   at the center of adjacent cells. This is the recommended approach.
+  ! To be in this case, nothing needs to be done:
+  !   do not prescribe a value for propfb(ifac, ipbrom) and
+  !   do not modify ibrom
 
-    ! For users who do not wish to follow this recommendation, we
-    !   note that the boundary temperature may be fictitious, simply
-    !   defined so as to conserve a flux (this is especially the case
-    !   at walls). The value of rho which is computed at the boundary
-    !   when introducing this fictitious temperature in a physical law
-    !   may thus be completely false (negative for example).
+  ! For users who do not wish to follow this recommendation, we
+  !   note that the boundary temperature may be fictitious, simply
+  !   defined so as to conserve a flux (this is especially the case
+  !   at walls). The value of rho which is computed at the boundary
+  !   when introducing this fictitious temperature in a physical law
+  !   may thus be completely false (negative for example).
 
-    ! If we wish to specify a law anyways:
-    !                        rho  = t  * ( a *  t +  b) +   c
-    ! so      propfb(iel, ipbrom) = xrtp * (vara*xrtp+varb) + varc
+  ! If we wish to specify a law anyways:
+  !                        rho  = t  * ( a *  t +  b) +   c
+  ! so      propfb(iel, ipbrom) = xrtp * (vara*xrtp+varb) + varc
 
-    ! 't' being the temperature at boundary face centers, we may use the
-    ! following lines of code (voluntarily deactived, as the must be used
-    ! with caution):
+  ! 't' being the temperature at boundary face centers, we may use the
+  ! following lines of code (voluntarily deactived, as the must be used
+  ! with caution):
 
-    ! Note that when we prscribe the density at the boundary, it must be done
-    ! at ALL boundary faces.
-    !    ===
+  ! Note that when we prscribe the density at the boundary, it must be done
+  ! at ALL boundary faces.
+  !    ===
 
-    ! ibrom = 1
-    ! do ifac = 1, nfabor
-    !   iel = ifabor(ifac)
-    !   xrtp = coefa(ifac, iclvar)+rtp(iel, ivart)*coefb(ifac, iclvar)
-    !   propfb(ifac, ipbrom) = xrtp * (vara*xrtp+varb) + varc
-    ! enddo
+  ! ibrom = 1
+  ! do ifac = 1, nfabor
+  !   iel = ifabor(ifac)
+  !   xrtp = coefa(ifac, iclvar)+rtp(iel, ivart)*coefb(ifac, iclvar)
+  !   propfb(ifac, ipbrom) = xrtp * (vara*xrtp+varb) + varc
+  ! enddo
 
-    ! ifabor(ifac) is the cell adjacent to the boundary face
+  ! ifabor(ifac) is the cell adjacent to the boundary face
 
-    ! Caution: ibrom = 1 is necessary for the law to be taken
-    !                           into account.
+  ! Caution: ibrom = 1 is necessary for the law to be taken
+  !                           into account.
 
-  enddo ! --- Loop on phases
 endif ! --- Test on 'iutile'
 
 
@@ -345,46 +342,43 @@ endif ! --- Test on 'iutile'
 iutile = 0
 if(iutile.eq.1) then
 
-  do iphas = 1, nphas ! Loop on phases
+  ! Position of variables, coefficients
+  ! -----------------------------------
 
-    ! Position of variables, coefficients
-    ! -----------------------------------
+  ! --- Number of the thermal variable for the current phase 'iphas'
+  !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-    ! --- Number of the thermal variable for the current phase 'iphas'
-    !       To use user scalar 2 instead, write 'ivart = isca(2)'
+  if (iscalt.gt.0) then
+    ivart = isca(iscalt)
+  else
+    write(nfecra,9010) iscalt
+    call csexit(1)
+  endif
 
-    if (iscalt.gt.0) then
-      ivart = isca(iscalt)
-    else
-      write(nfecra,9010) iscalt
-      call csexit(1)
-    endif
+  ! --- Rank of molecular dynamic viscosity for current phase 'iphas'
+  !     in 'propce', physical properties at element centers: 'ipcvis'
 
-    ! --- Rank of molecular dynamic viscosity for current phase 'iphas'
-    !     in 'propce', physical properties at element centers: 'ipcvis'
+  ipcvis = ipproc(iviscl)
 
-    ipcvis = ipproc(iviscl)
+  ! --- Coefficients of laws chosen by the user
+  !       Values given here are fictitious
 
-    ! --- Coefficients of laws chosen by the user
-    !       Values given here are fictitious
+  varam = -3.4016d-9
+  varbm =  6.2332d-7
+  varcm = -4.5577d-5
+  vardm =  1.6935d-3
 
-    varam = -3.4016d-9
-    varbm =  6.2332d-7
-    varcm = -4.5577d-5
-    vardm =  1.6935d-3
+  ! Molecular dynamic viscosity in kg/(m.s) at cell centers
+  !--------------------------------------------------------
+  ! law                    mu   = t * (t * (am * t + bm) + cm) + dm
+  ! so      propce(iel, ipcvis) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
 
-    ! Molecular dynamic viscosity in kg/(m.s) at cell centers
-    !--------------------------------------------------------
-    ! law                    mu   = t * (t * (am * t + bm) + cm) + dm
-    ! so      propce(iel, ipcvis) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  do iel = 1, ncel
+    xrtp = rtp(iel,ivart)
+    propce(iel,ipcvis) =                                        &
+         xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  enddo
 
-    do iel = 1, ncel
-      xrtp = rtp(iel,ivart)
-      propce(iel,ipcvis) =                                        &
-           xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
-    enddo
-
-  enddo ! --- Loop on phases
 endif ! --- Test on 'iutile'
 
 
@@ -401,54 +395,51 @@ endif ! --- Test on 'iutile'
 iutile = 0
 if(iutile.eq.1) then
 
-  do iphas = 1, nphas ! Loop on phases
+  ! Position of variables, coefficients
+  ! -----------------------------------
 
-    ! Position of variables, coefficients
-    ! -----------------------------------
+  ! --- Number of the thermal variable for the current phase 'iphas'
+  !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-    ! --- Number of the thermal variable for the current phase 'iphas'
-    !       To use user scalar 2 instead, write 'ivart = isca(2)'
+  if (iscalt.gt.0) then
+    ivart = isca(iscalt)
+  else
+    write(nfecra,9010) iscalt
+    call csexit (1)
+  endif
 
-    if (iscalt.gt.0) then
-      ivart = isca(iscalt)
-    else
-      write(nfecra,9010) iscalt
-      call csexit (1)
-    endif
+  ! --- Rank of the specific heat for current phase 'iphas'
+  !     in 'propce', physical properties at element centers: 'ipccp'
 
-    ! --- Rank of the specific heat for current phase 'iphas'
-    !     in 'propce', physical properties at element centers: 'ipccp'
+  if(icp.gt.0) then
+    ipccp  = ipproc(icp   )
+  else
+    ipccp  = 0
+  endif
 
-    if(icp.gt.0) then
-      ipccp  = ipproc(icp   )
-    else
-      ipccp  = 0
-    endif
+  ! --- Stop if Cp is not variable
 
-    ! --- Stop if Cp is not variable
+  if(ipccp.le.0) then
+    write(nfecra,1000) icp
+    call csexit (1)
+  endif
 
-    if(ipccp.le.0) then
-      write(nfecra,1000) icp
-      call csexit (1)
-    endif
+  ! --- Coefficients of laws chosen by the user
+  !       Values given here are fictitious
 
-    ! --- Coefficients of laws chosen by the user
-    !       Values given here are fictitious
+  varac = 0.00001d0
+  varbc = 1000.0d0
 
-    varac = 0.00001d0
-    varbc = 1000.0d0
+  ! Specific heat in J/(kg.degrees) at cell centers
+  !------------------------------------------------
+  ! law                    cp  = ac * t + bm
+  ! so      propce(iel, ipccp) = varac*xrtp + varbc
 
-    ! Specific heat in J/(kg.degrees) at cell centers
-    !------------------------------------------------
-    ! law                    cp  = ac * t + bm
-    ! so      propce(iel, ipccp) = varac*xrtp + varbc
+  do iel = 1, ncel
+    xrtp = rtp(iel,ivart)
+    propce(iel,ipccp ) = varac*xrtp + varbc
+  enddo
 
-    do iel = 1, ncel
-      xrtp = rtp(iel,ivart)
-      propce(iel,ipccp ) = varac*xrtp + varbc
-    enddo
-
-  enddo ! --- Loop on phases
 endif ! --- Test on 'iutile'
 
 
@@ -465,86 +456,83 @@ endif ! --- Test on 'iutile'
 iutile = 0
 if(iutile.eq.1) then
 
-  do iphas = 1, nphas ! Loop on phases
+  ! Position of variables, coefficients
+  ! -----------------------------------
 
-    ! Position of variables, coefficients
-    ! -----------------------------------
+  ! --- Number of the thermal variable for the current phase 'iphas'
+  !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-    ! --- Number of the thermal variable for the current phase 'iphas'
-    !       To use user scalar 2 instead, write 'ivart = isca(2)'
+  if (iscalt.gt.0) then
+    ivart = isca(iscalt)
+  else
+    write(nfecra,9010) iscalt
+    call csexit (1)
+  endif
 
-    if (iscalt.gt.0) then
-      ivart = isca(iscalt)
-    else
-      write(nfecra,9010) iscalt
-      call csexit (1)
-    endif
+  ! --- Rank of Lambda/Cp of the thermal variable for current phase 'iphas'
+  !     in 'propce', physical properties at element centers: 'ipcvsl'
 
-    ! --- Rank of Lambda/Cp of the thermal variable for current phase 'iphas'
-    !     in 'propce', physical properties at element centers: 'ipcvsl'
+  if(ivisls(iscalt).gt.0) then
+    ipcvsl = ipproc(ivisls(iscalt))
+  else
+    ipcvsl = 0
+  endif
 
-    if(ivisls(iscalt).gt.0) then
-      ipcvsl = ipproc(ivisls(iscalt))
-    else
-      ipcvsl = 0
-    endif
+  ! --- Stop if Lambda/CP is not variable
 
-    ! --- Stop if Lambda/CP is not variable
+  if(ipcvsl.le.0) then
+    write(nfecra,1010)                                          &
+         iscalt, iscalt, ivisls(iscalt)
+    call csexit (1)
+  endif
 
-    if(ipcvsl.le.0) then
-      write(nfecra,1010)                                          &
-           iscalt, iscalt, ivisls(iscalt)
-      call csexit (1)
-    endif
+  ! --- Rank of the specific heat for current phase 'iphas'
+  !     in 'propce', physical properties at element centers: 'ipccp'
 
-    ! --- Rank of the specific heat for current phase 'iphas'
-    !     in 'propce', physical properties at element centers: 'ipccp'
+  if(icp.gt.0) then
+    ipccp  = ipproc(icp   )
+  else
+    ipccp  = 0
+  endif
 
-    if(icp.gt.0) then
-      ipccp  = ipproc(icp   )
-    else
-      ipccp  = 0
-    endif
+  ! --- Coefficients of laws chosen by the user
+  !       Values given here are fictitious
 
-    ! --- Coefficients of laws chosen by the user
-    !       Values given here are fictitious
+  varal = -3.3283d-7
+  varbl =  3.6021d-5
+  varcl =  1.2527d-4
+  vardl =  0.58923d0
 
-    varal = -3.3283d-7
-    varbl =  3.6021d-5
-    varcl =  1.2527d-4
-    vardl =  0.58923d0
+  ! Lambda/Cp in kg/(m.s) at cell centers
+  !--------------------------------------
+  ! law    Lambda/Cp = {t * (t * (al * t +  bl) + cl) + dl} / Cp
+  ! so     propce(iel,ipcvsl) &
+  !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)/cp0
 
-    ! Lambda/Cp in kg/(m.s) at cell centers
-    !--------------------------------------
-    ! law    Lambda/Cp = {t * (t * (al * t +  bl) + cl) + dl} / Cp
-    ! so     propce(iel,ipcvsl) &
-    !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)/cp0
+  ! We assume Cp has been defined previously.
 
-    ! We assume Cp has been defined previously.
+  if(ipccp.le.0) then
 
-    if(ipccp.le.0) then
+    ! --- If Cp is uniform, we use cp0
+    do iel = 1, ncel
+      xrtp = rtp(iel,ivart)
+      propce(iel,ipcvsl) =                                      &
+           (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
+           /cp0
+    enddo
 
-      ! --- If Cp is uniform, we use cp0
-      do iel = 1, ncel
-        xrtp = rtp(iel,ivart)
-        propce(iel,ipcvsl) =                                      &
-             (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
-             /cp0
-      enddo
+  else
 
-    else
+    ! --- If Cp is not uniform, we use propce above
+    do iel = 1, ncel
+      xrtp = rtp(iel,ivart)
+      propce(iel,ipcvsl) =                                      &
+           (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
+           /propce(iel,ipccp)
+    enddo
 
-      ! --- If Cp is not uniform, we use propce above
-      do iel = 1, ncel
-        xrtp = rtp(iel,ivart)
-        propce(iel,ipcvsl) =                                      &
-             (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
-             /propce(iel,ipccp)
-      enddo
+  endif
 
-    endif
-
-  enddo ! --- Loop on phases
 endif ! --- Test on 'iutile'
 
 
@@ -573,9 +561,7 @@ if(iutile.eq.1) then
 
     ! --- If it is a thermal variable, it has already been handled above
     ith = 0
-    do iphas = 1, nphas
-      if (iscal.eq.iscalt) ith = 1
-    enddo
+    if (iscal.eq.iscalt) ith = 1
 
     ! --- If the variable is a fluctuation, its diffusivity is the same
     !       as that of the scalar to which it is attached:

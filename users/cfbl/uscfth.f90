@@ -347,13 +347,7 @@ if(ieos.eq.1) then
 ! --- Molar mass of the gas (kg/mol)
 
   if(iccfth.ge.0) then
-
-    if(iphas.eq.1) then
-
-      xmasml = 28.8d-3
-
-    endif
-
+    xmasml = 28.8d-3
   endif
 
 !===============================================================================
@@ -1090,9 +1084,6 @@ elseif(ieos.eq.2) then
 ! --- Ex. 1: Perfect gas containing 3 components
 !     Molar mass, gamma
 
-    ! Phase
-  if(iphas.eq.1) then
-
     ! Molar mass of the components (kg/mol)
     cstgr(1)  = 18.d-3
     cstgr(2)  = 32.d-3
@@ -1114,8 +1105,6 @@ elseif(ieos.eq.2) then
       enddo
 
     endif
-
-  endif
 
   endif
 

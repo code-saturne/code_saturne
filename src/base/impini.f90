@@ -256,14 +256,12 @@ write(nfecra,2000)
 write(nfecra,2010) gx,gy,gz
 write(nfecra,2011) omegax, omegay, omegaz, icorio
 
-do iphas = 1, nphas
-    write(nfecra,2020) ro0   ,viscl0,               &
-                       cp0   ,icp   ,               &
-                       p0    ,pred0 ,               &
-                       t0    ,                             &
-                       irovar,ivivar,               &
-                       (xyzp0(ii),ii=1,3)
-enddo
+write(nfecra,2020) ro0   ,viscl0,               &
+     cp0   ,icp   ,               &
+     p0    ,pred0 ,               &
+     t0    ,                             &
+     irovar,ivivar,               &
+     (xyzp0(ii),ii=1,3)
 
 if (ippmod(iphpar).ge.1) write(nfecra,2030) diftl0
 
@@ -347,68 +345,66 @@ write(nfecra,2510)
 
 !   - Modeles
 
-do iphas = 1, nphas
-  write(nfecra,2515)                                              &
-    iturb,ideuch,ypluli,ilogpo,       &
-    igrhok,iscalt
-  if(iturb.eq.10) then
-    write(nfecra,2516)                                            &
-      xlomlg
-  elseif(iturb.eq.20) then
-    write(nfecra,2517)                                            &
-      almax ,uref  ,                                &
-      iclkep,ikecou,igrake
-    if (ikecou.eq.0 .and. idtvar.ge.0) then
-      write(nfecra,2527) relaxv(ik),relaxv(iep)
-    else
-      write(nfecra,2540)
-    endif
-  elseif(iturb.eq.21) then
-    write(nfecra,2518)                                            &
-      almax ,uref  ,                                &
-      iclkep,ikecou,igrake
-    if (ikecou.eq.0.and. idtvar.ge.0) then
-      write(nfecra,2527) relaxv(ik),relaxv(iep)
-    else
-      write(nfecra,2540)
-    endif
-  elseif(iturb.eq.30) then
-    write(nfecra,2519)                                            &
-      almax ,uref  ,                                &
-      irijnu,irijrb,irijec,                  &
-      idifre,igrari,iclsyr,iclptr
-  elseif(iturb.eq.31) then
-    write(nfecra,2520)                                            &
-      almax ,uref  ,                                &
-      irijnu,irijrb,                                &
-      igrari,iclsyr,iclptr
-  elseif(itytur.eq.4) then
-    write(nfecra,2521)                                            &
-      csmago,cwale, xlesfl,ales,      &
-      bles,idries,cdries, xlesfd,     &
-      smagmx, ivrtex
-  elseif(iturb.eq.50) then
-    write(nfecra,2522)                                            &
-      almax ,uref  ,                                &
-      iclkep,ikecou,igrake
-    if (ikecou.eq.0 .and. idtvar.ge.0) then
-      write(nfecra,2527) relaxv(ik),relaxv(iep)
-    else
-      write(nfecra,2540)
-    endif
-  elseif(iturb.eq.60) then
-    write(nfecra,2523)                                            &
-      almax ,uref  ,                                &
-      ikecou,igrake
-    if (ikecou.eq.0 .and. idtvar.ge.0) then
-      write(nfecra,2528) relaxv(ik),relaxv(iomg)
-    else
-      write(nfecra,2540)
-    endif
-  elseif(iturb.eq.70) then
-    write(nfecra,2529) almax , uref , relaxv(inusa)
+write(nfecra,2515)                                              &
+     iturb,ideuch,ypluli,ilogpo,       &
+     igrhok,iscalt
+if(iturb.eq.10) then
+  write(nfecra,2516)                                            &
+       xlomlg
+elseif(iturb.eq.20) then
+  write(nfecra,2517)                                            &
+       almax ,uref  ,                                &
+       iclkep,ikecou,igrake
+  if (ikecou.eq.0 .and. idtvar.ge.0) then
+    write(nfecra,2527) relaxv(ik),relaxv(iep)
+  else
+    write(nfecra,2540)
   endif
-enddo
+elseif(iturb.eq.21) then
+  write(nfecra,2518)                                            &
+       almax ,uref  ,                                &
+       iclkep,ikecou,igrake
+  if (ikecou.eq.0.and. idtvar.ge.0) then
+    write(nfecra,2527) relaxv(ik),relaxv(iep)
+  else
+    write(nfecra,2540)
+  endif
+elseif(iturb.eq.30) then
+  write(nfecra,2519)                                            &
+       almax ,uref  ,                                &
+       irijnu,irijrb,irijec,                  &
+       idifre,igrari,iclsyr,iclptr
+elseif(iturb.eq.31) then
+  write(nfecra,2520)                                            &
+       almax ,uref  ,                                &
+       irijnu,irijrb,                                &
+       igrari,iclsyr,iclptr
+elseif(itytur.eq.4) then
+  write(nfecra,2521)                                            &
+       csmago,cwale, xlesfl,ales,      &
+       bles,idries,cdries, xlesfd,     &
+       smagmx, ivrtex
+elseif(iturb.eq.50) then
+  write(nfecra,2522)                                            &
+       almax ,uref  ,                                &
+       iclkep,ikecou,igrake
+  if (ikecou.eq.0 .and. idtvar.ge.0) then
+    write(nfecra,2527) relaxv(ik),relaxv(iep)
+  else
+    write(nfecra,2540)
+  endif
+elseif(iturb.eq.60) then
+  write(nfecra,2523)                                            &
+       almax ,uref  ,                                &
+       ikecou,igrake
+  if (ikecou.eq.0 .and. idtvar.ge.0) then
+    write(nfecra,2528) relaxv(ik),relaxv(iomg)
+  else
+    write(nfecra,2540)
+  endif
+elseif(iturb.eq.70) then
+  write(nfecra,2529) almax , uref , relaxv(inusa)
+endif
 
 !   - Constantes
 
@@ -421,29 +417,27 @@ iok31 = 0
 iok50 = 0
 iok60 = 0
 iok70 = 0
-do iphas = 1, nphas
-  if(iturb.eq.20) then
-    iok20 = 20
-  endif
-  if(iturb.eq.21) then
-    iok21 = 21
-  endif
-  if(iturb.eq.30) then
-    iok30 = 30
-  endif
-  if(iturb.eq.31) then
-    iok31 = 31
-  endif
-  if(iturb.eq.50) then
-    iok50 = 50
-  endif
-  if(iturb.eq.60) then
-    iok60 = 60
-  endif
-  if(iturb.eq.70) then
-    iok70 = 70
-  endif
-enddo
+if(iturb.eq.20) then
+  iok20 = 20
+endif
+if(iturb.eq.21) then
+  iok21 = 21
+endif
+if(iturb.eq.30) then
+  iok30 = 30
+endif
+if(iturb.eq.31) then
+  iok31 = 31
+endif
+if(iturb.eq.50) then
+  iok50 = 50
+endif
+if(iturb.eq.60) then
+  iok60 = 60
+endif
+if(iturb.eq.70) then
+  iok70 = 70
+endif
 if(iok20.gt.0) then
   write(nfecra,2531)ce1,ce2,sigmak,sigmae,cmu
 endif
@@ -854,9 +848,7 @@ write(nfecra,9900)
 ! --- Viscosite secondaire
 
 write(nfecra,2610)
-do iphas = 1, nphas
-  write(nfecra,2620) ivisse
-enddo
+write(nfecra,2620) ivisse
 
 write(nfecra,9900)
 
@@ -962,12 +954,10 @@ endif
 
 if (ippmod(icompf).ge.0) then
   write(nfecra,2700)
-  do iphas = 1, nphas
-    write(nfecra,2710)                                            &
-         icv,                                              &
-         iviscv,viscv0,                             &
-         icfgrp
-  enddo
+  write(nfecra,2710)                                            &
+       icv,                                              &
+       iviscv,viscv0,                             &
+       icfgrp
 
   write(nfecra,9900)
 
@@ -1070,9 +1060,7 @@ else
 !   - Ordre du schema en temps
 
   write(nfecra,3060)
-  do iphas = 1, nphas
-    write(nfecra,3061) ischtp
-  enddo
+  write(nfecra,3061) ischtp
   write(nfecra,3062)
 
 endif
@@ -1252,19 +1240,17 @@ write(nfecra,9900)
 ! --- Stokes
 
 write(nfecra,4110) iphydr,icalhy,iprco,ipucou,nterup
-do iphas = 1, nphas
-  write(nfecra,4111) irevmc
-  if (idtvar.ge.0) then
-    write(nfecra,4112) relaxv(ipr),arak
-  else
-    write(nfecra,4113) arak*relaxv(iu)
-  endif
-  write(nfecra,4114)istmpf,thetfl,                  &
-                    iroext,thetro,                  &
-                    iviext,thetvi,                  &
-                    icpext,thetcp,                  &
-                    thetsn,thetst,epsup
-enddo
+write(nfecra,4111) irevmc
+if (idtvar.ge.0) then
+  write(nfecra,4112) relaxv(ipr),arak
+else
+  write(nfecra,4113) arak*relaxv(iu)
+endif
+write(nfecra,4114)istmpf,thetfl,                  &
+     iroext,thetro,                  &
+     iviext,thetvi,                  &
+     icpext,thetcp,                  &
+     thetsn,thetst,epsup
 
 write(nfecra,9900)
 
@@ -1472,23 +1458,19 @@ write(nfecra,9900)
 ! --- Estimateurs d'erreurs pour Navier-Stokes
 
 iiesca = 0
-do iphas = 1, nphas
-  do iest = 1, nestmx
-if(iescal(iest).gt.0) then
-      iiesca = 1
-    endif
-  enddo
+do iest = 1, nestmx
+  if(iescal(iest).gt.0) then
+    iiesca = 1
+  endif
 enddo
 
 if(iiesca.gt.0) then
   write(nfecra,4820)
-  do iphas = 1, nphas
-    write(nfecra,4821)
-    do iest = 1, nestmx
-      write(nfecra,4822)iest, iescal(iest)
-    enddo
-    write(nfecra,4823)
+  write(nfecra,4821)
+  do iest = 1, nestmx
+    write(nfecra,4822)iest, iescal(iest)
   enddo
+  write(nfecra,4823)
   write(nfecra,4824)iespre,iesder,iescor,iestot
   write(nfecra,9900)
 endif

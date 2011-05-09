@@ -87,32 +87,28 @@ integer          iphas
 
 ! Recuperation des COMMON de "optcal"
 
-do iphas = 1, nphas
-  jtytur = itytur
-enddo
+jtytur = itytur
 
 ! Recuperation des COMMON de "numvar"
 
-do iphas = 1, nphas
-  ju   = iu
-  jv   = iv
-  jw   = iw
-  if(itytur.eq.3) then
-    jr11 = ir11
-    jr22 = ir22
-    jr33 = ir33
-    jr12 = ir12
-    jr13 = ir13
-    jr23 = ir23
-  else
-    jr11 = 0
-    jr22 = 0
-    jr33 = 0
-    jr12 = 0
-    jr13 = 0
-    jr23 = 0
-  endif
-enddo
+ju   = iu
+jv   = iv
+jw   = iw
+if(itytur.eq.3) then
+  jr11 = ir11
+  jr22 = ir22
+  jr33 = ir33
+  jr12 = ir12
+  jr13 = ir13
+  jr23 = ir23
+else
+  jr11 = 0
+  jr22 = 0
+  jr33 = 0
+  jr12 = 0
+  jr13 = 0
+  jr23 = 0
+endif
 
 !----
 ! FIN

@@ -532,7 +532,7 @@ do isou = 1, 6
   endif
   ipp    = ipprtp(ivar)
 
-  if (iilagr.eq.2 .and. iphas.eq.1) then
+  if (iilagr.eq.2) then
     iitsla = itsr11 + (isou-1)
     tslage = tslagr(1, iitsla)
     tslagi = tslagr(1, itsli)

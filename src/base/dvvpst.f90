@@ -298,11 +298,9 @@ if (numtyp .eq. -1) then
   if (ineedy.eq.1 .and. abs(icdpar).eq.1) then
 
     ineeyp = 0
-    do iphas = 1, nphas
-      if(itytur.eq.4.and.idries.eq.1) then
-        ineeyp = 1
-      endif
-    enddo
+    if(itytur.eq.4.and.idries.eq.1) then
+      ineeyp = 1
+    endif
 
     if (ineeyp.eq.1) then
 
@@ -449,38 +447,32 @@ else if  (numtyp .eq. -2) then
 
   if(mod(ipstdv,ipstyp).eq.0) then
 
-!       Phase
-    do iphas = 1, nphas
-
-!       Initialisation
-      do ii = 1, 32
-        NAMEVR (II:II) = ' '
-      enddo
-
-!       Nom de la variable
-      NAMEVR = 'Yplus'
-
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-      idimt = 1
-
-!       Calcul des valeurs de la variable sur les faces de bord
-
-      iyplbp = iyplbr
-      do iloc = 1, nfbrps
-        ifac = lstfbr(iloc)
-        trafbr(1 + (iloc-1)*idimt) = ra(iyplbp+ifac-1)
-      enddo
-
-!           Valeurs non entrelacées, définies sur tableau de travail
-      ientla = 0
-      ivarpr = 0
-
-      call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
-      !==========
-                  ntcabs, ttcabs, rbid, rbid, trafbr)
-
+    !       Initialisation
+    do ii = 1, 32
+      NAMEVR (II:II) = ' '
     enddo
-!     fin du test sur les phases
+
+    !       Nom de la variable
+    NAMEVR = 'Yplus'
+
+    !       Dimension de la variable (3 = vecteur, 1=scalaire)
+    idimt = 1
+
+    !       Calcul des valeurs de la variable sur les faces de bord
+
+    iyplbp = iyplbr
+    do iloc = 1, nfbrps
+      ifac = lstfbr(iloc)
+      trafbr(1 + (iloc-1)*idimt) = ra(iyplbp+ifac-1)
+    enddo
+
+    !           Valeurs non entrelacées, définies sur tableau de travail
+    ientla = 0
+    ivarpr = 0
+
+    call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
+                                !==========
+         ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 ! fin du test sur sortie de yplus
@@ -594,96 +586,93 @@ else if  (numtyp .eq. -2) then
 
   if(mod(ipstdv,ipstft).eq.0) then
 
-!       Phase
-    do iphas = 1, nphas
+    if(iscalt.gt.0 .and. nscal.gt.0 .and.                &
+         iscalt.le.nscal) then
 
-      if(iscalt.gt.0 .and. nscal.gt.0 .and.                &
-           iscalt.le.nscal) then
+      !       Initialisation
+      do ii = 1, 32
+        NAMEVR (II:II) = ' '
+      enddo
 
-!       Initialisation
-        do ii = 1, 32
-          NAMEVR (II:II) = ' '
-        enddo
+      !       Nom de la variable
+      NAMEVR = 'Flux thermique entrant W.m-2'
 
-!       Nom de la variable
-        NAMEVR = 'Flux thermique entrant W.m-2'
+      !       Dimension de la variable (3 = vecteur, 1=scalaire)
+      idimt = 1
 
-!       Dimension de la variable (3 = vecteur, 1=scalaire)
-        idimt = 1
+      !       Numero de la variable
 
-!       Numero de la variable
+      iscal  = iscalt
+      ivar   = isca(iscal)
+      iclvar = iclrtp(ivar,icoef)
 
-        iscal  = iscalt
-        ivar   = isca(iscal)
-        iclvar = iclrtp(ivar,icoef)
+      !       Calcul des valeurs de la variable sur les faces de bord
 
-!       Calcul des valeurs de la variable sur les faces de bord
+      !          Reservation de la memoire pour reconstruction
 
-!          Reservation de la memoire pour reconstruction
+      ifinia = idebia
 
-        ifinia = idebia
+      igradx = idebra
+      igrady = igradx+ncelet
+      igradz = igrady+ncelet
+      itravx = igradz+ncelet
+      itravy = itravx+ncelet
+      itravz = itravy+ncelet
+      itreco = itravz+ncelet
+      ifinra = itreco+nfabor
 
-        igradx = idebra
-        igrady = igradx+ncelet
-        igradz = igrady+ncelet
-        itravx = igradz+ncelet
-        itravy = itravx+ncelet
-        itravz = itravy+ncelet
-        itreco = itravz+ncelet
-        ifinra = itreco+nfabor
+      !          Verification de la disponibilite de la memoire
 
-!          Verification de la disponibilite de la memoire
-
-        call iasize('dvvpst',ifinia)
-        call rasize('dvvpst',ifinra)
+      call iasize('dvvpst',ifinia)
+      call rasize('dvvpst',ifinra)
 
 
-!          Calcul du gradient de la temperature / enthalpie
+      !          Calcul du gradient de la temperature / enthalpie
 
 
-!      Pour calculer le gradient de Temperature
-!        - dans les calculs paralleles, il est necessaire que
-!          les cellules situees sur un bord de sous-domaine connaissent
-!          la valeur de temperature dans les cellules situees en
-!          vis-a-vis sur le sous-domaine voisin.
-!        - dans les calculs periodiques, il est necessaire que
-!          les cellules periodiques aient acces a la valeur de la
-!          temperature des cellules periodiques correspondantes
+      !      Pour calculer le gradient de Temperature
+      !        - dans les calculs paralleles, il est necessaire que
+      !          les cellules situees sur un bord de sous-domaine connaissent
+      !          la valeur de temperature dans les cellules situees en
+      !          vis-a-vis sur le sous-domaine voisin.
+      !        - dans les calculs periodiques, il est necessaire que
+      !          les cellules periodiques aient acces a la valeur de la
+      !          temperature des cellules periodiques correspondantes
 
-!      Pour cela, il est necessaire d'appeler les routines de
-!        de synchronisation des halos pour echanger les valeurs de temperature
-!        avant de calculer le gradient.
-!      En effet, on se situe ici a la fin du pas de temps n. Or,
-!        les variables RTP ne seront echangees qu'en debut du pas de
-!        temps n+1. Ici, seules les variables RTPA (obtenues a la fin
-!        du pas de temps n-1) ont deja ete echangees.
+      !      Pour cela, il est necessaire d'appeler les routines de
+      !        de synchronisation des halos pour echanger les valeurs de temperature
+      !        avant de calculer le gradient.
+      !      En effet, on se situe ici a la fin du pas de temps n. Or,
+      !        les variables RTP ne seront echangees qu'en debut du pas de
+      !        temps n+1. Ici, seules les variables RTPA (obtenues a la fin
+      !        du pas de temps n-1) ont deja ete echangees.
 
-!      Si le calcul n'est ni periodique, ni parallele, on peut conserver
-!        appels (les tests sur IPERIO et IRANGP assurent la generalite)
-
-
-!          Echange pour le parallelisme et la periodicite
-
-        if (irangp.ge.0.or.iperio.eq.1) then
-          call synsca(rtp(1,ivar))
-          !==========
-        endif
+      !      Si le calcul n'est ni periodique, ni parallele, on peut conserver
+      !        appels (les tests sur IPERIO et IRANGP assurent la generalite)
 
 
-!          Calcul du gradient
+      !          Echange pour le parallelisme et la periodicite
 
-        inc = 1
-        iccocg = 1
-        nswrgp = nswrgr(ivar)
-        imligp = imligr(ivar)
-        iwarnp = iwarni(ivar)
-        epsrgp = epsrgr(ivar)
-        climgp = climgr(ivar)
-        extrap = extrag(ivar)
-        iphydp = 0
-
-        call grdcel                                               &
+      if (irangp.ge.0.or.iperio.eq.1) then
+        call synsca(rtp(1,ivar))
         !==========
+      endif
+
+
+      !          Calcul du gradient
+
+      inc = 1
+      iccocg = 1
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
+      iphydp = 0
+
+      call grdcel                                               &
+      !==========
  ( ifinia , ifinra ,                                              &
    nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
@@ -698,90 +687,87 @@ else if  (numtyp .eq. -2) then
    ra     )
 
 
-!          Calcul de la valeur reconstruite dans les cellules de bord
+      !          Calcul de la valeur reconstruite dans les cellules de bord
 
-        do ifac = 1, nfabor
-          iel = ifabor(ifac)
-          diipbx = diipb(1,ifac)
-          diipby = diipb(2,ifac)
-          diipbz = diipb(3,ifac)
-          ra(itreco+ifac-1) = rtp(iel,ivar)                       &
-               + diipbx*ra(igradx+iel-1)                          &
-               + diipby*ra(igrady+iel-1)                          &
-               + diipbz*ra(igradz+iel-1)
-        enddo
+      do ifac = 1, nfabor
+        iel = ifabor(ifac)
+        diipbx = diipb(1,ifac)
+        diipby = diipb(2,ifac)
+        diipbz = diipb(3,ifac)
+        ra(itreco+ifac-1) = rtp(iel,ivar)                       &
+             + diipbx*ra(igradx+iel-1)                          &
+             + diipby*ra(igrady+iel-1)                          &
+             + diipbz*ra(igradz+iel-1)
+      enddo
 
-!          Calcul du flux (ouf          !) convectif et diffusif
+      !          Calcul du flux (ouf          !) convectif et diffusif
 
-        if(ivisls(iscal).gt.0) then
-          ipcvsl = ipproc(ivisls(iscal))
+      if(ivisls(iscal).gt.0) then
+        ipcvsl = ipproc(ivisls(iscal))
+      else
+        ipcvsl = 0
+      endif
+      ipcvst = ipproc(ivisct)
+      iflmab = ipprob(ifluma(ivar))
+
+      do iloc = 1, nfbrps
+        ifac = lstfbr(iloc)
+        iel = ifabor(ifac)
+
+        if(ipcvsl.gt.0) then
+          xvsl = propce(iel,ipcvsl)
         else
-          ipcvsl = 0
+          xvsl = visls0(iscal)
         endif
-        ipcvst = ipproc(ivisct)
-        iflmab = ipprob(ifluma(ivar))
+        srfbn = surfbn(ifac)
+        distbr = distb(ifac)
+        visct  = propce(iel,ipcvst)
+        flumab = propfb(ifac,iflmab)
 
+        trafbr(1 + (iloc-1)*idimt) =                            &
+             (xvsl+visct/sigmas(iscal))/max(distbr,epzero)*     &
+             (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)*     &
+             rtp(iel,ivar))                                     &
+             - flumab/max(srfbn,epzero**2)*                    &
+             (coefa(ifac,iclvar)+ coefb(ifac,iclvar)*           &
+             rtp(iel,ivar))
+
+      enddo
+
+      !          Pour la temperature, on multiplie par CP
+      if(abs(iscsth(iscal)).eq.1) then
+        if(icp.gt.0) then
+          ipccp  = ipproc(icp   )
+        else
+          ipccp  = 0
+          cp0iph = cp0
+        endif
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
           iel = ifabor(ifac)
-
-          if(ipcvsl.gt.0) then
-            xvsl = propce(iel,ipcvsl)
+          if(ipccp.gt.0) then
+            xcp = propce(iel,ipccp)
           else
-            xvsl = visls0(iscal)
+            xcp    = cp0iph
           endif
-          srfbn = surfbn(ifac)
-          distbr = distb(ifac)
-          visct  = propce(iel,ipcvst)
-          flumab = propfb(ifac,iflmab)
-
-          trafbr(1 + (iloc-1)*idimt) =                            &
-               (xvsl+visct/sigmas(iscal))/max(distbr,epzero)*     &
-               (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)*     &
-               rtp(iel,ivar))                                     &
-               - flumab/max(srfbn,epzero**2)*                    &
-               (coefa(ifac,iclvar)+ coefb(ifac,iclvar)*           &
-               rtp(iel,ivar))
-
+          trafbr(1 + (iloc-1)*idimt)                            &
+               = xcp*trafbr(1 + (iloc-1)*idimt)
         enddo
-
-!          Pour la temperature, on multiplie par CP
-        if(abs(iscsth(iscal)).eq.1) then
-          if(icp.gt.0) then
-            ipccp  = ipproc(icp   )
-          else
-            ipccp  = 0
-            cp0iph = cp0
-          endif
-          do iloc = 1, nfbrps
-            ifac = lstfbr(iloc)
-            iel = ifabor(ifac)
-            if(ipccp.gt.0) then
-              xcp = propce(iel,ipccp)
-            else
-              xcp    = cp0iph
-            endif
-            trafbr(1 + (iloc-1)*idimt)                            &
-                 = xcp*trafbr(1 + (iloc-1)*idimt)
-          enddo
-        endif
-
-!             Valeurs entrelacées, définies sur tableau de travail
-        ientla = 1
-        ivarpr = 0
-
-        call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
-        !==========
-                    ntcabs, ttcabs, rbid, rbid, trafbr)
-
       endif
-!         Fin du test sur variable thermique
 
-    enddo
-!       Fin de boucle sur les phases
+      !             Valeurs entrelacées, définies sur tableau de travail
+      ientla = 1
+      ivarpr = 0
+
+      call psteva(nummai, namevr, idimt, ientla, ivarpr,        &
+      !==========
+                  ntcabs, ttcabs, rbid, rbid, trafbr)
+
+    endif
+    !         Fin du test sur variable thermique
 
   endif
-!      Fin du test sur sortie des flux thermiques
+  !      Fin du test sur sortie des flux thermiques
 
 ! --    1.2.4 TRAITEMENT DES EFFORTS AUX BORDS
 !       --------------------------------------

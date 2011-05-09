@@ -216,8 +216,6 @@ endif
 
 ipos = 1
 
-do iphas = 1, nphas
-
 !=========================================================================
 ! 1.  PREPARATION DE LA PRESSION
 !=========================================================================
@@ -225,30 +223,28 @@ do iphas = 1, nphas
 ! La pression est unique pour chaque phase, inutile donc de
 ! le faire pour toutes les phases.
 
-  if (iphas.eq.1) then
-
-    ipriph = ipr
+ipriph = ipr
 
 ! --- Calcul du gradient de la pression pour interpolation
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ipriph))
-      !==========
-    endif
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(rtp(1,ipriph))
+  !==========
+endif
 
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(ipriph,icoef)
-    nswrgp = nswrgr(ipriph)
-    imligp = imligr(ipriph)
-    iwarnp = iwarni(ipriph)
-    epsrgp = epsrgr(ipriph)
-    climgp = climgr(ipriph)
-    extrap = extrag(ipriph)
+inc    = 1
+iccocg = 1
+iphydp = 0
+iclvar = iclrtp(ipriph,icoef)
+nswrgp = nswrgr(ipriph)
+imligp = imligr(ipriph)
+iwarnp = iwarni(ipriph)
+epsrgp = epsrgr(ipriph)
+climgp = climgr(ipriph)
+extrap = extrag(ipriph)
 
-    call grdcel                                                   &
-    !==========
+call grdcel                                                   &
+!==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -262,113 +258,111 @@ do iphas = 1, nphas
     w4     , w5     , w6     ,                                    &
     ra     )
 
-    ! For a specific face to face coupling, geometric assumptions are made
+! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+  do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+    iel = locpts(ipt)
 
-! --- Pour la pression on veut imposer un dirichlet tel que le gradient
-!     de pression se conserve entre les deux domaines couplés Pour cela
-!     on impose une interpolation centrée
+    ! --- Pour la pression on veut imposer un dirichlet tel que le gradient
+    !     de pression se conserve entre les deux domaines couplés Pour cela
+    !     on impose une interpolation centrée
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-        rvdis(ipt,ipos) = rtp(iel,ipriph) &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+    rvdis(ipt,ipos) = rtp(iel,ipriph) &
+         + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-        ! On prend en compte le potentiel centrifuge en repère relatif
-        if (icormx(numcpl).eq.1) then
+    ! On prend en compte le potentiel centrifuge en repère relatif
+    if (icormx(numcpl).eq.1) then
 
-          ! Calcul de la distance a l'axe de rotation
-          ! On suppose que les axes sont confondus...
+      ! Calcul de la distance a l'axe de rotation
+      ! On suppose que les axes sont confondus...
 
-          xx = xyzcen(1,iel) + xjjp
-          yy = xyzcen(2,iel) + yjjp
-          zz = xyzcen(3,iel) + zjjp
+      xx = xyzcen(1,iel) + xjjp
+      yy = xyzcen(2,iel) + yjjp
+      zz = xyzcen(3,iel) + zjjp
 
-          daxis2 =   (omegar(2)*zz - omegar(3)*yy)**2 &
-                   + (omegar(3)*xx - omegar(1)*zz)**2 &
-                   + (omegar(1)*yy - omegar(2)*xx)**2
+      daxis2 =   (omegar(2)*zz - omegar(3)*yy)**2 &
+           + (omegar(3)*xx - omegar(1)*zz)**2 &
+           + (omegar(1)*yy - omegar(2)*xx)**2
 
-          daxis2 = daxis2 / omgnrr**2
+      daxis2 = daxis2 / omgnrr**2
 
-          rvdis(ipt,ipos) = rvdis(ipt,ipos)                         &
-            + 0.5d0*propce(iel,ipcrom)*(omgnrl**2 - omgnrd**2)*daxis2
-
-        endif
-
-      enddo
-
-    ! For a generic coupling, no assumption can be made
-
-    else
-
-      do ipt = 1, nptdis
-
-        iel = locpts(ipt)
-
-        xjpf = coopts(1,ipt) - xyzcen(1,iel)- djppts(1,ipt)
-        yjpf = coopts(2,ipt) - xyzcen(2,iel)- djppts(2,ipt)
-        zjpf = coopts(3,ipt) - xyzcen(3,iel)- djppts(3,ipt)
-
-        if(pndpts(ipt).ge.0.d0.and.pndpts(ipt).le.1.d0) then
-          jpf = -1.d0*sqrt(xjpf**2+yjpf**2+zjpf**2)
-        else
-          jpf =       sqrt(xjpf**2+yjpf**2+zjpf**2)
-        endif
-
-        rvdis(ipt,ipos) = (xjpf*w1(iel)+yjpf*w2(iel)+zjpf*w3(iel))  &
-                       /jpf
-
-      enddo
+      rvdis(ipt,ipos) = rvdis(ipt,ipos)                         &
+           + 0.5d0*propce(iel,ipcrom)*(omgnrl**2 - omgnrd**2)*daxis2
 
     endif
 
-  endif
-!       FIn pour la pression de la phase 1
+  enddo
+
+  ! For a generic coupling, no assumption can be made
+
+else
+
+  do ipt = 1, nptdis
+
+    iel = locpts(ipt)
+
+    xjpf = coopts(1,ipt) - xyzcen(1,iel)- djppts(1,ipt)
+    yjpf = coopts(2,ipt) - xyzcen(2,iel)- djppts(2,ipt)
+    zjpf = coopts(3,ipt) - xyzcen(3,iel)- djppts(3,ipt)
+
+    if(pndpts(ipt).ge.0.d0.and.pndpts(ipt).le.1.d0) then
+      jpf = -1.d0*sqrt(xjpf**2+yjpf**2+zjpf**2)
+    else
+      jpf =       sqrt(xjpf**2+yjpf**2+zjpf**2)
+    endif
+
+    rvdis(ipt,ipos) = (xjpf*w1(iel)+yjpf*w2(iel)+zjpf*w3(iel))  &
+         /jpf
+
+  enddo
+
+endif
+!       FIn pour la pression
 
 
 !=========================================================================
 ! 2.  PREPARATION DE LA VITESSE
 !=========================================================================
 
-  iuiph = iu
-  iviph = iv
-  iwiph = iw
+iuiph = iu
+iviph = iv
+iwiph = iw
 
 ! --- Calcul du gradient de la vitesse pour interpolation
 
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
-    !==========
-  endif
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
+  !==========
+endif
 
-  do isou = 1, 3
+do isou = 1, 3
 
-    ipos = ipos + 1
+  ipos = ipos + 1
 
-    if(isou.eq.1) ivar = iuiph
-    if(isou.eq.2) ivar = iviph
-    if(isou.eq.3) ivar = iwiph
+  if(isou.eq.1) ivar = iuiph
+  if(isou.eq.2) ivar = iviph
+  if(isou.eq.3) ivar = iwiph
 
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(ivar,icoef)
-    nswrgp = nswrgr(ivar)
-    imligp = imligr(ivar)
-    iwarnp = iwarni(ivar)
-    epsrgp = epsrgr(ivar)
-    climgp = climgr(ivar)
-    extrap = extrag(ivar)
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(ivar,icoef)
+  nswrgp = nswrgr(ivar)
+  imligp = imligr(ivar)
+  iwarnp = iwarni(ivar)
+  epsrgp = epsrgr(ivar)
+  climgp = climgr(ivar)
+  extrap = extrag(ivar)
 
-    call grdcel                                                   &
-    !==========
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -383,13 +377,13 @@ do iphas = 1, nphas
     ra     )
 
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
 ! --- Pour la vitesse on veut imposer un dirichlet de vitesse qui "imite"
 !     ce qui se passe pour une face interne. On se donne le choix entre
@@ -397,73 +391,73 @@ do iphas = 1, nphas
 !     Pour l'instant seul le CENTRE respecte ce qui se passerait pour la
 !     diffusion si on avait un seul domaine
 
-! -- UPWIND
+      ! -- UPWIND
 
-!        xjjp = djppts(1,ipt)
-!        yjjp = djppts(2,ipt)
-!        zjjp = djppts(3,ipt)
+      !        xjjp = djppts(1,ipt)
+      !        yjjp = djppts(2,ipt)
+      !        zjjp = djppts(3,ipt)
 
-!        rvdis(ipt,ipos) = rtp(iel,ivar)
+      !        rvdis(ipt,ipos) = rtp(iel,ivar)
 
-! -- SOLU
+      ! -- SOLU
 
-!        xjf = coopts(1,ipt) - xyzcen(1,iel)
-!        yjf = coopts(2,ipt) - xyzcen(2,iel)
-!        zjf = coopts(3,ipt) - xyzcen(3,iel)
+      !        xjf = coopts(1,ipt) - xyzcen(1,iel)
+      !        yjf = coopts(2,ipt) - xyzcen(2,iel)
+      !        zjf = coopts(3,ipt) - xyzcen(3,iel)
 
-!        rvdis(ipt,ipos) = rtp(iel,ivar) &
-!          + xjf*w1(iel) + yjf*w2(iel) + zjf*W3(iel)
+      !        rvdis(ipt,ipos) = rtp(iel,ivar) &
+      !          + xjf*w1(iel) + yjf*w2(iel) + zjf*W3(iel)
 
-! -- CENTRE
+      ! -- CENTRE
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        rvdis(ipt,ipos) = rtp(iel,ivar) &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      rvdis(ipt,ipos) = rtp(iel,ivar) &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-        ! On prend en compte la vitesse d'entrainement en repère relatif
-        if (icormx(numcpl).eq.1) then
+      ! On prend en compte la vitesse d'entrainement en repère relatif
+      if (icormx(numcpl).eq.1) then
 
-          if (isou.eq.1) then
-            vitent =   omegar(2)*(xyzcen(3,iel)+zjjp) &
-                     - omegar(3)*(xyzcen(2,iel)+yjjp)
-          elseif (isou.eq.2) then
-            vitent =   omegar(3)*(xyzcen(1,iel)+xjjp) &
-                     - omegar(1)*(xyzcen(3,iel)+zjjp)
-          elseif (isou.eq.3) then
-            vitent =   omegar(1)*(xyzcen(2,iel)+yjjp) &
-                     - omegar(2)*(xyzcen(1,iel)+xjjp)
-          endif
-
-          rvdis(ipt,ipos) = rvdis(ipt,ipos) + vitent
-
+        if (isou.eq.1) then
+          vitent =   omegar(2)*(xyzcen(3,iel)+zjjp) &
+               - omegar(3)*(xyzcen(2,iel)+yjjp)
+        elseif (isou.eq.2) then
+          vitent =   omegar(3)*(xyzcen(1,iel)+xjjp) &
+               - omegar(1)*(xyzcen(3,iel)+zjjp)
+        elseif (isou.eq.3) then
+          vitent =   omegar(1)*(xyzcen(2,iel)+yjjp) &
+               - omegar(2)*(xyzcen(1,iel)+xjjp)
         endif
 
-      enddo
+        rvdis(ipt,ipos) = rvdis(ipt,ipos) + vitent
+
+      endif
+
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = dofpts(1,ipt) + djppts(1,ipt)
-        yjjp = dofpts(2,ipt) + djppts(2,ipt)
-        zjjp = dofpts(3,ipt) + djppts(3,ipt)
+      xjjp = dofpts(1,ipt) + djppts(1,ipt)
+      yjjp = dofpts(2,ipt) + djppts(2,ipt)
+      zjjp = dofpts(3,ipt) + djppts(3,ipt)
 
 
-        rvdis(ipt,ipos) = rtp(iel,ivar)                             &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      rvdis(ipt,ipos) = rtp(iel,ivar)                             &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-    endif
+  endif
 
-  enddo
+enddo
 !       Fin de la boucle sur les composantes de la vitesse
 
 
@@ -471,14 +465,14 @@ do iphas = 1, nphas
 ! 3.  PREPARATION DES GRANDEURS TURBULENTES
 !=========================================================================
 
-  itytu0 = iturcp(numcpl)/10
+itytu0 = iturcp(numcpl)/10
 
 
 !=========================================================================
 !       3.1 Turbulence dans l'instance locale : modèles k-epsilon
 !=========================================================================
 
-  if (itytur.eq.2) then
+if (itytur.eq.2) then
 
 !=======================================================================
 !          3.1.1. INTERPOLATION EN J'
@@ -486,25 +480,25 @@ do iphas = 1, nphas
 
 !         Préparation des données: interpolation de k en J'
 
-    ikiph  = ik
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ikiph))
-      !==========
-    endif
-
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(ikiph,icoef)
-    nswrgp = nswrgr(ikiph)
-    imligp = imligr(ikiph)
-    iwarnp = iwarni(ikiph)
-    epsrgp = epsrgr(ikiph)
-    climgp = climgr(ikiph)
-    extrap = extrag(ikiph)
-
-    call grdcel                                                   &
+  ikiph  = ik
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,ikiph))
     !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(ikiph,icoef)
+  nswrgp = nswrgr(ikiph)
+  imligp = imligr(ikiph)
+  iwarnp = iwarni(ikiph)
+  epsrgp = epsrgr(ikiph)
+  climgp = climgr(ikiph)
+  extrap = extrag(ikiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
@@ -519,64 +513,64 @@ do iphas = 1, nphas
     ra     )
 
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-    endif
+  endif
 
-!         Préparation des données: interpolation de epsilon en J'
+  !         Préparation des données: interpolation de epsilon en J'
 
-    iepiph  = iep
+  iepiph  = iep
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,iepiph))
-      !==========
-    endif
-
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(iepiph,icoef)
-    nswrgp = nswrgr(iepiph)
-    imligp = imligr(iepiph)
-    iwarnp = iwarni(iepiph)
-    epsrgp = epsrgr(iepiph)
-    climgp = climgr(iepiph)
-    extrap = extrag(iepiph)
-
-    call grdcel                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,iepiph))
     !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(iepiph,icoef)
+  nswrgp = nswrgr(iepiph)
+  imligp = imligr(iepiph)
+  iwarnp = iwarni(iepiph)
+  epsrgp = epsrgr(iepiph)
+  climgp = climgr(iepiph)
+  extrap = extrag(iepiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -591,248 +585,100 @@ do iphas = 1, nphas
     ra     )
 
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-    endif
+  endif
 
 
 !=======================================================================
 !          3.1.2.   Transfert de variable à "iso-modèle"
 !=======================================================================
 
-    if (itytu0.eq.2) then
+  if (itytu0.eq.2) then
 
-!           Energie turbulente
-!           ------------------
-      ipos = ipos + 1
-      ikiph  = ik
+    !           Energie turbulente
+    !           ------------------
+    ipos = ipos + 1
+    ikiph  = ik
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
-      enddo
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+    enddo
 
-!           Dissipation turbulente
-!           ----------------------
-      ipos = ipos + 1
-      iepiph = iep
+    !           Dissipation turbulente
+    !           ----------------------
+    ipos = ipos + 1
+    iepiph = iep
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
-      enddo
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
+    enddo
 
-!=======================================================================
-!          3.1.3.   Transfert de k-eps vers Rij-eps
-!=======================================================================
+    !=======================================================================
+    !          3.1.3.   Transfert de k-eps vers Rij-eps
+    !=======================================================================
 
-    elseif (itytu0.eq.3) then
+  elseif (itytu0.eq.3) then
 
-!           Tenseur Rij
-!           ------------
-!           Termes de la diagonal R11,R22,R33
+    !           Tenseur Rij
+    !           ------------
+    !           Termes de la diagonal R11,R22,R33
 
-      do isou =1, 3
+    do isou =1, 3
 
-        ipos = ipos + 1
-
-        do ipt = 1, nptdis
-          rvdis(ipt,ipos) = d2s3*ra(itrav1 + ipt-1)
-        enddo
-
-      enddo
-
-!           Termes R12,R13,R23
-
-      iuiph = iu
-      iviph = iv
-      iwiph = iw
-
-!           La synchronisation des halos a deja ete faite plus haut
-
-      do isou = 1, 3
-
-        if(isou.eq.1) ivar = iuiph
-        if(isou.eq.2) ivar = iviph
-        if(isou.eq.3) ivar = iwiph
-
-        inc    = 1
-        iccocg = 1
-        iphydp = 0
-        iclvar = iclrtp(ivar,icoef)
-        nswrgp = nswrgr(ivar)
-        imligp = imligr(ivar)
-        iwarnp = iwarni(ivar)
-        epsrgp = epsrgr(ivar)
-        climgp = climgr(ivar)
-        extrap = extrag(ivar)
-
-        call grdcel                                               &
-        !==========
-  ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
-    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
-    iwarnp , nfecra ,                                             &
-    epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
-    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
-    ra     )
-
-
-        do ipt = 1, nptdis
-
-          iel = locpts(ipt)
-
-          if(isou.eq.1) then
-            ra(itrav3 + ipt-1) = w2(iel)
-            ra(itrav4 + ipt-1) = w3(iel)
-          elseif(isou.eq.2) then
-            ra(itrav5 + ipt-1) = w1(iel)
-            ra(itrav6 + ipt-1) = w3(iel)
-          elseif(isou.eq.3) then
-            ra(itrav7 + ipt-1) = w1(iel)
-            ra(itrav8 + ipt-1) = w2(iel)
-          endif
-
-        enddo
-
-      enddo
-!           Fin de la boucle sur les composantes de la vitesse
-
-!           R12
       ipos = ipos + 1
 
       do ipt = 1, nptdis
-        rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
-          /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-          *0.5d0*(ra(itrav3 + ipt-1) + ra(itrav5 + ipt-1))
+        rvdis(ipt,ipos) = d2s3*ra(itrav1 + ipt-1)
       enddo
 
-!           R13
-      ipos = ipos + 1
+    enddo
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
-          /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-          *0.5d0*(ra(itrav4 + ipt-1) + ra(itrav7 + ipt-1))
-      enddo
+    !           Termes R12,R13,R23
 
-!           R23
-      ipos = ipos + 1
+    iuiph = iu
+    iviph = iv
+    iwiph = iw
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
-          /max(1.0d-10,ra(itrav2 + ipt-1))                        &
-          *0.5d0*(ra(itrav6 + ipt-1) + ra(itrav8 + ipt-1))
-      enddo
+    !           La synchronisation des halos a deja ete faite plus haut
 
-!           Dissipation turbulente
-!           ----------------------
-      ipos = ipos + 1
-      iepiph = iep
+    do isou = 1, 3
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav2 + ipt -1)
-      enddo
-
-!=======================================================================
-!          3.1.4.   Transfert de k-eps vers v2f
-!=======================================================================
-
-    elseif (iturcp(numcpl).eq.50) then
-
-!   ATTENTION: CAS NON PRIS EN COMPTE (ARRET DU CALCUL DANS CSCINI.F)
-
-!=======================================================================
-!          3.1.5.   Transfert de k-eps vers k-omega
-!=======================================================================
-
-    elseif (iturcp(numcpl).eq.60) then
-
-!           Energie turbulente
-!           -----------------
-      ipos = ipos + 1
-      ikiph  = ik
-
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav1 + ipt -1)
-      enddo
-
-!           Omega
-!           -----
-      ipos = ipos + 1
-      iomiph = iomg
-
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav2 + ipt-1)/cmu                  &
-          /max(1.0d-10, ra(itrav1 + ipt-1))
-      enddo
-
-
-    endif
-
-!=========================================================================
-!       3.2 Turbulence dans l'instance locale : modèle Rij-epsilon
-!=========================================================================
-
-  elseif (itytur.eq.3) then
-
-!=======================================================================
-!          3.2.1. INTERPOLATION EN J'
-!=======================================================================
-
-!         Préparation des données: interpolation des Rij en J'
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synten &
-      !==========
-    ( rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),  &
-      rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),  &
-      rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
-    endif
-
-    do isou = 1, 6
-
-      if (isou.eq.1) ivar = ir11
-      if (isou.eq.2) ivar = ir22
-      if (isou.eq.3) ivar = ir33
-      if (isou.eq.4) ivar = ir12
-      if (isou.eq.5) ivar = ir13
-      if (isou.eq.6) ivar = ir23
+      if(isou.eq.1) ivar = iuiph
+      if(isou.eq.2) ivar = iviph
+      if(isou.eq.3) ivar = iwiph
 
       inc    = 1
       iccocg = 1
@@ -845,7 +691,7 @@ do iphas = 1, nphas
       climgp = climgr(ivar)
       extrap = extrag(ivar)
 
-      call grdcel                                                 &
+      call grdcel                                               &
       !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
@@ -860,73 +706,221 @@ do iphas = 1, nphas
     w4     , w5     , w6     ,                                    &
     ra     )
 
-      if (isou.eq.1) itrav = itrav1
-      if (isou.eq.2) itrav = itrav2
-      if (isou.eq.3) itrav = itrav3
-      if (isou.eq.4) itrav = itrav4
-      if (isou.eq.5) itrav = itrav5
-      if (isou.eq.6) itrav = itrav6
 
-      ! For a specific face to face coupling, geometric assumptions are made
+      do ipt = 1, nptdis
 
-      if (ifaccp.eq.1) then
+        iel = locpts(ipt)
 
-        do ipt = 1, nptdis
+        if(isou.eq.1) then
+          ra(itrav3 + ipt-1) = w2(iel)
+          ra(itrav4 + ipt-1) = w3(iel)
+        elseif(isou.eq.2) then
+          ra(itrav5 + ipt-1) = w1(iel)
+          ra(itrav6 + ipt-1) = w3(iel)
+        elseif(isou.eq.3) then
+          ra(itrav7 + ipt-1) = w1(iel)
+          ra(itrav8 + ipt-1) = w2(iel)
+        endif
 
-          iel = locpts(ipt)
-
-          xjjp = djppts(1,ipt)
-          yjjp = djppts(2,ipt)
-          zjjp = djppts(3,ipt)
-
-          ra(itrav + ipt-1) = rtp(iel,ivar)                         &
-            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
-
-        enddo
-
-      ! For a generic coupling, no assumption can be made
-
-      else
-
-        do ipt = 1, nptdis
-
-          iel = locpts(ipt)
-
-          xjjp = djppts(1,ipt)
-          yjjp = djppts(2,ipt)
-          zjjp = djppts(3,ipt)
-
-          ra(itrav + ipt-1) = rtp(iel,ivar)                         &
-            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
-
-        enddo
-
-      endif
+      enddo
 
     enddo
+    !           Fin de la boucle sur les composantes de la vitesse
 
-!         Préparation des données: interpolation de epsilon en J'
+    !           R12
+    ipos = ipos + 1
 
-    iepiph  = iep
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
+           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
+           *0.5d0*(ra(itrav3 + ipt-1) + ra(itrav5 + ipt-1))
+    enddo
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,iepiph))
-      !==========
-    endif
+    !           R13
+    ipos = ipos + 1
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
+           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
+           *0.5d0*(ra(itrav4 + ipt-1) + ra(itrav7 + ipt-1))
+    enddo
+
+    !           R23
+    ipos = ipos + 1
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
+           /max(1.0d-10,ra(itrav2 + ipt-1))                        &
+           *0.5d0*(ra(itrav6 + ipt-1) + ra(itrav8 + ipt-1))
+    enddo
+
+    !           Dissipation turbulente
+    !           ----------------------
+    ipos = ipos + 1
+    iepiph = iep
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav2 + ipt -1)
+    enddo
+
+    !=======================================================================
+    !          3.1.4.   Transfert de k-eps vers v2f
+    !=======================================================================
+
+  elseif (iturcp(numcpl).eq.50) then
+
+    !   ATTENTION: CAS NON PRIS EN COMPTE (ARRET DU CALCUL DANS CSCINI.F)
+
+    !=======================================================================
+    !          3.1.5.   Transfert de k-eps vers k-omega
+    !=======================================================================
+
+  elseif (iturcp(numcpl).eq.60) then
+
+    !           Energie turbulente
+    !           -----------------
+    ipos = ipos + 1
+    ikiph  = ik
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav1 + ipt -1)
+    enddo
+
+    !           Omega
+    !           -----
+    ipos = ipos + 1
+    iomiph = iomg
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)/cmu                  &
+           /max(1.0d-10, ra(itrav1 + ipt-1))
+    enddo
+
+
+  endif
+
+  !=========================================================================
+  !       3.2 Turbulence dans l'instance locale : modèle Rij-epsilon
+  !=========================================================================
+
+elseif (itytur.eq.3) then
+
+  !=======================================================================
+  !          3.2.1. INTERPOLATION EN J'
+  !=======================================================================
+
+  !         Préparation des données: interpolation des Rij en J'
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synten &
+    !==========
+  ( rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),  &
+    rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),  &
+    rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
+  endif
+
+  do isou = 1, 6
+
+    if (isou.eq.1) ivar = ir11
+    if (isou.eq.2) ivar = ir22
+    if (isou.eq.3) ivar = ir33
+    if (isou.eq.4) ivar = ir12
+    if (isou.eq.5) ivar = ir13
+    if (isou.eq.6) ivar = ir23
 
     inc    = 1
     iccocg = 1
     iphydp = 0
-    iclvar = iclrtp(iepiph,icoef)
-    nswrgp = nswrgr(iepiph)
-    imligp = imligr(iepiph)
-    iwarnp = iwarni(iepiph)
-    epsrgp = epsrgr(iepiph)
-    climgp = climgr(iepiph)
-    extrap = extrag(iepiph)
+    iclvar = iclrtp(ivar,icoef)
+    nswrgp = nswrgr(ivar)
+    imligp = imligr(ivar)
+    iwarnp = iwarni(ivar)
+    epsrgp = epsrgr(ivar)
+    climgp = climgr(ivar)
+    extrap = extrag(ivar)
 
-    call grdcel                                                   &
+    call grdcel                                                 &
     !==========
+  ( ifinia , ifinra ,                                             &
+    nphas  ,                                                      &
+    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+    iwarnp , nfecra ,                                             &
+    epsrgp , climgp , extrap ,                                    &
+    ia     ,                                    &
+    w4     , w4     , w4     ,                                    &
+    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
+    w1     , w2     , w3     ,                                    &
+!         ------   ------   ------
+    w4     , w5     , w6     ,                                    &
+    ra     )
+
+    if (isou.eq.1) itrav = itrav1
+    if (isou.eq.2) itrav = itrav2
+    if (isou.eq.3) itrav = itrav3
+    if (isou.eq.4) itrav = itrav4
+    if (isou.eq.5) itrav = itrav5
+    if (isou.eq.6) itrav = itrav6
+
+    ! For a specific face to face coupling, geometric assumptions are made
+
+    if (ifaccp.eq.1) then
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav + ipt-1) = rtp(iel,ivar)                         &
+             + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+      ! For a generic coupling, no assumption can be made
+
+    else
+
+      do ipt = 1, nptdis
+
+        iel = locpts(ipt)
+
+        xjjp = djppts(1,ipt)
+        yjjp = djppts(2,ipt)
+        zjjp = djppts(3,ipt)
+
+        ra(itrav + ipt-1) = rtp(iel,ivar)                         &
+             + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+
+      enddo
+
+    endif
+
+  enddo
+
+  !         Préparation des données: interpolation de epsilon en J'
+
+  iepiph  = iep
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,iepiph))
+    !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(iepiph,icoef)
+  nswrgp = nswrgr(iepiph)
+  imligp = imligr(iepiph)
+  iwarnp = iwarni(iepiph)
+  epsrgp = epsrgr(iepiph)
+  climgp = climgr(iepiph)
+  extrap = extrag(iepiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -941,169 +935,169 @@ do iphas = 1, nphas
     ra     )
 
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-   endif
+  endif
 
 !=======================================================================
 !          3.2.2. Transfert de variable à "iso-modèle"
 !=======================================================================
 
-    if (itytu0.eq.3) then
+  if (itytu0.eq.3) then
 
-!           Tensions de Reynolds
-!           --------------------
-      do isou = 1, 6
+    !           Tensions de Reynolds
+    !           --------------------
+    do isou = 1, 6
 
-        ipos = ipos + 1
-
-        if (isou.eq.1) itrav = itrav1
-        if (isou.eq.2) itrav = itrav2
-        if (isou.eq.3) itrav = itrav3
-        if (isou.eq.4) itrav = itrav4
-        if (isou.eq.5) itrav = itrav5
-        if (isou.eq.6) itrav = itrav6
-
-        do ipt = 1, nptdis
-          rvdis(ipt,ipos) = ra(itrav + ipt-1)
-        enddo
-
-      enddo
-
-!           Dissipation turbulente
-!           ----------------------
       ipos = ipos + 1
-      iepiph = iep
+
+      if (isou.eq.1) itrav = itrav1
+      if (isou.eq.2) itrav = itrav2
+      if (isou.eq.3) itrav = itrav3
+      if (isou.eq.4) itrav = itrav4
+      if (isou.eq.5) itrav = itrav5
+      if (isou.eq.6) itrav = itrav6
 
       do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
+        rvdis(ipt,ipos) = ra(itrav + ipt-1)
       enddo
 
-!=======================================================================
-!          3.2.3. Transfert de Rij-epsilon vers k-epsilon
-!=======================================================================
+    enddo
 
-    elseif (itytu0.eq.2) then
+    !           Dissipation turbulente
+    !           ----------------------
+    ipos = ipos + 1
+    iepiph = iep
 
-!           Energie turbulente
-!           ------------------
-      ipos = ipos + 1
-      ikiph = ik
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
+    enddo
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
-          + ra(itrav2 + ipt-1) + ra(itrav3 + ipt-1))
-      enddo
+    !=======================================================================
+    !          3.2.3. Transfert de Rij-epsilon vers k-epsilon
+    !=======================================================================
 
-!           Dissipation turbulente
-!           ----------------------
-      ipos = ipos + 1
-      iepiph = iep
+  elseif (itytu0.eq.2) then
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
-      enddo
+    !           Energie turbulente
+    !           ------------------
+    ipos = ipos + 1
+    ikiph = ik
 
-!=======================================================================
-!          3.2.4. Transfert de Rij-epsilon vers v2f
-!=======================================================================
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
+           + ra(itrav2 + ipt-1) + ra(itrav3 + ipt-1))
+    enddo
 
-    elseif (iturcp(numcpl).eq.50) then
+    !           Dissipation turbulente
+    !           ----------------------
+    ipos = ipos + 1
+    iepiph = iep
 
-!    ATTENTION: CAS NON PRIS EN COMPTE (ARRET DU CALCUL DANS CSCINI.F)
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
+    enddo
 
-!=======================================================================
-!          3.2.5. Transfert de Rij-epsilon vers k-omega
-!=======================================================================
+    !=======================================================================
+    !          3.2.4. Transfert de Rij-epsilon vers v2f
+    !=======================================================================
 
-    elseif (iturcp(numcpl).eq.60) then
+  elseif (iturcp(numcpl).eq.50) then
 
-!           Energie turbulente
-!           ------------------
-      ipos = ipos + 1
-      ikiph = ik
+    !    ATTENTION: CAS NON PRIS EN COMPTE (ARRET DU CALCUL DANS CSCINI.F)
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
-          + ra(itrav2 + ipt-1) + ra(itrav3 + ipt-1))
-      enddo
+    !=======================================================================
+    !          3.2.5. Transfert de Rij-epsilon vers k-omega
+    !=======================================================================
 
-!           Omega
-!           -----
-      ipos = ipos + 1
-      iomiph = iomg
+  elseif (iturcp(numcpl).eq.60) then
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav7 + ipt-1)/cmu                  &
-          /max(1.0d-10, rvdis(ipt,ipos-1))
-      enddo
+    !           Energie turbulente
+    !           ------------------
+    ipos = ipos + 1
+    ikiph = ik
 
-    endif
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
+           + ra(itrav2 + ipt-1) + ra(itrav3 + ipt-1))
+    enddo
 
-!==============================================================================
-!       3.3 Turbulence dans l'instance locale : modèle v2f (phi-model)
-!==============================================================================
+    !           Omega
+    !           -----
+    ipos = ipos + 1
+    iomiph = iomg
 
-  elseif (iturb.eq.50) then
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav7 + ipt-1)/cmu                  &
+           /max(1.0d-10, rvdis(ipt,ipos-1))
+    enddo
 
-!=======================================================================
-!          3.3.1. INTERPOLATION EN J'
-!=======================================================================
+  endif
 
-!         Préparation des données: interpolation de k en J'
+  !==============================================================================
+  !       3.3 Turbulence dans l'instance locale : modèle v2f (phi-model)
+  !==============================================================================
 
-    ikiph  = ik
+elseif (iturb.eq.50) then
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ikiph))
-      !==========
-    endif
+  !=======================================================================
+  !          3.3.1. INTERPOLATION EN J'
+  !=======================================================================
 
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(ikiph,icoef)
-    nswrgp = nswrgr(ikiph)
-    imligp = imligr(ikiph)
-    iwarnp = iwarni(ikiph)
-    epsrgp = epsrgr(ikiph)
-    climgp = climgr(ikiph)
-    extrap = extrag(ikiph)
+  !         Préparation des données: interpolation de k en J'
 
-    call grdcel                                                   &
+  ikiph  = ik
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,ikiph))
     !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(ikiph,icoef)
+  nswrgp = nswrgr(ikiph)
+  imligp = imligr(ikiph)
+  iwarnp = iwarni(ikiph)
+  epsrgp = epsrgr(ikiph)
+  climgp = climgr(ikiph)
+  extrap = extrag(ikiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
@@ -1118,64 +1112,64 @@ do iphas = 1, nphas
     ra     )
 
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-   endif
+  endif
 
-!         Préparation des données: interpolation de epsilon en J'
+  !         Préparation des données: interpolation de epsilon en J'
 
-    iepiph  = iep
+  iepiph  = iep
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,iepiph))
-      !==========
-    endif
-
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(iepiph,icoef)
-    nswrgp = nswrgr(iepiph)
-    imligp = imligr(iepiph)
-    iwarnp = iwarni(iepiph)
-    epsrgp = epsrgr(iepiph)
-    climgp = climgr(iepiph)
-    extrap = extrag(iepiph)
-
-    call grdcel                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,iepiph))
     !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(iepiph,icoef)
+  nswrgp = nswrgr(iepiph)
+  imligp = imligr(iepiph)
+  iwarnp = iwarni(iepiph)
+  epsrgp = epsrgr(iepiph)
+  climgp = climgr(iepiph)
+  extrap = extrag(iepiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -1190,64 +1184,64 @@ do iphas = 1, nphas
     ra     )
 
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-    endif
+  endif
 
-!         Préparation des données: interpolation de Phi en J'
+  !         Préparation des données: interpolation de Phi en J'
 
-    iphiph = iphi
+  iphiph = iphi
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,iphiph))
-      !==========
-    endif
-
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(iphiph,icoef)
-    nswrgp = nswrgr(iphiph)
-    imligp = imligr(iphiph)
-    iwarnp = iwarni(iphiph)
-    epsrgp = epsrgr(iphiph)
-    climgp = climgr(iphiph)
-    extrap = extrag(iphiph)
-
-    call grdcel                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,iphiph))
     !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(iphiph,icoef)
+  nswrgp = nswrgr(iphiph)
+  imligp = imligr(iphiph)
+  iwarnp = iwarni(iphiph)
+  epsrgp = epsrgr(iphiph)
+  climgp = climgr(iphiph)
+  extrap = extrag(iphiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     iphiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -1262,41 +1256,41 @@ do iphas = 1, nphas
     ra     )
 
 
-    do ipt = 1, nptdis
+  do ipt = 1, nptdis
 
-      iel = locpts(ipt)
+    iel = locpts(ipt)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      ra(itrav3 + ipt-1) = rtp(iel,iphiph)                        &
-        + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+    ra(itrav3 + ipt-1) = rtp(iel,iphiph)                        &
+         + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-    enddo
+  enddo
 
-!         Préparation des données: interpolation de F-barre en J'
+  !         Préparation des données: interpolation de F-barre en J'
 
-    ifbiph = ifb
+  ifbiph = ifb
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ifbiph))
-      !==========
-    endif
-
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(ifbiph,icoef)
-    nswrgp = nswrgr(ifbiph)
-    imligp = imligr(ifbiph)
-    iwarnp = iwarni(ifbiph)
-    epsrgp = epsrgr(ifbiph)
-    climgp = climgr(ifbiph)
-    extrap = extrag(ifbiph)
-
-    call grdcel                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,ifbiph))
     !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(ifbiph,icoef)
+  nswrgp = nswrgr(ifbiph)
+  imligp = imligr(ifbiph)
+  iwarnp = iwarni(ifbiph)
+  epsrgp = epsrgr(ifbiph)
+  climgp = climgr(ifbiph)
+  extrap = extrag(ifbiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     ifbiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -1311,125 +1305,125 @@ do iphas = 1, nphas
     ra     )
 
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-    endif
+  endif
 
 !=======================================================================
 !          3.3.2. Transfert de variable à "iso-modèle"
 !=======================================================================
 
-    if (iturcp(numcpl).eq.50) then
+  if (iturcp(numcpl).eq.50) then
 
-!           Energie turbulente
-!           ------------------
-      ipos = ipos + 1
-      ikiph  = ik
+    !           Energie turbulente
+    !           ------------------
+    ipos = ipos + 1
+    ikiph  = ik
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
-      enddo
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+    enddo
 
-!           Dissipation turbulente
-!           ----------------------
-      ipos = ipos + 1
-      iepiph = iep
+    !           Dissipation turbulente
+    !           ----------------------
+    ipos = ipos + 1
+    iepiph = iep
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
-      enddo
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
+    enddo
 
-!           Phi
-!           ---
-      ipos = ipos + 1
-      iphiph = iphi
+    !           Phi
+    !           ---
+    ipos = ipos + 1
+    iphiph = iphi
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav3 + ipt-1)
-      enddo
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav3 + ipt-1)
+    enddo
 
-!           F-barre
-!           -------
-      ipos = ipos + 1
-      ifbiph = ifb
+    !           F-barre
+    !           -------
+    ipos = ipos + 1
+    ifbiph = ifb
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav4 + ipt-1)
-      enddo
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav4 + ipt-1)
+    enddo
 
 
-!         ATTENTION: LE COUPLAGE ENTRE UN MODELE V2F ET UN MODELE DE
-!         TURBULENCE DIFFERENT N'EST PAS PRIS EN COMPTE
+    !         ATTENTION: LE COUPLAGE ENTRE UN MODELE V2F ET UN MODELE DE
+    !         TURBULENCE DIFFERENT N'EST PAS PRIS EN COMPTE
 
-    elseif (itytu0.eq.2) then
-    elseif (itytu0.eq.3) then
-    elseif (iturcp(numcpl).eq.60) then
-    endif
+  elseif (itytu0.eq.2) then
+  elseif (itytu0.eq.3) then
+  elseif (iturcp(numcpl).eq.60) then
+  endif
 
 !==============================================================================
 !       3.4 Turbulence dans l'instance locale : modèle omega SST
 !==============================================================================
 
-  elseif (iturb.eq.60) then
+elseif (iturb.eq.60) then
 
-!=======================================================================
-!          3.4.1. INTERPOLATION EN J'
-!=======================================================================
+  !=======================================================================
+  !          3.4.1. INTERPOLATION EN J'
+  !=======================================================================
 
-!         Préparation des données: interpolation de k en J'
+  !         Préparation des données: interpolation de k en J'
 
-    ikiph  = ik
+  ikiph  = ik
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ikiph))
-      !==========
-    endif
-
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(ikiph,icoef)
-    nswrgp = nswrgr(ikiph)
-    imligp = imligr(ikiph)
-    iwarnp = iwarni(ikiph)
-    epsrgp = epsrgr(ikiph)
-    climgp = climgr(ikiph)
-    extrap = extrag(ikiph)
-
-    call grdcel                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,ikiph))
     !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(ikiph,icoef)
+  nswrgp = nswrgr(ikiph)
+  imligp = imligr(ikiph)
+  iwarnp = iwarni(ikiph)
+  epsrgp = epsrgr(ikiph)
+  climgp = climgr(ikiph)
+  extrap = extrag(ikiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
@@ -1444,64 +1438,64 @@ do iphas = 1, nphas
     ra     )
 
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-    endif
+  endif
 
-!         Préparation des données: interpolation de omega en J'
+  !         Préparation des données: interpolation de omega en J'
 
-    iomiph  = iomg
+  iomiph  = iomg
 
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,iomiph))
-      !==========
-    endif
-
-    inc    = 1
-    iccocg = 1
-    iphydp = 0
-    iclvar = iclrtp(iomiph,icoef)
-    nswrgp = nswrgr(iomiph)
-    imligp = imligr(iomiph)
-    iwarnp = iwarni(iomiph)
-    epsrgp = epsrgr(iomiph)
-    climgp = climgr(iomiph)
-    extrap = extrag(iomiph)
-
-    call grdcel                                                   &
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(rtp(1,iomiph))
     !==========
+  endif
+
+  inc    = 1
+  iccocg = 1
+  iphydp = 0
+  iclvar = iclrtp(iomiph,icoef)
+  nswrgp = nswrgr(iomiph)
+  imligp = imligr(iomiph)
+  iwarnp = iwarni(iomiph)
+  epsrgp = epsrgr(iomiph)
+  climgp = climgr(iomiph)
+  extrap = extrag(iomiph)
+
+  call grdcel                                                   &
+  !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     iomiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -1515,135 +1509,135 @@ do iphas = 1, nphas
     w4     , w5     , w6     ,                                    &
     ra     )
 
-    ! For a specific face to face coupling, geometric assumptions are made
+  ! For a specific face to face coupling, geometric assumptions are made
 
-    if (ifaccp.eq.1) then
+  if (ifaccp.eq.1) then
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
     ! For a generic coupling, no assumption can be made
 
-    else
+  else
 
-      do ipt = 1, nptdis
+    do ipt = 1, nptdis
 
-        iel = locpts(ipt)
+      iel = locpts(ipt)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+      ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
+           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
-      enddo
+    enddo
 
-    endif
+  endif
 
-!=======================================================================
-!          3.4.2. Transfert de variable à "iso-modèle"
-!=======================================================================
+  !=======================================================================
+  !          3.4.2. Transfert de variable à "iso-modèle"
+  !=======================================================================
 
-    if (iturcp(numcpl).eq.60) then
+  if (iturcp(numcpl).eq.60) then
 
-!           Energie turbulente
-!           ------------------
+    !           Energie turbulente
+    !           ------------------
+    ipos = ipos + 1
+    ikiph  = ik
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+    enddo
+
+    !           Omega
+    !           -----
+    ipos = ipos + 1
+    iomiph = iomg
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
+    enddo
+
+  elseif (itytu0.eq.2) then
+
+    !========================================================================
+    !          3.4.3. Transfert de k-omega vers k-epsilon
+    !========================================================================
+    !           Energie turbulente
+    !           ------------------
+    ipos = ipos + 1
+    ikiph  = ik
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+    enddo
+
+    !           Omega
+    !           -----
+    ipos = ipos + 1
+    iomiph = iomg
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
+           *ra(itrav1 + ipt-1)
+    enddo
+
+    !========================================================================
+    !          3.4.3. Transfert de k-omega vers Rij-epsilon
+    !========================================================================
+
+  elseif (itytu0.eq.3) then
+
+    !           Tenseur Rij
+    !            ----------
+    !           Termes de la diagonal R11,R22,R33
+
+    do isou =1, 3
+
       ipos = ipos + 1
-      ikiph  = ik
 
       do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+        rvdis(ipt,ipos) = d2s3*ra(itrav1 + ipt-1)
       enddo
 
-!           Omega
-!           -----
-      ipos = ipos + 1
-      iomiph = iomg
+    enddo
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
-      enddo
+    !           Termes R12,R13,R23
 
-    elseif (itytu0.eq.2) then
+    iuiph = iu
+    iviph = iv
+    iwiph = iw
 
-!========================================================================
-!          3.4.3. Transfert de k-omega vers k-epsilon
-!========================================================================
-!           Energie turbulente
-!           ------------------
-      ipos = ipos + 1
-      ikiph  = ik
+    do isou = 1, 3
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
-      enddo
+      if(isou.eq.1) ivar = iuiph
+      if(isou.eq.2) ivar = iviph
+      if(isou.eq.3) ivar = iwiph
 
-!           Omega
-!           -----
-      ipos = ipos + 1
-      iomiph = iomg
+      inc    = 1
+      iccocg = 1
+      iphydp = 0
+      iclvar = iclrtp(ivar,icoef)
+      nswrgp = nswrgr(ivar)
+      imligp = imligr(ivar)
+      iwarnp = iwarni(ivar)
+      epsrgp = epsrgr(ivar)
+      climgp = climgr(ivar)
+      extrap = extrag(ivar)
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
-                         *ra(itrav1 + ipt-1)
-      enddo
-
-!========================================================================
-!          3.4.3. Transfert de k-omega vers Rij-epsilon
-!========================================================================
-
-    elseif (itytu0.eq.3) then
-
-!           Tenseur Rij
-!            ----------
-!           Termes de la diagonal R11,R22,R33
-
-      do isou =1, 3
-
-        ipos = ipos + 1
-
-        do ipt = 1, nptdis
-          rvdis(ipt,ipos) = d2s3*ra(itrav1 + ipt-1)
-        enddo
-
-      enddo
-
-!           Termes R12,R13,R23
-
-      iuiph = iu
-      iviph = iv
-      iwiph = iw
-
-      do isou = 1, 3
-
-        if(isou.eq.1) ivar = iuiph
-        if(isou.eq.2) ivar = iviph
-        if(isou.eq.3) ivar = iwiph
-
-        inc    = 1
-        iccocg = 1
-        iphydp = 0
-        iclvar = iclrtp(ivar,icoef)
-        nswrgp = nswrgr(ivar)
-        imligp = imligr(ivar)
-        iwarnp = iwarni(ivar)
-        epsrgp = epsrgr(ivar)
-        climgp = climgr(ivar)
-        extrap = extrag(ivar)
-
-        call grdcel                                               &
-        !==========
+      call grdcel                                               &
+      !==========
   ( ifinia , ifinra ,                                             &
     nphas  ,                                                      &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
@@ -1658,79 +1652,75 @@ do iphas = 1, nphas
     ra     )
 
 
-        do ipt = 1, nptdis
-
-          iel = locpts(ipt)
-
-          if (isou.eq.1) then
-            ra(itrav3 + ipt-1) = w2(iel)
-            ra(itrav4 + ipt-1) = w3(iel)
-          elseif (isou.eq.2) then
-            ra(itrav5 + ipt-1) = w1(iel)
-            ra(itrav6 + ipt-1) = w3(iel)
-          elseif (isou.eq.3) then
-            ra(itrav7 + ipt-1) = w1(iel)
-            ra(itrav8 + ipt-1) = w2(iel)
-          endif
-
-        enddo
-
-      enddo
-!           Fin de la boucle sur les composantes de la vitesse
-
-!           R12
-      ipos = ipos + 1
-
       do ipt = 1, nptdis
-        rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
-          /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-          *0.5d0*(ra(itrav3 + ipt-1) + ra(itrav5 + ipt-1))
+
+        iel = locpts(ipt)
+
+        if (isou.eq.1) then
+          ra(itrav3 + ipt-1) = w2(iel)
+          ra(itrav4 + ipt-1) = w3(iel)
+        elseif (isou.eq.2) then
+          ra(itrav5 + ipt-1) = w1(iel)
+          ra(itrav6 + ipt-1) = w3(iel)
+        elseif (isou.eq.3) then
+          ra(itrav7 + ipt-1) = w1(iel)
+          ra(itrav8 + ipt-1) = w2(iel)
+        endif
+
       enddo
 
-!           R13
-      ipos = ipos + 1
+    enddo
+    !           Fin de la boucle sur les composantes de la vitesse
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
-          /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-          *0.5d0*(ra(itrav4 + ipt-1) + ra(itrav7 + ipt-1))
-      enddo
+    !           R12
+    ipos = ipos + 1
 
-!           R23
-      ipos = ipos + 1
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
+           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
+           *0.5d0*(ra(itrav3 + ipt-1) + ra(itrav5 + ipt-1))
+    enddo
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
-          /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-          *0.5d0*(ra(itrav6 + ipt-1) + ra(itrav8 + ipt-1))
-      enddo
+    !           R13
+    ipos = ipos + 1
 
-!           Dissipation turbulente
-!           ----------------------
-      ipos = ipos + 1
-      iepiph = iep
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
+           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
+           *0.5d0*(ra(itrav4 + ipt-1) + ra(itrav7 + ipt-1))
+    enddo
 
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
-                         *ra(itrav1 + ipt-1)
-      enddo
+    !           R23
+    ipos = ipos + 1
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
+           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
+           *0.5d0*(ra(itrav6 + ipt-1) + ra(itrav8 + ipt-1))
+    enddo
+
+    !           Dissipation turbulente
+    !           ----------------------
+    ipos = ipos + 1
+    iepiph = iep
+
+    do ipt = 1, nptdis
+      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
+           *ra(itrav1 + ipt-1)
+    enddo
 
 
-!=======================================================================
-!          3.3.4. Transfert de k-omega vers v2f
-!=======================================================================
+    !=======================================================================
+    !          3.3.4. Transfert de k-omega vers v2f
+    !=======================================================================
 
-    elseif (iturcp(numcpl).eq.50) then
+  elseif (iturcp(numcpl).eq.50) then
 
-!  ATTENTION: CAS NON PRIS EN COMPTE. ARRET DU CALCUL DANS CSCINI.F
-
-    endif
+    !  ATTENTION: CAS NON PRIS EN COMPTE. ARRET DU CALCUL DANS CSCINI.F
 
   endif
 
-enddo
-!     Fin de la boucle sur les phases
-!     Ce qui suit est indépendant de la phase
+endif
 
 !=========================================================================
 ! 4.  PREPARATION DES SCALAIRES

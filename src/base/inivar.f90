@@ -210,30 +210,28 @@ endif
 ! En compressible, Ptot n'est pas defini (correspond directement a RTP(.,IPR)
 
 if  (ippmod(icompf).lt.0) then
-  do iphas = 1, nphas
-    ipriph = ipr
-    iiptot = ipproc(iprtot)
-    ro0iph = ro0
-    p0iph  = p0
-    pr0iph = pred0
-    xxp0   = xyzp0(1)
-    xyp0   = xyzp0(2)
-    xzp0   = xyzp0(3)
-    do iel = 1, ncel
-      if (propce(iel,iiptot).gt.-0.5d0*rinfin) then
-        rtp(iel,ipriph) = propce(iel,iiptot)                      &
-             - ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
-                      + gy*(xyzcen(2,iel)-xyp0)                   &
-                      + gz*(xyzcen(3,iel)-xzp0) )                 &
-             + pr0iph - p0iph
-      else
-        propce(iel,iiptot) = rtp(iel,ipriph)                      &
-             + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
-                      + gy*(xyzcen(2,iel)-xyp0)                   &
-                      + gz*(xyzcen(3,iel)-xzp0) )                 &
-             + p0iph - pr0iph
-      endif
-    enddo
+  ipriph = ipr
+  iiptot = ipproc(iprtot)
+  ro0iph = ro0
+  p0iph  = p0
+  pr0iph = pred0
+  xxp0   = xyzp0(1)
+  xyp0   = xyzp0(2)
+  xzp0   = xyzp0(3)
+  do iel = 1, ncel
+    if (propce(iel,iiptot).gt.-0.5d0*rinfin) then
+      rtp(iel,ipriph) = propce(iel,iiptot)                      &
+           - ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
+           + gy*(xyzcen(2,iel)-xyp0)                   &
+           + gz*(xyzcen(3,iel)-xzp0) )                 &
+           + pr0iph - p0iph
+    else
+      propce(iel,iiptot) = rtp(iel,ipriph)                      &
+           + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
+           + gy*(xyzcen(2,iel)-xyp0)                   &
+           + gz*(xyzcen(3,iel)-xzp0) )                 &
+           + p0iph - pr0iph
+    endif
   enddo
 endif
 
@@ -276,160 +274,154 @@ endif
 
 if(iusini.eq.1.or.isuite.eq.1) then
 
-  do iphas = 1, nphas
-    if(itytur.eq.2 .or. iturb.eq.50) then
+  if(itytur.eq.2 .or. iturb.eq.50) then
 
-      ikiph  = ik
-      ieiph  = iep
+    ikiph  = ik
+    ieiph  = iep
 
-      xekmin = rtp(1,ikiph)
-      xepmin = rtp(1,ieiph)
+    xekmin = rtp(1,ikiph)
+    xepmin = rtp(1,ieiph)
+    do iel = 1, ncel
+      xekmin = min(xekmin,rtp(iel,ikiph) )
+      xepmin = min(xepmin,rtp(iel,ieiph))
+    enddo
+    if (irangp.ge.0) then
+      call parmin (xekmin)
+      !==========
+      call parmin (xepmin)
+      !==========
+    endif
+
+    if(xekmin.ge.0.d0.and.xepmin.ge.0.d0) then
+      iclip = 1
+      call clipke( ncelet , ncel   , nvar   , nphas  ,          &
+      !==========
+                   iphass , iclip  , iwarni(ikiph) ,            &
+                   propce , rtp    )
+    else
+      write(nfecra,3020) xekmin,xepmin
+      iok = iok + 1
+    endif
+
+    !     En v2-f, on verifie aussi que phi est compris entre 0 et 2
+    if (iturb.eq.50) then
+      iphiph = iphi
+
+      xphmin = rtp(1,iphiph)
+      xphmax = rtp(1,iphiph)
       do iel = 1, ncel
-        xekmin = min(xekmin,rtp(iel,ikiph) )
-        xepmin = min(xepmin,rtp(iel,ieiph))
+        xphmin = min(xphmin,rtp(iel,iphiph) )
+        xphmax = max(xphmax,rtp(iel,iphiph) )
       enddo
       if (irangp.ge.0) then
-        call parmin (xekmin)
+        call parmin (xphmin)
         !==========
-        call parmin (xepmin)
-        !==========
-      endif
-
-      if(xekmin.ge.0.d0.and.xepmin.ge.0.d0) then
-        iclip = 1
-        iphass = iphas
-        call clipke( ncelet , ncel   , nvar   , nphas  ,          &
-        !==========
-                     iphass , iclip  , iwarni(ikiph) ,            &
-                     propce , rtp    )
-      else
-        write(nfecra,3020) xekmin,xepmin
-        iok = iok + 1
-      endif
-
-!     En v2-f, on verifie aussi que phi est compris entre 0 et 2
-      if (iturb.eq.50) then
-        iphiph = iphi
-
-        xphmin = rtp(1,iphiph)
-        xphmax = rtp(1,iphiph)
-        do iel = 1, ncel
-          xphmin = min(xphmin,rtp(iel,iphiph) )
-          xphmax = max(xphmax,rtp(iel,iphiph) )
-        enddo
-        if (irangp.ge.0) then
-          call parmin (xphmin)
-          !==========
-          call parmax (xphmax)
-          !==========
-        endif
-
-!     Par coherence avec clpv2f, on ne clippe qu'a zero et pas a 2
-!              IF(XPHMIN.LT.0.D0 .OR. XPHMAX.GT.2.D0) THEN
-        if(xphmin.lt.0.d0) then
-          write(nfecra,3021) xphmin,xphmax
-          iok = iok + 1
-        endif
-
-      endif
-
-    elseif(itytur.eq.3) then
-
-      ir11ip = ir11
-      ir22ip = ir22
-      ir33ip = ir33
-      ieiph  = iep
-
-      x11min = rtp(1,ir11ip)
-      x22min = rtp(1,ir22ip)
-      x33min = rtp(1,ir33ip)
-      xepmin = rtp(1,ieiph)
-      do iel = 1, ncel
-        x11min = min(x11min,rtp(iel,ir11ip))
-        x22min = min(x22min,rtp(iel,ir22ip))
-        x33min = min(x33min,rtp(iel,ir33ip))
-        xepmin = min(xepmin,rtp(iel,ieiph) )
-      enddo
-      if (irangp.ge.0) then
-        call parmin (x11min)
-        !==========
-        call parmin (x22min)
-        !==========
-        call parmin (x33min)
-        !==========
-        call parmin (xepmin)
-        !==========
-      endif
-      if (x11min.ge.0.d0.and.x22min.ge.0.d0.and.                  &
-          x33min.ge.0.d0.and.xepmin.ge.0.d0 ) then
-        iclip = 1
-        iphass = iphas
-        call clprij( ncelet , ncel   , nvar   , nphas  ,          &
-        !==========
-                     iphass , iclip  ,                            &
-                     propce , rtp    , rtp    )
-      else
-        write(nfecra,3030) x11min,x22min,x33min,xepmin
-        iok = iok + 1
-      endif
-
-    elseif(iturb.eq.60) then
-
-      ikiph   = ik
-      iomgip  = iomg
-
-      xekmin = rtp(1,ikiph )
-      xomgmn = rtp(1,iomgip)
-      do iel = 1, ncel
-        xekmin = min(xekmin,rtp(iel,ikiph ))
-        xomgmn = min(xomgmn,rtp(iel,iomgip))
-      enddo
-      if (irangp.ge.0) then
-        call parmin (xekmin)
-        !==========
-        call parmin (xomgmn)
+        call parmax (xphmax)
         !==========
       endif
 
-!     En k-omega on clippe seulement a 0
-      if(xekmin.lt.0.d0 .or. xomgmn.lt.0.d0) then
-        write(nfecra,3031) xekmin,xomgmn
-        iok = iok + 1
-      endif
-
-    elseif(iturb.eq.70) then
-
-      inuiph  = inusa
-
-      xnumin = rtp(1,inuiph)
-      do iel = 1, ncel
-        xnumin = min(xnumin,rtp(iel,inuiph))
-      enddo
-      if (irangp.ge.0) then
-        call parmin (xnumin)
-        !==========
-      endif
-
-!     En Spalart-Allmaras on clippe seulement a 0
-      if(xnumin.lt.0.d0 ) then
-        write(nfecra,3032) xnumin
+      !     Par coherence avec clpv2f, on ne clippe qu'a zero et pas a 2
+      !              IF(XPHMIN.LT.0.D0 .OR. XPHMAX.GT.2.D0) THEN
+      if(xphmin.lt.0.d0) then
+        write(nfecra,3021) xphmin,xphmax
         iok = iok + 1
       endif
 
     endif
-  enddo
+
+  elseif(itytur.eq.3) then
+
+    ir11ip = ir11
+    ir22ip = ir22
+    ir33ip = ir33
+    ieiph  = iep
+
+    x11min = rtp(1,ir11ip)
+    x22min = rtp(1,ir22ip)
+    x33min = rtp(1,ir33ip)
+    xepmin = rtp(1,ieiph)
+    do iel = 1, ncel
+      x11min = min(x11min,rtp(iel,ir11ip))
+      x22min = min(x22min,rtp(iel,ir22ip))
+      x33min = min(x33min,rtp(iel,ir33ip))
+      xepmin = min(xepmin,rtp(iel,ieiph) )
+    enddo
+    if (irangp.ge.0) then
+      call parmin (x11min)
+      !==========
+      call parmin (x22min)
+      !==========
+      call parmin (x33min)
+      !==========
+      call parmin (xepmin)
+      !==========
+    endif
+    if (x11min.ge.0.d0.and.x22min.ge.0.d0.and.                  &
+         x33min.ge.0.d0.and.xepmin.ge.0.d0 ) then
+      iclip = 1
+      call clprij( ncelet , ncel   , nvar   , nphas  ,          &
+      !==========
+                   iphass , iclip  ,                            &
+                   propce , rtp    , rtp    )
+    else
+      write(nfecra,3030) x11min,x22min,x33min,xepmin
+      iok = iok + 1
+    endif
+
+  elseif(iturb.eq.60) then
+
+    ikiph   = ik
+    iomgip  = iomg
+
+    xekmin = rtp(1,ikiph )
+    xomgmn = rtp(1,iomgip)
+    do iel = 1, ncel
+      xekmin = min(xekmin,rtp(iel,ikiph ))
+      xomgmn = min(xomgmn,rtp(iel,iomgip))
+    enddo
+    if (irangp.ge.0) then
+      call parmin (xekmin)
+      !==========
+      call parmin (xomgmn)
+      !==========
+    endif
+
+    !     En k-omega on clippe seulement a 0
+    if(xekmin.lt.0.d0 .or. xomgmn.lt.0.d0) then
+      write(nfecra,3031) xekmin,xomgmn
+      iok = iok + 1
+    endif
+
+  elseif(iturb.eq.70) then
+
+    inuiph  = inusa
+
+    xnumin = rtp(1,inuiph)
+    do iel = 1, ncel
+      xnumin = min(xnumin,rtp(iel,inuiph))
+    enddo
+    if (irangp.ge.0) then
+      call parmin (xnumin)
+      !==========
+    endif
+
+    !     En Spalart-Allmaras on clippe seulement a 0
+    if(xnumin.lt.0.d0 ) then
+      write(nfecra,3032) xnumin
+      iok = iok + 1
+    endif
+
+  endif
 
 else
 
-  do iphas = 1, nphas
-    if (iturb.ne.0 .and. iturb.ne.10                &
-         .and. itytur.ne.4) then
-      if (uref.lt.0.d0) then
-        write(nfecra,3039) uref
-        iok = iok + 1
-      endif
+  if (iturb.ne.0 .and. iturb.ne.10                &
+       .and. itytur.ne.4) then
+    if (uref.lt.0.d0) then
+      write(nfecra,3039) uref
+      iok = iok + 1
     endif
-  enddo
+  endif
 
 endif
 

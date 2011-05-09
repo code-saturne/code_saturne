@@ -210,14 +210,12 @@ idebra = idbra0
 
 iok = 0
 
-do iphas = 1, nphas
-  do ifac = 1, nfabor
-    ityp = itypfb(ifac)
-    if(ityp.le.0.or.ityp.gt.ntypmx) then
-      itypfb(ifac) = 0
-      iok = iok + 1
-    endif
-  enddo
+do ifac = 1, nfabor
+  ityp = itypfb(ifac)
+  if(ityp.le.0.or.ityp.gt.ntypmx) then
+    itypfb(ifac) = 0
+    iok = iok + 1
+  endif
 enddo
 
 if (irangp.ge.0) call parcmx(iok)
@@ -232,89 +230,73 @@ endif
 
 ! Count faces of each type (temporarily in ifinty)
 
-do iphas = 1, nphas
-  do ii = 1, ntypmx
-   ifinty(ii) = 0
- enddo
+do ii = 1, ntypmx
+  ifinty(ii) = 0
 enddo
 
-do iphas = 1, nphas
-  do ifac = 1, nfabor
-    ityp = itypfb(ifac)
-    ifinty(ityp) = ifinty(ityp) + 1
-  enddo
+do ifac = 1, nfabor
+  ityp = itypfb(ifac)
+  ifinty(ityp) = ifinty(ityp) + 1
 enddo
 
 
 ! Set start of each group of faces in itrifb (sorted by type): idebty
 
-do iphas = 1, nphas
-  do ii = 1, ntypmx
-    idebty(ii) = 1
-  enddo
+do ii = 1, ntypmx
+  idebty(ii) = 1
 enddo
 
-do iphas = 1, nphas
-  do ii = 1, ntypmx-1
-    do jj = ii+1, ntypmx
-      idebty(jj) = idebty(jj) + ifinty(ii)
-    enddo
+do ii = 1, ntypmx-1
+  do jj = ii+1, ntypmx
+    idebty(jj) = idebty(jj) + ifinty(ii)
   enddo
 enddo
 
 ! Sort faces in itrifb and use the opportunity to correctly set ifinty
 
-do iphas = 1, nphas
-  do ii = 1, ntypmx
-    ifinty(ii) = idebty(ii)-1
-  enddo
+do ii = 1, ntypmx
+  ifinty(ii) = idebty(ii)-1
 enddo
 
-do iphas = 1, nphas
-  do ifac = 1, nfabor
-    ityp = itypfb(ifac)
-    ifin = ifinty(ityp)+1
-    itrifb(ifin) = ifac
-    ifinty(ityp) = ifin
-  enddo
+do ifac = 1, nfabor
+  ityp = itypfb(ifac)
+  ifin = ifinty(ityp)+1
+  itrifb(ifin) = ifac
+  ifinty(ityp) = ifin
 enddo
 
 ! Basic check
 
 iok = 0
-do iphas = 1, nphas
-  do ii = 1, ntypmx-1
-    if(ifinty(ii).ge.idebty(ii+1)) then
-      if (iok.eq.0) iok = ii
-    endif
-  enddo
-  if (irangp.ge.0) call parcmx(iok)
-  if (iok.gt.0) then
-    ii = iok
-    if(ifinty(ii).ge.idebty(ii+1)) then
-      write(nfecra,2020) (ifinty(jj),jj=1,ntypmx)
-      write(nfecra,2030) (idebty(jj),jj=1,ntypmx)
-      write(nfecra,2040) (itypfb(jj),jj=1,nfabor)
-      write(nfecra,2098) ii,ifinty(ii),ii+1,idebty(ii+1)
-    else
-      write(nfecra,2099) ii,ii+1
-    endif
-    call csexit (1)
+do ii = 1, ntypmx-1
+  if(ifinty(ii).ge.idebty(ii+1)) then
+    if (iok.eq.0) iok = ii
   endif
 enddo
+if (irangp.ge.0) call parcmx(iok)
+if (iok.gt.0) then
+  ii = iok
+  if(ifinty(ii).ge.idebty(ii+1)) then
+    write(nfecra,2020) (ifinty(jj),jj=1,ntypmx)
+    write(nfecra,2030) (idebty(jj),jj=1,ntypmx)
+    write(nfecra,2040) (itypfb(jj),jj=1,nfabor)
+    write(nfecra,2098) ii,ifinty(ii),ii+1,idebty(ii+1)
+  else
+    write(nfecra,2099) ii,ii+1
+  endif
+  call csexit (1)
+endif
 
 iok = 0
-do iphas = 1, nphas
-  isum = 0
-  do ii = 1, ntypmx
-    isum = isum + ifinty(ii) - idebty(ii) + 1
-  enddo
-  if (irangp.ge.0) call parcpt (isum)
-  if(isum.ne.nfbrgb) then
-    write(nfecra,3099) isum, nfbrgb
-    iok = iok + 1
-  endif
+isum = 0
+do ii = 1, ntypmx
+  isum = isum + ifinty(ii) - idebty(ii) + 1
 enddo
+if (irangp.ge.0) call parcpt (isum)
+if(isum.ne.nfbrgb) then
+  write(nfecra,3099) isum, nfbrgb
+  iok = iok + 1
+endif
 if (iok.ne.0) then
   call csexit (1)
   !==========
@@ -330,203 +312,199 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 
   write(nfecra,6010)
 
-  do iphas = 1, nphas
+  write(nfecra,6011)
 
-    write(nfecra,6011)
+  if ( ippmod(icompf).lt.0 ) then
 
-    if ( ippmod(icompf).lt.0 ) then
+    ii = ientre
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Entree           ', ii, inb
+#else
+    write(nfecra,6020) 'Inlet            ', ii, inb
+#endif
+    ii = iparoi
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Paroi lisse      ', ii, inb
+#else
+    write(nfecra,6020) 'Smooth wall      ', ii, inb
+#endif
+    ii = iparug
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
+#else
+    write(nfecra,6020) 'Rough wall       ', ii, inb
+#endif
+    ii = isymet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Symetrie         ', ii, inb
+#else
+    write(nfecra,6020) 'Symmetry         ', ii, inb
+#endif
+    ii = isolib
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Sortie libre     ', ii, inb
+#else
+    write(nfecra,6020) 'Free outlet      ', ii, inb
+#endif
 
-      ii = ientre
+    if (nbrcpl.ge.1) then
+      ii = icscpl
       inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Entree           ', ii, inb
+      write(nfecra,6020) 'Couplage sat/sat ', ii, inb
 #else
-      write(nfecra,6020) 'Inlet            ', ii, inb
+      write(nfecra,6020) 'Sat/Sat coupling ', ii, inb
 #endif
-      ii = iparoi
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Paroi lisse      ', ii, inb
-#else
-      write(nfecra,6020) 'Smooth wall      ', ii, inb
-#endif
-      ii = iparug
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
-#else
-      write(nfecra,6020) 'Rough wall       ', ii, inb
-#endif
-      ii = isymet
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Symetrie         ', ii, inb
-#else
-      write(nfecra,6020) 'Symmetry         ', ii, inb
-#endif
-      ii = isolib
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Sortie libre     ', ii, inb
-#else
-      write(nfecra,6020) 'Free outlet      ', ii, inb
-#endif
-
-      if (nbrcpl.ge.1) then
-        ii = icscpl
-        inb = ifinty(ii)-idebty(ii)+1
-        if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-        write(nfecra,6020) 'Couplage sat/sat ', ii, inb
-#else
-        write(nfecra,6020) 'Sat/Sat coupling ', ii, inb
-#endif
-      endif
-
-      ii = iindef
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Indefini         ', ii, inb
-#else
-      write(nfecra,6020) 'Undefined        ', ii, inb
-#endif
-
-      do ii = 1, ntypmx
-        if (ii.ne.ientre .and. &
-            ii.ne.iparoi .and. &
-            ii.ne.iparug .and. &
-            ii.ne.isymet .and. &
-            ii.ne.isolib .and. &
-            ii.ne.icscpl .and. &
-            ii.ne.iindef ) then
-          inb = ifinty(ii)-idebty(ii)+1
-          if (irangp.ge.0) call parcpt (inb)
-          if(inb.gt.0) then
-#if defined(_CS_LANG_FR)
-            write(nfecra,6020) 'Type utilisateur ', ii, inb
-#else
-            write(nfecra,6020) 'User type        ', ii, inb
-#endif
-          endif
-        endif
-      enddo
-
-    else
-
-      ii = ieqhcf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Entree sub. enth.', ii, inb
-#else
-      write(nfecra,6020) 'Sub. enth. inlet ', ii, inb
-#endif
-
-      ii = ierucf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Entree subsonique', ii, inb
-#else
-      write(nfecra,6020) 'Subsonic inlet   ', ii, inb
-#endif
-
-      ii = iesicf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Entree/Sortie imp', ii, inb
-#else
-      write(nfecra,6020) 'Imp inlet/outlet ', ii, inb
-#endif
-
-      ii = isopcf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Sortie subsonique', ii, inb
-#else
-      write(nfecra,6020) 'Subsonic outlet  ', ii, inb
-#endif
-
-      ii = isspcf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Sortie supersoniq', ii, inb
-#else
-      write(nfecra,6020) 'Supersonic outlet', ii, inb
-#endif
-
-      ii = iparoi
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Paroi lisse      ', ii, inb
-#else
-      write(nfecra,6020) 'Smooth wall      ', ii, inb
-#endif
-
-      ii = iparug
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
-#else
-      write(nfecra,6020) 'Rough wall       ', ii, inb
-#endif
-
-      ii = isymet
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Symetrie         ', ii, inb
-#else
-      write(nfecra,6020) 'Symmetry         ', ii, inb
-#endif
-
-      ii = iindef
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Indefini         ', ii, inb
-#else
-      write(nfecra,6020) 'Undefined        ', ii, inb
-#endif
-
-      do ii = 1, ntypmx
-        if (ii.ne.iesicf .and. &
-            ii.ne.isspcf .and. &
-            ii.ne.ieqhcf .and. &
-            ii.ne.ierucf .and. &
-            ii.ne.isopcf .and. &
-            ii.ne.iparoi .and. &
-            ii.ne.iparug .and. &
-            ii.ne.isymet .and. &
-            ii.ne.iindef ) then
-          inb = ifinty(ii)-idebty(ii)+1
-          if (irangp.ge.0) call parcpt (inb)
-          if(inb.gt.0) then
-#if defined(_CS_LANG_FR)
-            write(nfecra,6020) 'Type utilisateur ',ii, inb
-#else
-            write(nfecra,6020) 'User type        ',ii, inb
-#endif
-          endif
-        endif
-      enddo
-
     endif
 
-    write(nfecra,6030)
+    ii = iindef
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Indefini         ', ii, inb
+#else
+    write(nfecra,6020) 'Undefined        ', ii, inb
+#endif
 
-  enddo
+    do ii = 1, ntypmx
+      if (ii.ne.ientre .and. &
+           ii.ne.iparoi .and. &
+           ii.ne.iparug .and. &
+           ii.ne.isymet .and. &
+           ii.ne.isolib .and. &
+           ii.ne.icscpl .and. &
+           ii.ne.iindef ) then
+        inb = ifinty(ii)-idebty(ii)+1
+        if (irangp.ge.0) call parcpt (inb)
+        if(inb.gt.0) then
+#if defined(_CS_LANG_FR)
+          write(nfecra,6020) 'Type utilisateur ', ii, inb
+#else
+          write(nfecra,6020) 'User type        ', ii, inb
+#endif
+        endif
+      endif
+    enddo
+
+  else
+
+    ii = ieqhcf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Entree sub. enth.', ii, inb
+#else
+    write(nfecra,6020) 'Sub. enth. inlet ', ii, inb
+#endif
+
+    ii = ierucf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Entree subsonique', ii, inb
+#else
+    write(nfecra,6020) 'Subsonic inlet   ', ii, inb
+#endif
+
+    ii = iesicf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Entree/Sortie imp', ii, inb
+#else
+    write(nfecra,6020) 'Imp inlet/outlet ', ii, inb
+#endif
+
+    ii = isopcf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Sortie subsonique', ii, inb
+#else
+    write(nfecra,6020) 'Subsonic outlet  ', ii, inb
+#endif
+
+    ii = isspcf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Sortie supersoniq', ii, inb
+#else
+    write(nfecra,6020) 'Supersonic outlet', ii, inb
+#endif
+
+    ii = iparoi
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Paroi lisse      ', ii, inb
+#else
+    write(nfecra,6020) 'Smooth wall      ', ii, inb
+#endif
+
+    ii = iparug
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
+#else
+    write(nfecra,6020) 'Rough wall       ', ii, inb
+#endif
+
+    ii = isymet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Symetrie         ', ii, inb
+#else
+    write(nfecra,6020) 'Symmetry         ', ii, inb
+#endif
+
+    ii = iindef
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Indefini         ', ii, inb
+#else
+    write(nfecra,6020) 'Undefined        ', ii, inb
+#endif
+
+    do ii = 1, ntypmx
+      if (ii.ne.iesicf .and. &
+           ii.ne.isspcf .and. &
+           ii.ne.ieqhcf .and. &
+           ii.ne.ierucf .and. &
+           ii.ne.isopcf .and. &
+           ii.ne.iparoi .and. &
+           ii.ne.iparug .and. &
+           ii.ne.isymet .and. &
+           ii.ne.iindef ) then
+        inb = ifinty(ii)-idebty(ii)+1
+        if (irangp.ge.0) call parcpt (inb)
+        if(inb.gt.0) then
+#if defined(_CS_LANG_FR)
+          write(nfecra,6020) 'Type utilisateur ',ii, inb
+#else
+          write(nfecra,6020) 'User type        ',ii, inb
+#endif
+        endif
+      endif
+    enddo
+
+  endif
+
+  write(nfecra,6030)
 
 endif
 
@@ -536,18 +514,15 @@ endif
 !     isolib and ientre are handled later.
 !================================================================================
 
-do iphas = 1, nphas
-  do ivar=1, nvar
-     do ifac = 1, nfabor
-        if((itypfb(ifac) .ne. isolib) .and. &
-           (itypfb(ifac) .ne. ientre) .and. &
-           (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
-           rcodcl(ifac,ivar,1) = 0.d0
-       endif
-      enddo
-   enddo
+do ivar=1, nvar
+  do ifac = 1, nfabor
+    if((itypfb(ifac) .ne. isolib) .and. &
+         (itypfb(ifac) .ne. ientre) .and. &
+         (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
+      rcodcl(ifac,ivar,1) = 0.d0
+    endif
+  enddo
 enddo
-
 
 !===============================================================================
 ! 5.  Compute pressure at boundary (in coefu(*,1))
@@ -556,45 +531,38 @@ enddo
 !     The loop on phases starts here and ends at the end of the next block.
 !===============================================================================
 
-! --- Boucle sur les phases : debut
-do iphas = 1, nphas
-
-  ro0iph = ro0
-  p0iph  = p0
-  pr0iph = pred0
-  xxp0   = xyzp0(1)
-  xyp0   = xyzp0(2)
-  xzp0   = xyzp0(3)
-  ipriph = ipr
-  iuiph  = iu
-  iviph  = iv
-  iwiph  = iw
-  if(itytur.eq.2) then
-    ikiph  = ik
-    iepiph = iep
-  elseif(itytur.eq.3) then
-    ir11ip = ir11
-    ir22ip = ir22
-    ir33ip = ir33
-    ir12ip = ir12
-    ir13ip = ir13
-    ir23ip = ir23
-    iepiph = iep
-  elseif(iturb.eq.50) then
-    ikiph  = ik
-    iepiph = iep
-    iphiph = iphi
-    ifbiph = ifb
-  elseif(iturb.eq.60) then
-    ikiph  = ik
-    iomgip = iomg
-  elseif(iturb.eq.70) then
-    inuiph  = inusa
-  endif
-
-! Check if the pressure (unique) has not been handled already
-
-  iprnew = 1
+ro0iph = ro0
+p0iph  = p0
+pr0iph = pred0
+xxp0   = xyzp0(1)
+xyp0   = xyzp0(2)
+xzp0   = xyzp0(3)
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+if(itytur.eq.2) then
+  ikiph  = ik
+  iepiph = iep
+elseif(itytur.eq.3) then
+  ir11ip = ir11
+  ir22ip = ir22
+  ir33ip = ir33
+  ir12ip = ir12
+  ir13ip = ir13
+  ir23ip = ir23
+  iepiph = iep
+elseif(iturb.eq.50) then
+  ikiph  = ik
+  iepiph = iep
+  iphiph = iphi
+  ifbiph = ifb
+elseif(iturb.eq.60) then
+  ikiph  = ik
+  iomgip = iomg
+elseif(iturb.eq.70) then
+  inuiph  = inusa
+endif
 
 ! ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
 ! itbslb = max of ifrslb on all ranks, standard outlet face presence indicator
@@ -603,98 +571,97 @@ do iphas = 1, nphas
 ! origin), we choose the face whose center is closest to it, so
 ! as to be mesh numbering (and partitioning) independent.
 
-  d0min = rinfin
+d0min = rinfin
 
-  ifrslb = 0
+ifrslb = 0
 
-  ideb = idebty(isolib)
-  ifin = ifinty(isolib)
+ideb = idebty(isolib)
+ifin = ifinty(isolib)
 
-  do ii = ideb, ifin
-    ifac = itrifb(ii)
-    if (icodcl(ifac,ipriph).eq.0) then
-      d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
-           + (cdgfbo(2,ifac)-xyp0)**2  &
-           + (cdgfbo(3,ifac)-xzp0)**2
-      if (d0.lt.d0min) then
-        ifrslb = ifac
-        d0min = d0
-      endif
+do ii = ideb, ifin
+  ifac = itrifb(ii)
+  if (icodcl(ifac,ipriph).eq.0) then
+    d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
+         + (cdgfbo(2,ifac)-xyp0)**2  &
+         + (cdgfbo(3,ifac)-xzp0)**2
+    if (d0.lt.d0min) then
+      ifrslb = ifac
+      d0min = d0
     endif
-  enddo
+  endif
+enddo
 
-  ! If we have free outlet faces, irangd and itbslb will
-  ! contain respectively the rank having the boundary face whose
-  ! center is closest to xyzp0, and the local number of that face
-  ! on that rank (also equal to ifrslb on that rank).
-  ! If we do not have free outlet faces, than itbslb = 0
-  ! (as it was initialized that way on all ranks).
+! If we have free outlet faces, irangd and itbslb will
+! contain respectively the rank having the boundary face whose
+! center is closest to xyzp0, and the local number of that face
+! on that rank (also equal to ifrslb on that rank).
+! If we do not have free outlet faces, than itbslb = 0
+! (as it was initialized that way on all ranks).
 
-  itbslb = ifrslb
-  irangd = irangp
-  if (irangp.ge.0) then
-    call parfpt(itbslb, irangd, d0min)
+itbslb = ifrslb
+irangd = irangp
+if (irangp.ge.0) then
+  call parfpt(itbslb, irangd, d0min)
+endif
+
+if (itbslb.gt.0) then
+
+  inc = 1
+  iccocg = 1
+  nswrgp = nswrgr(ipriph)
+  imligp = imligr(ipriph)
+  iwarnp = iwarni(ipriph)
+  epsrgp = epsrgr(ipriph)
+  climgp = climgr(ipriph)
+  extrap = extrag(ipriph)
+  iclipr = iclrtp(ipriph,icoef)
+
+  call grdcel                                                   &
+                                !==========
+       ( idebia , idebra ,                                              &
+       nphas  ,                                                       &
+       ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
+       iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+       ia     ,                                                       &
+       frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
+       rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
+       w1     , w2     , w3     ,                                     &
+       !        ------   ------   ------
+       w4     , w5     , w6     ,                                     &
+       ra     )
+
+
+  !  Put in coefu the value at I' or F (depending on iphydr) of the
+  !  total pressure, computed from P*
+
+  if (iphydr.eq.0) then
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      diipbx = diipb(1,ifac)
+      diipby = diipb(2,ifac)
+      diipbz = diipb(3,ifac)
+      coefu(ifac,1) = rtpa(ii,ipriph)                           &
+           + diipbx*w1(ii)+ diipby*w2(ii) + diipbz*w3(ii)       &
+           + ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
+           + gy*(cdgfbo(2,ifac)-xyp0)                  &
+           + gz*(cdgfbo(3,ifac)-xzp0))                 &
+           + p0iph - pr0iph
+    enddo
+  else
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      coefu(ifac,1) = rtpa(ii,ipriph)                           &
+           + (cdgfbo(1,ifac)-xyzcen(1,ii))*w1(ii)               &
+           + (cdgfbo(2,ifac)-xyzcen(2,ii))*w2(ii)               &
+           + (cdgfbo(3,ifac)-xyzcen(3,ii))*w3(ii)               &
+           + ro0iph*(  gx*(cdgfbo(1,ifac)-xxp0)                 &
+           + gy*(cdgfbo(2,ifac)-xyp0)                 &
+           + gz*(cdgfbo(3,ifac)-xzp0))                &
+           + p0iph - pr0iph
+    enddo
   endif
 
-  if ((itbslb.gt.0) .and. (iprnew.eq.1)) then
-
-    inc = 1
-    iccocg = 1
-    nswrgp = nswrgr(ipriph)
-    imligp = imligr(ipriph)
-    iwarnp = iwarni(ipriph)
-    epsrgp = epsrgr(ipriph)
-    climgp = climgr(ipriph)
-    extrap = extrag(ipriph)
-    iclipr = iclrtp(ipriph,icoef)
-
-    call grdcel                                                   &
-    !==========
- ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
-   ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
-   rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
-   ra     )
-
-
-!  Put in coefu the value at I' or F (depending on iphydr) of the
-!  total pressure, computed from P*
-
-    if (iphydr.eq.0) then
-      do ifac = 1, nfabor
-        ii = ifabor(ifac)
-        diipbx = diipb(1,ifac)
-        diipby = diipb(2,ifac)
-        diipbz = diipb(3,ifac)
-        coefu(ifac,1) = rtpa(ii,ipriph)                           &
-             + diipbx*w1(ii)+ diipby*w2(ii) + diipbz*w3(ii)       &
-             + ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
-                      + gy*(cdgfbo(2,ifac)-xyp0)                  &
-                      + gz*(cdgfbo(3,ifac)-xzp0))                 &
-             + p0iph - pr0iph
-      enddo
-    else
-      do ifac = 1, nfabor
-        ii = ifabor(ifac)
-        coefu(ifac,1) = rtpa(ii,ipriph)                           &
-             + (cdgfbo(1,ifac)-xyzcen(1,ii))*w1(ii)               &
-             + (cdgfbo(2,ifac)-xyzcen(2,ii))*w2(ii)               &
-             + (cdgfbo(3,ifac)-xyzcen(3,ii))*w3(ii)               &
-             + ro0iph*(  gx*(cdgfbo(1,ifac)-xxp0)                 &
-                       + gy*(cdgfbo(2,ifac)-xyp0)                 &
-                       + gz*(cdgfbo(3,ifac)-xzp0))                &
-             + p0iph - pr0iph
-      enddo
-    endif
-
-  endif
-
+endif
 
 !===============================================================================
 ! 6.  Convert to rcodcl and icodcl
@@ -710,24 +677,22 @@ do iphas = 1, nphas
 ! ---> La pression a un traitement Neumann, le reste Dirichlet
 !                                           sera traite plus tard.
 
-  ideb = idebty(ientre)
-  ifin = ifinty(ientre)
+ideb = idebty(ientre)
+ifin = ifinty(ientre)
 
-  do ivar = 1, nvar
-    if (ivar.eq.ipriph) then
-      if(iprnew.eq.1) then
-        do ii = ideb, ifin
-          ifac = itrifb(ii)
-          if(icodcl(ifac,ivar).eq.0) then
-            icodcl(ifac,ivar)   = 3
-            rcodcl(ifac,ivar,1) = 0.d0
-            rcodcl(ifac,ivar,2) = rinfin
-            rcodcl(ifac,ivar,3) = 0.d0
-          endif
-        enddo
+do ivar = 1, nvar
+  if (ivar.eq.ipriph) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
       endif
-    endif
-  enddo
+    enddo
+  endif
+enddo
 
 
 ! 6.2 SORTIE (entrée-sortie libre) (ISOLIB)
@@ -737,7 +702,7 @@ do iphas = 1, nphas
 !        (le reste Neumann, ou Dirichlet si donnée utilisateur,
 !        sera traite plus tard)
 
-  if (iphydr.eq.1) then
+if (iphydr.eq.1) then
 
 !     En cas de prise en compte de la pression hydrostatique,
 !     on remplit le tableau ISOSTD
@@ -746,15 +711,15 @@ do iphas = 1, nphas
 !     1 -> face de sortie libre avec CL de pression automatique.
 !     le numero de la face de reference est stocke dans ISOSTD(NFABOR+1)
 !     qui est d'abord initialise a -1 (i.e. pas de face de sortie std)
-    isostd(nfabor+1) = -1
-    do ifac = 1,nfabor
-      isostd(ifac) = 0
-      if ((itypfb(ifac).eq.isolib).and.                     &
-           (icodcl(ifac,ipriph).eq.0)) then
-        isostd(ifac) = 1
-      endif
-    enddo
-  endif
+  isostd(nfabor+1) = -1
+  do ifac = 1,nfabor
+    isostd(ifac) = 0
+    if ((itypfb(ifac).eq.isolib).and.                     &
+         (icodcl(ifac,ipriph).eq.0)) then
+      isostd(ifac) = 1
+    endif
+  enddo
+endif
 
 ! ---> Reference pressure (unique, even if there are multiple outlets)
 !     In case we account for the hydrostatic pressure, we search for the
@@ -767,79 +732,79 @@ do iphas = 1, nphas
 !     We also retrieve the coordinates of the reference point, so as to
 !     calculate pref later on.
 
-  if (itbslb.gt.0) then
+if (itbslb.gt.0) then
 
-    ! If irangd is the local rank, we assign PI' to coefup
-    ! (this is always the case in serial mode)
+  ! If irangd is the local rank, we assign PI' to coefup
+  ! (this is always the case in serial mode)
+
+  if (irangp.eq.irangd) then
+    xyzref(1) = cdgfbo(1,ifrslb)
+    xyzref(2) = cdgfbo(2,ifrslb)
+    xyzref(3) = cdgfbo(3,ifrslb)
+    xyzref(4) = coefu(ifrslb,1) ! coefup
+    if (iphydr.eq.1) isostd(nfabor+1) = ifrslb
+  endif
+
+  ! Broadcast coefup and pressure reference
+  ! from irangd to all other ranks.
+  if (irangp.ge.0) then
+    inb = 4
+    call parbcr(irangd, inb, xyzref)
+  endif
+
+  coefup = xyzref(4)
+  xyzref(4) = 0.d0
+
+  ! If the user has not specified anything, we set ixyzp0 to 2 so as
+  ! to update the reference point.
+
+  if (ixyzp0.eq.-1) ixyzp0 = 2
+
+elseif (ixyzp0.lt.0) then
+
+  ! If there are no outlet faces, we search for possible Dirichlets
+  ! specified by the user so as to locate the reference point.
+  ! As before, we chose the face closest to xyzp0 so as to
+  ! be mesh numbering (and partitioning) independent.
+
+  d0min = rinfin
+
+  ifadir = -1
+  do ifac = 1, nfabor
+    if (icodcl(ifac,ipriph).eq.1) then
+      d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
+           + (cdgfbo(2,ifac)-xyp0)**2  &
+           + (cdgfbo(3,ifac)-xzp0)**2
+      if (d0.lt.d0min) then
+        ifadir = ifac
+        d0min = d0
+      endif
+    endif
+  enddo
+
+  irangd = irangp
+  if (irangp.ge.0) call parfpt(ifadir, irangd, d0min)
+
+  if (ifadir.gt.0) then
+
+    ! on met ixyzp0 a 2 pour mettre a jour le point de reference
+    ixyzp0 = 2
 
     if (irangp.eq.irangd) then
-      xyzref(1) = cdgfbo(1,ifrslb)
-      xyzref(2) = cdgfbo(2,ifrslb)
-      xyzref(3) = cdgfbo(3,ifrslb)
-      xyzref(4) = coefu(ifrslb,1) ! coefup
-      if (iphydr.eq.1) isostd(nfabor+1) = ifrslb
+      xyzref(1) = cdgfbo(1,ifadir)
+      xyzref(2) = cdgfbo(2,ifadir)
+      xyzref(3) = cdgfbo(3,ifadir)
     endif
 
-    ! Broadcast coefup and pressure reference
-    ! from irangd to all other ranks.
+    ! Broadcast xyzref from irangd to all other ranks.
     if (irangp.ge.0) then
-      inb = 4
+      inb = 3
       call parbcr(irangd, inb, xyzref)
     endif
 
-    coefup = xyzref(4)
-    xyzref(4) = 0.d0
-
-    ! If the user has not specified anything, we set ixyzp0 to 2 so as
-    ! to update the reference point.
-
-    if (ixyzp0.eq.-1) ixyzp0 = 2
-
-  elseif (ixyzp0.lt.0) then
-
-    ! If there are no outlet faces, we search for possible Dirichlets
-    ! specified by the user so as to locate the reference point.
-    ! As before, we chose the face closest to xyzp0 so as to
-    ! be mesh numbering (and partitioning) independent.
-
-    d0min = rinfin
-
-    ifadir = -1
-    do ifac = 1, nfabor
-      if (icodcl(ifac,ipriph).eq.1) then
-        d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
-             + (cdgfbo(2,ifac)-xyp0)**2  &
-             + (cdgfbo(3,ifac)-xzp0)**2
-        if (d0.lt.d0min) then
-          ifadir = ifac
-          d0min = d0
-        endif
-      endif
-    enddo
-
-    irangd = irangp
-    if (irangp.ge.0) call parfpt(ifadir, irangd, d0min)
-
-    if (ifadir.gt.0) then
-
-      ! on met ixyzp0 a 2 pour mettre a jour le point de reference
-      ixyzp0 = 2
-
-      if (irangp.eq.irangd) then
-        xyzref(1) = cdgfbo(1,ifadir)
-        xyzref(2) = cdgfbo(2,ifadir)
-        xyzref(3) = cdgfbo(3,ifadir)
-      endif
-
-      ! Broadcast xyzref from irangd to all other ranks.
-      if (irangp.ge.0) then
-         inb = 3
-         call parbcr(irangd, inb, xyzref)
-      endif
-
-    endif
-
   endif
+
+endif
 
 
 !   Si le point de reference n'a pas ete specifie par l'utilisateur
@@ -847,82 +812,80 @@ do iphas = 1, nphas
 !   La pression totale dans PROPCE est aussi decalee (c'est a priori
 !   inutile sauf si l'utilisateur l'utilise dans ustsns par exemple)
 
-  if (ixyzp0.eq.2) then
-    ixyzp0 = 1
-    xxp0 = xyzref(1) - xyzp0(1)
-    xyp0 = xyzref(2) - xyzp0(2)
-    xzp0 = xyzref(3) - xyzp0(3)
-    xyzp0(1) = xyzref(1)
-    xyzp0(2) = xyzref(2)
-    xyzp0(3) = xyzref(3)
-    if (ippmod(icompf).lt.0) then
-      iiptot = ipproc(iprtot)
-      do iel = 1, ncelet
-        propce(iel,iiptot) = propce(iel,iiptot)       &
-             - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
-      enddo
-    endif
-    if (itbslb.gt.0) then
-      write(nfecra,8000)xxp0,xyp0,xzp0
-      do ifac = 1, nfabor
-        coefu(ifac,1) = coefu(ifac,1)                             &
-             - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
-      enddo
-      coefup = coefup - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
-    else
-      write(nfecra,8001)xxp0,xyp0,xzp0
-    endif
-  elseif (ixyzp0.eq.-1) then
-!     Il n'y a pas de sorties ni de Dirichlet et l'utilisateur n'a
-!     rien specifie -> on met IXYZP0 a 0 pour ne plus y toucher, tout
-!     en differenciant du cas =1 qui necessitera une ecriture en suite
-    ixyzp0 = 0
+if (ixyzp0.eq.2) then
+  ixyzp0 = 1
+  xxp0 = xyzref(1) - xyzp0(1)
+  xyp0 = xyzref(2) - xyzp0(2)
+  xzp0 = xyzref(3) - xyzp0(3)
+  xyzp0(1) = xyzref(1)
+  xyzp0(2) = xyzref(2)
+  xyzp0(3) = xyzref(3)
+  if (ippmod(icompf).lt.0) then
+    iiptot = ipproc(iprtot)
+    do iel = 1, ncelet
+      propce(iel,iiptot) = propce(iel,iiptot)       &
+           - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+    enddo
   endif
+  if (itbslb.gt.0) then
+    write(nfecra,8000)xxp0,xyp0,xzp0
+    do ifac = 1, nfabor
+      coefu(ifac,1) = coefu(ifac,1)                             &
+           - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+    enddo
+    coefup = coefup - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+  else
+    write(nfecra,8001)xxp0,xyp0,xzp0
+  endif
+elseif (ixyzp0.eq.-1) then
+  !     Il n'y a pas de sorties ni de Dirichlet et l'utilisateur n'a
+  !     rien specifie -> on met IXYZP0 a 0 pour ne plus y toucher, tout
+  !     en differenciant du cas =1 qui necessitera une ecriture en suite
+  ixyzp0 = 0
+endif
 
 !     La pression totale doit etre recalee en Xref a la valeur
 !     Po + rho_0*g.(Xref-X0)
-  if (itbslb.gt.0) then
-    xxp0 = xyzp0(1)
-    xyp0 = xyzp0(2)
-    xzp0 = xyzp0(3)
-    pref = p0                                              &
-         + ro0iph*( gx*(xyzref(1)-xxp0)                           &
-                  + gy*(xyzref(2)-xyp0)                           &
-                  + gz*(xyzref(3)-xzp0) )                         &
-         - coefup
-  endif
+if (itbslb.gt.0) then
+  xxp0 = xyzp0(1)
+  xyp0 = xyzp0(2)
+  xzp0 = xyzp0(3)
+  pref = p0                                              &
+       + ro0iph*( gx*(xyzref(1)-xxp0)                           &
+       + gy*(xyzref(2)-xyp0)                           &
+       + gz*(xyzref(3)-xzp0) )                         &
+       - coefup
+endif
 
 
 ! ---> Entree/Sortie libre
 
-  ideb = idebty(isolib)
-  ifin = ifinty(isolib)
+ideb = idebty(isolib)
+ifin = ifinty(isolib)
 
-  do ivar = 1, nvar
-    if (ivar.eq.ipriph) then
-      if(iprnew.eq.1) then
-        do ii = ideb, ifin
-          ifac = itrifb(ii)
-          if(icodcl(ifac,ivar).eq.0) then
-            icodcl(ifac,ivar)   = 1
-            rcodcl(ifac,ivar,1) = coefu(ifac,1) + pref
-            rcodcl(ifac,ivar,2) = rinfin
-            rcodcl(ifac,ivar,3) = 0.d0
-          endif
-        enddo
+do ivar = 1, nvar
+  if (ivar.eq.ipriph) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 1
+        rcodcl(ifac,ivar,1) = coefu(ifac,1) + pref
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
       endif
-    elseif(ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
-      do ii = ideb, ifin
-        ifac = itrifb(ii)
-        if(icodcl(ifac,ivar).eq.0) then
-          icodcl(ifac,ivar)   = 9
-          rcodcl(ifac,ivar,1) = 0.d0
-          rcodcl(ifac,ivar,2) = rinfin
-          rcodcl(ifac,ivar,3) = 0.d0
-        endif
-      enddo
-    endif
-  enddo
+    enddo
+  elseif(ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 9
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
+enddo
 
 
 ! 6.3 SYMETRIE
@@ -931,38 +894,36 @@ do iphas = 1, nphas
 ! ---> Les vecteurs et tenseurs ont un traitement particulier
 !        le reste Neumann sera traite plus tard
 
-  ideb = idebty(isymet)
-  ifin = ifinty(isymet)
+ideb = idebty(isymet)
+ifin = ifinty(isymet)
 
-  do ivar = 1, nvar
-    if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph.or.      &
+do ivar = 1, nvar
+  if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph.or.      &
        ( itytur.eq.3.and.                                  &
-          (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
-           ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip)    &
-                                                          ) ) then
-      do ii = ideb, ifin
-        ifac = itrifb(ii)
-        if(icodcl(ifac,ivar).eq.0) then
-          icodcl(ifac,ivar)   = 4
-!         rcodcl(ifac,ivar,1) = Modifie eventuellement par l'ALE
-          rcodcl(ifac,ivar,2) = rinfin
-          rcodcl(ifac,ivar,3) = 0.d0
-        endif
-      enddo
-    elseif(ivar.eq.ipriph) then
-      if(iprnew.eq.1) then
-        do ii = ideb, ifin
-          ifac = itrifb(ii)
-          if(icodcl(ifac,ivar).eq.0) then
-            icodcl(ifac,ivar)   = 3
-            rcodcl(ifac,ivar,1) = 0.d0
-            rcodcl(ifac,ivar,2) = rinfin
-            rcodcl(ifac,ivar,3) = 0.d0
-          endif
-        enddo
+       (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
+       ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip)    &
+       ) ) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 4
+        !         rcodcl(ifac,ivar,1) = Modifie eventuellement par l'ALE
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
       endif
-    endif
-  enddo
+    enddo
+  elseif(ivar.eq.ipriph) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
+enddo
 
 ! 6.4 PAROI LISSE
 ! ===============
@@ -970,57 +931,55 @@ do iphas = 1, nphas
 ! ---> La vitesse et les grandeurs turbulentes ont le code 5
 !        le reste Neumann sera traite plus tard
 
-  ideb = idebty(iparoi)
-  ifin = ifinty(iparoi)
+ideb = idebty(iparoi)
+ifin = ifinty(iparoi)
 
-  do ivar = 1, nvar
-    if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
-      do ii = ideb, ifin
-        ifac = itrifb(ii)
-        if(icodcl(ifac,ivar).eq.0) then
-          icodcl(ifac,ivar)   = 5
-!         rcodcl(ifac,ivar,1) = Utilisateur
-          rcodcl(ifac,ivar,2) = rinfin
-          rcodcl(ifac,ivar,3) = 0.d0
-        endif
-      enddo
-    elseif (                                                      &
-       ( itytur.eq.2.and.                                  &
-          (ivar.eq.ikiph  .or.ivar.eq.iepiph) ).or.               &
-       ( itytur.eq.3.and.                                  &
-          (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
-           ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip.or. &
-           ivar.eq.iepiph)                    ).or.               &
-       ( iturb.eq.50.and.                                  &
-          (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
-           ivar.eq.ifbiph)                    ).or.               &
-       ( iturb.eq.60.and.                                  &
-          (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
-       ( iturb.eq.70.and.                                  &
-          (ivar.eq.inuiph)                    )    ) then
-      do ii = ideb, ifin
-        ifac = itrifb(ii)
-        if(icodcl(ifac,ivar).eq.0) then
-          icodcl(ifac,ivar)   = 5
-          rcodcl(ifac,ivar,1) = 0.d0
-          rcodcl(ifac,ivar,2) = rinfin
-          rcodcl(ifac,ivar,3) = 0.d0
-        endif
-      enddo
-    elseif(ivar.eq.ipriph) then
-      if(iprnew.eq.1) then
-        do ii = ideb, ifin
-          ifac = itrifb(ii)
-          if(icodcl(ifac,ivar).eq.0) then
-            icodcl(ifac,ivar)   = 3
-            rcodcl(ifac,ivar,1) = 0.d0
-            rcodcl(ifac,ivar,2) = rinfin
-            rcodcl(ifac,ivar,3) = 0.d0
-          endif
-        enddo
+do ivar = 1, nvar
+  if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 5
+        !         rcodcl(ifac,ivar,1) = Utilisateur
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
       endif
-    endif
-  enddo
+    enddo
+  elseif (                                                      &
+       ( itytur.eq.2.and.                                  &
+       (ivar.eq.ikiph  .or.ivar.eq.iepiph) ).or.               &
+       ( itytur.eq.3.and.                                  &
+       (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
+       ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip.or. &
+       ivar.eq.iepiph)                    ).or.               &
+       ( iturb.eq.50.and.                                  &
+       (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
+       ivar.eq.ifbiph)                    ).or.               &
+       ( iturb.eq.60.and.                                  &
+       (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
+       ( iturb.eq.70.and.                                  &
+       (ivar.eq.inuiph)                    )    ) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 5
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  elseif(ivar.eq.ipriph) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
+enddo
 
 ! 6.5 PAROI RUGUEUSE
 ! ==================
@@ -1029,62 +988,55 @@ do iphas = 1, nphas
 !      la rugosite est stockee dans rcodcl(..,..,3)
 !      le reste Neumann sera traite plus tard (idem paroi lisse)
 
-  ideb = idebty(iparug)
-  ifin = ifinty(iparug)
+ideb = idebty(iparug)
+ifin = ifinty(iparug)
 
-  do ivar = 1, nvar
-    if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
-      do ii = ideb, ifin
-        ifac = itrifb(ii)
-        if(icodcl(ifac,ivar).eq.0) then
-          icodcl(ifac,ivar)   = 6
-!         rcodcl(ifac,ivar,1) = Utilisateur
-          rcodcl(ifac,ivar,2) = rinfin
-!         rcodcl(ifac,ivar,3) = Utilisateur
-        endif
-      enddo
-    elseif (                                                      &
-       ( itytur.eq.2.and.                                  &
-          (ivar.eq.ikiph  .or.ivar.eq.iepiph) ).or.               &
-       ( itytur.eq.3.and.                                  &
-          (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
-           ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip.or. &
-           ivar.eq.iepiph)                    ).or.               &
-       ( iturb.eq.50.and.                                  &
-          (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
-           ivar.eq.ifbiph)                    ).or.               &
-       ( iturb.eq.60.and.                                  &
-          (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
-       ( iturb.eq.70.and.                                  &
-          (ivar.eq.inuiph)                    )    ) then
-      do ii = ideb, ifin
-        ifac = itrifb(ii)
-        if(icodcl(ifac,ivar).eq.0) then
-          icodcl(ifac,ivar)   = 6
-          rcodcl(ifac,ivar,1) = 0.d0
-          rcodcl(ifac,ivar,2) = rinfin
-          rcodcl(ifac,ivar,3) = 0.d0
-        endif
-      enddo
-    elseif(ivar.eq.ipriph) then
-      if(iprnew.eq.1) then
-        do ii = ideb, ifin
-          ifac = itrifb(ii)
-          if(icodcl(ifac,ivar).eq.0) then
-            icodcl(ifac,ivar)   = 3
-            rcodcl(ifac,ivar,1) = 0.d0
-            rcodcl(ifac,ivar,2) = rinfin
-            rcodcl(ifac,ivar,3) = 0.d0
-          endif
-        enddo
+do ivar = 1, nvar
+  if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 6
+        !         rcodcl(ifac,ivar,1) = Utilisateur
+        rcodcl(ifac,ivar,2) = rinfin
+        !         rcodcl(ifac,ivar,3) = Utilisateur
       endif
-    endif
-  enddo
-
-
+    enddo
+  elseif (                                                      &
+       ( itytur.eq.2.and.                                  &
+       (ivar.eq.ikiph  .or.ivar.eq.iepiph) ).or.               &
+       ( itytur.eq.3.and.                                  &
+       (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
+       ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip.or. &
+       ivar.eq.iepiph)                    ).or.               &
+       ( iturb.eq.50.and.                                  &
+       (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
+       ivar.eq.ifbiph)                    ).or.               &
+       ( iturb.eq.60.and.                                  &
+       (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
+       ( iturb.eq.70.and.                                  &
+       (ivar.eq.inuiph)                    )    ) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 6
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  elseif(ivar.eq.ipriph) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
 enddo
-! --- Boucle sur les phases : fin
-
 
 !===============================================================================
 ! 6.bis  CONVERSION EN RCODCL ICODCL
@@ -1094,10 +1046,6 @@ enddo
 !    TRAITEMENT PARTICULIER (HORS PRESSION, VITESSE ...)
 !===============================================================================
 
-! --- Boucle sur les phases : debut
-do iphas = 1, nphas
-
-
 ! 6.1 ENTREE bis
 ! ===========
 
@@ -1106,56 +1054,56 @@ do iphas = 1, nphas
 !     Dirichlet si l'utilisateur fournit une valeur, sinon on utilise
 !     Neumann homogene si le flux de masse est sortant (erreur sinon).
 
-  ideb = idebty(ientre)
-  ifin = ifinty(ientre)
+ideb = idebty(ientre)
+ifin = ifinty(ientre)
 
-  iok = 0
-  do ivar = 1, nvar
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
+iok = 0
+do ivar = 1, nvar
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if(icodcl(ifac,ivar).eq.0) then
 
-        if (ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph)      &
-             then
-          if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
-            itypfb(ifac) = - abs(itypfb(ifac))
-            if (iok.eq.0.or.iok.eq.2) iok = iok + 1
-          else
-            icodcl(ifac,ivar) = 1
-!           rcodcl(ifac,ivar,1) = Utilisateur
-            rcodcl(ifac,ivar,2) = rinfin
-            rcodcl(ifac,ivar,3) = 0.d0
-          endif
-
-        elseif (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
-
-          flumbf = propfb(ifac,ipprob(ifluma(iuiph)))
-          if( flumbf.ge.-epzero) then
-            icodcl(ifac,ivar)   = 3
-            rcodcl(ifac,ivar,1) = 0.d0
-            rcodcl(ifac,ivar,2) = rinfin
-            rcodcl(ifac,ivar,3) = 0.d0
-          else
-            itypfb(ifac) = - abs(itypfb(ifac))
-            if (iok.lt.2) iok = iok + 2
-          endif
+      if (ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph)      &
+           then
+        if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+          itypfb(ifac) = - abs(itypfb(ifac))
+          if (iok.eq.0.or.iok.eq.2) iok = iok + 1
         else
           icodcl(ifac,ivar) = 1
-!         rcodcl(ifac,ivar,1) = Utilisateur
+          !           rcodcl(ifac,ivar,1) = Utilisateur
           rcodcl(ifac,ivar,2) = rinfin
           rcodcl(ifac,ivar,3) = 0.d0
         endif
 
-      endif
-    enddo
-  enddo
+      elseif (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
 
-  if (irangp.ge.0) call parcmx(iok)
-  if (iok.gt.0) then
-    if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
-    if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
-    call bcderr(itypfb)
-  endif
+        flumbf = propfb(ifac,ipprob(ifluma(iuiph)))
+        if( flumbf.ge.-epzero) then
+          icodcl(ifac,ivar)   = 3
+          rcodcl(ifac,ivar,1) = 0.d0
+          rcodcl(ifac,ivar,2) = rinfin
+          rcodcl(ifac,ivar,3) = 0.d0
+        else
+          itypfb(ifac) = - abs(itypfb(ifac))
+          if (iok.lt.2) iok = iok + 2
+        endif
+      else
+        icodcl(ifac,ivar) = 1
+        !         rcodcl(ifac,ivar,1) = Utilisateur
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+
+    endif
+  enddo
+enddo
+
+if (irangp.ge.0) call parcmx(iok)
+if (iok.gt.0) then
+  if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
+  if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
+  call bcderr(itypfb)
+endif
 
 
 
@@ -1172,28 +1120,28 @@ do iphas = 1, nphas
 
 ! ---> Sortie ISOLIB
 
-  ideb = idebty(isolib)
-  ifin = ifinty(isolib)
+ideb = idebty(isolib)
+ifin = ifinty(isolib)
 
-  do ivar = 1, nvar
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
+do ivar = 1, nvar
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if(icodcl(ifac,ivar).eq.0) then
 
-         if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
-              icodcl(ifac,ivar) = 3
-              rcodcl(ifac,ivar,1) = 0.d0
-              rcodcl(ifac,ivar,2) = rinfin
-              rcodcl(ifac,ivar,3) = 0.d0
-          else
-              icodcl(ifac,ivar) = 1
-!             rcodcl(ifac,ivar,1) = Utilisateur
-              rcodcl(ifac,ivar,2) = rinfin
-              rcodcl(ifac,ivar,3) = 0.d0
-         endif
+      if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+        icodcl(ifac,ivar) = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      else
+        icodcl(ifac,ivar) = 1
+        !             rcodcl(ifac,ivar,1) = Utilisateur
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
       endif
-    enddo
+    endif
   enddo
+enddo
 
 
 
@@ -1204,20 +1152,20 @@ do iphas = 1, nphas
 !        traite plus haut
 !        le reste Neumann
 
-  ideb = idebty(isymet)
-  ifin = ifinty(isymet)
+ideb = idebty(isymet)
+ifin = ifinty(isymet)
 
-  do ivar = 1, nvar
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
-        icodcl(ifac,ivar)   = 3
-        rcodcl(ifac,ivar,1) = 0.d0
-        rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
-      endif
-    enddo
+do ivar = 1, nvar
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if(icodcl(ifac,ivar).eq.0) then
+      icodcl(ifac,ivar)   = 3
+      rcodcl(ifac,ivar,1) = 0.d0
+      rcodcl(ifac,ivar,2) = rinfin
+      rcodcl(ifac,ivar,3) = 0.d0
+    endif
   enddo
+enddo
 
 ! 6.4 PAROI LISSE bis
 ! ===============
@@ -1226,20 +1174,20 @@ do iphas = 1, nphas
 !        traite plus haut
 !        le reste Neumann
 
-  ideb = idebty(iparoi)
-  ifin = ifinty(iparoi)
+ideb = idebty(iparoi)
+ifin = ifinty(iparoi)
 
-  do ivar = 1, nvar
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
-        icodcl(ifac,ivar)   = 3
-        rcodcl(ifac,ivar,1) = 0.d0
-        rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
-      endif
-    enddo
+do ivar = 1, nvar
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if(icodcl(ifac,ivar).eq.0) then
+      icodcl(ifac,ivar)   = 3
+      rcodcl(ifac,ivar,1) = 0.d0
+      rcodcl(ifac,ivar,2) = rinfin
+      rcodcl(ifac,ivar,3) = 0.d0
+    endif
   enddo
+enddo
 
 ! 6.5 PAROI RUGUEUSE bis
 ! ==================
@@ -1248,23 +1196,21 @@ do iphas = 1, nphas
 !        traite plus haut
 !        le reste Neumann
 
-  ideb = idebty(iparug)
-  ifin = ifinty(iparug)
+ideb = idebty(iparug)
+ifin = ifinty(iparug)
 
-  do ivar = 1, nvar
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
-        icodcl(ifac,ivar)   = 3
-        rcodcl(ifac,ivar,1) = 0.d0
-        rcodcl(ifac,ivar,2) = rinfin
-        rcodcl(ifac,ivar,3) = 0.d0
-      endif
-    enddo
+do ivar = 1, nvar
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if(icodcl(ifac,ivar).eq.0) then
+      icodcl(ifac,ivar)   = 3
+      rcodcl(ifac,ivar,1) = 0.d0
+      rcodcl(ifac,ivar,2) = rinfin
+      rcodcl(ifac,ivar,3) = 0.d0
+    endif
   enddo
-
 enddo
-! --- Boucle sur les phases : fin
+
 !===============================================================================
 ! 7.  RENFORCEMENT DIAGONALE DE LA MATRICE SI AUCUN POINTS DIRICHLET
 !===============================================================================
@@ -1300,10 +1246,8 @@ enddo
 !===============================================================================
 
 iwaru = -1
-do iphas = 1, nphas
-  iuiph  = iu
-  iwaru = max(iwarni(iuiph),iwaru)
-enddo
+iuiph  = iu
+iwaru = max(iwarni(iuiph),iwaru)
 if (irangp.ge.0) call parcmx(iwaru)
 
 if(iwaru.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
@@ -1311,274 +1255,269 @@ if(iwaru.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
   write(nfecra,7010)
 endif
 
-do iphas = 1, nphas
+iuiph  = iu
+iflmab = ipprob(ifluma(iuiph))
 
-  iuiph  = iu
-  iflmab = ipprob(ifluma(iuiph))
-
-  iwrnp = iwarni(iu)
-  if (irangp.ge.0) call parcmx (iwrnp)
-                   !==========
+iwrnp = iwarni(iu)
+if (irangp.ge.0) call parcmx (iwrnp)
+!==========
 
 !     On ecrit le flux de masse si IWARNI>0, a la periodicite NTLIST
 !     et au deux premiers et deux derniers pas de temps.
-  if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
-       .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)) then
+if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
+     .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)) then
+
+  do ii = 1, ntypmx
+    flumty(ii) = 0.d0
+  enddo
+
+  do ii = 1, ntypmx
+    ideb = idebty(ii)
+    ifin = ifinty(ii)
+    do jj = ideb, ifin
+      ifac = itrifb(jj)
+      flumty(ii) = flumty(ii) + propfb(ifac,iflmab)
+    enddo
+  enddo
+
+
+  write(nfecra,7011)
+
+  if (ippmod(icompf).lt.0 ) then
+
+    ii = ientre
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Entree           ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Inlet            ',ii,inb,flumty(ii)
+#endif
+    ii = iparoi
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Paroi lisse      ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Smooth wall      ',ii,inb,flumty(ii)
+#endif
+    ii = iparug
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Paroi rugueuse   ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Rough wall       ',ii,inb,flumty(ii)
+#endif
+    ii = isymet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Symetrie         ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Symmetry         ',ii,inb,flumty(ii)
+#endif
+
+    ii = isolib
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Sortie libre     ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Free outlet      ',ii,inb,flumty(ii)
+#endif
+
+    if (nbrcpl.ge.1) then
+      ii = icscpl
+      inb = ifinty(ii)-idebty(ii)+1
+      if (irangp.ge.0) then
+        call parcpt (inb)
+        call parsom (flumty(ii))
+      endif
+#if defined(_CS_LANG_FR)
+      write(nfecra,7020) 'Couplage sat/sat ',ii,inb,flumty(ii)
+#else
+      write(nfecra,7020) 'Sat/Sat coupling ',ii,inb,flumty(ii)
+#endif
+    endif
+
+    ii = iindef
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Indefini         ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Undefined        ',ii,inb,flumty(ii)
+#endif
 
     do ii = 1, ntypmx
-      flumty(ii) = 0.d0
-    enddo
-
-    do ii = 1, ntypmx
-      ideb = idebty(ii)
-      ifin = ifinty(ii)
-      do jj = ideb, ifin
-        ifac = itrifb(jj)
-        flumty(ii) = flumty(ii) + propfb(ifac,iflmab)
-      enddo
-    enddo
-
-
-    write(nfecra,7011)
-
-    if (ippmod(icompf).lt.0 ) then
-
-      ii = ientre
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Entree           ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Inlet            ',ii,inb,flumty(ii)
-#endif
-      ii = iparoi
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Paroi lisse      ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Smooth wall      ',ii,inb,flumty(ii)
-#endif
-      ii = iparug
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Paroi rugueuse   ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Rough wall       ',ii,inb,flumty(ii)
-#endif
-      ii = isymet
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Symetrie         ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Symmetry         ',ii,inb,flumty(ii)
-#endif
-
-      ii = isolib
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Sortie libre     ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Free outlet      ',ii,inb,flumty(ii)
-#endif
-
-      if (nbrcpl.ge.1) then
-        ii = icscpl
+      if( ii.ne.ientre .and.                                    &
+           ii.ne.iparoi .and.                                    &
+           ii.ne.iparug .and.                                    &
+           ii.ne.isymet .and.                                    &
+           ii.ne.isolib .and.                                    &
+           ii.ne.icscpl .and.                                    &
+           ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) then
           call parcpt (inb)
           call parsom (flumty(ii))
         endif
+        if(inb.gt.0) then
 #if defined(_CS_LANG_FR)
-        write(nfecra,7020) 'Couplage sat/sat ',ii,inb,flumty(ii)
+          write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
 #else
-        write(nfecra,7020) 'Sat/Sat coupling ',ii,inb,flumty(ii)
+          write(nfecra,7020) 'User type        ',ii,inb,flumty(ii)
 #endif
-      endif
-
-      ii = iindef
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Indefini         ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Undefined        ',ii,inb,flumty(ii)
-#endif
-
-      do ii = 1, ntypmx
-        if( ii.ne.ientre .and.                                    &
-            ii.ne.iparoi .and.                                    &
-            ii.ne.iparug .and.                                    &
-            ii.ne.isymet .and.                                    &
-            ii.ne.isolib .and.                                    &
-            ii.ne.icscpl .and.                                    &
-            ii.ne.iindef ) then
-          inb = ifinty(ii)-idebty(ii)+1
-          if (irangp.ge.0) then
-            call parcpt (inb)
-            call parsom (flumty(ii))
-          endif
-          if(inb.gt.0) then
-#if defined(_CS_LANG_FR)
-            write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
-#else
-            write(nfecra,7020) 'User type        ',ii,inb,flumty(ii)
-#endif
-          endif
         endif
-      enddo
-
-    else
-
-      ii = ieqhcf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
       endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Entree sub. enth.',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Sub. enth. inlet ',ii,inb,flumty(ii)
-#endif
+    enddo
 
-      ii = ierucf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Entree subsonique',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Subsonic inlet   ',ii,inb,flumty(ii)
-#endif
+  else
 
-      ii = iesicf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Entree/Sortie imp',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Imp inlet/outlet ',ii,inb,flumty(ii)
-#endif
-
-      ii = isopcf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Sortie subsonique',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Subsonic outlet  ',ii,inb,flumty(ii)
-#endif
-
-      ii = isspcf
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Sortie supersoniq',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Supersonic outlet',ii,inb,flumty(ii)
-#endif
-
-      ii = iparoi
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Paroi            ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Wall             ',ii,inb,flumty(ii)
-#endif
-
-      ii = isymet
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Symetrie         ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Symmetry         ',ii,inb,flumty(ii)
-#endif
-
-      ii = iindef
-      inb = ifinty(ii)-idebty(ii)+1
-      if (irangp.ge.0) then
-        call parcpt (inb)
-        call parsom (flumty(ii))
-      endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Indefini         ',ii,inb,flumty(ii)
-#else
-      write(nfecra,7020) 'Undefined        ',ii,inb,flumty(ii)
-#endif
-
-      do ii = 1, ntypmx
-        if (ii.ne.iesicf .and. &
-            ii.ne.isspcf .and. &
-            ii.ne.ieqhcf .and. &
-            ii.ne.ierucf .and. &
-            ii.ne.isopcf .and. &
-            ii.ne.iparoi .and. &
-            ii.ne.isymet .and. &
-            ii.ne.iindef) then
-          inb = ifinty(ii)-idebty(ii)+1
-          if (irangp.ge.0) then
-            call parcpt (inb)
-            call parsom (flumty(ii))
-          endif
-          if(inb.gt.0) then
-#if defined(_CS_LANG_FR)
-            write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
-#else
-            write(nfecra,7020) 'User type        ',ii,inb,flumty(ii)
-#endif
-          endif
-        endif
-      enddo
-
+    ii = ieqhcf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
     endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Entree sub. enth.',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Sub. enth. inlet ',ii,inb,flumty(ii)
+#endif
 
-    write(nfecra,7030)
+    ii = ierucf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Entree subsonique',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Subsonic inlet   ',ii,inb,flumty(ii)
+#endif
+
+    ii = iesicf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Entree/Sortie imp',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Imp inlet/outlet ',ii,inb,flumty(ii)
+#endif
+
+    ii = isopcf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Sortie subsonique',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Subsonic outlet  ',ii,inb,flumty(ii)
+#endif
+
+    ii = isspcf
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Sortie supersoniq',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Supersonic outlet',ii,inb,flumty(ii)
+#endif
+
+    ii = iparoi
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Paroi            ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Wall             ',ii,inb,flumty(ii)
+#endif
+
+    ii = isymet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Symetrie         ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Symmetry         ',ii,inb,flumty(ii)
+#endif
+
+    ii = iindef
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Indefini         ',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Undefined        ',ii,inb,flumty(ii)
+#endif
+
+    do ii = 1, ntypmx
+      if (ii.ne.iesicf .and. &
+           ii.ne.isspcf .and. &
+           ii.ne.ieqhcf .and. &
+           ii.ne.ierucf .and. &
+           ii.ne.isopcf .and. &
+           ii.ne.iparoi .and. &
+           ii.ne.isymet .and. &
+           ii.ne.iindef) then
+        inb = ifinty(ii)-idebty(ii)+1
+        if (irangp.ge.0) then
+          call parcpt (inb)
+          call parsom (flumty(ii))
+        endif
+        if(inb.gt.0) then
+#if defined(_CS_LANG_FR)
+          write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
+#else
+          write(nfecra,7020) 'User type        ',ii,inb,flumty(ii)
+#endif
+        endif
+      endif
+    enddo
 
   endif
 
-enddo
+  write(nfecra,7030)
 
+endif
 
 !===============================================================================
 ! FORMATS

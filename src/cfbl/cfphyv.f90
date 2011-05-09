@@ -166,15 +166,13 @@ call uscfpv                                                       &
 !     On se contente de faire le test au premier passage.
 if(ipass.eq.0) then
   ipass = ipass + 1
-  do iphas = 1, nphas
-    if((ivisls(itempk).gt.0.or.                            &
-        icp.gt.0.or.icv.gt.0).and.iuscfp.eq.0) then
-      write(nfecra,1000)                                          &
-           ivisls(itempk),icp,icv
-      call csexit (1)
-      !==========
-    endif
-  enddo
+  if((ivisls(itempk).gt.0.or.                            &
+       icp.gt.0.or.icv.gt.0).and.iuscfp.eq.0) then
+    write(nfecra,1000)                                          &
+         ivisls(itempk),icp,icv
+    call csexit (1)
+    !==========
+  endif
 endif
 
 !===============================================================================
@@ -191,60 +189,54 @@ endif
 !     et ICV.EQ.0, par construction de IVISLS(IENERG) dans
 !     le sous-programme cfvarp
 
-do iphas = 1, nphas
+if(ivisls(ienerg).gt.0) then
 
-  if(ivisls(ienerg).gt.0) then
+  if(ivisls(itempk).gt.0) then
 
-    if(ivisls(itempk).gt.0) then
-
-      do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg))) =               &
-             propce(iel,ipproc(ivisls(itempk)))
-      enddo
-
-    else
-      do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg))) =               &
-             visls0(itempk)
-      enddo
-
-    endif
-
-    if(icv.gt.0) then
-
-      do iel = 1, ncel
-        if(propce(iel,ipproc(icv)).le.0.d0) then
-          write(nfecra,2000)iel,propce(iel,ipproc(icv))
-          call csexit (1)
-          !==========
-        endif
-      enddo
-
-      do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg))) =               &
-             propce(iel,ipproc(ivisls(ienerg)))            &
-             / propce(iel,ipproc(icv))
-      enddo
-
-    else
-
-      do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg))) =               &
-             propce(iel,ipproc(ivisls(ienerg)))            &
-             / cv0
-      enddo
-
-    endif
+    do iel = 1, ncel
+      propce(iel,ipproc(ivisls(ienerg))) =               &
+           propce(iel,ipproc(ivisls(itempk)))
+    enddo
 
   else
-
-    visls0(ienerg) = visls0(itempk)/cv0
+    do iel = 1, ncel
+      propce(iel,ipproc(ivisls(ienerg))) =               &
+           visls0(itempk)
+    enddo
 
   endif
 
+  if(icv.gt.0) then
 
-enddo
+    do iel = 1, ncel
+      if(propce(iel,ipproc(icv)).le.0.d0) then
+        write(nfecra,2000)iel,propce(iel,ipproc(icv))
+        call csexit (1)
+        !==========
+      endif
+    enddo
 
+    do iel = 1, ncel
+      propce(iel,ipproc(ivisls(ienerg))) =               &
+           propce(iel,ipproc(ivisls(ienerg)))            &
+           / propce(iel,ipproc(icv))
+    enddo
+
+  else
+
+    do iel = 1, ncel
+      propce(iel,ipproc(ivisls(ienerg))) =               &
+           propce(iel,ipproc(ivisls(ienerg)))            &
+           / cv0
+    enddo
+
+  endif
+
+else
+
+  visls0(ienerg) = visls0(itempk)/cv0
+
+endif
 
 !===============================================================================
 ! 3. MISE A JOUR DE ROM et ROMB :
@@ -254,25 +246,20 @@ enddo
 !     L'échange pério/parall sera fait dans phyvar.
 !===============================================================================
 
-do iphas = 1, nphas
+iirom  = ipproc(irom  )
+iiromb = ipprob(irom  )
 
-  iirom  = ipproc(irom  )
-  iiromb = ipprob(irom  )
-
-  do iel = 1, ncel
-    propce(iel,iirom)  = rtpa(iel,isca(irho))
-  enddo
-
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    propfb(ifac,iiromb) =                                         &
-         coefa(ifac,iclrtp(isca(irho),icoef))              &
-         + coefb(ifac,iclrtp(isca(irho),icoef))            &
-         * rtpa(iel,isca(irho))
-  enddo
-
+do iel = 1, ncel
+  propce(iel,iirom)  = rtpa(iel,isca(irho))
 enddo
 
+do ifac = 1, nfabor
+  iel = ifabor(ifac)
+  propfb(ifac,iiromb) =                                         &
+       coefa(ifac,iclrtp(isca(irho),icoef))              &
+       + coefb(ifac,iclrtp(isca(irho),icoef))            &
+       * rtpa(iel,isca(irho))
+enddo
 
 !--------
 ! FORMATS

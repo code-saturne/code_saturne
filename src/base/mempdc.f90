@@ -90,17 +90,15 @@ idebra = idbra0
 !---> VERIFICATION DES DIMENSIONS
 
 iok1 = 0
-do iphas = 1, nphas
 
-  iok = 0
-  if(ncepdc.gt.ncelet .or. ncepdc.lt.0) then
-    iok = 1
-  endif
-  if(iok.ne.0) then
-    write(nfecra,1000) ncepdc
-    iok1 = 1
-  endif
-enddo
+iok = 0
+if(ncepdc.gt.ncelet .or. ncepdc.lt.0) then
+  iok = 1
+endif
+if(iok.ne.0) then
+  write(nfecra,1000) ncepdc
+  iok1 = 1
+endif
 
 if(iok1.ne.0) then
   call csexit (1)
@@ -108,39 +106,31 @@ endif
 
 !---> CALCUL DU NOMBRE DE CELLULES AVEC PDC TOTAL
 
-do iphas = 1, nphas
-  ncpdct = ncepdc
-enddo
+ncpdct = ncepdc
 if (irangp.ge.0) then
   call parism(nphas,ncpdct)
 endif
 
 !---> QUELQUES MESSAGES
 
-do iphas = 1, nphas
-  if(ncpdct.eq.0) then
-    write(nfecra,2000) ncpdct
-    write(nfecra,3000)
-  else
-    write(nfecra,2001) ncpdct
-    write(nfecra,3000)
-  endif
-enddo
+if(ncpdct.eq.0) then
+  write(nfecra,2000) ncpdct
+  write(nfecra,3000)
+else
+  write(nfecra,2001) ncpdct
+  write(nfecra,3000)
+endif
 
 !---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
 
 ifinia = idebia
 ifinra = idebra
 
-do iphas = 1, nphas
+iicepd = ifinia
+ifinia        = iicepd + ncepdc
 
-  iicepd = ifinia
-  ifinia        = iicepd + ncepdc
-
-  ickupd = ifinra
-  ifinra        = ickupd + ncepdc*6
-
-enddo
+ickupd = ifinra
+ifinra        = ickupd + ncepdc*6
 
 !     Si pour une des phases on a des pertes de charge
 !       sur un des processeurs
@@ -148,9 +138,7 @@ enddo
 !     il faut les dimensionner
 if (ipucou.eq.0) then
   iok=0
-  do iphas = 1, nphas
-    if (ncpdct.gt.0) iok = 1
-  enddo
+  if (ncpdct.gt.0) iok = 1
   if (iok.eq.1) then
     itpuco = ifinra
     ifinra = itpuco + ncelet *ndim

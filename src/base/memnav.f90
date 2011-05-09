@@ -120,18 +120,14 @@ idebra = idbra0
 !---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
 
 irij = 0
-do iphas = 1, nphas
-  if(itytur.eq.3.and.irijnu.eq.1) then
-    irij = 1
-  endif
-enddo
+if(itytur.eq.3.and.irijnu.eq.1) then
+  irij = 1
+endif
 
 iescat = 0
-do iphas = 1, nphas
-  if(iescal(iestot).gt.0) then
-    iescat = 1
-  endif
-enddo
+if(iescal(iestot).gt.0) then
+  iescat = 1
+endif
 
 ! Attention :
 !   ci-dessous, on fait pointer VISCFI et VISCBI

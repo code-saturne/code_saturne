@@ -156,31 +156,22 @@ ipass = ipass + 1
 
 if(iperot.gt.0) then
 
-  do iphas = 1,nphas
+  call perinu                                                   &
+  !==========
+( idebia , idebra ,                                              &
+  nvar   , nscal  , nphas  , iph    ,                            &
+  ia     ,                                                       &
+  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  coefa  , coefb  ,                                              &
+  w1     , w2     , w3     , w4     ,                            &
+  w5     , w6     , w7     , w8     ,                            &
+  ra(idudxy) ,                                                   &
+  ra     )
 
-    iph = iphas
-    call perinu                                                   &
+  if(itytur.eq.3) then
+
+    call perinr                                                 &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , iph    ,                            &
-   ia     ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
-   ra(idudxy) ,                                                   &
-   ra     )
-
-  enddo
-
-
-  do iphas = 1, nphas
-
-    if(itytur.eq.3) then
-
-      iph = iphas
-      call perinr                                                 &
-      !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , iph    ,                            &
    ia     ,                                                       &
@@ -191,9 +182,7 @@ if(iperot.gt.0) then
    ra(idrdxy) ,                                                   &
    ra     )
 
-    endif
-
-  enddo
+  endif
 
 endif
 
@@ -203,10 +192,7 @@ endif
 !===============================================================================
 
 nphmx = nphsmx
-do iphas = 1, nphsmx
-  ibrom = 0
-enddo
-
+ibrom = 0
 
 if (ippmod(iphpar).ge.1) then
   call ppphyv                                                     &
@@ -254,16 +240,14 @@ call usphyv &
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 
-do iphas = 1, nphas
-  if (ibrom.eq.0) then
-    ipcrom = ipproc(irom)
-    ipbrom = ipprob(irom)
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-      propfb(ifac,ipbrom) = propce(iel ,ipcrom)
-    enddo
-  endif
-enddo
+if (ibrom.eq.0) then
+  ipcrom = ipproc(irom)
+  ipbrom = ipprob(irom)
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    propfb(ifac,ipbrom) = propce(iel ,ipcrom)
+  enddo
+endif
 
 !  Au premier pas de temps du calcul
 !     Si on a indique que rho (visc) etait constant
@@ -275,38 +259,34 @@ if(ntcabs.eq.ntpabs+1) then
 
 !     Masse volumique aux cellules et aux faces de bord
   iok1 = 0
-  do iphas = 1, nphas
-    if(irovar.eq.0) then
-      ipcrom = ipproc(irom)
-      ipbrom = ipprob(irom)
-      do iel = 1, ncel
-        if( abs(propce(iel ,ipcrom)-ro0   ).gt.epzero) then
-          iok1 = 1
-        endif
-      enddo
-      do ifac = 1, nfabor
-        if( abs(propfb(ifac,ipbrom)-ro0   ).gt.epzero) then
-          iok1 = 1
-        endif
-      enddo
-    endif
-  enddo
+  if(irovar.eq.0) then
+    ipcrom = ipproc(irom)
+    ipbrom = ipprob(irom)
+    do iel = 1, ncel
+      if( abs(propce(iel ,ipcrom)-ro0   ).gt.epzero) then
+        iok1 = 1
+      endif
+    enddo
+    do ifac = 1, nfabor
+      if( abs(propfb(ifac,ipbrom)-ro0   ).gt.epzero) then
+        iok1 = 1
+      endif
+    enddo
+  endif
   if(iok1.ne.0) then
     write(nfecra,9001)
   endif
 
 !     Viscosite moleculaire aux cellules
   iok2 = 0
-  do iphas = 1, nphas
-    if(ivivar.eq.0) then
-      ipcvis = ipproc(iviscl)
-      do iel = 1, ncel
-        if( abs(propce(iel ,ipcvis)-viscl0).gt.epzero) then
-          iok2 = 1
-        endif
-      enddo
-    endif
-  enddo
+  if(ivivar.eq.0) then
+    ipcvis = ipproc(iviscl)
+    do iel = 1, ncel
+      if( abs(propce(iel ,ipcvis)-viscl0).gt.epzero) then
+        iok2 = 1
+      endif
+    enddo
+  endif
   if(iok2.ne.0) then
     if ( ippmod(icompf) .ge. 0 ) then
       write(nfecra,9003)
@@ -325,28 +305,24 @@ endif
 ! 3.  CALCUL DE LA VISCOSITE TURBULENTE
 !===============================================================================
 
-! --- Boucle sur les phases : Debut
-do iphas = 1, nphas
-
-  if     (iturb.eq. 0) then
+if     (iturb.eq. 0) then
 
 ! 3.1 LAMINAIRE
 ! ==============
 
-    ipcvst = ipproc(ivisct)
+  ipcvst = ipproc(ivisct)
 
-    do iel = 1, ncel
-      propce(iel,ipcvst) = 0.d0
-    enddo
+  do iel = 1, ncel
+    propce(iel,ipcvst) = 0.d0
+  enddo
 
-  elseif (iturb.eq.10) then
+elseif (iturb.eq.10) then
 
 ! 3.2 LONGUEUR DE MELANGE
 ! ========================
 
-    iph = iphas
-    call vislmg                                                   &
-    !==========
+  call vislmg                                                   &
+  !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
@@ -359,49 +335,48 @@ do iphas = 1, nphas
    w5     , w6     , w7     , w8     ,                            &
    ra     )
 
-  elseif (itytur.eq.2) then
+elseif (itytur.eq.2) then
 
 ! 3.3 K-EPSILON
 ! ==============
 
-    ikiph  = ik
-    ieiph  = iep
-    ipcvst = ipproc(ivisct)
-    ipcrom = ipproc(irom  )
+  ikiph  = ik
+  ieiph  = iep
+  ipcvst = ipproc(ivisct)
+  ipcrom = ipproc(irom  )
 
-    do iel = 1, ncel
-      xk = rtp(iel,ikiph)
-      xe = rtp(iel,ieiph)
-      propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
-    enddo
+  do iel = 1, ncel
+    xk = rtp(iel,ikiph)
+    xe = rtp(iel,ieiph)
+    propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
+  enddo
 
-  elseif (itytur.eq.3) then
+elseif (itytur.eq.3) then
 
 ! 3.4 Rij-EPSILON
 ! ================
 
-    ir11ip = ir11
-    ir22ip = ir22
-    ir33ip = ir33
-    ieiph  = iep
-    ipcvst = ipproc(ivisct)
-    ipcrom = ipproc(irom  )
+  ir11ip = ir11
+  ir22ip = ir22
+  ir33ip = ir33
+  ieiph  = iep
+  ipcvst = ipproc(ivisct)
+  ipcrom = ipproc(irom  )
 
-    do iel = 1, ncel
-      xk = 0.5d0*(rtp(iel,ir11ip)+rtp(iel,ir22ip)+rtp(iel,ir33ip))
-      xe = rtp(iel,ieiph)
-      propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
-    enddo
+  do iel = 1, ncel
+    xk = 0.5d0*(rtp(iel,ir11ip)+rtp(iel,ir22ip)+rtp(iel,ir33ip))
+    xe = rtp(iel,ieiph)
+    propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
+  enddo
 
-  elseif (iturb.eq.40) then
+elseif (iturb.eq.40) then
 
 ! 3.5 LES Smagorinsky
 ! ===================
 
-    iph = iphas
 
-    call vissma                                                   &
-    !==========
+  call vissma                                                   &
+  !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
@@ -415,15 +390,14 @@ do iphas = 1, nphas
    w5     , w6     , w7     , w8     ,                            &
    ra     )
 
-  elseif(iturb.eq.41) then
+elseif(iturb.eq.41) then
 
 ! 3.6 LES dynamique
 ! =================
 
-    iph = iphas
 
-    call visdyn                                                   &
-    !==========
+  call visdyn                                                   &
+  !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
@@ -438,15 +412,14 @@ do iphas = 1, nphas
    w5     , w6     , w7     , w8     , w9     , w10    , xmij   , &
    ra     )
 
-  elseif (iturb.eq.42) then
+elseif (iturb.eq.42) then
 
 ! 3.7 LES WALE
 ! ============
 
-    iph = iphas
 
-    call viswal                                                   &
-    !==========
+  call viswal                                                   &
+  !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
@@ -461,37 +434,36 @@ do iphas = 1, nphas
    w9     , w10    , w11    , w12    ,                            &
    ra     )
 
-  elseif (iturb.eq.50) then
+elseif (iturb.eq.50) then
 
 ! 3.8 v2f phi-model
 ! =================
-    ikiph  = ik
-    ieiph  = iep
-    iphiph = iphi
-    ipcvis = ipproc(iviscl)
-    ipcvst = ipproc(ivisct)
-    ipcrom = ipproc(irom  )
+  ikiph  = ik
+  ieiph  = iep
+  iphiph = iphi
+  ipcvis = ipproc(iviscl)
+  ipcvst = ipproc(ivisct)
+  ipcrom = ipproc(irom  )
 
-    do iel = 1, ncel
-      xk = rtp(iel,ikiph)
-      xe = rtp(iel,ieiph)
-      xrom = propce(iel,ipcrom)
-      xnu = propce(iel,ipcvis)/xrom
-      ttke = xk / xe
-      ttmin = cv2fct*sqrt(xnu/xe)
-      tt = max(ttke,ttmin)
-      propce(iel,ipcvst) = cv2fmu*xrom*tt*rtp(iel,iphiph)         &
-           *rtp(iel,ikiph)
-    enddo
+  do iel = 1, ncel
+    xk = rtp(iel,ikiph)
+    xe = rtp(iel,ieiph)
+    xrom = propce(iel,ipcrom)
+    xnu = propce(iel,ipcvis)/xrom
+    ttke = xk / xe
+    ttmin = cv2fct*sqrt(xnu/xe)
+    tt = max(ttke,ttmin)
+    propce(iel,ipcvst) = cv2fmu*xrom*tt*rtp(iel,iphiph)         &
+         *rtp(iel,ikiph)
+  enddo
 
-  elseif (iturb.eq.60) then
+elseif (iturb.eq.60) then
 
 ! 3.9 K-OMEGA SST
 ! ===============
 
-    iph = iphas
-    call vissst                                                   &
-    !==========
+  call vissst                                                   &
+  !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
@@ -505,85 +477,74 @@ do iphas = 1, nphas
    w5     , w6     , w7     , w8     ,                            &
    ra     )
 
-  elseif (iturb.eq.70) then
+elseif (iturb.eq.70) then
 
 ! 3.10 SPALART -ALLMARAS
 ! ======================
 
-    cv13 = csav1**3
+  cv13 = csav1**3
 
-    inuiph = inusa
-    ipcvst = ipproc(ivisct)
-    ipcrom = ipproc(irom  )
-    ipcvis = ipproc(iviscl)
+  inuiph = inusa
+  ipcvst = ipproc(ivisct)
+  ipcrom = ipproc(irom  )
+  ipcvis = ipproc(iviscl)
 
-    do iel = 1, ncel
-      xrom = propce(iel,ipcrom)
-      nusa = rtp(iel,inuiph)
-      xi3  = (xrom*nusa/propce(iel,ipcvis))**3
-      fv1  = xi3/(xi3+cv13)
-      propce(iel,ipcvst) = xrom*nusa*fv1
-    enddo
+  do iel = 1, ncel
+    xrom = propce(iel,ipcrom)
+    nusa = rtp(iel,inuiph)
+    xi3  = (xrom*nusa/propce(iel,ipcvis))**3
+    fv1  = xi3/(xi3+cv13)
+    propce(iel,ipcvst) = xrom*nusa*fv1
+  enddo
 
-  endif
-
-enddo
-! --- Boucle sur les phases : fin
+endif
 
 !===============================================================================
 ! 4.  MODIFICATION UTILISATEUR DE LA VISCOSITE TURBULENTE
 !===============================================================================
 
-do iphas = 1, nphas
-
-  iph = iphas
-  call usvist                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   ncepdc   , ncetsm   ,                            &
-   iph    ,                                                       &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
-   ia     ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd), ra(ismace),        &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
-   ra     )
-
-enddo
+call usvist                                                     &
+!==========
+( idebia , idebra ,                                              &
+  nvar   , nscal  , nphas  ,                                     &
+  ncepdc   , ncetsm   ,                            &
+  iph    ,                                                       &
+  ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+  ia     ,                                                       &
+  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  coefa  , coefb  , ra(ickupd), ra(ismace),        &
+  w1     , w2     , w3     , w4     ,                            &
+  w5     , w6     , w7     , w8     ,                            &
+  ra     )
 
 !===============================================================================
 ! 5.  CLIPPING DE LA VISCOSITE TURBULENTE EN LES DYNAMIQUE
 !===============================================================================
 
-do iphas = 1, nphas
 ! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
 ! a ce que mu+mu_t soit positif, .e. on autorise mu_t legerement negatif
 ! La diffusivite turbulente des scalaires (mu_t/sigma), elle, sera clippee a 0
 ! dans covofi
 
-  if (iturb.eq.41) then
-    ipcvis = ipproc(iviscl)
-    ipcvst = ipproc(ivisct)
-    iclipc = 0
-    do iel = 1, ncel
-      vistot = propce(iel,ipcvis) + propce(iel,ipcvst)
-      if(vistot.lt.0.d0) then
-        propce(iel,ipcvst) = 0.d0
-        iclipc = iclipc + 1
-      endif
-    enddo
-    if(iwarni(iu).ge.1) then
-      if(irangp.ge.0) then
-        call parcpt(iclipc)
-        !==========
-      endif
-      write(nfecra,1000) iclipc
+if (iturb.eq.41) then
+  ipcvis = ipproc(iviscl)
+  ipcvst = ipproc(ivisct)
+  iclipc = 0
+  do iel = 1, ncel
+    vistot = propce(iel,ipcvis) + propce(iel,ipcvst)
+    if(vistot.lt.0.d0) then
+      propce(iel,ipcvst) = 0.d0
+      iclipc = iclipc + 1
     endif
+  enddo
+  if(iwarni(iu).ge.1) then
+    if(irangp.ge.0) then
+      call parcpt(iclipc)
+      !==========
+    endif
+    write(nfecra,1000) iclipc
   endif
-
-enddo
+endif
 
 !===============================================================================
 ! 6.  MODIFICATION UTILISATEUR DE LA VISCOSITE DE MAILLAGE EN ALE
@@ -630,128 +591,122 @@ endif
 ! Indicateur d'erreur
 iok = 0
 
-do iphas = 1, nphas
-
 ! Rang des variables dans PROPCE
-  ipcrom = ipproc(irom)
-  ipcvis = ipproc(iviscl)
-  ipcvst = ipproc(ivisct)
-  if(icp.gt.0) then
-    ipccp  = ipproc(icp   )
-    nn     = 4
-  else
-    ipccp = 0
-    nn    = 3
-  endif
+ipcrom = ipproc(irom)
+ipcvis = ipproc(iviscl)
+ipcvst = ipproc(ivisct)
+if(icp.gt.0) then
+  ipccp  = ipproc(icp   )
+  nn     = 4
+else
+  ipccp = 0
+  nn    = 3
+endif
 
 ! Rang des variables dans PROPFB
-  ipbrom = ipprob(irom)
+ipbrom = ipprob(irom)
 
 ! Min et max sur les cellules
-  do ii = 1, nn
-    ivar = 0
-    if(ii.eq.1) ivar = ipcrom
-    if(ii.eq.2) ivar = ipcvis
-    if(ii.eq.3) ivar = ipcvst
-    if(ii.eq.4) ivar = ipccp
-    if(ivar.gt.0) then
-      varmx(ii) = propce(1,ivar)
-      varmn(ii) = propce(1,ivar)
-      do iel = 2, ncel
-        varmx(ii) = max(varmx(ii),propce(iel,ivar))
-        varmn(ii) = min(varmn(ii),propce(iel,ivar))
-      enddo
-      if (irangp.ge.0) then
-        call parmax (varmx(ii))
-        !==========
-        call parmin (varmn(ii))
-        !==========
-      endif
+do ii = 1, nn
+  ivar = 0
+  if(ii.eq.1) ivar = ipcrom
+  if(ii.eq.2) ivar = ipcvis
+  if(ii.eq.3) ivar = ipcvst
+  if(ii.eq.4) ivar = ipccp
+  if(ivar.gt.0) then
+    varmx(ii) = propce(1,ivar)
+    varmn(ii) = propce(1,ivar)
+    do iel = 2, ncel
+      varmx(ii) = max(varmx(ii),propce(iel,ivar))
+      varmn(ii) = min(varmn(ii),propce(iel,ivar))
+    enddo
+    if (irangp.ge.0) then
+      call parmax (varmx(ii))
+      !==========
+      call parmin (varmn(ii))
+      !==========
     endif
-  enddo
+  endif
+enddo
 
 ! Min et max sur les faces de bord (masse volumique uniquement)
-  ii   = 1
-  ivar = ipbrom
-  do ifac = 1, nfabor
-    varmx(ii) = max(varmx(ii),propfb(ifac,ivar))
-    varmn(ii) = min(varmn(ii),propfb(ifac,ivar))
-  enddo
-  if (irangp.ge.0) then
-    call parmax (varmx(ii))
-    !==========
-    call parmin (varmn(ii))
-    !==========
-  endif
+ii   = 1
+ivar = ipbrom
+do ifac = 1, nfabor
+  varmx(ii) = max(varmx(ii),propfb(ifac,ivar))
+  varmn(ii) = min(varmn(ii),propfb(ifac,ivar))
+enddo
+if (irangp.ge.0) then
+  call parmax (varmx(ii))
+  !==========
+  call parmin (varmn(ii))
+  !==========
+endif
 
 ! Impressions
-  iok1 = 0
-  do ii = 1, nn
-    if(ii.eq.1) chaine = nomvar(ipppro(ipproc(irom  )))
-    if(ii.eq.2) chaine = nomvar(ipppro(ipproc(iviscl)))
-    if(ii.eq.3) chaine = nomvar(ipppro(ipproc(ivisct)))
-    if(ii.eq.4) chaine = nomvar(ipppro(ipproc(icp   )))
-    if(iwarni(iu).ge.1.or.ipass.eq.1.or.                   &
-                                          varmn(ii).lt.0.d0)then
-      if(iok1.eq.0) then
-        write(nfecra,3010)
-        iok1 = 1
-      endif
-      if ((ii.ne.3).or.(iturb.ne.0))                       &
-           write(nfecra,3011)chaine(1:8),varmn(ii),varmx(ii)
+iok1 = 0
+do ii = 1, nn
+  if(ii.eq.1) chaine = nomvar(ipppro(ipproc(irom  )))
+  if(ii.eq.2) chaine = nomvar(ipppro(ipproc(iviscl)))
+  if(ii.eq.3) chaine = nomvar(ipppro(ipproc(ivisct)))
+  if(ii.eq.4) chaine = nomvar(ipppro(ipproc(icp   )))
+  if(iwarni(iu).ge.1.or.ipass.eq.1.or.                   &
+       varmn(ii).lt.0.d0)then
+    if(iok1.eq.0) then
+      write(nfecra,3010)
+      iok1 = 1
     endif
-  enddo
-  if(iok1.eq.1) write(nfecra,3012)
+    if ((ii.ne.3).or.(iturb.ne.0))                       &
+         write(nfecra,3011)chaine(1:8),varmn(ii),varmx(ii)
+  endif
+enddo
+if(iok1.eq.1) write(nfecra,3012)
 
 ! Verifications de valeur physique
 
 ! Masse volumique definie
-  ii = 1
-  chaine = nomvar(ipppro(ipproc(irom  )))
-  if (varmn(ii).lt.0.d0) then
-    write(nfecra,9011)chaine(1:8),varmn(ii)
-    iok = iok + 1
-  endif
+ii = 1
+chaine = nomvar(ipppro(ipproc(irom  )))
+if (varmn(ii).lt.0.d0) then
+  write(nfecra,9011)chaine(1:8),varmn(ii)
+  iok = iok + 1
+endif
 
 ! Viscosite moleculaire definie
-  ii = 2
-  chaine = nomvar(ipppro(ipproc(iviscl)))
-  if (varmn(ii).lt.0.d0) then
-    write(nfecra,9011)chaine(1:8),varmn(ii)
-    iok = iok + 1
-  endif
+ii = 2
+chaine = nomvar(ipppro(ipproc(iviscl)))
+if (varmn(ii).lt.0.d0) then
+  write(nfecra,9011)chaine(1:8),varmn(ii)
+  iok = iok + 1
+endif
 
 ! Viscosite turbulente definie
 ! on ne clippe pas mu_t en modele LES dynamique, car on a fait
 ! un clipping sur la viscosite totale
-  ii = 3
-  chaine = nomvar(ipppro(ipproc(ivisct)))
-  if (varmn(ii).lt.0.d0.and.iturb.ne.41) then
-    write(nfecra,9012)varmn(ii)
-    iok = iok + 1
-  endif
+ii = 3
+chaine = nomvar(ipppro(ipproc(ivisct)))
+if (varmn(ii).lt.0.d0.and.iturb.ne.41) then
+  write(nfecra,9012)varmn(ii)
+  iok = iok + 1
+endif
 
 ! Chaleur specifique definie
-  if(icp.gt.0) then
-    ii = 4
-    chaine = nomvar(ipppro(ipproc(icp   )))
-    if (varmn(ii).lt.0.d0) then
-      iisct = 0
-      do iscal = 1, nscal
-        if (iscsth(iscal).ne.0) then
-          iisct = 1
-        endif
-      enddo
-      if (iisct.eq.1) then
-        write(nfecra,9011)chaine(1:8),varmn(ii)
-        iok = iok + 1
+if(icp.gt.0) then
+  ii = 4
+  chaine = nomvar(ipppro(ipproc(icp   )))
+  if (varmn(ii).lt.0.d0) then
+    iisct = 0
+    do iscal = 1, nscal
+      if (iscsth(iscal).ne.0) then
+        iisct = 1
       endif
+    enddo
+    if (iisct.eq.1) then
+      write(nfecra,9011)chaine(1:8),varmn(ii)
+      iok = iok + 1
     endif
   endif
-
-enddo
-
-
+endif
 
 ! ---> Calcul des bornes des scalaires et impressions
 
@@ -881,16 +836,12 @@ endif
 ! Pour navsto et vissec on a besoin de ROM dans le halo
 
 
-do iphas = 1, nphas
+ipcrom = ipproc(irom)
 
-  ipcrom = ipproc(irom)
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(propce(1,ipcrom))
-    !==========
-  endif
-
-enddo
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(propce(1,ipcrom))
+  !==========
+endif
 
 !----
 ! FORMATS

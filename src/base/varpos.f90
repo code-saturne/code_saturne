@@ -179,9 +179,7 @@ endif
 if(ipass.eq.2) then
 
 ! ---> Remplissage de ITYTUR
-  do iphas = 1, nphas
-    itytur = iturb/10
-  enddo
+  itytur = iturb/10
 
 ! ---> Coherence modele
 !     Rq : ATTENTION il faudrait renforcer le blindage
@@ -439,70 +437,64 @@ if(ipass.eq.3) then
 
   ivar = 0
 
-  do iphas = 1, nphas
+  ! --- Pression : supposons ici qu'il n'y a qu'une pression
+  !       quelque soit le nombre de phases.
+  !     Le reste du code devrait se preter a l'extension, du fait
+  !       qu'il n'y a qu'ici qu'on fait cette hypothese (evidemment, il
+  !       faudrait ecrire un schema a deux pressions et remplacer navsto,
+  !       mais c'est un "detail"...relativement a ce qui nous occupe dans
+  !       le present sous-programme)
 
-! --- Pression : supposons ici qu'il n'y a qu'une pression
-!       quelque soit le nombre de phases.
-!     Le reste du code devrait se preter a l'extension, du fait
-!       qu'il n'y a qu'ici qu'on fait cette hypothese (evidemment, il
-!       faudrait ecrire un schema a deux pressions et remplacer navsto,
-!       mais c'est un "detail"...relativement a ce qui nous occupe dans
-!       le present sous-programme)
+  ivar          = ivar + 1
+  ipr    = ivar
 
-    if(iphas.eq.1) then
-      ivar          = ivar + 1
-      ipr    = ivar
-    endif
+  ! --- Vitesse
+  ivar          = ivar + 1
+  iu     = ivar
+  ivar          = ivar + 1
+  iv     = ivar
+  ivar          = ivar + 1
+  iw     = ivar
 
-! --- Vitesse
+  ! --- Turbulence
+  if (itytur.eq.2) then
     ivar          = ivar + 1
-    iu     = ivar
+    ik     = ivar
     ivar          = ivar + 1
-    iv     = ivar
+    iep    = ivar
+  elseif(itytur.eq.3) then
     ivar          = ivar + 1
-    iw     = ivar
-
-! --- Turbulence
-    if (itytur.eq.2) then
-      ivar          = ivar + 1
-      ik     = ivar
-      ivar          = ivar + 1
-      iep    = ivar
-    elseif(itytur.eq.3) then
-      ivar          = ivar + 1
-      ir11   = ivar
-      ivar          = ivar + 1
-      ir22   = ivar
-      ivar          = ivar + 1
-      ir33   = ivar
-      ivar          = ivar + 1
-      ir12   = ivar
-      ivar          = ivar + 1
-      ir13   = ivar
-      ivar          = ivar + 1
-      ir23   = ivar
-      ivar          = ivar + 1
-      iep    = ivar
-    elseif(iturb.eq.50) then
-      ivar          = ivar + 1
-      ik     = ivar
-      ivar          = ivar + 1
-      iep    = ivar
-      ivar          = ivar + 1
-      iphi   = ivar
-      ivar          = ivar + 1
-      ifb    = ivar
-    elseif(iturb.eq.60) then
-      ivar          = ivar + 1
-      ik     = ivar
-      ivar          = ivar + 1
-      iomg   = ivar
-    elseif (iturb.eq.70) then
-      ivar          = ivar + 1
-      inusa  = ivar
-    endif
-
-  enddo
+    ir11   = ivar
+    ivar          = ivar + 1
+    ir22   = ivar
+    ivar          = ivar + 1
+    ir33   = ivar
+    ivar          = ivar + 1
+    ir12   = ivar
+    ivar          = ivar + 1
+    ir13   = ivar
+    ivar          = ivar + 1
+    ir23   = ivar
+    ivar          = ivar + 1
+    iep    = ivar
+  elseif(iturb.eq.50) then
+    ivar          = ivar + 1
+    ik     = ivar
+    ivar          = ivar + 1
+    iep    = ivar
+    ivar          = ivar + 1
+    iphi   = ivar
+    ivar          = ivar + 1
+    ifb    = ivar
+  elseif(iturb.eq.60) then
+    ivar          = ivar + 1
+    ik     = ivar
+    ivar          = ivar + 1
+    iomg   = ivar
+  elseif (iturb.eq.70) then
+    ivar          = ivar + 1
+    inusa  = ivar
+  endif
 
 ! --- Scalaires
   if(nscapp.ge.1) then
@@ -543,17 +535,15 @@ if(ipass.eq.3) then
 
 ! --- Maintenant on peut faire ceci :
 
-  do iphas = 1, nphas
-    istat (ipr) = 0
-    iconv (ipr) = 0
-    if (iturb.eq.50) then
-      istat(ifb)  = 0
-      iconv(ifb)  = 0
-!     Pour fb, on sait qu'on a un terme diagonal, meme si ISTAT=0,
-!       donc on ne decalera pas la diagonale
-      idircl(ifb) = 0
-    endif
-  enddo
+  istat (ipr) = 0
+  iconv (ipr) = 0
+  if (iturb.eq.50) then
+    istat(ifb)  = 0
+    iconv(ifb)  = 0
+    !     Pour fb, on sait qu'on a un terme diagonal, meme si ISTAT=0,
+    !       donc on ne decalera pas la diagonale
+    idircl(ifb) = 0
+  endif
   if (iale.eq.1) then
     istat(iuma) = 0
     iconv(iuma) = 0
@@ -602,47 +592,37 @@ if(ipass.eq.3) then
   iprop = 0
 
 !   Proprietes des phases : proprietes toujours presentes
-  do iphas = 1, nphas
-    iprop         = iprop + 1
-    irom   = iprop
-    iprop         = iprop + 1
-    iviscl = iprop
-    iprop         = iprop + 1
-    ivisct = iprop
-    iprop         = iprop + 1
-    icour  = iprop
-    iprop         = iprop + 1
-    ifour  = iprop
-  enddo
+  iprop         = iprop + 1
+  irom   = iprop
+  iprop         = iprop + 1
+  iviscl = iprop
+  iprop         = iprop + 1
+  ivisct = iprop
+  iprop         = iprop + 1
+  icour  = iprop
+  iprop         = iprop + 1
+  ifour  = iprop
 
 !  Pression totale stockee dans IPRTOT, si on n'est pas en compressible
 !  (sinon Ptot=P* !)
   if (ippmod(icompf).lt.0) then
-    do iphas = 1, nphas
-      if (iphas.eq.1) then
-        iprop         = iprop + 1
-        iprtot        = iprop
-      endif
-    enddo
+    iprop         = iprop + 1
+    iprtot        = iprop
   endif
 
 !  Proprietes des phases : CP s'il est variable
-  do iphas = 1, nphas
-    if(icp.ne.0) then
-      iprop         = iprop + 1
-      icp    = iprop
-    endif
-  enddo
+  if(icp.ne.0) then
+    iprop         = iprop + 1
+    icp    = iprop
+  endif
 
 !  Proprietes des phases : Cs^2 si on est en LES dynamique
-  do iphas = 1, nphas
-    if(iturb.eq.41) then
-      iprop         = iprop + 1
-      ismago = iprop
-    else
-      ismago = -1
-    endif
-  enddo
+  if(iturb.eq.41) then
+    iprop         = iprop + 1
+    ismago = iprop
+  else
+    ismago = -1
+  endif
 
 !  Viscosite de maillage en ALE
   if (iale.eq.1) then
@@ -662,13 +642,10 @@ if(ipass.eq.3) then
   endif
 
 !   Proprietes des phases : estimateurs d'erreur
-  do iphas = 1, nphas
-    do iest = 1, nestmx
-      iprop              = iprop + 1
-      iestim(iest) = iprop
-    enddo
+  do iest = 1, nestmx
+    iprop              = iprop + 1
+    iestim(iest) = iprop
   enddo
-
 
 !   Proprietes des scalaires : VISCLS si elle est variable
 !     On utilisera IVISLS comme suit :
@@ -690,38 +667,33 @@ if(ipass.eq.3) then
 !   Proprietes des variables : flux de masse porteur
 
   iprofl = iprop
-  do iphas = 1, nphas
-    iprop               = iprop + 1
-    if(iphas.eq.1) then
-      ifluma(ipr ) = iprop
-    endif
-    ifluma(iu  ) = iprop
-    ifluma(iv  ) = iprop
-    ifluma(iw  ) = iprop
-    if(itytur.eq.2) then
-      ifluma(ik  ) = iprop
-      ifluma(iep ) = iprop
-    elseif(itytur.eq.3) then
-      ifluma(ir11) = iprop
-      ifluma(ir22) = iprop
-      ifluma(ir33) = iprop
-      ifluma(ir12) = iprop
-      ifluma(ir13) = iprop
-      ifluma(ir23) = iprop
-      ifluma(iep ) = iprop
-    elseif(iturb.eq.50) then
-      ifluma(ik  ) = iprop
-      ifluma(iep ) = iprop
-      ifluma(iphi) = iprop
-      ifluma(ifb ) = iprop
-    elseif(iturb.eq.60) then
-      ifluma(ik  ) = iprop
-      ifluma(iomg) = iprop
-    elseif(iturb.eq.70) then
-      ifluma(inusa)= iprop
-    endif
-  enddo
-  iphas = 1
+  iprop               = iprop + 1
+  ifluma(ipr ) = iprop
+  ifluma(iu  ) = iprop
+  ifluma(iv  ) = iprop
+  ifluma(iw  ) = iprop
+  if(itytur.eq.2) then
+    ifluma(ik  ) = iprop
+    ifluma(iep ) = iprop
+  elseif(itytur.eq.3) then
+    ifluma(ir11) = iprop
+    ifluma(ir22) = iprop
+    ifluma(ir33) = iprop
+    ifluma(ir12) = iprop
+    ifluma(ir13) = iprop
+    ifluma(ir23) = iprop
+    ifluma(iep ) = iprop
+  elseif(iturb.eq.50) then
+    ifluma(ik  ) = iprop
+    ifluma(iep ) = iprop
+    ifluma(iphi) = iprop
+    ifluma(ifb ) = iprop
+  elseif(iturb.eq.60) then
+    ifluma(ik  ) = iprop
+    ifluma(iomg) = iprop
+  elseif(iturb.eq.70) then
+    ifluma(inusa)= iprop
+  endif
   do iscal = 1, nscal
     ifluma(isca(iscal)) = ifluma(iu)
   enddo
@@ -775,80 +747,77 @@ if(ipass.eq.3) then
 !       imaginaire
 
   iprop = 0
-  do iphas = 1, nphas
 
-    iprop                 = iprop  + 1
-    ipproc(irom  ) = iprop
+  iprop                 = iprop  + 1
+  ipproc(irom  ) = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+  iprop                 = iprop  + 1
+  ipproc(iviscl) = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+  iprop                 = iprop  + 1
+  ipproc(ivisct) = iprop
+  if (iturb.eq.0) then
+    ipppro(iprop)         = 1
+  else
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
+  endif
+  iprop                 = iprop  + 1
+  ipproc(icour ) = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+  iprop                 = iprop  + 1
+  ipproc(ifour ) = iprop
+  ipppst                = ipppst + 1
+  ipppro(iprop)         = ipppst
+
+  if (ippmod(icompf).lt.0) then
     iprop                 = iprop  + 1
-    ipproc(iviscl) = iprop
+    ipproc(iprtot) = iprop
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
-    iprop                 = iprop  + 1
-    ipproc(ivisct) = iprop
-    if (iturb.eq.0) then
-      ipppro(iprop)         = 1
-    else
-      ipppst                = ipppst + 1
-      ipppro(iprop)         = ipppst
-    endif
-    iprop                 = iprop  + 1
-    ipproc(icour ) = iprop
+  endif
+
+  if(icp.gt.0) then
+    iprop                 = iprop + 1
+    ipproc(icp   ) = iprop
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
+  endif
+
+  if(ismago.ne.-1) then
     iprop                 = iprop  + 1
-    ipproc(ifour ) = iprop
+    ipproc(ismago) = iprop
     ipppst                = ipppst + 1
     ipppro(iprop)         = ipppst
+  endif
 
-    if (ippmod(icompf).lt.0) then
-      iprop                 = iprop  + 1
-      ipproc(iprtot) = iprop
-      ipppst                = ipppst + 1
-      ipppro(iprop)         = ipppst
-    endif
-
-    if(icp.gt.0) then
-      iprop                 = iprop + 1
-      ipproc(icp   ) = iprop
-      ipppst                = ipppst + 1
-      ipppro(iprop)         = ipppst
-    endif
-
-    if(ismago.ne.-1) then
-      iprop                 = iprop  + 1
-      ipproc(ismago) = iprop
-      ipppst                = ipppst + 1
-      ipppro(iprop)         = ipppst
-    endif
-
-    if (iale.eq.1) then
+  if (iale.eq.1) then
+    iprop             = iprop + 1
+    ipproc(ivisma(1)) = iprop
+    ipppst            = ipppst + 1
+    ipppro(iprop)     = ipppst
+    if (iortvm.eq.1) then
       iprop             = iprop + 1
-      ipproc(ivisma(1)) = iprop
+      ipproc(ivisma(2)) = iprop
       ipppst            = ipppst + 1
       ipppro(iprop)     = ipppst
-      if (iortvm.eq.1) then
-        iprop             = iprop + 1
-        ipproc(ivisma(2)) = iprop
-        ipppst            = ipppst + 1
-        ipppro(iprop)     = ipppst
-        iprop             = iprop + 1
-        ipproc(ivisma(3)) = iprop
-        ipppst            = ipppst + 1
-        ipppro(iprop)     = ipppst
-      endif
+      iprop             = iprop + 1
+      ipproc(ivisma(3)) = iprop
+      ipppst            = ipppst + 1
+      ipppro(iprop)     = ipppst
     endif
+  endif
 
-    do iest = 1, nestmx
-      if(iescal(iest).gt.0) then
-        iprop                      = iprop + 1
-        ipproc(iestim(iest)) = iprop
-        ipppst                     = ipppst + 1
-        ipppro(iprop)              = ipppst
-      endif
-    enddo
-
+  do iest = 1, nestmx
+    if(iescal(iest).gt.0) then
+      iprop                      = iprop + 1
+      ipproc(iestim(iest)) = iprop
+      ipppst                     = ipppst + 1
+      ipppro(iprop)              = ipppst
+    endif
   enddo
 
 !     Conductivite electrique imaginaire :
@@ -906,10 +875,8 @@ if(ipass.eq.3) then
 !   Au centre des faces de bord (rho et flux de masse)
 
   iprop = 0
-  do iphas = 1, nphas
-    iprop                 = iprop + 1
-    ipprob(irom  ) = iprop
-  enddo
+  iprop                 = iprop + 1
+  ipprob(irom  ) = iprop
   do iflum = 1, nfluma
     iprop                 = iprop + 1
     ipprob(iprofl+iflum)  = iprop
@@ -1001,88 +968,83 @@ if(ipass.eq.4) then
 !     Schemas en temps
 !         en LES : Ordre 2 ; sinon Ordre 1
 !         (en particulier, ordre 2 impossible en k-eps couple)
-  do iphas = 1, nphas
-    if(ischtp.eq.-999) then
-      if(itytur.eq.4) then
-        ischtp = 2
-      else
-        ischtp = 1
-      endif
+  if(ischtp.eq.-999) then
+    if(itytur.eq.4) then
+      ischtp = 2
+    else
+      ischtp = 1
     endif
-  enddo
+  endif
 
 !     Schemas en temps : variables deduites
-  do iphas = 1, nphas
 !     Schema pour le Flux de masse
-    if(istmpf.eq.-999) then
-      if(ischtp.eq.1) then
-        istmpf = 1
-      elseif(ischtp.eq.2) then
-        istmpf = 2
-      endif
+  if(istmpf.eq.-999) then
+    if(ischtp.eq.1) then
+      istmpf = 1
+    elseif(ischtp.eq.2) then
+      istmpf = 2
     endif
-!     Masse volumique
-    if(iroext.eq.-999) then
-      if(ischtp.eq.1) then
-        iroext = 0
-      elseif(ischtp.eq.2) then
-!       Pour le moment par defaut on ne prend pas l'ordre 2
-!              IROEXT = 1
-        iroext = 0
-      endif
+  endif
+  !     Masse volumique
+  if(iroext.eq.-999) then
+    if(ischtp.eq.1) then
+      iroext = 0
+    elseif(ischtp.eq.2) then
+      !       Pour le moment par defaut on ne prend pas l'ordre 2
+      !              IROEXT = 1
+      iroext = 0
     endif
-!     Viscosite
-    if(iviext.eq.-999) then
-      if(ischtp.eq.1) then
-        iviext = 0
-      elseif(ischtp.eq.2) then
-!       Pour le moment par defaut on ne prend pas l'ordre 2
-!              IVIEXT = 1
-        iviext = 0
-      endif
+  endif
+  !     Viscosite
+  if(iviext.eq.-999) then
+    if(ischtp.eq.1) then
+      iviext = 0
+    elseif(ischtp.eq.2) then
+      !       Pour le moment par defaut on ne prend pas l'ordre 2
+      !              IVIEXT = 1
+      iviext = 0
     endif
-!     Chaleur massique
-    if(icpext.eq.-999) then
-      if(ischtp.eq.1) then
-        icpext = 0
-      elseif(ischtp.eq.2) then
-!       Pour le moment par defaut on ne prend pas l'ordre 2
-!              ICPEXT = 1
-        icpext = 0
-      endif
+  endif
+  !     Chaleur massique
+  if(icpext.eq.-999) then
+    if(ischtp.eq.1) then
+      icpext = 0
+    elseif(ischtp.eq.2) then
+      !       Pour le moment par defaut on ne prend pas l'ordre 2
+      !              ICPEXT = 1
+      icpext = 0
     endif
-!     Termes sources NS,
-    if(isno2t.eq.-999) then
-      if(ischtp.eq.1) then
-        isno2t = 0
-!            ELSEIF(ISCHTP.EQ.2.AND.IVISSE.EQ.1) THEN
-      elseif(ischtp.eq.2) then
-!       Pour le moment par defaut on prend l'ordre 2
-        isno2t = 1
-!              ISNO2T = 0
-      endif
+  endif
+  !     Termes sources NS,
+  if(isno2t.eq.-999) then
+    if(ischtp.eq.1) then
+      isno2t = 0
+      !            ELSEIF(ISCHTP.EQ.2.AND.IVISSE.EQ.1) THEN
+    elseif(ischtp.eq.2) then
+      !       Pour le moment par defaut on prend l'ordre 2
+      isno2t = 1
+      !              ISNO2T = 0
     endif
-!     Termes sources turbulence (k-eps, Rij, v2f ou k-omega)
-!     On n'autorise de changer ISTO2T qu'en Rij (sinon avec
-!       le couplage k-eps/omega il y a pb)
-    if(isto2t.eq.-999) then
-      if(ischtp.eq.1) then
-        isto2t = 0
-      elseif(ischtp.eq.2) then
-!       Pour le moment par defaut on ne prend pas l'ordre 2
-!              ISTO2T = 1
-        isto2t = 0
-      endif
-    else if( itytur.eq.2.or.iturb.eq.50             &
-         .or.iturb.ne.60) then
-      write(nfecra,8132) iturb,isto2t
-      iok = iok + 1
+  endif
+  !     Termes sources turbulence (k-eps, Rij, v2f ou k-omega)
+  !     On n'autorise de changer ISTO2T qu'en Rij (sinon avec
+  !       le couplage k-eps/omega il y a pb)
+  if(isto2t.eq.-999) then
+    if(ischtp.eq.1) then
+      isto2t = 0
+    elseif(ischtp.eq.2) then
+      !       Pour le moment par defaut on ne prend pas l'ordre 2
+      !              ISTO2T = 1
+      isto2t = 0
     endif
-  enddo
+  else if( itytur.eq.2.or.iturb.eq.50             &
+       .or.iturb.ne.60) then
+    write(nfecra,8132) iturb,isto2t
+    iok = iok + 1
+  endif
 
   do iscal = 1, nscal
 !     Termes sources Scalaires,
-    iphas = 1
     if(isso2t(iscal).eq.-999) then
       if(ischtp.eq.1) then
         isso2t(iscal) = 0
@@ -1096,7 +1058,6 @@ if(ipass.eq.4) then
     endif
 !     Diffusivite scalaires
     if(ivsext(iscal).eq.-999) then
-      iphas = 1
       if(ischtp.eq.1) then
         ivsext(iscal) = 0
       elseif(ischtp.eq.2) then
@@ -1115,89 +1076,84 @@ if(ipass.eq.4) then
   endif
 
 !     Viscosite secondaire
-  do iphas = 1, nphas
-    ivisph = ivisse
-    if (ivisph.ne.0.and.ivisph.ne.1) then
-      WRITE(NFECRA,8022) 'IVISSE ',IVISPH
-      iok = iok + 1
-    endif
-  enddo
+  ivisph = ivisse
+  if (ivisph.ne.0.and.ivisph.ne.1) then
+    WRITE(NFECRA,8022) 'IVISSE ',IVISPH
+    iok = iok + 1
+  endif
 
 !     Schemas en temps
-  do iphas = 1, nphas
 
-!     Schema en temps global.
-    if(ischtp.ne. 1.and.ischtp.ne.2) then
-      WRITE(NFECRA,8101) 'ISCHTP',ISCHTP
-      iok = iok + 1
-    endif
-    if(ischtp.eq. 2.and.idtvar.ne.0) then
-      write(nfecra,8111) ischtp,idtvar
-      iok = iok + 1
-    endif
-    if(ischtp.eq. 2.and.itytur.eq.2) then
-      write(nfecra,8112) ischtp,iturb
-      iok = iok + 1
-    endif
-    if(ischtp.eq.1.and.itytur.eq.4) then
-      write(nfecra,8113) ischtp,iturb
-    endif
-    if(ischtp.eq. 2.and.iturb.eq.50) then
-      write(nfecra,8114) ischtp,iturb
-      iok = iok + 1
-    endif
-    if(ischtp.eq. 2.and.iturb.eq.60) then
-      write(nfecra,8115) ischtp,iturb
-      iok = iok + 1
-    endif
-    if(ischtp.eq. 2.and.iturb.eq.70) then
-      write(nfecra,8116) ischtp,iturb
-      iok = iok + 1
-    endif
+  !     Schema en temps global.
+  if(ischtp.ne. 1.and.ischtp.ne.2) then
+    WRITE(NFECRA,8101) 'ISCHTP',ISCHTP
+    iok = iok + 1
+  endif
+  if(ischtp.eq. 2.and.idtvar.ne.0) then
+    write(nfecra,8111) ischtp,idtvar
+    iok = iok + 1
+  endif
+  if(ischtp.eq. 2.and.itytur.eq.2) then
+    write(nfecra,8112) ischtp,iturb
+    iok = iok + 1
+  endif
+  if(ischtp.eq.1.and.itytur.eq.4) then
+    write(nfecra,8113) ischtp,iturb
+  endif
+  if(ischtp.eq. 2.and.iturb.eq.50) then
+    write(nfecra,8114) ischtp,iturb
+    iok = iok + 1
+  endif
+  if(ischtp.eq. 2.and.iturb.eq.60) then
+    write(nfecra,8115) ischtp,iturb
+    iok = iok + 1
+  endif
+  if(ischtp.eq. 2.and.iturb.eq.70) then
+    write(nfecra,8116) ischtp,iturb
+    iok = iok + 1
+  endif
 
-!     Schema en temps pour le flux de masse
-    if(istmpf.ne. 2.and.istmpf.ne.0.and.            &
+  !     Schema en temps pour le flux de masse
+  if(istmpf.ne. 2.and.istmpf.ne.0.and.            &
        istmpf.ne. 1) then
-      WRITE(NFECRA,8121) 'ISTMPF',ISTMPF
-      iok = iok + 1
-    endif
+    WRITE(NFECRA,8121) 'ISTMPF',ISTMPF
+    iok = iok + 1
+  endif
 
-!     Schema en temps pour les termes sources de NS
-    if(isno2t.ne.0.and.                                    &
+  !     Schema en temps pour les termes sources de NS
+  if(isno2t.ne.0.and.                                    &
        isno2t.ne. 1.and.isno2t.ne.2) then
-      WRITE(NFECRA,8131) 'ISNO2T',ISNO2T
-      iok = iok + 1
-    endif
-!     Schema en temps pour les termes sources des grandeurs
-!     turbulentes
-    if(isto2t.ne.0.and.                                    &
+    WRITE(NFECRA,8131) 'ISNO2T',ISNO2T
+    iok = iok + 1
+  endif
+  !     Schema en temps pour les termes sources des grandeurs
+  !     turbulentes
+  if(isto2t.ne.0.and.                                    &
        isto2t.ne. 1.and.isto2t.ne.2) then
-      WRITE(NFECRA,8131) 'ISTO2T',ISTO2T
-      iok = iok + 1
-    endif
+    WRITE(NFECRA,8131) 'ISTO2T',ISTO2T
+    iok = iok + 1
+  endif
 
-!     Schema en temps pour la masse volumique
-    if(iroext.ne.0.and.                                    &
+  !     Schema en temps pour la masse volumique
+  if(iroext.ne.0.and.                                    &
        iroext.ne. 1.and.iroext.ne.2) then
-      WRITE(NFECRA,8131) 'IROEXT',IROEXT
-      iok = iok + 1
-    endif
+    WRITE(NFECRA,8131) 'IROEXT',IROEXT
+    iok = iok + 1
+  endif
 
-!     Schema en temps pour la viscosite
-    if(iviext.ne.0.and.                                    &
+  !     Schema en temps pour la viscosite
+  if(iviext.ne.0.and.                                    &
        iviext.ne. 1.and.iviext.ne.2) then
-      WRITE(NFECRA,8131) 'IVIEXT',IVIEXT
-      iok = iok + 1
-    endif
+    WRITE(NFECRA,8131) 'IVIEXT',IVIEXT
+    iok = iok + 1
+  endif
 
-!     Schema en temps pour la chaleur specifique
-    if(icpext.ne.0.and.                                    &
+  !     Schema en temps pour la chaleur specifique
+  if(icpext.ne.0.and.                                    &
        icpext.ne. 1.and.icpext.ne.2) then
-      WRITE(NFECRA,8131) 'ICPEXT',ICPEXT
-      iok = iok + 1
-    endif
-
-  enddo
+    WRITE(NFECRA,8131) 'ICPEXT',ICPEXT
+    iok = iok + 1
+  endif
 
   do iscal = 1, nscal
 !     Schema en temps pour les termes sources des scalaires
@@ -1224,41 +1180,39 @@ if(ipass.eq.4) then
   iprop  = nprmax
 
 ! --- Numeros de propriete
-  do iphas = 1, nphas
-!     On a besoin de la masse volumique si on l'extrapole ou si ICALHY
-    if(iroext.gt.0.or.icalhy.eq.1) then
+
+  !     On a besoin de la masse volumique si on l'extrapole ou si ICALHY
+  if(iroext.gt.0.or.icalhy.eq.1) then
+    iprop         = iprop + 1
+    iroma  = iprop
+  endif
+  !     Dans le cas d'une extrapolation de la viscosite totale
+  if(iviext.gt.0) then
+    iprop         = iprop + 1
+    ivisla = iprop
+    iprop         = iprop + 1
+    ivista = iprop
+  endif
+
+  !     Proprietes des phases : CP s'il est variable
+  if(icp.ne.0) then
+    if(icpext.gt.0) then
       iprop         = iprop + 1
-      iroma  = iprop
+      icpa   = iprop
     endif
-!     Dans le cas d'une extrapolation de la viscosite totale
-    if(iviext.gt.0) then
-      iprop         = iprop + 1
-      ivisla = iprop
-      iprop         = iprop + 1
-      ivista = iprop
-    endif
-  enddo
-!     Proprietes des phases : CP s'il est variable
-  do iphas = 1, nphas
-    if(icp.ne.0) then
-      if(icpext.gt.0) then
-        iprop         = iprop + 1
-        icpa   = iprop
-      endif
-    endif
-  enddo
-!     On a besoin d'un tableau pour les termes sources de Navier Stokes
-!       a extrapoler. Ce tableau est NDIM
-  do iphas = 1, nphas
-    if(isno2t.gt.0) then
-      iprop         = iprop + 1
-      itsnsa = iprop
-    endif
-    if(isto2t.gt.0) then
-      iprop         = iprop + 1
-      itstua = iprop
-    endif
-  enddo
+  endif
+
+  !     On a besoin d'un tableau pour les termes sources de Navier Stokes
+  !       a extrapoler. Ce tableau est NDIM
+  if(isno2t.gt.0) then
+    iprop         = iprop + 1
+    itsnsa = iprop
+  endif
+  if(isto2t.gt.0) then
+    iprop         = iprop + 1
+    itstua = iprop
+  endif
+
 !     Proprietes des scalaires : termes sources pour theta schema
 !       et VISCLS si elle est variable
   if(nscal.ge.1) then
@@ -1291,44 +1245,38 @@ if(ipass.eq.4) then
   enddo
 !     On regarde s'il y en a besoin
   iiflaa = 0
-  do iphas = 1, nphas
-    if(istmpf.ne.1) iiflaa = 1
-  enddo
+  if(istmpf.ne.1) iiflaa = 1
+
 !     On les affecte
   iprofa = iprop
   if(iiflaa.eq.1) then
-    do iphas = 1, nphas
-      if(iphas.eq.1) then
-        iprop               = iprop + 1
-        ifluaa(ipr ) = iprop
-      endif
-      ifluaa(iu  ) = iprop
-      ifluaa(iv  ) = iprop
-      ifluaa(iw  ) = iprop
-      if(itytur.eq.2) then
-        ifluaa(ik  ) = iprop
-        ifluaa(iep ) = iprop
-      elseif(itytur.eq.3) then
-        ifluaa(ir11) = iprop
-        ifluaa(ir22) = iprop
-        ifluaa(ir33) = iprop
-        ifluaa(ir12) = iprop
-        ifluaa(ir13) = iprop
-        ifluaa(ir23) = iprop
-        ifluaa(iep ) = iprop
-      elseif(iturb.eq.50) then
-        ifluaa(ik  ) = iprop
-        ifluaa(iep ) = iprop
-        ifluaa(iphi) = iprop
-        ifluaa(ifb ) = iprop
-      elseif(iturb.eq.60) then
-        ifluaa(ik  ) = iprop
-        ifluaa(iomg) = iprop
-      elseif (iturb.eq.70) then
-        ifluaa(inusa)= iprop
-      endif
-    enddo
-    iphas = 1
+    iprop               = iprop + 1
+    ifluaa(ipr ) = iprop
+    ifluaa(iu  ) = iprop
+    ifluaa(iv  ) = iprop
+    ifluaa(iw  ) = iprop
+    if(itytur.eq.2) then
+      ifluaa(ik  ) = iprop
+      ifluaa(iep ) = iprop
+    elseif(itytur.eq.3) then
+      ifluaa(ir11) = iprop
+      ifluaa(ir22) = iprop
+      ifluaa(ir33) = iprop
+      ifluaa(ir12) = iprop
+      ifluaa(ir13) = iprop
+      ifluaa(ir23) = iprop
+      ifluaa(iep ) = iprop
+    elseif(iturb.eq.50) then
+      ifluaa(ik  ) = iprop
+      ifluaa(iep ) = iprop
+      ifluaa(iphi) = iprop
+      ifluaa(ifb ) = iprop
+    elseif(iturb.eq.60) then
+      ifluaa(ik  ) = iprop
+      ifluaa(iomg) = iprop
+    elseif (iturb.eq.70) then
+      ifluaa(inusa)= iprop
+    endif
     do iscal = 1, nscal
       ifluaa(isca(iscal)) = ifluaa(iu)
     enddo
@@ -1343,46 +1291,44 @@ if(ipass.eq.4) then
   ipppst                = nppmax
 
 ! --- Positionnement des PROPCE
-  do iphas = 1, nphas
 
-!     Variables schema en temps
-    if(iroext.gt.0.or.icalhy.eq.1) then
-      iprop                 = iprop  + 1
-      ipproc(iroma ) = iprop
+  !     Variables schema en temps
+  if(iroext.gt.0.or.icalhy.eq.1) then
+    iprop                 = iprop  + 1
+    ipproc(iroma ) = iprop
+  endif
+  if(iviext.gt.0) then
+    iprop                 = iprop  + 1
+    ipproc(ivisla) = iprop
+  endif
+  if(iviext.gt.0) then
+    iprop                 = iprop  + 1
+    ipproc(ivista) = iprop
+  endif
+  if(icpext.gt.0) then
+    iprop                 = iprop + 1
+    ipproc(icpa  ) = iprop
+  endif
+  if(isno2t.gt.0) then
+    iprop                 = iprop + 1
+    ipproc(itsnsa) = iprop
+    !     Ce tableau est NDIM :
+    iprop                 = iprop + ndim-1
+  endif
+  if(isto2t.gt.0) then
+    iprop                 = iprop + 1
+    ipproc(itstua) = iprop
+    !     Ce tableau est 2, 7 ou 4 selon le modele de turbulence :
+    if    (itytur.eq.2) then
+      iprop                 = iprop + 2-1
+    elseif(itytur.eq.3) then
+      iprop                 = iprop + 7-1
+    elseif(iturb.eq.50) then
+      iprop                 = iprop + 4-1
+    elseif(iturb.eq.70) then
+      iprop                 = iprop + 1-1
     endif
-    if(iviext.gt.0) then
-      iprop                 = iprop  + 1
-      ipproc(ivisla) = iprop
-    endif
-    if(iviext.gt.0) then
-      iprop                 = iprop  + 1
-      ipproc(ivista) = iprop
-    endif
-    if(icpext.gt.0) then
-      iprop                 = iprop + 1
-      ipproc(icpa  ) = iprop
-    endif
-    if(isno2t.gt.0) then
-      iprop                 = iprop + 1
-      ipproc(itsnsa) = iprop
-!     Ce tableau est NDIM :
-      iprop                 = iprop + ndim-1
-    endif
-    if(isto2t.gt.0) then
-      iprop                 = iprop + 1
-      ipproc(itstua) = iprop
-!     Ce tableau est 2, 7 ou 4 selon le modele de turbulence :
-      if    (itytur.eq.2) then
-        iprop                 = iprop + 2-1
-      elseif(itytur.eq.3) then
-        iprop                 = iprop + 7-1
-      elseif(iturb.eq.50) then
-        iprop                 = iprop + 4-1
-      elseif(iturb.eq.70) then
-        iprop                 = iprop + 1-1
-      endif
-    endif
-  enddo
+  endif
 
   do ii = 1, nscal
 ! Termes source des scalaires pour theta schema
@@ -1419,14 +1365,13 @@ if(ipass.eq.4) then
   iprop                 = nprofb
 
 ! --- Positionnement des PROPFB
-  do iphas = 1, nphas
-!     Variables schema en temps : rhoa (pas pour icalhy)
-    if(iroext.gt.0) then
-      iprop                 = iprop  + 1
-      ipprob(iroma ) = iprop
-    endif
-  enddo
-!     Variables schema en temps : flux de masse A
+
+  !     Variables schema en temps : rhoa (pas pour icalhy)
+  if(iroext.gt.0) then
+    iprop                 = iprop  + 1
+    ipprob(iroma ) = iprop
+  endif
+  !     Variables schema en temps : flux de masse A
   if(iiflaa.eq.1) then
     do iflum = 1, nfluma
       iprop                 = iprop + 1
@@ -1897,34 +1842,28 @@ if(ipass.eq.4) then
     iclrtp(ivar,icoef ) = icondl
     iclrtp(ivar,icoeff) = icondl
   enddo
-  do iphas = 1, nphas
-    if( itytur.eq.2 .or. itytur.eq.4                &
-         .or. iturb.eq.60 .or. iturb.eq.70          &
-         ) then
-      ivar = iu
-      icondl = icondl + 1
-      iclrtp(ivar,icoeff) = icondl
-      ivar = iv
-      icondl = icondl + 1
-      iclrtp(ivar,icoeff) = icondl
-      ivar = iw
-      icondl = icondl + 1
-      iclrtp(ivar,icoeff) = icondl
-    endif
-  enddo
+  if( itytur.eq.2 .or. itytur.eq.4                &
+       .or. iturb.eq.60 .or. iturb.eq.70          &
+       ) then
+    ivar = iu
+    icondl = icondl + 1
+    iclrtp(ivar,icoeff) = icondl
+    ivar = iv
+    icondl = icondl + 1
+    iclrtp(ivar,icoeff) = icondl
+    ivar = iw
+    icondl = icondl + 1
+    iclrtp(ivar,icoeff) = icondl
+  endif
   if (iphydr.eq.1) then
-    do iphas = 1, nphas
-      icondl = icondl + 1
-      iclrtp(ipr,icoeff) = icondl
-    enddo
+    icondl = icondl + 1
+    iclrtp(ipr,icoeff) = icondl
   endif
 
 ! Compressible
   if (ippmod(icompf).ge.0) then
-    do iphas = 1, nphas
-      icondl = icondl + 1
-      iclrtp(isca(ienerg),icoeff) = icondl
-    enddo
+    icondl = icondl + 1
+    iclrtp(isca(ienerg),icoeff) = icondl
   endif
 
   ncofab = icondl

@@ -507,23 +507,21 @@ idbia1 = ifinia
 idbra1 = ifinra
 
 
-do iphas = 1, nphas
+iappel = 1
 
-  iappel = 1
+if (iihmpr.eq.1) then
+  call uikpdc &
+  !==========
+( iappel, ncelet, ncepdc,     &
+  ia(idbia1), ra(idbra1) , ra(irtpa) )
+endif
 
-  if (iihmpr.eq.1) then
-    call uikpdc &
-    !==========
-  ( iappel, ncelet, ncepdc,     &
-    ia(idbia1), ra(idbra1) , ra(irtpa) )
-  endif
+ils    = idbia1
+idbia2 = ils + maxelt
+call iasize('caltri',idbia2)
 
-  ils    = idbia1
-  idbia2 = ils + maxelt
-  call iasize('caltri',idbia2)
-
-  call  uskpdc &
-  !===========
+call  uskpdc &
+!===========
 ( idbia2 , idbra1 ,                                              &
   nvar   , nscal  , nphas  ,                                     &
   ncepdc , iphas  , iappel ,                              &
@@ -534,8 +532,6 @@ do iphas = 1, nphas
   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
   ra(icoefa) , ra(icoefb) , ra(idbra1) ,                         &
   ra     )
-
-enddo
 
 call mempdc                                                       &
 !==========
@@ -548,39 +544,35 @@ call mempdc                                                       &
 !     On appelle cependant uskpdc avec tous les processeurs, au cas ou
 !     l'utilisateur aurait mis en oeuvre des operations globales.
 
-do iphas = 1, nphas
+if(ncpdct.gt.0) then
 
-  if(ncpdct.gt.0) then
+  iappel = 2
 
-    iappel = 2
-
-    if (iihmpr.eq.1) then
-      call uikpdc &
-      !==========
-    ( iappel, ncelet, ncepdc,                  &
-      ia(iicepd), ra(ickupd), ra(irtpa) )
-    endif
-
-    ils    = ifinia
-    ifnia2 = ils + maxelt
-    call iasize('caltri',ifnia2)
-
-    call  uskpdc                                                &
-    !===========
-  ( ifnia2 , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
-    ncepdc , iphas  , iappel ,                              &
-    maxelt , ia(ils),                                              &
-    ia(iicepd),                                             &
-    ia     ,                                                       &
-    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-    ra(icoefa) , ra(icoefb) , ra(ickupd) ,                  &
-    ra     )
-
+  if (iihmpr.eq.1) then
+    call uikpdc &
+    !==========
+  ( iappel, ncelet, ncepdc,                  &
+    ia(iicepd), ra(ickupd), ra(irtpa) )
   endif
 
-enddo
+  ils    = ifinia
+  ifnia2 = ils + maxelt
+  call iasize('caltri',ifnia2)
+
+  call  uskpdc                                                &
+  !===========
+( ifnia2 , ifinra ,                                              &
+  nvar   , nscal  , nphas  ,                                     &
+  ncepdc , iphas  , iappel ,                              &
+  maxelt , ia(ils),                                              &
+  ia(iicepd),                                             &
+  ia     ,                                                       &
+  ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
+  ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
+  ra(icoefa) , ra(icoefb) , ra(ickupd) ,                  &
+  ra     )
+
+endif
 
 idbia1 = ifinia
 idbra1 = ifinra
@@ -589,24 +581,20 @@ ils    = idbia1
 idbia2 = ils + maxelt
 call iasize('caltri',idbia2)
 
-do iphas = 1, nphas
-
-  iappel = 1
-  call  ustsma                                                    &
-  !===========
- ( idbia2 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  , ncepdc   ,                   &
-   ncetsm ,   iphas  , iappel ,                            &
-   maxelt , ia(ils),                                              &
-   ia(iicepd) ,                                            &
-   ia(idbia1) , ia(idbia1),                                       &
-   ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  ,                                      &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(ickupd)       , ra(idbra1),&
-   ra     )
-
-enddo
+iappel = 1
+call  ustsma                                                    &
+!===========
+( idbia2 , idbra1 ,                                              &
+  nvar   , nscal  , nphas  , ncepdc   ,                   &
+  ncetsm ,   iphas  , iappel ,                            &
+  maxelt , ia(ils),                                              &
+  ia(iicepd) ,                                            &
+  ia(idbia1) , ia(idbia1),                                       &
+  ia     ,                                                       &
+  ra(idt)    , ra(irtpa)  ,                                      &
+  ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
+  ra(icoefa) , ra(icoefb) , ra(ickupd)       , ra(idbra1),&
+  ra     )
 
 call memtsm                                                       &
 !==========
@@ -620,33 +608,28 @@ call memtsm                                                       &
 !     On appelle cependant ustsma avec tous les processeurs, au cas ou
 !     l'utilisateur aurait mis en oeuvre des operations globales.
 
-do iphas = 1, nphas
+if(nctsmt.gt.0) then
 
-  if(nctsmt.gt.0) then
+  ils    = ifinia
+  ifnia2 = ils + maxelt
+  call iasize('caltri',ifnia2)
 
-    ils    = ifinia
-    ifnia2 = ils + maxelt
-    call iasize('caltri',ifnia2)
+  iappel = 2
+  call  ustsma                                                  &
+  !===========
+( ifnia2 , ifinra ,                                              &
+  nvar   , nscal  , nphas  , ncepdc   ,                   &
+  ncetsm ,   iphas  , iappel ,                            &
+  maxelt , ia(ils),                                              &
+  ia(iicepd) ,                                            &
+  ia(iicesm) , ia(iitpsm),                         &
+  ia     ,                                                       &
+  ra(idt)    , ra(irtpa)  ,                                      &
+  ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
+  ra(icoefa) , ra(icoefb) , ra(ickupd), ra(ismace),&
+  ra     )
 
-    iappel = 2
-    call  ustsma                                                  &
-    !===========
- ( ifnia2 , ifinra ,                                              &
-   nvar   , nscal  , nphas  , ncepdc   ,                   &
-   ncetsm ,   iphas  , iappel ,                            &
-   maxelt , ia(ils),                                              &
-   ia(iicepd) ,                                            &
-   ia(iicesm) , ia(iitpsm),                         &
-   ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  ,                                      &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(ickupd), ra(ismace),&
-   ra     )
-
-  endif
-
-enddo
-
+endif
 
 ! -- Methode des vortex pour la L.E.S.
 !    (dans verini on s'est deja assure que ITYTUR=4 si IVRTEX=1)

@@ -106,18 +106,14 @@ idebia = idbia0
 idebra = idbra0
 
 irij = 0
-do iphas = 1, nphas
-  if(itytur.eq.3) then
-    irij = 1
-  endif
-enddo
+if(itytur.eq.3) then
+  irij = 1
+endif
 
 iiuetb = 0
-do iphas = 1, nphas
-  if(itytur.eq.4.and.idries.eq.1)then
-    iiuetb = 1
-  endif
-enddo
+if(itytur.eq.4.and.idries.eq.1)then
+  iiuetb = 1
+endif
 
 !---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
 

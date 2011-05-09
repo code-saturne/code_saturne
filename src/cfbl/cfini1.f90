@@ -80,13 +80,11 @@ integer          iphas, iok
 !===============================================================================
 !     L'utilisateur ne doit pas y avoir touche.
 
-do iphas = 1, nphas
-  if(iscalt.ne.-1) then
-    write(nfecra,1000)iscalt
-    call csexit (1)
-    !==========
-  endif
-enddo
+if(iscalt.ne.-1) then
+  write(nfecra,1000)iscalt
+  call csexit (1)
+  !==========
+endif
 do ii = 1, nscapp
   if(iscsth(iscapp(ii)).ne.-10) then
     write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))
@@ -102,28 +100,24 @@ enddo
 ! ==================================================================
 
 
-do iphas = 1, nphas
-
-  if(  (abs(scamin(irho  )+grand).gt.epzero).or.           &
-       (abs(scamin(ienerg)+grand).gt.epzero).or.           &
-       (abs(scamin(itempk)+grand).gt.epzero).or.           &
-       (abs(scamax(irho  )-grand).gt.epzero).or.           &
-       (abs(scamax(ienerg)-grand).gt.epzero).or.           &
-       (abs(scamax(itempk)-grand).gt.epzero) ) then
-    write(nfecra,2000)                                            &
-         scamin(irho  ),scamax(irho  ),             &
-         scamin(ienerg),scamax(ienerg),             &
-         scamin(itempk),scamax(itempk)
-    call csexit (1)
-  endif
+if(  (abs(scamin(irho  )+grand).gt.epzero).or.           &
+     (abs(scamin(ienerg)+grand).gt.epzero).or.           &
+     (abs(scamin(itempk)+grand).gt.epzero).or.           &
+     (abs(scamax(irho  )-grand).gt.epzero).or.           &
+     (abs(scamax(ienerg)-grand).gt.epzero).or.           &
+     (abs(scamax(itempk)-grand).gt.epzero) ) then
+  write(nfecra,2000)                                            &
+       scamin(irho  ),scamax(irho  ),             &
+       scamin(ienerg),scamax(ienerg),             &
+       scamin(itempk),scamax(itempk)
+  call csexit (1)
+endif
 !        SCAMIN(IRHO  )   = -GRAND
 !        SCAMAX(IRHO  )   =  GRAND
 !        SCAMIN(IENERG)   = -GRAND
 !        SCAMAX(IENERG)   =  GRAND
 !        SCAMIN(ITEMPK)   = -GRAND
 !        SCAMAX(ITEMPK)   =  GRAND
-
-enddo
 
 ! 1.2 Nature des scalaires transportes
 ! ====================================
@@ -134,16 +128,11 @@ enddo
 !                                  3 energie totale en J)
 !      La distinction -1/1 sert pour le rayonnement
 
-do iphas = 1, nphas
+iscsth(irho  ) = 0
+iscsth(ienerg) = 3
+iscsth(itempk) = 0
 
-  iscsth(irho  ) = 0
-  iscsth(ienerg) = 3
-  iscsth(itempk) = 0
-
-  iscalt = ienerg
-
-enddo
-
+iscalt = ienerg
 
 !         - Schema convectif % schema 2ieme ordre
 !           = 0 : upwind
@@ -173,28 +162,23 @@ enddo
 
 ! ======================================================================
 
-do iphas = 1, nphas
+ipp = ipprtp(isca(irho  ))
+NOMVAR(IPP)  = 'Rho'
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
 
-  ipp = ipprtp(isca(irho  ))
-  NOMVAR(IPP)  = 'Rho'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
+ipp = ipprtp(isca(ienerg))
+NOMVAR(IPP)  = 'EnergieT'
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
 
-  ipp = ipprtp(isca(ienerg))
-  NOMVAR(IPP)  = 'EnergieT'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-  ipp = ipprtp(isca(itempk))
-  NOMVAR(IPP)  = 'Temp K'
-  ichrvr(ipp)  = 1
-  ilisvr(ipp)  = 1
-  ihisvr(ipp,1)= -1
-
-enddo
-
+ipp = ipprtp(isca(itempk))
+NOMVAR(IPP)  = 'Temp K'
+ichrvr(ipp)  = 1
+ilisvr(ipp)  = 1
+ihisvr(ipp,1)= -1
 
 !===============================================================================
 ! 2. PARAMETRES GLOBAUX
@@ -214,41 +198,31 @@ endif
 
 !     Interdits en compressible
 
-do iphas = 1, nphas
-  if( (iescal(iespre).ne.0) .or.                            &
-      (iescal(iesder).ne.0) .or.                            &
-      (iescal(iescor).ne.0) .or.                            &
-      (iescal(iestot).ne.0) ) then
-    write(nfecra,4000)
-    call csexit (1)
-  endif
+if( (iescal(iespre).ne.0) .or.                            &
+     (iescal(iesder).ne.0) .or.                            &
+     (iescal(iescor).ne.0) .or.                            &
+     (iescal(iestot).ne.0) ) then
+  write(nfecra,4000)
+  call csexit (1)
+endif
 !       IESCAL(IESPRE) = 0
 !       IESCAL(IESDER) = 0
 !       IESCAL(IESCOR) = 0
 !       IESCAL(IESTOT) = 0
-enddo
-
 
 !===============================================================================
 ! 3. OPTIONS DE CALCUL PAR DEFAUT
 !===============================================================================
 
-!     Pour chaque phase
-
-do iphas = 1, nphas
-
 ! --> Conditions aux limites prenant en compte l'equilibre hydrostatique
 !     (oui = 1 , non = 0)
 
-  icfgrp = 1
+icfgrp = 1
 
 
 ! ---> Masse volumique variable et viscosite constante (pour les suites)
-  irovar = 1
-  ivivar = 0
-
-enddo
-
+irovar = 1
+ivivar = 0
 
 !===============================================================================
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR
@@ -265,43 +239,37 @@ call uscfx1
 
 !     Pour chaque phase
 
-do iphas = 1, nphas
-
-  idiff(isca(irho)) = 1
+idiff(isca(irho)) = 1
 
 ! --> Implicitation du terme de convection de l'equation de masse
 !     (oui = 1 , non = 0)
 !     On choisit 0 ; c'est la seule option qui a ete testee. Elle
 !       facilite le codage pour le respect du flux de masse au bord.
 
-  iconv(isca(irho)) = 0
+iconv(isca(irho)) = 0
 
 ! --> Prise en compte de la pression predite pour resoudre Navier-Stokes
 !     (oui = 1 , non = 0)
 
-  igrdpp = 0
+igrdpp = 0
 
 ! --> Prediction de pression par une equation d'evolution
 
 !     ATTENTION   PAS ENCORE IMPLEMENTE
 !========   LAISSER IPPRED = 0
 
-  ippred = 0
+ippred = 0
 
-
-enddo
 
 !===============================================================================
 ! 6. VERIFICATIONS
 !===============================================================================
 
 iok = 0
-do iphas = 1, nphas
-  if(icfgrp.ne.0.and.icfgrp.ne.1) then
-    WRITE(NFECRA,5000)'ICFGRP',ICFGRP
-    iok = 1
-  endif
-enddo
+if(icfgrp.ne.0.and.icfgrp.ne.1) then
+  WRITE(NFECRA,5000)'ICFGRP',ICFGRP
+  iok = 1
+endif
 
 if (iok.ne.0) then
   call csexit (1)

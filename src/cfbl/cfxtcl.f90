@@ -174,32 +174,30 @@ idebia = idbia0
 idebra = idbra0
 
 
-do iphas = 1, nphas
+ipriph = ipr
+iuiph  = iu
+iviph  = iv
+iwiph  = iw
+irhiph = isca(irho  )
+ieniph = isca(ienerg)
+itkiph = isca(itempk)
+iclp   = iclrtp(ipriph,icoef)
+iclr   = iclrtp(irhiph,icoef)
+iclu   = iclrtp(iuiph ,icoef)
+iclv   = iclrtp(iviph ,icoef)
+iclw   = iclrtp(iwiph ,icoef)
 
-  ipriph = ipr
-  iuiph  = iu
-  iviph  = iv
-  iwiph  = iw
-  irhiph = isca(irho  )
-  ieniph = isca(ienerg)
-  itkiph = isca(itempk)
-  iclp   = iclrtp(ipriph,icoef)
-  iclr   = iclrtp(irhiph,icoef)
-  iclu   = iclrtp(iuiph ,icoef)
-  iclv   = iclrtp(iviph ,icoef)
-  iclw   = iclrtp(iwiph ,icoef)
-
-  iflmab = ipprob(ifluma(ieniph))
+iflmab = ipprob(ifluma(ieniph))
 
 !     Liste des variables compressible :
-  ivarcf(1) = ipriph
-  ivarcf(2) = iuiph
-  ivarcf(3) = iviph
-  ivarcf(4) = iwiph
-  ivarcf(5) = irhiph
-  ivarcf(6) = ieniph
-  ivarcf(7) = itkiph
-  nvarcf    = 7
+ivarcf(1) = ipriph
+ivarcf(2) = iuiph
+ivarcf(3) = iviph
+ivarcf(4) = iwiph
+ivarcf(5) = irhiph
+ivarcf(6) = ieniph
+ivarcf(7) = itkiph
+nvarcf    = 7
 
 !     Calcul de epsilon_sup = e - CvT
 !       On en a besoin si on a des parois a temperature imposee.
@@ -208,115 +206,115 @@ do iphas = 1, nphas
 !         nécessaire de gagner de la mémoire, on pourra modifier
 !         uscfth.
 
-  icalep = 0
-  do ifac = 1, nfabor
-    if(icodcl(ifac,itkiph).eq.5) then
-      icalep = 1
-    endif
-  enddo
-  if(icalep.ne.0) then
-    iccfth = 7
-    imodif = 0
-    call uscfth                                                   &
-    !==========
- ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   w5     , coefu(1,1) , w3 , w4     )
+icalep = 0
+do ifac = 1, nfabor
+  if(icodcl(ifac,itkiph).eq.5) then
+    icalep = 1
   endif
+enddo
+if(icalep.ne.0) then
+  iccfth = 7
+  imodif = 0
+  call uscfth                                                   &
+  !==========
+( nvar   , nscal  , nphas  ,                                     &
+  iccfth , imodif , iphas  ,                                     &
+  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  coefa  , coefb  ,                                              &
+  w5     , coefu(1,1) , w3 , w4     )
+endif
 
 
 !     Calcul de gamma (constant ou variable ; pour le moment : cst)
 !       On en a besoin pour les entrees sorties avec rusanov
 
-  icalgm = 0
-  do ifac = 1, nfabor
-    if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
-         ( itypfb(ifac).eq.isopcf ) .or.                    &
-         ( itypfb(ifac).eq.ierucf ) .or.                    &
-         ( itypfb(ifac).eq.ieqhcf ) ) then
-      icalgm = 1
-    endif
-  enddo
-  if(icalgm.ne.0) then
-    iccfth = 1
-    imodif = 0
-    call uscfth                                                   &
-    !==========
- ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   w1     , w2     , w6     , w4     )
+icalgm = 0
+do ifac = 1, nfabor
+  if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
+       ( itypfb(ifac).eq.isopcf ) .or.                    &
+       ( itypfb(ifac).eq.ierucf ) .or.                    &
+       ( itypfb(ifac).eq.ieqhcf ) ) then
+    icalgm = 1
+  endif
+enddo
+if(icalgm.ne.0) then
+  iccfth = 1
+  imodif = 0
+  call uscfth                                                   &
+  !==========
+( nvar   , nscal  , nphas  ,                                     &
+  iccfth , imodif , iphas  ,                                     &
+  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  coefa  , coefb  ,                                              &
+  w1     , w2     , w6     , w4     )
 
-    if(ieos.eq.1) then
-      gammag = w6(1)
-    else
+  if(ieos.eq.1) then
+    gammag = w6(1)
+  else
 !     Gamma doit etre passe a cfrusb ; s'il est variable
 !       il est dans le tableau W6 et il faut ajouter
 !           GAMMAG = W6(IFABOR(IFAC)) selon IEOS
 !       dans la boucle sur les faces.
 !     En attendant que IEOS different de 1 soit code, on stoppe
-      write(nfecra,7000)
-      call csexit (1)
-    endif
-
+    write(nfecra,7000)
+    call csexit (1)
   endif
+
+endif
 
 
 
 !     Boucle sur les faces
 
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
+do ifac = 1, nfabor
+  iel = ifabor(ifac)
 
 !===============================================================================
 ! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
 !       ON BOUCLE SUR TOUTES LES FACES DE PAROI
 !===============================================================================
 
-    if ( itypfb(ifac).eq.iparoi) then
+  if ( itypfb(ifac).eq.iparoi) then
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
 !       verifier ceux que l'utilisateur a modifies. On les remet a zero
 !       si l'utilisateur ne les a pas modifies.
 !       En paroi, on traite toutes les variables.
-      do ivar = 1, nvar
-        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-          rcodcl(ifac,ivar,1) = 0.d0
-        endif
-      enddo
+    do ivar = 1, nvar
+      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+        rcodcl(ifac,ivar,1) = 0.d0
+      endif
+    enddo
 
 !     Le flux de masse est nul
 
-      propfb(ifac,iflmab) = 0.d0
+    propfb(ifac,iflmab) = 0.d0
 
 !     Pression :
 
 !       Si la gravite est predominante : pression hydrostatique
 !         (approximatif et surtout explicite en rho)
 
-      if(icfgrp.eq.1) then
+    if(icfgrp.eq.1) then
 
-        icodcl(ifac,ipriph) = 3
-        hint = dt(iel)/distb(ifac)
-        rcodcl(ifac,ipriph,3) = -hint                             &
-         * ( gx*(cdgfbo(1,ifac)-xyzcen(1,iel))                    &
+      icodcl(ifac,ipriph) = 3
+      hint = dt(iel)/distb(ifac)
+      rcodcl(ifac,ipriph,3) = -hint                             &
+           * ( gx*(cdgfbo(1,ifac)-xyzcen(1,iel))                    &
            + gy*(cdgfbo(2,ifac)-xyzcen(2,iel))                    &
            + gz*(cdgfbo(3,ifac)-xyzcen(3,iel)) )                  &
-         * rtp(iel,irhiph)
+           * rtp(iel,irhiph)
 
-      else
+    else
 
 !       En général : proportionnelle a la valeur interne
 !         (Pbord = COEFB*Pi)
 !       Si on détend trop : Dirichlet homogene
 
-        iccfth = 91
+      iccfth = 91
 
-        call uscfth                                               &
-        !==========
+      call uscfth                                               &
+      !==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -328,18 +326,18 @@ do iphas = 1, nphas
 !        et COEFB directement, on gagnerait en simplicite, mais cela
 !        demanderait un test sur IPPMOD dans condli : à voir)
 
-        icodcl(ifac,ipriph) = 1
-        if(coefb(ifac,iclp).lt.rinfin*0.5d0.and.                  &
+      icodcl(ifac,ipriph) = 1
+      if(coefb(ifac,iclp).lt.rinfin*0.5d0.and.                  &
            coefb(ifac,iclp).gt.0.d0  ) then
-          hint = dt(iel)/distb(ifac)
-          rcodcl(ifac,ipriph,1) = 0.d0
-          rcodcl(ifac,ipriph,2) =                                 &
-               hint*(1.d0/coefb(ifac,iclp)-1.d0)
-        else
-          rcodcl(ifac,ipriph,1) = 0.d0
-        endif
-
+        hint = dt(iel)/distb(ifac)
+        rcodcl(ifac,ipriph,1) = 0.d0
+        rcodcl(ifac,ipriph,2) =                                 &
+             hint*(1.d0/coefb(ifac,iclp)-1.d0)
+      else
+        rcodcl(ifac,ipriph,1) = 0.d0
       endif
+
+    endif
 
 
 !       La vitesse et la turbulence sont traitées de manière standard,
@@ -357,14 +355,14 @@ do iphas = 1, nphas
 !         aberrantes au voisinage de la couche limite)
 
 !       Par défaut : adiabatique
-      if(  icodcl(ifac,itkiph).eq.0.and.                          &
-           icodcl(ifac,ieniph).eq.0) then
-        icodcl(ifac,itkiph) = 3
-        rcodcl(ifac,itkiph,3) = 0.d0
-      endif
+    if(  icodcl(ifac,itkiph).eq.0.and.                          &
+         icodcl(ifac,ieniph).eq.0) then
+      icodcl(ifac,itkiph) = 3
+      rcodcl(ifac,itkiph,3) = 0.d0
+    endif
 
 !       Temperature imposee
-      if(icodcl(ifac,itkiph).eq.5) then
+    if(icodcl(ifac,itkiph).eq.5) then
 
 !           On impose la valeur de l'energie qui conduit au bon flux.
 !             On notera cependant qu'il s'agit de la condition à la
@@ -376,46 +374,46 @@ do iphas = 1, nphas
 !               sachant que l'energie contient l'energie cinetique,
 !               ce qui rend le choix du profil délicat.
 
-        icodcl(ifac,ieniph) = 5
-        if(icv.eq.0) then
-          rcodcl(ifac,ieniph,1) =                                 &
-               cv0*rcodcl(ifac,itkiph,1)
-        else
-          rcodcl(ifac,ieniph,1) = propce(iel,ipproc(icv))  &
-               *rcodcl(ifac,itkiph,1)
-        endif
-        rcodcl(ifac,ieniph,1) = rcodcl(ifac,ieniph,1)             &
+      icodcl(ifac,ieniph) = 5
+      if(icv.eq.0) then
+        rcodcl(ifac,ieniph,1) =                                 &
+             cv0*rcodcl(ifac,itkiph,1)
+      else
+        rcodcl(ifac,ieniph,1) = propce(iel,ipproc(icv))  &
+             *rcodcl(ifac,itkiph,1)
+      endif
+      rcodcl(ifac,ieniph,1) = rcodcl(ifac,ieniph,1)             &
            + 0.5d0*(rtp(iel,iuiph)**2+                            &
-                    rtp(iel,iviph)**2+rtp(iel,iwiph)**2)          &
+           rtp(iel,iviph)**2+rtp(iel,iwiph)**2)          &
            + w5(iel)
 !                   ^epsilon sup (cf USCFTH)
 
 !           Les flux en grad epsilon sup et énergie cinétique doivent
 !             être nuls puisque tout est pris par le terme de
 !             diffusion d'energie.
-        ia(iifbet+ifac-1) = 1
+      ia(iifbet+ifac-1) = 1
 
 !           Flux nul pour la reconstruction éventuelle de température
-        icodcl(ifac,itkiph) = 3
-        rcodcl(ifac,itkiph,3) = 0.d0
+      icodcl(ifac,itkiph) = 3
+      rcodcl(ifac,itkiph,3) = 0.d0
 
 !       Flux impose
-      elseif(icodcl(ifac,itkiph).eq.3) then
+    elseif(icodcl(ifac,itkiph).eq.3) then
 
 !           On impose le flux sur l'energie
-        icodcl(ifac,ieniph) = 3
-        rcodcl(ifac,ieniph,3) = rcodcl(ifac,itkiph,3)
+      icodcl(ifac,ieniph) = 3
+      rcodcl(ifac,ieniph,3) = rcodcl(ifac,itkiph,3)
 
 !           Les flux en grad epsilon sup et énergie cinétique doivent
 !             être nuls puisque tout est pris par le terme de
 !             diffusion d'energie.
-        ia(iifbet+ifac-1) = 1
+      ia(iifbet+ifac-1) = 1
 
 !           Flux nul pour la reconstruction éventuelle de température
-        icodcl(ifac,itkiph) = 3
-        rcodcl(ifac,itkiph,3) = 0.d0
+      icodcl(ifac,itkiph) = 3
+      rcodcl(ifac,itkiph,3) = 0.d0
 
-      endif
+    endif
 
 
 !     Scalaires : flux nul (par defaut dans typecl pour iparoi)
@@ -426,28 +424,28 @@ do iphas = 1, nphas
 !       ON BOUCLE SUR TOUTES LES FACES DE SYMETRIE
 !===============================================================================
 
-    elseif ( itypfb(ifac).eq.isymet ) then
+  elseif ( itypfb(ifac).eq.isymet ) then
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
 !       verifier ceux que l'utilisateur a modifies. On les remet a zero
 !       si l'utilisateur ne les a pas modifies.
 !       En symetrie, on traite toutes les variables.
-      do ivar = 1, nvar
-        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-          rcodcl(ifac,ivar,1) = 0.d0
-        endif
-      enddo
+    do ivar = 1, nvar
+      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+        rcodcl(ifac,ivar,1) = 0.d0
+      endif
+    enddo
 
 !     Le flux de masse est nul
 
-      propfb(ifac,iflmab) = 0.d0
+    propfb(ifac,iflmab) = 0.d0
 
 !     Condition de Pression
 
-      iccfth = 90
+    iccfth = 90
 
-      call uscfth                                                 &
-      !==========
+    call uscfth                                                 &
+    !==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -465,10 +463,10 @@ do iphas = 1, nphas
 !        et COEFB directement, on gagnerait en simplicite, mais cela
 !        demanderait un test sur IPPMOD dans condli : à voir)
 
-      icodcl(ifac,ipriph) = 3
-      rcodcl(ifac,ipriph,1) = 0.d0
-      rcodcl(ifac,ipriph,2) = rinfin
-      rcodcl(ifac,ipriph,3) = 0.d0
+    icodcl(ifac,ipriph) = 3
+    rcodcl(ifac,ipriph,1) = 0.d0
+    rcodcl(ifac,ipriph,2) = rinfin
+    rcodcl(ifac,ipriph,3) = 0.d0
 
 !       Toutes les autres variables prennent un flux nul (sauf la vitesse
 !         normale, qui est nulle) : par defaut dans typecl pour isymet.
@@ -484,7 +482,7 @@ do iphas = 1, nphas
 !     4.1 Entree/sortie imposée (par exemple : entree supersonique)
 !===============================================================================
 
-    elseif ( itypfb(ifac).eq.iesicf ) then
+  elseif ( itypfb(ifac).eq.iesicf ) then
 
 !     On a
 !       - la vitesse,
@@ -495,39 +493,39 @@ do iphas = 1, nphas
 !     On recherche la variable a initialiser
 !       (si on a donne une valeur nulle, c'est pas adapte : on supposera
 !        qu'on n'a pas initialise et on sort en erreur)
-      iccfth = 10000
-      if(rcodcl(ifac,ipriph,1).gt.0.d0) iccfth = 2*iccfth
-      if(rcodcl(ifac,irhiph,1).gt.0.d0) iccfth = 3*iccfth
-      if(rcodcl(ifac,itkiph,1).gt.0.d0) iccfth = 5*iccfth
-      if(rcodcl(ifac,ieniph,1).gt.0.d0) iccfth = 7*iccfth
-      if((iccfth.le.70000.and.iccfth.ne.60000).or.                &
+    iccfth = 10000
+    if(rcodcl(ifac,ipriph,1).gt.0.d0) iccfth = 2*iccfth
+    if(rcodcl(ifac,irhiph,1).gt.0.d0) iccfth = 3*iccfth
+    if(rcodcl(ifac,itkiph,1).gt.0.d0) iccfth = 5*iccfth
+    if(rcodcl(ifac,ieniph,1).gt.0.d0) iccfth = 7*iccfth
+    if((iccfth.le.70000.and.iccfth.ne.60000).or.                &
          (iccfth.eq.350000)) then
-        write(nfecra,1000)iccfth
-        call csexit (1)
-      endif
-      iccfth = iccfth + 900
+      write(nfecra,1000)iccfth
+      call csexit (1)
+    endif
+    iccfth = iccfth + 900
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
 !       verifier ceux que l'utilisateur a modifies. On les remet a zero
 !       si l'utilisateur ne les a pas modifies.
 !       On traite d'abord les variables autres que la turbulence et les
 !       scalaires passifs : celles-ci sont traitees plus bas.
-      do iii = 1, nvarcf
-        ivar = ivarcf(iii)
-        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-          rcodcl(ifac,ivar,1) = 0.d0
-        endif
-      enddo
+    do iii = 1, nvarcf
+      ivar = ivarcf(iii)
+      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+        rcodcl(ifac,ivar,1) = 0.d0
+      endif
+    enddo
 
 !     On calcule les variables manquantes parmi P,rho,T,E
 !     COEFA sert de tableau de transfert dans USCFTH
 
-      do ivar = 1, nvar
-        coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
-      enddo
+    do ivar = 1, nvar
+      coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
+    enddo
 
-      call uscfth                                                 &
-      !==========
+    call uscfth                                                 &
+    !==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -543,7 +541,7 @@ do iphas = 1, nphas
 !     4.2 Sortie supersonique
 !===============================================================================
 
-    elseif ( itypfb(ifac).eq.isspcf ) then
+  elseif ( itypfb(ifac).eq.isspcf ) then
 
 !     On impose un Dirichlet égal à la valeur interne pour rho u E
 !       (on impose des Dirichlet déduit pour les autres variables).
@@ -560,29 +558,29 @@ do iphas = 1, nphas
 !       si l'utilisateur ne les a pas modifies.
 !       On traite d'abord les variables autres que la turbulence et les
 !       scalaires passifs : celles-ci sont traitees plus bas.
-      do iii = 1, nvarcf
-        ivar = ivarcf(iii)
-        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-          rcodcl(ifac,ivar,1) = 0.d0
-        endif
-      enddo
+    do iii = 1, nvarcf
+      ivar = ivarcf(iii)
+      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+        rcodcl(ifac,ivar,1) = 0.d0
+      endif
+    enddo
 
 !     Valeurs de rho u E
-      rcodcl(ifac,irhiph,1) = rtp(iel,irhiph)
-      rcodcl(ifac,iuiph ,1) = rtp(iel,iuiph)
-      rcodcl(ifac,iviph ,1) = rtp(iel,iviph)
-      rcodcl(ifac,iwiph ,1) = rtp(iel,iwiph)
-      rcodcl(ifac,ieniph,1) = rtp(iel,ieniph)
+    rcodcl(ifac,irhiph,1) = rtp(iel,irhiph)
+    rcodcl(ifac,iuiph ,1) = rtp(iel,iuiph)
+    rcodcl(ifac,iviph ,1) = rtp(iel,iviph)
+    rcodcl(ifac,iwiph ,1) = rtp(iel,iwiph)
+    rcodcl(ifac,ieniph,1) = rtp(iel,ieniph)
 
 !     Valeurs de P et s déduites
-      iccfth = 924
+    iccfth = 924
 
-      do ivar = 1, nvar
-        coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
-      enddo
+    do ivar = 1, nvar
+      coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
+    enddo
 
-      call uscfth                                                 &
-      !==========
+    call uscfth                                                 &
+    !==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -597,7 +595,7 @@ do iphas = 1, nphas
 !     4.3 Sortie a pression imposee
 !===============================================================================
 
-    elseif ( itypfb(ifac).eq.isopcf ) then
+  elseif ( itypfb(ifac).eq.isopcf ) then
 
 !       Sortie subsonique a priori (si c'est supersonique dans le
 !         domaine, ce n'est pas pour autant que c'est supersonique
@@ -611,32 +609,32 @@ do iphas = 1, nphas
 !     Si P n'est pas donné, erreur ; on sort aussi en erreur si P
 !       négatif, même si c'est possible, dans la plupart des cas ce
 !       sera une erreur
-      if(rcodcl(ifac,ipriph,1).lt.-rinfin*0.5d0) then
-        write(nfecra,1100)
-        call csexit (1)
-      endif
+    if(rcodcl(ifac,ipriph,1).lt.-rinfin*0.5d0) then
+      write(nfecra,1100)
+      call csexit (1)
+    endif
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
 !       verifier ceux que l'utilisateur a modifies. On les remet a zero
 !       si l'utilisateur ne les a pas modifies.
 !       On traite d'abord les variables autres que la turbulence et les
 !       scalaires passifs : celles-ci sont traitees plus bas.
-      do iii = 1, nvarcf
-        ivar = ivarcf(iii)
-        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-          rcodcl(ifac,ivar,1) = 0.d0
-        endif
-      enddo
+    do iii = 1, nvarcf
+      ivar = ivarcf(iii)
+      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+        rcodcl(ifac,ivar,1) = 0.d0
+      endif
+    enddo
 
 !     Valeurs de rho, u, E, s
-      iccfth = 93
+    iccfth = 93
 
-      do ivar = 1, nvar
-        coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
-      enddo
+    do ivar = 1, nvar
+      coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
+    enddo
 
-      call uscfth                                                 &
-      !==========
+    call uscfth                                                 &
+    !==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -651,7 +649,7 @@ do iphas = 1, nphas
 !     4.4 Entree à rho et U imposes
 !===============================================================================
 
-    elseif ( itypfb(ifac).eq.ierucf ) then
+  elseif ( itypfb(ifac).eq.ierucf ) then
 
 !       Entree subsonique a priori (si c'est supersonique dans le
 !         domaine, ce n'est pas pour autant que c'est supersonique
@@ -662,35 +660,35 @@ do iphas = 1, nphas
 !       selon la thermo et on passe dans Rusanov ensuite pour lisser.
 
 !     Si rho et u ne sont pas donnés, erreur
-      if(rcodcl(ifac,irhiph,1).lt.-rinfin*0.5d0.or.               &
+    if(rcodcl(ifac,irhiph,1).lt.-rinfin*0.5d0.or.               &
          rcodcl(ifac,iuiph ,1).lt.-rinfin*0.5d0.or.               &
          rcodcl(ifac,iviph ,1).lt.-rinfin*0.5d0.or.               &
          rcodcl(ifac,iwiph ,1).lt.-rinfin*0.5d0) then
-        write(nfecra,1200)
-        call csexit (1)
-      endif
+      write(nfecra,1200)
+      call csexit (1)
+    endif
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
 !       verifier ceux que l'utilisateur a modifies. On les remet a zero
 !       si l'utilisateur ne les a pas modifies.
 !       On traite d'abord les variables autres que la turbulence et les
 !       scalaires passifs : celles-ci sont traitees plus bas.
-      do iii = 1, nvarcf
-        ivar = ivarcf(iii)
-        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-          rcodcl(ifac,ivar,1) = 0.d0
-        endif
-      enddo
+    do iii = 1, nvarcf
+      ivar = ivarcf(iii)
+      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+        rcodcl(ifac,ivar,1) = 0.d0
+      endif
+    enddo
 
 !     Valeurs de P, E, s
-      iccfth = 92
+    iccfth = 92
 
-      do ivar = 1, nvar
-        coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
-      enddo
+    do ivar = 1, nvar
+      coefa(ifac,iclrtp(ivar,icoef)) = rcodcl(ifac,ivar,1)
+    enddo
 
-      call uscfth                                                 &
-      !==========
+    call uscfth                                                 &
+    !==========
  ( nvar   , nscal  , nphas  ,                                     &
    iccfth , ifac   , iphas  ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -705,7 +703,7 @@ do iphas = 1, nphas
 !     4.5 Entree à rho*U et rho*U*H imposes
 !===============================================================================
 
-    elseif ( itypfb(ifac).eq.ieqhcf ) then
+  elseif ( itypfb(ifac).eq.ieqhcf ) then
 
 !       Entree subsonique a priori (si c'est supersonique dans le
 !         domaine, ce n'est pas pour autant que c'est supersonique
@@ -717,23 +715,23 @@ do iphas = 1, nphas
 !       ensuite pour lisser.
 
 !     Si rho et u ne sont pas donnés, erreur
-      if(rcodcl(ifac,irun ,1).lt.-rinfin*0.5d0.or.         &
+    if(rcodcl(ifac,irun ,1).lt.-rinfin*0.5d0.or.         &
          rcodcl(ifac,irunh,1).lt.-rinfin*0.5d0) then
-        write(nfecra,1300)
-        call csexit (1)
-      endif
+      write(nfecra,1300)
+      call csexit (1)
+    endif
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
 !       verifier ceux que l'utilisateur a modifies. On les remet a zero
 !       si l'utilisateur ne les a pas modifies.
 !       On traite d'abord les variables autres que la turbulence et les
 !       scalaires passifs : celles-ci sont traitees plus bas.
-      do iii = 1, nvarcf
-        ivar = ivarcf(iii)
-        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+    do iii = 1, nvarcf
+      ivar = ivarcf(iii)
+      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
           rcodcl(ifac,ivar,1) = 0.d0
-        endif
-      enddo
+      endif
+    enddo
 
 !     A coder
 
@@ -741,20 +739,20 @@ do iphas = 1, nphas
 !            et IRUNH = ISCA(IENER)
 !     (aliases pour simplifier uscfcl)
 
-      write(nfecra,1301)
-      call csexit (1)
+    write(nfecra,1301)
+    call csexit (1)
 
 !===============================================================================
 ! 5. CONDITION NON PREVUE
 !===============================================================================
 !     Stop
-    else
+  else
 
-      write(nfecra,1400)
-      call csexit (1)
+    write(nfecra,1400)
+    call csexit (1)
 
 ! --- Fin de test sur les types de faces
-    endif
+  endif
 
 
 !===============================================================================
@@ -764,11 +762,11 @@ do iphas = 1, nphas
 !     TYPE DE C    .L. (DIRICHLET NEUMANN)
 !===============================================================================
 
-    if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
-         ( itypfb(ifac).eq.isspcf ) .or.                    &
-         ( itypfb(ifac).eq.isopcf ) .or.                    &
-         ( itypfb(ifac).eq.ierucf ) .or.                    &
-         ( itypfb(ifac).eq.ieqhcf ) ) then
+  if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
+       ( itypfb(ifac).eq.isspcf ) .or.                    &
+       ( itypfb(ifac).eq.isopcf ) .or.                    &
+       ( itypfb(ifac).eq.ierucf ) .or.                    &
+       ( itypfb(ifac).eq.ieqhcf ) ) then
 
 !===============================================================================
 !     6.1 Flux de bord Rusanov ou simplement flux de masse
@@ -776,37 +774,37 @@ do iphas = 1, nphas
 !===============================================================================
 
 !     Sortie supersonique :
-      if ( itypfb(ifac).eq.isspcf ) then
+    if ( itypfb(ifac).eq.isspcf ) then
 
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 !       (toutes les variables sont connues)
 
-        propfb(ifac,iflmab) = coefa(ifac,iclr)*                   &
-             ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
-             + coefa(ifac,iclv)*surfbo(2,ifac)                    &
-             + coefa(ifac,iclw)*surfbo(3,ifac) )
+      propfb(ifac,iflmab) = coefa(ifac,iclr)*                   &
+           ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
+           + coefa(ifac,iclv)*surfbo(2,ifac)                    &
+           + coefa(ifac,iclw)*surfbo(3,ifac) )
 
 !     Entree subsonique
 
-      else if ( itypfb(ifac).eq.ierucf ) then
+    else if ( itypfb(ifac).eq.ierucf ) then
 
 !     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
 
-        propfb(ifac,iflmab) = coefa(ifac,iclr)*                   &
-             ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
-             + coefa(ifac,iclv)*surfbo(2,ifac)                    &
-             + coefa(ifac,iclw)*surfbo(3,ifac) )
+      propfb(ifac,iflmab) = coefa(ifac,iclr)*                   &
+           ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
+           + coefa(ifac,iclv)*surfbo(2,ifac)                    &
+           + coefa(ifac,iclw)*surfbo(3,ifac) )
 
 
 
 !     Autres entrees/sorties :
-      else
+    else
 
 !     On calcule des flux par Rusanov (PROPFB)
 !       (en particulier, le flux de masse est complete)
 
-        call cfrusb                                               &
-        !==========
+      call cfrusb                                               &
+      !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ifac   , iphas  ,                                              &
@@ -817,16 +815,16 @@ do iphas = 1, nphas
    w1     , w2     , w3     , w4     ,                            &
    ra     )
 
-      endif
+    endif
 
 !===============================================================================
 !     6.2 Recuperation de COEFA
 !===============================================================================
 
 !     On rétablit COEFA dans RCODCL
-      do ivar = 1, nvar
-        rcodcl(ifac,ivar,1) = coefa(ifac,iclrtp(ivar,icoef))
-      enddo
+    do ivar = 1, nvar
+      rcodcl(ifac,ivar,1) = coefa(ifac,iclrtp(ivar,icoef))
+    enddo
 
 !===============================================================================
 !     6.3 Types de C.L.
@@ -853,31 +851,31 @@ do iphas = 1, nphas
 !-------------------------------------------------------------------------------
 
 !       Entree sortie imposee : Neumann
-      if ( itypfb(ifac).eq.iesicf ) then
-        icodcl(ifac,ipriph)   = 3
+    if ( itypfb(ifac).eq.iesicf ) then
+      icodcl(ifac,ipriph)   = 3
 !       Entree subsonique
-      else if ( itypfb(ifac).eq.ierucf ) then
-        icodcl(ifac,ipriph)   = 3
-        rcodcl(ifac,ipriph,3) = 0.d0
+    else if ( itypfb(ifac).eq.ierucf ) then
+      icodcl(ifac,ipriph)   = 3
+      rcodcl(ifac,ipriph,3) = 0.d0
 !       Autres entrees/sorties : Dirichlet
-      else
-        icodcl(ifac,ipriph)   = 1
-      endif
+    else
+      icodcl(ifac,ipriph)   = 1
+    endif
 
 !-------------------------------------------------------------------------------
 !     rho U E T : Dirichlet
 !-------------------------------------------------------------------------------
 
 !     Masse volumique
-      icodcl(ifac,irhiph)   = 1
+    icodcl(ifac,irhiph)   = 1
 !     Vitesse
-      icodcl(ifac,iuiph)    = 1
-      icodcl(ifac,iviph)    = 1
-      icodcl(ifac,iwiph)    = 1
+    icodcl(ifac,iuiph)    = 1
+    icodcl(ifac,iviph)    = 1
+    icodcl(ifac,iwiph)    = 1
 !     Energie totale
-      icodcl(ifac,ieniph)   = 1
+    icodcl(ifac,ieniph)   = 1
 !     Temperature
-      icodcl(ifac,itkiph)   = 1
+    icodcl(ifac,itkiph)   = 1
 
 !-------------------------------------------------------------------------------
 !     turbulence et scalaires passifs : Dirichlet/Neumann selon flux
@@ -887,11 +885,60 @@ do iphas = 1, nphas
 !       On choisit un Dirichlet si le flux de masse est entrant et
 !       que l'utilisateur a donné une valeur dans RCODCL
 
-      if(propfb(ifac,iflmab).ge.0.d0) then
-        if(itytur.eq.2) then
+    if(propfb(ifac,iflmab).ge.0.d0) then
+      if(itytur.eq.2) then
+        icodcl(ifac,ik ) = 3
+        icodcl(ifac,iep) = 3
+      elseif(itytur.eq.3) then
+        icodcl(ifac,ir11) = 3
+        icodcl(ifac,ir22) = 3
+        icodcl(ifac,ir33) = 3
+        icodcl(ifac,ir12) = 3
+        icodcl(ifac,ir13) = 3
+        icodcl(ifac,ir23) = 3
+        icodcl(ifac,iep ) = 3
+      elseif(iturb.eq.50) then
+        icodcl(ifac,ik  ) = 3
+        icodcl(ifac,iep ) = 3
+        icodcl(ifac,iphi) = 3
+        icodcl(ifac,ifb ) = 3
+      elseif(iturb.eq.60) then
+        icodcl(ifac,ik  ) = 3
+        icodcl(ifac,iomg) = 3
+      elseif(iturb.eq.70) then
+        icodcl(ifac,inusa) = 3
+      endif
+      if(nscaus.gt.0) then
+        do ii = 1, nscaus
+          icodcl(ifac,isca(ii)) = 3
+        enddo
+      endif
+    else
+      if(itytur.eq.2) then
+        if(rcodcl(ifac,ik ,1).gt.0.d0.and.               &
+             rcodcl(ifac,iep,1).gt.0.d0) then
+          icodcl(ifac,ik ) = 1
+          icodcl(ifac,iep) = 1
+        else
           icodcl(ifac,ik ) = 3
           icodcl(ifac,iep) = 3
-        elseif(itytur.eq.3) then
+        endif
+      elseif(itytur.eq.3) then
+        if(rcodcl(ifac,ir11,1).gt.0.d0.and.              &
+             rcodcl(ifac,ir22,1).gt.0.d0.and.              &
+             rcodcl(ifac,ir33,1).gt.0.d0.and.              &
+             rcodcl(ifac,ir12,1).gt.-rinfin*0.5d0.and.     &
+             rcodcl(ifac,ir13,1).gt.-rinfin*0.5d0.and.     &
+             rcodcl(ifac,ir23,1).gt.-rinfin*0.5d0.and.     &
+             rcodcl(ifac,iep ,1).gt.0.d0) then
+          icodcl(ifac,ir11) = 1
+          icodcl(ifac,ir22) = 1
+          icodcl(ifac,ir33) = 1
+          icodcl(ifac,ir12) = 1
+          icodcl(ifac,ir13) = 1
+          icodcl(ifac,ir23) = 1
+          icodcl(ifac,iep ) = 1
+        else
           icodcl(ifac,ir11) = 3
           icodcl(ifac,ir22) = 3
           icodcl(ifac,ir33) = 3
@@ -899,97 +946,48 @@ do iphas = 1, nphas
           icodcl(ifac,ir13) = 3
           icodcl(ifac,ir23) = 3
           icodcl(ifac,iep ) = 3
-        elseif(iturb.eq.50) then
+        endif
+      elseif(iturb.eq.50) then
+        if(rcodcl(ifac,ik  ,1).gt.0.d0.and.              &
+             rcodcl(ifac,iep ,1).gt.0.d0.and.              &
+             rcodcl(ifac,iphi,1).gt.0.d0.and.              &
+             rcodcl(ifac,ifb ,1).gt.-rinfin*0.5d0 ) then
+          icodcl(ifac,ik  ) = 1
+          icodcl(ifac,iep ) = 1
+          icodcl(ifac,iphi) = 1
+          icodcl(ifac,ifb ) = 1
+        else
           icodcl(ifac,ik  ) = 3
           icodcl(ifac,iep ) = 3
           icodcl(ifac,iphi) = 3
           icodcl(ifac,ifb ) = 3
-        elseif(iturb.eq.60) then
-          icodcl(ifac,ik  ) = 3
-          icodcl(ifac,iomg) = 3
-        elseif(iturb.eq.70) then
-          icodcl(ifac,inusa) = 3
         endif
-        if(nscaus.gt.0) then
-          do ii = 1, nscaus
-            icodcl(ifac,isca(ii)) = 3
-          enddo
-        endif
-      else
-        if(itytur.eq.2) then
-          if(rcodcl(ifac,ik ,1).gt.0.d0.and.               &
-             rcodcl(ifac,iep,1).gt.0.d0) then
-            icodcl(ifac,ik ) = 1
-            icodcl(ifac,iep) = 1
-          else
-            icodcl(ifac,ik ) = 3
-            icodcl(ifac,iep) = 3
-          endif
-        elseif(itytur.eq.3) then
-          if(rcodcl(ifac,ir11,1).gt.0.d0.and.              &
-             rcodcl(ifac,ir22,1).gt.0.d0.and.              &
-             rcodcl(ifac,ir33,1).gt.0.d0.and.              &
-             rcodcl(ifac,ir12,1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,ir13,1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,ir23,1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,iep ,1).gt.0.d0) then
-            icodcl(ifac,ir11) = 1
-            icodcl(ifac,ir22) = 1
-            icodcl(ifac,ir33) = 1
-            icodcl(ifac,ir12) = 1
-            icodcl(ifac,ir13) = 1
-            icodcl(ifac,ir23) = 1
-            icodcl(ifac,iep ) = 1
-          else
-            icodcl(ifac,ir11) = 3
-            icodcl(ifac,ir22) = 3
-            icodcl(ifac,ir33) = 3
-            icodcl(ifac,ir12) = 3
-            icodcl(ifac,ir13) = 3
-            icodcl(ifac,ir23) = 3
-            icodcl(ifac,iep ) = 3
-          endif
-        elseif(iturb.eq.50) then
-          if(rcodcl(ifac,ik  ,1).gt.0.d0.and.              &
-             rcodcl(ifac,iep ,1).gt.0.d0.and.              &
-             rcodcl(ifac,iphi,1).gt.0.d0.and.              &
-             rcodcl(ifac,ifb ,1).gt.-rinfin*0.5d0 ) then
-            icodcl(ifac,ik  ) = 1
-            icodcl(ifac,iep ) = 1
-            icodcl(ifac,iphi) = 1
-            icodcl(ifac,ifb ) = 1
-          else
-            icodcl(ifac,ik  ) = 3
-            icodcl(ifac,iep ) = 3
-            icodcl(ifac,iphi) = 3
-            icodcl(ifac,ifb ) = 3
-          endif
-        elseif(iturb.eq.60) then
+      elseif(iturb.eq.60) then
          if(rcodcl(ifac,ik  ,1).gt.0.d0.and.               &
-            rcodcl(ifac,iomg,1).gt.0.d0 ) then
-            icodcl(ifac,ik  ) = 1
-            icodcl(ifac,iomg) = 1
-          else
-            icodcl(ifac,ik  ) = 3
-            icodcl(ifac,iomg) = 3
-          endif
-        elseif(iturb.eq.70) then
+              rcodcl(ifac,iomg,1).gt.0.d0 ) then
+           icodcl(ifac,ik  ) = 1
+           icodcl(ifac,iomg) = 1
+         else
+           icodcl(ifac,ik  ) = 3
+           icodcl(ifac,iomg) = 3
+         endif
+       elseif(iturb.eq.70) then
          if(rcodcl(ifac,inusa,1).gt.0.d0) then
-            icodcl(ifac,inusa) = 1
-          else
-            icodcl(ifac,inusa) = 3
-          endif
-        endif
-        if(nscaus.gt.0) then
-          do ii = 1, nscaus
-            if(rcodcl(ifac,isca(ii),1).gt.-rinfin*0.5d0) then
-              icodcl(ifac,isca(ii)) = 1
-            else
-              icodcl(ifac,isca(ii)) = 3
-            endif
-          enddo
-        endif
-      endif
+           icodcl(ifac,inusa) = 1
+         else
+           icodcl(ifac,inusa) = 3
+         endif
+       endif
+       if(nscaus.gt.0) then
+         do ii = 1, nscaus
+           if(rcodcl(ifac,isca(ii),1).gt.-rinfin*0.5d0) then
+             icodcl(ifac,isca(ii)) = 1
+           else
+             icodcl(ifac,isca(ii)) = 3
+           endif
+         enddo
+       endif
+     endif
 
 
 !     Les RCODCL ont ete initialises a -RINFIN pour permettre de
@@ -999,21 +997,18 @@ do iphas = 1, nphas
 !       simplifier la boucle, on traite toutes les variables : les
 !       variables du compressible sont donc vues deux fois, mais ce
 !       n'est pas grave).
-      do ivar = 1, nvar
-        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-          rcodcl(ifac,ivar,1) = 0.d0
-        endif
-      enddo
+     do ivar = 1, nvar
+       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
+         rcodcl(ifac,ivar,1) = 0.d0
+       endif
+     enddo
 
 
 ! --- Fin de test sur les faces d'entree sortie
-    endif
+   endif
 
 ! --- Fin de boucle sur les faces de bord
-  enddo
-
-! --- Fin de boucle sur les phases
-enddo
+ enddo
 
 !----
 ! FORMATS

@@ -297,37 +297,31 @@ if(iappel.eq.1.or.iappel.eq.2) then
   iutile = 0
   if(iutile.eq.1) then
 
-    if(iphas.eq.1) then
+    ieltsm = 0
 
-      ieltsm = 0
+    !     Cells with coordinate X between 2.5 and 5.
+    CALL GETCEL('X > 2.5 and X < 5.0',NLELT,LSTELT)
+    do ilelt = 1, nlelt
+      ii = lstelt(ilelt)
+      ieltsm = ieltsm + 1
+      if (iappel.eq.2) icetsm(ieltsm) = ii
+    enddo
 
-!     Cells with coordinate X between 2.5 and 5.
-      CALL GETCEL('X > 2.5 and X < 5.0',NLELT,LSTELT)
-      do ilelt = 1, nlelt
-        ii = lstelt(ilelt)
+
+    !     Cells with a boundary face of color 3
+
+    CALL GETFBR('3',NLELT,LSTELT)
+    do ilelt = 1, nlelt
+      ifac = lstelt(ilelt)
+      ii   = ifabor(ifac)
+      !       The cells that have already been counted above are not
+      !        counted again.
+      if (.not.(xyzcen(1,ii).lt.500.d0.and.                     &
+           xyzcen(1,ii).gt.250.d0)    )then
         ieltsm = ieltsm + 1
         if (iappel.eq.2) icetsm(ieltsm) = ii
-      enddo
-
-
-!     Cells with a boundary face of color 3
-
-      CALL GETFBR('3',NLELT,LSTELT)
-      do ilelt = 1, nlelt
-        ifac = lstelt(ilelt)
-        ii   = ifabor(ifac)
-!       The cells that have already been counted above are not
-!        counted again.
-        if (.not.(xyzcen(1,ii).lt.500.d0.and.                     &
-                  xyzcen(1,ii).gt.250.d0)    )then
-          ieltsm = ieltsm + 1
-          if (iappel.eq.2) icetsm(ieltsm) = ii
-        endif
-      enddo
-
-    else
-      ieltsm = 0
-    endif
+      endif
+    enddo
 
  endif
 
@@ -368,80 +362,76 @@ elseif(iappel.eq.3) then
 ! Example 1: simulation of an inlet condition by mass source terms
 !            and printing of the total mass rate for phase 1.
 
-  if(iphas.eq.1) then
+  vent = 0.1d0
+  vent2 = vent**2
+  dh     = 0.5d0
+  !
+  ! Calculation of the inlet conditions for k and epsilon with standard
+  !   laws in a circular pipe.
+  ustar2 = 0.d0
+  xkent  = epzero
+  xeent  = epzero
 
-    vent = 0.1d0
-    vent2 = vent**2
-    dh     = 0.5d0
-!
-! Calculation of the inlet conditions for k and epsilon with standard
-!   laws in a circular pipe.
-    ustar2 = 0.d0
-    xkent  = epzero
-    xeent  = epzero
+  call keendb                                                   &
+  !==========
+( vent2, dh, ro0, viscl0, cmu, xkappa,        &
+  ustar2, xkent, xeent )
 
-    call keendb                                                   &
-    !==========
-      ( vent2, dh, ro0, viscl0, cmu, xkappa,        &
-        ustar2, xkent, xeent )
-
-    flucel = 0.d0
-    do ieltsm = 1, ncesmp
-      smacel(ieltsm,ipr) = 30000.d0
-      itypsm(ieltsm,iv) = 1
-      smacel(ieltsm,iv) = vent
-      if (itytur.eq.2) then
-        itypsm(ieltsm,ik) = 1
-        smacel(ieltsm,ik) = xkent
-        itypsm(ieltsm,iep) = 1
-        smacel(ieltsm,iep) = xeent
-      else if (itytur.eq.3) then
-        itypsm(ieltsm,ir11) = 1
-        itypsm(ieltsm,ir12) = 1
-        itypsm(ieltsm,ir13) = 1
-        itypsm(ieltsm,ir22) = 1
-        itypsm(ieltsm,ir23) = 1
-        itypsm(ieltsm,ir33) = 1
-        smacel(ieltsm,ir11) = 2.d0/3.d0*xkent
-        smacel(ieltsm,ir12) = 0.d0
-        smacel(ieltsm,ir13) = 0.d0
-        smacel(ieltsm,ir22) = 2.d0/3.d0*xkent
-        smacel(ieltsm,ir23) = 0.d0
-        smacel(ieltsm,ir33) = 2.d0/3.d0*xkent
-        itypsm(ieltsm,iep) = 1
-        smacel(ieltsm,iep) = xeent
-      else if (iturb.eq.50) then
-        itypsm(ieltsm,ik) = 1
-        smacel(ieltsm,ik) = xkent
-        itypsm(ieltsm,iep) = 1
-        smacel(ieltsm,iep) = xeent
-        itypsm(ieltsm,iphi) = 1
-        smacel(ieltsm,iphi) = 2.d0/3.d0
-! There is no mass source term in the equation for f_bar
-      else if (iturb.eq.60) then
-        itypsm(ieltsm,ik) = 1
-        smacel(ieltsm,ik) = xkent
-        itypsm(ieltsm,iomg)= 1
-        smacel(ieltsm,iomg)= xeent/cmu/xkent
-      endif
-      if(nscal.gt.0) then
-        do ii = 1, nscal
-          itypsm(ieltsm,isca(ii)) = 1
-          smacel(ieltsm,isca(ii)) = 1.d0
-        enddo
-      endif
-      flucel = flucel+                                            &
-                volume(icetsm(ieltsm))*smacel(ieltsm,ipr)
-    enddo
-
-    if (irangp.ge.0) then
-      call parsom (flucel)
+  flucel = 0.d0
+  do ieltsm = 1, ncesmp
+    smacel(ieltsm,ipr) = 30000.d0
+    itypsm(ieltsm,iv) = 1
+    smacel(ieltsm,iv) = vent
+    if (itytur.eq.2) then
+      itypsm(ieltsm,ik) = 1
+      smacel(ieltsm,ik) = xkent
+      itypsm(ieltsm,iep) = 1
+      smacel(ieltsm,iep) = xeent
+    else if (itytur.eq.3) then
+      itypsm(ieltsm,ir11) = 1
+      itypsm(ieltsm,ir12) = 1
+      itypsm(ieltsm,ir13) = 1
+      itypsm(ieltsm,ir22) = 1
+      itypsm(ieltsm,ir23) = 1
+      itypsm(ieltsm,ir33) = 1
+      smacel(ieltsm,ir11) = 2.d0/3.d0*xkent
+      smacel(ieltsm,ir12) = 0.d0
+      smacel(ieltsm,ir13) = 0.d0
+      smacel(ieltsm,ir22) = 2.d0/3.d0*xkent
+      smacel(ieltsm,ir23) = 0.d0
+      smacel(ieltsm,ir33) = 2.d0/3.d0*xkent
+      itypsm(ieltsm,iep) = 1
+      smacel(ieltsm,iep) = xeent
+    else if (iturb.eq.50) then
+      itypsm(ieltsm,ik) = 1
+      smacel(ieltsm,ik) = xkent
+      itypsm(ieltsm,iep) = 1
+      smacel(ieltsm,iep) = xeent
+      itypsm(ieltsm,iphi) = 1
+      smacel(ieltsm,iphi) = 2.d0/3.d0
+      ! There is no mass source term in the equation for f_bar
+    else if (iturb.eq.60) then
+      itypsm(ieltsm,ik) = 1
+      smacel(ieltsm,ik) = xkent
+      itypsm(ieltsm,iomg)= 1
+      smacel(ieltsm,iomg)= xeent/cmu/xkent
     endif
-
-    if (iwarni(ipr).ge.1) then
-      write(nfecra,1000) flucel
+    if(nscal.gt.0) then
+      do ii = 1, nscal
+        itypsm(ieltsm,isca(ii)) = 1
+        smacel(ieltsm,isca(ii)) = 1.d0
+      enddo
     endif
+    flucel = flucel+                                            &
+         volume(icetsm(ieltsm))*smacel(ieltsm,ipr)
+  enddo
 
+  if (irangp.ge.0) then
+    call parsom (flucel)
+  endif
+
+  if (iwarni(ipr).ge.1) then
+    write(nfecra,1000) flucel
   endif
 
 !-------------------------------------------------------------------------------
@@ -458,45 +448,41 @@ elseif(iappel.eq.3) then
   iutile = 0
   if(iutile.eq.1) then
 
-    if(iphas.eq.1) then
+    ! Calculation of the total volume of the area where the mass source
+    !   term is imposed (the case of parallel computing is taken into
+    !   account with the call to parsom).
+    vtot = 0.d0
+    do ieltsm = 1, ncesmp
+      vtot = vtot + volume(icetsm(ieltsm))
+    enddo
+    if (irangp.ge.0) then
+      call parsom (vtot)
+    endif
 
-! Calculation of the total volume of the area where the mass source
-!   term is imposed (the case of parallel computing is taken into
-!   account with the call to parsom).
-      vtot = 0.d0
-      do ieltsm = 1, ncesmp
-        vtot = vtot + volume(icetsm(ieltsm))
-      enddo
-      if (irangp.ge.0) then
-        call parsom (vtot)
-      endif
+    ! The mass suction rate is gamma = -80000/vtot (in kg/m3/s)
+    ! It is set below, with a test for cases where vtot=0. The total
+    ! mass rate is calculated for verification.
 
-! The mass suction rate is gamma = -80000/vtot (in kg/m3/s)
-! It is set below, with a test for cases where vtot=0. The total
-! mass rate is calculated for verification.
+    if (vtot.gt.0.d0) then
+      gamma = -80000.d0/vtot
+    else
+      write(nfecra,9000) vtot
+      call csexit (1)
+    endif
 
-      if (vtot.gt.0.d0) then
-        gamma = -80000.d0/vtot
-      else
-        write(nfecra,9000) vtot
-        call csexit (1)
-      endif
+    flucel = 0.d0
+    do ieltsm = 1, ncesmp
+      smacel(ieltsm,ipr) = gamma
+      flucel = flucel+                                          &
+           volume(icetsm(ieltsm))*smacel(ieltsm,ipr)
+    enddo
 
-      flucel = 0.d0
-      do ieltsm = 1, ncesmp
-        smacel(ieltsm,ipr) = gamma
-        flucel = flucel+                                          &
-                volume(icetsm(ieltsm))*smacel(ieltsm,ipr)
-      enddo
+    if (irangp.ge.0) then
+      call parsom (flucel)
+    endif
 
-      if (irangp.ge.0) then
-        call parsom (flucel)
-      endif
-
-      if (iwarni(ipr).ge.1) then
-        write(nfecra,2000) flucel, vtot
-      endif
-
+    if (iwarni(ipr).ge.1) then
+      write(nfecra,2000) flucel, vtot
     endif
 
   endif

@@ -232,16 +232,14 @@ endif
 
 ! --- Rho et visc constants ou variables
 
-do iphas = 1, nphas
-  if(irovar.ne.0.and.irovar.ne.1) then
-    WRITE(NFECRA,2201)'IROVAR',IROVAR
-    iok = iok + 1
-  endif
-  if(ivivar.ne.0.and.ivivar.ne.1) then
-    WRITE(NFECRA,2201)'IVIVAR',IVIVAR
-    iok = iok + 1
-  endif
-enddo
+if(irovar.ne.0.and.irovar.ne.1) then
+  WRITE(NFECRA,2201)'IROVAR',IROVAR
+  iok = iok + 1
+endif
+if(ivivar.ne.0.and.ivivar.ne.1) then
+  WRITE(NFECRA,2201)'IVIVAR',IVIVAR
+  iok = iok + 1
+endif
 
 ! --- Definition des equations, schema en temps, schema convectif
 
@@ -269,106 +267,79 @@ enddo
 
 
 !     Extrap de rho : necessairement rho variable
-do iphas = 1, nphas
-  if(irovar.eq.0.and.iroext.gt.0) then
-    write(nfecra,2005)iroext,irovar
-    iok = iok + 1
-  endif
-enddo
+if(irovar.eq.0.and.iroext.gt.0) then
+  write(nfecra,2005)iroext,irovar
+  iok = iok + 1
+endif
 
 !     Coherence des vitesses
 !       Pour le moment, theta est fixe automatiquement dans modini
 !       On conserve quand meme le test pour plus tard puisqu'il est ecrit.
-do iphas = 1, nphas
-  if(abs(thetav(iv)-thetav(iu)).gt.epzero.or.       &
+if(abs(thetav(iv)-thetav(iu)).gt.epzero.or.       &
      abs(thetav(iw)-thetav(iu)).gt.epzero) then
-    write(nfecra,2111) thetav(iu),thetav(iv), &
-                       thetav(iw)
-    iok = iok + 1
-  endif
-enddo
+  write(nfecra,2111) thetav(iu),thetav(iv), &
+       thetav(iw)
+  iok = iok + 1
+endif
 
 
 !     Theta pression : vaut 1
 !       Pour le moment, theta est fixe automatiquement dans modini
 !         (on ne devrait donc jamais voir cet affichage)
 !       On conserve quand meme le test pour plus tard puisqu'il est ecrit.
-do iphas = 1, nphas
-  jj = ipr
-  if(abs(thetav(jj)-1.0d0).gt.epzero) then
-    ipp    = ipprtp(jj)
-    chaine=nomvar(ipp)
-    write(nfecra,2112) thetav(jj)
-    iok = iok + 1
-  endif
-enddo
-
-!     Flux de masse et proprietes
-!       Pour le moment, theta est fixe automatiquement dans modini
-!       Donc pas de test sur sa valeur ici
-
-!     On verifie que toutes les phases sont traitees pareil
-testth = thetfl
-itests = istmpf
-do iphas = 1, nphas
-
-  if(abs(testth-thetfl).gt.epzero) then
-    write(nfecra,2113) testth,thetfl
-    iok = iok + 1
-  endif
-  if(itests.ne.istmpf) then
-    write(nfecra,2114) itests,istmpf
-    iok = iok + 1
-  endif
-enddo
+jj = ipr
+if(abs(thetav(jj)-1.0d0).gt.epzero) then
+  ipp    = ipprtp(jj)
+  chaine=nomvar(ipp)
+  write(nfecra,2112) thetav(jj)
+  iok = iok + 1
+endif
 
 !     En LES il y a des verification de coherence supplementaires.
 !       (simple avertissement si on s'ecarte des choix std)
 !        mais stop si on fait plus de 5% d'upwind
 !     Schema centre sans/avec test de pente, nwsrsm
-do iphas = 1, nphas
-  if(itytur.eq.4) then
-    do ii = 1,3
-      if(ii.eq.1) jj = iu
-      if(ii.eq.2) jj = iv
-      if(ii.eq.3) jj = iw
-      ipp    = ipprtp(jj)
-      chaine=nomvar(ipp)
-      if(abs(thetav(jj)-0.5d0).gt.epzero) then
-        write(nfecra,2121) chaine(1:8),thetav(jj)
-      endif
-      if (blencv(jj).lt.0.95d0) then
-        write(nfecra,2127) chaine(1:8),blencv(jj)
-        iok = iok + 1
-      elseif(abs(blencv(jj)-1.d0).gt.epzero) then
-        write(nfecra,2122) chaine(1:8),blencv(jj)
-      endif
-      if(isstpc(jj).eq.0) then
-        write(nfecra,2123) chaine(1:8),isstpc(jj)
-      endif
-    enddo
-  endif
-  if(itytur.eq.4.or.ischtp.eq.2) then
-    do ii = 1,3
-      if(ii.eq.1) jj = iu
-      if(ii.eq.2) jj = iv
-      if(ii.eq.3) jj = iw
-      ipp    = ipprtp(jj)
-      chaine=nomvar(ipp)
-      iiidef = 10
-      if(nswrsm(jj).ne.iiidef) then
-        write(nfecra,2125) chaine(1:8),iiidef,nswrsm(jj)
-      endif
-    enddo
-    jj = ipr
+if(itytur.eq.4) then
+  do ii = 1,3
+    if(ii.eq.1) jj = iu
+    if(ii.eq.2) jj = iv
+    if(ii.eq.3) jj = iw
     ipp    = ipprtp(jj)
     chaine=nomvar(ipp)
-    iiidef = 5
+    if(abs(thetav(jj)-0.5d0).gt.epzero) then
+      write(nfecra,2121) chaine(1:8),thetav(jj)
+    endif
+    if (blencv(jj).lt.0.95d0) then
+      write(nfecra,2127) chaine(1:8),blencv(jj)
+      iok = iok + 1
+    elseif(abs(blencv(jj)-1.d0).gt.epzero) then
+      write(nfecra,2122) chaine(1:8),blencv(jj)
+    endif
+    if(isstpc(jj).eq.0) then
+      write(nfecra,2123) chaine(1:8),isstpc(jj)
+    endif
+  enddo
+endif
+if(itytur.eq.4.or.ischtp.eq.2) then
+  do ii = 1,3
+    if(ii.eq.1) jj = iu
+    if(ii.eq.2) jj = iv
+    if(ii.eq.3) jj = iw
+    ipp    = ipprtp(jj)
+    chaine=nomvar(ipp)
+    iiidef = 10
     if(nswrsm(jj).ne.iiidef) then
       write(nfecra,2125) chaine(1:8),iiidef,nswrsm(jj)
     endif
+  enddo
+  jj = ipr
+  ipp    = ipprtp(jj)
+  chaine=nomvar(ipp)
+  iiidef = 5
+  if(nswrsm(jj).ne.iiidef) then
+    write(nfecra,2125) chaine(1:8),iiidef,nswrsm(jj)
   endif
-enddo
+endif
 do ii = 1, nscal
   iphas = 1
   if(itytur.eq.4) then
@@ -398,31 +369,29 @@ enddo
 
 !     Test du theta de la viscosite secondaire, du flux de masse et
 !     de la viscosite par rapport a celui de la vitesse
-do iphas = 1, nphas
-  jj = iu
-  if( abs(thetav(jj)-1.d0).lt.epzero.and.                         &
-       (istmpf.eq.2.or.                                    &
-        isno2t.ne.0.or.                                    &
-        isto2t.ne.0.or.                                    &
-        iroext.ne.0.or.                                    &
-        iviext.ne.0.or.                                    &
-        icpext.ne.0   ) ) then
-    write(nfecra,2131) thetav(jj),                          &
-         istmpf,isno2t,isto2t,               &
-         iroext,iviext,icpext
-  endif
-  if( abs(thetav(jj)-0.5d0).lt.epzero.and.                        &
-       (istmpf.ne.2.or.                                    &
-        isno2t.ne.1.or.                                    &
-        isto2t.ne.1.or.                                    &
-        iroext.ne.1.or.                                    &
-        iviext.ne.1.or.                                    &
-        icpext.ne.1   ) ) then
-    write(nfecra,2132) thetav(jj),                          &
-         istmpf,isno2t,isto2t,               &
-         iroext,iviext,icpext
-  endif
-enddo
+jj = iu
+if( abs(thetav(jj)-1.d0).lt.epzero.and.                         &
+     (istmpf.eq.2.or.                                    &
+     isno2t.ne.0.or.                                    &
+     isto2t.ne.0.or.                                    &
+     iroext.ne.0.or.                                    &
+     iviext.ne.0.or.                                    &
+     icpext.ne.0   ) ) then
+  write(nfecra,2131) thetav(jj),                          &
+       istmpf,isno2t,isto2t,               &
+       iroext,iviext,icpext
+endif
+if( abs(thetav(jj)-0.5d0).lt.epzero.and.                        &
+     (istmpf.ne.2.or.                                    &
+     isno2t.ne.1.or.                                    &
+     isto2t.ne.1.or.                                    &
+     iroext.ne.1.or.                                    &
+     iviext.ne.1.or.                                    &
+     icpext.ne.1   ) ) then
+  write(nfecra,2132) thetav(jj),                          &
+       istmpf,isno2t,isto2t,               &
+       iroext,iviext,icpext
+endif
 do iscal = 1, nscal
   iphas = 1
   if(isso2t(iscal).ne.isno2t)then
@@ -435,12 +404,10 @@ enddo
 
 !     Test du theta de la diffusivite des scalaires et de Cp : ils doivent etre
 !       variables en (en espace) si on les extrapole (en temps) (...)
-do iphas = 1, nphas
-  if( icpext.gt.0 .and. icp.le.0 ) then
-    write(nfecra,2135) icpext, icp
-    iok = iok + 1
-  endif
-enddo
+if( icpext.gt.0 .and. icp.le.0 ) then
+  write(nfecra,2135) icpext, icp
+  iok = iok + 1
+endif
 do iscal = 1, nscal
   if( ivsext(iscal).gt.0 .and. ivisls(iscal).le.0 ) then
     write(nfecra,2136) iscal, ivsext(iscal), ivisls(iscal)
@@ -452,21 +419,19 @@ enddo
 
 !     Pour les tests suivants : Utilise-t-on un estimateur d'erreur ?
 indest = 0
-do iphas = 1, nphas
-  do iest = 1, nestmx
-    iiesca = iescal(iest)
-    if(iiesca.gt.0) then
-      indest = 1
-    endif
-  enddo
+do iest = 1, nestmx
+  iiesca = iescal(iest)
+  if(iiesca.gt.0) then
+    indest = 1
+  endif
 enddo
 
 !     Estimateurs incompatibles avec calcul a champ de vitesse
 !       fige (on ne fait rien, sauf ecrire des betises dans le listing)
- if(indest.eq.1.and.iccvfg.eq.1) then
-   write(nfecra,2137)
-   iok = iok + 1
- endif
+if(indest.eq.1.and.iccvfg.eq.1) then
+  write(nfecra,2137)
+  iok = iok + 1
+endif
 
 !     A priori, pour le moment, l'ordre 2 en temps
 !       (rho, visc, termes sources N.S, theta vitesse)
@@ -476,32 +441,29 @@ enddo
 !       - iphydr et icalhy
 !       - dt variable en espace ou en temps et stationnaire
 !     Ici on s'arrete si on n'est pas dans le cas du schema std
-do iphas = 1, nphas
-  iuiph = iu
-  iviph = iv
-  iwiph = iw
-  if( (abs(thetav(iuiph)-1.0d0).gt.1.d-3).or.                     &
-      (abs(thetav(iviph)-1.0d0).gt.1.d-3).or.                     &
-      (abs(thetav(iwiph)-1.0d0).gt.1.d-3).or.                     &
-      (    thetsn       .gt.0.d0 ).or.                     &
-      (    isno2t       .gt.0    ).or.                     &
-      (    thetro       .gt.0.d0 ).or.                     &
-      (    iroext       .gt.0    ).or.                     &
-      (    thetvi       .gt.0.d0 ).or.                     &
-      (    iviext       .gt.0    )    ) then
-     if(indest.eq.1.or.ipucou.eq.1.or.                            &
-        iphydr.eq.1.or.icalhy.eq.1.or.                            &
-        idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
-       write(nfecra,2140)                                         &
-            thetav(iuiph),thetav(iviph),thetav(iwiph),            &
-            isno2t,thetsn,                          &
-            iroext,thetro,                          &
-            iviext,thetvi
-       iok = iok + 1
-     endif
-   endif
- enddo
-
+iuiph = iu
+iviph = iv
+iwiph = iw
+if( (abs(thetav(iuiph)-1.0d0).gt.1.d-3).or.                     &
+     (abs(thetav(iviph)-1.0d0).gt.1.d-3).or.                     &
+     (abs(thetav(iwiph)-1.0d0).gt.1.d-3).or.                     &
+     (    thetsn       .gt.0.d0 ).or.                     &
+     (    isno2t       .gt.0    ).or.                     &
+     (    thetro       .gt.0.d0 ).or.                     &
+     (    iroext       .gt.0    ).or.                     &
+     (    thetvi       .gt.0.d0 ).or.                     &
+     (    iviext       .gt.0    )    ) then
+  if(indest.eq.1.or.ipucou.eq.1.or.                            &
+       iphydr.eq.1.or.icalhy.eq.1.or.                            &
+       idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
+    write(nfecra,2140)                                         &
+         thetav(iuiph),thetav(iviph),thetav(iwiph),            &
+         isno2t,thetsn,                          &
+         iroext,thetro,                          &
+         iviext,thetvi
+    iok = iok + 1
+  endif
+endif
 
 !     Iterations sur navsto
 !     Doit etre un entier superieur ou egal a 1
@@ -527,54 +489,52 @@ endif
 
 !     A priori, pour le moment, l'ordre 2 en temps
 !       n'est pas pris en compte en k-eps, v2f ou k-omega couple : on s'arrete
-do iphas = 1, nphas
-  if (itytur.eq.2 .and.ikecou.eq.1) then
-    if((    thetst       .gt.0.d0 ).or.                    &
+if (itytur.eq.2 .and.ikecou.eq.1) then
+  if((    thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ).or.                    &
        (abs(thetav(ik )-1.0d0).gt.epzero).or.              &
        (abs(thetav(iep)-1.0d0).gt.epzero) ) then
-      write(nfecra,2142)iturb,ikecou,         &
-           thetst,isto2t,                           &
-           thetav(ik ),thetav(iep)
-      iok = iok + 1
-    endif
+    write(nfecra,2142)iturb,ikecou,         &
+         thetst,isto2t,                           &
+         thetav(ik ),thetav(iep)
+    iok = iok + 1
   endif
-  if (iturb.eq.50.and.ikecou.eq.1) then
-    if((    thetst       .gt.0.d0 ).or.                    &
+endif
+if (iturb.eq.50.and.ikecou.eq.1) then
+  if((    thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ).or.                    &
        (abs(thetav(ik  )-1.0d0).gt.epzero).or.             &
        (abs(thetav(iep )-1.0d0).gt.epzero).or.             &
        (abs(thetav(iphi)-1.0d0).gt.epzero).or.             &
        (abs(thetav(ifb )-1.0d0).gt.epzero) ) then
-      write(nfecra,2143)iturb,ikecou,         &
-           thetst,isto2t,                           &
-           thetav(ik  ),thetav(iep ),               &
-           thetav(iphi),thetav(ifb )
-      iok = iok + 1
-    endif
+    write(nfecra,2143)iturb,ikecou,         &
+         thetst,isto2t,                           &
+         thetav(ik  ),thetav(iep ),               &
+         thetav(iphi),thetav(ifb )
+    iok = iok + 1
   endif
-  if (iturb.eq.60.and.ikecou.eq.1) then
-    if((    thetst       .gt.0.d0 ).or.                    &
+endif
+if (iturb.eq.60.and.ikecou.eq.1) then
+  if((    thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ).or.                    &
        (abs(thetav(ik  )-1.0d0).gt.epzero).or.             &
        (abs(thetav(iomg)-1.0d0).gt.epzero) ) then
-      write(nfecra,2144)iturb,ikecou,         &
-           thetst,isto2t,                           &
-           thetav(ik  ),thetav(iomg)
-      iok = iok + 1
-    endif
+    write(nfecra,2144)iturb,ikecou,         &
+         thetst,isto2t,                           &
+         thetav(ik  ),thetav(iomg)
+    iok = iok + 1
   endif
-  if (iturb.eq.70) then
-    if((    thetst       .gt.0.d0 ).or.                    &
+endif
+if (iturb.eq.70) then
+  if((    thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ).or.                    &
        (abs(thetav(inusa)-1.0d0).gt.epzero) ) then
-      write(nfecra,2145)iturb,                       &
-           thetst,isto2t,                           &
-           thetav(inusa  )
-      iok = iok + 1
-    endif
+    write(nfecra,2145)iturb,                       &
+         thetst,isto2t,                           &
+         thetav(inusa  )
+    iok = iok + 1
   endif
-enddo
+endif
 
 !     A priori, pour le moment, l'ordre 2 en temps
 !       (rho, visc, cp, termes sources N.S., Turb., Scal., theta)
@@ -586,8 +546,7 @@ if(ippmod(iphpar).ge.1) then
   do ivar = 1, nvar
     if( (abs(thetav(ivar)-1.0d0).gt.1.d-3) ) istop = 1
   enddo
-  do iphas = 1, nphas
-    if((    thetsn       .gt.0.d0 ).or.                    &
+  if((    thetsn       .gt.0.d0 ).or.                    &
        (    isno2t       .gt.0    ).or.                    &
        (    thetro       .gt.0.d0 ).or.                    &
        (    iroext       .gt.0    ).or.                    &
@@ -595,12 +554,11 @@ if(ippmod(iphpar).ge.1) then
        (    iviext       .gt.0    ).or.                    &
        (    thetcp       .gt.0.d0 ).or.                    &
        (    icpext       .gt.0    )    ) istop = 1
-  enddo
   do iscal = 1, nscal
     if((    thetss(iscal)       .gt.0.d0 ).or.                    &
-       (    isso2t(iscal)       .gt.0    ).or.                    &
-       (    thetvs(iscal).gt.0.d0 ).or.                    &
-       (    ivsext(iscal).gt.0    )    ) istop = 1
+         (    isso2t(iscal)       .gt.0    ).or.                    &
+         (    thetvs(iscal).gt.0.d0 ).or.                    &
+         (    ivsext(iscal).gt.0    )    ) istop = 1
   enddo
 
   if(istop.ne.0) then
@@ -613,16 +571,14 @@ endif
 !       n'est pas pris en compte pour les termes issus du Lagrangien.
 !       On pourrait le signaler et continuer : on s'arrete.
 if(iilagr .eq. 2) then
-  do iphas = 1, nphas
-    if((    thetsn       .gt.0.d0 ).or.                    &
-      (    isno2t       .gt.0    ).or.                     &
+  if((    thetsn       .gt.0.d0 ).or.                    &
+       (    isno2t       .gt.0    ).or.                     &
        (    thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ) ) then
-      write(nfecra,2147)thetsn,isno2t,        &
-                        thetst,isto2t
-      iok = iok + 1
-    endif
-  enddo
+    write(nfecra,2147)thetsn,isno2t,        &
+         thetst,isto2t
+    iok = iok + 1
+  endif
   do iscal = 1, nscal
     if (iscsth(iscal).eq.1.or.iscsth(iscal).eq.2) then
       if((    thetss(iscal)       .gt.0.d0 ).or.                  &
@@ -639,17 +595,15 @@ endif
 !       n'est pas pris en compte pour les termes issus du rayonnement.
 !       On pourrait le signaler et continuer : on s'arrete.
 if (iirayo.gt.0) then
-  do iphas = 1, nphas
-    do iscal = 1, nscal
-      if (iscal.eq.iscalt) then
-        if((    thetss(iscal)       .gt.0.d0 ).or.                &
+  do iscal = 1, nscal
+    if (iscal.eq.iscalt) then
+      if((    thetss(iscal)       .gt.0.d0 ).or.                &
            (    isso2t(iscal)       .gt.0    )) then
-          write(nfecra,2148)                                      &
-         'rayonnement',ISCAL,THETSS(ISCAL),ISSO2T(ISCAL),'usray1'
-          iok = iok + 1
-        endif
+        write(nfecra,2148)                                      &
+             'rayonnement',ISCAL,THETSS(ISCAL),ISSO2T(ISCAL),'usray1'
+        iok = iok + 1
       endif
-    enddo
+    endif
   enddo
 endif
 
@@ -665,26 +619,22 @@ if (idtvar.lt.0) then
       endif
     endif
   enddo
-  do iphas = 1, nphas
-    if((relaxv(iv).ne.relaxv(iu))                   &
-   .or.(relaxv(iw).ne.relaxv(iu)) ) then
-      write(nfecra,2150) relaxv(iu),relaxv(iv),     &
-           relaxv(iw)
-      iok = iok + 1
-    endif
-  enddo
+  if((relaxv(iv).ne.relaxv(iu))                   &
+       .or.(relaxv(iw).ne.relaxv(iu)) ) then
+    write(nfecra,2150) relaxv(iu),relaxv(iv),     &
+         relaxv(iw)
+    iok = iok + 1
+  endif
 !       L'algorithme stationnaire n'est pas compatible avec le module Lagrangien
   if (iilagr.ne.0) then
     write(nfecra,2151) iilagr
     iok = iok + 1
   endif
 !       L'algorithme stationnaire n'est pas compatible avec la LES
-  do iphas = 1, nphas
-    if (itytur.eq.4) then
-      write(nfecra,2152) iturb
-      iok = iok + 1
-    endif
-  enddo
+  if (itytur.eq.4) then
+    write(nfecra,2152) iturb
+    iok = iok + 1
+  endif
 endif
 
 ! --- Reconstruction des gradients
@@ -778,16 +728,14 @@ do ipp = 2, nvppmx
   if(ii.ge.1) then
     if(abs(extrag(ii)     ).ge.epzero) then
       iokpre = 0
-      do iphas = 1, nphas
-        if (ii.eq.ipr) then
-          iokpre = 1
-          if(abs(extrag(ii)-1.d0).ge.epzero) then
-            chaine=nomvar(ipp)
-            write(nfecra,2330) chaine(1:8),ii,extrag(ii)
-            iok = iok + 1
-          endif
+      if (ii.eq.ipr) then
+        iokpre = 1
+        if(abs(extrag(ii)-1.d0).ge.epzero) then
+          chaine=nomvar(ipp)
+          write(nfecra,2330) chaine(1:8),ii,extrag(ii)
+          iok = iok + 1
         endif
-      enddo
+      endif
       if(iokpre.eq.0) then
         chaine=nomvar(ipp)
         write(nfecra,2331) chaine(1:8),ii,extrag(ii)
@@ -860,11 +808,9 @@ endif
 ! En LES, on previent que ce n'est pas malin de ne pas relire le fichier
 !   auxiliaire
 if(iecaux.eq.0.or.ileaux.eq.0) then
-  do iphas = 1, nphas
-    if(itytur.eq.4) then
-      write(nfecra,2420) iturb,ileaux,iecaux
-    endif
-  enddo
+  if(itytur.eq.4) then
+    write(nfecra,2420) iturb,ileaux,iecaux
+  endif
 endif
 
 ! --- Reperage du temps et marche en temps
@@ -928,24 +874,21 @@ endif
 
 !    Modele
 
-do iphas = 1, nphas
-  itrbph = iturb
-  if ( itrbph.ne. 0.and.itrbph.ne.10.and.itrbph.ne.20.and.        &
-       itrbph.ne.21.and.itrbph.ne.30.and.itrbph.ne.31.and.        &
-       itrbph.ne.40.and.itrbph.ne.41.and.itrbph.ne.42.and.        &
-       itrbph.ne.50.and.itrbph.ne.60.and.itrbph.ne.70  ) then
-    WRITE(NFECRA,2600) 'ITURB  ',ITRBPH
-    iok = iok + 1
-  endif
+itrbph = iturb
+if ( itrbph.ne. 0.and.itrbph.ne.10.and.itrbph.ne.20.and.        &
+     itrbph.ne.21.and.itrbph.ne.30.and.itrbph.ne.31.and.        &
+     itrbph.ne.40.and.itrbph.ne.41.and.itrbph.ne.42.and.        &
+     itrbph.ne.50.and.itrbph.ne.60.and.itrbph.ne.70  ) then
+  WRITE(NFECRA,2600) 'ITURB  ',ITRBPH
+  iok = iok + 1
+endif
 
-  ! In lagrangian with two-way coupling, k-omega SST is forbidden (not
-  ! properly implemented)
-  if (itrbph.eq.60 .and. iilagr.eq.2) then
-     write(nfecra,2601) iilagr
-     iok = iok + 1
-  endif
-
-enddo
+! In lagrangian with two-way coupling, k-omega SST is forbidden (not
+! properly implemented)
+if (itrbph.eq.60 .and. iilagr.eq.2) then
+  write(nfecra,2601) iilagr
+  iok = iok + 1
+endif
 
 !     Methode des vortex pour la LES
 
@@ -967,202 +910,196 @@ endif
 !    Nb de variables
 
 if(nscal.ge.1) then
-  do iphas = 1, nphas
-    if(iscalt.gt.nscal) then
-      write(nfecra,2610)                                          &
-                 'NUMERO DU SCALAIRE TEMPERATURE ',ISCALT, &
-                 'NOMBRE DE SCALAIRES            ',NSCAL
-      iok = iok + 1
-    endif
-    if(  (nvar.lt. 4+nscal               ) .or.                   &
-         (nvar.lt. 6+nscal.and.itytur.eq.2).or.            &
-         (nvar.lt.11+nscal.and.itytur.eq.3).or.            &
-         (nvar.lt. 8+nscal.and.iturb.eq.50).or.            &
-         (nvar.lt. 6+nscal.and.iturb.eq.60).or.            &
-         (nvar.lt. 5+nscal.and.iturb.eq.70)      ) then
-      write(nfecra,2610)                                          &
-                 'NOMBRE DE VARIABLES            ',NVAR,          &
-                 'NOMBRE DE SCALAIRES            ',NSCAL
-      iok = iok + 1
-    endif
-  enddo
+  if(iscalt.gt.nscal) then
+    write(nfecra,2610)                                          &
+         'NUMERO DU SCALAIRE TEMPERATURE ',ISCALT, &
+         'NOMBRE DE SCALAIRES            ',NSCAL
+    iok = iok + 1
+  endif
+  if(  (nvar.lt. 4+nscal               ) .or.                   &
+       (nvar.lt. 6+nscal.and.itytur.eq.2).or.            &
+       (nvar.lt.11+nscal.and.itytur.eq.3).or.            &
+       (nvar.lt. 8+nscal.and.iturb.eq.50).or.            &
+       (nvar.lt. 6+nscal.and.iturb.eq.60).or.            &
+       (nvar.lt. 5+nscal.and.iturb.eq.70)      ) then
+    write(nfecra,2610)                                          &
+         'NOMBRE DE VARIABLES            ',NVAR,          &
+         'NOMBRE DE SCALAIRES            ',NSCAL
+    iok = iok + 1
+  endif
 endif
 
-do iphas = 1, nphas
-
-  if(ideuch.lt.0.or.ideuch.gt.2) then
-    WRITE(NFECRA,2211)'IDEUCH',IDEUCH
-    iok = iok + 1
-  endif
-  if (ideuch.ne.0 .and.                                    &
-       (iturb.eq.0 .or. iturb.eq.10 .or.            &
-       itytur.eq.4 .or. iturb.eq.7 )) then
-     write(nfecra,2209)iturb,ideuch
-     iok = iok + 1
-  endif
-  if(ilogpo.ne.0.and.ilogpo.ne.1) then
-    WRITE(NFECRA,2201)'ILOGPO',ILOGPO
-    iok = iok + 1
-  endif
+if(ideuch.lt.0.or.ideuch.gt.2) then
+  WRITE(NFECRA,2211)'IDEUCH',IDEUCH
+  iok = iok + 1
+endif
+if (ideuch.ne.0 .and.                                    &
+     (iturb.eq.0 .or. iturb.eq.10 .or.            &
+     itytur.eq.4 .or. iturb.eq.7 )) then
+  write(nfecra,2209)iturb,ideuch
+  iok = iok + 1
+endif
+if(ilogpo.ne.0.and.ilogpo.ne.1) then
+  WRITE(NFECRA,2201)'ILOGPO',ILOGPO
+  iok = iok + 1
+endif
 
 !      Specifique k-epsilon, v2f et k-omega
 
- if(itytur.eq.2 .or. iturb.eq.50                    &
-       .or. iturb.eq.60 ) then
-    if( (nvar.le.5.and.itytur.eq.2) .or.                   &
-        (nvar.le.7.and.iturb.eq.50) .or.                   &
-        (nvar.le.5.and.iturb.eq.60)     ) then
-      write(nfecra,2610)                                          &
-                 'NOMBRE DE VARIABLES            ',NVAR,          &
-                 'OPTION POUR LA TURBULENCE      ',ITURB
-      iok = iok + 1
-    endif
-!     Le choix de ICLKEP n'est possible qu'en k-eps ou v2f
-    if (iturb.ne.60) then
-      if(iclkep.ne.0.and.iclkep.ne.1) then
-        WRITE(NFECRA,2201)'ICLKEP',ICLKEP
-        iok = iok + 1
-      endif
-    endif
-    if(ikecou.ne.0.and.ikecou.ne.1) then
-      WRITE(NFECRA,2201)'IKECOU',IKECOU
-      iok = iok + 1
-    endif
-!     En k-eps a prod lin et en v2f on force IKECOU a 0
-    if (ikecou.eq.1 .and.                                  &
-         (iturb.eq.21 .or. iturb.eq.50)) then
-      write(nfecra,2208)iturb,ikecou
-      iok = iok + 1
-    endif
-!     En stationnaire on force IKECOU a 0
-    if (ikecou.ne.0.and.idtvar.lt.0) then
-      write(nfecra,2210)ikecou
-      iok = iok + 1
-    endif
-
-    if(igrhok.ne.0.and.igrhok.ne.1) then
-      WRITE(NFECRA,2201)'IGRHOK',IGRHOK
-      iok = iok + 1
-    endif
-    if(igrake.ne.0.and.igrake.ne.1) then
-      WRITE(NFECRA,2201)'IGRAKE',IGRAKE
-      iok = iok + 1
-    endif
-!        IF( IGRAKE.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
-!          WRITE(NFECRA,2620)'IGRAKE',IGRAKE,GX,GY,GZ
-!          IOK = IOK + 1
-!        ENDIF
-    if(nscal.gt.0) then
-      if(iscalt.le.0.and.                                  &
-           (gx**2+gy**2+gz**2).ge.epzero**2) then
-        write(nfecra,2621) gx,gy,gz,iscalt
-        if(igrake.eq.1) then
-          WRITE(NFECRA,2622)'IGRAKE',IGRAKE
-        endif
-!MO            IOK = IOK + 1
-      endif
-    endif
-
-!     Si RELAXV(IK) a ete modifie par l'utilisateur mais que IKECOU n'est
-!     pas egal a 0, on previent que ce sera sans effet
-!     Sinon on verifie que RELAXV(IK) est bien compris entre 0 et 1
-!     (en stationnaire cela a deja ete fait plus haut)
-    ikiph = ik
-    if (itytur.eq.6) then
-      ieiph = iomg
-    else
-      ieiph = iep
-    endif
-    if ( (abs(relaxv(ikiph)+999.d0).gt.epzero .or.                &
-          abs(relaxv(ieiph)+999.d0).gt.epzero ) .and.             &
-          ikecou.ne.0) write(nfecra,2623)                  &
-            relaxv(ikiph),relaxv(ieiph)
-    if (ikecou.eq.0 .and. idtvar.ge.0) then
-      if(relaxv(ikiph).gt.1.d0.or.relaxv(ikiph).lt.0.d0 .or.      &
-         relaxv(ieiph).gt.1.d0.or.relaxv(ieiph).lt.0.d0) then
-        write(nfecra,2624) relaxv(ikiph),relaxv(ieiph)
-        iok = iok + 1
-      endif
-    endif
-
+if(itytur.eq.2 .or. iturb.eq.50                    &
+     .or. iturb.eq.60 ) then
+  if( (nvar.le.5.and.itytur.eq.2) .or.                   &
+       (nvar.le.7.and.iturb.eq.50) .or.                   &
+       (nvar.le.5.and.iturb.eq.60)     ) then
+    write(nfecra,2610)                                          &
+         'NOMBRE DE VARIABLES            ',NVAR,          &
+         'OPTION POUR LA TURBULENCE      ',ITURB
+    iok = iok + 1
   endif
+  !     Le choix de ICLKEP n'est possible qu'en k-eps ou v2f
+  if (iturb.ne.60) then
+    if(iclkep.ne.0.and.iclkep.ne.1) then
+      WRITE(NFECRA,2201)'ICLKEP',ICLKEP
+      iok = iok + 1
+    endif
+  endif
+  if(ikecou.ne.0.and.ikecou.ne.1) then
+    WRITE(NFECRA,2201)'IKECOU',IKECOU
+    iok = iok + 1
+  endif
+  !     En k-eps a prod lin et en v2f on force IKECOU a 0
+  if (ikecou.eq.1 .and.                                  &
+       (iturb.eq.21 .or. iturb.eq.50)) then
+    write(nfecra,2208)iturb,ikecou
+    iok = iok + 1
+  endif
+  !     En stationnaire on force IKECOU a 0
+  if (ikecou.ne.0.and.idtvar.lt.0) then
+    write(nfecra,2210)ikecou
+    iok = iok + 1
+  endif
+
+  if(igrhok.ne.0.and.igrhok.ne.1) then
+    WRITE(NFECRA,2201)'IGRHOK',IGRHOK
+    iok = iok + 1
+  endif
+  if(igrake.ne.0.and.igrake.ne.1) then
+    WRITE(NFECRA,2201)'IGRAKE',IGRAKE
+    iok = iok + 1
+  endif
+  !        IF( IGRAKE.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
+  !          WRITE(NFECRA,2620)'IGRAKE',IGRAKE,GX,GY,GZ
+  !          IOK = IOK + 1
+  !        ENDIF
+  if(nscal.gt.0) then
+    if(iscalt.le.0.and.                                  &
+         (gx**2+gy**2+gz**2).ge.epzero**2) then
+      write(nfecra,2621) gx,gy,gz,iscalt
+      if(igrake.eq.1) then
+        WRITE(NFECRA,2622)'IGRAKE',IGRAKE
+      endif
+      !MO            IOK = IOK + 1
+    endif
+  endif
+
+  !     Si RELAXV(IK) a ete modifie par l'utilisateur mais que IKECOU n'est
+  !     pas egal a 0, on previent que ce sera sans effet
+  !     Sinon on verifie que RELAXV(IK) est bien compris entre 0 et 1
+  !     (en stationnaire cela a deja ete fait plus haut)
+  ikiph = ik
+  if (itytur.eq.6) then
+    ieiph = iomg
+  else
+    ieiph = iep
+  endif
+  if ( (abs(relaxv(ikiph)+999.d0).gt.epzero .or.                &
+       abs(relaxv(ieiph)+999.d0).gt.epzero ) .and.             &
+       ikecou.ne.0) write(nfecra,2623)                  &
+       relaxv(ikiph),relaxv(ieiph)
+  if (ikecou.eq.0 .and. idtvar.ge.0) then
+    if(relaxv(ikiph).gt.1.d0.or.relaxv(ikiph).lt.0.d0 .or.      &
+         relaxv(ieiph).gt.1.d0.or.relaxv(ieiph).lt.0.d0) then
+      write(nfecra,2624) relaxv(ikiph),relaxv(ieiph)
+      iok = iok + 1
+    endif
+  endif
+
+endif
 
 !     Specifique Rij-epsilon
 
-  if(itytur.eq.3) then
-    if(nvar.le.10) then
-      write(nfecra,2610)                                          &
-                 'NOMBRE DE VARIABLES            ',NVAR,          &
-                 'OPTION POUR LA TURBULENCE      ',ITURB
+if(itytur.eq.3) then
+  if(nvar.le.10) then
+    write(nfecra,2610)                                          &
+         'NOMBRE DE VARIABLES            ',NVAR,          &
+         'OPTION POUR LA TURBULENCE      ',ITURB
+    iok = iok + 1
+  endif
+  if(irijnu.ne.0.and.irijnu.ne.1) then
+    WRITE(NFECRA,2201)'IRIJNU',IRIJNU
+    iok = iok + 1
+  endif
+  if(irijrb.ne.0.and.irijrb.ne.1) then
+    WRITE(NFECRA,2201)'IRIJRB',IRIJRB
+    iok = iok + 1
+  endif
+  if (iturb.eq.30) then
+    !     echo de paroi et implicitation speciale de la diffusion de epsilon
+    !     seulement en Rij standard
+    if(irijec.ne.0.and.irijec.ne.1) then
+      WRITE(NFECRA,2201)'IRIJEC',IRIJEC
       iok = iok + 1
     endif
-    if(irijnu.ne.0.and.irijnu.ne.1) then
-      WRITE(NFECRA,2201)'IRIJNU',IRIJNU
+    if(idifre.ne.0.and.idifre.ne.1) then
+      WRITE(NFECRA,2201)'IDIFRE',IDIFRE
       iok = iok + 1
-    endif
-    if(irijrb.ne.0.and.irijrb.ne.1) then
-      WRITE(NFECRA,2201)'IRIJRB',IRIJRB
-      iok = iok + 1
-    endif
-    if (iturb.eq.30) then
-!     echo de paroi et implicitation speciale de la diffusion de epsilon
-!     seulement en Rij standard
-      if(irijec.ne.0.and.irijec.ne.1) then
-        WRITE(NFECRA,2201)'IRIJEC',IRIJEC
-        iok = iok + 1
-      endif
-      if(idifre.ne.0.and.idifre.ne.1) then
-        WRITE(NFECRA,2201)'IDIFRE',IDIFRE
-        iok = iok + 1
-      endif
-    endif
-    if(igrari.ne.0.and.igrari.ne.1) then
-      WRITE(NFECRA,2201)'IGRARI',IGRARI
-      iok = iok + 1
-    endif
-!        IF( IGRARI.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
-!          WRITE(NFECRA,2620)'IGRARI',IGRARI,GX,GY,GZ
-!          IOK = IOK + 1
-!        ENDIF
-    if(iclsyr.ne.0.and.iclsyr.ne.1) then
-      WRITE(NFECRA,2201)'ICLSYR',ICLSYR
-      iok = iok + 1
-    endif
-    if(iclptr.ne.0.and.iclptr.ne.1) then
-      WRITE(NFECRA,2201)'ICLPTR',ICLPTR
-      iok = iok + 1
-    endif
-    if(nscal.gt.0) then
-      if(iscalt.le.0.and.                                  &
-           (gx**2+gy**2+gz**2).ge.epzero**2) then
-        write(nfecra,2621)gx,gy,gz,iscalt
-        if(igrari.eq.1) then
-          WRITE(NFECRA,2622)'IGRARI',IGRARI
-        endif
-!MO            IOK = IOK + 1
-      endif
     endif
   endif
+  if(igrari.ne.0.and.igrari.ne.1) then
+    WRITE(NFECRA,2201)'IGRARI',IGRARI
+    iok = iok + 1
+  endif
+  !        IF( IGRARI.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
+  !          WRITE(NFECRA,2620)'IGRARI',IGRARI,GX,GY,GZ
+  !          IOK = IOK + 1
+  !        ENDIF
+  if(iclsyr.ne.0.and.iclsyr.ne.1) then
+    WRITE(NFECRA,2201)'ICLSYR',ICLSYR
+    iok = iok + 1
+  endif
+  if(iclptr.ne.0.and.iclptr.ne.1) then
+    WRITE(NFECRA,2201)'ICLPTR',ICLPTR
+    iok = iok + 1
+  endif
+  if(nscal.gt.0) then
+    if(iscalt.le.0.and.                                  &
+         (gx**2+gy**2+gz**2).ge.epzero**2) then
+      write(nfecra,2621)gx,gy,gz,iscalt
+      if(igrari.eq.1) then
+        WRITE(NFECRA,2622)'IGRARI',IGRARI
+      endif
+!MO            IOK = IOK + 1
+    endif
+  endif
+endif
 
 !     Specifique LES
 
-  if(itytur.eq.4) then
-    if(idries.ne.1.and.idries.ne.0) then
-      WRITE(NFECRA,2201)'IDRIES',IDRIES
-      iok = iok + 1
-    endif
-    if(idries.ne.0.and.(iturb.eq.41.or.iturb.eq.42)) then
-      write(nfecra,2630) idries,iturb
-      iok = iok + 1
-    endif
-!         La reduction du voisinage etendu peut degrader
-!         les resultats du modele dynamique en LES
-    if(iturb.eq.41.and.imrgra.eq.3) then
-      write(nfecra,2607) iturb, imrgra
-    endif
+if(itytur.eq.4) then
+  if(idries.ne.1.and.idries.ne.0) then
+    WRITE(NFECRA,2201)'IDRIES',IDRIES
+    iok = iok + 1
   endif
-
-enddo
+  if(idries.ne.0.and.(iturb.eq.41.or.iturb.eq.42)) then
+    write(nfecra,2630) idries,iturb
+    iok = iok + 1
+  endif
+  !         La reduction du voisinage etendu peut degrader
+  !         les resultats du modele dynamique en LES
+  if(iturb.eq.41.and.imrgra.eq.3) then
+    write(nfecra,2607) iturb, imrgra
+  endif
+endif
 
 ! --- Stokes
 
@@ -1172,24 +1109,22 @@ if(iprco .ne.0.and.iprco .ne.1) then
   iok = iok + 1
 endif
 if(iprco.eq.1) then
-  do iphas = 1, nphas
-    if(irevmc.ne.0.and.irevmc.ne.1.and.             &
-                              irevmc.ne.2) then
-      WRITE(NFECRA,2211) 'IREVMC',IREVMC
-      iok = iok + 1
-    endif
-    arakfr = arak
-    if (idtvar.lt.0) arakfr=arakfr*relaxv(iu)
-    if(arakfr.gt.1.d0 .or. arakfr.lt.0.d0) then
-      WRITE(NFECRA,2640) 'ARAK  ',ARAKFR
-      iok = iok + 1
-    endif
-    if( relaxv(ipr).gt.1d0 .or.                            &
-        relaxv(ipr).lt.0d0     ) then
-      write(nfecra,2625) relaxv(ipr)
-      iok = iok + 1
-    endif
-  enddo
+  if(irevmc.ne.0.and.irevmc.ne.1.and.             &
+       irevmc.ne.2) then
+    WRITE(NFECRA,2211) 'IREVMC',IREVMC
+    iok = iok + 1
+  endif
+  arakfr = arak
+  if (idtvar.lt.0) arakfr=arakfr*relaxv(iu)
+  if(arakfr.gt.1.d0 .or. arakfr.lt.0.d0) then
+    WRITE(NFECRA,2640) 'ARAK  ',ARAKFR
+    iok = iok + 1
+  endif
+  if( relaxv(ipr).gt.1d0 .or.                            &
+       relaxv(ipr).lt.0d0     ) then
+    write(nfecra,2625) relaxv(ipr)
+    iok = iok + 1
+  endif
 endif
 
 ! --- Couplage U-P
@@ -1203,13 +1138,11 @@ endif
 ! Si theta n'est pas egal a 1 pour la vitesse (incompatibilite du
 ! pas de temps variable aussi)
 
-do iphas = 1, nphas
-  jj = iu
-  if((abs(thetav(jj)-1.0d0).gt.epzero).and.                       &
-    ((idtvar.ne.0).or.(ipucou.eq.1))) then
-    write(nfecra,2204) thetav(jj),idtvar,ipucou
-  endif
-enddo
+jj = iu
+if((abs(thetav(jj)-1.0d0).gt.epzero).and.                       &
+     ((idtvar.ne.0).or.(ipucou.eq.1))) then
+  write(nfecra,2204) thetav(jj),idtvar,ipucou
+endif
 
 ! --- Prise en compte de la pression hydrostatique
 
@@ -1311,15 +1244,13 @@ endif
 
 ! --- Estimateurs  d'erreur pour Navier-Stokes
 
-do iphas = 1, nphas
-  do iest = 1, nestmx
-    iiesca = iescal(iest)
-    if (iiesca.ne.0.and.iiesca.ne.1.and.iiesca.ne.2) then
-      write(nfecra,2664) iest,iest,iiesca,            &
-                         iespre,iesder,iescor,iestot
-      iok = iok + 1
-    endif
-  enddo
+do iest = 1, nestmx
+  iiesca = iescal(iest)
+  if (iiesca.ne.0.and.iiesca.ne.1.and.iiesca.ne.2) then
+    write(nfecra,2664) iest,iest,iiesca,            &
+         iespre,iesder,iescor,iestot
+    iok = iok + 1
+  endif
 enddo
 
 
@@ -1398,12 +1329,10 @@ do ipp = 2, nvppmx
       WRITE(NFECRA,3000) CHAINE(1:8),'IMGR  ',II,IMGR(II)
       iok = iok + 1
     endif
-    do iphas = 1, nphas
-      if(imgr(ii).eq.1.and.iconv(ii).eq.1) then
-        write(nfecra,3001)
-        iok = iok + 1
-      endif
-    enddo
+    if(imgr(ii).eq.1.and.iconv(ii).eq.1) then
+      write(nfecra,3001)
+      iok = iok + 1
+    endif
     if(imgr(ii).eq.1) then
       if(ncymax(ii).le.0) then
         WRITE(NFECRA,3010) CHAINE(1:8),'NCYMAX',II,NCYMAX(II)
@@ -1441,18 +1370,16 @@ endif
 ! 3. TABLEAUX DE cstphy : formats 4000
 !===============================================================================
 
-do iphas = 1, nphas
-
 ! --- Constantes physiques de chaque phase
 
-  if(ro0   .lt.0d0) then
-    WRITE(NFECRA,2511)'RO0   ', RO0
-    iok = iok + 1
-  endif
-  if(viscl0.lt.0d0) then
-    WRITE(NFECRA,2511)'VISCL0', VISCL0
-    iok = iok + 1
-  endif
+if(ro0   .lt.0d0) then
+  WRITE(NFECRA,2511)'RO0   ', RO0
+  iok = iok + 1
+endif
+if(viscl0.lt.0d0) then
+  WRITE(NFECRA,2511)'VISCL0', VISCL0
+  iok = iok + 1
+endif
 
 ! --- Turbulence
 
@@ -1461,60 +1388,58 @@ do iphas = 1, nphas
 !    Ici on met juste un avertissement, car sans UREF l'utilisateur peut
 !      initialiser la turbulence a la main. Un test complementaire sera fait
 !      dans inivar.
-  if(itytur.eq.2.or.itytur.eq.3                     &
-       .or.iturb.eq.50.or.iturb.eq.60               &
-       .or.iturb.eq.70) then
-    if(uref  .lt.0.d0) then
-      write(nfecra,4100) uref
-    endif
+if(itytur.eq.2.or.itytur.eq.3                     &
+     .or.iturb.eq.50.or.iturb.eq.60               &
+     .or.iturb.eq.70) then
+  if(uref  .lt.0.d0) then
+    write(nfecra,4100) uref
   endif
+endif
 
-  if(iturb.eq.10) then
-    if(xlomlg.le.0.d0) then
-      WRITE(NFECRA,2511)'XLOMLG', XLOMLG
-      iok = iok + 1
-    endif
+if(iturb.eq.10) then
+  if(xlomlg.le.0.d0) then
+    WRITE(NFECRA,2511)'XLOMLG', XLOMLG
+    iok = iok + 1
   endif
+endif
 
 !     LES
-  if(itytur.eq.4) then
-    if(xlesfl.lt.0.d0) then
-      WRITE(NFECRA,2511) 'XLESFL', XLESFL
+if(itytur.eq.4) then
+  if(xlesfl.lt.0.d0) then
+    WRITE(NFECRA,2511) 'XLESFL', XLESFL
+    iok = iok + 1
+  endif
+  if(ales  .lt.0.d0) then
+    WRITE(NFECRA,2511) 'ALES  ', ALES
+    iok = iok + 1
+  endif
+  if(bles  .lt.0.d0) then
+    WRITE(NFECRA,2511) 'BLES  ', BLES
+    iok = iok + 1
+  endif
+  if(csmago.lt.0.d0) then
+    WRITE(NFECRA,2511) 'CSMAGO', CSMAGO
+    iok = iok + 1
+  endif
+  if(cwale.lt.0.d0) then
+    WRITE(NFECRA,2511) 'CWALE', CWALE
+    iok = iok + 1
+  endif
+  if(idries.eq.1.and.cdries.lt.0) then
+    WRITE(NFECRA,2511) 'CDRIES', CDRIES
+    iok = iok + 1
+  endif
+  if(iturb.eq.41) then
+    if(xlesfd.lt.0.d0) then
+      WRITE(NFECRA,2511) 'XLESFD', XLESFD
       iok = iok + 1
     endif
-    if(ales  .lt.0.d0) then
-      WRITE(NFECRA,2511) 'ALES  ', ALES
+    if(smagmx.lt.0.d0) then
+      WRITE(NFECRA,2511) 'SMAGMX', SMAGMX
       iok = iok + 1
-    endif
-    if(bles  .lt.0.d0) then
-      WRITE(NFECRA,2511) 'BLES  ', BLES
-      iok = iok + 1
-    endif
-    if(csmago.lt.0.d0) then
-      WRITE(NFECRA,2511) 'CSMAGO', CSMAGO
-      iok = iok + 1
-    endif
-    if(cwale.lt.0.d0) then
-      WRITE(NFECRA,2511) 'CWALE', CWALE
-      iok = iok + 1
-    endif
-    if(idries.eq.1.and.cdries.lt.0) then
-      WRITE(NFECRA,2511) 'CDRIES', CDRIES
-      iok = iok + 1
-    endif
-    if(iturb.eq.41) then
-      if(xlesfd.lt.0.d0) then
-        WRITE(NFECRA,2511) 'XLESFD', XLESFD
-        iok = iok + 1
-      endif
-      if(smagmx.lt.0.d0) then
-        WRITE(NFECRA,2511) 'SMAGMX', SMAGMX
-        iok = iok + 1
-      endif
     endif
   endif
-
-enddo
+endif
 
 ! --- Scalaires
 
@@ -1641,22 +1566,20 @@ if(nscal.gt.0) then
 
 !     Si CP0 est utilise (resolution d'un scalaire en temperature
 !       et CP constant), il doit etre positif
-  do iphas = 1, nphas
-    if(icp.eq.0) then
-      if (cp0.lt.0.d0) then
-        iisct = 0
-        do iis = 1, nscal
-          if (abs(iscsth(iis)).eq.1) then
-            iisct = 1
-          endif
-        enddo
-        if (iisct.eq.1) then
-          WRITE(NFECRA,2511)'CP0   ',CP0
-          iok = iok + 1
+  if(icp.eq.0) then
+    if (cp0.lt.0.d0) then
+      iisct = 0
+      do iis = 1, nscal
+        if (abs(iscsth(iis)).eq.1) then
+          iisct = 1
         endif
+      enddo
+      if (iisct.eq.1) then
+        WRITE(NFECRA,2511)'CP0   ',CP0
+        iok = iok + 1
       endif
     endif
-  enddo
+  endif
 
 endif
 
@@ -1691,28 +1614,24 @@ endif
 ! --- periodicite de rotation douteuse avec rij
 !      (et donc a fortiori avec ordre 2 sur Rij)
 if(iperot.gt.0) then
-  do iphas = 1, nphas
-    if(itytur.eq.3) then
-      write(nfecra,5009)iperio,iturb
-!            IOK = IOK + 1
-    endif
-  enddo
+  if(itytur.eq.3) then
+    write(nfecra,5009)iperio,iturb
+    !            IOK = IOK + 1
+  endif
 endif
 
 ! --- periodicite de rotation douteuse avec ordre 2 vitesse
 if(iperot.gt.0) then
-  do iphas = 1, nphas
-    iuiph = iu
-    iviph = iv
-    iwiph = iw
-    if( (abs(thetav(iuiph)-0.5d0).lt.1.d-3).or.                   &
-        (abs(thetav(iviph)-0.5d0).lt.1.d-3).or.                   &
+  iuiph = iu
+  iviph = iv
+  iwiph = iw
+  if( (abs(thetav(iuiph)-0.5d0).lt.1.d-3).or.                   &
+       (abs(thetav(iviph)-0.5d0).lt.1.d-3).or.                   &
         (abs(thetav(iwiph)-0.5d0).lt.1.d-3)) then
-      write(nfecra,5010)iperio,                                   &
-        thetav(iuiph),thetav(iviph),thetav(iwiph)
-!            IOK = IOK + 1
-    endif
-  enddo
+    write(nfecra,5010)iperio,                                   &
+         thetav(iuiph),thetav(iviph),thetav(iwiph)
+    !            IOK = IOK + 1
+  endif
 endif
 
 
@@ -1777,12 +1696,10 @@ endif
 !===============================================================================
 
 if(ippmod(icompf).ge.0) then
-  do iphas = 1, nphas
-    if(t0.le.0.d0.or.p0.le.0.d0) then
-      write(nfecra,8000)t0,p0
-      iok = iok + 1
-    endif
-  enddo
+  if(t0.le.0.d0.or.p0.le.0.d0) then
+    write(nfecra,8000)t0,p0
+    iok = iok + 1
+  endif
 endif
 
 !===============================================================================
@@ -2066,43 +1983,6 @@ endif
 '@  Il vaut ici ',E14.5                                        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2113 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@   DONNEES NON ADMISSIBLES POUR LE SCHEMA EN TEMPS          ',/,&
-'@                                                            ',/,&
-'@   EN L.E.S.                                                ',/,&
-'@   LE PARAMETRE THETFL DU SCHEMA EN TEMPS POUR LE FLUX DE   ',/,&
-'@     MASSE EST DIFFERENT DE CELUI DE LA PHASE 1 ',E14.5      ,/,&
-'@     THETFL A ETE IMPOSE ICI A ',E14.5                       ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute                             ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2114 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@   DONNEES NON ADMISSIBLES POUR LE SCHEMA EN TEMPS          ',/,&
-'@                                                            ',/,&
-'@   LE PARAMETRE ISTMPF DU SCHEMA EN TEMPS POUR LE FLUX DE   ',/,&
-'@     MASSE EST DIFFERENT DE CELUI DE LA PHASE 1 ',I10        ,/,&
-'@     ISTMPF A ETE IMPOSE ICI A ',I10                         ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute                             ',/,&
 '@                                                            ',/,&
 '@  Verifier les parametres donnes via l''interface ou usini1.',/,&
 '@                                                            ',/,&
@@ -4561,43 +4441,6 @@ endif
 '@  It has value ',E14.5                                       ,/,&
 '@                                                            ',/,&
 '@  Computation CAN NOT run                                   ',/,&
-'@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2113 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME            ',/,&
-'@                                                            ',/,&
-'@  IN L.E.S.                                                 ',/,&
-'@    PARAMETER THETFL FOR TIME DISCRETISATION FOR MASS FLUX  ',/,&
-'@     IS DIFFERENT FROM THAT OF PHASE 1 ',E14.5               ,/,&
-'@     THETFL WAS SET AT         ',E14.5                       ,/,&
-'@                                                            ',/,&
-'@  Computation CAN NOT run                                   ',/,&
-'@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2114 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME            ',/,&
-'@                                                            ',/,&
-'@   PARAMETER ISTMPF IN SCHEME EN TEMPS POUR LE FLUX DE      ',/,&
-'@     MASSE  IS DIFFERENT FROM THAT  OF  PHASE 1',I10        ,/, &
-'@     ISTMPF IS NOW IMPOSED AS  ',I10                         ,/,&
-'@                                                            ',/,&
-'@  Computation will NOT proceed                              ',/,&
 '@                                                            ',/,&
 '@ Check the input data given via User Interface or in usini1.',/,&
 '@                                                            ',/,&

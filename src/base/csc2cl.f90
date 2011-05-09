@@ -290,9 +290,7 @@ do ivar = 1, nvcp
       xjp = rvcpfb(ipt,ivar)
 
 
-      do iphas = 1, nphas
-        itypfb(ifac)  = icscpl
-      enddo
+      itypfb(ifac)  = icscpl
 
       if (ivar.eq.ipr) then
 
@@ -378,9 +376,7 @@ do ivar = 1, nvcp
 
       gradi = (w1(iel)*xipf+w2(iel)*yipf+w3(iel)*zipf)/ipf
 
-      do iphas = 1, nphas
-        itypfb(ifac)  = icscpl
-      enddo
+      itypfb(ifac)  = icscpl
 
       if(ivar.ne.ipr) then
         icodcl(ifac,ivar  ) = 1
@@ -402,9 +398,7 @@ do ivar = 1, nvcp
 
     ifac = lfbncp(ipt)
 
-    do iphas = 1, nphas
-      itypfb(ifac)  = icscpl
-    enddo
+    itypfb(ifac)  = icscpl
 
     icodcl(ifac,ivar  ) = 3
     rcodcl(ifac,ivar,3) = 0.d0

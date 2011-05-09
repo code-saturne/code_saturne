@@ -284,9 +284,7 @@ do ilelt = 1, nlelt
   iprofm(izone) = 1
 
 !     - Assign inlet boundary conditions
-  do iphas = 1, nphas
-    itypfb(ifac) = ientre
-  enddo
+  itypfb(ifac) = ientre
 
 enddo
 
@@ -319,49 +317,45 @@ do ilelt = 1, nlelt
   xkent=ustar**2/sqrt(cmu)
   xeent=ustar**3/xkappa/(zent+rugd)
 
-  do iphas = 1, nphas
+  itypfb(ifac) = ientre
 
-    itypfb(ifac) = ientre
+  rcodcl(ifac,iu,1) = xuent
+  rcodcl(ifac,iv,1) = xvent
+  rcodcl(ifac,iw,1) = 0.d0
 
-    rcodcl(ifac,iu,1) = xuent
-    rcodcl(ifac,iv,1) = xvent
-    rcodcl(ifac,iw,1) = 0.d0
+  ! itytur is a flag equal to iturb/10
+  if    (itytur.eq.2) then
 
-    ! itytur is a flag equal to iturb/10
-    if    (itytur.eq.2) then
+    rcodcl(ifac,ik,1)  = xkent
+    rcodcl(ifac,iep,1) = xeent
 
-      rcodcl(ifac,ik,1)  = xkent
-      rcodcl(ifac,iep,1) = xeent
+  elseif(itytur.eq.3) then
 
-    elseif(itytur.eq.3) then
+    rcodcl(ifac,ir11,1) = d2s3*xkent
+    rcodcl(ifac,ir22,1) = d2s3*xkent
+    rcodcl(ifac,ir33,1) = d2s3*xkent
+    rcodcl(ifac,ir12,1) = 0.d0
+    rcodcl(ifac,ir13,1) = 0.d0
+    rcodcl(ifac,ir23,1) = 0.d0
+    rcodcl(ifac,iep,1)  = xeent
 
-      rcodcl(ifac,ir11,1) = d2s3*xkent
-      rcodcl(ifac,ir22,1) = d2s3*xkent
-      rcodcl(ifac,ir33,1) = d2s3*xkent
-      rcodcl(ifac,ir12,1) = 0.d0
-      rcodcl(ifac,ir13,1) = 0.d0
-      rcodcl(ifac,ir23,1) = 0.d0
-      rcodcl(ifac,iep,1)  = xeent
+  elseif(iturb.eq.50) then
 
-    elseif(iturb.eq.50) then
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,iphi,1) = d2s3
+    rcodcl(ifac,ifb,1)  = 0.d0
 
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iep,1)  = xeent
-      rcodcl(ifac,iphi,1) = d2s3
-      rcodcl(ifac,ifb,1)  = 0.d0
+  elseif(iturb.eq.60) then
 
-    elseif(iturb.eq.60) then
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+  elseif(iturb.eq.70) then
 
-    elseif(iturb.eq.70) then
+    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
-      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-
-    endif
-
-  enddo
+  endif
 
 enddo
 
@@ -383,9 +377,7 @@ do ilelt = 1, nlelt
   !         Note that the pressure will be set to P0 at the first
   !         free outlet face (isolib)
 
-  do iphas = 1, nphas
-    itypfb(ifac)   = isolib
-  enddo
+  itypfb(ifac)   = isolib
 
 enddo
 
@@ -407,17 +399,16 @@ do ilelt = 1, nlelt
 !     - Zone to which the zone belongs
   izfppp(ifac) = izone
 
-  do iphas = 1, nphas
-    itypfb(ifac)   = iparug
+  itypfb(ifac)   = iparug
 
-!     Roughness for velocity: rugd
-    rcodcl(ifac,iu,3) = rugd
+  !     Roughness for velocity: rugd
+  rcodcl(ifac,iu,3) = rugd
 
-!     Roughness for scalars (if required):
-!   rcodcl(ifac,iv,3) = rugd
+  !     Roughness for scalars (if required):
+  !   rcodcl(ifac,iv,3) = rugd
 
 
-    if(iscalt.ne.-1) then
+  if(iscalt.ne.-1) then
 
     ! If temperature prescribed to 20 with a rough wall law (scalar ii=1)
     ! (with thermal roughness specified in rcodcl(ifac,iv,3)) :
@@ -430,8 +421,7 @@ do ilelt = 1, nlelt
     ! icodcl(ifac, isca(ii))    = 3
     ! rcodcl(ifac, isca(ii), 3) = 4.D0
 
-    endif
-  enddo
+  endif
 enddo
 
 ! --- Prescribe at boundary faces of color 4 a symmetry for all phases
@@ -448,10 +438,7 @@ do ilelt = 1, nlelt
 !     - Zone to which the zone belongs
   izfppp(ifac) = izone
 
-  do iphas = 1, nphas
-    itypfb(ifac)   = isymet
-  enddo
-
+  itypfb(ifac)   = isymet
 
 enddo
 

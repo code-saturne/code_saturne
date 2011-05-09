@@ -508,94 +508,90 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
   iel = ifabor(ifac)
 
-  do iphas = 1, nphas
+  itypfb(ifac) = ientre
 
-    itypfb(ifac) = ientre
+  rcodcl(ifac,iu,1) = 1.1d0
+  rcodcl(ifac,iv,1) = 1.1d0
+  rcodcl(ifac,iw,1) = 1.1d0
 
-    rcodcl(ifac,iu,1) = 1.1d0
-    rcodcl(ifac,iv,1) = 1.1d0
-    rcodcl(ifac,iw,1) = 1.1d0
-
-    uref2 = rcodcl(ifac,iu,1)**2  &
-           +rcodcl(ifac,iv,1)**2  &
-           +rcodcl(ifac,iw,1)**2
-    uref2 = max(uref2,1.d-12)
+  uref2 = rcodcl(ifac,iu,1)**2  &
+       +rcodcl(ifac,iv,1)**2  &
+       +rcodcl(ifac,iw,1)**2
+  uref2 = max(uref2,1.d-12)
 
 
-    !   Turbulence example computed using equations valid for a pipe.
+  !   Turbulence example computed using equations valid for a pipe.
 
-    !   We will be careful to specify a hydraulic diameter adapted
-    !     to the current inlet.
+  !   We will be careful to specify a hydraulic diameter adapted
+  !     to the current inlet.
 
-    !   We will also be careful if necessary to use a more precise
-    !     formula for the dynamic viscosity use in the calculation of
-    !     the Reynolds number (especially if it is variable, it may be
-    !     useful to take the law from 'usphyv'. Here, we use by default
-    !     the 'viscl0" value given in 'usini1'.
-    !   Regarding the density, we have access to its value at boundary
-    !     faces (romb) so this value is the one used here (specifically,
-    !     it is consistent with the processing in 'usphyv', in case of
-    !     variable density)
+  !   We will also be careful if necessary to use a more precise
+  !     formula for the dynamic viscosity use in the calculation of
+  !     the Reynolds number (especially if it is variable, it may be
+  !     useful to take the law from 'usphyv'. Here, we use by default
+  !     the 'viscl0" value given in 'usini1'.
+  !   Regarding the density, we have access to its value at boundary
+  !     faces (romb) so this value is the one used here (specifically,
+  !     it is consistent with the processing in 'usphyv', in case of
+  !     variable density)
 
-    !     Hydraulic diameter
-    dh     = 0.075d0
+  !     Hydraulic diameter
+  dh     = 0.075d0
 
-    !   Calculation of friction velocity squared (ustar2)
-    !     and of k and epsilon at the inlet (xkent and xeent) using
-    !     standard laws for a circular pipe
-    !     (their initialization is not needed here but is good practice).
-    rhomoy = propfb(ifac,ipprob(irom))
-    ustar2 = 0.d0
-    xkent  = epzero
-    xeent  = epzero
+  !   Calculation of friction velocity squared (ustar2)
+  !     and of k and epsilon at the inlet (xkent and xeent) using
+  !     standard laws for a circular pipe
+  !     (their initialization is not needed here but is good practice).
+  rhomoy = propfb(ifac,ipprob(irom))
+  ustar2 = 0.d0
+  xkent  = epzero
+  xeent  = epzero
 
-    call keendb                                            &
-    !==========
-        ( uref2, dh, rhomoy, viscl0, cmu, xkappa,   &
-          ustar2, xkent, xeent )
+  call keendb                                            &
+  !==========
+( uref2, dh, rhomoy, viscl0, cmu, xkappa,   &
+  ustar2, xkent, xeent )
 
-    ! itytur is a flag equal to iturb/10
-    if    (itytur.eq.2) then
+  ! itytur is a flag equal to iturb/10
+  if    (itytur.eq.2) then
 
-      rcodcl(ifac,ik,1)  = xkent
-      rcodcl(ifac,iep,1) = xeent
+    rcodcl(ifac,ik,1)  = xkent
+    rcodcl(ifac,iep,1) = xeent
 
-    elseif(itytur.eq.3) then
+  elseif(itytur.eq.3) then
 
-      rcodcl(ifac,ir11,1) = d2s3*xkent
-      rcodcl(ifac,ir22,1) = d2s3*xkent
-      rcodcl(ifac,ir33,1) = d2s3*xkent
-      rcodcl(ifac,ir12,1) = 0.d0
-      rcodcl(ifac,ir13,1) = 0.d0
-      rcodcl(ifac,ir23,1) = 0.d0
-      rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,ir11,1) = d2s3*xkent
+    rcodcl(ifac,ir22,1) = d2s3*xkent
+    rcodcl(ifac,ir33,1) = d2s3*xkent
+    rcodcl(ifac,ir12,1) = 0.d0
+    rcodcl(ifac,ir13,1) = 0.d0
+    rcodcl(ifac,ir23,1) = 0.d0
+    rcodcl(ifac,iep,1)  = xeent
 
-    elseif(iturb.eq.50) then
+  elseif(iturb.eq.50) then
 
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iep,1)  = xeent
-      rcodcl(ifac,iphi,1) = d2s3
-      rcodcl(ifac,ifb,1)  = 0.d0
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,iphi,1) = d2s3
+    rcodcl(ifac,ifb,1)  = 0.d0
 
-    elseif(iturb.eq.60) then
+  elseif(iturb.eq.60) then
 
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-    elseif(iturb.eq.70) then
+  elseif(iturb.eq.70) then
 
-      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
-    endif
+  endif
 
-    ! --- Handle scalars attached to the current phase
-    if(nscal.gt.0) then
-      do ii = 1, nscal
-        rcodcl(ifac,isca(ii),1) = 1.d0
-      enddo
-    endif
-
-  enddo
+  ! --- Handle scalars attached to the current phase
+  if(nscal.gt.0) then
+    do ii = 1, nscal
+      rcodcl(ifac,isca(ii),1) = 1.d0
+    enddo
+  endif
 
 enddo
 
@@ -607,82 +603,79 @@ do ilelt = 1, nlelt
   ifac = lstelt(ilelt)
   iel  = ifabor(ifac)
 
-  do iphas = 1, nphas
+  itypfb(ifac) = ientre
 
-    itypfb(ifac) = ientre
+  rcodcl(ifac,iu,1) = 1.1d0
+  rcodcl(ifac,iv,1) = 1.1d0
+  rcodcl(ifac,iw,1) = 1.1d0
 
-    rcodcl(ifac,iu,1) = 1.1d0
-    rcodcl(ifac,iv,1) = 1.1d0
-    rcodcl(ifac,iw,1) = 1.1d0
+  uref2 = rcodcl(ifac,iu,1)**2   &
+       +rcodcl(ifac,iv,1)**2   &
+       +rcodcl(ifac,iw,1)**2
+  uref2 = max(uref2,1.d-12)
 
-    uref2 = rcodcl(ifac,iu,1)**2   &
-           +rcodcl(ifac,iv,1)**2   &
-           +rcodcl(ifac,iw,1)**2
-    uref2 = max(uref2,1.d-12)
+  ! Turbulence example computed using turbulence intensity data.
 
-    ! Turbulence example computed using turbulence intensity data.
+  ! We will be careful to specify a hydraulic diameter adapted
+  !   to the current inlet.
 
-    ! We will be careful to specify a hydraulic diameter adapted
-    !   to the current inlet.
+  ! Hydraulic diameter
 
-    ! Hydraulic diameter
+  dh     = 0.075d0
+  ! Turbulence intensity
+  xintur = 0.02d0
 
-    dh     = 0.075d0
-    ! Turbulence intensity
-    xintur = 0.02d0
+  ! Calculation of k and epsilon at the inlet (xkent and xeent) using
+  !   the turbulence intensity and standard laws for a circular pipe
+  !   (their initialization is not needed here but is good practice)
+  xkent  = epzero
+  xeent  = epzero
 
-    ! Calculation of k and epsilon at the inlet (xkent and xeent) using
-    !   the turbulence intensity and standard laws for a circular pipe
-    !   (their initialization is not needed here but is good practice)
-    xkent  = epzero
-    xeent  = epzero
+  call keenin                                                   &
+  !==========
+( uref2, xintur, dh, cmu, xkappa, xkent, xeent )
 
-    call keenin                                                   &
-    !==========
-        ( uref2, xintur, dh, cmu, xkappa, xkent, xeent )
+  ! itytur is a flag equal to iturb/10
+  if    (itytur.eq.2) then
 
-    ! itytur is a flag equal to iturb/10
-    if    (itytur.eq.2) then
+    rcodcl(ifac,ik,1)  = xkent
+    rcodcl(ifac,iep,1) = xeent
 
-      rcodcl(ifac,ik,1)  = xkent
-      rcodcl(ifac,iep,1) = xeent
+  elseif(itytur.eq.3) then
 
-    elseif(itytur.eq.3) then
+    rcodcl(ifac,ir11,1) = d2s3*xkent
+    rcodcl(ifac,ir22,1) = d2s3*xkent
+    rcodcl(ifac,ir33,1) = d2s3*xkent
+    rcodcl(ifac,ir12,1) = 0.d0
+    rcodcl(ifac,ir13,1) = 0.d0
+    rcodcl(ifac,ir23,1) = 0.d0
+    rcodcl(ifac,iep,1)  = xeent
 
-      rcodcl(ifac,ir11,1) = d2s3*xkent
-      rcodcl(ifac,ir22,1) = d2s3*xkent
-      rcodcl(ifac,ir33,1) = d2s3*xkent
-      rcodcl(ifac,ir12,1) = 0.d0
-      rcodcl(ifac,ir13,1) = 0.d0
-      rcodcl(ifac,ir23,1) = 0.d0
-      rcodcl(ifac,iep,1)  = xeent
+  elseif(iturb.eq.50) then
 
-    elseif(iturb.eq.50) then
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iep,1)  = xeent
+    rcodcl(ifac,iphi,1) = d2s3
+    rcodcl(ifac,ifb,1)  = 0.d0
 
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iep,1)  = xeent
-      rcodcl(ifac,iphi,1) = d2s3
-      rcodcl(ifac,ifb,1)  = 0.d0
+  elseif(iturb.eq.60) then
 
-    elseif(iturb.eq.60) then
+    rcodcl(ifac,ik,1)   = xkent
+    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
 
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
+  elseif(iturb.eq.70) then
 
-    elseif(iturb.eq.70) then
+    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
 
-      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
+  endif
 
-    endif
+  ! --- Handle scalars attached to the current phase
+  if(nscal.gt.0) then
+    do ii = 1, nscal
+      rcodcl(ifac,isca(ii),1) = 1.d0
+    enddo
+  endif
 
-    ! --- Handle scalars attached to the current phase
-    if(nscal.gt.0) then
-      do ii = 1, nscal
-        rcodcl(ifac,isca(ii),1) = 1.d0
-      enddo
-    endif
-
-  enddo
 enddo
 
 ! --- Prescribe at boundary faces of group 'outlet' an outlet for all phases
@@ -696,9 +689,7 @@ do ilelt = 1, nlelt
   !         Note that the pressure will be set to P0 at the first
   !         free outlet face (isolib)
 
-  do iphas = 1, nphas
-    itypfb(ifac)   = isolib
-  enddo
+  itypfb(ifac)   = isolib
 
 enddo
 
@@ -713,9 +704,7 @@ do ilelt = 1, nlelt
   !       friction for velocities (+ turbulent variables)
   !       zero flux for scalars
 
-  do iphas = 1, nphas
-    itypfb(ifac)   = iparoi
-  enddo
+  itypfb(ifac)   = iparoi
 
   ! If sliding wall with velocity u(1) = 1:
   ! rcodcl(ifac, iu(1), 1) = 1.d0
@@ -755,16 +744,13 @@ do ilelt = 1, nlelt
   !       rough friction for velocities (+ turbulent variables)
   !       zero flux for scalars
 
-  do iphas = 1, nphas
-    itypfb(ifac)   = iparug
+  itypfb(ifac)   = iparug
 
-    ! Roughness for velocity: 1cm
-    rcodcl(ifac,iu,3) = 0.01d0
+  ! Roughness for velocity: 1cm
+  rcodcl(ifac,iu,3) = 0.01d0
 
-    ! Roughness for scalar (if required): 1cm
-    ! rcodcl(ifac,iv,3) = 0.01d0
-
-  enddo
+  ! Roughness for scalar (if required): 1cm
+  ! rcodcl(ifac,iv,3) = 0.01d0
 
   ! If sliding wall with velocity u(1) = 1:
   ! rcodcl(ifac, iu(1), 1) = 1.d0
@@ -796,9 +782,7 @@ do ilelt = 1, nlelt
 
   ! Symmetries
 
-  do iphas = 1, nphas
-    itypfb(ifac)   = isymet
-  enddo
+  itypfb(ifac)   = isymet
 
 enddo
 
@@ -820,9 +804,7 @@ do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  do iphas = 1, nphas
-    itypfb(ifac) = iparoi
-  enddo
+  itypfb(ifac) = iparoi
 
   iphas = 1
   icodcl(ifac,iu )  = 1
@@ -859,9 +841,7 @@ do ilelt = 1, nlelt
 
 ! CAUTION: the value of itypfb must be assigned to iindef
 
-  do iphas = 1, nphas
-    itypfb(ifac) = iindef
-  enddo
+  itypfb(ifac) = iindef
 
   do ii = 1, nvar
     icodcl(ifac,ii )  = 3
@@ -891,9 +871,7 @@ do ilelt = 1, nlelt
 !          less than or equal to ntypmx;
 !          these integers are defined in paramx.h
 
-  do iphas = 1, nphas
-    itypfb(ifac) = 89
-  enddo
+  itypfb(ifac) = 89
 
   do ii = 1, nvar
     icodcl(ifac,ii )  = 3

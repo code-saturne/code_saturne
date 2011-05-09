@@ -100,20 +100,16 @@ idebra = idbra0
 
 write(nfecra,1000)
 
-do iphas = 1, nphas
-  if (almax.le.0.d0) then
-    almax = voltot**.333d0
-    write(nfecra,1100) almax
-    write(nfecra,1102)
-    if(itytur.eq.2.or.itytur.eq.3                   &
-         .or. iturb.eq.50 .or. iturb.eq.60          &
-         .or. iturb.eq.70) then
-      write(nfecra,1101)
-    endif
+if (almax.le.0.d0) then
+  almax = voltot**.333d0
+  write(nfecra,1100) almax
+  write(nfecra,1102)
+  if(itytur.eq.2.or.itytur.eq.3                   &
+       .or. iturb.eq.50 .or. iturb.eq.60          &
+       .or. iturb.eq.70) then
+    write(nfecra,1101)
   endif
-enddo
-
-
+endif
 
 #if defined(_CS_LANG_FR)
 

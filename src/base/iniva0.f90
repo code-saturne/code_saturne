@@ -167,85 +167,81 @@ enddo
 ! 3.  INITIALISATION DES PROPRIETES PHYSIQUES
 !===============================================================================
 
-do iphas = 1, nphas
-
 !     Masse volumique
-  iirom  = ipproc(irom  )
-  iiromb = ipprob(irom  )
-  ro0iph = ro0
+iirom  = ipproc(irom  )
+iiromb = ipprob(irom  )
+ro0iph = ro0
 
 !     Masse volumique aux cellules (et au pdt precedent si ordre2 ou icalhy)
+do iel = 1, ncel
+  propce(iel,iirom)  = ro0iph
+enddo
+if(iroext.gt.0.or.icalhy.eq.1) then
+  iiroma = ipproc(iroma )
   do iel = 1, ncel
-    propce(iel,iirom)  = ro0iph
+    propce(iel,iiroma) = propce(iel,iirom)
   enddo
-  if(iroext.gt.0.or.icalhy.eq.1) then
-    iiroma = ipproc(iroma )
-    do iel = 1, ncel
-      propce(iel,iiroma) = propce(iel,iirom)
-    enddo
-  endif
+endif
 !     Masse volumique aux faces de bord (et au pdt precedent si ordre2)
+do ifac = 1, nfabor
+  propfb(ifac,iiromb) = ro0iph
+enddo
+if(iroext.gt.0) then
+  iiroma = ipprob(iroma )
   do ifac = 1, nfabor
-    propfb(ifac,iiromb) = ro0iph
+    propfb(ifac,iiroma) = propfb(ifac,iiromb)
   enddo
-  if(iroext.gt.0) then
-    iiroma = ipprob(iroma )
-    do ifac = 1, nfabor
-      propfb(ifac,iiroma) = propfb(ifac,iiromb)
-    enddo
-  endif
+endif
 
 !     Viscosite moleculaire
-  iivisl = ipproc(iviscl)
-  iivist = ipproc(ivisct)
-  visiph = viscl0
+iivisl = ipproc(iviscl)
+iivist = ipproc(ivisct)
+visiph = viscl0
 
 !     Viscosite moleculaire aux cellules (et au pdt precedent si ordre2)
+do iel = 1, ncel
+  propce(iel,iivisl) = visiph
+enddo
+if(iviext.gt.0) then
+  iivisa = ipproc(ivisla)
   do iel = 1, ncel
-    propce(iel,iivisl) = visiph
+    propce(iel,iivisa) = propce(iel,iivisl)
   enddo
-  if(iviext.gt.0) then
-    iivisa = ipproc(ivisla)
-    do iel = 1, ncel
-      propce(iel,iivisa) = propce(iel,iivisl)
-    enddo
-  endif
+endif
 !     Viscosite turbulente aux cellules (et au pdt precedent si ordre2)
+do iel = 1, ncel
+  propce(iel,iivist) = 0.d0
+enddo
+if(iviext.gt.0) then
+  iivisa = ipproc(ivista)
   do iel = 1, ncel
-    propce(iel,iivist) = 0.d0
+    propce(iel,iivisa) = propce(iel,iivist)
   enddo
-  if(iviext.gt.0) then
-    iivisa = ipproc(ivista)
-    do iel = 1, ncel
-      propce(iel,iivisa) = propce(iel,iivist)
-    enddo
-  endif
+endif
 
 !     Chaleur massique aux cellules (et au pdt precedent si ordre2)
-  if(icp.gt.0) then
-    iicp = ipproc(icp)
+if(icp.gt.0) then
+  iicp = ipproc(icp)
+  do iel = 1, ncel
+    propce(iel,iicp) = cp0
+  enddo
+  if(icpext.gt.0) then
+    iicpa  = ipproc(icpa)
     do iel = 1, ncel
-      propce(iel,iicp) = cp0
+      propce(iel,iicpa ) = propce(iel,iicp)
     enddo
-    if(icpext.gt.0) then
-      iicpa  = ipproc(icpa)
-      do iel = 1, ncel
-        propce(iel,iicpa ) = propce(iel,iicp)
-      enddo
-    endif
   endif
+endif
 
 ! La pression totale sera initialisee a P0 + rho.g.r dans INIVAR
 !  si l'utilisateur n'a pas fait d'initialisation personnelle
 ! Non valable en compressible
-  if (ippmod(icompf).lt.0) then
-    iiptot = ipproc(iprtot)
-    do iel = 1, ncel
-      propce(iel,iiptot) = - rinfin
-    enddo
-  endif
-
-enddo
+if (ippmod(icompf).lt.0) then
+  iiptot = ipproc(iprtot)
+  do iel = 1, ncel
+    propce(iel,iiptot) = - rinfin
+  enddo
+endif
 
 iphas = 1
 
@@ -292,10 +288,8 @@ do ivar = 1, nvar
 enddo
 
 !     On met la pression P* a PRED0
-do iphas = 1, nphas
-  do iel = 1, ncel
-    rtp(iel,ipr) = pred0
-  enddo
+do iel = 1, ncel
+  rtp(iel,ipr) = pred0
 enddo
 
 !     Couplage U-P
@@ -316,137 +310,133 @@ endif
 !    -10*GRAND. On testera ensuite si l'utilisateur les a modifiees dans
 !    usiniv ou en lisant un fichier suite.
 
-do iphas = 1, nphas
+if(itytur.eq.2 .or. iturb.eq.50) then
 
-  if(itytur.eq.2 .or. iturb.eq.50) then
+  ikiph  = ik
+  ieiph  = iep
 
-    ikiph  = ik
-    ieiph  = iep
-
-    xcmu = cmu
-    if (iturb.eq.50) xcmu = cv2fmu
+  xcmu = cmu
+  if (iturb.eq.50) xcmu = cv2fmu
 
 
-    if (uref.ge.0.d0) then
-      do iel = 1, ncel
-        rtp(iel,ikiph) = 1.5d0*(0.02d0*uref)**2
-        rtp(iel,ieiph) = rtp(iel,ikiph)**1.5d0*xcmu/almax
-      enddo
+  if (uref.ge.0.d0) then
+    do iel = 1, ncel
+      rtp(iel,ikiph) = 1.5d0*(0.02d0*uref)**2
+      rtp(iel,ieiph) = rtp(iel,ikiph)**1.5d0*xcmu/almax
+    enddo
 
-      iclip = 1
-      iphass = iphas
-      call clipke(ncelet , ncel   , nvar    , nphas  ,            &
-                  iphass , iclip  , iwarni(ikiph),                &
-                  propce , rtp    )
+    iclip = 1
+    iphass = iphas
+    call clipke(ncelet , ncel   , nvar    , nphas  ,            &
+         iphass , iclip  , iwarni(ikiph),                &
+         propce , rtp    )
 
-    else
-      do iel = 1, ncel
-        rtp(iel,ikiph) = -grand
-        rtp(iel,ieiph) = -grand
-      enddo
-    endif
+  else
+    do iel = 1, ncel
+      rtp(iel,ikiph) = -grand
+      rtp(iel,ieiph) = -grand
+    enddo
+  endif
 
-    if (iturb.eq.50) then
-      iphiph = iphi
-      ifbiph = ifb
-      do iel = 1, ncel
-        rtp(iel,iphiph) = 2.d0/3.d0
-        rtp(iel,ifbiph) = 0.d0
-      enddo
-    endif
+  if (iturb.eq.50) then
+    iphiph = iphi
+    ifbiph = ifb
+    do iel = 1, ncel
+      rtp(iel,iphiph) = 2.d0/3.d0
+      rtp(iel,ifbiph) = 0.d0
+    enddo
+  endif
 
-  elseif(itytur.eq.3) then
+elseif(itytur.eq.3) then
 
-    ir11ip = ir11
-    ir22ip = ir22
-    ir33ip = ir33
-    ir12ip = ir12
-    ir13ip = ir13
-    ir23ip = ir23
-    ieiph  = iep
+  ir11ip = ir11
+  ir22ip = ir22
+  ir33ip = ir33
+  ir12ip = ir12
+  ir13ip = ir13
+  ir23ip = ir23
+  ieiph  = iep
 
-    if (uref.ge.0.d0) then
+  if (uref.ge.0.d0) then
 
-      trii   = (0.02d0*uref)**2
+    trii   = (0.02d0*uref)**2
 
-      do iel = 1, ncel
-        rtp(iel,ir11ip) = trii
-        rtp(iel,ir22ip) = trii
-        rtp(iel,ir33ip) = trii
-        rtp(iel,ir12ip) = 0.d0
-        rtp(iel,ir13ip) = 0.d0
-        rtp(iel,ir23ip) = 0.d0
-        xxk = 0.5d0*(rtp(iel,ir11ip)+                             &
-                     rtp(iel,ir22ip)+rtp(iel,ir33ip))
-        rtp(iel,ieiph) = xxk**1.5d0*cmu/almax
-      enddo
-      iclip = 1
-      iphass = iphas
-      call clprij(ncelet , ncel   , nvar    , nphas  ,            &
-                  iphass , iclip  ,                               &
-                  propce , rtp    , rtp    )
+    do iel = 1, ncel
+      rtp(iel,ir11ip) = trii
+      rtp(iel,ir22ip) = trii
+      rtp(iel,ir33ip) = trii
+      rtp(iel,ir12ip) = 0.d0
+      rtp(iel,ir13ip) = 0.d0
+      rtp(iel,ir23ip) = 0.d0
+      xxk = 0.5d0*(rtp(iel,ir11ip)+                             &
+           rtp(iel,ir22ip)+rtp(iel,ir33ip))
+      rtp(iel,ieiph) = xxk**1.5d0*cmu/almax
+    enddo
+    iclip = 1
+    iphass = iphas
+    call clprij(ncelet , ncel   , nvar    , nphas  ,            &
+         iphass , iclip  ,                               &
+         propce , rtp    , rtp    )
 
-    else
+  else
 
-      do iel = 1, ncel
-        rtp(iel,ir11ip) = -grand
-        rtp(iel,ir22ip) = -grand
-        rtp(iel,ir33ip) = -grand
-        rtp(iel,ir12ip) = -grand
-        rtp(iel,ir13ip) = -grand
-        rtp(iel,ir23ip) = -grand
-        rtp(iel,ieiph)  = -grand
-      enddo
-
-    endif
-
-  elseif(iturb.eq.60) then
-
-    ikiph   = ik
-    iomgip  = iomg
-
-    if (uref.ge.0.d0) then
-
-      do iel = 1, ncel
-        rtp(iel,ikiph ) = 1.5d0*(0.02d0*uref)**2
-!     on utilise la formule classique eps=k**1.5/Cmu/ALMAX et omega=eps/Cmu/k
-        rtp(iel,iomgip) = rtp(iel,ikiph)**0.5d0/almax
-      enddo
-!     pas la peine de clipper, les valeurs sont forcement positives
-
-    else
-
-      do iel = 1, ncel
-        rtp(iel,ikiph ) = -grand
-        rtp(iel,iomgip) = -grand
-      enddo
-
-    endif
-
-  elseif(iturb.eq.70) then
-
-    inuiph  = inusa
-
-    if (uref.ge.0.d0) then
-
-      do iel = 1, ncel
-        rtp(iel,inuiph ) = sqrt(1.5d0)*(0.02d0*uref)*almax
-!     on utilise la formule classique eps=k**1.5/Cmu/ALMAX
-!     et nusa=Cmu*k**2/eps
-      enddo
-!     pas la peine de clipper, les valeurs sont forcement positives
-
-    else
-
-      do iel = 1, ncel
-        rtp(iel,inuiph ) = -grand
-      enddo
-
-    endif
+    do iel = 1, ncel
+      rtp(iel,ir11ip) = -grand
+      rtp(iel,ir22ip) = -grand
+      rtp(iel,ir33ip) = -grand
+      rtp(iel,ir12ip) = -grand
+      rtp(iel,ir13ip) = -grand
+      rtp(iel,ir23ip) = -grand
+      rtp(iel,ieiph)  = -grand
+    enddo
 
   endif
 
-enddo
+elseif(iturb.eq.60) then
+
+  ikiph   = ik
+  iomgip  = iomg
+
+  if (uref.ge.0.d0) then
+
+    do iel = 1, ncel
+      rtp(iel,ikiph ) = 1.5d0*(0.02d0*uref)**2
+      !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX et omega=eps/Cmu/k
+      rtp(iel,iomgip) = rtp(iel,ikiph)**0.5d0/almax
+    enddo
+    !     pas la peine de clipper, les valeurs sont forcement positives
+
+  else
+
+    do iel = 1, ncel
+      rtp(iel,ikiph ) = -grand
+      rtp(iel,iomgip) = -grand
+    enddo
+
+  endif
+
+elseif(iturb.eq.70) then
+
+  inuiph  = inusa
+
+  if (uref.ge.0.d0) then
+
+    do iel = 1, ncel
+      rtp(iel,inuiph ) = sqrt(1.5d0)*(0.02d0*uref)*almax
+      !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX
+      !     et nusa=Cmu*k**2/eps
+    enddo
+    !     pas la peine de clipper, les valeurs sont forcement positives
+
+  else
+
+    do iel = 1, ncel
+      rtp(iel,inuiph ) = -grand
+    enddo
+
+  endif
+
+endif
 
 !===============================================================================
 ! 6.  CLIPPING DES GRANDEURS SCALAIRES (SF K-EPS VOIR CI DESSUS)
@@ -506,11 +496,9 @@ do ii = 1, ncofab
   enddo
 enddo
 
-do iphas = 1, nphas
-  do ifac = 1, nfabor
-    ia(iitypf-1+ifac) = 0
-    ia(iitrif-1+ifac) = 0
-  enddo
+do ifac = 1, nfabor
+  ia(iitypf-1+ifac) = 0
+  ia(iitrif-1+ifac) = 0
 enddo
 
 ! Type symétrie : on en a besoin dans le cas du calcul des gradients
@@ -519,10 +507,8 @@ enddo
 !     Habituellement, on évite l'extrapolation sur les faces de symétries
 !     pour ne pas tomber sur une indétermination et une matrice 3*3 non
 !     inversible dans les configurations 2D).
-do iphas = 1, nphas
-  do ifac = 1, nfabor
-    ia(iisymp-1+ifac) = 0
-  enddo
+do ifac = 1, nfabor
+  ia(iisymp-1+ifac) = 0
 enddo
 
 ! Flux de masse (on essaye de ne pas trop faire les choses 2 fois,
@@ -562,34 +548,30 @@ enddo
 ! 8.  INITIALISATION DES TERMES SOURCES SI EXTRAPOLES
 !===============================================================================
 
-do iphas = 1, nphas
-
 !     les termes sources de Navier Stokes
-  if(isno2t.gt.0) then
-    iptsna = ipproc(itsnsa)
-    do ii = 1, ndim
-      do iel = 1, ncel
-        propce(iel,iptsna+ii-1) = 0.d0
-      enddo
+if(isno2t.gt.0) then
+  iptsna = ipproc(itsnsa)
+  do ii = 1, ndim
+    do iel = 1, ncel
+      propce(iel,iptsna+ii-1) = 0.d0
     enddo
-  endif
+  enddo
+endif
 
 !     les termes sources turbulents
-  if(isto2t.gt.0) then
-    if(itytur.eq.2) jj = 2
-    if(itytur.eq.3) jj = 7
-    if(iturb.eq.50) jj = 4
-    if(iturb.eq.60) jj = 2
-    if(iturb.eq.70) jj = 1
-    iptsta = ipproc(itstua)
-    do ii = 1, jj
-      do iel = 1, ncel
-        propce(iel,iptsta+ii-1) = 0.d0
-      enddo
+if(isto2t.gt.0) then
+  if(itytur.eq.2) jj = 2
+  if(itytur.eq.3) jj = 7
+  if(iturb.eq.50) jj = 4
+  if(iturb.eq.60) jj = 2
+  if(iturb.eq.70) jj = 1
+  iptsta = ipproc(itstua)
+  do ii = 1, jj
+    do iel = 1, ncel
+      propce(iel,iptsta+ii-1) = 0.d0
     enddo
-  endif
-
-enddo
+  enddo
+endif
 
 !     les termes sources des scalaires
 do iis = 1, nscal
@@ -623,13 +605,11 @@ enddo
 ! 10.  INITIALISATION CONSTANTE DE SMAGORINSKY EN MODELE DYNAMIQUE
 !===============================================================================
 
-do iphas = 1, nphas
-  if(iturb.eq.41) then
-    do iel = 1, ncel
-      propce(iel,ipproc(ismago)) = 0.d0
-    enddo
-  endif
-enddo
+if(iturb.eq.41) then
+  do iel = 1, ncel
+    propce(iel,ipproc(ismago)) = 0.d0
+  enddo
+endif
 
 !===============================================================================
 ! 11.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE
@@ -638,25 +618,21 @@ enddo
 !     Si IFAPA existe,
 !     on suppose qu'il faut le (re)calculer : on init le tab a -1.
 
-do iphas = 1, nphas
-  if(iifapa.gt.0) then
-    do iel = 1, ncel
-      ia(iifapa-1+ iel) = -1
-    enddo
-  endif
-enddo
+if(iifapa.gt.0) then
+  do iel = 1, ncel
+    ia(iifapa-1+ iel) = -1
+  enddo
+endif
 
 !===============================================================================
 ! 12.  INITIALISATION DE LA FORCE EXTERIEURE QUAND IPHYDR=1
 !===============================================================================
 
 if(iphydr.eq.1) then
-  do iphas = 1, nphas
-    do iel = 1, ncel
-      frcxt(iel,1) = 0.d0
-      frcxt(iel,2) = 0.d0
-      frcxt(iel,3) = 0.d0
-    enddo
+  do iel = 1, ncel
+    frcxt(iel,1) = 0.d0
+    frcxt(iel,2) = 0.d0
+    frcxt(iel,3) = 0.d0
   enddo
 endif
 

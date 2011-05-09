@@ -83,12 +83,10 @@ integer          isc , iphas , ivar
 
 iok = 0
 
-do iphas = 1, nphas
-  if(iscalt.ne.-1) then
-    write(nfecra,1000)iscalt
-    iok = iok + 1
-  endif
-enddo
+if(iscalt.ne.-1) then
+  write(nfecra,1000)iscalt
+  iok = iok + 1
+endif
 do ii = 1, nscapp
   if(iscsth(iscapp(ii)).ne.-10) then
     write(nfecra,1001)ii,iscapp(ii),iscapp(ii),iscsth(iscapp(ii))

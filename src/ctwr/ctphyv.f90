@@ -204,40 +204,109 @@ ipass = ipass + 1
 ! 1 - MASSE VOLUMIQUE
 !===============================================================================
 
-! --- Boucle sur les phases : debut
-do iphas = 1, nphas
-
-
 !   Positions des variables, coefficients
 !   -------------------------------------
 
 ! --- Numero de variable thermique pour la phase courante iphas
 !       (et de ses conditions limites)
 
-  ivart = isca(itemp4)
+ivart = isca(itemp4)
 
 ! --- Position des conditions limites de la variable IVART
 
-  iclvar = iclrtp(ivart,icoef)
+iclvar = iclrtp(ivart,icoef)
 
 ! --- Rang de la masse volumique de la phase courante IPHAS
 !     dans PROPCE, prop. physiques au centre des elements       : IPCROM
 
-  ipcrom = ipproc(irom)
+ipcrom = ipproc(irom)
 
 ! --- Coefficients des lois choisis et imposes par l'utilisateur
 !       Les valeurs donnees ici sont fictives
 
-  rho0 = 1.293d0
-  t00  = 273.15d0
-  p00  = 101325.d0
-  del  = 0.622d0
-  t1   = 273.15d0
-  r    = 8.3143d0
+rho0 = 1.293d0
+t00  = 273.15d0
+p00  = 101325.d0
+del  = 0.622d0
+t1   = 273.15d0
+r    = 8.3143d0
 
 
 !   Masse volumique au centre des cellules
 !   ---------------------------------------
+
+do iel = 1, ncel
+
+  tti = rtp(iel,isca(itemp4))
+  xxi = rtp(iel,isca(ihumid))
+
+  call xsath(tti,xsati)
+  !==========
+
+  if (xxi .le. xsati) then
+
+    rho = rho0*t00/(tti+t1)*del/(del+xxi)
+
+  else
+
+    if (tti.le.0.d0) then
+      rhoj = 917.0d0
+    else
+      rhoj = 998.36d0 - 0.4116d0*(tti-20.d0)                    &
+           - 2.24d0*(tti-20.d0)*(tti-70.d0)/625.d0
+    endif
+
+    rho = 1.0d0/((tti+t1)*p00/(t00*p00*rho0*del)                &
+         *(del+xsati)+(xxi-xsati)/rhoj)
+
+  endif
+
+  if (rho .lt. 0.1d0) rho = 0.1d0
+  propce(iel,ipcrom) = rho
+
+enddo
+
+!===============================================================================
+! 2 - CHALEUR SPECIFIQUE
+!===============================================================================
+
+!   Positions des variables, coefficients
+!   -------------------------------------
+
+! --- Numero de variable thermique pour la phase courante iphas
+
+ivart = isca(itemp4)
+
+! --- Rang de la chaleur specifique de la phase courante IPHAS
+!     dans PROPCE, prop. physiques au centre des elements       : IPCCP
+
+if(icp.gt.0) then
+  ipccp  = ipproc(icp   )
+else
+  ipccp  = 0
+endif
+
+! --- Stop si CP n'est pas variable
+
+if(ipccp.le.0) then
+  write(nfecra,1000) icp
+  call csexit (1)
+endif
+
+
+! --- Coefficients des lois choisis et imposes par l'utilisateur
+!       Les valeurs donnees ici sont fictives
+
+cpa    = 1006.0d0
+cpv    = 1831.0d0
+cpe    = 4179.0d0
+hv0    = 2501600.0d0
+
+
+!   Chaleur specifique J/(kg degres) au centre des cellules
+!   --------------------------------------------------------
+
+if (ippmod(iaeros).eq.1) then
 
   do iel = 1, ncel
 
@@ -245,126 +314,39 @@ do iphas = 1, nphas
     xxi = rtp(iel,isca(ihumid))
 
     call xsath(tti,xsati)
-!         ==========
+    !==========
 
     if (xxi .le. xsati) then
-
-      rho = rho0*t00/(tti+t1)*del/(del+xxi)
-
+      propce(iel,ipccp) = cpa + xxi*cpv
     else
-
-      if (tti.le.0.d0) then
-        rhoj = 917.0d0
-      else
-        rhoj = 998.36d0 - 0.4116d0*(tti-20.d0)                    &
-               - 2.24d0*(tti-20.d0)*(tti-70.d0)/625.d0
-      endif
-
-      rho = 1.0d0/((tti+t1)*p00/(t00*p00*rho0*del)                &
-            *(del+xsati)+(xxi-xsati)/rhoj)
-
+      hvti = (cpv-cpe)*tti + hv0
+      call dxsath(tti,dxsati)
+      !==========
+      propce(iel,ipccp) = cpa + xsati*cpv +                     &
+           (xxi-xsati)*cpe + dxsati*hvti
     endif
-
-      if (rho .lt. 0.1d0) rho = 0.1d0
-      propce(iel,ipcrom) = rho
 
   enddo
 
+elseif (ippmod(iaeros).eq.2) then
 
-enddo
-! --- Boucle sur les phases : fin
+  do iel = 1, ncel
 
+    tti = rtp(iel,isca(itemp4))
 
+    call xsath(tti,xsati)
+    !==========
 
-!===============================================================================
-! 2 - CHALEUR SPECIFIQUE
-!===============================================================================
+    hvti = cpv*tti + hv0
 
-! --- Boucle sur les phases : debut
-do iphas = 1, nphas
+    call dxsath(tti,dxsati)
+    !==========
 
+    propce(iel,ipccp) = cpa + xsati*cpv + dxsati*hvti
 
-!   Positions des variables, coefficients
-!   -------------------------------------
+  enddo
 
-! --- Numero de variable thermique pour la phase courante iphas
-
-  ivart = isca(itemp4)
-
-! --- Rang de la chaleur specifique de la phase courante IPHAS
-!     dans PROPCE, prop. physiques au centre des elements       : IPCCP
-
-  if(icp.gt.0) then
-    ipccp  = ipproc(icp   )
-  else
-    ipccp  = 0
-  endif
-
-! --- Stop si CP n'est pas variable
-
-  if(ipccp.le.0) then
-    write(nfecra,1000) icp
-    call csexit (1)
-  endif
-
-
-! --- Coefficients des lois choisis et imposes par l'utilisateur
-!       Les valeurs donnees ici sont fictives
-
-  cpa    = 1006.0d0
-  cpv    = 1831.0d0
-  cpe    = 4179.0d0
-  hv0    = 2501600.0d0
-
-
-!   Chaleur specifique J/(kg degres) au centre des cellules
-!   --------------------------------------------------------
-
-  if (ippmod(iaeros).eq.1) then
-
-    do iel = 1, ncel
-
-      tti = rtp(iel,isca(itemp4))
-      xxi = rtp(iel,isca(ihumid))
-
-      call xsath(tti,xsati)
-!           ==========
-
-      if (xxi .le. xsati) then
-        propce(iel,ipccp) = cpa + xxi*cpv
-      else
-        hvti = (cpv-cpe)*tti + hv0
-        call dxsath(tti,dxsati)
-        !==========
-        propce(iel,ipccp) = cpa + xsati*cpv +                     &
-                            (xxi-xsati)*cpe + dxsati*hvti
-      endif
-
-    enddo
-
-  elseif (ippmod(iaeros).eq.2) then
-
-    do iel = 1, ncel
-
-      tti = rtp(iel,isca(itemp4))
-
-      call xsath(tti,xsati)
-!           ==========
-
-      hvti = cpv*tti + hv0
-
-      call dxsath(tti,dxsati)
-      !==========
-
-      propce(iel,ipccp) = cpa + xsati*cpv + dxsati*hvti
-
-    enddo
-
-  endif
-
-
-enddo
-! --- Boucle sur les phases : fin
+endif
 
 
 !===============================================================================

@@ -95,52 +95,43 @@ ipass = ipass + 1
 !---> VERIFICATION DES DIMENSIONS
 
 iok1 = 0
-do iphas = 1, nphas
-  if(ncetsm.gt.ncelet .or. ncetsm.lt.0) then
-    write(nfecra,1000) ncetsm
-    iok1 = 1
-  endif
-enddo
+if(ncetsm.gt.ncelet .or. ncetsm.lt.0) then
+  write(nfecra,1000) ncetsm
+  iok1 = 1
+endif
 if(iok1.ne.0) then
   call csexit (1)
 endif
 
 !---> CALCUL DU NOMBRE DE CELLULES AVEC TSM TOTAL
 
-do iphas = 1, nphas
-  nctsmt = ncetsm
-enddo
+nctsmt = ncetsm
 if (irangp.ge.0) then
   call parism(nphas,nctsmt)
 endif
 
 !---> QUELQUES MESSAGES
 
-do iphas = 1, nphas
-  if(nctsmt.eq.0) then
-    write(nfecra,2000) nctsmt
-    write(nfecra,3000)
-  else
-    write(nfecra,2001) nctsmt
-    write(nfecra,3000)
-  endif
-enddo
+if(nctsmt.eq.0) then
+  write(nfecra,2000) nctsmt
+  write(nfecra,3000)
+else
+  write(nfecra,2001) nctsmt
+  write(nfecra,3000)
+endif
 
 !---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
 
 ifinia = idebia
 ifinra = idebra
 
-do iphas = 1, nphas
+iicesm = ifinia
+iitpsm = iicesm + ncetsm
+ifinia        = iitpsm + ncetsm*nvar
 
-  iicesm = ifinia
-  iitpsm = iicesm + ncetsm
-  ifinia        = iitpsm + ncetsm*nvar
+ismace = ifinra
+ifinra        = ismace + ncetsm*nvar
 
-  ismace = ifinra
-  ifinra        = ismace + ncetsm*nvar
-
-enddo
 
 !---> VERIFICATION
 

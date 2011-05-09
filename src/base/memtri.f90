@@ -169,11 +169,9 @@ if (iperot.gt.0) then
   iipero = 1
 endif
 iiirij = 0
-do iphas = 1, nphas
-  if(itytur.eq.3) then
-    iiirij = 1
-  endif
-enddo
+if(itytur.eq.3) then
+  iiirij = 1
+endif
 
 
 !     Distance a la paroi
@@ -199,13 +197,11 @@ endif
 !       ou lagrangien+IROULE=2)
 iypar1 = 0
 if(ineedy.eq.1.and.abs(icdpar).eq.1) then
-  do iphas = 1, nphas
-    if(itytur.eq.4) then
-      if(idries.eq.1) then
-        iypar1 = 1
-      endif
+  if(itytur.eq.4) then
+    if(idries.eq.1) then
+      iypar1 = 1
     endif
-  enddo
+  endif
   if (iilagr.ge.1 .and. iroule.eq.2) iypar1 = 1
 endif
 
@@ -240,15 +236,13 @@ iitypf = idebia
 iitrif = iitypf + nfabor
 iisymp = iitrif + nfabor
 ifinia = iisymp + nfabor
-do iphas = 1, nphas
-  if(idpar2.eq.1) then
-    iifapa = ifinia
-    ifinia        = iifapa + ncelet
-  else
-!         cette valeur nulle est utilisee dans les tests
-    iifapa = 0
-  endif
-enddo
+if(idpar2.eq.1) then
+  iifapa = ifinia
+  ifinia        = iifapa + ncelet
+else
+  !         cette valeur nulle est utilisee dans les tests
+  iifapa = 0
+endif
 
 !  Zones de face de bord : on utilise provisoirement les zones des physiques
 !    particulieres, meme sans physique particuliere
@@ -303,14 +297,12 @@ ifinra = iforbr + nfabor*ndim*iiforb
 !     dans PHYVAR et dans TURBKW. On reserve un tableau pour divU en meme temps.
 !     Les pointeurs IS2KW et IDVUKW sont fonction de IPHAS
 
-do iphas = 1, nphas
-  is2kw  = ifinra
-  idvukw = ifinra
-  if (iturb.eq.60) then
-    idvukw = is2kw  + ncelet
-    ifinra        = idvukw + ncelet
-  endif
-enddo
+is2kw  = ifinra
+idvukw = ifinra
+if (iturb.eq.60) then
+  idvukw = is2kw  + ncelet
+  ifinra        = idvukw + ncelet
+endif
 
 ! En ALE ou maillage mobile, on reserve des tableaux supplementaires
 ! de position initiale
@@ -358,57 +350,53 @@ enddo
 
 !     IPPROC a ete complete au prealable dans VARPOS
 
-do iphas = 1, nphas
+ivar = ipr
+ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+ivar = iu
+ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+ivar = iv
+ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+ivar = iw
+ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
 
-  ivar = ipr
+if    (itytur.eq.2) then
+  ivar = ik
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  ivar = iu
+  ivar = iep
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  ivar = iv
+elseif(itytur.eq.3) then
+  ivar = ir11
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  ivar = iw
+  ivar = ir22
   ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-
-  if    (itytur.eq.2) then
-    ivar = ik
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iep
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  elseif(itytur.eq.3) then
-    ivar = ir11
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir22
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir33
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir12
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir13
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ir23
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iep
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  elseif(iturb.eq.50) then
-    ivar = ik
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iep
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iphi
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = ifb
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  elseif(iturb.eq.60) then
-    ivar = ik
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-    ivar = iomg
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  elseif(iturb.eq.70) then
-    ivar = inusa
-    ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
-  endif
-
-enddo
+  ivar = ir33
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ivar = ir12
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ivar = ir13
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ivar = ir23
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ivar = iep
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+elseif(iturb.eq.50) then
+  ivar = ik
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ivar = iep
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ivar = iphi
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ivar = ifb
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+elseif(iturb.eq.60) then
+  ivar = ik
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+  ivar = iomg
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+elseif(iturb.eq.70) then
+  ivar = inusa
+  ipp2ra(ipprtp(ivar)) = irtp  +(ivar-1)*ncelet
+endif
 
 if (iale.eq.1) then
   ivar = iuma
@@ -471,17 +459,15 @@ else
 endif
 
 !     Vecteur vitesse chrono
-do iphas = 1, nphas
-  ippu = ipprtp(iu)
-  ippv = ipprtp(iv)
-  ippw = ipprtp(iw)
-  if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.                 &
-    ichrvr(ippw).eq.1) then
-    ichrvr(ippv) = 0
-    ichrvr(ippw) = 0
-    ipp2ra(ippu) = - ipp2ra(ippu)
-  endif
-enddo
+ippu = ipprtp(iu)
+ippv = ipprtp(iv)
+ippw = ipprtp(iw)
+if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.                 &
+     ichrvr(ippw).eq.1) then
+  ichrvr(ippv) = 0
+  ichrvr(ippw) = 0
+  ipp2ra(ippu) = - ipp2ra(ippu)
+endif
 !     Vecteur vitesse de maillage chrono
 if (iale.eq.1) then
   ippu = ipprtp(iuma)

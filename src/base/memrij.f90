@@ -116,20 +116,16 @@ idebia = idbia0
 idebra = idbra0
 
 jgrari = 0
-do iphas = 1, nphas
-  if(igrari.eq.1) then
-    jgrari = 1
-  endif
-enddo
+if(igrari.eq.1) then
+  jgrari = 1
+endif
 
 
 icobx = 0
 if(abs(icdpar).eq.1) then
-  do iphas = 1, nphas
-    if(irijec.eq.1) then
-      icobx = 1
-    endif
-  enddo
+  if(irijec.eq.1) then
+    icobx = 1
+  endif
 endif
 
 

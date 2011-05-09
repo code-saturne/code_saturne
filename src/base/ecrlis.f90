@@ -175,11 +175,9 @@ enddo
 
 do ipp = 2, nvppmx
   iok = 1
-  do iphas = 1, nphas
-    if(ipp.eq.ipprtp(ipr)) then
-      iok = 0
-    endif
-  enddo
+  if(ipp.eq.ipprtp(ipr)) then
+    iok = 0
+  endif
   if(ilisvr(ipp).eq.1.and.itrsvr(ipp).ge.1) then
     if(iok.eq.1) then
       ira = abs(ipp2ra(ipp))
@@ -197,13 +195,11 @@ do ipp = 2, nvppmx
   endif
 enddo
 
-do iphas = 1, nphas
-  ipp = ipprtp(ipr)
-  if(dervar(ipp).lt.epzero) then
-    dervar(ipp) = -1.d0
-  endif
-  dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
-enddo
+ipp = ipprtp(ipr)
+if(dervar(ipp).lt.epzero) then
+  dervar(ipp) = -1.d0
+endif
+dervar(ipp) = rnsmbr(ipp) / dervar(ipp)
 
 
 !==================================================================
@@ -327,19 +323,17 @@ do ipp = 2, nvppmx
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+16
     ipuvw = 0
-    do iphas = 1, nphas
-      if(ipp.eq.ipprtp(ipr) .or.                           &
+    if(ipp.eq.ipprtp(ipr) .or.                           &
          ipp.eq.ipprtp(iu ) .or.                           &
          ipp.eq.ipprtp(iv ) .or.                           &
          ipp.eq.ipprtp(iw ) ) then
-        ipuvw = 1
-      endif
-!   En v2f on ne clippe jamais f_barrre, on ne l'affiche donc pas
-      if (iturb.eq.50) then
-        if (ipp.eq.ipprtp(ifb)) ipuvw = 1
-      endif
-    enddo
-!   En ALE on ne clippe pas la vitesse de maillage
+      ipuvw = 1
+    endif
+    !   En v2f on ne clippe jamais f_barrre, on ne l'affiche donc pas
+    if (iturb.eq.50) then
+      if (ipp.eq.ipprtp(ifb)) ipuvw = 1
+    endif
+    !   En ALE on ne clippe pas la vitesse de maillage
     if (iale.eq.1) then
       if (ipp.eq.ipprtp(iuma) .or.                                &
           ipp.eq.ipprtp(ivma) .or.                                &
@@ -380,30 +374,28 @@ write(nfecra,1160)
 
 do ipp = 2, nvppmx
   ipuvw = 0
-  do iphas = 1, nphas
-    if(ipp.eq.ipprtp(ipr) .or.                             &
+  if(ipp.eq.ipprtp(ipr) .or.                             &
        ipp.eq.ipprtp(iu ) .or.                             &
        ipp.eq.ipprtp(iv ) .or.                             &
        ipp.eq.ipprtp(iw ) ) then
+    ipuvw = 1
+  endif
+  !   En v2f on ne clippe jamais f_barrre, on ne l'affiche donc pas
+  if (iturb.eq.50) then
+    if (ipp.eq.ipprtp(ifb)) ipuvw = 1
+  endif
+  !   En ALE on ne clippe pas la vitesse de maillage
+  if (iale.eq.1) then
+    if (ipp.eq.ipprtp(iuma) .or.                                &
+         ipp.eq.ipprtp(ivma) .or.                                &
+         ipp.eq.ipprtp(iwma)) ipuvw = 1
+  endif
+  !   Compressible
+  if(ippmod(icompf).ge.0) then
+    if(ipp.eq.ipprtp(isca(itempk))) then
       ipuvw = 1
     endif
-!   En v2f on ne clippe jamais f_barrre, on ne l'affiche donc pas
-    if (iturb.eq.50) then
-      if (ipp.eq.ipprtp(ifb)) ipuvw = 1
-    endif
-!   En ALE on ne clippe pas la vitesse de maillage
-    if (iale.eq.1) then
-      if (ipp.eq.ipprtp(iuma) .or.                                &
-          ipp.eq.ipprtp(ivma) .or.                                &
-          ipp.eq.ipprtp(iwma)) ipuvw = 1
-    endif
-!   Compressible
-    if(ippmod(icompf).ge.0) then
-      if(ipp.eq.ipprtp(isca(itempk))) then
-        ipuvw = 1
-      endif
-    endif
-  enddo
+  endif
   if(ilisvr(ipp).eq.1.and.itrsvr(ipp).gt.0.and.ipuvw.eq.0) then
     chainc = 'a'
     chain = ' '
