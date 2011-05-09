@@ -249,7 +249,7 @@ class resource_info(batch_info):
                             self.n_procs += int(s0[0:i])*int(s0[i+2:-1])
                         else:
                             self.n_procs += int(s0)
-                else;
+                else:
                     self.n_procs = self.n_nodes
 
         # Test for Platform LSF.
