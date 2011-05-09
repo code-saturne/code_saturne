@@ -1,3 +1,67 @@
+* 09/05/2011 - David Monfort <david.monfort@edf.fr>
+  Removing the dependency to the number of phases (step 6).
+  The continuous phase number relative to the species (user or specific
+  physics scalars) is no more necessary (iphsca keyword).
+  The phase number is now handled by a standard iphas variable set to 1.
+  modified files:
+    doc/user/saturne1.tex
+    doc/user/saturne2.tex
+  modified routines:
+    src/atmo/atini1.f90
+    src/atmo/atvarp.f90
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/condli.f90
+    src/base/coupbi.f90
+    src/base/coupbo.f90
+    src/base/covofi.f90
+    src/base/cstphy.f90
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/iniusi.f90
+    src/base/iniva0.f90
+    src/base/modini.f90
+    src/base/scalai.f90
+    src/base/tridim.f90
+    src/base/varpos.f90
+    src/base/vericl.f90
+    src/base/verini.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfmsfl.f90
+    src/cfbl/cfmsgs.f90
+    src/cfbl/cfmsvl.f90
+    src/cfbl/cfmsvs.f90
+    src/cfbl/cfvarp.f90
+    src/cogz/coini1.f90
+    src/cogz/covarp.f90
+    src/cogz/ebutss.f90
+    src/cogz/lwctss.f90
+    src/cplv/cpini1.f90
+    src/cplv/cplin1.f90
+    src/cplv/cpltsv.f90
+    src/cplv/cplvar.f90
+    src/cplv/cptssc.f90
+    src/cplv/cptsvc.f90
+    src/cplv/cpvarp.f90
+    src/ctwr/ctini1.f90
+    src/ctwr/ctvarp.f90
+    src/elec/elini1.f90
+    src/elec/elvarp.f90
+    src/fuel/fuini1.f90
+    src/fuel/futssc.f90
+    src/fuel/futsvc.f90
+    src/fuel/fuvarp.f90
+    users/base/usclim.f90
+    users/base/usini1.f90
+    users/base/usphyv.f90
+    users/base/ustsma.f90
+    users/base/ustssc.f90
+    users/cfbl/uscfcl.f90
+    users/cfbl/uscfxi.f90
+    users/cplv/uscpcl.f90
+    users/cplv/uscplc.f90
+    users/fuel/usfucl.f90
+
 * 06/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix memory leak.
   modified file:

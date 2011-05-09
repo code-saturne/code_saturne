@@ -676,13 +676,9 @@ do ilelt = 1, nlelt
 
 ! ------ Traitement des scalaires utilisateurs
 
-! Exemple : On traite les scalaires rattaches a la phase courante : DEBUT
-!     Eliminer ces lignes pour la clarte s'il n'y en a pas
   if ( (nscal-nscapp).gt.0 ) then
     do ii = 1, (nscal-nscapp)
-      if(iphsca(ii).eq.iphas) then
-        rcodcl(ifac,isca(ii),1) = 1.d0
-      endif
+      rcodcl(ifac,isca(ii),1) = 1.d0
     enddo
   endif
 

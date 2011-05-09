@@ -744,7 +744,7 @@ enddo
 
 !     Scalaires
 do iscal = 1, nscal
-  iphas = iphsca(iscal)
+  iphas = 1
   ivar  = isca(iscal)
   if(abs(thetav(ivar)+999.d0).gt.epzero) then
     WRITE(NFECRA,1041) IPHAS,'SCALAIRE',ISCAL,'THETAV'
@@ -1086,7 +1086,7 @@ endif
 if(nscal.gt.0) then
   do ii = 1, nscal
     if(iscsth(ii).eq.-10)then
-      iphas = iphsca(ii)
+      iphas = 1
       if(ii.ne.iscalt(iphas)) then
         iscsth(ii) = 0
       endif
@@ -1270,7 +1270,7 @@ do iscal = 1, nscal
 enddo
 
 
-! ---> VISLS0 (IPHSCA, IVISLS ont ete verifies dans varpos)
+! ---> VISLS0 (IVISLS ont ete verifies dans varpos)
 !      Pour les variances de fluctuations, les valeurs du tableau
 !        precedent ne doivent pas avoir ete modifiees par l'utilisateur
 !        Elles sont prises egales aux valeurs correspondantes pour le

@@ -168,7 +168,7 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Numero de phase associee au scalaire traite
-iphas  = iphsca(iscal)
+iphas  = 1
 
 ! --- Numero des variables de calcul
 !     Masse volumique

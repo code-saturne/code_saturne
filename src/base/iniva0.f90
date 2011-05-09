@@ -247,6 +247,7 @@ do iphas = 1, nphas
 
 enddo
 
+iphas = 1
 
 !     Diffusivite des scalaires
 do iscal = 1, nscal
@@ -256,7 +257,7 @@ do iscal = 1, nscal
     do iel = 1, ncel
       propce(iel,iiviss) = visls0(iscal)
     enddo
-    if(ivsext(iphsca(iscal)).gt.0) then
+    if(ivsext(iphas).gt.0) then
       iivisa = ipproc(ivissa(iscal))
       do iel = 1, ncel
         propce(iel,iivisa) = propce(iel,iiviss)

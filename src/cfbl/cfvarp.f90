@@ -102,11 +102,6 @@ if ( ippmod(icompf).ge.0 ) then
     iprop = iprop + 1
     itempk(iphas) = iscapp(iprop)
 
-! ---- Phase associee
-    iphsca(irho  (iphas)) = iphas
-    iphsca(ienerg(iphas)) = iphas
-    iphsca(itempk(iphas)) = iphas
-
 ! ---- Viscosite dynamique de reference relative au scalaire IRHO
     ivisls(irho  (iphas)) = 0
     visls0(irho  (iphas)) = epzero

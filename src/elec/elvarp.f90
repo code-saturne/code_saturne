@@ -132,15 +132,12 @@ endif
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!      IPHSCA, IVISLS, ICP
+!      IVISLS, ICP
 !===============================================================================
 
 do isc = 1, nscapp
 
   if ( iscavr(iscapp(isc)).le.0 ) then
-
-! ---- Notre physique particuliere est monophasique
-    iphsca(iscapp(isc)) = 1
 
 ! ---- Viscosite dynamique moleculaire variable pour les
 !                                              scalaires ISCAPP(ISC)
@@ -162,7 +159,7 @@ endif
 
 ! ---- Cp est variable ; pas sur que ce soit indispensable pour le verre
 !                              mais pour le moment c'est comme ca.
-iphas      = iphsca(ihm)
+iphas      = 1
 icp(iphas) = 1
 
 return

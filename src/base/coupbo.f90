@@ -210,7 +210,7 @@ do inbcou = 1, nbccou
 
     iccfth = 7
     imodif = 0
-    iphas  = iphsca(isvtb)
+    iphas  = 1
 
     call uscfth                                                   &
     !==========

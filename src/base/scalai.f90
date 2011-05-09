@@ -283,7 +283,7 @@ call iasize('scalai',ifinia)
 
       if(ispecf.eq.2) then
 
-        iphas = iphsca(iscal)
+        iphas = 1
 
         call cfener                                               &
         !==========
@@ -349,7 +349,7 @@ call iasize('scalai',ifinia)
 
 ! ---> Appel a covofi pour la resolution
 
-      iphas  = iphsca(iisc)
+      iphas  = 1
 
       call covofi                                                 &
       !==========
@@ -536,7 +536,7 @@ if(nscaus.gt.0) then
 
 ! ---> Appel a covofi pour la resolution
 
-    iphas  = iphsca(iisc)
+    iphas  = 1
 
     call covofi                                                   &
     !==========

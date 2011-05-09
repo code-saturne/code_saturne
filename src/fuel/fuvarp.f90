@@ -120,7 +120,7 @@ endif
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!    - PROPRES AUX SCALAIRES   : IPHSCA, IVISLS, ISCAVR
+!    - PROPRES AUX SCALAIRES   : IVISLS, ISCAVR
 !      Rq : pas de variance associee a un scalaire dans notre cas
 !    - PROPRES A LA SUSPENSION : ICP
 !===============================================================================
@@ -128,9 +128,6 @@ endif
 do isc = 1, nscapp
 
   if ( iscavr(iscapp(isc)) .le. 0 ) then
-
-! ---- Notre physique particuliere est monophasique
-    iphsca(iscapp(isc)) = 1
 
 ! ---- Viscosite dynamique de reference relative au scalaire
 !      ISCAPP(ISC)
@@ -142,7 +139,7 @@ enddo
 
 ! ---- Bien que l on soit en enthalpie on conserve un CP constant
 
-iphas = iphsca(ihm)
+iphas = 1
 icp(iphas)    = 0
 
 return

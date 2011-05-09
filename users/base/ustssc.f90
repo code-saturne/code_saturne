@@ -249,7 +249,7 @@ chaine = nomvar(ipprtp(ivar))
 iiscvr = iscavr(iscal)
 
 ! --- Index number of the phase associated to scalar iscal
-iphas = iphsca(iscal)
+iphas = 1
 
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom(iphas))

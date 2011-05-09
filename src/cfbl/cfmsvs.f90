@@ -137,7 +137,7 @@ idebia = idbia0
 idebra = idbra0
 
 ! --- Numero de phase associee au scalaire traite
-iphas  = iphsca(iscal)
+iphas  = 1
 
 do ifac = 1, nfac
   viscf(ifac) = 0.d0

@@ -206,15 +206,10 @@ if ( isuite.eq.0 ) then
   if(nscaus.gt.0) then
     ! For each scalar
     do iscal = 1, nscaus
-      ! If the scalar is associated to the considered phase iphas
-      if(iphsca(iscal).eq.iphas) then
-
-        ! Initialize each cell value
-        do iel = 1, ncel
-          rtp(iel,isca(iscal)) = 0.d0
-        enddo
-
-      endif
+      ! Initialize each cell value
+      do iel = 1, ncel
+        rtp(iel,isca(iscal)) = 0.d0
+      enddo
     enddo
   endif
 

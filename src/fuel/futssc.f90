@@ -230,7 +230,7 @@ ivar = isca(iscal)
 chaine = nomvar(ipprtp(ivar))
 
 ! --- Numero de phase associee au scalaire ISCAL
-iphas = iphsca(iscal)
+iphas = 1
 
 ! --- Numero des grandeurs physiques (voir usclim)
 ipcrom = ipproc(irom(iphas))

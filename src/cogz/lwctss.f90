@@ -202,7 +202,7 @@ epsi   = 1.0d-10
 ivar = isca(iscal)
 
 ! --- Numero de phase associee au scalaire ISCAL
-iphas = iphsca(iscal)
+iphas = 1
 
 ! ---
 ipcrom = ipproc(irom(iphas))

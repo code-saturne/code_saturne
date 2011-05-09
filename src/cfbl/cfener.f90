@@ -183,7 +183,7 @@ idebia = idbia0
 idebra = idbra0
 
 ! ---  Numero de phase associee au scalaire traite
-iphas  = iphsca(iscal)
+iphas  = 1
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)

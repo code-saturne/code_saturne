@@ -170,7 +170,7 @@ endif
 !    auront ete renseignes. C'est dans la section ci-dessous qu'on en
 !    en deduira NSCAPP (avant meme les verifications).
 !  A la sortie de cette section, NSCAL, NSCAUS et NSCAPP sont connus.
-!  On renseignera egalement ici les valeurs de IPHSCA, ISCAVR, IVISLS
+!  On renseignera egalement ici les valeurs de ISCAVR, IVISLS
 !    pour les scalaires physiques particulieres en question.
 !  On en profite aussi pour remplir ITYTUR puisque ITURB vient d'etre
 !    defini.
@@ -320,29 +320,6 @@ if(ipass.eq.3) then
     iok = iok + 1
   endif
 
-! --- IPHSCA(ISCAL) doit etre compris entre 0 et NPHAS.
-
-  if(nscaus.gt.0) then
-    do ii = 1, nscaus
-      iscal = ii
-      if(iphsca(iscal).gt.nphas.or.iphsca(iscal).lt.0) then
-        write(nfecra,7020) iscal, iscal, ii,ii,                   &
-             iphsca(iscal), nphas
-        iok = iok + 1
-      endif
-    enddo
-  endif
-  if(nscapp.gt.0) then
-    do ii = 1, nscapp
-      iscal = iscapp(ii)
-      if(iphsca(iscal).gt.nphas.or.iphsca(iscal).lt.0) then
-        write(nfecra,7021) iscal, iscal, ii,ii,                   &
-             iphsca(iscal), nphas
-        iok = iok + 1
-      endif
-    enddo
-  endif
-
 ! --- ISCAVR(ISCAL) doit etre compris entre 0 et NSCAL.
 
   if(nscaus.gt.0) then
@@ -442,71 +419,6 @@ if(ipass.eq.3) then
     enddo
   endif
 
-! ---> IPHSCA
-!      Pour les variances de fluctuations, les valeurs de IPHSCA
-!        ne doivent pas avoir ete modifiees par l'utilisateur
-!        Elles sont prises egales aux valeurs correspondantes
-!        pour le scalaire associe.
-
-  if(nscaus.gt.0) then
-    do jj = 1, nscaus
-      ii    = jj
-      iscal = iscavr(ii)
-      if(iscal.gt.0.and.iscal.le.nscal)then
-        if(iphsca(ii).eq.0) then
-          iphsca(ii) = iphsca(iscal)
-        else
-          ll = 0
-          do kk = 1, nscaus
-            if(       kk .eq.iscal) ll = kk
-          enddo
-          do kk = 1, nscapp
-            if(iscapp(kk).eq.iscal) ll = -kk
-          enddo
-          if(ll.gt.0) then
-            write(nfecra,7060)ii,                                 &
-                 ii,jj,iscal,ll,jj,iscal,                         &
-                 jj,iphsca(iscal)
-          else
-            write(nfecra,7061)ii,                                 &
-                 ii,jj,iscal,-ll,jj,iscal,                        &
-                 jj,iphsca(iscal)
-          endif
-          iok = iok + 1
-        endif
-      endif
-    enddo
-  endif
-
-  if(nscapp.gt.0) then
-    do jj = 1, nscapp
-      ii    = iscapp(jj)
-      iscal = iscavr(ii)
-      if(iscal.gt.0.and.iscal.le.nscal)then
-        if(iphsca(ii).eq.0) then
-          iphsca(ii) = iphsca(iscal)
-        else
-          ll = 0
-          do kk = 1, nscaus
-            if(       kk .eq.iscal) ll = kk
-          enddo
-          do kk = 1, nscapp
-            if(iscapp(kk).eq.iscal) ll = -kk
-          enddo
-          if(ll.gt.0) then
-            write(nfecra,7062)ii,                                 &
-                 ii,jj,iscal,ll,jj,iscal,                         &
-                 jj,iphsca(iscal)
-          else
-            write(nfecra,7063)ii,                                 &
-                 ii,jj,iscal,-ll,jj,iscal,                        &
-                 jj,iphsca(iscal)
-          endif
-          iok = iok + 1
-        endif
-      endif
-    enddo
-  endif
 
 ! ---> VISCOSITE ALE
   if (iale.eq.1) then
@@ -813,8 +725,9 @@ if(ipass.eq.3) then
       ifluma(inusa(iphas))= iprop
     endif
   enddo
+  iphas = 1
   do iscal = 1, nscal
-    ifluma(isca(iscal)) = ifluma(iu(iphsca(iscal)))
+    ifluma(isca(iscal)) = ifluma(iu(iphas))
   enddo
   if (iale.eq.1) then
     ifluma(iuma) = ifluma(ipr(1))
@@ -1173,7 +1086,7 @@ if(ipass.eq.4) then
 
   do iscal = 1, nscal
 !     Termes sources Scalaires,
-    iphas = iphsca(iscal)
+    iphas = 1
     if(isso2t(iscal).eq.-999) then
       if(ischtp(iphas).eq.1) then
         isso2t(iscal) = 0
@@ -1187,7 +1100,7 @@ if(ipass.eq.4) then
     endif
 !     Diffusivite scalaires
     if(ivsext(iscal).eq.-999) then
-      iphas = iphsca(iscal)
+      iphas = 1
       if(ischtp(iphas).eq.1) then
         ivsext(iscal) = 0
       elseif(ischtp(iphas).eq.2) then
@@ -1419,8 +1332,9 @@ if(ipass.eq.4) then
         ifluaa(inusa(iphas))= iprop
       endif
     enddo
+    iphas = 1
     do iscal = 1, nscal
-      ifluaa(isca(iscal)) = ifluaa(iu(iphsca(iscal)))
+      ifluaa(isca(iscal)) = ifluaa(iu(iphas))
     enddo
   endif
 
@@ -2445,42 +2359,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7020 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHASE PORTEUSE INCORRECTE POUR LE SCALAIRE ',I10         ,/,&
-'@                                                            ',/,&
-'@  La phase porteuse du scalaire ',I10                        ,/,&
-'@          (scalaire utilisateur ',I10   ,') indiquee dans   ',/,&
-'@    usini1 est IPHSCA(',I10   ,') = ',I10                    ,/,&
-'@  Elle devrait etre comprise entre 0 et NPHAS = ',I10        ,/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier IPHSCA dans usini1.                              ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7021 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHASE PORTEUSE INCORRECTE POUR LE SCALAIRE ',I10         ,/,&
-'@                                                            ',/,&
-'@  La phase porteuse du scalaire ',I10                        ,/,&
-'@          (scalaire physique particuliere ',I10   ,')       ',/,&
-'@           est IPHSCA(ISCAPP(',I10   ,')) = ',I10            ,/,&
-'@  Elle devrait etre comprise entre 0 et NPHAS = ',I10        ,/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier IPHSCA.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7030 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2662,106 +2540,6 @@ endif
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  Verifier IVISLS.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7060 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',I10   ,' NE PAS MODIFIER LA PHASE PORTEUSE   ',/,&
-'@                                                            ',/,&
-'@  Le scalaire ',I10                                          ,/,&
-'@    (scalaire utilisateur           ',I10   ,') represente  ',/,&
-'@    la variance des fluctuations du scalaire ',I10           ,/,&
-'@    (scalaire utilisateur           ',I10   ,') puisque     ',/,&
-'@    ISCAVR(',I10   ,') vaut ',I10   ,' (non nul)            ',/,&
-'@                                                            ',/,&
-'@  La phase porteuse IPHSCA(',I10   ,') du scalaire          ',/,&
-'@    ne doit pas etre renseignee.                            ',/,&
-'@  Elle sera automatiquement prise identique a la phase      ',/,&
-'@    porteuse du scalaire associe, soit ',I10                 ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier IPHSCA dans usini1.                              ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7061 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',I10   ,' NE PAS MODIFIER LA PHASE PORTEUSE   ',/,&
-'@                                                            ',/,&
-'@  Le scalaire ',I10                                          ,/,&
-'@    (scalaire utilisateur           ',I10   ,') represente  ',/,&
-'@    la variance des fluctuations du scalaire ',I10           ,/,&
-'@    (scalaire physique particuliere ',I10   ,') puisque     ',/,&
-'@    ISCAVR(',I10   ,') vaut ',I10   ,' (non nul)            ',/,&
-'@                                                            ',/,&
-'@  La phase porteuse IPHSCA(',I10   ,') du scalaire          ',/,&
-'@    ne doit pas etre renseignee.                            ',/,&
-'@  Elle sera automatiquement prise identique a la phase      ',/,&
-'@    porteuse du scalaire associe, soit ',I10                 ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier IPHSCA dans usini1.                              ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7062 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',I10   ,' NE PAS MODIFIER LA PHASE PORTEUSE   ',/,&
-'@                                                            ',/,&
-'@  Le scalaire ',I10                                          ,/,&
-'@    (scalaire physique particuliere ',I10   ,') represente  ',/,&
-'@    la variance des fluctuations du scalaire ',I10           ,/,&
-'@    (scalaire utilisateur           ',I10   ,') puisque     ',/,&
-'@    ISCAVR(ISCAPP(',I10   ,')) vaut ',I10   ,' (non nul)    ',/,&
-'@                                                            ',/,&
-'@  La phase porteuse IPHSCA(ISCAPP(',I10   ,')) du scalaire  ',/,&
-'@    ne doit pas etre renseignee.                            ',/,&
-'@  Elle sera automatiquement prise identique a la phase      ',/,&
-'@    porteuse du scalaire associe, soit ',I10                 ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier IPHSCA.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7063 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',I10   ,' NE PAS MODIFIER LA PHASE PORTEUSE   ',/,&
-'@                                                            ',/,&
-'@  Le scalaire ',I10                                          ,/,&
-'@    (scalaire physique particuliere ',I10   ,') represente  ',/,&
-'@    la variance des fluctuations du scalaire ',I10           ,/,&
-'@    (scalaire physique particuliere ',I10   ,') puisque     ',/,&
-'@    ISCAVR(ISCAPP(',I10   ,')) vaut ',I10   ,' (non nul)    ',/,&
-'@                                                            ',/,&
-'@  La phase porteuse IPHSCA(ISCAPP(',I10   ,')) du scalaire  ',/,&
-'@    ne doit pas etre renseignee.                            ',/,&
-'@  Elle sera automatiquement prise identique a la phase      ',/,&
-'@    porteuse du scalaire associe, soit ',I10                 ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier IPHSCA.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -3599,42 +3377,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 7020 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    CARRIER PHASE IS INCORRECT FOR THE SCALAR  ',I10         ,/,&
-'@                                                            ',/,&
-'@  The carrier phase of the scalar ' ,I10                     ,/,&
-'@    (user scalar          ',I10   ,') indicated in          ',/,&
-'@    usini1 is  IPHSCA(',I10   ,') = ',I10                    ,/,&
-'@    It should be between zero and       NPHAS = ',I10        ,/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   IPHSCA in   usini1.                              ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7021 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    CARRIER PHASE IS INCORRECT FOR THE SCALAR  ',I10         ,/,&
-'@                                                            ',/,&
-'@  The carrier phase of the scalar ' ,I10                     ,/,&
-'@          (scalar in paricular phisics    ',I10   ,')       ',/,&
-'@           is  IPHSCA(ISCAPP(',I10   ,')) = ',I10            ,/,&
-'@  It should be between zero and    NPHAS = ',I10             ,/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   IPHSCA.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7030 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3816,106 +3558,6 @@ endif
 '@  The calculation cannot be executed                        ',/,&
 '@                                                            ',/,&
 '@  Verify   IVISLS.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7060 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',I10   ,' DO NOT MODIFY THE CARRIER PHASE     ',/,&
-'@                                                            ',/,&
-'@  The scalar  ',I10                                          ,/,&
-'@    (user scalar                    ',I10   ,') represents  ',/,&
-'@    the variance of fluctuations of the scalar',I10          ,/,&
-'@    (user scalar                    ',I10   ,') since       ',/,&
-'@    ISCAVR(',I10   ,') has a value ',I10   ,' (non-zero)    ',/,&
-'@                                                            ',/,&
-'@  The carrier phase IPHSCA(',I10   ,') of the scalar        ',/,&
-'@    must not be set.                                        ',/,&
-'@  It will automatically be set equal to the carrier phase   ',/,&
-'@    of the associated scalar ',I10                           ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   IPHSCA in   usini1.                              ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7061 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',I10   ,' DO NOT MODIFY THE CARRIER PHASE     ',/,&
-'@                                                            ',/,&
-'@  The scalar  ',I10                                          ,/,&
-'@    (user scalar                    ',I10   ,') represents  ',/,&
-'@    the variance of fluctuations of the scalar',I10          ,/,&
-'@    (scalar of specific physics   ',I10   ,') since         ',/,&
-'@    ISCAVR(',I10   ,')has a value ',I10   ,' (non-zero)     ',/,&
-'@                                                            ',/,&
-'@  The carrier phase IPHSCA(',I10   ,') of the scalar        ',/,&
-'@    must not be set.                                        ',/,&
-'@  It will automatically be set equal to the carrier phase   ',/,&
-'@    of the associated scalar ',I10                           ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   IPHSCA in   usini1.                              ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7062 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',I10   ,' DO NOT MODIFY THE CARRIER PHASE     ',/,&
-'@                                                            ',/,&
-'@  The scalar  ',I10                                          ,/,&
-'@    (scalar of specific physics   ',I10   ,') represents    ',/,&
-'@    the variance of fluctuations of the scalar',I10          ,/,&
-'@    (user scalar                    ',I10   ,') since       ',/,&
-'@ ISCAVR(ISCAPP(',I10   ,'))has a value ',I10   ,' (non-zero)',/,&
-'@                                                            ',/,&
-'@  The carrier phase IPHSCA(ISCAPP(',I10   ,')) of the scalar',/,&
-'@    must not be set.                                        ',/,&
-'@  It will automatically be set equal to the carrier phase   ',/,&
-'@    of the associated scalar ',I10                           ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   IPHSCA.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7063 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',I10   ,' DO NOT MODIFY THE CARRIER PHASE     ',/,&
-'@                                                            ',/,&
-'@  The scalar  ',I10                                          ,/,&
-'@    (scalar of specific physics   ',I10   ,') represents    ',/,&
-'@    the variance of fluctuations of the scalar',I10          ,/,&
-'@    (scalar of specific physics   ',I10   ,') since         ',/,&
-'@ ISCAVR(ISCAPP(',I10   ,'))has a value ',I10   ,' (non-zero)',/,&
-'@                                                            ',/,&
-'@  The carrier phase IPHSCA(ISCAPP(',I10   ,')) of the scalar',/,&
-'@    must not be set.                                        ',/,&
-'@  It will automatically be set equal to the carrier phase   ',/,&
-'@    of the associated scalar ',I10                           ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   IPHSCA.                                          ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

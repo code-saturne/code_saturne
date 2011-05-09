@@ -594,9 +594,7 @@ do ilelt = 1, nlelt
     ! --- Handle scalars attached to the current phase
     if(nscal.gt.0) then
       do ii = 1, nscal
-        if(iphsca(ii).eq.iphas) then
-          rcodcl(ifac,isca(ii),1) = 1.d0
-        endif
+        rcodcl(ifac,isca(ii),1) = 1.d0
       enddo
     endif
 
@@ -683,9 +681,7 @@ do ilelt = 1, nlelt
     ! --- Handle scalars attached to the current phase
     if(nscal.gt.0) then
       do ii = 1, nscal
-        if(iphsca(ii).eq.iphas) then
-          rcodcl(ifac,isca(ii),1) = 1.d0
-        endif
+        rcodcl(ifac,isca(ii),1) = 1.d0
       enddo
     endif
 

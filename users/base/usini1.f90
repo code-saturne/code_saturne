@@ -1436,6 +1436,8 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
+iphas = 1
+
 ! If there are user scalars
 if (nscaus.gt.0) then
 
@@ -1444,7 +1446,7 @@ if (nscaus.gt.0) then
     ! For scalars which are not variances
     if (iscavr(jj).le.0) then
       ! We define the diffusivity
-      visls0(jj) = viscl0(iphsca(jj))
+      visls0(jj) = viscl0(iphas)
     endif
   enddo
 

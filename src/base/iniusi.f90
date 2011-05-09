@@ -285,36 +285,6 @@ call usipsc                                                       &
  ( nscmax , nscusi , iihmpu , nfecra , iscavr , ivisls , iverif )
 
 
-! --- Parametres dependant du nombre de scalaires : exception
-!     IPHSCA indique le numero de la phase porteuse pour chaque
-!                                                    scalaire UTILISATEUR
-
-!       Dans le cas d'une seule phase, IPHSCA(ISCAL) = 1 : ne rien changer.
-!       ==================================================================
-
-!       Sinon noter bien que :
-
-!       La phase porteuse des scalaires UTILISATEUR ISCAL qui
-!         representent la moyenne du carre des fluctuations d'un
-!         scalaire utilisateur K sera la meme que celle de ce scalaire
-!         utilisateur K.
-!         Donc, pour de tels scalaires ISCAL (reperes par ISCAVR(ISCAL)>0),
-!                          on ne doit pas renseigner IPHSCA(ISCAL) ici.
-!         C'est l'objet du test inclus dans l'exemple ci-dessous.
-
-!       Pour les scalaires non utilisateur relatifs a des physiques
-!         particulieres, (charbon, combustion, electrique : voir usppmo)
-!         implicitement definis selon le modele,
-!         les informations sont donnees automatiquement par ailleurs :
-!                                         on ne modifie pas IPHSCA ici.
-
-do iscal = 1, nscaus
-  if(iscavr(iscal).le.0) then
-    iphsca(iscal) = 1
-  endif
-enddo
-
-
 !===============================================================================
 ! 3. INITIALISATION DE PARAMETRES "GLOBAUX"
 !===============================================================================

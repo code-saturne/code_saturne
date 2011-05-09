@@ -591,7 +591,7 @@ if(iutile.eq.1) then
       ! --- Number of the thermal variable for the current phase 'iphas'
       !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-      iphas = iphsca(iscal)
+      iphas = 1
       if (iscalt(iphas).gt.0) then
         ivart = isca(iscalt(iphas))
       else

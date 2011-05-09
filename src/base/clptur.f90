@@ -1005,7 +1005,7 @@ do ifac = 1, nfabor
 
       do ll = 1, nscal
 
-        if(iphsca(ll).eq.iphas.and.iscavr(ll).le.0) then
+        if(iscavr(ll).le.0) then
 
           ivar = isca(ll)
           iclvar = iclrtp(ivar,icoef)

@@ -145,15 +145,12 @@ endif
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!      IPHSCA, IVISLS, ICP
+!      IVISLS, ICP
 !===============================================================================
 
 do isc = 1, nscapp
 
   if ( iscavr(iscapp(isc)).le.0 ) then
-
-! ---- Notre physque particuliere est monophasique
-    iphsca(iscapp(isc)) = 1
 
 ! ---- Viscosite dynamique de reference relative au scalaire
 !      ISCAPP(ISC)
@@ -173,7 +170,7 @@ if ( ippmod(icod3p).eq.1 .or.                                     &
 
 ! ---- Bien que l on soit en enthalpie on conserve un CP constant
 
-  iphas = iphsca(ihm)
+  iphas = 1
   icp(iphas)    = 0
 
 endif

@@ -163,7 +163,6 @@ module cstphy
   !          2 : clipping des variances a max(zero,scamin) et scamax
   ! iscavr : numero du scalaire associe a la variance ou zero
   !          si le scalaire n'est pas une variance
-  ! iphsca : numero de la phase porteuse
   ! scamin, scamax : min et max pour clipping des scalaires
   !                  on ne clippe que si scamin < scamax
   ! visls0 : viscosite des scalaires si constante
@@ -171,7 +170,7 @@ module cstphy
   ! rvarfl : coeff de dissipation des variances
 
   integer, save ::          iscsth(nscamx), ivisls(nscamx), ivissa(nscamx),  &
-                            iclvfl(nscamx), iscavr(nscamx), iphsca(nscamx)
+                            iclvfl(nscamx), iscavr(nscamx)
   double precision, save :: scamin(nscamx), scamax(nscamx),                  &
                             visls0(nscamx),sigmas(nscamx),                   &
                             rvarfl(nscamx)

@@ -203,7 +203,7 @@ if ( ippmod(icod3p).eq.1 .or.                                     &
      ippmod(icolwc).eq.3 .or.                                     &
      ippmod(icolwc).eq.5     ) then
 
-  iphas = iphsca(ihm)
+  iphas = 1
 
   iscalt(iphas) = ihm
   iscsth(ihm) = 2
@@ -214,6 +214,8 @@ endif
 ! 1.4 Donnees physiques ou numeriques propres aux scalaires COMBUSTION
 ! ====================================================================
 
+iphas = 1
+
 do isc = 1, nscapp
 
   jj = iscapp(isc)
@@ -223,7 +225,7 @@ do isc = 1, nscapp
 ! ---- En combustion on considere que la viscosite turbulente domine
 !      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
-    visls0(jj) = viscl0(iphsca(jj))
+    visls0(jj) = viscl0(iphas)
 
   endif
 

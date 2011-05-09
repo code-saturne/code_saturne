@@ -188,7 +188,7 @@ enddo
 
 ! ---- On resout en enthalpie avec un CP constant (Cf. cpvarp)
 
-iphas = iphsca(ihm)
+iphas = 1
 iscalt(iphas) = ihm
 iscsth(ihm) = 2
 
@@ -203,7 +203,7 @@ do isc = 1, nscapp
 !        En combustion on considere que la viscosite turbulente domine
 !        ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1
 
-    visls0(jj) = viscl0(iphsca(jj))
+    visls0(jj) = viscl0(iphas)
 
   endif
 

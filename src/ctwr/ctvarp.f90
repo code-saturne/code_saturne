@@ -88,15 +88,12 @@ ihumid = iscapp(2)
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!      IPHSCA, IVISLS, ICP
+!      IVISLS, ICP
 !===============================================================================
 
 do isc = 1, nscapp
 
   if ( iscavr(iscapp(isc)).le.0 ) then
-
-! ---- Notre physique particuliere est monophasique
-    iphsca(iscapp(isc)) = 1
 
 ! ---- Viscosite dynamique moleculaire variable pour les
 !                                              scalaires ISCAPP(ISC)
@@ -106,7 +103,7 @@ do isc = 1, nscapp
 
 enddo
 
-iphas      = iphsca(itemp4)
+iphas      = 1
 icp(iphas) = 1
 
 return

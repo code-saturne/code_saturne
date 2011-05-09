@@ -1206,7 +1206,7 @@ do while (iterns.le.nterup)
   !  (ou de la phase 1, si pas de couplage)
   iphas = 1
   if(isvtb.gt.0) then
-    iphas = iphsca(isvtb)
+    iphas = 1
   endif
   if(icp(iphas).gt.0) then
     ippcp = ipproc(icp(iphas))
@@ -1223,7 +1223,7 @@ do while (iterns.le.nterup)
 
   if ( ippmod(icompf).ge.0 .and. ientha .eq. 2 ) then
 
-    iphas = iphsca(isvtb)
+    iphas = 1
     if(icv(iphas).gt.0) then
       ippcv = ipproc(icv(iphas))
       ncv   = ncelet

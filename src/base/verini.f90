@@ -370,7 +370,7 @@ do iphas = 1, nphas
   endif
 enddo
 do ii = 1, nscal
-  iphas = iphsca(ii)
+  iphas = 1
   if(itytur(iphas).eq.4) then
     jj    = isca(ii)
     ipp   = ipprtp(jj)
@@ -424,7 +424,7 @@ do iphas = 1, nphas
   endif
 enddo
 do iscal = 1, nscal
-  iphas = iphsca(iscal)
+  iphas = 1
   if(isso2t(iscal).ne.isno2t(iphas))then
     write(nfecra,2133) iscal,isso2t(iscal),iphas,isno2t(iphas)
   endif
@@ -1529,15 +1529,6 @@ if(nscal.gt.0) then
     endif
   enddo
 
-!     Phase porteuse
-  do ii = 1, nscal
-    if (iphsca(ii).gt.nphas.or.iphsca(ii).lt.1) then
-      chaine=nomvar(ipprtp(isca(ii)))
-      write(nfecra,4310)chaine(1:8),ii,nphas,iphsca(ii)
-      iok = iok + 1
-    endif
-  enddo
-
 !     Scalaire associe dans le cas des variances
   do ii = 1, nscal
     if (iscavr(ii).gt.nscal.or.iscavr(ii).lt.0) then
@@ -1655,8 +1646,7 @@ if(nscal.gt.0) then
       if (cp0(iphas).lt.0.d0) then
         iisct = 0
         do iis = 1, nscal
-          if (iphsca(iis).eq.iphas.and.                           &
-              abs(iscsth(iis)).eq.1) then
+          if (abs(iscsth(iis)).eq.1) then
             iisct = 1
           endif
         enddo
@@ -3791,25 +3781,6 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
-'@  Verifier les parametres donnes via l''interface ou usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 4310 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',A8                                            ,/,&
-'@    IPHSCA(',I10   ,') DOIT ETRE UN ENTIER                  ',/,&
-'@      STRICTEMENT POSITIF ET                                ',/,&
-'@      INFERIEUR OU EGAL A NPHAS = ',I10                      ,/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  IPHSCA est le numero de la phase porteuse du scalaire.    ',/,&
 '@  Verifier les parametres donnes via l''interface ou usini1.',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6328,25 +6299,6 @@ endif
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&
 '@                                                            ',/,&
-'@ Check the input data given via User Interface or in usini1.',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 4310 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',A8                                            ,/,&
-'@    IPHSCA(',I10   ,') MUST BE AN INTEGER                   ',/,&
-'@      STRICTLY  POSITIVE  AND                               ',/,&
-'@      LESS THAN or EGAL A NPHAS = ',I10                      ,/,&
-'@   IT HAS VALUE ',I10                                        ,/,&
-'@                                                            ',/,&
-'@   The calculation could NOT run.                           ',/,&
-'@                                                            ',/,&
-'@  IPHSCA is number of fluid phase related to scalar    .    ',/,&
 '@ Check the input data given via User Interface or in usini1.',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

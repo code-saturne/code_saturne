@@ -157,7 +157,7 @@ do inbcou = 1, nbccou
 
       ll = isca(iscal)
       if (ippmod(icompf).ge.0) then
-        iphas = iphsca(iscal)
+        iphas = 1
         if (iscal.eq.ienerg(iphas)) then
           ll = isca(itempk(iphas))
         else

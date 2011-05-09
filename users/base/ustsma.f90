@@ -426,10 +426,8 @@ elseif(iappel.eq.3) then
       endif
       if(nscal.gt.0) then
         do ii = 1, nscal
-          if(iphsca(ii).eq.iphas) then
-            itypsm(ieltsm,isca(ii)) = 1
-            smacel(ieltsm,isca(ii)) = 1.d0
-          endif
+          itypsm(ieltsm,isca(ii)) = 1
+          smacel(ieltsm,isca(ii)) = 1.d0
         enddo
       endif
       flucel = flucel+                                            &

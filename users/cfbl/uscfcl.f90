@@ -399,9 +399,7 @@ do ilelt = 1, nlelt
 !       (ne pas boucler sur NSCAL sous peine de modifier rho et energie)
   if(nscaus.gt.0) then
     do ii = 1, nscaus
-      if(iphsca(ii).eq.iphas) then
-        rcodcl(ifac,isca(ii),1) = 1.d0
-      endif
+      rcodcl(ifac,isca(ii),1) = 1.d0
     enddo
   endif
 
@@ -578,13 +576,11 @@ do ilelt = 1, nlelt
 
   endif
 
-  ! - Handle scalars attached to the current phase
+  ! - Handle scalars
   !   (do not loop on nscal, to avoid risking modifying rho and energy)
   if(nscaus.gt.0) then
     do ii = 1, nscaus
-      if(iphsca(ii).eq.iphas) then
-        rcodcl(ifac,isca(ii),1) = 1.d0
-      endif
+      rcodcl(ifac,isca(ii),1) = 1.d0
     enddo
   endif
 

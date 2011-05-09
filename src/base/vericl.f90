@@ -996,7 +996,7 @@ enddo
 
 if( nscal.ge.1 ) then
   do iis = 1, nscal
-    iphas = iphsca(iis)
+    iphas = 1
     if(itytur(iphas).eq.2.or.itytur(iphas).eq.3) then
       ivar  = isca(iis)
       do ifac = 1, nfabor

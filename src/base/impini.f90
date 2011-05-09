@@ -1991,21 +1991,21 @@ if(nscal.ge.1) then
   write(nfecra,6011)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
-    write(nfecra,6021) chaine(1:8),ii,iphsca(ii),iscsth(ii),      &
+    write(nfecra,6021) chaine(1:8),ii,iscsth(ii),      &
                        ivisls(ii),visls0(ii),sigmas(ii)
   enddo
   write(nfecra,6031)
   write(nfecra,6012)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
-    write(nfecra,6022) chaine(1:8),ii,iphsca(ii),iscavr(ii),      &
+    write(nfecra,6022) chaine(1:8),ii,iscavr(ii),      &
                        rvarfl(ii)
   enddo
   write(nfecra,6032)
   write(nfecra,6013)
   do ii = 1, nscal
     chaine=nomvar(ipprtp(isca(ii)))
-    write(nfecra,6023) chaine(1:8),ii,iphsca(ii),iclvfl(ii),      &
+    write(nfecra,6023) chaine(1:8),ii,iclvfl(ii),      &
                        scamin(ii),scamax(ii)
   enddo
   write(nfecra,6033)
@@ -2030,29 +2030,29 @@ endif
  6010 format(                                                           &
 '       ITBRRB = ',4X,I10,    ' (Reconstruction T ou H au brd)',/)
  6011 format(                                                           &
-'-------------------------------------------------------------',/,&
-' Variable Numero IPHSCA ISCSTH IVISLS      VISLS0      SIGMAS',/,&
-'-------------------------------------------------------------'  )
+'------------------------------------------------------',/,&
+' Variable Numero ISCSTH IVISLS      VISLS0      SIGMAS',/,&
+'------------------------------------------------------'  )
  6021 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,    i7,      e12.4,      e12.4   )
+ 1x,    a8,    i7,    i7,    i7,      e12.4,      e12.4   )
  6031 format(                                                           &
-'-------------------------------------------------------------',/)
+'------------------------------------------------------',/)
  6012 format(                                                           &
-'------------------------------------------'                   ,/,&
-' Variable Numero IPHSCA ISCAVR      RVARFL'                   ,/,&
-'------------------------------------------'                     )
+'-----------------------------------'                   ,/,&
+' Variable Numero ISCAVR      RVARFL'                   ,/,&
+'-----------------------------------'                     )
  6022 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,      e12.4                      )
+ 1x,    a8,    i7,    i7,      e12.4                      )
  6032 format(                                                           &
-'------------------------------------------'                   ,/)
+'-----------------------------------'                   ,/)
  6013 format(                                                           &
-'------------------------------------------------------'       ,/,&
-' Variable Numero IPHSCA ICLVFL      SCAMIN      SCAMAX'       ,/,&
-'------------------------------------------------------'         )
+'-----------------------------------------------'       ,/,&
+' Variable Numero ICLVFL      SCAMIN      SCAMAX'       ,/,&
+'-----------------------------------------------'         )
  6023 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,      e12.4,      e12.4          )
+ 1x,    a8,    i7,    i7,      e12.4,      e12.4          )
  6033 format(                                                           &
-'------------------------------------------------------'       ,/)
+'-----------------------------------------------'       ,/)
  6030 format(                                                           &
 '-------------------------------------------------------------',/,&
                                                                 /,&
@@ -2062,7 +2062,6 @@ endif
 '         scalaires physique particuliere sont a la fin, de'   ,/,&
 '         NSCAUS+1 a NSCAPP+NSCAUS=NSCAL.'                     ,/,&
                                                                 /,&
-'       IPHSCA =                (Phase porteuse              )',/,&
 '       ISCSTH = -1,0, 1 ou 2   (T (C), Passif, T (K) ou H   )',/,&
 '       IVISLS = 0 ou >0        (Viscosite constante ou non  )',/,&
 '       VISLS0 = >0             (Viscosite de reference      )',/,&
@@ -2101,29 +2100,29 @@ endif
  6010 format(                                                           &
 '       ITBRRB = ',4X,I10,    ' (T or H reconstruction at bdy)',/)
  6011 format(                                                           &
-'-------------------------------------------------------------',/,&
-' Variable Number IPHSCA ISCSTH IVISLS      VISLS0      SIGMAS',/,&
-'-------------------------------------------------------------'  )
+'------------------------------------------------------',/,&
+' Variable Number ISCSTH IVISLS      VISLS0      SIGMAS',/,&
+'------------------------------------------------------'  )
  6021 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,    i7,      e12.4,      e12.4   )
+ 1x,    a8,    i7,    i7,    i7,      e12.4,      e12.4   )
  6031 format(                                                           &
-'-------------------------------------------------------------',/)
+'------------------------------------------------------',/)
  6012 format(                                                           &
-'------------------------------------------'                   ,/,&
-' Variable Number IPHSCA ISCAVR      RVARFL'                   ,/,&
-'------------------------------------------'                     )
+'-----------------------------------'                   ,/,&
+' Variable Number ISCAVR      RVARFL'                   ,/,&
+'-----------------------------------'                     )
  6022 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,      e12.4                      )
+ 1x,    a8,    i7,    i7,      e12.4                      )
  6032 format(                                                           &
-'------------------------------------------'                   ,/)
+'-----------------------------------'                   ,/)
  6013 format(                                                           &
-'------------------------------------------------------'       ,/,&
-' Variable Number IPHSCA ICLVFL      SCAMIN      SCAMAX'       ,/,&
-'------------------------------------------------------'         )
+'-----------------------------------------------'       ,/,&
+' Variable Number ICLVFL      SCAMIN      SCAMAX'       ,/,&
+'-----------------------------------------------'         )
  6023 format(                                                           &
- 1x,    a8,    i7,    i7,    i7,      e12.4,      e12.4          )
+ 1x,    a8,    i7,    i7,      e12.4,      e12.4          )
  6033 format(                                                           &
-'------------------------------------------------------'       ,/)
+'-----------------------------------------------'       ,/)
  6030 format(                                                           &
 '-------------------------------------------------------------',/,&
                                                                 /,&
@@ -2133,7 +2132,6 @@ endif
 '         are placed at the end, from'                         ,/,&
 '         NSCAUS+1 to NSCAPP+NSCAUS=NSCAL.'                    ,/,&
                                                                 /,&
-'       IPHSCA =                (Carrier phase               )',/,&
 '       ISCSTH = -1,0, 1 ou 2   (T (C), Passive, T (K) or H  )',/,&
 '       IVISLS = 0 ou >0        (Viscosity: constant or not  )',/,&
 '       VISLS0 = >0             (Reference viscosity         )',/,&

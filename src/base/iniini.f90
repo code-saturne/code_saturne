@@ -1343,7 +1343,7 @@ enddo
 ! --- Scalaires
 !       L'utilisateur devra remplir VISLS0
 !       On remplira plus tard, selon les modifs utilisateur,
-!         ISCSTH, IPHSCA
+!         ISCSTH
 !       On modifiera eventuellement plus tard, selon modifs utilisateur,
 !         IVISLS, ce dernier a ete initialise plus haut
 !       On donne la valeur par defaut pour les autres
@@ -1355,7 +1355,6 @@ do iscal = 1, nscamx
   iscsth(iscal) =-10
   iclvfl(iscal) = -1
   iscavr(iscal) = 0
-  iphsca(iscal) = 0
   scamin(iscal) =-grand
   scamax(iscal) =+grand
   visls0(iscal) =-grand*10.d0

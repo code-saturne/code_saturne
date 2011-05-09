@@ -199,7 +199,7 @@ else
 endif
 
 ! --- Numero de phase associee au scalaire ISCAL
-iphas = iphsca(iscal)
+iphas = 1
 
 ! --- Numero des variables de calcul
 if ( itytur(iphas).eq.2 .or. iturb(iphas).eq.50 ) then

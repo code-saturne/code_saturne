@@ -703,9 +703,7 @@ do ilelt = 1, nlelt
 
   if ( (nscal-nscapp).gt.0 ) then
     do ii = 1, (nscal-nscapp)
-      if(iphsca(ii).eq.iphas) then
-        rcodcl(ifac,isca(ii),1) = 1.d0
-      endif
+      rcodcl(ifac,isca(ii),1) = 1.d0
     enddo
   endif
 

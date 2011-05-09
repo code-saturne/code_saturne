@@ -566,19 +566,16 @@ do iphas = 1, nphas
 
 !     Si un scalaire est couple a SYRTHES ou au module 1D
   if(isvtb.ne.0) then
-!       et qu'il est relatif a la phase courante
-    if(iphsca(isvtb).eq.iphas) then
 !         si ce n'est pas la variable thermique, ca ne va pas.
-      if(isvtb.ne.iscalt(iphas)) then
-        write(nfecra,8000)isvtb,iphas,iscalt(iphas)
-        call csexit (1)
-        !==========
+    if(isvtb.ne.iscalt(iphas)) then
+      write(nfecra,8000)isvtb,iphas,iscalt(iphas)
+      call csexit (1)
+      !==========
 !         sinon, on calcule le gradient.
-      else
-        iscat = isvtb
-      endif
+    else
+      iscat = isvtb
     endif
- endif
+  endif
 
 
 !     S'il y a du rayonnement
@@ -1361,22 +1358,20 @@ do iphas = 1, nphas
 
     do ii = 1, nscal
 
-      if(iphsca(ii).eq.iphas) then
+      ivar   = isca(ii)
+      iclvar = iclrtp(ivar,icoef)
+      iclvaf = iclrtp(ivar,icoeff)
 
-        ivar   = isca(ii)
-        iclvar = iclrtp(ivar,icoef)
-        iclvaf = iclrtp(ivar,icoeff)
+      isvhbl = 0
+      if(ii.eq.isvhb) then
+        isvhbl = isvhb
+      endif
 
-        isvhbl = 0
-        if(ii.eq.isvhb) then
-          isvhbl = isvhb
-        endif
-
-        if(ivisls(ii).gt.0) then
-          ipcvsl = ipproc(ivisls(ii))
-        else
-          ipcvsl = 0
-        endif
+      if(ivisls(ii).gt.0) then
+        ipcvsl = ipproc(ivisls(ii))
+      else
+        ipcvsl = 0
+      endif
 
 ! --- Indicateur de prise en compte de Cp ou non
 !       (selon si le scalaire (scalaire associe pour une fluctuation)
@@ -1384,94 +1379,94 @@ do iphas = 1, nphas
 !      Si le scalaire est une variance et que le
 !        scalaire associe n'est pas resolu, on suppose alors qu'il
 !        doit etre traite comme un scalaire passif (defaut IHCP = 0)
-        ihcp = 0
-        if(iscavr(ii).le.nscal) then
-          if(iscavr(ii).gt.0) then
-            iscal = iscavr(ii)
+      ihcp = 0
+      if(iscavr(ii).le.nscal) then
+        if(iscavr(ii).gt.0) then
+          iscal = iscavr(ii)
+        else
+          iscal = ii
+        endif
+        if(iscsth(iscal).eq.0.or.iscsth(iscal).eq.2             &
+                             .or.iscsth(iscal).eq.3) then
+          ihcp = 0
+        elseif(abs(iscsth(iscal)).eq.1) then
+          if(ipccp.gt.0) then
+            ihcp = 2
           else
-            iscal = ii
-          endif
-          if(iscsth(iscal).eq.0.or.iscsth(iscal).eq.2             &
-                               .or.iscsth(iscal).eq.3) then
-            ihcp = 0
-          elseif(abs(iscsth(iscal)).eq.1) then
-            if(ipccp.gt.0) then
-              ihcp = 2
-            else
-              ihcp = 1
-            endif
+            ihcp = 1
           endif
         endif
+      endif
 
 ! --- Boucle sur les faces
-        do ifac = 1, nfabor
+      do ifac = 1, nfabor
 
-          iel = ifabor(ifac)
+        iel = ifabor(ifac)
 
 ! --- Proprietes physiques
-          visctc = propce(iel,ipcvst)
-          flumbf = propfb(ifac,ipprob(ifluma(ivar)))
+        visctc = propce(iel,ipcvst)
+        flumbf = propfb(ifac,ipprob(ifluma(ivar)))
 
 ! --- Grandeurs geometriques
-          distbf = distb(ifac)
+        distbf = distb(ifac)
 
 ! --- Prise en compte de Cp ou CV
 !      (dans le Cas compressible IHCP=0)
 
+        cpp = 1.d0
+        if(ihcp.eq.0) then
           cpp = 1.d0
-          if(ihcp.eq.0) then
-            cpp = 1.d0
-          elseif(ihcp.eq.2) then
-            cpp = propce(iel,ipccp )
-          elseif(ihcp.eq.1) then
-            cpp = cp0(iphas)
-          endif
-          hint = cpp
+        elseif(ihcp.eq.2) then
+          cpp = propce(iel,ipccp )
+        elseif(ihcp.eq.1) then
+          cpp = cp0(iphas)
+        endif
+        hint = cpp
 
 ! --- Viscosite variable ou non
-          if (ipcvsl.le.0) then
-            rkl = visls0(ii)
-          else
-            rkl = propce(iel,ipcvsl)
-          endif
+        if (ipcvsl.le.0) then
+          rkl = visls0(ii)
+        else
+          rkl = propce(iel,ipcvsl)
+        endif
 
 ! --- Cas turbulent
-          if (iturb(iphas).ne.0) then
-            hint = hint*(rkl+visctc/sigmas(ii))/distbf
+        if (iturb(iphas).ne.0) then
+          hint = hint*(rkl+visctc/sigmas(ii))/distbf
 !     Cas laminaire
-          else
-            hint  = hint*rkl/distbf
-          endif
+        else
+          hint  = hint*rkl/distbf
+        endif
 
 ! --->  C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
 
-          if( icodcl(ifac,ivar).eq.1) then
-            hext = rcodcl(ifac,ivar,2)
-            if(abs(hext).ge.rinfin*0.5d0) then
-              pimp = rcodcl(ifac,ivar,1)
-              coefa(ifac,iclvar) = pimp
-              coefb(ifac,iclvar) = 0.d0
-            else
-              pimp = rcodcl(ifac,ivar,1)
-              coefa(ifac,iclvar) = hext*pimp/(hint+hext)
-              coefb(ifac,iclvar) = hint     /(hint+hext)
-            endif
+        if( icodcl(ifac,ivar).eq.1) then
+          hext = rcodcl(ifac,ivar,2)
+          if(abs(hext).ge.rinfin*0.5d0) then
+            pimp = rcodcl(ifac,ivar,1)
+            coefa(ifac,iclvar) = pimp
+            coefb(ifac,iclvar) = 0.d0
+          else
+            pimp = rcodcl(ifac,ivar,1)
+            coefa(ifac,iclvar) = hext*pimp/(hint+hext)
+            coefb(ifac,iclvar) = hint     /(hint+hext)
+          endif
 
 !     On utilise le Dirichlet pour les calculs de gradients
 !       et pour les flux de bord.
 
-            if(iclvaf.ne.iclvar) then
-              coefa(ifac,iclvaf) = coefa(ifac,iclvar)
-              coefb(ifac,iclvaf) = coefb(ifac,iclvar)
-            endif
+          if(iclvaf.ne.iclvar) then
+            coefa(ifac,iclvaf) = coefa(ifac,iclvar)
+            coefb(ifac,iclvaf) = coefb(ifac,iclvar)
+          endif
 
 ! ---> COUPLAGE : on stocke le hint (lambda/d      en temperature,
 !                                    lambda/(cp d) en enthalpie,
 !                                    lambda/(cv d) en energie)
 
-            if (isvhbl .gt. 0) then
-              hbord(ifac) = hint
-            endif
+          if (isvhbl .gt. 0) then
+            hbord(ifac) = hint
+          endif
 
 
 !--> Rayonnement :
@@ -1513,89 +1508,87 @@ do iphas = 1, nphas
 !               Si on rayonne et que
 !                  le scalaire est la variable energetique
 
-            if (iirayo.ge.1 .and. ii.eq.iscalt(iphas)) then
+          if (iirayo.ge.1 .and. ii.eq.iscalt(iphas)) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 
 !                  Si on resout en enthalpie
-              if(iscsth(ii).eq.2) then
+            if(iscsth(ii).eq.2) then
 !                    Si Cp variable
-                if(ipccp.gt.0) then
-                  propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
-                else
-                  propfb(ifac,ipprob(ihconv)) = hint*cp0(iphas)
-                endif
-!                  Si on resout en energie (compressible)
-              elseif(iscsth(ii).eq.3) then
-!                    Si Cv variable
-                if(ipccv.gt.0) then
-                  propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
-                else
-                  propfb(ifac,ipprob(ihconv)) = hint*cv0(iphas)
-                endif
-!                  Si on resout en temperature
-              elseif(abs(iscsth(ii)).eq.1) then
-                propfb(ifac,ipprob(ihconv)) = hint
+              if(ipccp.gt.0) then
+                propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
+              else
+                propfb(ifac,ipprob(ihconv)) = hint*cp0(iphas)
               endif
+!                  Si on resout en energie (compressible)
+            elseif(iscsth(ii).eq.3) then
+!                    Si Cv variable
+              if(ipccv.gt.0) then
+                propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
+              else
+                propfb(ifac,ipprob(ihconv)) = hint*cv0(iphas)
+              endif
+!                  Si on resout en temperature
+            elseif(abs(iscsth(ii)).eq.1) then
+              propfb(ifac,ipprob(ihconv)) = hint
+            endif
 
 !                On recupere le flux h(Ti'-Tp) (sortant ou
 !                             negatif si gain pour le fluide) en W/m2
 
-              propfb(ifac,ipprob(ifconv)) =                       &
-                   hint*( (1.d0-coefb(ifac,iclvaf))*thbord(ifac)  &
-                         - coefa(ifac,iclvaf))
+            propfb(ifac,ipprob(ifconv)) =                       &
+                 hint*( (1.d0-coefb(ifac,iclvaf))*thbord(ifac)  &
+                       - coefa(ifac,iclvaf))
 
-            endif
+          endif
 
 ! --->  C.L DE TYPE FLUX
 
-          elseif(icodcl(ifac,ivar).eq.3)then
-            coefa(ifac,iclvaf)  = -rcodcl(ifac,ivar,3)/hint
-            coefb(ifac,iclvaf)  = 1.d0
-            if(iclvar.ne.iclvaf) then
-              coefa(ifac,iclvar)  = 0.d0
-              coefb(ifac,iclvar)  = 1.d0
-            endif
-            if (isvhbl .gt. 0) hbord(ifac) = hint
+        elseif(icodcl(ifac,ivar).eq.3)then
+          coefa(ifac,iclvaf)  = -rcodcl(ifac,ivar,3)/hint
+          coefb(ifac,iclvaf)  = 1.d0
+          if(iclvar.ne.iclvaf) then
+            coefa(ifac,iclvar)  = 0.d0
+            coefb(ifac,iclvar)  = 1.d0
+          endif
+          if (isvhbl .gt. 0) hbord(ifac) = hint
 
 
 !--> Rayonnement :
 
-            if (iirayo.ge.1 .and. ii.eq.iscalt(iphas)) then
+          if (iirayo.ge.1 .and. ii.eq.iscalt(iphas)) then
 
 !                On calcule le coefficient d'echange en W/(m2 K)
 
 !                Si on resout en enthalpie
-              if(iscsth(ii).eq.2) then
+            if(iscsth(ii).eq.2) then
 !                  Si Cp variable
-                if(ipccp.gt.0) then
-                  propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
-                else
-                  propfb(ifac,ipprob(ihconv)) = hint*cp0(iphas)
-                endif
-              elseif(iscsth(ii).eq.3) then
-!                    Si Cv variable
-                if(ipccv.gt.0) then
-                  propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
-                else
-                  propfb(ifac,ipprob(ihconv)) = hint*cv0(iphas)
-                endif
-!                Si on resout en temperature
-              elseif(abs(iscsth(ii)).eq.1) then
-                propfb(ifac,ipprob(ihconv)) = hint
+              if(ipccp.gt.0) then
+                propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccp )
+              else
+                propfb(ifac,ipprob(ihconv)) = hint*cp0(iphas)
               endif
+            elseif(iscsth(ii).eq.3) then
+!                    Si Cv variable
+              if(ipccv.gt.0) then
+                propfb(ifac,ipprob(ihconv)) = hint*propce(iel,ipccv )
+              else
+                propfb(ifac,ipprob(ihconv)) = hint*cv0(iphas)
+              endif
+!                Si on resout en temperature
+            elseif(abs(iscsth(ii)).eq.1) then
+              propfb(ifac,ipprob(ihconv)) = hint
+            endif
 
 !              On recupere le flux h(Ti'-Tp) (sortant ou
 !                             negatif si gain pour le fluide)
 
-              propfb(ifac,ipprob(ifconv)) = rcodcl(ifac,ivar,3)
-            endif
-
+            propfb(ifac,ipprob(ifconv)) = rcodcl(ifac,ivar,3)
           endif
 
-        enddo
+        endif
 
-      endif
+      enddo
 
     enddo
 

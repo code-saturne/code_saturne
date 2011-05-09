@@ -138,7 +138,7 @@ if ( ippmod(iatmos).eq.1 ) then
     jj = iscapp(isc)
 
     if (iscavr(jj).le.0) then
-      visls0(jj) = viscl0(iphsca(jj))
+      visls0(jj) = viscl0(iphas)
     endif
 
     blencv(isca(jj)) = 1.d0

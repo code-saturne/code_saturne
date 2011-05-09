@@ -156,7 +156,7 @@ do isc = 1, nscapp
 enddo
 
 !     Pour l'enthalpie
-iphas = iphsca(ihm)
+iphas = 1
 iscalt(iphas) = ihm
 iscsth(ihm)   = 2
 
