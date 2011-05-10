@@ -175,7 +175,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ivar, iel, iphas, idirac, ivar0
+integer          ivar, iel, idirac, ivar0
 integer          iphydp
 integer          inc , iccocg
 integer          ipcvst
@@ -200,9 +200,6 @@ epsi   = 1.0d-10
 
 ! --- Numero de la variable associee au scalaire a traiter ISCAL
 ivar = isca(iscal)
-
-! --- Numero de phase associee au scalaire ISCAL
-iphas = 1
 
 ! ---
 ipcrom = ipproc(irom)

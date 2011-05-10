@@ -30,7 +30,7 @@ subroutine atmcls &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , ifac   , iel    ,                                     &
+   ifac   , iel    ,                                              &
    uk     , utau   , yplus  ,                                     &
    uet    ,                                                       &
    gredu  , q0     , e0     , rib    , lmo    ,                   &
@@ -58,7 +58,6 @@ subroutine atmcls &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! ifac             ! e  ! <-- ! face de bord traitee                           !
 ! iel              ! e  ! <-- ! cellule de bord en regard de la face           !
 !                  !    !     !  traitee                                       !
@@ -138,7 +137,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          iphas  , ifac   , iel
+integer          ifac   , iel
 
 integer          icodcl(nfabor,nvar)
 integer          ia(*)

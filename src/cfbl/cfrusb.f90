@@ -30,7 +30,7 @@ subroutine cfrusb &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   imodif , iphas  ,                                              &
+   imodif ,                                                       &
    ia     ,                                                       &
    gammag ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -61,7 +61,6 @@ subroutine cfrusb &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! imodif           ! e  ! <-- ! modification directe de rtp (imodif=1          !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! gammag           ! r  ! <-- ! gamma du gaz                                   !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
@@ -110,7 +109,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          imodif , iphas
+integer          imodif
 
 integer          ia(*)
 

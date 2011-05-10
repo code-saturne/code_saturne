@@ -141,7 +141,7 @@ integer          iis, icodcu, icodcv, icodcw, icodck, icodce
 integer          icodcn
 integer          icodcp, icodcf, icodom
 integer          icor11, icor22, icor33, icor12, icor13, icor23
-integer          ipp, iokcod, iok, iphas
+integer          ipp, iokcod, iok
 integer          ipriph, iuiph , iviph , iwiph , ikiph , iepiph
 integer          inuiph
 integer          iphiph, ifbiph, iomgip
@@ -981,7 +981,6 @@ endif
 
 if( nscal.ge.1 ) then
   do iis = 1, nscal
-    iphas = 1
     if(itytur.eq.2.or.itytur.eq.3) then
       ivar  = isca(iis)
       do ifac = 1, nfabor

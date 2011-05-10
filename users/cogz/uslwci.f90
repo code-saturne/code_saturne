@@ -58,12 +58,12 @@ subroutine uslwci &
 !   c) PROPFB (Properties at boundary faces).
 !
 !   Examples:
-!   PROPCE(IEL,IPPROC(IROM  )) =  IROM of cell IEL of phase IPHAS
-!   PROPCE(IEL,IPPROC(ICP   )) =  ICP  of cell IEL of phase IPHAS
+!   PROPCE(IEL,IPPROC(IROM  )) =  IROM of cell IEL
+!   PROPCE(IEL,IPPROC(ICP   )) =  ICP  of cell IEL
 !
 !   PROPFA(IFAC,IPPROF(IFLUMA(IVAR )))=  FLUMAS of IVAR at the internal face IFAC
 !
-!   PROPFB(IFAC,IPPROB(IROM  ))=  ROMB of IPHAS at the boundary face IFAC
+!   PROPFB(IFAC,IPPROB(IROM  ))=  ROMB at the boundary face IFAC
 !   PROPFB(IFAC,IPPROB(IFLUMA(IVAR )))=  FLUMAB of IVAR at the boundary face IFAC
 
 !   All cells can be identified by using the subroutine 'getcel'.
@@ -220,7 +220,7 @@ double precision ra(*)
 ! Local Variables
 
 integer          idebia, idebra
-integer          iel, mode, igg, iphas, izone
+integer          iel, mode, igg, izone
 double precision hinit, coefg(ngazgm)
 double precision sommqf, sommqt, sommq, tentm, fmelm
 
@@ -249,8 +249,6 @@ idebra = idbra0
 do igg = 1, ngazgm
   coefg(igg) = zero
 enddo
-
-iphas  = 1
 
 !===============================================================================
 ! 2. INITIALISATION OF TRANSPORTED VARIABLES

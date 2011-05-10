@@ -121,7 +121,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra, ifinra
-integer          istr, ii, iel, ifac, iphas, ntab
+integer          istr, ii, iel, ifac, ntab
 integer          iflmas, iflmab, iclp, iclu, iclv, iclw
 integer          indast
 integer          icvext, icvint, icv
@@ -261,8 +261,6 @@ enddo
 icvext = 0
 icvint = 0
 icv    = 0
-
-iphas = 1
 
 delta = 0.d0
 do istr = 1, nbstru

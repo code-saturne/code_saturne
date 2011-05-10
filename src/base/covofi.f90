@@ -157,7 +157,7 @@ double precision ra(*)
 
 character*80     chaine
 integer          idebia, idebra
-integer          ivar  , iphas
+integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc, iscala
@@ -200,9 +200,6 @@ xk = 0.d0
 
 idebia = idbia0
 idebra = idbra0
-
-! ---  Numero de phase associee au scalaire traite
-iphas  = 1
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)

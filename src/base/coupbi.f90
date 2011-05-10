@@ -99,7 +99,7 @@ double precision rcodcl(nfabor,nvar,3)
 ! Local variables
 
 integer          ll, nbccou, inbcou, inbcoo, nbfcou
-integer          ifac, iloc, iscal , iphas
+integer          ifac, iloc, iscal
 integer          icldef
 integer          mode
 double precision temper, enthal
@@ -157,7 +157,6 @@ do inbcou = 1, nbccou
 
       ll = isca(iscal)
       if (ippmod(icompf).ge.0) then
-        iphas = 1
         if (iscal.eq.ienerg) then
           ll = isca(itempk)
         else

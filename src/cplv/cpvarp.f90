@@ -72,7 +72,7 @@ use ihmpre
 
 implicit none
 
-integer        icla,  is, iphas, icha, isc , is1
+integer        icla,  is, icha, isc , is1
 
 !===============================================================================
 !===============================================================================
@@ -179,7 +179,6 @@ enddo
 
 ! ---- Bien que l'on soit en enthalpie on conserve un CP constant
 
-iphas = 1
 icp    = 0
 
 return

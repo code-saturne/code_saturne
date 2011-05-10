@@ -77,7 +77,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, ivar, iscal, iphas, iprop, iest, imom
+integer          ii, jj, ivar, iscal, iprop, iest, imom
 integer          istr
 
 !===============================================================================

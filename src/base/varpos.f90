@@ -89,7 +89,7 @@ integer       nmodpp
 
 character     rubriq*64, cmoy4*4, cindfm*4
 character     ficsui*32
-integer       ivar  , ipp   , iscal , iphas , irphas , iprop , iprofl
+integer       ivar  , ipp   , iscal , irphas , iprop , iprofl
 integer       ii    , jj    , kk    , ll
 integer       iok   , ippok , ipppst
 integer       iflum , icondl

@@ -154,7 +154,7 @@ integer          itravx, itravy, itravz, itreco
 integer          iw1   , iw2
 integer          inc   , iccocg, nswrgp, imligp, iwarnp, iphydp
 integer          isorva, isaut
-integer          ifac  , iloc  , iphas , ivar , iclvar
+integer          ifac  , iloc  , ivar , iclvar
 integer          ira   , idivdt, ineeyp
 integer          ipp   , idimt , ii    , kk   , iel
 integer          ivarl , iip   , iph
@@ -321,7 +321,6 @@ if (numtyp .eq. -1) then
 
   if (icorio.eq.1) then
 
-    iphas = 1
     ipcrom = ipproc(irom)
     omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
@@ -379,7 +378,6 @@ if (numtyp .eq. -1) then
 
   if (imobil.eq.1) then
 
-    iphas = 1
     ipcrom = ipproc(irom)
     omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 

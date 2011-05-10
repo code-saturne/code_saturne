@@ -81,8 +81,6 @@ implicit none
 
 ! Local variables
 
-integer          iphas
-
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -117,10 +115,6 @@ endif
 !===============================================================================
 ! 1. Physical properties
 !===============================================================================
-
-! --> Only done for phase 1
-
-iphas = 1
 
 ! --> Molecular thermal conductivity
 

@@ -190,7 +190,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iel   , iphas
+integer          iel
 integer          ipcrom, ipcvis, ipccp , ipcvsl, ipcsig
 integer          mode
 
@@ -215,8 +215,6 @@ idebia = idbia0
 idebra = idbra0
 
 ipass = ipass + 1
-
-iphas = 1
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================

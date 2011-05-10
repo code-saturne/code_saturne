@@ -121,7 +121,7 @@ integer          inc , iccocg , ipriph , iclipr
 integer          iuiph , iviph , iwiph
 integer          ipcliu , ipcliv , ipcliw
 integer          iromf
-integer          iel    , iphydp , iphas
+integer          iel    , iphydp
 double precision unsrho
 
 !===============================================================================
@@ -151,10 +151,6 @@ idebra = idbra0
 inc     = 1
 iccocg  = 1
 iphydp  = 0
-
-!-->Numero de la phase continue qui est la phase porteuse
-
-iphas = 1
 
 !===============================================================================
 ! 1. CALCUL DE :  - (GRADIENT DE PRESSION)/ROM

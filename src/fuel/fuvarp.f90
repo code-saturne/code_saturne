@@ -71,7 +71,7 @@ use ppcpfu
 
 implicit none
 
-integer        is, iphas, isc, icla
+integer        is, isc, icla
 
 !===============================================================================
 ! 1. DEFINITION DES POINTEURS
@@ -139,7 +139,6 @@ enddo
 
 ! ---- Bien que l on soit en enthalpie on conserve un CP constant
 
-iphas = 1
 icp    = 0
 
 return

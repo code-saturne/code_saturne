@@ -138,7 +138,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra, ifinia
-integer          ivar  , iphas
+integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, ii, jj
 integer          ipp
@@ -165,9 +165,6 @@ double precision flui  , fluj  , pfac  , thetv
 
 idebia = idbia0
 idebra = idbra0
-
-! --- Numero de phase associee au scalaire traite
-iphas  = 1
 
 ! --- Numero des variables de calcul
 !     Masse volumique
@@ -253,7 +250,7 @@ if(itsqdm.ne.0) then
   !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iuiph  , iphas  ,                                              &
+   iuiph  ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -270,7 +267,7 @@ if(itsqdm.ne.0) then
   !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iviph  , iphas  ,                                              &
+   iviph  ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -287,7 +284,7 @@ if(itsqdm.ne.0) then
   !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iwiph  , iphas  ,                                              &
+   iwiph  ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -326,7 +323,7 @@ if(itsqdm.ne.0) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iuiph  , iviph  , iwiph  , imaspe , iphas  ,                   &
+   iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -399,7 +396,6 @@ if(itsqdm.ne.0) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -414,7 +410,6 @@ if(itsqdm.ne.0) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -429,7 +424,6 @@ if(itsqdm.ne.0) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -511,7 +505,7 @@ imodif = 0
 call uscfth                                                       &
 !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w8     , w9     , w10    )
@@ -528,7 +522,7 @@ imodif = 0
 call uscfth                                                       &
 !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w2     , w8     , w9     , w10    )
@@ -655,7 +649,7 @@ call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ivar0  , ivar0  , ivar0  , imaspe , iphas  ,                   &
+   ivar0  , ivar0  , ivar0  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

@@ -77,7 +77,7 @@ integer          idbia0 ,idbra0
 integer          ncelet , ncel , nphas, ndim
 integer          ifinia , ifinra
 
-integer          idebia, idebra, iok, iok1, iphas
+integer          idebia, idebra, iok, iok1
 
 !===============================================================================
 

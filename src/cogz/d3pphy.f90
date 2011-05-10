@@ -135,7 +135,7 @@ double precision ra(*)
 integer          idebia, idebra, ifinia
 integer          if, ih, iel, icg
 integer          ifac, mode, izone
-integer          iphas, ipbrom, ipcrom, ipbycg, ipcycg
+integer          ipbrom, ipcrom, ipbycg, ipcycg
 double precision coefg(ngazgm), fsir, hhloc, tstoea, tin
 double precision temsmm
 
@@ -327,7 +327,6 @@ endif
 
 ! --> Masse volumique au bord
 
-iphas = 1
 ibrom = 1
 ipbrom = ipprob(irom)
 ipcrom = ipproc(irom)

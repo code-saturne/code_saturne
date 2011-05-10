@@ -104,7 +104,7 @@ integer          idfrcx , ifrchy , idfrhy
 integer          icoefu , iesflm , iesflb
 integer          ifinia , ifinra
 
-integer          idebia , idebra , iphas, irij
+integer          idebia , idebra , irij
 
 integer          iescat
 integer          iirnpn

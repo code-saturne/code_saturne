@@ -78,7 +78,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, iphas, iok , iiscal, iscaok, ipp, iph, nmodpp, iverif
+integer          ii, jj, iok , iiscal, iscaok, ipp, iph, nmodpp, iverif
 integer          irphas
 character        car4*4
 character*2      num
@@ -111,10 +111,6 @@ enddo
 ! 1. INITIALISATIONS PAR DEFAUT DU MODULE DE TRANSFERTS RADIATIFS
 !                        ^^^^^^
 !===============================================================================
-
-!--> NUMERO DE LA PHASE PORTEUSE
-
-iphas = 1
 
 !-->  IIRAYO = 0 : PAS DE TRANSFERTS RADIATIFS
 !            = 1 : TRANSFERTS RADIATIFS, METHODE DES ORDONNEES DISCRETES

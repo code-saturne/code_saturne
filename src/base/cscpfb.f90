@@ -112,7 +112,7 @@ integer          itrav1 , itrav2 , itrav3 , itrav4 , itrav5
 integer          itrav6 , itrav7 , itrav8 , itrav
 
 integer          ipt    , ifac   , iel    , isou
-integer          ivar   , iscal  , iphas  , ipcrom
+integer          ivar   , iscal  , ipcrom
 integer          ipriph , iuiph  , iviph  , iwiph
 integer          ikiph  , iepiph , ifbiph , iomiph , iphiph
 integer          ir11ip , ir22ip , ir33ip , ir12ip , ir13ip , ir23ip
@@ -163,7 +163,6 @@ call rasize('cscpfb',ifinra)
 
 d2s3 = 2.d0/3.d0
 
-iphas = 1
 ipcrom = ipproc(irom)
 
 if (icormx(numcpl).eq.1) then
@@ -204,7 +203,6 @@ endif
 
 ! De plus, les variables sont envoyées dans l'ordre de VARPOS :
 
-!   Pour chaque phase IPHAS :
 !     - pression (unique pour toute les phases)
 !     - vitesse
 !     - grandeurs turbulentes (selon le modèle)

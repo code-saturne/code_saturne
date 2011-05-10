@@ -106,7 +106,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, ii, iphas
+integer          ifac, iel, ii
 integer          ient, ipcvis, ipcrom
 integer          iappel
 integer          isurf(nentmx)
@@ -182,7 +182,6 @@ enddo
 ! Chaque processeur stocke dans les tableaux RA(IW1X),...
 ! les coordonnees des faces ou il doit ensuite utiliser des vortex
 
-iphas  = 1
 ipcvis = ipproc(iviscl)
 ipcrom = ipproc(irom)
 do ifac = 1, nfabor

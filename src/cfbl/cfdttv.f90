@@ -136,7 +136,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra, ifinia, ifinra
-integer          ifac  , iel   , iphas , ivar  , iscal
+integer          ifac  , iel   , ivar  , iscal
 integer          init
 integer          iw7   , iw8   , iw9   , iw10  , iw11  , iw12
 integer          iviscf, icoefu, ixam
@@ -148,8 +148,6 @@ integer          iviscf, icoefu, ixam
 
 idebia = idbia0
 idebra = idbra0
-
-iphas   = 1
 
 iscal  = irho
 ivar   = isca(iscal)

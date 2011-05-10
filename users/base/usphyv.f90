@@ -62,13 +62,13 @@ subroutine usphyv &
 ! icp = 1 must have been specified
 !                ========================
 !    in usini1 if we wish to define a varible specific heat
-!    cp for phase iphas (otherwise: memory overwrite).
+!    cp (otherwise: memory overwrite).
 
 
 ! ivisls = 1 must have been specified
 !                   ========================
 !    in usini1 if we wish to define a variable viscosity
-!    viscls for phase iphas (otherwise: memory overwrite).
+!    viscls (otherwise: memory overwrite).
 
 
 ! Notes:
@@ -178,7 +178,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ivart, iclvar, iel, iphas
+integer          ivart, iclvar, iel
 integer          ipcrom, ipbrom, ipcvis, ipccp
 integer          ipcvsl, ith, iscal, ii
 integer          iutile
@@ -246,7 +246,7 @@ if(iutile.eq.1) then
   ! Position of variables, coefficients
   ! -----------------------------------
 
-  ! --- Number of the thermal variable for the current phase 'iphas'
+  ! --- Number of the thermal variable
   !       (and of its boundary conditions)
   !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
@@ -261,7 +261,7 @@ if(iutile.eq.1) then
 
   iclvar = iclrtp(ivart,icoef)
 
-  ! --- Rank of density for current phase 'iphas'
+  ! --- Rank of density
   !     in 'propce', physical properties at element centers:       'ipcrom'
   !     in 'propfb', physical properties at boundary face centers: 'ipbrom'
 
@@ -345,7 +345,7 @@ if(iutile.eq.1) then
   ! Position of variables, coefficients
   ! -----------------------------------
 
-  ! --- Number of the thermal variable for the current phase 'iphas'
+  ! --- Number of the thermal variable
   !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
   if (iscalt.gt.0) then
@@ -355,7 +355,7 @@ if(iutile.eq.1) then
     call csexit(1)
   endif
 
-  ! --- Rank of molecular dynamic viscosity for current phase 'iphas'
+  ! --- Rank of molecular dynamic viscosity
   !     in 'propce', physical properties at element centers: 'ipcvis'
 
   ipcvis = ipproc(iviscl)
@@ -398,7 +398,7 @@ if(iutile.eq.1) then
   ! Position of variables, coefficients
   ! -----------------------------------
 
-  ! --- Number of the thermal variable for the current phase 'iphas'
+  ! --- Number of the thermal variable
   !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
   if (iscalt.gt.0) then
@@ -408,7 +408,7 @@ if(iutile.eq.1) then
     call csexit (1)
   endif
 
-  ! --- Rank of the specific heat for current phase 'iphas'
+  ! --- Rank of the specific heat
   !     in 'propce', physical properties at element centers: 'ipccp'
 
   if(icp.gt.0) then
@@ -459,7 +459,7 @@ if(iutile.eq.1) then
   ! Position of variables, coefficients
   ! -----------------------------------
 
-  ! --- Number of the thermal variable for the current phase 'iphas'
+  ! --- Number of the thermal variable
   !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
   if (iscalt.gt.0) then
@@ -469,7 +469,7 @@ if(iutile.eq.1) then
     call csexit (1)
   endif
 
-  ! --- Rank of Lambda/Cp of the thermal variable for current phase 'iphas'
+  ! --- Rank of Lambda/Cp of the thermal
   !     in 'propce', physical properties at element centers: 'ipcvsl'
 
   if(ivisls(iscalt).gt.0) then
@@ -486,7 +486,7 @@ if(iutile.eq.1) then
     call csexit (1)
   endif
 
-  ! --- Rank of the specific heat for current phase 'iphas'
+  ! --- Rank of the specific heat
   !     in 'propce', physical properties at element centers: 'ipccp'
 
   if(icp.gt.0) then
@@ -574,10 +574,9 @@ if(iutile.eq.1) then
       ! Position of variables, coefficients
       ! -----------------------------------
 
-      ! --- Number of the thermal variable for the current phase 'iphas'
+      ! --- Number of the thermal variable
       !       To use user scalar 2 instead, write 'ivart = isca(2)'
 
-      iphas = 1
       if (iscalt.gt.0) then
         ivart = isca(iscalt)
       else

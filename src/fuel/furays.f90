@@ -100,8 +100,7 @@ integer          iel , numcla , ipcl
 !===============================================================================
 
 !===============================================================================
-! 1. RECHERCHE DE LA ZONE MEMOIRE (IPH) EN FONCTION DU NUMERO DE PHASE
-!    COURANT IPHAS POUR TROUVER LES BONS TERMES SOURCES
+! 1. RECHERCHE DE LA ZONE MEMOIRE (IPH) POUR TROUVER LES BONS TERMES SOURCES
 !===============================================================================
 
 numcla = ivar-isca(ihlf(1))+1

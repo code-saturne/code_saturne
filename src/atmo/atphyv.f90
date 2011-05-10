@@ -57,7 +57,7 @@ subroutine atphyv &
 !  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
-!    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
+!    CP variable (sinon: ecrasement memoire).
 
 
 !  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
@@ -173,7 +173,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ivart, iclvar, iel, iphas
+integer          ivart, iclvar, iel
 integer          ipcrom, ipbrom, ipcvis, ipccp, ipctem
 integer          ipcvsl, ith, iscal, ii
 integer          iutile
@@ -212,7 +212,7 @@ if (imeteo.eq.0) return
 !   Positions des variables, coefficients
 !   -------------------------------------
 
-! --- Numero de variable thermique pour la phase courante iphas
+! --- Numero de variable thermique
 !       (et de ses conditions limites)
 !       (Pour utiliser le scalaire utilisateur 2 a la place, ecrire
 !          IVART = ISCA(2)
@@ -228,7 +228,7 @@ endif
 
 iclvar = iclrtp(ivart,icoef)
 
-! --- Rang de la masse volumique de la phase courante IPHAS
+! --- Rang de la masse volumique
 !     dans PROPCE, prop. physiques au centre des elements       : IPCROM
 !     dans PROPFB, prop. physiques au centre des faces de bord  : IPBROM
 

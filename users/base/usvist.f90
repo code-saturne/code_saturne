@@ -33,7 +33,6 @@ subroutine usvist &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -74,7 +73,6 @@ subroutine usvist &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term
-! iphas            ! i  ! <-- ! phase number
 ! icepdc(ncelet    ! te ! <-- ! head loss cell numbering                       !
 ! icetsm(ncesmp    ! te ! <-- ! numbering of cells with mass source term       !
 ! itypsm           ! te ! <-- ! kind of mass source for each variable          !
@@ -125,7 +123,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          iphas
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)

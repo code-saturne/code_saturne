@@ -30,7 +30,6 @@ subroutine preduv &
 
  ( idbia0 , idbra0 , iappel ,                                     &
    nvar   , nscal  , nphas  , iterns , ncepdp , ncesmp ,          &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -80,7 +79,6 @@ subroutine preduv &
 ! iterns           ! e  ! <-- ! numero d'iteration sur navsto                  !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
@@ -169,7 +167,6 @@ implicit none
 integer          idbia0 , idbra0 , iappel
 integer          nvar   , nscal  , nphas  , iterns
 integer          ncepdp , ncesmp
-integer          iphas
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -461,7 +458,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iuiph  , iviph  , iwiph  , imaspe , iphas  ,                   &
+   iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -740,7 +737,6 @@ if (ivisse.eq.1.and.iterns.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -819,7 +815,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdp ,                                                       &
-   iphas  , idiaex ,                                              &
+   idiaex ,                                                       &
    icepdc ,                                                       &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -870,7 +866,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdp ,                                                       &
-   iphas  , idiaex ,                                              &
+   idiaex ,                                                       &
    icepdc ,                                                       &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -994,7 +990,7 @@ if(itytur.eq.3.and.iterns.eq.1) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   isou   , ivar   , iphas  ,                                     &
+   isou   , ivar   ,                                              &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  ,                                              &
@@ -1184,7 +1180,7 @@ do isou = 1, 3
     !==========
   ( ifinia , idebra ,                                              &
     nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-    ivar   , iphas  ,                                              &
+    ivar   ,                                                       &
     maxelt , ia(ils),                                              &
     icepdc , icetsm , itypsm ,                                     &
     ia     ,                                                       &
@@ -1201,7 +1197,7 @@ do isou = 1, 3
       !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ivar   , iphas  ,                                              &
+   ivar   ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
@@ -1704,7 +1700,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iuiph  , iviph  , iwiph  , imaspe , iphas  ,                   &
+   iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

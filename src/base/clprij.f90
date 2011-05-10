@@ -29,7 +29,7 @@ subroutine clprij &
 !================
 
  ( ncelet , ncel   , nvar   , nphas  ,                            &
-   iphas  , iclip  ,                                              &
+   iclip  ,                                                       &
    propce , rtpa   , rtp    )
 
 !===============================================================================
@@ -48,7 +48,6 @@ subroutine clprij &
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas rtpa           !
 !                  !    !     !  (inivar)                                      !
 !                  !    !     !            sinon on peut (turrij)              !
@@ -83,7 +82,7 @@ implicit none
 ! Arguments
 
 integer          nvar, ncelet, ncel, nphas
-integer          iphas, iclip
+integer          iclip
 double precision propce(ncelet,*)
 double precision rtpa(ncelet,nvar)
 double precision rtp(ncelet,nvar)

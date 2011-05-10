@@ -150,7 +150,7 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ifac, izone, icha, iclapc
-integer          iphas, ivar
+integer          ivar
 
 !===============================================================================
 !===============================================================================

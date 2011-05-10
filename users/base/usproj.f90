@@ -217,7 +217,7 @@ integer          igradx , igrady , igradz
 integer          itravx , itravy , itravz , itreco
 integer          inc    , iccocg
 integer          nswrgp , imligp , iphydp , iwarnp
-integer          iutile , iphas  , iclvar , iii
+integer          iutile , iclvar , iii
 integer          ipcrom , ipcvst , iflmas , iflmab , ipccp, ipcvsl
 integer          iscal
 integer          ii     , nbr    , irangv , irang1 , npoint
@@ -392,8 +392,6 @@ if (inpdt0.eq.0) then
   xbilmi = 0.d0
   xbilma = 0.d0
   xbilan = 0.d0
-
-  iphas = 1   ! We only consider phase 1 in this example
 
   iscal = iscalt         ! temperature scalar number
   ivar =  isca(iscal)           ! temperature variable number
@@ -1066,7 +1064,6 @@ if (iutile.eq.0) return
 
 ! ----------------------------------------------
 
-iphas = 1
 iscal = iscalt
 
 if (ttcabs .ge. 12.d0) then
@@ -1129,7 +1126,6 @@ if (ntcabs.eq.ntmabs) then
          '# z(m) U(m/s) V(m/s) W(m/s) k(m2/s2) eps(m2/s3)'
   endif
 
-  iphas  = 1
   npoint = 200
   iel1   = -999
   irang1 = -999

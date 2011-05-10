@@ -188,7 +188,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac  , iel   , ivar  , iphas
+integer          ifac  , iel   , ivar
 integer          isou  , ii    , iii   , iiph
 integer          ihcp  , iscal , iscat
 integer          inc   , iccocg, iphydp
@@ -818,7 +818,7 @@ if (ipatur.ne.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , isvhb  ,                                              &
+   isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
@@ -836,7 +836,7 @@ if (ipatrg.ne.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , isvhb  ,                                              &
+   isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
@@ -864,7 +864,6 @@ if (iclsym.ne.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  ,                                                       &
    icodcl , ia(iismph) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
@@ -1662,7 +1661,6 @@ endif
 !===============================================================================
 
 if (ineedf.eq.1) then
-  iphas = 1
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     visclc = propce(iel,ipproc(iviscl))

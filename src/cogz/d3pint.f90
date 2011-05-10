@@ -105,7 +105,7 @@ double precision propce(ncelet,*), w1(ncelet)
 
 ! Local variables
 
-integer          icel, icg, iphas
+integer          icel, icg
 integer          ih, if, jh, jf, ipcrom
 integer          ipcsca, ipctem, ipckab, ipct4, ipct3
 double precision aa1, bb1, aa2, bb2, f1, f2, a, b, fmini, fmaxi
@@ -268,7 +268,6 @@ if ( iirayo.gt.0 ) then
   ipct3  = ipproc(it3m)
 endif
 
-iphas = 1
 ipcrom = ipproc(irom)
 
 do icel = 1, ncel

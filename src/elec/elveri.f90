@@ -77,7 +77,7 @@ integer          iok
 
 ! Local variables
 
-integer          iphas , imono , ntf
+integer          imono , ntf
 
 !===============================================================================
 
@@ -158,7 +158,6 @@ if( ielcor.eq.1) then
 endif
 
 ! --> Rho et viscosite variables
-iphas = 1
 if(irovar.ne.1) then
   write(nfecra,2010)irovar
   iok = iok + 1
@@ -169,7 +168,6 @@ if(ivivar.ne.1) then
 endif
 
 ! --> Cp et visls (ihm) variables
-iphas = 1
 if(icp.le.0) then
   WRITE(NFECRA,2012)'       ICP(1)',    ICP,               &
                     '       ICP(1)','la chaleur massique     ',   &

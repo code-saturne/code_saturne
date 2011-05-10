@@ -32,7 +32,7 @@ subroutine usray3 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iphas  , iappel ,                            &
+   nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                       &
    izfrdp ,                                                       &
    ia     ,                                                       &
@@ -73,7 +73,6 @@ subroutine usray3 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrdp(nfabor    ! ia ! <-- ! zone number for boundary faces                 !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -122,7 +121,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , iphas  , iappel
+integer          nvar   , nscal  , iappel
 
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)

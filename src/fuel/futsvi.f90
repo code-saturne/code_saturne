@@ -98,7 +98,7 @@ double precision w1(ncelet)
 
 ! Local variables
 
-integer          iel    , icla   , iphas
+integer          iel    , icla
 integer          ipcrom
 integer          ixckcl , ixnpcl , ipcght , ipcdia
 
@@ -134,7 +134,6 @@ d2s3 = 2.d0/3.d0
 !===============================================================================
 
 
-iphas  = 1
 ipcrom = ipproc(irom)
 ixckcl = isca(ifhtf)
 ipcte1 = ipproc(itemp1)

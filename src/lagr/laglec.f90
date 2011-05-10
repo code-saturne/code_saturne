@@ -154,7 +154,7 @@ integer          ncelok , nfaiok , nfabok , nsomok
 integer          ierror , irtyp  , itysup , nbval
 integer          ilecec , nberro , ivers
 integer          mvls   , ivar   , ip     , icha
-integer          ifac   , iel    , iok    , iphas
+integer          ifac   , iel    , iok
 integer          jphyla , jtpvar , jdpvar , jmpvar
 integer          jsttio , jdstnt , mstist , mvlsts
 integer          mstbor , musbor , mstits , jturb, jtytur
@@ -176,8 +176,6 @@ idebra = idbra0
 !---> Il faut faire dans cette routine les initialisations des
 !     tableaux lagrangiens ouverts dans la routine MEMLA1
 !     (sauf ITYCEL et ICOCEL qui sont initialises dans LAGDEB),
-
-iphas = 1
 
 do ivar = 1,nvp
   do ip = 1,nbpmax

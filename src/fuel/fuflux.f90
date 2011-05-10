@@ -99,7 +99,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia , idebra
-integer          iel    , iphas  , icla
+integer          iel    , icla
 integer          ipcrom , ipcte1 , ipcte2 , ipcro2 , ipcdia
 integer          ipcgev , ipcght , ipcyox
 integer          ipcvst,ipcvsl,ipccp,ipchgl
@@ -139,7 +139,6 @@ enddo
 
 ! --- Calcul de la masse volumique du melange gazeux
 
-iphas  = 1
 ipcrom = ipproc(irom)
 ipcte1 = ipproc(itemp1)
 ipcyox = ipproc(iym1(io2))

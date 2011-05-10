@@ -180,7 +180,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, ii, iphas , iel
+integer          ifac, ii, iel
 integer          idim
 integer          izone,iesp
 integer          ilelt, nlelt
@@ -238,8 +238,6 @@ d2s3 = 2.d0/3.d0
 !       Loop on faces from a subset
 !         Set the boundary condition for each face
 !===============================================================================
-
-iphas = 1
 
 ! --- For boundary faces of color 1 assign an inlet for all phases
 !     ============================================================

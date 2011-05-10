@@ -60,14 +60,14 @@ subroutine useliv &
 !     PROPCE (at the center of the cells), PROPFA (for internal faces),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL)
+!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL)
+!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
 !      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
 
-!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC,IPHAS)
+!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC)
 !      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 ! Thermodynamic properties and transport coefficients modification
@@ -154,7 +154,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iel, mode, iphas
+integer          iel, mode
 integer          iesp , idimve
 
 double precision tinit, hinit, coefe(ngazem)
@@ -231,8 +231,6 @@ idebra = idbra0
 !===============================================================================
 
 if ( isuite.eq.0 ) then
-
-  iphas = 1
 
 ! --> Enthalpy = H(T0) ou 0
 

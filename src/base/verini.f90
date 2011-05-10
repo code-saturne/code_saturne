@@ -85,7 +85,7 @@ integer          iok
 ! Local variables
 
 character        chaine*80, chain2*80
-integer          ii    , iis   , jj    , iisct , iphas
+integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
 integer          iuiph , iviph , iwiph, ikiph, ieiph
 integer          itrbph, nbsccp
@@ -337,7 +337,6 @@ if(itytur.eq.4.or.ischtp.eq.2) then
   endif
 endif
 do ii = 1, nscal
-  iphas = 1
   if(itytur.eq.4) then
     jj    = isca(ii)
     ipp   = ipprtp(jj)
@@ -389,7 +388,6 @@ if( abs(thetav(jj)-0.5d0).lt.epzero.and.                        &
        iroext,iviext,icpext
 endif
 do iscal = 1, nscal
-  iphas = 1
   if(isso2t(iscal).ne.isno2t)then
     write(nfecra,2133) iscal,isso2t(iscal),isno2t
   endif
@@ -891,7 +889,6 @@ if (ivrtex.ne.0 .and.ivrtex.ne.1) then
   WRITE(NFECRA,2200) 'IVRTEX ',IVRTEX
   iok = iok + 1
 endif
-iphas = 1
 if(ivrtex.eq.1.and.itytur.ne.4) then
   write(nfecra,2606)itytur,ivrtex
   ivrtex = 0

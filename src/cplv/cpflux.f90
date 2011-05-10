@@ -99,7 +99,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia , idebra
-integer          iel    , iphas  , icha   , icla
+integer          iel    , icha   , icla
 integer          ipcrom , ipcte1 , ipctem , ipcro2 , ipcdia
 integer          ipcgd1 , ipcgd2 , ipcgch , ipcght , ipcyox
 integer          ipcsec
@@ -158,7 +158,6 @@ enddo
 
 ! --- Calcul de la masse volumique du melange gazeux
 
-iphas  = 1
 ipcrom = ipproc(irom)
 
 ! ---- W1 = Somme (X2i)
@@ -244,7 +243,6 @@ enddo
 
 ! --- Calcul de l'integrale de GMDEV1 et GMDEV2 pour chaque charbon
 
-iphas = 1
 ipcrom = ipproc(irom)
 do icla = 1, nclacp
   ipcgd1 = ipproc(igmdv1(icla))

@@ -30,7 +30,7 @@ subroutine resssg &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -64,7 +64,6 @@ subroutine resssg &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! isou             ! e  ! <-- ! numero de passage                              !
 ! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
@@ -139,7 +138,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          iphas  , ivar   , isou   , ipp
+integer          ivar   , isou   , ipp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itpsmp(ncesmp)
@@ -262,7 +261,7 @@ call ustsri                                                       &
 !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  , ivar   ,                                              &
+   ivar   ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
@@ -544,7 +543,7 @@ if(igrari.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   ivar   , isou   , ipp    ,                                     &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , grarox , graroy , graroz , w7     ,          &

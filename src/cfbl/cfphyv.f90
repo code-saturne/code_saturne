@@ -119,7 +119,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra, ifinia
-integer          iphas , iel
+integer          iel
 integer          ifac
 integer          iirom , iiromb
 integer          maxelt, ils

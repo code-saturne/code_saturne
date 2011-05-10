@@ -32,7 +32,7 @@ subroutine usray2 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iphas  ,                                     &
+   nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    maxelt , lstelt ,                                              &
    icodcl , izfrdp , isothp ,                                     &
@@ -142,7 +142,6 @@ subroutine usray2 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! current phase number                           !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
@@ -222,7 +221,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , iphas
+integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          maxelt, lstelt(maxelt)

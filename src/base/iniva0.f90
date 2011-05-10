@@ -115,7 +115,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iis   , ivar  , iphas , iphass, iscal , imom
+integer          iis   , ivar  , iscal , imom
 integer          iel   , ifac
 integer          iclip , ii    , jj    , idim
 integer          iiflum, iiflua
@@ -243,8 +243,6 @@ if (ippmod(icompf).lt.0) then
   enddo
 endif
 
-iphas = 1
-
 !     Diffusivite des scalaires
 do iscal = 1, nscal
   if(ivisls(iscal).gt.0) then
@@ -326,9 +324,8 @@ if(itytur.eq.2 .or. iturb.eq.50) then
     enddo
 
     iclip = 1
-    iphass = iphas
     call clipke(ncelet , ncel   , nvar    , nphas  ,            &
-         iphass , iclip  , iwarni(ikiph),                &
+         iclip  , iwarni(ikiph),                &
          propce , rtp    )
 
   else
@@ -373,9 +370,8 @@ elseif(itytur.eq.3) then
       rtp(iel,ieiph) = xxk**1.5d0*cmu/almax
     enddo
     iclip = 1
-    iphass = iphas
     call clprij(ncelet , ncel   , nvar    , nphas  ,            &
-         iphass , iclip  ,                               &
+         iclip  ,                               &
          propce , rtp    , rtp    )
 
   else

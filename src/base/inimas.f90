@@ -30,7 +30,7 @@ subroutine inimas &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ivar1  , ivar2  , ivar3  , imaspe , iphas  ,                   &
+   ivar1  , ivar2  , ivar3  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
@@ -80,7 +80,6 @@ subroutine inimas &
 ! imaspe           ! e  ! <-- ! suivant l'appel de inimas                      !
 !                  !    !     ! = 1 si appel de navsto resolp                  !
 !                  !    !     ! = 2 si appel de divrij                         !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! iflmb0           ! e  ! <-- ! =1 : flux de masse annule sym-paroi            !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
@@ -145,7 +144,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          ivar1  , ivar2  , ivar3  , imaspe , iphas
+integer          ivar1  , ivar2  , ivar3  , imaspe
 integer          iflmb0 , init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
 integer          iwarnu , nfecra

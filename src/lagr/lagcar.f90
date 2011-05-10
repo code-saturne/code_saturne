@@ -153,7 +153,7 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          iel , ip , id , igvx , igvy , igvz , ivt
-integer          iromf , iphas
+integer          iromf
 
 double precision cd1 , cd2 , rec , cl , c0 , cb , cbcb
 double precision upart , vpart , wpart
@@ -186,8 +186,6 @@ idebra = idbra0
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
-
-iphas = 1
 
 cd1  = 0.15d0
 cd2  = 0.687d0

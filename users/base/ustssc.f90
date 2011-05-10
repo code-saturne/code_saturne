@@ -212,7 +212,7 @@ double precision ra(*)
 
 character*80     chaine
 integer          idebia, idebra
-integer          ivar, iiscvr, ipcrom, iel, iphas, iutile
+integer          ivar, iiscvr, ipcrom, iel, iutile
 integer          ilelt, nlelt
 
 double precision tauf, prodf, volf, pwatt
@@ -247,9 +247,6 @@ chaine = nomvar(ipprtp(ivar))
 !         If iscavr(iscal) > 0 and iscavr(iscal) < nscal + 1 :
 !           the scalar iscal is the variance of the scalar iscavr(iscal)
 iiscvr = iscavr(iscal)
-
-! --- Index number of the phase associated to scalar iscal
-iphas = 1
 
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)

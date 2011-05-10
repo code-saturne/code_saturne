@@ -29,7 +29,7 @@ subroutine ppray4 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iphas  ,                                     &
+   nvar   , nscal  ,                                              &
 
    mode   ,                                                       &
 
@@ -73,7 +73,6 @@ subroutine ppray4 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! mode             ! e  ! <-- ! type de conversion enthal<->tempk              !
 ! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -128,7 +127,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , iphas
+integer          nvar   , nscal
 
 integer          mode
 

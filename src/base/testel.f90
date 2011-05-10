@@ -96,7 +96,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra, ifinia, ifinra
-integer          ifac  , iel   , ivar  , iphas
+integer          ifac  , iel   , ivar
 integer          inc   , iccocg, iphydp
 integer          iuiph , iviph , iwiph
 integer          nswrgp, imligp, iwarnp
@@ -140,7 +140,6 @@ enddo
 ! 1. FONCTION ANALYTIQUE SIN(X+2Y+3Z)
 !===============================================================================
 
-iphas = 1
 iuiph = iu
 iviph = iv
 iwiph = iw

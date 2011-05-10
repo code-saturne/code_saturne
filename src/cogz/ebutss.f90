@@ -175,7 +175,7 @@ double precision ra(*)
 
 character*80     chaine
 integer          idebia, idebra
-integer          ivar, ipcrom, iel, iphas
+integer          ivar, ipcrom, iel
 
 !===============================================================================
 !===============================================================================
@@ -192,9 +192,6 @@ ivar = isca(iscal)
 
 ! --- Nom de la variable associee au scalaire a traiter ISCAL
 chaine = nomvar(ipprtp(ivar))
-
-! --- Numero de phase associee au scalaire ISCAL
-iphas = 1
 
 ! --- Numero des grandeurs physiques (voir usclim)
 ipcrom = ipproc(irom)

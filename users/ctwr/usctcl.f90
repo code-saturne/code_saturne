@@ -179,7 +179,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, ii, ivar, iphas
+integer          ifac, iel, ii, ivar
 integer          ilelt, nlelt, izone
 
 !===============================================================================
@@ -262,7 +262,6 @@ do ilelt = 1, nlelt
   itypfb(ifac) = isolib
 
 !       On impose un profil de pression sur toutes les faces
-  iphas = 1
   icodcl(ifac,ipr) = 1
   rcodcl(ifac,ipr,1) =                                     &
     ro0*(  gx*(cdgfbo(1,ifac)-xyzp0(1))              &

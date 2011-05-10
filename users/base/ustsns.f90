@@ -33,7 +33,7 @@ subroutine ustsns &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   ivar   , iphas  ,                                              &
+   ivar   ,                                                       &
    maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -104,7 +104,6 @@ subroutine ustsns &
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! ivar             ! i  ! <-- ! index number of the current variable           !
-! iphas            ! i  ! <-- ! index number of the current phase              !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
@@ -160,7 +159,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          ivar   , iphas
+integer          ivar
 
 integer          maxelt, lstelt(maxelt)
 integer          icepdc(ncepdp)
@@ -247,7 +246,6 @@ if(iutile.eq.0) return
 
 ! ----------------------------------------------
 
-iphas=1
 if (ivar.eq.iu) then
 
   ckp  = 10.d0

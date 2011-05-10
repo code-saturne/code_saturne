@@ -132,7 +132,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, iphas, iuiph, iviph, iwiph
+integer          ifac, iel, iuiph, iviph, iwiph
 integer          ii, inod, iecrw, icpt, ierror
 double precision ddepx, ddepy, ddepz
 double precision srfbnf, rnx, rny, rnz
@@ -326,7 +326,6 @@ endif
 !   et on prend la vitesse de maillage pour la composante normale.
 ! On se base uniquement sur ITYPFB, a l'utilisateur de gere les choses
 !   s'il rentre en CL non standards.
-iphas = 1
 iuiph = iu
 iviph = iv
 iwiph = iw

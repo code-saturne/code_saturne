@@ -64,14 +64,14 @@ subroutine usctiv &
 !     PROPCE (prop au centre), PROPFA (aux faces internes),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL)
+!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL)
+!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
 !      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
 
-!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC,IPHAS)
+!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC)
 !      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 
@@ -155,7 +155,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iel, iutile, iphas
+integer          iel, iutile
 integer          ilelt, nlelt
 
 double precision d2s3
@@ -188,8 +188,6 @@ d2s3 = 2.d0/3.d0
 ! 2. INITIALISATION DES INCONNUES :
 !      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
 !===============================================================================
-
-iphas = 1
 
 if (isuite.eq.0) then
 

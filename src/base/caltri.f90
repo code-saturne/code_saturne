@@ -108,7 +108,7 @@ integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
 integer          ntsdef, ntcam1
-integer          iphas , ivar
+integer          ivar
 
 integer          iicoce , iityce
 integer          iiitep , iitepa , istatc , istatf
@@ -393,14 +393,12 @@ ils    = idbia1
 ifnia2 = ils + maxelt
 call iasize('caltri',ifnia2)
 
-iphas = 1
-
 !     Premier appel : definition de NFPT1D et ISUIT1
 iappel = 1
 call uspt1d                                                       &
 !==========
  ( ifnia2 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
+   nvar   , nscal  , nphas  , nfpt1d , iappel ,                   &
    maxelt , ia(ils),                                              &
    ia(idbia1) , ia(idbia1) , ia(idbia1) ,                         &
    ia     ,                                                       &
@@ -440,7 +438,7 @@ if (nfpt1t.gt.0) then
   call  uspt1d                                                    &
   !===========
  ( ifnia3 , ifinra ,                                              &
-   nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
+   nvar   , nscal  , nphas  , nfpt1d , iappel ,                   &
    maxelt , ia(ils),                                              &
    ia(iifpt1) , ia(inppt1) , ia(iiclt1) ,                         &
    ia     ,                                                       &
@@ -524,7 +522,7 @@ call  uskpdc &
 !===========
 ( idbia2 , idbra1 ,                                              &
   nvar   , nscal  , nphas  ,                                     &
-  ncepdc , iphas  , iappel ,                              &
+  ncepdc , iappel ,                                              &
   maxelt , ia(ils),                                              &
   ia(idbia1),                                                    &
   ia     ,                                                       &
@@ -563,7 +561,7 @@ if(ncpdct.gt.0) then
   !===========
 ( ifnia2 , ifinra ,                                              &
   nvar   , nscal  , nphas  ,                                     &
-  ncepdc , iphas  , iappel ,                              &
+  ncepdc , iappel ,                                              &
   maxelt , ia(ils),                                              &
   ia(iicepd),                                             &
   ia     ,                                                       &
@@ -586,7 +584,7 @@ call  ustsma                                                    &
 !===========
 ( idbia2 , idbra1 ,                                              &
   nvar   , nscal  , nphas  , ncepdc   ,                   &
-  ncetsm ,   iphas  , iappel ,                            &
+  ncetsm ,   iappel ,                                            &
   maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
   ia(idbia1) , ia(idbia1),                                       &
@@ -619,7 +617,7 @@ if(nctsmt.gt.0) then
   !===========
 ( ifnia2 , ifinra ,                                              &
   nvar   , nscal  , nphas  , ncepdc   ,                   &
-  ncetsm ,   iphas  , iappel ,                            &
+  ncetsm ,   iappel ,                                            &
   maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
   ia(iicesm) , ia(iitpsm),                         &
@@ -639,7 +637,6 @@ if (ivrtex.eq.1) then
   idbia1 = ifinia
   idbra1 = ifinra
 
-  iphas  = 1
   iappel = 1
 
 !  On met une valeur factice a certains parametres non utilise en IAPPEL=1
@@ -658,7 +655,7 @@ if (ivrtex.eq.1) then
   !==========
  ( ifnia2 , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , iappel ,                                              &
+   iappel ,                                                       &
    maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
    ia     ,                                                       &

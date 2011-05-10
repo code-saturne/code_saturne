@@ -171,7 +171,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          npt , iel , ivar , icha , iphas
+integer          npt , iel , ivar , icha
 double precision tvmax , tauv , taum , aux1
 double precision uuf , vvf , wwf , mf
 
@@ -180,8 +180,6 @@ double precision uuf , vvf , wwf , mf
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
-
-iphas = 1
 
 tvmax = 0.8d0
 

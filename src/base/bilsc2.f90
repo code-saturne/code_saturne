@@ -368,8 +368,7 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
 
     call pergra                                                   &
     !==========
-  ( nphsmx , nphas  ,                                             &
-    iiu    , iiv    , iiw    ,                                    &
+  ( iiu    , iiv    , iiw    ,                                    &
     iitytu ,                                                      &
     iir11  , iir22  , iir33  , iir12  , iir13  , iir23  )
 
@@ -1122,7 +1121,7 @@ if (idtvar.lt.0) then
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
 
-    ! On enleve le decentrement pour les faces couplees (test sur iphas=1)
+    ! On enleve le decentrement pour les faces couplees
     if (ifaccp.eq.1.and.ia(iitypf-1+ifac).eq.icscpl) then
       flui = 0.0d0
       fluj = flumab(ifac)
@@ -1155,7 +1154,7 @@ else
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
 
-    ! On enleve le decentrement pour les faces couplees (test sur iphas=1)
+    ! On enleve le decentrement pour les faces couplees
     if (ifaccp.eq.1.and.ia(iitypf-1+ifac).eq.icscpl) then
       flui = 0.0d0
       fluj = flumab(ifac)

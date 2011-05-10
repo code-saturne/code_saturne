@@ -61,14 +61,14 @@ subroutine cfiniv &
 !     PROPCE (prop au centre), PROPFA (aux faces internes),
 !     PROPFB (prop aux faces de bord)
 !     Ainsi,
-!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL ,IPHAS)
-!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL ,IPHAS)
+!      PROPCE(IEL,IPPROC(IROM  )) designe ROM   (IEL)
+!      PROPCE(IEL,IPPROC(IVISCL)) designe VISCL (IEL)
+!      PROPCE(IEL,IPPROC(ICP   )) designe CP    (IEL)
 !      PROPCE(IEL,IPPROC(IVISLS(ISCAL))) designe VISLS (IEL ,ISCAL)
 
 !      PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) designe FLUMAS(IFAC,IVAR)
 
-!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC,IPHAS)
+!      PROPFB(IFAC,IPPROB(IROM  )) designe ROMB  (IFAC)
 !      PROPFB(IFAC,IPPROB(IFLUMA(IVAR ))) designe FLUMAB(IFAC,IVAR)
 
 ! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
@@ -141,7 +141,7 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifinia, ifinra
 integer          iwcel1, iwcel2, iwcel3, iwcel4
-integer          iel   , iphas , iccfth, imodif
+integer          iel   , iccfth, imodif
 integer          iirom , iiromb, ifac
 
 
@@ -195,7 +195,7 @@ if ( isuite.eq.0 ) then
     call uscfth                                                 &
     !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )
@@ -278,7 +278,7 @@ else
     call uscfth                                                 &
     !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )

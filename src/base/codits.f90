@@ -241,7 +241,7 @@ integer          lchain
 integer          idebia, idebra
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
-integer          iphas,idimte,itenso,iinvpe, iinvpp
+integer          idimte,itenso,iinvpe, iinvpp
 integer          idtva0
 integer          iagmax, nagmax, npstmg
 double precision residu,rnorm

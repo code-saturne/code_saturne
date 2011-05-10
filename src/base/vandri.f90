@@ -29,7 +29,6 @@ subroutine vandri &
 !================
 
  (  ndim   , ncelet , ncel   , nfac   , nfabor , nphas ,          &
-    iphas  ,                                                      &
     itypfb , ifabor , ifapat ,                                    &
     ia    ,                                                       &
     xyzcen , cdgfbo , uetbor , visvdr , yplusc , propce ,         &
@@ -53,7 +52,6 @@ subroutine vandri &
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
@@ -98,7 +96,6 @@ implicit none
 ! Arguments
 
 integer          ndim, ncelet , ncel   , nfac   , nfabor, nphas
-integer          iphas
 integer          itypfb(nfabor),ifabor(nfabor)
 integer          ifapat(ncelet)
 integer          ia(*)

@@ -173,7 +173,7 @@ character        ficsui*32
 integer          idebia , idebra
 integer          ifinia , ifinra
 integer          ierror , irtyp  , itysup , nbval
-integer          ivers  , ilecec , iphas
+integer          ivers  , ilecec
 integer          nfin   , iforce , icha   , ii
 integer          itrav1
 integer          ipas   , jj
@@ -190,8 +190,6 @@ idebra = idbra0
 !===============================================================================
 ! 1. ECRITURE DU FICHIER SUITE : VARIABLES LIEES AUX PARTICULES
 !===============================================================================
-
-iphas = 1
 
 ! ---> Ouverture (et on saute si erreur)
 !     ILECEC = 2 : ecriture

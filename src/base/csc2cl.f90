@@ -145,7 +145,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel,isou, iphas
+integer          ifac, iel,isou
 integer          inc, iccocg, iphydp, iclvar, nswrgp, imligp
 integer          iwarnp, ivar
 integer          ipt

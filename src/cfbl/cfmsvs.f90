@@ -122,7 +122,6 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iphas
 integer          ifac  , iel
 
 integer          imvis1, iccfth, imodif
@@ -135,9 +134,6 @@ integer          imvis1, iccfth, imodif
 
 idebia = idbia0
 idebra = idbra0
-
-! --- Numero de phase associee au scalaire traite
-iphas  = 1
 
 do ifac = 1, nfac
   viscf(ifac) = 0.d0
@@ -156,7 +152,7 @@ imodif = 0
 call uscfth                                                       &
 !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , ra(1)  , w2     , w3     )

@@ -96,7 +96,7 @@ integer          icoefu , irijip , iuetbo , ivsvdr
 integer          ihbord , itbord
 integer          ifinia , ifinra
 
-integer          idebia , idebra, irij, iphas, iiuetb
+integer          idebia , idebra, irij, iiuetb
 
 !===============================================================================
 

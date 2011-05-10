@@ -29,7 +29,7 @@ subroutine clipke &
 !================
 
  ( ncelet , ncel   , nvar   , nphas  ,                            &
-   iphas  , iclip  , iwarnk ,                                     &
+   iclip  , iwarnk ,                                              &
    propce , rtp    )
 
 !===============================================================================
@@ -48,7 +48,6 @@ subroutine clipke &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! iclip            ! e  ! <-- ! indicateur = 0 on utilise viscl0               !
 !                  !    !     !            sinon on utilise viscl              !
 ! iwarnk           ! e  ! <-- ! niveau d'impression                            !
@@ -83,7 +82,7 @@ implicit none
 ! Arguments
 
 integer          nvar, ncelet, ncel, nphas
-integer          iphas, iclip, iwarnk
+integer          iclip, iwarnk
 double precision propce(ncelet,*)
 double precision rtp(ncelet,nvar)
 

@@ -150,7 +150,7 @@ double precision ra(*)
 character*80     chaine
 integer          idebia, idebra
 integer          ifinia, ifinra
-integer          ivar  , iphas
+integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii
 integer          iclvar, iclvaf
@@ -181,9 +181,6 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 
 idebia = idbia0
 idebra = idbra0
-
-! ---  Numero de phase associee au scalaire traite
-iphas  = 1
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
@@ -338,7 +335,6 @@ if( idiff(iu).ge. 1 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -602,7 +598,7 @@ if( idiff(ivar).ge. 1 ) then
   call uscfth                                                     &
   !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w9     , ra(iwb), w8     , w1     )
@@ -846,7 +842,7 @@ call clpsca                                                       &
   call uscfth                                                     &
   !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w6     , w7     , w8     , w9     )
@@ -878,7 +874,7 @@ endif
   call uscfth                                                     &
   !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    rtp(1,ipr) , rtp(1,isca(itempk)) , w8     , w9 )

@@ -153,7 +153,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iphas, ifac, izone, ifvu, izonem
+integer          ifac, izone, ifvu, izonem
 integer          nozapm, nzfppp
 integer          ipbrom, icke, ipcvis, ii, iel, iok
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
@@ -172,7 +172,6 @@ save             ipass
 idebia = idbia0
 idebra = idbra0
 
-iphas = 1
 ipbrom = ipprob(irom  )
 ipcvis = ipproc(iviscl)
 

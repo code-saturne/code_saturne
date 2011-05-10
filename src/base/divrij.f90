@@ -30,7 +30,7 @@ subroutine divrij &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   idim   , ivar   , iphas  ,                                     &
+   idim   , ivar   ,                                              &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  ,                                              &
@@ -65,7 +65,6 @@ subroutine divrij &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! idim             ! e  ! <-- ! composante traitee                             !
 ! ivar             ! e  ! <-- ! numero de variable courante                    !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
@@ -108,7 +107,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          idim   , ivar   , iphas
+integer          idim   , ivar
 
 integer          ia(*)
 
@@ -205,7 +204,7 @@ call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ivar1  , ivar2  , ivar3  , imaspe , iphas  ,                   &
+   ivar1  , ivar2  , ivar3  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

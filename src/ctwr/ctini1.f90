@@ -71,7 +71,7 @@ implicit none
 
 ! Local variables
 
-integer iphas, ii, jj, isc, ipp
+integer ii, jj, isc, ipp
 
 !===============================================================================
 
@@ -101,7 +101,6 @@ enddo
 iscsth(itemp4) = 1
 iscsth(ihumid) = 0
 
-iphas = 1
 iscalt = itemp4
 
 irovar = 1

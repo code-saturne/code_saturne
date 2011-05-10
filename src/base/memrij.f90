@@ -106,7 +106,6 @@ integer          iw7    , iw8    , iw9
 integer          ifinia , ifinra
 
 integer          idebia, idebra, jgrari, icobx
-integer          iphas
 
 !===============================================================================
 

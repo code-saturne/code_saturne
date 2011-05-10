@@ -103,7 +103,7 @@ double precision hbord(nfabor),tbord(nfabor)
 integer          nbccou, inbcou, inbcoo, nbfcou, ifac, iloc, iel
 integer          itflui, ihparo
 integer          mode
-integer          iccfth, imodif, iphas
+integer          iccfth, imodif
 integer          iepsel, iepsfa, igamag, ixmasm, ifinwa
 double precision enthal, temper, energ, cvt
 
@@ -210,12 +210,11 @@ do inbcou = 1, nbccou
 
     iccfth = 7
     imodif = 0
-    iphas  = 1
 
     call uscfth                                                   &
     !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    wa(iepsel) , wa(iepsfa) , wa(igamag) , wa(ixmasm) )

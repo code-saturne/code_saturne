@@ -30,7 +30,7 @@ subroutine csccel &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ivar   , iphas  ,                                              &
+   ivar   ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
@@ -57,7 +57,6 @@ subroutine csccel &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ivar             ! i  ! <-- ! variable number                                !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
@@ -105,7 +104,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          ivar   , iphas
+integer          ivar
 
 integer          ia(*)
 
@@ -218,7 +217,7 @@ do numcpl = 1, nbrcpl
   ( ifinia , ifinra ,                                             &
     nvar   , nscal  , nphas  ,                                    &
     ncedis , ityloc ,                                             &
-    ivar   , iphas  ,                                             &
+    ivar   ,                                                      &
     ia(ilocpt) ,                                                  &
     ia     ,                                    &
     dt     , rtpa   , propce , propfa , propfb ,                  &
@@ -253,7 +252,7 @@ do numcpl = 1, nbrcpl
   ( ifinia , ifinra ,                                             &
     nvar   , nscal  , nphas  ,                                    &
     ncecpl ,                                                      &
-    ivar   , iphas  ,                                             &
+    ivar   ,                                                      &
     ia(ilcecp)      ,                                             &
     ia     ,                                    &
     dt     , rtpa   , propce , propfa , propfb ,                  &

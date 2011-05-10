@@ -68,8 +68,6 @@ use atincl
 
 implicit none
 
-integer          iphas
-
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START

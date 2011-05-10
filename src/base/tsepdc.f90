@@ -30,7 +30,7 @@ subroutine tsepdc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp ,                            &
-   iphas  , idiaex ,                                              &
+   idiaex ,                                                       &
    icepdc ,                                                       &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -55,7 +55,6 @@ subroutine tsepdc &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! idiaex           ! e  ! <-- ! indicateur de traitement de la                 !
 !                  !    !     ! diagonale (=1) ou extradiagonale (=2)          !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
@@ -98,7 +97,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp
-integer          iphas, idiaex
+integer          idiaex
 
 integer          icepdc(ncepdp)
 integer          ia(*)

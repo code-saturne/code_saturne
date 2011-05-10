@@ -144,7 +144,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, ii, iphas, ient
+integer          ifac, iel, ii, ient
 double precision xu, xv, xw
 
 integer          ipass

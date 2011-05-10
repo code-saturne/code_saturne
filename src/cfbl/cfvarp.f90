@@ -71,7 +71,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, iphas, iprop, iok, iccfth, imodif
+integer          ii, iprop, iok, iccfth, imodif
 double precision dblpre(1)
 
 !===============================================================================
@@ -128,7 +128,7 @@ if ( ippmod(icompf).ge.0 ) then
   call uscfth                                                   &
   !==========
  ( ii , ii , ii ,                                                 &
-   iccfth , imodif  , iphas   ,                                   &
+   iccfth , imodif  ,                                             &
    dblpre , dblpre , dblpre , dblpre , dblpre , dblpre ,          &
    dblpre , dblpre ,                                              &
    dblpre , dblpre , dblpre , dblpre )

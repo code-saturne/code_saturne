@@ -360,20 +360,20 @@ subroutine uscplc &
 ! Valeurs aux cellules
 !               Soit        IEL = IFABOR(IFAC)
 
-! * Masse vol                       phase IPHAS, cellule      IEL  :
+! * Masse vol                                    cellule      IEL  :
 !                  PROPCE(IEL ,IPPROC(IROM ))
-! * Viscosite moleculaire dynamique phase IPHAS, cellule      IEL  :
+! * Viscosite moleculaire dynamique              cellule      IEL  :
 !                  PROPCE(IEL ,IPPROC(IVISCL))
-! * Viscosite turbulente  dynamique phase IPHAS, cellule      IEL  :
+! * Viscosite turbulente  dynamique              cellule      IEL  :
 !                  PROPCE(IEL ,IPPROC(IVISCT))
-! * Chaleur specifique              phase IPHAS, cellule      IEL  :
+! * Chaleur specifique                           cellule      IEL  :
 !                  PROPCE(IEL ,IPPROC(ICP   ))
 ! * Diffusivite lambda           scalaire ISCAL, cellule      IEL  :
 !                  PROPCE(IEL ,IPPROC(IVISLS(ISCAL)))
 
 ! Valeurs aux faces de bord
 
-! * Masse vol                      phase IPHAS, face de bord IFAC :
+! * Masse vol                                   face de bord IFAC :
 !                  PROPFB(IFAC,IPPROB(IROM ))
 ! * Flux de masse relatif a la variable  IVAR , face de bord IFAC :
 !      (i.e. le flux de masse servant a la convection de IVAR)
@@ -494,7 +494,7 @@ double precision ra(*)
 ! VARIABLES LOCALES
 
 integer          idebia, idebra
-integer          ifac, iphas, ii
+integer          ifac, ii
 integer          izone
 integer          ilelt, nlelt
 
@@ -555,8 +555,6 @@ d2s3 = 2.d0/3.d0
 !          INTERVENTION UTLISATEUR
 
 !===============================================================================
-
-  iphas = 1
 
 ! ---- Face de type entree correspondant a une entree d'air
 !        Par exemple : Air primaire , secondaire ou Air tertiaire

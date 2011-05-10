@@ -280,7 +280,7 @@ subroutine usfucl &
 !                                 rcodcl(ifac, ivar, 2) = rinfin
 !                                 rcodcl(ifac, ivar, 3) = 0.d0)
 !        Especially, we may have for example:
-!        -> set itypfb(ifac, iphas) = iparoi
+!        -> set itypfb(ifac) = iparoi
 !        which prescribes default wall conditions for all variables at
 !        face ifac,
 !        -> and define IN ADDITION for variable ivar on this face
@@ -339,20 +339,20 @@ subroutine usfucl &
 ! Cell values
 !               Let         iel = ifabor(ifac)
 
-! * Density                         phase iphas, cell iel:
+! * Density                                      cell iel:
 !                  propce(iel, ipproc(irom))
-! * Dynamic molecular viscosity     phase iphas, cell iel:
+! * Dynamic molecular viscosity                  cell iel:
 !                  propce(iel, ipproc(iviscl))
-! * Turbulent viscosity   dynamique phase iphas, cell iel:
+! * Turbulent viscosity   dynamique              cell iel:
 !                  propce(iel, ipproc(ivisct))
-! * Specific heat                   phase iphas, cell iel:
-!                  propce(iel, ipproc(icp(iphasl))
+! * Specific heat                                cell iel:
+!                  propce(iel, ipproc(icp))
 ! * Diffusivity: lambda          scalaire iscal, cell iel:
 !                  propce(iel, ipproc(ivisls(iscal)))
 
 ! Boundary face values
 
-! * Density                        phase iphas, boundary face ifac :
+! * Density                                     boundary face ifac :
 !                  propfb(ifac, ipprob(irom))
 ! * Mass flow relative to variable ivar, boundary face ifac:
 !      (i.e. the mass flow used for convecting ivar)
@@ -528,7 +528,7 @@ double precision ra(*)
 
 
 integer          idebia, idebra
-integer          ifac, iphas, ii
+integer          ifac, ii
 integer          izone
 integer          iclafu
 integer          ilelt, nlelt
@@ -591,8 +591,6 @@ d2s3 = 2.d0/3.d0
 
 !  Each kind of condition for extended physic is allocated with a number
 !  IZONE ( 0<IZONE<= NOZPPM ; NOZPPM allocated in ppppar.h)
-
-iphas = 1
 
 ! ---- The 12 color is a pure air inlet
 

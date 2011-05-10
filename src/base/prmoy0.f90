@@ -30,7 +30,6 @@ subroutine prmoy0 &
 
  ( idbia0 , idbra0 ,                                              &
    ncelet , ncel   , nfac   , nfabor ,                            &
-   iphas  ,                                                       &
    ia     ,                                                       &
    volume , pvar   ,                                              &
    ra     )
@@ -53,7 +52,6 @@ subroutine prmoy0 &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! volume(ncelet    ! tr ! <-- ! volume des elements                            !
 ! pvar             ! tr ! <-- ! tableau de valeurs au cellules                 !
@@ -83,7 +81,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          ncelet , ncel   , nfac , nfabor
 
-integer          iphas
 integer          ia(*)
 double precision volume(ncelet), pvar(ncelet)
 double precision ra(*)

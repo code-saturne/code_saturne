@@ -140,7 +140,7 @@ character        nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 integer          idebia, idebra
-integer          ivar  , iphas , iscal , imom
+integer          ivar  , iscal , imom
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers , idtm  , idtcm
 integer          iclvar, iclvaf, iptsna, iptsta, iptsca
@@ -813,7 +813,6 @@ if (iecaux.eq.1) then
     ifait(ii) = 0
   enddo
 
-  iphas = 1
   nomflu(IPR)='fm_p_phase'//cphase
   nomflu(IU)='fm_u_phase'//cphase
   nomflu(IV)='fm_v_phase'//cphase
@@ -905,7 +904,6 @@ if (iecaux.eq.1) then
     ifait(ii) = 0
   enddo
 
-  iphas = 1
   nomflu(IPR)='fm_a_p_phase'//cphase
   nomflu(IU)='fm_a_u_phase'//cphase
   nomflu(IV)='fm_a_v_phase'//cphase
@@ -1442,7 +1440,6 @@ if (iecaux.eq.1) then
       endif
 !     Pour la distance reelle, on a besoin d'un tableau provisoire
 !     on ne prend que la phase 1
-      iphas  = 1
       if(iifapa.gt.0) then
         iw1    = idebra
         ifinra = iw1 + ncelet
@@ -1466,7 +1463,6 @@ if (iecaux.eq.1) then
 
 !     Nouveau mode de calcul
     elseif(abs(icdpar).eq.1) then
-      iphas  = 1
       iecr   = 1
       itysup = 1
       nbval  = 1

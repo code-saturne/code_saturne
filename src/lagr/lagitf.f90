@@ -146,7 +146,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          npt   , iel   , iphas  , mode
+integer          npt   , iel   , mode
 double precision ct    , aux1  , aux2   , ter1   , ter2
 double precision energ , dissip
 
@@ -160,8 +160,6 @@ double precision energ , dissip
 
 dissip = 0.d0
 energ = 0.d0
-
-iphas = 1
 
 ct = 1.d0
 

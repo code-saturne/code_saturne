@@ -157,9 +157,9 @@ integer          icofbr
 integer          ntrela
 
 integer          isvhb , isvtb
-integer          iphas , ii    , jj    , ippcp , ientha, ippcv
+integer          ii    , jj    , ippcp , ientha, ippcv
 integer          ikiph , ieiph , iomiph
-integer          iuiph , iviph , iwiph , ipriph, iphiph, iphass
+integer          iuiph , iviph , iwiph , ipriph, iphiph
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          inuiph
 integer          ipcrom, ipcroa
@@ -174,7 +174,7 @@ integer          iisoth, itext , itint , itek
 integer          icorua, icorub, iflxma, iflxmb
 integer          iterns, inslst, icvrge, iuetbo, ivsvdr
 integer          iwflms, iwflmb
-integer          iwcf  , iph   , iflmas, iflmab
+integer          iwcf  , iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
 integer          iflalf, iflalb, iprale, icoale
 integer          maxelt, ils, iilzfb, nbzfmx, nozfmx, iqcalc
@@ -232,7 +232,6 @@ if (nbccou .ge. 1) then
 endif
 
 if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
-  iphas = 1
   isvhb = iscalt
   isvtb = iscalt
 endif
@@ -625,7 +624,7 @@ if (ncpdct.gt.0) then
   !==========
 ( idbia1 , idebra ,                                              &
   nvar   , nscal  , nphas  ,                                     &
-  ncepdc , iphas  , iappel ,                              &
+  ncepdc , iappel ,                                              &
   maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
   ia     ,                                                       &
@@ -658,7 +657,7 @@ if(nctsmt.gt.0) then
   !============
 ( idbia1 , idebra ,                                              &
   nvar   , nscal  , nphas  , ncepdc   ,                   &
-  ncetsm   , iphas  , iappel ,                            &
+  ncetsm   , iappel ,                                           &
   maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
   ia(iicesm) , ia(iitpsm) ,                        &
@@ -686,8 +685,6 @@ call memdtv                                                       &
    icofbr , igrarx , igrary , igrarz , iwcf   ,                   &
    iptlro , ippmod(icompf) ,                                      &
    ifinia , ifinra )
-
-iphas = 1
 
 call dttvar                                                       &
 !==========
@@ -728,13 +725,12 @@ if (ivrtex.eq.1) then
   ifnia1 = ils + maxelt
   call iasize('tridim',ifnia1)
 
-  iphas  = 1
   iappel = 2
   call usvort &
   !==========
  ( ifnia1 , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , iappel ,                                              &
+   iappel ,                                                       &
    maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
    ia     ,                                                       &
@@ -1165,11 +1161,6 @@ do while (iterns.le.nterup)
   endif
 
   ! On recupere le Cp de la phase couplee
-  !  (ou de la phase 1, si pas de couplage)
-  iphas = 1
-  if(isvtb.gt.0) then
-    iphas = 1
-  endif
   if(icp.gt.0) then
     ippcp = ipproc(icp)
     ncp   = ncelet
@@ -1185,7 +1176,6 @@ do while (iterns.le.nterup)
 
   if ( ippmod(icompf).ge.0 .and. ientha .eq. 2 ) then
 
-    iphas = 1
     if(icv.gt.0) then
       ippcv = ipproc(icv)
       ncv   = ncelet
@@ -1329,9 +1319,6 @@ do while (iterns.le.nterup)
   !     OU CALCUL DE Y+ POUR LE LAGRANGIEN
 
 
-  !       Pour passer en argument
-  iphass = iphas
-
   !     On calcule y+ si on en a besoin
 
   if( (itytur.eq.4.and.idries.eq.1)                 &
@@ -1362,7 +1349,7 @@ do while (iterns.le.nterup)
       call distyp                                                 &
       !==========
     ( ifinib , ifinrb ,                                              &
-      nvar   , nscal  , nphas  , iphass ,                            &
+      nvar   , nscal  , nphas  ,                                     &
       ia(iitypf) , ia(iismph),                                       &
       ia     ,                                                       &
       ra(idipar), propce    , ra(iuetbo), ra(iyppar),                &
@@ -1393,7 +1380,6 @@ do while (iterns.le.nterup)
       call vandri &
       !==========
     ( ndim   , ncelet , ncel   , nfac   , nfabor , nphas ,         &
-      iphass ,                                                     &
       ia(iitypf) , ifabor, ia(iiifap),                             &
       ia     ,                                                     &
       xyzcen , cdgfbo , ra(iuetbo) , ra(ivsvdr) , ra(iyppar) ,     &
@@ -1544,14 +1530,12 @@ do while (iterns.le.nterup)
       iuiph  = iu
       iflmas = ipprof(ifluma(iuiph))
       iflmab = ipprob(ifluma(iuiph))
-      iph    = iphas
 
       call cfqdmv &
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
       ncepdc   , ncetsm   ,                            &
-      iph    ,                                                       &
       ia(iicepd)        , ia(iicesm)       ,           &
       ia(iitpsm)        ,                                     &
       ia     ,                                                       &
@@ -1754,7 +1738,6 @@ if (iccvfg.eq.0) then
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  , nphas  ,                                     &
     ncepdc , ncetsm ,                                &
-    iphas  ,                                                       &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
     ia     ,                                                       &
     ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
@@ -1796,7 +1779,6 @@ if (iccvfg.eq.0) then
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nphas  ,                                     &
       ncepdc , ncetsm ,                                &
-      iphas  ,                                                       &
       ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
       ia     ,                                                       &
       ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
@@ -1854,7 +1836,6 @@ if (iccvfg.eq.0) then
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  , nphas  ,                                     &
     ncepdc , ncetsm ,                                &
-    iphas  ,                                                       &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
     ia     ,                                                       &
     ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
@@ -1897,7 +1878,6 @@ if (iccvfg.eq.0) then
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  , nphas  ,                                     &
     ncepdc , ncetsm ,                                &
-    iphas  ,                                                       &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
     ia     ,                                                       &
     ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
@@ -1952,7 +1932,6 @@ if (iccvfg.eq.0) then
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  , nphas  ,                                     &
     ncepdc , ncetsm ,                                &
-    iphas  ,                                                       &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
     ia     ,                                                       &
     ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &

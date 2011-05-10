@@ -181,7 +181,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ivart, iel, iphas
+integer          ivart, iel
 integer          ipcvis, ipcvsv, ipccp
 integer          ipcvsl, ith, iscal, ii, iccfth, imodif
 double precision varam, varbm, varcm, vardm
@@ -247,17 +247,16 @@ idebra = idbra0
 ! =====
 !    The values of the molecular viscosity are provided as a function of
 !    the temperature. All variables are evaluated at the cell centres.
-!    The same treatment is applied for all values of iphas.
 !===============================================================================
 
-! --- Rank of the temperature of the current phase iphas in the array 'rtp'
+! --- Rank of the temperature in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
 ivart = isca(itempk)
 
-! --- Rank 'ipcvis' of the molecular dynamic viscosity of the current phase
-!     iphas in the array 'propce' (physical properties at the cell centers)
+! --- Rank 'ipcvis' of the molecular dynamic viscosity
+!     in the array 'propce' (physical properties at the cell centers)
 
 ipcvis = ipproc(iviscl)
 
@@ -295,17 +294,16 @@ endif
 ! =====
 !    The values of the molecular volumetric viscosity are provided as a function
 !    of the temperature. All variables are evaluated at the cell centres.
-!    The same treatment is applied for all values of iphas.
 !===============================================================================
 
-! --- Rank of the temperature for the current phase iphas in the array 'rtp'
+! --- Rank of the temperature in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
 ivart = isca(itempk)
 
-! --- Rank 'ipcvsv' of the molecular dynamic viscosity of the current phase
-!     iphas in the array 'propce' (physical properties at the cell centers)
+! --- Rank 'ipcvsv' of the molecular dynamic viscosity
+!     in the array 'propce' (physical properties at the cell centers)
 
 if(iviscv.gt.0) then
   ipcvsv = ipproc(iviscv)
@@ -353,7 +351,6 @@ endif
 ! =====
 !    The values of the isobaric specific heat values are provided as a function
 !    of the temperature. All variables are evaluated at the cell centres.
-!    The same treatment is applied for all values of iphas.
 !===============================================================================
 
 ! Warning:
@@ -363,14 +360,14 @@ endif
 ! Indeed, this variable needs to be computed from the isobaric specific heat
 ! using the thermodynamics laws.
 
-! --- Rank of the temperature for the current phase iphas in the array 'rtp'
+! --- Rank of the temperature in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
 ivart = isca(itempk)
 
-! --- Rank 'ipcpp' of the isobaric specific heat for the current phase
-!     iphas in the array 'propce' (physical properties at the cell
+! --- Rank 'ipcpp' of the isobaric specific heat
+!     in the array 'propce' (physical properties at the cell
 !     centers)
 
 if(icp.gt.0) then
@@ -418,7 +415,7 @@ imodif = 0
 call uscfth                                                     &
 !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    propce(1, ipproc(icv) )    , w1     , w2     , w3     )
@@ -435,17 +432,16 @@ endif
 ! =====
 !    The values of the molecular thermal conductivity are provided as a function
 !    of the temperature. All variables are evaluated at the cell centres.
-!    The same treatment is applied for all values of iphas.
 !===============================================================================
 
-! --- Rank of the temperature for the current phase iphas in the array 'rtp'
+! --- Rank of the temperature in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
 ivart = isca(itempk)
 
-! --- Rank 'ipcvsl' of the olecular thermal conductivity for the current
-!     phase iphas in the array 'propce' (physical properties at the cell
+! --- Rank 'ipcvsl' of the olecular thermal conductivity
+!     in the array 'propce' (physical properties at the cell
 !     centers)
 
 if(ivisls(itempk).gt.0) then
@@ -527,7 +523,7 @@ do ii = 1, nscaus
 !     the enthalpy and the variance of the fluctuations of another
 !     scalar variable.
 
-! --- Rank of the temperature for the current phase iphas in the array 'rtp'
+! --- Rank of the temperature in the array 'rtp'
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 

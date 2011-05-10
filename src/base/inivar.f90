@@ -114,7 +114,7 @@ double precision ra(*)
 character*80     chaine
 integer          maxelt, ils
 integer          idebia, idebra, ifinia
-integer          ivar  , iphas , iscal , iphass, imom
+integer          ivar  , iscal , imom
 integer          iel
 integer          iclip , ipp  , iok   , ii
 integer          ikiph , ieiph , ir11ip, ir22ip, ir33ip, iphiph
@@ -296,7 +296,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       iclip = 1
       call clipke( ncelet , ncel   , nvar   , nphas  ,          &
       !==========
-                   iphass , iclip  , iwarni(ikiph) ,            &
+                   iclip  , iwarni(ikiph) ,            &
                    propce , rtp    )
     else
       write(nfecra,3020) xekmin,xepmin
@@ -361,7 +361,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       iclip = 1
       call clprij( ncelet , ncel   , nvar   , nphas  ,          &
       !==========
-                   iphass , iclip  ,                            &
+                   iclip  ,                            &
                    propce , rtp    , rtp    )
     else
       write(nfecra,3030) x11min,x22min,x33min,xepmin

@@ -146,7 +146,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, ivar, iphas
+integer          ifac, ivar
 
 !===============================================================================
 !===============================================================================

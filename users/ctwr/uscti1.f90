@@ -71,8 +71,6 @@ use ctincl
 
 implicit none
 
-integer          iphas
-
 double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
 
 !===============================================================================

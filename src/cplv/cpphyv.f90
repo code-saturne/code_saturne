@@ -62,7 +62,7 @@ subroutine cpphyv &
 !  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
-!    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
+!    CP variable (sinon: ecrasement memoire).
 
 
 !  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
@@ -190,7 +190,7 @@ integer          ntbcpi, icpwi, ntbcpr, icpwr
 integer          ntbmci, imcwi, ntbmcr, imcwr
 integer          ntbwoi, iwori, ntbwor, iworr
 integer          ifinia, ifinra
-integer          iel, icha, icla, iphas, ipcrom, ipcro2
+integer          iel, icha, icla, ipcrom, ipcro2
 integer          izone, ifac
 integer          ipbrom, ipcx2c, iromf , ioxy
 
@@ -446,7 +446,6 @@ enddo
 !       a partir du premier passage si on est en suite de calcul et
 !         qu'on a relu la masse volumique dans le fichier suite.
 
-iphas = 1
 ipcrom = ipproc(irom)
 
 if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
@@ -476,7 +475,6 @@ enddo
 !                      ----------------
 !===============================================================================
 
-iphas = 1
 ibrom = 1
 ipbrom = ipprob(irom)
 ipcrom = ipproc(irom)

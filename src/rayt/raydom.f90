@@ -166,7 +166,7 @@ double precision ra(*)
 
 integer          idebia , idebra
 integer          iappel
-integer          ifac   , iel    , iok    , izone  , iphas
+integer          ifac   , iel    , iok    , izone
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
 integer          mode   , icla   , ipcla  , ivar0
 integer          iscat  , ivart  , iphydp
@@ -191,10 +191,6 @@ idebra = idbra0
 !===============================================================================
 ! 1. INITIALISATIONS GENERALES
 !===============================================================================
-
-!---> NUMERO DE LA PHASE PORTEUSE
-
-iphas = 1
 
 !---> NUMERO DE PASSAGE RELATIF
 
@@ -237,7 +233,7 @@ unspi = 1.d0/pi
     call ppcabs                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
    itypfb ,                                                      &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -342,7 +338,7 @@ unspi = 1.d0/pi
     call usray3                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas , iappel ,                            &
+   nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &
@@ -420,7 +416,7 @@ unspi = 1.d0/pi
   call usray5                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  , iappel ,                           &
+   nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &
@@ -519,7 +515,7 @@ unspi = 1.d0/pi
         call usray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
    ia     ,                                                       &
@@ -534,7 +530,7 @@ unspi = 1.d0/pi
         call ppray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
    ia     ,                                                       &
@@ -749,7 +745,7 @@ unspi = 1.d0/pi
     call raypun                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , iphas  ,                           &
+   nvar   , nscal  , nphas  ,                                    &
    itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -850,7 +846,7 @@ unspi = 1.d0/pi
     call raysol                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , iphas  ,                           &
+   nvar   , nscal  , nphas  ,                                    &
    itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -905,7 +901,7 @@ unspi = 1.d0/pi
   call usray5                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  , iappel ,                           &
+   nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &

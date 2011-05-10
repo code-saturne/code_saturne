@@ -352,8 +352,7 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
 
     call pergra                                                   &
     !==========
-  ( nphsmx , nphas  ,                                             &
-    iiu    , iiv    , iiw    ,                                    &
+  ( iiu    , iiv    , iiw    ,                                    &
     iitytu ,                                                      &
     iir11  , iir22  , iir33  , iir12  , iir13  , iir23  )
 

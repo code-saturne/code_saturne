@@ -31,7 +31,7 @@ subroutine csc2ts &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncecpl,                                                        &
-   ivar   , iphas  ,                                              &
+   ivar   ,                                                       &
    lcecpl ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -57,7 +57,6 @@ subroutine csc2ts &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ivar             ! i  ! <-- ! variable number                                !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
@@ -104,7 +103,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          ivar   , iphas
+integer          ivar
 integer          ncecpl
 
 integer          lcecpl(ncecpl)

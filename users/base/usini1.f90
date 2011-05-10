@@ -76,8 +76,8 @@ subroutine usipph &
 ! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
-! iturb(nphmax)    ! ia ! <-> ! turbulence model                               !
-! icp(nphmax)      ! ia ! <-> ! flag for uniform Cp or not                     !
+! iturb            ! ia ! <-> ! turbulence model                               !
+! icp              ! ia ! <-> ! flag for uniform Cp or not                     !
 ! iverif           ! i  ! <-- ! flag for elementary tests                      !
 !__________________!____!_____!________________________________________________!
 
@@ -100,12 +100,10 @@ implicit none
 ! Arguments
 
 integer nphmax, nphas, iihmpu, nfecra
-integer iturb(nphmax), icp(nphmax)
+integer iturb, icp
 integer iverif
 
 ! Local variables
-
-integer iphas
 
 !===============================================================================
 
@@ -188,14 +186,12 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
 iturb = 20
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
 
 ! --- Variable specific heat (ICP=1) or not (ICP=0)
-!       for each phase IPHAS
 
 !     Should be set only if specific physics (coal, combustion, electric arcs)
 !       ARE NOT activated.
@@ -211,7 +207,6 @@ iturb = 20
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
 icp = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
@@ -660,8 +655,6 @@ double precision cwfthr
 
 ! Local variables
 
-integer iphas
-
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -768,7 +761,6 @@ iphydr = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
 !       div(rho u) -Gamma
 iescal(iescor) = 0
 !       resolution precision for the momentum
@@ -863,7 +855,7 @@ integer iverif
 
 ! Local variables
 
-integer iphas, iutile, ii, jj, imom
+integer iutile, ii, jj, imom
 
 !===============================================================================
 
@@ -985,12 +977,12 @@ dtref  = 0.01d0
 
 !   On the other hand, if specific physics are NOT activated:
 
-!     If a USER scalar represents the temperature or enthalpy (of phase iphas):
+!     If a USER scalar represents the temperature or enthalpy:
 !       we define the number of this scalar in iscalt and
 !       we set iscsth(iscalt) = 1 if it is the temperature
 !          or  iscsth(iscalt) = 2 if it is the enthalpy.
 
-!     If no scalar represents the temperature or enthalpy (of phase iphas)
+!     If no scalar represents the temperature or enthalpy
 !       we set iscalt = -1
 !       and we do not define iscsth(iscalt).
 
@@ -1014,8 +1006,6 @@ dtref  = 0.01d0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 if (nmodpp.eq.0) then
-
-  iphas = 1
 
   ! Number of the scalar representing temperature or enthalpy,
   !   or -1 if there is none.
@@ -1049,7 +1039,6 @@ iccvfg = 0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
 if (itytur.eq.4) then
   ivrtex = 0
 endif
@@ -1084,8 +1073,6 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
-
 blencv(iu) = 1.0d0
 blencv(iv) = 1.0d0
 blencv(iw) = 1.0d0
@@ -1116,7 +1103,6 @@ endif
 iutile = 0
 if (iutile.eq.1) then
 
-  iphas = 1
   iresol(iu) = 2
   iresol(iv) = 2
   iresol(iw) = 2
@@ -1147,7 +1133,6 @@ endif
 ! mltmmr = 1    ! number of active ranks under which no merging is done
 ! mltmst = 4    ! number of ranks over which merging takes place
 
-iphas = 1
 imgr(ipr) = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
@@ -1178,7 +1163,6 @@ imgr(ipr) = 1
 iutile = 0
 if (iutile.eq.1) then
 
-  iphas = 1
   if (iturb.eq.20) then
     ircflu(ik)   = 0
     ircflu(iep)  = 0
@@ -1325,15 +1309,11 @@ omegaz = 0.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
-
 ro0    = 0.235d0
 viscl0 = 0.84d-6
 cp0    = 1219.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-iphas = 1
 
 t0 = 1000.d0 + 273.15d0
 p0 = 1.01325d5
@@ -1366,7 +1346,6 @@ p0 = 1.01325d5
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 if (nmodpp.eq.0) then
-  iphas = 1
   irovar = 0
   ivivar = 0
 endif
@@ -1436,8 +1415,6 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
-
 ! If there are user scalars
 if (nscaus.gt.0) then
 
@@ -1460,7 +1437,6 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
 uref    = 1.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
@@ -1474,7 +1450,6 @@ uref    = 1.d0
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
-iphas = 1
 almax = -grand
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
@@ -1510,12 +1485,10 @@ if (iutile.eq.1) then
 
   ! First moment: <u>
   imom  = 1
-  iphas = 1
   idfmom(1,imom) =  iu
   ntdmom(imom)   =  1000
   ! Second moment: <rho u v>
   imom  = 2
-  iphas = 1
   idfmom(1,imom) = -irom
   idfmom(2,imom) =  iu
   idfmom(3,imom) =  iv
@@ -1592,7 +1565,7 @@ integer iverif
 
 ! Local variables
 
-integer ii, iphas, ipp, imom, iutile
+integer ii, ipp, imom, iutile
 
 !===============================================================================
 
@@ -1688,8 +1661,6 @@ ntlist = 1
 
 iutile = 0
 if (iutile.eq.1) then
-
-  iphas = 1
 
   do ii = 1, nvar
     iwarni(ii) = 1
@@ -1815,9 +1786,6 @@ xyzcap(3,4) = 0.01d0
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 
 ! Current dynamic variables
-
-! Examples for phase 1
-iphas = 1
 
 ! pressure variable
 ipp = ipprtp(ipr   )
@@ -2016,8 +1984,6 @@ endif
 
 
 ! Other variables
-
-iphas = 1
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
 

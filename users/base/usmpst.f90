@@ -139,7 +139,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          ifac  , iphas
+integer          ifac
 integer          ii   , jj
 double precision vmin2, v2, w2
 
@@ -189,8 +189,6 @@ if (ipart.eq.3) then
 
     do ii = 1, ncel
 
-      iphas = 1
-
       v2 =   rtp(ii, iu)**2 + rtp(ii, iv)**2        &
            + rtp(ii, iw)**2
       if (v2 .ge. vmin2) then
@@ -206,8 +204,6 @@ if (ipart.eq.3) then
   else if (itypps(2) .eq. 1) then
 
     do ifac = 1, nfac
-
-      iphas = 1
 
       ii = ifacel(1, ifac)
       jj = ifacel(2, ifac)
@@ -232,8 +228,6 @@ if (ipart.eq.3) then
   else if (itypps(3) .eq. 1) then
 
     do ifac = 1, nfabor
-
-      iphas = 1
 
       ii = ifabor(ifac)
 
@@ -265,8 +259,6 @@ else if (ipart.eq.4) then
 
   do ifac = 1, nfac
 
-    iphas = 1
-
     ii = ifacel(1, ifac)
     jj = ifacel(2, ifac)
 
@@ -289,8 +281,6 @@ else if (ipart.eq.4) then
   ! ---------------------
 
   do ifac = 1, nfabor
-
-    iphas = 1
 
     ii = ifabor(ifac)
 

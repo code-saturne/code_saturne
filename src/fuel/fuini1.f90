@@ -73,7 +73,7 @@ use ppcpfu
 implicit none
 
 integer          ipp , ii , jj , iok , icla
-integer          isc , iphas
+integer          isc
 double precision wmolme
 
 !===============================================================================
@@ -149,11 +149,8 @@ do isc = 1, nscapp
 
 enddo
 
-iphas = 1
-
 ! ---- On resout en enthalpie avec un CP constant (Cf. cpvarp)
 
-iphas = 1
 iscalt = ihm
 iscsth(ihm)   = 2
 
@@ -431,8 +428,6 @@ endif
 ! 3. INFORMATIONS COMPLEMENTAIRES
 !===============================================================================
 
-! ---> Initialisation
-iphas = 1
 ! ---- Calcul de RO0 a partir de T0 et P0
 !        (loi des gaz parfaits applliquee a l'air)
 

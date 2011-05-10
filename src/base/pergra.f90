@@ -28,8 +28,7 @@
 subroutine pergra &
 !================
 
- ( nphjmx , nphas  ,                                              &
-   ju     , jv     , jw     ,                                     &
+ ( ju     , jv     , jw     ,                                     &
    jtytur ,                                                       &
    jr11   , jr22   , jr33   , jr12   , jr13   , jr23   )
 
@@ -79,8 +78,6 @@ integer          jr11,jr22,jr33
 integer          jr12,jr13,jr23
 
 ! Local variables
-
-integer          iphas
 
 !===============================================================================
 

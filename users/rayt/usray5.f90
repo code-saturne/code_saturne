@@ -32,7 +32,7 @@ subroutine usray5 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iphas  , iappel ,                            &
+   nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                       &
    izfrdp ,                                                       &
    ia     ,                                                       &
@@ -111,7 +111,6 @@ subroutine usray5 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! current phase number                           !
 ! iappel           ! i  ! <-- ! current subroutine call number                 !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
@@ -171,7 +170,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , iphas  , iappel
+integer          nvar   , nscal  , iappel
 
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)

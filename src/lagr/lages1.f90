@@ -153,7 +153,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia , idebra
-integer          iel , ip , id , i0 , iromf , iphas , mode
+integer          iel , ip , id , i0 , iromf , mode
 
 double precision aa , bb , cc , dd , ee
 double precision aux1 , aux2 ,aux3 , aux4 , aux5 , aux6
@@ -186,8 +186,6 @@ idebra = idbra0
 ! Initialize variables to avoid compiler warnings
 
 vitf = 0.d0
-
-iphas = 1
 
 grav(1) = gx
 grav(2) = gy

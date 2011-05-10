@@ -29,7 +29,7 @@ subroutine raypar &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iphas  ,                                     &
+   nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    icodcl , isothp , izfrap ,                                     &
    ia     ,                                                       &
@@ -60,7 +60,6 @@ subroutine raypar &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
@@ -140,7 +139,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , iphas
+integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          ia(*)

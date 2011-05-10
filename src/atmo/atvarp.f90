@@ -73,7 +73,7 @@ implicit none
 
 ! Local variables
 
-integer        isc, iphas
+integer        isc
 
 !===============================================================================
 ! 1. DEFINITION DES POINTEURS
@@ -133,7 +133,6 @@ do isc = 1, nscapp
 enddo
 
 ! ---- Cp est constant
-iphas      = 1
 icp = 0
 
 return

@@ -112,7 +112,7 @@ double precision ra(*)
 
 integer          idebia , idebra
 integer          iel    , ifac   , iscal
-integer          iphas  , iuiph
+integer          iuiph
 integer          ipcrom , ipcroa
 integer          ipbrom , ipbroa
 integer          iflmas , iflmab , iflmba, iflmsa

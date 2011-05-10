@@ -84,7 +84,7 @@ integer          iok
 ! Local variables
 
 character        chaine*80
-integer          ipp, isc, jj, iphas
+integer          ipp, isc, jj
 integer          ige
 
 !===============================================================================
@@ -103,8 +103,6 @@ endif
 !===============================================================================
 ! 2. TABLEAUX DE cstphy.h et ppthch.F : formats 3000
 !===============================================================================
-
-iphas = 1
 
 ! --> Masse volumique
 

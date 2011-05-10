@@ -161,7 +161,7 @@ double precision ra(*)
 
 character*80     chaine
 integer          idebia, idebra
-integer          ivar  , iphas
+integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt , ii, jj, iii
 integer          iclvar, iclvaf
@@ -195,9 +195,6 @@ iwfabg = idebra
 iwfbbg = iwfabg+nfac
 idebra = iwfbbg+nfabor
 call rasize('cfmsvl',idebra)
-
-! --- Numero de phase associee au scalaire traite
-iphas  = 1
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
@@ -527,7 +524,7 @@ call clpsca                                                       &
   call uscfth                                                     &
   !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w7     , w8     , w9     , w10    )
@@ -620,7 +617,7 @@ if(igrdpp.gt.0) then
   call uscfth                                                     &
   !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    rtp(1,ipr)        , w8     , w9     , w10    )

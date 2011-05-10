@@ -162,7 +162,7 @@ double precision ra(*)
 ! Local variables
 
 integer          npt , iel , icha , mode , ige
-integer          iromf , iphas
+integer          iromf
 double precision aux1 , aux2 , aux3 , aux4 , aux5 , aux6
 double precision ter1 , ter2 , ter3 , diamp2, d2
 double precision tpk , tfk , skc , skdd , se , po2
@@ -184,8 +184,6 @@ parameter ( precis = 1.d-15 )
 ! Initialize variables to avoid compiler warnings
 
 coef = 0.d0
-
-iphas = 1
 
 d6spi = 6.d0 / pi
 dpis6 = pi / 6.d0

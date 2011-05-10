@@ -146,7 +146,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iel, iphas
+integer          iel
 
 integer          iccfth, iscal, imodif, iutile
 
@@ -188,8 +188,6 @@ imodif = 1
 !===============================================================================
 
 if ( isuite.eq.0 ) then
-
-  iphas  = 1
 
 ! --- Velocity components
 
@@ -281,7 +279,7 @@ if ( isuite.eq.0 ) then
   call uscfth                                                     &
   !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )

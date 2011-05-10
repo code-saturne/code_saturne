@@ -150,7 +150,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          igg, iphas, ifac, izone, mode
+integer          igg, ifac, izone, mode
 integer          ipbrom, icke, ipcvis, ii, iel, iok
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision ustar2, xkent, xeent, hgazf , tgazf, hgazb, tgazb
@@ -165,7 +165,6 @@ double precision coefg(ngazgm)
 idebia = idbia0
 idebra = idbra0
 
-iphas = 1
 ipbrom = ipprob(irom  )
 ipcvis = ipproc(iviscl)
 
@@ -389,8 +388,6 @@ enddo
 !    (modele ebu)
 !===============================================================================
 
-iphas  = 1
-
 ! --- FRMEL et TGF (on n'en veut qu'un : on prend le max)
 !     EBU nominal est a f homogene
 !     On se limite pour l'instant a une temperature
@@ -442,8 +439,6 @@ enddo
 
 ! ---> Combustion gaz USEBUC
 !      Flamme de premelange modele EBU
-
-iphas = 1
 
 !      Enthalpie du melange gazeux :
 !         hors de la boucle pour eviter un appel par face.

@@ -278,7 +278,7 @@ subroutine uscpcl &
 !                                 rcodcl(ifac, ivar, 2) = rinfin
 !                                 rcodcl(ifac, ivar, 3) = 0.d0)
 !        Especially, we may have for example:
-!        -> set itypfb(ifac, iphas) = iparoi
+!        -> set itypfb(ifac) = iparoi
 !        which prescribes default wall conditions for all variables at
 !        face ifac,
 !        -> and define IN ADDITION for variable ivar on this face
@@ -337,20 +337,20 @@ subroutine uscpcl &
 ! Cell values
 !               Let         iel = ifabor(ifac)
 
-! * Density                         phase iphas, cell iel:
+! * Density                                      cell iel:
 !                  propce(iel, ipproc(irom))
-! * Dynamic molecular viscosity     phase iphas, cell iel:
+! * Dynamic molecular viscosity                  cell iel:
 !                  propce(iel, ipproc(iviscl))
-! * Turbulent viscosity   dynamique phase iphas, cell iel:
+! * Turbulent viscosity   dynamique              cell iel:
 !                  propce(iel, ipproc(ivisct))
-! * Specific heat                   phase iphas, cell iel:
-!                  propce(iel, ipproc(icp(iphasl))
+! * Specific heat                                cell iel:
+!                  propce(iel, ipproc(icp))
 ! * Diffusivity: lambda          scalaire iscal, cell iel:
 !                  propce(iel, ipproc(ivisls(iscal)))
 
 ! Boundary face values
 
-! * Density                        phase iphas, boundary face ifac :
+! * Density                                     boundary face ifac :
 !                  propfb(ifac, ipprob(irom))
 ! * Mass flow relative to variable ivar, boundary face ifac:
 !      (i.e. the mass flow used for convecting ivar)
@@ -461,7 +461,7 @@ double precision ra(*)
 ! LOCAL VARIABLES
 
 integer          idebia, idebra
-integer          ifac, iphas, ii
+integer          ifac, ii
 integer          izone
 integer          icha, iclapc
 integer          ilelt, nlelt
@@ -523,8 +523,6 @@ d2s3 = 2.d0/3.d0
 !     USER'S WORK TO DO
 !
 !===============================================================================
-
-iphas = 1
 
 ! ---- BOUNDARY FACE corresponding to AIR INLET
 !      e.g. : secondary or tertiary air

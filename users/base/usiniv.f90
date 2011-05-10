@@ -63,12 +63,12 @@ subroutine usiniv &
 !  propfa (physical quantities defined at border face center).
 !
 ! Examples:
-!  propce(iel, ipproc(irom  )) means rom  (iel, iphas)
-!  propce(iel, ipproc(iviscl)) means viscl(iel, iphas)
-!  propce(iel, ipproc(icp   )) means cp   (iel, iphas)
+!  propce(iel, ipproc(irom  )) means rom  (iel)
+!  propce(iel, ipproc(iviscl)) means viscl(iel)
+!  propce(iel, ipproc(icp   )) means cp   (iel)
 !  propce(iel, ipproc(ivisls(iscal))) means visls(iel, iscal)
 !  propfa(ifac, ipprof(ifluma(ivar))) means flumas(ifac, ivar)
-!  propfb(ifac, ipprob(irom )) means romb  (ifac, iphas)
+!  propfb(ifac, ipprob(irom )) means romb  (ifac)
 !  propfb(ifac, ipprob(ifluma(ivar))) means flumab(ifac, ivar)
 
 ! Modification of the behaviour law of physical quantities (rom, viscl,

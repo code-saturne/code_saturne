@@ -31,7 +31,7 @@ subroutine cscpce &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    nptdis , ityloc ,                                              &
-   ivar   , iphas  ,                                              &
+   ivar   ,                                                       &
    locpts ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -87,7 +87,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          ivar   , iphas
+integer          ivar
 integer          nptdis , ityloc
 
 integer          locpts(nptdis)

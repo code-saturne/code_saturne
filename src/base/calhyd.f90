@@ -30,7 +30,6 @@ subroutine calhyd &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  ,                                                       &
    indhyd ,                                                       &
    ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
@@ -61,7 +60,6 @@ subroutine calhyd &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! indhyd           ! e  ! --> ! indicateur de mise a jour de phydr             !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -114,7 +112,6 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          iphas
 
 integer          indhyd
 integer          ia(*)

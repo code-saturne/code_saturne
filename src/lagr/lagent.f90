@@ -172,7 +172,7 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifinia, ifinra
 
-integer          iel , ifac , iphas , ip , nb , nc, ii, ifvu
+integer          iel , ifac , ip , nb , nc, ii, ifvu
 integer          iiwork , iok , n1 , nd , icha
 integer          npt , nfin , npar1  , npar2 , mode , idvar
 integer          maxelt, idbia1, ils
@@ -198,8 +198,6 @@ idebra = idbra0
 !===============================================================================
 
 ! Init aberrante pour forcer l'utilisateur a mettre sa valeur
-
-iphas = 1
 
 pis6 = pi / 6.d0
 

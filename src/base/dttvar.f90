@@ -153,7 +153,7 @@ character*8      cnom
 integer          idebia, idebra
 integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym
 integer          modntl
-integer          iphas, iuiph, ipcvis, ipcvst
+integer          iuiph, ipcvis, ipcvst
 integer          iflmas, iflmab
 integer          icou, ifou , icoucf
 integer          inc, iccocg
@@ -176,7 +176,6 @@ double precision dtsdtm,dtsdt0
 idebia = idbia0
 idebra = idbra0
 
-iphas   = 1
 iuiph   = iu
 iflmas  = ipprof(ifluma(iuiph))
 iflmab  = ipprob(ifluma(iuiph))

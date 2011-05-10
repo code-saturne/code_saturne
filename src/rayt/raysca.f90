@@ -84,7 +84,7 @@ implicit none
 
 ! Arguments
 
-integer          iisca , ncelet , ncel , iphas
+integer          iisca , ncelet , ncel
 
 double precision volume(ncelet)
 double precision smbrs(ncelet)
@@ -96,8 +96,6 @@ double precision propce(ncelet,*)
 integer          iel
 
 !===============================================================================
-
-iphas = 1
 
 !===============================================================================
 ! Radiative source terms (thermal scalar only)

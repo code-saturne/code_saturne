@@ -85,7 +85,7 @@ use ihmpre
 
 implicit none
 
-integer  ii , ip , irf , iphas , icha , i1 , i2 , i3, iok
+integer  ii , ip , irf , icha , i1 , i2 , i3, iok
 
 !===============================================================================
 ! 0. INITIALISATION
@@ -471,8 +471,6 @@ if (iok.ne.0) call csexit (1)
 !     IDPVAR ITPVAR IMPVAR
 
 !     Couplage-retour uniquement vers la phase continue
-
-iphas  = 1
 
 if (iphyla.eq.1) then
   if (idpvar.lt.0 .or. idpvar.gt.1) then
@@ -1598,10 +1596,6 @@ endif
 ! 3.8 DEFINITION DES POINTEURS LIES AUX TERMES SOURCES LAGRANGIEN
 !     POUR COUPLAGE RETOUR
 
-
-!     Couplage-retour uniquement vers la phase continue
-
-iphas  = 1
 
 !     Nombre de termes sources de couplage-retour
 

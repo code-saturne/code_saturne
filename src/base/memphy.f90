@@ -86,7 +86,7 @@ integer          iw9    , iw10   , iw11   , iw12  , ixmij
 integer          ifinia , ifinra
 
 integer          idebia , idebra
-integer          imemph , iphas
+integer          imemph
 
 !===============================================================================
 

@@ -161,7 +161,7 @@ double precision rtbwo(ncelet,nrtbwo)
 ! Local variables
 
 integer          idebia , idebra
-integer          iel    , iphas  , ice
+integer          iel    , ice
 integer          ipcte1
 integer          ipcyf1 , ipcyf3 , ipcyox
 integer          ipcyp1 , ipcyp2 , ipcyin , ipcyce
@@ -328,7 +328,6 @@ call futeh1                                                       &
 
 !          TABLEAUX DE TRAVAIL
 
-iphas  = 1
 ipcte1 = ipproc(itemp1)
 do iel = 1, ncel
   wmolme = propce(iel,ipcyf1) / wmole(ifov)                       &

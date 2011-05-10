@@ -91,7 +91,7 @@ double precision  phprom(nbmett,nbmetm)
 
 ! Local variables
 
-integer itp, ii, ios, k, iphas
+integer itp, ii, ios, k
 integer syear, squant, shour, smin
 integer year, quant,hour,minute
 
@@ -275,7 +275,6 @@ endif
 !         ET UNE INTEGRATION DE LAPLACE DE BAS EN HAUT
 
 if (imode.eq.1) then
-  iphas = 1
   phprom(1, itp)=pmer(itp)
   psol=p0
   rscp=rair/cp0

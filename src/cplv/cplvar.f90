@@ -77,7 +77,7 @@ use ppincl
 
 implicit none
 
-integer        is, iphas, icha, isc
+integer        is, icha, isc
 
 !===============================================================================
 
@@ -126,7 +126,6 @@ enddo
 
 ! ---- Bien que l on soit en enthalpie on conserve un CP constant
 
-iphas = 1
 icp    = 0
 
 

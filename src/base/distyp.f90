@@ -29,7 +29,7 @@ subroutine distyp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , iphas  ,                            &
+   nvar   , nscal  , nphas  ,                                     &
    itypfb , isympa ,                                              &
    ia     ,                                                       &
    distpa , propce , uetbor , disty  ,                            &
@@ -70,7 +70,6 @@ subroutine distyp &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
 ! (nfabor     )    !    !     ! (transmis mais non utilise)                    !
@@ -131,7 +130,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , iphas
+integer          nvar   , nscal  , nphas
 
 integer          itypfb(nfabor),isympa(nfabor)
 integer          ia(*)
@@ -327,7 +326,7 @@ call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ivar   , ivar   , ivar   , imaspe , iphas  ,                   &
+   ivar   , ivar   , ivar   , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &

@@ -78,7 +78,7 @@ integer          idbia0 ,idbra0
 integer          ncelet , ncel  ,nvar   , nphas
 integer          ifinia , ifinra
 
-integer          idebia, idebra, iok1, iphas
+integer          idebia, idebra, iok1
 integer          ipass
 data             ipass /0/
 save             ipass

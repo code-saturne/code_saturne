@@ -73,7 +73,7 @@ implicit none
 
 ! Local variables
 
-integer          iphas, ii, isc, jj, ipp
+integer          ii, isc, jj, ipp
 
 !===============================================================================
 
@@ -105,7 +105,6 @@ endif
 !===============================================================================
 
 ! ---> Initialisation
-iphas = 1
 rair = 287.d0
 
 ! ---> Masse volumique et viscosite

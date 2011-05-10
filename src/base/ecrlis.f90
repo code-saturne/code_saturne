@@ -104,7 +104,7 @@ double precision ra(*)
 ! Local variables
 
 integer          ii, jj, ic, icel, ipp, ira, ivrtp, iok
-integer          iphas, iprnew, ipuvw
+integer          ipuvw
 integer          icmin, icmax
 integer          nbrval
 integer          idivdt, ixmsdt, idebia, idebra, ifinra, iel

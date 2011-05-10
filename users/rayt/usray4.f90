@@ -32,7 +32,7 @@ subroutine usray4 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iphas  ,                                     &
+   nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
    ia     ,                                                       &
@@ -64,7 +64,6 @@ subroutine usray4 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! current phase number                           !
 ! mode             ! i  ! <-- ! convertion mode                                !
 !                  !    !     ! mode = 1 enthaly -> temperature                !
 !                  !    !     ! mode =-1 temperature -> enthaly                !
@@ -118,7 +117,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , iphas
+integer          nvar   , nscal
 
 integer          mode
 

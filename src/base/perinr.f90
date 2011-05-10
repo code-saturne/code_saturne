@@ -29,7 +29,7 @@ subroutine perinr &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , iphas  ,                            &
+   nvar   , nscal  , nphas  ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -109,7 +109,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , iphas
+integer          nvar   , nscal  , nphas
 
 integer          ia(*)
 
@@ -192,7 +192,7 @@ do isou = 1,6
   isou1 = isou
   call peinr1                                                     &
   !==========
-  ( isou1  , iphas   ,                                            &
+  ( isou1  ,                                                      &
     drdxyz ,                                                      &
     w1     , w2      , w3     )
 
@@ -201,9 +201,8 @@ enddo
 ! --> ON FAIT TOURNER LE TENSEUR DRDXYZ PAR MANQUE DE TABLEAUX DE
 !     TRAVAIL (ON A LE MEME PROBLEME POUR U)
 
-call peinr2                                                       &
+call peinr2  ( drdxyz )
 !==========
-  ( iphas  , drdxyz )
 
 ! On a calcule les gradients dans DRDXYZ
 igrper = 1

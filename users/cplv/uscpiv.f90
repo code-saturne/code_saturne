@@ -58,7 +58,7 @@ subroutine uscpiv &
 ! Physical properties are stored in PROPCE(cell center)
 !  PROPFA(inner face) and PROPFB(boundary face)
 !  e.g.
-!  PROPCE(IEL, IPPROC(IROM  )) is ROM(IEL,IPHAS) mean density kg/m3
+!  PROPCE(IEL, IPPROC(IROM  )) is ROM(IEL) mean density kg/m3
 !  PROPFA(IFAC,IPPROF(IFLUMA(IVAR ))) is FLUMAS(IFAC,IVAR) convective flux
 !                                                        of variable IVAR
 !  PROPFB(......                      .................................
@@ -222,7 +222,7 @@ double precision ra(*)
 ! VARIABLES LOCALES
 
 integer          idebia, idebra
-integer          iel, ige, mode, icla, icha, iphas
+integer          iel, ige, mode, icla, icha
 integer          ioxy
 
 double precision t1init, h1init, coefe(ngazem)
@@ -263,8 +263,6 @@ d2s3 = 2.d0/3.d0
 !===============================================================================
 
 if ( isuite.eq.0 ) then
-
-  iphas = 1
 
 ! --> Initialisation of k and epsilon (exemple)
 

@@ -103,7 +103,7 @@ double precision w1(ncelet)
 ! Local variables
 
 integer          iel    , icla   , icha
-integer          iphas  , ipcrom , ixchcl , ixckcl , ixnpcl
+integer          ipcrom , ixchcl , ixckcl , ixnpcl
 integer          ipcgd1 , ipcgd2 , ipcght , ipcdia
 
 double precision gamdev1 , gamdev2 , gmdevt , gamhet  , d2s3
@@ -133,7 +133,6 @@ do icla = 1, nclacp
   enddo
 enddo
 
-iphas = 1
 ipcrom = ipproc(irom)
 
 ! Calcul de F1 et F2 sur l'ensemble des charbons

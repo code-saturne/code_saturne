@@ -71,7 +71,7 @@ implicit none
 
 ! Local variables
 
-integer        is, iesp , idimve, isc, iphas
+integer        is, iesp , idimve, isc
 
 !===============================================================================
 !===============================================================================
@@ -159,7 +159,6 @@ endif
 
 ! ---- Cp est variable ; pas sur que ce soit indispensable pour le verre
 !                              mais pour le moment c'est comme ca.
-iphas      = 1
 icp = 1
 
 return

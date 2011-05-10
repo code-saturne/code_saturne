@@ -85,7 +85,6 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia , idebra , ifinia , ifinra
-integer          iphas
 integer          numcpl
 integer          imobmx , ialemx , nvcpmx, ifcpmx
 

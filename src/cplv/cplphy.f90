@@ -66,7 +66,7 @@ subroutine cplphy &
 !  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
-!    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
+!    CP variable (sinon: ecrasement memoire).
 
 
 !  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
@@ -185,7 +185,7 @@ integer          ntbcpi, icpwi, ntbcpr, icpwr
 integer          ntbmci, imcwi, ntbmcr, imcwr
 integer          ntbwoi, iwori, ntbwor, iworr
 integer          ifinia, ifinra
-integer          iel, icha, iphas, ipcrom
+integer          iel, icha, ipcrom
 integer          izone, ifac
 integer          ipbrom
 double precision srrom1
@@ -318,7 +318,6 @@ call cplph1                                                       &
 
 ! --- Calcul de Rho avec relaxation
 
-iphas = 1
 ipcrom = ipproc(irom)
 
 if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
@@ -342,7 +341,6 @@ enddo
 !                             -------------
 !===============================================================================
 
-iphas = 1
 ibrom = 1
 ipbrom = ipprob(irom)
 ipcrom = ipproc(irom)

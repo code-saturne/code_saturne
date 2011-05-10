@@ -149,7 +149,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ii, iphas, ifac, izone, mode, iel, ige, iok
+integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icha, iclapc, isol, icla
 integer          ipbrom, icke, idecal, ipcvis
 integer          nbrval, ioxy
@@ -171,7 +171,6 @@ double precision wmh2o,wmco2,wmn2,wmo2
 idebia = idbia0
 idebra = idbra0
 
-iphas = 1
 ipbrom = ipprob(irom  )
 ipcvis = ipproc(iviscl)
 

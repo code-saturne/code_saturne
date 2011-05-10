@@ -33,7 +33,7 @@ subroutine ustsma &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp ,                            &
-   ncesmp , iphas  , iappel ,                                     &
+   ncesmp , iappel ,                                              &
    maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -47,7 +47,7 @@ subroutine ustsma &
 
 !    User subroutine.
 
-!    Mass source term for a phase iphas
+!    Mass source term
 
 ! The subroutine ustsma is called at three different stages in the code
 !  (iappel = 1, 2 or 3)
@@ -127,7 +127,7 @@ subroutine ustsma &
 !     therefore Code_Saturna automatically considers f_i=f^(n+1),
 !     whatever the values of itypsm or smacel specified by the user
 
-! - if a value ivar is not linked to phase iphas for a mass source
+! - if a value ivar is not linked for a mass source
 !     term is imposed, no source term will be taen into account.
 
 ! - if a scalar doesn't evolve following the standard equation
@@ -158,7 +158,6 @@ subroutine ustsma &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! iphas            ! i  ! <-- ! index number of the current phase              !
 ! iappel           ! i  ! <-- ! indicates which at which stage the routine is  !
 !                  !    !     !  is called                                     !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
@@ -211,7 +210,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          iphas  , iappel
+integer          iappel
 
 integer          maxelt, lstelt(maxelt)
 integer          icepdc(ncepdp)

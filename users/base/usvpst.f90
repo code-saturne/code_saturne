@@ -148,7 +148,7 @@ double precision ra(*)
 character*32     namevr
 
 integer          ntindp
-integer          iel, ifac, iloc, iphas, ivar, iclt
+integer          iel, ifac, iloc, ivar, iclt
 integer          idimt, ii , jj
 integer          ientla, ivarpr
 integer          imom1, imom2, ipcmo1, ipcmo2, idtcm
@@ -251,8 +251,6 @@ if (ipart .eq. -1) then
   ! 1.1.1 Output of k=1/2(R11+R22+R33) for the Rij-epsilon model
   !       ------------------------------------------------------
 
-  iphas = 1   ! We only consider phase 1 in this example
-
   if (itytur .eq. 3) then
 
     ! Initialize variable name
@@ -294,8 +292,6 @@ if (ipart .eq. -1) then
   !   <u>  for imom=1
   !   <uu> for imom=2
   ! We seek to plot <u'u'>=<uu>-<U>**2
-
-  iphas = 1   ! We only consider phase 1 in this example
 
   if (nbmomt .ge. 2) then
 
@@ -365,8 +361,6 @@ else if  (ipart .eq. -2) then
 
   ! 1.2.1 Output of the density at the boundary
   !       -------------------------------------
-
-  iphas = 1   ! We only consider phase 1 in this example
 
   ! Initialize variable name
   do ii = 1, 32
@@ -462,8 +456,6 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
   ! Values are interlaced.
   ientla = 1
 
-  iphas = 1   ! We only consider phase 1 in this example
-
   ! Compute variable values on interior faces.
   ! In this example, we use a simple linear interpolation.
   ! For parallel calculations, if neighbors are used, they must be synchronized
@@ -530,8 +522,6 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
   ! Values are not interlaced (dimension 1 here, so no effect).
   ientla = 0
 
-  iphas = 1   ! We only consider phase 1 in this example
-
   ! Variable number
   ivar = ipr
 
@@ -578,8 +568,6 @@ else if  (ipart.eq.1 .or. ipart.eq.2) then
 
   ! 1.3.3 Output of the boundary temperature
   !       ----------------------------------
-
-  iphas = 1   ! We only consider phase 1 in this example
 
   if (iscalt .gt. 0) then
 
@@ -770,8 +758,6 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
   ! Values are not interlaced.
   ientla = 0
 
-  iphas = 1   ! We only consider phase 1 in this example
-
   ! Variable number
   ivar = iu
 
@@ -838,8 +824,6 @@ else if  (ipart.ge.3 .and. ipart.le.4) then
 
   ! Values are not interlaced (dimension 1 here, so no effect).
   ientla = 0
-
-  iphas = 1   ! We only consider phase 1 in this example
 
   ! Variable number
   ivar = ipr

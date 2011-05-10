@@ -167,7 +167,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, ideb, ivart, iscat, iphas
+integer          ifac, iel, ideb, ivart, iscat
 integer          mode, iok, ifvu, ii, izonem, izone
 integer          maxelt, idbia1, ils
 
@@ -191,10 +191,6 @@ maxelt = max(ncelet,nfac,nfabor)
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
-
-!--> NUMERO DE LA PHASE PORTEUSE
-
-iphas = 1
 
 !---> NUMERO DE PASSAGE RELATIF
 
@@ -298,7 +294,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
       call usray2                                                 &
       !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , iphas   ,                                    &
+   nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    maxelt , ia(ils),                                              &
    icodcl , izfrad , isothm ,                                     &
@@ -379,7 +375,7 @@ endif
   call usray2                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
    itypfb ,                                                       &
    maxelt , ia(ils),                                              &
    icodcl , izfrad , isothm ,                                     &
@@ -642,7 +638,7 @@ endif
       call usray4                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                       &
    ia     ,                                                       &
@@ -658,7 +654,7 @@ endif
       call ppray4                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
 
    mode   ,                                                       &
 
@@ -725,7 +721,7 @@ endif
     call raypar                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
    itypfb ,                                                      &
 
    icodcl , isothm , izfrad ,                                     &
@@ -813,7 +809,7 @@ endif
         call usray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
    ia     ,                                                       &
@@ -830,7 +826,7 @@ endif
         call ppray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
 
    mode   ,                                                       &
 
@@ -863,7 +859,7 @@ endif
         call usray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
    ia     ,                                                       &
@@ -879,7 +875,7 @@ endif
         call ppray4                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , iphas  ,                                    &
+   nvar   , nscal  ,                                             &
 
    mode   ,                                                       &
 

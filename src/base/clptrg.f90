@@ -30,7 +30,7 @@ subroutine clptrg &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , isvhb  ,                                              &
+   isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
@@ -44,7 +44,6 @@ subroutine clptrg &
 ! --------
 
 ! CONDITIONS LIMITES EN PAROI RUGUEUSE POUR TOUTES LES VARIABLES
-!  DE LA PHASE IPHAS
 
 ! ON SUPPOSE QUE ICODCL(IU) = 6 =>
 !             PAROI RUGUEUSE POUR TOUTES LES VARIABLES TURBULENTES
@@ -60,7 +59,6 @@ subroutine clptrg &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
 !                  !    !     !  coefficients d'echange aux bords              !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
@@ -144,7 +142,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          iphas  , isvhb
+integer          isvhb
 
 integer          icodcl(nfabor,nvar)
 integer          ia(*)
@@ -578,7 +576,7 @@ do ifac = 1, nfabor
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , ifac   , iel    ,                                     &
+   ifac   , iel    ,                                              &
    uk     , utau   , yplus  ,                                     &
    uet    ,                                                       &
    gredu  , q0     , e0     , rib    ,lmo     ,                   &

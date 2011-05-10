@@ -73,7 +73,7 @@ implicit none
 
 integer          idimve , iesp
 integer          ipp , ii , iok
-integer          isc , iphas , ivar
+integer          isc , ivar
 
 !===============================================================================
 !===============================================================================
@@ -154,7 +154,6 @@ do isc = 1, nscapp
 enddo
 
 !     Pour l'enthalpie
-iphas = 1
 iscalt = ihm
 iscsth(ihm)   = 2
 

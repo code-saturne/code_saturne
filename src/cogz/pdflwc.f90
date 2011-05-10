@@ -116,7 +116,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel, igg, idirac, iphas
+integer          iel, igg, idirac
 integer          mode
 
 double precision coefg(ngazgm), epsi
@@ -191,7 +191,6 @@ ipcoxy = ipproc(iym(2))
 ipcpro = ipproc(iym(3))
 ipctsc = ipproc(itsc)
 ipctem = ipproc(itemp)
-iphas = 1
 ipcrom = ipproc(irom)
 ipcmam = ipproc(imam)
 
@@ -700,7 +699,6 @@ do iel = 1, ncel
         rhol(idirac) = p0 * maml(idirac)                   &
                      / (rr*teml(idirac))
       else
-        iphas = 1
         rhol(idirac) = ro0
       endif
 

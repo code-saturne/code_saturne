@@ -78,7 +78,7 @@ use ppcpfu
 implicit none
 
 integer          ipp , ii , jj , iok
-integer          icha , isc , is, iphas
+integer          icha , isc , is
 double precision wmolme
 
 !===============================================================================
@@ -145,7 +145,6 @@ enddo
 
 ! ---- On resout en enthalpie avec un CP constant (Cf. cpvarp)
 
-iphas = 1
 iscalt = ihm
 iscsth(ihm) = 2
 

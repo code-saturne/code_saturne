@@ -127,7 +127,7 @@ double precision propce(ncelet,*)
 !===============================================================================
 
 integer          iel, igg, idirac
-integer          mode, iphas
+integer          mode
 
 integer          ipctem, ipcmam,  ipcrom
 integer          ipampl(ndracm), ipfmel(ndracm)
@@ -206,7 +206,6 @@ ipcoxy = ipproc(iym(2))
 ipcpro = ipproc(iym(3))
 ipctsc = ipproc(itsc)
 ipctem = ipproc(itemp)
-iphas = 1
 ipcrom = ipproc(irom)
 ipcmam = ipproc(imam)
 

@@ -174,7 +174,7 @@ double precision ra(*)
 
 integer          idebia, idebra,ifinia , ifinra
 integer          idppar, inxpar, inypar, inzpar
-integer          ip , iel , iphas , mode
+integer          ip , iel , mode
 
 double precision val , tempf , dnorm
 double precision debye, aa
@@ -187,8 +187,6 @@ double precision debye, aa
 
 idebia = idbia0
 idebra = idbra0
-
-iphas  = 1
 
 !===============================================================================
 ! 1. CALCUL DE LA DISTANCE A LA PAROI + NORMAL A LA PAROI

@@ -208,7 +208,7 @@ character*16     cnom
 integer          idebia, idebra
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
-integer          iphas,idimte,itenso,iinvpe, iinvpp
+integer          idimte,itenso,iinvpe, iinvpp
 double precision residu,rnorm
 
 !===============================================================================

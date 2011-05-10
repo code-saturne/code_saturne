@@ -33,7 +33,7 @@ subroutine uskpdc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ncepdp , iphas  , iappel ,                                     &
+   ncepdp , iappel ,                                              &
    maxelt , lstelt ,                                              &
    icepdc ,                                                       &
    ia     ,                                                       &
@@ -46,7 +46,6 @@ subroutine uskpdc &
 ! ----------
 
 !                    PERTES DE CHARGE (PDC)
-!                       POUR LA PHASE IPHAS
 
 ! IAPPEL = 1 :
 !             CALCUL DU NOMBRE DE CELLULES OU L'ON IMPOSE UNE PDC
@@ -166,7 +165,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iel, ielpdc, iphas, ikpdc
+integer          iel, ielpdc, ikpdc
 integer          ilelt, nlelt
 integer          iutile
 

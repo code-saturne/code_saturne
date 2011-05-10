@@ -441,7 +441,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, ii, ivar, iphas
+integer          ifac, iel, ii, ivar
 integer          ilelt, nlelt
 double precision uref2, d2s3
 double precision rhomoy, dh, ustar2
@@ -806,7 +806,6 @@ do ilelt = 1, nlelt
 
   itypfb(ifac) = iparoi
 
-  iphas = 1
   icodcl(ifac,iu )  = 1
   rcodcl(ifac,iu,1) = 1.d0
   rcodcl(ifac,iu,2) = rinfin

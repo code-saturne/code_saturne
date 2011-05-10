@@ -33,7 +33,7 @@ subroutine ustsv2 &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  , ivar   ,                                              &
+   ivar   ,                                                       &
    maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -119,7 +119,6 @@ subroutine ustsv2 &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! iphas            ! i  ! <-- ! index number of the current phase              !
 ! ivar             ! i  ! <-- ! index number of the current variable           !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
@@ -178,7 +177,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          iphas  , ivar
+integer          ivar
 
 integer          maxelt, lstelt(maxelt)
 integer          icepdc(ncepdp)
@@ -224,7 +223,7 @@ if(1.eq.1) return
 idebia = idbia0
 idebra = idbra0
 
-! --- Index numbers of variables f_bar and phi for the current phase iphas
+! --- Index numbers of variables f_bar and phi
 ifbiph = ifb
 iphiph = iphi
 

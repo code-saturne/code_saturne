@@ -172,7 +172,7 @@ double precision ra(*)
 integer          idebia, idebra
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax, iii
 integer          ii    , inod
-integer          iphas , iph, isou, ivar, iitsm, igamm1
+integer          isou, ivar, iitsm, igamm1
 integer          ipriph, iuiph , iviph , iwiph , iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
 integer          icluma, iclvma, iclwma
@@ -282,14 +282,12 @@ iappel = 1
 iuiph  = iu
 iflmas = ipprof(ifluma(iuiph))
 iflmab = ipprob(ifluma(iuiph))
-iph    = iphas
 
 call preduv                                                     &
 !==========
 ( idebia , idebra , iappel ,                                     &
   nvar   , nscal  , nphas  , iterns ,                            &
   ncepdc   , ncetsm   ,                            &
-  iph    ,                                                       &
   ia(iicepd)        , ia(iicesm)       ,           &
   ia(iitpsm)        ,                                     &
   ia     ,                                                       &
@@ -305,8 +303,7 @@ call preduv                                                     &
   w7     , w8     , w9     , w10    , coefu  ,                   &
   ra     )
 
-! --- Sortie si pas de pression continuite (on suppose que
-!       la pression est unique, donc pas de iphas dans le test),
+! --- Sortie si pas de pression continuite
 !       on met a jour les flux de masse, et on sort
 
 if( iprco.le.0 ) then
@@ -337,15 +334,13 @@ if( iprco.le.0 ) then
   climgp = climgr(iuiph)
   extrap = extrag(iuiph)
 
-  iph    = iphas
-
   imaspe = 1
 
   call inimas                                                   &
   !==========
 ( idebia , idebra ,                                              &
   nvar   , nscal  , nphas  ,                                     &
-  iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
+  iuiph  , iviph  , iwiph  , imaspe ,                            &
   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
@@ -404,8 +399,6 @@ if( iprco.le.0 ) then
     climgp = climgr(iuma )
     extrap = extrag(iuma )
 
-    iph    = iphas
-
     imaspe = 1
 
     do ifac = 1, nfac
@@ -416,7 +409,7 @@ if( iprco.le.0 ) then
     !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
+   iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -524,11 +517,6 @@ if(iwarni(iu).ge.1) then
   write(nfecra,1200)
 endif
 
-! On n'appelle resolp qu'une seule fois, pour LA phase qu'il faut
-
-iphas = 1
-iph   = iphas
-
 ! --- Pas de temps scalaire ou pas
 idtsca = 0
 if ((ipucou.eq.1).or.(ncpdct.gt.0)) idtsca = 1
@@ -538,7 +526,6 @@ call resolp                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc   , ncetsm   ,                            &
-   iph    ,                                                       &
    ia(iicepd)        , ia(iicesm)       ,           &
    ia(iitpsm)        , isostd , idtsca ,                   &
    ia     ,                                                       &
@@ -629,15 +616,13 @@ if( irevmc.eq.1 ) then
   climgp = climgr(iuiph )
   extrap = extrag(iuiph )
 
-  iph  = iphas
-
   imaspe = 1
 
   call inimas                                                   &
   !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
+   iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -865,8 +850,6 @@ if (iale.eq.1) then
   climgp = climgr(iuma )
   extrap = extrag(iuma )
 
-  iph    = iphas
-
   imaspe = 1
 
   do ifac = 1, nfac
@@ -877,7 +860,7 @@ if (iale.eq.1) then
   !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
+   iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1043,15 +1026,13 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   climgp = climgr(iuiph )
   extrap = extrag(iuiph )
 
-  iph    = iphas
-
   imaspe = 1
 
   call inimas                                                   &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iuiph  , iviph  , iwiph  , imaspe , iph    ,                   &
+   iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1115,13 +1096,11 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     !   APPEL A PREDUV AVEC RTP ET RTP AU LIEU DE RTP ET RTPA
     !                  AVEC LE FLUX DE MASSE RECALCULE
     iappel = 2
-    iph    = iphas
     call preduv                                                 &
     !==========
  ( idebia , idebra , iappel ,                                     &
    nvar   , nscal  , nphas  , iterns ,                            &
    ncepdc   , ncetsm   ,                            &
-   iph    ,                                                       &
    ia(iicepd)        , ia(iicesm)       ,           &
    ia(iitpsm)        ,                                     &
    ia     ,                                                       &
@@ -1193,7 +1172,6 @@ if(ndircp.le.0) then
   !==========
 ( idebia , idebra ,                                           &
   ncelet , ncel   , nfac   , nfabor ,                         &
-  iphas  ,                                                    &
   ia     ,                                                    &
   volume , rtp(1,ipriph) ,                                    &
   ra     )

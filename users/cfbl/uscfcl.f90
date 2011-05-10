@@ -206,7 +206,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac  , iel   , ii    , iphas
+integer          ifac  , iel   , ii
 integer          izone , iutile
 integer          ilelt, nlelt
 
@@ -262,9 +262,6 @@ d2s3 = 2.d0/3.d0
 !          IMPOSER ICI LES CONDITIONS LIMITES SUR LES FACES DE BORD
 
 !===============================================================================
-
-iphas = 1
-
 
 ! --- Exemple d'entree/sortie pour laquelle tout est connu
 

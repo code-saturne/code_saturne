@@ -126,7 +126,7 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ipctem, ipcfue, ipcoxy, ipcpro
-integer          igg, iphas, iel, ipcrom
+integer          igg, iel, ipcrom
 integer          ipckab, ipt4, ipt3
 integer          ifac, izone
 integer          ipbrom, ipbycg, ipcycg, mode
@@ -172,7 +172,6 @@ enddo
 
 ! ---> Positions des variables, coefficients
 
-iphas = 1
 ipcrom = ipproc(irom)
 ipbrom = ipprob(irom)
 ipctem = ipproc(itemp)
@@ -364,7 +363,6 @@ enddo
 
 ! --> Masse volumique au bord
 
-iphas = 1
 ibrom = 1
 
 ! ---- Masse volumique au bord pour toutes les facettes

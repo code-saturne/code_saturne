@@ -141,7 +141,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , iel , iphas
+integer          idebia , idebra , iel
 double precision aa
 
 !===============================================================================
@@ -158,8 +158,6 @@ double precision aa
 
 idebia = idbia0
 idebra = idbra0
-
-iphas = 1
 
 !===============================================================================
 ! 1 . Zone of standard statistics

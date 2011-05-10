@@ -171,7 +171,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, ii, ivar, iphas
+integer          ifac, iel, ii, ivar
 integer          izone
 integer          ilelt, nlelt
 double precision uref2, d2s3

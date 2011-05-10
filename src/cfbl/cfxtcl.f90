@@ -149,7 +149,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iphas , ivar  , ifac  , iel
+integer          ivar  , ifac  , iel
 integer          ii    , iii   , imodif, iccfth
 integer          icalep, icalgm
 integer          iflmab
@@ -218,7 +218,7 @@ if(icalep.ne.0) then
   call uscfth                                                   &
   !==========
 ( nvar   , nscal  , nphas  ,                                     &
-  iccfth , imodif , iphas  ,                                     &
+  iccfth , imodif ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
   w5     , coefu(1,1) , w3 , w4     )
@@ -243,7 +243,7 @@ if(icalgm.ne.0) then
   call uscfth                                                   &
   !==========
 ( nvar   , nscal  , nphas  ,                                     &
-  iccfth , imodif , iphas  ,                                     &
+  iccfth , imodif ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
   w1     , w2     , w6     , w4     )
@@ -316,7 +316,7 @@ do ifac = 1, nfabor
       call uscfth                                               &
       !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , ifac   , iphas  ,                                     &
+   iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
@@ -447,7 +447,7 @@ do ifac = 1, nfabor
     call uscfth                                                 &
     !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , ifac   , iphas  ,                                     &
+   iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
@@ -527,7 +527,7 @@ do ifac = 1, nfabor
     call uscfth                                                 &
     !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , ifac   , iphas  ,                                     &
+   iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
@@ -582,7 +582,7 @@ do ifac = 1, nfabor
     call uscfth                                                 &
     !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , ifac   , iphas  ,                                     &
+   iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
@@ -636,7 +636,7 @@ do ifac = 1, nfabor
     call uscfth                                                 &
     !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , ifac   , iphas  ,                                     &
+   iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
@@ -690,7 +690,7 @@ do ifac = 1, nfabor
     call uscfth                                                 &
     !==========
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , ifac   , iphas  ,                                     &
+   iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    w1     , w2     , w3     , w4     )
@@ -807,7 +807,7 @@ do ifac = 1, nfabor
       !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   ifac   , iphas  ,                                              &
+   ifac   ,                                                       &
    ia     ,                                                       &
    gammag ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

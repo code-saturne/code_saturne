@@ -30,7 +30,6 @@ subroutine turrij &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -62,7 +61,6 @@ subroutine turrij &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
@@ -135,7 +133,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          iphas
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -550,7 +547,7 @@ do isou = 1, 6
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -569,7 +566,7 @@ do isou = 1, 6
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -603,7 +600,7 @@ call reseps                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  , ivar   , isou   , ipp    ,                            &
+   ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -624,7 +621,7 @@ iclip  = 2
 call clprij                                                       &
 !==========
  ( ncelet , ncel   , nvar   , nphas  ,                            &
-   iphas  , iclip  ,                                              &
+   iclip  ,                                                       &
    propce , rtpa   , rtp    )
 
 

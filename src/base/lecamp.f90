@@ -111,7 +111,7 @@ character        ficsui*32
 
 integer          idebia, idebra
 integer          iel
-integer          iphas , ivar  , iscal , ii    ,  ivers
+integer          ivar  , iscal , ii    ,  ivers
 integer          jphas , jvar  , jscal , jscaus, jscapp
 integer          ikiph , ieiph , iomgip
 integer          ir11ip, ir22ip, ir33ip

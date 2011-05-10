@@ -95,7 +95,7 @@ integer          iverif
 
 ! Local variables
 
-integer          ii, iphas , iscal , nmodpp
+integer          ii, iscal , nmodpp
 integer          nphmax, nscmax, nesmax, nphusi, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce, imgrpr, icwfps
@@ -434,7 +434,6 @@ if(iihmpr.eq.1) then
   imgrpr = 0
   call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, imgrpr)
   !==========
-  iphas = 1
   extrag(ipr) = extrap
   if (idtvar.ge.0) relaxv(ipr) = relaxp
   imgr(ipr) = imgrpr
@@ -456,7 +455,6 @@ if(iihmpr.eq.1) then
   !==========
 
 !     Init turb (uref, almax) si necessaire (modele RANS)
-  iphas = 1
   if (itytur.eq.2 .or. itytur.eq.3 .or.             &
       itytur.eq.5 .or. itytur.eq.6 ) then
     call cstini(uref, almax)

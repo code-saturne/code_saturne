@@ -32,7 +32,7 @@ subroutine uscfth &
 !================
 
  ( nvar   , nscal  , nphas  ,                                     &
-   iccfth , imodif , iphas  ,                                     &
+   iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    sorti1 , sorti2 , gamagr , xmasmr )
@@ -240,7 +240,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal  , nphas
-integer          iccfth   , imodif , iphas
+integer          iccfth   , imodif
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)

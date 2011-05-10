@@ -141,7 +141,7 @@ double precision ra(*)
 
 integer          idebia , idebra
 integer          ivar   , ivarsc , ivarut , ivar0
-integer          iel    , iphas  , ifac
+integer          iel    , ifac
 integer          ipcrom , ipcvst
 integer          ikiph  , ieiph  , iomgip , iphydp
 integer          ir11ip , ir22ip , ir33ip
@@ -188,9 +188,6 @@ if (iscala.gt.0) then
 else
   ivarsc = 0
 endif
-
-! --- Numero de phase associee au scalaire ISCAL
-iphas = 1
 
 ! --- Numero des variables de calcul
 if ( itytur.eq.2 .or. iturb.eq.50 ) then

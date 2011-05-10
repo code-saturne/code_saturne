@@ -32,7 +32,7 @@ subroutine uspt1d &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
+   nvar   , nscal  , nphas  , nfpt1d , iappel ,                   &
    maxelt , lstelt ,                                              &
    ifpt1d , nppt1d , iclt1d ,                                     &
    ia     ,                                                       &
@@ -151,7 +151,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas  , nfpt1d
-integer          iphas  , iappel
+integer          iappel
 
 integer          maxelt, lstelt(maxelt)
 integer          ifpt1d(nfpt1d), nppt1d(nfpt1d), iclt1d(nfpt1d)

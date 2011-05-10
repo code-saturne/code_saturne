@@ -154,7 +154,7 @@ character        nomflu(nvarmx)*18,nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 integer          iel   , ifac, ii, istr
-integer          iphas , ivar  , iscal , jphas , isco
+integer          ivar  , iscal , jphas , isco
 integer          idecal, iclapc, icha  , icla
 integer          imom  , imold
 integer          jdtvar
@@ -1666,7 +1666,6 @@ elseif(abs(icdpar).eq.1) then
   if(ineedy.eq.1) then
     if(icdpar.eq.1.or.inpdt0.eq.1) then
       if(nfabok.eq.1) then
-        iphas  = 1
         itysup = 1
         nbval  = 1
         irtyp  = 2

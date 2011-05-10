@@ -30,7 +30,7 @@ subroutine atprke &
 
  ( idbia0 , idbra0 ,                                              &
    nscal  , nphas  ,                                              &
-   iphas  , ipcvto,                                               &
+   ipcvto,                                                        &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
@@ -56,7 +56,6 @@ subroutine atprke &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! irespr(ncelet    ! te ! --- ! tab entier multigrille                         !
@@ -108,7 +107,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nscal  , nphas
-integer          iphas  , ipcvto
+integer          ipcvto
 
 
 integer          ia(*)

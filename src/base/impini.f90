@@ -85,7 +85,7 @@ implicit none
 character        name*300, chaine*80
 integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok60
 integer          iok70
-integer          ii    , jj    , ivar  , iphas , iiesca, iest
+integer          ii    , jj    , ivar  , iiesca, iest
 integer          ipp   , iwar  , imom
 integer          nbccou
 
@@ -876,8 +876,6 @@ write(nfecra,9900)
 ! --- Rayonnement thermique
 
 if (iirayo.gt.0) then
-
-  iphas = 1
 
   write(nfecra,2630)
 

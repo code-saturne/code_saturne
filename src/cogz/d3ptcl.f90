@@ -150,7 +150,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          igg, iphas, ifac, izone, mode
+integer          igg, ifac, izone, mode
 integer          ii, iel, ifue, ioxy, iok
 integer          ipbrom, icke, ipcvis
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
@@ -166,7 +166,6 @@ double precision coefg(ngazgm)
 idebia = idbia0
 idebra = idbra0
 
-iphas = 1
 ipbrom = ipprob(irom  )
 ipcvis = ipproc(iviscl)
 

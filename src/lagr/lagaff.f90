@@ -150,7 +150,6 @@ double precision ra(*)
 
 integer          idebia , idebra
 
-integer          iphas
 double precision dnbpr
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
@@ -172,7 +171,6 @@ idebra = idbra0
 ! 1. INITIALISATION
 !===============================================================================
 
-iphas = 1
 ipass = ipass + 1
 
 !===============================================================================

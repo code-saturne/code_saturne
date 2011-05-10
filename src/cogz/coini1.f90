@@ -76,7 +76,7 @@ implicit none
 ! Local variables
 
 integer          ipp , ii , jj, iok, idirac
-integer          isc , iphas
+integer          isc
 double precision wmolme
 
 !===============================================================================
@@ -201,8 +201,6 @@ if ( ippmod(icod3p).eq.1 .or.                                     &
      ippmod(icolwc).eq.3 .or.                                     &
      ippmod(icolwc).eq.5     ) then
 
-  iphas = 1
-
   iscalt = ihm
   iscsth(ihm) = 2
 
@@ -211,8 +209,6 @@ endif
 
 ! 1.4 Donnees physiques ou numeriques propres aux scalaires COMBUSTION
 ! ====================================================================
-
-iphas = 1
 
 do isc = 1, nscapp
 
@@ -548,7 +544,6 @@ endif
 
 ! --> Calcul de RO0 a partir de T0 et P0
 
- iphas = 1
  if ( ippmod(icod3p).ne.-1 .or.                                   &
       ippmod(icoebu).ne.-1 .or.                                   &
       ippmod(icolwc).ne.-1     ) then

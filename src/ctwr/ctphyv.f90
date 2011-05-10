@@ -58,7 +58,7 @@ subroutine ctphyv &
 !  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
-!    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
+!    CP variable (sinon: ecrasement memoire).
 
 
 !  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
@@ -171,7 +171,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra, ifinia
-integer          iel   , iphas
+integer          iel
 integer          ipcrom, ipcvis, ipccp , ipcray
 integer          ipcvsl, ith   , iscal , ivart, ii
 integer          iclvar
@@ -207,7 +207,7 @@ ipass = ipass + 1
 !   Positions des variables, coefficients
 !   -------------------------------------
 
-! --- Numero de variable thermique pour la phase courante iphas
+! --- Numero de variable thermique
 !       (et de ses conditions limites)
 
 ivart = isca(itemp4)
@@ -216,7 +216,7 @@ ivart = isca(itemp4)
 
 iclvar = iclrtp(ivart,icoef)
 
-! --- Rang de la masse volumique de la phase courante IPHAS
+! --- Rang de la masse volumique
 !     dans PROPCE, prop. physiques au centre des elements       : IPCROM
 
 ipcrom = ipproc(irom)
@@ -273,11 +273,11 @@ enddo
 !   Positions des variables, coefficients
 !   -------------------------------------
 
-! --- Numero de variable thermique pour la phase courante iphas
+! --- Numero de variable thermique
 
 ivart = isca(itemp4)
 
-! --- Rang de la chaleur specifique de la phase courante IPHAS
+! --- Rang de la chaleur specifique
 !     dans PROPCE, prop. physiques au centre des elements       : IPCCP
 
 if(icp.gt.0) then

@@ -121,7 +121,7 @@ double precision ra(*)
 
 character*80     chaine
 integer          idebia, idebra
-integer          ivar  , iel   , ifac  , iscal , iphas , iph
+integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct
 integer          nphmx , nn
 integer          ibrom , ipcrom, ipbrom, ipcvst
@@ -159,7 +159,7 @@ if(iperot.gt.0) then
   call perinu                                                   &
   !==========
 ( idebia , idebra ,                                              &
-  nvar   , nscal  , nphas  , iph    ,                            &
+  nvar   , nscal  , nphas  ,                                     &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
@@ -173,7 +173,7 @@ if(iperot.gt.0) then
     call perinr                                                 &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , iph    ,                            &
+   nvar   , nscal  , nphas  ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -326,7 +326,6 @@ elseif (iturb.eq.10) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
-   iph    ,                                                       &
    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -380,7 +379,6 @@ elseif (iturb.eq.40) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
-   iph    ,                                                       &
    ia(iicepd) ,                                            &
    ia(iicesm) , ia(iitpsm),                         &
    ia     ,                                                       &
@@ -401,7 +399,6 @@ elseif(iturb.eq.41) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
-   iph    ,                                                       &
    ia(iicepd) ,                                            &
    ia(iicesm) , ia(iitpsm),                         &
    ia     ,                                                       &
@@ -423,7 +420,6 @@ elseif (iturb.eq.42) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
-   iph    ,                                                       &
    ia(iicepd) ,                                            &
    ia(iicesm) , ia(iitpsm),                         &
    ia     ,                                                       &
@@ -467,7 +463,6 @@ elseif (iturb.eq.60) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdc , ncetsm ,                                &
-   iph    ,                                                       &
    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -508,7 +503,6 @@ call usvist                                                     &
 ( idebia , idebra ,                                              &
   nvar   , nscal  , nphas  ,                                     &
   ncepdc   , ncetsm   ,                            &
-  iph    ,                                                       &
   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

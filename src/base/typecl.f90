@@ -154,7 +154,7 @@ integer          idebia, idebra
 integer          ifac, ivar, iel
 integer          iok, inc, iccocg, ideb, ifin, inb, isum, iwrnp
 integer          ifrslb, itbslb
-integer          ityp, ii, jj, iphas, iwaru, iflmab
+integer          ityp, ii, jj, iwaru, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          ipriph, iuiph, iviph, iwiph
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip,ir23ip

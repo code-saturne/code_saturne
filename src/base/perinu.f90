@@ -29,7 +29,7 @@ subroutine perinu &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , iphas  ,                            &
+   nvar   , nscal  , nphas  ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -64,7 +64,6 @@ subroutine perinu &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -108,7 +107,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , iphas
+integer          nvar   , nscal  , nphas
 
 integer          ia(*)
 
@@ -188,7 +187,7 @@ do isou = 1,3
   isou1 = isou
   call peinu1                                                     &
   !==========
-  ( isou1  , iphas  ,                                             &
+  ( isou1  ,                                                      &
     dudxyz ,                                                      &
     w1     , w2     , w3     )
 
@@ -197,9 +196,8 @@ enddo
 ! --> ON FAIT TOURNER LE TENSEUR DUDXYZ PAR MANQUE DE TABLEAUX DE
 !     TRAVAIL (ON A LE MEME PROBLEME POUR RIJ)
 
-call peinu2                                                       &
+call peinu2 ( dudxyz )
 !==========
-  ( iphas  , dudxyz )
 
 ! On a calcule les gradients dans DUDXYZ
 iguper = 1

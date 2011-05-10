@@ -30,7 +30,6 @@ subroutine cfqdmv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -76,7 +75,6 @@ subroutine cfqdmv &
 ! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
@@ -155,7 +153,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
 integer          ncepdp , ncesmp
-integer          iphas
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -504,7 +501,6 @@ if (ivisse.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   iphas  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -529,7 +525,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
    ncepdp ,                                                       &
-   iphas  , idiaex ,                                              &
+   idiaex ,                                                       &
    icepdc ,                                                       &
    ia     ,                                                       &
    rtp    , propce , propfa , propfb ,                            &
@@ -554,7 +550,7 @@ if(itytur.eq.3 ) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   isou   , ivar   , iphas  ,                                     &
+   isou   , ivar   ,                                              &
    ia     ,                                                       &
    rtp    , propce , propfa , propfb ,                            &
    coefa  , coefb  ,                                              &
@@ -692,7 +688,7 @@ do isou = 1, 3
   !==========
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
-   ivar   , iphas  ,                                              &
+   ivar   ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &

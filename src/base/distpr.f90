@@ -138,7 +138,7 @@ integer          ndircp, iconvp, idiffp, isym
 integer          ipol  , ireslp, ipp
 integer          niterf, icycle, ncymxp, nitmfp
 integer          iinvpe
-integer          isqrt , iel   , ifac  , iphas
+integer          isqrt , iel   , ifac
 integer          inc   , iccocg, iphydp, ivar
 integer          isweep, nittot, idtva0
 
@@ -160,8 +160,6 @@ rnoini = 0.d0
 idebia = idbia0
 idebra = idbra0
 
-!     On travaille sur la phase 1
-iphas = 1
 !     Nombre d'iteration totale pour l'inversion
 nittot = 0
 

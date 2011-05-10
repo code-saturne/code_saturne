@@ -119,7 +119,7 @@ integer          ifinia , ifinra
 ! Local variables
 
 integer          idebia , idebra
-integer          iis, iphas, ippu, ippv, ippw, ivar, iprop
+integer          iis, ippu, ippv, ippw, ivar, iprop
 integer          iipero , iiirij , imom, idtnm
 integer          idpar1 , idpar2 , iypar1, iiyplb, iiforb, iicoci
 
@@ -152,8 +152,6 @@ idebra = idbra0
 
 !     ITYPFB, ITRIFB et ISYMPA peuvent passer en entier dans certains
 !         sous-pgm, il convient donc qu'ils soient en un seul bloc.
-!         Le meilleur moyen de s'en assurer est de referencer ce bloc par un
-!         pointeur unique independant de iphas.
 
 !     Le tableau des zones frontieres des faces de bord pour les
 !         physiques particulieres est de declare ci-dessous (voir PPCLIM)
@@ -295,7 +293,6 @@ ifinra = iforbr + nfabor*ndim*iiforb
 !     On rajoute des tableaux pour le k-omega SST si necessaire
 !     En k-omega, on a besoin de calculer 2 Sij.Sij pour etre utilise
 !     dans PHYVAR et dans TURBKW. On reserve un tableau pour divU en meme temps.
-!     Les pointeurs IS2KW et IDVUKW sont fonction de IPHAS
 
 is2kw  = ifinra
 idvukw = ifinra

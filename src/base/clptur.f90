@@ -30,7 +30,7 @@ subroutine clptur &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nphas  ,                                     &
-   iphas  , isvhb  ,                                              &
+   isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
@@ -44,7 +44,6 @@ subroutine clptur &
 ! --------
 
 ! CONDITIONS LIMITES EN PAROI TURBULENTE POUR TOUTES LES VARIABLES
-!  DE LA PHASE IPHAS
 
 ! ON SUPPOSE QUE ICODCL(IU) = 5 =>
 !                     PAROI POUR TOUTES LES VARIABLES TURBULENTES
@@ -60,7 +59,6 @@ subroutine clptur &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
 !                  !    !     !  coefficients d'echange aux bords              !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
@@ -144,7 +142,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nvar   , nscal  , nphas
-integer          iphas  , isvhb
+integer          isvhb
 
 integer          icodcl(nfabor,nvar)
 integer          ia(*)

@@ -135,7 +135,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra, ifinia
-integer          iscal, ivar, iphas, iel
+integer          iscal, ivar, iel
 integer          ii, iisc, itspdv, icalc, iappel
 integer          ispecf
 integer          maxelt, ils
@@ -281,8 +281,6 @@ call iasize('scalai',ifinia)
 
       if(ispecf.eq.2) then
 
-        iphas = 1
-
         call cfener                                               &
         !==========
  ( idebia , idebra ,                                              &
@@ -346,8 +344,6 @@ call iasize('scalai',ifinia)
 
 
 ! ---> Appel a covofi pour la resolution
-
-      iphas  = 1
 
       call covofi                                                 &
       !==========
@@ -533,8 +529,6 @@ if(nscaus.gt.0) then
 
 
 ! ---> Appel a covofi pour la resolution
-
-    iphas  = 1
 
     call covofi                                                   &
     !==========

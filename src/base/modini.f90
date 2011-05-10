@@ -73,7 +73,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, jj, ivar, iphas, iok, iest, imom, ikw
+integer          ii, jj, ivar, iok, iest, imom, ikw
 integer          icompt, ipp, nbccou, nn
 integer          nscacp, iscal
 double precision relxsp
@@ -702,7 +702,6 @@ endif
 
 !     Scalaires
 do iscal = 1, nscal
-  iphas = 1
   ivar  = isca(iscal)
   if(abs(thetav(ivar)+999.d0).gt.epzero) then
     WRITE(NFECRA,1041) 'SCALAIRE',ISCAL,'THETAV'
@@ -716,7 +715,6 @@ enddo
 
 !     Vitesse de maillage en ALE
 if (iale.eq.1) then
-  iphas = 1
   if(abs(thetav(iuma)+999.d0).gt.epzero.or.                       &
      abs(thetav(ivma)+999.d0).gt.epzero.or.                       &
      abs(thetav(iwma)+999.d0).gt.epzero) then
@@ -1028,7 +1026,6 @@ endif
 if(nscal.gt.0) then
   do ii = 1, nscal
     if(iscsth(ii).eq.-10)then
-      iphas = 1
       if(ii.ne.iscalt) then
         iscsth(ii) = 0
       endif

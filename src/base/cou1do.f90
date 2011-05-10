@@ -128,7 +128,7 @@ double precision ra(*)
 !     VARIABLES LOCALES
 
 integer          idebia, idebra, mode
-integer          iphas  , iappel
+integer          iappel
 integer          ifac, iel , ii
 integer          maxelt, ils, idbia1
 double precision enthal, temper
@@ -178,7 +178,6 @@ if (ientha.eq.2) then
 endif
 
 !     Mise a jour des conditions aux limites externes du module 1D
-iphas = 1
 iappel = 3
 
 maxelt = max(ncelet,nfac,nfabor)
@@ -189,7 +188,7 @@ call iasize('cou1do',idbia1)
 call  uspt1d                                                      &
 !===========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , nphas  , nfpt1d , iphas  , iappel ,          &
+   nvar   , nscal  , nphas  , nfpt1d , iappel ,                   &
    maxelt , ia(ils),                                              &
    ifpt1d , ia(idebia), iclt1d ,                                  &
    ia     ,                                                       &

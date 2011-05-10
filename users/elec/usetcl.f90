@@ -170,7 +170,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac  , ii     , iphas , iel
+integer          ifac  , ii     , iel
 integer          i     , ntf    , nb    , id , itrouv
 integer          izone
 integer          nborne(nbtrmx)
@@ -222,8 +222,6 @@ if(ntcabs.lt.(ntpabs+2)) then
 endif
 
 !     Loop on selected boundary faces
-
-iphas = 1
 
 do i=1,nbelec
 
@@ -375,8 +373,6 @@ write(nfecra,1501)
 
 !     Loop on selected Boundary Faces
 
-iphas = 1
-
 do i=1,nbelec
 
   CHAIN = ' '
@@ -432,8 +428,6 @@ if ( ntfref .eq. 0 ) then
 
   itrouv = 0
   do ifac = 1, nfabor
-
-    iphas = 1
 
     if ( itypfb(ifac) .eq. iparoi ) then
 

@@ -69,7 +69,7 @@ subroutine elphyv &
 !  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
 !    dans usini1 si on souhaite imposer une chaleur specifique
-!    CP variable pour la phase IPHAS (sinon: ecrasement memoire).
+!    CP variable (sinon: ecrasement memoire).
 
 
 !  Il FAUT AVOIR PRECISE IVISLS(Numero de scalaire) = 1
@@ -183,7 +183,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra, ifinia
-integer          iel   , iphas
+integer          iel
 integer          ipcrom, ipcvis, ipccp , ipcray
 integer          ipcvsl, ith   , iscal , ii
 integer          iiii  , ipcsig, it
@@ -220,8 +220,6 @@ idebia = idbia0
 idebra = idbra0
 
 ipass = ipass + 1
-
-iphas = 1
 
 !     Sous relaxation de la masse volumique (pas au premier pas de temps)
 if(ntcabs.gt.1.and.srrom.gt.0.d0) then

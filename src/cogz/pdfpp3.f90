@@ -117,7 +117,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel, igg, idirac, iphas
+integer          iel, igg, idirac
 integer          mode
 integer          clicoy, cliy1, cliy2 , cliy2p
 integer          clif  , cliy , clifp2, clyfp2
@@ -175,7 +175,6 @@ ipcoxy = ipproc(iym(2))
 ipcpro = ipproc(iym(3))
 ipctsc = ipproc(itsc)
 ipctem = ipproc(itemp)
-iphas = 1
 ipcrom = ipproc(irom)
 ipcmam = ipproc(imam)
 

@@ -185,8 +185,7 @@ if(iperio.eq.1) then
 
     call pergra                                                   &
     !==========
-  ( nphsmx , nphas  ,                                             &
-    iiu    , iiv    , iiw    ,                                    &
+  ( iiu    , iiv    , iiw    ,                                    &
     iitytu ,                                                      &
     iir11  , iir22  , iir33  , iir12  , iir13  , iir23  )
 

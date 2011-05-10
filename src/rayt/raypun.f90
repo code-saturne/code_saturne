@@ -29,7 +29,7 @@ subroutine raypun &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , iphas  ,                            &
+   nvar   , nscal  , nphas  ,                                     &
    itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -66,7 +66,6 @@ subroutine raypun &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nphas            ! i  ! <-- ! number of phases                               !
-! iphas            ! i  ! --> ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -136,7 +135,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , iphas
+integer          nvar   , nscal  , nphas
 
 integer          itypfb(nfabor)
 integer          ia(*)

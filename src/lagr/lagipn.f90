@@ -124,7 +124,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia , idebra
-integer          iel , npt , nomb , iphas
+integer          iel , npt , nomb
 double precision tu , d2s3
 
 !===============================================================================
@@ -140,7 +140,6 @@ idebra = idbra0
 ! 1. INITIALISATION
 !===============================================================================
 
-iphas = 1
 d2s3 = 2.d0 / 3.d0
 
 !===============================================================================

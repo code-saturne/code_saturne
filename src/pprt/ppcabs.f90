@@ -29,7 +29,7 @@ subroutine ppcabs &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iphas  ,                                     &
+   nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -47,8 +47,6 @@ subroutine ppcabs &
 !  DONNE LA VALEUR DU COEFFICIENT D'ABSORPTION POUR
 !    LE MELANGE GAZEUX ET LES PARTICULES POUR LE CP.
 
-!  NOTER QUE IPHAS VAUT 1.
-
 !  DANS LE CAS DU MODELE P-1 ON VERIFIE QUE LA LONGUEUR OPTIQUE
 !    DU MILIEU EST AU MINIMUM DE L'ORDRE DE L'UNITE
 
@@ -62,7 +60,6 @@ subroutine ppcabs &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! iphas            ! i  ! <-- ! phase number                                   !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -111,7 +108,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , iphas
+integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          ia(*)
