@@ -31,38 +31,35 @@ module paramx
 
   !=============================================================================
 
-  ! nphsmx : nombre max de phases
-  !          (keep it consistent with cs_nphsmx in cs_perio.h)
   ! nscamx : nombre max de scalaires
   ! nvarmx : nombre max de variables =
-  !          nombre max de scalaires + 12 (u,v,w,P,Rij,e,alp)*nphsmx
+  !          nombre max de scalaires + 12 (u,v,w,P,Rij,e,alp)
   ! nprcmx : nombre max de proprietes physiques aux cellules (total) =
-  !          nscamx (Lambda) + 7 (rho,Cp,viscl,visct,cou,fou,iprtot) nphsmx
-  !                          + 4 (estim) nphsmx
+  !          nscamx (Lambda) + 7 (rho,Cp,viscl,visct,cou,fou,iprtot)
+  !                          + 4 (estim)
   ! nprfmx : nombre max de proprietes physiques aux faces internes =
-  !          nscamx (flumas) + 2*nphsmx(flumas,alp)
+  !          nscamx (flumas) + 2*(flumas,alp)
   ! nprbmx : nombre max de proprietes physiques aux faces de bord =
-  !          nscamx (flumab) + 3*nphsmx(flumab,alp, romb)
+  !          nscamx (flumab) + 3*(flumab,alp, romb)
   ! npromx : nombre max de proprietes physiques tout confondu
   !          majore par nprcmx+nprfmx+nprbmx
   ! ngrdmx : nombre max de grandeurs =
   !          nvarmx + npromx
   ! nsmamx : nombre max de cases pour les tableaux termes source de masse
-  !          nvarmx + nphsmx pour smacel
+  !          nvarmx + 1 pour smacel
   ! nvppmx : nombre de variables pour affichages
   !          ngrdmx + 20 (20 couvre dt, tpucou, et une marge de 16 ...)
 
-  integer   nphsmx, nscamx, nvarmx, nprcmx, nprfmx, nprbmx, npromx
+  integer   nscamx, nvarmx, nprcmx, nprfmx, nprbmx, npromx
   integer   ngrdmx, nsmamx, nvppmx
-  parameter(nphsmx=1)
   parameter(nscamx=200)
-  parameter(nvarmx=nscamx+12*nphsmx)
-  parameter(nprcmx=nscamx+11*nphsmx)
-  parameter(nprfmx=nscamx+ 2*nphsmx)
-  parameter(nprbmx=nscamx+ 3*nphsmx)
+  parameter(nvarmx=nscamx+12)
+  parameter(nprcmx=nscamx+11)
+  parameter(nprfmx=nscamx+ 2)
+  parameter(nprbmx=nscamx+ 3)
   parameter(npromx=nprcmx+ nprfmx+nprbmx)
   parameter(ngrdmx=nvarmx+ npromx)
-  parameter(nsmamx=nvarmx+ nphsmx)
+  parameter(nsmamx=nvarmx+ 1)
   parameter(nvppmx=ngrdmx+20)
 
   ! ntypmx nombre de types de conditions aux limites possibles

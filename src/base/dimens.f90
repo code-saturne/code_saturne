@@ -35,7 +35,7 @@ module dimens
 
   !=============================================================================
 
-  integer, save :: nvar, nscal, nvisls, nphas
+  integer, save :: nvar, nscal, nvisls
 
   integer, save :: ncofab
 

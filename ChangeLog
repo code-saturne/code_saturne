@@ -1,4 +1,21 @@
 * 10/05/2011 - David Monfort <david.monfort@edf.fr>
+  Removing the dependency to the number of phases (step 15).
+  The number of phases (total and actual) are now totally suppressed from
+  the code. No reference to the number of phase remain, except in the
+  checkpoint code to keep a backward-compatibility in the checkpoint files
+  reading (and this should kept in the future).
+  The only remaining changes to be done are a documentation and comments
+  update to account for the phase-dependency removal.
+  modified routines:
+    src/base/dimens.f90
+    src/base/iniini.f90
+    src/base/iniusi.f90
+    src/base/paramx.f90
+    src/base/varpos.f90
+    src/pprt/ppcsca.f90
+    src/rayt/rayopt.f90
+
+* 10/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 14).
   Likewise step 13 but for the number of phases (total and actual).
   modified routines:

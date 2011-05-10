@@ -133,38 +133,11 @@ nfmtmo = 9999
 cindfm = 'YYYY'
 
 !===============================================================================
-! 1. PREMIER APPEL : VERIFICATION DU NOMBRE DE PHASES
+! 1. PREMIER APPEL : CALCUL DE NSCAPP
+!                    VERIFICATION DU NOMBRE DE SCALAIRES
+!                    CONSTRUCTION DE ISCAPP
+!                    CALCUL DE NSCAL
 !                    RETURN
-!===============================================================================
-
-if(ipass.eq.1) then
-
-  iok = 0
-
-  if(nphas.le.0) then
-    write(nfecra,5000) nphas
-    iok = iok + 1
-  endif
-  if(nphas.gt.nphsmx) then
-    write(nfecra,5001) nphas, nphsmx, nphas
-    iok = iok + 1
-  endif
-
-  if(iok.ne.0) then
-    call csexit (1)
-    !==========
-  endif
-
-  return
-
-endif
-
-!===============================================================================
-! 2. SECOND APPEL : CALCUL DE NSCAPP
-!                   VERIFICATION DU NOMBRE DE SCALAIRES
-!                   CONSTRUCTION DE ISCAPP
-!                   CALCUL DE NSCAL
-!                   RETURN
 
 !  C'est juste avant ce second appel que les modeles de combustion
 !    auront ete renseignes. C'est dans la section ci-dessous qu'on en
@@ -176,7 +149,7 @@ endif
 !    defini.
 !===============================================================================
 
-if(ipass.eq.2) then
+if(ipass.eq.1) then
 
 ! ---> Remplissage de ITYTUR
   itytur = iturb/10
@@ -285,29 +258,20 @@ endif
 
 
 !===============================================================================
-! 3. TROISIEME APPEL : VERIFICATIONS ET
+! 2. SECOND APPEL : VERIFICATIONS ET
 !        POSITIONNEMENT DES VARIABLES  : IPR, IU ... ISCA, NVAR
 !                       ET DES PROPRIETES PPALES
 !===============================================================================
 
-if(ipass.eq.3) then
+if(ipass.eq.2) then
 
 
-! ---> 3.1 VERIFICATIONS
+! ---> 2.1 VERIFICATIONS
 !      -----------------
 
   iok = 0
 
-! ---  NPHAS et NSCAL ont deja ete verifies, mais on ne sait jamais.
-
-  if(nphas.le.0) then
-    write(nfecra,5000) nphas
-    iok = iok + 1
-  endif
-  if(nphas.gt.nphsmx) then
-    write(nfecra,5001) nphas, nphsmx, nphas
-    iok = iok + 1
-  endif
+! ---  NSCAL a deja ete verifie, mais on ne sait jamais.
 
   if(nscal.lt.0) then
     write(nfecra,7010) nscal, nscaus, nscapp
@@ -432,7 +396,7 @@ if(ipass.eq.3) then
   endif
 
 
-! ---> 3.2 POSITIONNEMENT DES VARIABLES  : IPR, IU ... ISCA, NVAR
+! ---> 2.2 POSITIONNEMENT DES VARIABLES  : IPR, IU ... ISCA, NVAR
 !      --------------------------------
 
   ivar = 0
@@ -557,7 +521,7 @@ if(ipass.eq.3) then
   endif
 
 
-! ---> 3.3 POSITIONNEMENT DES PROPRIETES PRINCIPALES
+! ---> 2.3 POSITIONNEMENT DES PROPRIETES PRINCIPALES
 !      --------------------------------
 
 ! --- Numerotation des proprietes presentes ici
@@ -926,7 +890,7 @@ if(ipass.eq.3) then
 endif
 
 !===============================================================================
-! 4. QUATRIEME APPEL :
+! 3. TROISIEME APPEL :
 !        POSITIONNEMENT DES PROPRIETES POUR LE SCHEMA EN TEMPS,
 !                                           LES MOMENTS ET FIN
 !===============================================================================
@@ -940,10 +904,10 @@ endif
 !       d'infos situees en tete de fichier suite (si on fait une
 !       suite avec des moments non reinitialises).
 
-if(ipass.eq.4) then
+if(ipass.eq.3) then
 
 
-! ---> 4.1 PROPRIETES ADDITIONNELLES POUR LES ET SCHEMA EN TEMPS
+! ---> 3.1 PROPRIETES ADDITIONNELLES POUR LES ET SCHEMA EN TEMPS
 !      ---------------------------------------------------------
 
 ! --- Initialisations par defaut eventuelles et verifications
@@ -1398,7 +1362,7 @@ if(ipass.eq.4) then
   nprofa = iprop
 
 
-! ---> 4.2 CALCUL DE LA TAILLE DU TABLEAU DES TEMPS CUMULES POUR LES MOMENTS
+! ---> 3.2 CALCUL DE LA TAILLE DU TABLEAU DES TEMPS CUMULES POUR LES MOMENTS
 !      ---------------------------------------------------------------------
 
 !     Pour verification des definitions de moments
@@ -1781,7 +1745,7 @@ if(ipass.eq.4) then
     nbdtcm=max(idtmom(imom),nbdtcm)
   enddo
 
-! ---> 4.3 POSITIONNEMENT DANS PROPCE DES MOMENTS ET DU TEMPS CUMULE
+! ---> 3.3 POSITIONNEMENT DANS PROPCE DES MOMENTS ET DU TEMPS CUMULE
 !      -------------------------------------------------------------
 
 ! --- Reprise du dernier numero de propriete
@@ -1824,7 +1788,7 @@ if(ipass.eq.4) then
 
 
 
-! ---> 4.4  POSITIONNEMENT DES CONDITIONS AUX LIMITES
+! ---> 3.4  POSITIONNEMENT DES CONDITIONS AUX LIMITES
 !      ---------------------------------------------------------------------
 
 ! --- Numerotation des tableaux NFABOR de type COEFA/COEFB presents ici
@@ -1869,7 +1833,7 @@ if(ipass.eq.4) then
   ncofab = icondl
 
 
-! ---> 4.5 POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
+! ---> 3.5 POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
 !      ---------------------------------------------------------------------
 
 ! --- Les pointeurs ont ete initialises a 1 (poubelle).
@@ -1915,12 +1879,12 @@ if(ipass.eq.4) then
 endif
 
 !===============================================================================
-! 5. CINQUIEME APPEL :
+! 4. QUATRIEME APPEL :
 !        RESERVATION D'UNE PLACE DANS PROPCE SI RAYONNEMENT
 !        ET LAGRANGIEN AVEC THERMIQUE DES PARTICULES
 !===============================================================================
 
-if (ipass.eq.5) then
+if (ipass.eq.4) then
 
   if ( iirayo.gt.0 ) then
 
@@ -2110,47 +2074,10 @@ endif
 
 
 !===============================================================================
-! 6. FORMATS
+! 5. FORMATS
 !===============================================================================
 
 #if defined(_CS_LANG_FR)
- 5000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE PHASES ERRONE                                ',/,&
-'@                                                            ',/,&
-'@  Le nombre de phases doit etre un entier strictement       ',/,&
-'@    positif. Il vaut ici                NPHAS  = ',I10       ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 5001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE PHASES TROP GRAND                            ',/,&
-'@                                                            ',/,&
-'@  Le nombre de phases                                       ',/,&
-'@    - demande          dans usini1   est NPHAS  = ',I10      ,/,&
-'@    - maximal autorise dans paramx.h est NPHSMX = ',I10      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usini1.                                          ',/,&
-'@                                                            ',/,&
-'@  NPHSMX doit valoir au moins ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  6000 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3130,43 +3057,6 @@ endif
 
 #else
 
- 5000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA                    ',/,&
-'@    =========                                               ',/,&
-'@     WRTONG    NUMBER OF PHASES                             ',/,&
-'@                                                            ',/,&
-'@  The number of phases must be an integer strictly          ',/,&
-'@    positive. Here it has a value of    NPHAS  = ',I10       ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 5001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     NUMBER OF PHASES TOO LARGE                             ',/,&
-'@                                                            ',/,&
-'@  The number of phases                                      ',/,&
-'@    - requested        in   usini1   is  NPHAS  = ',I10      ,/,&
-'@    - maximmum authorised in paramx.h is NPHSMX = ',I10      ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   usini1.                                          ',/,&
-'@                                                            ',/,&
-'@  NPHSMX must be at least     ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  6000 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

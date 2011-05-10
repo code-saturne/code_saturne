@@ -123,28 +123,8 @@ if(iihmpr.eq.1) then
 endif
 
 !===============================================================================
-! 1. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE PHASES
+! 1. INITIALISATION DE PARAMETRES POUR LA PHASE CONTINUE
 !===============================================================================
-
-! --- Nombre de phases
-
-!     Egal a 1 en version 1.2
-!     =======================
-
-!     Le nombre de phases maximal est donne par NPHSMX dans paramx.h
-!     On teste la valeur donnee par l'utilisateur avant de completer
-!       les tableaux dimensionnes a NPHSMX (ex. ITURB).
-
-nphas = 1
-
-
-! --- Varpos
-!     Verification du nombre de phases
-!      1er passage
-call varpos(nmodpp)
-!==========
-
-! --- Parametres dependant du nombre de phases
 
 !     Turbulence
 !     Chaleur massique variable ou non
@@ -244,7 +224,7 @@ call usray1
 
 ! --- Varpos
 !     Verification et construction de ISCAPP
-!      2ieme passage
+!      1ier passage
 call varpos(nmodpp)
 !==========
 
@@ -364,7 +344,7 @@ call usalin
 !     Determination de IPR, IU ... ISCA, NVAR
 !     Determination de IPP...
 
-!      3ieme passage
+!      2ieme passage
 call varpos(nmodpp)
 !==========
 
@@ -481,7 +461,7 @@ call indsui(isuite)
 !==========
 
 ! --- Varpos
-!      4ieme passage
+!      3ieme passage
 call varpos(nmodpp)
 !==========
 

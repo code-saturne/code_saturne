@@ -392,7 +392,7 @@ iok = 0
 if (iirayo.gt.0) then
 
 ! Positionnement des pointeurs
-! 5eme passage (les autres sont dans iniusi)
+! 4eme passage (les autres sont dans iniusi)
 
   call varpos(nmodpp)
   !==========

@@ -166,7 +166,7 @@ endif
 ! 3. MODELE COMPRESSIBLE SANS CHOC : rho, e, s
 !===============================================================================
 
-if ( ippmod(icompf).ge.0 ) nscapp = 3*nphas
+if ( ippmod(icompf).ge.0 ) nscapp = 3
 
 
 !===============================================================================
@@ -216,45 +216,6 @@ if ( ippmod(iatmos).eq.2 ) nscapp = 3
 !===============================================================================
 
 if ( ippmod(iaeros).ge.0 ) nscapp = 2
-
-!===============================================================================
-! 9. VERIFICATION : UNE SEULE PHASE
-!===============================================================================
-
-iok = 0
-
-if( nscapp.gt.0 .and. ippmod(icompf).lt.0 ) then
-!                     ^^^^^^^^^^^^^^^^^^^^^^^^^
-!     On peut penser faire du multiphasique avec la physique particuliere
-!     compressible sans choc... (mettons deux pressions indépendantes
-!     par exemple) ... a mettre en place si necessaire ...
-
-  if(nphas.ne.1) then
-    write(nfecra,1000)
-    iok = iok + 1
-  endif
-endif
-
-if(iok.ne.0) then
-  call csexit (1)
-  !==========
-endif
-
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SEULE UNE PHASE PERMISE EN PHYSIQUE PARTICULIERE        ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Arret dans ppcsca.                                        ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
 
 return
 end subroutine

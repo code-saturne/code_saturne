@@ -489,10 +489,9 @@ endif
 ! 4. DIMENSIONS de dimens.f90 (PHYSIQUE)
 !===============================================================================
 
-! --- Nombre de phases, de scalaires, de scalaires a diffusivite
+! --- Nombre de scalaires, de scalaires a diffusivite
 !            variable, de variables
 
-nphas  = 0
 nscal  = 0
 nscaus = 0
 nscapp = 0
