@@ -29,7 +29,7 @@ subroutine raydom &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
    ia     ,                                                       &

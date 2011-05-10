@@ -29,7 +29,7 @@ subroutine memv2f &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idtr   , iviscf , iviscb ,                                     &
    idam   , ixam   , idrtp  ,                                     &
    ismbr  , irovsd ,                                              &

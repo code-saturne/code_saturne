@@ -29,7 +29,7 @@ subroutine vorpre &
 !================
 
  ( idbia0 , idbra0 , ifinia , ifinra ,                            &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    irepvo ,                                                       &
    ia     ,                                                       &
    propce , propfa , propfb ,                                     &

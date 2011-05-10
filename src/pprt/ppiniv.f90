@@ -29,7 +29,7 @@ subroutine ppiniv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -161,7 +161,7 @@ idebra = idbra0
   call d3pini                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -175,7 +175,7 @@ idebra = idbra0
   call ebuini                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -189,7 +189,7 @@ endif
   call lwcini                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -202,7 +202,7 @@ if ( ippmod(icp3pl).ge.0 ) then
   call cpiniv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -215,7 +215,7 @@ if ( ippmod(icpl3c).ge.0 ) then
   call cplini                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -228,7 +228,7 @@ if  (ippmod(icfuel).ge.0 ) then
   call fuiniv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -241,7 +241,7 @@ if ( ippmod(icompf).ge.0 ) then
   call cfiniv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -259,7 +259,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   call eliniv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -274,7 +274,7 @@ if ( ippmod(iatmos).ge.0 ) then
   call atiniv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -289,7 +289,7 @@ if ( ippmod(iaeros).ge.0 ) then
   call ctiniv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &

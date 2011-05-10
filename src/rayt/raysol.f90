@@ -29,7 +29,7 @@ subroutine raysol &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -428,7 +428,7 @@ do ii = -1,1,2
         call codits                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &

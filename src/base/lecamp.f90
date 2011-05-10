@@ -30,7 +30,7 @@ subroutine lecamp &
 
  ( idbia0 , idbra0 ,                                              &
    ncelet , ncel   ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    rtp    ,                                                       &
    ra     )

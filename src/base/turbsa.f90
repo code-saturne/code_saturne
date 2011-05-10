@@ -634,7 +634,7 @@ if (ncesmp.gt.0) then
   call catsma                                                     &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
-                                 isto2t , thetv        ,   &
+                                 isto2t , thetv        ,          &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
    smbrsa , w2     , w4 )
@@ -817,7 +817,7 @@ thetap = thetav(ivar)
 call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &

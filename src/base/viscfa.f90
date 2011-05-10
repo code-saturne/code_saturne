@@ -133,8 +133,7 @@ else
     surfn = surfan(ifac)
     pnd  = pond(ifac)
 
-    viscf(ifac) =                                                 &
-      visci*viscj / (pnd*visci+(1.d0-pnd)*viscj)  * surfn/dist(ifac)
+    viscf(ifac) = visci*viscj / (pnd*visci+(1.d0-pnd)*viscj) * surfn/dist(ifac)
 
   enddo
 

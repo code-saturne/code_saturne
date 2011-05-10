@@ -29,7 +29,7 @@ subroutine laggra &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &

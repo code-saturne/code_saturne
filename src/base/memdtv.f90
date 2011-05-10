@@ -29,7 +29,7 @@ subroutine memdtv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iviscf , iviscb , idam   , icofbd , iw1   , iw2    , iw3     , &
    icofbr , igrarx , igrary , igrarz , iwcf  ,                    &
    iptlro , ippmcf ,                                              &

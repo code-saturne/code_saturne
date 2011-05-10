@@ -29,7 +29,7 @@ subroutine csc2ts &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ncecpl,                                                        &
    ivar   ,                                                       &
    lcecpl ,                                                       &

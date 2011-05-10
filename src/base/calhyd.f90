@@ -29,7 +29,7 @@ subroutine calhyd &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    indhyd ,                                                       &
    ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
@@ -289,7 +289,7 @@ climgp = climgr(ipriph)
 call projts                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
@@ -432,7 +432,7 @@ do isweep = 1, nswmpr
     call itrgrp                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

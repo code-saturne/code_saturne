@@ -29,7 +29,7 @@ subroutine projts &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu ,                                              &

@@ -595,7 +595,7 @@ if( idiff(ivar).ge. 1 ) then
   imodif = 0
   call uscfth                                                     &
   !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -802,7 +802,7 @@ iescap = 0
 call cfcdts                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iscal  , iconvp , idiffp , ireslp , ndircp , nitmap ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , iifbru ,                            &
@@ -838,7 +838,7 @@ call clpsca                                                       &
   imodif = 0
   call uscfth                                                     &
   !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -870,7 +870,7 @@ endif
   imodif = 0
   call uscfth                                                     &
   !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

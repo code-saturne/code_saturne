@@ -29,7 +29,7 @@ subroutine memale &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iviscf , iviscb ,                                              &
    idam   , ixam   , idrtp  ,                                     &
    ismbr  , irovsd ,                                              &

@@ -128,16 +128,16 @@ module optcal
   !  xnrmu  : norme de u(k+1) - u(k)
   !  xnrmu0 : norme de u(0)
 
-  integer, save ::          nterup,                                         &
+  integer, save ::          nterup,                         &
                             ischtp, istmpf,                 &
                             isno2t, isto2t, isso2t(nscamx), &
-                            iroext,                                 &
+                            iroext,                         &
                             iviext, icpext, ivsext(nscamx), &
                             initro, initvi,                 &
                             initcp, initvs(nscamx)
   double precision, save :: thetav(nvarmx), thetsn, thetst, &
-                            thetss(nscamx),                                 &
-                            thetfl, thetro, thetvi, &
+                            thetss(nscamx),                 &
+                            thetfl, thetro, thetvi,         &
                             thetcp, thetvs(nscamx), epsup , &
                             xnrmu0, xnrmu
 

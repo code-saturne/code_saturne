@@ -29,7 +29,7 @@ subroutine cscpce &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nptdis , ityloc ,                                              &
    ivar   ,                                                       &
    locpts ,                                                       &

@@ -29,7 +29,7 @@ subroutine cfrusb &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    imodif ,                                                       &
    ia     ,                                                       &
    gammag ,                                                       &

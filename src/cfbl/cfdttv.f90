@@ -158,7 +158,7 @@ ivar   = isca(iscal)
 call memcft                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
    iviscf , icoefu , ixam   ,                                     &
    ifinia , ifinra )

@@ -181,12 +181,12 @@ do ii = 1, 3
 enddo
 
 !----
-! FORMATS
+! Formats
 !----
 
 #if defined(_CS_LANG_FR)
 
- 1000 format (                                                          &
+ 1000 format (                                                    &
 '@                                                            ',/,&
 '@ @@ ATTENTION : DEPLACEMENT DE STRUCTURES INTERNES ALE      ',/,&
 '@    =========                                               ',/,&
@@ -201,7 +201,7 @@ enddo
 
 #else
 
- 1000 format (                                                          &
+ 1000 format (                                                    &
 '@                                                            ',/,&
 '@ @@ WARNING: ALE DISPLACEMENT OF INTERNAL STRUCTURES        ',/,&
 '@    ========                                                ',/,&
@@ -217,7 +217,7 @@ enddo
 #endif
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

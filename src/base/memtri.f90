@@ -29,7 +29,7 @@ subroutine memtri &
 !================
 
  ( idbia0 , idbra0 , iverif ,                                     &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ncofab , nproce , nprofa , nprofb ,                            &
    iisstd , ifrcx  ,                                              &
    idt    , irtp   , irtpa  , ipropc , ipropf , ipropb ,          &

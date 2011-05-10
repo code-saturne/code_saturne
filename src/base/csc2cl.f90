@@ -29,7 +29,7 @@ subroutine csc2cl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nvcp   , nvcpto , nfbcpl , nfbncp ,                            &
    icodcl , itrifb , itypfb ,                                     &
    lfbcpl , lfbncp ,                                              &

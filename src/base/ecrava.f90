@@ -30,7 +30,7 @@ subroutine ecrava &
 
  ( idbia0 , idbra0 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
    dt     , rtp    , propce , propfa , propfb ,                   &

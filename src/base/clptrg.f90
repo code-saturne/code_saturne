@@ -29,7 +29,7 @@ subroutine clptrg &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
@@ -574,7 +574,7 @@ do ifac = 1, nfabor
     call atmcls                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ifac   , iel    ,                                              &
    uk     , utau   , yplus  ,                                     &
    uet    ,                                                       &

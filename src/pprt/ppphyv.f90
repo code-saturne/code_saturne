@@ -29,7 +29,7 @@ subroutine ppphyv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -190,7 +190,7 @@ idebra = idbra0
     call d3pphy                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -213,7 +213,7 @@ idebra = idbra0
     call ebuphy                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -260,7 +260,7 @@ idebra = idbra0
      call cpphyv                                                  &
      !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -281,7 +281,7 @@ idebra = idbra0
      call cplphy                                                  &
      !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -299,7 +299,7 @@ idebra = idbra0
      call fuphyv                                                  &
      !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -317,7 +317,7 @@ idebra = idbra0
      call cfphyv                                                  &
      !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -344,7 +344,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   call elphyv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -362,7 +362,7 @@ if ( ippmod(iaeros).ge.0 ) then
    call ctphyv                                                    &
    !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -380,7 +380,7 @@ if ( ippmod(iatmos).ge.1 ) then
    call atphyv                                                    &
    !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   ,                                     &

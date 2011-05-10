@@ -29,7 +29,7 @@ subroutine ppclim &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -176,7 +176,7 @@ if ( ippmod(icod3p).ge.0 ) then
   call usd3pc                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -194,7 +194,7 @@ if ( ippmod(icoebu).ge.0 ) then
   call usebuc                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -211,7 +211,7 @@ if ( ippmod(icolwc).ge.0 ) then
   call uslwcc                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -228,7 +228,7 @@ if ( ippmod(icp3pl).ge.0 ) then
   call uscpcl                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -245,7 +245,7 @@ if ( ippmod(icpl3c).ge.0 ) then
   call uscplc                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -261,7 +261,7 @@ if ( ippmod(icfuel).ge.0 ) then
   call usfucl                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -277,7 +277,7 @@ if ( ippmod(icompf).ge.0 ) then
   call uscfcl                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -299,7 +299,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   call uselcl                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -313,7 +313,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
     call usetcl                                                   &
      !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -333,7 +333,7 @@ if ( ippmod(iatmos).ge.0 ) then
     call usatcl                                                   &
     !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -351,7 +351,7 @@ if (ippmod(iaeros).ge.0) then
   call usctcl                                                     &
   !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &

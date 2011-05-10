@@ -29,7 +29,7 @@ subroutine memnav &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iviscf , iviscb , ivisfi , ivisbi ,                            &
    idam   , ixam   ,                                              &
    idrtp  , igrdp  , ismbr  , irovsd ,                            &

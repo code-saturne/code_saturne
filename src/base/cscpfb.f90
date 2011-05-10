@@ -29,7 +29,7 @@ subroutine cscpfb &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nptdis , ityloc , nvcp   , numcpl , nvcpto,                    &
    locpts ,                                                       &
    ia     ,                                                       &

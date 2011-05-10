@@ -282,18 +282,18 @@ iuiph  = iu
 iflmas = ipprof(ifluma(iuiph))
 iflmab = ipprob(ifluma(iuiph))
 
-call preduv                                                     &
+call preduv                                                      &
 !==========
 ( idebia , idebra , iappel ,                                     &
   nvar   , nscal  , iterns ,                                     &
-  ncepdc   , ncetsm   ,                            &
-  ia(iicepd)        , ia(iicesm)       ,           &
-  ia(iitpsm)        ,                                     &
+  ncepdc   , ncetsm   ,                                          &
+  ia(iicepd)        , ia(iicesm)       ,                         &
+  ia(iitpsm)        ,                                            &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   propfa(1,iflmas), propfb(1,iflmab),                            &
   tslagr , coefa  , coefb  ,                                     &
-  ra(ickupd)        , ra(ismace)        ,  frcxt , &
+  ra(ickupd)        , ra(ismace)        ,  frcxt ,               &
   trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      ,  trav  , &
   viscf  , viscb  , viscfi , viscbi ,                            &
   dam    , xam    ,                                              &
@@ -335,7 +335,7 @@ if( iprco.le.0 ) then
 
   imaspe = 1
 
-  call inimas                                                   &
+  call inimas                                                    &
   !==========
 ( idebia , idebra ,                                              &
   nvar   , nscal  ,                                              &
@@ -404,7 +404,7 @@ if( iprco.le.0 ) then
       ra(iflint+ifac-1) = 0.d0
     enddo
 
-    call inimas                                                 &
+    call inimas                                                   &
     !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
@@ -459,8 +459,8 @@ if( iprco.le.0 ) then
         dtfac = 0.5d0*(dt(iel1) + dt(iel2))
         rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
         propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(      &
-             ddepx*surfac(1,ifac)                &
-             +ddepy*surfac(2,ifac)                &
+             ddepx*surfac(1,ifac)                                 &
+             +ddepy*surfac(2,ifac)                                &
              +ddepz*surfac(3,ifac) )/dtfac/icpt
         !     Else w is calculated from the cell-centre mesh velocity
       else
@@ -524,13 +524,13 @@ call resolp                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc   , ncetsm   ,                            &
-   ia(iicepd)        , ia(iicesm)       ,           &
-   ia(iitpsm)        , isostd , idtsca ,                   &
+   ncepdc   , ncetsm   ,                                          &
+   ia(iicepd)        , ia(iicesm)       ,                         &
+   ia(iitpsm)        , isostd , idtsca ,                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(ickupd)        , ra(ismace)        ,          &
+   ra(ickupd)        , ra(ismace)        ,                        &
    frcxt  , dfrcxt , ra(itpuco)      , trav   ,                   &
    viscf  , viscb  , viscfi , viscbi ,                            &
    dam    , xam    ,                                              &
@@ -617,7 +617,7 @@ if( irevmc.eq.1 ) then
 
   imaspe = 1
 
-  call inimas                                                   &
+  call inimas                                                     &
   !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
@@ -643,7 +643,7 @@ if( irevmc.eq.1 ) then
     ra(iflbrd+ifac-1) = propfb(ifac,iflmab) - ra(iflbrd+ifac-1)
   enddo
 
-  call recvmc                                                   &
+  call recvmc                                                     &
   !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
@@ -670,9 +670,9 @@ elseif( irevmc.eq.2 ) then
   call rasize('navsto',ifinra)
   !==========
 
-  call recvmc                                                   &
-                                !==========
-       ( idebia , ifinra ,                                              &
+  call recvmc                                                         &
+  !==========
+       ( idebia , ifinra ,                                            &
        nvar   , nscal  ,                                              &
        ia     ,                                                       &
        propce(1,ipcrom), propfa(1,iflmas), propfb(1,iflmab),          &
@@ -717,16 +717,16 @@ else
   climgp = climgr(ipriph)
   extrap = extrag(ipriph)
 
-  call grdcel                                                   &
+  call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
    trav(1,1)       , trav(1,2)       , trav(1,3) ,                &
-!        ---------         ---------         ---------
+   !--------         ---------         ---------
    w1     , w2     , w3     ,                                     &
    ra     )
 
@@ -909,8 +909,8 @@ if (iale.eq.1) then
       dtfac = 0.5d0*(dt(iel1) + dt(iel2))
       rhofac = 0.5d0*(propce(iel1,ipcrom) + propce(iel2,ipcrom))
       propfa(ifac,iflmas) = propfa(ifac,iflmas) - rhofac*(        &
-           ddepx*surfac(1,ifac)                  &
-           +ddepy*surfac(2,ifac)                  &
+           ddepx*surfac(1,ifac)                                   &
+           +ddepy*surfac(2,ifac)                                  &
            +ddepz*surfac(3,ifac) )/dtfac/icpt
       !     Else w is calculated from the cell-centre mesh velocity
     else
@@ -1094,18 +1094,18 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     !   APPEL A PREDUV AVEC RTP ET RTP AU LIEU DE RTP ET RTPA
     !                  AVEC LE FLUX DE MASSE RECALCULE
     iappel = 2
-    call preduv                                                 &
+    call preduv                                                   &
     !==========
  ( idebia , idebra , iappel ,                                     &
    nvar   , nscal  , iterns ,                                     &
-   ncepdc   , ncetsm   ,                            &
-   ia(iicepd)        , ia(iicesm)       ,           &
-   ia(iitpsm)        ,                                     &
+   ncepdc   , ncetsm   ,                                          &
+   ia(iicepd)        , ia(iicesm)       ,                         &
+   ia(iitpsm)        ,                                            &
    ia     ,                                                       &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  ,                                     &
-   ra(ickupd)        , ra(ismace)        , frcxt  , &
+   ra(ickupd)        , ra(ismace)        , frcxt  ,               &
    trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      , trav   , &
    viscf  , viscb  , viscfi , viscbi ,                            &
    dam    , xam    ,                                              &
@@ -1166,7 +1166,7 @@ else
   ndircp = ndircl(ipr)-1
 endif
 if(ndircp.le.0) then
-  call prmoy0                                                   &
+  call prmoy0                                                 &
   !==========
 ( idebia , idebra ,                                           &
   ncelet , ncel   , nfac   , nfabor ,                         &
@@ -1186,8 +1186,8 @@ if (ippmod(icompf).lt.0) then
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
   do iel=1,ncel
-    propce(iel,ipproc(iprtot))= rtp(iel,ipr)      &
-         + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                     &
+    propce(iel,ipproc(iprtot))= rtp(iel,ipr)           &
+         + ro0iph*( gx*(xyzcen(1,iel)-xxp0)            &
          + gy*(xyzcen(2,iel)-xyp0)                     &
          + gz*(xyzcen(3,iel)-xzp0) )                   &
          + p0iph - pr0iph
@@ -1222,8 +1222,7 @@ if (iwarni(iuiph).ge.1) then
 
   rnorm = -1.d0
   do iel = 1, ncel
-    vitnor =                                                    &
-         sqrt(rtp(iel,iuiph)**2+rtp(iel,iviph)**2+rtp(iel,iwiph)**2)
+    vitnor = sqrt(rtp(iel,iuiph)**2+rtp(iel,iviph)**2+rtp(iel,iwiph)**2)
     if(vitnor.ge.rnorm) then
       rnorm = vitnor
       imax  = iel
@@ -1269,8 +1268,7 @@ if (iwarni(iuiph).ge.1) then
   rnorma = -grand
   rnormi =  grand
   do ifac = 1, nfabor
-    rnorm = propfb(ifac,iflmab)/                                &
-         (surfbn(ifac)*propfb(ifac,ipbrom))
+    rnorm = propfb(ifac,iflmab)/(surfbn(ifac)*propfb(ifac,ipbrom))
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
   enddo
@@ -1297,8 +1295,7 @@ if (iwarni(iuiph).ge.1) then
   if(nterup.gt.1) then
     if(icvrge.eq.0) then
       write(nfecra,2600) iterns
-      write(nfecra,2601) xnrmu,                          &
-           xnrmu0, epsup
+      write(nfecra,2601) xnrmu, xnrmu0, epsup
       write(nfecra,2001)
       if(iterns.eq.nterup) then
         write(nfecra,2603)
@@ -1306,8 +1303,7 @@ if (iwarni(iuiph).ge.1) then
       endif
     else
       write(nfecra,2602) iterns
-      write(nfecra,2601) xnrmu,                          &
-           xnrmu0, epsup
+      write(nfecra,2601) xnrmu, xnrmu0, epsup
       write(nfecra,2001)
     endif
   endif

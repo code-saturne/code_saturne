@@ -29,7 +29,7 @@ subroutine cscini &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    ra     )
 

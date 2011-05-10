@@ -29,7 +29,7 @@ subroutine memdyp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idam   , ixam   , ismbr  , irovsd ,                            &
    irtdp  , idrtdp ,                                              &
    iqfx   , iqfy   , iqfz   , icoefq , irho   , irhob  ,          &

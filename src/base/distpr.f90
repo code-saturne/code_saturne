@@ -29,7 +29,7 @@ subroutine distpr &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    ia     ,                                                       &
    distpa ,                                                       &
@@ -300,7 +300,7 @@ do isweep = 0, nswrsy
     call bilsc2                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
    ipp    , iwarny ,                                              &

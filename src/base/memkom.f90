@@ -29,7 +29,7 @@ subroutine memkom &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
    idrtp  , ismbrk , ismbrw , itinsk , itinsw , if1    ,          &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &

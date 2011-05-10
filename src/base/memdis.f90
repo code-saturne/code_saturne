@@ -29,7 +29,7 @@ subroutine memdis &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iviscf , iviscb , idam   , ixam   , ismbr  , irovsd ,          &
    irtdp  , icoefa , icoefb ,                                     &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &

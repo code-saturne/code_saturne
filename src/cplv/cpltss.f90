@@ -33,7 +33,7 @@ subroutine cpltss &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   izfppp , ia     ,                            &
+   izfppp , ia     ,                                              &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr ,                                     &

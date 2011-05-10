@@ -53,15 +53,15 @@ module numvar
   ! nscapp                     nbre de scalaires physique particuliere
   ! iuma, ivma, iwma           Vitesse de maillage en ALE
 
-  integer, save :: ipr ,                                   &
-                   iu  , iv    , iw  ,     &
-                   ik  , iep   ,                   &
-                   ir11, ir22  , ir33,     &
-                   ir12, ir13  , ir23,     &
-                   iphi, ifb   , iomg,     &
-                   inusa,                                  &
-                   isca(nscamx), iscapp(nscamx),                   &
-                   nscaus      , nscapp        ,                   &
+  integer, save :: ipr ,                                        &
+                   iu  , iv    , iw  ,                          &
+                   ik  , iep   ,                                &
+                   ir11, ir22  , ir33,                          &
+                   ir12, ir13  , ir23,                          &
+                   iphi, ifb   , iomg,                          &
+                   inusa,                                       &
+                   isca(nscamx), iscapp(nscamx),                &
+                   nscaus      , nscapp        ,                &
                    iuma        , ivma          , iwma
 
 
@@ -99,12 +99,12 @@ module numvar
   ! ivisma : Viscosite de maillage en ALE (eventuellement orthotrope)
 
   integer, save :: ipproc(npromx), ipprof(npromx), ipprob(npromx), &
-                   irom  , iroma , iviscl, &
-                   ivisct, ivisla, ivista, &
-                   icp   , icpa  , itsnsa, &
-                   itstua, itssca(nscamx),                 &
-                   iestim(nestmx)         , ifluma(nvarmx), &
-                   ifluaa(nvarmx), ismago, icour , &
+                   irom  , iroma , iviscl,                         &
+                   ivisct, ivisla, ivista,                         &
+                   icp   , icpa  , itsnsa,                         &
+                   itstua, itssca(nscamx),                         &
+                   iestim(nestmx)         , ifluma(nvarmx),        &
+                   ifluaa(nvarmx), ismago, icour ,                 &
                    ifour , iprtot, ivisma(3)
 
   ! Position des conditions aux limites

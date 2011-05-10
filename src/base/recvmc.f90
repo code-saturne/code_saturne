@@ -29,7 +29,7 @@ subroutine recvmc &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    rom    , flumas , flumab ,                                     &
    ux     , uy     , uz     ,                                     &

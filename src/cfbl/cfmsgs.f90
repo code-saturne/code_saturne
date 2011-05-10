@@ -328,7 +328,7 @@ call iasize('cfmsgs',ifinia)
     call inimas                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
@@ -510,7 +510,7 @@ iccfth = 6
 imodif = 0
 call uscfth                                                       &
 !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -527,7 +527,7 @@ iccfth = 162
 imodif = 0
 call uscfth                                                       &
 !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -583,7 +583,7 @@ extrap = extrag(ivar)
 call cfbsc3                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
@@ -653,7 +653,7 @@ imaspe = 1
 call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ivar0  , ivar0  , ivar0  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &

@@ -29,7 +29,7 @@ subroutine memra3 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iisoth , itek   , itext  , itint  ,                            &
    ifinia , ifinra )
 

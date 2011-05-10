@@ -29,7 +29,7 @@ subroutine csccel &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ivar   ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &

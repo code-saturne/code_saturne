@@ -29,7 +29,7 @@ subroutine memcft &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
    iviscf , icoefu , ixam   ,                                     &
    ifinia , ifinra )

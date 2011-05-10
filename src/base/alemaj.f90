@@ -29,7 +29,7 @@ subroutine alemaj &
 !================
 
  ( idbia0 , idbra0 , itrale ,                                     &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    impale ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &

@@ -29,7 +29,7 @@ subroutine memcli &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    isvhb  , isvtb  ,                                              &
    iicodc , ircodc ,                                              &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &

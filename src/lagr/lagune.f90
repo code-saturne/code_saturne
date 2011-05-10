@@ -30,7 +30,7 @@ subroutine lagune &
 
  ( idbia0 , idbra0 ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , ifrlag , itepa  , indep  , ibord  ,          &
@@ -294,7 +294,7 @@ if ( ntcabs.eq.1 ) then
   !==========
  ( idebia , idebra ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itycel     , icocel      ,                                     &
@@ -311,7 +311,7 @@ else
   !==========
  ( idebia , idebra ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itycel     , icocel      ,                                     &
@@ -332,7 +332,7 @@ if (iroule.ge.1) then
   call uslaru                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ia(iitypf) , ia(iitrif)  , itepa ,                             &
@@ -390,7 +390,7 @@ if ( ntcabs.eq.1 ) then
   call laggra                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
@@ -402,7 +402,7 @@ else
   call laggra                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    rtpa   , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
@@ -470,7 +470,7 @@ if (nor.eq.2 .and. iilagr.ne.3) then
   call laggra                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
@@ -615,7 +615,7 @@ if (nor.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ia(iitypf)      , ia(iitrif)      ,                            &
@@ -681,7 +681,7 @@ if (nor.eq.nordre .and. istala.eq.1 .and. iplas.ge.idstnt) then
   call lagsta                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
@@ -703,7 +703,7 @@ if (nor.eq.nordre .and. ilapoi.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , ifrlag , itepa  ,                            &
@@ -768,7 +768,7 @@ if (nordre.eq.2 .and. nor.eq.1) goto 10
 call uslast                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
@@ -841,7 +841,7 @@ if (modntl.eq.0) then
    call lagaff                                                    &
    !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &

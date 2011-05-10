@@ -29,7 +29,7 @@ subroutine distyp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    itypfb , isympa ,                                              &
    ia     ,                                                       &
    distpa , propce , uetbor , disty  ,                            &
@@ -323,7 +323,7 @@ ivar = 0
 call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ivar   , ivar   , ivar   , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
    iwarny , nfecra ,                                              &
@@ -577,7 +577,7 @@ do ntcont = 1, ntcmxy
   call codits                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap ,                                     &

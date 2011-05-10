@@ -29,7 +29,7 @@ subroutine raycli &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    isvhb  , isvtb  ,                                              &
    icodcl , itrifb , itypfb ,                                     &
    izfrad , isothm ,                                              &

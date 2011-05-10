@@ -30,7 +30,7 @@ subroutine lagcel &
 
  ( idbia0 , idbra0 ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , icocel , itycel , ifrlag , itepa  , ibord  , &
@@ -684,7 +684,7 @@ do ip = 1,nbpart
           !==========
  ( idebia , idebra ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ifac   , ip     , isuivi ,                                     &

@@ -520,7 +520,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
   call tsepdc                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ncepdp ,                                                       &
    idiaex ,                                                       &
    icepdc ,                                                       &
@@ -546,7 +546,7 @@ if(itytur.eq.3 ) then
     call divrij                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    isou   , ivar   ,                                              &
    ia     ,                                                       &
    rtp    , propce , propfa , propfb ,                            &
@@ -784,7 +784,7 @@ do isou = 1, 3
   call cfcdts                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , ireslp , ndircp ,  nitmap ,         &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , iifbru ,                            &

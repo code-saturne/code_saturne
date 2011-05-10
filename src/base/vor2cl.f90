@@ -29,7 +29,7 @@ subroutine vor2cl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb ,                                     &
    irepvo ,                                                       &
    ia     ,                                                       &

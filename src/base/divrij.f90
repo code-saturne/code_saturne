@@ -29,7 +29,7 @@ subroutine divrij &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idim   , ivar   ,                                              &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -202,7 +202,7 @@ imaspe = 2
 call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ivar1  , ivar2  , ivar3  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &

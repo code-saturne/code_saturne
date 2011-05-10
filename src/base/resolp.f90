@@ -272,38 +272,26 @@ if(irnpnw.ne.1) then
   if (iphydr.eq.1) then
     do iel = 1, ncel
       unsvom = -1.d0/volume(iel)
-      trav(iel,1) = trav(iel,1)*unsvom                            &
-           + frcxt(iel,1)                                   &
-           + dfrcxt(iel,1)
-      trav(iel,2) = trav(iel,2)*unsvom                            &
-           + frcxt(iel,2)                                   &
-           + dfrcxt(iel,2)
-      trav(iel,3) = trav(iel,3)*unsvom                            &
-           + frcxt(iel,3)                                   &
-           + dfrcxt(iel,3)
+      trav(iel,1) = trav(iel,1)*unsvom + frcxt(iel,1) + dfrcxt(iel,1)
+      trav(iel,2) = trav(iel,2)*unsvom + frcxt(iel,2) + dfrcxt(iel,2)
+      trav(iel,3) = trav(iel,3)*unsvom + frcxt(iel,3) + dfrcxt(iel,3)
     enddo
   else
     if(isno2t.gt.0) then
       do iel = 1, ncel
         unsvom = -1.d0/volume(iel)
         romro0 = propce(iel,ipcrom)-ro0iph
-        trav(iel,1) = (trav(iel,1)+trava(iel,1))*unsvom     &
-             + romro0*gx
-        trav(iel,2) = (trav(iel,2)+trava(iel,2))*unsvom     &
-             + romro0*gy
-        trav(iel,3) = (trav(iel,3)+trava(iel,3))*unsvom     &
-             + romro0*gz
+        trav(iel,1) = (trav(iel,1)+trava(iel,1))*unsvom + romro0*gx
+        trav(iel,2) = (trav(iel,2)+trava(iel,2))*unsvom + romro0*gy
+        trav(iel,3) = (trav(iel,3)+trava(iel,3))*unsvom + romro0*gz
       enddo
     else
       do iel = 1, ncel
         unsvom = -1.d0/volume(iel)
         romro0 = propce(iel,ipcrom)-ro0iph
-        trav(iel,1) = trav(iel,1)*unsvom                          &
-             + romro0*gx
-        trav(iel,2) = trav(iel,2)*unsvom                          &
-             + romro0*gy
-        trav(iel,3) = trav(iel,3)*unsvom                          &
-             + romro0*gz
+        trav(iel,1) = trav(iel,1)*unsvom + romro0*gx
+        trav(iel,2) = trav(iel,2)*unsvom + romro0*gy
+        trav(iel,3) = trav(iel,3)*unsvom + romro0*gz
       enddo
     endif
   endif
@@ -342,7 +330,7 @@ if(irnpnw.ne.1) then
   call inimas                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
@@ -443,7 +431,7 @@ if (iphydr.eq.1) then
       call calhyd                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    indhyd ,                                                       &
    ia     ,                                                       &
    frchy (1,1) , frchy (1,2) , frchy (1,3) ,                      &
@@ -553,7 +541,7 @@ call grdcel                                                       &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr)  ,         &
    trav(1,1) , trav(1,2) , trav(1,3) ,                            &
 !        ---------   ---------   ---------
@@ -610,7 +598,7 @@ imaspe = 1
 call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
@@ -643,12 +631,12 @@ if (iphydr.eq.1) then
     call projts                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    coefb(1,iclipr) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -658,12 +646,12 @@ if (iphydr.eq.1) then
     call projts                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    coefb(1,iclipr) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -701,12 +689,12 @@ if(arakph.gt.0.d0) then
     call itrmas                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
@@ -732,12 +720,12 @@ if(arakph.gt.0.d0) then
       call projts                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    ia     ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    coefb(1,iclipf) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -768,12 +756,12 @@ if(arakph.gt.0.d0) then
     call itrmas                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1)     , tpucou(1,2)     , tpucou(1,3)     ,          &
@@ -799,12 +787,12 @@ if(arakph.gt.0.d0) then
       call projts                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
    ia     ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    coefb(1,iclipf) ,                                              &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    viscf  , viscb  ,                                              &
@@ -849,7 +837,7 @@ if (iphydr.eq.1) then
       phydr0 = 0.d0
     else
       iel0 = ifabor(ifac0)
-      phydr0 = rtp(iel0,ipriph)                                   &
+      phydr0 = rtp(iel0,ipriph)                             &
            +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(iel0,1) &
            +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(iel0,2) &
            +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(iel0,3)
@@ -860,7 +848,7 @@ if (iphydr.eq.1) then
     do ifac=1,nfabor
       if (isostd(ifac).eq.1) then
         iel=ifabor(ifac)
-        coefa(ifac,iclipf) = rtp(iel,ipriph)                      &
+        coefa(ifac,iclipf) = rtp(iel,ipriph)                &
              +(cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(iel,1)  &
              +(cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(iel,2)  &
              +(cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(iel,3)  &
@@ -888,7 +876,7 @@ if (imgr(ipriph).gt.0) then
 
   call clmlga                                                     &
   !==========
- ( chaine(1:16) ,   lchain ,                                     &
+ ( chaine(1:16) ,   lchain ,                                      &
    ncelet , ncel   , nfac   ,                                     &
    isym   , iagmax , nagmax , npstmg , iwarnp ,                   &
    ngrmax , ncegrm ,                                              &
@@ -994,12 +982,12 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
@@ -1012,12 +1000,12 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
@@ -1054,7 +1042,7 @@ do 100 isweep = 1, nswmpr
  ( chaine(1:16)    , isym   , ipol   , ireslp , nitmap , imgrp  , &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
-   epsilp , rnormp   , residu ,                            &
+   epsilp , rnormp   , residu ,                                   &
    dam    , xam    , smbr   , drtp   )
 
   nbivar(ipp) = nbivar(ipp) + niterf
@@ -1107,12 +1095,12 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
@@ -1130,12 +1118,12 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    drtp            , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
@@ -1148,12 +1136,12 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
@@ -1171,12 +1159,12 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    drtp            , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
@@ -1226,12 +1214,12 @@ do 100 isweep = 1, nswmpr
       call itrgrp                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
@@ -1244,12 +1232,12 @@ do 100 isweep = 1, nswmpr
       call itrgrp                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),         &
+   dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    rtp(1,ipriph)   , coefa(1,iclipf) , coefb(1,iclipr) ,          &
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
@@ -1303,7 +1291,7 @@ endif
 
  1300 format(1X,A16,' : RESIDU DE NORMALISATION =', E14.6)
  1400 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6)
- 1600 format(                                                           &
+ 1600 format(                                                     &
 '@                                                            ',/,&
 '@ @@ ATTENTION : ', A16,' ETAPE DE PRESSION                  ',/,&
 '@    =========                                               ',/,&
@@ -1314,7 +1302,7 @@ endif
 
  1300 format(1X,A16,' : NORMED RESIDUALS = ', E14.6)
  1400 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
- 1600 format(                                                           &
+ 1600 format(                                                     &
 '@'                                                            ,/,&
 '@ @@ WARNING: ', A16,' PRESSURE STEP '                        ,/,&
 '@    ========'                                                ,/,&

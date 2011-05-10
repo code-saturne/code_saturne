@@ -29,7 +29,7 @@ subroutine cfxtcl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -216,7 +216,7 @@ if(icalep.ne.0) then
   imodif = 0
   call uscfth                                                   &
   !==========
-( nvar   , nscal  ,                                                                                 &
+( nvar   , nscal  ,                                              &
   iccfth , imodif ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
@@ -241,7 +241,7 @@ if(icalgm.ne.0) then
   imodif = 0
   call uscfth                                                   &
   !==========
-( nvar   , nscal  ,                                                                                 &
+( nvar   , nscal  ,                                              &
   iccfth , imodif ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
@@ -314,7 +314,7 @@ do ifac = 1, nfabor
 
       call uscfth                                               &
       !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -445,7 +445,7 @@ do ifac = 1, nfabor
 
     call uscfth                                                 &
     !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -525,7 +525,7 @@ do ifac = 1, nfabor
 
     call uscfth                                                 &
     !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -580,7 +580,7 @@ do ifac = 1, nfabor
 
     call uscfth                                                 &
     !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -634,7 +634,7 @@ do ifac = 1, nfabor
 
     call uscfth                                                 &
     !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -688,7 +688,7 @@ do ifac = 1, nfabor
 
     call uscfth                                                 &
     !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , ifac   ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -805,7 +805,7 @@ do ifac = 1, nfabor
       call cfrusb                                               &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ifac   ,                                                       &
    ia     ,                                                       &
    gammag ,                                                       &

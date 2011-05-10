@@ -29,7 +29,7 @@ subroutine typecl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -614,13 +614,13 @@ if (itbslb.gt.0) then
   extrap = extrag(ipriph)
   iclipr = iclrtp(ipriph,icoef)
 
-  call grdcel                                                   &
-                                !==========
-       ( idebia , idebra ,                                              &
+  call grdcel                                                         &
+  !==========
+       ( idebia , idebra ,                                            &
        ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
        iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
        ia     ,                                                       &
-       frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
+       frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
        rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
        w1     , w2     , w3     ,                                     &
        !        ------   ------   ------
@@ -652,8 +652,8 @@ if (itbslb.gt.0) then
            + (cdgfbo(2,ifac)-xyzcen(2,ii))*w2(ii)               &
            + (cdgfbo(3,ifac)-xyzcen(3,ii))*w3(ii)               &
            + ro0iph*(  gx*(cdgfbo(1,ifac)-xxp0)                 &
-           + gy*(cdgfbo(2,ifac)-xyp0)                 &
-           + gz*(cdgfbo(3,ifac)-xzp0))                &
+           + gy*(cdgfbo(2,ifac)-xyp0)                           &
+           + gz*(cdgfbo(3,ifac)-xzp0))                          &
            + p0iph - pr0iph
     enddo
   endif
@@ -847,8 +847,8 @@ if (itbslb.gt.0) then
   xxp0 = xyzp0(1)
   xyp0 = xyzp0(2)
   xzp0 = xyzp0(3)
-  pref = p0                                              &
-       + ro0iph*( gx*(xyzref(1)-xxp0)                           &
+  pref = p0                                            &
+       + ro0iph*( gx*(xyzref(1)-xxp0)                  &
        + gy*(xyzref(2)-xyp0)                           &
        + gz*(xyzref(3)-xzp0) )                         &
        - coefup
@@ -896,9 +896,9 @@ ifin = ifinty(isymet)
 
 do ivar = 1, nvar
   if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph.or.      &
-       ( itytur.eq.3.and.                                  &
-       (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
-       ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip)    &
+       ( itytur.eq.3.and.                                       &
+       (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or.  &
+       ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip)      &
        ) ) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
@@ -1366,7 +1366,7 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
 #endif
 
     do ii = 1, ntypmx
-      if( ii.ne.ientre .and.                                    &
+      if ( ii.ne.ientre .and.                                    &
            ii.ne.iparoi .and.                                    &
            ii.ne.iparug .and.                                    &
            ii.ne.isymet .and.                                    &

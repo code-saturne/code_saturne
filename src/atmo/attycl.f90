@@ -29,7 +29,7 @@ subroutine attycl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbmetd , nbmett , nbmetm ,                                     &
    icodcl , itrifb , itypfb , izfppp , iprofm ,                   &
    ia     ,                                                       &

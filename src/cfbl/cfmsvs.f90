@@ -29,7 +29,7 @@ subroutine cfmsvs &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iscal  ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -150,7 +150,7 @@ iccfth = 126
 imodif = 0
 call uscfth                                                       &
 !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

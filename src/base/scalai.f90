@@ -29,7 +29,7 @@ subroutine scalai &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  ,                                     &
@@ -178,7 +178,7 @@ call iasize('scalai',ifinia)
   call ppinv2                                                     &
   !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -267,8 +267,7 @@ call iasize('scalai',ifinia)
 
     if ( ippmod(icompf).ge.0 ) then
 
-      if ( iscal.eq.irho .or.                            &
-           iscal.eq.itempk ) then
+      if ( iscal.eq.irho .or. iscal.eq.itempk ) then
         ispecf = 1
       elseif ( iscal.eq.ienerg ) then
         ispecf = 2
@@ -283,13 +282,13 @@ call iasize('scalai',ifinia)
         call cfener                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
-   ncepdc   , ncetsm   ,                            &
+   nvar   , nscal  ,                                              &
+   ncepdc   , ncetsm   ,                                          &
    iscal  ,                                                       &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
+   coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
@@ -347,13 +346,13 @@ call iasize('scalai',ifinia)
       call covofi                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
-   ncepdc , ncetsm ,                                &
+   nvar   , nscal  ,                                              &
+   ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
    ia     ,                                                       &
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
-   coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
+   coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
@@ -403,7 +402,7 @@ call iasize('scalai',ifinia)
           call elflux                                             &
           !==========
  ( idebia , idebra , iappel ,                                     &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
@@ -420,7 +419,7 @@ call iasize('scalai',ifinia)
             !==========
    (idebia , idebra ,                                             &
     nvar   , nscal  ,                                             &
-    ia     ,                                    &
+    ia     ,                                                      &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,         &
     coefa  , coefb  , viscf  , viscb  ,                           &
     w1     , w2     , w3     , w4     , w5     ,                  &
@@ -453,7 +452,7 @@ if ( ippmod(ielarc).ge.1       ) then
   call elflux                                                     &
   !==========
  ( idebia , idebra , iappel ,                                     &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
@@ -532,13 +531,13 @@ if(nscaus.gt.0) then
     call covofi                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
-   ncepdc , ncetsm ,                                &
+   nvar   , nscal  ,                                              &
+   ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
    ia     ,                                                       &
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
-   coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
+   coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
@@ -562,7 +561,7 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 9000 format(                                                           &
+ 9000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -589,7 +588,7 @@ endif
 
 #else
 
- 9000 format(                                                           &
+ 9000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

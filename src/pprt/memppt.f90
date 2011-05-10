@@ -29,7 +29,7 @@ subroutine memppt &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ifinia , ifinra )
 
 !===============================================================================

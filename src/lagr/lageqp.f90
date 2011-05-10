@@ -29,7 +29,7 @@ subroutine lageqp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
    viscf  , viscb  ,                                              &
@@ -232,7 +232,7 @@ enddo
 call diverv                                                       &
 !==========
  ( idebia , ifinra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     ,                                                       &
    smbrs  , w1     , w2     , w3     ,                            &
@@ -364,7 +364,7 @@ thetap = 1.0d0
 call codits                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &

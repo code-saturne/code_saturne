@@ -30,7 +30,7 @@ subroutine lagpoi &
 
  ( idbia0 , idbra0 ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , ifrlag , itepa  ,                            &
@@ -222,7 +222,7 @@ enddo
 call lageqp                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
    ra(iviscf) , ra(iviscb) ,                                      &

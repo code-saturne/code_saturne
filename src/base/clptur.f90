@@ -29,7 +29,7 @@ subroutine clptur &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &

@@ -212,7 +212,7 @@ do inbcou = 1, nbccou
 
     call uscfth                                                   &
     !==========
- ( nvar   , nscal  ,                                                                                 &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

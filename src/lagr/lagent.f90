@@ -30,7 +30,7 @@ subroutine lagent &
 
  ( idbia0 , idbra0 ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itycel , icocel ,                                              &
@@ -299,7 +299,7 @@ endif
 call uslag2                                                       &
 !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    maxelt , ia(ils),                                              &
@@ -876,7 +876,7 @@ do ii = 1,nfrlag
          !==========
  ( idebia , idebra ,                                              &
    idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -937,7 +937,7 @@ do ii = 1,nfrlag
           !==========
  ( idebia , idebra ,                                              &
    idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -982,7 +982,7 @@ do ii = 1,nfrlag
               !==========
  ( idebia , idebra ,                                              &
    idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -1069,7 +1069,7 @@ do ii = 1,nfrlag
           !==========
  ( idebia , idebra ,                                              &
    idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -1239,7 +1239,7 @@ call lagipn                                                       &
 call uslain                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nbpnew ,                                                       &

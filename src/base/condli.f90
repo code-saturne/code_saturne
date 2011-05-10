@@ -29,7 +29,7 @@ subroutine condli &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
    ia     ,                                                       &
@@ -287,7 +287,7 @@ if(ippmod(iphpar).ge.1) then
   call pptycl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    icodcl , ia(iitrif) , ia(iitypf)  , ia(iizfpp) ,               &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -300,7 +300,7 @@ if (iale.eq.1) then
   call altycl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia(iitypf)      , ia(iialty)      , icodcl , ia(iimpal)      , &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -314,7 +314,7 @@ if (imobil.eq.1) then
   call mmtycl &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia(iitypf)      , icodcl ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -327,7 +327,7 @@ endif
 call typecl                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ia(iitypf)      , ia(iitrif)      , icodcl , isostd ,          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -342,7 +342,7 @@ call typecl                                                       &
 call vericl                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -813,7 +813,7 @@ if (ipatur.ne.0) then
   call clptur                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
@@ -831,7 +831,7 @@ if (ipatrg.ne.0) then
   call clptrg                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
@@ -859,7 +859,7 @@ if (iclsym.ne.0) then
   call clsyvt                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    icodcl , ia(iismph) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &

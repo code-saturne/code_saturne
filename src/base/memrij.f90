@@ -29,7 +29,7 @@ subroutine memrij &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    iturbp ,                                                       &
    idtr   , iviscf , iviscb , icoefx ,                            &
    idam   , ixam   , idrtp  ,                                     &

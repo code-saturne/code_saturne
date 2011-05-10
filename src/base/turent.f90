@@ -194,11 +194,10 @@ double precision uref2, xintur, dh, cmu, xkappa, xk, xeps
 
 
 xk   = 1.5d0*uref2*xintur**2
-xeps =                                                            &
-     10.d0*cmu**(0.75d0)*xk**1.5d0/(xkappa*dh)
+xeps = 10.d0*cmu**(0.75d0)*xk**1.5d0/(xkappa*dh)
 
 !----
-! FIN
+! End
 !----
 
 return

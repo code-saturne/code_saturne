@@ -29,7 +29,7 @@ subroutine cfbsc2 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
    ipp    , iwarnp ,                                              &

@@ -29,7 +29,7 @@ subroutine rijthe &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                                                                 &
+   nvar   , nscal  ,                                              &
    ivar   , isou   , ipp    ,                                     &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
@@ -303,7 +303,7 @@ elseif (ivar.eq.ir23ip) then
     kseps = (rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))  &
            /(2.d0*rtpa(iel,ieiph))
 
-    g23 = const*kseps*     (r2t*gz+r3t*gy)
+    g23 = const*kseps*(r2t*gz+r3t*gy)
 
     phit23 = -crij3* g23
 
@@ -338,9 +338,9 @@ elseif (ivar.eq.ieiph ) then
         + rtpa(iel,ir23ip)*graroy(iel)                            &
         + rtpa(iel,ir33ip)*graroz(iel)
 
-    g11p = const*      2.d0*(r1t*gx       )
-    g22p = const*      2.d0*(r2t*gy       )
-    g33p = const*      2.d0*(r3t*gz       )
+    g11p = const*      2.d0*(r1t*gx)
+    g22p = const*      2.d0*(r2t*gy)
+    g33p = const*      2.d0*(r3t*gz)
 
     aa = 0.d0
     bb = 0.5d0*(g11p+g22p+g33p)
