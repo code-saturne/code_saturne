@@ -2848,8 +2848,6 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t  *matrix,
   int n_rows = ms->n_rows;
   const char uplo[] = "u";
 
-  assert(ms->symmetric == false);
-
   mkl_cspblas_dcsrsymv(uplo,
                        &n_rows,
                        mc->val,

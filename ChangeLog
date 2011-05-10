@@ -1,3 +1,9 @@
+* 10/05/2011 - David Monfort <david.monfort@edf.fr>
+  Remove now inconsistent assert on a symmetric flag (due to the matrix
+  structure refactoring), only present with MKL support.
+  modified routine:
+    src/base/cs_matrix.c
+
 * 09/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 12).
   Complete previous steps where some changes were missing.
