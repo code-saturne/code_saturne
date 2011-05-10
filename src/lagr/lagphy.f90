@@ -66,7 +66,6 @@ subroutine lagphy &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -134,7 +133,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
@@ -181,7 +180,7 @@ if ( iphyla.eq.2 .or. (iphyla.eq.1 .and. itpvar.eq.1) ) then
   call lagitf                                                     &
   !==========
   ( idebia , idebra ,                                             &
-    nvar   , nscal  , nphas  ,                                    &
+    nvar   , nscal  ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
@@ -201,7 +200,7 @@ if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
   call lagitp                                                     &
   !==========
   ( idebia , idebra ,                                             &
-    nvar   , nscal  , nphas  ,                                    &
+    nvar   , nscal  ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
@@ -221,7 +220,7 @@ if ( iphyla.eq.1 .and. idpvar.eq.1 ) then
   call lagidp                                                     &
   !==========
   ( idebia , idebra ,                                             &
-    nvar   , nscal  , nphas  ,                                    &
+    nvar   , nscal  ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
@@ -241,7 +240,7 @@ if (iphyla.eq.1 .and. impvar.eq.1) then
   call lagimp                                                     &
   !==========
   ( idebia , idebra ,                                             &
-    nvar   , nscal  , nphas  ,                                    &
+    nvar   , nscal  ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
@@ -268,7 +267,7 @@ if (iphyla.eq.2) then
   call lagich                                                     &
   !==========
   ( ifinia , ifinra ,                                             &
-    nvar   , nscal  , nphas  ,                                    &
+    nvar   , nscal  ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
     itepa  , ibord  , ia     ,                                    &
@@ -289,7 +288,7 @@ if (nvls.ge.1) then
   call uslaed                                                     &
   !==========
     ( idebia , idebra ,                                           &
-      nvar   , nscal  , nphas  ,                                  &
+      nvar   , nscal  ,                                           &
       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
       itepa  , ibord  ,                                           &

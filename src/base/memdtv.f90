@@ -29,7 +29,7 @@ subroutine memdtv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iviscf , iviscb , idam   , icofbd , iw1   , iw2    , iw3     , &
    icofbr , igrarx , igrary , igrarz , iwcf  ,                    &
    iptlro , ippmcf ,                                              &
@@ -50,7 +50,6 @@ subroutine memdtv &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iviscf, b        ! e  ! --> ! "pointeur" sur viscf, viscb                    !
 ! idam             ! e  ! --> ! "pointeur" sur dam                             !
 ! icofbd           ! e  ! --> ! "pointeur" sur cofbdt                          !
@@ -80,7 +79,7 @@ use mesh
 implicit none
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          iviscf , iviscb , idam  , icofbd, icofbr
 integer          iw1    , iw2    , iw3
 integer          igrarx, igrary, igrarz, iwcf

@@ -29,7 +29,7 @@ subroutine clptrg &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
@@ -58,7 +58,6 @@ subroutine clptrg &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
 !                  !    !     !  coefficients d'echange aux bords              !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
@@ -95,10 +94,10 @@ subroutine clptrg &
 ! (nfabor,6   )    !    !     !  des rij au bord                               !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! uetbor           ! tr ! --> ! vitesse de frottement au bord                  !
-! (nfabor,nphas    !    !     !  pour van driest en les                        !
-! visvdr(nphas)    ! tr ! <-- ! viscosite dynamique ds les cellules            !
-! (ncelet,nphas    !    !     !  de bord apres amortisst de v driest           !
+! uetbor(nfabor)   ! tr ! --> ! vitesse de frottement au bord                  !
+!                  !    !     !  pour van driest en les                        !
+! visvdr(ncelet)   ! tr ! <-- ! viscosite dynamique ds les cellules            !
+!                  !    !     !  de bord apres amortisst de v driest           !
 ! hbord            ! tr ! --> ! coefficients d'echange aux bords               !
 ! (nfabor)         !    !     !                                                !
 ! thbord           ! tr ! <-- ! temperature aux bords en i'                    !
@@ -141,7 +140,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          isvhb
 
 integer          icodcl(nfabor,nvar)
@@ -575,7 +574,7 @@ do ifac = 1, nfabor
     call atmcls                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ifac   , iel    ,                                              &
    uk     , utau   , yplus  ,                                     &
    uet    ,                                                       &

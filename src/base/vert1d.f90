@@ -63,7 +63,6 @@ subroutine vert1d &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nfpt1d           ! e  ! <-- ! nombre de faces avec module therm 1d           !
 ! ifpt1d           ! e  ! <-- ! numero de la face en traitement                !
 !                  !    !     ! thermique en paroi                             !

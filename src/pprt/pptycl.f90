@@ -29,7 +29,7 @@ subroutine pptycl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -55,7 +55,6 @@ subroutine pptycl &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -132,7 +131,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
@@ -281,7 +280,7 @@ if ( ippmod(icod3p).ge.0 ) then
   call d3ptcl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -297,7 +296,7 @@ elseif ( ippmod(icoebu).ge.0 ) then
   call ebutcl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -313,7 +312,7 @@ elseif ( ippmod(icolwc).ge.0 ) then
   call lwctcl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -328,7 +327,7 @@ elseif ( ippmod(icp3pl).ge.0 ) then
   call cpptcl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -343,7 +342,7 @@ elseif ( ippmod(icpl3c).ge.0 ) then
   call cpltcl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -358,7 +357,7 @@ elseif ( ippmod(icfuel).ge.0 ) then
   call fuptcl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -373,7 +372,7 @@ elseif ( ippmod(icompf).ge.0 ) then
   call cfxtcl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -388,7 +387,7 @@ elseif ( ippmod(iatmos).ge.0 ) then
   call attycl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbmetd , nbmett , nbmetm ,                                     &
    icodcl , itrifb , itypfb , izfppp , iprofm ,                   &
    ia     ,                                                       &

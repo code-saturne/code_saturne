@@ -29,7 +29,7 @@ subroutine alelap &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
@@ -54,7 +54,6 @@ subroutine alelap &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -105,7 +104,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -228,7 +227,7 @@ do ii = 1, 3
   call codits                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &

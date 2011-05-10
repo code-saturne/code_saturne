@@ -29,7 +29,7 @@ subroutine atprke &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nscal  , nphas  ,                                              &
+   nscal  ,                                                       &
    ipcvto,                                                        &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
@@ -55,7 +55,6 @@ subroutine atprke &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! irespr(ncelet    ! te ! --- ! tab entier multigrille                         !
@@ -106,7 +105,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nscal  , nphas
+integer          nscal
 integer          ipcvto
 
 
@@ -172,7 +171,6 @@ if (ippmod(iatmos).eq.1) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    iivar  , imrgra , inc    , iccocg , nswrgp ,imligp, iphydp,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &

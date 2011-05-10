@@ -29,7 +29,7 @@ subroutine lwctss &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp , ia     ,                            &
@@ -84,7 +84,6 @@ subroutine lwctss &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
@@ -149,7 +148,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
@@ -286,7 +285,6 @@ if ( ivar.eq.isca(icoyfp)) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
    iphydp , iwarni(ii) , nfecra ,                                 &
    epsrgr(ii) , climgr(ii) , extrag(ii) ,                         &
@@ -323,7 +321,6 @@ if ( ivar.eq.isca(icoyfp)) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
    iphydp , iwarni(ii) , nfecra ,                                 &
    epsrgr(ii) , climgr(ii) , extrag(ii) ,                         &

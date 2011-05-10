@@ -163,7 +163,6 @@ integer          iscal , ipcvsl, ipcvst, iflmab
 integer          ientla, ivarpr
 integer          iyplbp
 integer          ipccp , ipcrom
-integer          nphas
 
 double precision cp0iph, xcp   , xvsl  , srfbn, distbr
 double precision visct , flumab, diipbx, diipby, diipbz
@@ -183,10 +182,6 @@ cp0iph = 0
 
 idebia = idbia0
 idebra = idbra0
-
-! Number of phases
-
-nphas = 1
 
 !===============================================================================
 !     1.1. TRAITEMENT POUR LE MAILLAGE FLUIDE
@@ -672,7 +667,6 @@ else if  (numtyp .eq. -2) then
       call grdcel                                               &
       !==========
  ( ifinia , ifinra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -860,7 +854,7 @@ if (nummai .eq. -1) then
         call uslaen                                               &
         !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  , nvlsta ,                            &
+   nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -902,7 +896,7 @@ if (nummai .eq. -1) then
         call uslaen                                               &
         !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  , nvlsta ,                            &
+   nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -1088,7 +1082,7 @@ if (     ippmod(ieljou).ge.1                                      &
   call uselen                                                     &
   !==========
  ( ifinia , ifinra , nummai ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    ncelps , nfacps , nfbrps ,                                     &
    lstcel , lstfac , lstfbr ,                                     &
    ia     ,                                                       &

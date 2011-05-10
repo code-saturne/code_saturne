@@ -29,7 +29,7 @@ subroutine raycli &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    isvhb  , isvtb  ,                                              &
    icodcl , itrifb , itypfb ,                                     &
    izfrad , isothm ,                                              &
@@ -60,7 +60,6 @@ subroutine raycli &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
 !                  !    !     !  coefficients d'echange aux bords              !
 ! isvtb            ! e  ! <-- ! indicateur de sauvegarde des                   !
@@ -142,7 +141,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)

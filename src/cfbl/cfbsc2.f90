@@ -29,7 +29,7 @@ subroutine cfbsc2 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
    ipp    , iwarnp ,                                              &
@@ -70,7 +70,6 @@ subroutine cfbsc2 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ivar             ! e  ! <-- ! numero de la variable                          !
 ! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
 ! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
@@ -143,7 +142,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
 integer          inc    , imrgra , iccocg , iifbru
@@ -241,7 +240,6 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or.                          &
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &

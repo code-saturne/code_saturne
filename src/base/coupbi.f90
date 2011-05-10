@@ -28,7 +28,7 @@
 subroutine coupbi &
 !================
 
- ( nfabor , nvar   , nscal  , nphas  ,                            &
+ ( nfabor , nvar   , nscal  ,                                     &
    icodcl ,                                                       &
    rcodcl )
 
@@ -46,7 +46,6 @@ subroutine coupbi &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! icodcl           ! te ! --> ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> flux density                          !
@@ -92,7 +91,7 @@ implicit none
 
 ! Arguments
 
-integer          nfabor, nvar, nscal, nphas
+integer          nfabor, nvar, nscal
 integer          icodcl(nfabor,nvar)
 double precision rcodcl(nfabor,nvar,3)
 

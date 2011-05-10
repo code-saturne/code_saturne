@@ -29,7 +29,7 @@ subroutine phyvar &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -55,7 +55,6 @@ subroutine phyvar &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -103,7 +102,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -123,7 +122,7 @@ character*80     chaine
 integer          idebia, idebra
 integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct
-integer          nphmx , nn
+integer          nn
 integer          ibrom , ipcrom, ipbrom, ipcvst
 integer          ikiph , ieiph , ir11ip, ir22ip, ir33ip
 integer          inuiph
@@ -159,7 +158,7 @@ if(iperot.gt.0) then
   call perinu                                                   &
   !==========
 ( idebia , idebra ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                                                                 &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
@@ -173,7 +172,7 @@ if(iperot.gt.0) then
     call perinr                                                 &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -191,15 +190,13 @@ endif
 !      GRANDEURS PHYSIQUES VARIABLES QUI LUI SONT PROPRES
 !===============================================================================
 
-nphmx = nphsmx
 ibrom = 0
 
 if (ippmod(iphpar).ge.1) then
   call ppphyv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   nphmx  ,                                                       &
+   nvar   , nscal  ,                                                                                 &
    ibrom  ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -227,8 +224,7 @@ endif
 call usphyv &
 !==========
 ( idebia , idebra ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
-  nphmx  ,                                                       &
+  nvar   , nscal  ,                                                                                 &
   ibrom  ,                                                       &
   ia     ,                                                       &
   dt     , rtp    , rtpa   ,                                     &
@@ -324,7 +320,7 @@ elseif (iturb.eq.10) then
   call vislmg                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc , ncetsm ,                                &
    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
@@ -377,7 +373,7 @@ elseif (iturb.eq.40) then
   call vissma                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc , ncetsm ,                                &
    ia(iicepd) ,                                            &
    ia(iicesm) , ia(iitpsm),                         &
@@ -397,7 +393,7 @@ elseif(iturb.eq.41) then
   call visdyn                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc , ncetsm ,                                &
    ia(iicepd) ,                                            &
    ia(iicesm) , ia(iitpsm),                         &
@@ -418,7 +414,7 @@ elseif (iturb.eq.42) then
   call viswal                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc , ncetsm ,                                &
    ia(iicepd) ,                                            &
    ia(iicesm) , ia(iitpsm),                         &
@@ -461,7 +457,7 @@ elseif (iturb.eq.60) then
   call vissst                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc , ncetsm ,                                &
    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
    ia     ,                                                       &
@@ -501,7 +497,7 @@ endif
 call usvist                                                     &
 !==========
 ( idebia , idebra ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                                                                 &
   ncepdc   , ncetsm   ,                            &
   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
   ia     ,                                                       &

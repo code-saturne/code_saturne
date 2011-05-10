@@ -29,7 +29,7 @@ subroutine mempdc &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   , nphas  , ndim   , ifinia , ifinra )
+   ncelet , ncel   , ndim   , ifinia , ifinra )
 
 !===============================================================================
 !  FONCTION
@@ -46,7 +46,6 @@ subroutine mempdc &
 !                  !    !     !  tableaux ia/ra                                !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ndim             ! e  ! <-- ! dimension de l'espace (3)                      !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
@@ -74,7 +73,7 @@ use parall
 implicit none
 
 integer          idbia0 ,idbra0
-integer          ncelet , ncel , nphas, ndim
+integer          ncelet , ncel , ndim
 integer          ifinia , ifinra
 
 integer          idebia, idebra, iok, iok1
@@ -108,7 +107,7 @@ endif
 
 ncpdct = ncepdc
 if (irangp.ge.0) then
-  call parism(nphas,ncpdct)
+  call parcpt(ncpdct)
 endif
 
 !---> QUELQUES MESSAGES

@@ -32,7 +32,7 @@ subroutine ustsma &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp ,                            &
+   nvar   , nscal  , ncepdp ,                                     &
    ncesmp , iappel ,                                              &
    maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -155,7 +155,6 @@ subroutine ustsma &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! iappel           ! i  ! <-- ! indicates which at which stage the routine is  !
@@ -208,7 +207,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iappel
 

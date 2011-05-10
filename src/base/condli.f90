@@ -29,7 +29,7 @@ subroutine condli &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
    ia     ,                                                       &
@@ -75,7 +75,6 @@ subroutine condli &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
 !                  !    !     !  coefficients d'echange aux bords              !
 ! isvtb            ! e  ! <-- ! indicateur de sauvegarde des                   !
@@ -112,16 +111,16 @@ subroutine condli &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! uetbor           ! tr ! --> ! vitesse de frottement au bord                  !
-! (nfabor,nphas    !    !     !  pour van driest en les                        !
-! visvdr(nphas)    ! tr ! --> ! viscosite dynamique ds les cellules            !
-! (ncelet,nphas    !    !     !  de bord apres amortisst de v driest           !
+! uetbor(nfabor)   ! tr ! --> ! vitesse de frottement au bord                  !
+!                  !    !     !  pour van driest en les                        !
+! visvdr(ncelet)   ! tr ! --> ! viscosite dynamique ds les cellules            !
+!                  !    !     !  de bord apres amortisst de v driest           !
 ! hbord            ! tr ! --> ! coefficients d'echange aux bords               !
 ! (nfabor)         !    !     !                                                !
 ! thbord           ! tr ! --> ! temperature aux bords en i'                    !
 ! (nfabor)         !    !     !    (plus exactmt : var. energetique)           !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! coefu            ! tr ! --- ! tab de trav pour valeurs en iprime             !
@@ -165,7 +164,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)
@@ -288,7 +287,7 @@ if(ippmod(iphpar).ge.1) then
   call pptycl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , ia(iitrif) , ia(iitypf)  , ia(iizfpp) ,               &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -301,7 +300,7 @@ if (iale.eq.1) then
   call altycl                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia(iitypf)      , ia(iialty)      , icodcl , ia(iimpal)      , &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -315,7 +314,7 @@ if (imobil.eq.1) then
   call mmtycl &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia(iitypf)      , icodcl ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -328,7 +327,7 @@ endif
 call typecl                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia(iitypf)      , ia(iitrif)      , icodcl , isostd ,          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -343,7 +342,7 @@ call typecl                                                       &
 call vericl                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -597,7 +596,6 @@ if (iscat .gt. 0) then
     call grdcel                                                 &
     !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -684,7 +682,6 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
       call grdcel                                               &
       !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -751,7 +748,6 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
       call grdcel                                               &
       !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -817,7 +813,7 @@ if (ipatur.ne.0) then
   call clptur                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
@@ -835,7 +831,7 @@ if (ipatrg.ne.0) then
   call clptrg                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    isvhb  ,                                                       &
    icodcl ,                                                       &
    ia     ,                                                       &
@@ -863,7 +859,7 @@ if (iclsym.ne.0) then
   call clsyvt                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    icodcl , ia(iismph) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &

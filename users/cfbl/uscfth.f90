@@ -31,7 +31,7 @@
 subroutine uscfth &
 !================
 
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -194,7 +194,6 @@ subroutine uscfth &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
@@ -239,7 +238,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          iccfth   , imodif
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)

@@ -29,7 +29,7 @@ subroutine rijech &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , isou   , ipp    ,                                     &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
@@ -56,7 +56,6 @@ subroutine rijech &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! isou             ! e  ! <-- ! numero de passage                              !
 ! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
@@ -107,7 +106,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ivar   , isou   , ipp
 
 integer          ia(*)
@@ -241,7 +240,6 @@ elseif(abs(icdpar).eq.1) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &

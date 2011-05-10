@@ -44,8 +44,6 @@ subroutine pergra &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nphjmx           ! e  ! <-- ! nombre de phases max                           !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ju, jv, jw       ! te ! --> ! numero de variable pour u, v, w                !
 ! jtytur           ! te ! --> ! indicateur modele de turbulence                !
 ! jr11...jr23      ! te ! --> ! numero de variable pour rij                    !
@@ -71,7 +69,6 @@ implicit none
 
 ! Arguments
 
-integer          nphjmx, nphas
 integer          ju,jv,jw
 integer          jtytur
 integer          jr11,jr22,jr33

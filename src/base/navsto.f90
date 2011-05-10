@@ -29,7 +29,7 @@ subroutine navsto &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , iterns , icvrge ,                   &
+   nvar   , nscal  , iterns , icvrge ,                            &
    isostd ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -59,7 +59,6 @@ subroutine navsto &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iterns           ! e  ! <-- ! numero d'iteration sur navsto                  !
 ! icvrge           ! e  ! <-- ! indicateur de convergence du pnt fix           !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
@@ -73,14 +72,14 @@ subroutine navsto &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! trava,ximpa      ! tr ! <-- ! tableau de travail pour couplage               !
-!ncelet,3,nphas    !    !     ! vitesse pression par point fixe                !
+!(ncelet,3)        !    !     ! vitesse pression par point fixe                !
 ! uvwk             ! tr ! <-- ! tableau de travail pour couplage u/p           !
-!ncelet,3,nphas    !    !     ! sert a stocker la vitesse de                   !
+!(ncelet,3)        !    !     ! sert a stocker la vitesse de                   !
 !                  !    !     ! l'iteration precedente                         !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
@@ -93,8 +92,8 @@ subroutine navsto &
 ! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! w1..10(ncelet    ! tr ! --- ! tableau de travail                             !
-! dfrcxt(ncelet    ! tr ! --- ! variation de force exterieure                  !
-!   3,nphas)       !    !     !  generant la pression hydrostatique            !
+! dfrcxt(ncelet,3) ! tr ! --- ! variation de force exterieure                  !
+!                  !    !     !  generant la pression hydrostatique            !
 ! frchy(ncelet     ! tr ! --- ! tableau de travail                             !
 !  ndim  )         !    !     !  pression hydrostatique                        !
 ! dfrchy(ncelet    ! tr ! --- ! tableau de travail variation de                !
@@ -140,7 +139,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , iterns , icvrge
+integer          nvar   , nscal  , iterns , icvrge
 
 integer          isostd(nfabor+1)
 integer          ia(*)
@@ -286,7 +285,7 @@ iflmab = ipprob(ifluma(iuiph))
 call preduv                                                     &
 !==========
 ( idebia , idebra , iappel ,                                     &
-  nvar   , nscal  , nphas  , iterns ,                            &
+  nvar   , nscal  , iterns ,                                     &
   ncepdc   , ncetsm   ,                            &
   ia(iicepd)        , ia(iicesm)       ,           &
   ia(iitpsm)        ,                                     &
@@ -339,7 +338,7 @@ if( iprco.le.0 ) then
   call inimas                                                   &
   !==========
 ( idebia , idebra ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                              &
   iuiph  , iviph  , iwiph  , imaspe ,                            &
   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
   iwarnp , nfecra ,                                              &
@@ -408,7 +407,7 @@ if( iprco.le.0 ) then
     call inimas                                                 &
     !==========
  ( idebia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
@@ -524,7 +523,7 @@ if ((ipucou.eq.1).or.(ncpdct.gt.0)) idtsca = 1
 call resolp                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    ncepdc   , ncetsm   ,                            &
    ia(iicepd)        , ia(iicesm)       ,           &
    ia(iitpsm)        , isostd , idtsca ,                   &
@@ -621,7 +620,7 @@ if( irevmc.eq.1 ) then
   call inimas                                                   &
   !==========
  ( idebia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
@@ -647,7 +646,7 @@ if( irevmc.eq.1 ) then
   call recvmc                                                   &
   !==========
  ( idebia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    ia     ,                                                       &
    propce(1,ipcrom), ra(iflint)      , ra(iflbrd)      ,          &
    w1     , w2     , w3     ,                                     &
@@ -674,7 +673,7 @@ elseif( irevmc.eq.2 ) then
   call recvmc                                                   &
                                 !==========
        ( idebia , ifinra ,                                              &
-       nvar   , nscal  , nphas  ,                                     &
+       nvar   , nscal  ,                                              &
        ia     ,                                                       &
        propce(1,ipcrom), propfa(1,iflmas), propfb(1,iflmab),          &
        rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph),                      &
@@ -721,7 +720,6 @@ else
   call grdcel                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -859,7 +857,7 @@ if (iale.eq.1) then
   call inimas                                                   &
   !==========
  ( idebia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
@@ -1031,7 +1029,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   call inimas                                                   &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
@@ -1099,7 +1097,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     call preduv                                                 &
     !==========
  ( idebia , idebra , iappel ,                                     &
-   nvar   , nscal  , nphas  , iterns ,                            &
+   nvar   , nscal  , iterns ,                                     &
    ncepdc   , ncetsm   ,                            &
    ia(iicepd)        , ia(iicesm)       ,           &
    ia(iitpsm)        ,                                     &

@@ -28,7 +28,7 @@
 subroutine coupbo &
 !================
 
- ( nvar   , nscal  , nphas  , isvtb  ,                            &
+ ( nvar   , nscal  , isvtb  ,                                     &
    ncp , ncv , ientha ,                                           &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -53,7 +53,6 @@ subroutine coupbo &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ientha           ! i  ! <-- ! 1 si tparoi est une enthalpie                  !
 !                  ! i  ! <-- ! 2 si tparoi est une energie                    !
 !                  !    !     !    (compressible)                              !
@@ -86,7 +85,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          isvtb
 integer          ncp    , ncv    , ientha
 
@@ -213,7 +212,7 @@ do inbcou = 1, nbccou
 
     call uscfth                                                   &
     !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

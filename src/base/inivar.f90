@@ -29,7 +29,7 @@ subroutine inivar &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncofab ,                            &
+   nvar   , nscal  , ncofab ,                                     &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  , frcxt  ,                                     &
@@ -51,7 +51,6 @@ subroutine inivar &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncofab           ! e  ! <-- ! nombre de couples coefa/b pour les cl          !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
@@ -62,8 +61,8 @@ subroutine inivar &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -99,7 +98,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , ncofab
+integer          nvar   , nscal  , ncofab
 
 integer          ia(*)
 
@@ -171,7 +170,7 @@ call iasize('inivar',IFINIA)
 call usiniv                                                       &
 !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -196,7 +195,7 @@ if (ippmod(iphpar).ge.1) then
   call ppiniv                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    maxelt , ia(ils),                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -294,7 +293,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
     if(xekmin.ge.0.d0.and.xepmin.ge.0.d0) then
       iclip = 1
-      call clipke( ncelet , ncel   , nvar   , nphas  ,          &
+      call clipke( ncelet , ncel   , nvar   ,          &
       !==========
                    iclip  , iwarni(ikiph) ,            &
                    propce , rtp    )
@@ -359,7 +358,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
     if (x11min.ge.0.d0.and.x22min.ge.0.d0.and.                  &
          x33min.ge.0.d0.and.xepmin.ge.0.d0 ) then
       iclip = 1
-      call clprij( ncelet , ncel   , nvar   , nphas  ,          &
+      call clprij( ncelet , ncel   , nvar   ,          &
       !==========
                    iclip  ,                            &
                    propce , rtp    , rtp    )

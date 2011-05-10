@@ -32,8 +32,7 @@ subroutine usphyv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   nphmx  ,                                                       &
+   nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
@@ -118,8 +117,6 @@ subroutine usphyv &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
-! nphmx            ! i  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !        !    !     !                                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -161,8 +158,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
-integer          nphmx
+integer          nvar   , nscal
 
 integer          ibrom
 integer          ia(*)

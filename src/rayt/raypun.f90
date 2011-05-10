@@ -29,7 +29,7 @@ subroutine raypun &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    itypfb ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -65,7 +65,6 @@ subroutine raypun &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -135,7 +134,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          ia(*)
@@ -285,7 +284,7 @@ nomvar(inum) = cnom
 call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
@@ -328,7 +327,6 @@ iphydp  = 0
 call grdcel                                                       &
 !==========
    ( idebia , idebra ,                                            &
-     nphas  ,                                                     &
      ivar0  , imrgra , inc    , iccocg , nswrgp , imligp,         &
      iphydp ,                                                     &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                 &

@@ -29,7 +29,7 @@ subroutine memrij &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iturbp ,                                                       &
    idtr   , iviscf , iviscb , icoefx ,                            &
    idam   , ixam   , idrtp  ,                                     &
@@ -53,7 +53,6 @@ subroutine memrij &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! idtr             ! e  ! --> ! "pointeur" sur dtr                             !
 ! iviscf, b        ! e  ! --> ! "pointeur" sur viscf, viscb                    !
 ! icoefx           ! e  ! --> ! "pointeur" sur coefax                          !
@@ -93,7 +92,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          iturbp
 
 integer          idtr

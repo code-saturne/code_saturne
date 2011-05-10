@@ -32,7 +32,7 @@ subroutine uslain &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nptnew ,                                                       &
@@ -69,7 +69,6 @@ subroutine uslain &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
 ! nvp              ! i  ! <-- ! number of particle variables                   !
 ! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
@@ -80,11 +79,9 @@ subroutine uslain &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! nptnew           ! i  ! <-- ! total number of new particles for all the      !
 !                  !    !     ! injection zones                                !
-! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the boundary    !
-!  nphas      )    !    !     ! faces                                          !
-! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
-!  nphas      )    !    !     !                                                !
-! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
+! itrifb(nfabor)   ! ia ! <-- ! indirection for the sorting of the boundary    !
+! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
+! ifrlag(nfabor)   ! ia ! --> ! type of the Lagrangian boundary faces          !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! injfac(nptnew    ! ia ! <-- ! number of the injection boundary face          !
@@ -140,7 +137,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          nptnew

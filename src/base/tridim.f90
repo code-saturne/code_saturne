@@ -29,7 +29,7 @@ subroutine tridim &
 !================
 
  ( idbia0 , idbra0 , itrale ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    isostd ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -53,7 +53,6 @@ subroutine tridim &
 ! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -67,8 +66,8 @@ subroutine tridim &
 !  (nfabor, *)     !    !     !                                                !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -118,7 +117,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , itrale
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          isostd(nfabor+1)
 integer          ia(*)
@@ -488,7 +487,7 @@ if (itrale.gt.0) then
   call schtmp                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , iappel ,                            &
+   nvar   , nscal  , iappel ,                                     &
    isostd ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -567,7 +566,7 @@ endif
 call memphy                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , ncelet , ncel   , nfac   , nfabor , nphas  ,          &
+   nvar   , ncelet , ncel   , nfac   , nfabor ,                   &
    iw1    , iw2    , iw3    , iw4    ,                            &
    iw5    , iw6    , iw7    , iw8    ,                            &
    iw9    , iw10   , iw11   , iw12   , ixmij  ,                   &
@@ -576,7 +575,7 @@ call memphy                                                       &
 call phyvar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -590,7 +589,7 @@ if (itrale.gt.0) then
   call schtmp                                                     &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , iappel ,                            &
+   nvar   , nscal  , iappel ,                                     &
    isostd ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -623,7 +622,7 @@ if (ncpdct.gt.0) then
   call uskpdc &
   !==========
 ( idbia1 , idebra ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                                                                 &
   ncepdc , iappel ,                                              &
   maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
@@ -656,7 +655,7 @@ if(nctsmt.gt.0) then
   call  ustsma                                                  &
   !============
 ( idbia1 , idebra ,                                              &
-  nvar   , nscal  , nphas  , ncepdc   ,                   &
+  nvar   , nscal  , ncepdc   ,                                   &
   ncetsm   , iappel ,                                           &
   maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
@@ -680,7 +679,7 @@ endif
 call memdtv                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iviscf , iviscb , idam   , icofbd , iw1    , iw2    , iw3    , &
    icofbr , igrarx , igrary , igrarz , iwcf   ,                   &
    iptlro , ippmod(icompf) ,                                      &
@@ -689,7 +688,7 @@ call memdtv                                                       &
 call dttvar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc   , ncetsm   ,                            &
    iwarni(iu)   ,                                                 &
    ia(iicepd), ia(iicesm), ia(iitpsm) ,      &
@@ -729,7 +728,7 @@ if (ivrtex.eq.1) then
   call usvort &
   !==========
  ( ifnia1 , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iappel ,                                                       &
    maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
@@ -829,7 +828,7 @@ do while (iterns.le.nterup)
   call memcli &
   !==========
 ( idbia1 , idbra1 ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                                                                 &
   isvhb  , isvtb  ,                                              &
   iicodc , ircodc ,                                              &
   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
@@ -839,7 +838,7 @@ do while (iterns.le.nterup)
   call precli &
   !==========
 ( ifinia , ifinra ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                                                                 &
   ia(iicodc)      , ia(iizfpp)      ,                            &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -886,7 +885,7 @@ do while (iterns.le.nterup)
       call stdtcl &
       !==========
     ( ifnia1 , ifnra1 ,                                              &
-      nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
+      nvar   , nscal  , nbzfmx , nozfmx ,                            &
       iqimp  , icalke , qimp   , dh , xintur,                        &
       ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp)   , &
       ia(iilzfb)      ,                                              &
@@ -913,7 +912,7 @@ do while (iterns.le.nterup)
     call usclim &
     !==========
   ( ifnia1 , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     maxelt , ia(ils),                                              &
     ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
     ia     ,                                                       &
@@ -930,7 +929,7 @@ do while (iterns.le.nterup)
     call ppclim &
     !==========
   ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp) ,   &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -962,7 +961,7 @@ do while (iterns.le.nterup)
     call vor2cl &
     !==========
   ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
     ia(iirepv)      ,                                              &
     ia     ,                                                       &
@@ -983,7 +982,7 @@ do while (iterns.le.nterup)
     call cscfbr &
     !==========
   ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -1027,7 +1026,7 @@ do while (iterns.le.nterup)
     call usalcl &
     !==========
   ( ifnia1 , ifinra , itrale ,                                     &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     maxelt , ia(ils),                                              &
     ia(iicodc)      , ia(iitypf)      , ia(iialty)      ,          &
     ia(iimpal)      ,                                              &
@@ -1070,7 +1069,7 @@ do while (iterns.le.nterup)
 
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call coupbi(nfabor, nvar, nscal, nphas, ia(iicodc), ra(ircodc))
+    call coupbi(nfabor, nvar, nscal, ia(iicodc), ra(ircodc))
     !==========
 
     if (nfpt1t.gt.0) then
@@ -1078,7 +1077,7 @@ do while (iterns.le.nterup)
       !==========
     ( ifinia , ifinra ,                                              &
       nfabor ,                                                       &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       isvtb  , ia(iicodc) ,                                          &
       ia     ,                                                       &
       ra(ircodc) ,                                                   &
@@ -1093,14 +1092,14 @@ do while (iterns.le.nterup)
     call memra3 &
     !==========
   ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     iisoth , itek   , itext  , itint  ,                            &
     ifinib , ifinrb )
 
     call raycli &
     !==========
   ( ifinib , ifinrb ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     isvhb  , isvtb  ,                                              &
     ia(iicodc) , ia(iitrif)   , ia(iitypf)   ,                     &
 
@@ -1123,7 +1122,7 @@ do while (iterns.le.nterup)
   call condli &
   !==========
 ( ifinia , ifinra ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                                                                 &
   isvhb  , isvtb  ,                                              &
   ia(iicodc)      , isostd ,                                     &
   ia     ,                                                       &
@@ -1197,7 +1196,7 @@ do while (iterns.le.nterup)
 
     call coupbo &
     !==========
-  ( nvar   , nscal  , nphas  , isvtb  ,                            &
+  ( nvar   , nscal  , isvtb  ,                                     &
     ncp  , ncv , ientha ,                                          &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
@@ -1209,7 +1208,7 @@ do while (iterns.le.nterup)
       call cou1do &
       !==========
     ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  , ncp    , nfpt1d ,                   &
+      nvar   , nscal  , ncp    , nfpt1d ,                            &
       ientha , ia(iifpt1), ia(iiclt1),                               &
       ia     ,                                                       &
       ra(itppt1), ra(itept1), ra(ihept1),                            &
@@ -1284,7 +1283,7 @@ do while (iterns.le.nterup)
         call memdis &
         !==========
     ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       iviscf , iviscb , idam   , ixam   , ismbr  , irovsd ,          &
       irtdp  , icofay , icofby ,                                     &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1294,7 +1293,7 @@ do while (iterns.le.nterup)
         call distpr &
         !==========
     ( ifinib , ifinrb ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       ia(iitypf)      ,                                              &
       ia     ,                                                       &
       ra(idipar)      ,                                              &
@@ -1336,7 +1335,7 @@ do while (iterns.le.nterup)
       call memdyp &
       !==========
     ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       idam   , ixam   , ismbr  , irovsd ,                            &
       irtdp  , idrtdp ,                                              &
       iqfx   , iqfy   , iqfz   , icoefq , iirho  , iirhob ,          &
@@ -1349,7 +1348,7 @@ do while (iterns.le.nterup)
       call distyp                                                 &
       !==========
     ( ifinib , ifinrb ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       ia(iitypf) , ia(iismph),                                       &
       ia     ,                                                       &
       ra(idipar), propce    , ra(iuetbo), ra(iyppar),                &
@@ -1379,7 +1378,7 @@ do while (iterns.le.nterup)
       endif
       call vandri &
       !==========
-    ( ndim   , ncelet , ncel   , nfac   , nfabor , nphas ,         &
+    ( ndim   , ncelet , ncel   , nfac   , nfabor ,                 &
       ia(iitypf) , ifabor, ia(iiifap),                             &
       ia     ,                                                     &
       xyzcen , cdgfbo , ra(iuetbo) , ra(ivsvdr) , ra(iyppar) ,     &
@@ -1418,7 +1417,7 @@ do while (iterns.le.nterup)
       call memale &
       !==========
     ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       iviscf , iviscb , idam   , ixam   ,                            &
       idrtp  , ismbr  , irovsd ,                                     &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1428,7 +1427,7 @@ do while (iterns.le.nterup)
       call alelap &
       !==========
     ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  ,                                              &
@@ -1482,7 +1481,7 @@ do while (iterns.le.nterup)
       call cfmsvl &
       !==========
     ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       ncepdc   , ncetsm   ,                            &
       iscal  ,                                                       &
       ia(iicepd)        , ia(iicesm)       ,           &
@@ -1515,7 +1514,7 @@ do while (iterns.le.nterup)
     call memnav &
     !==========
   ( idbia1 , idbra1 ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     iviscf , iviscb , ivisfi , ivisbi ,                            &
     idam   , ixam   ,                                              &
     idrtp  , igrdp  , ismbr  , irovsd ,                            &
@@ -1534,7 +1533,7 @@ do while (iterns.le.nterup)
       call cfqdmv &
       !==========
     ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       ncepdc   , ncetsm   ,                            &
       ia(iicepd)        , ia(iicesm)       ,           &
       ia(iitpsm)        ,                                     &
@@ -1558,7 +1557,7 @@ do while (iterns.le.nterup)
       call navsto &
       !==========
     ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  , iterns , icvrge ,                   &
+      nvar   , nscal  , iterns , icvrge ,                            &
       isostd ,                                                       &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -1615,7 +1614,7 @@ do while (iterns.le.nterup)
         call schtmp &
         !==========
       ( idbia1 , idbra1 ,                                              &
-        nvar   , nscal  , nphas  , iappel ,                            &
+        nvar   , nscal  , iappel ,                                     &
         isostd ,                                                       &
         ia     ,                                                       &
         dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -1674,7 +1673,7 @@ if (iccvfg.eq.0) then
     call schtmp &
     !==========
   ( idebia , idebra ,                                              &
-    nvar   , nscal  , nphas  , iappel ,                            &
+    nvar   , nscal  , iappel ,                                     &
     isostd ,                                                       &
     ia     ,                                                       &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -1716,7 +1715,7 @@ if (iccvfg.eq.0) then
     call memkep &
     !==========
   ( idbia1 , idbra1 ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     idtr   , iviscf , iviscb , idam   , ixam   ,                   &
     idrtp  , ismbr  , irovsd , itinsk , itinse , idivu ,           &
     iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1736,7 +1735,7 @@ if (iccvfg.eq.0) then
     call turbke &
     !==========
   ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     ncepdc , ncetsm ,                                &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
     ia     ,                                                       &
@@ -1757,7 +1756,7 @@ if (iccvfg.eq.0) then
       call memv2f &
       !==========
     ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       idtr   , iviscf , iviscb , idam   , ixam   ,                   &
       idrtp  , ismbr  , irovsd ,                                     &
       iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1777,7 +1776,7 @@ if (iccvfg.eq.0) then
       call resv2f &
       !==========
     ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nphas  ,                                     &
+      nvar   , nscal  ,                                                                                 &
       ncepdc , ncetsm ,                                &
       ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
       ia     ,                                                       &
@@ -1812,7 +1811,7 @@ if (iccvfg.eq.0) then
     call memrij &
     !==========
   ( idebia , idebra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     iturb ,                                                 &
     idtr   , iviscf , iviscb , icoefx ,                            &
     idam   , ixam   , idrtp  ,                                     &
@@ -1834,7 +1833,7 @@ if (iccvfg.eq.0) then
     call turrij &
     !==========
   ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     ncepdc , ncetsm ,                                &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
     ia     ,                                                       &
@@ -1856,7 +1855,7 @@ if (iccvfg.eq.0) then
     call memkom &
     !==========
   ( idebia , idebra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     idtr   , iviscf , iviscb , idam   , ixam   ,                   &
     idrtp  , ismbr  , irovsd , itinsk , itinse , idivu  ,          &
     iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1876,7 +1875,7 @@ if (iccvfg.eq.0) then
     call turbkw                                                 &
     !==========
   ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     ncepdc , ncetsm ,                                &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
     ia     ,                                                       &
@@ -1910,7 +1909,7 @@ if (iccvfg.eq.0) then
     call memspa &
     !==========
   ( idebia , idebra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     idtr   , iviscf , iviscb , idam   , ixam   ,                   &
     idrtp  , ismbr           , itinsa , idivu ,                    &
     iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -1930,7 +1929,7 @@ if (iccvfg.eq.0) then
     call turbsa &
     !==========
   ( ifinia , ifinra ,                                              &
-    nvar   , nscal  , nphas  ,                                     &
+    nvar   , nscal  ,                                                                                 &
     ncepdc , ncetsm ,                                &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
     ia     ,                                                       &
@@ -1975,7 +1974,7 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   call memra2                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
    idrtp  , ismbr  , irovsd ,                                     &
 
@@ -1989,7 +1988,7 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   call raydom                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia(iitypf) ,                                                   &
    ia(iizfrd) ,                                                   &
    ia     ,                                                       &
@@ -2017,7 +2016,7 @@ if (nscal.ge.1) then
   call memsca                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
    idrtp  , ismbr  , irovsd ,                                     &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -2027,7 +2026,7 @@ if (nscal.ge.1) then
   call scalai                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  ,                                     &
@@ -2051,7 +2050,7 @@ iappel = 5
 call schtmp                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , iappel ,                            &
+   nvar   , nscal  , iappel ,                                     &
    isostd ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &

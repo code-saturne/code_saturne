@@ -29,7 +29,7 @@ subroutine recvmc &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    rom    , flumas , flumab ,                                     &
    ux     , uy     , uz     ,                                     &
@@ -52,7 +52,6 @@ subroutine recvmc &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rom(ncelet       ! tr ! <-- ! masse volumique aux cellules                   !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
@@ -85,7 +84,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 

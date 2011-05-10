@@ -29,7 +29,7 @@ subroutine eltssc &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    itypfb ,                                                       &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
@@ -85,7 +85,6 @@ subroutine eltssc &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
@@ -150,7 +149,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 

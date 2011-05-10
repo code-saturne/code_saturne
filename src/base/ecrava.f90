@@ -30,7 +30,7 @@ subroutine ecrava &
 
  ( idbia0 , idbra0 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
    dt     , rtp    , propce , propfa , propfb ,                   &
@@ -59,7 +59,6 @@ subroutine ecrava &
 ! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -69,8 +68,8 @@ subroutine ecrava &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -110,7 +109,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -140,6 +139,7 @@ character        nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 integer          idebia, idebra
+integer          nphas
 integer          ivar  , iscal , imom
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers , idtm  , idtcm
@@ -303,6 +303,9 @@ endif
 ! 3.1 DIMENSIONS : les dimensions geometriques sont ecrites
 !===============   automatiquement lors de l'ouverture du fichier
 !                  on ecrit ici les nombres de variables
+
+! The checkpoint file is now single-phase by default
+nphas = 1
 
 nberro = 0
 

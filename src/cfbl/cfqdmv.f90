@@ -29,7 +29,7 @@ subroutine cfqdmv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -72,7 +72,6 @@ subroutine cfqdmv &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
@@ -97,10 +96,10 @@ subroutine cfqdmv &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
-!dfrcxt(ncelet,    ! tr ! <-- ! variation de force exterieure                  !
-!   3,nphas)       !    !     !  generant lapression hydrostatique             !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
+!dfrcxt(ncelet,3)  ! tr ! <-- ! variation de force exterieure                  !
+!                  !    !     !  generant lapression hydrostatique             !
 ! tpucou           ! tr ! --> ! couplage vitesse pression                      !
 ! (ncelel,ndim)    !    !     !                                                !
 ! trav(ncelet,3    ! tr ! --> ! smb qui servira pour normalisation             !
@@ -151,7 +150,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
@@ -319,7 +318,6 @@ extrap = extrag(ipriph)
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -451,7 +449,6 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -500,7 +497,7 @@ if (ivisse.eq.1) then
   call vissec                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -523,7 +520,7 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
   call tsepdc                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdp ,                                                       &
    idiaex ,                                                       &
    icepdc ,                                                       &
@@ -549,7 +546,7 @@ if(itytur.eq.3 ) then
     call divrij                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    isou   , ivar   ,                                              &
    ia     ,                                                       &
    rtp    , propce , propfa , propfb ,                            &
@@ -687,7 +684,7 @@ do isou = 1, 3
   call ustsns                                                     &
   !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -787,7 +784,7 @@ do isou = 1, 3
   call cfcdts                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , iconvp , idiffp , ireslp , ndircp ,  nitmap ,         &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , iifbru ,                            &

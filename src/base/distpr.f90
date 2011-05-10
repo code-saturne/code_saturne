@@ -29,7 +29,7 @@ subroutine distpr &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    itypfb ,                                                       &
    ia     ,                                                       &
    distpa ,                                                       &
@@ -66,7 +66,6 @@ subroutine distpr &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! --> ! tab des distances a la paroi                   !
@@ -115,7 +114,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          ia(*)
@@ -301,7 +300,7 @@ do isweep = 0, nswrsy
     call bilsc2                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
    ipp    , iwarny ,                                              &
@@ -345,7 +344,6 @@ ivar   = 0
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
    ia     ,                                                       &

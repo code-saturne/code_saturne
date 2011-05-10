@@ -29,7 +29,7 @@ subroutine cfmsvl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -61,7 +61,6 @@ subroutine cfmsvl &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
@@ -132,7 +131,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
@@ -256,7 +255,7 @@ enddo
 call cfmsgs                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -290,7 +289,6 @@ if(ircflp.gt.0) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -424,7 +422,7 @@ endif
 call cfmsvs                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iscal  ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -483,7 +481,7 @@ thetv  = thetav(ivar)
 call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
@@ -523,7 +521,7 @@ call clpsca                                                       &
   imodif = 0
   call uscfth                                                     &
   !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -569,7 +567,7 @@ iccocg = 1
 call cfbsc3                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
@@ -616,7 +614,7 @@ if(igrdpp.gt.0) then
   imodif = 0
   call uscfth                                                     &
   !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

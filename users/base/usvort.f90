@@ -32,7 +32,7 @@ subroutine usvort &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    iappel ,                                                       &
    maxelt , lstelt ,                                              &
    irepvo ,                                                       &
@@ -68,7 +68,6 @@ subroutine usvort &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
@@ -108,7 +107,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          iappel
 
 integer          maxelt, lstelt(maxelt)

@@ -29,7 +29,7 @@ subroutine projts &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu ,                                              &
@@ -62,7 +62,6 @@ subroutine projts &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
 ! inc              ! e  ! <-- ! indicateur = 0 resol sur increment             !
 !                  !    !     !              1 sinon                           !
@@ -109,7 +108,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
 integer          iwarnu , nfecra

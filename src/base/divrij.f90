@@ -29,7 +29,7 @@ subroutine divrij &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idim   , ivar   ,                                              &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -62,7 +62,6 @@ subroutine divrij &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! idim             ! e  ! <-- ! composante traitee                             !
 ! ivar             ! e  ! <-- ! numero de variable courante                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -106,7 +105,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          idim   , ivar
 
 integer          ia(*)
@@ -203,7 +202,7 @@ imaspe = 2
 call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar1  , ivar2  , ivar3  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &

@@ -29,7 +29,7 @@ subroutine ecrlis &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nphas  , ndim   , ncelet , ncel   ,                   &
+   nvar   , ndim   , ncelet , ncel   ,                            &
    irtp   ,                                                       &
    ia     ,                                                       &
    rtp    , rtpa   , dt     , volume , xyzcen ,                   &
@@ -49,7 +49,6 @@ subroutine ecrlis &
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -93,7 +92,7 @@ use ppincl
 
 implicit none
 
-integer          idbia0, idbra0, nvar, nphas, ndim, ncelet, ncel
+integer          idbia0, idbra0, nvar, ndim, ncelet, ncel
 integer          irtp
 integer          ia(*)
 double precision rtpa(ncelet,nvar), rtp(ncelet,nvar)

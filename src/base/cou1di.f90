@@ -30,7 +30,7 @@ subroutine cou1di &
 
  ( idbia0 , idbra0 ,                                              &
    nfabor ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    isvtb  , icodcl ,                                              &
    ia     ,                                                       &
    rcodcl ,                                                       &
@@ -53,7 +53,6 @@ subroutine cou1di &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! isvtb            ! e  ! <-- ! numero du scalaire couple                      !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
@@ -106,7 +105,7 @@ implicit none
 
 integer          idbia0, idbra0
 integer          nfabor
-integer          nvar , nscal , nphas
+integer          nvar , nscal
 integer          isvtb  , icodcl(nfabor,nvar)
 integer          ia(*)
 double precision rcodcl(nfabor,nvar,3)

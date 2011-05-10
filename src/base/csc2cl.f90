@@ -29,7 +29,7 @@ subroutine csc2cl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nvcp   , nvcpto , nfbcpl , nfbncp ,                            &
    icodcl , itrifb , itypfb ,                                     &
    lfbcpl , lfbncp ,                                              &
@@ -55,7 +55,6 @@ subroutine csc2cl &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! icodcl           ! te ! --> ! boundary condition code at boundary faces      !
 !  (nfabor, nvar)  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> flux density                          !
@@ -121,7 +120,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nvcp   , nvcpto
 integer          nfbcpl , nfbncp
 
@@ -195,7 +194,6 @@ do ivar = 1, nvcp
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

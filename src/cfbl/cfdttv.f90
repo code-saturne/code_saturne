@@ -29,7 +29,7 @@ subroutine cfdttv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -55,7 +55,6 @@ subroutine cfdttv &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
@@ -114,7 +113,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iwarnp
 
@@ -159,7 +158,7 @@ ivar   = isca(iscal)
 call memcft                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
    iviscf , icoefu , ixam   ,                                     &
    ifinia , ifinra )
@@ -183,7 +182,7 @@ enddo
 call cfmsfl                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &

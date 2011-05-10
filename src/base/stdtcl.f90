@@ -29,7 +29,7 @@ subroutine stdtcl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , nbzfmx , nozfmx ,                   &
+   nvar   , nscal  , nbzfmx , nozfmx ,                            &
    iqimp  , icalke , qimp   , dh     , xintur ,                   &
    icodcl , itrifb , itypfb , iznfbr , ilzfbr ,                   &
    ia     ,                                                       &
@@ -57,7 +57,6 @@ subroutine stdtcl &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbzfmx           ! e  ! <-- ! nb max de zones de faces de bord               !
 ! nozfmx           ! e  ! <-- ! numero max de zones de faces de bord           !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
@@ -130,7 +129,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nozfmx
-integer          nvar   , nscal  , nphas  , nbzfmx
+integer          nvar   , nscal  , nbzfmx
 
 integer          iqimp(nozfmx), icalke(nozfmx)
 integer          icodcl(nfabor,nvar)

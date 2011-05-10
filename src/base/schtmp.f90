@@ -29,7 +29,7 @@ subroutine schtmp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , iappel ,                            &
+   nvar   , nscal  , iappel ,                                     &
    isostd ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -53,7 +53,6 @@ subroutine schtmp &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iappel           ! e  ! <-- ! numero de l'appel (avant ou apres              !
 !                  !    !     ! phyvar                                         !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
@@ -97,7 +96,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , iappel
+integer          nvar   , nscal  , iappel
 
 integer          isostd(nfabor+1)
 integer          ia(*)

@@ -29,7 +29,7 @@ subroutine cou1do &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncp    , nfpt1d ,                   &
+   nvar   , nscal  , ncp    , nfpt1d ,                            &
    ientha , ifpt1d , iclt1d ,                                     &
    ia     ,                                                       &
    tppt1d , tept1d , hept1d , fept1d ,                            &
@@ -58,7 +58,6 @@ subroutine cou1do &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nfpt1d           ! e  ! <-- ! nombre de faces avec module therm 1d           !
 ! ientha           ! e  ! <-- ! 1 si tparoi est une enthalpie                  !
 ! ifpt1d           ! te ! <-- ! numero de la face en traitement                !
@@ -108,7 +107,7 @@ implicit none
 ! Arguments
 integer          idbia0 , idbra0
 integer          nfpt1d
-integer          nvar   , nscal  , nphas  , ncp
+integer          nvar   , nscal  , ncp
 
 integer          ifpt1d(nfpt1d), iclt1d(nfpt1d)
 integer          ientha
@@ -188,7 +187,7 @@ call iasize('cou1do',idbia1)
 call  uspt1d                                                      &
 !===========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , nphas  , nfpt1d , iappel ,                   &
+   nvar   , nscal  , nfpt1d , iappel ,                            &
    maxelt , ia(ils),                                              &
    ifpt1d , ia(idebia), iclt1d ,                                  &
    ia     ,                                                       &

@@ -50,7 +50,6 @@ subroutine strini &
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! ra(*)            ! ra ! --- ! main real work array                           !

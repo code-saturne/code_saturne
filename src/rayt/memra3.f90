@@ -29,7 +29,7 @@ subroutine memra3 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iisoth , itek   , itext  , itint  ,                            &
    ifinia , ifinra )
 
@@ -52,7 +52,6 @@ subroutine memra3 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iisoth           ! e  ! --> ! "pointeur" sur isoth                           !
 ! itext            ! e  ! --> ! "pointeur" sur text                            !
 ! itint            ! e  ! --> ! "pointeur" sur tint                            !
@@ -86,7 +85,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ifinia , ifinra
 

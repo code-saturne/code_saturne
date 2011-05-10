@@ -29,7 +29,7 @@ subroutine reseps &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
@@ -61,7 +61,6 @@ subroutine reseps &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! ivar             ! i  ! <-- ! variable number                                !
@@ -135,7 +134,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          ivar   , isou   , ipp
 
@@ -254,7 +253,7 @@ call iasize('reseps',ifinia)
 call ustsri                                                       &
 !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itpsmp ,                                     &
@@ -463,7 +462,7 @@ if(igrari.eq.1) then
   call rijthe                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , isou   , ipp    ,                                     &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
@@ -511,7 +510,6 @@ if (iturb.eq.30) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -748,7 +746,7 @@ relaxp = relaxv(ivar)
 call codits                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &

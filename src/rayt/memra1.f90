@@ -29,7 +29,7 @@ subroutine memra1 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ifinia , ifinra )
 
 !===============================================================================
@@ -50,7 +50,6 @@ subroutine memra1 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
@@ -80,7 +79,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ifinia , ifinra
 
 ! VARIALBES LOCALES

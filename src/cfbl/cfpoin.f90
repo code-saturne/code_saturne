@@ -34,10 +34,10 @@ module cfpoin
   !      Accessibles directement dans ia, ra
 
   ! Pointeur Dimension       Description
-  ! iifbet ! nfabor*nphas            ! indicateur flux thermique au bord impose
+  ! iifbet ! nfabor        ! indicateur flux thermique au bord impose
   !                          (il faut annuler des contributions de bord
   !                           de l'eq de E)
-  ! iifbru ! nfabor*nphas            ! indicateur flux de bord calcule par rusanov
+  ! iifbru ! nfabor        ! indicateur flux de bord calcule par rusanov
   !                          (il faut annuler des contributions de bord
   !                           de l'eq de Qdm et de l'eq de E)
 

@@ -29,7 +29,7 @@ subroutine memcli &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    isvhb  , isvtb  ,                                              &
    iicodc , ircodc ,                                              &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
@@ -51,7 +51,6 @@ subroutine memcli &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! isvhb            ! e  ! <-- ! indicateur de stockage de hbord                !
 ! isvtb            ! e  ! <-- ! indicateur de stockage de tbord                !
 ! iicodc,ircodc    ! e  ! --> ! "pointeur" sur icodlc rcodcl                   !
@@ -88,7 +87,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          isvhb  , isvtb
 integer          iicodc , ircodc
 integer          iw1    , iw2    , iw3    , iw4    , iw5    , iw6

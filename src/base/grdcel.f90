@@ -29,7 +29,6 @@ subroutine grdcel &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -52,7 +51,6 @@ subroutine grdcel &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ivar             ! e  ! <-- ! numero de la variable                          !
 !                  !    !     !   destine a etre utilise pour la               !
 !                  !    !     !   periodicite uniquement (pering)              !
@@ -120,7 +118,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nphas
 integer          ivar   , imrgra , inc    , iccocg , nswrgp
 integer          imligp ,iwarnp  , iphydp , nfecra
 double precision epsrgp , climgp , extrap

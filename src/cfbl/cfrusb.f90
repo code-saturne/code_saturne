@@ -29,7 +29,7 @@ subroutine cfrusb &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    imodif ,                                                       &
    ia     ,                                                       &
    gammag ,                                                       &
@@ -59,7 +59,6 @@ subroutine cfrusb &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! imodif           ! e  ! <-- ! modification directe de rtp (imodif=1          !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! gammag           ! r  ! <-- ! gamma du gaz                                   !
@@ -108,7 +107,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          imodif
 
 integer          ia(*)

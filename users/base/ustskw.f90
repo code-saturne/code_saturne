@@ -32,7 +32,7 @@ subroutine ustskw &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -119,7 +119,6 @@ subroutine ustskw &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
@@ -183,7 +182,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          maxelt, lstelt(maxelt)

@@ -29,7 +29,7 @@ subroutine memale &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iviscf , iviscb ,                                              &
    idam   , ixam   , idrtp  ,                                     &
    ismbr  , irovsd ,                                              &
@@ -52,7 +52,6 @@ subroutine memale &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iviscf, b        ! e  ! --> ! "pointeur" sur viscf, viscb                    !
 ! idam, ixam       ! e  ! --> ! "pointeur" sur dam, xam                        !
 ! idrtp            ! e  ! --> ! "pointeur" sur drtp                            !
@@ -85,7 +84,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          iviscf , iviscb
 integer          idam   , ixam

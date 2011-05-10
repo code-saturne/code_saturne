@@ -29,7 +29,7 @@ subroutine memphy &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , ncelet , ncel   , nfac   , nfabor , nphas  ,          &
+   nvar   , ncelet , ncel   , nfac   , nfabor ,                   &
    iw1    , iw2    , iw3    , iw4    ,                            &
    iw5    , iw6    , iw7    , iw8    ,                            &
    iw9    , iw10   , iw11   , iw12   , ixmij  ,                   &
@@ -48,7 +48,6 @@ subroutine memphy &
 !__________________!____!_____!________________________________________________!
 ! idbia0/idbra0    ! e  ! <-- ! pointeur de la premiere cas libre des          !
 !                  !    !     !  tableaux ia/ra                                !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -79,7 +78,7 @@ implicit none
 
 integer          idbia0 ,idbra0
 integer          nvar
-integer          ncelet , ncel   , nfac   , nfabor, nphas
+integer          ncelet , ncel   , nfac   , nfabor
 integer          iw1    , iw2    , iw3    , iw4
 integer          iw5    , iw6    , iw7    , iw8
 integer          iw9    , iw10   , iw11   , iw12  , ixmij

@@ -29,7 +29,7 @@ subroutine memcft &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
    iviscf , icoefu , ixam   ,                                     &
    ifinia , ifinra )
@@ -51,7 +51,6 @@ subroutine memcft &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iw7..12          ! e  ! --> ! "pointeurs" sur w7 a w12                       !
 ! iviscf           ! e  ! --> ! "pointeur" sur viscf                           !
 ! icoefu           ! e  ! --> ! "pointeur" sur coefu                           !
@@ -79,7 +78,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          iw7    , iw8    , iw9    , iw10   , iw11   , iw12
 integer          iviscf , icoefu , ixam
 integer          ifinia , ifinra

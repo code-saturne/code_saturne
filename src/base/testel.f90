@@ -29,7 +29,7 @@ subroutine testel &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nphas  , nvar   ,                                              &
+   nvar   ,                                                       &
    ia     ,                                                       &
    rtp    , coefa  , coefb  ,                                     &
    ra     )
@@ -47,7 +47,6 @@ subroutine testel &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -85,7 +84,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nphas , nvar
+integer          nvar
 
 integer          ia(*)
 
@@ -209,7 +208,6 @@ imligp = -1
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -259,7 +257,6 @@ imligp = 1
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -310,7 +307,6 @@ imligp = 1
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -360,7 +356,6 @@ imligp = -1
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -415,7 +410,6 @@ imligp = 1
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

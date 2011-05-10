@@ -57,7 +57,7 @@
 subroutine usipph &
 !================
 
- ( nphmax, nphas , iihmpu, nfecra , iturb , icp , iverif )
+ ( iihmpu, nfecra , iturb , icp , iverif )
 
 
 !===============================================================================
@@ -71,8 +71,6 @@ subroutine usipph &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nphmax           ! i  ! <-- ! maximum number of phases                       !
-! nphas            ! i  ! <-- ! number of active phases                        !
 ! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
@@ -99,7 +97,7 @@ implicit none
 
 ! Arguments
 
-integer nphmax, nphas, iihmpu, nfecra
+integer iihmpu, nfecra
 integer iturb, icp
 integer iverif
 
@@ -583,9 +581,9 @@ end subroutine
 subroutine usipgl &
 !================
 
- ( nphmax, nesmax,                                                &
+ ( nesmax,                                                        &
    iespre, iesder, iescor, iestot,                                &
-   nphas , iihmpu, nfecra,                                        &
+   iihmpu, nfecra,                                                &
    idtvar, ipucou, iphydr, ialgce , iescal , iverif ,             &
    icwfps, cwfthr )
 
@@ -601,13 +599,11 @@ subroutine usipgl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nphmax           ! i  ! <-- ! maximum number of phases                       !
 ! nesmax           ! i  ! <-- ! maximum number of error estimators per phase   !
 ! iespre           ! i  ! <-- ! number of the prediction error estimator       !
 ! iesder           ! i  ! <-- ! number of the derivative error estimator       !
 ! iescor           ! i  ! <-- ! number of the correction error estimator       !
 ! iestot           ! i  ! <-- ! number of the total error estimator            !
-! nphas            ! i  ! <-- ! number of active phases                        !
 ! iihmpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
 ! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
@@ -618,8 +614,8 @@ subroutine usipgl &
 !                  !    !     ! head-loss terms                                !
 ! ialgce           ! i  ! <-- ! option for the method of calculation of        !
 !                  !    !     !  cell centers                                  !
-! iescal           ! ia ! <-- ! flag for activation of error estimators for    !
-!  (nesmax,nphmax) !    !     ! Navier-Stokes                                  !
+! iescal(nesmax)   ! ia ! <-- ! flag for activation of error estimators for    !
+!                  !    !     ! Navier-Stokes                                  !
 ! iverif           ! i  ! <-- ! flag for elementary tests                      !
 ! cwfthr           ! i  ! <-- ! Treshold angle to cut warped faces (do not     !
 !                  !    !     !  cut warped faces if value is negative)        !
@@ -644,9 +640,9 @@ implicit none
 
 ! Arguments
 
-integer nphmax, nesmax
+integer nesmax
 integer iespre, iesder, iescor, iestot
-integer nphas , iihmpu, nfecra
+integer iihmpu, nfecra
 integer idtvar, ipucou, iphydr, ialgce
 integer iescal(nesmax)
 integer iverif, icwfps

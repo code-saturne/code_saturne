@@ -29,7 +29,7 @@ subroutine vorpre &
 !================
 
  ( idbia0 , idbra0 , ifinia , ifinra ,                            &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    irepvo ,                                                       &
    ia     ,                                                       &
    propce , propfa , propfb ,                                     &
@@ -52,7 +52,6 @@ subroutine vorpre &
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! irepvo           ! te ! <-- ! tab entier pour reperage des faces de          !
 !                  !    !     ! bord pour la methode des vortex                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -94,7 +93,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , ifinia , ifinra
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          irepvo(nfabor)
 integer          ia(*)

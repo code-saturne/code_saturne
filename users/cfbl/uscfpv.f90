@@ -32,8 +32,7 @@ subroutine uscfpv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   nphmx  ,                                                       &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -120,8 +119,6 @@ subroutine uscfpv &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
-! nphmx            ! i  ! <-- ! nphsmx                                         !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -165,8 +162,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
-integer          nphmx
+integer          nvar   , nscal
 
 integer          maxelt, lstelt(maxelt)
 integer          ia(*)
@@ -414,7 +410,7 @@ imodif = 0
 
 call uscfth                                                     &
 !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                              &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

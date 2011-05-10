@@ -28,7 +28,7 @@
 subroutine clpv2f &
 !================
 
- ( ncelet , ncel   , nvar   , nphas  ,                            &
+ ( ncelet , ncel   , nvar   ,                                     &
    iwaphi ,                                                       &
    propce , rtp    )
 
@@ -47,7 +47,6 @@ subroutine clpv2f &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iwaphi           ! e  ! <-- ! niveau d'impression                            !
 ! propce           ! tr ! <-- ! tableaux des variables au pdt courant          !
 !(ncelet,*         !    !     !                                                !
@@ -77,7 +76,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, ncelet, ncel, nphas
+integer          nvar, ncelet, ncel
 integer          iwaphi
 double precision propce(ncelet,*)
 double precision rtp(ncelet,nvar)

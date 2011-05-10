@@ -29,7 +29,7 @@ subroutine distyp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    itypfb , isympa ,                                              &
    ia     ,                                                       &
    distpa , propce , uetbor , disty  ,                            &
@@ -69,15 +69,14 @@ subroutine distyp &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
 ! (nfabor     )    !    !     ! (transmis mais non utilise)                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! <-- ! tab des distances a la paroi                   !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! uetbor           ! tr ! <-- ! vitesse de frottement au bord                  !
-! (nfabor,nphas    !    !     !  pour van driest en les                        !
+! uetbor(nfabor)   ! tr ! <-- ! vitesse de frottement au bord                  !
+!                  !    !     !  pour van driest en les                        !
 ! disty(ncelet)    ! tr ! --> ! distance y+                                    !
 ! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
 ! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
@@ -130,7 +129,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          itypfb(nfabor),isympa(nfabor)
 integer          ia(*)
@@ -242,7 +241,6 @@ ivar   = 0
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
    ia     ,                                                       &
@@ -325,7 +323,7 @@ ivar = 0
 call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , ivar   , ivar   , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
    iwarny , nfecra ,                                              &
@@ -579,7 +577,7 @@ do ntcont = 1, ntcmxy
   call codits                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap ,                                     &

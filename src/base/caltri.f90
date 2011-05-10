@@ -203,7 +203,7 @@ endif
 call memtri                                                       &
 !==========
  ( idebia , idebra , iverif ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncofab , nproce , nprofa , nprofb ,                            &
    iisstd , ifrcx  ,                                              &
    idt    , irtp   , irtpa  , ipropc , ipropf , ipropb ,          &
@@ -218,7 +218,7 @@ idbra1 = ifinra
 call memppt                                                       &
 !==========
  ( idbia1 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ifinia , ifinra )
 
 !===============================================================================
@@ -233,7 +233,7 @@ if (iirayo.gt.0) then
   call memra1                                                     &
   !==========
  ( idbia1 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ifinia , ifinra )
 
 endif
@@ -269,7 +269,7 @@ if (iverif.eq.1) then
   call testel                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
-   nphas  , nvar   ,                                              &
+   nvar   ,                                                       &
    ia     ,                                                       &
    ra(irtp) , ra(icoefa) , ra(icoefb) ,                           &
    ra     )
@@ -285,7 +285,7 @@ endif
 call iniva0                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  , ncofab ,                            &
+   nvar   , nscal  , ncofab ,                                     &
    ia     ,                                                       &
    ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
    ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
@@ -301,7 +301,7 @@ if (isuite.eq.1) then
   !==========
  ( ifinia , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
    ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
@@ -336,7 +336,7 @@ endif
 call inivar                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  , ncofab ,                            &
+   nvar   , nscal  , ncofab ,                                     &
    ia     ,                                                       &
    ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
    ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
@@ -398,7 +398,7 @@ iappel = 1
 call uspt1d                                                       &
 !==========
  ( ifnia2 , idbra1 ,                                              &
-   nvar   , nscal  , nphas  , nfpt1d , iappel ,                   &
+   nvar   , nscal  , nfpt1d , iappel ,                            &
    maxelt , ia(ils),                                              &
    ia(idbia1) , ia(idbia1) , ia(idbia1) ,                         &
    ia     ,                                                       &
@@ -438,7 +438,7 @@ if (nfpt1t.gt.0) then
   call  uspt1d                                                    &
   !===========
  ( ifnia3 , ifinra ,                                              &
-   nvar   , nscal  , nphas  , nfpt1d , iappel ,                   &
+   nvar   , nscal  , nfpt1d , iappel ,                            &
    maxelt , ia(ils),                                              &
    ia(iifpt1) , ia(inppt1) , ia(iiclt1) ,                         &
    ia     ,                                                       &
@@ -521,7 +521,7 @@ call iasize('caltri',idbia2)
 call  uskpdc &
 !===========
 ( idbia2 , idbra1 ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                                                                 &
   ncepdc , iappel ,                                              &
   maxelt , ia(ils),                                              &
   ia(idbia1),                                                    &
@@ -533,7 +533,7 @@ call  uskpdc &
 
 call mempdc                                                       &
 !==========
- ( idbia1, idbra1, ncelet, ncel,  nphas, ndim, ifinia, ifinra)
+ ( idbia1, idbra1, ncelet, ncel,  ndim, ifinia, ifinra)
 
 
 ! On appelle uskpdc lorqu'il y a sur un processeur au moins des cellules
@@ -560,7 +560,7 @@ if(ncpdct.gt.0) then
   call  uskpdc                                                &
   !===========
 ( ifnia2 , ifinra ,                                              &
-  nvar   , nscal  , nphas  ,                                     &
+  nvar   , nscal  ,                                                                                 &
   ncepdc , iappel ,                                              &
   maxelt , ia(ils),                                              &
   ia(iicepd),                                             &
@@ -583,7 +583,7 @@ iappel = 1
 call  ustsma                                                    &
 !===========
 ( idbia2 , idbra1 ,                                              &
-  nvar   , nscal  , nphas  , ncepdc   ,                   &
+  nvar   , nscal  , ncepdc   ,                                   &
   ncetsm ,   iappel ,                                            &
   maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
@@ -597,7 +597,7 @@ call  ustsma                                                    &
 call memtsm                                                       &
 !==========
      ( idbia1 , idbra1 ,                                          &
-       ncelet , ncel   , nvar   , nphas  ,                        &
+       ncelet , ncel   , nvar   ,                                 &
        ifinia , ifinra )
 
 ! On appelle ustsma lorqu'il y a sur un processeur au moins des cellules
@@ -616,7 +616,7 @@ if(nctsmt.gt.0) then
   call  ustsma                                                  &
   !===========
 ( ifnia2 , ifinra ,                                              &
-  nvar   , nscal  , nphas  , ncepdc   ,                   &
+  nvar   , nscal  , ncepdc   ,                                   &
   ncetsm ,   iappel ,                                            &
   maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
@@ -654,7 +654,7 @@ if (ivrtex.eq.1) then
   call usvort                                                     &
   !==========
  ( ifnia2 , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iappel ,                                                       &
    maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
@@ -676,7 +676,7 @@ if (ivrtex.eq.1) then
   call vorpre                                                     &
   !==========
  ( idbia1 , idbra1 , ifinia , ifinra ,                            &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia(iirepv),                                                    &
    ia     ,                                                       &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
@@ -711,7 +711,7 @@ endif
 call cscini                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    ra     )
 
@@ -804,7 +804,7 @@ endif
 call tridim                                                       &
 !==========
  ( ifinia , ifinra , itrale ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia(iisstd),                                                    &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
@@ -852,7 +852,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
   !==========
  ( ilagia , ilagra ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ia(iicoce) , ia(iityce) , ia(iifrla) , ia(iiitep) ,            &
@@ -900,7 +900,7 @@ if (itrale.gt.0) then
   call usproj                                                     &
   !==========
  ( ifnia2 , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    maxelt , ia(ils),                                              &
    ia(iiitep),                                                    &
@@ -925,7 +925,7 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
     call alemaj                                                   &
     !==========
  ( ifinia , ifinra , itrale ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia(iimpal)      ,                                              &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
@@ -998,7 +998,7 @@ if (iisuit.eq.1) then
   !==========
  ( ifinia , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    xyzcen     , surfac     , surfbo     , cdgfac     , cdgfbo    ,&
    ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
@@ -1025,7 +1025,7 @@ if (iisuit.eq.1) then
     !==========
  ( ifinia , ifinra ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ia(iicoce) , ia(iityce) , ia(iiitep) ,                         &
@@ -1043,7 +1043,7 @@ if (iisuit.eq.1) then
     call rayout                                                   &
     !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
@@ -1138,7 +1138,7 @@ endif
 call ushist                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
@@ -1161,7 +1161,7 @@ if(modntl.eq.0) then
   call ecrlis                                                     &
   !==========
   ( ifinia , ifinra ,                                             &
-    nvar   , nphas  , ndim   , ncelet , ncel   ,                  &
+    nvar   , ndim   , ncelet , ncel   ,                           &
     irtp   ,                                                      &
     ia     ,                                                      &
     ra(irtp  ) , ra(irtpa ) , ra(idt ) , volume , xyzcen,         &
@@ -1172,7 +1172,7 @@ if(modntl.eq.0) then
     call laglis                                                   &
     !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ia(iiitep),                                                    &

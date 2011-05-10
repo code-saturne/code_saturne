@@ -32,7 +32,7 @@ subroutine uslaen &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , nvlsta ,                            &
+   nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -61,7 +61,6 @@ subroutine uslaen &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! ivarl            !  i ! <-- ! number of the stat (between 1 and nvlsta)      !
 ! ivarl1           !  i ! <-- ! number of the global stat + group              !
@@ -125,7 +124,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , nvlsta
+integer          nvar   , nscal  , nvlsta
 integer          ivarl , ivarl1 , ivarlm , iflu , ilpd1 , icla
 
 integer          ia(*)

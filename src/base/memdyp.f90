@@ -29,7 +29,7 @@ subroutine memdyp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idam   , ixam   , ismbr  , irovsd ,                            &
    irtdp  , idrtdp ,                                              &
    iqfx   , iqfy   , iqfz   , icoefq , irho   , irhob  ,          &
@@ -54,7 +54,6 @@ subroutine memdyp &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! idam, ixam       ! e  ! --> ! "pointeur" sur dam, xam                        !
 ! ismbr            ! e  ! --> ! "pointeur" sur smbr                            !
 ! irovsd           ! e  ! --> ! "pointeur" sur rovsdt                          !
@@ -92,7 +91,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          idam   , ixam   , ismbr  , irovsd
 integer          irtdp  , idrtdp

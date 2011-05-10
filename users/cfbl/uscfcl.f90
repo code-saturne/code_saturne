@@ -32,7 +32,7 @@ subroutine uscfcl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -114,7 +114,6 @@ subroutine uscfcl &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
@@ -185,7 +184,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)

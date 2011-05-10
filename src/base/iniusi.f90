@@ -42,10 +42,6 @@ subroutine iniusi(iverif)
 !   CONTROLER LES ZONES OU SONT INITIALISES LES VARIABLES (PAR
 !   LE BIAIS DE PARAMETRES PASSES EN ARGUMENT)
 
-! ON INITIALISE EGALEMENT ICI NPHAS ET ISCAPH QUI VALENT 1 EN
-!   PRATIQUE DANS TOUS LES CALCULS (C'EST UN PARAMETRE UTILISATEUR,
-!   MAIS SA VALEUR EST QUELQUE PEU CONTRAINTE ENCORE...)
-
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -96,7 +92,7 @@ integer          iverif
 ! Local variables
 
 integer          ii, iscal , nmodpp
-integer          nphmax, nscmax, nesmax, nphusi, nscusi
+integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce, imgrpr, icwfps
 integer          iappel
@@ -169,12 +165,10 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-nphmax = nphsmx
-nphusi = nphas
 iihmpu = iihmpr
 call usipph                                                       &
 !==========
- (nphmax , nphusi , iihmpu , nfecra , iturb  , icp , iverif)
+ (iihmpu , nfecra , iturb  , icp , iverif)
 
 !===============================================================================
 ! 2. INITIALISATION DE PARAMETRES DEPENDANT DU NOMBRE DE SCALAIRES
@@ -319,13 +313,11 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-nphmax = nphsmx
 nesmax = nestmx
 ieepre = iespre
 ieeder = iesder
 ieecor = iescor
 ieetot = iestot
-nphusi = nphas
 iihmpu = iihmpr
 !     IALGCE permet de remplir la variable cs_glob_maillage_grd_cdg_cel dans
 !       cs_maillage_grd.c, a travers la routine ALGCEN.
@@ -340,9 +332,9 @@ cwfthr = -1.d0 ! Threshold (in degrees) to triangulate warped faces if positive
 
 call usipgl                                                       &
 !==========
- ( nphmax , nesmax ,                                              &
+ ( nesmax ,                                                       &
    ieepre , ieeder , ieecor , ieetot ,                            &
-   nphusi , iihmpu , nfecra ,                                     &
+   iihmpu , nfecra ,                                              &
    idtvar , ipucou , iphydr , ialgce , iescal , iverif,           &
    icwfps,  cwfthr )
 

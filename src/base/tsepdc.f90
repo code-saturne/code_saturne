@@ -29,7 +29,7 @@ subroutine tsepdc &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp ,                            &
+   nvar   , nscal  , ncepdp ,                                     &
    idiaex ,                                                       &
    icepdc ,                                                       &
    ia     ,                                                       &
@@ -53,7 +53,6 @@ subroutine tsepdc &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! idiaex           ! e  ! <-- ! indicateur de traitement de la                 !
 !                  !    !     ! diagonale (=1) ou extradiagonale (=2)          !
@@ -95,7 +94,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp
 integer          idiaex
 

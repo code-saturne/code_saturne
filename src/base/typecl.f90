@@ -29,7 +29,7 @@ subroutine typecl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    itypfb , itrifb , icodcl , isostd ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -52,10 +52,8 @@ subroutine typecl &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
-!  nphas)          !    !     !                                                !
+! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
+! itrifb(nfabor)   ! te ! --> ! tab d'indirection pour tri des faces           !
 ! icodcl           ! te ! <-- ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -88,8 +86,8 @@ subroutine typecl &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! rijipb           ! tr ! --- ! tab de trav pour valeurs en iprime             !
@@ -129,7 +127,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor) , itrifb(nfabor)
@@ -619,7 +617,6 @@ if (itbslb.gt.0) then
   call grdcel                                                   &
                                 !==========
        ( idebia , idebra ,                                              &
-       nphas  ,                                                       &
        ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
        iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
        ia     ,                                                       &

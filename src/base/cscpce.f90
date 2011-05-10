@@ -29,7 +29,7 @@ subroutine cscpce &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nptdis , ityloc ,                                              &
    ivar   ,                                                       &
    locpts ,                                                       &
@@ -86,7 +86,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ivar
 integer          nptdis , ityloc
 
@@ -137,7 +137,6 @@ extrap = extrag(ivar)
 call grdcel                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nphas  ,                                                       &
    ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

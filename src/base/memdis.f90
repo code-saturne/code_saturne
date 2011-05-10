@@ -29,7 +29,7 @@ subroutine memdis &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iviscf , iviscb , idam   , ixam   , ismbr  , irovsd ,          &
    irtdp  , icoefa , icoefb ,                                     &
    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
@@ -51,7 +51,6 @@ subroutine memdis &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iviscf, b        ! e  ! --> ! "pointeur" sur viscf, viscb                    !
 ! idam, ixam       ! e  ! --> ! "pointeur" sur dam, xam                        !
 ! idrtp            ! e  ! --> ! "pointeur" sur drtp                            !
@@ -85,7 +84,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          iviscf , iviscb , idam   , ixam
 integer          ismbr  , irovsd

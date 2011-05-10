@@ -29,7 +29,7 @@ subroutine memra2 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
    idrtp  , ismbr  , irovsd ,                                     &
 
@@ -58,7 +58,6 @@ subroutine memra2 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! idtr             ! e  ! --> ! "pointeur" sur dtr                             !
 ! iviscf, b        ! e  ! --> ! "pointeur" sur viscf, viscb                    !
 ! idam, ixam       ! e  ! --> ! "pointeur" sur dam, xam                        !
@@ -98,7 +97,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          idtr
 integer          iviscf , iviscb , idam   , ixam

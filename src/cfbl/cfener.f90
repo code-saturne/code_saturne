@@ -29,7 +29,7 @@ subroutine cfener &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -58,7 +58,6 @@ subroutine cfener &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iscal            ! i  ! <-- ! scalar number                                  !
@@ -123,7 +122,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
@@ -262,7 +261,7 @@ call iasize('cfener',idbia1)
 call ustssc                                                       &
 !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -334,7 +333,7 @@ if( idiff(iu).ge. 1 ) then
   call cfdivs                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -411,7 +410,6 @@ endif
 !      call grdcel
 !      !==========
 !     & ( idebia , ifinra ,
-!     &   nphas  ,
 !     &   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,
 !     &   iwarnp , nfecra , epsrgp , climgp , extrap ,
 !     &   ia     ,
@@ -597,7 +595,7 @@ if( idiff(ivar).ge. 1 ) then
   imodif = 0
   call uscfth                                                     &
   !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -654,7 +652,6 @@ iphydp = 0
 call grdcel                                                       &
 !==========
  ( idebia , ifinra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -805,7 +802,7 @@ iescap = 0
 call cfcdts                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iscal  , iconvp , idiffp , ireslp , ndircp , nitmap ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , iifbru ,                            &
@@ -841,7 +838,7 @@ call clpsca                                                       &
   imodif = 0
   call uscfth                                                     &
   !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -873,7 +870,7 @@ endif
   imodif = 0
   call uscfth                                                     &
   !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

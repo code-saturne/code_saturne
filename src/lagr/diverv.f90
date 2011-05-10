@@ -29,7 +29,7 @@ subroutine diverv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     ,                                                       &
    div    , ux     , vy     , wz     ,                            &
@@ -59,7 +59,6 @@ subroutine diverv &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! div(ncelet)      ! tr ! --> ! divergence du vecteur                          !
@@ -101,7 +100,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -164,7 +163,6 @@ extrap = 0.d0
 call grdcel                                                       &
 !==========
 ( idebia , idebra ,                                               &
-  nphas  ,                                                        &
   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
@@ -181,7 +179,6 @@ call grdcel                                                       &
 call grdcel                                                       &
 !==========
 ( idebia , idebra ,                                               &
-  nphas  ,                                                        &
   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
@@ -198,7 +195,6 @@ call grdcel                                                       &
 call grdcel                                                       &
 !==========
 ( idebia , idebra ,                                               &
-  nphas  ,                                                        &
   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &

@@ -300,7 +300,6 @@ subroutine usstr2 &
 ! nbstru           ! e  ! <-- ! nombre de structures definies                  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! idfstr(nfabor    ! te ! <-- ! definition des structures                      !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dtcel(ncelet)    ! ra ! <-- ! time step (per cell)                           !

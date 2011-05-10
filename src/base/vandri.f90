@@ -28,7 +28,7 @@
 subroutine vandri &
 !================
 
- (  ndim   , ncelet , ncel   , nfac   , nfabor , nphas ,          &
+ (  ndim   , ncelet , ncel   , nfac   , nfabor ,                  &
     itypfb , ifabor , ifapat ,                                    &
     ia    ,                                                       &
     xyzcen , cdgfbo , uetbor , visvdr , yplusc , propce ,         &
@@ -51,7 +51,6 @@ subroutine vandri &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
@@ -61,10 +60,10 @@ subroutine vandri &
 !  (ndim, ncelet)  !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
 !  (ndim, nfabor)  !    !     !                                                !
-! uetbor           ! tr ! <-- ! vitesse de frottement au bord                  !
-! (nfabor,nphas    !    !     !  pour van driest en les                        !
-! visvdr(nphas)    ! tr ! <-- ! viscosite dynamique ds les cellules            !
-! (ncelet,nphas    !    !     !  de bord apres amortisst de v driest           !
+! uetbor(nfabor)   ! tr ! <-- ! vitesse de frottement au bord                  !
+!                  !    !     !  pour van driest en les                        !
+! visvdr(ncelet)   ! tr ! <-- ! viscosite dynamique ds les cellules            !
+!                  !    !     !  de bord apres amortisst de v driest           !
 ! yplusc           ! tr ! <-- ! valeur de yplus aux cellules                   !
 ! (ncelet  )       !    !     !    dans le cas abs(icdpar).eq.1                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -95,7 +94,7 @@ implicit none
 
 ! Arguments
 
-integer          ndim, ncelet , ncel   , nfac   , nfabor, nphas
+integer          ndim, ncelet , ncel   , nfac   , nfabor
 integer          itypfb(nfabor),ifabor(nfabor)
 integer          ifapat(ncelet)
 integer          ia(*)

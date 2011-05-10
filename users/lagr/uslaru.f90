@@ -32,7 +32,7 @@ subroutine uslaru &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  ,                                     &
@@ -65,7 +65,6 @@ subroutine uslaru &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
 ! nvp              ! i  ! <-- ! number of particle variables                   !
 ! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
@@ -74,12 +73,10 @@ subroutine uslaru &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
-!  nphas)          !    !     !                                                !
-! itrifb(nfabor    ! ia ! --> ! indirection for the sorting of the             !
-!  nphas)          !    !     ! boundary faces                                 !
+! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
+! itrifb(nfabor)   ! ia ! --> ! indirection for the sorting of the             !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
+! (nbpmax,nivep)   !    !     !                                                !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at cell centers for      !
@@ -136,7 +133,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 

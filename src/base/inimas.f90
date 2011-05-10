@@ -29,7 +29,7 @@ subroutine inimas &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar1  , ivar2  , ivar3  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
    iwarnu , nfecra ,                                              &
@@ -73,7 +73,6 @@ subroutine inimas &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ivar1            ! e  ! <-- ! variable de la direction 1                     !
 ! ivar2            ! e  ! <-- ! variable de la direction 2                     !
 ! ivar3            ! e  ! <-- ! variable de la direction 3                     !
@@ -143,7 +142,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ivar1  , ivar2  , ivar3  , imaspe
 integer          iflmb0 , init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
@@ -292,7 +291,6 @@ if( nswrgu.gt.1 ) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar1  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
@@ -355,7 +353,6 @@ if( nswrgu.gt.1 ) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar2  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
@@ -417,7 +414,6 @@ if( nswrgu.gt.1 ) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar3  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &

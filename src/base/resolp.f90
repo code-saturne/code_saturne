@@ -29,7 +29,7 @@ subroutine resolp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm , isostd , idtsca ,                   &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -58,7 +58,6 @@ subroutine resolp &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
@@ -82,10 +81,10 @@ subroutine resolp &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
-!dfrcxt(ncelet,    ! tr ! <-- ! variation de force exterieure                  !
-!   3,nphas)       !    !     !  generant lapression hydrostatique             !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
+!dfrcxt(ncelet,3)  ! tr ! <-- ! variation de force exterieure                  !
+!                  !    !     !  generant lapression hydrostatique             !
 ! tpucou           ! tr ! <-- ! couplage vitesse pression                      !
 ! (ncelel,ndim)    !    !     !                                                !
 ! trav(ncelet,3    ! tr ! <-- ! smb pour normalisation de residu               !
@@ -144,7 +143,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
@@ -343,7 +342,7 @@ if(irnpnw.ne.1) then
   call inimas                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
@@ -444,7 +443,7 @@ if (iphydr.eq.1) then
       call calhyd                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    indhyd ,                                                       &
    ia     ,                                                       &
    frchy (1,1) , frchy (1,2) , frchy (1,3) ,                      &
@@ -551,7 +550,6 @@ extrap = extrag(ipriph)
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -612,7 +610,7 @@ imaspe = 1
 call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
@@ -645,7 +643,7 @@ if (iphydr.eq.1) then
     call projts                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
@@ -660,7 +658,7 @@ if (iphydr.eq.1) then
     call projts                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
@@ -703,7 +701,7 @@ if(arakph.gt.0.d0) then
     call itrmas                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -734,7 +732,7 @@ if(arakph.gt.0.d0) then
       call projts                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
@@ -770,7 +768,7 @@ if(arakph.gt.0.d0) then
     call itrmas                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -801,7 +799,7 @@ if(arakph.gt.0.d0) then
       call projts                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
@@ -996,7 +994,7 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1014,7 +1012,7 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1109,7 +1107,7 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1132,7 +1130,7 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1150,7 +1148,7 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1173,7 +1171,7 @@ do 100 isweep = 1, nswmpr
       call itrmas                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrp  , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1228,7 +1226,7 @@ do 100 isweep = 1, nswmpr
       call itrgrp                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -1246,7 +1244,7 @@ do 100 isweep = 1, nswmpr
       call itrgrp                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &

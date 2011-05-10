@@ -29,8 +29,7 @@ subroutine elphyv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   nphmx  ,                                                       &
+   nvar   , nscal  ,                                                                                 &
    ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -117,8 +116,6 @@ subroutine elphyv &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
-! nphmx            ! e  ! <-- ! nphsmx                                         !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !        !    !     !                                                !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
@@ -165,8 +162,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
-integer          nphmx
+integer          nvar   , nscal
 
 integer          ibrom
 integer          izfppp(nfabor)
@@ -748,8 +744,7 @@ call iasize('elphyv',ifinia)
 call uselph                                                       &
 !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
-   nphmx  ,                                                       &
+   nvar   , nscal  ,                                                                                 &
    maxelt , ia(ils),                                              &
    ibrom  , izfppp ,                                              &
    ia     ,                                                       &

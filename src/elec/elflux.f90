@@ -29,7 +29,7 @@ subroutine elflux &
 !================
 
  ( idbia0 , idbra0 , iappel ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
@@ -58,7 +58,6 @@ subroutine elflux &
 !                  !    !     ! 2 : b,    jxb                                  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -111,7 +110,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , iappel
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -237,7 +236,6 @@ if(iappel.eq.1) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -414,7 +412,6 @@ if(iappel.eq.1) then
     call grdcel                                                   &
     !==========
   ( idbia0 , idbra0 ,                                             &
-    nphas  ,                                                      &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &
@@ -622,7 +619,6 @@ if (iappel.eq.2) then
     call grdcel                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -674,7 +670,6 @@ if (iappel.eq.2) then
     call grdcel                                                   &
     !==========
   ( idbia0 , idbra0 ,                                             &
-    nphas  ,                                                      &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &
@@ -726,7 +721,6 @@ if (iappel.eq.2) then
     call grdcel                                                   &
     !==========
   ( idbia0 , idbra0 ,                                             &
-    nphas  ,                                                      &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &

@@ -29,7 +29,7 @@ subroutine visdyn &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -63,7 +63,6 @@ subroutine visdyn &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
@@ -84,8 +83,8 @@ subroutine visdyn &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! smagor(ncelet    ! tr ! <-- ! constante de smagorinsky dans le cas           !
-! , nphas)         !    !     ! d'un modlele dynamique                         !
+! smagor(ncelet)   ! tr ! <-- ! constante de smagorinsky dans le cas           !
+!                  !    !     ! d'un modlele dynamique                         !
 ! w1..10(ncelet    ! tr ! --- ! tableau de travail                             !
 ! xmij(ncelet,6    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -119,7 +118,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
@@ -206,7 +205,6 @@ iphydp = 0
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    iuiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iuiph) , imligr(iuiph) , iphydp , iwarni(iuiph) ,       &
    nfecra , epsrgr(iuiph) , climgr(iuiph) , extrag(iuiph) ,       &
@@ -239,7 +237,6 @@ enddo
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    iviph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iviph) , imligr(iviph) , iphydp , iwarni(iviph) ,       &
    nfecra , epsrgr(iviph) , climgr(iviph) , extrag(iviph) ,       &
@@ -288,7 +285,6 @@ enddo
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    iwiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iwiph) , imligr(iwiph) , iphydp , iwarni(iwiph) ,       &
    nfecra , epsrgr(iwiph) , climgr(iwiph) , extrag(iwiph) ,       &
@@ -524,7 +520,7 @@ enddo
 call ussmag                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

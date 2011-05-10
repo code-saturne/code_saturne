@@ -32,7 +32,7 @@ subroutine usproj &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    maxelt , lstelt ,                                              &
    itepa  ,                                                       &
@@ -118,7 +118,6 @@ subroutine usproj &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! i  ! <-- ! max. number of particles allowed               !
 ! nvp              ! i  ! <-- ! number of particle-defined variables           !
 ! nvep             ! i  ! <-- ! number of real particle properties             !
@@ -187,7 +186,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
@@ -534,7 +533,6 @@ if (inpdt0.eq.0) then
     call grdcel                                                     &
     !==========
       ( ifinia , ifinra ,                                              &
-        nphas  ,                                                       &
         ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
         iwarnp , nfecra ,                                              &
         epsrgp , climgp , extrap ,                                     &

@@ -29,7 +29,7 @@ subroutine memnav &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iviscf , iviscb , ivisfi , ivisbi ,                            &
    idam   , ixam   ,                                              &
    idrtp  , igrdp  , ismbr  , irovsd ,                            &
@@ -53,7 +53,6 @@ subroutine memnav &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iviscf, b        ! e  ! --> ! "pointeur" sur viscf, viscb                    !
 ! ivisfi, bi       ! e  ! --> ! "pointeur" sur viscfi, viscbi                  !
 ! idam, ixam       ! e  ! --> ! "pointeur" sur dam, xam                        !
@@ -93,7 +92,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          iviscf , iviscb , ivisfi , ivisbi
 integer          idam   , ixam

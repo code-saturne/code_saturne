@@ -29,7 +29,7 @@ subroutine cfmsvs &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iscal  ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -54,7 +54,6 @@ subroutine cfmsvs &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
@@ -106,7 +105,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          iscal
 
 integer          ia(*)
@@ -151,7 +150,7 @@ iccfth = 126
 imodif = 0
 call uscfth                                                       &
 !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

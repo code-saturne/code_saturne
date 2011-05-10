@@ -30,7 +30,7 @@ subroutine lagcel &
 
  ( idbia0 , idbra0 ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , icocel , itycel , ifrlag , itepa  , ibord  , &
@@ -63,7 +63,6 @@ subroutine lagcel &
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -72,9 +71,8 @@ subroutine lagcel &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! itrifb(nfabor    ! te ! --> ! tab d'indirection pour tri des faces           !
-!  nphas)          !    !     !                                                !
+! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
+! itrifb(nfabor)   ! te ! --> ! tab d'indirection pour tri des faces           !
 ! icocel           ! te ! --> ! connectivite cellules -> faces                 !
 !   (lndnod)       !    !     !    face de bord si numero negatif              !
 ! itycel           ! te ! --> ! connectivite cellules -> faces                 !
@@ -138,7 +136,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          lndnod
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
@@ -686,7 +684,7 @@ do ip = 1,nbpart
           !==========
  ( idebia , idebra ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ifac   , ip     , isuivi ,                                     &

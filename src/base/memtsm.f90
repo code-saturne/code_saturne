@@ -29,7 +29,7 @@ subroutine memtsm &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   , nvar   , nphas  ,                            &
+   ncelet , ncel   , nvar   ,                                     &
    ifinia , ifinra )
 
 !===============================================================================
@@ -48,7 +48,6 @@ subroutine memtsm &
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
@@ -75,7 +74,7 @@ use parall
 implicit none
 
 integer          idbia0 ,idbra0
-integer          ncelet , ncel  ,nvar   , nphas
+integer          ncelet , ncel  ,nvar
 integer          ifinia , ifinra
 
 integer          idebia, idebra, iok1
@@ -107,7 +106,7 @@ endif
 
 nctsmt = ncetsm
 if (irangp.ge.0) then
-  call parism(nphas,nctsmt)
+  call parcpt(nctsmt)
 endif
 
 !---> QUELQUES MESSAGES

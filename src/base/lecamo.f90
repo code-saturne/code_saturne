@@ -30,7 +30,7 @@ subroutine lecamo &
 
  ( idbia0 , idbra0 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  , frcxt  ,                                     &
@@ -57,7 +57,6 @@ subroutine lecamo &
 ! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
@@ -70,8 +69,8 @@ subroutine lecamo &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(ncelet,    ! tr ! --> ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! --> ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -102,7 +101,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -138,7 +137,7 @@ idebra = idbra0
 call lecamp (idebia , idebra ,                                    &
 !     ==========
              ncelet , ncel   ,                                    &
-             nvar   , nscal  , nphas  ,                           &
+             nvar   , nscal  ,                                    &
              ia     ,                                             &
              rtp    ,                                             &
              ra     )
@@ -153,7 +152,7 @@ if (ileaux.eq.1) then
   call lecamx (idebia , idebra ,                                  &
 !       ==========
                ndim   , ncelet , ncel   , nfac   , nfabor ,       &
-               nnod   , nvar   , nscal  , nphas  ,                &
+               nnod   , nvar   , nscal  ,                         &
                ia     ,                                           &
                dt     , rtp    , propce , propfa , propfb ,       &
                coefa  , coefb  , frcxt  ,                         &

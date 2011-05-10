@@ -30,7 +30,7 @@ subroutine lecamx &
 
  ( idbia0 , idbra0 ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  , frcxt  ,                                     &
@@ -72,7 +72,6 @@ subroutine lecamx &
 ! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! jturb            ! te ! <-- ! modeles de turb calcul precedent               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
@@ -86,8 +85,8 @@ subroutine lecamx &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa, coefb     ! tr ! --> ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(ncelet,    ! tr ! --> ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! --> ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! racell(ncelet    ! tr ! --- ! tableau de travail                             !
 ! rafacl(nfac      ! tr ! --- ! tableau de travail                             !
 ! rafabl(nfabor    ! tr ! --- ! tableau de travail                             !
@@ -132,7 +131,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*)

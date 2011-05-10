@@ -32,7 +32,7 @@ subroutine useliv &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -92,7 +92,6 @@ subroutine useliv &
 ! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nphas            ! e  ! <-- ! nombre de phases                               !
 ! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
 ! lstelt(maxelt) te ! --- ! tableau de travail                             !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -140,7 +139,7 @@ use mesh
 implicit none
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          maxelt, lstelt(maxelt)
 integer          ia(*)

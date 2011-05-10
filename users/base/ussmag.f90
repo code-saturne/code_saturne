@@ -32,7 +32,7 @@ subroutine ussmag &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -69,7 +69,6 @@ subroutine ussmag &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
@@ -90,8 +89,8 @@ subroutine ussmag &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! smagor(ncelet    ! tr ! <-- ! constante de smagorinsky dans le cas           !
-! , nphas)         !    !     ! d'un modlele dynamique                         !
+! smagor(ncelet)   ! tr ! <-- ! constante de smagorinsky dans le cas           !
+!                  !    !     ! d'un modlele dynamique                         !
 ! mijlij(ncelet    ! tr ! <-- ! mij.lij avant moyenne locale                   !
 ! mijmij(ncelet    ! tr ! <-- ! mij.mij avant moyenne locale                   !
 ! w1..4(ncelet)    ! tr ! --- ! tableau de travail                             !
@@ -123,7 +122,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)

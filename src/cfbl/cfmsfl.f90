@@ -29,7 +29,7 @@ subroutine cfmsfl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -57,7 +57,6 @@ subroutine cfmsfl &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
@@ -113,7 +112,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
@@ -249,7 +248,7 @@ if(itsqdm.ne.0) then
   call ustsns                                                     &
   !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iuiph  ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -266,7 +265,7 @@ if(itsqdm.ne.0) then
   call ustsns                                                     &
   !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iviph  ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -283,7 +282,7 @@ if(itsqdm.ne.0) then
   call ustsns                                                     &
   !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwiph  ,                                                       &
    maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -322,7 +321,7 @@ if(itsqdm.ne.0) then
     call inimas                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    iuiph  , iviph  , iwiph  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
@@ -395,7 +394,7 @@ if(itsqdm.ne.0) then
     call cfdivs                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -409,7 +408,7 @@ if(itsqdm.ne.0) then
     call cfdivs                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -423,7 +422,7 @@ if(itsqdm.ne.0) then
     call cfdivs                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
@@ -504,7 +503,7 @@ iccfth = 6
 imodif = 0
 call uscfth                                                       &
 !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -521,7 +520,7 @@ iccfth = 162
 imodif = 0
 call uscfth                                                       &
 !==========
- ( nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                                                                 &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -577,7 +576,7 @@ extrap = extrag(ivar)
 call cfbsc3                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
@@ -648,7 +647,7 @@ imaspe = 1
 call inimas                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar0  , ivar0  , ivar0  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &

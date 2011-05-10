@@ -29,7 +29,7 @@ subroutine iniva0 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncofab ,                            &
+   nvar   , nscal  , ncofab ,                                     &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  , frcxt  ,                                     &
@@ -53,7 +53,6 @@ subroutine iniva0 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncofab           ! e  ! <-- ! nombre de couples coefa/b pour les cl          !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
@@ -64,8 +63,8 @@ subroutine iniva0 &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! frcxt(ncelet,    ! tr ! <-- ! force exterieure generant la pression          !
-!   3,nphas)       !    !     !  hydrostatique                                 !
+! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
+!                  !    !     !  hydrostatique                                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -102,7 +101,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , ncofab
+integer          nvar   , nscal  , ncofab
 
 integer          ia(*)
 
@@ -324,7 +323,7 @@ if(itytur.eq.2 .or. iturb.eq.50) then
     enddo
 
     iclip = 1
-    call clipke(ncelet , ncel   , nvar    , nphas  ,            &
+    call clipke(ncelet , ncel   , nvar    ,     &
          iclip  , iwarni(ikiph),                &
          propce , rtp    )
 
@@ -370,7 +369,7 @@ elseif(itytur.eq.3) then
       rtp(iel,ieiph) = xxk**1.5d0*cmu/almax
     enddo
     iclip = 1
-    call clprij(ncelet , ncel   , nvar    , nphas  ,            &
+    call clprij(ncelet , ncel   , nvar    ,     &
          iclip  ,                               &
          propce , rtp    , rtp    )
 

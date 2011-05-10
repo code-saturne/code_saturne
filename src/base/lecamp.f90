@@ -30,7 +30,7 @@ subroutine lecamp &
 
  ( idbia0 , idbra0 ,                                              &
    ncelet , ncel   ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    rtp    ,                                                       &
    ra     )
@@ -57,7 +57,6 @@ subroutine lecamp &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! jphas            ! e  ! <-- ! nombre de phases du calcul precedent           !
 ! ljtu             ! e  ! <-- ! longueur de jturb                              !
 ! jturb            ! te ! <-- ! modeles de turb calcul precedent               !
@@ -95,7 +94,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          ncelet , ncel
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 

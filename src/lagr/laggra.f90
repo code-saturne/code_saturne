@@ -29,7 +29,7 @@ subroutine laggra &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
@@ -56,7 +56,6 @@ subroutine laggra &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -102,7 +101,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -172,7 +171,6 @@ endif
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ipriph , imrgra , inc    , iccocg ,                            &
    nswrgr(ipriph)  , imligr(ipriph)  , iphydp ,                   &
    iwarni(ipriph)  , nfecra ,                                     &
@@ -231,7 +229,6 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    iuiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iuiph)   , imligr(iuiph)  , iphydp ,                    &
    iwarni(iuiph)   , nfecra ,                                     &
@@ -253,7 +250,6 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    iviph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iviph)   , imligr(iviph)  , iphydp ,                    &
    iwarni(iviph)   , nfecra ,                                     &
@@ -275,7 +271,6 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    iwiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iwiph)   , imligr(iwiph)  , iphydp ,                    &
    iwarni(iwiph)   , nfecra ,                                     &

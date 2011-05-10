@@ -29,7 +29,7 @@ subroutine cscpfb &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nptdis , ityloc , nvcp   , numcpl , nvcpto,                    &
    locpts ,                                                       &
    ia     ,                                                       &
@@ -86,7 +86,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nptdis , nvcp   , numcpl , nvcpto , ityloc
 
 integer          locpts(nptdis)
@@ -244,7 +244,6 @@ extrap = extrag(ipriph)
 call grdcel                                                   &
 !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -362,7 +361,6 @@ do isou = 1, 3
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -498,7 +496,6 @@ if (itytur.eq.2) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -570,7 +567,6 @@ if (itytur.eq.2) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -692,7 +688,6 @@ if (itytur.eq.2) then
       call grdcel                                               &
       !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -840,7 +835,6 @@ elseif (itytur.eq.3) then
     call grdcel                                                 &
     !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -920,7 +914,6 @@ elseif (itytur.eq.3) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -1097,7 +1090,6 @@ elseif (iturb.eq.50) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -1169,7 +1161,6 @@ elseif (iturb.eq.50) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -1241,7 +1232,6 @@ elseif (iturb.eq.50) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     iphiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -1290,7 +1280,6 @@ elseif (iturb.eq.50) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ifbiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -1423,7 +1412,6 @@ elseif (iturb.eq.60) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -1495,7 +1483,6 @@ elseif (iturb.eq.60) then
   call grdcel                                                   &
   !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     iomiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -1637,7 +1624,6 @@ elseif (iturb.eq.60) then
       call grdcel                                               &
       !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
@@ -1753,7 +1739,6 @@ if (nscal.gt.0) then
     call grdcel                                                   &
     !==========
   ( ifinia , ifinra ,                                             &
-    nphas  ,                                                      &
     ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &

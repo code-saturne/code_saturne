@@ -29,7 +29,7 @@ subroutine csccel &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -55,7 +55,6 @@ subroutine csccel &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -103,7 +102,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ivar
 
 integer          ia(*)
@@ -215,7 +214,7 @@ do numcpl = 1, nbrcpl
     call cscpce                                                   &
     !==========
   ( ifinia , ifinra ,                                             &
-    nvar   , nscal  , nphas  ,                                    &
+    nvar   , nscal  ,                                             &
     ncedis , ityloc ,                                             &
     ivar   ,                                                      &
     ia(ilocpt) ,                                                  &
@@ -250,7 +249,7 @@ do numcpl = 1, nbrcpl
     call csc2ts                                                   &
     !==========
   ( ifinia , ifinra ,                                             &
-    nvar   , nscal  , nphas  ,                                    &
+    nvar   , nscal  ,                                             &
     ncecpl ,                                                      &
     ivar   ,                                                      &
     ia(ilcecp)      ,                                             &

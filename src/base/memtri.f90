@@ -29,7 +29,7 @@ subroutine memtri &
 !================
 
  ( idbia0 , idbra0 , iverif ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncofab , nproce , nprofa , nprofb ,                            &
    iisstd , ifrcx  ,                                              &
    idt    , irtp   , irtpa  , ipropc , ipropf , ipropb ,          &
@@ -52,7 +52,6 @@ subroutine memtri &
 ! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncofab           ! e  ! <-- ! nombre de couple de cl a prevoir               !
 ! nproce           ! e  ! <-- ! nombre de prop phy aux centres                 !
 ! nprofa           ! e  ! <-- ! nombre de prop phy aux faces internes          !
@@ -107,7 +106,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          iverif
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncofab , nproce , nprofa , nprofb
 integer          iisstd , ifrcx
 integer          idt

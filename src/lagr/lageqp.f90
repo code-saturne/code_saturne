@@ -29,7 +29,7 @@ subroutine lageqp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
    viscf  , viscb  ,                                              &
@@ -61,7 +61,6 @@ subroutine lageqp &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -115,7 +114,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -233,7 +232,7 @@ enddo
 call diverv                                                       &
 !==========
  ( idebia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     ,                                                       &
    smbrs  , w1     , w2     , w3     ,                            &
@@ -365,7 +364,7 @@ thetap = 1.0d0
 call codits                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &

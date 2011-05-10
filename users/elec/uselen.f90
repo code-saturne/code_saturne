@@ -32,7 +32,7 @@ subroutine uselen &
 !================
 
  ( idbia0 , idbra0 , nummai ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    ncelps , nfacps , nfbrps ,                                     &
    lstcel , lstfac , lstfbr ,                                     &
    ia     ,                                                       &
@@ -58,7 +58,6 @@ subroutine uselen &
 ! nummai           ! ec ! <-- ! numero du maillage post                        !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nphas            ! e  ! <-- ! nombre de phases                               !
 ! ncelps           ! e  ! <-- ! nombre de cellules du maillage post            !
 ! nfacps           ! e  ! <-- ! nombre de faces interieur post                 !
 ! nfbrps           ! e  ! <-- ! nombre de faces de bord post                   !
@@ -121,7 +120,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          nummai
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncelps , nfacps , nfbrps
 integer          idimt
 
@@ -190,7 +189,6 @@ if(nummai.eq.-1) then
   call grdcel                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -238,7 +236,6 @@ if(nummai.eq.-1) then
     call grdcel                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -291,7 +288,6 @@ if(nummai.eq.-1) then
     call grdcel                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -348,7 +344,6 @@ if(nummai.eq.-1) then
     call grdcel                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
@@ -388,7 +383,6 @@ if(nummai.eq.-1) then
     call grdcel                                                   &
     !==========
   ( idbia0 , idbra0 ,                                             &
-    nphas  ,                                                      &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                                      &
@@ -428,7 +422,6 @@ if(nummai.eq.-1) then
     call grdcel                                                   &
     !==========
   ( idbia0 , idbra0 ,                                             &
-    nphas  ,                                                      &
     ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                                      &

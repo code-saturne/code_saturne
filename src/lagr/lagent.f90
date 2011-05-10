@@ -30,7 +30,7 @@ subroutine lagent &
 
  ( idbia0 , idbra0 ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itycel , icocel ,                                              &
@@ -70,7 +70,6 @@ subroutine lagent &
 ! lndnod           ! e  !  ->           ! longueur du tableau icocel
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -83,9 +82,8 @@ subroutine lagent &
 ! (lndnod)         !    !     !    face de bord si numero negatif              !
 ! itycel           ! te ! <-- ! connectivite cellules -> faces                 !
 ! (ncelet+1)       !    !     !    pointeur du tableau icocel                  !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! itrifb(nfabor    ! te ! <-- ! tab d'indirection pour tri des faces           !
-!  nphas)          !    !     !                                                !
+! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
+! itrifb(nfabor)   ! te ! <-- ! tab d'indirection pour tri des faces           !
 ! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
@@ -148,7 +146,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          lndnod
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
@@ -301,7 +299,7 @@ endif
 call uslag2                                                       &
 !==========
  ( idbia1 , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    maxelt , ia(ils),                                              &
@@ -878,7 +876,7 @@ do ii = 1,nfrlag
          !==========
  ( idebia , idebra ,                                              &
    idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -939,7 +937,7 @@ do ii = 1,nfrlag
           !==========
  ( idebia , idebra ,                                              &
    idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -984,7 +982,7 @@ do ii = 1,nfrlag
               !==========
  ( idebia , idebra ,                                              &
    idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -1071,7 +1069,7 @@ do ii = 1,nfrlag
           !==========
  ( idebia , idebra ,                                              &
    idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -1241,7 +1239,7 @@ call lagipn                                                       &
 call uslain                                                       &
 !==========
  ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nbpnew ,                                                       &

@@ -32,7 +32,7 @@ subroutine uscplc &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
@@ -391,7 +391,6 @@ subroutine uscplc &
 ! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! nphas            ! e  ! <-- ! nombre de phases                               !
 ! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
 ! lstelt(maxelt) te ! --- ! tableau de travail                             !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
@@ -403,10 +402,8 @@ subroutine uscplc &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! itrifb(nfabor    ! te ! <-- ! indirection pour tri des faces de brd          !
-!  nphas      )    !    !     !                                                !
-! itypfb(nfabor    ! te ! --> ! type des faces de bord                         !
-!  nphas      )    !    !     !                                                !
+! itrifb(nfabor)   ! te ! <-- ! indirection pour tri des faces de brd          !
+! itypfb(nfabor)   ! te ! --> ! type des faces de bord                         !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -473,7 +470,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)

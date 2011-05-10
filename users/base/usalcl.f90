@@ -32,7 +32,7 @@ subroutine usalcl &
 !================
 
  ( idbia0 , idbra0 , itrale ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    maxelt , lstelt ,                                              &
    icodcl , itypfb , ialtyb , impale ,                            &
    ia     ,                                                       &
@@ -292,7 +292,6 @@ subroutine usalcl &
 ! itrale           ! i  ! <-- ! number of iterations for ALE method            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
 ! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
@@ -359,7 +358,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , itrale
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)

@@ -75,9 +75,7 @@ ivoset = 0
 
 if (imrgra.eq.2 .or. imrgra.eq.3) ivoset = 1
 
-do ii = 1, nphsmx
-  if (iturb.eq.41) ivoset = 1
-enddo
+if (iturb.eq.41) ivoset = 1
 
 if (ippmod(iaeros).ge.0) ivoset = 1
 

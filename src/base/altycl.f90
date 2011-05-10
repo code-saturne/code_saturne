@@ -29,7 +29,7 @@ subroutine altycl &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    itypfb , ialtyb , icodcl , impale ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -52,7 +52,6 @@ subroutine altycl &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ialtyb(nfabor    ! te ! <-- ! type des faces de bord pour l'ale              !
 ! icodcl           ! te ! <-- ! code de condition limites aux faces            !
@@ -113,7 +112,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          ialtyb(nfabor), icodcl(nfabor,nvar)

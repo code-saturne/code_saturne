@@ -32,7 +32,7 @@ subroutine uspt1d &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , nfpt1d , iappel ,                   &
+   nvar   , nscal  , nfpt1d , iappel ,                            &
    maxelt , lstelt ,                                              &
    ifpt1d , nppt1d , iclt1d ,                                     &
    ia     ,                                                       &
@@ -93,7 +93,6 @@ subroutine uspt1d &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermal module    !
 ! iappel           ! i  ! <-- ! data type to send                              !
 ! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
@@ -150,7 +149,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas  , nfpt1d
+integer          nvar   , nscal  , nfpt1d
 integer          iappel
 
 integer          maxelt, lstelt(maxelt)

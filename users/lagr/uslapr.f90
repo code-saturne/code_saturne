@@ -33,7 +33,7 @@ subroutine uslapr &
 
  ( idbia0 , idbra0 ,                                              &
    idvar  , iepart , izone  , iclass ,                            &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -77,7 +77,6 @@ subroutine uslapr &
 ! iclass           ! i  ! <-- ! number of the particle class                   !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
 ! nvp              ! i  ! <-- ! number of particle variables                   !
 ! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
@@ -86,11 +85,9 @@ subroutine uslapr &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! itrifb(nfabor    ! ia ! <-- ! indirection for the sorting of the             !
-!  nphas      )    !    !     ! boundary faces                                 !
-! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
-!  nphas      )    !    !     !                                                !
-! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
+! itrifb(nfabor)   ! ia ! <-- ! indirection for the sorting of the             !
+! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
+! ifrlag(nfabor)   ! ia ! --> ! type of the Lagrangian boundary faces          !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! ia(*)            ! ia ! --- ! macro array of integers                        !
@@ -154,7 +151,7 @@ integer          idbia0 , idbra0
 
 integer          idvar  , iepart , izone  , iclass
 
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 

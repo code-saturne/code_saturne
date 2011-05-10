@@ -29,7 +29,7 @@ subroutine scalai &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  ,                                     &
@@ -56,7 +56,6 @@ subroutine scalai &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -113,7 +112,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          ia(*)
 
@@ -179,7 +178,7 @@ call iasize('scalai',ifinia)
   call ppinv2                                                     &
   !==========
  ( ifinia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    maxelt , ia(ils),                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -284,7 +283,7 @@ call iasize('scalai',ifinia)
         call cfener                                               &
         !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc   , ncetsm   ,                            &
    iscal  ,                                                       &
    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
@@ -348,7 +347,7 @@ call iasize('scalai',ifinia)
       call covofi                                                 &
       !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc , ncetsm ,                                &
    iisc   , itspdv ,                                              &
    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
@@ -404,7 +403,7 @@ call iasize('scalai',ifinia)
           call elflux                                             &
           !==========
  ( idebia , idebra , iappel ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
@@ -420,7 +419,7 @@ call iasize('scalai',ifinia)
             call uselrc                                           &
             !==========
    (idebia , idebra ,                                             &
-    nvar   , nscal  , nphas  ,                                    &
+    nvar   , nscal  ,                                             &
     ia     ,                                    &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,         &
     coefa  , coefb  , viscf  , viscb  ,                           &
@@ -454,7 +453,7 @@ if ( ippmod(ielarc).ge.1       ) then
   call elflux                                                     &
   !==========
  ( idebia , idebra , iappel ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
@@ -533,7 +532,7 @@ if(nscaus.gt.0) then
     call covofi                                                   &
     !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ncepdc , ncetsm ,                                &
    iisc   , itspdv ,                                              &
    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &

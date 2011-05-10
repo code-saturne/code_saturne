@@ -32,7 +32,7 @@ subroutine usvist &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -70,7 +70,6 @@ subroutine usvist &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term
 ! icepdc(ncelet    ! te ! <-- ! head loss cell numbering                       !
@@ -121,7 +120,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
@@ -207,7 +206,6 @@ iphydp = 0
 call grdcel                                                       &
 !==========
  ( idebia , idebra ,                                              &
-   nphas  ,                                                       &
    iuiph  , imrgra , inc    , iccocg , iphydp ,                   &
    nswrgr(iuiph) , imligr(iuiph) ,                                &
    iwarni(iuiph) , nfecra ,                                       &

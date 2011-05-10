@@ -32,7 +32,7 @@ subroutine ustsv2 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -116,7 +116,6 @@ subroutine ustsv2 &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! ivar             ! i  ! <-- ! index number of the current variable           !
@@ -175,7 +174,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          ivar
 

@@ -29,7 +29,7 @@ subroutine cfcdts &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , iconvp , idiffp , ireslp , ndircp , nitmap ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , iifbru ,                            &
@@ -88,7 +88,6 @@ subroutine cfcdts &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
 ! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
 ! ndircp           ! e  ! <-- ! indicateur = 0 si decalage diagonale           !
@@ -174,7 +173,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          ivar   , iconvp , idiffp , ndircp
 integer          nitmap
 integer          imrgra , nswrsp , nswrgp , imligp , ircflp
@@ -349,7 +348,7 @@ do 100 isweep = 1, nswmod
   call cfbsc2                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
    ipp    , iwarnp ,                                              &
@@ -486,7 +485,7 @@ if (iescap.gt.0) then
   call cfbsc2                                                     &
   !==========
  ( idebia , idebra ,                                              &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
    ipp    , iwarnp ,                                              &

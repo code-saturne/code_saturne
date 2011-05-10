@@ -33,7 +33,7 @@ subroutine uslabo &
 
  ( idbia0 , idbra0 ,                                              &
    lndnod ,                                                       &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    kface  , nbpt   , isuivi ,                                     &
@@ -116,7 +116,6 @@ subroutine uslabo &
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
 ! nvp              ! i  ! <-- ! number of particle variables                   !
 ! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
@@ -128,10 +127,8 @@ subroutine uslabo &
 ! kface            ! i  ! <-- ! number of the interaction face                 !
 ! nbpt             ! i  ! <-- ! number of the treated particle                 !
 ! isuivi           ! i  ! <-- ! flag to follow (or not) the particle           !
-! itypfb(nfabor    ! ia ! <-- ! type of the boundary faces                     !
-!  nphas)          !    !     !                                                !
-! itrifb(nfabor    ! ia ! <-- ! indirection array for the sorting of the faces !
-!   nphas)         !    !     !                                                !
+! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
+! itrifb(nfabor)   ! ia ! <-- ! indirection array for the sorting of the faces !
 ! ifrlag           ! ia ! <-- ! number of the boundary face                    !
 !   (nfabor)       !    !     ! for the Lagrangian module                      !
 ! itepa            ! ra ! <-- ! particle information (integer)                 !
@@ -200,7 +197,7 @@ implicit none
 
 integer          idbia0 , idbra0
 integer          lndnod
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          kface  , nbpt   , isuivi

@@ -29,7 +29,7 @@ subroutine alemaj &
 !================
 
  ( idbia0 , idbra0 , itrale ,                                     &
-   nvar   , nscal  , nphas  ,                                     &
+   nvar   , nscal  ,                                                                                 &
    impale ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -52,7 +52,6 @@ subroutine alemaj &
 ! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -97,7 +96,7 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0 , itrale
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 
 integer          impale(nnod)
 integer          ia(*)
