@@ -1,4 +1,10 @@
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added fvm_nodal_make_vertices_private() function.
+  modified files:
+    src/fvm/fvm_nodal.c
+    src/fvm/fvm_nodal.h
+
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix Valgrind initialization warning in XML reader.
   modified files:
     src/gui/cs_gui.c

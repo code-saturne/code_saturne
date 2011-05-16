@@ -9,7 +9,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2009  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -247,6 +247,22 @@ fvm_nodal_set_shared_vertices(fvm_nodal_t        *this_nodal,
 fvm_coord_t *
 fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
                             fvm_coord_t   vertex_coords[]);
+
+/*----------------------------------------------------------------------------
+ * Make vertex coordinates of a nodal mesh private.
+ *
+ * If vertex coordinates were previously shared, those coordinates that
+ * are actually refernces are copied, and the relation to parent vertices
+ * is discarded.
+ *
+ * If vertices were already private, the mesh is not modified.
+ *
+ * parameters:
+ *   this_nodal <-> nodal mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_make_vertices_private(fvm_nodal_t  *this_nodal);
 
 /*----------------------------------------------------------------------------
  * Assign group class set descriptions to a nodal mesh.

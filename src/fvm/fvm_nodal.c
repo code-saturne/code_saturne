@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2010  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -1507,6 +1507,61 @@ fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
   this_nodal->vertex_coords = _vertex_coords;
 
   return _vertex_coords;
+}
+
+/*----------------------------------------------------------------------------
+ * Make vertex coordinates of a nodal mesh private.
+ *
+ * If vertex coordinates were previously shared, those coordinates that
+ * are actually refernces are copied, and the relation to parent vertices
+ * is discarded.
+ *
+ * If vertices were already private, the mesh is not modified.
+ *
+ * parameters:
+ *   this_nodal <-> nodal mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_make_vertices_private(fvm_nodal_t  *this_nodal)
+{
+  assert(this_nodal != NULL);
+
+  if (this_nodal->_vertex_coords == NULL) {
+
+    fvm_coord_t *_vertex_coords = NULL;
+    const fvm_coord_t *vertex_coords = this_nodal->vertex_coords;
+    const fvm_lnum_t n_vertices = this_nodal->n_vertices;
+    const int dim = this_nodal->dim;
+
+    BFT_MALLOC(vertex_coords, n_vertices * dim, fvm_coord_t);
+
+    /* If renumbering is necessary, update connectivity */
+
+    if (this_nodal->parent_vertex_num != NULL) {
+
+      fvm_lnum_t i;
+      int j;
+      const fvm_lnum_t *parent_vertex_num = this_nodal->parent_vertex_num;
+
+      for (i = 0; i < n_vertices; i++) {
+        for (j = 0; j < dim; j++)
+          _vertex_coords[i*dim + j]
+            = vertex_coords[(parent_vertex_num[i]-1)*dim + j];
+      }
+
+      this_nodal->parent_vertex_num = NULL;
+      if (this_nodal->_parent_vertex_num != NULL)
+        BFT_FREE(this_nodal->_parent_vertex_num);
+    }
+    else
+      memcpy(_vertex_coords, vertex_coords, n_vertices*dim*sizeof(fvm_coord_t));
+
+    /* Assign new array to structure */
+
+    this_nodal->_vertex_coords = _vertex_coords;
+    this_nodal->vertex_coords = _vertex_coords;
+  }
 }
 
 /*----------------------------------------------------------------------------
