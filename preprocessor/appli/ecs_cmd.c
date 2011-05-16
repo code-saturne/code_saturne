@@ -453,10 +453,6 @@ _print_help(void)
 
   printf("\n");
 
-  _fct_prt("--case",
-           _("<name>"),
-           _(": case name (without this option,"));
-
   _fct_prt("--post-error", _("[format]"),
            _(": select output format of error meshes"));
 

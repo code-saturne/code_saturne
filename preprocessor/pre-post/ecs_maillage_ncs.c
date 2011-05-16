@@ -95,55 +95,6 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui construit la liste des de bord.
- *
- *  Un tableau indiquant le type associé à chaque face (0 pour face isolée,
- *  1 ou 2 pour face de bord, 3 pour face interne, et 4 pour tous les autres
- *  cas (faces voyant au moins deux cellules sur un même côté, d'ou erreur
- *  de connectivité) doit être fourni en entrée.
- *----------------------------------------------------------------------------*/
-
-static void
-_maillage_ncs__liste_fac_bord(const ecs_tab_int_t  *typ_fac,
-                              ecs_tab_int_t        *liste_fac_de_bord)
-{
-  size_t  ifac;
-  size_t  cpt_fac_de_bord = 0;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(typ_fac != NULL);
-  assert(liste_fac_de_bord != NULL);
-
-  /* Initialisations */
-
-  cpt_fac_de_bord = 0;
-
-  /* Première boucle sur les faces : comptage */
-  /*------------------------------------------*/
-
-  for (ifac = 0; ifac < typ_fac->nbr; ifac++) {
-    if (typ_fac->val[ifac] == 1 || typ_fac->val[ifac] == 2)
-      cpt_fac_de_bord += 1;
-  }
-
-  /* Initialisation de la liste */
-
-  liste_fac_de_bord->nbr = cpt_fac_de_bord;
-  ECS_MALLOC(liste_fac_de_bord->val, liste_fac_de_bord->nbr, ecs_int_t);
-
-  /* Seconde boucle sur les faces : remplissage de la liste */
-  /*--------------------------------------------------------*/
-
-  cpt_fac_de_bord = 0;
-
-  for (ifac = 0; ifac < typ_fac->nbr; ifac++) {
-    if (typ_fac->val[ifac] == 1 || typ_fac->val[ifac] == 2)
-      liste_fac_de_bord->val[cpt_fac_de_bord++] = ifac;
-  }
-}
-
-/*----------------------------------------------------------------------------
  *  Fonction qui (re)numérote les groupes et construit un tableau contenant
  *   les noms ordonnés de ces groupes. Le tableau de chaînes de caractères
  *   noms_groupes doit initialement être vide.
@@ -153,7 +104,7 @@ static void
 _maillage_ncs__renum_groupes(const ecs_maillage_t  *maillage,
                              const ecs_int_t        nbr_fam_ent[],
                              ecs_tab_char_t        *tab_propr_nom_fam_ent[],
-                             ecs_tab_char_t         *noms_groupes)
+                             ecs_tab_char_t        *noms_groupes)
 {
   int             ient;
   int             ifam;
@@ -247,9 +198,10 @@ _maillage_ncs__renum_groupes(const ecs_maillage_t  *maillage,
  *----------------------------------------------------------------------------*/
 
 static void
-_maillage_ncs__aff_nbr_ent(ecs_int_t  nbr_elt_cel,
-                           ecs_int_t  nbr_elt_fac_interne,
-                           ecs_int_t  nbr_elt_fac_de_bord)
+_maillage_ncs__aff_nbr_ent(size_t  nbr_elt_cel,
+                           size_t  nbr_elt_fac_interne,
+                           size_t  nbr_elt_fac_de_bord,
+                           size_t  nbr_elt_fac_isolee)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -258,6 +210,7 @@ _maillage_ncs__aff_nbr_ent(ecs_int_t  nbr_elt_cel,
   lng_var_nbr = strlen(_("Number of cells"));
   lng_var_nbr = ECS_MAX(lng_var_nbr, strlen(_("Number of internal faces")));
   lng_var_nbr = ECS_MAX(lng_var_nbr, strlen(_("Number of boundary faces")));
+  lng_var_nbr = ECS_MAX(lng_var_nbr, strlen(_("Number of isolated faces")));
 
   if (nbr_elt_cel > 0) {
     printf("  ");
@@ -275,6 +228,11 @@ _maillage_ncs__aff_nbr_ent(ecs_int_t  nbr_elt_cel,
     printf("  ");
     ecs_print_padded_str(_("Number of boundary faces"), lng_var_nbr);
     printf(" : %*ld\n", ECS_LNG_AFF_ENT, (long)nbr_elt_fac_de_bord);
+  }
+  if (nbr_elt_fac_isolee > 0) {
+    printf("  ");
+    ecs_print_padded_str(_("Number of isolated faces"), lng_var_nbr);
+    printf(" : %*ld\n", ECS_LNG_AFF_ENT, (long)nbr_elt_fac_isolee);
   }
 }
 
@@ -294,7 +252,7 @@ static void
 _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
                         size_t                   nbr_cel,
                         size_t                   nbr_fac,
-                        ecs_tab_int_t           *liste_fac_de_bord,
+                        const ecs_tab_int_t     *typ_fac_cel,
                         int                     *nbr_fam,
                         int                     *nbr_max_propr,
                         ecs_tab_int_t           *tab_fam_cel,
@@ -312,14 +270,11 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
   size_t         ifac;
   ecs_int_t      ifam;
   size_t         ipropr;
-  size_t         nbr_cel_avec_fam_defaut;
-  size_t         nbr_fac_avec_fam_defaut;
-  size_t         nbr_fbr_avec_fam_defaut;
   ecs_int_t      nbr_fam_tot;
   ecs_int_t      nbr_loc_propr;
   ecs_int_t      num_fam_defaut;
 
-  ecs_int_t     *cpt_elt_ent_fam;
+  size_t        *cpt_elt_fam;
   ecs_int_t      nbr_fam_ent[ECS_N_ENTMAIL];
 
   ecs_int_t      left;
@@ -328,10 +283,10 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
   ecs_int_t      num_grp_loc;
   char          *nom_grp_loc;
 
-  ecs_tab_int_t    tab_nbr_cel_fam;
-  ecs_tab_int_t    tab_nbr_fac_fam;
-  ecs_tab_int_t    tab_nbr_fbr_fam;
   ecs_tab_char_t  *tab_propr_nom_fam_ent[ECS_N_ENTMAIL];
+
+  /* face family counter shift based on face type */
+  const int typ_fam_fac[4] = {3, 2, 2, 1};
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -360,105 +315,54 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
   } /* Fin : boucle sur les entités de maillage */
 
-  tab_nbr_cel_fam.nbr = nbr_fam_tot;
-  tab_nbr_fac_fam.nbr = nbr_fam_tot;
-  tab_nbr_fbr_fam.nbr = nbr_fam_tot;
-
-  if (nbr_fam_tot != 0) {
-    ECS_MALLOC(tab_nbr_cel_fam.val,
-               tab_nbr_cel_fam.nbr, ecs_int_t);
-    ECS_MALLOC(tab_nbr_fac_fam.val,
-               tab_nbr_fac_fam.nbr, ecs_int_t);
-    ECS_MALLOC(tab_nbr_fbr_fam.val,
-               tab_nbr_fbr_fam.nbr, ecs_int_t);
-  }
-  else {
-    tab_nbr_cel_fam.val = NULL;
-    tab_nbr_fac_fam.val = NULL;
-    tab_nbr_fbr_fam.val = NULL;
-  }
-
   num_fam_defaut = nbr_fam_tot + 1;
+
+  ECS_MALLOC(cpt_elt_fam, num_fam_defaut*4, size_t);
+  for (ient = 0; ient < num_fam_defaut*4; ient++)
+    cpt_elt_fam[ient] = 0;
 
   /* Numéros des familles des cellules */
   /*-----------------------------------*/
 
+  ECS_MALLOC(tab_fam_cel->val, nbr_cel, ecs_int_t);
+  tab_fam_cel->nbr = nbr_cel;
+
   if (maillage->elt_fam[ECS_ENTMAIL_CEL] != NULL && nbr_cel != 0) {
-
-    *tab_fam_cel = ecs_table_att__fam_elt(nbr_cel,
-                                          maillage->elt_fam[ECS_ENTMAIL_CEL],
-                                          &tab_nbr_cel_fam);
-
+    for (icel = 0; icel < nbr_cel; icel++)
+      tab_fam_cel->val[icel] = maillage->elt_fam[ECS_ENTMAIL_CEL][icel];
   }
   else {
-
-    ECS_MALLOC(tab_fam_cel->val, nbr_cel, ecs_int_t);
-    tab_fam_cel->nbr = nbr_cel;
-
     for (icel = 0; icel < nbr_cel; icel++)
       tab_fam_cel->val[icel] = 0;
-
-    for (ifam = 0; ifam < nbr_fam_tot; ifam++)
-      tab_nbr_cel_fam.val[ifam] = 0;
-
   }
 
-  nbr_cel_avec_fam_defaut = 0;
-
   for (icel = 0; icel < nbr_cel; icel++) {
-    if (tab_fam_cel->val[icel] == 0) {
+    if (tab_fam_cel->val[icel] == 0)
       tab_fam_cel->val[icel] = num_fam_defaut;
-      nbr_cel_avec_fam_defaut++;
-    }
+    cpt_elt_fam[(tab_fam_cel->val[icel]-1) * 4] += 1;
   }
 
   /* Numéros des familles des faces */
   /*--------------------------------*/
 
+  ECS_MALLOC(tab_fam_fac->val, nbr_fac, ecs_int_t);
+  tab_fam_fac->nbr = nbr_fac;
+
   if (maillage->elt_fam[ECS_ENTMAIL_FAC] != NULL) {
-
-    *tab_fam_fac = ecs_table_att__fam_elt(nbr_fac,
-                                          maillage->elt_fam[ECS_ENTMAIL_FAC],
-                                          &tab_nbr_fac_fam);
-
+    for (ifac = 0; ifac < nbr_fac; ifac++)
+      tab_fam_fac->val[ifac] = maillage->elt_fam[ECS_ENTMAIL_FAC][ifac];
   }
   else {
-
-    ECS_MALLOC(tab_fam_fac->val, nbr_fac, ecs_int_t);
-    tab_fam_fac->nbr = nbr_fac;
-
     for (ifac = 0; ifac < nbr_fac; ifac++)
       tab_fam_fac->val[ifac] = 0;
-
-    for (ifam = 0; ifam < nbr_fam_tot; ifam++)
-      tab_nbr_fac_fam.val[ifam] = 0;
-
   }
-
-  nbr_fac_avec_fam_defaut = 0;
-  nbr_fbr_avec_fam_defaut = 0;
 
   for (ifac = 0; ifac < nbr_fac; ifac++) {
-    if (tab_fam_fac->val[ifac] == 0) {
+    if (tab_fam_fac->val[ifac] == 0)
       tab_fam_fac->val[ifac] = num_fam_defaut;
-      nbr_fac_avec_fam_defaut++;
-    }
+    cpt_elt_fam[  (tab_fam_fac->val[ifac]-1) * 4
+                + typ_fam_fac[typ_fac_cel->val[ifac]]] += 1;
   }
-
-  for (ifam = 0; ifam < (ecs_int_t)(tab_nbr_fbr_fam.nbr); ifam++)
-    tab_nbr_fbr_fam.val[ifam] = 0;
-
-  if (nbr_fam_tot > 0) {
-    for (ifac = 0; ifac < liste_fac_de_bord->nbr; ifac++) {
-      if (tab_fam_fac->val[liste_fac_de_bord->val[ifac]] == num_fam_defaut)
-        nbr_fbr_avec_fam_defaut++;
-      else
-        tab_nbr_fbr_fam.val
-          [tab_fam_fac->val[liste_fac_de_bord->val[ifac]] - 1] += 1;
-    }
-  }
-  else
-    nbr_fbr_avec_fam_defaut += liste_fac_de_bord->nbr;
 
   /*-------------------------------------------------------*/
   /* Détermination du  nombre  de  propriétés des familles */
@@ -492,36 +396,6 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
                                tab_propr_nom_fam_ent,
                                noms_groupes);
 
-  if (nbr_fam_tot != 0) {
-
-    for (ient = ECS_ENTMAIL_CEL; ient >= ECS_ENTMAIL_FAC; ient--) {
-
-      cpt_elt_ent_fam = NULL;
-
-      if (maillage->elt_fam[ient] != NULL) {
-
-        /* Nombre d'éléments par entité et par famille */
-        cpt_elt_ent_fam
-          = ecs_table_att__ret_nbr_elt_fam
-              (ecs_table__ret_elt_nbr(maillage->table_def[ient]),
-               maillage->elt_fam[ient],
-               nbr_fam_tot);
-
-      }
-      else {
-
-        ECS_MALLOC(cpt_elt_ent_fam, nbr_fam_tot, ecs_int_t);
-        for (ifam = 0; ifam < nbr_fam_tot; ifam++)
-          cpt_elt_ent_fam[ifam] = 0;
-
-      }
-
-      if (cpt_elt_ent_fam != NULL)
-        ECS_FREE(cpt_elt_ent_fam);
-
-    }
-  }
-
   /* Affichage des définitions des familles */
   /*----------------------------------------*/
 
@@ -529,38 +403,13 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
            "Definition of face and cell families\n"
            "------------------------------------\n\n"));
 
-  if (nbr_fac_avec_fam_defaut > 0) {
-
-    /* On a du attribuer une famille par défaut à certaines faces */
-
-    if (nbr_fbr_avec_fam_defaut > 0)
-      ecs_warn();
-
-    printf
-      (_("%d faces from a total of %d do not belong to a group...\n"
-         "A default family is assigned to those faces.\n\n"),
-       (int)nbr_fac_avec_fam_defaut, (int)nbr_fac);
-
-  }
-
-  if (nbr_cel_avec_fam_defaut > 0) {
-
-    /* On a du attribuer une famille par défaut à certaines cellules */
-
-    ecs_warn();
-    printf
-      (_("%d cells from a total of %d do not belong to a group...\n"
-         "A default family is assigned to those cells.\n\n"),
-       (int)nbr_cel_avec_fam_defaut, (int)nbr_cel);
-
-  }
-
   cpt_fam = 0;
 
-  if (nbr_fac_avec_fam_defaut > 0 || nbr_cel_avec_fam_defaut > 0)
-    bool_cree_fam_par_defaut = true;
-  else
-    bool_cree_fam_par_defaut = false;
+  bool_cree_fam_par_defaut = false;
+  for (ient = 0; ient < 4; ient++) {
+    if (cpt_elt_fam[(num_fam_defaut-1)*4] > 0)
+      bool_cree_fam_par_defaut = true;
+  }
 
   for (ient = ECS_ENTMAIL_CEL; ient >= ECS_ENTMAIL_FAC; ient--) {
 
@@ -568,48 +417,31 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
       ecs_famille_chaine__affiche(ifam + 1, maillage->famille[ient]);
 
-      _maillage_ncs__aff_nbr_ent
-        (tab_nbr_cel_fam.val[cpt_fam],
-         (tab_nbr_fac_fam.val[cpt_fam] - tab_nbr_fbr_fam.val[cpt_fam]),
-         tab_nbr_fbr_fam.val[cpt_fam]);
+      _maillage_ncs__aff_nbr_ent(cpt_elt_fam[cpt_fam*4],
+                                 cpt_elt_fam[cpt_fam*4 + 1],
+                                 cpt_elt_fam[cpt_fam*4 + 2],
+                                 cpt_elt_fam[cpt_fam*4 + 3]);
 
       cpt_fam++;
 
     }
   }
 
-  if (nbr_fam_tot != 0) {
-
-    if (tab_nbr_cel_fam.nbr != 0)
-      ECS_FREE(tab_nbr_cel_fam.val);
-
-    if (tab_nbr_fac_fam.nbr != 0)
-      ECS_FREE(tab_nbr_fac_fam.val);
-
-    if (tab_nbr_fbr_fam.nbr != 0)
-      ECS_FREE(tab_nbr_fbr_fam.val);
-
-  }
-
   /* Affichage famille par défaut si nécessaire */
 
   if (bool_cree_fam_par_defaut == true) {
 
-    printf("  %s %d\n", _("Family"),
-           cpt_fam + 1);
+    printf("  %s %d\n", _("Family"), cpt_fam);
 
     printf("  %*s%s\n", (int)(strlen(_("Family")) + 1), "",
            _("Default family"));
     printf("  %*s%s\n", (int)(strlen(_("Family")) + 1), "",
            _("(no group)"));
 
-    /* Comme on ne traite pas les faces internes, inutile d'affecter la */
-    /* famille par défaut à celles n'appartenant pas à une famille > 0  */
-
-    _maillage_ncs__aff_nbr_ent
-      (nbr_cel_avec_fam_defaut,
-       (nbr_fac_avec_fam_defaut - nbr_fbr_avec_fam_defaut),
-       nbr_fbr_avec_fam_defaut);
+    _maillage_ncs__aff_nbr_ent(cpt_elt_fam[cpt_fam*4],
+                               cpt_elt_fam[cpt_fam*4 + 1],
+                               cpt_elt_fam[cpt_fam*4 + 2],
+                               cpt_elt_fam[cpt_fam*4 + 3]);
 
   } /* Fin : si affichage de la famille par défaut */
 
@@ -728,7 +560,6 @@ ecs_maillage_ncs__ecr(const char      *output,
 
   ecs_tab_int_t   typ_fac_cel;
   ecs_tab_int_t   connect_fac_cel;
-  ecs_tab_int_t   liste_fac_de_bord;
 
   ecs_tab_int_t   tab_fam_cel;
   ecs_tab_int_t   tab_fam_fac;
@@ -764,16 +595,10 @@ ecs_maillage_ncs__ecr(const char      *output,
     = ecs_table_def__typ_fac_cel(maillage->table_def[ECS_ENTMAIL_CEL],
                                  maillage->table_def[ECS_ENTMAIL_FAC]);
 
-  _maillage_ncs__liste_fac_bord(&typ_fac_cel,
-                                &liste_fac_de_bord);
-
-  typ_fac_cel.nbr = 0;
-  ECS_FREE(typ_fac_cel.val);
-
   _maillage_ncs__cree_fam(maillage,
                           n_cells,
                           n_faces,
-                          &liste_fac_de_bord,
+                          &typ_fac_cel,
                           &nbr_fam,
                           &nbr_max_propr,
                           &tab_fam_cel,
@@ -781,8 +606,8 @@ ecs_maillage_ncs__ecr(const char      *output,
                           &tab_propr_fam,
                           &tab_noms_groupes);
 
-  liste_fac_de_bord.nbr = 0;
-  ECS_FREE(liste_fac_de_bord.val);
+  typ_fac_cel.nbr = 0;
+  ECS_FREE(typ_fac_cel.val);
 
   /* En cas de simulation seule, libération des tableaux temporaires
      et sortie directe */

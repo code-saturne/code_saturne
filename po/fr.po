@@ -1,15 +1,15 @@
 # translation of fr.po to
 # French translations for code_saturne package.
-# Copyright (C) 2008-2010 EDF S.A.
+# Copyright (C) 2008-2011 EDF S.A.
 # This file is distributed under the same license as Code_Saturne.
 #
-# Automatically generated, 2008-2010.
+# Automatically generated, 2008-2011.
 # Saturne <saturne-support@edf.fr>, 2008-2010.
 msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-05-06 15:42+0200\n"
+"POT-Creation-Date: 2011-05-16 16:57+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -702,6 +702,9 @@ msgstr "Nombre de faces internes"
 msgid "Number of boundary faces"
 msgstr "Nombre de faces de bord"
 
+msgid "Number of isolated faces"
+msgstr "Nombre de faces isolées"
+
 #, c-format
 msgid ""
 "\n"
@@ -714,26 +717,6 @@ msgstr ""
 "\n"
 "Définition des familles de faces et cellules\n"
 "--------------------------------------------\n"
-"\n"
-
-#, c-format
-msgid ""
-"%d faces from a total of %d do not belong to a group...\n"
-"A default family is assigned to those faces.\n"
-"\n"
-msgstr ""
-"%d faces sur un total de %d n'appartiennent à aucun groupe ...\n"
-"On attribue à ces faces une famille par défaut.\n"
-"\n"
-
-#, c-format
-msgid ""
-"%d cells from a total of %d do not belong to a group...\n"
-"A default family is assigned to those cells.\n"
-"\n"
-msgstr ""
-"%d cellules sur un total de %d n'appartiennent à aucun groupe ...\n"
-"On attribue à ces cellules une famille par défaut.\n"
 "\n"
 
 msgid "Default family"
@@ -3931,21 +3914,6 @@ msgstr ""
 "\n"
 "Code_Saturne : %s:%d : Avertissement\n"
 
-msgid "    no value\n"
-msgstr "    aucune valeur\n"
-
-#, c-format
-msgid "    minimum value =         %10d\n"
-msgstr "    valeur minimale =       %10d\n"
-
-#, c-format
-msgid ""
-"    maximum value =         %10d\n"
-"\n"
-msgstr ""
-"    valeur maximale =       %10d\n"
-"\n"
-
 #, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
@@ -5904,6 +5872,21 @@ msgstr "La matrice n'est pas définie."
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"
 
+msgid "    no value\n"
+msgstr "    aucune valeur\n"
+
+#, c-format
+msgid "    minimum value =         %10d\n"
+msgstr "    valeur minimale =       %10d\n"
+
+#, c-format
+msgid ""
+"    maximum value =         %10d\n"
+"\n"
+msgstr ""
+"    valeur maximale =       %10d\n"
+"\n"
+
 msgid ""
 "\n"
 " Halo creation times summary\n"
@@ -7398,15 +7381,9 @@ msgstr ""
 "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
-#, c-format
 msgid ""
 "The centred interpolation scheme is not available\n"
 "when coupling cells"
-msgstr ""
-
-msgid ""
-"\n"
-" Reordering cells by Hilbert curve\n"
 msgstr ""
 
 #, c-format
@@ -9666,4 +9643,3 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
-

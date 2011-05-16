@@ -157,30 +157,6 @@ ecs_table_att__fusionne(ecs_table_t         *this_table_att,
                         size_t               nbr_elt_new,
                         const ecs_tab_int_t  vect_transf);
 
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie la liste des numéros de famille des éléments
- *
- *  Pour les éléments de famille 0 ou n'ayant pas de famille, on leur
- *   attribue le numéro de famille par défaut
- *----------------------------------------------------------------------------*/
-
-ecs_tab_int_t
-ecs_table_att__fam_elt(size_t          n_elts,
-                       int            *elt_fam,
-                       ecs_tab_int_t  *tab_nbr_elt_fam);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie un tableau donnant pour chaque valeur de la table
- *   le nombre d'éléments ayant cette valeur
- *----------------------------------------------------------------------------*/
-
-ecs_int_t *
-ecs_table_att__ret_nbr_elt_fam(size_t        n_elts,
-                               int          *elt_fam,
-                               size_t        nbr_val_fam);
-
 /*----------------------------------------------------------------------------
  *  Fonction qui construit les familles à partir
  *   de la liste chaînée de tous les tables de type "attribut"

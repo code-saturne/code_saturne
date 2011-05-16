@@ -1,4 +1,13 @@
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Preprocessor: simpler handling of kernel output family info logging.
+  modified files:
+    po/fr.po
+    preprocessor/appli/ecs_cmd.c
+    preprocessor/base/ecs_table_att.c
+    preprocessor/base/ecs_table_att.h
+    preprocessor/pre-post/ecs_maillage_ncs.c
+
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Simplified Preprocessor command-line for postprocessing.
   modified files:
     gui/Pages/SolutionVerifView.py
