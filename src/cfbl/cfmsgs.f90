@@ -248,8 +248,7 @@ if(itsqdm.ne.0) then
 !     Suivant X
   call ustsns                                                     &
   !==========
-( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iuiph  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -264,8 +263,7 @@ if(itsqdm.ne.0) then
 !     Suivant Y
   call ustsns                                                     &
   !==========
- ( ifinia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iviph  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -280,8 +278,7 @@ if(itsqdm.ne.0) then
 !     Suivant Z
   call ustsns                                                     &
   !==========
- ( ifinia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwiph  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &

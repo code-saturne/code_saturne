@@ -113,8 +113,7 @@ call iasize ('cregeo', ifinia)
 
 call usdpst                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
-   ia(ilcel) , ia(ilfaci) , ia(ilfacb)  ,                         &
+ ( ia(ilcel) , ia(ilfaci) , ia(ilfacb)  ,                         &
    ia     ,                                                       &
    ra     )
 
@@ -144,8 +143,7 @@ if (ippmod(iaeros).ge.0) then
 
   call usctdz                                                     &
   !==========
- ( ifinia , ifinra ,                                              &
-   ia     ,                                                       &
+ ( ia     ,                                                       &
    ra     )
 
   call nbzect(nbzech)

@@ -181,8 +181,7 @@ iappel = 3
 
 call  uspt1d                                                      &
 !===========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , nfpt1d , iappel ,                            &
+ ( nvar   , nscal  , nfpt1d , iappel ,                            &
    ifpt1d , ia(idebia), iclt1d ,                                  &
    ia     ,                                                       &
    tppt1d , ra(idebra), ra(idebra),                               &

@@ -616,8 +616,7 @@ if (ncpdct.gt.0) then
 
   call uskpdc &
   !==========
-( idebia , idebra ,                                              &
-  nvar   , nscal  ,                                              &
+( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   ia(iicepd) ,                                            &
   ia     ,                                                       &
@@ -644,8 +643,7 @@ if(nctsmt.gt.0) then
   iappel = 3
   call  ustsma                                                  &
   !============
-( idebia , idebra ,                                              &
-  nvar   , nscal  , ncepdc   ,                                   &
+( nvar   , nscal  , ncepdc   ,                                   &
   ncetsm   , iappel ,                                           &
   ia(iicepd) ,                                            &
   ia(iicesm) , ia(iitpsm) ,                        &
@@ -712,8 +710,7 @@ if (ivrtex.eq.1) then
   iappel = 2
   call usvort &
   !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
    ia(iirepv)      ,                                              &
    ia     ,                                                       &
@@ -891,8 +888,7 @@ do while (iterns.le.nterup)
 
     call usclim &
     !==========
-  ( ifinia , ifinra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -1000,7 +996,7 @@ do while (iterns.le.nterup)
 
     call usalcl &
     !==========
-  ( ifinia , ifinra , itrale ,                                     &
+  ( itrale ,                                                       &
     nvar   , nscal  ,                                              &
     ia(iicodc)      , ia(iitypf)      , ia(iialty)      ,          &
     ia(iimpal)      ,                                              &

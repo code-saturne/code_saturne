@@ -224,8 +224,7 @@ if ( isuite.eq.0 ) then
 
     call uscfxi                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4),                &

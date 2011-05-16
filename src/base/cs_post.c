@@ -1976,7 +1976,7 @@ void CS_PROCF (pstvar, PSTVAR)
 
       imodif = 0;
 
-      CS_PROCF(usmpst, USMPST) (idbia0, idbra0, &nummai,
+      CS_PROCF(usmpst, USMPST) (&nummai,
                                 nvar, nscal, nvlsta,
                                 &n_cells, &n_i_faces, &n_b_faces,
                                 &imodif,
@@ -2194,7 +2194,7 @@ void CS_PROCF (pstvar, PSTVAR)
 
       /* Call to user subroutine for additional post-processing */
 
-      CS_PROCF(usvpst, USVPST) (idbia0, idbra0, &nummai,
+      CS_PROCF(usvpst, USVPST) (&nummai,
                                 nvar, nscal, nvlsta,
                                 &n_cells, &n_i_faces, &n_b_faces,
                                 itypps,

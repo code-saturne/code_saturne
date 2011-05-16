@@ -223,8 +223,7 @@ endif
 
 call usphyv &
 !==========
-( idebia , idebra ,                                              &
-  nvar   , nscal  ,                                              &
+( nvar   , nscal  ,                                              &
   ibrom  ,                                                       &
   ia     ,                                                       &
   dt     , rtp    , rtpa   ,                                     &
@@ -496,8 +495,7 @@ endif
 
 call usvist                                                     &
 !==========
-( idebia , idebra ,                                              &
-  nvar   , nscal  ,                                              &
+( nvar   , nscal  ,                                              &
   ncepdc   , ncetsm   ,                            &
   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
   ia     ,                                                       &
@@ -559,8 +557,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
   call usvima                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , propce(1,ipproc(ivisma(1))) ,                &

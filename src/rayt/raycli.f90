@@ -286,8 +286,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
 
       call usray2                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
@@ -362,8 +361,7 @@ endif
 
   call usray2                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    itypfb ,                                                       &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
@@ -624,8 +622,7 @@ endif
 
       call usray4                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                       &
    ia     ,                                                       &
@@ -795,8 +792,7 @@ endif
 
         call usray4                                               &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
    ia     ,                                                       &
@@ -845,8 +841,7 @@ endif
 
         call usray4                                               &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
    ia     ,                                                       &

@@ -682,8 +682,7 @@ do ip = 1,nbpart
 
           call uslabo                                             &
           !==========
- ( idebia , idebra ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &

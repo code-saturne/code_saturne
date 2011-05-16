@@ -278,8 +278,7 @@ iscala = iscal
 
 call ustssc &
 !==========
-( idebia , idebra ,                                              &
-  nvar   , nscal  , ncepdp , ncesmp ,                            &
+( nvar   , nscal  , ncepdp , ncesmp ,                            &
   iscala ,                                                       &
   icepdc , icetsm , itypsm ,                                     &
   ia     ,                                                       &

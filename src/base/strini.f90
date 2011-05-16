@@ -171,8 +171,7 @@ endif
 
 call usstr1                                                       &
 !==========
- ( ifinia , idebra ,                                              &
-   ia(iidfst),                                                    &
+ ( ia(iidfst),                                                    &
    ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstp   , xpstr  , xstreq ,                                     &
@@ -183,8 +182,7 @@ call usstr1                                                       &
 
 call usaste                                                       &
 !==========
- ( ifinia , idebra ,                                              &
-   ia(iidfst),                                                    &
+ ( ia(iidfst),                                                    &
    ia     ,                                                       &
    ra     )
 

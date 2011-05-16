@@ -287,8 +287,7 @@ if (nvls.ge.1) then
 
   call uslaed                                                     &
   !==========
-    ( idebia , idebra ,                                           &
-      nvar   , nscal  ,                                           &
+    ( nvar   , nscal  ,                                           &
       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
       itepa  , ibord  ,                                           &

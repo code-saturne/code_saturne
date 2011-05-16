@@ -1,3 +1,55 @@
+* 16/05/2011 - David Monfort <david.monfort@edf.fr>
+  Missing modifications according to previous commit in user files calls.
+  modified routines:
+    src/atmo/atiniv.f90
+    src/base/caltri.f90
+    src/base/cou1do.f90
+    src/base/covofi.f90
+    src/base/cregeo.f90
+    src/base/cs_post.c
+    src/base/cs_prototypes.h
+    src/base/dvvpst.f90
+    src/base/inivar.f90
+    src/base/phyvar.f90
+    src/base/preduv.f90
+    src/base/reseps.f90
+    src/base/resrij.f90
+    src/base/resssg.f90
+    src/base/resv2f.f90
+    src/base/scalai.f90
+    src/base/strdep.f90
+    src/base/strini.f90
+    src/base/tridim.f90
+    src/base/turbke.f90
+    src/base/turbkw.f90
+    src/base/turbsa.f90
+    src/base/visdyn.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfiniv.f90
+    src/cfbl/cfmsfl.f90
+    src/cfbl/cfmsgs.f90
+    src/cfbl/cfphyv.f90
+    src/cfbl/cfqdmv.f90
+    src/cogz/d3pini.f90
+    src/cogz/ebuini.f90
+    src/cogz/lwcini.f90
+    src/cplv/cpiniv.f90
+    src/ctwr/ctiniv.f90
+    src/elec/eliniv.f90
+    src/elec/elphyv.f90
+    src/fuel/fuiniv.f90
+    src/lagr/lagcar.f90
+    src/lagr/lagcel.f90
+    src/lagr/lagent.f90
+    src/lagr/lagesp.f90
+    src/lagr/lagfch.f90
+    src/lagr/laglis.f90
+    src/lagr/lagphy.f90
+    src/lagr/lagune.f90
+    src/pprt/ppclim.f90
+    src/rayt/raycli.f90
+    src/rayt/raydom.f90
+
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fixes to SLURM batch options selection of partitions (queues).
   modified files:

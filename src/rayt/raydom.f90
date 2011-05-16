@@ -336,8 +336,7 @@ unspi = 1.d0/pi
 
     call usray3                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &
@@ -414,8 +413,7 @@ unspi = 1.d0/pi
 
   call usray5                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &
@@ -513,8 +511,7 @@ unspi = 1.d0/pi
 
         call usray4                                               &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
    ia     ,                                                       &
@@ -899,8 +896,7 @@ unspi = 1.d0/pi
 
   call usray5                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
    ia     ,                                                       &

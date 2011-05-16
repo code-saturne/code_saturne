@@ -852,8 +852,7 @@ if (nummai .eq. -1) then
 
         call uslaen                                               &
         !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nvlsta ,                                     &
+ ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -894,8 +893,7 @@ if (nummai .eq. -1) then
 
         call uslaen                                               &
         !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nvlsta ,                                     &
+ ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -1080,7 +1078,7 @@ if (     ippmod(ieljou).ge.1                                      &
 
   call uselen                                                     &
   !==========
- ( ifinia , ifinra , nummai ,                                     &
+ ( nummai ,                                                       &
    nvar   , nscal  ,                                              &
    ncelps , nfacps , nfbrps ,                                     &
    lstcel , lstfac , lstfbr ,                                     &

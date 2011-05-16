@@ -209,8 +209,7 @@ enddo
 
 call usladp                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &

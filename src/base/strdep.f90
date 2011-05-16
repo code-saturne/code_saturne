@@ -225,8 +225,7 @@ if (nbstru.gt.0) then
 
   call usstr2                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nbstru ,                                                       &
+ ( nbstru ,                                                       &
    ia(iidfst),                                                    &
    ia     ,                                                       &
    dt     ,                                                       &

@@ -389,8 +389,7 @@ idbra1 = ifinra
 iappel = 1
 call uspt1d                                                       &
 !==========
- ( idbia1 , idbra1 ,                                              &
-   nvar   , nscal  , nfpt1d , iappel ,                            &
+ ( nvar   , nscal  , nfpt1d , iappel ,                            &
    ia(idbia1) , ia(idbia1) , ia(idbia1) ,                         &
    ia     ,                                                       &
    ra(idbra1) , ra(idbra1) , ra(idbra1) ,                         &
@@ -424,8 +423,7 @@ if (nfpt1t.gt.0) then
   iappel = 2
   call  uspt1d                                                    &
   !===========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nfpt1d , iappel ,                            &
+ ( nvar   , nscal  , nfpt1d , iappel ,                            &
    ia(iifpt1) , ia(inppt1) , ia(iiclt1) ,                         &
    ia     ,                                                       &
    ra(itppt1) , ra(irgpt1) , ra(ieppt1) ,                         &
@@ -502,8 +500,7 @@ endif
 
 call  uskpdc &
 !===========
-( idbia1 , idbra1 ,                                              &
-  nvar   , nscal  ,                                              &
+( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   ia(idbia1),                                                    &
   ia     ,                                                       &
@@ -536,8 +533,7 @@ if(ncpdct.gt.0) then
 
   call  uskpdc                                                   &
   !===========
-( ifinia , ifinra ,                                              &
-  nvar   , nscal  ,                                              &
+( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   ia(iicepd),                                                    &
   ia     ,                                                       &
@@ -554,8 +550,7 @@ idbra1 = ifinra
 iappel = 1
 call ustsma                                                      &
 !==========
-( idbia1 , idbra1 ,                                              &
-  nvar   , nscal  , ncepdc   ,                                   &
+( nvar   , nscal  , ncepdc   ,                                   &
   ncetsm ,   iappel ,                                            &
   ia(iicepd) ,                                                   &
   ia(idbia1) , ia(idbia1),                                       &
@@ -582,8 +577,7 @@ if(nctsmt.gt.0) then
   iappel = 2
   call ustsma                                                    &
   !===========
-( ifinia , ifinra ,                                              &
-  nvar   , nscal  , ncepdc   ,                                   &
+( nvar   , nscal  , ncepdc   ,                                   &
   ncetsm ,   iappel ,                                            &
   ia(iicepd) ,                                                   &
   ia(iicesm) , ia(iitpsm),                                       &
@@ -615,8 +609,7 @@ if (ivrtex.eq.1) then
 
   call usvort                                                     &
   !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
    ia(iirepv)      ,                                              &
    ia     ,                                                       &
@@ -856,8 +849,7 @@ if (itrale.gt.0) then
 
   call usproj                                                     &
   !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    ia(iiitep),                                                    &
    ia     ,                                                       &
@@ -1020,8 +1012,7 @@ endif ! iisuit = 1
 
 call usnpst                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nvlsta ,                                     &
+ ( nvar   , nscal  , nvlsta ,                                     &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
@@ -1093,8 +1084,7 @@ endif
 
 call ushist                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &

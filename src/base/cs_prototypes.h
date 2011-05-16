@@ -550,8 +550,6 @@ extern void CS_PROCF (tstvec, TSTVEC)
 
 void CS_PROCF (usmpst, USMPST)
 (
- const cs_int_t  *idbia0,    /* <-> number of first free position in IA */
- const cs_int_t  *idbra0,    /* <-> number of first free position in RA */
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */
@@ -587,8 +585,6 @@ void CS_PROCF (usmpst, USMPST)
 
 void CS_PROCF (usvpst, USVPST)
 (
- const cs_int_t  *idbia0,    /* <-> number of first free position in IA */
- const cs_int_t  *idbra0,    /* <-> number of first free position in RA */
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
  const cs_int_t  *nvar,      /* <-- number of variables */
  const cs_int_t  *nscal,     /* <-- number of scalars */

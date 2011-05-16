@@ -331,8 +331,7 @@ if (iroule.ge.1) then
 
   call uslaru                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    ia(iitypf) , ia(iitrif)  , itepa ,                             &
@@ -767,8 +766,7 @@ if (nordre.eq.2 .and. nor.eq.1) goto 10
 
 call uslast                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &

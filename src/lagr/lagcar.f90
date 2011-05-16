@@ -257,8 +257,7 @@ do ip = 1,nbpart
 
     call uslatp                                                   &
     !==========
-     ( idebia , idebra ,                                          &
-       nvar   , nscal  ,                                          &
+     ( nvar   , nscal  ,                                          &
        nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
        ip     , itepa  ,                                          &
        ia     ,                                                   &
@@ -317,8 +316,7 @@ do ip = 1,nbpart
 
     call uslatc                                                   &
     !==========
-     ( idebia , idebra ,                                          &
-       nvar   , nscal  ,                                          &
+     ( nvar   , nscal  ,                                          &
        nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
        ip     , itepa  ,                                          &
        ia     ,                                                   &

@@ -268,8 +268,7 @@ if (istala.eq.1) then
 
         call uslaen                                               &
         !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nvlsta ,                                     &
+ ( nvar   , nscal  , nvlsta ,                                     &
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &

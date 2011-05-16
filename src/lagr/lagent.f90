@@ -291,8 +291,7 @@ endif
 
 call uslag2                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
@@ -866,8 +865,7 @@ do ii = 1,nfrlag
 
          call uslapr                                              &
          !==========
- ( idebia , idebra ,                                              &
-   idvar  , iel    , nb     , nc     ,                            &
+ ( idvar  , iel    , nb     , nc     ,                            &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
@@ -927,8 +925,7 @@ do ii = 1,nfrlag
 
           call uslapr                                             &
           !==========
- ( idebia , idebra ,                                              &
-   idvar  , iel    , nb     , nc     ,                            &
+ ( idvar  , iel    , nb     , nc     ,                            &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
@@ -972,8 +969,7 @@ do ii = 1,nfrlag
 
               call uslapr                                         &
               !==========
- ( idebia , idebra ,                                              &
-   idvar  , iel    , nb     , nc     ,                            &
+ ( idvar  , iel    , nb     , nc     ,                            &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
@@ -1059,8 +1055,7 @@ do ii = 1,nfrlag
 
           call uslapr                                             &
           !==========
- ( idebia , idebra ,                                              &
-   idvar  , iel    , nb     , nc     ,                            &
+ ( idvar  , iel    , nb     , nc     ,                            &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
@@ -1230,8 +1225,7 @@ call lagipn                                                       &
 
 call uslain                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nbpnew ,                                                       &
