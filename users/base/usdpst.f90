@@ -31,8 +31,7 @@
 subroutine usdpst &
 !=================
 
- ( idbia0 , idbra0 ,                                              &
-   lstcel , lstfac , lstfbr ,                                     &
+ ( lstcel , lstfac , lstfbr ,                                     &
    ia     ,                                                       &
    ra     )
 
@@ -55,8 +54,6 @@ subroutine usdpst &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lstcel(ncelet)   ! ia ! --- ! work array (list of cells)                     !
 ! lstfac(nfac)     ! ia ! --- ! work array (list of interior faces)            !
 ! lstfbr(nfabor)   ! ia ! --- ! work array (list of boundary faces)            !
@@ -86,7 +83,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 
 integer          lstcel(ncelet), lstfac(nfac), lstfbr(nfabor)
 integer          ia(*)
@@ -100,7 +96,6 @@ integer          ntchrl, indgrp
 
 integer          nlcel, nlfac , nlfbr, nlfam
 integer          iel, ifac, ifam, ii
-integer          idebia, idebra
 integer          iflag1, iflag2, iel1, iel2
 character*32     nomcas, nomfmt, nommai
 character*96     nomrep, optfmt
@@ -126,8 +121,6 @@ nbpart = 0
 
 ! "pointeurs" to the first free positions in 'ia' and 'ra'
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! Create output writers for post-processing

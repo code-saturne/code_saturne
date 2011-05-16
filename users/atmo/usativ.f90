@@ -31,8 +31,7 @@
 subroutine usativ &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbmetd , nbmett , nbmetm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
@@ -98,8 +97,6 @@ subroutine usativ &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -137,7 +134,6 @@ use mesh
 
 implicit none
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbmetd , nbmett , nbmetm
 
@@ -158,7 +154,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel, iutile
 double precision d2s3
 double precision zent,xuent,xvent,xkent,xeent,tpent
@@ -187,8 +182,6 @@ endif
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-idebia = idbia0
-idebra = idbra0
 d2s3 = 2.d0/3.d0
 
 !===============================================================================

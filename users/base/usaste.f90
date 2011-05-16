@@ -31,8 +31,7 @@
 subroutine usaste &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   idfstr ,                                                       &
+ ( idfstr ,                                                       &
    ia     ,                                                       &
    ra     )
 
@@ -60,8 +59,6 @@ subroutine usaste &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -93,7 +90,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nbstru
 
 integer          idfstr(nfabor)
@@ -103,7 +99,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac
 integer          ilelt, nlelt
 
@@ -127,8 +122,6 @@ endif
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2.  Definition of external structures

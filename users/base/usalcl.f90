@@ -31,7 +31,7 @@
 subroutine usalcl &
 !================
 
- ( idbia0 , idbra0 , itrale ,                                     &
+ ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    icodcl , itypfb , ialtyb , impale ,                            &
    ia     ,                                                       &
@@ -286,8 +286,6 @@ subroutine usalcl &
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! itrale           ! i  ! <-- ! number of iterations for ALE method            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -354,7 +352,7 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0 , itrale
+integer          itrale
 integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
@@ -372,7 +370,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, iel, ii
 integer          inod
 integer          ilelt, nlelt
@@ -421,8 +418,6 @@ endif
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
 
-idebia = idbia0
-idebra = idbra0
 
 
 !===============================================================================

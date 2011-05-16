@@ -31,8 +31,7 @@
 subroutine useliv &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -87,8 +86,6 @@ subroutine useliv &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
@@ -135,7 +132,6 @@ use mesh
 
 implicit none
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          ia(*)
@@ -148,7 +144,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel, mode
 integer          iesp , idimve
 
@@ -222,8 +217,6 @@ write(nfecra,9001)
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2. Initialization : examples

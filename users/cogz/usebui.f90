@@ -30,8 +30,7 @@
 subroutine usebui &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -132,8 +131,6 @@ subroutine usebui &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
@@ -203,7 +200,6 @@ implicit none
 
 !Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          ia(*)
@@ -215,7 +211,6 @@ double precision ra(*)
 
 ! Local Variables
 
-integer          idebia, idebra
 integer          iel, mode, igg, izone
 double precision hinit, coefg(ngazgm)
 double precision sommqf, sommqt, sommq, tentm, fmelm
@@ -239,8 +234,6 @@ write(nfecra,9001)
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-idebia = idbia0
-idebra = idbra0
 
 do igg = 1, ngazgm
   coefg(igg) = zero

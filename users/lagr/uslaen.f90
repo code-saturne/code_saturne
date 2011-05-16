@@ -31,8 +31,7 @@
 subroutine uslaen &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nvlsta ,                                     &
+ ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -57,8 +56,6 @@ subroutine uslaen &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
@@ -123,7 +120,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , nvlsta
 integer          ivarl , ivarl1 , ivarlm , iflu , ilpd1 , icla
 
@@ -140,7 +136,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , iel
+integer          iel
 double precision aa
 
 !===============================================================================
@@ -155,8 +151,6 @@ double precision aa
 !
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1 . Zone of standard statistics

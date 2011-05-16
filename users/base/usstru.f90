@@ -56,8 +56,7 @@
 subroutine usstr1 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   idfstr ,                                                       &
+ ( idfstr ,                                                       &
    ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstr0  , vstr0  , xstreq ,                                     &
@@ -77,8 +76,6 @@ subroutine usstr1 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! aexxst,bexxst    ! r  ! <-- ! prediction coefficients of structural data     !
@@ -117,7 +114,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nbstru
 
 integer          idfstr(nfabor)
@@ -130,7 +126,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac
 integer          ilelt, nlelt
 
@@ -155,8 +150,6 @@ endif
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2.  Definition of internal structures
@@ -274,8 +267,7 @@ end subroutine
 subroutine usstr2 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nbstru ,                                                       &
+ ( nbstru ,                                                       &
    idfstr ,                                                       &
    ia     ,                                                       &
    dtcel  ,                                                       &
@@ -297,8 +289,6 @@ subroutine usstr2 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nbstru           ! e  ! <-- ! nombre de structures definies                  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -347,7 +337,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nbstru
 
 integer          idfstr(nfabor)
@@ -366,7 +355,6 @@ double precision ra(*)
 
 ! VARIABLES LOCALES
 
-integer          idebia, idebra
 integer          ii, jj, istr
 double precision theta, sint, cost, xm, xc, xk, fx, fy
 
@@ -384,8 +372,6 @@ if(1.eq.1) return
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2.  Structural parameters (subroutine usstr2 is called at each time step

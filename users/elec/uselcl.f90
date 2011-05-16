@@ -31,8 +31,7 @@
 subroutine uselcl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -87,8 +86,6 @@ subroutine uselcl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
@@ -154,7 +151,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
@@ -174,7 +170,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, ii, iel
 integer          idim
 integer          izone,iesp
@@ -226,8 +221,6 @@ endif
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
 
-idebia = idbia0
-idebra = idbra0
 
 d2s3 = 2.d0/3.d0
 

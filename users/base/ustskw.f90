@@ -31,8 +31,7 @@
 subroutine ustskw &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -114,8 +113,6 @@ subroutine ustskw &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
@@ -178,7 +175,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
@@ -202,7 +198,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel, ikiph, iomgip, ipcrom
 double precision ff, tau, xx
 
@@ -226,8 +221,6 @@ if(1.eq.1) return
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Index numbers of variables k and omega
 ikiph  = ik

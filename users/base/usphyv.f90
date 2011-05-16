@@ -31,8 +31,7 @@
 subroutine usphyv &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
@@ -113,8 +112,6 @@ subroutine usphyv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
@@ -157,7 +154,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          ibrom
@@ -173,7 +169,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ivart, iclvar, iel
 integer          ipcrom, ipbrom, ipcvis, ipccp
 integer          ipcvsl, ith, iscal, ii
@@ -200,8 +195,6 @@ if(1.eq.1) return
 
 ! --- Memory initialization
 
-idebia = idbia0
-idebra = idbra0
 
 
 !===============================================================================

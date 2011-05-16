@@ -31,8 +31,7 @@
 subroutine ustsma &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp ,                                     &
+ ( nvar   , nscal  , ncepdp ,                                     &
    ncesmp , iappel ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -150,8 +149,6 @@ subroutine ustsma &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
@@ -203,7 +200,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iappel
@@ -222,7 +218,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ieltsm
 integer          ifac, iutile, ii
 integer          ilelt, nlelt
@@ -240,8 +235,6 @@ integer, allocatable, dimension(:) :: lstelt
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-idebia = idbia0
-idebra = idbra0
 
 if(iappel.eq.1.or.iappel.eq.2) then
 

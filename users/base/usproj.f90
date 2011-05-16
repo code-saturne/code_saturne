@@ -31,8 +31,7 @@
 subroutine usproj &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &
    ia     ,                                                       &
@@ -113,8 +112,6 @@ subroutine usproj &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! max. number of particles allowed               !
@@ -182,7 +179,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
@@ -203,7 +199,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel    , ielg   , ifac   , ifacg  , ivar
 integer          iel1   , iel2   , ieltsm
 integer          iortho , impout
@@ -251,8 +246,6 @@ allocate(lstelt(max(ncel,nfac,nfabor)))
 
 ! Memory management
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2. Example: compute energy balance relative to temperature

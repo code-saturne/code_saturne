@@ -31,8 +31,7 @@
 subroutine usray2 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    icodcl , izfrdp , isothp ,                                     &
    tmin   , tmax   , tx     ,                                     &
@@ -137,8 +136,6 @@ subroutine usray2 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
@@ -217,7 +214,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
@@ -247,7 +243,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          ifac , ivar, iok
 integer          ilelt, nlelt
 
@@ -292,8 +287,6 @@ endif
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. IVAR: number of the thermal variable

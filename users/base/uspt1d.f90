@@ -31,8 +31,7 @@
 subroutine uspt1d &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nfpt1d , iappel ,                            &
+ ( nvar   , nscal  , nfpt1d , iappel ,                            &
    ifpt1d , nppt1d , iclt1d ,                                     &
    ia     ,                                                       &
    tppt1d , rgpt1d , eppt1d ,                                     &
@@ -88,8 +87,6 @@ subroutine uspt1d &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermal module    !
@@ -145,7 +142,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , nfpt1d
 integer          iappel
 
@@ -163,7 +159,6 @@ double precision ra(*)
 
 ! Local variables
 !-------------------------------------------------------------------
-integer          idebia , idebra
 integer          ifbt1d , ii , ifac
 integer          ilelt, nlelt
 
@@ -174,8 +169,6 @@ integer, allocatable, dimension(:) :: lstelt
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
 
-idebia = idbia0
-idebra = idbra0
 
 
 !===============================================================================

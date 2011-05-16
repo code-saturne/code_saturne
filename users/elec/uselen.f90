@@ -31,7 +31,7 @@
 subroutine uselen &
 !================
 
- ( idbia0 , idbra0 , nummai ,                                     &
+ ( nummai ,                                                       &
    nvar   , nscal  ,                                              &
    ncelps , nfacps , nfbrps ,                                     &
    lstcel , lstfac , lstfbr ,                                     &
@@ -53,8 +53,6 @@ subroutine uselen &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! nummai           ! ec ! <-- ! numero du maillage post                        !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
@@ -118,7 +116,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nummai
 integer          nvar   , nscal
 integer          ncelps , nfacps , nfbrps
@@ -139,7 +136,7 @@ double precision ra(*)
 ! Local variables
 
 character*32     namevr
-integer          idebia, idebra, iel   , iloc
+integer          iel   , iloc
 integer          ivar  , ivar0 , inc   , iccocg
 integer          iphydp, nswrgp, imligp, iwarnp, iclimv
 integer          ipcsii
@@ -160,8 +157,6 @@ double precision rbid(1)
 !===============================================================================
 
 
-idebia = idbia0
-idebra = idbra0
 
 if(nummai.eq.-1) then
 

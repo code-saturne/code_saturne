@@ -31,8 +31,7 @@
 subroutine uscfpv &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -114,8 +113,6 @@ subroutine uscfpv &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -158,7 +155,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          ia(*)
@@ -172,7 +168,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ivart, iel
 integer          ipcvis, ipcvsv, ipccp
 integer          ipcvsl, ith, iscal, ii, iccfth, imodif
@@ -206,8 +201,6 @@ endif
 
 ! --- Memory initialization
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 

@@ -31,8 +31,7 @@
 subroutine uslapr &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   idvar  , iepart , izone  , iclass ,                            &
+ ( idvar  , iepart , izone  , iclass ,                            &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
@@ -69,8 +68,6 @@ subroutine uslapr &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! idvar            ! i  ! <-- ! type of the value(s) ta calculate              !
 ! iepart           ! i  ! <-- ! number of the particle cell                    !
 ! izone            ! i  ! <-- ! number of the particle zone                    !
@@ -147,7 +144,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 
 integer          idvar  , iepart , izone  , iclass
 
@@ -172,7 +168,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 
 double precision pis6
 
@@ -214,8 +209,6 @@ endif
 ! 1. Memory management
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2. Initialization

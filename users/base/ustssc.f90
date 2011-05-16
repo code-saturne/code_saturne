@@ -31,8 +31,7 @@
 subroutine ustssc &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
@@ -121,8 +120,6 @@ subroutine ustssc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
@@ -180,7 +177,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
@@ -206,7 +202,6 @@ double precision ra(*)
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra
 integer          ivar, iiscvr, ipcrom, iel, iutile
 integer          ilelt, nlelt
 
@@ -232,8 +227,6 @@ if(1.eq.1) return
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Index number of the variable associated to scalar iscal
 ivar = isca(iscal)

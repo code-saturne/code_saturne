@@ -31,8 +31,7 @@
 subroutine uselrc &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
@@ -56,8 +55,6 @@ subroutine uselrc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
@@ -109,7 +106,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          ia(*)
@@ -126,7 +122,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel    , ifac   , iutile
 integer          ipcefj , ipcdc1 , ipcdc2 , ipcdc3 , ipcsig
 integer          ipdcrp , idimve
@@ -142,8 +137,6 @@ double precision xelec , yelec  , zelec
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 
 !===============================================================================

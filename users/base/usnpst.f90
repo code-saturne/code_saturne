@@ -31,8 +31,7 @@
 subroutine usnpst &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , nvlsta ,                                     &
+ ( nvar   , nscal  , nvlsta ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis ,                                     &
@@ -67,8 +66,6 @@ subroutine usnpst &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
@@ -107,7 +104,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , nvlsta
 
 integer          ia(*)

@@ -31,8 +31,7 @@
 subroutine usray4 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
    ia     ,                                                       &
@@ -60,8 +59,6 @@ subroutine usray4 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! mode             ! i  ! <-- ! convertion mode                                !
@@ -116,7 +113,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          mode
@@ -139,7 +135,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel , ifac , iscal
 
 !===============================================================================
@@ -148,8 +143,6 @@ integer          iel , ifac , iscal
 ! 1 - INITIALISATIONS GENERALES
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 iscal = iscalt
 

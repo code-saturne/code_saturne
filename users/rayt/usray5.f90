@@ -31,8 +31,7 @@
 subroutine usray5 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                       &
    izfrdp ,                                                       &
    ia     ,                                                       &
@@ -107,8 +106,6 @@ subroutine usray5 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! i  ! <-- ! current subroutine call number                 !
@@ -169,7 +166,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , iappel
 
 integer          itypfb(nfabor)
@@ -196,7 +192,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , ifac, iok
+integer          ifac, iok
 double precision unspi, xit, distbf
 
 !===============================================================================
@@ -205,8 +201,6 @@ double precision unspi, xit, distbf
 ! 0 - Initialization
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 ! Stop indicator (forgotten boundary faces)
 iok = 0

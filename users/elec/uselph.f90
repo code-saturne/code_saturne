@@ -31,8 +31,7 @@
 subroutine uselph &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -117,8 +116,6 @@ subroutine uselph &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ibrom            ! te ! <-- ! indicateur de remplissage de romb              !
@@ -164,7 +161,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          ibrom
@@ -181,7 +177,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel
 integer          ipcrom, ipcvis, ipccp , ipcvsl, ipcsig
 integer          mode
@@ -203,8 +198,6 @@ save             ipass
 
 ! --- Initialisation memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ipass = ipass + 1
 

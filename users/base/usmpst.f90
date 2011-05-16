@@ -31,7 +31,7 @@
 subroutine usmpst &
 !================
 
- ( idbia0 , idbra0 , ipart  ,                                     &
+ ( ipart  ,                                                       &
    nvar   , nscal  , nvlsta ,                                     &
    ncelps , nfacps , nfbrps ,                                     &
    imodif ,                                                       &
@@ -60,8 +60,6 @@ subroutine usmpst &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ipart            ! i  ! <-- ! number of the post-processing mesh (< 0 or > 0)!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -118,7 +116,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ipart
 integer          nvar   , nscal  , nvlsta
 integer          ncelps , nfacps , nfbrps

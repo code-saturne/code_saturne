@@ -31,8 +31,7 @@
 subroutine usctdz &
 !=================
 
- ( idbia0 , idbra0 ,                                              &
-   ia     ,                                                       &
+ ( ia     ,                                                       &
    ra     )
 
 !===============================================================================
@@ -47,8 +46,6 @@ subroutine usctdz &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
@@ -80,7 +77,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 
 integer          ia(*)
 

@@ -31,8 +31,7 @@
 subroutine uslast &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
@@ -85,8 +84,6 @@ subroutine uslast &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
@@ -159,7 +156,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
@@ -181,8 +177,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
-integer          ifinia, ifinra
 integer          npt ,  iel
 
 integer          ivf , ivff , iflu , icla
@@ -258,8 +252,6 @@ endif
 ! 0.  Memory management
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. Initialization
@@ -413,8 +405,7 @@ if (1.eq.0) then
 
         call uslaen                                               &
         !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  , nvlsta ,                                     &
+ ( nvar   , nscal  , nvlsta ,                                     &
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &

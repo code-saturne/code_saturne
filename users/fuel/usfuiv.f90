@@ -31,8 +31,7 @@
 subroutine usfuiv &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -134,8 +133,6 @@ subroutine usfuiv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
@@ -205,7 +202,6 @@ use mesh
 
 implicit none
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          ia(*)
@@ -218,7 +214,6 @@ double precision ra(*)
 
 ! LOCAL VARIABLES
 
-integer          idebia, idebra
 integer          iel, ige, mode, icla
 
 double precision t1init, h1init, coefe(ngazem)
@@ -251,8 +246,6 @@ write(nfecra,9001)
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-idebia = idbia0
-idebra = idbra0
 
 d2s3 = 2.d0/3.d0
 

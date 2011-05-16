@@ -31,8 +31,7 @@
 subroutine usray3 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                       &
    izfrdp ,                                                       &
    ia     ,                                                       &
@@ -69,8 +68,6 @@ subroutine usray3 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
@@ -120,7 +117,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , iappel
 
 integer          itypfb(nfabor)
@@ -141,7 +137,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , iel, ifac, iok
+integer          iel, ifac, iok
 double precision vv, sf, xlc, xkmin, pp
 
 !===============================================================================
@@ -183,8 +179,6 @@ endif
 ! 0 - Memory management
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 ! Stop flag (to determine if faces were forgotten)
 iok = 0

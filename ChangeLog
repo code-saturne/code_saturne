@@ -1,4 +1,75 @@
 * 16/05/2011 - David Monfort <david.monfort@edf.fr>
+  Remove direct access to ia/ra for work-arrays allocation in user files.
+  modified routines:
+    users/atmo/usatcl.f90
+    users/atmo/usativ.f90
+    users/base/usalcl.f90
+    users/base/usaste.f90
+    users/base/usclim.f90
+    users/base/usdpst.f90
+    users/base/ushist.f90
+    users/base/usiniv.f90
+    users/base/uskpdc.f90
+    users/base/usmpst.f90
+    users/base/usnpst.f90
+    users/base/usphyv.f90
+    users/base/usproj.f90
+    users/base/uspt1d.f90
+    users/base/ussmag.f90
+    users/base/usstru.f90
+    users/base/ustske.f90
+    users/base/ustskw.f90
+    users/base/ustsma.f90
+    users/base/ustsns.f90
+    users/base/ustsri.f90
+    users/base/ustssa.f90
+    users/base/ustssc.f90
+    users/base/ustsv2.f90
+    users/base/usvima.f90
+    users/base/usvist.f90
+    users/base/usvort.f90
+    users/base/usvpst.f90
+    users/cfbl/uscfcl.f90
+    users/cfbl/uscfpv.f90
+    users/cfbl/uscfxi.f90
+    users/cogz/usd3pc.f90
+    users/cogz/usd3pi.f90
+    users/cogz/usebuc.f90
+    users/cogz/usebui.f90
+    users/cogz/uslwcc.f90
+    users/cogz/uslwci.f90
+    users/cplv/uscpcl.f90
+    users/cplv/uscpiv.f90
+    users/cplv/uscplc.f90
+    users/ctwr/usctcl.f90
+    users/ctwr/usctdz.f90
+    users/ctwr/usctiv.f90
+    users/elec/uselcl.f90
+    users/elec/uselen.f90
+    users/elec/useliv.f90
+    users/elec/uselph.f90
+    users/elec/uselrc.f90
+    users/elec/usetcl.f90
+    users/fuel/usfucl.f90
+    users/fuel/usfuiv.f90
+    users/lagr/uslabo.f90
+    users/lagr/usladp.f90
+    users/lagr/uslaed.f90
+    users/lagr/uslaen.f90
+    users/lagr/uslafe.f90
+    users/lagr/uslag2.f90
+    users/lagr/uslain.f90
+    users/lagr/uslapr.f90
+    users/lagr/uslaru.f90
+    users/lagr/uslast.f90
+    users/lagr/uslatc.f90
+    users/lagr/uslatp.f90
+    users/rayt/usray2.f90
+    users/rayt/usray3.f90
+    users/rayt/usray4.f90
+    users/rayt/usray5.f90
+
+* 16/05/2011 - David Monfort <david.monfort@edf.fr>
   Remove idebia/idebra references from the gradient calculation API.
   modified routines:
     src/atmo/atprke.f90
