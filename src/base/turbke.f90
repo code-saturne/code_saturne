@@ -166,7 +166,6 @@ integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
-integer          maxelt, ils
 double precision rnorm , d2s3, divp23
 double precision deltk , delte, a11, a12, a22, a21
 double precision gravke, epssuk, unsdet, romvsd
@@ -389,16 +388,10 @@ do iel = 1, ncel
   w8 (iel) = 0.d0
 enddo
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-call iasize('turbke',ifinia)
-
 call ustske                                                       &
 !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &

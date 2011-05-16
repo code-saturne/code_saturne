@@ -118,7 +118,6 @@ integer          idebia, idebra, ifinia
 integer          iel
 integer          ifac
 integer          iirom , iiromb
-integer          maxelt, ils
 
 integer          ipass
 data             ipass /0/
@@ -139,17 +138,11 @@ idebra = idbra0
 ! 2. ON DONNE LA MAIN A L'UTILISATEUR
 !===============================================================================
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-call iasize('cfphyv',ifinia)
-
 iuscfp = 1
 call uscfpv                                                       &
 !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , ia(ils),                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

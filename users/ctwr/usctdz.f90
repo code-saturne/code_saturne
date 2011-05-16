@@ -32,7 +32,6 @@ subroutine usctdz &
 !=================
 
  ( idbia0 , idbra0 ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    ra     )
 
@@ -50,8 +49,6 @@ subroutine usctdz &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
@@ -85,7 +82,6 @@ implicit none
 
 integer          idbia0 , idbra0
 
-integer          maxelt, lstelt(maxelt)
 integer          ia(*)
 
 double precision ra(*)

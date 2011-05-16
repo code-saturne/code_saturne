@@ -173,7 +173,6 @@ integer          ipcvsl, ith   , iscal , ivart, ii
 integer          iclvar
 integer          iiii  , ipcsig, it
 integer          iesp  , iesp1 , iesp2 , mode , isrrom
-integer          maxelt, ils
 
 double precision tp    , delt  , somphi, val
 double precision rho   , r     , cpa   , cpe , cpv , del

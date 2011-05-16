@@ -123,7 +123,6 @@ integer          ilagia , ilagra , iiwork
 integer          iw1    , iw2    , iw3
 integer          inod   , idim
 integer          itrale , indact , indwri
-integer          maxelt , ils
 
 double precision titer1, titer2
 double precision tecrf1, tecrf2
@@ -151,9 +150,6 @@ call zufalli(0)
 !---> Stop test set to 1 if P-1 radiative module "sees" too many cells
 !     with an optical thickness greater than 1 (see ppcabs).
 istpp1 = 0
-
-!---> Maximum number of elements for selector.
-maxelt = max(ncelet, nfac, nfabor)
 
 !--> Probes output tracking
 ttchis = -1.d0
@@ -389,17 +385,12 @@ endif
 idbia1 = ifinia
 idbra1 = ifinra
 
-ils    = idbia1
-ifnia2 = ils + maxelt
-call iasize('caltri',ifnia2)
-
 !     Premier appel : definition de NFPT1D et ISUIT1
 iappel = 1
 call uspt1d                                                       &
 !==========
- ( ifnia2 , idbra1 ,                                              &
+ ( idbia1 , idbra1 ,                                              &
    nvar   , nscal  , nfpt1d , iappel ,                            &
-   maxelt , ia(ils),                                              &
    ia(idbia1) , ia(idbia1) , ia(idbia1) ,                         &
    ia     ,                                                       &
    ra(idbra1) , ra(idbra1) , ra(idbra1) ,                         &
@@ -430,16 +421,11 @@ call memt1d                                                       &
 if (nfpt1t.gt.0) then
 ! Deuxieme appel : remplissage des tableaux de definition de la geometrie
 !            et de l'initialisation (IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
-  ils    = ifinia
-  ifnia3 = ils + maxelt
-  call iasize('caltri',ifnia3)
-
   iappel = 2
   call  uspt1d                                                    &
   !===========
- ( ifnia3 , ifinra ,                                              &
+ ( ifinia , ifinra ,                                              &
    nvar   , nscal  , nfpt1d , iappel ,                            &
-   maxelt , ia(ils),                                              &
    ia(iifpt1) , ia(inppt1) , ia(iiclt1) ,                         &
    ia     ,                                                       &
    ra(itppt1) , ra(irgpt1) , ra(ieppt1) ,                         &
@@ -514,16 +500,11 @@ if (iihmpr.eq.1) then
   ia(idbia1), ra(idbra1) , ra(irtpa) )
 endif
 
-ils    = idbia1
-idbia2 = ils + maxelt
-call iasize('caltri',idbia2)
-
 call  uskpdc &
 !===========
-( idbia2 , idbra1 ,                                              &
+( idbia1 , idbra1 ,                                              &
   nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
-  maxelt , ia(ils),                                              &
   ia(idbia1),                                                    &
   ia     ,                                                       &
   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
@@ -553,16 +534,11 @@ if(ncpdct.gt.0) then
     ia(iicepd), ra(ickupd), ra(irtpa) )
   endif
 
-  ils    = ifinia
-  ifnia2 = ils + maxelt
-  call iasize('caltri',ifnia2)
-
   call  uskpdc                                                   &
   !===========
-( ifnia2 , ifinra ,                                              &
+( ifinia , ifinra ,                                              &
   nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
-  maxelt , ia(ils),                                              &
   ia(iicepd),                                                    &
   ia     ,                                                       &
   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
@@ -575,17 +551,12 @@ endif
 idbia1 = ifinia
 idbra1 = ifinra
 
-ils    = idbia1
-idbia2 = ils + maxelt
-call iasize('caltri',idbia2)
-
 iappel = 1
 call ustsma                                                      &
 !==========
-( idbia2 , idbra1 ,                                              &
+( idbia1 , idbra1 ,                                              &
   nvar   , nscal  , ncepdc   ,                                   &
   ncetsm ,   iappel ,                                            &
-  maxelt , ia(ils),                                              &
   ia(iicepd) ,                                                   &
   ia(idbia1) , ia(idbia1),                                       &
   ia     ,                                                       &
@@ -608,17 +579,12 @@ call memtsm                                                      &
 
 if(nctsmt.gt.0) then
 
-  ils    = ifinia
-  ifnia2 = ils + maxelt
-  call iasize('caltri',ifnia2)
-
   iappel = 2
   call ustsma                                                    &
   !===========
-( ifnia2 , ifinra ,                                              &
+( ifinia , ifinra ,                                              &
   nvar   , nscal  , ncepdc   ,                                   &
   ncetsm ,   iappel ,                                            &
-  maxelt , ia(ils),                                              &
   ia(iicepd) ,                                                   &
   ia(iicesm) , ia(iitpsm),                                       &
   ia     ,                                                       &
@@ -647,16 +613,11 @@ if (ivrtex.eq.1) then
   call vorin0(nfabor, ia(iirepv))
   !==========
 
-  ils    = ifinia
-  ifnia2 = ils + maxelt
-  call iasize('caltri',ifnia2)
-
   call usvort                                                     &
   !==========
- ( ifnia2 , ifinra ,                                              &
+ ( ifinia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  ,                                      &
@@ -893,16 +854,11 @@ if (itrale.gt.0) then
     xyzcen, ra(irtp), ra(ipropc) )
   endif
 
-  ils    = ifinia
-  ifnia2 = ils + maxelt
-  call iasize('caltri',ifnia2)
-
   call usproj                                                     &
   !==========
- ( ifnia2 , ifinra ,                                              &
+ ( ifinia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   maxelt , ia(ils),                                              &
    ia(iiitep),                                                    &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &

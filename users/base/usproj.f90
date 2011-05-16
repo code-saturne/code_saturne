@@ -34,7 +34,6 @@ subroutine usproj &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   maxelt , lstelt ,                                              &
    itepa  ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -125,8 +124,6 @@ subroutine usproj &
 ! ntersl           ! i  ! <-- ! number of return coupling source terms         !
 ! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! itepa            ! ia ! <-- ! integer particle attributes                    !
 !  (nbpmax, nivep) !    !     !   (containing cell, ...)                       !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -190,7 +187,6 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          maxelt, lstelt(maxelt)
 integer          itepa(nbpmax,nivep)
 integer          ia(*)
 
@@ -235,6 +231,8 @@ double precision diipbx, diipby, diipbz, distbr
 double precision visct, flumab , xcp , xvsl, cp0iph, rrr
 double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 
+integer, allocatable, dimension(:) :: lstelt
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -248,6 +246,9 @@ if (1.eq.1) return
 !===============================================================================
 ! 1.  Initialization
 !===============================================================================
+
+! Allocate a temporary array for cells or interior/boundary faces selection
+allocate(lstelt(max(ncel,nfac,nfabor)))
 
 ! Memory management
 
@@ -1596,6 +1597,9 @@ write(nfecra,5190) ifac, irangp, ifacg
  5190 format(' usproj: Local boundary face number ifac =  ', i10, /,  &
              '         on rank irangp =                   ', i10, /,  &
              '         has global number ifacg =          ', i10)
+
+! Deallocate the temporary array
+deallocate(lstelt)
 
 return
 end subroutine

@@ -84,7 +84,6 @@ double precision ra(*)
 
 integer          idebia , idebra
 integer          ilcel  , ilfaci , ilfacb
-integer          maxelt , ils
 integer          ifinia , ifinra , nbrsyr , nbzech
 
 character        ficsui*32
@@ -142,17 +141,10 @@ endif
 
 if (ippmod(iaeros).ge.0) then
 
-  maxelt = max(ncelet,nfac,nfabor)
-
-  ils    = idebia
-  ifinia = ils + maxelt
-  call iasize('cregeo',ifinia)
-  !==========
 
   call usctdz                                                     &
   !==========
  ( ifinia , ifinra ,                                              &
-   maxelt , ia(ils),                                              &
    ia     ,                                                       &
    ra     )
 

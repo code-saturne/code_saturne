@@ -34,7 +34,6 @@ subroutine usvort &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   maxelt , lstelt ,                                              &
    irepvo ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -69,8 +68,6 @@ subroutine usvort &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! irepvo           ! te ! <-- ! numero de l'entree associe a chaque            !
 !     (nfabor)     !    !     ! face de bord (=0 si pas de vortex)             !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -110,7 +107,6 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          iappel
 
-integer          maxelt, lstelt(maxelt)
 integer          irepvo(nfabor)
 integer          ia(*)
 
@@ -125,6 +121,8 @@ double precision ra(*)
 integer          ifac, ient
 integer          ilelt, nlelt
 
+integer, allocatable, dimension(:) :: lstelt
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -135,6 +133,8 @@ if(1.eq.1) return
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
+! Allocate a temporary array for boundary faces selection
+allocate(lstelt(nfabor))
 
 !===============================================================================
 ! 1. PARAMETRES GLOBAUX
@@ -419,6 +419,9 @@ elseif (iappel.eq.2) then
 endif
 
 
+! Deallocate the temporary array
+deallocate(lstelt)
+
 return
 end subroutine
 
@@ -502,6 +505,7 @@ if(icas.eq.1.or.icas.eq.2.or.icas.eq.3) then
 elseif(icas.eq.4) then
   phidat = vardat(1)
 endif
+
 
 return
 end function

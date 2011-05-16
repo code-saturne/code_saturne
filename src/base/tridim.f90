@@ -176,7 +176,7 @@ integer          iwflms, iwflmb
 integer          iwcf  , iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
 integer          iflalf, iflalb, iprale, icoale
-integer          maxelt, ils, iilzfb, nbzfmx, nozfmx, iqcalc
+integer          iilzfb, nbzfmx, nozfmx, iqcalc
 
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0
@@ -204,7 +204,6 @@ endif
 idebia = idbia0
 idebra = idbra0
 
-maxelt = max(ncelet, nfac, nfabor)
 
 ipass = ipass + 1
 
@@ -615,16 +614,11 @@ if (ncpdct.gt.0) then
     ia(iicepd), ra(ickupd), rtpa )
   endif
 
-  ils    = idebia
-  idbia1 = ils + maxelt
-  call iasize('tridim',idbia1)
-
   call uskpdc &
   !==========
-( idbia1 , idebra ,                                              &
+( idebia , idebra ,                                              &
   nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
-  maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
   ia     ,                                                       &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -641,10 +635,6 @@ endif
 !    VALEURS GLOBALES OU MAX.
 if(nctsmt.gt.0) then
 
-  ils    = idebia
-  idbia1 = ils + maxelt
-  call iasize('tridim',idbia1)
-
   !     Mise a zero du tableau de type de TS masse et source
   do ii = 1, ncetsm*nvar
     ia(iitpsm+ii-1) = 0
@@ -654,10 +644,9 @@ if(nctsmt.gt.0) then
   iappel = 3
   call  ustsma                                                  &
   !============
-( idbia1 , idebra ,                                              &
+( idebia , idebra ,                                              &
   nvar   , nscal  , ncepdc   ,                                   &
   ncetsm   , iappel ,                                           &
-  maxelt , ia(ils),                                              &
   ia(iicepd) ,                                            &
   ia(iicesm) , ia(iitpsm) ,                        &
   ia     ,                                                       &
@@ -720,17 +709,12 @@ endif
 
 if (ivrtex.eq.1) then
 
-  ils    = ifinia
-  ifnia1 = ils + maxelt
-  call iasize('tridim',ifnia1)
-
   iappel = 2
   call usvort &
   !==========
- ( ifnia1 , ifinra ,                                              &
+ ( ifinia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   maxelt , ia(ils),                                              &
    ia(iirepv)      ,                                              &
    ia     ,                                                       &
    dt     , rtpa   ,                                              &
@@ -905,15 +889,10 @@ do while (iterns.le.nterup)
 
   if (ippmod(iphpar).eq.0) then
 
-    ils    = ifinia
-    ifnia1 = ils + maxelt
-    call iasize('tridim',ifnia1)
-
     call usclim &
     !==========
-  ( ifnia1 , ifinra ,                                              &
+  ( ifinia , ifinra ,                                              &
     nvar   , nscal  ,                                              &
-    maxelt , ia(ils),                                              &
     ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -1019,15 +998,10 @@ do while (iterns.le.nterup)
 
     endif
 
-    ils    = ifinia
-    ifnia1 = ils + maxelt
-    call iasize('tridim',ifnia1)
-
     call usalcl &
     !==========
-  ( ifnia1 , ifinra , itrale ,                                     &
+  ( ifinia , ifinra , itrale ,                                     &
     nvar   , nscal  ,                                              &
-    maxelt , ia(ils),                                              &
     ia(iicodc)      , ia(iitypf)      , ia(iialty)      ,          &
     ia(iimpal)      ,                                              &
     ia     ,                                                       &

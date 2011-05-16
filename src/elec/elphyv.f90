@@ -184,7 +184,6 @@ integer          ipcrom, ipcvis, ipccp , ipcray
 integer          ipcvsl, ith   , iscal , ii
 integer          iiii  , ipcsig, it
 integer          iesp  , iesp1 , iesp2 , mode , isrrom
-integer          maxelt, ils
 
 double precision tp    , delt  , somphi, val
 double precision alpro , alpvis, alpcp , alpsig, alplab , alpkab
@@ -736,16 +735,10 @@ endif
 ! 4 - ON PASSE LA MAIN A L'UTILISATEUR (joule en particulier)
 !===============================================================================
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-call iasize('elphyv',ifinia)
-
 call uselph                                                       &
 !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , ia(ils),                                              &
    ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

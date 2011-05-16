@@ -161,7 +161,6 @@ integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-integer          maxelt, ils
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision tuexpe, thets , thetv , thetap, thetp1
@@ -305,17 +304,11 @@ enddo
 ! 3.1 TERMES SOURCES  UTILISATEURS
 !===============================================================================
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-call iasize('resv2f',ifinia)
-
 call ustsv2                                                       &
 !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -562,17 +555,11 @@ enddo
 ! 4.1 TERMES SOURCES  UTILISATEURS
 !===============================================================================
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-call iasize('resv2f',ifinia)
-
 call ustsv2                                                       &
 !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &

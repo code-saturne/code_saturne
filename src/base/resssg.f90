@@ -174,7 +174,6 @@ integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
-integer          maxelt, ils
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision trprod, trrij , rctse , deltij
@@ -251,17 +250,11 @@ enddo
 !(le deuxieme argument GRDVIT est lu en PRODUC dans ustsri, mais ce
 ! tableau n'est dimensionne et utilise qu'en modele Rij standard)
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-call iasize('resssg',ifinia)
-
 call ustsri                                                       &
 !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &

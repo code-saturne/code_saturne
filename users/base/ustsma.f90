@@ -34,7 +34,6 @@ subroutine ustsma &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , ncepdp ,                                     &
    ncesmp , iappel ,                                              &
-   maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -159,8 +158,6 @@ subroutine ustsma &
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
 ! iappel           ! i  ! <-- ! indicates which at which stage the routine is  !
 !                  !    !     !  is called                                     !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
@@ -211,7 +208,6 @@ integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iappel
 
-integer          maxelt, lstelt(maxelt)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          ia(*)
@@ -237,7 +233,12 @@ double precision xkent, xeent
 double precision flucel
 double precision vtot  , gamma
 
+integer, allocatable, dimension(:) :: lstelt
+
 !===============================================================================
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
 
 idebia = idbia0
 idebra = idbra0
@@ -505,6 +506,8 @@ endif
 ! End
 !----
 
-return
+! Deallocate the temporary array
+deallocate(lstelt)
 
+return
 end subroutine

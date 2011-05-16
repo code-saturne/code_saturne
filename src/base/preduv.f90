@@ -211,7 +211,6 @@ integer          iesprp, iestop
 integer          iptsna
 integer          iflmb0, nswrp , imaspe, iismph, ipbrom
 integer          idiaex, idtva0
-integer          maxelt, ils
 double precision rnorm , vitnor
 double precision romvom, ro0iph, drom
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
@@ -1168,17 +1167,11 @@ do isou = 1, 3
 !       utilisateurs est faite uniquement a la premiere iter sur navsto.
   if(iterns.eq.1) then
 
-    maxelt = max(ncelet, nfac, nfabor)
-    ils    = idebia
-    ifinia = ils + maxelt
-    call iasize('preduv',ifinia)
-
     call ustsns                                                 &
     !==========
-  ( ifinia , idebra ,                                              &
+  ( idebia , idebra ,                                              &
     nvar   , nscal  , ncepdp , ncesmp ,                            &
     ivar   ,                                                       &
-    maxelt , ia(ils),                                              &
     icepdc , icetsm , itypsm ,                                     &
     ia     ,                                                       &
     dt     , rtpa   , propce , propfa , propfb ,                   &

@@ -129,7 +129,7 @@ double precision ra(*)
 integer          idebia, idebra, mode
 integer          iappel
 integer          ifac, iel , ii
-integer          maxelt, ils, idbia1
+integer          idbia1
 double precision enthal, temper
 
 !===============================================================================
@@ -179,16 +179,10 @@ endif
 !     Mise a jour des conditions aux limites externes du module 1D
 iappel = 3
 
-maxelt = max(ncelet,nfac,nfabor)
-ils    = idebia
-idbia1 = ils + maxelt
-call iasize('cou1do',idbia1)
-
 call  uspt1d                                                      &
 !===========
- ( idbia1 , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , nfpt1d , iappel ,                            &
-   maxelt , ia(ils),                                              &
    ifpt1d , ia(idebia), iclt1d ,                                  &
    ia     ,                                                       &
    tppt1d , ra(idebra), ra(idebra),                               &

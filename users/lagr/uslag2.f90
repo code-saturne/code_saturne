@@ -35,7 +35,6 @@ subroutine uslag2 &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   maxelt , lstelt ,                                              &
    itypfb , itrifb , itepa  , ifrlag ,                            &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -81,8 +80,6 @@ subroutine uslag2 &
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! itrifb(nfabor)   ! ia ! <-- ! indirection for the sorting of the             !
 ! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
 ! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
@@ -141,7 +138,6 @@ integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          maxelt, lstelt(maxelt)
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          ia(*)
@@ -161,6 +157,8 @@ integer          icha
 integer          ilelt, nlelt
 
 double precision pis6 , mp0 , temp
+
+integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
@@ -199,6 +197,9 @@ endif
 !===============================================================================
 ! 1.  Memory management
 !===============================================================================
+
+! Allocate a temporary array for boundary faces selection
+allocate(lstelt(nfabor))
 
 idebia = idbia0
 idebra = idbra0
@@ -537,6 +538,8 @@ iusclb (izone)         =  irebol
 ! End
 !----
 
-return
+! Deallocate the temporary array
+deallocate(lstelt)
 
+return
 end subroutine

@@ -34,7 +34,6 @@ subroutine usativ &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
    nbmetd , nbmett , nbmetm ,                                     &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    tmprom , ztprom , zdprom , xmet   , ymet   , pmer   ,          &
@@ -103,8 +102,6 @@ subroutine usativ &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -144,7 +141,6 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbmetd , nbmett , nbmetm
 
-integer          maxelt, lstelt(maxelt)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
@@ -167,6 +163,8 @@ integer          iel, iutile
 double precision d2s3
 double precision zent,xuent,xvent,xkent,xeent,tpent
 
+integer, allocatable, dimension(:) :: lstelt
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -185,6 +183,9 @@ endif
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
 
 idebia = idbia0
 idebra = idbra0
@@ -286,6 +287,9 @@ endif
 !----
 ! FIN
 !----
+
+! Deallocate the temporary array
+deallocate(lstelt)
 
 return
 end subroutine

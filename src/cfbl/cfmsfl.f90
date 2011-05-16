@@ -151,7 +151,6 @@ integer          imaspe, iflmb0, iismph
 integer          icliup, iclivp, icliwp, iclvar
 integer          iuiph , iviph , iwiph
 integer          itsqdm, iiun  , iextts
-integer          maxelt, ils
 
 double precision epsrgp, climgp, extrap, blencp
 double precision flui  , fluj  , pfac  , thetv
@@ -239,18 +238,12 @@ if(itsqdm.ne.0) then
 
 ! --- Terme source utilisateur
 
-  maxelt = max(ncelet, nfac, nfabor)
-  ils    = idebia
-  ifinia = ils + maxelt
-  call iasize('cfmsfl',ifinia)
-
 !     Suivant X
   call ustsns                                                     &
   !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iuiph  ,                                                       &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -267,7 +260,6 @@ if(itsqdm.ne.0) then
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iviph  ,                                                       &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -284,7 +276,6 @@ if(itsqdm.ne.0) then
  ( ifinia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwiph  ,                                                       &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &

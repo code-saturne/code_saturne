@@ -34,7 +34,6 @@ subroutine uskpdc &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
    ncepdp , iappel ,                                              &
-   maxelt , lstelt ,                                              &
    icepdc ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
@@ -104,8 +103,6 @@ subroutine uskpdc &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icepdc(ncepdp    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -150,7 +147,6 @@ integer          nvar   , nscal
 integer          ncepdp
 integer          iappel
 
-integer          maxelt, lstelt(maxelt)
 integer          icepdc(ncepdp)
 integer          ia(*)
 
@@ -170,6 +166,8 @@ integer          iutile
 
 double precision alpha, cosalp, sinalp, vit, ck1, ck2
 
+integer, allocatable, dimension(:) :: lstelt
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -182,6 +180,9 @@ if(1.eq.1) return
 
 
 !===============================================================================
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
 
 idebia = idbia0
 idebra = idbra0
@@ -359,6 +360,8 @@ elseif(iappel.eq.3) then
 
 endif
 
-return
+! Deallocate the temporary array
+deallocate(lstelt)
 
+return
 end subroutine

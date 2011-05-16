@@ -167,7 +167,6 @@ integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
-integer          maxelt, ils
 integer          ipatrg
 
 double precision romvsd
@@ -432,16 +431,10 @@ do iel = 1, ncel
   w7 (iel) = 0.d0
 enddo
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-CALL IASIZE('TURBSA',IFINIA)
-
 call ustssa                                                       &
 !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &

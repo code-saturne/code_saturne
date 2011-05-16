@@ -190,7 +190,6 @@ integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          idiaex, iterns
 integer          iifru
-integer          maxelt, ils
 double precision rnorm , vitnor
 double precision romvom, rtprom
 double precision epsrgp, climgp, extrap, blencp, epsilp
@@ -676,17 +675,11 @@ do isou = 1, 3
     drtp  (iel) = 0.d0
   enddo
 
-  maxelt = max(ncelet, nfac, nfabor)
-  ils    = idebia
-  ifinia = ils + maxelt
-  call iasize('cfqdmv',ifinia)
-
   call ustsns                                                     &
   !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &

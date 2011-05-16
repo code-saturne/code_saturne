@@ -34,7 +34,6 @@ subroutine usray2 &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
    itypfb ,                                                       &
-   maxelt , lstelt ,                                              &
    icodcl , izfrdp , isothp ,                                     &
    tmin   , tmax   , tx     ,                                     &
    ia     ,                                                       &
@@ -143,8 +142,6 @@ subroutine usray2 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icodcl           ! ia ! <-- ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
 !                  !    !     ! = 2  -> flux density                           !
@@ -224,7 +221,6 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          maxelt, lstelt(maxelt)
 integer          ia(*)
 
 integer          icodcl(nfabor,nvar)
@@ -254,6 +250,8 @@ double precision ra(*)
 integer          idebia , idebra
 integer          ifac , ivar, iok
 integer          ilelt, nlelt
+
+integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
@@ -290,6 +288,9 @@ endif
 !===============================================================================
 ! 0. Initialization
 !===============================================================================
+
+! Allocate a temporary array for boundary faces selection
+allocate(lstelt(nfabor))
 
 idebia = idbia0
 idebra = idbra0
@@ -648,6 +649,8 @@ endif
 ! END
 ! ---
 
-return
+! Deallocate the temporary array
+deallocate(lstelt)
 
+return
 end subroutine

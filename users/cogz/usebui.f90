@@ -32,7 +32,6 @@ subroutine usebui &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -137,8 +136,6 @@ subroutine usebui &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! maxelt           !  e ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icodcl           ! ia ! --> ! boundary condition code                        !
 !  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
 !                  !    !     ! = 2  -> flux density                           !
@@ -209,7 +206,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          maxelt, lstelt(maxelt)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
@@ -224,6 +220,8 @@ integer          iel, mode, igg, izone
 double precision hinit, coefg(ngazgm)
 double precision sommqf, sommqt, sommq, tentm, fmelm
 
+integer, allocatable, dimension(:) :: lstelt
+
 !===============================================================================
 
 
@@ -237,6 +235,9 @@ write(nfecra,9001)
 !===============================================================================
 ! 1.  INITIALISATION OF LOCAL VARIABLES
 !===============================================================================
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
 
 idebia = idbia0
 idebra = idbra0
@@ -327,6 +328,8 @@ endif
 ! END
 !----
 
+! Deallocate the temporary array
+deallocate(lstelt)
 
 return
 end subroutine

@@ -57,7 +57,6 @@ subroutine usstr1 &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   maxelt , lstelt ,                                              &
    idfstr ,                                                       &
    ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
@@ -80,8 +79,6 @@ subroutine usstr1 &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! aexxst,bexxst    ! r  ! <-- ! prediction coefficients of structural data     !
@@ -123,7 +120,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nbstru
 
-integer          maxelt, lstelt(maxelt)
 integer          idfstr(nfabor)
 integer          ia(*)
 
@@ -137,6 +133,8 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifac
 integer          ilelt, nlelt
+
+integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
@@ -152,8 +150,10 @@ endif
 
 !===============================================================================
 ! 1.  Initialization
-
 !===============================================================================
+
+! Allocate a temporary array for boundary faces selection
+allocate(lstelt(nfabor))
 
 idebia = idbia0
 idebra = idbra0
@@ -260,9 +260,11 @@ cfopre =  2.d0
 !     The value of structural history output step is the same as the one for standard
 !     variables ('NTHIST').
 ihistr = 1
-!
-return
 
+! Deallocate the temporary array
+deallocate(lstelt)
+
+return
 end subroutine
 
 

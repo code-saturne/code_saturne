@@ -137,7 +137,6 @@ integer          idebia, idebra, ifinia
 integer          iscal, ivar, iel
 integer          ii, iisc, itspdv, icalc, iappel
 integer          ispecf
-integer          maxelt, ils
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -170,16 +169,10 @@ if (ippmod(iphpar).ge.1) then
 !   On initialise RTP (et pas RTPA) car RTPA ne sert pas
 !      dans codits.
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-call iasize('scalai',ifinia)
-
   call ppinv2                                                     &
   !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , ia(ils),                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )

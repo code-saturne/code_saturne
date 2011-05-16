@@ -33,7 +33,6 @@ subroutine uscplc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
@@ -391,8 +390,6 @@ subroutine uscplc &
 ! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
-! lstelt(maxelt) te ! --- ! tableau de travail                             !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
@@ -472,7 +469,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          maxelt, lstelt(maxelt)
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
@@ -497,6 +493,8 @@ integer          ilelt, nlelt
 
 double precision uref2, d2s3
 double precision xkent, xeent
+
+integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
@@ -533,8 +531,10 @@ endif
 
 !===============================================================================
 ! 1.  INITIALISATIONS
-
 !===============================================================================
+
+! Allocate a temporary array for boundary faces selection
+allocate(lstelt(nfabor))
 
 idebia = idbia0
 idebra = idbra0
@@ -755,6 +755,9 @@ enddo
 !----
 ! FIN
 !----
+
+! Deallocate the temporary array
+deallocate(lstelt)
 
 return
 end subroutine

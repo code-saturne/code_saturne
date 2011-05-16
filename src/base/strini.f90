@@ -96,7 +96,7 @@ double precision ra(*)
 integer          idebia, idebra, itrav
 integer          ifac  , istr, icompt, ii
 integer          mbstru, mbaste
-integer          maxelt, ifnia2, ils
+integer          ifnia2
 
 integer          jj, inod
 integer          ilstfa, indast, iidflo, iidnlo
@@ -142,10 +142,6 @@ isyncp = 1
 iidfst = idebia
 ifinia = iidfst + nfabor
 
-maxelt = max(ncelet,nfac,nfabor)
-ils    = ifinia
-ifnia2 = ils + maxelt
-
 call iasize('strini',ifnia2)
 !==========
 
@@ -175,8 +171,7 @@ endif
 
 call usstr1                                                       &
 !==========
- ( ifnia2 , idebra ,                                              &
-   maxelt , ia(ils),                                              &
+ ( ifinia , idebra ,                                              &
    ia(iidfst),                                                    &
    ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
@@ -188,8 +183,7 @@ call usstr1                                                       &
 
 call usaste                                                       &
 !==========
- ( ifnia2 , idebra ,                                              &
-   maxelt , ia(ils),                                              &
+ ( ifinia , idebra ,                                              &
    ia(iidfst),                                                    &
    ia     ,                                                       &
    ra     )

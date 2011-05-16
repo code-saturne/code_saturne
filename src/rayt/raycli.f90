@@ -168,7 +168,6 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifac, iel, ideb, ivart, iscat
 integer          mode, iok, ifvu, ii, izonem, izone
-integer          maxelt, idbia1, ils
 
 double precision tmin , tmax   , tx
 double precision cpp, xmtk
@@ -185,7 +184,6 @@ save       ipacli
 idebia = idbia0
 idebra = idbra0
 
-maxelt = max(ncelet,nfac,nfabor)
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -286,16 +284,11 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
 
       endif
 
-      ils    = idebia
-      idbia1 = ils + maxelt
-      call iasize('raycli',idbia1)
-
       call usray2                                                 &
       !==========
- ( idbia1 , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    itypfb ,                                                       &
-   maxelt , ia(ils),                                              &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
    ia     ,                                                       &
@@ -367,16 +360,11 @@ endif
 
   endif
 
-  ils    = idebia
-  idbia1 = ils + maxelt
-  CALL iasize('raycli', idbia1)
-
   call usray2                                                     &
   !==========
- ( idbia1 , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                             &
    itypfb ,                                                       &
-   maxelt , ia(ils),                                              &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
    ia     ,                                                       &

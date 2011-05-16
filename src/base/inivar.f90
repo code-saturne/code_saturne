@@ -111,7 +111,6 @@ double precision ra(*)
 ! Local variables
 
 character*80     chaine
-integer          maxelt, ils
 integer          idebia, idebra, ifinia
 integer          ivar  , iscal , imom
 integer          iel
@@ -162,16 +161,10 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-maxelt = max(ncelet, nfac, nfabor)
-ils    = idebia
-ifinia = ils + maxelt
-call iasize('inivar',IFINIA)
-
 call usiniv                                                       &
 !==========
- ( ifinia , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , ia(ils),                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -196,7 +189,6 @@ if (ippmod(iphpar).ge.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , ia(ils),                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )

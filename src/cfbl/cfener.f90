@@ -167,7 +167,7 @@ integer          ivar0  , iphydp , iij , ii , jj
 integer          iccfth , imodif
 integer          iel1  , iel2, iifru, iifbe
 integer          iterns
-integer          maxelt, ils, idbia1
+integer          idbia1
 double precision flux
 double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
@@ -253,17 +253,11 @@ enddo
 !     TERME SOURCE VOLUMIQUE DE CHALEUR : RHO*PHI *VOLUME
 !     =================================          v
 
-maxelt = max(ncelet,nfac,nfabor)
-ils = idebia
-idbia1 = ils + maxelt
-call iasize('cfener',idbia1)
-
 call ustssc                                                       &
 !==========
- ( idbia1 , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
-   maxelt , ia(ils),                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &

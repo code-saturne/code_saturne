@@ -33,7 +33,6 @@ subroutine useliv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -92,8 +91,6 @@ subroutine useliv &
 ! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! maxelt           !  e ! <-- ! nb max d'elements (cell,fac,fbr)               !
-! lstelt(maxelt) te ! --- ! tableau de travail                             !
 ! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -141,7 +138,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          maxelt, lstelt(maxelt)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
@@ -157,6 +153,8 @@ integer          iel, mode
 integer          iesp , idimve
 
 double precision tinit, hinit, coefe(ngazem)
+
+integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
@@ -220,6 +218,9 @@ write(nfecra,9001)
 !===============================================================================
 ! 1.  Local variables initialization
 !===============================================================================
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
 
 idebia = idbia0
 idebra = idbra0
@@ -315,5 +316,9 @@ endif
 !----
 ! FIN
 !----
+
+! Deallocate the temporary array
+deallocate(lstelt)
+
 return
 end subroutine

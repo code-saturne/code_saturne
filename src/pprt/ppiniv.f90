@@ -30,7 +30,6 @@ subroutine ppiniv &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -82,8 +81,6 @@ subroutine ppiniv &
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
@@ -127,7 +124,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          maxelt, lstelt(maxelt)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
@@ -162,7 +158,6 @@ idebra = idbra0
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -176,7 +171,6 @@ idebra = idbra0
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -190,7 +184,6 @@ endif
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -203,7 +196,6 @@ if ( ippmod(icp3pl).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -216,7 +208,6 @@ if ( ippmod(icpl3c).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -229,7 +220,6 @@ if  (ippmod(icfuel).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -242,7 +232,6 @@ if ( ippmod(icompf).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -260,7 +249,6 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -275,7 +263,6 @@ if ( ippmod(iatmos).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )
@@ -290,7 +277,6 @@ if ( ippmod(iaeros).ge.0 ) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   maxelt , lstelt ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    ra     )

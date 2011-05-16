@@ -33,7 +33,6 @@ subroutine ustskw &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
-   maxelt , lstelt ,                                              &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -121,8 +120,6 @@ subroutine ustskw &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
 ! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
@@ -185,7 +182,6 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
-integer          maxelt, lstelt(maxelt)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          ia(*)
@@ -210,6 +206,8 @@ integer          idebia, idebra
 integer          iel, ikiph, iomgip, ipcrom
 double precision ff, tau, xx
 
+integer, allocatable, dimension(:) :: lstelt
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -224,6 +222,9 @@ if(1.eq.1) return
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
 
 idebia = idbia0
 idebra = idbra0
@@ -282,6 +283,8 @@ enddo
 ! End
 !----
 
-return
+! Deallocate the temporary array
+deallocate(lstelt)
 
+return
 end subroutine

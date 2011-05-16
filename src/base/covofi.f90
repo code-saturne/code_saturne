@@ -170,7 +170,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          maxelt, ils   , idbia1
+integer          idbia1
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
@@ -276,17 +276,11 @@ enddo
 
 iscala = iscal
 
-maxelt = max(ncelet,nfac,nfabor)
-ils    = idebia
-idbia1 = ils + maxelt
-call iasize('covofi',idbia1)
-
 call ustssc &
 !==========
-( idbia1 , idebra ,                                              &
+( idebia , idebra ,                                              &
   nvar   , nscal  , ncepdp , ncesmp ,                            &
   iscala ,                                                       &
-  maxelt , ia(ils),                                              &
   icepdc , icetsm , itypsm ,                                     &
   ia     ,                                                       &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &

@@ -33,7 +33,6 @@ subroutine uspt1d &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , nfpt1d , iappel ,                            &
-   maxelt , lstelt ,                                              &
    ifpt1d , nppt1d , iclt1d ,                                     &
    ia     ,                                                       &
    tppt1d , rgpt1d , eppt1d ,                                     &
@@ -95,8 +94,6 @@ subroutine uspt1d &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermal module    !
 ! iappel           ! i  ! <-- ! data type to send                              !
-! maxelt           !  i ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! ifpt1d           ! ia ! <-- ! number of the face treated                     !
 ! nppt1d           ! ia ! <-- ! number of discretized points                   !
 ! iclt1d           ! ia ! <-- ! boundary condition type                        !
@@ -152,7 +149,6 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal  , nfpt1d
 integer          iappel
 
-integer          maxelt, lstelt(maxelt)
 integer          ifpt1d(nfpt1d), nppt1d(nfpt1d), iclt1d(nfpt1d)
 integer          ia(*)
 
@@ -171,7 +167,12 @@ integer          idebia , idebra
 integer          ifbt1d , ii , ifac
 integer          ilelt, nlelt
 
+integer, allocatable, dimension(:) :: lstelt
+
 !===============================================================================
+
+! Allocate a temporary array for boundary faces selection
+allocate(lstelt(nfabor))
 
 idebia = idbia0
 idebra = idbra0
@@ -315,6 +316,9 @@ endif
 !===============================================================================
 ! End of the uspt1d subroutine
 !===============================================================================
+
+! Deallocate the temporary array
+deallocate(lstelt)
 
 return
 end subroutine

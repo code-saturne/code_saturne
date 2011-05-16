@@ -32,7 +32,6 @@ subroutine usaste &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   maxelt , lstelt ,                                              &
    idfstr ,                                                       &
    ia     ,                                                       &
    ra     )
@@ -63,8 +62,6 @@ subroutine usaste &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
 ! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -99,7 +96,6 @@ implicit none
 integer          idbia0 , idbra0
 integer          nbstru
 
-integer          maxelt, lstelt(maxelt)
 integer          idfstr(nfabor)
 integer          ia(*)
 
@@ -110,6 +106,8 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifac
 integer          ilelt, nlelt
+
+integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -124,8 +122,10 @@ endif
 
 !===============================================================================
 ! 1.  INITIALIZATION
-
 !===============================================================================
+
+! Allocate a temporary array for boundary faces selection
+allocate(lstelt(nfabor))
 
 idebia = idbia0
 idebra = idbra0
@@ -205,6 +205,9 @@ isyncp = 1
 !----
 ! End
 !----
-return
 
+! Deallocate the temporary array
+deallocate(lstelt)
+
+return
 end subroutine

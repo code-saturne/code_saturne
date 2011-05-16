@@ -173,7 +173,6 @@ integer          ifinia, ifinra
 integer          iel , ifac , ip , nb , nc, ii, ifvu
 integer          iiwork , iok , n1 , nd , icha
 integer          npt , nfin , npar1  , npar2 , mode , idvar
-integer          maxelt, idbia1, ils
 
 double precision vn1 , vn2 , vn3 , pis6 , d3
 double precision dmasse , rd(1) , aa
@@ -276,12 +275,6 @@ enddo
 ! 2. Initialisation utilisateur par classe et par frontiere
 !===============================================================================
 
-maxelt = max(ncelet,nfac,nfabor)
-ils    = idebia
-idbia1 = ils + maxelt
-call iasize('lagent', idbia1)
-!==========
-
 if (iihmpr.eq.1) then
   call uilag2                                                     &
   !==========
@@ -298,11 +291,10 @@ endif
 
 call uslag2                                                       &
 !==========
- ( idbia1 , idebra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   maxelt , ia(ils),                                              &
    itypfb , itrifb , itepa  , ifrlag ,                            &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
