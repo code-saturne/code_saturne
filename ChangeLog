@@ -1,3 +1,9 @@
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixes to SLURM batch options selection of partitions (queues).
+  modified files:
+    gui/Pages/BatchRunningModel.py
+    extras/batch/batch.SLURM
+
 * 16/05/2011 - David Monfort <david.monfort@edf.fr>
   Remove direct access to ia/ra for work-arrays allocation in user files.
   modified routines:

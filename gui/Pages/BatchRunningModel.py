@@ -484,7 +484,7 @@ class BatchRunningModel(Model):
                     elif len(wt) == 1:
                         self.dictValues['job_walltime'] \
                             = th + int(wt[0])
-                elif kw == '--partition' or kw == '-p':
+                elif kw == '--partition=' or kw == '-p':
                     self.dictValues['job_class'] = val
 
 

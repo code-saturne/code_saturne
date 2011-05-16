@@ -9,7 +9,6 @@
 #SBATCH --output=nameandcaseo%j
 #SBATCH --error=nameandcasee%j
 #SBATCH --job-name=nameandcase
-#SBATCH --partition=partition
 #
 #  -t<time>, --time=<time>            : walltime in minutes, minutes:seconds,
 #                                       hours:minutes:seconds, or
@@ -23,6 +22,7 @@
 #  --mem-bind=local
 #  --contiguous                       : force use of contiguous nodes for
 #                                       better latency and minimal latency
+#  --exclusive                        : do not share nodes with other jobs
 #  --partition=<name>, -p<name>       : partition (queue) (run "sinfo -s"
 #                                       for list of partitions)
 #  --reservation=<name>               : allocate resources from reservation
