@@ -282,8 +282,7 @@ if ( 1.eq.0 ) then
 
   call lagipn                                                     &
   !==========
-  ( idebia , idebra ,                                             &
-    ncelet , ncel   ,                                             &
+  ( ncelet , ncel   ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npar1  , npar2  ,                                             &
     itepa  ,                                                      &

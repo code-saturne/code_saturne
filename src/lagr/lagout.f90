@@ -868,8 +868,7 @@ if (iensi1.eq.1) then
   iforce = 0
   call enslag                                                     &
   !==========
-   ( idebia , idebra ,                                            &
-     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
+   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      nfin   , iforce ,                                            &
      itepa  ,                                                     &
      ettp   , tepa   , ra )

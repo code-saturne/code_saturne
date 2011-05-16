@@ -28,8 +28,7 @@
 subroutine enslag &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    nfin   , iforce ,                                              &
    itepa  ,                                                       &
    ettp   , tepa   , ra)
@@ -60,8 +59,6 @@ subroutine enslag &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
 ! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
@@ -101,7 +98,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          nfin   , iforce
 integer          itepa(nbpmax, nivep)
@@ -110,7 +106,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          nl , np
 
 integer          numl
@@ -122,13 +117,16 @@ integer          iu1l , iv1l  , iw1l
 integer          iu2l , iv2l  , iw2l
 integer          itpl , idml  , itel  , impl
 integer          ihpl , idckl , imchl , imckl
-integer          ifinia, ifinra
+integer          nvpst
 
 double precision xpl , ypl , zpl
 double precision u1l , v1l , w1l
 double precision u2l , v2l , w2l
 double precision tpl , dml , tel , mpl
 double precision hpl , dckl , mchl , mckl
+
+double precision, allocatable, dimension(:,:) :: rwork
+
 character        fich*80
 character        name*80
 
@@ -158,11 +156,6 @@ ihpl = 0
 idckl = 0
 imchl = 0
 imckl = 0
-
-! Memoire
-
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 0. INITIALISATIONS
@@ -494,59 +487,67 @@ if (nfin.eq.1) then
 
 ! 2) Allocation Memoire
 
-  ifinia = idebia
-  ix     = idebra
-  iy     = ix+lmax
-  iz     = iy+lmax
-  ifinra = iz +lmax
+  ! First, count the number of variables in post-processing
+
+  nvpst = 1
+  ix    = nvpst
+  nvpst = nvpst + 1
+  iy    = nvpst
+  nvpst = nvpst + 1
+  iz    = nvpst
 
   if (ivisv1.eq.1) then
-    iu1l   = ifinra
-    iv1l   = iu1l  +lmax
-    iw1l   = iv1l  +lmax
-    ifinra = iw1l  +lmax
+    nvpst = nvpst + 1
+    iu1l   = nvpst
+    nvpst = nvpst + 1
+    iv1l   = nvpst
+    nvpst = nvpst + 1
+    iw1l   = nvpst
   endif
   if (ivisv2.eq.1) then
-    iu2l   = ifinra
-    iv2l   = iu2l  +lmax
-    iw2l   = iv2l  +lmax
-    ifinra = iw2l  +lmax
+    nvpst = nvpst + 1
+    iu2l   = nvpst
+    nvpst = nvpst + 1
+    iv2l   = nvpst
+    nvpst = nvpst + 1
+    iw2l   = nvpst
   endif
   if (ivistp.eq.1) then
-    itpl = ifinra
-    ifinra = itpl +lmax
+    nvpst = nvpst + 1
+    itpl = nvpst
   endif
   if (ivisdm.eq.1) then
-    idml = ifinra
-    ifinra = idml +lmax
+    nvpst = nvpst + 1
+    idml = nvpst
   endif
   if (ivismp.eq.1) then
-    impl = ifinra
-    ifinra = impl +lmax
+    nvpst = nvpst + 1
+    impl = nvpst
   endif
   if (iviste.eq.1) then
-    itel = ifinra
-    ifinra = itel +lmax
+    nvpst = nvpst + 1
+    itel = nvpst
   endif
   if (ivishp.eq.1) then
-    ihpl = ifinra
-    ifinra = ihpl +lmax
+    nvpst = nvpst + 1
+    ihpl = nvpst
   endif
   if (ivisdk.eq.1) then
-    idckl= ifinra
-    ifinra = idckl +lmax
+    nvpst = nvpst + 1
+    idckl= nvpst
   endif
   if (ivisch.eq.1) then
-    imchl = ifinra
-    ifinra = imchl +lmax
+    nvpst = nvpst + 1
+    imchl = nvpst
   endif
   if (ivisck.eq.1) then
-    imckl = ifinra
-    ifinra = imckl +lmax
+    nvpst = nvpst + 1
+    imckl = nvpst
   endif
 
-  call rasize('enslag', ifinra)
-  !==========
+  ! Second, allocate a global work array of dimensions "lmax*nvpst"
+
+  allocate(rwork(lmax,nvpst))
 
 ! 3) ON REMPLIT LES ENTETES DES FICHIERS : geo + variable
 
@@ -635,42 +636,42 @@ if (nfin.eq.1) then
 
           ipt = ipt+1
 
-          ra(ix+ipt-1) = xpl
-          ra(iy+ipt-1) = ypl
-          ra(iz+ipt-1) = zpl
+          rwork(ipt,ix) = xpl
+          rwork(ipt,iy) = ypl
+          rwork(ipt,iz) = zpl
           if (ivisv1.eq.1) then
-            ra(iu1l+ipt-1) = u1l
-            ra(iv1l+ipt-1) = v1l
-            ra(iw1l+ipt-1) = w1l
+            rwork(ipt,iu1l) = u1l
+            rwork(ipt,iv1l) = v1l
+            rwork(ipt,iw1l) = w1l
           endif
           if (ivisv2.eq.1) then
-            ra(iu2l+ipt-1) = u2l
-            ra(iv2l+ipt-1) = v2l
-            ra(iw2l+ipt-1) = w2l
+            rwork(ipt,iu2l) = u2l
+            rwork(ipt,iv2l) = v2l
+            rwork(ipt,iw2l) = w2l
           endif
           if (ivistp.eq.1) then
-            ra(itpl+ipt-1) = tpl
+            rwork(ipt,itpl) = tpl
           endif
           if (ivisdm.eq.1) then
-            ra(idml+ipt-1) = dml
+            rwork(ipt,idml) = dml
           endif
           if (ivismp.eq.1) then
-            ra(impl+ipt-1) = mpl
+            rwork(ipt,impl) = mpl
           endif
           if (iviste.eq.1) then
-            ra(itel+ipt-1) = tel
+            rwork(ipt,itel) = tel
           endif
           if (ivishp.eq.1) then
-            ra(ihpl+ipt-1) = hpl
+            rwork(ipt,ihpl) = hpl
           endif
           if (ivisdk.eq.1) then
-            ra(idckl+ipt-1) = dckl
+            rwork(ipt,idckl) = dckl
           endif
           if (ivisch.eq.1) then
-            ra(imchl+ipt-1) = mchl
+            rwork(ipt,imchl) = mchl
           endif
           if (ivisck.eq.1) then
-            ra(imckl+ipt-1) = mckl
+            rwork(ipt,imckl) = mckl
           endif
 
         endif
@@ -684,13 +685,13 @@ if (nfin.eq.1) then
       write(impla1, 3005)
       write(impla1, 1010) ipt
       do ii=1, ipt
-        write(impla1, 1030) ra(ix+ii-1)
+        write(impla1, 1030) rwork(ii,ix)
       enddo
       do ii=1, ipt
-        write(impla1, 1030) ra(iy+ii-1)
+        write(impla1, 1030) rwork(ii,iy)
       enddo
       do ii=1, ipt
-        write(impla1, 1030) ra(iz+ii-1)
+        write(impla1, 1030) rwork(ii,iz)
       enddo
       write(impla1, 3006)
       if (ipt.eq.0) then
@@ -710,13 +711,13 @@ if (nfin.eq.1) then
         write(impla5(1), 1010) nl
         write(impla5(1), 3005)
         do ii=1, ipt
-          write(impla5(1), 1030) ra(iu1l+ii-1)
+          write(impla5(1), 1030) rwork(ii,iu1l)
         enddo
         do ii=1, ipt
-          write(impla5(1), 1030) ra(iv1l+ii-1)
+          write(impla5(1), 1030) rwork(ii,iv1l)
         enddo
         do ii=1, ipt
-          write(impla5(1), 1030) ra(iw1l+ii-1)
+          write(impla5(1), 1030) rwork(ii,iw1l)
         enddo
       endif
 
@@ -725,13 +726,13 @@ if (nfin.eq.1) then
         write(impla5(2), 1010) nl
         write(impla5(2), 3005)
         do ii=1, ipt
-          write(impla5(2), 1030) ra(iu2l+ii-1)
+          write(impla5(2), 1030) rwork(ii,iu2l)
         enddo
         do ii=1, ipt
-          write(impla5(2), 1030) ra(iv2l+ii-1)
+          write(impla5(2), 1030) rwork(ii,iv2l)
         enddo
         do ii=1, ipt
-          write(impla5(2), 1030) ra(iw2l+ii-1)
+          write(impla5(2), 1030) rwork(ii,iw2l)
         enddo
       endif
 
@@ -740,7 +741,7 @@ if (nfin.eq.1) then
         write(impla5(3), 1010) nl
         write(impla5(3), 3005)
         do ii=1, ipt
-          write(impla5(3), 1030) ra(itpl+ii-1)
+          write(impla5(3), 1030) rwork(ii,itpl)
         enddo
       endif
       if (ivisdm.eq.1) then
@@ -748,7 +749,7 @@ if (nfin.eq.1) then
         write(impla5(4), 1010) nl
         write(impla5(4), 3005)
         do ii=1, ipt
-          write(impla5(4), 1030) ra(idml+ii-1)
+          write(impla5(4), 1030) rwork(ii,idml)
         enddo
       endif
       if (ivismp.eq.1) then
@@ -756,7 +757,7 @@ if (nfin.eq.1) then
         write(impla5(5), 1010) nl
         write(impla5(5), 3005)
         do ii=1, ipt
-          write(impla5(5), 1030) ra(impl+ii-1)
+          write(impla5(5), 1030) rwork(ii,impl)
         enddo
       endif
       if (iviste.eq.1) then
@@ -764,7 +765,7 @@ if (nfin.eq.1) then
         write(impla5(6), 1010) nl
         write(impla5(6), 3005)
         do ii=1, ipt
-          write(impla5(6), 1030) ra(itel+ii-1)
+          write(impla5(6), 1030) rwork(ii,itel)
         enddo
       endif
       if (ivishp.eq.1) then
@@ -772,7 +773,7 @@ if (nfin.eq.1) then
         write(impla5(7), 1010) nl
         write(impla5(7), 3005)
         do ii=1, ipt
-          write(impla5(7), 1030) ra(ihpl+ii-1)
+          write(impla5(7), 1030) rwork(ii,ihpl)
         enddo
       endif
       if (ivisdk.eq.1) then
@@ -780,7 +781,7 @@ if (nfin.eq.1) then
         write(impla5(8), 1010) nl
         write(impla5(8), 3005)
         do ii=1, ipt
-          write(impla5(8), 1030) ra(idckl+ii-1)
+          write(impla5(8), 1030) rwork(ii,idckl)
         enddo
       endif
       if (ivisch.eq.1) then
@@ -788,7 +789,7 @@ if (nfin.eq.1) then
         write(impla5(9), 1010) nl
         write(impla5(9), 3005)
         do ii=1, ipt
-          write(impla5(9), 1030) ra(imchl+ii-1)
+          write(impla5(9), 1030) rwork(ii,imchl)
         enddo
       endif
       if (ivisck.eq.1) then
@@ -796,7 +797,7 @@ if (nfin.eq.1) then
         write(impla5(10), 1010) nl
         write(impla5(10), 3005)
         do ii=1, ipt
-          write(impla5(10), 1030) ra(imckl+ii-1)
+          write(impla5(10), 1030) rwork(ii,imckl)
         enddo
       endif
 

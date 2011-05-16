@@ -1300,8 +1300,7 @@ if ( iensi1.eq.1 ) then
         do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
           call enslag                                             &
           !==========
-           ( ifinia , ifinra ,                                    &
-             nbpmax , nvp    , nvp1   , nvep   , nivep  ,         &
+           ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,         &
              nfin   , ip     ,                                    &
              itepa  ,                                             &
              ettp   , tepa   , ra)

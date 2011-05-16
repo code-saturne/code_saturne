@@ -207,9 +207,6 @@ integer          idebia, idebra
 integer          iel    , ielg   , ifac   , ifacg  , ivar
 integer          iel1   , iel2   , ieltsm
 integer          iortho , impout
-integer          ifinia , ifinra
-integer          igradx , igrady , igradz
-integer          itravx , itravy , itravz , itreco
 integer          inc    , iccocg
 integer          nswrgp , imligp , iphydp , iwarnp
 integer          iutile , iclvar , iii
@@ -231,6 +228,8 @@ double precision diipbx, diipby, diipbz, distbr
 double precision visct, flumab , xcp , xvsl, cp0iph, rrr
 double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 
+integer, allocatable, dimension(:,:) :: grad, trav
+integer, allocatable, dimension(:) :: treco
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
@@ -459,12 +458,14 @@ if (inpdt0.eq.0) then
 
   ! --> Compute value reconstructed at I' for boundary faces
 
+  allocate(treco(nfabor))
+
   ! For non-orthogonal meshes, it must be equal to the value at the
   ! cell center, which is computed in:
-  ! ra(itreco+ifac-1) (with ifac=1, nfabor)
+  ! treco(ifac) (with ifac=1, nfabor)
 
   ! For orthogonal meshes, it is sufficient to assign:
-  ! rtp(iel, ivar) to ra(itreco+ifac-1), with iel=ifabor(ifac)
+  ! rtp(iel, ivar) to treco(ifac), with iel=ifabor(ifac)
   ! (this option corresponds to the second branch of the test below,
   ! with iortho different from 0).
 
@@ -474,23 +475,9 @@ if (inpdt0.eq.0) then
 
   if (iortho.eq.0) then
 
-    ! Reserve memory
-
-    ifinia = idebia
-
-    igradx = idebra
-    igrady = igradx+ncelet
-    igradz = igrady+ncelet
-    itravx = igradz+ncelet
-    itravy = itravx+ncelet
-    itravz = itravy+ncelet
-    itreco = itravz+ncelet
-    ifinra = itreco+nfabor
-
-    ! Check memory availability
-
-    call iasize('usproj', ifinia)
-    call rasize('usproj', ifinra)
+    ! Allocate work arrays
+    allocate(grad(ncelet,3))
+    allocate(trav(ncelet,3))
 
     ! --- Compute temperature gradient
 
@@ -538,11 +525,11 @@ if (inpdt0.eq.0) then
         iwarnp , nfecra ,                                              &
         epsrgp , climgp , extrap ,                                     &
         ia     ,                                                       &
-        ra(itravx) , ra(itravx) , ra(itravx) ,                         &
+        trav(1,1) , trav(1,2) , trav(1,3) ,                            &
         rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-        ra(igradx) , ra(igrady) , ra(igradz) ,                         &
+        grad(1,1) , grad(1,2) , grad(1,3) ,                            &
         !---------   ----------   ----------
-        ra(itravx) , ra(itravy) , ra(itravz) ,                         &
+        trav(1,1) , trav(1,2) , trav(1,3) ,                            &
         ra     )
 
     ! - Compute reconstructed value in boundary cells
@@ -552,34 +539,26 @@ if (inpdt0.eq.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      ra(itreco+ifac-1) =   rtp(iel,ivar)            &
-                          + diipbx*ra(igradx+iel-1)  &
-                          + diipby*ra(igrady+iel-1)  &
-                          + diipbz*ra(igradz+iel-1)
+      treco(ifac) =   rtp(iel,ivar)            &
+                    + diipbx*grad(iel,1)  &
+                    + diipby*grad(iel,2)  &
+                    + diipbz*grad(iel,3)
     enddo
+
+    ! Free memory
+    deallocate(trav)
+    deallocate(grad)
 
   ! --> Case of orthogonal meshes
 
   else
-
-    ! Reserve memory
-
-    ifinia = idebia
-
-    itreco = idebra
-    ifinra = itreco+nfabor
-
-    ! Check memory availability
-
-    call iasize('usproj', ifinia)
-    call rasize('usproj', ifinra)
 
     ! Compute reconstructed value
     ! (here, we assign the non-reconstructed value)
 
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      ra(itreco+ifac-1) = rtp(iel,ivar)
+      treco(ifac) = rtp(iel,ivar)
     enddo
 
   endif
@@ -722,10 +701,10 @@ if (inpdt0.eq.0) then
     xfluxf =      surfbn(ifac) * dt(iel) * xcp                      &
                 * (xvsl+visct/sigmas(iscal)) / distbr               &
                 * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
-                   * ra(itreco+ifac-1))                             &
+                   * treco(ifac))                                   &
               -   flumab * dt(iel) * xcp                            &
                 * (  coefa(ifac,iclvar) + coefb(ifac,iclvar)        &
-                   * ra(itreco+ifac-1))
+                   * treco(ifac))
 
     xbilpa = xbilpa + xfluxf
 
@@ -769,10 +748,10 @@ if (inpdt0.eq.0) then
     xfluxf =    surfbn(ifac) * dt(iel) * xcp                      &
               * (xvsl+visct/sigmas(iscal)) / distbr               &
               * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
-                 * ra(itreco+ifac-1))                             &
+                 * treco(ifac))                                   &
               -   flumab * dt(iel) * xcp                          &
                 * (  coefa(ifac,iclvar) + coefb(ifac,iclvar)       &
-                   * ra(itreco+ifac-1))
+                   * treco(ifac))
 
     xbilpt = xbilpt + xfluxf
 
@@ -814,11 +793,9 @@ if (inpdt0.eq.0) then
 
     xfluxf =          surfbn(ifac) * dt(iel) * xcp *              &
      (xvsl+visct/sigmas(iscal))/distbr *                          &
-     (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)                &
-                                               *ra(itreco+ifac-1))&
+     (coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)*treco(ifac))   &
                     - flumab * dt(iel) * xcp *                    &
-     (coefa(ifac,iclvar)+ coefb(ifac,iclvar)                      &
-                                               *ra(itreco+ifac-1))
+     (coefa(ifac,iclvar)+ coefb(ifac,iclvar)*treco(ifac))
 
     xbilsy = xbilsy + xfluxf
 
@@ -861,10 +838,10 @@ if (inpdt0.eq.0) then
     xfluxf =    surfbn(ifac) * dt(iel) * xcp                      &
               * (xvsl+visct/sigmas(iscal))/distbr                 &
               * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
-                 * ra(itreco+ifac-1))                             &
+                 * treco(ifac))                                   &
               -   flumab * dt(iel) * xcp                          &
                 * (  coefa(ifac,iclvar)+ coefb(ifac,iclvar)       &
-                   * ra(itreco+ifac-1))
+                   * treco(ifac))
 
     xbilen = xbilen + xfluxf
 
@@ -907,14 +884,18 @@ if (inpdt0.eq.0) then
     xfluxf =     surfbn(ifac) * dt(iel) * xcp                      &
                * (xvsl+visct/sigmas(iscal))/distbr                 &
                * (  coefa(ifac,iclvar)+(coefb(ifac,iclvar)-1.d0)   &
-                  * ra(itreco+ifac-1))                             &
+                  * treco(ifac))                                   &
              -   flumab * dt(iel) * xcp                            &
                * (  coefa(ifac,iclvar)+ coefb(ifac,iclvar)         &
-                  * ra(itreco+ifac-1))
+                  * treco(ifac))
 
     xbilso = xbilso + xfluxf
 
   enddo
+
+  ! Now the work array for the temperature can be freed
+  deallocate(treco)
+
 
   ! --> Balance on mass source terms
   !     ----------------------------

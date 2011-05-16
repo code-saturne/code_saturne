@@ -1,4 +1,18 @@
 * 16/05/2011 - David Monfort <david.monfort@edf.fr>
+  Use dynamic memory allocation in some routines so as to later remove
+  direct access to ia/ra in user subroutines.
+  modified routines:
+    src/lagr/enslag.f90
+    src/lagr/lagent.f90
+    src/lagr/lagipn.f90
+    src/lagr/lagout.f90
+    src/lagr/lagune.f90
+    users/base/usproj.f90
+    users/lagr/uslabo.f90
+    users/lagr/uslain.f90
+    users/lagr/uslast.f90
+
+* 16/05/2011 - David Monfort <david.monfort@edf.fr>
   Prefer "var(:) = 0" syntax to "var = 0" for Fortran 90 arrays
   initialization.
   modified routines:

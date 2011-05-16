@@ -28,8 +28,7 @@
 subroutine lagipn &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   ,                                              &
+ ( ncelet , ncel   ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npar1  , npar2  ,                                              &
    itepa  ,                                                       &
@@ -54,8 +53,6 @@ subroutine lagipn &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -108,7 +105,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npar1 , npar2
@@ -123,18 +119,10 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel , npt , nomb
 double precision tu , d2s3
 
 !===============================================================================
-
-!===============================================================================
-! 0.  GESTION MEMOIRE
-!===============================================================================
-
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. INITIALISATION

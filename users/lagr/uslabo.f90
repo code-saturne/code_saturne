@@ -455,8 +455,7 @@ else if (iusclb(kzone).eq.idepfa) then
      nfin = 0
      call enslag                                                 &
           !==========
-          ( idebia, idebra  ,                                        &
-          nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
+        ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
           nfin   , ip     ,                                        &
           itepa  ,                                                 &
           ettpa  , tepa   , ra)
@@ -517,8 +516,7 @@ else if (iusclb(kzone).eq.irebol) then
       nfin = 0
       call enslag                                                 &
       !==========
-       ( idebia, idebra  ,                                        &
-         nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
+       ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
          nfin   , ip     ,                                        &
          itepa  ,                                                 &
          ettpa  , tepa   , ra)
@@ -620,8 +618,7 @@ else if (iusclb(kzone).eq.iencrl) then
         nfin = 0
         call enslag                                               &
         !==========
-       ( idebia, idebra  ,                                        &
-         nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
+       ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
          nfin   , ip     ,                                        &
          itepa  ,                                                 &
          ettpa  , tepa   , ra)

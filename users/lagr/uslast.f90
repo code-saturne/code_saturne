@@ -185,7 +185,7 @@ integer          idebia , idebra
 integer          ifinia, ifinra
 integer          npt ,  iel
 
-integer          ivf , ivff , itabvr , iflu , icla
+integer          ivf , ivff , iflu , icla
 
 ! User-defined local variables
 
@@ -200,6 +200,8 @@ integer          ist(6)
 integer, allocatable, dimension(:) :: node_mask
 
 double precision zz(4), zzz(8), xlist(nxlist,8), xyzpt(3)
+
+double precision, allocatable, dimension(:) :: tabvr
 
 character        name(8)*4
 
@@ -388,13 +390,8 @@ if (1.eq.0) then
 
     npts = nxlist
 
-    ifinia = idebia
-    itabvr = idebra
-    ifinra = itabvr + ncelet
-    CALL RASIZE('USLAST',IFINRA)
-    !==========
-
-    ! Allocate a temporary array to mark the nodes already used
+    ! Allocate work arrays
+    allocate(tabvr(ncelet))
     allocate(node_mask(nnod))
     node_mask(:) = 0
 
@@ -421,7 +418,7 @@ if (1.eq.0) then
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis , stativ , ra(itabvr) ,               &
+   coefa  , coefb  , statis , stativ , tabvr  ,                   &
    ra     )
 
         ind = 0
@@ -441,7 +438,7 @@ if (1.eq.0) then
             ind = ind +1
             xlist(ind,1) = xyzcen(1,inoeud)
             xlist(ind,2) = xyzcen(3,inoeud) * (1.d3 / 5.d0)
-            xlist(ind,ivf+2) = ra(itabvr+inoeud-1)
+            xlist(ind,ivf+2) = tabvr(inoeud)
           endif
         enddo
       enddo
@@ -454,8 +451,9 @@ if (1.eq.0) then
 
     enddo
 
-    ! Free the temporary array
+    ! Free memory
     deallocate(node_mask)
+    deallocate(tabvr)
 
   endif
 

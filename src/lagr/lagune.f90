@@ -796,8 +796,7 @@ if (iensi1.eq.1) then
 
   call enslag                                                     &
   !==========
-   ( idebia , idebra ,                                            &
-     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
+   ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      nfin   , iforce ,                                            &
      itepa  ,                                                     &
      ettp   , tepa   , ra )
