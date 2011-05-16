@@ -84,10 +84,10 @@ XML_LIB  =-lxml2
 
 # BLAS support
 BLAS            =1
-BLAS_HOME       =/logiciels/intel/cmkl/10.2.5.035
+BLAS_HOME       =/logiciels/intel/composerxe-2011.3.174/mkl
 BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_MKL
-BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
 
 # Macros for gettext
 #-------------------

@@ -181,12 +181,21 @@ do
   echo $REPBASECAS | sed -e "s/\//\\\\\//g" > $FICREPBASECASBKSLH
   REPBASECASBCKSLH=`cat $FICREPBASECASBKSLH`
   rm $FICREPBASECASBKSLH
-  sed -e "s/nometcas/$NOMETCAS/g" \
+  if [ -f $SCRIPT_HOME/batch_$NOM_ARCH.sh ] ; then
+    sed -e "s/nometcas/$NOMETCAS/g" $SCRIPT_HOME/batch_$NOM_ARCH.sh > batch.tmp
+  else
+    echo "" > batch.tmp
+  fi
+  sed -e "/BATCHSETUP/ {
+          r batch.tmp
+          d
+          } " \
       -e "s/NOMET/$STUDY/g" \
       -e "s/NOMCAS/$CASE/g" \
       -e "s/NOMREPBASE/$REPBASECASBCKSLH/g" \
       -e "s/NOMCSHOME/$CSHOMEBCKSLH/g" \
       -e "s/nomet/${study}/g"  $CASE/SCRIPTS/lance >case.tmp
+  rm batch.tmp
   mv case.tmp $CASE/SCRIPTS/lance
 
   for fich in $CASE/FORT/$users/*/*.[F]

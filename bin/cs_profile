@@ -30,61 +30,63 @@
 #============================================================================
 #
 # Architecture
-  NOM_ARCH=`uname -s`
-  if [ "$NOM_ARCH" = "Linux" ] ; then
-    if [ $(grep -c "Calibre 7" /etc/issue) -ne 0 ] ; then
-      NOM_ARCH=calibre7
-    elif [ $(grep -c "Calibre 5" /etc/issue) -ne 0 ] ; then
-      NOM_ARCH=calibre5
-    elif [ -d /bgsys/drivers/ppcfloor ] ; then
-      NOM_ARCH=Blue_Gene_P
-    elif [ "`hostname | cut -c1-6`" = "titane" ] ; then
-      NOM_ARCH=titane
-    elif [ "`hostname | cut -c1-7`" = "platine" ] ; then
-      NOM_ARCH=platine
-    elif [ "`hostname | cut -c1-5`" = "clala" -o "`hostname`" = "clay1pfr" ] ; then
-      NOM_ARCH=clamart2
-    elif [ "`hostname | cut -c1-4`" = "noec" -o "`hostname | cut -c 1-7`" = "noeuser" ] ; then
+NOM_ARCH=`uname -s`
+if [ "$NOM_ARCH" = "Linux" ] ; then
+  if [ $(grep -c "Calibre 7" /etc/issue) -ne 0 ] ; then
+    if [ "`hostname | cut -c1-2`" = "cn" -o "`hostname | cut -c 1-6`" = "ivanoe" ] ; then
       NOM_ARCH=ivanoe
+    else
+      NOM_ARCH=calibre7
     fi
+  elif [ $(grep -c "Calibre 5" /etc/issue) -ne 0 ] ; then
+    NOM_ARCH=calibre5
+  elif [ -d /bgsys/drivers/ppcfloor ] ; then
+    NOM_ARCH=Blue_Gene_P
+  elif [ "`hostname | cut -c1-6`" = "titane" ] ; then
+    NOM_ARCH=titane
+  elif [ "`hostname | cut -c1-7`" = "platine" ] ; then
+    NOM_ARCH=platine
+  elif [ "`hostname | cut -c1-5`" = "clala" -o "`hostname`" = "clay1pfr" ] ; then
+    NOM_ARCH=clamart2
   fi
+fi
 
 # Code_Saturne version
 
-  if [ "$NOM_ARCH" = "titane" -o "$NOM_ARCH" = "platine" ] ; then 
-    CS_ROOT=/home/cont002/saturne/Code_Saturne/1.3
-  elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then 
-    CS_ROOT=/gpfs/home/saturne/Code_Saturne/1.3
-  elif [ "$NOM_ARCH" = "calibre7" ] ; then
-    CS_ROOT=/netdata/saturne/Code_Saturne/1.3
-  elif [ "$NOM_ARCH" = "ivanoe" ] ; then
-    CS_ROOT=/home/projets/saturne/Code_Saturne/1.3
-  else
-    CS_ROOT=/home/saturne/Code_Saturne/1.3
-  fi
-  CS_HOME=${CS_ROOT}/Noyau/ncs-1.3.4
-  ECS_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.4
-  CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.4
-  SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.1.2
+if [ "$NOM_ARCH" = "titane" -o "$NOM_ARCH" = "platine" ] ; then 
+  CS_ROOT=/home/cont002/saturne/Code_Saturne/1.3
+elif [ "$NOM_ARCH" = "Blue_Gene_P" ] ; then 
+  CS_ROOT=/gpfs/home/saturne/Code_Saturne/1.3
+elif [ "$NOM_ARCH" = "calibre7" ] ; then
+  CS_ROOT=/netdata/saturne/Code_Saturne/1.3
+elif [ "$NOM_ARCH" = "ivanoe" ] ; then
+  CS_ROOT=/home/projets/saturne/Code_Saturne/1.3
+else
+  CS_ROOT=/home/saturne/Code_Saturne/1.3
+fi
+CS_HOME=${CS_ROOT}/Noyau/ncs-1.3.4
+ECS_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.4
+CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.4
+SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.1.2
 
-  if [ "$NOM_ARCH" = "Linux" -a -d /home/prevalcs/HOMARD ] ; then
-    CSHOMARD_HOME=/home/prevalcs/HOMARD
-  else
-    CSHOMARD_HOME=
-  fi
+if [ "$NOM_ARCH" = "Linux" -a -d /home/prevalcs/HOMARD ] ; then
+  CSHOMARD_HOME=/home/prevalcs/HOMARD
+else
+  CSHOMARD_HOME=
+fi
 
 # Path 
-  PATH=$CS_HOME/bin:$ECS_HOME/bin:$PATH
+PATH=$CS_HOME/bin:$ECS_HOME/bin:$PATH
 
 # Export variables
-  export NOM_ARCH CS_ROOT CS_HOME ECS_HOME CSGUI_HOME
-  export SYRCS_HOME CSHOMARD_HOME
-  export PATH
+export NOM_ARCH CS_ROOT CS_HOME ECS_HOME CSGUI_HOME
+export SYRCS_HOME CSHOMARD_HOME
+export PATH
 
 # Paths and libraries for MPI
-  if [ "$NOM_ARCH" = "calibre5" ] ; then
-    CS_MPI_PATH=/home/saturne/opt/openmpi-1.4/arch/$NOM_ARCH/bin
-  else
-    CS_MPI_PATH=
-  fi
-  export CS_MPI_PATH
+if [ "$NOM_ARCH" = "calibre5" ] ; then
+  CS_MPI_PATH=/home/saturne/opt/openmpi-1.4/arch/$NOM_ARCH/bin
+else
+  CS_MPI_PATH=
+fi
+export CS_MPI_PATH

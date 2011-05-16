@@ -1,7 +1,24 @@
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
-  Fixes for IVANOE port.
+  Updates for IVANOE port, which now uses SLURM.
+  To avoid priority issues with multiple batch systems in cases where
+  wrappers from one system to the other are installed, only one batch
+  option set is included in the lance script when creating a case.
+  added files:
+    aux/macros_old/batch_loadl.sh
+    aux/macros_old/batch_sge.sh
+    bin/batch_clamart2.sh
+    bin/batch_ivanoe.sh
+    bin/batch_platine.sh
+    bin/batch_titane.sh
   modified files:
+    bin/cree_sat
+    bin/cs_profile
     bin/lance
+    bin/macros_ivanoe.mk
+
+* 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix for compilation bug with recent tremai.c patch.
+  modified files:
     src/base/tremai.c
 
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>

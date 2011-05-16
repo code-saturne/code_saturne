@@ -54,86 +54,7 @@
   echo ' ' 
   exit 1
 # TEST_A_ENLEVER_POUR_UTILISER_LE_SOUS_PROGRAMME_FIN
-########################################################################
-#
-#                  BATCH FILE FOR THE CCRT (Titane or Platine under LSF)
-#                  =====================================================
-#
-#BSUB -n 2
-#BSUB -W 00:05  
-#BSUB -o nometcaso.%J 
-#BSUB -e nometcase.%J 
-#BSUB -J nometcas
-#
-#  -n : number of processors
-#  -W : walltime as hh:mm
-#  -o : output file name
-#  -e : error file name
-#  -J : job name
-#
-# ------------------------------------------------------------------
-#
-#                  BATCH FILE FOR THE Clamart2 CLUSTER (PBS)
-#                  =========================================
-#
-#PBS -l nodes=4:ppn=2,walltime=1:00:00,mem=320mb
-#PBS -j eo -N nometcas
-#
-#  nodes    : number of nodes
-#  ppn      : number of processes per node
-#  walltime : wall clock time (hh:mm:ss)
-#  mem      : memory
-#
-#WARNING: when coupling with SYRTHES, 1 processor will be reserved for each
-#         instance of SYRTHES. The Kernel will be executed on the remaining
-#         processors, so make sure to reserve a sufficiently high number
-#         of processors.
-#
-# ------------------------------------------------------------------
-#
-#                  BATCH FILE (Sun Grid Engine)
-#                  ============================
-#
-# set the name of the job
-##$ -N nometcas
-#
-# request between 2 and 4 slots
-##$ -pe mpich 2-4
-#
-# Execute the job from the current working directory
-# Job output will appear in this directory
-##$ -cwd
-#   can use -o dirname to redirect stdout
-#   can use -e dirname to redirect stderr
-
-#  Export these environment variables
-##$ -v MPI_HOME
-
-#set -x
-#
-# ------------------------------------------------------------------
-#
-#                  BATCH FILE (Loadlever)
-#                  ======================
-#
-#@ shell = /bin/bash
-#
-#@ job_name = nometcas
-#
-#@ job_type = mpich
-#@ node = 2
-#@ tasks_per_node = 6
-#@ node_usage = not_shared
-#@ class = standard
-#
-#@ wall_clock_limit = 00:20:00
-#
-#@ output = $(job_name).$(jobid).out
-#@ error  = $(job_name).$(jobid).err
-#@ notification = never
-#
-#@ queue
-#
+BATCHSETUP
 ########################################################################
 #
 # BEGINNING OF USER MODIFIABLE ZONE FOR STANDARD CALCULATIONS
@@ -247,8 +168,8 @@ export CS_HOME
 if [ "$NOM_ARCH" = "titane" ] ; then
   module load gcc/4.4.0 # some gcc path necessary for icc in bach mode
 elif [ "$NOM_ARCH" = "ivanoe" ] ; then
-  module load intel_compilers/11.1.072
-  module load open_mpi/intel/1.4.2
+  module load intel_compilers/12.0.3.174
+  module load open_mpi/intel/1.4.3
 fi
 #
 # Library compatibility check
@@ -328,6 +249,9 @@ else
   if [ "$SCRATCHDIR" != "" ] ; then
     RUN=$SCRATCHDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
 #
+  elif [ -d /scratch/$USER ] ; then
+    RUN=$TMPDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
+
   elif [ "$TMPDIR" != "" -a "$TMPDIR" != "/tmp" ] ; then
     RUN=$TMPDIR/tmp_Saturne/$ETUDE.$CAS.$DATE
   else
@@ -388,6 +312,8 @@ if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
   elif [ ! -z "${SLURM_NPROCS}" ] ; then
     # for LSF batch system with Slurm
     NOMBRE_DE_PROCESSEURS=$SLURM_NPROCS
+  elif [ ! -z "${SLURM_NNODES}" ] ; then
+    NOMBRE_DE_PROCESSEURS=`srun hostname -s | wc -w`
   elif [ ! -z "${LSB_HOSTS}" ] ; then
     # for LSF batch system without Slurm
     NOMBRE_DE_PROCESSEURS=`echo $LSB_HOSTS | wc -w`
@@ -403,10 +329,13 @@ if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
 fi
 #
 # Check number of nodes if possible
-NOMBRE_DE_NOEUDS=1
 if [ -z  "${NOMBRE_DE_PROCESSEURS}" ] ; then
-  if [ ! -z  "${MPIHOSTS}" ] ; then
+  if [ ! -z "${SLURM_NNODES}" ] ; then
+    NOMBRE_DE_NOEUDS=$SLURM_NNODES
+  elif [ ! -z  "${MPIHOSTS}" ] ; then
     NOMBRE_DE_NOEUDS=`sort $MPIHOSTS | sed -e 's/:/ /' | cut -f 1 -d" " | uniq | wc -l`
+  else
+    NOMBRE_DE_NOEUDS=1
   fi
 fi
 #
@@ -528,14 +457,7 @@ if [ $NOMBRE_DE_PROCESSEURS -gt 1 ] ; then
     MPIRUN="mpirun -n ${NOMBRE_DE_PROCESSEURS}"
 #
   elif [ "$NOM_ARCH" = "ivanoe" ] ; then
-    type mpdboot > /dev/null 2>&1
-    if [ $? = 0 ] ; then
-      # If we are using Intel MPI (MPICH2)
-      MPIRUN="mpirun -f ${LOADL_HOSTFILE} -np ${LOADL_TOTAL_TASKS}"
-    else
-      # If we are using Open MPI (MPICH2)
-      MPIRUN="mpirun --machinefile ${LOADL_HOSTFILE} -n ${LOADL_TOTAL_TASKS}"
-    fi
+    MPIRUN="mpiexec -n ${NOMBRE_DE_PROCESSEURS}"
 #
   else 
     if [ -d "$CS_MPI_PATH" ] ; then 
