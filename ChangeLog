@@ -1,3 +1,17 @@
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow disabling of front-end tools.
+  modified files:
+    Makefile.am
+    configure.ac
+    bin/cs_config.py.in
+    bin/cs_script.py
+    src/apps/Makefile.am
+
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix missing install of SLURM batch template.
+  modified file:
+    Makefile.am
+
 * 10/05/2011 - David Monfort <david.monfort@edf.fr>
   Removing the dependency to the number of phases (step 15).
   The number of phases (total and actual) are now totally suppressed from

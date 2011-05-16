@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009-2010 EDF
+#   Copyright (C) 2009-2011 EDF
 #
 #   The Code_Saturne Preprocessor is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -20,6 +20,7 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
+import os.path
 import sys
 
 #-------------------------------------------------------------------------------
@@ -38,6 +39,10 @@ class master_script:
                          'info':self.info,
                          'run':self.run,
                          'salome':self.salome}
+
+        if not os.path.isfile(os.path.join(package.pkgpythondir,
+                                           'Base', 'MainView.py')):
+            self.commands['gui'] = False
 
     def execute(self):
 
@@ -94,8 +99,12 @@ Options:
         return cs_create.main(options, self.package)
 
     def gui(self, options = None):
-        import cs_gui
-        return cs_gui.main(options, self.package)
+
+        if self.commands['gui']:
+            import cs_gui
+            return cs_gui.main(options, self.package)
+        else:
+            raise SystemExit("Graphical user interface not installed.")
 
     def info(self, options = None):
         import cs_info

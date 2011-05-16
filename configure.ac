@@ -27,23 +27,22 @@
 
 m4_define([cs_licence_c_comment],
 [/*
-   This file is part of the Code_Saturne Kernel, element of the
-   Code_Saturne CFD tool.
+   This file is part of the Code_Saturne CFD tool.
 
    Copyright (C) 2009-2011 EDF S.A., France
 
-   The Code_Saturne Kernel is free software; you can redistribute it
+   The Code_Saturne CFD tool is free software; you can redistribute it
    and/or modify it under the terms of the GNU General Public License
    as published by the Free Software Foundation; either version 2 of
    the License, or (at your option) any later version.
 
-   The Code_Saturne Kernel is distributed in the hope that it will be
+   The Code_Saturne CFD tool is distributed in the hope that it will be
    useful, but WITHOUT ANY WARRANTY; without even the implied warranty
    of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public Licence
-   along with the Code_Saturne Preprocessor; if not, write to the
+   along with the Code_Saturne CFD tool; if not, write to the
    Free Software Foundation, Inc.,
    51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */])
@@ -430,22 +429,22 @@ fi
 AM_CONDITIONAL(HAVE_LINK_CXX, test x$cs_have_link_cxx = xyes)
 
 #------------------------------------------------------------------------------
-# Enables Code_Saturne preprocessor
+# Enables Code_Saturne front-end 
 #------------------------------------------------------------------------------
 
-AC_ARG_ENABLE(prepro, [AS_HELP_STRING([--disable-prepro],
-                                      [disable the Preprocessor])],
+AC_ARG_ENABLE(frontend, [AS_HELP_STRING([--disable-frontend],
+                                        [disable front-end elements])],
   [
     case "${enableval}" in
-      yes) cs_have_prepro=yes ;;
-      no)  cs_have_prepro=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-prepro]) ;;
+      yes) cs_have_frontend=yes ;;
+      no)  cs_have_frontend=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-frontend]) ;;
     esac
   ],
-  [ cs_have_prepro=yes ]
+  [ cs_have_frontend=yes ]
 )
-AM_CONDITIONAL(HAVE_PREPROCESSOR, test x$cs_have_prepro = xyes)
-AC_SUBST(cs_have_prepro)
+AM_CONDITIONAL(HAVE_FRONTEND, test x$cs_have_frontend = xyes)
+AC_SUBST(cs_have_frontend)
 
 #------------------------------------------------------------------------------
 # Checks for Python support.
@@ -469,6 +468,10 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
   ],
   [ cs_have_gui=yes ]
 )
+
+if test "x$cs_have_frontend" = "xno" ; then
+  cs_have_gui=no
+fi
 
 #------------------------------------------------------------------------------
 # Checks for PyQt support.
@@ -886,8 +889,11 @@ echo
 echo "Configuration options:"
 echo " use debugging code: "$debug""
 echo " use malloc hooks: "$cs_have_malloc_hooks""
-echo " use graphical user interface: "$cs_have_gui""
-echo " use preprocessor: "$cs_have_prepro""
+if test x$cs_have_frontend = xno ; then
+  echo " use frontend: no"
+else
+  echo " use graphical user interface: "$cs_have_gui""
+fi
 echo " use long integers: "$cs_have_long_gnum""
 echo " Zlib (gzipped file) support: "$cs_have_zlib""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""

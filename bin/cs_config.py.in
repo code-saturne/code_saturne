@@ -121,7 +121,7 @@ class config:
         self.features['debug'] = "@debug@"
         self.features['shared'] = "@enable_shared@"
         self.features['gui'] = "@cs_have_gui@"
-        self.features['prepro'] = "@cs_have_prepro@"
+        self.features['frontend'] = "@cs_have_frontend@"
         self.features['openmp'] = "@cs_have_openmp@"
         self.features['socket'] = "@cs_have_socket@"
         self.features['long-gnum'] = "@cs_have_long_gnum@"

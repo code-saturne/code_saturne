@@ -84,11 +84,15 @@ endif
 
 # Code_Saturne IO utility program
 
+if HAVE_FRONTEND
 bin_PROGRAMS += cs_io_dump
+endif
 
 # Code_Saturne syntax checker
 
+if HAVE_FRONTEND
 bin_PROGRAMS += cs_check_syntax
+endif
 
 # MPI partitioning program
 
@@ -113,9 +117,13 @@ $(FCLIBS)
 
 # Code_Saturne IO utility (minimal dependencies)
 
+if HAVE_FRONTEND
 cs_io_dump_SOURCES = cs_io_dump.c
+endif
 
 # Code_Saturne syntax checker
+
+if HAVE_FRONTEND
 
 cs_check_syntax_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
@@ -126,7 +134,9 @@ $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/bft/libbft.la \
 -lm
 
-# Conditionally compiled executables
+endif
+
+# Code_Saturne partitioner
 
 if HAVE_PARTITIONER
 

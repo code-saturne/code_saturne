@@ -23,7 +23,7 @@ if HAVE_GUI
 GUI = gui
 endif
 
-if HAVE_PREPROCESSOR
+if HAVE_FRONTEND
 PREPRO = preprocessor
 endif
 
