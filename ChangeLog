@@ -1,3 +1,9 @@
+* 12/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add SLURM support and improve batch system handling support.
+  modified files:
+    bin/cs_exec_environment.py
+    bin/runcase_mpi_env
+
 * 09/05/2011 - David Monfort <david.monfort@edf.fr>
   Correct access to two arrays depending on the scalar number and not
   the phase number.
