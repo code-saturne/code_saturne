@@ -117,7 +117,7 @@ void CS_PROCF (tremai, TREMAI) (double  *tps,
   if (cs_glob_base_nbr > 1) {
     double buf[2];
     buf[0] = *ret; buf[1] = *tps;
-    MPI_Bcast(buf, 2, MPI_DOUBLE, 0, cs_glob_mpi_comm);
+    MPI_Bcast(buf, 2, MPI_DOUBLE, 0, cs_glob_base_mpi_comm);
     *ret = buf[0]; *tps = buf[1];
   }
 #endif
