@@ -1,4 +1,11 @@
 * 16/05/2011 - David Monfort <david.monfort@edf.fr>
+  Prefer "var(:) = 0" syntax to "var = 0" for Fortran 90 arrays
+  initialization.
+  modified routines:
+    users/base/usdpst.f90
+    users/lagr/uslast.f90
+
+* 16/05/2011 - David Monfort <david.monfort@edf.fr>
   Replace lstelt workarrays with local dynamically-allocated arrays.
   modified routines:
     src/atmo/atiniv.f90

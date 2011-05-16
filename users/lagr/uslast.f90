@@ -396,7 +396,7 @@ if (1.eq.0) then
 
     ! Allocate a temporary array to mark the nodes already used
     allocate(node_mask(nnod))
-    node_mask = 0
+    node_mask(:) = 0
 
     do iplan = 1,8
 

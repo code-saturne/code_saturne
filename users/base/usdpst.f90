@@ -311,7 +311,7 @@ do ipart = 1, nbpart
     allocate(fam_list(nfml))
     allocate(fam_mask(nfml))
 
-    fam_mask = 0
+    fam_mask(:) = 0
 
     ! Build mask on families matching colors 2 (1), 3 (2)
 
