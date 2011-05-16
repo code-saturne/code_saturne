@@ -98,9 +98,6 @@ struct _ecs_post_ens_t {
   char                  *prefixe_rep;    /* Préfixe du répertoire EnSight  */
   char                  *prefixe_fic;    /* Préfixe des fichiers EnSight */
   char                  *nom_fic_case;   /* Nom du fichier "case" */
-  int                    nbr_var;        /* Nombre de variables */
-  char                 **nom_var;        /* Noms des variables */
-  char                 **ligne_var;      /* Ligne pour une variable  */
 
   int                    nbr_part;       /* Nombre de ``parts'' géométrie */
   ecs_post_ens_part_t  **tab_part;       /* Descripteurs des ``parts'' */

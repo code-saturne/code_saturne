@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-05-16 16:57+0200\n"
+"POT-Creation-Date: 2011-05-16 17:04+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -447,9 +447,6 @@ msgstr "Temps     total                     (sec)"
 msgid "Total CPU time / Total time              "
 msgstr "Temps CPU total / Temps total            "
 
-msgid "Creating file:"
-msgstr "Création du fichier :"
-
 #, c-format
 msgid ""
 "\n"
@@ -554,9 +551,6 @@ msgstr ""
 msgid "There is/are %lu isolated face(s)\n"
 msgstr "On compte %lu face(s) isolée(s)\n"
 
-msgid "Dump mesh structure to file"
-msgstr "Dump de la structure maillage dans le fichier"
-
 #, c-format
 msgid ""
 "\n"
@@ -599,9 +593,6 @@ msgstr "  Nombre de sommets :                         %10d\n"
 
 msgid "Connectivity Error Faces"
 msgstr "Faces erreur connectivite"
-
-msgid "connectivity_error"
-msgstr "erreur_connectivite"
 
 #, c-format
 msgid ""
@@ -818,6 +809,9 @@ msgstr ""
 "CGNS : échec à l'ouverture du fichier \"%s\" :\n"
 "%s"
 
+msgid "Creating file:"
+msgstr "Création du fichier :"
+
 #, c-format
 msgid ""
 "CGNS: error writing file \"%s\":\n"
@@ -869,10 +863,6 @@ msgstr ""
 "MED : erreur a l'écriture du fichier \"%s\".\n"
 "Nom du maillage : \"%s\"\n"
 "dimension du maillage : \"%d\" / de l'espace : \"%d\""
-
-#, c-format
-msgid "Field \"%s\" has already been defined in file \"%s\"\n"
-msgstr "Le champ \"%s\" a déjà été défini dans le fichier \"%s\"\n"
 
 msgid "EnSight (6 or Gold)"
 msgstr "EnSight (6 ou Gold)"
@@ -2497,14 +2487,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"MED: error writing file \"%s\".\n"
-"Error creating field \"%s\"\n"
-msgstr ""
-"MED : erreur a l'écriture du fichier \"%s\".\n"
-"Erreur à la création du champ \"%s\"\n"
-
-#, c-format
-msgid ""
 "CGNS: no mesh named \"%s\".\n"
 "is associated to file: \"%s\"\n"
 msgstr ""
@@ -2517,27 +2499,6 @@ msgid ""
 "%s"
 msgstr ""
 "CGNS : échec à la réouverture du fichier \"%s\" :\n"
-"%s"
-
-msgid "Mesh_values"
-msgstr "Grandeurs_maillage"
-
-#, c-format
-msgid ""
-"CGNS: error writing a solution node\n"
-"File name: \"%s\"; base : \"1\"\n"
-"%s"
-msgstr ""
-"CGNS : échec à l'écriture d'un noeud solution\n"
-"Nom du fichier : \"%s\" ; base : \"1\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"CGNS: error writing field \"%s\"\n"
-"%s"
-msgstr ""
-"CGNS : échec à l'écriture du champ \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2634,28 +2595,6 @@ msgid ""
 msgstr ""
 "MED : erreur a l'écriture du fichier \"%s\".\n"
 "Erreur à l'écriture des familles."
-
-#, c-format
-msgid "Geometric type \"%d\" has no MED equivalent."
-msgstr "Le type géométrique \"%d\" n'a pas d'équivalent MED."
-
-#, c-format
-msgid ""
-"MED: error writing file \"%s\".\n"
-"Error writing field \"%s\"."
-msgstr ""
-"MED : erreur à l'écriture du fichier \"%s\".\n"
-"Erreur a l'écriture du champ \"%s\"."
-
-#, c-format
-msgid ""
-"MED: error writing field \"%s\".\n"
-"Incompatibility between the number of elements to write (%d)\n"
-"and the dimensions of mesh \"%s\"."
-msgstr ""
-"MED : erreur à l'écriture du champ \"%s\".\n"
-"Incohérence entre les nombre d'élements à écrire (%d) et\n"
-"les dimensions su maillage \"%s\"."
 
 #, c-format
 msgid ""

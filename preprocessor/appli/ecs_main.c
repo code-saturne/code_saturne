@@ -102,9 +102,6 @@
  *----------------------------------------------------------------------------*/
 
 
-const char nom_fic_dump[] = "preprocessor_dump.txt";
-
-
 /*============================================================================
  *                              Fonctions privées
  *============================================================================*/
@@ -174,8 +171,6 @@ _lit_maillage(const ecs_cmd_t *cmd)
   ecs_maillage_t  *maillage = NULL;
   ecs_maillage_t  *maillage_lu = NULL;
 
-  char            *chaine;
-
   const char titre[] = "Apres lecture du fichier de maillage ";
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -192,39 +187,13 @@ _lit_maillage(const ecs_cmd_t *cmd)
                                         cmd->grp_fac_section,
                                         cmd->grp_fac_zone);
 
-    /* Affichage des infos maillage */
-
-    ECS_MALLOC(chaine,
-               strlen(titre) + strlen(cmd->fic_maillage) + 1,
-               char);
-
-    strcpy(chaine, titre);
-    strcat(chaine, cmd->fic_maillage);
-
-    if (cmd->nbr_dump > 0) {
-
-      ecs_maillage__imprime(maillage_lu,
-                            nom_fic_dump,
-                            cmd->nbr_dump,
-                            chaine);
-
-    }
-
     if (ific == 0)
       maillage = maillage_lu;
 
     else
       ecs_maillage__concatene_nodal(maillage, maillage_lu);
 
-    ECS_FREE(chaine);
-
   } /* Fin : boucle sur les fichiers de maillage à lire */
-
-  if (cmd->n_num_maillage > 1 && cmd->nbr_dump > 0)
-    ecs_maillage__imprime(maillage,
-                          nom_fic_dump,
-                          cmd->nbr_dump,
-                          "After concatenation of meshes from file");
 
   if (cmd->n_num_maillage == 1)
     printf (_("\nDone reading mesh"
@@ -232,6 +201,9 @@ _lit_maillage(const ecs_cmd_t *cmd)
   else
     printf (_("\nDone reading and concatenating meshes"
               "\n-------------------------------------\n"));
+
+  if (cmd->nbr_dump > 0)
+    ecs_maillage__imprime(maillage, cmd->nbr_dump);
 
   _aff_taille_maillage(maillage);
 
@@ -251,7 +223,7 @@ _init_post(const ecs_cmd_t *cmd)
   ecs_post_t     *cas_post;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
- 
+
   cas_post = ecs_post__cree_cas(cmd->nom_cas);
 
   if (!strcmp(cmd->post_err, "ens"))
@@ -439,19 +411,6 @@ main(int    argc,
   cmd = ecs_cmd__lit_arg(argc, argv);
 
 
-  /*=========================================================*/
-  /* Début du traitement en fonction de la ligne de commande */
-  /*=========================================================*/
-
-  if (cmd->nbr_dump > 0) {
-    /* Pour écraser le fichier d'impression d'une précédente execution */
-    fic_imp = ecs_file_open(nom_fic_dump,
-                            ECS_FILE_MODE_WRITE, ECS_FILE_TYPE_TEXT);
-    printf("  %s %s\n", _("Creating file:"), nom_fic_dump);
-    ecs_file_free(fic_imp);
-  }
-
-
   /*==========================================================================*/
   /* Lecture des fichiers d'entrée contenant les maillages                    */
   /*==========================================================================*/
@@ -536,14 +495,6 @@ main(int    argc,
   /* Passage en connectivité descendante */
 
   ecs_maillage__connect_descend(maillage);
-
-
-  if (cmd->nbr_dump > 0)
-    ecs_maillage__imprime(maillage,
-                          nom_fic_dump,
-                          cmd->nbr_dump,
-                          "Descending connectivity");
-
 
   printf (_("\nEnd of conversion to descending connectivity"
             "\n--------------------------------------------\n"));

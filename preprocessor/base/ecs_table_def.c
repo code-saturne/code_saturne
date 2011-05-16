@@ -1123,6 +1123,11 @@ _orient_polyhedron(const ecs_coord_t   coord[],
       }
     }
 
+    if (face_index->nbr < n_faces + 1) {
+      face_index->nbr = ECS_MAX(n_faces + 1, face_index->nbr*2);
+      ECS_REALLOC(face_index->val, face_index->nbr, ecs_int_t);
+    }
+
     face_index->val[n_faces] = size;
 
     /* face_marker: 0 initially, 1 if oriented, -1 if inverted */
@@ -3068,78 +3073,6 @@ ecs_table_def__fac_cel(ecs_table_t  *table_def_cel,
   ecs_table__libere_pos(table_def_cel);
 
   return fac_cel;
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie un tableau associant à chaque cellule un code
- * en fonction des erreurs de connectivité éventuelles associées à cette
- * cellule (0 si pas d'erreur, 1 si une des faces définissant cette cellule
- * s'appuie sur plusieurs cellules du même côté).
- *----------------------------------------------------------------------------*/
-
-ecs_tab_int_t
-ecs_table_def__err_cel_connect(ecs_table_t          *table_def_cel,
-                               const ecs_tab_int_t  *typ_fac_cel)
-{
-  size_t      nbr_cel;
-  ecs_int_t   num_fac;
-  size_t      icel;
-  size_t      ifac;
-  size_t      ipos;
-
-  ecs_tab_int_t   typ_cell_connect;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  typ_cell_connect.nbr = 0;
-  typ_cell_connect.val = NULL;
-
-  if (table_def_cel == NULL)
-    return typ_cell_connect;
-
-  ecs_table__regle_en_pos(table_def_cel);
-
-  /* Initialisations */
-
-  nbr_cel = table_def_cel->nbr;
-
-  /* Allocation et mise à zéro du tableau */
-
-  typ_cell_connect.nbr = nbr_cel;
-
-  ECS_MALLOC(typ_cell_connect.val, typ_cell_connect.nbr, ecs_int_t);
-
-  for (icel = 0; icel < typ_cell_connect.nbr; icel++)
-    typ_cell_connect.val[icel] = 0;
-
-  /* Boucle sur les cellules */
-  /*-------------------------*/
-
-  for (icel = 0; icel < nbr_cel; icel++ ) {
-
-    for (ipos = table_def_cel->pos[icel] - 1;
-         ipos < table_def_cel->pos[icel+1] - 1;
-         ipos++) {
-
-      num_fac = table_def_cel->val[ipos];
-
-      ifac = ECS_ABS(num_fac) - 1;
-
-      if (num_fac > 0) {
-        if (typ_fac_cel->val[ifac] & 4)
-          typ_cell_connect.val[icel] = 1;
-      }
-      else {
-        if (typ_fac_cel->val[ifac] & 8)
-          typ_cell_connect.val[icel] = 1;
-      }
-
-    }
-  }
-
-  ecs_table__libere_pos(table_def_cel);
-
-  return typ_cell_connect;
 }
 
 /*----------------------------------------------------------------------------*/

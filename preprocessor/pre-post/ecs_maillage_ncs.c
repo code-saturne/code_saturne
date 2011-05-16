@@ -8,7 +8,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -308,7 +308,6 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
     else {
 
       assert(maillage->famille[ient] == NULL);
-
       nbr_fam_ent[ient] = 0;
 
     }
@@ -407,7 +406,7 @@ _maillage_ncs__cree_fam(const ecs_maillage_t    *maillage,
 
   bool_cree_fam_par_defaut = false;
   for (ient = 0; ient < 4; ient++) {
-    if (cpt_elt_fam[(num_fam_defaut-1)*4] > 0)
+    if (cpt_elt_fam[(num_fam_defaut-1)*4 + ient] > 0)
       bool_cree_fam_par_defaut = true;
   }
 

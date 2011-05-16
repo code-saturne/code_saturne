@@ -850,11 +850,14 @@ ecs_table__transforme_tableau(size_t                nbr_elt,
 size_t
 ecs_table__ret_elt_nbr(const ecs_table_t  *this_table)
 {
+  size_t retval = 0;
+
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  assert(this_table   != NULL);
+  if (this_table != NULL)
+    retval = this_table->nbr;
 
-  return this_table->nbr;
+  return retval;
 }
 
 

@@ -155,88 +155,6 @@ ecs_loc_table_post_cgns__base(const ecs_post_cgns_t  *cas_cgns,
   return  base_cgns;
 }
 
-/*----------------------------------------------------------------------------
- * Write per-element values for a given array.
- *
- * Values corresponding to polyhedra are ignored.
- *---------------------------------------------------------------------------*/
-
-static void
-_table_post_cgns__ecr_fam(const int        *elt_fam,
-                          const char       *nom_maillage,
-                          ecs_post_cgns_t  *cas_cgns)
-{
-  ecs_post_cgns_base_t  *base_cgns;
-
-  /* Declarations des variables pour CGNS */
-  /*-------------------------------------*/
-
-  char  nom_table_cgns[ECS_CGNS_TAILLE_NOM + 1];
-
-  CS_CG_ENUM(DataType_t)  type_val_cgns;
-
-  int  num_sol;
-  int  num_table;
-  int  ret_cgns;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(elt_fam != NULL);
-
-  /* Recherche de la base CGNS */
-  /*---------------------------*/
-
-  base_cgns = ecs_loc_table_post_cgns__base(cas_cgns,
-                                            nom_maillage);
-
-  if (base_cgns == NULL)
-    return;
-
-  /* Ajout d'une solution au cas CGNS si nécessaire */
-  /*------------------------------------------------*/
-
-  if (base_cgns->num_sol_stat < 0) {
-
-    if (cg_sol_write(base_cgns->num_fic,
-                     1,
-                     1,
-                     _("Mesh_values"),
-                     CS_CG_ENUM(CellCenter),
-                     &num_sol) != CG_OK)
-
-      ecs_error(__FILE__, __LINE__, 0,
-                _("CGNS: error writing a solution node\n"
-                  "File name: \"%s\"; base : \"1\"\n%s"),
-                base_cgns->nom_fic, cg_get_error());
-
-    base_cgns->num_sol_stat = num_sol;
-  }
-
-  /* Nom de la table */
-
-  strncpy(nom_table_cgns, _("Family"), ECS_CGNS_TAILLE_NOM);
-  nom_table_cgns[ECS_CGNS_TAILLE_NOM] = '\0';
-
-  /* Écriture de la table */
-  /*----------------------*/
-
-  type_val_cgns = CS_CG_ENUM(Integer);
-
-  ret_cgns = cg_field_write(base_cgns->num_fic,
-                            1,
-                            1,
-                            base_cgns->num_sol_stat,
-                            type_val_cgns,
-                            nom_table_cgns,
-                            elt_fam,
-                            &num_table);
-
-  if (ret_cgns != CG_OK)
-    ecs_error(__FILE__, __LINE__, 0,
-              _("CGNS: error writing field \"%s\"\n%s"),
-              nom_table_cgns, cg_get_error());
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -253,7 +171,6 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
                                  size_t                 n_vertices,
                                  const ecs_coord_t      vertex_coords[],
                                  ecs_table_t           *table_def,
-                                 const int              elt_fam[],
                                  const ecs_tab_int_t   *tab_elt_typ_geo,
                                  ecs_post_cgns_t       *cas_cgns)
 {
@@ -514,104 +431,6 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
   /*---------------------------*/
 
   ecs_table__libere_pos_tab(table_def, def_pos_tab);
-
-  /* Familles des éléments */
-  /*-----------------------*/
-
-  if (elt_fam != NULL)
-    _table_post_cgns__ecr_fam(elt_fam,
-                              nom_maillage,
-                              cas_cgns);
-}
-
-/*----------------------------------------------------------------------------
- * Write per-element values for a given array.
- *
- * Values corresponding to polyhedra are ignored.
- *---------------------------------------------------------------------------*/
-
-void
-ecs_table_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
-                             const char           *nom_maillage,
-                             const char           *nom_table,
-                             ecs_post_cgns_t      *cas_cgns)
-{
-  ecs_post_cgns_base_t  *base_cgns;
-
-  /* Declarations des variables pour CGNS */
-  /*-------------------------------------*/
-
-  char               nom_table_cgns[ECS_CGNS_TAILLE_NOM + 1];
-
-  CS_CG_ENUM(DataType_t)  type_val_cgns;
-
-  int                num_sol;
-  int                num_table;
-  int                ret_cgns;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(tab_val != NULL);
-
-  /* Recherche de la base CGNS */
-  /*---------------------------*/
-
-  base_cgns = ecs_loc_table_post_cgns__base(cas_cgns,
-                                            nom_maillage);
-
-  if (base_cgns == NULL)
-    return;
-
-  /* Ajout d'une solution au cas CGNS si nécessaire */
-  /*------------------------------------------------*/
-
-  if (base_cgns->num_sol_stat < 0) {
-
-    if (cg_sol_write(base_cgns->num_fic,
-                     1,
-                     1,
-                     _("Mesh_values"),
-                     CS_CG_ENUM(CellCenter),
-                     &num_sol) != CG_OK)
-
-      ecs_error(__FILE__, __LINE__, 0,
-                _("CGNS: error writing a solution node\n"
-                  "File name: \"%s\"; base : \"1\"\n%s"),
-                base_cgns->nom_fic, cg_get_error());
-
-    base_cgns->num_sol_stat = num_sol;
-
-  }
-
-  /* Nom de la table */
-
-  strncpy(nom_table_cgns, nom_table, ECS_CGNS_TAILLE_NOM);
-  nom_table_cgns[ECS_CGNS_TAILLE_NOM] = '\0';
-
-  /* Écriture de la table */
-  /*----------------------*/
-
-  assert(sizeof(ecs_int_t) == sizeof(int));
-
-  type_val_cgns = CS_CG_ENUM(Integer);
-
-  if (tab_val->nbr > 0) {
-
-    ret_cgns = cg_field_write(base_cgns->num_fic,
-                              1,
-                              1,
-                              base_cgns->num_sol_stat,
-                              type_val_cgns,
-                              nom_table_cgns,
-                              (void *)tab_val->val,
-                              &num_table);
-
-    if (ret_cgns != CG_OK)
-      ecs_error(__FILE__, __LINE__, 0,
-                _("CGNS: error writing field \"%s\"\n%s"),
-                nom_table_cgns, cg_get_error());
-
-  }
 }
 
 #endif /* HAVE_CGNS */

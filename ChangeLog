@@ -1,4 +1,33 @@
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Further Preprocessor simplifications.
+  removed files:
+    preprocessor/appli/ecs_cmd_priv.h
+  modified files:
+    po/fr.po
+    preprocessor/appli/ecs_main.c
+    preprocessor/base/ecs_maillage.c
+    preprocessor/base/ecs_maillage.h
+    preprocessor/base/ecs_table.c
+    preprocessor/base/ecs_table_def.c
+    preprocessor/base/ecs_table_def.h
+    preprocessor/pre-post/ecs_maillage_ncs.c
+    preprocessor/pre-post/ecs_med_priv.h
+    preprocessor/pre-post/ecs_post_cgns.c
+    preprocessor/pre-post/ecs_post_cgns_priv.h
+    preprocessor/pre-post/ecs_post_ens.c
+    preprocessor/pre-post/ecs_post_ens_priv.h
+    preprocessor/pre-post/ecs_post_med.c
+    preprocessor/pre-post/ecs_post_med.h
+    preprocessor/pre-post/ecs_table_post.c
+    preprocessor/pre-post/ecs_table_post_cgns.c
+    preprocessor/pre-post/ecs_table_post_cgns.h
+    preprocessor/pre-post/ecs_table_post_ens.c
+    preprocessor/pre-post/ecs_table_post_ens.h
+    preprocessor/pre-post/ecs_table_post.h
+    preprocessor/pre-post/ecs_table_post_med.c
+    preprocessor/pre-post/ecs_table_post_med.h
+
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Preprocessor: simpler handling of kernel output family info logging.
   modified files:
     po/fr.po

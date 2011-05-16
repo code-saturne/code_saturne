@@ -175,11 +175,6 @@ typedef struct {
   char               *nom_maillage;      /* Nom du maillage MED */
   char                nom_maillage_med[MED_NAME_SIZE + 1];  /* Nom MED */
 
-  ecs_int_t           dim_entite;        /* Dimension entité max. */
-  ecs_int_t           nbr_typ_ele;       /* Nombre de types d'éléments */
-  ecs_int_t          *nbr_ele_typ;       /* Nombre d'éléments par type */
-  med_geometry_type  *med_typ;           /* Types MED des élements */
-
 } ecs_med_maillage_t;
 
 /* Structure définissant un cas MED */
@@ -191,9 +186,6 @@ struct _ecs_med_t {
 
   med_idt                fid;             /* Identificateur de fichier MED */
   med_int                version[3];      /* MED version used to write file */
-
-  ecs_int_t              nbr_var;         /* Nombre de variables */
-  char                 **nom_var;         /* Noms des variables */
 
   ecs_int_t              nbr_maillages;   /* Nombre de maillages */
   ecs_med_maillage_t   **tab_maillages;   /* Descripteurs des maillages */

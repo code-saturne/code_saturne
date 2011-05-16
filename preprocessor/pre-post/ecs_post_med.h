@@ -102,24 +102,6 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
                               const ecs_int_t   dim_m,
                               ecs_med_t        *cas_med);
 
-
-/*----------------------------------------------------------------------------
- *  Fonction vérifiant si un champ figure dans la liste des champs du cas
- *----------------------------------------------------------------------------*/
-
-bool
-ecs_post_med__test_champ_liste(const char  *nom_champ,
-                               ecs_med_t   *cas_med);
-
-
-/*----------------------------------------------------------------------------
- *  Fonction ajoutant un champ à la liste des champs du cas
- *----------------------------------------------------------------------------*/
-
-void
-ecs_post_med__ajoute_champ_liste(const char  *nom_champ,
-                                 ecs_med_t   *cas_med);
-
 #endif /* HAVE_MED */
 
 /*----------------------------------------------------------------------------*/

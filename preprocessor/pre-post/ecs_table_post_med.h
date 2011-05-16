@@ -113,26 +113,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                             const ecs_tab_int_t  *tab_elt_typ_geo,
                             const ecs_med_t      *cas_med);
 
-/*----------------------------------------------------------------------------
- *  Fonction qui ajoute à une structure maillage_med les informations
- *   sur le nombre d'éléments de chaque type d'un maillage
- *----------------------------------------------------------------------------*/
-
-void
-ecs_table_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
-                                const char           *nom_maillage,
-                                ecs_med_t            *cas_med);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui écrit les valeurs par élément pour un tableau donné.
- *----------------------------------------------------------------------------*/
-
-void
-ecs_table_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
-                            const char           *nom_maillage,
-                            const char           *nom_table,
-                            const ecs_med_t      *cas_med);
-
 #endif /* HAVE_MED */
 
 /*----------------------------------------------------------------------------*/

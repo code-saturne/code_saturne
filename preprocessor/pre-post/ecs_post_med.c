@@ -113,9 +113,6 @@ ecs_post_med__cree_cas(const char  *nom_cas)
       cas_med->nom_fic[ind] = '_';
   }
 
-  cas_med->nbr_var = 0;
-  cas_med->nom_var = NULL;
-
   cas_med->nbr_maillages = 0;
   cas_med->tab_maillages = NULL;
 
@@ -160,20 +157,11 @@ ecs_post_med__detruit_cas(ecs_med_t  *cas_med)
     ECS_FREE(cas_med->nom_cas);
     ECS_FREE(cas_med->nom_fic);
 
-    for (ind = 0; ind < cas_med->nbr_var; ind++)
-      ECS_FREE(cas_med->nom_var[ind]);
-
-    ECS_FREE(cas_med->nom_var);
-    cas_med->nbr_var = 0;
-
     for (ind = 0; ind < cas_med->nbr_maillages; ind++) {
 
       maillage_med = cas_med->tab_maillages[ind];
 
       ECS_FREE(maillage_med->nom_maillage);
-      ECS_FREE(maillage_med->nbr_ele_typ);
-      ECS_FREE(maillage_med->med_typ);
-
       ECS_FREE(maillage_med);
 
     }
@@ -292,15 +280,6 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
     maillage_med->nom_maillage_med[ind] = '\0';
   maillage_med->nom_maillage_med[MED_NAME_SIZE] = '\0';
 
-  /* BUG: En théorie, on devrait utiliser
-     maillage_med->dim_entite = dim_entite;
-     mais L'API MED 2.x est incohérente */
-
-  maillage_med->dim_entite = 3;
-  maillage_med->nbr_typ_ele = 0;
-  maillage_med->nbr_ele_typ = NULL;
-  maillage_med->med_typ = NULL;
-
   cas_med->nbr_maillages += 1;
   ECS_REALLOC(cas_med->tab_maillages,
               cas_med->nbr_maillages,
@@ -313,7 +292,7 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
 
   ret_med = MEDmaaCr(cas_med->fid,
                      maillage_med->nom_maillage_med,
-                     (med_int)(maillage_med->dim_entite),
+                     3,
                      MED_NON_STRUCTURE,
                      desc_maillage_med);
 
@@ -322,7 +301,7 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
   ret_med = MEDmeshCr(cas_med->fid,
                       maillage_med->nom_maillage_med,
                       (med_int)3,
-                      (med_int)(maillage_med->dim_entite),
+                      (med_int)(dim_m),
                       MED_UNSTRUCTURED_MESH,
                       desc_maillage_med,
                       dtunit,
@@ -354,51 +333,6 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
                 "mesh dimension: \"%d\", space dimension: \"%d\""),
               cas_med->nom_fic, maillage_med->nom_maillage_med,
               (int)dim_m, 3);
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction vérifiant si un champ figure dans la liste des champs du cas
- *----------------------------------------------------------------------------*/
-
-bool
-ecs_post_med__test_champ_liste(const char  *nom_champ,
-                               ecs_med_t   *cas_med)
-{
-  ecs_int_t  ind;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  for (ind = 0;
-       ind < cas_med->nbr_var
-         && strncmp(nom_champ, cas_med->nom_var[ind], MED_NAME_SIZE) != 0;
-       ind++);
-
-  if (ind < cas_med->nbr_var)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction ajoutant un champ à la liste des champs du cas
- *----------------------------------------------------------------------------*/
-
-void
-ecs_post_med__ajoute_champ_liste(const char  *nom_champ,
-                                 ecs_med_t   *cas_med)
-{
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  if (ecs_post_med__test_champ_liste(nom_champ, cas_med) == true)
-    ecs_error(__FILE__, __LINE__, 0,
-              _("Field \"%s\" has already been defined in file \"%s\"\n"),
-              nom_champ, cas_med->nom_fic);
-
-  cas_med->nbr_var += 1;
-  ECS_REALLOC(cas_med->nom_var, cas_med->nbr_var, char *);
-  ECS_MALLOC(cas_med->nom_var[cas_med->nbr_var - 1], MED_NAME_SIZE + 1, char);
-  strncpy(cas_med->nom_var[cas_med->nbr_var - 1], nom_champ, MED_NAME_SIZE);
-  cas_med->nom_var[cas_med->nbr_var - 1][MED_NAME_SIZE] = '\0';
 }
 
 /*----------------------------------------------------------------------------*/

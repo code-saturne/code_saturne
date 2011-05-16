@@ -190,24 +190,13 @@ ecs_table_def__typ_fac_cel(ecs_table_t  *table_def_cel,
  * cellule correspondante directe (la périodicité n'est donc pas prise en
  * compte à ce niveau).
  *
- * On suppose que la cohérence du maillage a déjà été véridifiée et
+ * On suppose que la cohérence du maillage a déjà été vérifiée et
  * qu'aucune face n'appartient à plus d'une cellule par côté.
  *----------------------------------------------------------------------------*/
 
 ecs_tab_int_t
 ecs_table_def__fac_cel(ecs_table_t  *table_def_cel,
                        ecs_table_t  *table_def_fac);
-
-/*----------------------------------------------------------------------------
- *  Fonction qui renvoie un tableau associant à chaque cellule un code
- * en fonction des erreurs de connectivité éventuelles associées à cette
- * cellule (0 si pas d'erreur, 1 si une des faces définissant cette cellule
- * s'appuie sur plusieurs cellules du même côté).
- *----------------------------------------------------------------------------*/
-
-ecs_tab_int_t
-ecs_table_def__err_cel_connect(ecs_table_t          *table_def_cel,
-                               const ecs_tab_int_t  *typ_fac_cel);
 
 /*----------------------------------------------------------------------------*/
 

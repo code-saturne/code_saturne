@@ -926,15 +926,12 @@ ecs_maillage__detruit(ecs_maillage_t  **maillage)
 
 /*----------------------------------------------------------------------------
  *  Fonction imprimant le contenu d'une structure `ecs_maillage_t' donnée
- *   dans le fichier de nom donné
- *   précédé par le `titre'
+ *   dans le fichier preprocessor_dump.txt
  *----------------------------------------------------------------------------*/
 
 void
 ecs_maillage__imprime(const ecs_maillage_t  *maillage,
-                      const char            *nom_fichier_dump,
-                      const ecs_int_t        nbr_imp,
-                      const char            *titre)
+                      const ecs_int_t        nbr_imp)
 {
   const char *nom_typ_c[2] = {
     "ECS_MAILLAGE_CONNECT_NODALE",
@@ -981,19 +978,12 @@ ecs_maillage__imprime(const ecs_maillage_t  *maillage,
   /* Ouverture du fichier d'impression */
   /*===================================*/
 
-  f = fopen(nom_fichier_dump, "a");
+  f = fopen("preprocessor_dump.txt", "w");
 
   /* Message sur la sortie standard */
   /*================================*/
 
-  printf("\n\n%s %s\n%s\n\n",
-         _("Dump mesh structure to file"),
-         nom_fichier_dump, titre);
-
-  /* Écriture du titre */
-  /*===================*/
-
-  fprintf(f, "\n\n%s\n\n", titre );
+  printf("\n\nMesh structure after reading input\n\n");
 
   /* Connectivity type */
   /*-------------------*/
@@ -1806,7 +1796,7 @@ ecs_maillage__verif(ecs_maillage_t  *maillage,
   size_t  nbr_cel, nbr_fac, nbr_som;
   size_t  nbr_fac_erreur, nbr_fac_interne, nbr_fac_de_bord, nbr_fac_isolee;
 
-  ecs_tab_int_t  typ_fac_cel, indic_erreur_cel;
+  ecs_tab_int_t  typ_fac_cel;
   ecs_tab_int_t  liste_fac_erreur;
 
   bool  bool_coherent;
@@ -1868,8 +1858,6 @@ ecs_maillage__verif(ecs_maillage_t  *maillage,
     printf(_("  Number of vertices:                         %10d\n"),
            (int)nbr_som);
 
-  /* Création des coupes (pour post-traitement) */
-
   /* Construction des listes de faces en cas de post-traitement */
 
   _maillage__liste_fac_err(&typ_fac_cel,
@@ -1890,18 +1878,6 @@ ecs_maillage__verif(ecs_maillage_t  *maillage,
                                      liste_fac_erreur,
                                      ECS_POST_TYPE_ERREUR,
                                      cas_post);
-
-    indic_erreur_cel
-      = ecs_table_def__err_cel_connect(maillage->table_def[ECS_ENTMAIL_CEL],
-                                       &typ_fac_cel);
-
-    ecs_table_post__ecr_val(&indic_erreur_cel,
-                            _("Fluid Domain"),
-                            _("connectivity_error"),
-                            cas_post);
-
-    ECS_FREE(indic_erreur_cel.val);
-    indic_erreur_cel.nbr = 0;
 
     ECS_FREE(liste_fac_erreur.val);
     liste_fac_erreur.nbr = 0;

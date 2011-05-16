@@ -102,16 +102,6 @@ ecs_table_post__ecr_elt(const char            *nom_maillage,
                         ecs_post_type_t        type_post,
                         ecs_post_t            *cas_post);
 
-/*----------------------------------------------------------------------------
- *  Fonction ecrivant les valeurs d'une table donnée pour le post traitement
- *---------------------------------------------------------------------------*/
-
-void
-ecs_table_post__ecr_val(const ecs_tab_int_t  *tab_val,
-                        const char           *nom_maillage,
-                        const char           *nom_table,
-                        ecs_post_t           *cas_post);
-
 /*----------------------------------------------------------------------------*/
 
 #endif /* _ECS_TABLE_POST_H_ */

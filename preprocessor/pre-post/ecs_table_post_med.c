@@ -105,73 +105,6 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui renvoie un pointeur sur un tableau de type `med_int'
- *   dont les valeurs sont converties si necessaire
- *   a partir du tableau `val_ecs' ayant `nbr_val' valeurs de type `ecs_int_t'
- *
- *  On convertit les premières `pas_med' valeurs toutes les `pas_ecs'
- *   valeurs (utile pour ne sortir que les deux premières coordonnées en 2D)
- *
- *  Si le tableau renvoye a ete alloue, la fonction positionne le booleen
- *   `bool_libere' a true
- *----------------------------------------------------------------------------*/
-
-static med_int *
-ecs_loc_table_post_med__cv_int(ecs_int_t   *val_ecs,
-                               size_t       nbr_val,
-                               size_t       pas_ecs,
-                               size_t       pas_med,
-                               bool        *bool_libere)
-{
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(val_ecs != NULL);
-  assert(nbr_val != 0   );
-
-  if ((pas_med == pas_ecs) && (sizeof(med_int) == sizeof(ecs_int_t))) {
-
-    /* Toutes les valeurs sont à conserver et */
-    /* Les entiers de type `med_int' et     */
-    /* les entiers de type `ecs_int_t'       */
-    /* sont codés sur le meme nombre d'octets */
-
-    /* Aucune conversion n'est nécessaire */
-
-    *bool_libere = false;
-
-    return (med_int *)val_ecs;
-
-  }
-  else {
-
-    size_t     iloc, ipas, ipos, ival;
-    size_t     nbr_pas;
-    med_int  * val_med;
-
-    /* On effectue la conversion de type pour chaque valeur */
-
-    nbr_pas = nbr_val / pas_ecs;
-
-    ECS_MALLOC(val_med, nbr_pas * pas_med, med_int);
-
-    *bool_libere = true;
-
-    ival = 0;
-
-    for (ipas = 0; ipas < nbr_pas; ipas++) {
-
-      ipos = ipas * pas_ecs;
-
-      for (iloc = 0; iloc < pas_med; iloc++)
-        val_med[ival++] = (med_int)val_ecs[ipos++];
-
-    }
-
-    return val_med;
-  }
-}
-
-/*----------------------------------------------------------------------------
  *  Fonction qui renvoie un pointeur sur un tableau de type `med_float'
  *   dont les valeurs sont converties si necessaire
  *   a partir du tableau `val_ecs' ayant `nbr_val' valeurs de type `double'
@@ -666,7 +599,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
   med_err            ret_med = 0;
 
   med_int            ityp_med;
-  med_int            mdim_med;
   med_int            nbr_ele_med;
   med_int            nbr_som_med;
 
@@ -703,8 +635,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
 
   /* Connectivite des elements */
   /*---------------------------*/
-
-  mdim_med = maillage_med->dim_entite;
 
   ecs_table__regle_en_pos(table_def);
 
@@ -785,7 +715,7 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
 
       ret_med = MEDconnEcr(cas_med->fid,
                            maillage_med->nom_maillage_med,
-                           mdim_med,
+                           3,
                            connect_med,
                            MED_FULL_INTERLACE,
                            nbr_ele_med,
@@ -1041,220 +971,6 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
   ECS_FREE(fam_ele_med);
 
   ecs_table__libere_pos_tab(table_def, def_pos_tab);
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction qui ajoute à une structure maillage_med les informations
- *   sur le nombre d'éléments de chaque type d'un maillage
- *----------------------------------------------------------------------------*/
-
-void
-ecs_table_post_med__cpt_elt_typ(const ecs_tab_int_t  *tab_elt_typ_geo,
-                                const char           *nom_maillage,
-                                ecs_med_t            *cas_med)
-{
-  size_t  cpt_typ_med;
-  size_t  ityp;
-  int     ityp_med;
-
-  ecs_med_maillage_t  * maillage_med;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  /* Recherche du maillage med */
-  /*---------------------------*/
-
-  maillage_med = ecs_loc_table_post_med__maillage(cas_med,
-                                                  nom_maillage);
-
-  if (maillage_med == NULL)
-    return;
-
-  /* Comptage et allocation */
-
-  cpt_typ_med = 0;
-
-  for (ityp = 0; ityp < tab_elt_typ_geo->nbr; ityp++) {
-    if (tab_elt_typ_geo->val[ityp] > 0)
-      cpt_typ_med += 1;
-  }
-
-  maillage_med->nbr_typ_ele = cpt_typ_med;
-  ECS_MALLOC(maillage_med->nbr_ele_typ, cpt_typ_med, ecs_int_t);
-  ECS_MALLOC(maillage_med->med_typ,     cpt_typ_med, med_geometry_type);
-
-  /* Mise à jour de la structure maillage_med */
-
-  cpt_typ_med = 0;
-
-  for (ityp = 0; ityp < tab_elt_typ_geo->nbr; ityp++) {
-
-    if (tab_elt_typ_geo->val[ityp] > 0) {
-
-      /* détermination du type géométrique MED correspondant */
-
-      ityp_med = 0;
-      while (   ityp_med < ECS_MED_NBR_TYP_ELT
-             && (   (int)ecs_fic_med_init_elt_liste_c[ityp_med].ecs_typ
-                 != (int)ityp))
-        ityp_med++;
-
-      if (ityp_med == ECS_MED_NBR_TYP_ELT)
-        ecs_error(__FILE__, __LINE__, 0,
-                  _("Geometric type \"%d\" has no MED equivalent."),
-                  (int)ityp);
-
-      maillage_med->nbr_ele_typ[cpt_typ_med] = tab_elt_typ_geo->val[ityp];
-      maillage_med->med_typ[cpt_typ_med]
-        = ecs_fic_med_init_elt_liste_c[ityp_med].med_typ;
-
-      cpt_typ_med += 1;
-
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction ecrivant une table au format MED
- *----------------------------------------------------------------------------*/
-
-void
-ecs_table_post_med__ecr_val(const ecs_tab_int_t  *tab_val,
-                            const char           *nom_maillage,
-                            const char           *nom_table,
-                            const ecs_med_t      *cas_med)
-{
-  bool        bool_libere_val;
-
-  ecs_int_t   cpt_elt;
-  ecs_int_t   elt_typ_ref;
-  ecs_int_t   nbr_elt;
-  ecs_int_t   nbr_elt_typ_geo; /* Nombre d'elements de meme type geometrique */
-
-  ecs_med_maillage_t  * maillage_med;
-
-  /* Declarations des variables pour MED */
-  /*-------------------------------------*/
-
-  char   *nom_champ_med;
-
-#if ECS_MED_VERSION == 2
-  char    nom_unite_dt_med[MED_NAME_SIZE + 1] = "";
-  char    profil_med_nopfl[] = MED_NOPFL;
-  char    locname_med_nogauss[] = MED_NOGAUSS;
-#endif
-
-  med_geometry_type  typ_geo_med;
-
-  med_int   ityp_med;
-  med_int  *val_med;
-
-  med_err   ret_med = 0;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  assert(tab_val != NULL);
-
-  /* Recherche du maillage med */
-  /*---------------------------*/
-
-  maillage_med = ecs_loc_table_post_med__maillage(cas_med,
-                                                  nom_maillage);
-
-  if (maillage_med == NULL)
-    return;
-
-  /* Nom de la table */
-  /*-----------------*/
-
-  ECS_MALLOC(nom_champ_med, strlen(nom_table) + 1, char);
-  strcpy(nom_champ_med, nom_table);
-
-  /* Valeurs de la table suivant le type des elements */
-  /*--------------------------------------------------*/
-
-  nbr_elt = tab_val->nbr;
-  cpt_elt = 0;
-
-  elt_typ_ref = -1;
-
-  for (ityp_med = 0; ityp_med < maillage_med->nbr_typ_ele; ityp_med++) {
-
-    typ_geo_med     = maillage_med->med_typ[ityp_med];
-    nbr_elt_typ_geo = maillage_med->nbr_ele_typ[ityp_med];
-
-    /* En cas d'incohérence, on sort de la boucle, on gèrera l'erreur ensuite */
-
-    if (cpt_elt + nbr_elt_typ_geo > nbr_elt)
-      break;
-
-    if (typ_geo_med != MED_POLYGON && typ_geo_med != MED_POLYHEDRON) {
-
-      /* On écrit les valeurs correspondant à ce type géométrique */
-
-      val_med = ecs_loc_table_post_med__cv_int(tab_val->val + cpt_elt,
-                                               1,
-                                               1,
-                                               nbr_elt_typ_geo,
-                                               &bool_libere_val);
-
-#if ECS_MED_VERSION == 2
-
-      ret_med = MEDchampEcr(cas_med->fid,
-                            maillage_med->nom_maillage_med,
-                            nom_champ_med,
-                            (unsigned char *)(val_med),
-                            MED_FULL_INTERLACE,
-                            nbr_elt_typ_geo,
-                            locname_med_nogauss,
-                            MED_ALL,
-                            profil_med_nopfl,
-                            MED_NO_PFLMOD,
-                            MED_MAILLE,
-                            typ_geo_med,
-                            MED_NOPDT,
-                            nom_unite_dt_med,
-                            0.0,
-                            MED_NONOR);
-
-#else
-
-      ret_med = MEDfieldValueWr(cas_med->fid,
-                                nom_champ_med,
-                                MED_NO_DT,
-                                MED_NO_IT,
-                                0.0,
-                                MED_CELL,
-                                typ_geo_med,
-                                MED_FULL_INTERLACE,
-                                MED_ALL_CONSTITUENT,
-                                nbr_elt_typ_geo,
-                                (unsigned char *)(val_med));
-
-#endif
-
-      if (ret_med != 0)
-        ecs_error(__FILE__, __LINE__, 0,
-                  _("MED: error writing file \"%s\".\n"
-                    "Error writing field \"%s\"."),
-                  cas_med->nom_fic, nom_champ_med);
-
-      if (bool_libere_val == true)
-        ECS_FREE(val_med);
-
-    }
-
-    cpt_elt += nbr_elt_typ_geo;
-  }
-
-  if (cpt_elt != nbr_elt || ityp_med < maillage_med->nbr_typ_ele)
-    ecs_error(__FILE__, __LINE__, 0,
-              _("MED: error writing field \"%s\".\n"
-                "Incompatibility between the number of elements to write (%d)\n"
-                "and the dimensions of mesh \"%s\"."),
-              nom_champ_med, (ecs_int_t)nbr_elt, nom_maillage);
-
-  ECS_FREE(nom_champ_med);
 }
 
 #endif /* HAVE_MED */

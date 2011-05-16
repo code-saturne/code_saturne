@@ -261,8 +261,6 @@ ecs_post_cgns__ajoute_maillage(const char       *nom_maillage,
 
   /* Champs associés aux sorties */
 
-  base_cgns->num_sol_stat   = -1;
-
   cas_cgns->nbr_bases += 1;
   ECS_REALLOC(cas_cgns->tab_bases,
               cas_cgns->nbr_bases,

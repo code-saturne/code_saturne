@@ -71,127 +71,6 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *  Fonction qui met à jour la structure ecs_post_ens_t en fonction d'une
- *  nouvelle variable : si le temps physique ou la variable correspondante
- *  n'est pas présent dans la structure, on ajoute les elements
- *  correspondants à la structure.
- *----------------------------------------------------------------------------*/
-
-static char *
-ecs_loc_post_ens__ajout_table(ecs_post_ens_t  *cas_ens,
-                              const char      *nom_table,
-                              ecs_int_t       *num_sor_prec)
-{
-  size_t      ind;
-  char       *nom_var;
-  size_t      lng_nom_var;
-  size_t      lng_ligne_var;
-  ecs_int_t   ivar;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  /* On écrit la ligne contenant la référence de la variable                  */
-  /*  dans le fichier `.case' sous la forme suivante :                        */
-  /*                                                                          */
-  /* <nom_rubrique> <nom_var> <prefixe>.<nom_var>                             */
-  /*                                                                          */
-  /* Or la ligne ne doit pas dépasser 79 caractères                           */
-  /*  d'après les spécifications d'Ensight.                                   */
-  /* Le nom de la variable écrit sur fichier Case d'Ensight est donc          */
-  /*  le nom du champ, raccourcit éventuellement pour ne dépasser             */
-  /*  les 79 caractères autorises sur la ligne                                */
-  /*                                                                          */
-  /* `scalar per element:' (19 caractères)                                    */
-
-  lng_ligne_var = 19 + 1 + 1 + strlen(cas_ens->prefixe_fic) + 1;
-
-  lng_nom_var = 79 - lng_ligne_var;
-
-  /* Le nom de la variable est aussi utilisée comme suffixe du fichier : */
-
-  lng_nom_var /= 2; /* Division entière */
-
-  lng_nom_var = ECS_MIN(lng_nom_var, strlen(nom_table));
-
-  ECS_MALLOC(nom_var, lng_nom_var + 1, char);
-
-  sprintf(nom_var, "%*.*s", (int)lng_nom_var, (int)lng_nom_var, nom_table);
-
-  for (ind = 0; ind < lng_nom_var; ind++) {
-    if (nom_var[ind] == '-')
-      nom_var[ind] = '_';
-  }
-
-  /* On cherche si cette variable existe déjà  */
-
-  ivar = 0;
-
-  while (ivar < cas_ens->nbr_var &&
-         strcmp(cas_ens->nom_var[ivar], nom_var) != 0)
-      ivar ++;
-
-  /* Si la variable n'existe pas encore, ivar = cas_ens->nbr_var   */
-
-  if (ivar == cas_ens->nbr_var) {
-
-    /* ----------------------------------------------------------- */
-    /* Mise à jour de la structure si la ligne n'existe pas encore */
-    /* ----------------------------------------------------------- */
-
-    size_t    lng_imp_nom_var;
-
-    /* Mise à jour du nombre de variables (on se base plutôt sur */
-    /* la variable locale ivar à l'intérieur de cette fonction)  */
-
-    cas_ens->nbr_var += 1;
-
-    /* Ajout de nom_var */
-
-    ECS_REALLOC(cas_ens->nom_var, ivar + 1, char *);
-
-    ECS_MALLOC(cas_ens->nom_var[ivar], strlen(nom_var) + 1, char);
-
-    strcpy(cas_ens->nom_var[ivar], nom_var);
-
-    /* Ajout de ligne_var (on choisit de fournir au moins 24 caractères
-       pour la zone d'écriture du nom de la variable) */
-
-    ECS_REALLOC(cas_ens->ligne_var, ivar + 1, char *);
-
-    lng_imp_nom_var = ECS_MAX(lng_nom_var, 24);
-
-    ECS_MALLOC(cas_ens->ligne_var[ivar],
-               lng_ligne_var + lng_imp_nom_var + lng_nom_var + 1,
-               char);
-
-    /* Variable pas encore définie */
-
-    *num_sor_prec = -1;
-
-    /* Nom dans le fichier case */
-
-    sprintf(*(cas_ens->ligne_var + ivar),
-            "scalar per element: %-*s %s.%s",
-            (int)lng_imp_nom_var,
-            nom_var,
-            cas_ens->prefixe_fic,
-            nom_var);
-
-    cas_ens->modifie = true;
-
-  }
-  else {
-
-    *num_sor_prec = 0;
-
-  }
-
-  /* On renvoie le nom associé à la variable */
-
-  return nom_var;
-}
-
-/*----------------------------------------------------------------------------
  *  Fonction écrivant un fichier Case
  *
  *  Cette fonction crée le répertoire correspondant si nécessaire
@@ -201,7 +80,6 @@ static void
 ecs_loc_post_ens__ecr_case(ecs_post_ens_t  *cas_ens)
 {
   ecs_file_t  *fic_case;
-  ecs_int_t    ivar;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -324,16 +202,6 @@ ecs_loc_post_ens__ecr_case(ecs_post_ens_t  *cas_ens)
                   "model: %s.geo\n\n",
                   cas_ens->prefixe_fic);
 
-  /* Écriture de la section VARIABLE */
-  /*---------------------------------*/
-
-  if (cas_ens->nbr_var > 0) {
-    ecs_file_printf(fic_case, "VARIABLE\n");
-
-    for (ivar = 0; ivar < cas_ens->nbr_var; ivar ++)
-      ecs_file_printf(fic_case, "%s\n", cas_ens->ligne_var[ivar]);
-  }
-
   /* Fermeture du fichier Case */
   /*---------------------------*/
 
@@ -407,14 +275,6 @@ ecs_post_ens__cree_cas(const char  *nom_cas)
   cas_ens->prefixe_fic = NULL;
   cas_ens->nom_fic_case = NULL;
 
-  /* Autres membres de la structure `ecs_post_ens_t` */
-  /*-------------------------------------------------*/
-
-  cas_ens->nbr_var      = 0;
-
-  cas_ens->nom_var     = NULL;
-  cas_ens->ligne_var   = NULL;
-
   /* Champs relatifs au fichier géométrie */
   /*--------------------------------------*/
 
@@ -447,19 +307,6 @@ ecs_post_ens__detruit_cas(ecs_post_ens_t  *cas_ens)
     ECS_FREE(cas_ens->prefixe_rep);
     ECS_FREE(cas_ens->prefixe_fic);
     ECS_FREE(cas_ens->nom_fic_case);
-
-    if (cas_ens->nbr_var > 0) {
-
-      for (ind = 0; ind < cas_ens->nbr_var; ind ++)
-        ECS_FREE(cas_ens->nom_var[ind]);
-
-      ECS_FREE(cas_ens->nom_var);
-
-      for (ind = 0; ind < cas_ens->nbr_var; ind ++)
-        ECS_FREE(cas_ens->ligne_var[ind]);
-
-      ECS_FREE(cas_ens->ligne_var);
-    }
 
     for (ind = 0; ind < cas_ens->nbr_part; ind ++)
       ecs_loc_post_ens__detruit_part(cas_ens->tab_part[ind]);
@@ -585,88 +432,6 @@ ecs_post_ens__ecrit_fic_geo(ecs_post_ens_t  *cas_ens)
   ecs_post_ens__ecr_chaine(cas_ens->fic_geo, "element id assign");
 
   return cas_ens->fic_geo;
-}
-
-/*----------------------------------------------------------------------------
- *  Fonction construisant le descripteur (`ecs_file_t') du fichier
- *  contenant les valeurs de la variable   sortir pour post-traitement Ensight
- *
- *  La fonction détermine aussi la ligne spécifiant la variable
- *   devant figurer dans le fichier Case
- *----------------------------------------------------------------------------*/
-
-ecs_file_t  *
-ecs_post_ens__ecrit_fic_var(ecs_post_ens_t  *cas_ens,
-                            const char      *nom_table)
-{
-  ecs_file_t       * fic_var;
-  ecs_file_mode_t    mode_ouverture;
-  char             * nom_var;
-  char             * nom_fic_var;
-  char               buf[81];
-
-  ecs_int_t          num_sor_prec;
-
-  /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
-
-  /* Construction du nom de la variable à partir du nom du champ */
-  /*-------------------------------------------------------------*/
-
-  nom_var = ecs_loc_post_ens__ajout_table(cas_ens,
-                                          nom_table,
-                                          &num_sor_prec);
-
-  /* Création du descripteur du fichier contenant la variable */
-  /*----------------------------------------------------------*/
-
-  ECS_MALLOC(nom_fic_var,
-             strlen(cas_ens->prefixe_rep) + strlen(cas_ens->prefixe_fic)
-             + 1 + strlen(nom_var) + 1,
-             char);
-
-  sprintf(nom_fic_var, "%s%s.%s",
-          cas_ens->prefixe_rep, cas_ens->prefixe_fic,
-          nom_var);
-
-  if (num_sor_prec == 0)
-    mode_ouverture = ECS_FILE_MODE_APPEND;
-  else
-    mode_ouverture = ECS_FILE_MODE_WRITE;
-
-  fic_var = ecs_file_open(nom_fic_var,
-                          mode_ouverture,
-                          ECS_FILE_TYPE_BINARY);
-
-  /* Info sur la création du fichier contenant la variable */
-  /*-------------------------------------------------------*/
-
-  printf("  %s %s\n", _("Creating file:"), nom_fic_var);
-
-  ECS_FREE(nom_fic_var);
-
-  /* Écriture dans ce fichier de la 1ère ligne (ligne de commentaires) */
-  /*-------------------------------------------------------------------*/
-
-  if (num_sor_prec != 0) {
-
-    strcpy(buf, "Variable: ");
-    strncpy(buf + strlen(buf), nom_var, 80 - strlen(buf));
-    strncpy(buf + strlen(buf), ", Case: ", 80 - strlen(buf));
-    strncpy(buf + strlen(buf), cas_ens->prefixe_fic, 80 - strlen(buf));
-
-    ecs_post_ens__ecr_chaine(fic_var, buf);
-
-  }
-
-  ECS_FREE(nom_var);
-
-  /* On réécrit le fichier Case */
-  /*----------------------------*/
-
-  if (cas_ens->modifie == true)
-    ecs_loc_post_ens__ecr_case(cas_ens);
-
-  return fic_var;
 }
 
 /*----------------------------------------------------------------------------*/

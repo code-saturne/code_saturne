@@ -105,15 +105,12 @@ ecs_maillage__detruit(ecs_maillage_t  **this_maillage);
 
 /*----------------------------------------------------------------------------
  *  Fonction imprimant le contenu d'une structure `ecs_maillage_t' donnee
- *   dans le fichier de nom donne
- *   precede par le `titre'
+ *   dans le fichier preprocessor_dump.txt
  *----------------------------------------------------------------------------*/
 
 void
 ecs_maillage__imprime(const ecs_maillage_t  *maillage,
-                      const char            *nom_fichier_dump,
-                      ecs_int_t              nbr_imp,
-                      const char            *titre);
+                      ecs_int_t              nbr_imp);
 
 /*----------------------------------------------------------------------------
  *  Fonction qui retourne le type d'éntité de plus grande dimension

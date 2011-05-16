@@ -67,22 +67,8 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
                                  size_t                 n_vertices,
                                  const ecs_coord_t      vertex_coords[],
                                  ecs_table_t           *table_def,
-                                 const int              elt_fam[],
                                  const ecs_tab_int_t   *tab_elt_typ_geo,
                                  ecs_post_cgns_t       *cas_cgns);
-
-/*----------------------------------------------------------------------------
- * Write per-element values for a given array.
- *
- * Values corresponding to polyhedra are ignored.
- *---------------------------------------------------------------------------*/
-
-void
-ecs_table_post_cgns__ecr_val(const ecs_tab_int_t  *tab_val,
-                             const char           *nom_maillage,
-                             const char           *nom_table,
-                             ecs_post_cgns_t      *cas_cgns);
-
 
 #endif /* HAVE_CGNS */
 

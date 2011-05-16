@@ -92,8 +92,6 @@ typedef struct {
 
   /* Informations sur état du cas en post traitement */
 
-  int                  num_sol_stat;   /* Num. sorties */
-
   int                  dim_espace;     /* Dimension de l'espace associé */
   int                  dim_entite;     /* Dimension entités maillage */
 

@@ -97,16 +97,6 @@ ecs_table_post_ens__ecr_part(const char            *nom_maillage,
                              const ecs_tab_int_t   *tab_elt_typ_geo,
                              ecs_post_ens_t        *cas_ens);
 
-/*----------------------------------------------------------------------------
- *  Fonction écrivant la table à sortir au format Ensight
- *---------------------------------------------------------------------------*/
-
-void
-ecs_table_post_ens__ecr_val(const ecs_tab_int_t  *tab_val,
-                            const char           *nom_maillage,
-                            const char           *nom_table,
-                            ecs_post_ens_t       *cas_ens);
-
 /*----------------------------------------------------------------------------*/
 
 #endif /* _ECS_TABLE_POST_ENS_H_ */
