@@ -1,4 +1,9 @@
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix bug in CGNS output when CGNS uses 64-bit ids.
+  modified files:
+    preprocessor/pre-post/ecs_table_post_cgns.c
+
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow disabling of front-end tools.
   modified files:
     Makefile.am

@@ -103,6 +103,10 @@
 #define CS_CG_ENUM(e) e
 #endif
 
+#if CGNS_VERSION < 3100
+#define cgsize_t int
+#endif
+
 
 /*============================================================================
  *                              Fonctions privées
@@ -273,7 +277,7 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
 
   int         cpt_section;
   size_t      nbr_elt_typ;
-  int         isize[3];
+  cgsize_t    isize[3];
   int         num_coord;
   int         num_section;
   int         num_zone;
@@ -282,7 +286,7 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
   int         type_cgns[ECS_ELT_TYP_FIN];
   int         type_cgns_loc;
 
-  int        *def_elt;
+  cgsize_t   *def_elt;
 
   double     *coo_temp;
 
@@ -418,7 +422,7 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
 
       type_cgns_loc = type_cgns[elt_typ_ref];
 
-      ECS_MALLOC(def_elt, nbr_val, int);
+      ECS_MALLOC(def_elt, nbr_val, cgsize_t);
 
       for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
 
@@ -441,7 +445,7 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
 
       type_cgns_loc = CS_CG_ENUM(MIXED);
 
-      ECS_MALLOC(def_elt, nbr_val + cpt_elt_fin - cpt_elt, int);
+      ECS_MALLOC(def_elt, nbr_val + cpt_elt_fin - cpt_elt, cgsize_t);
 
       for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
 
