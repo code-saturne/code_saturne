@@ -199,8 +199,7 @@ iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   iuiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w6     , w6     , w6     ,                                     &
@@ -230,8 +229,7 @@ iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   iviph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w6     , w6     , w6     ,                                     &
@@ -261,8 +259,7 @@ iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   iwiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w6     , w6     , w6     ,                                     &

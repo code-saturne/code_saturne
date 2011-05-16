@@ -162,8 +162,7 @@ extrap = 0.d0
 
 call grdcel                                                       &
 !==========
-( idebia , idebra ,                                               &
-  ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
+( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
   ux     , ux     , ux     ,                                      &
@@ -178,8 +177,7 @@ call grdcel                                                       &
 
 call grdcel                                                       &
 !==========
-( idebia , idebra ,                                               &
-  ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
+( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
   vy     , vy     , vy     ,                                      &
@@ -194,8 +192,7 @@ call grdcel                                                       &
 
 call grdcel                                                       &
 !==========
-( idebia , idebra ,                                               &
-  ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
+( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
   wz     , wz     , wz     ,                                      &

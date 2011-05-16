@@ -229,8 +229,7 @@ if( nswrgp.gt.1 ) then
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &

@@ -28,8 +28,7 @@
 subroutine grdcel &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
@@ -49,8 +48,6 @@ subroutine grdcel &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ivar             ! e  ! <-- ! numero de la variable                          !
 !                  !    !     !   destine a etre utilise pour la               !
 !                  !    !     !   periodicite uniquement (pering)              !
@@ -117,7 +114,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ivar   , imrgra , inc    , iccocg , nswrgp
 integer          imligp ,iwarnp  , iphydp , nfecra
 double precision epsrgp , climgp , extrap
@@ -132,7 +128,6 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          idimte , itenso
 integer          iiu,iiv,iiw
 integer          iitytu
@@ -143,10 +138,6 @@ integer          imlini
 double precision climin
 
 !===============================================================================
-
-
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 0. PREPARATION POUR PERIODICITE DE ROTATION

@@ -284,8 +284,7 @@ if ( ivar.eq.isca(icoyfp)) then
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
    iphydp , iwarni(ii) , nfecra ,                                 &
    epsrgr(ii) , climgr(ii) , extrag(ii) ,                         &
    ia     ,                                                       &
@@ -320,8 +319,7 @@ if ( ivar.eq.isca(icoyfp)) then
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
    iphydp , iwarni(ii) , nfecra ,                                 &
    epsrgr(ii) , climgr(ii) , extrag(ii) ,                         &
    ia     ,                                                       &

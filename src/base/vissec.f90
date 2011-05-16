@@ -266,8 +266,7 @@ do isou = 1, 3
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w4     , w4     , w4     ,                                     &

@@ -240,8 +240,7 @@ ivar   = 0
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   ivar   , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
    ia     ,                                                       &
    w1     , w1     , w1     ,                                     &

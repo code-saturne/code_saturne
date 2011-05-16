@@ -520,8 +520,7 @@ if (inpdt0.eq.0) then
 
     call grdcel                                                     &
     !==========
-      ( ifinia , ifinra ,                                              &
-        ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+      ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
         iwarnp , nfecra ,                                              &
         epsrgp , climgp , extrap ,                                     &
         ia     ,                                                       &

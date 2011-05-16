@@ -176,8 +176,7 @@ do isou = 1,6
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ipiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ipiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w1     , w1     , w1     ,                                     &

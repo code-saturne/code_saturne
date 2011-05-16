@@ -290,8 +290,7 @@ if( nswrgu.gt.1 ) then
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar1  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
+ ( ivar1  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
@@ -352,8 +351,7 @@ if( nswrgu.gt.1 ) then
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar2  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
+ ( ivar2  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
@@ -413,8 +411,7 @@ if( nswrgu.gt.1 ) then
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar3  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
+ ( ivar3  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &

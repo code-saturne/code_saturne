@@ -300,8 +300,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   iphydp = 0
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w7     , w7     , w7     ,                                     &

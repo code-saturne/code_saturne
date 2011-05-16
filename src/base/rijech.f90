@@ -239,8 +239,7 @@ elseif(abs(icdpar).eq.1) then
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
    ia     ,                                                       &

@@ -719,8 +719,7 @@ else
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
+ ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &

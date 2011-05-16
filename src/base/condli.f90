@@ -595,8 +595,7 @@ if (iscat .gt. 0) then
 
     call grdcel                                                 &
     !==========
- ( idebia , idebra ,                                              &
-   ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
@@ -681,8 +680,7 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
 
       call grdcel                                               &
       !==========
- ( idebia , idebra ,                                              &
-   ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
@@ -747,8 +745,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
 
       call grdcel                                               &
       !==========
- ( idebia , idebra ,                                              &
-   ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &

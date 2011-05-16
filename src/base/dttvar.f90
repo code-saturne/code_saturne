@@ -315,8 +315,7 @@ if (idtvar.ge.0) then
 
     call grdcel                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w1     , w1     , w1     ,                                     &

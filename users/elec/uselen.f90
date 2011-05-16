@@ -188,8 +188,7 @@ if(nummai.eq.-1) then
 !
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
@@ -235,8 +234,7 @@ if(nummai.eq.-1) then
 !
     call grdcel                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
@@ -287,8 +285,7 @@ if(nummai.eq.-1) then
 
     call grdcel                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
@@ -343,8 +340,7 @@ if(nummai.eq.-1) then
 !
     call grdcel                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
@@ -382,8 +378,7 @@ if(nummai.eq.-1) then
 !
     call grdcel                                                   &
     !==========
-  ( idbia0 , idbra0 ,                                             &
-    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
+  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                                      &
     ra     , ra     , ra     ,                                    &
@@ -421,8 +416,7 @@ if(nummai.eq.-1) then
 !
     call grdcel                                                   &
     !==========
-  ( idbia0 , idbra0 ,                                             &
-    ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
+  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                                      &
     ra     , ra     , ra     ,                                    &

@@ -174,8 +174,7 @@ iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   iuiph  , imrgra , inc    , iccocg ,                            &
+ ( iuiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iuiph) , imligr(iuiph) , iphydp , iwarni(iuiph) ,       &
    nfecra , epsrgr(iuiph) , climgr(iuiph) , extrag(iuiph) ,       &
    ia     ,                                                       &
@@ -197,8 +196,7 @@ enddo
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   iviph  , imrgra , inc    , iccocg ,                            &
+ ( iviph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iviph) , imligr(iviph) , iphydp , iwarni(iviph) ,       &
    nfecra , epsrgr(iviph) , climgr(iviph) , extrag(iviph) ,       &
    ia     ,                                                       &
@@ -226,8 +224,7 @@ enddo
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   iwiph  , imrgra , inc    , iccocg ,                            &
+ ( iwiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iwiph) , imligr(iwiph) , iphydp , iwarni(iwiph) ,       &
    nfecra , epsrgr(iwiph) , climgr(iwiph) , extrag(iwiph) ,       &
    ia     ,                                                       &

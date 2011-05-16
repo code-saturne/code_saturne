@@ -225,8 +225,7 @@ endif
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   iphiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iphiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
@@ -250,8 +249,7 @@ endif
 
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w4     , w4     , w4     ,                                     &

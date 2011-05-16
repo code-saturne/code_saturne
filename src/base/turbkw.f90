@@ -248,8 +248,7 @@ iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w7     , w7     , w7     ,                                     &
@@ -270,8 +269,7 @@ iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   iomgip , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iomgip , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w7     , w7     , w7     ,                                     &
@@ -378,8 +376,7 @@ if(igrake.eq.1) then
   iphydp = 0
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w5     , w5     , w5     ,                                     &

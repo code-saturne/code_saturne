@@ -522,8 +522,7 @@ if (itspdv.eq.1) then
 
     call grdcel                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   iii    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iii    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &

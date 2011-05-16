@@ -1195,8 +1195,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     iphydp = 0
     call grdcel                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
@@ -1222,8 +1221,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     iphydp = 0
     call grdcel                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w1     , w1     , w1     ,                                     &
@@ -1249,8 +1247,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     iphydp = 0
     call grdcel                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w1     , w1     , w1     ,                                     &

@@ -204,8 +204,7 @@ if( idiffp.ne.0 .and. ircflp.eq.1 ) then
   iphydp = 0
   call grdcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    dpdxa  , dpdxa  , dpdxa  ,                                     &
