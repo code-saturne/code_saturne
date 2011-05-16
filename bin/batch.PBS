@@ -1,0 +1,20 @@
+#
+# Batch options (PBS)
+# ===================
+#
+#PBS -l nodes=4:ppn=2
+#PBS -l walltime=1:00:00
+#
+#PBS -j eo
+#PBS -N nameandcase
+#
+#  nodes    : number of nodes
+#  ppn      : number of processes per node
+#  walltime : wall clock time (hh:mm:ss)
+#  mem      : memory
+#
+# Warning: when coupling with SYRTHES, 1 processor will be reserved for each
+#          instance of SYRTHES. The Kernel will be executed on the remaining
+#          processors, so make sure to reserve a sufficiently high number
+#          of processors.
+#

@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2011 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -48,6 +48,7 @@ sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
 $(ac_aux_dir)/cs_auto_flags.sh \
+$(ac_aux_dir)/cs_batch.m4 \
 $(ac_aux_dir)/cs_bft.m4 \
 $(ac_aux_dir)/cs_blas.m4 \
 $(ac_aux_dir)/cs_config_info.m4 \
@@ -184,6 +185,23 @@ extras/bash_completion/code_saturne
 # Done with two sed passes (do not work otherwise)
 
 install-data-hook:
+	if test "@cs_batch_template@" != no; then \
+	  if test -f $(srcdir)/bin/batch.@cs_batch_template@; then \
+	    cat $(srcdir)/bin/batch.@cs_batch_template@ > $(DESTDIR)$(pkgdatadir)/batch.tmp; \
+	  elif test -f @cs_batch_template@; then \
+	    cat @cs_batch_template@ > $(DESTDIR)$(pkgdatadir)/batch.tmp; \
+	  fi; \
+	fi; \
+	cd $(DESTDIR)$(pkgdatadir) && \
+	if test ! -f batch.tmp; then \
+	  echo "#" > batch.tmp; \
+	fi; \
+	for file in runcase runcase.py; do \
+	  sed -e "/BATCHTEMPLATE/r batch.tmp" \
+	      -e "/BATCHTEMPLATE/d" "$${file}" > "$${file}.tmp" && \
+	  mv "$${file}.tmp" "$${file}"; \
+	done; \
+	rm -f batch.tmp
 	cd $(DESTDIR)$(pkgdatadir)/users && \
 	user_files=`ls */*.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \

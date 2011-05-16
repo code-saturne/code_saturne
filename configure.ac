@@ -413,6 +413,12 @@ fi
 AM_CONDITIONAL(HAVE_GUI, [test "x$have_gui" = "xyes"])
 
 #------------------------------------------------------------------------------
+# Checks for batch system
+#------------------------------------------------------------------------------
+
+CS_AC_TEST_BATCH
+
+#------------------------------------------------------------------------------
 # Checks for header files.
 #------------------------------------------------------------------------------
 
@@ -596,7 +602,12 @@ echo " Libxml2 (XML Reader) support: "$have_libxml2""
 echo " MEI (Mathematical Expressions Interpreter) support: "$have_mei""
 echo " SYRTHES 3 coupling support: "$have_syrthes""
 echo " IP socket support (for SYRTHES 3 or CFD_Proxy): "$have_socket""
-echo " Dynamic loader support (for YACS): "$have_dlloader""
+echo " dynamic loader support (for YACS): "$have_dlloader""
+if test "x$cs_batch_template" != "x"; then
+  echo " batch job template: "$cs_batch_template""
+else
+  echo " batch job template: no"
+fi
 echo
 echo "The package has been configured. Type:"
 echo " make"
