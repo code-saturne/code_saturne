@@ -205,19 +205,16 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /* On vérifie si l'on a besoin d'écrire le maillage */
   /*--------------------------------------------------*/
 
-  if (   cas_post->post_ens == true
-      && cas_post->opt_ens[type_post] == true)
+  if (cas_post->opt_ens[type_post] == true)
     bool_ecrit_maillage = true;
 
 #if defined(HAVE_CGNS)
-  if (   cas_post->post_cgns == true
-      && cas_post->opt_cgns[type_post] == true)
+  if (cas_post->opt_cgns[type_post] == true)
     bool_ecrit_maillage = true;
 #endif
 
 #if defined(HAVE_MED)
-  if (   cas_post->post_med == true
-      && cas_post->opt_med[type_post] == true)
+  if (cas_post->opt_med[type_post] == true)
     bool_ecrit_maillage = true;
 #endif
 
@@ -227,8 +224,7 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /* Ajout du cas EnSight (si nécessaire) */
   /*--------------------------------------*/
 
-  if (   cas_post->post_ens == true
-      && cas_post->opt_ens[type_post] == true) {
+  if (cas_post->opt_ens[type_post] == true) {
 
     printf(_("\n\n"
              "EnSight output of mesh: %s\n"
@@ -244,8 +240,7 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /* Ajout du cas CGNS (si nécessaire) */
   /*-----------------------------------*/
 
-  if (   cas_post->post_cgns == true
-      && cas_post->opt_cgns[type_post] == true) {
+  if (cas_post->opt_cgns[type_post] == true) {
 
     printf(_("\n\n"
              "CGNS file output of mesh: %s\n"
@@ -263,8 +258,7 @@ ecs_maillage_post__ecr(const char       *nom_maillage,
   /* Ajout du cas MED (si nécessaire) */
   /*----------------------------------*/
 
-  if (   cas_post->post_med == true
-      && cas_post->opt_med[type_post] == true) {
+  if (cas_post->opt_med[type_post] == true) {
 
     printf(_("\n\n"
              "MED file output of mesh: %s\n"

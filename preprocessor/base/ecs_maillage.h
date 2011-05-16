@@ -142,13 +142,12 @@ ecs_maillage__nettoie_nodal(ecs_maillage_t  *maillage);
  *  Correction si nécessaire de l'orientation des éléments en
  *   connectivité nodale.
  *
- *  Les listes de cellules avec erreur ou corrigées sont optionnelles.
+ *  La liste de cellules avec erreur est optionnelle.
  *----------------------------------------------------------------------------*/
 
 void
 ecs_maillage__orient_nodal(ecs_maillage_t    *maillage,
                            ecs_tab_int_t     *liste_cel_err,
-                           ecs_tab_int_t     *liste_cel_cor,
                            bool               correc_orient);
 
 /*----------------------------------------------------------------------------

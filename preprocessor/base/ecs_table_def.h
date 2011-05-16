@@ -139,7 +139,7 @@ ecs_table_def__nettoie_nodal(size_t        *n_vertices,
 
 /*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation des éléments en connectivité
- *   nodale. Les arguments liste_cel_err et liste_cel_cor sont optionnels.
+ *   nodale. L'argument liste_cel_err est optionnel.
  *----------------------------------------------------------------------------*/
 
 void
@@ -147,7 +147,6 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
                             ecs_table_t     *table_def_fac,
                             ecs_table_t     *table_def_cel,
                             ecs_tab_int_t   *liste_cel_err,
-                            ecs_tab_int_t   *liste_cel_cor,
                             bool             correc_orient);
 
 /*----------------------------------------------------------------------------

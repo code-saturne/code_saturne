@@ -46,8 +46,7 @@ ecs_cmd.c \
 ecs_main.c
 
 noinst_HEADERS = \
-ecs_cmd.h \
-ecs_cmd_priv.h
+ecs_cmd.h
 
 cs_preprocess_LDADD = \
 $(top_builddir)/preprocessor/pre-post/libprepostecs.la \

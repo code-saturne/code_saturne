@@ -2464,7 +2464,7 @@ ecs_table_def__nettoie_nodal(size_t        *n_vertices,
 
 /*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation des éléments en connectivité
- *   nodale. Les arguments liste_cel_err et liste_cel_cor sont optionnels.
+ *   nodale. L'argument liste_cel_err est optionnel.
  *----------------------------------------------------------------------------*/
 
 void
@@ -2472,7 +2472,6 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
                             ecs_table_t     *table_def_fac,
                             ecs_table_t     *table_def_cel,
                             ecs_tab_int_t   *liste_cel_err,
-                            ecs_tab_int_t   *liste_cel_cor,
                             bool             correc_orient)
 {
   size_t      ipos_cel;
@@ -2637,13 +2636,6 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
       else if (ret_orient > 0) {
         cpt_orient_correc[typ_elt] += 1;
-        if (liste_cel_cor != NULL) {
-          if (liste_cel_cor->nbr == 0) {
-            liste_cel_cor->nbr = nbr_cel;
-            ECS_MALLOC(liste_cel_cor->val, liste_cel_cor->nbr, ecs_int_t);
-          }
-          liste_cel_cor->val[cpt_cel_correc] = icel;
-        }
         cpt_cel_correc += 1;
       }
     }
@@ -2689,12 +2681,6 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
     if (liste_cel_err->nbr > 0) {
       liste_cel_err->nbr = cpt_cel_erreur;
       ECS_REALLOC(liste_cel_err->val, liste_cel_err->nbr, ecs_int_t);
-    }
-  }
-  if (liste_cel_cor != NULL) {
-    if (liste_cel_cor->nbr > 0) {
-      liste_cel_cor->nbr = cpt_cel_correc;
-      ECS_REALLOC(liste_cel_cor->val, liste_cel_cor->nbr, ecs_int_t);
     }
   }
 

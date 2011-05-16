@@ -9,7 +9,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -73,7 +73,6 @@
 typedef enum {
 
   ECS_POST_TYPE_VOLUME,   /* maillage volumique (initial) */
-  ECS_POST_TYPE_INFO,     /* maillage d'information */
   ECS_POST_TYPE_ERREUR    /* maillage d'une zone avec erreur */
 
 } ecs_post_type_t ;
@@ -89,22 +88,19 @@ typedef struct {
 
   char            *nom_cas;           /* Nom du cas par défaut */
 
-  bool             post_ens;          /* Indicateur post-traitement Ensight */
-  bool             opt_ens[3];        /* Indicateur de sortie par type */
+  bool             opt_ens[2];        /* Indicateur de sortie par type */
   ecs_post_ens_t  *cas_ens;           /* Cas EnSight associé */
 
 #if defined(HAVE_CGNS)
 
-  bool             post_cgns;         /* Indicateur post-traitement CGNS */
-  bool             opt_cgns[3];       /* Indicateur de sortie par type */
+  bool             opt_cgns[2];       /* Indicateur de sortie par type */
   ecs_post_cgns_t *cas_cgns;          /* Cas CGNS associé */
 
 #endif
 
 #if defined(HAVE_MED)
 
-  bool             post_med;          /* Indicateur post-traitement MED */
-  bool             opt_med[3];        /* Indicateur de sortie par type */
+  bool             opt_med[2];        /* Indicateur de sortie par type */
   ecs_med_t       *cas_med;           /* Cas MED associé */
 
 #endif

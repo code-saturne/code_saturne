@@ -6,7 +6,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2010 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -100,65 +100,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_cmd.h"
-#include "ecs_cmd_priv.h"
 
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Definitions of file names and extensions
- *----------------------------------------------------------------------------*/
-
-#define ECS_CMD_EXEC_NAME                             "cs_preprocess"
-
-#define ECS_CMD_LOGFILE_NAME_DEFAULT               "preprocessor.log"
-#define ECS_CMD_OUTFILE_NAME_DEFAULT            "preprocessor_output"
-
-#define ECS_CMD_POST_CASE_DEFAULT                        "preprocess"
-
-/*----------------------------------------------------------------------------
- * Définition des mots-cles pour les options de la ligne de commande
- *----------------------------------------------------------------------------*/
-
-#define ECS_CMD_KEY_MESH_GRP_SECTION                        "section"
-#define ECS_CMD_KEY_MESH_GRP_ZONE                              "zone"
-
-/*----------------------------------------------------------------------------
- *  Définition des options de la ligne de commande
- *----------------------------------------------------------------------------*/
-
-#define ECS_CMD_OPTION_CASE                                  "--case"
-
-#define ECS_CMD_OPTION_DUMP                                  "--dump"
-#define ECS_CMD_OPTION_NULL_COMM                         "--no-write"
-#define ECS_CMD_OPTION_FMT_MESH_FILE                       "--format"
-#define ECS_CMD_OPTION_NUM_MESH                               "--num"
-#define ECS_CMD_OPTION_GRP_CEL_MESH                       "--grp-cel"
-#define ECS_CMD_OPTION_GRP_FAC_MESH                       "--grp-fac"
-
-#define ECS_CMD_OPTION_HELP                                  "--help"
-#define ECS_CMD_OPTION_HELP_1                                    "-h"
-
-#define ECS_CMD_OPTION_LOG_FILE                               "--log"
-
-#define ECS_CMD_OPTION_OUTPUT_FILE                            "--out"
-#define ECS_CMD_OPTION_OUTPUT_FILE_1                             "-o"
-
-#define ECS_CMD_OPTION_ORIENT_CORREC                     "--reorient"
-
-#if defined(HAVE_CGNS)
-#define ECS_CMD_OPTION_POST_CGNS                             "--cgns"
-#endif /* HAVE_CGNS */
-#define ECS_CMD_OPTION_POST_ENS                           "--ensight"
-#if defined(HAVE_MED)
-#define ECS_CMD_OPTION_POST_MED                               "--med"
-#endif /* HAVE_MED */
-
-#define ECS_CMD_OPTION_POST_MAIN                           "--volume"
-#define ECS_CMD_OPTION_POST_INFO                             "--info"
-
-#define ECS_CMD_OPTION_VERSION                            "--version"
 
 /*============================================================================
  * Static global variables
@@ -248,7 +193,7 @@ _sys_info_cpu(void)
  *----------------------------------------------------------------------------*/
 
 static void
-ecs_loc_cmd__aff_version(void)
+_print_version(void)
 {
 
   char str_date [ECS_STR_SIZE];
@@ -356,8 +301,8 @@ ecs_loc_cmd__aff_version(void)
  *----------------------------------------------------------------------------*/
 
 static void
-ecs_loc_cmd__aff_titre(int    argc,
-                       char  *argv[])
+_print_preamble(int    argc,
+                char  *argv[])
 {
   int  iarg, ltot;
 
@@ -385,7 +330,7 @@ ecs_loc_cmd__aff_titre(int    argc,
            "  |                              |\n"
            "  `------------------------------'\n"));
 
-  ecs_loc_cmd__aff_version();
+  _print_version();
 }
 
 /*----------------------------------------------------------------------------
@@ -410,126 +355,81 @@ _fct_prt(const char  *opt,
  *----------------------------------------------------------------------------*/
 
 static void
-ecs_loc_cmd__aff_aide(void)
+_print_help(void)
 {
   char opt_str[81];
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   printf(_("\n\nUsage:  %s [<options>] <file>\n"),
-         ECS_CMD_EXEC_NAME);
+         "cs_preprocess");
 
   /* General options */
   /*-----------------*/
 
   printf(_("\n\nGeneral options:\n\n"));
 
-  _fct_prt(ECS_CMD_OPTION_HELP_1, "", _(": this help message"));
-  _fct_prt(ECS_CMD_OPTION_HELP, "", _(": same"));
+  _fct_prt("-h", "", _(": this help message"));
+  _fct_prt("--help", "", _(": same"));
 
   printf("\n");
 
-  _fct_prt(ECS_CMD_OPTION_LOG_FILE, _("[file]"),
+  _fct_prt("--log", _("[file]"),
            _(": redirect terminal output to a file"));
 
   sprintf(opt_str, _("  (default file: \"%s\")"),
-          ECS_CMD_LOGFILE_NAME_DEFAULT);
+          "preprocessor.log");
   _fct_prt("", "", opt_str);
 
   printf("\n");
 
-  _fct_prt(ECS_CMD_OPTION_NULL_COMM, "",
+  _fct_prt("--no-write", "",
            _(": do not write preprocessor output"));
 
   printf("\n");
 
-  _fct_prt(ECS_CMD_OPTION_OUTPUT_FILE_1, _("<file>"),
+  _fct_prt("-o", _("<file>"),
            _(": output file name"));
   sprintf(opt_str, _("  (default file: \"%s\")"),
-          ECS_CMD_OUTFILE_NAME_DEFAULT);
+          "mesh_input");
   _fct_prt("", "", opt_str);
 
-  _fct_prt(ECS_CMD_OPTION_OUTPUT_FILE, _("<file>"), _(": same"));
+  _fct_prt("--out", _("<file>"), _(": same"));
 
   printf("\n");
 
-  _fct_prt(ECS_CMD_OPTION_ORIENT_CORREC, "",
+  _fct_prt("--reorient", "",
            _(": if necessary, correct orientation of"));
   _fct_prt("", "", _("  cells and faces"));
 
   printf("\n");
 
-  _fct_prt(ECS_CMD_OPTION_VERSION, "",
+  _fct_prt("--version", "",
            _(": print version number"));
 
-  /* Post-processing options */
-  /*-------------------------*/
-
-  printf(_("\n\nPostprocessing options:\n\n"));
-
-  _fct_prt(ECS_CMD_OPTION_CASE,
-           _("<name>"),
-           _(": case name (without this option,"));
-
-  sprintf(opt_str,
-          _("  the default name is: \"%s\""),
-          ECS_CMD_POST_CASE_DEFAULT);
-  _fct_prt("", "", opt_str);
-
-  printf("\n");
-
-#if defined(HAVE_CGNS)
-
-  sprintf(opt_str,
-          _(": %s geometry output"), "CGNS");
-  _fct_prt(ECS_CMD_OPTION_POST_CGNS, _("[<sub-options>]"), opt_str);
-
-  printf("\n");
-
-#endif /* HAVE_CGNS */
-
-  sprintf(opt_str,
-          _(": %s geometry output"), "EnSight Gold");
-  _fct_prt(ECS_CMD_OPTION_POST_ENS, _("[<sub-options>]"), opt_str);
-
-
-#if defined(HAVE_MED)
-
-  printf("\n");
-
-  sprintf(opt_str,
-          _(": %s geometry output"), "MED");
-  _fct_prt(ECS_CMD_OPTION_POST_MED, _("[<sub-options>]"), opt_str);
-
-#endif /* HAVE_MED */
-
-  /* Mesh selection sub-options */
-  /*----------------------------*/
+  /* Mesh selection options */
+  /*------------------------*/
 
   printf(_("\n\nMesh selection options:\n\n"));
 
-  _fct_prt(ECS_CMD_OPTION_FMT_MESH_FILE, _("<keyword>"),
+  _fct_prt("--format", _("<keyword>"),
            _(": selection of mesh file format"));
 
-  _fct_prt(ECS_CMD_OPTION_NUM_MESH, "<n> [...]",
+  _fct_prt("--num", "<n> [...]",
            _(": selection of mesh numbers in file"));
   _fct_prt("", "",
            _("  (if the format allows it)"));
 
-  _fct_prt(ECS_CMD_OPTION_GRP_CEL_MESH, _("<keyword>"),
+  _fct_prt("--grp-cel", _("<keyword>"),
            _(": add groups of cells"));
-  _fct_prt("", "", _("   * based on sections: keyword \""
-                     ECS_CMD_KEY_MESH_GRP_SECTION"\""));
-  _fct_prt("", "", _("   * based on zones:    keyword \""
-                     ECS_CMD_KEY_MESH_GRP_ZONE"\""));
+  _fct_prt("", "", _("   * based on sections: keyword \"section\""));
+  _fct_prt("", "", _("   * based on zones:    keyword \"zone\""));
   _fct_prt("", "", _("  (based on format features/conventions)"));
 
-  _fct_prt(ECS_CMD_OPTION_GRP_FAC_MESH, _("<keyword>"),
+  _fct_prt("--grp-fac", _("<keyword>"),
            _(": add groups of faces"));
-  _fct_prt("", "", _("   * based on sections: keyword \""
-                     ECS_CMD_KEY_MESH_GRP_SECTION"\""));
-  _fct_prt("", "", _("   * based on zones:    keyword \""
-                     ECS_CMD_KEY_MESH_GRP_ZONE"\""));
+  _fct_prt("", "", _("   * based on sections: keyword \"section""\""));
+  _fct_prt("", "", _("   * based on zones:    keyword \"zone""\""));
   _fct_prt("", "", _("  (based on format features/conventions)"));
 
   printf(_("\n\nAvailable mesh formats:\n"));
@@ -537,37 +437,41 @@ ecs_loc_cmd__aff_aide(void)
 
   ecs_pre__aff_formats();
 
-  /* Post-processign sub-options */
-  /*-----------------------------*/
+  /* Post-processing options */
+  /*-------------------------*/
 
-  opt_str[0] = '\0';
+  printf(_("\n\nPostprocessing options:\n\n"));
 
+  _fct_prt("--case",
+           _("<name>"),
+           _(": case name (without this option,"));
+
+  sprintf(opt_str,
+          _("  the default name is: \"%s\""),
+          "preprocess");
+  _fct_prt("", "", opt_str);
+
+  printf("\n");
+
+  _fct_prt("--case",
+           _("<name>"),
+           _(": case name (without this option,"));
+
+  _fct_prt("--post-error", _("[format]"),
+           _(": select output format of error meshes"));
+
+  _fct_prt("--post-volume", _("[format]"),
+           _(": activate output of volume meshes"));
+
+  printf(_("\n\nAvailable output formats:\n"));
+  printf(_("                                  keyword:\n"));
 #if defined(HAVE_CGNS)
-  strcat(opt_str, ECS_CMD_OPTION_POST_CGNS);
-  strcat(opt_str, ", ");
+  printf("   CGNS                           cgns\n");
 #endif
-
-  strcat(opt_str, ECS_CMD_OPTION_POST_ENS);
-
-#if defined(HAVE_MED)
-  strcat(opt_str, ", ");
-  strcat(opt_str, ECS_CMD_OPTION_POST_MED);
+  printf("   EnSight Gold                   ensight\n");
+#if defined(HAVE_CGNS)
+  printf("   MED                            med\n");
 #endif
-
-  printf(_("\n\nPostprocessing selection sub-options\n"
-           " (%s):\n\n"), opt_str);
-
-  _fct_prt(ECS_CMD_OPTION_POST_MAIN,
-           "", _(": activate output of main mesh"));
-  sprintf(opt_str, _("  (by default if %s not given)"),
-          ECS_CMD_OPTION_POST_INFO);
-  _fct_prt("", "", opt_str);
-
-  _fct_prt(ECS_CMD_OPTION_POST_INFO,
-              "", _(": activate output of information meshes"));
-  sprintf(opt_str, _("  (by default if %s not given)"),
-          ECS_CMD_OPTION_POST_MAIN);
-  _fct_prt("", "", opt_str);
 
   /* Environment variables */
   /*-----------------------*/
@@ -599,9 +503,9 @@ ecs_loc_cmd__aff_opt_en_double(int          argc,
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  ecs_loc_cmd__aff_titre(argc, argv);
+  _print_preamble(argc, argv);
 
-  ecs_loc_cmd__aff_aide();
+  _print_help();
 
   ecs_error(__FILE__, __LINE__, 0,
             _("Error in command line specification.\n\n"
@@ -620,9 +524,9 @@ ecs_loc_cmd__aff_manque_arg(int          argc,
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  ecs_loc_cmd__aff_titre(argc, argv);
+  _print_preamble(argc, argv);
 
-  ecs_loc_cmd__aff_aide();
+  _print_help();
 
   ecs_error(__FILE__, __LINE__, 0,
             _("Error in command line specification.\n\n"
@@ -633,68 +537,54 @@ ecs_loc_cmd__aff_manque_arg(int          argc,
  *  Fonction qui lit les sous-options d'un post traitement
  *----------------------------------------------------------------------------*/
 
-static ecs_cmd_post_t  *
-ecs_loc_cmd__lit_arg_post(int    argc,
-                          char  *argv[],
-                          int   *argpos)
+static void
+_read_post_opt(int    argc,
+               char  *argv[],
+               char   post_type[8],
+               int   *argpos)
 {
-  int         iarg;
-  int         iarg_prec;
-
-  bool        bool_fin = false;
-
-  ecs_cmd_post_t  *cmd_post;
+  int iarg = *argpos + 1;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  iarg_prec = *argpos;
+  strcpy(post_type, "ens"); /* default */
 
-  cmd_post = NULL;
+  if (iarg < argc) {
 
-  ECS_MALLOC(cmd_post, 1, ecs_cmd_post_t);
+    if (!strcmp ("ensight", argv[iarg]))
+      *argpos += 1;
 
-  cmd_post->volume = false;
-  cmd_post->info   = false;
-
-  for (iarg = *argpos + 1; iarg < argc && bool_fin == false; iarg++) {
-
-    if (!strcmp (ECS_CMD_OPTION_POST_MAIN, argv[iarg]))
-      cmd_post->volume = true;
-
-    else if (!strcmp (ECS_CMD_OPTION_POST_INFO, argv[iarg]))
-      cmd_post->info = true;
-
-    else {
-
-      /* Autre option (pas une sous-option) -> on a fini */
-
-      iarg--;
-      bool_fin = true;
-
+    if (!strcmp ("cgns", argv[iarg])) {
+#if defined(HAVE_CGNS)
+      strcpy(post_type, "cgns");
+      *argpos += 1;
+#else
+      ecs_error(__FILE__, __LINE__, 0,
+                _("CGNS output format not available in this build."));
+#endif
     }
+
+    if (!strcmp ("med", argv[iarg])) {
+#if defined(HAVE_CGNS)
+      strcpy(post_type, "med");
+      *argpos += 1;
+#else
+      ecs_error(__FILE__, __LINE__, 0,
+                _("MED output format not available in this build."));
+#endif
+    }
+
   }
-
-  /* Si aucune option de filtrage du post traitement n'est
-     activée, tous les types post traitements sont actifs */
-
-  if (cmd_post->volume == false && cmd_post->info   == false) {
-    cmd_post->volume = true;
-    cmd_post->info   = true;
-  }
-
-  *argpos = iarg - 1;
-
-  return cmd_post;
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui initialise les options de commande
+ *  Initialize command-line options
  *----------------------------------------------------------------------------*/
 
 static ecs_cmd_t *
-ecs_loc_cmd__initialise(void)
+_cmd_initialize(void)
 {
-  size_t   lng;
+  size_t   i, lng;
   ecs_cmd_t  *cmd;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -706,9 +596,9 @@ ecs_loc_cmd__initialise(void)
 
   cmd->fic_maillage                  = NULL;
 
-  lng =   strlen(ECS_CMD_POST_CASE_DEFAULT) + 1;
+  lng = strlen("preprocess") + 1;
   ECS_MALLOC(cmd->nom_cas, lng, char);
-  strcpy(cmd->nom_cas, ECS_CMD_POST_CASE_DEFAULT);
+  strcpy(cmd->nom_cas, "preprocess");
 
   cmd->nom_out                       = NULL;
 
@@ -722,19 +612,12 @@ ecs_loc_cmd__initialise(void)
   cmd->grp_fac_section = false;
   cmd->grp_fac_zone    = false;
 
-#if defined(HAVE_CGNS)
+  for (i = 0; i < 8; i++) {
+    cmd->post_err[i] = '\0';
+    cmd->post_vol[i] = '\0';
+  }
 
-  cmd->post_cgns = NULL;
-
-#endif /* HAVE_CGNS */
-
-  cmd->post_ens = NULL;
-
-#if defined(HAVE_MED)
-
-  cmd->post_med = NULL;
-
-#endif /* HAVE_MED */
+  strcpy(cmd->post_err, "ens"); /* default */
 
   cmd->correct_orient = false;
 
@@ -1028,7 +911,7 @@ ecs_cmd__lit_arg(int    argc,
   /* Initialisation des options de commande */
   /*----------------------------------------*/
 
-  cmd = ecs_loc_cmd__initialise();
+  cmd = _cmd_initialize();
 
   /*---------------------------------------------*/
   /* Lecture des options de la ligne de commande */
@@ -1036,7 +919,7 @@ ecs_cmd__lit_arg(int    argc,
 
   for (iarg = 1; iarg < argc; iarg++) {
 
-    if (!strcmp (ECS_CMD_OPTION_CASE, argv[iarg])) {
+    if (!strcmp ("--case", argv[iarg])) {
 
       if (bool_cmd_option_case == false)
         bool_cmd_option_case = true;
@@ -1054,7 +937,7 @@ ecs_cmd__lit_arg(int    argc,
         ecs_loc_cmd__aff_manque_arg(argc, argv, argv[iarg]);
       }
     }
-    else if (!strcmp (ECS_CMD_OPTION_DUMP, argv[iarg])) {
+    else if (!strcmp ("--dump", argv[iarg])) {
 
       /* Option non documentee */
 
@@ -1066,54 +949,20 @@ ecs_cmd__lit_arg(int    argc,
         cmd->nbr_dump = (ecs_int_t) atoi(argv[++iarg]);
 
     }
-    else if (!strcmp (ECS_CMD_OPTION_NULL_COMM, argv[iarg]))
+    else if (!strcmp ("--no-write", argv[iarg]))
       bool_no_write = true;
 
-    else if (!strcmp(ECS_CMD_OPTION_HELP_1, argv[iarg]) ||
-             !strcmp(ECS_CMD_OPTION_HELP, argv[iarg]))
+    else if (!strcmp("-h", argv[iarg]) ||
+             !strcmp("--help", argv[iarg]))
       bool_cmd_option_help = true;
 
-#if defined(HAVE_CGNS)
+    else if (!strcmp ("--post-error", argv[iarg]))
+      _read_post_opt(argc, argv, cmd->post_err, &iarg);
 
-    else if (!strcmp (ECS_CMD_OPTION_POST_CGNS, argv[iarg])) {
+    else if (!strcmp ("--post-volume", argv[iarg]))
+      _read_post_opt(argc, argv, cmd->post_vol, &iarg);
 
-      if (cmd->post_cgns == NULL)
-        cmd->post_cgns = ecs_loc_cmd__lit_arg_post(argc,
-                                                   argv,
-                                                   &iarg);
-      else
-        ecs_loc_cmd__aff_opt_en_double(argc, argv, argv[iarg]);
-    }
-
-#endif /* HAVE_CGNS */
-
-    else if (!strcmp (ECS_CMD_OPTION_POST_ENS, argv[iarg])) {
-
-      if (cmd->post_ens == NULL)
-        cmd->post_ens = ecs_loc_cmd__lit_arg_post(argc,
-                                                  argv,
-                                                  &iarg);
-
-      else
-        ecs_loc_cmd__aff_opt_en_double(argc, argv, argv[iarg]);
-    }
-
-#if defined(HAVE_MED)
-
-    else if (!strcmp (ECS_CMD_OPTION_POST_MED, argv[iarg])) {
-
-      if (cmd->post_med == NULL)
-        cmd->post_med = ecs_loc_cmd__lit_arg_post(argc,
-                                                  argv,
-                                                  &iarg);
-
-      else
-        ecs_loc_cmd__aff_opt_en_double(argc, argv, argv[iarg]);
-    }
-
-#endif /* HAVE_MED */
-
-    else if (!strcmp (ECS_CMD_OPTION_LOG_FILE, argv[iarg])) {
+    else if (!strcmp ("--log", argv[iarg])) {
 
       int have_error = 0;
       const char *outfic;
@@ -1128,7 +977,7 @@ ecs_cmd__lit_arg(int    argc,
       if (argc - 1 > iarg && strncmp(argv[iarg + 1], "-", 1))
         outfic = argv[++iarg];
       else
-        outfic = ECS_CMD_LOGFILE_NAME_DEFAULT;
+        outfic = "preprocessor.log";
 
       ECS_MALLOC(outfic_err, strlen(outfic) + strlen(".err") + 1, char);
 
@@ -1144,7 +993,7 @@ ecs_cmd__lit_arg(int    argc,
         have_error = 1;
 #endif
       if (have_error) {
-        ecs_loc_cmd__aff_titre(argc, argv);
+        _print_preamble(argc, argv);
         ecs_error(__FILE__, __LINE__, errno,
                   _("It is impossible to redirect the standard output "
                     "to file:\n%s"), outfic);
@@ -1153,8 +1002,8 @@ ecs_cmd__lit_arg(int    argc,
       ECS_FREE(outfic_err);
     }
 
-    else if (   !strcmp (ECS_CMD_OPTION_OUTPUT_FILE_1, argv[iarg])
-             || !strcmp (ECS_CMD_OPTION_OUTPUT_FILE, argv[iarg])) {
+    else if (   !strcmp ("-o", argv[iarg])
+             || !strcmp ("--out", argv[iarg])) {
 
       const char *outfic;
 
@@ -1164,7 +1013,7 @@ ecs_cmd__lit_arg(int    argc,
       if (argc - 1 > iarg && strncmp(argv[iarg + 1], "-", 1))
         outfic = argv[++iarg];
       else
-        outfic = ECS_CMD_OUTFILE_NAME_DEFAULT;
+        outfic = "mesh_input";
 
       ECS_MALLOC(cmd->nom_out, strlen(outfic) + 1, char);
 
@@ -1172,15 +1021,15 @@ ecs_cmd__lit_arg(int    argc,
 
     }
 
-    else if (!strcmp (ECS_CMD_OPTION_ORIENT_CORREC, argv[iarg]))
+    else if (!strcmp ("--reorient", argv[iarg]))
       cmd->correct_orient = true;
 
-    else if (!strcmp (ECS_CMD_OPTION_VERSION, argv[iarg]))
+    else if (!strcmp ("--version", argv[iarg]))
       bool_cmd_option_version = true;
 
     /* Option de choix de format */
 
-    else if (!strcmp (ECS_CMD_OPTION_FMT_MESH_FILE, argv[iarg])) {
+    else if (!strcmp ("--format", argv[iarg])) {
 
       if (cle_fmt == NULL)
         cle_fmt = argv[iarg + 1];
@@ -1193,7 +1042,7 @@ ecs_cmd__lit_arg(int    argc,
 
     /* Numéros de maillage */
 
-    else if (!strcmp (ECS_CMD_OPTION_NUM_MESH, argv[iarg])) {
+    else if (!strcmp ("--num", argv[iarg])) {
 
       int iarg_num;
 
@@ -1213,8 +1062,8 @@ ecs_cmd__lit_arg(int    argc,
       cmd->n_num_maillage = iarg_num - (iarg+1);
 
       if (cmd->n_num_maillage == 0) {
-        ecs_loc_cmd__aff_titre(argc, argv);
-        ecs_loc_cmd__aff_aide();
+        _print_preamble(argc, argv);
+        _print_help();
         ecs_error(__FILE__, __LINE__, 0,
                   _(arg_err_keyword), argv[iarg + 1], argv[iarg]);
       }
@@ -1227,19 +1076,19 @@ ecs_cmd__lit_arg(int    argc,
 
     /* Sous-options de création de groupes de cellules */
 
-    else if (!strcmp (ECS_CMD_OPTION_GRP_CEL_MESH, argv[iarg])) {
+    else if (!strcmp ("--grp-cel", argv[iarg])) {
 
       if (   iarg + 1 < argc
-          && !strcmp(ECS_CMD_KEY_MESH_GRP_SECTION, argv[iarg + 1]))
+          && !strcmp("section", argv[iarg + 1]))
         cmd->grp_cel_section = true;
 
       else if (   iarg + 1 < argc
-          && !strcmp(ECS_CMD_KEY_MESH_GRP_ZONE, argv[iarg + 1]))
+          && !strcmp("zone", argv[iarg + 1]))
         cmd->grp_cel_zone = true;
 
       else {
-        ecs_loc_cmd__aff_titre(argc, argv);
-        ecs_loc_cmd__aff_aide();
+        _print_preamble(argc, argv);
+        _print_help();
         ecs_error(__FILE__, __LINE__, 0,
                   _(arg_err_keyword), argv[iarg + 1], argv[iarg]);
       }
@@ -1249,19 +1098,17 @@ ecs_cmd__lit_arg(int    argc,
 
     /* Création de groupes de faces */
 
-    else if (!strcmp (ECS_CMD_OPTION_GRP_FAC_MESH, argv[iarg])) {
+    else if (!strcmp ("--grp-fac", argv[iarg])) {
 
-      if (   iarg + 1 < argc
-          && !strcmp(ECS_CMD_KEY_MESH_GRP_SECTION, argv[iarg + 1]))
+      if (iarg + 1 < argc && !strcmp("section", argv[iarg + 1]))
         cmd->grp_fac_section = true;
 
-      else if (   iarg + 1 < argc
-          && !strcmp(ECS_CMD_KEY_MESH_GRP_ZONE, argv[iarg + 1]))
+      else if (iarg + 1 < argc && !strcmp("zone", argv[iarg + 1]))
         cmd->grp_fac_zone = true;
 
       else {
-        ecs_loc_cmd__aff_titre(argc, argv);
-        ecs_loc_cmd__aff_aide();
+        _print_preamble(argc, argv);
+        _print_help();
         ecs_error(__FILE__, __LINE__, 0,
                   _(arg_err_keyword), argv[iarg + 1], argv[iarg]);
       }
@@ -1278,9 +1125,9 @@ ecs_cmd__lit_arg(int    argc,
 
     else {
 
-      ecs_loc_cmd__aff_titre(argc, argv);
+      _print_preamble(argc, argv);
 
-      ecs_loc_cmd__aff_aide();
+      _print_help();
 
       ecs_error(__FILE__, __LINE__, 0,
                 _("Option \"%s\" is not recognized.\n"), argv[iarg]);
@@ -1293,13 +1140,13 @@ ecs_cmd__lit_arg(int    argc,
   /* Affichage de la ligne de commande, du titre et de la version */
   /*---------------------------------------------------------------*/
 
-  ecs_loc_cmd__aff_titre(argc, argv);
+  _print_preamble(argc, argv);
 
   if (cmd->nom_out == NULL && bool_no_write == false) {
     ECS_MALLOC(cmd->nom_out,
-               strlen(ECS_CMD_OUTFILE_NAME_DEFAULT) + 1,
+               strlen("mesh_input") + 1,
                char);
-    strcpy(cmd->nom_out, ECS_CMD_OUTFILE_NAME_DEFAULT);
+    strcpy(cmd->nom_out, "mesh_input");
   }
 
   /*-----------------------------------------*/
@@ -1307,7 +1154,7 @@ ecs_cmd__lit_arg(int    argc,
   /*-----------------------------------------*/
 
   if (bool_cmd_option_help == true)
-    ecs_loc_cmd__aff_aide();
+    _print_help();
 
   /*-------------------------------------------*/
   /* Options provoquant l'arret de l'execution */
@@ -1337,7 +1184,7 @@ ecs_cmd__lit_arg(int    argc,
 
   if (cmd->fic_maillage == NULL) {
 
-    ecs_loc_cmd__aff_aide();
+    _print_help();
 
     ecs_error(__FILE__, __LINE__, 0,
               _("Error in command line specification:\n\n"
@@ -1389,21 +1236,6 @@ ecs_cmd__detruit(ecs_cmd_t  *cmd)
 
   if (cmd->n_num_maillage > 0)
     ECS_FREE(cmd->num_maillage);
-
-#if defined(HAVE_CGNS)
-  if (cmd->post_cgns != NULL)
-    ECS_FREE(cmd->post_cgns);
-#endif /* HAVE_CGNS */
-
-  if (cmd->post_ens != NULL)
-    ECS_FREE(cmd->post_ens);
-
-#if defined(HAVE_MED)
-
-  if (cmd->post_med != NULL)
-    ECS_FREE(cmd->post_med);
-
-#endif /* HAVE_MED */
 
   /* Liberation de la structure `ecs_cmd_t' */
   /*====================================*/

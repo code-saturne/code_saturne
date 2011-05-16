@@ -107,7 +107,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         os.mkdir(self.exec_dir)
         os.chdir(self.exec_dir)
 
-        self.fmt = string.split(self.__getPostCommand())[0]
+        self.fmt = self.out2.getPostProFormat().lower()
 
         # Prepare preprocessing
 
@@ -149,20 +149,15 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                 if meshNode['grp_cel']:
                     cmd += ' --grp-cel ' + meshNode['grp_cel']
 
-                cmd += ' ' + self.__getPostCommand()
+                # Define postprocessing output for errors and warnings.
 
-                # Limit postprocessing output to errors and info.
-
-                cmd += ' --info'
+                cmd += ' --post-err ' + self.fmt
 
                 cmd += ' --case preprocess'
                 if len(nodeList) > 1:
                     str_add = '_%02d' % (len(self.preprocess_cmd) + 1)
                     cmd += str_add
                     cmd += ' --out ' + os.path.join('mesh_input', 'mesh' + str_add)
-                else:
-                    cmd += ' --out mesh_input'
-
                 cmd += ' ' + mesh
 
                 log.debug("ecs_cmd = %s" % cmd)
@@ -230,7 +225,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
             try:
 
-                if self.fmt == "--ensight":
+                if self.fmt == "ensight":
 
                     os.rename(os.path.join(self.exec_dir, 'chr.ensight'),
                               os.path.join(self.exec_dir, 'quality.ensight'))
@@ -255,10 +250,10 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
                     os.chdir(self.exec_dir)
 
-                elif self.fmt == "--med":
+                elif self.fmt == "med":
                     os.rename('chr.med', 'QUALITY.med')
 
-                elif self.fmt == "--cgns":
+                elif self.fmt == "cgns":
                     os.rename('chr.cgns', 'QUALITY.cgns')
 
             except OSError: # file to rename might not exist
@@ -276,20 +271,6 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
         self.__saveLog()
         self.__finished()
-
-
-    def __getPostCommand(self):
-        """
-        Return the preprocessor argument for postprocessing.
-        """
-        format = self.out2.getPostProFormat()
-        if format == "EnSight":
-            l = " --ensight"
-        elif format == "MED":
-            l = " --med"
-        elif format == "CGNS":
-            l = " --cgns"
-        return l
 
 
     def __readFromStdout(self):

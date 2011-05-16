@@ -1,4 +1,22 @@
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Simplified Preprocessor command-line for postprocessing.
+  modified files:
+    gui/Pages/SolutionVerifView.py
+    po/fr.po
+    preprocessor/appli/ecs_cmd.c
+    preprocessor/appli/ecs_cmd.h
+    preprocessor/appli/ecs_cmd_priv.h
+    preprocessor/appli/ecs_main.c
+    preprocessor/appli/Makefile.am
+    preprocessor/base/ecs_maillage.c
+    preprocessor/base/ecs_maillage.h
+    preprocessor/base/ecs_table_def.c
+    preprocessor/base/ecs_table_def.h
+    preprocessor/pre-post/ecs_maillage_post.c
+    preprocessor/pre-post/ecs_post.c
+    preprocessor/pre-post/ecs_post.h
+
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix bug in CGNS output when CGNS uses 64-bit ids.
   modified files:
     preprocessor/pre-post/ecs_table_post_cgns.c

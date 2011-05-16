@@ -6,7 +6,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2010 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -95,8 +95,6 @@
 /*----------------------------------------------------------------------------
  *  Fichiers `include' privés du  paquetage courant
  *----------------------------------------------------------------------------*/
-
-#include "ecs_cmd_priv.h"
 
 
 /*----------------------------------------------------------------------------
@@ -226,7 +224,7 @@ _lit_maillage(const ecs_cmd_t *cmd)
     ecs_maillage__imprime(maillage,
                           nom_fic_dump,
                           cmd->nbr_dump,
-                          "After concatenation of meshes from files");
+                          "After concatenation of meshes from file");
 
   if (cmd->n_num_maillage == 1)
     printf (_("\nDone reading mesh"
@@ -253,55 +251,27 @@ _init_post(const ecs_cmd_t *cmd)
   ecs_post_t     *cas_post;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
+ 
+  cas_post = ecs_post__cree_cas(cmd->nom_cas);
 
-  cas_post = NULL;
-
-
-  if (cmd->post_ens != NULL
-#if defined(HAVE_CGNS)
-      || cmd->post_cgns != NULL
-#endif
-#if defined(HAVE_MED)
-      || cmd->post_med != NULL
-#endif
-      )
-    cas_post = ecs_post__cree_cas(cmd->nom_cas);
-
-
-  if (cmd->post_ens != NULL) {
-
-    cas_post->post_ens = true;
-
-    cas_post->opt_ens[ECS_POST_TYPE_VOLUME] = cmd->post_ens->volume;
-    cas_post->opt_ens[ECS_POST_TYPE_INFO] = cmd->post_ens->info;
-
-  }
+  if (!strcmp(cmd->post_err, "ens"))
+    cas_post->opt_ens[ECS_POST_TYPE_ERREUR] = true;
+  if (!strcmp(cmd->post_vol, "ens"))
+    cas_post->opt_ens[ECS_POST_TYPE_VOLUME] = true;
 
 #if defined(HAVE_CGNS)
-
-  if (cmd->post_cgns != NULL) {
-
-    cas_post->post_cgns = true;
-
-    cas_post->opt_cgns[ECS_POST_TYPE_VOLUME] = cmd->post_cgns->volume;
-    cas_post->opt_cgns[ECS_POST_TYPE_INFO] = cmd->post_cgns->info;
-
-  }
-
-#endif /* HAVE_CGNS */
+  if (!strcmp(cmd->post_err, "cgns"))
+    cas_post->opt_cgns[ECS_POST_TYPE_ERREUR] = true;
+  if (!strcmp(cmd->post_vol, "cgns"))
+    cas_post->opt_cgns[ECS_POST_TYPE_VOLUME] = true;
+#endif
 
 #if defined(HAVE_MED)
-
-  if (cmd->post_med != NULL) {
-
-    cas_post->post_med = true;
-
-    cas_post->opt_med[ECS_POST_TYPE_VOLUME] = cmd->post_med->volume;
-    cas_post->opt_med[ECS_POST_TYPE_INFO] = cmd->post_med->info;
-
-  }
-
-#endif /* HAVE_MED */
+  if (!strcmp(cmd->post_err, "med"))
+    cas_post->opt_med[ECS_POST_TYPE_ERREUR] = true;
+  if (!strcmp(cmd->post_vol, "med"))
+    cas_post->opt_med[ECS_POST_TYPE_VOLUME] = true;
+#endif
 
   return cas_post;
 }
@@ -439,7 +409,6 @@ main(int    argc,
   ecs_post_t        *cas_post;
 
   ecs_tab_int_t      liste_cel_err;
-  ecs_tab_int_t      liste_cel_correct;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -493,7 +462,7 @@ main(int    argc,
 
 
   /*==========================================================================*/
-  /* Tri des types géométriques pour post-traitement Ensight                  */
+  /* Tri des types géométriques pour post-traitement                          */
   /*==========================================================================*/
 
   ecs_maillage__trie_typ_geo(maillage);
@@ -525,12 +494,9 @@ main(int    argc,
 
   liste_cel_err.nbr     = 0;
   liste_cel_err.val     = NULL;
-  liste_cel_correct.nbr = 0;
-  liste_cel_correct.val = NULL;
 
   ecs_maillage__orient_nodal(maillage,
-                             cas_post != NULL ? &liste_cel_err     : NULL,
-                             cas_post != NULL ? &liste_cel_correct : NULL,
+                             &liste_cel_err,
                              cmd->correct_orient);
 
 
@@ -551,12 +517,6 @@ main(int    argc,
                       _("Orientation Error"),
                       ECS_POST_TYPE_ERREUR,
                       cas_post);
-    if (liste_cel_correct.nbr > 0)
-      _post_ele_liste(maillage,
-                      liste_cel_correct,
-                      _("Orientation Corrected"),
-                      ECS_POST_TYPE_INFO,
-                      cas_post);
 
   }
 
@@ -566,10 +526,6 @@ main(int    argc,
   if (liste_cel_err.nbr > 0) {
     ECS_FREE(liste_cel_err.val);
     liste_cel_err.nbr = 0;
-  }
-  if (liste_cel_correct.nbr > 0) {
-    ECS_FREE(liste_cel_correct.val);
-    liste_cel_correct.nbr = 0;
   }
 
 
@@ -629,38 +585,18 @@ main(int    argc,
 
 
   /*========================================================================*/
-  /* Si l'on ne peut créer de structure pour le Noyau, on termine           */
-  /*========================================================================*/
-
-  if (passe_verif == false)
-    goto Etape_fin;
-
-
-  /*========================================================================*/
   /* Envoi des informations pour le noyau                                   */
   /*========================================================================*/
 
-  if (cmd->nbr_dump > 0)
-    ecs_maillage__imprime(maillage,
-                          nom_fic_dump,
-                          cmd->nbr_dump,
-                          "Before output for Kernel");
-
-
-  ecs_maillage_ncs__ecr(cmd->nom_out, maillage);
+  if (passe_verif == true)
+    ecs_maillage_ncs__ecr(cmd->nom_out, maillage);
 
 
   /*==========================================================================*/
   /* Libération en mémoire des structures de maillage                         */
   /*==========================================================================*/
 
- Etape_fin:
-
   ecs_maillage__detruit(&maillage);
-
-
-  /* Libérations */
-  /*=============*/
 
   ecs_cmd__detruit(cmd);
 

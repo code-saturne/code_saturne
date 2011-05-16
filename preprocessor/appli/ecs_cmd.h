@@ -11,7 +11,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -32,40 +32,48 @@
   Boston, MA  02110-1301  USA
 */
 
+/*----------------------------------------------------------------------------*/
+
+#include "cs_config.h"
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "ecs_def.h"
+#include "ecs_pre.h"
 
 /*============================================================================
- *                                 Visibilité
+ * Type definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- *  Fichiers `include' librairie standard C
- *----------------------------------------------------------------------------*/
+typedef struct {
 
+  char                   *fic_maillage;
+  char                   *nom_cas;
+  char                   *nom_out;
+  int                     nbr_dump;
+  int                     n_num_maillage;
+  int                    *num_maillage;
+  ecs_pre_format_t        fmt_maillage;
+  bool                    grp_cel_section;
+  bool                    grp_cel_zone;
+  bool                    grp_fac_section;
+  bool                    grp_fac_zone;
 
-/*----------------------------------------------------------------------------
- *  Fichiers `include' publics  du  paquetage global "Utilitaire"
- *----------------------------------------------------------------------------*/
+  bool                    correct_orient;
 
+  char                    post_err[8];
+  char                    post_vol[8];
 
-/*----------------------------------------------------------------------------
- *  Fichiers `include' publics  des paquetages visibles
- *----------------------------------------------------------------------------*/
-
-
-/*----------------------------------------------------------------------------
- *  Fichiers `include' publics  du  paquetage courant
- *----------------------------------------------------------------------------*/
-
-
-/*============================================================================
- *                         Déclaration de la structure
- *============================================================================*/
-
-typedef struct _ecs_cmd_post_t    ecs_cmd_post_t;
-typedef struct _ecs_cmd_t         ecs_cmd_t;
+} ecs_cmd_t;
 
 /*============================================================================
- *                       Prototypes de fonctions publiques
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------

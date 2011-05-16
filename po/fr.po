@@ -145,35 +145,6 @@ msgstr ": affichage du numéro de version"
 msgid ""
 "\n"
 "\n"
-"Postprocessing options:\n"
-"\n"
-msgstr ""
-"\n"
-"\n"
-"options de post-traitement :\n"
-"\n"
-
-msgid "<name>"
-msgstr "<nom>"
-
-msgid ": case name (without this option,"
-msgstr ": nom du cas (en l'absence de cette option,"
-
-#, c-format
-msgid "  the default name is: \"%s\""
-msgstr "  le nom du par défaut est : \"%s\""
-
-#, c-format
-msgid ": %s geometry output"
-msgstr ": sortie de la géometrie au format %s"
-
-msgid "[<sub-options>]"
-msgstr "[<sous-options>]"
-
-#, c-format
-msgid ""
-"\n"
-"\n"
 "Mesh selection options:\n"
 "\n"
 msgstr ""
@@ -197,11 +168,11 @@ msgstr "  le fichier (si le format le permet)"
 msgid ": add groups of cells"
 msgstr ": ajoute des groupes de cellules"
 
-msgid "   * based on sections: keyword \""
-msgstr "   * selon les sections : mot clé \""
+msgid "   * based on sections: keyword \"section\""
+msgstr "   * selon les sections : mot clé \"section\""
 
-msgid "   * based on zones:    keyword \""
-msgstr "   * selon les zones    : mot clé \""
+msgid "   * based on zones:    keyword \"zone\""
+msgstr "   * selon les zones    : mot clé \"zone\""
 
 msgid "  (based on format features/conventions)"
 msgstr "  (selon possibilités/conventions du format)"
@@ -227,25 +198,46 @@ msgstr "                                  extension :   mot-clé :\n"
 msgid ""
 "\n"
 "\n"
-"Postprocessing selection sub-options\n"
-" (%s):\n"
+"Postprocessing options:\n"
 "\n"
 msgstr ""
 "\n"
 "\n"
-"Sous-options de sélection de post traitement\n"
-" (%s) :\n"
+"options de post-traitement :\n"
 "\n"
 
-msgid ": activate output of main mesh"
+msgid "<name>"
+msgstr "<nom>"
+
+msgid ": case name (without this option,"
+msgstr ": nom du cas (en l'absence de cette option,"
+
+#, c-format
+msgid "  the default name is: \"%s\""
+msgstr "  le nom du par défaut est : \"%s\""
+
+msgid "[format]"
+msgstr ""
+
+msgid ": select output format of error meshes"
+msgstr ": sélection du format des maillages d'erreur."
+
+msgid ": activate output of volume meshes"
 msgstr ": active l'écriture du maillage principal"
 
 #, c-format
-msgid "  (by default if %s not given)"
-msgstr "  (par défaut si %s non précisé)"
+msgid ""
+"\n"
+"\n"
+"Available output formats:\n"
+msgstr ""
+"\n"
+"\n"
+"Formats de maillage de sortie disponibles :\n"
 
-msgid ": activate output of information meshes"
-msgstr ": active l'écriture des maillages d'information"
+#, c-format
+msgid "                                  keyword:\n"
+msgstr "                                  mot-clé :\n"
 
 msgid "Environment variables"
 msgstr "Variables d'environnement"
@@ -298,6 +290,12 @@ msgstr ""
 "Erreur dans la spécification de la ligne de commande.\n"
 "\n"
 "L'option \"%s\" nécessite un argument."
+
+msgid "CGNS output format not available in this build."
+msgstr ""
+
+msgid "MED output format not available in this build."
+msgstr ""
 
 msgid ""
 "Case configuration\n"
@@ -472,9 +470,6 @@ msgstr "Domaine fluide"
 msgid "Orientation Error"
 msgstr "Erreur orientation"
 
-msgid "Orientation Corrected"
-msgstr "Correction orientation"
-
 #, c-format
 msgid ""
 "\n"
@@ -607,9 +602,6 @@ msgstr "Faces erreur connectivite"
 
 msgid "connectivity_error"
 msgstr "erreur_connectivite"
-
-msgid "Isolated Faces"
-msgstr "Faces isolees"
 
 #, c-format
 msgid ""
@@ -3939,6 +3931,21 @@ msgstr ""
 "\n"
 "Code_Saturne : %s:%d : Avertissement\n"
 
+msgid "    no value\n"
+msgstr "    aucune valeur\n"
+
+#, c-format
+msgid "    minimum value =         %10d\n"
+msgstr "    valeur minimale =       %10d\n"
+
+#, c-format
+msgid ""
+"    maximum value =         %10d\n"
+"\n"
+msgstr ""
+"    valeur maximale =       %10d\n"
+"\n"
+
 #, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
@@ -5897,21 +5904,6 @@ msgstr "La matrice n'est pas définie."
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"
 
-msgid "    no value\n"
-msgstr "    aucune valeur\n"
-
-#, c-format
-msgid "    minimum value =         %10d\n"
-msgstr "    valeur minimale =       %10d\n"
-
-#, c-format
-msgid ""
-"    maximum value =         %10d\n"
-"\n"
-msgstr ""
-"    valeur maximale =       %10d\n"
-"\n"
-
 msgid ""
 "\n"
 " Halo creation times summary\n"
@@ -7406,9 +7398,15 @@ msgstr ""
 "On a indiqué ITYDIS = %d et NBRPTS = %d.\n"
 "On devrait avoir la valeur %d pour NBRPTS."
 
+#, c-format
 msgid ""
 "The centred interpolation scheme is not available\n"
 "when coupling cells"
+msgstr ""
+
+msgid ""
+"\n"
+" Reordering cells by Hilbert curve\n"
 msgstr ""
 
 #, c-format
@@ -9669,14 +9667,3 @@ msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
 
-#~ msgid ""
-#~ "\n"
-#~ "Phase %d:\n"
-#~ "  "
-#~ msgstr ""
-#~ "\n"
-#~ "Phase %d :\n"
-#~ "  "
-
-#~ msgid "Phase %d, "
-#~ msgstr "Phase %d,"

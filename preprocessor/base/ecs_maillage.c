@@ -297,7 +297,7 @@ _maillage__selectionne_lst(ecs_maillage_t       *maillage,
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui détermine un nouveau table à partir d'une table de référence
+ *  Fonction qui détermine une nouveau table à partir d'une table de référence
  *   en extrayant de ce dernier les éléments sélectionnés
  *   par le tableau de booléens
  *
@@ -683,10 +683,9 @@ _maillage__nettoie_descend(ecs_maillage_t  *maillage)
 }
 
 /*----------------------------------------------------------------------------
- *  Fonction qui construit la liste des de bord, ainsi que les listes de faces
- *  avec erreur de connectivité (i.e. qui appartiennent à 2 cellules ou plus
- *  vu d'un même côté, ou qui sont à la fois entrante et sortante pour une
- *  cellule) et de faces isolées.
+ *  Fonction qui construit la liste des faces avec erreur de connectivité
+ *  (i.e. qui appartiennent à 2 cellules ou plus vu d'un même côté, ou qui
+ *  sont à la fois entrante et sortante pour une cellule).
  *
  *  Un tableau indiquant le type associé à chaque face (0 pour face isolée,
  *  1 ou 2 pour face de bord, 3 pour face interne, et 4 pour tous les autres
@@ -695,85 +694,42 @@ _maillage__nettoie_descend(ecs_maillage_t  *maillage)
  *----------------------------------------------------------------------------*/
 
 static void
-_maillage__listes_fac(const ecs_tab_int_t  *typ_fac,
-                      ecs_tab_int_t        *liste_fac_erreur,
-                      ecs_tab_int_t        *liste_fac_isolee)
+_maillage__liste_fac_err(const ecs_tab_int_t  *typ_fac,
+                         ecs_tab_int_t        *liste_fac_erreur)
 {
   size_t  cpt_fac_erreur;
-  size_t  cpt_fac_isolee;
-
   size_t  ifac;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(typ_fac != NULL);
+  assert(liste_fac_erreur != NULL);
 
   /* Initialisations */
 
   cpt_fac_erreur  = 0;
-  cpt_fac_isolee  = 0;
 
   /* Première boucle sur les faces : comptage */
   /*------------------------------------------*/
 
   for (ifac = 0; ifac < typ_fac->nbr; ifac++) {
-
-    switch(typ_fac->val[ifac]) {
-
-    case 0:
-      cpt_fac_isolee++;
-      break;
-
-    case 1:
-    case 2:
-    case 3:
-      break;
-
-    default:
+    if (typ_fac->val[ifac] == 4)
       cpt_fac_erreur++;
-
-    }
   }
 
+  /* Initialisation et allocation de la liste */
 
-  /* Initialisation et allocation des listes */
-
-  if (liste_fac_erreur != NULL) {
-    liste_fac_erreur->nbr = cpt_fac_erreur;
-    ECS_MALLOC(liste_fac_erreur->val, liste_fac_erreur->nbr, ecs_int_t);
-  }
-
-  if (liste_fac_isolee != NULL) {
-    liste_fac_isolee->nbr = cpt_fac_isolee;
-    ECS_MALLOC(liste_fac_isolee->val, liste_fac_isolee->nbr, ecs_int_t);
-  }
+  liste_fac_erreur->nbr = cpt_fac_erreur;
+  ECS_MALLOC(liste_fac_erreur->val, liste_fac_erreur->nbr, ecs_int_t);
 
   /* Seconde boucle sur les faces : remplissage des listes */
   /*-------------------------------------------------------*/
 
   cpt_fac_erreur  = 0;
-  cpt_fac_isolee  = 0;
 
   for (ifac = 0; ifac < typ_fac->nbr; ifac++) {
-
-    switch(typ_fac->val[ifac]) {
-
-    case 1:
-    case 2:
-    case 3:
-      break;
-
-    case 0:
-      if (liste_fac_isolee != NULL)
-        liste_fac_isolee->val[cpt_fac_isolee++] = ifac;
-      break;
-
-    default:
-      if (liste_fac_erreur != NULL)
-        liste_fac_erreur->val[cpt_fac_erreur++] = ifac;
-      break;
-
-    }
+    if (typ_fac->val[ifac] == 4)
+      liste_fac_erreur->val[cpt_fac_erreur++] = ifac;
   }
 }
 
@@ -1275,12 +1231,13 @@ ecs_maillage__nettoie_nodal(ecs_maillage_t  *maillage)
 /*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation des éléments en
  *   connectivité nodale.
+ *
+ *  La liste de cellules avec erreur est optionnelle.
  *----------------------------------------------------------------------------*/
 
 void
 ecs_maillage__orient_nodal(ecs_maillage_t    *maillage,
                            ecs_tab_int_t     *liste_cel_err,
-                           ecs_tab_int_t     *liste_cel_cor,
                            bool               correc_orient)
 {
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
@@ -1292,7 +1249,6 @@ ecs_maillage__orient_nodal(ecs_maillage_t    *maillage,
                               maillage->table_def[ECS_ENTMAIL_FAC],
                               maillage->table_def[ECS_ENTMAIL_CEL],
                               liste_cel_err,
-                              liste_cel_cor,
                               correc_orient);
 }
 
@@ -1851,31 +1807,15 @@ ecs_maillage__verif(ecs_maillage_t  *maillage,
   size_t  nbr_fac_erreur, nbr_fac_interne, nbr_fac_de_bord, nbr_fac_isolee;
 
   ecs_tab_int_t  typ_fac_cel, indic_erreur_cel;
-  ecs_tab_int_t  liste_fac_erreur, liste_fac_isolee;
+  ecs_tab_int_t  liste_fac_erreur;
 
-  bool  bool_post_verif, bool_coherent;
+  bool  bool_coherent;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(maillage != NULL);
 
   bool_coherent = true;
-
-  /* Détermination s'il y a lieu de post-traiter ou non */
-
-  bool_post_verif = false;
-
-  if (cas_post != NULL) {
-    if (cas_post->post_ens == true
-#if defined(HAVE_CGNS)
-        || cas_post->post_cgns == true
-#endif
-#if defined(HAVE_MED)
-        || cas_post->post_med == true
-#endif
-        )
-      bool_post_verif = true;
-  }
 
   /* On vérifie qu'on est bien en connectivité descendante */
 
@@ -1932,58 +1872,40 @@ ecs_maillage__verif(ecs_maillage_t  *maillage,
 
   /* Construction des listes de faces en cas de post-traitement */
 
-  if (bool_post_verif == true)
-    _maillage__listes_fac(&typ_fac_cel,
-                          &liste_fac_erreur,
-                          &liste_fac_isolee);
+  _maillage__liste_fac_err(&typ_fac_cel,
+                           &liste_fac_erreur);
 
   typ_fac_cel.nbr = 0;
   ECS_FREE(typ_fac_cel.val);
 
-  /* Affichage des faces isolées ou de connectivité excessive */
+  /* Affichage des faces avec connectivité excessive */
 
-  if (bool_post_verif == true) {
-
-    if (liste_fac_erreur.nbr > 0) {
+  if (liste_fac_erreur.nbr > 0) {
 
     /* En case de faces avec erreur de connectivité,
        on effectue un post traitement pour analyse de problème */
 
-      ecs_maillage_post__ecr_fac_liste(_("Connectivity Error Faces"),
-                                       maillage,
-                                       liste_fac_erreur,
-                                       ECS_POST_TYPE_ERREUR,
-                                       cas_post);
+    ecs_maillage_post__ecr_fac_liste(_("Connectivity Error Faces"),
+                                     maillage,
+                                     liste_fac_erreur,
+                                     ECS_POST_TYPE_ERREUR,
+                                     cas_post);
 
-      indic_erreur_cel
-        = ecs_table_def__err_cel_connect(maillage->table_def[ECS_ENTMAIL_CEL],
-                                         &typ_fac_cel);
+    indic_erreur_cel
+      = ecs_table_def__err_cel_connect(maillage->table_def[ECS_ENTMAIL_CEL],
+                                       &typ_fac_cel);
 
-      ecs_table_post__ecr_val(&indic_erreur_cel,
-                              _("Fluid Domain"),
-                              _("connectivity_error"),
-                              cas_post);
+    ecs_table_post__ecr_val(&indic_erreur_cel,
+                            _("Fluid Domain"),
+                            _("connectivity_error"),
+                            cas_post);
 
-      ECS_FREE(indic_erreur_cel.val);
-      indic_erreur_cel.nbr = 0;
-    }
+    ECS_FREE(indic_erreur_cel.val);
+    indic_erreur_cel.nbr = 0;
 
     ECS_FREE(liste_fac_erreur.val);
     liste_fac_erreur.nbr = 0;
 
-    /* On affiche aussi les faces isolées */
-
-    if (liste_fac_isolee.nbr > 0) {
-
-      ecs_maillage_post__ecr_fac_liste(_("Isolated Faces"),
-                                       maillage,
-                                       liste_fac_isolee,
-                                       ECS_POST_TYPE_INFO,
-                                       cas_post);
-
-      ECS_FREE(liste_fac_isolee.val);
-      liste_fac_isolee.nbr = 0;
-    }
   }
 
   return bool_coherent;

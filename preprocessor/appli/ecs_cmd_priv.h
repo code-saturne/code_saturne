@@ -43,8 +43,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "ecs_def.h"
-#include "ecs_tab_glob.h"
-
 #include "ecs_pre.h"
 
 /*----------------------------------------------------------------------------
@@ -55,38 +53,6 @@
  * Type definitions
  *============================================================================*/
 
-struct _ecs_cmd_post_t {
-
-  bool       volume;         /* output volume mesh */
-  bool       info;           /* output information meshes */
-
-};
-
-struct _ecs_cmd_t {
-
-  char                   *fic_maillage;
-  char                   *nom_cas;
-  char                   *nom_out;
-  int                     nbr_dump;
-  int                     n_num_maillage;
-  int                    *num_maillage;
-  ecs_pre_format_t        fmt_maillage;
-  bool                    grp_cel_section;
-  bool                    grp_cel_zone;
-  bool                    grp_fac_section;
-  bool                    grp_fac_zone;
-
-#if defined(HAVE_CGNS)
-  ecs_cmd_post_t         *post_cgns;
-#endif /* HAVE_CGNS */
-  ecs_cmd_post_t         *post_ens;
-#if defined(HAVE_MED)
-  ecs_cmd_post_t         *post_med;
-#endif /* HAVE_MED */
-
-  bool                    correct_orient;
-
-};
 
 /*----------------------------------------------------------------------------*/
 

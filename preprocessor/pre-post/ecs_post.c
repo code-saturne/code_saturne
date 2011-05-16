@@ -88,29 +88,23 @@ ecs_post__cree_cas(const char  *nom_cas)
   ECS_MALLOC(cas->nom_cas, strlen(nom_cas) + 1, char);
   strcpy(cas->nom_cas, nom_cas);
 
-  cas->post_ens = false;
   cas->cas_ens = NULL;
-  cas->opt_ens[ECS_POST_TYPE_VOLUME] = true;
-  cas->opt_ens[ECS_POST_TYPE_INFO] = true;
-  cas->opt_ens[ECS_POST_TYPE_ERREUR] = true;
+  cas->opt_ens[ECS_POST_TYPE_VOLUME] = false;
+  cas->opt_ens[ECS_POST_TYPE_ERREUR] = false;
 
 #if defined(HAVE_CGNS)
 
-  cas->post_cgns = false;
   cas->cas_cgns = NULL;
-  cas->opt_cgns[ECS_POST_TYPE_VOLUME] = true;
-  cas->opt_cgns[ECS_POST_TYPE_INFO] = true;
-  cas->opt_cgns[ECS_POST_TYPE_ERREUR] = true;
+  cas->opt_cgns[ECS_POST_TYPE_VOLUME] = false;
+  cas->opt_cgns[ECS_POST_TYPE_ERREUR] = false;
 
 #endif /* HAVE_CGNS */
 
 #if defined(HAVE_MED)
 
-  cas->post_med = false;
   cas->cas_med = NULL;
-  cas->opt_med[ECS_POST_TYPE_VOLUME] = true;
-  cas->opt_med[ECS_POST_TYPE_INFO] = true;
-  cas->opt_med[ECS_POST_TYPE_ERREUR] = true;
+  cas->opt_med[ECS_POST_TYPE_VOLUME] = false;
+  cas->opt_med[ECS_POST_TYPE_ERREUR] = false;
 
 #endif /* HAVE_MED */
 
