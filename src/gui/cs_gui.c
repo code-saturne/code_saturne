@@ -4023,6 +4023,8 @@ void CS_PROCF (csenso, CSENSO)
   cs_var_t  *vars = cs_glob_var;
   char fmtprb[16];
   int size_fmtprb = sizeof(fmtprb) - 1;
+  for (i = 0; i < sizeof(fmtprb); i++)
+    fmtprb[i] = '\0';
 
   cs_gui_output_value("fluid_domain", ichrvl);
   cs_gui_output_value("domain_boundary", ichrbo);

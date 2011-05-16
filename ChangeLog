@@ -1,4 +1,9 @@
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix Valgrind initialization warning in XML reader.
+  modified files:
+    src/gui/cs_gui.c
+
+* 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Further Preprocessor simplifications.
   removed files:
     preprocessor/appli/ecs_cmd_priv.h
