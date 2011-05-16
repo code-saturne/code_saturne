@@ -1,3 +1,9 @@
+* 16/05/2011 - David Monfort <david.monfort@edf.fr>
+  Revert a previous commit regarding the GUI presence checking because
+  of an incompatibility with NEPTUNE_CFD.
+  modified script:
+    bin/cs_script.py
+
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Added fvm_nodal_make_vertices_private() function.
   modified files:
