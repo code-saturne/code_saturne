@@ -296,7 +296,6 @@ if (nvls.ge.1) then
       ettp   , ettpa  , tepa   , taup   , tlag   ,                &
       tempct , tsvar  ,                                           &
       auxl(1,1) ,  auxl(1,2) ,  auxl(1,3) ,                       &
-      w1     , w2     , w3     ,                                  &
       ra     )
 
 endif

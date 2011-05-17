@@ -38,7 +38,6 @@ subroutine usray5 &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
-   w1     , w2     , w3     , w4     , w5     ,  w6     ,         &
    tparoi , qincid , flunet , xlam   , epa    , eps     ,  ck   , &
    ra     )
 
@@ -122,8 +121,6 @@ subroutine usray5 &
 !  (nfabor, *)     !    !     !                                                !
 ! cofrua, cofrub   ! ra ! --> ! boundary conditions for intensity or P-1 model !
 !  (nfabor, *)     !    !     !                                                !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !                                                !
 ! tparoi(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
 ! qincid(nfabor)   ! ra ! <-- ! radiative incident flux  (W/m2)                !
 ! flunet(nfabor)   ! ra ! --> ! net flux (W/m2)                                !
@@ -179,8 +176,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision cofrua(nfabor), cofrub(nfabor)
 
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 
 double precision tparoi(nfabor), qincid(nfabor)
 double precision xlam(nfabor), epa(nfabor)

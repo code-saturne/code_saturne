@@ -340,7 +340,6 @@ if (iroule.ge.1) then
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl ,                     &
    ra(idipar) , ra(iyppar) ,                                      &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
   iok = 0
@@ -738,15 +737,13 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
 
     call lagipn                                                   &
     !==========
-    ( idebia , idebra ,                                           &
-      ncelet , ncel   ,                                           &
+    ( ncelet , ncel   ,                                           &
       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       npar1  , npar2  ,                                           &
       itepa  ,                                                    &
       ia     ,                                                    &
       rtp    ,                                                    &
       ettp   , tepa   , vagaus ,                                  &
-      w1     , w2     , w3     ,                                  &
       ra     )
 
   endif
@@ -775,7 +772,6 @@ call uslast                                                       &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    statis , stativ ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================

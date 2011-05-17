@@ -342,7 +342,6 @@ unspi = 1.d0/pi
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    propce(1,ipproc(icak(1))),                                &
-   w1     , w2     , w3     , w4     , w5     ,  w6    ,          &
    ra     )
 
   endif
@@ -420,7 +419,6 @@ unspi = 1.d0/pi
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
    propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
@@ -517,7 +515,6 @@ unspi = 1.d0/pi
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  ,              &
    ra     )
 
@@ -903,7 +900,6 @@ unspi = 1.d0/pi
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
    propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &

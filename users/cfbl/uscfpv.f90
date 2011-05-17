@@ -35,7 +35,6 @@ subroutine uscfpv &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -124,7 +123,6 @@ subroutine uscfpv &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1...3(ncelet    ! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -163,7 +161,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -175,6 +172,8 @@ double precision varam, varbm, varcm, vardm
 double precision varal, varbl, varcl, vardl
 double precision varac, varbc
 double precision xrtp
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
 
@@ -201,6 +200,8 @@ endif
 
 ! --- Memory initialization
 
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 !===============================================================================
 
@@ -403,7 +404,7 @@ call uscfth                                                     &
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   propce(1, ipproc(icv) )    , w1     , w2     , w3     )
+   propce(1, ipproc(icv) )  , w1     , w2     , w3     )
 
 ! --- Discard the following test so that the code do not stop
 if(1.eq.1) then
@@ -558,6 +559,8 @@ do ii = 1, nscaus
 enddo
 ! --- End of the loop on the scalars
 
+! Free memory
+deallocate(w1, w2, w3)
 
 ! --- Discard the following test so that the code do not stop
 if(1.eq.1) then

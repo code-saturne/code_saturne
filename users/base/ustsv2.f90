@@ -39,8 +39,6 @@ subroutine ustsv2 &
    coefa  , coefb  , ckupdc , smacel , produc , gphigk ,          &
    crvexp , crvimp ,                                              &
    viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    , w11    ,                   &
    ra     )
 
 !===============================================================================
@@ -138,7 +136,6 @@ subroutine ustsv2 &
 ! viscf(nfac)      ! ra ! --- ! work array                                     !
 ! viscb(nfabor)    ! ra ! --- ! work array                                     !
 ! xam(nfac,2)      ! ra ! --- ! work array                                     !
-! w1 to w11(ncelet)! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -184,10 +181,6 @@ double precision crvexp(ncelet), crvimp(ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision produc(ncelet), gphigk(ncelet)
 double precision xam(nfac,2)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision w10(ncelet), w11(ncelet)
 double precision ra(*)
 
 ! Local variables

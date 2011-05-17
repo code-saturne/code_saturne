@@ -40,7 +40,6 @@ subroutine uslast &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
    statis , stativ ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -123,7 +122,6 @@ subroutine uslast &
 ! stativ           ! ra ! <-- ! cumul. for the variance of the volume stats.   !
 !(ncelet,          !    !     !                                                !
 !   nvlsta-1)      !    !     !                                                !
-! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -172,7 +170,6 @@ double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision ra(*)
 
 ! Local variables

@@ -35,7 +35,6 @@ subroutine lagipn &
    ia     ,                                                       &
    rtp    ,                                                       &
    ettp   , tepa   , vagaus ,                                     &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -73,7 +72,6 @@ subroutine lagipn &
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
-! w1...w3(ncel)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -114,13 +112,14 @@ integer          ia(*)
 double precision rtp(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision ra(*)
 
 ! Local variables
 
 integer          iel , npt , nomb
 double precision tu , d2s3
+
+double precision, allocatable, dimension(:) :: w1
 
 !===============================================================================
 
@@ -129,6 +128,9 @@ double precision tu , d2s3
 !===============================================================================
 
 d2s3 = 2.d0 / 3.d0
+
+! Allocate a work array
+allocate(w1(ncelet))
 
 !===============================================================================
 ! 2. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANNEES VUES
@@ -189,6 +191,9 @@ do npt = npar1,npar2
   ettp(npt,jwf) = rtp(iel,iw) + vagaus(npt,3)*tu
 
 enddo
+
+! Free memory
+deallocate(w1)
 
 !--------
 ! FORMATS

@@ -38,7 +38,7 @@ subroutine uslaed &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
-   auxl1  , auxl2  , auxl3  , w1     , w2     , w3     ,          &
+   auxl1  , auxl2  , auxl3  ,                                     &
    ra     )
 
 !===============================================================================
@@ -124,7 +124,6 @@ subroutine uslaed &
 ! auxl1(nbpmax)    ! ra ! ---   work array                                     !
 ! auxl2(nbpmax)    ! ra ! --- ! work array                                     !
 ! auxl3(nbpmax)    ! ra ! --- ! work array                                     !
-! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -169,7 +168,6 @@ double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax), auxl2(nbpmax), auxl3(nbpmax)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision ra(*)
 
 ! Local variables

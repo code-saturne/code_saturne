@@ -1085,7 +1085,6 @@ if (     ippmod(ieljou).ge.1                                      &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(iw1) , ra(iw2) ,                                            &
    tracel , trafac , trafbr ,                                     &
    ra     )
 

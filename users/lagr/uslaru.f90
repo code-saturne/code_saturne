@@ -40,7 +40,6 @@ subroutine uslaru &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl  ,                    &
    distpa , distyp ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -98,7 +97,6 @@ subroutine uslaru &
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 ! distpa(ncelet    ! ra ! <-- ! wall-normal distance arrays                    !
 ! disty(ncelet)    ! ra ! <-- ! y+ distance                                    !
-! w1...w3(ncel)    ! ra ! --- ! work arrays                                    !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -145,7 +143,6 @@ double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*) , croule(ncelet)
 double precision auxl(nbpmax,3)
 double precision distpa(ncelet) , distyp(ncelet)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision ra(*)
 
 ! Local variables

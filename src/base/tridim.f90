@@ -893,8 +893,6 @@ do while (iterns.le.nterup)
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
-    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-    ra(icoefu)      ,                                              &
     ra     )
 
   else

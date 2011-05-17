@@ -39,7 +39,6 @@ subroutine ustsns &
    coefa  , coefb  , ckupdc , smacel ,                            &
    crvexp , crvimp ,                                              &
    dam    , xam    ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !===============================================================================
@@ -119,8 +118,6 @@ subroutine ustsns &
 ! crvimp           ! ra ! --> ! implicit part of the source term               !
 ! dam(ncelet)      ! ra ! --- ! work array                                     !
 ! xam(nfac,2)      ! ra ! --- ! work array                                     !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -164,8 +161,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 double precision dam(ncelet ),xam(nfac ,2)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision ra(*)
 
 ! Local variables

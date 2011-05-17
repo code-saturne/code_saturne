@@ -229,8 +229,6 @@ call usphyv &
   dt     , rtp    , rtpa   ,                                     &
   propce , propfa , propfb ,                                     &
   coefa  , coefb  ,                                              &
-  w1     , w2     , w3     , w4     ,                            &
-  w5     , w6     , w7     , w8     ,                            &
   ra     )
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
@@ -501,8 +499,6 @@ call usvist                                                     &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  , ra(ickupd), ra(ismace),        &
-  w1     , w2     , w3     , w4     ,                            &
-  w5     , w6     , w7     , w8     ,                            &
   ra     )
 
 !===============================================================================
@@ -562,8 +558,6 @@ if (iale.eq.1.and.ntcabs.eq.0) then
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , propce(1,ipproc(ivisma(1))) ,                &
    propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) ,    &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 endif

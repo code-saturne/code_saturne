@@ -145,7 +145,6 @@ call uscfpv                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !     Si IUSCFP = 0, l'utilisateur n'a pas inclus le ss pgm uscfpv dans

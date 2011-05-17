@@ -1176,7 +1176,6 @@ do isou = 1, 3
     w7     , drtp   ,                                              &
  !        ------   ------
     dam    , xam    ,                                              &
-    w1     , w2     , w3     , w4     , w5     , w6     ,          &
     ra     )
 
     if (nbrcpl.gt.0) then

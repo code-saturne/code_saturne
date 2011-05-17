@@ -36,8 +36,6 @@ subroutine usvist &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 !===============================================================================
@@ -86,7 +84,6 @@ subroutine usvist &
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! ra ! <-- ! values of variables related to mass source     !
 ! (ncesmp,*   )    !    !     ! term. If ivar=ipr, smacel=mass flux            !
-! w1...8(ncelet    ! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -128,8 +125,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -139,6 +134,8 @@ integer          iuiph, iviph, iwiph
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst, iphydp
 double precision dudx, dudy, dudz, sqdu, visct, rom
+
+double precision, allocatable, dimension(:,:) :: grad, trav
 
 !===============================================================================
 
@@ -170,6 +167,10 @@ if(1.eq.1) return
 
 ! --- Memory
 
+! Allocate work arrays
+allocate(grad(ncelet,3))
+allocate(trav(ncelet,3))
+
 ! --- Number associated to variables (in RTP)
 iuiph = iu
 iviph = iv
@@ -194,8 +195,6 @@ iccocg = 1
 inc = 1
 iphydp = 0
 
-! W1 = DUDX, W2 = DUDY, W3=DUDZ
-
 call grdcel                                                       &
 !==========
  ( iuiph  , imrgra , inc    , iccocg , iphydp ,                   &
@@ -203,11 +202,11 @@ call grdcel                                                       &
    iwarni(iuiph) , nfecra ,                                       &
    epsrgr(iuiph) , climgr(iuiph) , extrag(iuiph) ,                &
    ia     ,                                                       &
-   w6     , w6     , w6     ,                                     &
+   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    rtpa(1,iuiph) , coefa(1,ipcliu) , coefb(1,ipcliu) ,            &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
-   w6     , w7     , w8     ,                                     &
+   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
+   !---------   ----------   ----------
+   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
 !===============================================================================
@@ -221,9 +220,9 @@ do iel = 1, ncel
   rom   = propce(iel,ipcrom)
 
 ! --- Various computations
-  dudx = w1(iel)
-  dudy = w2(iel)
-  dudz = w3(iel)
+  dudx = grad(iel,1)
+  dudy = grad(iel,2)
+  dudz = grad(iel,3)
   sqdu = sqrt(dudx**2+dudy**2+dudz**2)
 
 ! --- Computation of the new dynamic viscosity
@@ -233,6 +232,10 @@ do iel = 1, ncel
   propce(iel,ipcvst) = visct
 
 enddo
+
+! Free memory
+deallocate(trav)
+deallocate(grad)
 
 !--------
 ! Formats

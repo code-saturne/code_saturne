@@ -227,7 +227,6 @@ if ( isuite.eq.0 ) then
  ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4),                &
    ra     )
 
 ! ----- Initialisation des proprietes physiques ROM et ROMB

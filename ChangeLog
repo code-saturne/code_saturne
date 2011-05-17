@@ -1,3 +1,80 @@
+* 17/05/2011 - David Monfort <david.monfort@edf.fr>
+  Remove most of the work arrays in user subroutines and add allocatable
+  arrays (only) when necessary.
+  modified routines:
+    src/base/covofi.f90
+    src/base/dvvpst.f90
+    src/base/phyvar.f90
+    src/base/preduv.f90
+    src/base/reseps.f90
+    src/base/resrij.f90
+    src/base/resssg.f90
+    src/base/resv2f.f90
+    src/base/scalai.f90
+    src/base/testel.f90
+    src/base/tridim.f90
+    src/base/turbke.f90
+    src/base/turbkw.f90
+    src/base/turbsa.f90
+    src/base/visdyn.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfiniv.f90
+    src/cfbl/cfmsfl.f90
+    src/cfbl/cfmsgs.f90
+    src/cfbl/cfphyv.f90
+    src/cfbl/cfqdmv.f90
+    src/cfbl/cfvarp.f90
+    src/elec/elphyv.f90
+    src/lagr/lagent.f90
+    src/lagr/lagipn.f90
+    src/lagr/lagphy.f90
+    src/lagr/lagune.f90
+    src/pprt/ppclim.f90
+    src/rayt/raycli.f90
+    src/rayt/raydom.f90
+    users/atmo/usatcl.f90
+    users/base/usclim.f90
+    users/base/usphyv.f90
+    users/base/uspt1d.f90
+    users/base/ussmag.f90
+    users/base/ustske.f90
+    users/base/ustskw.f90
+    users/base/ustsns.f90
+    users/base/ustsri.f90
+    users/base/ustssa.f90
+    users/base/ustssc.f90
+    users/base/ustsv2.f90
+    users/base/usvima.f90
+    users/base/usvist.f90
+    users/cfbl/uscfcl.f90
+    users/cfbl/uscfpv.f90
+    users/cfbl/uscfxi.f90
+    users/cogz/usd3pc.f90
+    users/cogz/usd3pi.f90
+    users/cogz/usebuc.f90
+    users/cogz/usebui.f90
+    users/cogz/uslwcc.f90
+    users/cogz/uslwci.f90
+    users/cplv/uscpcl.f90
+    users/cplv/uscpiv.f90
+    users/cplv/uscplc.f90
+    users/ctwr/usctcl.f90
+    users/elec/uselcl.f90
+    users/elec/uselen.f90
+    users/elec/uselph.f90
+    users/elec/uselrc.f90
+    users/elec/usetcl.f90
+    users/fuel/usfucl.f90
+    users/fuel/usfuiv.f90
+    users/lagr/uslaed.f90
+    users/lagr/uslain.f90
+    users/lagr/uslaru.f90
+    users/lagr/uslast.f90
+    users/rayt/usray2.f90
+    users/rayt/usray3.f90
+    users/rayt/usray4.f90
+    users/rayt/usray5.f90
+
 * 17/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix parsing and example of wall-clock time for SLURM.
   modified files:

@@ -264,8 +264,6 @@ call ustssc                                                       &
    smbrs  , rovsdt ,                                              &
 !        ------   ------
    viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , drtp   , dam    ,          &
    ra     )
 
 do iel = 1, ncel

@@ -250,7 +250,6 @@ if(itsqdm.ne.0) then
    w10    , w9     ,                                              &
 !        ------   ------
    w8     , xam    ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     Suivant Y
@@ -265,7 +264,6 @@ if(itsqdm.ne.0) then
    w11    , w9     ,                                              &
 !        ------   ------
    w8     , xam    ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     Suivant Z
@@ -280,7 +278,6 @@ if(itsqdm.ne.0) then
    w12    , w9     ,                                              &
 !        ------   ------
    w8     , xam    ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 

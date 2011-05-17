@@ -522,7 +522,6 @@ call ussmag                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smagor , w1     , w2     ,                                     &
-   w3     , w4     , w5     , w6     ,                            &
    ra     )
 
 iclipc = 0

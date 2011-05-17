@@ -313,8 +313,6 @@ call ustsv2                                                       &
    smbr   , rovsdt ,                                              &
 !        ------   ------
    viscf  , viscb  , xam    ,                                     &
-   w2     , w3     , w4     , w5     , w6     , w7     ,          &
-   w8     , w9     , w10    , dam    , drtp   ,                   &
    ra     )
 
 !     Si on extrapole les T.S.
@@ -563,8 +561,6 @@ call ustsv2                                                       &
    smbr   , rovsdt ,                                              &
 !        ------   ------
    viscf  , viscb  , xam    ,                                     &
-   w2     , w3     , w4     , w5     , w6     , w7     ,          &
-   w8     , w9     , w10    , dam    , drtp   ,                   &
    ra     )
 
 !     Si on extrapole les T.S.

@@ -164,10 +164,6 @@ subroutine usfuiv &
 !                  !    !     ! for velocities           ( vistl+visct)*gradu  !
 !                  !    !     ! for pressure                         dt*gradp  !
 !                  !    !     ! for scalars    cp*(viscls+visct/sigmas)*gradt  !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! coefu            ! ra ! --- ! tab de trav                                    !
-!  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 

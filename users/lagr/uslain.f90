@@ -39,7 +39,7 @@ subroutine uslain &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , vagaus , w1     , w2     , w3     ,          &
+   ettp   , tepa   , vagaus ,                                     &
    ra     )
 
 !===============================================================================
@@ -100,7 +100,6 @@ subroutine uslain &
 ! (nbpmax,nvep)    !    !     !                                                !
 ! vagaus           ! ra ! --> ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
-! w1..w3(ncelet    ! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
@@ -149,7 +148,6 @@ double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -282,7 +280,6 @@ if ( 1.eq.0 ) then
     ia     ,                                                      &
     rtpa   ,                                                      &
     ettp   , tepa   , vagaus ,                                    &
-    w1     , w2     , w3     ,                                    &
     ra     )
 
 endif

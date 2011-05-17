@@ -1208,15 +1208,13 @@ npar2 = nbpart+nbpnew
 
 call lagipn                                                       &
 !==========
-  ( ifinia , ifinra ,                                             &
-    ncelet , ncel   ,                                             &
+  ( ncelet , ncel   ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npar1  , npar2  ,                                             &
     itepa  ,                                                      &
     ia     ,                                    &
     rtpa   ,                                                      &
     ettp   , tepa   , vagaus ,                                    &
-    w1     , w2     , w3     ,                                    &
     ra     )
 
 !===============================================================================
@@ -1233,7 +1231,7 @@ call uslain                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , vagaus , w1     , w2     , w3     ,          &
+   ettp   , tepa   , vagaus ,                                     &
    ra     )
 
 !   reinitialisation du compteur de nouvelles particules

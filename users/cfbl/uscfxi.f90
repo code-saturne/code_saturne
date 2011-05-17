@@ -34,7 +34,6 @@ subroutine uscfxi &
  ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   w1     , w2     , w3     , w4     ,                            &
    ra     )
 
 !===============================================================================
@@ -91,7 +90,6 @@ subroutine uscfxi &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1..4(ncelet)    ! tr ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -131,7 +129,6 @@ integer          ia(*)
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision w1(ncelet), w2(ncelet), w3(ncelet), w4(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -141,6 +138,8 @@ integer          iel
 integer          iccfth, iscal, imodif, iutile
 
 integer, allocatable, dimension(:) :: lstelt
+
+double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 
 !===============================================================================
 
@@ -172,6 +171,8 @@ write(nfecra,9001)
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet), w4(ncelet))
 
 imodif = 1
 
@@ -279,6 +280,9 @@ if ( isuite.eq.0 ) then
 
 
 endif
+
+! Free memory
+deallocate(w1, w2, w3, w4)
 
 !----
 ! Formats

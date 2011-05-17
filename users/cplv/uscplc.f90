@@ -36,7 +36,6 @@ subroutine uscplc &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
 !===============================================================================
@@ -424,10 +423,6 @@ subroutine uscplc &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! w1,2,3,4,5,6     ! tr ! --- ! tableaux de travail                            !
-!  (ncelet         !    !     !  (calcul du gradient de pression)              !
-! coefu            ! tr ! --- ! tab de trav                                    !
-!  (nfabor,3)      !    !     !  (calcul du gradient de pression)              !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
@@ -475,9 +470,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision coefu(nfabor,ndim)
 double precision ra(*)
 
 ! VARIABLES LOCALES

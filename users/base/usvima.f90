@@ -36,8 +36,6 @@ subroutine usvima &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    viscmx , viscmy , viscmz ,                                     &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 !===============================================================================
@@ -86,8 +84,6 @@ subroutine usvima &
 ! viscmx(ncelet)    ! ra ! <-- ! mesh viscosity in X direction                 !
 ! viscmy(ncelet)    ! ra ! <-- ! mesh viscosity in Y direction                 !
 ! viscmz(ncelet)    ! ra ! <-- ! mesh viscosity in Z direction                 !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -127,8 +123,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
 double precision ra(*)
 
 ! Local variables

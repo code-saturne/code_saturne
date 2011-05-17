@@ -436,8 +436,6 @@ call ustssa                                                       &
    w7     , dam    ,                                              &
 !  ------   ------
    viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   drtp   , smbrsa , w8     , w9     ,                            &
    ra     )
 
 ! On libere W1, W2, W3, W4, W5, W6, W8, W9,

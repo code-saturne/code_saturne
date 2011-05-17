@@ -174,7 +174,6 @@ if ( ippmod(icod3p).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
   endif
 
@@ -190,7 +189,6 @@ if ( ippmod(icoebu).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 endif
 
@@ -205,7 +203,6 @@ if ( ippmod(icolwc).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 endif
 
@@ -220,7 +217,6 @@ if ( ippmod(icp3pl).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
 endif
@@ -235,7 +231,6 @@ if ( ippmod(icpl3c).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 endif
 
@@ -249,7 +244,6 @@ if ( ippmod(icfuel).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 endif
 
@@ -263,7 +257,6 @@ if ( ippmod(icompf).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 endif
 
@@ -283,7 +276,6 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
   if ( ippmod(ieljou).eq.3 .or. ippmod(ieljou).eq.4 ) then
@@ -295,7 +287,6 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
   endif
@@ -313,7 +304,6 @@ if ( ippmod(iatmos).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
 endif
@@ -329,7 +319,6 @@ if (ippmod(iaeros).ge.0) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
 endif

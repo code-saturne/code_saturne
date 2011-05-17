@@ -36,7 +36,7 @@ subroutine usray3 &
    izfrdp ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   ck     , w1     , w2     , w3     , w4     , w5     ,  w6    , &
+   ck     ,                                                       &
    ra     )
 
 !===============================================================================
@@ -81,7 +81,6 @@ subroutine usray3 &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ck(ncelet)       ! ra ! --> ! medium's absorption coefficient                !
 !                  !    !     ! (zero if transparent)                          !
-! w1...6(ncelet)   ! ra ! --- ! working array                                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -127,8 +126,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 
 double precision ck(ncelet)
 

@@ -293,7 +293,6 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    tbord  , propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ihconv))  ,&
    propfb(1,ipprob(ifconv)),                                      &
    propfb(1,ipprob(ixlam)) , propfb(1,ipprob(iepa)) ,             &
@@ -368,7 +367,6 @@ endif
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    tbord  , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv))  ,&
    propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
@@ -628,7 +626,6 @@ endif
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , tbord  , tempk  ,                   &
 !                                   Resultat : T en K
    ra     )
@@ -798,7 +795,6 @@ endif
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
    tempk  ,                                                       &
 !                          HPAROI
@@ -847,7 +843,6 @@ endif
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    text   , tbord  , tempk  ,                                     &
 !                       HEXT
    ra     )

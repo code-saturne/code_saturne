@@ -37,7 +37,6 @@ subroutine usray4 &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    tparop , hparop , tempk  ,                                     &
    ra     )
 
@@ -74,8 +73,6 @@ subroutine usray4 &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !                                                !
 ! tparop(nfabor)   ! i  ! <-- ! temperature in kelvin for wall boundary faces  !
 ! hparop(nfabor)   ! i  ! --> ! enthalpy for wall boundary faces               !
 ! tempk(ncelet)    ! i  ! --> ! temperature in kelvin                          !
@@ -124,8 +121,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)

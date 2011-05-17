@@ -35,8 +35,6 @@ subroutine uselrc &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
    ra     )
 
 !===============================================================================
@@ -73,7 +71,6 @@ subroutine uselrc &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
 ! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..9(ncelet     ! tr ! --- ! tableau de travail    cellules                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -115,9 +112,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision viscf(nfac), viscb(nfabor)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -131,6 +125,8 @@ double precision emax  , aiex   , amex
 double precision rayo  , econs  , z1     , z2   , posi
 double precision dtj   , dtjm   , delhsh , cdtj , cpmx
 double precision xelec , yelec  , zelec
+
+double precision, allocatable, dimension(:) :: w1
 
 !===============================================================================
 !===============================================================================
@@ -389,6 +385,10 @@ if ( ippmod(ielarc).ge.1 ) then
 !        -----------------------------------------
 
     if(ntcabs.ge.400 .and. iclaq .eq. 0 ) then
+
+      ! Allocate a work array
+      allocate(w1(ncelet))
+
       amex = 1.d30
       aiex = -1.d30
       emax = 0.d0
@@ -422,6 +422,9 @@ if ( ippmod(ielarc).ge.1 ) then
           endif
         endif
       enddo
+
+      ! Free memory
+      deallocate(w1)
 
       write(nfecra,*)
       WRITE(NFECRA,*) ' NT min et max de E = ',NTCABS,AMEX,AiEX

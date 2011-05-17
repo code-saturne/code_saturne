@@ -37,7 +37,6 @@ subroutine ussmag &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smagor , mijlij , mijmij ,                                     &
-   w1     , w2     , w3     , w4     ,                            &
    ra     )
 
 !===============================================================================
@@ -90,7 +89,6 @@ subroutine ussmag &
 !                  !    !     ! d'un modlele dynamique                         !
 ! mijlij(ncelet    ! tr ! <-- ! mij.lij avant moyenne locale                   !
 ! mijmij(ncelet    ! tr ! <-- ! mij.mij avant moyenne locale                   !
-! w1..4(ncelet)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -131,12 +129,13 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
 double precision ra(*)
 
 ! Local variables
 
 integer          iel
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
 
@@ -154,6 +153,9 @@ if(1.eq.1) return
 !===============================================================================
 
 ! --- Memoire
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 !===============================================================================
 ! 2.  MOYENNE SPATIALE SUR LE VOISINAGE ETENDU
@@ -180,6 +182,8 @@ enddo
 call cfiltr ( w1     , smagor , w2     , w3     )
 !==========
 
+! Free memory
+deallocate(w1, w2, w3)
 
 !----
 ! FIN

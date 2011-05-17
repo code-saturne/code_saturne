@@ -38,8 +38,6 @@ subroutine ustssa &
    coefa  , coefb  , ckupdc , smacel , tinssa , divu   ,          &
    crvexp , crvimp ,                                              &
    viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    ,                            &
    ra     )
 
 !===============================================================================
@@ -128,8 +126,6 @@ subroutine ustssa &
 ! viscf(nfac)      ! ra ! --- ! work array                                     !
 ! viscb(nfabor)    ! ra ! --- ! work array                                     !
 ! xam(nfac,2)      ! ra ! --- ! work array                                     !
-! w1 to w10        ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -173,9 +169,6 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision tinssa(ncelet), divu(ncelet)
 double precision crvexp(ncelet), crvimp(ncelet)
 double precision viscf(nfac), viscb(nfabor), xam(nfac,2)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet), w10(ncelet)
 double precision ra(*)
 
 ! Local variables

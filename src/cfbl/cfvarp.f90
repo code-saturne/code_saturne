@@ -127,7 +127,7 @@ if ( ippmod(icompf).ge.0 ) then
   dblpre(1) = 0.d0
   call uscfth                                                   &
   !==========
- ( ii , ii , ii ,                                                 &
+ ( ii , ii ,                                                      &
    iccfth , imodif  ,                                             &
    dblpre , dblpre , dblpre , dblpre , dblpre , dblpre ,          &
    dblpre , dblpre ,                                              &

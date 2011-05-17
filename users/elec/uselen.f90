@@ -38,7 +38,6 @@ subroutine uselen &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     ,                                              &
    tracel , trafac , trafbr ,                                     &
    ra     )
 
@@ -77,8 +76,6 @@ subroutine uselen &
 ! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
 ! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
 ! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
-! w1-w2            ! tr ! --- ! tab reel pour calcul gradient                  !
-! (ncelet,3)       !    !     !                                                !
 ! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
@@ -130,7 +127,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
-double precision w1(ncelet,3), w2(ncelet,3)
 double precision ra(*)
 
 ! Local variables
@@ -144,6 +140,8 @@ integer          ientla, ivarpr
 double precision epsrgp, climgp, extrap
 double precision rbid(1)
 
+double precision, allocatable, dimension(:,:) :: grad, trav
+
 !===============================================================================
 !===============================================================================
 ! 0.  PAR DEFAUT, ON CONSIDERE QUE LE SOUS PROGRAMME CI-DESSOUS CONVIENT
@@ -156,9 +154,11 @@ double precision rbid(1)
 !       IL PEUT LES AJOUTER A LA FIN, VOIR LA DOCUMENTATION DE USEEVO
 !===============================================================================
 
-
-
 if(nummai.eq.-1) then
+
+  ! Allocate work arrays
+  allocate(grad(ncelet,3))
+  allocate(trav(ncelet,3))
 
 !===============================================================================
 ! 1.   Graident of the real potential
@@ -189,9 +189,9 @@ if(nummai.eq.-1) then
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
-   w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
+   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d POTR /dx   d POTR /dy   d POTR /dz
-   w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
+   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
 !
@@ -200,7 +200,7 @@ if(nummai.eq.-1) then
 
   call psteva(nummai, namevr, idimt, ientla, ivarpr,              &
   !==========
-              ntcabs, ttcabs, w1, rbid, rbid)
+              ntcabs, ttcabs, grad, rbid, rbid)
 
 !===============================================================================
 ! 2.   For Joule Heating by direct conduction :
@@ -235,9 +235,9 @@ if(nummai.eq.-1) then
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
-   w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
+   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d POTI /dx   d POTI /dy   d POTI /dz
-   w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
+   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
 !
@@ -246,7 +246,7 @@ if(nummai.eq.-1) then
 
     call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
     !==========
-                ntcabs, ttcabs, w1, rbid, rbid)
+                ntcabs, ttcabs, grad, rbid, rbid)
 
   endif
 
@@ -286,16 +286,16 @@ if(nummai.eq.-1) then
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
-   w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
+   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d POTI /dx   d POTI /dy   d POTI /dz
-   w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
+   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      tracel(iloc)          = -propce(iel,ipcsii)*w1(iel,1)
-      tracel(iloc+ncelps)   = -propce(iel,ipcsii)*w1(iel,2)
-      tracel(iloc+2*ncelps) = -propce(iel,ipcsii)*w1(iel,3)
+      tracel(iloc)          = -propce(iel,ipcsii)*grad(iel,1)
+      tracel(iloc+ncelps)   = -propce(iel,ipcsii)*grad(iel,2)
+      tracel(iloc+2*ncelps) = -propce(iel,ipcsii)*grad(iel,3)
     enddo
 !
     ientla = 0
@@ -340,9 +340,9 @@ if(nummai.eq.-1) then
    ia     ,                                                       &
    ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-   w1(1,1) , w1(1,2) , w1(1,3) ,                                  &
+   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d Ax /dx   d Ax /dy   d Ax /dz
-   w2(1,1) , w2(1,2) , w2(1,3) ,                                  &
+   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
 !       B = rot A ( B = curl A)
@@ -350,8 +350,8 @@ if(nummai.eq.-1) then
     do iloc = 1, ncelps
       iel = lstcel(iloc)
       tracel(iloc)          =  zero
-      tracel(iloc+ncelps)   =  w1(iel,3)
-      tracel(iloc+2*ncelps) = -w1(iel,2)
+      tracel(iloc+ncelps)   =  grad(iel,3)
+      tracel(iloc+2*ncelps) = -grad(iel,2)
     enddo
 
 !    Ay component
@@ -378,18 +378,18 @@ if(nummai.eq.-1) then
     ia     ,                                                      &
     ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    w1(1,1) , w1(1,2) , w1(1,3) ,                                 &
+    grad(1,1) , grad(1,2) , grad(1,3) ,                           &
 !       d Ay /dx   d Ay /dy   d Ay /dz
-    w2(1,1) , w2(1,2) , w2(1,3) ,                                 &
+    trav(1,1) , trav(1,2) , trav(1,3) ,                           &
     ra     )
 
 !       B = rot A (B = curl A)
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      tracel(iloc)          = tracel(iloc)          - w1(iel,3)
+      tracel(iloc)          = tracel(iloc)          - grad(iel,3)
       tracel(iloc+ncelps)   = tracel(iloc + ncelps) + zero
-      tracel(iloc+2*ncelps) = tracel(iloc+2*ncelps) + w1(iel,1)
+      tracel(iloc+2*ncelps) = tracel(iloc+2*ncelps) + grad(iel,1)
     enddo
 
 !    Az component
@@ -416,17 +416,17 @@ if(nummai.eq.-1) then
     ia     ,                                                      &
     ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    w1(1,1) , w1(1,2) , w1(1,3) ,                                 &
+    grad(1,1) , grad(1,2) , grad(1,3) ,                           &
 !       d Az /dx   d Az /dy   d Az /dz
-    w2(1,1) , w2(1,2) , w2(1,3) ,                                 &
+    trav(1,1) , trav(1,2) , trav(1,3) ,                           &
     ra     )
 
 !       B = rot A (B = curl A)
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      tracel(iloc)          = tracel(iloc)          + w1(iel,2)
-      tracel(iloc+ncelps)   = tracel(iloc+ncelps)   - w1(iel,1)
+      tracel(iloc)          = tracel(iloc)          + grad(iel,2)
+      tracel(iloc+ncelps)   = tracel(iloc+ncelps)   - grad(iel,1)
       tracel(iloc+2*ncelps) = tracel(iloc+2*ncelps) + zero
     enddo
 !
@@ -507,6 +507,10 @@ if(nummai.eq.-1) then
                 ntcabs, ttcabs, tracel, rbid, rbid)
 
   endif
+
+  ! Free memory
+  deallocate(trav)
+  deallocate(grad)
 
 endif
 
