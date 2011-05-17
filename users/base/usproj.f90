@@ -223,9 +223,10 @@ double precision diipbx, diipby, diipbz, distbr
 double precision visct, flumab , xcp , xvsl, cp0iph, rrr
 double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 
-integer, allocatable, dimension(:,:) :: grad, trav
-integer, allocatable, dimension(:) :: treco
 integer, allocatable, dimension(:) :: lstelt
+
+double precision, allocatable, dimension(:,:) :: grad, trav
+double precision, allocatable, dimension(:) :: treco
 
 !===============================================================================
 
