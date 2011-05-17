@@ -331,7 +331,7 @@ class OutputControlModel(Model):
         """
         Return the type of output for printing listing
         """
-        node = self.node_out.xmlGetNode('probe_recording_frequency')
+        node = self.node_out.xmlGetNode('probe_recording_frequency_time')
         if node != None :
             return 'Frequency_h_x'
         val = self.getMonitoringPointFrequency()

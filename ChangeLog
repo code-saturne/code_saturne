@@ -1,3 +1,8 @@
+* 17/05/2011 - Cyril Baudry <cyril.baudry@edf.fr>
+  Fix a refresh issue for the probes output frequency.
+  modified routine:
+    gui/Pages/OutputControlModel.py
+
 * 17/05/2011 - David Monfort <david.monfort@edf.fr>
   Remove most of the work arrays in user subroutines and add allocatable
   arrays (only) when necessary.
