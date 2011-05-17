@@ -1,3 +1,8 @@
+* 17/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Dump character sections of Code_Saturne native files as strings in extract mode.
+  modified files:
+    src/appli/cs_io_dump.c
+
 * 16/05/2011 - David Monfort <david.monfort@edf.fr>
   Missing modifications according to previous commit in user files calls.
   modified routines:
