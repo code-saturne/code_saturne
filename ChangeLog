@@ -1,4 +1,10 @@
 * 17/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix parsing and example of wall-clock time for SLURM.
+  modified files:
+    gui/Pages/BatchRunningModel.py
+    extras/batch/batch.SLURM
+
+* 17/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Dump character sections of Code_Saturne native files as strings in extract mode.
   modified files:
     src/appli/cs_io_dump.c

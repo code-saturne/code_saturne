@@ -5,13 +5,14 @@
 #
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=12
-#SBATCH --time=0:30
+#SBATCH --time=0:30:00
 #SBATCH --output=nameandcaseo%j
 #SBATCH --error=nameandcasee%j
 #SBATCH --job-name=nameandcase
 #
 #  -t<time>, --time=<time>            : walltime in minutes, minutes:seconds,
-#                                       hours:minutes:seconds, or
+#                                       hours:minutes:seconds, days-hours,
+#                                       days-hours:minutes, or
 #                                       days-hours:minutes:seconds
 #  -N, --nodes=<minnodes[-maxnodes]>  : number of allocated nodes
 #  --ntasks=24, -n24                  : number of total tasks

@@ -479,11 +479,19 @@ class BatchRunningModel(Model):
                         self.dictValues['job_walltime'] \
                             = th + int(wt[0])*3600 + int(wt[1])*60 + int(wt[2])
                     elif len(wt) == 2:
-                        self.dictValues['job_walltime'] \
-                            = th + int(wt[0])*60 + int(wt[1])
+                        if len(wt0) == 2:
+                            self.dictValues['job_walltime'] \
+                                = th + int(wt[0])*3600 + int(wt[1])*60
+                        else:
+                            self.dictValues['job_walltime'] \
+                                = th + int(wt[0])*60 + int(wt[1])
                     elif len(wt) == 1:
-                        self.dictValues['job_walltime'] \
-                            = th + int(wt[0])
+                        if len(wt0) == 2:
+                            self.dictValues['job_walltime'] \
+                                = th + int(wt[0])*3600
+                        else:
+                            self.dictValues['job_walltime'] \
+                                = th + int(wt[0])*60
                 elif kw == '--partition=' or kw == '-p':
                     self.dictValues['job_class'] = val
 
