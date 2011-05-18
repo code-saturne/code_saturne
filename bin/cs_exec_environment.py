@@ -200,7 +200,7 @@ class resource_info(batch_info):
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, n_procs = None):
+    def __init__(self, n_procs = None, n_procs_default = None):
 
         """
         Get execution resources information.
@@ -343,6 +343,9 @@ class resource_info(batch_info):
                                      + self.manager + ')\n   allows for '
                                      + str(n_procs) + '.\n\n')
             self.n_procs = n_procs
+
+        if self.n_procs == None:
+            self.n_procs = n_procs_default
 
     #---------------------------------------------------------------------------
 
@@ -1092,7 +1095,7 @@ class exec_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, pkg, wdir=None, n_procs=None):
+    def __init__(self, pkg, wdir=None, n_procs=None, n_procs_default = None):
         """
         Returns Execution environment.
         """
@@ -1106,7 +1109,7 @@ class exec_environment:
         if self.wdir == None:
             self.wdir = os.getcwd()
 
-        self.resources = resource_info(n_procs)
+        self.resources = resource_info(n_procs, n_procs_default)
 
         self.mpi_env = None
 

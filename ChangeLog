@@ -1,3 +1,10 @@
+* 18/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Ensure number of procs required by XML file has lower priority than
+  that defined by the resource manager.
+  modified files:
+    bin/cs_case.py
+    bin/cs_exec_environment.py
+
 * 18/05/2011 - David Monfort <david.monfort@edf.fr>
   Fix SYRTHES compilation from code_saturne script (with internal PLE).
   mofidied script:

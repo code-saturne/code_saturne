@@ -1252,10 +1252,19 @@ fi
         os.chdir(self.exec_dir)
 
         # Determine execution environment.
+        # (priority for n_procs, in increasing order:
+        # XML file, resource manager, method argument, user Python script).
+
+        n_procs_default = None
+        if len(self.domains) == 1 and len(self.syr_domains) == 0:
+            d = self.domains[0]
+            if hasattr(d, 'case_n_procs'):
+                n_procs_default = int(d.case_n_procs)
 
         exec_env = cs_exec_environment.exec_environment(self.package_compute,
                                                         self.exec_dir,
-                                                        n_procs)
+                                                        n_procs,
+                                                        n_procs_default)
 
         # Set user MPI environment if required.
 
@@ -1653,8 +1662,6 @@ fi
 
             if hasattr(d, 'case_scratchdir'):
                 scratchdir = d.case_scratchdir
-            if hasattr(d, 'case_n_procs'):
-                n_procs = int(d.case_n_procs)
             if hasattr(d, 'define_case_parameters'):
                 d.define_case_parameters(self)
                 del(self.domains[0].define_case_parameters)
