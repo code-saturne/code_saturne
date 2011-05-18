@@ -614,7 +614,7 @@ if (itbslb.gt.0) then
   extrap = extrag(ipriph)
   iclipr = iclrtp(ipriph,icoef)
 
-  call grdcel                                                         &
+  call grdpot                                                         &
   !==========
      ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
        iwarnp , nfecra , epsrgp , climgp , extrap ,                   &

@@ -229,7 +229,7 @@ if( nswrgp.gt.1 ) then
 !     soit phi, donc on peut mettre IVAR=0
   ivar = 0
 
-  call grdcel                                                     &
+  call grdpot                                                     &
   !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
 

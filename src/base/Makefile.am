@@ -271,6 +271,7 @@ ecrhis.f90 \
 ecrlis.f90 \
 findpt.f90 \
 grdcel.f90 \
+grdpot.f90 \
 haltyp.f90 \
 hturbp.f90 \
 idrbla.f90 \

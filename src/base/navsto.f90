@@ -717,7 +717,7 @@ else
   climgp = climgr(ipriph)
   extrap = extrag(ipriph)
 
-  call grdcel                                                     &
+  call grdpot                                                     &
   !==========
  ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &

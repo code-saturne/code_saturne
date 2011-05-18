@@ -227,7 +227,7 @@ if( nswrgp.gt.1 ) then
 
 !     CALCUL DU GRADIENT
 
-  call grdcel                                                     &
+  call grdpot                                                     &
   !==========
  ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &

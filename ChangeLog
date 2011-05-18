@@ -1,3 +1,21 @@
+* 18/05/2011 - David Monfort <david.monfort@edf.fr>
+  Split the gradient API into subroutines to highlight the pressure
+  gradient computation and facilitate future simplifications and tests.
+  Only the new 'grdpot' subroutine (at the moment just a copy of grdcel)
+  will be able to account for body forces later on.
+  added routine:
+    src/base/grdpot.f90
+  modified routines:
+    src/base/itrgrp.f90
+    src/base/itrmas.f90
+    src/base/navsto.f90
+    src/base/preduv.f90
+    src/base/resolp.f90
+    src/base/typecl.f90
+    src/cfbl/cfqdmv.f90
+  modified script:
+    src/base/Makefile.am
+
 * 18/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix format type and missing parallel counter sync for rare mesh
   quantity face distance situation.
