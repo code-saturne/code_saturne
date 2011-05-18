@@ -947,7 +947,6 @@ _compute_face_distances(const cs_int_t   dim,
                               cs_real_t  b_dist[],
                               cs_real_t  weight[])
 {
-  cs_int_t w_count;
   cs_int_t face_id;
   cs_int_t cell_id, cell_id1, cell_id2;
 
@@ -955,9 +954,9 @@ _compute_face_distances(const cs_int_t   dim,
   cs_real_t xvn, yvn, zvn, xvv, yvv, zvv;
   cs_real_t dist2f;
 
-  /* Interior faces */
+  fvm_gnum_t w_count = 0;
 
-  w_count = 0;
+  /* Interior faces */
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
@@ -996,10 +995,13 @@ _compute_face_distances(const cs_int_t   dim,
 
   }
 
+  fvm_parall_counter(&w_count, 1);
+
   if (w_count > 0)
-    bft_printf("%f faces have a null distance between centres.\n"
-               "For these faces, the weight is set to 0.5.\n",
-               w_count);
+    bft_printf(_("\n"
+                 "%llu faces have a null distance between centers.\n"
+                 "For these faces, the weight is set to 0.5.\n"),
+               (unsigned long long)w_count);
 
   /* Border faces */
 

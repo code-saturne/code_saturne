@@ -1,4 +1,10 @@
 * 18/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix format type and missing parallel counter sync for rare mesh
+  quantity face distance situation.
+  modified files:
+    src/base/cs_mesh_quantities.c
+
+* 18/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Ensure number of procs required by XML file has lower priority than
   that defined by the resource manager.
   modified files:
