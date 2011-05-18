@@ -299,7 +299,7 @@ def compile_and_link_syrthes(pkg, srcdir, destdir,
         cmd = cmd + " " + build_syrthes.ldflags
         cmd = cmd + " " + build_syrthes.libs
         if pkg.rpath != "":
-            cmd = cmd + " " + so_dirs_path(cmd)
+            cmd = cmd + " " + so_dirs_path(cmd, pkg.rpath)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
             retval = 1
 
