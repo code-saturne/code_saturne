@@ -167,7 +167,7 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ifac, ii, jj, iel, iii
-integer          iappel, iphydp
+integer          iappel
 double precision pfac,pip,uxfac,uyfac,uzfac
 double precision dofx,dofy,dofz,pnd
 double precision diipbx, diipby, diipbz
@@ -286,14 +286,11 @@ if( nswrgu.gt.1 ) then
 
 ! ---> CALCUL DU GRADIENT
 
-  iphydp = 0
-
   call grdcel                                                     &
   !==========
- ( ivar1  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
+ ( ivar1  , imrgra , inc    , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
-   dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmx   , coefqa(1,1) , coefbx ,                                &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
@@ -347,14 +344,11 @@ if( nswrgu.gt.1 ) then
 
 ! ---> CALCUL DU GRADIENT
 
-  iphydp = 0
-
   call grdcel                                                     &
   !==========
- ( ivar2  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
+ ( ivar2  , imrgra , inc    , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
-   dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmy   , coefqa(1,2) , coefby ,                                &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
@@ -407,14 +401,11 @@ if( nswrgu.gt.1 ) then
 
 ! ---> CALCUL DU GRADIENT
 
-  iphydp = 0
-
   call grdcel                                                     &
   !==========
- ( ivar3  , imrgra , inc    , iccocg , nswrgu , imligu , iphydp , &
+ ( ivar3  , imrgra , inc    , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
-   dpdxa  , dpdxa  , dpdxa  ,                                     &
    qdmz     , coefqa(1,3) , coefbz ,                              &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------

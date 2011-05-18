@@ -161,7 +161,6 @@ integer          icoefap , icoefbp
 integer          ivar0
 integer          inc, iccocg
 integer          nswrgp , imligp , iwarnp
-integer          iphydp
 double precision epsrgp , climgp , extrap
 
 !===============================================================================
@@ -276,16 +275,11 @@ endif
 !     n'est pas la vitesse ni Rij)
 ivar0 = 0
 
-!    Sans prise en compte de la pression hydrostatique
-
-iphydp = 0
-
 call grdcel                                                       &
 !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   ra(iphil) , ra(iphil) , ra(iphil)    ,                         &
    ra(iphil) , ra(icoefap) , ra(icoefbp) ,                        &
    w1       , w2    , w3 ,                                        &
    ra(iw1)  , ra(iw2) , ra(iw3) ,                                 &

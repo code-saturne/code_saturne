@@ -125,7 +125,7 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          inc, iccocg,ipiph,nswrgp,imligp,iwarnp
-integer          isou, isou1, iphydp
+integer          isou, isou1
 
 double precision epsrgp, climgp,extrap
 
@@ -172,14 +172,12 @@ do isou = 1,6
   epsrgp = epsrgr(ipiph)
   climgp = climgr(ipiph)
   extrap = extrag(ipiph)
-  iphydp = 0
 
   call grdcel                                                     &
   !==========
- ( ipiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ipiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtp(1,ipiph)  , coefa(1,ipiph) , coefb(1,ipiph) ,              &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------

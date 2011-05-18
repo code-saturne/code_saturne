@@ -125,7 +125,7 @@ integer         idebra, idebia
 integer         iel
 integer         itpp , icltpp
 integer         iccocg, inc
-integer         iivar, iphydp
+integer         iivar
 integer         nswrgp, imligp
 integer         iwarnp
 
@@ -167,13 +167,11 @@ if (ippmod(iatmos).eq.1) then
 
   iivar = itpp
 
-  iphydp = 0
   call grdcel                                                     &
   !==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp, iphydp,    &
+ ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------

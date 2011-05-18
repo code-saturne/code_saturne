@@ -145,7 +145,7 @@ integer          iel, iccocg, inc
 integer          iuiph, iviph, iwiph, ikiph, iomgip
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvis, ipcvst
-integer          nswrgp, imligp, iwarnp, iphydp
+integer          nswrgp, imligp, iwarnp
 integer          ifacpt
 double precision epsrgp, climgp, extrap
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
@@ -195,14 +195,12 @@ iwarnp = iwarni(iuiph)
 epsrgp = epsrgr(iuiph)
 climgp = climgr(iuiph)
 extrap = extrag(iuiph)
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w6     , w6     , w6     ,                                     &
    rtpa(1,iuiph)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
@@ -225,14 +223,12 @@ iwarnp = iwarni(iviph)
 epsrgp = epsrgr(iviph)
 climgp = climgr(iviph)
 extrap = extrag(iviph)
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w6     , w6     , w6     ,                                     &
    rtpa(1,iviph)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,          &
    w1     , w4     , w5     ,                                     &
 !        ------   ------   ------
@@ -255,14 +251,12 @@ iwarnp = iwarni(iwiph)
 epsrgp = epsrgr(iwiph)
 climgp = climgr(iwiph)
 extrap = extrag(iwiph)
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w6     , w6     , w6     ,                                     &
    rtpa(1,iwiph)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,          &
    w1     , w2     , w4     ,                                     &
 !        ------   ------   ------

@@ -163,7 +163,7 @@ double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision sclnor, thetap, epsrsp
 
 integer          iwb    , inc    , iccocg , icoefa , icoefb
-integer          ivar0  , iphydp , iij , ii , jj
+integer          ivar0  , iij , ii , jj
 integer          iccfth , imodif
 integer          iel1  , iel2, iifru, iifbe
 integer          iterns
@@ -397,13 +397,11 @@ endif
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
 !      ivar0 = 0
-!      iphydp = 0
 !      call grdcel
 !      !==========
-!     & ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,
+!     & ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,
 !     &   iwarnp , nfecra , epsrgp , climgp , extrap ,
 !     &   ia     ,
-!     &   w7     , w7     , w7     ,
 !     &   w7     , ra(icoefa) , ra(icoefb)  ,
 !     &   w1     , w2     , w3     ,
 !     &   w4     , w5     , w6     ,
@@ -638,13 +636,11 @@ endif
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
 ivar0 = 0
-iphydp = 0
 call grdcel                                                       &
 !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w7     , w7     , w7     ,                                     &
    w7     , ra(icoefa) , ra(icoefb)  ,                            &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &

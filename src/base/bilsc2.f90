@@ -177,7 +177,7 @@ character*80     chaine
 character*8      cnom
 integer          idebia, idebra
 integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, iok
-integer          itenso, idimte, iphydp
+integer          itenso, idimte
 integer          iiu,iiv,iiw
 integer          iitytu
 integer          iir11,iir22,iir33
@@ -252,13 +252,11 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or.                          &
     (iconvp.ne.0 .and. iupwin.eq.0 .and.                          &
        (ischcp.eq.0 .or. ircflp.eq.1 .or. isstpp.eq.0)) ) then
 
-  iphydp = 0
   call grdcel                                                     &
   !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   dpdxa  , dpdxa  , dpdxa  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------

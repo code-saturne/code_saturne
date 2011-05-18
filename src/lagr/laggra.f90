@@ -120,7 +120,7 @@ integer          inc , iccocg , ipriph , iclipr
 integer          iuiph , iviph , iwiph
 integer          ipcliu , ipcliv , ipcliw
 integer          iromf
-integer          iel    , iphydp
+integer          iel
 double precision unsrho
 
 !===============================================================================
@@ -142,14 +142,12 @@ idebra = idbra0
 !     EPSRGR  = 1.D-8           ! PRECISION RELATIVE POUR LA REC GRA 97
 !     CLIMGR  = 1.5D0           ! COEF GRADIENT*DISTANCE/ECART
 !     EXTRAG  = 0               ! COEF GRADIENT*DISTANCE/ECART
-!     IPHYDP  = 0               ! =1 NE CONCERNE QUE LE GRADIENT DE PRESSION
 
 
 !-->Parametrage des calculs des gradients
 
 inc     = 1
 iccocg  = 1
-iphydp  = 0
 
 !===============================================================================
 ! 1. CALCUL DE :  - (GRADIENT DE PRESSION)/ROM
@@ -171,11 +169,10 @@ endif
 call grdcel                                                       &
 !==========
  ( ipriph , imrgra , inc    , iccocg ,                            &
-   nswrgr(ipriph)  , imligr(ipriph)  , iphydp ,                   &
+   nswrgr(ipriph)  , imligr(ipriph)  ,                            &
    iwarni(ipriph)  , nfecra ,                                     &
    epsrgr(ipriph)  , climgr(ipriph)  , extrag(ipriph)  ,          &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtp(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,           &
    gradpr(1,1)     , gradpr(1,2)     , gradpr(1,3)     ,          &
    w1     , w2     , w3     ,                                     &
@@ -221,18 +218,13 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
 !     COMPOSANTE X
 !     ============
 
-!    Sans prise en compte de la pression hydrostatique
-
-  iphydp = 0
-
   call grdcel                                                     &
   !==========
  ( iuiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iuiph)   , imligr(iuiph)  , iphydp ,                    &
+   nswrgr(iuiph)   , imligr(iuiph)  ,                             &
    iwarni(iuiph)   , nfecra ,                                     &
    epsrgr(iuiph)   , climgr(iuiph)  , extrag(iuiph)  ,            &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtp(1,iuiph)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,           &
    gradvf(1,1)     , gradvf(1,2)     , gradvf(1,3)     ,          &
    w1     , w2     , w3     ,                                     &
@@ -241,18 +233,13 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
 !     COMPOSANTE Y
 !     ============
 
-!    Sans prise en compte de la pression hydrostatique
-
-  iphydp = 0
-
   call grdcel                                                     &
   !==========
  ( iviph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iviph)   , imligr(iviph)  , iphydp ,                    &
+   nswrgr(iviph)   , imligr(iviph)  ,                             &
    iwarni(iviph)   , nfecra ,                                     &
    epsrgr(iviph)   , climgr(iviph)  , extrag(iviph)  ,            &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtp(1,iviph)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,           &
    gradvf(1,4)     , gradvf(1,5)     , gradvf(1,6)     ,          &
    w1     , w2     , w3     ,                                     &
@@ -261,18 +248,13 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
 !     COMPOSANTE Z
 !     ============
 
-!    Sans prise en compte de la pression hydrostatique
-
-  iphydp = 0
-
   call grdcel                                                     &
   !==========
  ( iwiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iwiph)   , imligr(iwiph)  , iphydp ,                    &
+   nswrgr(iwiph)   , imligr(iwiph)  ,                             &
    iwarni(iwiph)   , nfecra ,                                     &
    epsrgr(iwiph)   , climgr(iwiph)  , extrag(iwiph)  ,            &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtp(1,iwiph)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,           &
    gradvf(1,7)     , gradvf(1,8)     , gradvf(1,9)     ,          &
    w1     , w2     , w3     ,                                     &

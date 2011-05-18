@@ -221,14 +221,12 @@ endif
   epsrgp = epsrgr(ivar )
   climgp = climgr(ivar )
   extrap = extrag(ivar )
-  iphydp = 0
 
   call grdcel                                                     &
   !==========
- ( iphiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iphiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,iphiph ) , coefa(1,iclphi) , coefb(1,iclphi) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
@@ -245,14 +243,12 @@ endif
   epsrgp = epsrgr(ivar )
   climgp = climgr(ivar )
   extrap = extrag(ivar )
-  iphydp = 0
 
   call grdcel                                                     &
   !==========
- ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w4     , w4     , w4     ,                                     &
    rtpa(1,ikiph )  , coefa(1,iclikp) , coefb(1,iclikp) ,          &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------

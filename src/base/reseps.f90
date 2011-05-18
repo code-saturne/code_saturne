@@ -168,7 +168,7 @@ integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          ieiph , iuiph
 integer          iclvar, iclvaf
 integer          ipcrom, ipcroo, ipcvis, ipcvst, iflmas, iflmab
-integer          nswrgp, imligp, iwarnp, iphydp
+integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
@@ -495,14 +495,12 @@ if (iturb.eq.30) then
   epsrgp = epsrgr(ivar )
   climgp = climgr(ivar )
   extrap = extrag(ivar )
-  iphydp = 0
 
   call grdcel                                                     &
   !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,ivar )   , coefa(1,iclvar) , coefb(1,iclvar) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------

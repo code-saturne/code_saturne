@@ -198,7 +198,7 @@ double precision ra(*)
 
 integer          idebia, idebra, ifinia
 integer          iel   , ielpdc, ifac  , ivar  , isou
-integer          iccocg, inc   , init  , iphydp, ii    , isqrt
+integer          iccocg, inc   , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
 integer          ipriph, ikiph , iuiph , iviph , iwiph
 integer                  iclipr, icliup, iclivp, icliwp
@@ -633,14 +633,12 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
   extrap = extrag(ikiph)
 
   iwarnp = iwarni(iuiph)
-  iphydp = 0
 
   call grdcel                                                     &
   !==========
- ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w6     , w6     , w6     ,                                     &
    rtpa(1,ikiph)   , coefa(1,iclik)  , coefb(1,iclik)  ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------

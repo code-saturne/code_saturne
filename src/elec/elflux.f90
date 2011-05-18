@@ -134,7 +134,7 @@ integer          ipcdc1, ipcdc2, ipcdc3
 integer          ipcdi1, ipcdi2, ipcdi3
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
 integer          ivar0 , iclimv
-integer          iphydp, ivar  , modntl
+integer          ivar  , modntl
 
 double precision epsrgp, climgp, extrap, vrmin, vrmax, var
 
@@ -229,16 +229,11 @@ if(iappel.eq.1) then
 !     n'est pas la vitesse ni Rij)
   ivar0 = 0
 
-!    Sans prise en compte de la pression hydrostatique
-
-  iphydp = 0
-
   call grdcel                                                     &
   !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
    w4     , w5     , w6     ,                                     &
@@ -403,17 +398,11 @@ if(iappel.eq.1) then
 !     n'est pas la vitesse ni Rij)
     ivar0 = 0
 
-
-!    SANS PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
-
-    iphydp = 0
-
     call grdcel                                                   &
     !==========
-  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
+  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &
-    ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d POTI /dx   d POTI /dy   d POTI /dz
@@ -610,16 +599,11 @@ if (iappel.eq.2) then
 
     ivar0 = 0
 
-!    SANS PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
-
-    iphydp = 0
-
     call grdcel                                                   &
     !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
    w4     , w5     , w6     ,                                     &
 !       d Ax /dx   d Ax /dy   d Ax /dz
@@ -660,16 +644,11 @@ if (iappel.eq.2) then
 
     ivar0 = 0
 
-!    SANS PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
-
-    iphydp = 0
-
     call grdcel                                                   &
     !==========
-  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
+  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &
-    ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d Ay /dx   d Ay /dy   d Ay /dz
@@ -710,16 +689,11 @@ if (iappel.eq.2) then
 
     ivar0 = 0
 
-!    SANS PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE
-
-    iphydp = 0
-
     call grdcel                                                   &
     !==========
-  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
+  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &
-    ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d Az /dx   d Az /dy   d Az /dz

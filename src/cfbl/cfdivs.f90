@@ -155,7 +155,6 @@ integer          iuiph, iviph, iwiph
 integer          iclvar
 integer          nswrgp, imligp, iwarnp
 integer          ipcvis, ipcvst, ipcvsv
-integer          iphydp
 double precision epsrgp, climgp, extrap
 double precision vecfac, visttt
 
@@ -236,14 +235,12 @@ do isou = 1, 3
   epsrgp = epsrgr(ivar)
   climgp = climgr(ivar)
   extrap = extrag(ivar)
-  iphydp = 0
 
   call grdcel                                                     &
   !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w6     , w6     , w6     ,                                     &
    rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------

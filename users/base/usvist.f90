@@ -132,7 +132,7 @@ double precision ra(*)
 integer          iel, iccocg, inc
 integer          iuiph, iviph, iwiph
 integer          ipcliu, ipcliv, ipcliw
-integer          ipcrom, ipcvst, iphydp
+integer          ipcrom, ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
 
 double precision, allocatable, dimension(:,:) :: grad, trav
@@ -193,16 +193,14 @@ ipcliw = iclrtp(iwiph,icoef)
 
 iccocg = 1
 inc = 1
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( iuiph  , imrgra , inc    , iccocg , iphydp ,                   &
+ ( iuiph  , imrgra , inc    , iccocg ,                            &
    nswrgr(iuiph) , imligr(iuiph) ,                                &
    iwarni(iuiph) , nfecra ,                                       &
    epsrgr(iuiph) , climgr(iuiph) , extrag(iuiph) ,                &
    ia     ,                                                       &
-   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    rtpa(1,iuiph) , coefa(1,ipcliu) , coefb(1,ipcliu) ,            &
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
    !---------   ----------   ----------

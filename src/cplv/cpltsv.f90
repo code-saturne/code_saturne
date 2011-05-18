@@ -154,7 +154,6 @@ integer          ir11ip, ir22ip, ir33ip
 integer          icha
 integer          inc , iccocg , nswrgp , imligp , iwarnp
 integer          ifinra , icoefa , icoefb
-integer          iphydp
 
 double precision xk , xe , rhovst
 double precision epsrgp , climgp , extrap
@@ -296,16 +295,11 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
 !     n'est pas la vitesse ni Rij)
   ivar0 = 0
 
-!    Sans prise en compte de la pression hydrostatique
-
-  iphydp = 0
-
   call grdcel                                                     &
   !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w7     , w7     , w7     ,                                     &
    w7     , ra(icoefa) , ra(icoefb)  ,                            &
 !        FIM      COEFA        COEFB
    w1     , w2     , w3     ,                                     &

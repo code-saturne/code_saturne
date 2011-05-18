@@ -165,7 +165,7 @@ integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt , ii, jj, iii
 integer          iclvar, iclvaf
 integer          iflmas, iflmab
-integer          ippvar, ipp   , iphydp
+integer          ippvar, ipp
 integer          nswrgp, imligp, iwarnp
 integer          istatp, iconvp, idiffp, ireslp, ndircp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -280,7 +280,6 @@ if(ircflp.gt.0) then
   iccocg = 1
   nswrgp = nswrgr(ivar)
   imligp = imligr(ivar)
-  iphydp = 0
   iwarnp = iwarni(ivar)
   epsrgp = epsrgr(ivar)
   climgp = climgr(ivar)
@@ -288,10 +287,9 @@ if(ircflp.gt.0) then
 
   call grdcel                                                     &
   !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,ivar)    ,                                              &
    coefa(1,iclrtp(ivar,icoef)) , coefb(1,iclrtp(ivar,icoef)) ,    &
    w1     , w2     , w3     ,                                     &

@@ -164,7 +164,6 @@ character*80     chaine
 character*8      cnom
 integer          idebia, idebra
 integer          ifac,ii,jj,infac,iel, iij, iii
-integer          iphydp
 double precision pfac,pfacd,pip,pjp,flui,fluj,flux
 double precision pif,pjf
 double precision dpxf,dpyf,dpzf
@@ -201,13 +200,11 @@ cnom   = chaine(1:8)
 
 if( idiffp.ne.0 .and. ircflp.eq.1 ) then
 
-  iphydp = 0
   call grdcel                                                     &
   !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   dpdxa  , dpdxa  , dpdxa  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------

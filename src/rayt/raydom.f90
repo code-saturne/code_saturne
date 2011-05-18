@@ -168,7 +168,7 @@ integer          iappel
 integer          ifac   , iel    , iok    , izone
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
 integer          mode   , icla   , ipcla  , ivar0
-integer          iscat  , ivart  , iphydp
+integer          iscat  , ivart
 integer          iflux(nozrdm)
 double precision epsrgp, climgp, extrap
 double precision aa, bb, ckmin, unspi, xlimit, cofrmn, flunmn
@@ -1184,13 +1184,11 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 !     n'est pas la vitesse ni Rij)
 !    sera a revoir pour la periodicite de rotation
     ivar0 = 0
-    iphydp = 0
     call grdcel                                                   &
     !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    propce(1,ipproc(iqx))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &
@@ -1210,13 +1208,11 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 !     n'est pas la vitesse ni Rij)
 !    sera a revoir pour la periodicite de rotation
     ivar0 = 0
-    iphydp = 0
     call grdcel                                                   &
     !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    propce(1,ipproc(iqy))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &
@@ -1236,13 +1232,11 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 !     n'est pas la vitesse ni Rij)
 !    sera a revoir pour la periodicite de rotation
     ivar0 = 0
-    iphydp = 0
     call grdcel                                                   &
     !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    propce(1,ipproc(iqz))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
    w4     , w5     , w6     ,                                     &

@@ -157,7 +157,7 @@ double precision ra(*)
 integer          idebia, idebra
 integer          idtva0, ivar  , iconvp, idiffp
 integer          ndircp, ireslp
-integer          iescap, iflmb0, imaspe, iphydp
+integer          iescap, iflmb0, imaspe
 integer          ncymxp, nitmfp, ipp
 integer          ifac  , iel   , ipcvis, init  , ipcrom
 integer          inc   , iccocg, isym  , ntcont, infpar
@@ -235,15 +235,13 @@ endif
 
 inc    = 1
 iccocg = 1
-iphydp = 0
 ivar   = 0
 
 call grdcel                                                       &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy ,          &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    distpa , coefax , coefbx ,                                     &
    qx     , qy     , qz     ,                                     &
 !        ------   ------   ------

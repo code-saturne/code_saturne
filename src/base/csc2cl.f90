@@ -145,7 +145,7 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ifac, iel,isou
-integer          inc, iccocg, iphydp, iclvar, nswrgp, imligp
+integer          inc, iccocg, iclvar, nswrgp, imligp
 integer          iwarnp, ivar
 integer          ipt
 integer          iii
@@ -181,7 +181,6 @@ do ivar = 1, nvcp
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
 
   iclvar = iclrtp(ivar,icoef)
   nswrgp = nswrgr(ivar)
@@ -193,11 +192,10 @@ do ivar = 1, nvcp
 
   call grdcel                                                     &
   !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   w4     , w4     , w4     ,                                     &
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------

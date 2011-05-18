@@ -154,7 +154,7 @@ integer          idebia, idebra, ifinia
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          iivar , iiun
 integer          iclip , isqrt
-integer          nswrgp, imligp, iphydp
+integer          nswrgp, imligp
 integer          ipriph, iuiph , iviph , iwiph
 integer          ikiph , ieiph , iphiph
 integer          icliup, iclivp, icliwp
@@ -271,14 +271,12 @@ iwarnp = iwarni(ikiph)
 epsrgp = epsrgr(iuiph)
 climgp = climgr(iuiph)
 extrap = extrag(iuiph)
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
    smbrk  , w4     , w5     ,                                     &
 !        ------   ------   ------
@@ -303,14 +301,12 @@ iwarnp = iwarni(ikiph)
 epsrgp = epsrgr(iviph)
 climgp = climgr(iviph)
 extrap = extrag(iviph)
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
    tinste , smbrk  , w6     ,                                     &
 !        ------   ------   ------
@@ -338,14 +334,12 @@ iwarnp = iwarni(ikiph)
 epsrgp = epsrgr(iwiph)
 climgp = climgr(iwiph)
 extrap = extrag(iwiph)
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
    w4     , tinste , smbrk  ,                                     &
 !        ------   ------   ------
@@ -482,13 +476,11 @@ else if (igrake.eq.1) then
 
   iivar = 0
 
-  iphydp = 0
   call grdcel                                                     &
   !==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------

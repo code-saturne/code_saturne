@@ -203,7 +203,7 @@ integer          iel    , ielg   , ifac   , ifacg  , ivar
 integer          iel1   , iel2   , ieltsm
 integer          iortho , impout
 integer          inc    , iccocg
-integer          nswrgp , imligp , iphydp , iwarnp
+integer          nswrgp , imligp , iwarnp
 integer          iutile , iclvar , iii
 integer          ipcrom , ipcvst , iflmas , iflmab , ipccp, ipcvsl
 integer          iscal
@@ -510,15 +510,13 @@ if (inpdt0.eq.0) then
     epsrgp = epsrgr(ivar)
     climgp = climgr(ivar)
     extrap = extrag(ivar)
-    iphydp = 0
 
     call grdcel                                                     &
     !==========
-      ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+      ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
         iwarnp , nfecra ,                                              &
         epsrgp , climgp , extrap ,                                     &
         ia     ,                                                       &
-        trav(1,1) , trav(1,2) , trav(1,3) ,                            &
         rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
         grad(1,1) , grad(1,2) , grad(1,3) ,                            &
         !---------   ----------   ----------

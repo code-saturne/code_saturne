@@ -118,7 +118,6 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ivar0
-integer          iphydp
 integer          iel
 integer          inc, iccocg
 integer          nswrgp, imligp, iwarnp
@@ -143,10 +142,6 @@ endif
 !     n'est pas la vitesse ni Rij)
   ivar0 = 0
 
-!    Sans prise en compte de la pression hydrostatique
-
-iphydp = 0
-
 inc = 1
 iccocg = 1
 nswrgp = 100
@@ -162,10 +157,9 @@ extrap = 0.d0
 
 call grdcel                                                       &
 !==========
-( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
+( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
-  ux     , ux     , ux     ,                                      &
   ux     , coefax , coefbx ,                                      &
   w1     , w4     , w5     ,                                      &
   w6     , w7     , w8     ,                                      &
@@ -177,10 +171,9 @@ call grdcel                                                       &
 
 call grdcel                                                       &
 !==========
-( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
+( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
-  vy     , vy     , vy     ,                                      &
   vy     , coefay , coefby ,                                      &
   w4     , w2     , w5     ,                                      &
   w6     , w7     , w8     ,                                      &
@@ -192,10 +185,9 @@ call grdcel                                                       &
 
 call grdcel                                                       &
 !==========
-( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,  &
+( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
-  wz     , wz     , wz     ,                                      &
   wz     , coefaz , coefbz ,                                      &
   w5     , w6     , w3     ,                                      &
   w7     , w8     , w9     ,                                      &

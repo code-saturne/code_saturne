@@ -28,10 +28,9 @@
 subroutine grdcel &
 !================
 
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
    dpdxa  , dpdya  , dpdza  ,                                     &
@@ -73,8 +72,6 @@ subroutine grdcel &
 !                  !    !     !  = 0 a partir des gradients voisins            !
 !                  !    !     !  = 1 a partir du gradient moyen                !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! iphydp           ! e  ! <-- ! indicateur de prise en compte de la            !
-!                  !    !     ! pression hydrostatique                         !
 ! nfecra           ! e  ! <-- ! unite du fichier sortie std                    !
 ! epsrgp           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
@@ -84,8 +81,6 @@ subroutine grdcel &
 ! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
 ! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
-!   (ncelet)       !    !     !  hydrostatique                                 !
 ! dpdx,dpdy        ! tr ! --> ! gradient de pvar                               !
 ! dpdz (ncelet     !    !     !                                                !
 ! dpdxa (ncelet    ! tr ! --- ! tableau de travail pour le grad de p           !
@@ -115,12 +110,11 @@ implicit none
 ! Arguments
 
 integer          ivar   , imrgra , inc    , iccocg , nswrgp
-integer          imligp ,iwarnp  , iphydp , nfecra
+integer          imligp ,iwarnp  , nfecra
 double precision epsrgp , climgp , extrap
 
 integer          ia(*)
 
-double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
 double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
@@ -128,6 +122,7 @@ double precision ra(*)
 
 ! Local variables
 
+integer          iphydp
 integer          idimte , itenso
 integer          iiu,iiv,iiw
 integer          iitytu
@@ -135,6 +130,7 @@ integer          iir11,iir22,iir33
 integer          iir12,iir13,iir23
 integer          imlini
 
+double precision rvoid(1)
 double precision climin
 
 !===============================================================================
@@ -191,6 +187,8 @@ endif
 ! 1. CALCUL DU GRADIENT
 !===============================================================================
 
+! This subroutine is never used to compute the pressure gradient
+iphydp = 0
 
 call cgdcel                                                       &
 !==========
@@ -200,7 +198,7 @@ call cgdcel                                                       &
    ifacel , ifabor , icelbr , ia(iisymp) ,                        &
    volume , surfac , surfbo , surfbn , pond,                      &
    dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   fextx  , fexty  , fextz  ,                                     &
+   rvoid  , rvoid  , rvoid  ,                                     &
    xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
    ra(icocgb) , ra(icocg)   ,                                     &
    ra(icocib) , ra(icoci)   ,                                     &

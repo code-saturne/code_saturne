@@ -142,7 +142,7 @@ integer          idebia , idebra
 integer          ivar   , ivarsc , ivarut , ivar0
 integer          iel    , ifac
 integer          ipcrom , ipcvst
-integer          ikiph  , ieiph  , iomgip , iphydp
+integer          ikiph  , ieiph  , iomgip
 integer          ir11ip , ir22ip , ir33ip
 integer          ixchcl , ixckcl , ixnpcl , icla   , icha
 integer          inc    , iccocg , nswrgp , imligp , iwarnp
@@ -305,13 +305,11 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
   ivar0  = 0
-  iphydp = 0
   call grdcel                                                     &
   !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w7     , w7     , w7     ,                                     &
    w7     , ra(icoefa) , ra(icoefb)  ,                            &
 !          FIM      COEFA        COEFB
    w1     , w2     , w3     ,                                     &

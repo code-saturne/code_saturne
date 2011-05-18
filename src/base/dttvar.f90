@@ -156,7 +156,7 @@ integer          iuiph, ipcvis, ipcvst
 integer          iflmas, iflmab
 integer          icou, ifou , icoucf
 integer          inc, iccocg
-integer          nswrgp, imligp , iphydp
+integer          nswrgp, imligp
 integer          ipcrom, ipbrom, iivar
 integer          nbrval
 integer          ipccou, ipcfou
@@ -307,7 +307,6 @@ if (idtvar.ge.0) then
     epsrgp = epsrgr(ipr)
     climgp = climgr(ipr)
     extrap = 0.d0
-    iphydp = 0
 
     iivar = 0
     inc   = 1
@@ -315,10 +314,9 @@ if (idtvar.ge.0) then
 
     call grdcel                                                   &
     !==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    propce(1,ipcrom), propfb(1,ipbrom), coefbr ,                   &
    grarox , graroy , graroz ,                                     &
 !        ------   ------   ------

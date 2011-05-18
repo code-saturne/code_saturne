@@ -1,4 +1,59 @@
 * 18/05/2011 - David Monfort <david.monfort@edf.fr>
+  Remove the body forces and pressure gradient improvement option from
+  the grdcel arguments (now that it is separated from grdpot).
+  modified routines:
+    src/atmo/atprke.f90
+    src/base/bilsc2.f90
+    src/base/condli.f90
+    src/base/covofi.f90
+    src/base/csc2cl.f90
+    src/base/cscpce.f90
+    src/base/cscpfb.f90
+    src/base/distpr.f90
+    src/base/distyp.f90
+    src/base/dttvar.f90
+    src/base/dvvpst.f90
+    src/base/grdcel.f90
+    src/base/inimas.f90
+    src/base/perinr.f90
+    src/base/perinu.f90
+    src/base/preduv.f90
+    src/base/reseps.f90
+    src/base/resrij.f90
+    src/base/resv2f.f90
+    src/base/rijech.f90
+    src/base/testel.f90
+    src/base/turbke.f90
+    src/base/turbkw.f90
+    src/base/turbsa.f90
+    src/base/turrij.f90
+    src/base/visdyn.f90
+    src/base/vislmg.f90
+    src/base/vissec.f90
+    src/base/vissma.f90
+    src/base/vissst.f90
+    src/base/viswal.f90
+    src/cfbl/cfbsc2.f90
+    src/cfbl/cfbsc3.f90
+    src/cfbl/cfdivs.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfmsvl.f90
+    src/cfbl/cfqdmv.f90
+    src/cogz/lwctss.f90
+    src/cplv/cpltsv.f90
+    src/cplv/cptsvc.f90
+    src/elec/elflux.f90
+    src/fuel/futsvc.f90
+    src/lagr/diverv.f90
+    src/lagr/laggra.f90
+    src/lagr/lagpoi.f90
+    src/rayt/raydom.f90
+    src/rayt/raypun.f90
+    users/base/usproj.f90
+    users/base/usvist.f90
+    users/elec/uselen.f90
+
+* 18/05/2011 - David Monfort <david.monfort@edf.fr>
   Split the gradient API into subroutines to highlight the pressure
   gradient computation and facilitate future simplifications and tests.
   Only the new 'grdpot' subroutine (at the moment just a copy of grdcel)

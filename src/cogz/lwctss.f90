@@ -175,7 +175,6 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ivar, iel, idirac, ivar0
-integer          iphydp
 integer          inc , iccocg
 integer          ipcvst
 integer          ipcrom, ii
@@ -278,17 +277,15 @@ if ( ivar.eq.isca(icoyfp)) then
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
   ivar0 = 0
-  iphydp = 0
   inc = 1
   iccocg = 1
 
   call grdcel                                                     &
   !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
-   iphydp , iwarni(ii) , nfecra ,                                 &
+   iwarni(ii) , nfecra ,                                          &
    epsrgr(ii) , climgr(ii) , extrag(ii) ,                         &
    ia     ,                                                       &
-   w10    , w10    , w10    ,                                     &
    w10    , coefa(1,iclrtp(ii,icoef))  ,                          &
             coefb(1,iclrtp(ii,icoef))  ,                          &
    w1              , w2              , w3     ,                   &
@@ -313,17 +310,15 @@ if ( ivar.eq.isca(icoyfp)) then
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
   ivar0 = 0
-  iphydp = 0
   inc = 1
   iccocg = 1
 
   call grdcel                                                     &
   !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgr(ii) , imligr(ii) ,  &
-   iphydp , iwarni(ii) , nfecra ,                                 &
+   iwarni(ii) , nfecra ,                                          &
    epsrgr(ii) , climgr(ii) , extrag(ii) ,                         &
    ia     ,                                                       &
-   w11    , w11    , w11    ,                                     &
    w11    , coefa(1,iclrtp(ii,icoef))  ,                          &
             coefb(1,iclrtp(ii,icoef))  ,                          &
    w7              , w8              , w9     ,                   &

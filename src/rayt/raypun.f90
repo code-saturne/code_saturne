@@ -177,7 +177,7 @@ integer          imgr1 , imligp, ircflp, ischcp, isstpp, iescap
 integer          ncymap, nitmgp
 integer          inum
 integer          idtva0, ivar0
-integer          inc, iccocg, iphydp
+integer          inc, iccocg
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision aa, aaa, aaaa, relaxp, thetap
 
@@ -322,15 +322,12 @@ climgp  = 1.5d0
 extrap  = 0.d0
 nswrgp  = 100
 ivar0   = 0
-iphydp  = 0
 
 call grdcel                                                       &
 !==========
    ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp,         &
-     iphydp ,                                                     &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                 &
      ia     ,                                                     &
-     w7     , w7     , w7     ,                                   &
      theta4 , cofrua , cofrub ,                                   &
      w1     , w2     , w3     ,                                   &
      w4     , w5     , w6     ,                                   &

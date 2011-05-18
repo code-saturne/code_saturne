@@ -130,7 +130,7 @@ integer          irkm  , irki  , irkj  , iskm  , iski  , iskj
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          ieiph , ipcrom, ipcroo
 integer          ifac
-integer          inc   , iccocg, iphydp, ivar0 , iityph
+integer          inc   , iccocg, ivar0 , iityph
 
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision unssur, vnk   , vnm   , vni   , vnj
@@ -234,16 +234,14 @@ elseif(abs(icdpar).eq.1) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   ivar0  = 0
 
   call grdcel                                                     &
   !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgy , imligy ,          &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
    ia     ,                                                       &
-   ra     , ra     , ra     ,                                     &
    ra(idipar) , coefax , coefbx ,                                 &
    w2     , w3     , w4     ,                                     &
 !        ------   ------   ------

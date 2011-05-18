@@ -165,7 +165,7 @@ integer          ikiph , ieiph , iomgip
 integer          ir11ip, ir22ip, ir33ip
 integer          iclvar, iclvaf
 integer          ipcrom, ipcvst, ipcvsl, iflmas, iflmab
-integer          ippvar, ipp   , iphydp, iptsca, ipcvso
+integer          ippvar, ipp   , iptsca, ipcvso
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -515,15 +515,13 @@ if (itspdv.eq.1) then
     epsrgp = epsrgr(iii)
     climgp = climgr(iii)
     extrap = extrag(iii)
-    iphydp = 0
 
     call grdcel                                                   &
     !==========
- ( iii    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,iii) , coefa(1,iclrtp(iii,icoef)) ,                     &
                  coefb(1,iclrtp(iii,icoef)) ,                     &
    w1     , w2     , w3     ,                                     &

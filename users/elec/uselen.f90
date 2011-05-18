@@ -134,7 +134,7 @@ double precision ra(*)
 character*32     namevr
 integer          iel   , iloc
 integer          ivar  , ivar0 , inc   , iccocg
-integer          iphydp, nswrgp, imligp, iwarnp, iclimv
+integer          nswrgp, imligp, iwarnp, iclimv
 integer          ipcsii
 integer          ientla, ivarpr
 double precision epsrgp, climgp, extrap
@@ -179,14 +179,12 @@ if(nummai.eq.-1) then
   climgp = climgr(ivar)
   extrap = extrag(ivar)
   ivar0 = 0
-  iphydp = 0
 !
   call grdcel                                                     &
   !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
@@ -225,14 +223,12 @@ if(nummai.eq.-1) then
     extrap = extrag(ivar)
 !
     ivar0 = 0
-    iphydp = 0
 !
     call grdcel                                                   &
     !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
@@ -276,14 +272,12 @@ if(nummai.eq.-1) then
     extrap = extrag(ivar)
 !
     ivar0 = 0
-    iphydp = 0
 
     call grdcel                                                   &
     !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
@@ -331,14 +325,12 @@ if(nummai.eq.-1) then
     extrap = extrag(ivar)
 !
     ivar0 = 0
-    iphydp = 0
 !
     call grdcel                                                   &
     !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   ra     , ra     , ra     ,                                     &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d Ax /dx   d Ax /dy   d Ax /dz
@@ -369,14 +361,12 @@ if(nummai.eq.-1) then
     extrap = extrag(ivar)
 !
     ivar0 = 0
-    iphydp = 0
 !
     call grdcel                                                   &
     !==========
-  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
+  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                                      &
-    ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     grad(1,1) , grad(1,2) , grad(1,3) ,                           &
 !       d Ay /dx   d Ay /dy   d Ay /dz
@@ -407,14 +397,12 @@ if(nummai.eq.-1) then
     extrap = extrag(ivar)
 !
     ivar0 = 0
-   iphydp = 0
 !
     call grdcel                                                   &
     !==========
-  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp ,&
+  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                                      &
-    ra     , ra     , ra     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     grad(1,1) , grad(1,2) , grad(1,3) ,                           &
 !       d Az /dx   d Az /dy   d Az /dz

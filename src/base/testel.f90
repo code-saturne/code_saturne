@@ -96,7 +96,7 @@ double precision ra(*)
 
 integer          idebia, idebra, ifinia, ifinra
 integer          ifac  , iel   , ivar
-integer          inc   , iccocg, iphydp
+integer          inc   , iccocg
 integer          iuiph , iviph , iwiph
 integer          nswrgp, imligp, iwarnp
 integer          ipclip
@@ -197,7 +197,6 @@ iwarnp = iwarni(ivar)
 epsrgp = epsrgr(ivar)
 climgp = climgr(ivar)
 extrap = extrag(ivar)
-iphydp = 0
 
 !  2.1 APPEL A GRDCEL AVEC IMRGRA = 0
 !  ==================================
@@ -207,11 +206,10 @@ imligp = -1
 
 call grdcel                                                       &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
@@ -255,11 +253,10 @@ imligp = 1
 
 call grdcel                                                       &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
@@ -304,11 +301,10 @@ imligp = 1
 
 call grdcel                                                       &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
@@ -352,11 +348,10 @@ imligp = -1
 
 call grdcel                                                       &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &
@@ -405,11 +400,10 @@ imligp = 1
 
 call grdcel                                                       &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   ra(iw1), ra(iw1), ra(iw1),                                     &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
    ra(iw1), ra(iw2), ra(iw3),                                     &

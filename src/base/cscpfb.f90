@@ -118,7 +118,7 @@ integer          ikiph  , iepiph , ifbiph , iomiph , iphiph
 integer          ir11ip , ir22ip , ir33ip , ir12ip , ir13ip , ir23ip
 integer          itravx , itravy , itravz
 integer          igradx , igrady , igradz
-integer          inc    , iccocg , iphydp , iclvar, nswrgp
+integer          inc    , iccocg , iclvar, nswrgp
 integer          iwarnp , imligp
 integer          ipos
 integer          itytu0
@@ -232,7 +232,6 @@ endif
 
 inc    = 1
 iccocg = 1
-iphydp = 0
 iclvar = iclrtp(ipriph,icoef)
 nswrgp = nswrgr(ipriph)
 imligp = imligr(ipriph)
@@ -243,11 +242,10 @@ extrap = extrag(ipriph)
 
 call grdcel                                                   &
 !==========
-  ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ipriph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -348,7 +346,6 @@ do isou = 1, 3
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(ivar,icoef)
   nswrgp = nswrgr(ivar)
   imligp = imligr(ivar)
@@ -359,11 +356,10 @@ do isou = 1, 3
 
   call grdcel                                                   &
   !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -482,7 +478,6 @@ if (itytur.eq.2) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(ikiph,icoef)
   nswrgp = nswrgr(ikiph)
   imligp = imligr(ikiph)
@@ -493,11 +488,10 @@ if (itytur.eq.2) then
 
   call grdcel                                                   &
   !==========
-  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
+  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -552,7 +546,6 @@ if (itytur.eq.2) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(iepiph,icoef)
   nswrgp = nswrgr(iepiph)
   imligp = imligr(iepiph)
@@ -563,11 +556,10 @@ if (itytur.eq.2) then
 
   call grdcel                                                   &
   !==========
-  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -672,7 +664,6 @@ if (itytur.eq.2) then
 
       inc    = 1
       iccocg = 1
-      iphydp = 0
       iclvar = iclrtp(ivar,icoef)
       nswrgp = nswrgr(ivar)
       imligp = imligr(ivar)
@@ -683,11 +674,10 @@ if (itytur.eq.2) then
 
       call grdcel                                               &
       !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -818,7 +808,6 @@ elseif (itytur.eq.3) then
 
     inc    = 1
     iccocg = 1
-    iphydp = 0
     iclvar = iclrtp(ivar,icoef)
     nswrgp = nswrgr(ivar)
     imligp = imligr(ivar)
@@ -829,11 +818,10 @@ elseif (itytur.eq.3) then
 
     call grdcel                                                 &
     !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -896,7 +884,6 @@ elseif (itytur.eq.3) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(iepiph,icoef)
   nswrgp = nswrgr(iepiph)
   imligp = imligr(iepiph)
@@ -907,11 +894,10 @@ elseif (itytur.eq.3) then
 
   call grdcel                                                   &
   !==========
-  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -1071,7 +1057,6 @@ elseif (iturb.eq.50) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(ikiph,icoef)
   nswrgp = nswrgr(ikiph)
   imligp = imligr(ikiph)
@@ -1082,11 +1067,10 @@ elseif (iturb.eq.50) then
 
   call grdcel                                                   &
   !==========
-  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
+  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -1141,7 +1125,6 @@ elseif (iturb.eq.50) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(iepiph,icoef)
   nswrgp = nswrgr(iepiph)
   imligp = imligr(iepiph)
@@ -1152,11 +1135,10 @@ elseif (iturb.eq.50) then
 
   call grdcel                                                   &
   !==========
-  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -1211,7 +1193,6 @@ elseif (iturb.eq.50) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(iphiph,icoef)
   nswrgp = nswrgr(iphiph)
   imligp = imligr(iphiph)
@@ -1222,11 +1203,10 @@ elseif (iturb.eq.50) then
 
   call grdcel                                                   &
   !==========
-  ( iphiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( iphiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,iphiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -1258,7 +1238,6 @@ elseif (iturb.eq.50) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(ifbiph,icoef)
   nswrgp = nswrgr(ifbiph)
   imligp = imligr(ifbiph)
@@ -1269,11 +1248,10 @@ elseif (iturb.eq.50) then
 
   call grdcel                                                   &
   !==========
-  ( ifbiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( ifbiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ifbiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -1389,7 +1367,6 @@ elseif (iturb.eq.60) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(ikiph,icoef)
   nswrgp = nswrgr(ikiph)
   imligp = imligr(ikiph)
@@ -1400,11 +1377,10 @@ elseif (iturb.eq.60) then
 
   call grdcel                                                   &
   !==========
-  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp,  &
+  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -1459,7 +1435,6 @@ elseif (iturb.eq.60) then
 
   inc    = 1
   iccocg = 1
-  iphydp = 0
   iclvar = iclrtp(iomiph,icoef)
   nswrgp = nswrgr(iomiph)
   imligp = imligr(iomiph)
@@ -1470,11 +1445,10 @@ elseif (iturb.eq.60) then
 
   call grdcel                                                   &
   !==========
-  ( iomiph , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( iomiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,iomiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -1599,7 +1573,6 @@ elseif (iturb.eq.60) then
 
       inc    = 1
       iccocg = 1
-      iphydp = 0
       iclvar = iclrtp(ivar,icoef)
       nswrgp = nswrgr(ivar)
       imligp = imligr(ivar)
@@ -1610,11 +1583,10 @@ elseif (iturb.eq.60) then
 
       call grdcel                                               &
       !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
@@ -1713,7 +1685,6 @@ if (nscal.gt.0) then
 
     inc    = 1
     iccocg = 1
-    iphydp = 0
     iclvar = iclrtp(ivar,icoef)
     nswrgp = nswrgr(ivar)
     imligp = imligr(ivar)
@@ -1724,11 +1695,10 @@ if (nscal.gt.0) then
 
     call grdcel                                                   &
     !==========
-  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp, &
+  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
-    w4     , w4     , w4     ,                                    &
     rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,         &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------

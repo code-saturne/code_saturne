@@ -190,7 +190,7 @@ integer          idebia, idebra
 integer          ifac  , iel   , ivar
 integer          isou  , ii    , iii   , iiph
 integer          ihcp  , iscal , iscat
-integer          inc   , iccocg, iphydp
+integer          inc   , iccocg
 integer          iok   , iok1
 integer          icodcu
 integer          isoent, isorti, ncpt,   isocpt(2)
@@ -591,15 +591,13 @@ if (iscat .gt. 0) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
     icliva = iclrtp(ivar,icoef)
-    iphydp = 0
 
     call grdcel                                                 &
     !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,  iphydp ,&
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
@@ -676,15 +674,13 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
       climgp = climgr(ivar)
       extrap = extrag(ivar)
       icliva = iclrtp(ivar,icoef)
-      iphydp = 0
 
       call grdcel                                               &
       !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
@@ -741,15 +737,13 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
       climgp = climgr(ivar)
       extrap = extrag(ivar)
       icliva = iclrtp(ivar,icoef)
-      iphydp = 0
 
       call grdcel                                               &
       !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   w1     , w1     , w1     ,                                     &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------

@@ -152,7 +152,7 @@ integer          idebia, idebra, ifinia, ifinra
 integer          igradx, igrady, igradz
 integer          itravx, itravy, itravz, itreco
 integer          iw1   , iw2
-integer          inc   , iccocg, nswrgp, imligp, iwarnp, iphydp
+integer          inc   , iccocg, nswrgp, imligp, iwarnp
 integer          isorva, isaut
 integer          ifac  , iloc  , ivar , iclvar
 integer          ira   , idivdt, ineeyp
@@ -662,15 +662,13 @@ else if  (numtyp .eq. -2) then
       epsrgp = epsrgr(ivar)
       climgp = climgr(ivar)
       extrap = extrag(ivar)
-      iphydp = 0
 
       call grdcel                                               &
       !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
-   ra(itravx) , ra(itravx) , ra(itravx) ,                         &
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
    ra(igradx) , ra(igrady) , ra(igradz) ,                         &
 !        ----------   ----------   ----------

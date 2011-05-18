@@ -140,7 +140,7 @@ integer          idebia, idebra, ifinra
 integer          iel, iccocg, inc
 integer          iuiph, iviph, iwiph
 integer          ipcliu, ipcliv, ipcliw
-integer          ipcrom, ipcvst, iphydp, ipcvis
+integer          ipcrom, ipcvst, ipcvis
 integer          i, j, k
 
 double precision coef, deux, delta, tiers
@@ -192,15 +192,13 @@ tiers  = 1.d0/3.d0
 
 iccocg = 1
 inc = 1
-iphydp = 0
 
 call grdcel                                                       &
 !==========
  ( iuiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iuiph) , imligr(iuiph) , iphydp , iwarni(iuiph) ,       &
+   nswrgr(iuiph) , imligr(iuiph) , iwarni(iuiph) ,                &
    nfecra , epsrgr(iuiph) , climgr(iuiph) , extrag(iuiph) ,       &
    ia     ,                                                       &
-   w12    , w12    , w12    ,                                     &
    rtpa(1,iuiph) , coefa(1,ipcliu) , coefb(1,ipcliu) ,            &
    w1            , w2              , w3              ,            &
 !        ------   ------   ------
@@ -210,10 +208,9 @@ call grdcel                                                       &
 call grdcel                                                       &
 !==========
  ( iviph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iviph) , imligr(iviph) , iphydp , iwarni(iviph) ,       &
+   nswrgr(iviph) , imligr(iviph) , iwarni(iviph) ,                &
    nfecra , epsrgr(iviph) , climgr(iviph) , extrag(iviph) ,       &
    ia     ,                                                       &
-   w12    , w12    , w12    ,                                     &
    rtpa(1,iviph) , coefa(1,ipcliv) , coefb(1,ipcliv) ,            &
    w4            , w5              , w6              ,            &
 !        ------   ------   ------
@@ -223,10 +220,9 @@ call grdcel                                                       &
 call grdcel                                                       &
 !==========
  ( iwiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iwiph) , imligr(iwiph) , iphydp , iwarni(iwiph) ,       &
+   nswrgr(iwiph) , imligr(iwiph) , iwarni(iwiph) ,                &
    nfecra , epsrgr(iwiph) , climgr(iwiph) , extrag(iwiph) ,       &
    ia     ,                                                       &
-   w12    , w12    , w12    ,                                     &
    rtpa(1,iwiph) , coefa(1,ipcliw) , coefb(1,ipcliw) ,            &
    w7            , w8              , w9            ,              &
 !        ------   ------   ------

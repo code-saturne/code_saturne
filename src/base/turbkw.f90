@@ -153,7 +153,7 @@ integer          idebia, idebra, ifinia
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          ii, iivar , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt
-integer          nswrgp, imligp, iphydp
+integer          nswrgp, imligp
 integer          ipriph, ikiph , iomgip
 integer          iclikp, iclomg
 integer          iclvar, iclvaf
@@ -244,14 +244,12 @@ iwarnp = iwarni(ikiph)
 epsrgp = epsrgr(ikiph)
 climgp = climgr(ikiph)
 extrap = extrag(ikiph)
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w7     , w7     , w7     ,                                     &
    rtpa(1,ikiph)   , coefa(1,iclikp) , coefb(1,iclikp) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
@@ -265,14 +263,12 @@ iwarnp = iwarni(iomgip)
 epsrgp = epsrgr(iomgip)
 climgp = climgr(iomgip)
 extrap = extrag(iomgip)
-iphydp = 0
 
 call grdcel                                                       &
 !==========
- ( iomgip , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iomgip , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w7     , w7     , w7     ,                                     &
    rtpa(1,iomgip)  , coefa(1,iclomg) , coefb(1,iclomg) ,          &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
@@ -373,13 +369,11 @@ if(igrake.eq.1) then
 
   iivar = 0
 
-  iphydp = 0
   call grdcel                                                     &
   !==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
+ ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w5     , w5     , w5     ,                                     &
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
    w2     , w3     , w4     ,                                     &
 !        ------   ------   ------

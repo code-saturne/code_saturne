@@ -138,7 +138,7 @@ integer          ipol  , ireslp, ipp
 integer          niterf, icycle, ncymxp, nitmfp
 integer          iinvpe
 integer          isqrt , iel   , ifac
-integer          inc   , iccocg, iphydp, ivar
+integer          inc   , iccocg, ivar
 integer          isweep, nittot, idtva0
 
 double precision relaxp, thetap, rnorm, residu, rnoini
@@ -338,15 +338,13 @@ endif
 
 inc    = 1
 iccocg = 1
-iphydp = 0
 ivar   = 0
 
 call grdcel                                                       &
 !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy , iphydp , &
+ ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy ,          &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
    ia     ,                                                       &
-   w1     , w2     , w3     ,                                     &
    rtpdp  , coefad , coefbd ,                                     &
    w4     , w5     , w6     ,                                     &
    w7     , w8     , w9     ,                                     &
