@@ -277,8 +277,8 @@ call grdcel                                                       &
    ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
    nnod   , lndfac , lndfbr , ncelbr , nphas  ,                   &
    nideve , nrdeve , nituse , nrtuse ,                            &
-   iuiph  , imrgra , inc    , iccocg , iphydp ,                   &
-   nswrgr(iuiph) , imligr(iuiph) ,                                &
+   iuiph  , imrgra , inc    , iccocg ,                            &
+   nswrgr(iuiph) , imligr(iuiph) , iphydp ,                       &
    iwarni(iuiph) , nfecra ,                                       &
    epsrgr(iuiph) , climgr(iuiph) , extrag(iuiph) ,                &
    ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &

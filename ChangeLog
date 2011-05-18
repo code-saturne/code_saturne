@@ -1,3 +1,8 @@
+* 16/05/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the order of arguments in a call to grdcel in usvist.
+  modified routine:
+    users/base/usvist.f90
+
 * 16/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Try to determine batch system used at configure time, so as to install
   runcase scripts with only the required batch template.
