@@ -5552,7 +5552,7 @@ cs_gui_get_sfc_partition_type(void)
   int retval = 0;
 
   if (!cs_gui_file_is_loaded())
-    return;
+    return retval;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "calculation_management", "partition_type");
