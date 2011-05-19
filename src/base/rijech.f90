@@ -245,7 +245,6 @@ elseif(abs(icdpar).eq.1) then
    ra(idipar) , coefax , coefbx ,                                 &
    w2     , w3     , w4     ,                                     &
 !        ------   ------   ------
-   produk , epsk   , w6     ,                                     &
    ra     )
 
 

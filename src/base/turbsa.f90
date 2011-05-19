@@ -283,7 +283,6 @@ call grdcel                                                       &
    rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
    smbrsa , w4     , w5     ,                                     &
 !  ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 
@@ -315,7 +314,6 @@ call grdcel                                                       &
 !  dpdx     dpdy     dpdz
    w6     , w7     , w8     ,                                     &
 !  ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 ! W6     = DVDX ,W7     = DVDY ,W8     = DVDZ
@@ -349,7 +347,6 @@ call grdcel                                                       &
    rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
    w4     , w6     , w7     ,                                     &
 !  ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 ! TINSSA = 2 OMEGA**2 =
@@ -387,7 +384,6 @@ call grdcel                                                       &
    rtpa(1,inuiph)  , coefa(1,iclvar) , coefb(1,iclvar) ,          &
    w4     , w5     , w6     ,                                     &
 !  ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 ! SMBRSA = GRADnu**2
 

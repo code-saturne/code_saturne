@@ -314,7 +314,6 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
 !          FIM      COEFA        COEFB
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
   do iel = 1, ncel

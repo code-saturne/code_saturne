@@ -320,7 +320,6 @@ if (idtvar.ge.0) then
    propce(1,ipcrom), propfb(1,ipbrom), coefbr ,                   &
    grarox , graroy , graroz ,                                     &
 !        ------   ------   ------
-   w1     , w2     , dam    ,                                     &
    ra     )
 
     do iel = 1, ncel

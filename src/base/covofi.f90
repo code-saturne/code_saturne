@@ -525,7 +525,6 @@ if (itspdv.eq.1) then
                  coefb(1,iclrtp(iii,icoef)) ,                     &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 !     Traitement de la production

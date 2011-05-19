@@ -245,7 +245,6 @@ call grdcel                                                       &
    distpa , coefax , coefbx ,                                     &
    qx     , qy     , qz     ,                                     &
 !        ------   ------   ------
-   w2     , w3     , w4     ,                                     &
    ra     )
 
 

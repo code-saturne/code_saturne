@@ -242,7 +242,6 @@ if( nswrgp.gt.1 ) then
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
-   dpdxa  , dpdya  , dpdza  ,                                     &
    ra     )
 
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE

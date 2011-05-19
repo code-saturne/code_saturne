@@ -367,7 +367,6 @@ call grdpot                                                       &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 
@@ -645,7 +644,6 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
    rtpa(1,ikiph)   , coefa(1,iclik)  , coefb(1,iclik)  ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
   d2s3 = 2.d0/3.d0

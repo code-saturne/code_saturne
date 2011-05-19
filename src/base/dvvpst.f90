@@ -150,7 +150,7 @@ character*80     name80
 
 integer          idebia, idebra, ifinia, ifinra
 integer          igradx, igrady, igradz
-integer          itravx, itravy, itravz, itreco
+integer          itreco
 integer          iw1   , iw2
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
 integer          isorva, isaut
@@ -608,10 +608,7 @@ else if  (numtyp .eq. -2) then
       igradx = idebra
       igrady = igradx+ncelet
       igradz = igrady+ncelet
-      itravx = igradz+ncelet
-      itravy = itravx+ncelet
-      itravz = itravy+ncelet
-      itreco = itravz+ncelet
+      itreco = igradz+ncelet
       ifinra = itreco+nfabor
 
       !          Verification de la disponibilite de la memoire
@@ -672,7 +669,6 @@ else if  (numtyp .eq. -2) then
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
    ra(igradx) , ra(igrady) , ra(igradz) ,                         &
 !        ----------   ----------   ----------
-   ra(itravx) , ra(itravy) , ra(itravz) ,                         &
    ra     )
 
 

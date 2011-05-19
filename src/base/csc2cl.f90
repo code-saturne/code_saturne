@@ -199,7 +199,6 @@ do ivar = 1, nvcp
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 

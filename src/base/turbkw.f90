@@ -253,7 +253,6 @@ call grdcel                                                       &
    rtpa(1,ikiph)   , coefa(1,iclikp) , coefb(1,iclikp) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w7     , w8     , xf1    ,                                     &
    ra     )
 
 
@@ -272,7 +271,6 @@ call grdcel                                                       &
    rtpa(1,iomgip)  , coefa(1,iclomg) , coefb(1,iclomg) ,          &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
-   w7     , w8     , xf1    ,                                     &
    ra     )
 
 do iel = 1, ncel
@@ -377,7 +375,6 @@ if(igrake.eq.1) then
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
    w2     , w3     , w4     ,                                     &
 !        ------   ------   ------
-   w5     , w6     , w7     ,                                     &
    ra     )
 
 

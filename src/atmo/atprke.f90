@@ -175,7 +175,6 @@ if (ippmod(iatmos).eq.1) then
    rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 

@@ -33,7 +33,6 @@ subroutine grdcel &
    ia     ,                                                       &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
-   dpdxa  , dpdya  , dpdza  ,                                     &
    ra     )
 
 !===============================================================================
@@ -83,7 +82,6 @@ subroutine grdcel &
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! dpdx,dpdy        ! tr ! --> ! gradient de pvar                               !
 ! dpdz (ncelet     !    !     !                                                !
-! dpdxa (ncelet    ! tr ! --- ! tableau de travail pour le grad de p           !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -117,7 +115,6 @@ integer          ia(*)
 
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
-double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -202,9 +199,7 @@ call cgdcel                                                       &
    xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
    ra(icocgb) , ra(icocg)   ,                                     &
    ra(icocib) , ra(icoci)   ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
-   dpdxa  , dpdya  , dpdza  )
-
+   dpdx   , dpdy   , dpdz   )
 
 return
 end subroutine

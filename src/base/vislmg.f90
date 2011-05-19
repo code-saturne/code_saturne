@@ -180,7 +180,6 @@ call grdcel                                                       &
    rtpa(1,iuiph) , coefa(1,ipcliu) , coefb(1,ipcliu) ,            &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w6     , w7     , w8     ,                                     &
    ra     )
 
 do iel = 1, ncel
@@ -201,7 +200,6 @@ call grdcel                                                       &
    rtpa(1,iviph) , coefa(1,ipcliv) , coefb(1,ipcliv) ,            &
    w4     , w1     , w5     ,                                     &
 !        ------   ------   ------
-   w6     , w7     , w8     ,                                     &
    ra     )
 
 do iel = 1, ncel
@@ -228,7 +226,6 @@ call grdcel                                                       &
    rtpa(1,iwiph) , coefa(1,ipcliw) , coefb(1,ipcliw) ,            &
    w2     , w4     , w1     ,                                     &
 !        ------   ------   ------
-   w6     , w7     , w8     ,                                     &
    ra     )
 
 do iel = 1, ncel

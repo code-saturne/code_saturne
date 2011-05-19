@@ -294,7 +294,6 @@ if(ircflp.gt.0) then
    coefa(1,iclrtp(ivar,icoef)) , coefb(1,iclrtp(ivar,icoef)) ,    &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
   else

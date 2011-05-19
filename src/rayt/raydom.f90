@@ -1191,7 +1191,6 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
    ia     ,                                                       &
    propce(1,ipproc(iqx))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
-   w4     , w5     , w6     ,                                     &
    ra     )
 
     do iel = 1,ncel
@@ -1215,7 +1214,6 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
    ia     ,                                                       &
    propce(1,ipproc(iqy))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
-   w4     , w5     , w6     ,                                     &
    ra     )
 
     do iel = 1,ncel
@@ -1239,7 +1237,6 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
    ia     ,                                                       &
    propce(1,ipproc(iqz))    , cofrua , cofrub ,                   &
    w1     , w2     , w3     ,                                     &
-   w4     , w5     , w6     ,                                     &
    ra     )
 
     do iel = 1,ncel

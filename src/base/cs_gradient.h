@@ -132,10 +132,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                              on boundary's boundary faces     */
        cs_real_t         dpdx[],      /* <-- gradient x component             */
        cs_real_t         dpdy[],      /* <-- gradient y component             */
-       cs_real_t         dpdz[],      /* <-- gradient z component             */
-       cs_real_t         bx[],        /* --- local work array                 */
-       cs_real_t         by[],        /* --- local work array                 */
-       cs_real_t         bz[]         /* --- local work array                 */
+       cs_real_t         dpdz[]       /* <-- gradient z component             */
 );
 
 /*=============================================================================

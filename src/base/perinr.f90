@@ -181,7 +181,6 @@ do isou = 1,6
    rtp(1,ipiph)  , coefa(1,ipiph) , coefb(1,ipiph) ,              &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
   isou1 = isou

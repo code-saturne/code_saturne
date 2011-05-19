@@ -280,7 +280,6 @@ call grdcel                                                       &
    rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
    smbrk  , w4     , w5     ,                                     &
 !        ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 
@@ -310,7 +309,6 @@ call grdcel                                                       &
    rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
    tinste , smbrk  , w6     ,                                     &
 !        ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 
@@ -343,7 +341,6 @@ call grdcel                                                       &
    rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
    w4     , tinste , smbrk  ,                                     &
 !        ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 ! TINSTK = PRODUCTION = (
@@ -483,7 +480,6 @@ else if (igrake.eq.1) then
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 

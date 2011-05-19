@@ -249,7 +249,6 @@ call grdcel                                                   &
     rtp(1,ipriph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 ! For a specific face to face coupling, geometric assumptions are made
@@ -363,7 +362,6 @@ do isou = 1, 3
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -495,7 +493,6 @@ if (itytur.eq.2) then
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -563,7 +560,6 @@ if (itytur.eq.2) then
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -681,7 +677,6 @@ if (itytur.eq.2) then
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -825,7 +820,6 @@ elseif (itytur.eq.3) then
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
     if (isou.eq.1) itrav = itrav1
@@ -901,7 +895,6 @@ elseif (itytur.eq.3) then
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -1074,7 +1067,6 @@ elseif (iturb.eq.50) then
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -1142,7 +1134,6 @@ elseif (iturb.eq.50) then
     rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -1210,7 +1201,6 @@ elseif (iturb.eq.50) then
     rtp(1,iphiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -1255,7 +1245,6 @@ elseif (iturb.eq.50) then
     rtp(1,ifbiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -1384,7 +1373,6 @@ elseif (iturb.eq.60) then
     rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -1452,7 +1440,6 @@ elseif (iturb.eq.60) then
     rtp(1,iomiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -1590,7 +1577,6 @@ elseif (iturb.eq.60) then
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
 
@@ -1702,7 +1688,6 @@ if (nscal.gt.0) then
     rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,         &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
-    w4     , w5     , w6     ,                                    &
     ra     )
 
     ! For a specific face to face coupling, geometric assumptions are made

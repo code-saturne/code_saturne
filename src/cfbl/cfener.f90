@@ -403,7 +403,6 @@ endif
 !     &   ia     ,
 !     &   w7     , ra(icoefa) , ra(icoefb)  ,
 !     &   w1     , w2     , w3     ,
-!     &   w4     , w5     , w6     ,
 !     &   ra     )
 
 !       On libere la place dans RA
@@ -642,7 +641,6 @@ call grdcel                                                       &
    ia     ,                                                       &
    w7     , ra(icoefa) , ra(icoefb)  ,                            &
    w1     , w2     , w3     ,                                     &
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 !       On libere la place dans RA

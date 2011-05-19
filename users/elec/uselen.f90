@@ -140,7 +140,7 @@ integer          ientla, ivarpr
 double precision epsrgp, climgp, extrap
 double precision rbid(1)
 
-double precision, allocatable, dimension(:,:) :: grad, trav
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 !===============================================================================
@@ -158,7 +158,6 @@ if(nummai.eq.-1) then
 
   ! Allocate work arrays
   allocate(grad(ncelet,3))
-  allocate(trav(ncelet,3))
 
 !===============================================================================
 ! 1.   Graident of the real potential
@@ -189,7 +188,6 @@ if(nummai.eq.-1) then
 !       POTR
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d POTR /dx   d POTR /dy   d POTR /dz
-   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
 !
@@ -233,7 +231,6 @@ if(nummai.eq.-1) then
 !       POTI
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d POTI /dx   d POTI /dy   d POTI /dz
-   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
 !
@@ -282,7 +279,6 @@ if(nummai.eq.-1) then
 !       POTI
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d POTI /dx   d POTI /dy   d POTI /dz
-   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
     do iloc = 1, ncelps
@@ -334,7 +330,6 @@ if(nummai.eq.-1) then
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
 !       d Ax /dx   d Ax /dy   d Ax /dz
-   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
 !       B = rot A ( B = curl A)
@@ -370,7 +365,6 @@ if(nummai.eq.-1) then
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     grad(1,1) , grad(1,2) , grad(1,3) ,                           &
 !       d Ay /dx   d Ay /dy   d Ay /dz
-    trav(1,1) , trav(1,2) , trav(1,3) ,                           &
     ra     )
 
 !       B = rot A (B = curl A)
@@ -406,7 +400,6 @@ if(nummai.eq.-1) then
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     grad(1,1) , grad(1,2) , grad(1,3) ,                           &
 !       d Az /dx   d Az /dy   d Az /dz
-    trav(1,1) , trav(1,2) , trav(1,3) ,                           &
     ra     )
 
 !       B = rot A (B = curl A)
@@ -497,7 +490,6 @@ if(nummai.eq.-1) then
   endif
 
   ! Free memory
-  deallocate(trav)
   deallocate(grad)
 
 endif

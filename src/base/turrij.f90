@@ -250,7 +250,6 @@ if (iturb.eq.30) then
    rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 
@@ -290,7 +289,6 @@ if (iturb.eq.30) then
    rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
   do iel = 1 , ncel
@@ -329,7 +327,6 @@ if (iturb.eq.30) then
    rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
   do iel = 1 , ncel
@@ -380,7 +377,6 @@ else
    rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
    grdvit(1,1,1)   , grdvit(1,1,2)   , grdvit(1,1,3)   ,          &
 !        -------------     -------------     -------------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 
@@ -401,7 +397,6 @@ else
    rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
    grdvit(1,2,1)   , grdvit(1,2,2)   , grdvit(1,2,3)   ,          &
 !        -------------     -------------     -------------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 
@@ -422,7 +417,6 @@ else
    rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
    grdvit(1,3,1)   , grdvit(1,3,2)   , grdvit(1,3,3)   ,          &
 !        -------------     -------------     -------------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 endif
@@ -469,7 +463,6 @@ if(igrari.eq.1) then
    propce(1,ipcroo), propfb(1,ipbroo), viscb           ,          &
    grarox , graroy , graroz ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 endif

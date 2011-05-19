@@ -290,7 +290,6 @@ if ( ivar.eq.isca(icoyfp)) then
             coefb(1,iclrtp(ii,icoef))  ,                          &
    w1              , w2              , w3     ,                   &
 !        d./dx1          , d./dx2          , d./dx3 ,
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 ! --- Calcul du gradient de Yfuel
@@ -323,7 +322,6 @@ if ( ivar.eq.isca(icoyfp)) then
             coefb(1,iclrtp(ii,icoef))  ,                          &
    w7              , w8              , w9     ,                   &
 !        d./dx1          , d./dx2          , d./dx3 ,
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 

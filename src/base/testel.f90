@@ -100,7 +100,6 @@ integer          inc   , iccocg
 integer          iuiph , iviph , iwiph
 integer          nswrgp, imligp, iwarnp
 integer          ipclip
-integer          iw1   , iw2   , iw3
 integer          indwri, indact, ipart, idimt, ientla, ivarpr
 
 double precision epsrgp, climgp, extrap
@@ -120,14 +119,6 @@ ifinia = idbia0
 ! On positionne l'indicateur ALE a 1 de maniere a forcer le recalcul
 ! de la contribution des cellules de bord a chaque appel de GRDCEL
 iale = 1
-
-iw1    = idbra0
-iw2    = iw1    + ncelet
-iw3    = iw2    + ncelet
-ifinra = iw3    + ncelet
-
-call rasize('testel', ifinra)
-!==========
 
 ! Symmetry type:
 ! value 0 avoids extrapolating the gradient on boundary faces.
@@ -212,7 +203,6 @@ call grdcel                                                       &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
-   ra(iw1), ra(iw2), ra(iw3),                                     &
    ra     )
 
 ! On sort le gradient
@@ -259,7 +249,6 @@ call grdcel                                                       &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
-   ra(iw1), ra(iw2), ra(iw3),                                     &
    ra     )
 
 
@@ -307,7 +296,6 @@ call grdcel                                                       &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
-   ra(iw1), ra(iw2), ra(iw3),                                     &
    ra     )
 
 ! On sort le gradient
@@ -354,7 +342,6 @@ call grdcel                                                       &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
-   ra(iw1), ra(iw2), ra(iw3),                                     &
    ra     )
 
 ! On sort le gradient
@@ -406,7 +393,6 @@ call grdcel                                                       &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
    rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
-   ra(iw1), ra(iw2), ra(iw3),                                     &
    ra     )
 
 ! On sort le gradient

@@ -230,7 +230,6 @@ endif
    rtpa(1,iphiph ) , coefa(1,iclphi) , coefb(1,iclphi) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
   iccocg = 1
@@ -252,7 +251,6 @@ endif
    rtpa(1,ikiph )  , coefa(1,iclikp) , coefb(1,iclikp) ,          &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
-   w7     , w8     , w9     ,                                     &
    ra     )
 
   do iel = 1, ncel

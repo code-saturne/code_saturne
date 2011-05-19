@@ -729,10 +729,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                              on boundary's boundary faces     */
        cs_real_t         dpdx[],      /* <-- gradient x component             */
        cs_real_t         dpdy[],      /* <-- gradient y component             */
-       cs_real_t         dpdz[],      /* <-- gradient z component             */
-       cs_real_t         bx[],        /* --- local work array                 */
-       cs_real_t         by[],        /* --- local work array                 */
-       cs_real_t         bz[]         /* --- local work array                 */
+       cs_real_t         dpdz[]       /* <-- gradient z component             */
 )
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -749,9 +746,21 @@ void CS_PROCF (cgdcel, CGDCEL)
   cs_int_t  *ipcvse = NULL;
   cs_int_t  *ielvse = NULL;
 
+  cs_real_t  *_aux_vectors;
+  cs_real_t  *restrict bx, *restrict by, *restrict bz;
+
   cs_bool_t update_stats = true;
   cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
 
+  /* Allocate work arrays */
+
+  BFT_MALLOC(_aux_vectors, (*ncelet)*3, cs_real_t);
+
+  bx = _aux_vectors;
+  by = _aux_vectors +  *ncelet;
+  bz = _aux_vectors + (*ncelet)*2;
+
+  /* Choose gradient type */
 
   switch (*imrgra) {
   case 0: gradient_type = CS_GRADIENT_ITER; break;
@@ -893,6 +902,7 @@ void CS_PROCF (cgdcel, CGDCEL)
   }
 
   BFT_FREE(var_name);
+  BFT_FREE(_aux_vectors);
 }
 
 /*============================================================================

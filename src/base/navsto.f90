@@ -729,7 +729,6 @@ else
    drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
    trav(1,1)       , trav(1,2)       , trav(1,3) ,                &
    !--------         ---------         ---------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
   !     REACTUALISATION DU CHAMP DE VITESSES

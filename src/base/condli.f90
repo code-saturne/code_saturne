@@ -601,7 +601,6 @@ if (iscat .gt. 0) then
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
     do ifac = 1 , nfabor
@@ -684,7 +683,6 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
       do ifac = 1, nfabor
@@ -747,7 +745,6 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w4     , w5     , w6     ,                                     &
    ra     )
 
 

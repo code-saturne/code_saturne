@@ -175,7 +175,6 @@ call grdcel                                                       &
    ia     ,                                                       &
    rtp(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,           &
    gradpr(1,1)     , gradpr(1,2)     , gradpr(1,3)     ,          &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
@@ -227,7 +226,6 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    ia     ,                                                       &
    rtp(1,iuiph)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,           &
    gradvf(1,1)     , gradvf(1,2)     , gradvf(1,3)     ,          &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !     COMPOSANTE Y
@@ -242,7 +240,6 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    ia     ,                                                       &
    rtp(1,iviph)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,           &
    gradvf(1,4)     , gradvf(1,5)     , gradvf(1,6)     ,          &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !     COMPOSANTE Z
@@ -257,7 +254,6 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    ia     ,                                                       &
    rtp(1,iwiph)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,           &
    gradvf(1,7)     , gradvf(1,8)     , gradvf(1,9)     ,          &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 endif

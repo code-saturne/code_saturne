@@ -547,7 +547,6 @@ call grdpot                                                       &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr)  ,         &
    trav(1,1) , trav(1,2) , trav(1,3) ,                            &
 !        ---------   ---------   ---------
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 

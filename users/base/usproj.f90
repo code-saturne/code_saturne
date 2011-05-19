@@ -225,7 +225,7 @@ double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 
 integer, allocatable, dimension(:) :: lstelt
 
-double precision, allocatable, dimension(:,:) :: grad, trav
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: treco
 
 !===============================================================================
@@ -471,7 +471,6 @@ if (inpdt0.eq.0) then
 
     ! Allocate work arrays
     allocate(grad(ncelet,3))
-    allocate(trav(ncelet,3))
 
     ! --- Compute temperature gradient
 
@@ -520,7 +519,6 @@ if (inpdt0.eq.0) then
         rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
         grad(1,1) , grad(1,2) , grad(1,3) ,                            &
         !---------   ----------   ----------
-        trav(1,1) , trav(1,2) , trav(1,3) ,                            &
         ra     )
 
     ! - Compute reconstructed value in boundary cells
@@ -537,7 +535,6 @@ if (inpdt0.eq.0) then
     enddo
 
     ! Free memory
-    deallocate(trav)
     deallocate(grad)
 
   ! --> Case of orthogonal meshes

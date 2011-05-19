@@ -238,7 +238,6 @@ if(iappel.eq.1) then
 !       POTR
    w4     , w5     , w6     ,                                     &
 !       d POTR /dx   d POTR /dy   d POTR /dz
-   w7     , w8     , w9    ,                                      &
    ra     )
 
 
@@ -406,7 +405,6 @@ if(iappel.eq.1) then
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d POTI /dx   d POTI /dy   d POTI /dz
-    w7     , w8     , w9     ,                                    &
     ra     )
 
 
@@ -607,7 +605,6 @@ if (iappel.eq.2) then
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
    w4     , w5     , w6     ,                                     &
 !       d Ax /dx   d Ax /dy   d Ax /dz
-   w7     , w8     , w9    ,                                      &
    ra     )
 
 !       B = rot A
@@ -652,7 +649,6 @@ if (iappel.eq.2) then
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d Ay /dx   d Ay /dy   d Ay /dz
-    w7     , w8     , w9     ,                                    &
     ra     )
 
 !       B = rot A
@@ -697,7 +693,6 @@ if (iappel.eq.2) then
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
     w4     , w5     , w6     ,                                    &
 !       d Az /dx   d Az /dy   d Az /dz
-    w7     , w8     , w9     ,                                    &
     ra     )
 
 !       B = rot A

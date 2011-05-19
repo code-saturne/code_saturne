@@ -330,7 +330,6 @@ call grdcel                                                       &
      ia     ,                                                     &
      theta4 , cofrua , cofrub ,                                   &
      w1     , w2     , w3     ,                                   &
-     w4     , w5     , w6     ,                                   &
      ra     )
 
 aa = - stephn * 4.d0 / 3.d0

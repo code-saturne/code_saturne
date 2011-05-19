@@ -208,7 +208,6 @@ if( idiffp.ne.0 .and. ircflp.eq.1 ) then
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
-   dpdxa  , dpdya  , dpdza  ,                                     &
    ra     )
 
 else

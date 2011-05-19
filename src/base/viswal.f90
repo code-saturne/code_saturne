@@ -202,7 +202,6 @@ call grdcel                                                       &
    rtpa(1,iuiph) , coefa(1,ipcliu) , coefb(1,ipcliu) ,            &
    w1            , w2              , w3              ,            &
 !        ------   ------   ------
-   w10           , w11             , w12             ,            &
    ra     )
 
 call grdcel                                                       &
@@ -214,7 +213,6 @@ call grdcel                                                       &
    rtpa(1,iviph) , coefa(1,ipcliv) , coefb(1,ipcliv) ,            &
    w4            , w5              , w6              ,            &
 !        ------   ------   ------
-   w10           , w11             , w12             ,            &
    ra     )
 
 call grdcel                                                       &
@@ -226,7 +224,6 @@ call grdcel                                                       &
    rtpa(1,iwiph) , coefa(1,ipcliw) , coefb(1,ipcliw) ,            &
    w7            , w8              , w9            ,              &
 !        ------   ------   ------
-   w10           , w11             , w12             ,            &
    ra     )
 
 ! Kronecker delta Dij

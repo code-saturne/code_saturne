@@ -626,7 +626,6 @@ if (itbslb.gt.0) then
        rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
        w1     , w2     , w3     ,                                     &
        !        ------   ------   ------
-       w4     , w5     , w6     ,                                     &
        ra     )
 
 

@@ -135,7 +135,7 @@ integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
 
-double precision, allocatable, dimension(:,:) :: grad, trav
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -169,7 +169,6 @@ if(1.eq.1) return
 
 ! Allocate work arrays
 allocate(grad(ncelet,3))
-allocate(trav(ncelet,3))
 
 ! --- Number associated to variables (in RTP)
 iuiph = iu
@@ -204,7 +203,6 @@ call grdcel                                                       &
    rtpa(1,iuiph) , coefa(1,ipcliu) , coefb(1,ipcliu) ,            &
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &
    !---------   ----------   ----------
-   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
    ra     )
 
 !===============================================================================
@@ -232,7 +230,6 @@ do iel = 1, ncel
 enddo
 
 ! Free memory
-deallocate(trav)
 deallocate(grad)
 
 !--------

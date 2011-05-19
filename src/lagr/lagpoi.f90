@@ -282,7 +282,6 @@ call grdcel                                                       &
    ia     ,                                                       &
    ra(iphil) , ra(icoefap) , ra(icoefbp) ,                        &
    w1       , w2    , w3 ,                                        &
-   ra(iw1)  , ra(iw2) , ra(iw3) ,                                 &
    ra     )
 
 ! CORRECTION DES VITESSES MOYENNES ET RETOUR AU CUMUL

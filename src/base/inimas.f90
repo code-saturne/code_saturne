@@ -294,7 +294,6 @@ if( nswrgu.gt.1 ) then
    qdmx   , coefqa(1,1) , coefbx ,                                &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
-   dpdxa  , dpdya  , dpdza  ,                                     &
    ra     )
 
 
@@ -352,7 +351,6 @@ if( nswrgu.gt.1 ) then
    qdmy   , coefqa(1,2) , coefby ,                                &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
-   dpdxa  , dpdya  , dpdza  ,                                     &
    ra     )
 
 
@@ -409,7 +407,6 @@ if( nswrgu.gt.1 ) then
    qdmz     , coefqa(1,3) , coefbz ,                              &
    dpdx   , dpdy   , dpdz   ,                                     &
 !        ------   ------   ------
-   dpdxa  , dpdya  , dpdza  ,                                     &
    ra     )
 
 !     FLUX DE MASSE SUR LES FACETTES FLUIDES

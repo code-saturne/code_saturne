@@ -204,7 +204,6 @@ call grdcel                                                       &
    rtpa(1,iuiph)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,          &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
-   w6     , w7     , w8     ,                                     &
    ra     )
 
 
@@ -232,7 +231,6 @@ call grdcel                                                       &
    rtpa(1,iviph)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,          &
    w1     , w4     , w5     ,                                     &
 !        ------   ------   ------
-   w6     , w7     , w8     ,                                     &
    ra     )
 
 
@@ -260,7 +258,6 @@ call grdcel                                                       &
    rtpa(1,iwiph)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,          &
    w1     , w2     , w4     ,                                     &
 !        ------   ------   ------
-   w6     , w7     , w8     ,                                     &
    ra     )
 
 ! S2KW    =  2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
