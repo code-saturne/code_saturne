@@ -632,7 +632,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
  *   face_ifs          <-- parallel and periodic faces interfaces set
  *   face_cell         <-- local face -> cell connectivity
  *   face_vertices_idx <-- local face -> vertices index
- *   face_typ         --> face type marker
+ *   face_type         --> face type marker
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1645,6 +1645,7 @@ _precompute_cell_center(const _mesh_reader_t     *mr,
                                         mr->cell_bi,
                                         2,
                                         mr->face_cells,
+                                        NULL,
                                         NULL);
 
   _n_faces = fvm_block_to_part_get_n_part_ents(d);
@@ -1907,7 +1908,8 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                         mr->cell_bi,
                                         2,
                                         mr->face_cells,
-                                        mr->cell_rank);
+                                        mr->cell_rank,
+                                        NULL);
 
   BFT_FREE(mr->cell_rank); /* Not needed anymore */
 

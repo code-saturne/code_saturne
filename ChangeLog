@@ -1,8 +1,12 @@
 * 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
-  MED output: a field must have different names on different MED
-  meshes within a single file, so postpend mesh name if necessary.
+  Add possibility of defining a default destination rank for
+  block to part distributor based on strided adjacency, so as to
+  also distribute elements with no adjacency.
   modified files:
-    src/fvm/fvm_to_med.c
+    src/apps/cs_partition.c
+    src/base/cs_preprocessor_data.c
+    src/fvm/fvm_block_to_part.c
+    src/fvm/fvm_block_to_part.h
 
 * 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix crash due to trying to read info from XML file even when not present.

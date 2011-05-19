@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2008  EDF
+  Copyright (C) 2008-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -444,6 +444,11 @@ fvm_block_to_part_create_by_rank(MPI_Comm                  comm,
  * boundary faces which are adjacent to only 1 element; in this case,
  * the adjacent element number for the exterior side of the face is 0.
  *
+ * It is also possible to define a default destination rank,
+ * so that elements with no adjacency are redistributed.
+ * If the default rank for a given element is < 0, or no default
+ * ranks are defined, elements with no adjacency are no distributed.
+ *
  * arguments:
  *   comm              <-- communicator
  *   block             <-- block size and range info
@@ -452,6 +457,7 @@ fvm_block_to_part_create_by_rank(MPI_Comm                  comm,
  *   adjacency         <-- entity adjacency (1 to n numbering)
  *   adjacent_ent_rank <-- destination rank for adjacent entities, or
  *                         NULL if based on block size and range only.
+ *   default_rank      <-- default rank in case there is no adjacency
  *
  * returns:
  *   initialized block to partition distributor
@@ -463,7 +469,8 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
                                   fvm_block_to_part_info_t  adjacent_block,
                                   int                       stride,
                                   fvm_gnum_t                adjacency[],
-                                  int                       adjacent_ent_rank[])
+                                  int                       adjacent_ent_rank[],
+                                  int                       default_rank[])
 {
   int i, k;
   fvm_lnum_t j;
@@ -578,18 +585,25 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
     rank_flag[i] = -1;
 
   for (j = 0; j < n_ents; j++) {
+    int send_rank = -1;
     for (k = 0; k < stride; k++) {
       fvm_gnum_t adj_g_num = adjacency[j*stride + k];
       if (adj_g_num > 0) {
         int adj_ent_rank =   ((adj_g_num-1) / adjacent_block.block_size)
                            * adjacent_block.rank_step;
-        int send_rank = adj_send_num[adj_send_displ[adj_ent_rank]];
+        send_rank = adj_send_num[adj_send_displ[adj_ent_rank]];
         if (rank_flag[send_rank] < j) {
           d->send_count[send_rank] += 1;
           rank_flag[send_rank] = j;
         }
         adj_send_displ[adj_ent_rank] += 1;
       }
+    }
+    if (send_rank == -1 && default_rank != NULL)
+      send_rank = default_rank[j];
+    if (send_rank >= 0 && rank_flag[send_rank] < j) {
+      d->send_count[send_rank] += 1;
+      rank_flag[send_rank] = j;
     }
   }
 
@@ -611,12 +625,13 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
     rank_flag[i] = -1;
 
   for (j = 0; j < n_ents; j++) {
+    int send_rank = -1;
     for (k = 0; k < stride; k++) {
       fvm_gnum_t adj_g_num = adjacency[j*stride + k];
       if (adj_g_num > 0) {
         int adj_ent_rank =   ((adj_g_num-1) / adjacent_block.block_size)
                            * adjacent_block.rank_step;
-        int send_rank = adj_send_num[adj_send_displ[adj_ent_rank]];
+        send_rank = adj_send_num[adj_send_displ[adj_ent_rank]];
         if (rank_flag[send_rank] < j) {
           d->send_list[d->send_displ[send_rank]] = j;
           d->send_displ[send_rank] += 1;
@@ -624,6 +639,13 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
         }
         adj_send_displ[adj_ent_rank] += 1;
       }
+    }
+    if (send_rank == -1 && default_rank != NULL)
+      send_rank = default_rank[j];
+    if (send_rank >= 0 && rank_flag[send_rank] < j) {
+      d->send_list[d->send_displ[send_rank]] = j;
+      d->send_displ[send_rank] += 1;
+      rank_flag[send_rank] = j;
     }
   }
 

@@ -135,6 +135,11 @@ fvm_block_to_part_create_by_rank(MPI_Comm                  comm,
  * boundary faces which are adjacent to only 1 element; in this case,
  * the adjacent element number for the exterior side of the face is 0.
  *
+ * It is also possible to define a default destination rank,
+ * so that elements with no adjacency are redistributed.
+ * If the default rank for a given element is < 0, or no default
+ * ranks are defined, elements with no adjacency are no distributed.
+ *
  * arguments:
  *   comm              <-- communicator
  *   block             <-- block size and range info
@@ -143,6 +148,7 @@ fvm_block_to_part_create_by_rank(MPI_Comm                  comm,
  *   adjacency         <-- entity adjacency (1 to n numbering)
  *   adjacent_ent_rank <-- destination rank for adjacent entities, or
  *                         NULL if based on block size and range only.
+ *   default_rank      <-- default rank in case there is no adjacency
  *
  * returns:
  *   initialized block to partition distributor
@@ -154,7 +160,8 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
                                   fvm_block_to_part_info_t  adjacent_block,
                                   int                       stride,
                                   fvm_gnum_t                adjacency[],
-                                  int                       adjacent_ent_rank[]);
+                                  int                       adjacent_ent_rank[],
+                                  int                       default_rank[]);
 
 /*----------------------------------------------------------------------------
  * Initialize block to partition distributor for entities adjacent to

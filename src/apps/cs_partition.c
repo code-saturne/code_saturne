@@ -1924,6 +1924,7 @@ _read_input(const char   *path,
                                           cell_bi,
                                           2,
                                           _g_face_cells,
+                                          NULL,
                                           NULL);
 
     *n_faces = fvm_block_to_part_get_n_part_ents(d);
