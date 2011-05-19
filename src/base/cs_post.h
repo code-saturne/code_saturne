@@ -886,6 +886,13 @@ void
 cs_post_init_main_meshes(int check_mask);
 
 /*----------------------------------------------------------------------------
+ * Postprocess free (isolated) faces of the current global mesh
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_free_faces(void);
+
+/*----------------------------------------------------------------------------
  * Initialize post-processing writer with same format and associated
  * options as default writer, but no time dependency, intended to
  * troubleshoot errors.

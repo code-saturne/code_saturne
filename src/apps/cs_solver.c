@@ -277,6 +277,11 @@ cs_run(void)
 
   cs_user_mesh_modify(cs_glob_mesh);
 
+  /* Discard isolated faces if present */
+
+  cs_post_add_free_faces();
+  cs_mesh_discard_free_faces(cs_glob_mesh);
+
   /* Triangulate warped faces if necessary */
 
   cs_mesh_warping_get_defaults(&cwf_threshold, &cwf_post);

@@ -1,3 +1,21 @@
+* 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Delay discarding of isolated faces to just prior calculation phase.
+  This allows post-processing of those faces, as well as their usage
+  in mesh joining (not updated for this yet) or user modification.
+  modified files:
+    src/apps/cs_solver.c
+    src/base/cs_mesh.c
+    src/base/cs_mesh.h
+    src/base/cs_post.c
+    src/base/cs_post.h
+    src/base/cs_preprocessor_data.c
+    src/base/cs_preprocessor_data.h
+
+* 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix generation of hosts file under SLURM.
+  modified file:
+    bin/cs_exec_environment.py
+
 * 19/05/2011 - David Monfort <david.monfort@edf.fr>
   Remove some unused work arrays in user subroutines, again.
   modified routines:

@@ -170,6 +170,14 @@ cs_preprocessor_data_add_file(const char     *file_name,
 /*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.
  *
+ * At this stage, ghost cells are not generated yet, so the interior
+ * face connectivity is not complete near parallel domain or periodic
+ * boundaries. Also, isolated faces, if present, are considered to be
+ * boundary faces, as they may participate in future mesh joining
+ * operations. Their matching cell number will be set to -1.
+ * Remaining isolated faces should be removed before completing
+ * the mesh structure.
+ *
  * parameters:
  *   mesh         <-- pointer to mesh structure
  *   mesh_builder <-- pointer to mesh builder structure

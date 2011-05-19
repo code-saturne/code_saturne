@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -1009,6 +1009,81 @@ _cs_post_write_displacements(int     nt_cur_abs,
 }
 
 /*----------------------------------------------------------------------------
+ * Generate global group flags array from local family flags
+ *
+ * The caller should free the returned array once it is no longer needed.
+ *
+ * parameters:
+ *   mesh     <-- pointer to mesh structure
+ *   fam_flag <-- flag values (size: mesh->n_families + 1)
+ *
+ * returns:
+ *   group flag (size: mesh->n_groups)
+ *----------------------------------------------------------------------------*/
+
+static char *
+_build_group_flag(const cs_mesh_t  *mesh,
+                  int              *fam_flag)
+{
+  int i, j;
+
+  char *group_flag = NULL;
+
+  BFT_MALLOC(group_flag, mesh->n_groups, char);
+  memset(group_flag, 0, mesh->n_groups);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    int *_fam_flag = NULL;
+    BFT_MALLOC(_fam_flag, mesh->n_families + 1, int);
+    MPI_Allreduce(fam_flag, _fam_flag, mesh->n_families + 1,
+                  MPI_INT, MPI_MAX, cs_glob_mpi_comm);
+    memcpy(fam_flag, _fam_flag, (mesh->n_families + 1)*sizeof(int));
+    BFT_FREE(_fam_flag);
+  }
+#endif /* defined(HAVE_MPI) */
+
+  for (i = 0; i < mesh->n_families; i++) {
+    if (fam_flag[(i+1)] != 0) {
+      char mask = fam_flag[i+1];
+      for (j = 0; j < mesh->n_max_family_items; j++) {
+        int g_id = - mesh->family_item[mesh->n_families*j + i] - 1;
+        if (g_id >= 0)
+          group_flag[g_id] = group_flag[g_id] | mask;
+      }
+    }
+  }
+
+  return group_flag;
+}
+
+/*----------------------------------------------------------------------------
+ * Set a family flags array to 1 for families containg a given group,
+ * and to 0 for others.
+ *
+ * parameters:
+ *   mesh     <-- pointer to mesh structure
+ *   g_id     <-- group id
+ *   fam_flag --> flag values (size: mesh->n_families)
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_fam_flags(const cs_mesh_t  *mesh,
+               int               g_id,
+               int              *fam_flag)
+{
+  int j, k;
+  memset(fam_flag, 0, mesh->n_families*sizeof(int));
+  for (j = 0; j < mesh->n_families; j++) {
+    for (k = 0; k < mesh->n_max_family_items; k++) {
+      int _g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
+      if (_g_id == g_id)
+        fam_flag[j] = 1;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Output volume sub-meshes by group
  *
  * parameters:
@@ -1022,9 +1097,9 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
                         const char       *fmt_name,
                         const char       *fmt_opts)
 {
-  fvm_lnum_t  i, j, k;
+  fvm_lnum_t  i, j;
   fvm_lnum_t n_cells, n_i_faces, n_b_faces;
-  char part_name[81] ;
+  char part_name[81];
   int max_null_family = 0;
   int *fam_flag = NULL;
   char *group_flag = NULL;
@@ -1064,47 +1139,26 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
   /* Now detect which groups may be referenced */
 
-  BFT_MALLOC(fam_flag, (mesh->n_families + 1) * 3, int);
-  memset(fam_flag, 0, (mesh->n_families + 1) * sizeof(int) * 3);
+  BFT_MALLOC(fam_flag, (mesh->n_families + 1), int);
+  memset(fam_flag, 0, (mesh->n_families + 1) * sizeof(int));
 
   if (mesh->cell_family != NULL) {
     for (i = 0; i < mesh->n_cells; i++)
-      fam_flag[mesh->cell_family[i]*3] = 1;
+      fam_flag[mesh->cell_family[i]]
+        = fam_flag[mesh->cell_family[i]] | 1;
   }
   if (mesh->i_face_family != NULL) {
     for (i = 0; i < mesh->n_i_faces; i++)
-      fam_flag[mesh->i_face_family[i]*3 + 1] = 1;
+      fam_flag[mesh->i_face_family[i]]
+        = fam_flag[mesh->i_face_family[i]] | 2;
   }
   if (mesh->b_face_family != NULL) {
     for (i = 0; i < mesh->n_b_faces; i++)
-      fam_flag[mesh->b_face_family[i]*3 + 2] = 1;
+      fam_flag[mesh->b_face_family[i]]
+        = fam_flag[mesh->b_face_family[i]] | 4;
   }
 
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    int *_fam_flag = NULL;
-    BFT_MALLOC(_fam_flag, (mesh->n_families + 1) * 3, int);
-    MPI_Allreduce(fam_flag, _fam_flag, (mesh->n_families + 1) * 3,
-                  MPI_INT, MPI_MAX, cs_glob_mpi_comm);
-    BFT_FREE(fam_flag);
-    fam_flag = _fam_flag;
-  }
-#endif /* defined(HAVE_MPI) */
-
-  BFT_MALLOC(group_flag, mesh->n_groups * 3, char);
-  memset(group_flag, 0, mesh->n_groups * 3);
-
-  for (i = 0; i < mesh->n_families; i++) {
-    for (j = 0; j < 3; j++) {
-      if (fam_flag[(i+1)*3 + j] != 0) {
-        for (k = 0; k < mesh->n_max_family_items; k++) {
-          int g_id = - mesh->family_item[mesh->n_families*k + i] - 1;
-          if (g_id >= 0)
-            group_flag[g_id*3 + j] = 1;
-        }
-      }
-    }
-  }
+  group_flag = _build_group_flag(mesh, fam_flag);
 
   /* Now extract volume elements by groups.
      Note that selector structures may not have been initialized yet,
@@ -1116,18 +1170,11 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
   for (i = 0; i < mesh->n_groups; i++) {
 
-    if (group_flag[i*3] != 0) {
+    if (group_flag[i] & '\1') {
 
       const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
 
-      memset(fam_flag, 0, mesh->n_families*sizeof(int));
-      for (j = 0; j < mesh->n_families; j++) {
-        for (k = 0; k < mesh->n_max_family_items; k++) {
-          int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
-          if (g_id == i)
-            fam_flag[j] = 1;
-        }
-      }
+      _set_fam_flags(mesh, i, fam_flag);
 
       for (j = 0, n_cells = 0; j < mesh->n_cells; j++) {
         int f_id = mesh->cell_family[j];
@@ -1194,18 +1241,11 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
   for (i = 0; i < mesh->n_groups; i++) {
 
-    if (group_flag[i*3 + 1] != 0 || group_flag[i*3 + 2] != 0) {
+    if ((group_flag[i] & '\2') || (group_flag[i] & '\4')) {
 
       const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
 
-      memset(fam_flag, 0, mesh->n_families*sizeof(int));
-      for (j = 0; j < mesh->n_families; j++) {
-        for (k = 0; k < mesh->n_max_family_items; k++) {
-          int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
-          if (g_id == i)
-            fam_flag[j] = 1;
-        }
-      }
+      _set_fam_flags(mesh, i, fam_flag);
 
       n_i_faces = 0;
       if (mesh->i_face_family != NULL) {
@@ -1258,17 +1298,17 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
  * Output boundary sub-meshes by group, if it contains multiple groups.
  *
  * parameters:
- *   mesh      <-- base mesh
- *   fmt_name  <-- format name
- *   fmt_opts  <-- format options
+ *   mesh        <-- base mesh
+ *   fmt_name    <-- format name
+ *   fmt_opts    <-- format options
  *---------------------------------------------------------------------------*/
 
 static void
-_boundary_submeshes_by_group(const cs_mesh_t  *mesh,
-                             const char       *fmt_name,
-                             const char       *fmt_opts)
+_boundary_submeshes_by_group(const cs_mesh_t   *mesh,
+                             const char        *fmt_name,
+                             const char        *fmt_opts)
 {
-  fvm_lnum_t i, j, k;
+  fvm_lnum_t i, j;
   fvm_lnum_t n_b_faces;
   fvm_gnum_t n_no_group = 0;
   int max_null_family = 0;
@@ -1334,29 +1374,7 @@ _boundary_submeshes_by_group(const cs_mesh_t  *mesh,
       fam_flag[mesh->b_face_family[i]] = 1;
   }
 
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    int *_fam_flag = NULL;
-    BFT_MALLOC(_fam_flag, mesh->n_families + 1, int);
-    MPI_Allreduce(fam_flag, _fam_flag, mesh->n_families + 1,
-                  MPI_INT, MPI_MAX, cs_glob_mpi_comm);
-    BFT_FREE(fam_flag);
-    fam_flag = _fam_flag;
-  }
-#endif /* defined(HAVE_MPI) */
-
-  BFT_MALLOC(group_flag, mesh->n_groups, char);
-  memset(group_flag, 0, mesh->n_groups);
-
-  for (i = 0; i < mesh->n_families; i++) {
-    if (fam_flag[(i+1)] != 0) {
-      for (j = 0; j < mesh->n_max_family_items; j++) {
-        int g_id = - mesh->family_item[mesh->n_families*j + i] - 1;
-        if (g_id >= 0)
-          group_flag[g_id] = 1;
-      }
-    }
-  }
+  group_flag = _build_group_flag(mesh, fam_flag);
 
   /* Now extract boundary faces by groups.
      Note that selector structures may not have been initialized yet,
@@ -1372,14 +1390,7 @@ _boundary_submeshes_by_group(const cs_mesh_t  *mesh,
 
       const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
 
-      memset(fam_flag, 0, mesh->n_families*sizeof(int));
-      for (j = 0; j < mesh->n_families; j++) {
-        for (k = 0; k < mesh->n_max_family_items; k++) {
-          int g_id = - mesh->family_item[mesh->n_families*k + j] - 1;
-          if (g_id == i)
-            fam_flag[j] = 1;
-        }
-      }
+      _set_fam_flags(mesh, i, fam_flag);
 
       n_b_faces = 0;
       if (mesh->b_face_family != NULL) {
@@ -3968,6 +3979,242 @@ cs_post_init_main_meshes(int check_mask)
       cs_post_associate(mesh_id, writer_id);
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Postprocess free (isolated) faces of the current global mesh
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_add_free_faces(void)
+{
+  fvm_lnum_t i, j;
+  fvm_lnum_t n_f_faces = 0;
+  fvm_gnum_t n_no_group = 0;
+  int max_null_family = 0;
+  fvm_lnum_t *f_face_list = NULL;
+
+  const char *dir_name = NULL;
+  char  fmt_name[32 + 1] = "";
+  char  fvm_opts[96 + 1] = "";
+
+  fvm_writer_t *writer = NULL;
+  fvm_nodal_t *exp_mesh = NULL;
+
+  cs_bool_t  generate_submeshes = false;
+  cs_mesh_t *mesh = cs_glob_mesh;
+
+  if (mesh->n_g_free_faces == 0)
+    return;
+
+  /* Create default writer */
+
+  {
+    cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
+    cs_int_t  indic_mod = -1, ntchr = -1;
+    cs_real_t frchr = -1.0;
+
+    /* Get parameters from Fortran module */
+
+    CS_PROCF(inipst, INIPST)(&indic_vol,
+                             &indic_brd,
+                             &indic_syr,
+                             &indic_ze,
+                             &indic_mod,
+                             &ntchr,
+                             &frchr,
+                             fmt_name,
+                             fvm_opts);
+
+    fmt_name[32] = '\0';
+    fvm_opts[96] = '\0';
+
+    if (fmt_name[0] == 'e' || fmt_name[0] == 'E')
+      dir_name = _cs_post_dirname_ens;
+    else
+      dir_name = _cs_post_dirname_def;
+
+    writer = fvm_writer_init("isolated_faces",
+                             dir_name,
+                             fmt_name,
+                             fvm_opts,
+                             FVM_WRITER_FIXED_MESH);
+  }
+
+  /* Build list of faces to extract */
+
+  BFT_MALLOC(f_face_list, mesh->n_b_faces, fvm_lnum_t);
+
+  for (i = 0; i < mesh->n_b_faces; i++) {
+    if (mesh->b_face_cells[i] < 1)
+      f_face_list[n_f_faces++] = i + 1;
+  }
+
+  /* Extract and output mesh of isolated faces */
+
+  exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                            "isolated faces",
+                                            true,
+                                            0,
+                                            n_f_faces,
+                                            NULL,
+                                            f_face_list);
+
+  if (fvm_writer_needs_tesselation(writer, exp_mesh, FVM_FACE_POLY) > 0)
+    fvm_nodal_tesselate(exp_mesh, FVM_FACE_POLY, NULL);
+
+  fvm_writer_set_mesh_time(writer, -1, 0);
+  fvm_writer_export_nodal(writer, exp_mesh);
+
+  exp_mesh = fvm_nodal_destroy(exp_mesh);
+
+  /* Now check if we should generate additional meshes (EnSight Gold format) */
+
+  if ((fmt_name[0] == 'e' || fmt_name[0] == 'E') && mesh->n_families > 0) {
+
+    generate_submeshes = true;
+
+    /* Families should be sorted, so if a nonzero family is empty,
+       it is family 1 */
+    if (mesh->family_item[0] == 0)
+      max_null_family = 1;
+    if (mesh->n_families <= max_null_family)
+      generate_submeshes = false;
+
+    /* Check how many boundary faces belong to no group */
+
+    if (mesh->b_face_family != NULL) {
+      for (j = 0; j < n_f_faces; j++) {
+        if (mesh->b_face_family[f_face_list[j] - 1] <= max_null_family)
+          n_no_group += 1;
+      }
+    }
+    else
+      n_no_group = n_f_faces;
+
+    fvm_parall_counter(&n_no_group, 1);
+
+    if (n_no_group == mesh->n_g_free_faces)
+      generate_submeshes = false;
+  }
+
+  /* Generate submeshes if necessary */
+
+  if (generate_submeshes) {
+
+    fvm_lnum_t n_b_faces;
+    int *fam_flag = NULL;
+    char *group_flag = NULL;
+    fvm_lnum_t *b_face_list = NULL;
+    char part_name[81];
+
+    /* Now detect which groups may be referenced */
+
+    BFT_MALLOC(fam_flag, mesh->n_families + 1, int);
+    memset(fam_flag, 0, (mesh->n_families + 1)*sizeof(int));
+
+    if (mesh->b_face_family != NULL) {
+      for (i = 0; i < n_f_faces; i++)
+        fam_flag[mesh->b_face_family[f_face_list[i] - 1]] = 1;
+    }
+
+    group_flag = _build_group_flag(mesh, fam_flag);
+
+    /* Now extract isolated faces by groups.
+       Selector structures may not have been initialized yet,
+       so we use a direct selection here. */
+
+    BFT_REALLOC(fam_flag, mesh->n_families, int);
+
+    BFT_MALLOC(b_face_list, mesh->n_b_faces, fvm_lnum_t);
+
+    for (i = 0; i < mesh->n_groups; i++) {
+
+      if (group_flag[i] != 0) {
+
+        const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
+
+        _set_fam_flags(mesh, i, fam_flag);
+
+        n_b_faces = 0;
+        if (mesh->b_face_family != NULL) {
+          for (j = 0; j < n_f_faces; j++) {
+            fvm_lnum_t face_id = f_face_list[j] - 1;
+            int fam_id = mesh->b_face_family[face_id];
+            if (fam_id > 0 && fam_flag[fam_id - 1])
+              b_face_list[n_b_faces++] = face_id + 1;
+          }
+        }
+
+        strcpy(part_name, "isolated: ");
+        strncat(part_name, g_name, 80 - strlen(part_name));
+
+        exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                  part_name,
+                                                  false,
+                                                  0,
+                                                  n_b_faces,
+                                                  NULL,
+                                                  b_face_list);
+
+        if (fvm_writer_needs_tesselation(writer, exp_mesh, FVM_FACE_POLY) > 0)
+          fvm_nodal_tesselate(exp_mesh, FVM_FACE_POLY, NULL);
+
+        fvm_writer_set_mesh_time(writer, -1, 0);
+        fvm_writer_export_nodal(writer, exp_mesh);
+
+        exp_mesh = fvm_nodal_destroy(exp_mesh);
+      }
+
+    }
+
+    /* Output boundary faces belonging to no group */
+
+    if (n_no_group > 0) {
+
+      if (mesh->b_face_family != NULL) {
+        for (j = 0, n_b_faces = 0; j < n_f_faces; j++) {
+          fvm_lnum_t face_id = f_face_list[j] - 1;
+          if (mesh->b_face_family[face_id] <= max_null_family)
+            b_face_list[n_b_faces++] = face_id + 1;
+        }
+      }
+      else {
+        for (j = 0, n_b_faces = 0; j < n_f_faces; j++) {
+          fvm_lnum_t face_id = f_face_list[j] - 1;
+          b_face_list[n_b_faces++] = face_id + 1;
+        }
+      }
+
+      exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+                                                "isolated: no_group",
+                                                false,
+                                                0,
+                                                n_b_faces,
+                                                NULL,
+                                                b_face_list);
+
+      if (fvm_writer_needs_tesselation(writer, exp_mesh, FVM_FACE_POLY) > 0)
+        fvm_nodal_tesselate(exp_mesh, FVM_FACE_POLY, NULL);
+
+      fvm_writer_set_mesh_time(writer, -1, 0);
+      fvm_writer_export_nodal(writer, exp_mesh);
+
+      exp_mesh = fvm_nodal_destroy(exp_mesh);
+    }
+
+    BFT_FREE(b_face_list);
+
+    BFT_FREE(fam_flag);
+    BFT_FREE(group_flag);
+
+  } /* End of submeshes generation */
+
+  /* Free memory */
+
+  writer = fvm_writer_finalize(writer);
+
+  BFT_FREE(f_face_list);
 }
 
 /*----------------------------------------------------------------------------

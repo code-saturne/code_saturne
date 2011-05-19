@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -57,6 +57,7 @@
  * FVM library headers
  *----------------------------------------------------------------------------*/
 
+#include <fvm_io_num.h>
 #include <fvm_order.h>
 #include <fvm_parall.h>
 #include <fvm_interface.h>
@@ -1578,13 +1579,113 @@ _get_perio_faces_l(const cs_mesh_t    *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Discard free (unreferenced) vertices from a mesh.
+ *
+ * parameters:
+ *   mesh    <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_discard_free_vertices(cs_mesh_t  *mesh)
+{
+  fvm_lnum_t  i;
+  fvm_lnum_t  n_vertices = 0;
+  fvm_lnum_t *new_vertex_id = NULL;
+
+  /* Mark vertices */
+
+  BFT_MALLOC(new_vertex_id, mesh->n_vertices, fvm_lnum_t);
+
+  for (i = 0; i < mesh->n_vertices; i++)
+    new_vertex_id[i] = -1;
+
+  for (i = 0; i < mesh->i_face_vtx_connect_size; i++)
+    new_vertex_id[mesh->i_face_vtx_lst[i] - 1] = 0;
+
+  for (i = 0; i < mesh->b_face_vtx_connect_size; i++)
+    new_vertex_id[mesh->b_face_vtx_lst[i] - 1] = 0;
+
+  /* Transform marker to mapping */
+
+  for (i = 0; i < mesh->n_vertices; i++) {
+    if (new_vertex_id[i] != -1)
+      new_vertex_id[i] = n_vertices++;
+  }
+
+  /* Update local mesh structure if necessary */
+
+  if (n_vertices < mesh->n_vertices) {
+
+    /* Update face connectivity */
+
+    for (i = 0; i < mesh->i_face_vtx_connect_size; i++)
+      mesh->i_face_vtx_lst[i] = new_vertex_id[mesh->i_face_vtx_lst[i] - 1] + 1;
+
+    for (i = 0; i < mesh->b_face_vtx_connect_size; i++)
+      mesh->b_face_vtx_lst[i] = new_vertex_id[mesh->b_face_vtx_lst[i] - 1] + 1;
+
+    /* Update vertex connectivity and global numbering */
+
+    for (i = 0; i < mesh->n_vertices; i++) {
+      int l;
+      const fvm_lnum_t j = new_vertex_id[i];
+      if (j != -1) {
+        for (l = 0; l < 3; l++)
+          mesh->vtx_coord[j*3 + l] = mesh->vtx_coord[i*3 + l];
+        if (mesh->global_vtx_num != NULL)
+          mesh->global_vtx_num[j] = mesh->global_vtx_num[i];
+      }
+    }
+
+    /* Update mesh structure */
+
+    mesh->n_vertices = n_vertices;
+
+    BFT_REALLOC(mesh->vtx_coord, n_vertices*3, cs_real_t);
+
+    if (mesh->global_vtx_num != NULL)
+      BFT_REALLOC(mesh->global_vtx_num, n_vertices, fvm_gnum_t);
+  }
+
+  BFT_FREE(new_vertex_id);
+
+  /* Build an I/O numbering to compact the global numbering */
+
+  if (cs_glob_n_ranks > 1) {
+
+    fvm_io_num_t *tmp_num = fvm_io_num_create(NULL,
+                                              mesh->global_vtx_num,
+                                              mesh->n_vertices,
+                                              0);
+
+    if (mesh->n_vertices > 0)
+      memcpy(mesh->global_vtx_num,
+             fvm_io_num_get_global_num(tmp_num),
+             mesh->n_vertices*sizeof(fvm_gnum_t));
+
+    mesh->n_g_vertices = fvm_io_num_get_global_count(tmp_num);
+
+    assert(fvm_io_num_get_local_count(tmp_num) == (fvm_lnum_t)mesh->n_vertices);
+
+    tmp_num = fvm_io_num_destroy(tmp_num);
+
+  }
+  else { /* if (cs_glob_ranks == 1) */
+
+    assert(mesh->global_vtx_num == NULL);
+    mesh->n_g_vertices = mesh->n_vertices;
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Prepare local processor count for mesh stats.
  *
  * parameters:
  *   mesh          <-- pointer to mesh structure
- *   n_group_elts  --> number of cells, interior faces, and boundary faces
- *                     belonging to each group
- *                     (size: mesh->n_groups * 3, interleaved)
+ *   n_group_elts  --> number of cells, interior faces, boundary faces,
+ *                     and isolated faces belonging to each group
+ *                     (size: mesh->n_groups * 4, interleaved)
  *   n_perio_faces --> number of faces belonging to each group
  *                     (size: mesh->n_init_perio)
  *----------------------------------------------------------------------------*/
@@ -1630,8 +1731,8 @@ _prepare_mesh_group_stats(const cs_mesh_t  *mesh,
 
   /* Set counts to zero */
 
-  BFT_MALLOC(f_count, mesh->n_families*3, fvm_lnum_t);
-  for (i = 0; i < mesh->n_families*3; i++)
+  BFT_MALLOC(f_count, mesh->n_families*4, fvm_lnum_t);
+  for (i = 0; i < mesh->n_families*4; i++)
     f_count[i] = 0;
 
   for (i = 0; i < mesh->n_init_perio; i++)
@@ -1640,7 +1741,7 @@ _prepare_mesh_group_stats(const cs_mesh_t  *mesh,
   /* Cell counters */
 
   for (i = 0; i < mesh->n_cells; i++)
-    f_count[(mesh->cell_family[i] - 1) * 3] += 1;
+    f_count[(mesh->cell_family[i] - 1) * 4] += 1;
 
   /* Interior face counters */
 
@@ -1650,25 +1751,27 @@ _prepare_mesh_group_stats(const cs_mesh_t  *mesh,
       if (flag > 0)
         n_perio_faces[flag - 1] += 1;
       if (flag > -1)
-        f_count[(mesh->i_face_family[i] - 1) * 3 + 1] += 1;
+        f_count[(mesh->i_face_family[i] - 1) * 4 + 1] += 1;
     }
     BFT_FREE(i_face_flag);
   }
   else {
     for (i = 0; i < mesh->n_i_faces; i++)
-      f_count[(mesh->i_face_family[i] - 1) * 3 + 1] += 1;
+      f_count[(mesh->i_face_family[i] - 1) * 4 + 1] += 1;
   }
 
   /* Boundary face counters */
 
   if (mesh->n_b_faces > 0) {
-    for (i = 0; i < mesh->n_b_faces; i++)
-      f_count[(mesh->b_face_family[i] - 1) * 3 + 2] += 1;
+    for (i = 0; i < mesh->n_b_faces; i++) {
+      int col = (mesh->b_face_cells[i] > 0) ? 2 : 3;
+      f_count[(mesh->b_face_family[i] - 1) * 4 + col] += 1;
+    }
   }
 
   /* Now transfer count from group classes to groups */
 
-  for (i = 0; i < mesh->n_groups*3; i++)
+  for (i = 0; i < mesh->n_groups*4; i++)
     n_group_elts[i] = 0;
 
   for (i = 0; i < mesh->n_families; i++) {
@@ -1676,8 +1779,8 @@ _prepare_mesh_group_stats(const cs_mesh_t  *mesh,
       int group_id = -1 - mesh->family_item[mesh->n_families*j + i];
       if (group_id >= 0) {
         int k;
-        for (k = 0; k < 3; k++)
-          n_group_elts[group_id*3 + k] += f_count[i*3 + k];
+        for (k = 0; k < 4; k++)
+          n_group_elts[group_id*4 + k] += f_count[i*4 + k];
       }
     }
   }
@@ -1696,7 +1799,7 @@ static void
 _print_mesh_group_stats(const cs_mesh_t  *mesh)
 {
   int i;
-  size_t count_size = mesh->n_groups*3 + mesh->n_init_perio;
+  size_t count_size = mesh->n_groups*4 + mesh->n_init_perio;
   fvm_gnum_t *count = NULL, *n_elt_groups = NULL, *n_perio_faces = NULL;
 
   if (count_size == 0)
@@ -1705,7 +1808,7 @@ _print_mesh_group_stats(const cs_mesh_t  *mesh)
   BFT_MALLOC(count, count_size, fvm_gnum_t);
 
   n_elt_groups = count;
-  n_perio_faces = count + mesh->n_groups*3;
+  n_perio_faces = count + mesh->n_groups*4;
 
   _prepare_mesh_group_stats(mesh, n_elt_groups, n_perio_faces);
 
@@ -1741,20 +1844,26 @@ _print_mesh_group_stats(const cs_mesh_t  *mesh)
 
     for (i = 0; i < mesh->n_groups; i++) {
       bft_printf("    \"%s\"\n", mesh->group_lst + (mesh->group_idx[i] - 1));
-      if (n_elt_groups[i*3] > 0)
+      if (n_elt_groups[i*4] > 0)
         bft_printf(_("       cells:          %12llu\n"),
-                   (unsigned long long)(n_elt_groups[i*3]));
-      if (n_elt_groups[i*3 + 1] > 0)
+                   (unsigned long long)(n_elt_groups[i*4]));
+      if (n_elt_groups[i*4 + 1] > 0)
         bft_printf(_("       interior faces: %12llu\n"),
-                   (unsigned long long)(n_elt_groups[i*3 + 1]));
-      if (n_elt_groups[i*3 + 2] > 0)
+                   (unsigned long long)(n_elt_groups[i*4 + 1]));
+      if (n_elt_groups[i*4 + 2] > 0)
         bft_printf(_("       boundary faces: %12llu\n"),
-                   (unsigned long long)(n_elt_groups[i*3 + 2]));
+                   (unsigned long long)(n_elt_groups[i*4 + 2]));
+      if (n_elt_groups[i*4 + 3] > 0)
+        bft_printf(_("       isolated faces: %12llu\n"),
+                   (unsigned long long)(n_elt_groups[i*4 + 2]));
     }
 
   }
 
   BFT_FREE(count);
+
+  if (mesh->n_init_perio > 0 || mesh->n_groups > 0)
+    bft_printf("\n");
 }
 
 /*----------------------------------------------------------------------------
@@ -2202,8 +2311,9 @@ cs_mesh_create(void)
   mesh->select_i_faces = NULL;
   mesh->select_b_faces = NULL;
 
-  /* Modification flag */
+  /* Status flags */
 
+  mesh->n_g_free_faces = 0;
   mesh->modified = 0;
 
   return (mesh);
@@ -2348,11 +2458,113 @@ cs_mesh_builder_destroy(cs_mesh_builder_t  **mesh_builder)
 }
 
 /*----------------------------------------------------------------------------
+ * Discard free (isolated) faces from a mesh.
+ *
+ * This should always be done before using the mesh for computation.
+ *
+ * parameters:
+ *   mesh    <-> pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
+{
+  fvm_lnum_t  i;
+  fvm_gnum_t  n_g_b_faces_old = 0, n_g_vertices_old = 0;
+  fvm_lnum_t  j = 0, k = 0, l = 0;
+
+  if (mesh->n_g_free_faces == 0)
+    return;
+
+  n_g_b_faces_old = mesh->n_g_b_faces;
+  n_g_vertices_old = mesh->n_g_vertices;
+
+  for (i = 0; i < mesh->n_b_faces; i++) {
+
+    if (mesh->b_face_cells[i] > 0) {
+
+      mesh->b_face_cells[j] = mesh->b_face_cells[i];
+      mesh->b_face_family[j] = mesh->b_face_family[i];
+
+      mesh->b_face_vtx_idx[j] = l+1;
+      for (k = mesh->b_face_vtx_idx[i]; k < mesh->b_face_vtx_idx[i+1]; k++)
+        mesh->b_face_vtx_lst[l++] = mesh->b_face_vtx_lst[k-1];
+
+      if (mesh->global_b_face_num != NULL)
+        mesh->global_b_face_num[j] = mesh->global_b_face_num[i];
+
+      j += 1;
+    }
+
+  }
+
+  mesh->b_face_vtx_idx[j] = l+1;
+  mesh->b_face_vtx_connect_size = l;
+
+  /* Resize arrays if necessary */
+
+  if (j < i) {
+
+    BFT_REALLOC(mesh->b_face_cells, j, cs_int_t);
+    BFT_REALLOC(mesh->b_face_family, j, cs_int_t);
+    BFT_REALLOC(mesh->b_face_vtx_idx, j+1, cs_int_t);
+    BFT_REALLOC(mesh->b_face_vtx_lst, k, cs_int_t);
+    if (mesh->global_b_face_num != NULL) {
+      BFT_REALLOC(mesh->global_b_face_num, j, fvm_gnum_t);
+    }
+
+    mesh->n_b_faces = j;
+  }
+
+  /* Build an I/O numbering on boundary faces to compact the global numbering */
+
+  if (cs_glob_n_ranks > 1) {
+
+    fvm_io_num_t *tmp_num = fvm_io_num_create(NULL,
+                                              mesh->global_b_face_num,
+                                              mesh->n_b_faces,
+                                              0);
+
+    if (mesh->n_b_faces > 0)
+      memcpy(mesh->global_b_face_num,
+             fvm_io_num_get_global_num(tmp_num),
+             mesh->n_b_faces*sizeof(fvm_gnum_t));
+
+    mesh->n_g_b_faces = fvm_io_num_get_global_count(tmp_num);
+
+    assert(fvm_io_num_get_local_count(tmp_num) == (fvm_lnum_t)mesh->n_b_faces);
+
+    tmp_num = fvm_io_num_destroy(tmp_num);
+
+  }
+  else { /* if (cs_glob_ranks == 1) */
+
+    assert(mesh->global_b_face_num == NULL);
+    mesh->n_g_b_faces = mesh->n_b_faces;
+
+  }
+
+  /* Now also clean-up unreferenced vertices */
+
+  _discard_free_vertices(mesh);
+
+  bft_printf(_("\n"
+               " Removed %llu isolated faces\n"
+               "     Number of initial vertices:  %llu\n"
+               "     Number of vertices:          %llu\n\n"),
+             (unsigned long long)(n_g_b_faces_old - mesh->n_g_b_faces),
+             (unsigned long long)(n_g_vertices_old),
+             (unsigned long long)(mesh->n_g_vertices));
+
+  mesh->n_g_free_faces = 0;
+}
+
+/*----------------------------------------------------------------------------
  * Renumber vertices.
  *
  * We ensure:
  * If i < j then mesh->global_vtx_num[i] < mesh->global_vtx_num[j]
- * which is not insured by the initial numbering from the pre-processor.
+ * which is not ensured by the initial numbering from the pre-processor.
  *
  * parameters:
  *   mesh      <->  pointer to mesh structure
@@ -2597,8 +2809,10 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
     for (i = 0; i < mesh->n_cells; i++)
       flag[i] = false;
 
-    for (i = 0; i < mesh->n_b_faces; i++)
-      flag[mesh->b_face_cells[i] - 1] = true;
+    for (i = 0; i < mesh->n_b_faces; i++) {
+      if (mesh->b_face_cells[i] > 0)
+        flag[mesh->b_face_cells[i] - 1] = true;
+    }
 
     for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
       if (flag[i] == true)
@@ -3583,8 +3797,13 @@ cs_mesh_print_info(const cs_mesh_t  *mesh,
              name,
              (unsigned long long)(mesh->n_g_cells),
              (unsigned long long)(mesh->n_g_i_faces),
-             (unsigned long long)(mesh->n_g_b_faces),
+             (unsigned long long)(mesh->n_g_b_faces - mesh->n_g_free_faces),
              (unsigned long long)(mesh->n_g_vertices));
+
+  if (mesh->n_g_free_faces > 0)
+    bft_printf(_("\n"
+                 "     Number of isolated faces: %llu\n"),
+               (unsigned long long)(mesh->n_g_free_faces));
 
   _print_mesh_group_stats(mesh);
 }

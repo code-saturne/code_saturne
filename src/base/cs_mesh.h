@@ -171,9 +171,11 @@ typedef struct {
   fvm_selector_t *select_i_faces;     /* Internal faces selection object */
   fvm_selector_t *select_b_faces;     /* Border faces selection object */
 
-  /* Modification flag */
+  /* Status flags */
 
-  int modified;
+  fvm_gnum_t n_g_free_faces;          /* Global number of boundary faces
+                                         which are in fact isolated */
+  int modified;                       /* Modification status */
 
 } cs_mesh_t;
 
@@ -361,6 +363,18 @@ cs_mesh_destroy(cs_mesh_t  *mesh);
 
 void
 cs_mesh_builder_destroy(cs_mesh_builder_t  **mesh_builder);
+
+/*----------------------------------------------------------------------------
+ * Discard free (isolated) faces from a mesh.
+ *
+ * This should always be done before using the mesh for computation.
+ *
+ * parameters:
+ *   mesh  <->  pointer to mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_discard_free_faces(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Renumber vertices.

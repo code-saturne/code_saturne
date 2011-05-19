@@ -657,8 +657,9 @@ _face_type_g(cs_mesh_t                  *mesh,
       face_type[i] = '\1';
     else if (face_cell[i*2 + 1] > 0)
       face_type[i] = '\2';
-    else
+    else {
       face_type[i] = '\3';
+    }
   }
 
   /* Also mark parallel and periodic faces as interior */
@@ -687,7 +688,7 @@ _face_type_g(cs_mesh_t                  *mesh,
       mesh->n_i_faces += 1;
       mesh->i_face_vtx_connect_size += n_f_vertices;
     }
-    else if (face_type[i] == '\1' || face_type[i] == '\2') {
+    else {
       mesh->n_b_faces += 1;
       mesh->b_face_vtx_connect_size += n_f_vertices;
     }
@@ -766,7 +767,7 @@ _face_type_l(cs_mesh_t                  *mesh,
       mesh->n_i_faces += 1;
       mesh->i_face_vtx_connect_size += n_f_vertices;
     }
-    else if (face_type[i] == '\1' || face_type[i] == '\2') {
+    else {
       mesh->n_b_faces += 1;
       mesh->b_face_vtx_connect_size += n_f_vertices;
     }
@@ -779,6 +780,12 @@ _face_type_l(cs_mesh_t                  *mesh,
 /*----------------------------------------------------------------------------
  * Build internal and boundary face -> cell connectivity using a common
  * face -> cell connectivity and a face type marker.
+ *
+ * At this stage, isolated faces, if present, are considered to be
+ * boundary faces, as they may participate in future mesh joining
+ * operations. Their matching cell number will be set to -1.
+ * Remaining isolated faces should be removed before completing
+ * the mesh structure.
  *
  * The corresponding arrays in the mesh structure are allocated and
  * defined by this function, and should have been previously empty.
@@ -823,6 +830,12 @@ _extract_face_cell(cs_mesh_t         *mesh,
 
     else if (face_type[i] == '\2') {
       mesh->b_face_cells[n_b_faces] = face_cell[i*2 + 1];
+      n_b_faces++;
+    }
+
+    else if (face_type[i] == '\3') {
+      mesh->b_face_cells[n_b_faces] = -1;
+      mesh->n_g_free_faces += 1;
       n_b_faces++;
     }
   }
@@ -886,7 +899,7 @@ _extract_face_vertices(cs_mesh_t         *mesh,
       n_i_faces++;
     }
 
-    else if (face_type[i] == '\1') {
+    else if (face_type[i] == '\1' || face_type[i] == '\3') {
       fvm_lnum_t *_b_face_vtx =   mesh->b_face_vtx_lst
                                 + mesh->b_face_vtx_idx[n_b_faces] - 1;
       for (j = 0; j < n_f_vertices; j++)
@@ -956,7 +969,7 @@ _extract_face_gnum(cs_mesh_t         *mesh,
     if (face_type[i] == '\0')
       global_i_face[n_i_faces++] = i+1;
 
-    else if (face_type[i] == '\1' || face_type[i] == '\2')
+    else
       global_b_face[n_b_faces++] = i+1;
 
   }
@@ -1043,7 +1056,7 @@ _extract_face_gc_id(cs_mesh_t        *mesh,
     if (face_type[i] == '\0')
       mesh->i_face_family[n_i_faces++] = face_gc_id[i];
 
-    else if (face_type[i] == '\1' || face_type[i] == '\2')
+    else
       mesh->b_face_family[n_b_faces++] = face_gc_id[i];
 
   }
@@ -1749,6 +1762,254 @@ _precompute_cell_center(const _mesh_reader_t     *mr,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute free (isolated) face centers using minimal local data.
+ *
+ * parameters:
+ *   n_f_faces     <-- number of faces
+ *   f_face_ids    <-- list of free faces
+ *   face_vtx_idx  <-- face -> vertices connectivity index
+ *   face_vtx      <-- face -> vertices connectivity
+ *   vtx_coord     <-- vertex coordinates
+ *   f_face_center --> free face centers
+ *----------------------------------------------------------------------------*/
+
+static void
+_f_face_center(fvm_lnum_t        n_f_faces,
+               fvm_lnum_t        f_face_ids[],
+               const fvm_lnum_t  face_vtx_idx[],
+               const fvm_lnum_t  face_vtx[],
+               const cs_real_t   vtx_coord[],
+               fvm_coord_t       f_face_center[])
+{
+  fvm_lnum_t i, j, k;
+  fvm_lnum_t vtx_id, start_id, end_id;
+  fvm_lnum_t n_face_vertices;
+  fvm_coord_t ref_normal[3], vtx_cog[3];
+
+  fvm_lnum_t n_max_face_vertices = 0;
+
+  cs_point_t *face_vtx_coord = NULL;
+
+  const double surf_epsilon = 1e-24;
+
+  assert(face_vtx_idx[0] == 0);
+
+  for (i = 0; i < n_f_faces; i++) {
+    for (j = 0; j < 3; j++)
+      f_face_center[i*3 + j] = 0.0;
+  }
+
+  /* Counting and allocation */
+
+  n_max_face_vertices = 0;
+
+  for (k = 0; k < n_f_faces; k++) {
+    fvm_lnum_t face_id = f_face_ids[k];
+    n_face_vertices = face_vtx_idx[face_id + 1] - face_vtx_idx[face_id];
+    if (n_max_face_vertices <= n_face_vertices)
+      n_max_face_vertices = n_face_vertices;
+  }
+
+  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, cs_point_t);
+
+  /* Loop on each face */
+
+  for (k = 0; k < n_f_faces; k++) {
+
+    fvm_lnum_t tri_id;
+
+    /* Initialization */
+
+    fvm_lnum_t face_id = f_face_ids[k];
+    fvm_coord_t unweighted_center[3] = {0.0, 0.0, 0.0};
+    fvm_coord_t face_surface = 0.0;
+    fvm_coord_t *face_center = f_face_center + (k*3);
+
+    n_face_vertices = 0;
+
+    start_id = face_vtx_idx[face_id];
+    end_id = face_vtx_idx[face_id + 1];
+
+    /* Define the polygon (P) according to the vertices (Pi) of the face */
+
+    for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
+
+      fvm_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
+      for (i = 0; i < 3; i++)
+        face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
+      n_face_vertices++;
+
+    }
+
+    /* Compute the barycentre of the face vertices */
+
+    for (i = 0; i < 3; i++) {
+      vtx_cog[i] = 0.0;
+      for (vtx_id = 0; vtx_id < n_face_vertices; vtx_id++)
+        vtx_cog[i] += face_vtx_coord[vtx_id][i];
+      vtx_cog[i] /= n_face_vertices;
+    }
+
+    /* Loop on the triangles of the face (defined by an edge of the face
+       and its barycentre) */
+
+    for (i = 0; i < 3; i++) {
+      ref_normal[i] = 0.;
+      face_center[i] = 0.0;
+    }
+
+    for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
+
+      fvm_coord_t tri_surface;
+      fvm_coord_t vect1[3], vect2[3], tri_normal[3], tri_center[3];
+
+      fvm_lnum_t id0 = tri_id;
+      fvm_lnum_t id1 = (tri_id + 1)%n_face_vertices;
+
+      /* Normal for each triangle */
+
+      for (i = 0; i < 3; i++) {
+        vect1[i] = face_vtx_coord[id0][i] - vtx_cog[i];
+        vect2[i] = face_vtx_coord[id1][i] - vtx_cog[i];
+      }
+
+      tri_normal[0] = vect1[1] * vect2[2] - vect2[1] * vect1[2];
+      tri_normal[1] = vect2[0] * vect1[2] - vect1[0] * vect2[2];
+      tri_normal[2] = vect1[0] * vect2[1] - vect2[0] * vect1[1];
+
+      if (tri_id == 0) {
+        for (i = 0; i < 3; i++)
+          ref_normal[i] = tri_normal[i];
+      }
+
+      /* Center of gravity for a triangle */
+
+      for (i = 0; i < 3; i++) {
+        tri_center[i] = (  vtx_cog[i]
+                         + face_vtx_coord[id0][i]
+                         + face_vtx_coord[id1][i]) / 3.0;
+      }
+
+      tri_surface = sqrt(  tri_normal[0]*tri_normal[0]
+                         + tri_normal[1]*tri_normal[1]
+                         + tri_normal[2]*tri_normal[2]) * 0.5;
+
+      if ((  tri_normal[0]*ref_normal[0]
+           + tri_normal[1]*ref_normal[1]
+           + tri_normal[2]*ref_normal[2]) < 0.0)
+        tri_surface *= -1.0;
+
+      /* Now compute contribution to face center and surface */
+
+      face_surface += tri_surface;
+
+      for (i = 0; i < 3; i++) {
+        face_center[i] += tri_surface * tri_center[i];
+        unweighted_center[i] = tri_center[i];
+      }
+
+    } /* End of loop  on triangles of the face */
+
+    if (face_surface > surf_epsilon) {
+      for (i = 0; i < 3; i++)
+        face_center[i] /= face_surface;
+    }
+    else {
+      face_surface = surf_epsilon;
+      for (i = 0; i < 3; i++)
+        face_center[i] = unweighted_center[i] * face_surface / n_face_vertices;
+    }
+  } /* End of loop on faces */
+
+  BFT_FREE(face_vtx_coord);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute face centers using block data read from file.
+ *
+ * parameters:
+ *   mr          <-- pointer to mesh reader helper structure
+ *   n_f_faces   <-- local number of free faces
+ *   f_face_ids  <-- free face ids
+ *   face_center --> cell centers array
+ *   comm        <-- associated MPI communicator
+ *----------------------------------------------------------------------------*/
+
+static void
+_precompute_free_face_center(const _mesh_reader_t   *mr,
+                             fvm_lnum_t              n_f_faces,
+                             fvm_lnum_t              f_face_ids[],
+                             fvm_coord_t             f_face_center[],
+                             MPI_Comm                comm)
+{
+  int n_ranks = 0;
+
+  fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
+
+  fvm_lnum_t _n_faces = 0;
+  fvm_lnum_t _n_vertices = 0;
+
+  fvm_gnum_t *_vtx_num = NULL;
+  fvm_lnum_t *_face_vertices = NULL;
+
+  cs_real_t *_vtx_coord = NULL;
+
+  fvm_block_to_part_t *d = NULL;
+
+  /* Initialization */
+
+  MPI_Comm_size(comm, &n_ranks);
+
+  assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
+
+  _n_faces = mr->face_bi.gnum_range[1] - mr->face_bi.gnum_range[0];
+
+  /* Distribute vertices */
+  /*---------------------*/
+
+  d = fvm_block_to_part_create_adj(comm,
+                                   mr->vertex_bi,
+                                   mr->face_vertices_idx[_n_faces],
+                                   mr->face_vertices);
+
+  _n_vertices = fvm_block_to_part_get_n_part_ents(d);
+
+  BFT_MALLOC(_vtx_coord, _n_vertices*3, cs_real_t);
+
+  fvm_block_to_part_copy_array(d,
+                               real_type,
+                               3,
+                               mr->vertex_coords,
+                               _vtx_coord);
+
+  _vtx_num = fvm_block_to_part_transfer_gnum(d);
+
+  fvm_block_to_part_destroy(&d);
+
+  /* Now convert face -> vertex connectivity to local vertex numbers */
+
+  BFT_MALLOC(_face_vertices, mr->face_vertices_idx[_n_faces], fvm_lnum_t);
+
+  fvm_block_to_part_global_to_local(mr->face_vertices_idx[_n_faces],
+                                    1,
+                                    _n_vertices,
+                                    _vtx_num,
+                                    mr->face_vertices,
+                                    _face_vertices);
+
+  _f_face_center(n_f_faces,
+                 f_face_ids,
+                 mr->face_vertices_idx,
+                 _face_vertices,
+                 _vtx_coord,
+                 f_face_center);
+
+  BFT_FREE(_vtx_coord);
+  BFT_FREE(_vtx_num);
+  BFT_FREE(_face_vertices);
+}
+
+/*----------------------------------------------------------------------------
  * Compute cell centers using block data read from file.
  *
  * parameters:
@@ -1796,6 +2057,113 @@ _cell_rank_by_sfc(const _mesh_reader_t     *mr,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute default face destination rank array in case of isolated faces.
+ *
+ * parameters:
+ *   mr           <-> pointer to mesh reader helper structure
+ *   comm         <-- associated MPI communicator
+ *
+ * returns:
+ *  default rank array for faces (>= for isolated faces)
+ *----------------------------------------------------------------------------*/
+
+static int *
+_default_face_rank(_mesh_reader_t     *mr,
+                   MPI_Comm            comm)
+{
+  fvm_lnum_t i;
+  fvm_block_to_part_info_t free_face_bi;
+
+  int n_ranks = 0, rank_id = -1;
+
+  fvm_lnum_t _n_faces = 0, n_free_faces = 0;
+  fvm_gnum_t _n_g_free_faces = 0, n_g_free_faces = 0;
+
+  fvm_lnum_t *free_face_ids = NULL;
+  fvm_coord_t *free_face_centers = NULL;
+
+  fvm_io_num_t *free_face_io_num = NULL;
+  const fvm_gnum_t *free_face_num = NULL;
+
+  int *default_rank = NULL;
+
+  /* Initialization */
+
+  assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
+
+  /* Count number of isolated faces */
+
+  _n_faces = mr->face_bi.gnum_range[1] - mr->face_bi.gnum_range[0];
+  n_free_faces = 0;
+
+  for (i = 0; i < _n_faces; i++) {
+    if (mr->face_cells[i*2] == 0 && mr->face_cells[i*2 + 1] == 0)
+      n_free_faces += 1;
+  }
+
+  _n_g_free_faces = n_free_faces;
+  MPI_Allreduce(&_n_g_free_faces, &n_g_free_faces, 1,
+                FVM_MPI_GNUM, MPI_SUM, comm);
+
+  /* Return if we do not have isolated faces */
+
+  if (n_g_free_faces == 0)
+    return NULL;
+
+  /* Initialize rank info */
+
+  MPI_Comm_size(comm, &n_ranks);
+  MPI_Comm_size(comm, &rank_id);
+  free_face_bi = fvm_block_to_part_compute_sizes(rank_id,
+                                                 n_ranks,
+                                                 0,
+                                                 0,
+                                                 n_g_free_faces);
+
+  /* Define distribution of isolated faces based on sfc */
+
+  BFT_MALLOC(default_rank, _n_faces, int);
+  for (i = 0; i < _n_faces; i++)
+    default_rank[i] = -1;
+
+  BFT_MALLOC(free_face_ids, n_free_faces, fvm_lnum_t);
+  BFT_MALLOC(free_face_centers, n_free_faces*3, fvm_coord_t);
+
+  n_free_faces = 0;
+  for (i = 0; i < _n_faces; i++) {
+    if (mr->face_cells[i*2] == 0 && mr->face_cells[i*2 + 1] == 0)
+      free_face_ids[n_free_faces++] = i;
+  }
+
+  _precompute_free_face_center(mr,
+                               n_free_faces,
+                               free_face_ids,
+                               free_face_centers,
+                               comm);
+
+  free_face_io_num = fvm_io_num_create_from_sfc(free_face_centers,
+                                                3,
+                                                n_free_faces,
+                                                _sfc_type);
+
+  BFT_FREE(free_face_centers);
+
+  free_face_num = fvm_io_num_get_global_num(free_face_io_num);
+
+  /* Determine rank based on global numbering with SFC ordering */
+  for (i = 0; i < n_free_faces; i++) {
+    default_rank[free_face_ids[i]]
+      =    ((free_face_num[i] - 1) / free_face_bi.block_size)
+         * free_face_bi.rank_step;
+  }
+
+  free_face_io_num = fvm_io_num_destroy(free_face_io_num);
+  BFT_FREE(free_face_ids);
+
+  return default_rank;
+}
+
+/*----------------------------------------------------------------------------
  * Organize data read by blocks in parallel and build most mesh structures.
  *
  * parameters:
@@ -1830,6 +2198,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   fvm_lnum_t *_face_vertices_idx = NULL;
   fvm_lnum_t *_face_vertices = NULL;
 
+  int  *default_face_rank = NULL;
   char *face_type = NULL;
   fvm_interface_set_t *face_ifs = NULL;
 
@@ -1903,13 +2272,18 @@ _decompose_data_g(cs_mesh_t          *mesh,
   /* Distribute faces */
   /*------------------*/
 
+  default_face_rank = _default_face_rank(mr, comm);
+
   d = fvm_block_to_part_create_by_adj_s(comm,
                                         mr->face_bi,
                                         mr->cell_bi,
                                         2,
                                         mr->face_cells,
                                         mr->cell_rank,
-                                        NULL);
+                                        default_face_rank);
+
+  if (default_face_rank != NULL)
+    BFT_FREE(default_face_rank);
 
   BFT_FREE(mr->cell_rank); /* Not needed anymore */
 
@@ -2039,6 +2413,12 @@ _decompose_data_g(cs_mesh_t          *mesh,
                face_type);
 
   _extract_face_cell(mesh, _n_faces, _face_cells, face_type);
+
+  {
+    fvm_gnum_t _n_g_free_faces = mesh->n_g_free_faces;
+    MPI_Allreduce(&_n_g_free_faces, &(mesh->n_g_free_faces), 1,
+                  FVM_MPI_GNUM, MPI_SUM, comm);
+  }
 
   BFT_FREE(_face_cells);
 
@@ -4003,6 +4383,14 @@ cs_preprocessor_data_add_file(const char     *file_name,
 
 /*----------------------------------------------------------------------------
  * Read pre-processor mesh data and finalize input.
+ *
+ * At this stage, ghost cells are not generated yet, so the interior
+ * face connectivity is not complete near parallel domain or periodic
+ * boundaries. Also, isolated faces, if present, are considered to be
+ * boundary faces, as they may participate in future mesh joining
+ * operations. Their matching cell number will be set to -1.
+ * Remaining isolated faces should be removed before completing
+ * the mesh structure (for example, just before building ghost cells).
  *
  * parameters:
  *   mesh         <-- pointer to mesh structure
