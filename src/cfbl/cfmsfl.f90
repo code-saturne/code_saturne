@@ -249,7 +249,6 @@ if(itsqdm.ne.0) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    w10    , w9     ,                                              &
 !        ------   ------
-   w8     , xam    ,                                              &
    ra     )
 
 !     Suivant Y
@@ -263,7 +262,6 @@ if(itsqdm.ne.0) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    w11    , w9     ,                                              &
 !        ------   ------
-   w8     , xam    ,                                              &
    ra     )
 
 !     Suivant Z
@@ -277,7 +275,6 @@ if(itsqdm.ne.0) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    w12    , w9     ,                                              &
 !        ------   ------
-   w8     , xam    ,                                              &
    ra     )
 
 

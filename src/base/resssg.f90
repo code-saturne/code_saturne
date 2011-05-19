@@ -260,7 +260,6 @@ call ustsri                                                       &
    coefa  , coefb  , ckupdc , smcelp , gamma  , grdvit , grdvit , &
    smbr   , rovsdt ,                                              &
 !        ------   ------
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 !     Si on extrapole les T.S.

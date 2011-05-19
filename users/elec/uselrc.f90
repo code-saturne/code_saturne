@@ -34,7 +34,7 @@ subroutine uselrc &
  ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , viscf  , viscb  ,                            &
+   coefa  , coefb  ,                                              &
    ra     )
 
 !===============================================================================
@@ -69,8 +69,6 @@ subroutine uselrc &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
-! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -111,7 +109,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision viscf(nfac), viscb(nfabor)
 double precision ra(*)
 
 ! Local variables

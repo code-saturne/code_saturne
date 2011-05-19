@@ -681,7 +681,6 @@ do isou = 1, 3
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbr   , drtp   ,                                              &
 !        ------   ------
-   dam    , xam    ,                                              &
    ra     )
 
 

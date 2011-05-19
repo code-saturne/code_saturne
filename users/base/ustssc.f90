@@ -38,7 +38,6 @@ subroutine ustssc &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    crvexp , crvimp ,                                              &
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 !===============================================================================
@@ -143,9 +142,6 @@ subroutine ustssc &
 !  (ncesmp,nvar)   !    !     !  source terms or mass rate (see ustsma)        !
 ! crvexp           ! ra ! --> ! explicit part of the source term               !
 ! crvimp           ! ra ! --> ! implicit part of the source term               !
-! viscf(nfac)      ! ra ! --- ! work array                                     !
-!  viscb(nfabor)   ! ra ! --- ! work array                                     !
-! xam(nfac,2)      ! ra ! --- ! work array                                     !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -188,7 +184,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
-double precision viscf(nfac), viscb(nfabor)
 double precision xam(nfac,2)
 double precision ra(*)
 

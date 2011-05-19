@@ -263,7 +263,6 @@ call ustssc                                                       &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
 !        ------   ------
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 do iel = 1, ncel

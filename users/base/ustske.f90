@@ -37,7 +37,6 @@ subroutine ustske &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , tinstk , divu   ,          &
    crkexp , creexp , crkimp , creimp ,                            &
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 !===============================================================================
@@ -133,9 +132,6 @@ subroutine ustske &
 ! creexp           ! ra ! --> ! explicit part of the source term for epsilon   !
 ! crkimp           ! ra ! --> ! implicit part of the source term for k         !
 ! creimp           ! ra ! --> ! implicit part of the source term for epsilon   !
-! viscf(nfac)      ! ra ! --- ! work array                                     !
-! viscb(nfabor)    ! ra ! --- ! work array                                     !
-! xam(nfac,2)      ! ra ! --- ! work array                                     !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -179,7 +175,6 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision tinstk(ncelet), divu(ncelet)
 double precision crkexp(ncelet), crkimp(ncelet)
 double precision creexp(ncelet), creimp(ncelet)
-double precision viscf(nfac), viscb(nfabor), xam(nfac,2)
 double precision ra(*)
 
 ! Local variables

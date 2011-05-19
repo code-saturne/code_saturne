@@ -308,7 +308,6 @@ call ustsv2                                                       &
    coefa  , coefb  , ckupdc , smacel , prdv2f , w1     ,          &
    smbr   , rovsdt ,                                              &
 !        ------   ------
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 !     Si on extrapole les T.S.
@@ -556,7 +555,6 @@ call ustsv2                                                       &
    coefa  , coefb  , ckupdc , smacel , prdv2f , w1     ,          &
    smbr   , rovsdt ,                                              &
 !        ------   ------
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 !     Si on extrapole les T.S.

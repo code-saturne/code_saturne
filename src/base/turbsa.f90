@@ -426,7 +426,6 @@ call ustssa                                                       &
    coefa  , coefb  , ckupdc , smacel , tinssa , divu   ,          &
    w7     , dam    ,                                              &
 !  ------   ------
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 ! On libere W1, W2, W3, W4, W5, W6, W8, W9,

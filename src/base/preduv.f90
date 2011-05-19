@@ -1173,7 +1173,6 @@ do isou = 1, 3
     coefa  , coefb  , ckupdc , smacel ,                            &
     w7     , drtp   ,                                              &
  !        ------   ------
-    dam    , xam    ,                                              &
     ra     )
 
     if (nbrcpl.gt.0) then

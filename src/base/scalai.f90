@@ -413,7 +413,7 @@ if (ippmod(iphpar).ge.1) then
   ( nvar   , nscal  ,                                             &
     ia     ,                                                      &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,         &
-    coefa  , coefb  , viscf  , viscb  ,                           &
+    coefa  , coefb  ,                                             &
     ra     )
 
           endif

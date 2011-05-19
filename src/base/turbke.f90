@@ -388,7 +388,6 @@ call ustske                                                       &
    coefa  , coefb  , ckupdc , smacel , tinstk , divu   ,          &
    w7     , w8     , dam    , w9     ,                            &
 !        ------   ------   ------   ------
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 ! On libere W1, W2, W3, W4, W5, W6

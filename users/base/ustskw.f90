@@ -38,7 +38,6 @@ subroutine ustskw &
    coefa  , coefb  , ckupdc , smacel , s2kw   , divukw ,          &
    gkgw   , ggrho  , xf1    ,                                     &
    crkexp , crwexp , crkimp , crwimp ,                            &
-   viscf  , viscb  , xam    ,                                     &
    ra     )
 
 !===============================================================================
@@ -141,9 +140,6 @@ subroutine ustskw &
 ! crwexp           ! ra ! --> ! explicit part of the source term for omega     !
 ! crkimp           ! ra ! --> ! implicit part of the source term for k         !
 ! crwimp           ! ra ! --> ! implicit part of the source term for omega     !
-! viscf(nfac)      ! ra ! --- ! work array                                     !
-! viscb(nfabor)    ! ra ! --- ! work array                                     !
-! xam(nfac,2)      ! ra ! --- ! work array                                     !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -188,7 +184,6 @@ double precision s2kw(ncelet)  , divukw(ncelet)
 double precision gkgw(ncelet)  , ggrho(ncelet), xf1(ncelet)
 double precision crkexp(ncelet), crkimp(ncelet)
 double precision crwexp(ncelet), crwimp(ncelet)
-double precision viscf(nfac), viscb(nfabor), xam(nfac,2)
 double precision ra(*)
 
 ! Local variables

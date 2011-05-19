@@ -1,3 +1,29 @@
+* 19/05/2011 - David Monfort <david.monfort@edf.fr>
+  Remove some unused work arrays in user subroutines, again.
+  modified routines:
+    src/base/covofi.f90
+    src/base/preduv.f90
+    src/base/reseps.f90
+    src/base/resrij.f90
+    src/base/resssg.f90
+    src/base/resv2f.f90
+    src/base/scalai.f90
+    src/base/turbke.f90
+    src/base/turbkw.f90
+    src/base/turbsa.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfmsfl.f90
+    src/cfbl/cfmsgs.f90
+    src/cfbl/cfqdmv.f90
+    users/base/ustske.f90
+    users/base/ustskw.f90
+    users/base/ustsns.f90
+    users/base/ustsri.f90
+    users/base/ustssa.f90
+    users/base/ustssc.f90
+    users/base/ustsv2.f90
+    users/elec/uselrc.f90
+
 * 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add possibility of defining a default destination rank for
   block to part distributor based on strided adjacency, so as to

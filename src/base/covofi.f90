@@ -286,7 +286,6 @@ call ustssc &
   coefa  , coefb  , ckupdc , smacel ,                            &
   smbrs  , rovsdt ,                                              &
 !        ------   ------
-  viscf  , viscb  , xam    ,                                     &
   ra     )
 
 !     Si on extrapole les TS :
