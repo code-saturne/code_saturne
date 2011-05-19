@@ -197,6 +197,9 @@ double precision epsrsp
 double precision vit1  , vit2  , vit3  , thetap, pfac, pfac1
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , pbord , diipbx, diipby, diipbz, pip, xkb
+
+double precision rvoid(1)
+
 !===============================================================================
 
 !===============================================================================
@@ -319,6 +322,7 @@ call grdpot                                                       &
  ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
+   rvoid  ,                                                       &
    frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    rtp(1,ipriph)   , coefa(1,iclrtp(ipriph,icoef))  ,             &
                      coefb(1,iclrtp(ipriph,icoef))  ,             &

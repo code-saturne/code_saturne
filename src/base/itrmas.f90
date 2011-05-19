@@ -152,6 +152,8 @@ double precision dijpfx, dijpfy, dijpfz
 double precision diipbx, diipby, diipbz
 double precision dijx  , dijy  , dijz
 
+double precision rvoid(1)
+
 !===============================================================================
 
 
@@ -232,6 +234,7 @@ if( nswrgp.gt.1 ) then
  ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
+   rvoid  ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &

@@ -221,6 +221,8 @@ double precision d2s3  , thetap, thetp1, thets , dtsrom
 double precision diipbx, diipby, diipbz
 double precision cx    , cy    , cz
 
+double precision rvoid(1)
+
 !===============================================================================
 
 !===============================================================================
@@ -360,6 +362,7 @@ call grdpot                                                       &
  ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
+   rvoid  ,                                                       &
    frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
    w1     , w2     , w3     ,                                     &

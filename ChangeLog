@@ -1,3 +1,18 @@
+* 19/05/2011 - David Monfort <david.monfort@edf.fr>
+  Remove useless check for the periodicity of rotation in the gradient
+  computation for the pressure (or potential).
+  Add a, at the moment, uunused variable to this gradient computation
+  to enable future development (with a 'physical' weight).
+  modified routines:
+    src/base/grdpot.f90
+    src/base/itrgrp.f90
+    src/base/itrmas.f90
+    src/base/navsto.f90
+    src/base/preduv.f90
+    src/base/resolp.f90
+    src/base/typecl.f90
+    src/cfbl/cfqdmv.f90
+
 * 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Delay discarding of isolated faces to just prior calculation phase.
   This allows post-processing of those faces, as well as their usage

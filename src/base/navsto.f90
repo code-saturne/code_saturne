@@ -191,6 +191,8 @@ double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis
 double precision vitbox, vitboy, vitboz
 
+double precision rvoid(1)
+
 !===============================================================================
 
 !===============================================================================
@@ -722,6 +724,7 @@ else
  ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
+   rvoid  ,                                                       &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
    trav(1,1)       , trav(1,2)       , trav(1,3) ,                &

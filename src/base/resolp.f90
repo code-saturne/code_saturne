@@ -199,6 +199,8 @@ double precision dtsrom, unsvom, romro0, ro0iph
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , dronm1
 
+double precision rvoid(1)
+
 !===============================================================================
 
 !===============================================================================
@@ -540,6 +542,7 @@ call grdpot                                                       &
  ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
+   rvoid  ,                                                       &
    frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr)  ,         &
    trav(1,1) , trav(1,2) , trav(1,3) ,                            &

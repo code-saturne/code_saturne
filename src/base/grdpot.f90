@@ -31,6 +31,7 @@ subroutine grdpot &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
+   ppond  ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
    dpdx   , dpdy   , dpdz   ,                                     &
@@ -84,6 +85,7 @@ subroutine grdpot &
 ! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
 ! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
+! ppond(ncelet)    ! tr ! <-- ! ponderation "physique"                         !
 ! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
 !   (ncelet)       !    !     !  hydrostatique                                 !
 ! dpdx,dpdy        ! tr ! --> ! gradient de pvar                               !
@@ -120,6 +122,7 @@ double precision epsrgp , climgp , extrap
 
 integer          ia(*)
 
+double precision ppond(ncelet)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
@@ -140,52 +143,13 @@ double precision climin
 !===============================================================================
 
 !===============================================================================
-! 0. PREPARATION POUR PERIODICITE DE ROTATION
+! 0. INITIALISATION
 !===============================================================================
 
-! Par defaut, on traitera le gradient comme un vecteur ...
-!   (i.e. on suppose que c'est le gradient d'une grandeurs scalaire)
-
-! S'il n'y a pas de rotation, les echanges d'informations seront
-!   faits par percom (implicite)
-
-! S'il y a une ou des periodicites de rotation,
-!   on determine si la variables est un vecteur (vitesse)
-!   ou un tenseur (de Reynolds)
-!   pour lui appliquer dans percom le traitement adequat.
-!   On positionne IDIMTE et ITENSO
-!   et on recupere le gradient qui convient.
-! Notons que si on n'a pas, auparavant, calcule et stocke les gradients
-!   du halo on ne peut pas les recuperer ici (...).
-!   Aussi ce sous programme est-il appele dans phyvar (dans perinu perinr)
-!   pour calculer les gradients au debut du pas de temps et les stocker
-!   dans DUDXYZ et DRDXYZ
-
-! Il est necessaire que ITENSO soit toujours initialise, meme hors
-!   periodicite, donc on l'initialise au prealable a sa valeur par defaut.
+! The gradient of a potential (pressure, ...) is a vector
 
 idimte = 1
 itenso = 0
-
-if(iperio.eq.1) then
-
-!       On recupere d'abord certains pointeurs necessaires a PERING
-
-    call pergra                                                   &
-    !==========
-  ( iiu    , iiv    , iiw    ,                                    &
-    iitytu ,                                                      &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  )
-
-  call pering                                                     &
-  !==========
-  ( ivar   ,                                                      &
-    idimte , itenso , iperot , iguper , igrper ,                  &
-    iiu    , iiv    , iiw    , iitytu ,                           &
-    iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
-    dpdx   , dpdy   , dpdz   ,                                    &
-    ra(idudxy) , ra(idrdxy)  )
-endif
 
 !===============================================================================
 ! 1. CALCUL DU GRADIENT

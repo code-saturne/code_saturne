@@ -166,6 +166,8 @@ double precision flumbf, flumty(ntypmx)
 double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0, d0, d0min
 double precision xyzref(4) ! xyzref(3) + coefup for broadcast
 
+double precision rvoid(1)
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -619,6 +621,7 @@ if (itbslb.gt.0) then
      ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
        iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
        ia     ,                                                       &
+       rvoid  ,                                                       &
        frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
        rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
        w1     , w2     , w3     ,                                     &
