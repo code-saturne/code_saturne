@@ -1,4 +1,10 @@
 * 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  MED output: a field must have different names on different MED
+  meshes within a single file, so postpend mesh name if necessary.
+  modified files:
+    src/fvm/fvm_to_med.c
+
+* 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix crash due to trying to read info from XML file even when not present.
   modified files:
     src/gui/cs_gui.c

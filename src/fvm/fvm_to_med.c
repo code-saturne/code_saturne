@@ -143,20 +143,6 @@ extern "C" {
 #endif
 
 /*----------------------------------------------------------------------------
- * MED field structure
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-
-  char    name[MED_NAME_SIZE + 1];  /* MED field name */
-
-  int     id;                        /* MED field id */
-  int     n_components;              /* Number of components */
-  med_field_type  datatype;          /* Field datatype */
-
-} fvm_to_med_field_t;
-
-/*----------------------------------------------------------------------------
  * MED mesh structure
  *----------------------------------------------------------------------------*/
 
@@ -169,6 +155,22 @@ typedef struct {
   med_int  space_dim;   /* Number of coordinates to define a vertex */
 
 } fvm_to_med_mesh_t;
+
+/*----------------------------------------------------------------------------
+ * MED field structure
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  char    name[MED_NAME_SIZE + 1];      /* MED field name */
+  char    basename[MED_NAME_SIZE + 1];  /* MED field base name */
+
+  int     id;                           /* MED field id */
+  int     mesh_id;                      /* Associated mesh structure */
+  int     n_components;                 /* Number of components */
+  med_field_type  datatype;             /* Field datatype */
+
+} fvm_to_med_field_t;
 
 /*----------------------------------------------------------------------------
  * MED writer structure
@@ -1069,7 +1071,76 @@ _get_datatypes(const fvm_datatype_t    input_fvm_datatype,
 }
 
 /*----------------------------------------------------------------------------
- * Get med fieldname, update field struture and call MEDchampCr() if necessary
+ * Build a new field name from a base field name and a mesh name
+ *
+ * parameters:
+ *   writer         <-- MED writer structure.
+ *   med_meshname   <-- MED mesh name.
+ *   base_fieldname <-- input fieldname.
+ *   med_fieldname  --> MED name of the field.
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_new_fieldname(fvm_to_med_writer_t  *writer,
+                     const char           *med_meshname,
+                     const char           *base_fieldname,
+                     char                 *med_fieldname)
+{
+  int i;
+  size_t n_chars, l;
+
+  const int n_fields = writer->n_fields - 1;
+
+  /* Fieldname adaptation */
+
+  strncpy(med_fieldname, base_fieldname, MED_NAME_SIZE);
+  n_chars = strlen(med_fieldname);
+
+  while (n_chars > 0) {
+
+    if (n_chars < MED_NAME_SIZE - 4) {
+      med_fieldname[n_chars] = ' ';
+      med_fieldname[n_chars + 1] = '(';
+    }
+
+    strncpy(med_fieldname + n_chars + 2,
+            med_meshname,
+            MED_NAME_SIZE - n_chars - 3);
+    med_fieldname[MED_NAME_SIZE - 1] = '\0';
+    l = strlen(med_fieldname);
+    med_fieldname[l] = ')';
+    med_fieldname[l+1] = '\0';
+
+    /* Loop on fields to know if field has already been created */
+
+    for (i = 0; i < n_fields; i++) {
+      fvm_to_med_field_t *field = writer->fields[i];
+      if (strcmp(med_fieldname, field->name) == 0)
+        break;
+    }
+
+    if (i < n_fields)  /* we have a name conflict, so start again */
+      n_chars -= 1;
+    else
+      break;
+
+  }
+
+  if (n_chars < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Writer: \"%s\"\n"
+                "Unable to build field name of size < %d\n"
+                "for field: \"%s\" on mesh: \"%s\"."),
+              writer->name, (int)MED_NAME_SIZE,
+              base_fieldname, med_meshname);
+
+  for (i = strlen(med_fieldname) + 1; i < MED_NAME_SIZE; i++)
+    med_fieldname[i] = ' ';
+  med_fieldname[MED_NAME_SIZE] = '\0';
+}
+
+/*----------------------------------------------------------------------------
+ * Get med fieldname, update field structure and create new field if necessary
  *
  * parameters:
  *   writer          <-- MED writer structure.
@@ -1089,7 +1160,7 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
                    int                     dimension,
                    char                   *med_fieldname)
 {
-  int i, i_char, i_dim, n_chars;
+  int i, i_char, i_dim, n_chars, med_mesh_id;
   int n_fields, i_field, name_size;
   med_int n_components;
 
@@ -1101,6 +1172,7 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
   char dt_unit[MED_LNAME_SIZE + 1];
 #endif
 
+  int basename_present = 0;
   const int rank = writer->rank;
 
   med_err retval = 0;
@@ -1115,6 +1187,18 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
 
   med_fieldname[MED_NAME_SIZE] = '\0';
 
+  /* Get MED mesh structure */
+  /*------------------------*/
+
+  med_mesh_id = _get_med_mesh_num(writer, med_meshname) - 1;
+
+  if (med_mesh_id < 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Writer: \"%s\"\n"
+                "Mesh: \"%s\" not defined,\n"
+                "but referenced by field: \"%s\"."),
+              writer->name, med_meshname, med_fieldname);
+
   /* Loop on fields to know if field has already been created */
 
   n_fields = writer->n_fields;
@@ -1123,24 +1207,40 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
 
     fvm_to_med_field_t *field = writer->fields[i_field];
 
-    if (strcmp(med_fieldname, field->name) == 0)
-      break;
+    if (strcmp(med_fieldname, field->basename) == 0) {
+      fvm_to_med_mesh_t *mesh = writer->med_meshes[field->mesh_id];
+      if (strcmp(med_meshname, mesh->name) == 0)
+        break;
+      else
+        basename_present = 1;
+    }
 
   }
 
   if (i_field == n_fields) { /* Create a new field for this writer */
 
-    writer->n_fields++;
-    BFT_REALLOC(writer->fields, writer->n_fields, fvm_to_med_field_t *);
+    BFT_REALLOC(writer->fields, writer->n_fields + 1, fvm_to_med_field_t *);
 
     BFT_MALLOC(writer->fields[n_fields], 1, fvm_to_med_field_t);
 
-    for (i = 0; i < MED_NAME_SIZE; i++)
-      writer->fields[n_fields]->name[i] = med_fieldname[i];
-    writer->fields[n_fields]->name[MED_NAME_SIZE] = '\0';
+    memcpy(writer->fields[n_fields]->basename,
+           med_fieldname,
+           MED_NAME_SIZE + 1);
+
+    if (basename_present)
+      _build_new_fieldname(writer,
+                           med_meshname,
+                           fieldname,
+                           med_fieldname); /* Updated */
+
+    memcpy(writer->fields[n_fields]->name,
+           med_fieldname,
+           MED_NAME_SIZE + 1);
+
     writer->fields[n_fields]->id = n_fields;
     writer->fields[n_fields]->n_components = dimension;
     writer->fields[n_fields]->datatype = datatype_med;
+    writer->fields[n_fields]->mesh_id = med_mesh_id;
 
     if (rank == 0) {
 
@@ -1255,6 +1355,8 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
 
     } /* End if rank = 0 */
 
+    writer->n_fields++;
+
   } /* End of field creation */
 
   /* If field exists, check that dimensions and type are compatible */
@@ -1262,6 +1364,10 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
   else { /*  if (i_field < n_fields) */
 
     fvm_to_med_field_t *field = writer->fields[i_field];
+
+    memcpy(med_fieldname,
+           writer->fields[i_field]->name,
+           MED_NAME_SIZE + 1);
 
     if (dimension != field->n_components)
       bft_error(__FILE__, __LINE__, 0,
@@ -1271,7 +1377,7 @@ _get_med_fieldname(fvm_to_med_writer_t    *writer,
                 med_fieldname, writer->name,
                 (int)field->n_components, (int)dimension);
 
-    if (datatype_med != field->datatype )
+    if (datatype_med != field->datatype)
       bft_error(__FILE__, __LINE__, 0,
                 _("MED field \"%s\" already defined\n"
                   "for writer \"%s\" with datatype %d,\n"
@@ -4478,7 +4584,7 @@ fvm_to_med_export_nodal(void               *this_writer,
   med_mesh_num = _get_med_mesh_num(writer,
                                    med_mesh_name);
 
-  if (med_mesh_num == 0 )
+  if (med_mesh_num == 0)
     med_mesh_num = _add_med_mesh(writer,
                                  med_mesh_name,
                                  mesh);
@@ -4787,7 +4893,7 @@ fvm_to_med_export_field(void                            *this_writer,
   med_mesh_num = _get_med_mesh_num(writer,
                                    med_mesh_name);
 
-  if (med_mesh_num == 0 )
+  if (med_mesh_num == 0)
     med_mesh_num = _add_med_mesh(writer,
                                  med_mesh_name,
                                  mesh);
