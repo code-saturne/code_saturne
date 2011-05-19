@@ -1,3 +1,8 @@
+* 19/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix crash due to trying to read info from XML file even when not present.
+  modified files:
+    src/gui/cs_gui.c
+
 * 18/05/2011 - David Monfort <david.monfort@edf.fr>
   Remove the body forces and pressure gradient improvement option from
   the grdcel arguments (now that it is separated from grdpot).
