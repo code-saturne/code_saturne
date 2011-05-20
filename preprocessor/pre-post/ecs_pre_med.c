@@ -534,6 +534,7 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
   med_bool           transformation = MED_FALSE;
   med_int            nstep = 0;
   med_int            nocstpcorrespondence = 0;
+  med_data_type      data_type = MED_CONNECTIVITY;
 #endif
 
   const int          n_typ_geo_ignore = 3;
@@ -759,6 +760,27 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                  &changement,
                                  &transformation);
 
+    if (nbr_ele_med > 0) { /* Special case for polygons and polyhedra */
+
+      if (typ_geo_med == MED_POLYGON)
+        data_type = MED_INDEX_NODE;
+      else if (typ_geo_med == MED_POLYHEDRON)
+        data_type = MED_INDEX_FACE;
+
+      if (data_type != MED_CONNECTIVITY)
+        nbr_ele_med = MEDmeshnEntity(fic_maillage->fid,
+                                     nom_maillage_med,
+                                     MED_NO_DT,
+                                     MED_NO_IT,
+                                     typ_ent_med,
+                                     typ_geo_med,
+                                     data_type,
+                                     MED_NODAL,
+                                     &changement,
+                                     &transformation) - 1;
+
+    }
+
 #endif
 
     if (nbr_ele_med < 0)
@@ -954,7 +976,8 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                     &changement,
                                     &transformation);
 
-        ret_med = taille_med;
+        if (taille_med < 0)
+          ret_med = -1;
 
 #endif
 
@@ -1049,18 +1072,21 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
 #else
 
+        ret_med = 0;
+
         n_index_f_med = MEDmeshnEntity(fic_maillage->fid,
                                        nom_maillage_med,
                                        MED_NO_DT,
                                        MED_NO_IT,
                                        typ_ent_med,
                                        MED_POLYHEDRON,
-                                       MED_INDEX_FACE,
+                                       MED_INDEX_NODE,
                                        MED_NODAL,
                                        &changement,
                                        &transformation);
 
-        ret_med = n_index_f_med;
+        if (n_index_f_med < 0)
+          ret_med = -1;
 
         if (ret_med >= 0) {
 
@@ -1070,12 +1096,13 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                       MED_NO_IT,
                                       typ_ent_med,
                                       MED_POLYHEDRON,
-                                      MED_INDEX_NODE,
+                                      MED_CONNECTIVITY,
                                       MED_NODAL,
                                       &changement,
                                       &transformation);
 
-          ret_med = taille_med;
+          if (taille_med < 0)
+            ret_med = -1;
 
         }
 
@@ -1124,8 +1151,8 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                                       MED_NO_IT,
                                       typ_ent_med,
                                       MED_NODAL,
-                                      index_f_med,
                                       index_med,
+                                      index_f_med,
                                       connect_med);
 #endif
 

@@ -1,3 +1,9 @@
+* 20/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fixes for MED 3.0 support (polygons, polyhedra, and field axes and units).
+  modified files:
+    preprocessor/pre-post/ecs_pre_med.c
+    src/fvm/fvm_to_med.c
+
 * 19/05/2011 - David Monfort <david.monfort@edf.fr>
   Move the allocation of work arrays for the gradient computation from
   the calling routine to the C wrapper.
