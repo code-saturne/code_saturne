@@ -914,9 +914,9 @@ ecs_table_post_med__ecr_elt(const char           *nom_maillage,
                                     MED_CELL,
                                     MED_NODAL,
                                     (med_int)(nbr_elt_typ_geo + 1),
-                                    index_f_med,
-                                    index_f_med[nbr_elt_typ_geo],
                                     index_med,
+                                    index_med[nbr_elt_typ_geo],
+                                    index_f_med,
                                     connect_med);
 #endif
 

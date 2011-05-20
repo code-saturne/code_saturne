@@ -7,7 +7,7 @@
   This file is part of the Code_Saturne Preprocessor, element of the
   Code_Saturne CFD tool.
 
-  Copyright (C) 1999-2009 EDF S.A., France
+  Copyright (C) 1999-2011 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
@@ -193,7 +193,7 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
   char  desc_maillage_med[MED_COMMENT_SIZE + 1] = "";
 
 #if ECS_MED_VERSION == 3
-  char  dtunit[MED_LNAME_SIZE + 1];
+  char  dtunit[MED_LNAME_SIZE + 1] = "s";
   char  axisname[MED_SNAME_SIZE*3 + 1];
   char  axisunit[MED_SNAME_SIZE*3 + 1];
 #endif
@@ -230,9 +230,6 @@ ecs_post_med__ajoute_maillage(const char       *nom_maillage,
   desc_maillage_med[MED_COMMENT_SIZE] = '\0';
 
 #if ECS_MED_VERSION == 3
-  for (ind = 0; ind < MED_LNAME_SIZE; ind++)
-    dtunit[ind] = ' ';
-  dtunit[MED_LNAME_SIZE] = '\0';
   for (ind = 0; ind < MED_SNAME_SIZE*3; ind++) {
     axisname[ind] = ' ';
     axisunit[ind] = ' ';
