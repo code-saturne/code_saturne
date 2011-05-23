@@ -52,7 +52,6 @@
  * FVM library headers
  *---------------------------------------------------------------------------*/
 
-#include <fvm_config_defs.h>
 #include <fvm_nodal.h>
 #include <fvm_nodal_order.h>
 #include <fvm_nodal_from_desc.h>
