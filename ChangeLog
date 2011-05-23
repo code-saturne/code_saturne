@@ -1,4 +1,11 @@
 * 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  MPI-IO robustness improvements. When creating a new file, destroy
+  previous file if present, and in individual file pointers mode,
+  always convert seeking to seeks relative to file start.
+  modified files:
+   src/fvm/fvm_file.c
+
+* 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Move activation of Cooling Towers postprocessing to that module.
   modified files:
    src/base/cregeo.f90

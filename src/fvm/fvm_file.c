@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2007-2010  EDF
+  Copyright (C) 2007-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,13 @@
 
 #if defined(HAVE_CONFIG_H)
 #include "cs_config.h"
+#endif
+
+#if defined(HAVE_SYS_TYPES_H) && defined(HAVE_SYS_STAT_H) \
+                              && defined(HAVE_UNISTD_H)
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 /*
@@ -833,6 +840,45 @@ _file_write_block(fvm_file_t  *f,
 #if defined(HAVE_MPI_IO)
 
 /*----------------------------------------------------------------------------
+ * Check for and remove existing file.
+ *
+ * This is necessary because some MPI-IO implementations seem to append
+ * data to an exisiting file even when MPI_MODE_CREATE is specified.
+ *
+ * parameters:
+ *   f <-- fvm_file_t descriptor
+ *----------------------------------------------------------------------------*/
+
+static void
+_file_clear(fvm_file_t  *f)
+{
+  int exists = 0;
+
+#if defined(HAVE_SYS_TYPES_H) && defined(HAVE_SYS_STAT_H) \
+                              && defined(HAVE_UNISTD_H)
+
+  struct stat s;
+
+  if (stat(f->name, &s) == 0) {
+    if (S_ISREG(s.st_mode) != 0)
+      exists = 1;
+  }
+  if (exists)
+    unlink(f->name);
+
+#else
+
+  /* If Posix-type API is not available, revert to basic method */
+
+  FILE *f;
+
+  if ((f = fopen(fic_name, "w")) != NULL)
+    fclose(f);
+
+#endif
+}
+
+/*----------------------------------------------------------------------------
  * Output MPI error message.
  *
  * This supposes that the default MPI errorhandler is not used
@@ -893,8 +939,13 @@ _mpi_file_open(fvm_file_t       *f,
   if (f->mode == FVM_FILE_MODE_APPEND)
     amode = MPI_MODE_WRONLY | MPI_MODE_APPEND;
 
-  else if (f->mode == FVM_FILE_MODE_WRITE)
+  else if (f->mode == FVM_FILE_MODE_WRITE) {
+    int rank;
     amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
+    MPI_Comm_rank(f->comm, &rank);
+    if (rank < 1)
+      _file_clear(f);
+  }
 
   else if (f->mode == FVM_FILE_MODE_READ)
     amode = MPI_MODE_RDONLY;
@@ -1846,12 +1897,6 @@ fvm_file_seek(fvm_file_t       *f,
               fvm_file_off_t    offset,
               fvm_file_seek_t   whence)
 {
-  /* Convert fvm_file_seek to MPI_File_seek */
-
-#if defined(HAVE_MPI_IO)
-  static int _mpi_seek[3] = {MPI_SEEK_SET, MPI_SEEK_CUR, MPI_SEEK_END};
-#endif
-
   int retval = 0;
 
   if (f->semantics & FVM_FILE_NO_MPI_IO) {
@@ -1883,9 +1928,7 @@ fvm_file_seek(fvm_file_t       *f,
     }
 
     if (f->semantics & FVM_FILE_INDIVIDUAL_POINTERS)
-      retval = MPI_File_seek(f->fh,
-                             (MPI_Offset)offset,
-                             _mpi_seek[whence]);
+      retval = MPI_File_seek(f->fh, f->offset, MPI_SEEK_SET);
 
     if (retval != MPI_SUCCESS)
       _mpi_io_error_message(f->name, retval);
