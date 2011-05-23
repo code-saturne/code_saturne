@@ -35,11 +35,6 @@ subroutine turbsa &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
    itypfb ,                                                       &
-   viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrsa          , tinssa          ,                   &
-   divu   , w1     , w2     , w3     , w4     ,                   &
-   w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
 
 !===============================================================================
@@ -80,15 +75,6 @@ subroutine turbsa &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbr.(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! tinst.(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! divu(ncelet      ! tr ! --- ! tableau de travail                             !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -139,13 +125,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet),   smbrsa(ncelet),tinssa(ncelet)
-double precision divu(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -180,11 +159,30 @@ double precision chi  , chi3, taussa, nusa, distbf, fw, fv1, fv2
 double precision gsa , rsa , dsigma, cv13
 double precision surfn, nu0, dsa0, hssa
 
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: drtp, smbrsa, tinssa, divu
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays for the turbulence resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(drtp(ncelet), smbrsa(ncelet))
+allocate(tinssa(ncelet), divu(ncelet))
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -822,6 +820,15 @@ call clipsa                                                       &
    iclip  , iwarnp ,                                              &
    propce , rtp    )
 
+
+! Free memory
+deallocate(viscf, viscb)
+deallocate(dam, xam)
+deallocate(drtp, smbrsa)
+deallocate(tinssa, divu)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
 
 !--------
 ! FORMATS

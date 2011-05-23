@@ -35,13 +35,6 @@ subroutine raydom &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   cofrua , cofrub ,                                              &
-   flurds , flurdb ,                                              &
-   dtr    , viscf  , viscb  ,                                     &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt , tempk  ,                            &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    ,                   &
    ra     )
 
 !===============================================================================
@@ -78,21 +71,6 @@ subroutine raydom &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! cofrua,cofrub    ! tr ! --- ! conditions aux limites aux                     !
-!(nfabor)          !    !     !    faces de bord pour la luminances            !
-! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !
-!(nfac)(nfabor)    !    !     !    et faces de bord )                          !
-! dtr(ncelet)      ! ra ! --- ! dt*cdtvar                                      !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! tempk(ncelet,    ! ra ! --> ! temperature in Kelvin                          !
-!       nrphas)    !    !     !                                                !
-! w1...9(ncelet)   ! ra ! --- ! work arrays                                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -144,21 +122,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
-double precision cofrua(nfabor), cofrub(nfabor)
-double precision flurds(nfac), flurdb(nfabor)
-
-double precision dtr(ncelet)
-double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbrs(ncelet)
-double precision rovsdt(ncelet)
-double precision w1(ncelet) , w2(ncelet) , w3(ncelet)
-double precision w4(ncelet) , w5(ncelet) , w6(ncelet)
-double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
-double precision w10(ncelet)
-
-double precision tempk(ncelet,nrphas)
-
 double precision ra(*)
 
 ! Local variables
@@ -175,6 +138,19 @@ double precision aa, bb, ckmin, unspi, xlimit, cofrmn, flunmn
 double precision flux(nozrdm)
 double precision vv, sf, xlc, xkmin, pp
 
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: drtp, smbrs, rovsdt
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w10
+double precision, allocatable, dimension(:,:) :: tempk
+double precision, allocatable, dimension(:) :: cofrua, cofrub
+double precision, allocatable, dimension(:) :: flurds, flurdb
+
+
 integer    ipadom
 data       ipadom /0/
 save       ipadom
@@ -183,6 +159,22 @@ save       ipadom
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
+
+! Allocate temporary arrays for the radiative equations resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(drtp(ncelet), smbrs(ncelet), rovsdt(ncelet))
+
+! Allocate specific arrays for the radiative transfert module
+allocate(tempk(ncelet,nrphas))
+allocate(cofrua(nfabor), cofrub(nfabor))
+allocate(flurds(nfac), flurdb(nfabor))
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w10(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -745,7 +737,7 @@ unspi = 1.d0/pi
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
-   dtr    , viscf  , viscb  ,                                     &
+   viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
 
@@ -846,7 +838,7 @@ unspi = 1.d0/pi
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
-   dtr    , viscf  , viscb  ,                                     &
+   viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
@@ -1317,6 +1309,17 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     write(nfecra,5000)
   endif
 
+! Free memory
+deallocate(viscf, viscb)
+deallocate(dam, xam)
+deallocate(drtp, smbrs, rovsdt)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
+deallocate(w10)
+deallocate(tempk)
+deallocate(cofrua, cofrub)
+deallocate(flurds, flurdb)
 
 !--------
 ! FORMATS

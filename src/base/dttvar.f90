@@ -35,8 +35,6 @@ subroutine dttvar &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   viscf  , viscb  , dam    , cofbdt , w1     , w2     , w3     , &
-   coefbr , grarox , graroy , graroz , wcf    ,                   &
    ra     )
 
 !===============================================================================
@@ -81,13 +79,6 @@ subroutine dttvar &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,nvar)    !    !     !  source de masse                               !
 !                  !    !     ! pour ivar=ipr, smacel=flux de masse            !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! cofbdt(nfabor    ! tr ! --- ! condition limite pas de temps                  !
-! w1,2,3(ncelet    ! tr ! --- ! tableaux de travail                            !
-! graro.(ncelet    ! tr ! --- ! tableaux de travail (iptlro=1)                 !
-! coefbr(nfabor    ! tr ! --- ! tableau de travail (iptlro=1)                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -134,21 +125,13 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet ), cofbdt(nfabor)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-!   Attention, COEFBR n'est defini  que pour IPTLRO = 1
-double precision coefbr(nfabor)
-!   Attention, GRAROX, GRAROY, GRAROZ ne sont
-!   definis que pour IPTLRO = 1 ou en compressible
-double precision grarox(ncelet),graroy(ncelet),graroz(ncelet)
-!   Attention, WCF n'est defini qu'en compressible
-double precision wcf(ncelet)
+
 double precision ra(*)
 
 ! Local variables
 
 character*8      cnom
+
 integer          idebia, idebra
 integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym
 integer          modntl
@@ -160,17 +143,45 @@ integer          nswrgp, imligp
 integer          ipcrom, ipbrom, iivar
 integer          nbrval
 integer          ipccou, ipcfou
+
 double precision epsrgp, climgp, extrap
 double precision cfmax,cfmin, coufou, w1min, w2min, w3min
 double precision unpvdt, rom
 double precision xyzmax(3), xyzmin(3)
 double precision dtsdtm,dtsdt0
 
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:) :: grarox, graroy, graroz
+double precision, allocatable, dimension(:) :: wcf
+double precision, allocatable, dimension(:) :: cofbdt, coefbr
+double precision, allocatable, dimension(:) :: w1, w2, w3
+
 !===============================================================================
 
 !===============================================================================
 ! 0.  INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays for the time-step resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet))
+allocate(cofbdt(nfabor))
+
+! Allocate other arrays, depending on user options
+if (iptlro.eq.1 .or. ippmod(icompf).ge.0) then
+  allocate(grarox(ncelet), graroy(ncelet), graroz(ncelet))
+  allocate(coefbr(nfabor))
+endif
+if (ippmod(icompf).ge.0) then
+  allocate(wcf(ncelet))
+endif
+if (iptlro.eq.1) then
+  allocate(coefbr(nfabor))
+endif
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -982,6 +993,15 @@ else
   enddo
 
 endif
+
+! Free memory
+deallocate(viscf, viscb)
+deallocate(dam)
+deallocate(cofbdt)
+if (allocated(grarox)) deallocate(grarox, graroy, graroz)
+if (allocated(coefbr)) deallocate(coefbr)
+if (allocated(wcf)) deallocate(wcf)
+deallocate(w1, w2, w3)
 
 !--------
 ! FORMATS

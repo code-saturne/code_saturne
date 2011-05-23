@@ -35,11 +35,6 @@ subroutine turrij &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr ,                                                       &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   viscf  , viscb  , coefax ,                                     &
-   dam    , xam    , drtp   ,                                     &
-   smbr   , rovsdt , grdvit , produc , grarox , graroy , graroz , &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
 
 !===============================================================================
@@ -80,26 +75,6 @@ subroutine turrij &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! coefax(nfabor    ! tr ! --- ! tab de trav pour cond.lim. paroi               !
-!                  ! tr ! --- !   attention : uniquement avec echo             !
-!                  ! tr ! --- !   de paroi et abs(icdpar) = 1                  !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbr (ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! drtp(ncelet)     ! tr ! --- ! tableau de travail pour increment              !
-! smbr?(ncelet)    ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! grdvit           ! tr ! --- ! tableau de travail pour terme grad             !
-!  (ncelet,3,3)    !    !     !    de vitesse     uniqt pour iturb=31          !
-! produc           ! tr ! <-- ! tableau de travail pour production             !
-!  (6,ncelet)      !    !     ! (sans rho volume) uniqt pour iturb=30          !
-! grarox,y,z       ! tr ! --- ! tableau de travail pour grad rom               !
-!  (ncelet)        !    !     !                                                !
-! w?(ncelet)       ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -143,14 +118,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision viscf(nfac), viscb(nfabor), coefax(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbr(ncelet), rovsdt(ncelet)
-double precision grdvit(ncelet,3,3), produc(6,ncelet)
-double precision grarox(ncelet), graroy(ncelet), graroz(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -168,6 +135,17 @@ integer          ipcrom, ipbrom, ipcroo, ipbroo, iivar
 integer          iitsla
 double precision epsrgp, climgp, extrap
 
+double precision, allocatable, dimension(:) :: viscf, viscb, coefax
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
+double precision, allocatable, dimension(:,:,:) :: grdvit
+double precision, allocatable, dimension(:,:) :: produc
+double precision, allocatable, dimension(:) :: grarox, graroy, graroz
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+
 integer,          pointer, dimension(:) :: itpsmp => null()
 double precision, pointer, dimension(:) :: smcelp => null(), gammap => null()
 double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
@@ -177,6 +155,29 @@ double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays for the turbulence resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
+
+! Allocate other arrays, depending on user options
+if (igrari.eq.1) then
+  allocate(grarox(ncelet), graroy(ncelet), graroz(ncelet))
+endif
+if (abs(icdpar).eq.1.and.irijec.eq.1) then
+  allocate(coefax(nfabor))
+endif
+if (iturb.eq.30) then
+  allocate(produc(6,ncelet))
+else
+  allocate(grdvit(ncelet,3,3))
+endif
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -588,6 +589,18 @@ call clprij                                                       &
    iclip  ,                                                       &
    propce , rtpa   , rtp    )
 
+
+! Free memory
+deallocate(viscf, viscb)
+deallocate(dam, xam)
+deallocate(drtp, smbr, rovsdt)
+if (allocated(grarox)) deallocate(grarox, graroy, graroz)
+if (allocated(coefax)) deallocate(coefax)
+if (allocated(produc)) deallocate(produc)
+if (allocated(grdvit)) deallocate(grdvit)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
 
 !--------
 ! FORMATS

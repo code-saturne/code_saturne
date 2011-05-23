@@ -33,13 +33,6 @@ subroutine distyp &
    itypfb , isympa ,                                              &
    ia     ,                                                       &
    distpa , propce , uetbor , disty  ,                            &
-   dam    , xam    , smbdp  , rovsdp ,                            &
-   rtpdp  , drtp   ,                                              &
-   qx     , qy     , qz     , coefq  , rom    , romb   ,          &
-   flumas , flumab ,                                              &
-   coefax , coefbx , coefay , coefby , coefaz , coefbz ,          &
-   w1     , w2     , w3     , w4     , w5     , w6     , w7     , &
-   w8     , w9     ,                                              &
    ra     )
 
 !===============================================================================
@@ -78,24 +71,6 @@ subroutine distyp &
 ! uetbor(nfabor)   ! tr ! <-- ! vitesse de frottement au bord                  !
 !                  !    !     !  pour van driest en les                        !
 ! disty(ncelet)    ! tr ! --> ! distance y+                                    !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! smbdp            ! tr ! --- ! tableau de travail pour sec mem                !
-! (ncelet)         !    !     !                                                !
-! rovsdp           ! tr ! --- ! tableau de travail pour terme instat           !
-! (ncelet)         !    !     !                                                !
-! rtpdp(ncelet)    ! tr ! --- ! var de travail du sclaire diffuse              !
-! drtp(ncelet)     ! tr ! --- ! tableau de travail pour increment              !
-! qx,y,z(ncelet    ! tr ! --- ! normale aux iso-distance a la paroi            !
-! coefq            ! tr ! --- ! tableau de travail cl inimas                   !
-! (nfabor,ndim)    !    !     !                                                !
-! rom(ncelet       ! tr ! --- ! masse volumique aux cellules                   !
-! romb(nfabor)     ! tr ! --- ! masse volumique aux bords                      !
-! flumas(nfac)     ! tr ! --- ! flux de masse aux faces internes               !
-! flumab(nfabor    ! tr ! --- ! flux de masse aux faces de bord                !
-! coefax,y,z, b    ! tr ! --- ! tableaux des cond lim pour qx, qy, qz          !
-!   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -137,19 +112,6 @@ integer          ia(*)
 double precision distpa(ncelet),propce(ncelet,*)
 double precision uetbor(nfabor)
 double precision disty(ncelet)
-double precision dam(ncelet)  , xam(nfac,2)
-double precision smbdp(ncelet), rovsdp(ncelet)
-double precision rtpdp(ncelet), drtp(ncelet)
-double precision qx(ncelet)   , qy(ncelet)  , qz(ncelet)
-double precision coefq(nfabor,3)
-double precision rom(ncelet)   ,romb(nfabor)
-double precision flumas(nfac)  ,flumab(nfabor)
-double precision coefax(nfabor),coefbx(nfabor)
-double precision coefay(nfabor),coefby(nfabor)
-double precision coefaz(nfabor),coefbz(nfabor)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -166,6 +128,19 @@ double precision xnorme, dtminy, dtmaxy, relaxp, thetap, timey
 double precision xusnmx, xusnmn, xnorm0
 double precision dismax, dismin, usna
 
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: rtpdp, drtp, smbdp, rovsdp
+double precision, allocatable, dimension(:) :: qx, qy, qz
+double precision, allocatable, dimension(:) :: flumas, flumab
+double precision, allocatable, dimension(:) :: rom, romb
+double precision, allocatable, dimension(:,:) :: coefq
+double precision, allocatable, dimension(:) :: coefax, coefay, coefaz
+double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -175,6 +150,21 @@ save             ipass
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays for the species resolution
+allocate(dam(ncelet), xam(nfac,2))
+allocate(rtpdp(ncelet), drtp(ncelet), smbdp(ncelet), rovsdp(ncelet))
+allocate(qx(ncelet), qy(ncelet), qz(ncelet))
+allocate(flumas(nfac), flumab(nfabor))
+allocate(rom(nfac), romb(nfabor))
+allocate(coefq(nfabor,3))
+allocate(coefax(nfabor), coefay(nfabor), coefaz(nfabor))
+allocate(coefbx(nfabor), coefby(nfabor), coefbz(nfabor))
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -667,6 +657,20 @@ endif
 if(iwarny.ge.1) then
   write(nfecra,1000)dismin, dismax, min(ntcont,ntcmxy)
 endif
+
+
+! Free memory
+deallocate(dam, xam)
+deallocate(rtpdp, drtp, smbdp, rovsdp)
+deallocate(qx, qy, qz)
+deallocate(flumas, flumab)
+deallocate(rom, romb)
+deallocate(coefq)
+deallocate(coefax, coefay, coefaz)
+deallocate(coefbx, coefby, coefbz)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
 
 
 #if defined(_CS_LANG_FR)

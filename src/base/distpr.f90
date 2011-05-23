@@ -33,10 +33,6 @@ subroutine distpr &
    itypfb ,                                                       &
    ia     ,                                                       &
    distpa ,                                                       &
-   viscf  , viscb  , dam    , xam    , smbdp  , rovsdp ,          &
-   rtpdp  , coefad , coefbd ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , w7     , &
-   w8     , w9     ,                                              &
    ra     )
 
 !===============================================================================
@@ -69,17 +65,6 @@ subroutine distpr &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! --> ! tab des distances a la paroi                   !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! smbrp(ncelet)    ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdp(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! rtpdp(ncelet)    ! tr ! --- ! var de travail du sclaire diffuse              !
-! drtp(ncelet)     ! tr ! --- ! tableau de travail pour increment              !
-! coefad,coefbd    ! tr ! --- ! conditions aux limites aux                     !
-!  (nfabor)        !    !     ! faces de bord du scalaire diffuse              !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -119,14 +104,7 @@ integer          nvar   , nscal
 integer          itypfb(nfabor)
 integer          ia(*)
 
-double precision distpa(ncelet), viscf (nfac)  , viscb (nfabor)
-double precision dam   (ncelet), xam   (nfac,2)
-double precision smbdp (ncelet), rovsdp(ncelet)
-double precision rtpdp (ncelet)
-double precision coefad(nfabor), coefbd(nfabor)
-double precision w1    (ncelet), w2    (ncelet), w3    (ncelet)
-double precision w4    (ncelet), w5    (ncelet), w6    (ncelet)
-double precision w7    (ncelet), w8    (ncelet), w9    (ncelet)
+double precision distpa(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -143,6 +121,16 @@ integer          isweep, nittot, idtva0
 
 double precision relaxp, thetap, rnorm, residu, rnoini
 double precision dismax, dismin
+
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: coefad, coefbd
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: rtpdp, smbdp, rovsdp
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+
 !===============================================================================
 
 
@@ -150,6 +138,17 @@ double precision dismax, dismin
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays for the species resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(coefad(nfac), coefbd(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(rtpdp(ncelet), smbdp(ncelet), rovsdp(ncelet))
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -380,6 +379,15 @@ enddo
 
   write(nfecra,1000)dismin, dismax, nittot
 
+
+! Free memory
+deallocate(viscf, viscb)
+deallocate(coefad, coefbd)
+deallocate(dam, xam)
+deallocate(rtpdp, smbdp, rovsdp)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
 
 !===============================================================================
 ! 7. FORMATS

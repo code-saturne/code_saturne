@@ -34,11 +34,7 @@ subroutine turbke &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
-   viscf  , viscb  , prdv2f ,                                     &
-   dam    , xam    ,                                              &
-   drtp   , smbrk  , smbre  , tinstk , tinste ,                   &
-   divu   , w1     , w2     , w3     , w4     ,                   &
-   w5     , w6     , w7     , w8     , w9     ,                   &
+   prdv2f ,                                                       &
    ra     )
 
 !===============================================================================
@@ -79,17 +75,8 @@ subroutine turbke &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! prdv2f(ncelet    ! tr ! <-- ! tableau de stockage du terme de                !
 !                  !    !     ! prod de turbulence pour le v2f                 !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbr.(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! tinst.(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! divu(ncelet      ! tr ! --- ! tableau de travail                             !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -137,14 +124,7 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision viscf(nfac), viscb(nfabor)
 double precision prdv2f(ncelet)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet),   smbrk(ncelet),  smbre(ncelet)
-double precision tinstk(ncelet), tinste(ncelet), divu(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -177,11 +157,31 @@ double precision thetp1, thetak, thetae, thets, thetap
 double precision tuexpk, tuexpe
 double precision cmueta, sqrcmu, xs
 
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: drtp, smbrk, smbre, rovsdt
+double precision, allocatable, dimension(:) :: tinstk, tinste, divu
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays for the turbulence resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(drtp(ncelet), smbrk(ncelet), smbre(ncelet), rovsdt(ncelet))
+allocate(tinstk(ncelet), tinste(ncelet), divu(ncelet))
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -1391,6 +1391,15 @@ call clipke                                                       &
    iclip  , iwarnp ,                                              &
    propce , rtp    )
 
+
+! Free memory
+deallocate(viscf, viscb)
+deallocate(dam, xam)
+deallocate(drtp, smbrk, smbre, rovsdt)
+deallocate(tinstk, tinste, divu)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
 
 !--------
 ! FORMATS

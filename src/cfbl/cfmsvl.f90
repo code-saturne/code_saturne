@@ -35,13 +35,6 @@ subroutine cfmsvl &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    , w11    , w12    ,          &
-   wflmas , wflmab ,                                              &
-   coefu  ,                                                       &
    ra     )
 
 !===============================================================================
@@ -86,17 +79,6 @@ subroutine cfmsvl &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1..12(ncelet    ! tr ! --- ! tableau de travail                             !
-! wflmas(nfac)     ! tr ! --- ! tableau de w flux de masse aux faces           !
-! wflmab(nfabor    ! tr ! --- ! tableau de w flux de masse aux bords           !
-! coefu(nfabo,3    ! tr ! --- ! tableau de travail cl de la qdm                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -144,16 +126,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbrs(ncelet)
-double precision rovsdt(ncelet)
-double precision w1(ncelet) , w2(ncelet) , w3(ncelet)
-double precision w4(ncelet) , w5(ncelet) , w6(ncelet)
-double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
-double precision w10(ncelet), w11(ncelet), w12(ncelet)
-double precision wflmas(nfac), wflmab(nfabor)
-double precision coefu(nfabor,3)
 double precision ra(*)
 
 ! Local variables
@@ -182,10 +154,34 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision diipbx, diipby, diipbz
 double precision pip   , pjp   , thetv, relaxp
 
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: drtp, smbrs, rovsdt
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w10, w11, w12
+double precision, allocatable, dimension(:) :: wflmas, wflmab
+double precision, allocatable, dimension(:,:) :: coefu
+
 !===============================================================================
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays for the mass resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(drtp(ncelet), smbrs(ncelet), rovsdt(ncelet))
+allocate(wflmas(nfac), wflmab(nfabor))
+allocate(coefu(nfabor,3))
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w10(ncelet), w11(ncelet), w12(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -631,6 +627,17 @@ endif
 !       considere que la masse volumique et l'énergie ont été vérifiees,
 !       sont correctes et donc que la pression l'est aussi (elle
 !       vient d'être calculée avec un sous-pgm utilisateur).
+
+! Free memory
+deallocate(viscf, viscb)
+deallocate(dam, xam)
+deallocate(drtp, smbrs, rovsdt)
+deallocate(wflmas, wflmab)
+deallocate(coefu)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
+deallocate(w10, w11, w12)
 
 !--------
 ! FORMATS

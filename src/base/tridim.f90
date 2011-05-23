@@ -139,14 +139,13 @@ integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncp   , ncv   , iok
 integer          iicodc, ircodc
 integer          icoefu, irijip, ihbord, itbord
-integer          idtr  , iviscf, iviscb, ivisfi, ivisbi, iiptot
+integer          iviscf, iviscb, ivisfi, ivisbi, iiptot
 integer          idam  , ixam
 integer          icofbd
 integer          idrtp , igrdp , ismbr , irovsd
 integer          itinsk, itinse, idivu , iprv2f, itinsa
 integer          iw1   , iw2   , iw3   , iw4   , iw5   , iw6
 integer          iw7   , iw8   , iw9   , iw10  , iw11  , iw12
-integer          ixmij
 integer          ifrchy, idfrhy, idfrcx
 integer          igrdvt, iprodu, igrarx, igrary, igrarz
 integer          iesflm, iesflb
@@ -189,6 +188,8 @@ save             ipass
 
 integer          infpar
 save             infpar
+
+double precision, allocatable, dimension(:) :: dtr, prdv2f
 
 !===============================================================================
 
@@ -562,25 +563,13 @@ if(iwarni(iu).ge.1) then
   write(nfecra,1010)
 endif
 
-call memphy                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   nvar   , ncelet , ncel   , nfac   , nfabor ,                   &
-   iw1    , iw2    , iw3    , iw4    ,                            &
-   iw5    , iw6    , iw7    , iw8    ,                            &
-   iw9    , iw10   , iw11   , iw12   , ixmij  ,                   &
-   ifinia , ifinra )
-
 call phyvar                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-   ra(iw7), ra(iw8), ra(iw9), ra(iw10), ra(iw11), ra(iw12),       &
-   ra(ixmij) ,                                                    &
    ra     )
 
 if (itrale.gt.0) then
@@ -663,18 +652,9 @@ if(iwarni(iu).ge.1) then
   write(nfecra,1020)
 endif
 
-call memdtv                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   iviscf , iviscb , idam   , icofbd , iw1    , iw2    , iw3    , &
-   icofbr , igrarx , igrary , igrarz , iwcf   ,                   &
-   iptlro , ippmod(icompf) ,                                      &
-   ifinia , ifinra )
-
 call dttvar                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    ncepdc   , ncetsm   ,                            &
    iwarni(iu)   ,                                                 &
@@ -682,10 +662,6 @@ call dttvar                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd) , ra(ismace),       &
-   ra(iviscf)      , ra(iviscb)      , ra(idam)      ,            &
-   ra(icofbd)      , ra(iw1)         , ra(iw2)       , ra(iw3)   ,&
-   ra(icofbr)      , ra(igrarx)      , ra(igrary)    , ra(igrarz),&
-   ra(iwcf),                                                      &
    ra     )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
@@ -1248,29 +1224,13 @@ do while (iterns.le.nterup)
         !     On doit conserver la memoire de memcli a cause de RA(IUETBO)
         !       dans DISTYP (uniquement en LES avec van Driest mais tant pis)
 
-        call memdis &
-        !==========
-    ( ifinia , ifinra ,                                              &
-      nvar   , nscal  ,                                              &
-      iviscf , iviscb , idam   , ixam   , ismbr  , irovsd ,          &
-      irtdp  , icofay , icofby ,                                     &
-      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-      iw8    , iw9    ,                                              &
-      ifinib , ifinrb )
-
         call distpr &
         !==========
-    ( ifinib , ifinrb ,                                              &
+    ( ifinia , ifinra ,                                              &
       nvar   , nscal  ,                                              &
       ia(iitypf)      ,                                              &
       ia     ,                                                       &
       ra(idipar)      ,                                              &
-      ra(iviscf)      , ra(iviscb)      ,                            &
-      ra(idam)        , ra(ixam)        ,                            &
-      ra(ismbr )      , ra(irovsd)      ,                            &
-      ra(irtdp)       , ra(icofay)      , ra(icofby)      ,          &
-      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6), ra(iw7), &
-      ra(iw8), ra(iw9),                                              &
       ra     )
 
         !     La distance n'a plus a etre mise a jour sauf en ALE
@@ -1300,35 +1260,13 @@ do while (iterns.le.nterup)
       !     On doit conserver la memoire de memcli a cause de RA(IUETBO)
       !       dans DISTYP
 
-      call memdyp &
-      !==========
-    ( ifinia , ifinra ,                                              &
-      nvar   , nscal  ,                                              &
-      idam   , ixam   , ismbr  , irovsd ,                            &
-      irtdp  , idrtdp ,                                              &
-      iqfx   , iqfy   , iqfz   , icoefq , iirho  , iirhob ,          &
-      iflua  , iflub  ,                                              &
-      icoax  , icobx  , icoay  , icoby  , icoaz  , icobz  ,          &
-      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-      iw8    , iw9    ,                                              &
-      ifinib , ifinrb )
-
       call distyp                                                 &
       !==========
-    ( ifinib , ifinrb ,                                              &
+    ( ifinia , ifinra ,                                              &
       nvar   , nscal  ,                                              &
       ia(iitypf) , ia(iismph),                                       &
       ia     ,                                                       &
       ra(idipar), propce    , ra(iuetbo), ra(iyppar),                &
-      ra(idam  ), ra(ixam  ), ra(ismbr ), ra(irovsd),                &
-      ra(irtdp ), ra(idrtdp),                                        &
-      ra(iqfx  ), ra(iqfy  ), ra(iqfz  ), ra(icoefq),                &
-      ra(iirho ), ra(iirhob),                            &
-      ra(iflua ), ra(iflub ),                                        &
-      ra(icoax ), ra(icobx ), ra(icoay ), ra(icoby ),                &
-      ra(icoaz ), ra(icobz ),                            &
-      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6), ra(iw7), &
-      ra(iw8), ra(iw9),                                              &
       ra     )
 
     endif
@@ -1382,28 +1320,13 @@ do while (iterns.le.nterup)
 
     if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
-      call memale &
-      !==========
-    ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  ,                                              &
-      iviscf , iviscb , idam   , ixam   ,                            &
-      idrtp  , ismbr  , irovsd ,                                     &
-      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-      iw8    , iw9    ,                                              &
-      ifinia , ifinra )
-
       call alelap &
       !==========
-    ( ifinia , ifinra ,                                              &
+    ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  ,                                              &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  ,                                              &
-      ra(iviscf) , ra(iviscb) ,                                      &
-      ra(idam  ) , ra(ixam  ) ,                                      &
-      ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
-      ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),             &
-      ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
       ra     )
 
     endif
@@ -1433,22 +1356,11 @@ do while (iterns.le.nterup)
         write(nfecra,1080)
       endif
 
-      call memcfm &
-      !==========
-    ( idbia1 , idbra1 ,                                              &
-      idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-      idrtp  , ismbr  , irovsd ,                                     &
-      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
-      iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
-      iwflms , iwflmb ,                                              &
-      icoefu ,                                                       &
-      ifinia , ifinra )
-
       iscal = irho
 
       call cfmsvl &
       !==========
-    ( ifinia , ifinra ,                                              &
+    ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  ,                                              &
       ncepdc   , ncetsm   ,                            &
       iscal  ,                                                       &
@@ -1458,15 +1370,6 @@ do while (iterns.le.nterup)
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  ,                                              &
       ra(ickupd)        , ra(ismace)        ,          &
-      ra(iviscf) , ra(iviscb)  ,                                     &
-      ra(idam  ) , ra(ixam  )  ,                                     &
-      ra(idrtp ) , ra(ismbr )  , ra(irovsd) ,                        &
-      ra(iw1   ) , ra(iw2   )  , ra(iw3   ) ,                        &
-      ra(iw4   ) , ra(iw5   )  , ra(iw6   ) ,                        &
-      ra(iw7   ) , ra(iw8   )  , ra(iw9   ) ,                        &
-      ra(iw10  ) , ra(iw11  )  , ra(iw12  ) ,                        &
-      ra(iwflms) , ra(iwflmb)  ,                                     &
-      ra(icoefu) ,                                                   &
       ra     )
 
     endif
@@ -1479,18 +1382,6 @@ do while (iterns.le.nterup)
       write(nfecra,1040)
     endif
 
-    call memnav &
-    !==========
-  ( idbia1 , idbra1 ,                                              &
-    nvar   , nscal  ,                                              &
-    iviscf , iviscb , ivisfi , ivisbi ,                            &
-    idam   , ixam   ,                                              &
-    idrtp  , igrdp  , ismbr  , irovsd ,                            &
-    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-    iw8    , iw9    , iw10   , idfrcx , ifrchy , idfrhy ,          &
-    icoefu , iesflm , iesflb ,                                     &
-    ifinia , ifinra )
-
     !     SI LE COMPRESSIBLE SANS CHOC EST ACTIF, ON RESOUT AVEC CFQDMV
     if ( ippmod(icompf).ge.0 ) then
 
@@ -1500,45 +1391,30 @@ do while (iterns.le.nterup)
 
       call cfqdmv &
       !==========
-    ( ifinia , ifinra ,                                              &
+    ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  ,                                              &
-      ncepdc   , ncetsm   ,                            &
-      ia(iicepd)        , ia(iicesm)       ,           &
-      ia(iitpsm)        ,                                     &
+      ncepdc   , ncetsm   ,                                          &
+      ia(iicepd)        , ia(iicesm)       ,                         &
+      ia(iitpsm)        ,                                            &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       propfa(1,iflmas), propfb(1,iflmab),                            &
       coefa  , coefb  ,                                              &
-      ra(ickupd)        , ra(ismace)        ,          &
-      frcxt  , ra(idfrcx)      , ra(itpuco)      , ra(igrdp)       , &
-      ra(iviscf) , ra(iviscb)  , ra(ivisfi) , ra(ivisbi)  ,          &
-      ra(idam  ) , ra(ixam  )  ,                                     &
-      ra(idrtp ) , ra(ismbr )  , ra(irovsd) ,                        &
-      ra(iw1   ) , ra(iw2   )  , ra(iw3   ) ,                        &
-      ra(iw4   ) , ra(iw5   )  , ra(iw6   ) ,                        &
-      ra(iw7   ) , ra(iw8   )  , ra(iw9   ) ,                        &
-      ra(icoefu) ,                                                   &
+      ra(ickupd)        , ra(ismace)        ,                        &
+      frcxt  , ra(itpuco)      ,                                     &
       ra     )
 
     else
 
       call navsto &
       !==========
-    ( ifinia , ifinra ,                                              &
+    ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  , iterns , icvrge ,                            &
       isostd ,                                                       &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       tslagr , coefa  , coefb  , frcxt  ,                            &
       ra(itrava) , ra(iximpa) , ra(iuvwk ) ,                         &
-      ra(iviscf) , ra(iviscb) , ra(ivisfi) , ra(ivisbi) ,            &
-      ra(idam  ) , ra(ixam  ) ,                                      &
-      ra(idrtp ) , ra(igrdp ) , ra(ismbr ) , ra(irovsd) ,            &
-      ra(iw1   ) , ra(iw2   ) , ra(iw3   ) ,                         &
-      ra(iw4   ) , ra(iw5   ) , ra(iw6   ) ,                         &
-      ra(iw7   ) , ra(iw8   ) , ra(iw9   ) , ra(iw10  ) ,            &
-      ra(idfrcx) , ra(ifrchy) , ra(idfrhy) ,                         &
-      ra(icoefu) , ra(iesflm) , ra(iesflb),                          &
       ra     )
 
       !     Mise a jour de la pression si on utilise un couplage vitesse/pression
@@ -1664,99 +1540,70 @@ if (iccvfg.eq.0) then
     endif
   endif
 
-  !     Si on est en v2f, on reserve un tableau de taille NCELET pour
-  !     eviter de recalculer la production dans RESV2F (trois appels
-  !     a GRDCEL)
-  idbia1 = idebia
-  idbra1 = idebra
-  iprv2f = idebra
+  ! Si on est en v2f, on reserve un tableau de taille NCELET pour eviter
+  ! de recalculer la production dans RESV2F (trois appels a GRDCEL)
   if (iturb.eq.50) then
-    idbra1 = iprv2f + ncelet
-    !     Pas la peine de tester les depassements de tableaux puisqu'on
-    !     passe juste apres dans MEMKEP
+    allocate(prdv2f(ncelet))
   endif
 
   if( (itytur.eq.2) .or. (iturb.eq.50) ) then
 
-    ikiph  = ik
+    ! Allocate a work array for the time-step
+    allocate(dtr(ncelet))
 
-    call memkep &
-    !==========
-  ( idbia1 , idbra1 ,                                              &
-    nvar   , nscal  ,                                              &
-    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-    idrtp  , ismbr  , irovsd , itinsk , itinse , idivu ,           &
-    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-    iw8    , iw9    ,                                              &
-    ifinia , ifinra )
+    ikiph  = ik
 
     if(cdtvar(ikiph).ne.1.d0) then
       do iel = 1, ncel
-        ra(idtr-1+iel) = dt(iel)*cdtvar(ikiph)
+        dtr(iel) = dt(iel)*cdtvar(ikiph)
       enddo
     else
       do iel = 1, ncel
-        ra(idtr-1+iel) = dt(iel)
+        dtr(iel) = dt(iel)
       enddo
     endif
 
     call turbke &
     !==========
-  ( ifinia , ifinra ,                                              &
+  ( idebia , idebra ,                                              &
     nvar   , nscal  ,                                              &
-    ncepdc , ncetsm ,                                &
-    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+    ncepdc , ncetsm ,                                              &
+    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
     ia     ,                                                       &
-    ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
-    tslagr   ,                                                     &
-    coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
-    ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
-    ra(idam  ) , ra(ixam  ) ,                                      &
-    ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
-    ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
-    ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+    dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
+    tslagr ,                                                       &
+    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+    prdv2f ,                                                       &
     ra     )
 
     if( iturb.eq.50 )  then
 
       iphiph  = iphi
 
-      call memv2f &
-      !==========
-    ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  ,                                              &
-      idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-      idrtp  , ismbr  , irovsd ,                                     &
-      iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-      iw8    , iw9    , iw10   ,                                     &
-      ifinia , ifinra )
-
       if(cdtvar(iphiph).ne.1.d0) then
         do iel = 1, ncel
-          ra(idtr-1+iel) = dt(iel)*cdtvar(iphiph)
+          dtr(iel) = dt(iel)*cdtvar(iphiph)
         enddo
       else
         do iel = 1, ncel
-          ra(idtr-1+iel) = dt(iel)
+          dtr(iel) = dt(iel)
         enddo
       endif
 
       call resv2f &
       !==========
-    ( ifinia , ifinra ,                                              &
+    ( idebia , idebra ,                                              &
       nvar   , nscal  ,                                              &
-      ncepdc , ncetsm ,                                &
-      ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+      ncepdc , ncetsm ,                                              &
+      ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
       ia     ,                                                       &
-      ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
-      coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
-      ra(iviscf) , ra(iviscb) , ra(iprv2f),                          &
-      ra(idam  ) , ra(ixam  ) ,                                      &
-      ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,                         &
-      ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),             &
-      ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
-      ra(iw10  ) ,                                                   &
+      dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
+      coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+      prdv2f ,                                                       &
       ra     )
+
+      ! Free memory
+      deallocate(prdv2f)
 
     endif
 
@@ -1772,90 +1619,68 @@ if (iccvfg.eq.0) then
       enddo
     endif
 
+    ! Free memory
+    deallocate(dtr)
+
   else if(itytur.eq.3) then
+
+    ! Allocate a work array for the time-step
+    allocate(dtr(ncelet))
 
     ir11ip = ir11
 
-    call memrij &
-    !==========
-  ( idebia , idebra ,                                              &
-    nvar   , nscal  ,                                              &
-    iturb ,                                                 &
-    idtr   , iviscf , iviscb , icoefx ,                            &
-    idam   , ixam   , idrtp  ,                                     &
-    ismbr  , irovsd , igrdvt , iprodu , igrarx , igrary , igrarz , &
-    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-    iw8    , iw9    ,                                              &
-    ifinia , ifinra )
-
     if(cdtvar(ir11ip).ne.1.d0) then
       do iel = 1, ncel
-        ra(idtr-1+iel) = dt(iel)*cdtvar(ir11ip)
+        dtr(iel) = dt(iel)*cdtvar(ir11ip)
       enddo
     else
       do iel = 1, ncel
-        ra(idtr-1+iel) = dt(iel)
+        dtr(iel) = dt(iel)
       enddo
     endif
 
     call turrij &
     !==========
-  ( ifinia , ifinra ,                                              &
+  ( idebia , idebra ,                                              &
     nvar   , nscal  ,                                              &
-    ncepdc , ncetsm ,                                &
-    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+    ncepdc , ncetsm ,                                              &
+    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
     ia     ,                                                       &
-    ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
+    dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
-    coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
-    ra(iviscf) , ra(iviscb) , ra(icoefx),                          &
-    ra(idam  ) , ra(ixam  ) ,                                      &
-    ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(igrdvt) ,            &
-    ra(iprodu) , ra(igrarx) , ra(igrary) , ra(igrarz) ,            &
-    ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) ,            &
-    ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
     ra     )
+
+    ! Free memory
+    deallocate(dtr)
 
   else if( iturb.eq.60 ) then
 
-    ikiph  = ik
+    ! Allocate a work array for the time-step
+    allocate(dtr(ncelet))
 
-    call memkom &
-    !==========
-  ( idebia , idebra ,                                              &
-    nvar   , nscal  ,                                              &
-    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-    idrtp  , ismbr  , irovsd , itinsk , itinse , idivu  ,          &
-    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-    iw8    , iw9    ,                                              &
-    ifinia , ifinra )
+    ikiph  = ik
 
     if(cdtvar(ikiph).ne.1.d0) then
       do iel = 1, ncel
-        ra(idtr-1+iel) = dt(iel)*cdtvar(ikiph)
+        dtr(iel) = dt(iel)*cdtvar(ikiph)
       enddo
     else
       do iel = 1, ncel
-        ra(idtr-1+iel) = dt(iel)
+        dtr(iel) = dt(iel)
       enddo
     endif
 
-    call turbkw                                                 &
+    call turbkw &
     !==========
-  ( ifinia , ifinra ,                                              &
+  ( idebia , idebra ,                                              &
     nvar   , nscal  ,                                              &
-    ncepdc , ncetsm ,                                &
-    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+    ncepdc , ncetsm ,                                              &
+    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
     ia     ,                                                       &
-    ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
+    dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
-    coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
-    ra(is2kw), ra(idvukw),                           &
-    ra(iviscf) , ra(iviscb) ,                                      &
-    ra(idam  ) , ra(ixam  ) ,                                      &
-    ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itinsk) , ra(itinse),&
-    ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
-    ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
+    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
     ra     )
 
     !  RELAXATION DE K ET OMEGA SI IKECOU=0
@@ -1870,46 +1695,37 @@ if (iccvfg.eq.0) then
       enddo
     endif
 
+    ! Free memory
+    deallocate(dtr)
+
   else if( iturb.eq.70 ) then
+
+    ! Allocate a work array for the time-step
+    allocate(dtr(ncelet))
 
     inuiph = inusa
 
-    call memspa &
-    !==========
-  ( idebia , idebra ,                                              &
-    nvar   , nscal  ,                                              &
-    idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-    idrtp  , ismbr           , itinsa , idivu ,                    &
-    iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-    iw8    , iw9    ,                                              &
-    ifinia , ifinra )
-
     if(cdtvar(inuiph).ne.1.d0) then
       do iel = 1, ncel
-        ra(idtr-1+iel) = dt(iel)*cdtvar(inuiph)
+        dtr(iel) = dt(iel)*cdtvar(inuiph)
       enddo
     else
       do iel = 1, ncel
-        ra(idtr-1+iel) = dt(iel)
+        dtr(iel) = dt(iel)
       enddo
     endif
 
     call turbsa &
     !==========
-  ( ifinia , ifinra ,                                              &
+  ( idebia , idebra ,                                              &
     nvar   , nscal  ,                                              &
-    ncepdc , ncetsm ,                                &
-    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+    ncepdc , ncetsm ,                                              &
+    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
     ia     ,                                                       &
-    ra(idtr) , rtp    , rtpa   , propce , propfa , propfb ,        &
+    dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
-    coefa  , coefb  , ra(ickupd) , ra(ismace) ,      &
+    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
     ia(iitypf) ,                                                   &
-    ra(iviscf) , ra(iviscb) ,                                      &
-    ra(idam  ) , ra(ixam  ) ,                                      &
-    ra(idrtp ) , ra(ismbr )              , ra(itinsa)             ,&
-    ra(idivu ) , ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ),&
-    ra(iw5   ) , ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ),&
     ra     )
 
     !  RELAXATION DE NUSA
@@ -1920,6 +1736,9 @@ if (iccvfg.eq.0) then
         rtp(iel,inuiph) = relaxn*rtp(iel,inuiph)+(1.d0-relaxn)*rtpa(iel,inuiph)
       enddo
     endif
+
+    ! Free memory
+    deallocate(dtr)
 
   endif
 
@@ -1939,37 +1758,15 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
     write(nfecra,1070)
   endif
 
-  call memra2                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-   idrtp  , ismbr  , irovsd ,                                     &
-
-   icorua , icorub , iflxma , iflxmb , itek   ,                   &
-
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    , iw10   ,                                     &
-   ifinia , ifinra )
-
-
   call raydom                                                     &
   !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    ia(iitypf) ,                                                   &
    ia(iizfrd) ,                                                   &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(icorua) , ra(icorub) ,                                      &
-   ra(iflxma) , ra(iflxmb) ,                                      &
-   ra(idtr)   , ra(iviscf) , ra(iviscb) ,                         &
-   ra(idam  ) , ra(ixam  ) ,                                      &
-                ra(idrtp ) , ra(ismbr ) , ra(irovsd) , ra(itek)  ,&
-   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) , ra(iw5   ),&
-   ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ) ,            &
-   ra(iw10  ) ,                                                   &
    ra     )
 
 endif
@@ -1981,28 +1778,13 @@ if (nscal.ge.1) then
     write(nfecra,1060)
   endif
 
-  call memsca                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   idtr   , iviscf , iviscb , idam   , ixam   ,                   &
-   idrtp  , ismbr  , irovsd ,                                     &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    , iw7    , &
-   iw8    , iw9    ,                                              &
-   ifinia , ifinra )
-
   call scalai                                                     &
   !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  ,                                     &
-   ra(idtr)   , ra(iviscf) , ra(iviscb) ,                         &
-   ra(idam  ) , ra(ixam  ) ,                                      &
-                ra(idrtp ) , ra(ismbr ) , ra(irovsd) ,            &
-   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iw4   ) , ra(iw5   ),&
-   ra(iw6   ) , ra(iw7   ) , ra(iw8   ) , ra(iw9   ) ,            &
    ra     )
 
 endif

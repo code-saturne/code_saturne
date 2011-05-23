@@ -57,7 +57,6 @@ cfrusb.f90 \
 cfvarp.f90 \
 cfxtcl.f90 \
 memcfe.f90 \
-memcfm.f90 \
 memcft.f90 \
 memcfv.f90
 libcscfbl_la_LDFLAGS = -no-undefined

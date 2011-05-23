@@ -34,12 +34,8 @@ subroutine cfqdmv &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    flumas , flumab ,                                              &
-   coefa  , coefb  , ckupdc , smacel , frcxt  , dfrcxt ,          &
-   tpucou , trav   , viscf  , viscb  , viscfi , viscbi ,          &
-   dam    , xam    ,                                              &
-   drtp   , smbr   , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
+   coefa  , coefb  , ckupdc , smacel , frcxt  ,                   &
+   tpucou ,                                                       &
    ra     )
 
 !===============================================================================
@@ -98,23 +94,8 @@ subroutine cfqdmv &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-!dfrcxt(ncelet,3)  ! tr ! <-- ! variation de force exterieure                  !
-!                  !    !     !  generant lapression hydrostatique             !
 ! tpucou           ! tr ! --> ! couplage vitesse pression                      !
 ! (ncelel,ndim)    !    !     !                                                !
-! trav(ncelet,3    ! tr ! --> ! smb qui servira pour normalisation             !
-!                  !    !     !  dans resolp                                   !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! viscfi(nfac)     ! tr ! --- ! idem viscf pour increments                     !
-! viscbi(nfabor    ! tr ! --- ! idem viscb pour increments                     !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
-! coefu(nfab,3)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -163,17 +144,8 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision flumas(nfac), flumab(nfabor)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
-double precision tpucou(ncelet,ndim), trav(ncelet,3)
-double precision viscf(nfac), viscb(nfabor)
-double precision viscfi(nfac), viscbi(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet)
-double precision smbr(ncelet), rovsdt(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision coefu(nfabor,3)
+double precision frcxt(ncelet,3)
+double precision tpucou(ncelet,ndim)
 double precision ra(*)
 
 ! Local variables
@@ -200,11 +172,48 @@ double precision d2s3  , pbord , diipbx, diipby, diipbz, pip, xkb
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:), target :: viscf, viscb
+double precision, allocatable, dimension(:), target :: wvisfi, wvisbi
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
+double precision, allocatable, dimension(:,:) :: trav
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:,:) :: dfrcxt
+double precision, allocatable, dimension(:,:) :: coefu
+
+double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays for the velocity-pressure resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
+allocate(trav(ncelet,3))
+allocate(dfrcxt(ncelet,3))
+allocate(coefu(nfabor,3))
+
+! Allocate other arrays, depending on user options
+if (itytur.eq.3.and.irijnu.eq.1) then
+  allocate(wvisfi(nfac), wvisbi(nfabor))
+  viscfi => wvisfi(1:nfac)
+  viscbi => wvisbi(1:nfabor)
+else
+  viscfi => viscf(1:nfac)
+  viscbi => viscb(1:nfabor)
+endif
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -812,6 +821,17 @@ if (iwarni(iuiph).ge.2) then
   write(nfecra,1100) rnorm
 endif
 
+! Free memory
+deallocate(viscf, viscb)
+deallocate(dam, xam)
+deallocate(drtp, smbr, rovsdt)
+deallocate(trav)
+deallocate(dfrcxt)
+deallocate(coefu)
+if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
 
 !--------
 ! FORMATS

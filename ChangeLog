@@ -1,4 +1,46 @@
 * 23/05/2011 - David Monfort <david.monfort@edf.fr>
+  Use dynamic memory allocation for most of the memory management in the
+  tridim subroutine (often related to the codits calls).
+  removed subroutines: 
+    src/base/memale.f90
+    src/base/memdis.f90
+    src/base/memdtv.f90
+    src/base/memdyp.f90
+    src/base/memkep.f90
+    src/base/memkom.f90
+    src/base/memnav.f90
+    src/base/memphy.f90
+    src/base/memrij.f90
+    src/base/memsca.f90
+    src/base/memspa.f90
+    src/base/memv2f.f90
+    src/cfbl/memcfm.f90
+    src/rayt/memra2.f90
+  modified subroutines:
+    src/base/alelap.f90
+    src/base/distpr.f90
+    src/base/distyp.f90
+    src/base/dttvar.f90
+    src/base/navsto.f90
+    src/base/phyvar.f90
+    src/base/resv2f.f90
+    src/base/scalai.f90
+    src/base/tridim.f90
+    src/base/turbke.f90
+    src/base/turbkw.f90
+    src/base/turbsa.f90
+    src/base/turrij.f90
+    src/cfbl/cfmsvl.f90
+    src/cfbl/cfqdmv.f90
+    src/rayt/raydom.f90
+    src/rayt/raypun.f90
+    src/rayt/raysol.f90
+  modified scripts:
+    src/base/Makefile.am
+    src/cfbl/Makefile.am
+    src/rayt/Makefile.am
+
+* 23/05/2011 - David Monfort <david.monfort@edf.fr>
   Improve MPI auto-detection in Debian-based environment.
   modified script:
     m4/cs_mpi.m4

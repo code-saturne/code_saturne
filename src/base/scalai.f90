@@ -33,11 +33,6 @@ subroutine scalai &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  ,                                     &
-   dtr    , viscf  , viscb  ,                                     &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
    ra     )
 
 !===============================================================================
@@ -67,15 +62,6 @@ subroutine scalai &
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! dtr(ncelet)      ! tr ! --- ! dt*cdtvar                                      !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -121,14 +107,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision dtr(ncelet)
-double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbrs(ncelet)
-double precision rovsdt(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -137,6 +115,15 @@ integer          idebia, idebra, ifinia
 integer          iscal, ivar, iel
 integer          ii, iisc, itspdv, icalc, iappel
 integer          ispecf
+
+double precision, allocatable, dimension(:) :: dtr
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: drtp, smbrs, rovsdt
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -149,6 +136,17 @@ save             ipass
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays for the species resolution
+allocate(dtr(ncelet))
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(drtp(ncelet), smbrs(ncelet), rovsdt(ncelet))
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -544,6 +542,15 @@ if(nscaus.gt.0) then
   enddo
 
 endif
+
+! Free memory
+deallocate(dtr)
+deallocate(viscf, viscb)
+deallocate(dam, xam)
+deallocate(drtp, smbrs, rovsdt)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
 
 !===============================================================================
 ! 4.  FORMATS

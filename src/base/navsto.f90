@@ -35,12 +35,6 @@ subroutine navsto &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , frcxt  ,                            &
    trava  , ximpa  , uvwk   ,                                     &
-   viscf  , viscb  , viscfi , viscbi ,                            &
-   dam    , xam    ,                                              &
-   drtp   , trav   , smbr   , rovsdt ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    , dfrcxt , frchy  , dfrchy , &
-   coefu  , esflum , esflub ,                                     &
    ra     )
 
 !===============================================================================
@@ -81,26 +75,6 @@ subroutine navsto &
 ! uvwk             ! tr ! <-- ! tableau de travail pour couplage u/p           !
 !(ncelet,3)        !    !     ! sert a stocker la vitesse de                   !
 !                  !    !     ! l'iteration precedente                         !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! viscfi(nfac)     ! tr ! --- ! idem viscf pour increments                     !
-! viscbi(nfabor    ! tr ! --- ! idem viscb pour increments                     !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
-! trav(ncelet,3    ! tr ! --- ! tableau de travail pour gradient               !
-! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1..10(ncelet    ! tr ! --- ! tableau de travail                             !
-! dfrcxt(ncelet,3) ! tr ! --- ! variation de force exterieure                  !
-!                  !    !     !  generant la pression hydrostatique            !
-! frchy(ncelet     ! tr ! --- ! tableau de travail                             !
-!  ndim  )         !    !     !  pression hydrostatique                        !
-! dfrchy(ncelet    ! tr ! --- ! tableau de travail variation de                !
-!  ndim  )         !    !     !  pression hydrostatique                        !
-! coefu(nfab,3)    ! tr ! --- ! tableau de travail                             !
-! esflum(nfac)     ! tr ! --- ! tableau de travail (iestot  )                  !
-! esflub(nfabor    ! tr ! --- ! tableau de travail (iestot  )                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -152,18 +126,6 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(ncelet,3)
 double precision trava(ncelet,ndim),ximpa(ncelet,ndim)
 double precision uvwk(ncelet,ndim)
-double precision viscf(nfac), viscb(nfabor)
-double precision viscfi(nfac), viscbi(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), trav(ncelet,3)
-double precision smbr(ncelet), rovsdt(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet), w10(ncelet)
-double precision dfrcxt(ncelet,3)
-double precision frchy(ncelet,ndim), dfrchy(ncelet,ndim)
-double precision coefu(nfabor,3)
-double precision esflum(nfac), esflub(nfabor)
 double precision ra(*)
 
 ! Local variables
@@ -193,11 +155,55 @@ double precision vitbox, vitboy, vitboz
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:), target :: viscf, viscb
+double precision, allocatable, dimension(:), target :: wvisfi, wvisbi
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
+double precision, allocatable, dimension(:,:) :: trav
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w10
+double precision, allocatable, dimension(:,:) :: dfrcxt
+double precision, allocatable, dimension(:,:) :: frchy, dfrchy
+double precision, allocatable, dimension(:,:) :: coefu
+double precision, allocatable, dimension(:) :: esflum, esflub
+
+double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays for the velocity-pressure resolution
+allocate(viscf(nfac), viscb(nfabor))
+allocate(dam(ncelet), xam(nfac,2))
+allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
+allocate(trav(ncelet,3))
+allocate(coefu(nfabor,3))
+
+! Allocate other arrays, depending on user options
+!if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))
+allocate(dfrcxt(ncelet,3))
+if (icalhy.eq.1) allocate(frchy(ncelet,ndim), dfrchy(ncelet,ndim))
+if (iescal(iestot).gt.0) allocate(esflum(nfac), esflub(nfabor))
+if (itytur.eq.3.and.irijnu.eq.1) then
+  allocate(wvisfi(nfac), wvisbi(nfabor))
+  viscfi => wvisfi(1:nfac)
+  viscbi => wvisbi(1:nfabor)
+else
+  viscfi => viscf(1:nfac)
+  viscbi => viscb(1:nfabor)
+endif
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+if (irnpnw.eq.1) allocate(w10(ncelet))
 
 if(iwarni(iu).ge.1) then
   write(nfecra,1000)
@@ -1310,6 +1316,21 @@ if (iwarni(iuiph).ge.1) then
   endif
 
 endif
+
+! Free memory
+deallocate(viscf, viscb)
+deallocate(dam, xam)
+deallocate(drtp, smbr, rovsdt)
+deallocate(trav)
+deallocate(coefu)
+if (allocated(dfrcxt)) deallocate(dfrcxt)
+if (allocated(frchy))  deallocate(frchy, dfrchy)
+if (allocated(esflum)) deallocate(esflum, esflub)
+if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
+if (allocated(w10)) deallocate(w10)
 
 !--------
 ! FORMATS

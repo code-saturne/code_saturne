@@ -36,7 +36,7 @@ subroutine raysol &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
-   dtr    , viscf  , viscb  ,                                     &
+   viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbrs  , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     ,                   &
@@ -109,7 +109,6 @@ subroutine raysol &
 !(nfabor)          !    !     !    faces de bord pour la luminance             !
 ! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !
 !(nfac)(nfabor)    !    !     !    et faces de bord )                          !
-! dtr(ncelet)      ! tr ! --- ! dt*cdtvar                                      !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
@@ -172,7 +171,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision cofrua(nfabor), cofrub(nfabor)
 double precision flurds(nfac), flurdb(nfabor)
 
-double precision dtr(ncelet)
 double precision viscf(nfac), viscb(nfabor)
 double precision dam(ncelet), xam(nfac,2)
 double precision drtp(ncelet), smbrs(ncelet)
