@@ -305,7 +305,7 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
                         nom_maillage_med,
                         nom_fam_med,
                         num_fam_med,
-                        0,
+                        nbr_grp_med,
                         grp_nom_med);
 
 #endif
