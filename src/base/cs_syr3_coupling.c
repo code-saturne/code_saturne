@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -129,6 +129,7 @@ struct _cs_syr3_coupling_t {
 
   /* Saved arrays for post processing (float for reduced memory use) */
 
+  int             visualization;    /* Visualization output level */
   int             post_mesh_id;     /* 0 if post-processing is not active,
                                        mesh_id if post-processing is active */
   float          *wall_temp;        /* Wall temperature (received) */
@@ -153,13 +154,13 @@ struct _cs_syr3_coupling_t {
  *  Global variables
  *============================================================================*/
 
-static int                   cs_glob_syr_n_couplings = 0;
-static cs_syr3_coupling_t  **cs_glob_syr_coupling_array = NULL;
+static int                   cs_glob_syr3_n_couplings = 0;
+static cs_syr3_coupling_t  **cs_glob_syr3_couplings = NULL;
 
 /* Start and end (negative) numbers associated with
    dedicated post processing meshes */
 
-static int  cs_glob_syr_post_maillage_ext[2] = {0, 1};
+static int  cs_glob_syr3_post_maillage_ext[2] = {0, 1};
 
 
 /*============================================================================
@@ -849,6 +850,87 @@ _cs_syr3_coupling_post_function(int        coupling_id,
 }
 
 /*----------------------------------------------------------------------------
+ * Initialize post-processing of a Syrthes coupling
+ *
+ * parameters:
+ *   syr_coupling <-- SYRTHES coupling structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_post_init(cs_syr3_coupling_t  *syr_coupling)
+{
+  int  dim_shift = 0;
+  int coupling_id = -1;
+
+  const int writer_id = -1;
+
+  cs_int_t  n_vertices = 0;
+  cs_int_t  mesh_id = cs_post_get_free_mesh_id();
+
+  assert(syr_coupling != NULL);
+
+  /* Determine coupling id */
+
+  for (coupling_id = 0;
+       (   coupling_id < cs_glob_syr3_n_couplings
+        && cs_glob_syr3_couplings[coupling_id] != syr_coupling);
+       coupling_id++);
+
+  /* Exit silently if associated writer is not available */
+
+  if (cs_post_writer_exists(writer_id) != true)
+    return;
+
+  /* Initialize post processing flag, and free previous arrays in
+     case this function is called more than once */
+
+  syr_coupling->post_mesh_id = mesh_id;
+
+  if (syr_coupling->wall_temp != NULL)
+    BFT_FREE(syr_coupling->wall_temp);
+
+  if (syr_coupling->flux != NULL)
+    BFT_FREE(syr_coupling->flux);
+
+  /* Get number of coupled vertices */
+
+  n_vertices = fvm_nodal_get_n_entities(syr_coupling->coupled_mesh, 0);
+
+  /* Allocate arrays */
+
+  if (n_vertices > 0) {
+    BFT_MALLOC(syr_coupling->wall_temp, n_vertices, float);
+    BFT_MALLOC(syr_coupling->flux, n_vertices, float);
+  }
+  syr_coupling->tfluid_tmp = NULL;
+
+  /* Associate external mesh description with post processing subsystem */
+
+  if (syr_coupling->dim == 2)
+    dim_shift = 1;
+
+  cs_post_add_existing_mesh(mesh_id,
+                            syr_coupling->coupled_mesh,
+                            dim_shift,
+                            false);
+
+  cs_post_associate(mesh_id, writer_id);
+
+  /* Register post processing function */
+
+  cs_post_add_time_dep_var(_cs_syr3_coupling_post_function,
+                           coupling_id);
+
+  /* Update start and end (negative) numbers associated with
+     dedicated post processing meshes */
+
+  if (cs_glob_syr3_post_maillage_ext[0] == 0)
+    cs_glob_syr3_post_maillage_ext[0] = mesh_id;
+
+  cs_glob_syr3_post_maillage_ext[1] = mesh_id;
+}
+
+/*----------------------------------------------------------------------------
  * Dump of SYRTHES coupling structure
  *
  * parameters:
@@ -868,8 +950,12 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
              "SYRTHES 3 coupling structure dump\n"
              "---------------------------------\n\n");
 
-  bft_printf("\nSYRTHES coupling name: %s\n",
-             syr_coupling->syr_name);
+  bft_printf("\nSYRTHES coupling name: %s\n\n"
+             "echo_comm: %d\n"
+             "visualization: %d\n",
+             syr_coupling->syr_name,
+             syr_coupling->comm_echo,
+             syr_coupling->visualization);
 
   /* Print selection criteria */
 
@@ -929,7 +1015,7 @@ _dump_syr_coupling(cs_syr3_coupling_t  *syr_coupling)
 int
 cs_syr3_coupling_n_couplings(void)
 {
-  return cs_glob_syr_n_couplings;
+  return cs_glob_syr3_n_couplings;
 }
 
 /*----------------------------------------------------------------------------
@@ -948,8 +1034,8 @@ cs_syr3_coupling_by_id(int coupling_id)
   cs_syr3_coupling_t  *retval = NULL;
 
   if (   coupling_id > -1
-      && coupling_id < cs_glob_syr_n_couplings)
-    retval = cs_glob_syr_coupling_array[coupling_id];
+      && coupling_id < cs_glob_syr3_n_couplings)
+    retval = cs_glob_syr3_couplings[coupling_id];
 
   return retval;
 }
@@ -1063,6 +1149,7 @@ cs_syr3_coupling_get_face_list(const cs_syr3_coupling_t  *syr_coupling,
  *   syr_proc_rank      <-- SYRTHES process rank for MPI
  *   comm_type          <-- communicator type
  *   verbosity          <-- verbosity level
+ *   visualization      <-- visualization output level
  *----------------------------------------------------------------------------*/
 
 void
@@ -1072,14 +1159,15 @@ cs_syr3_coupling_add(int                 dim,
                      const char         *syr_name,
                      int                 syr_proc_rank,
                      cs_syr3_comm_type_t comm_type,
-                     int                 verbosity)
+                     int                 verbosity,
+                     int                 visualization)
 {
   cs_syr3_coupling_t *syr_coupling = NULL;
 
   /* Allocate _cs_syr3_coupling_t structure */
 
-  BFT_REALLOC(cs_glob_syr_coupling_array,
-              cs_glob_syr_n_couplings + 1, cs_syr3_coupling_t*);
+  BFT_REALLOC(cs_glob_syr3_couplings,
+              cs_glob_syr3_n_couplings + 1, cs_syr3_coupling_t*);
   BFT_MALLOC(syr_coupling, 1, cs_syr3_coupling_t);
 
   syr_coupling->syr_name = NULL;
@@ -1116,6 +1204,7 @@ cs_syr3_coupling_add(int                 dim,
 
   /* Post processing */
 
+  syr_coupling->visualization = visualization;
   syr_coupling->post_mesh_id = 0;
   syr_coupling->wall_temp = NULL;
   syr_coupling->flux = NULL;
@@ -1130,8 +1219,8 @@ cs_syr3_coupling_add(int                 dim,
   syr_coupling->syr_proc_rank = syr_proc_rank;
 #endif
 
-  cs_glob_syr_coupling_array[cs_glob_syr_n_couplings] = syr_coupling;
-  cs_glob_syr_n_couplings++;
+  cs_glob_syr3_couplings[cs_glob_syr3_n_couplings] = syr_coupling;
+  cs_glob_syr3_n_couplings++;
 }
 
 /*----------------------------------------------------------------------------
@@ -1159,8 +1248,8 @@ cs_syr3_coupling_init_comm(cs_syr3_coupling_t  *syr_coupling,
                               syr_coupling->comm_echo);
 
   if (syr_coupling->comm_echo >= 0) {
-    for (i_coupl = 0 ; i_coupl < cs_glob_syr_n_couplings; i_coupl++)
-      _dump_syr_coupling(cs_glob_syr_coupling_array[i_coupl]);
+    for (i_coupl = 0 ; i_coupl < cs_glob_syr3_n_couplings; i_coupl++)
+      _dump_syr_coupling(cs_glob_syr3_couplings[i_coupl]);
   }
 }
 
@@ -1174,12 +1263,12 @@ cs_syr3_coupling_all_destroy(void)
   cs_int_t i_coupl;
   cs_syr3_coupling_t *syr_coupling = NULL;
 
-  if (cs_glob_syr_n_couplings == 0)
+  if (cs_glob_syr3_n_couplings == 0)
     return;
 
-  for (i_coupl = 0; i_coupl < cs_glob_syr_n_couplings; i_coupl++) {
+  for (i_coupl = 0; i_coupl < cs_glob_syr3_n_couplings; i_coupl++) {
 
-    syr_coupling = cs_glob_syr_coupling_array[i_coupl];
+    syr_coupling = cs_glob_syr3_couplings[i_coupl];
 
     /* Sending "End Of File" message */
 
@@ -1226,10 +1315,10 @@ cs_syr3_coupling_all_destroy(void)
 
     BFT_FREE(syr_coupling);
 
-  } /* End of loop on cs_glob_syr_coupling_array */
+  } /* End of loop on cs_glob_syr3_couplings */
 
-  cs_glob_syr_n_couplings = 0;
-  BFT_FREE(cs_glob_syr_coupling_array);
+  cs_glob_syr3_n_couplings = 0;
+  BFT_FREE(cs_glob_syr3_couplings);
 
   bft_printf(_("\nStructures associated with SYRTHES 3 coupling freed.\n"));
   bft_printf_flush();
@@ -1412,9 +1501,9 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
   if (comm_echo >= 0) {
 
     if (elt_dim == 2)
-      bft_printf(_("\nExtracted mesh built of %d triangles"),n_elts);
+      bft_printf(_("\nExtracted mesh built of %d triangles"), n_elts);
     else if (elt_dim == 1)
-      bft_printf(_("\nExtracted mesh built of %d edges"),n_elts);
+      bft_printf(_("\nExtracted mesh built of %d edges"), n_elts);
     else
       assert(elt_dim == 2 || elt_dim == 1);
 
@@ -1439,6 +1528,10 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
   if (coords != NULL)
     BFT_FREE(coords);
 
+  /* Initialize post-processing */
+
+  if (syr_coupling->visualization > 0)
+    _post_init(syr_coupling);
 }
 
 /*----------------------------------------------------------------------------
@@ -1612,80 +1705,6 @@ cs_syr3_coupling_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
   BFT_FREE(connect);
   BFT_FREE(parent_num);
 
-}
-
-/*----------------------------------------------------------------------------
- * Initialize post-processing of a Syrthes coupling
- *
- * parameters:
- *   coupling_id <--  Id of SYRTHES coupling
- *   writer_id   <--  Id of associated writer
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_coupling_post_init(int       coupling_id,
-                           cs_int_t  writer_id)
-{
-  int  dim_shift = 0;
-  cs_int_t  n_vertices = 0;
-  cs_int_t  mesh_id = cs_post_get_free_mesh_id();
-
-  cs_syr3_coupling_t  *syr_coupling = cs_syr3_coupling_by_id(coupling_id);
-
-  assert(syr_coupling != NULL);
-
-  /* Exit silently if associated writer is not available */
-
-  if (cs_post_writer_exists(writer_id) != true)
-    return;
-
-  /* Initialize post processing flag, and free previous arrays in
-     case this function is called more than once */
-
-  syr_coupling->post_mesh_id = mesh_id;
-
-  if (syr_coupling->wall_temp != NULL)
-    BFT_FREE(syr_coupling->wall_temp);
-
-  if (syr_coupling->flux != NULL)
-    BFT_FREE(syr_coupling->flux);
-
-  /* Get number of coupled vertices */
-
-  n_vertices = fvm_nodal_get_n_entities(syr_coupling->coupled_mesh, 0);
-
-  /* Allocate arrays */
-
-  if (n_vertices > 0) {
-    BFT_MALLOC(syr_coupling->wall_temp, n_vertices, float);
-    BFT_MALLOC(syr_coupling->flux, n_vertices, float);
-  }
-  syr_coupling->tfluid_tmp = NULL;
-
-  /* Associate external mesh description with post processing subsystem */
-
-  if (syr_coupling->dim == 2)
-    dim_shift = 1;
-
-  cs_post_add_existing_mesh(mesh_id,
-                            syr_coupling->coupled_mesh,
-                            dim_shift,
-                            false);
-
-  cs_post_associate(mesh_id, writer_id);
-
-  /* Register post processing function */
-
-  cs_post_add_time_dep_var(_cs_syr3_coupling_post_function,
-                           coupling_id);
-
-  /* Update start and end (negative) numbers associated with
-     dedicated post processing meshes */
-
-  if (cs_glob_syr_post_maillage_ext[0] == 0)
-    cs_glob_syr_post_maillage_ext[0] = mesh_id;
-
-  cs_glob_syr_post_maillage_ext[1] = mesh_id;
 }
 
 /*----------------------------------------------------------------------------

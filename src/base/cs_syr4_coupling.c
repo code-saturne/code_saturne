@@ -136,18 +136,19 @@ struct _cs_syr4_coupling_t {
 
   /* Mesh-related members */
 
-  int                      dim;      /* Coupled mesh dimension */
-  int                      ref_axis; /* Selected axis for edge extraction */
+  int                      dim;            /* Coupled mesh dimension */
+  int                      ref_axis;       /* Selected axis for edge extraction */
 
-  char                    *syr_name; /* Application name, or -1 */
+  char                    *syr_name;       /* Application name, or -1 */
 
-  char                    *face_sel; /* Face selection criteria */
-  char                    *cell_sel; /* Face selection criteria */
+  char                    *face_sel;       /* Face selection criteria */
+  char                    *cell_sel;       /* Face selection criteria */
 
-  cs_syr4_coupling_ent_t  *faces;    /* Wall coupling structure */
-  cs_syr4_coupling_ent_t  *cells;    /* Volume coupling structure */
+  cs_syr4_coupling_ent_t  *faces;          /* Wall coupling structure */
+  cs_syr4_coupling_ent_t  *cells;          /* Volume coupling structure */
 
-  int                      verbosity; /* Verbosity level */
+  int                      verbosity;      /* Verbosity level */
+  int                      visualization;  /* Visualization output flag */
 
   /* Communication-related members */
 
@@ -446,7 +447,6 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
  *   syr_coupling    <-- partially initialized SYRTHES coupling structure
  *   select_criteria <-- selection criteria
  *   elt_dim         <-- element dimension
- *   post_process    <-- if 1, activate associated post-processing
  *
  * returns:
  *   pointer to created Syrthes coupling entity helper structure
@@ -455,8 +455,7 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
 static cs_syr4_coupling_ent_t *
 _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                     const char          *select_criteria,
-                    int                  elt_dim,
-                    int                  post_process)
+                    int                  elt_dim)
 {
   char *coupled_mesh_name = NULL;
   fvm_gnum_t n_exterior = 0, n_dist_elts = 0;
@@ -614,14 +613,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* Initialize post-processing */
 
-  if (post_process != 0) {
-    int coupling_id;
-    for (coupling_id = 0;
-         (   coupling_id < cs_glob_syr4_n_couplings
-          && cs_glob_syr4_couplings[coupling_id] != syr_coupling);
-         coupling_id++);
+  if (syr_coupling->visualization != 0)
     _post_init(syr_coupling, coupling_ent);
-  }
 
   /* Build and initialize associated locator */
 
@@ -679,7 +672,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   if (elt_centers != NULL)
     BFT_FREE(elt_centers);
 
-  if (post_process != 0 && locate_on_closest != NULL) {
+  if (syr_coupling->visualization != 0 && locate_on_closest != NULL) {
 
     cs_post_activate_writer(0, 1);
     cs_post_write_meshes(-1, 0.0);
@@ -714,7 +707,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                    1,
                                    1);
 
-    if (post_process != 0) {
+    if (syr_coupling->visualization != 0) {
 
       fvm_lnum_t i;
       int mesh_id = coupling_ent->post_mesh_id - 1;
@@ -924,6 +917,7 @@ cs_syr4_coupling_by_id(fvm_lnum_t coupling_id)
  *   cell_sel_criterion <-- criterion for selection of cells
  *   syr_name           <-- SYRTHES application name
  *   verbosity          <-- verbosity level
+ *   visualization      <-- visualization output flag
  *----------------------------------------------------------------------------*/
 
 void
@@ -932,7 +926,8 @@ cs_syr4_coupling_add(fvm_lnum_t   dim,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
                      const char  *syr_name,
-                     int          verbosity)
+                     int          verbosity,
+                     int          visualization)
 {
   cs_syr4_coupling_t *syr_coupling = NULL;
 
@@ -980,6 +975,7 @@ cs_syr4_coupling_add(fvm_lnum_t   dim,
   syr_coupling->cells = NULL;
 
   syr_coupling->verbosity = verbosity;
+  syr_coupling->visualization = visualization;
 
   /* Initialize communicators */
 
@@ -1173,14 +1169,14 @@ cs_syr4_coupling_sync_iter(int   nt_cur_abs,
 /*----------------------------------------------------------------------------
  * Define coupled mesh and send it to SYRTHES
  *
+ * Optional post-processing output is also built at this stage.
+ *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
- *   post_process <-- if 1, activate associated post-processing
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling,
-                           int                  post_process)
+cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling)
 {
   char op_name_send[32 + 1];
   char op_name_recv[32 + 1];
@@ -1199,14 +1195,12 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling,
   if (syr_coupling->face_sel != NULL)
     syr_coupling->faces = _create_coupled_ent(syr_coupling,
                                               syr_coupling->face_sel,
-                                              syr_coupling->dim - 1,
-                                              post_process);
+                                              syr_coupling->dim - 1);
 
   if (syr_coupling->cell_sel != NULL)
     syr_coupling->cells = _create_coupled_ent(syr_coupling,
                                               syr_coupling->cell_sel,
-                                              syr_coupling->dim,
-                                              post_process);
+                                              syr_coupling->dim);
 
   /* Communication with SYRTHES */
   /*----------------------------*/

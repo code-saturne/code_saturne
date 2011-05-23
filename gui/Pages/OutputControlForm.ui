@@ -246,26 +246,6 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="0" >
-               <widget class="QLabel" name="labelICHRSY" >
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: ICHRSY</string>
-                </property>
-                <property name="text" >
-                 <string>Syrthes boundary post processing</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1" >
-               <widget class="QCheckBox" name="checkBoxICHRSY" >
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: ICHRSY</string>
-                </property>
-                <property name="text" >
-                 <string/>
-                </property>
-               </widget>
-              </item>
              </layout>
             </item>
             <item>

@@ -83,6 +83,7 @@ BEGIN_C_DECLS
  *                         'x', 'y', or 'z': projection axis for coupling
  *                                           with 2D SYRTHES.
  *   verbosity         <-- verbosity level
+ *   plot              <-- visualization level
  *
  * In the case of a single Code_Saturne and single SYRTHES instance, the
  * 'syrthes_name' argument is ignored, as there is only one matching
@@ -95,7 +96,7 @@ BEGIN_C_DECLS
 void
 cs_user_syrthes_coupling(void)
 {
-  int  verbosity = 1;
+  int  verbosity = 1, plot = 1;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
   /*-------------------------------------------------------------------------
@@ -108,7 +109,8 @@ cs_user_syrthes_coupling(void)
                          "3",             /* boundary criteria */
                          NULL,            /* volume_criteria */
                          ' ',             /* projection_axis */
-                         verbosity);
+                         verbosity,
+                         plot);
 
   /*-------------------------------------------------------------------------
    * Example 2:
@@ -121,7 +123,8 @@ cs_user_syrthes_coupling(void)
                          "Wall",          /* boundary criteria */
                          NULL,            /* volume_criteria */
                          'z',             /* projection_axis */
-                         verbosity);
+                         verbosity,
+                         plot);
 
   /*-------------------------------------------------------------------------
    * Example 3:
@@ -134,5 +137,6 @@ cs_user_syrthes_coupling(void)
                          NULL,                          /* boundary */
                          "box[0., 0., 0., 1., 1., 1.]", /* volume */
                          ' ',                           /* projection */
-                         verbosity);
+                         verbosity,
+                         plot);
 }

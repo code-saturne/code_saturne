@@ -28,7 +28,7 @@
 subroutine inipst &
 !=================
 
- ( ipstvl , ipstbo , ipstsy , ipstze,                             &
+ ( ipstvl , ipstbo , ipstze,                             &
    ipstmd , ntpst  , frpst  , fmtpst , optpst )
 
 !===============================================================================
@@ -45,8 +45,6 @@ subroutine inipst &
 !__________________!____!_____!________________________________________________!
 ! ipstvl           ! e  ! --> ! indicateur pour le maillage volumique          !
 ! ipstbo           ! e  ! --> ! indicateur pour le maillage de peau            !
-! ipstsy           ! e  ! --> ! indicateur pour les maillages de               !
-!                  !    !     !  peau couples avec syrthes                     !
 ! ipstze           ! e  ! --> ! indicateur pour les maillages de               !
 !                  !    !     !  zone d'echange aero                           !
 ! ipstmd           ! e  ! --> ! indicateur de maillage deformable :            !
@@ -109,7 +107,6 @@ integer          ll
 
 ipstvl = ichrvl
 ipstbo = ichrbo
-ipstsy = ichrsy
 ipstze = ichrze
 
 ipstmd = ichrmd

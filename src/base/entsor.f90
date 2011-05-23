@@ -78,7 +78,6 @@ module entsor
 
   !     ichrvl : Post traitement du domaine fluide
   !     ichrbo : Post traitement du bord du domaine
-  !     ichrsy : Post traitement des zones de bord couplees avec SYRTHES
   !     ichrze : Post traitement des zones d'echange aerorefrigerants
   !     ichrmd : Indique si les maillages ecrits seront :
   !               0 : fixes,
@@ -94,7 +93,7 @@ module entsor
   !     fmtchr : format de sortie ('EnSight Gold', 'MED_fichier', 'CGNS')
   !     optchr : options associees au format de sortie
 
-  integer, save :: ichrvl, ichrbo, ichrsy, ichrze,                 &
+  integer, save :: ichrvl, ichrbo, ichrze,                 &
                    ichrmd, ntchr, ichrvr(nvppmx)
   double precision, save :: frchr
 

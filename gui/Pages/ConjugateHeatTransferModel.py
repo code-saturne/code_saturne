@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2008 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -49,7 +49,6 @@ from Base.Common import *
 import Base.Toolbox as Tool
 from Base.XMLvariables import Variables, Model
 from Base.XMLmodel import ModelTest
-from Pages.OutputControlModel import OutputControlModel
 
 #-------------------------------------------------------------------------------
 # Conjugate Heat Transfer model class
@@ -77,6 +76,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         default = {}
         default['syrthes_name']       = "SYRTHES"
         default['verbosity']  = 0
+        default['visualization']  = 1
         default['projection_axis']    = "off"
         default['selection_criteria'] = "all[]"
         return default
@@ -97,7 +97,6 @@ class ConjugateHeatTransferModel(Variables, Model):
 
         if status == "off":
             self.__node_syr.xmlRemoveChild('syrthes')
-        OutputControlModel(self.__case).setSyrthesBoundaryPostProStatus(status)
 
 
     def getSyrthesCouplingList(self):
@@ -109,16 +108,19 @@ class ConjugateHeatTransferModel(Variables, Model):
         list = []
         for index in range(len(node_list)):
             num = index + 1
-            syrthes_name = self.getSyrthesInstanceName(num)
-            verbosity    = self.getSyrthesVerbosity(num)
-            proj_axis    = self.getSyrthesProjectionAxis(num)
-            location     = self.getSelectionCriteria(num)
-            list.append([syrthes_name, verbosity, proj_axis, location])
+            syrthes_name  = self.getSyrthesInstanceName(num)
+            verbosity     = self.getSyrthesVerbosity(num)
+            visualization = self.getSyrthesVisualization(num)
+            proj_axis     = self.getSyrthesProjectionAxis(num)
+            location      = self.getSelectionCriteria(num)
+            list.append([syrthes_name, verbosity, visualization,
+                         proj_axis, location])
 
         return list
 
 
-    def addSyrthesCoupling(self, syrthes_name, verbosity, proj_axis, location):
+    def addSyrthesCoupling(self, syrthes_name,
+                           verbosity, visualization, proj_axis, location):
         """
         Add a new definition of a Syrthes coupling.
 
@@ -126,6 +128,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         @param syrthes_name: Syrthes instance name
         @type verbosity: C{Int}
         @param verbosity: Syrthes verbosity
+        @param visualization: Syrthes visualization output
         @type proj_axis: C{String}
         @param proj_axis: Syrthes projection axis
         @type location: C{String}
@@ -139,6 +142,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         num = num + 1
         self.setSyrthesInstanceName(num, syrthes_name)
         self.setSyrthesVerbosity(num, verbosity)
+        self.setSyrthesVisualization(num, visualization)
         self.setSyrthesProjectionAxis(num, proj_axis)
         self.setSelectionCriteria(num, location)
         self.setConjugateHeatTransferStatus("on")
@@ -222,7 +226,7 @@ class ConjugateHeatTransferModel(Variables, Model):
                                     self.setSyrthesInstanceName)
 
     #------------------------------------------------------------------
-    # Syrthes application number
+    # Syrthes verbosity
     #------------------------------------------------------------------
     def setSyrthesVerbosity(self, num, value):
         """
@@ -252,6 +256,38 @@ class ConjugateHeatTransferModel(Variables, Model):
         return self.__getIntData(num-1,
                                  'verbosity',
                                  self.setSyrthesVerbosity)
+
+    #------------------------------------------------------------------
+    # Syrthes visualization output
+    #------------------------------------------------------------------
+    def setSyrthesVisualization(self, num, value):
+        """
+        Set value of Syrthes visualization.
+
+        @type num: C{Int}
+        @param num: Syrthes coupling number
+        @type value: C{Int}
+        @param value: Syrthes visualization
+        """
+        self.isLowerOrEqual(num, self.__getNumberOfSyrthesCoupling())
+        self.isInt(value)
+        self.isGreaterOrEqual(value, 0)
+        node = self.__node_syr.xmlGetNodeList('syrthes')[num-1]
+        node.xmlSetData('visualization', value)
+
+
+    def getSyrthesVisualization(self, num):
+        """
+        Get value of Syrthes visualization.
+
+        @type num: C{Int}
+        @param num: Syrthes coupling number
+        @return: Syrthes visualization
+        @rtype: C{Int}
+        """
+        return self.__getIntData(num-1,
+                                 'visualization',
+                                 self.setSyrthesVisualization)
 
     #------------------------------------------------------------------
     # Projection axis

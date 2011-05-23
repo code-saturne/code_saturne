@@ -175,6 +175,7 @@ cs_syr3_coupling_get_face_list(const cs_syr3_coupling_t  *syr_coupling,
  *   syr_proc_rank      <-- syrthes process rank for MPI
  *   comm_type          <-- communicator type
  *   verbosity          <-- verbosity level
+ *   visualization      <-- visualization output level
  *----------------------------------------------------------------------------*/
 
 void
@@ -184,7 +185,8 @@ cs_syr3_coupling_add(int                 dim,
                      const char         *syr_name,
                      int                 syr_proc_rank,
                      cs_syr3_comm_type_t comm_type,
-                     int                 verbosity);
+                     int                 verbosity,
+                     int                 visualization);
 
 /*----------------------------------------------------------------------------
  * Initialize communicator for Syrthes coupling
@@ -248,18 +250,6 @@ cs_syr3_coupling_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
                             const cs_real_t           *elt_values,
                             fvm_lnum_t                 n_vertices,
                             cs_real_t                 *vtx_values);
-
-/*----------------------------------------------------------------------------
- * Initialize post-processing of a Syrthes coupling
- *
- * parameters:
- *   coupling_id <--  Id of SYRTHES coupling
- *   writer_id   <--  Id of associated writer
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr3_coupling_post_init(int       coupling_id,
-                           cs_int_t  writer_id);
 
 /*----------------------------------------------------------------------------
  * Update post-processing variables of a Syrthes coupling

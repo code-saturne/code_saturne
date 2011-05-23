@@ -332,7 +332,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.lineEditFRCHR, SIGNAL("textChanged(const QString &)"), self.slotPostproFrequencyTime)
         self.connect(self.checkBoxICHRVL, SIGNAL("clicked()"), self.slotVolumeOuput)
         self.connect(self.checkBoxICHRBO, SIGNAL("clicked()"), self.slotBoundaryOuput)
-        self.connect(self.checkBoxICHRSY, SIGNAL("clicked()"), self.slotSyrthesOutput)
         self.connect(self.comboBoxMeshes, SIGNAL("activated(const QString&)"), self.slotTypePostMeshes)
         self.connect(self.comboBoxFMTCHR, SIGNAL("activated(const QString&)"), self.slotOutputFormat)
         self.connect(self.comboBoxFormat, SIGNAL("activated(const QString&)"), self.slotOutputOptions)
@@ -401,7 +400,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         t = self.modelHisto.dicoM2V[m]
         self.slotMonitoringPoint(t)
 
-        # ICHRVL, ICHRBO, ICHRSY
+        # ICHRVL, ICHRBO
 
         if self.mdl.getFluidDomainPostProStatus() == "on":
             self.checkBoxICHRVL.setChecked(True)
@@ -412,15 +411,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.checkBoxICHRBO.setChecked(True)
         else:
             self.checkBoxICHRBO.setChecked(False)
-
-        if ConjugateHeatTransferModel(self.case).getSyrthesCouplingList():
-            if self.mdl.getSyrthesBoundaryPostProStatus() == 'on':
-                self.checkBoxICHRSY.setChecked(True)
-            else:
-                self.checkBoxICHRSY.setChecked(False)
-        else:
-            self.labelICHRSY.hide()
-            self.checkBoxICHRSY.hide()
 
         # values of type of mesh's post processing
 
@@ -646,17 +636,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setDomainBoundaryPostProStatus('off')
 
         self.browser.configureTree(self.case)
-
-
-    @pyqtSignature("")
-    def slotSyrthesOutput(self):
-        """
-        Input value of ICHRSY
-        """
-        if self.checkBoxICHRSY.isChecked():
-            self.mdl.setSyrthesBoundaryPostProStatus('on')
-        else:
-            self.mdl.setSyrthesBoundaryPostProStatus('off')
 
 
     @pyqtSignature("const QString &")

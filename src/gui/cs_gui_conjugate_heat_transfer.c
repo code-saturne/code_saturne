@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -144,8 +144,10 @@ void CS_PROCF (uisyrc, UISYRC) (void)
 {
     int izone;
     int verbosity = 0;
+    int visualization = 1;
     char* syrthes_name = NULL;
     char* syrthes_verbosity = NULL;
+    char* syrthes_visu = NULL;
     char* projection_axis = NULL;
     char* boundary_criteria = NULL;
     char* volume_criteria = NULL;
@@ -158,27 +160,34 @@ void CS_PROCF (uisyrc, UISYRC) (void)
     {
       syrthes_name      = _get_syrthes_coupling("syrthes_name",       izone+1);
       syrthes_verbosity = _get_syrthes_coupling("verbosity",          izone+1);
+      syrthes_visu      = _get_syrthes_coupling("visualization",      izone+1);
       projection_axis   = _get_syrthes_coupling("projection_axis",    izone+1);
       boundary_criteria = _get_syrthes_coupling("selection_criteria", izone+1);
 
       if (syrthes_verbosity != NULL)
         verbosity = atoi(syrthes_verbosity);
 
+      if (syrthes_visu != NULL)
+        visualization = atoi(syrthes_visu);
+
       cs_syr_coupling_define(syrthes_name,
                              boundary_criteria,
                              volume_criteria,
                              *projection_axis,
-                             verbosity);
+                             verbosity,
+                             visualization);
 
 #if _XML_DEBUG_
       bft_printf("==>uisyrc\n");
-      bft_printf("--syrthes_name      = %s\n", syrthes_name);
-      bft_printf("--syrthes_verbosity = %s\n", syrthes_verbosity);
-      bft_printf("--boundary_criteria = %s\n", boundary_criteria);
-      bft_printf("--projection_axis   = %s\n", projection_axis);
+      bft_printf("--syrthes_name          = %s\n", syrthes_name);
+      bft_printf("--syrthes_verbosity     = %s\n", syrthes_verbosity);
+      bft_printf("--syrthes_visualization = %s\n", syrthes_visu);
+      bft_printf("--boundary_criteria     = %s\n", boundary_criteria);
+      bft_printf("--projection_axis       = %s\n", projection_axis);
 #endif
       BFT_FREE(syrthes_name);
       BFT_FREE(syrthes_verbosity);
+      BFT_FREE(syrthes_visu);
       BFT_FREE(projection_axis);
       BFT_FREE(boundary_criteria);
 

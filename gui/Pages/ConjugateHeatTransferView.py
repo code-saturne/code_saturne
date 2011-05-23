@@ -5,7 +5,7 @@
 #     This file is part of the Code_Saturne User Interface, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 1998-2010 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -71,7 +71,7 @@ log = logging.getLogger("ConjugateHeatTransferView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# QLineEdit delegate for validation of Syrthes app number
+# QLineEdit delegate for validation of Syrthes verbosity or visualization
 #-------------------------------------------------------------------------------
 
 class SyrthesVerbosityDelegate(QItemDelegate):
@@ -176,11 +176,17 @@ class StandardItemModelSyrthes(QStandardItemModel):
         """
         """
         QStandardItemModel.__init__(self)
-        self.setColumnCount(4)
+        self.setColumnCount(5)
         self.headers = [self.tr("Instance name"),
                         self.tr("Verbosity"),
+                        self.tr("Visualization"),
                         self.tr("Projection Axis"),
                         self.tr("Selection criteria")]
+        self.tooltip = [self.tr("Name of coupled instance"),
+                        self.tr("Verbosity level"),
+                        self.tr("Visualization output level (0 for none)"),
+                        self.tr("Projection axis to match 2D Solid domain"),
+                        self.tr("Selection criteria for coupled boundary faces")]
         self.setColumnCount(len(self.headers))
         self.dataSyrthes = []
         self.__model = model
@@ -189,6 +195,8 @@ class StandardItemModelSyrthes(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return QVariant()
+        if role == Qt.ToolTipRole:
+            return QVariant(self.tooltip[index.column()])
         if role == Qt.DisplayRole:
             return QVariant(self.dataSyrthes[index.row()][index.column()])
         elif role == Qt.TextAlignmentRole:
@@ -213,7 +221,7 @@ class StandardItemModelSyrthes(QStandardItemModel):
             return QVariant()
 
         row = index.row()
-        if index.column() in (0, 2, 3):
+        if index.column() in (0, 3, 4):
             self.dataSyrthes[row][index.column()] = str(value.toString())
         else:
             self.dataSyrthes[row][index.column()], ok = value.toInt()
@@ -221,8 +229,9 @@ class StandardItemModelSyrthes(QStandardItemModel):
         num = row + 1
         self.__model.setSyrthesInstanceName(num, self.dataSyrthes[row][0])
         self.__model.setSyrthesVerbosity(num, self.dataSyrthes[row][1])
-        self.__model.setSyrthesProjectionAxis(num, self.dataSyrthes[row][2])
-        self.__model.setSelectionCriteria(num, self.dataSyrthes[row][3])
+        self.__model.setSyrthesVisualization(num, self.dataSyrthes[row][2])
+        self.__model.setSyrthesProjectionAxis(num, self.dataSyrthes[row][3])
+        self.__model.setSelectionCriteria(num, self.dataSyrthes[row][4])
 
         id1 = self.index(0, 0)
         id2 = self.index(self.rowCount(), 0)
@@ -230,11 +239,13 @@ class StandardItemModelSyrthes(QStandardItemModel):
         return True
 
 
-    def addItem(self, syrthes_name, verbosity, proj_axis, location):
+    def addItem(self, syrthes_name,
+                verbosity, visualization, proj_axis, location):
         """
         Add a row in the table.
         """
-        self.dataSyrthes.append([syrthes_name, verbosity, proj_axis, location])
+        self.dataSyrthes.append([syrthes_name,
+                                 verbosity, visualization, proj_axis, location])
         row = self.rowCount()
         self.setRowCount(row+1)
 
@@ -272,14 +283,15 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
 
         self.tableViewSyrthes.verticalHeader().setResizeMode(QHeaderView.ResizeToContents)
         self.tableViewSyrthes.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
-        self.tableViewSyrthes.horizontalHeader().setResizeMode(3, QHeaderView.Stretch)
+        self.tableViewSyrthes.horizontalHeader().setResizeMode(4, QHeaderView.Stretch)
 
         delegateSyrthesVerbosity = SyrthesVerbosityDelegate(self.tableViewSyrthes)
         self.tableViewSyrthes.setItemDelegateForColumn(1, delegateSyrthesVerbosity)
+        self.tableViewSyrthes.setItemDelegateForColumn(2, delegateSyrthesVerbosity)
         delegateProjectionAxis = ProjectionAxisDelegate(self.tableViewSyrthes)
-        self.tableViewSyrthes.setItemDelegateForColumn(2, delegateProjectionAxis)
+        self.tableViewSyrthes.setItemDelegateForColumn(3, delegateProjectionAxis)
         delegateSelectionCriteria = SelectionCriteriaDelegate(self.tableViewSyrthes, self.__model)
-        self.tableViewSyrthes.setItemDelegateForColumn(3, delegateSelectionCriteria)
+        self.tableViewSyrthes.setItemDelegateForColumn(4, delegateSelectionCriteria)
 
         # Connections
         self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddSyrthes)
@@ -287,8 +299,9 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
 
         # Insert list of Syrthes couplings for view
         for c in self.__model.getSyrthesCouplingList():
-            [syrthes_name, verbosity, proj_axis, location] = c
-            self.modelSyrthes.addItem(syrthes_name, verbosity, proj_axis, location)
+            [syrthes_name, verbosity, visualization, proj_axis, location] = c
+            self.modelSyrthes.addItem(syrthes_name,
+                                      verbosity, visualization, proj_axis, location)
 
         if len(self.__model.getSyrthesCouplingList()) < 2:
             self.tableViewSyrthes.hideColumn(0)
@@ -299,12 +312,16 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
         """
         Set in view label and variables to see on profile
         """
-        syrthes_name = self.__model.defaultValues()['syrthes_name']
-        verbosity    = self.__model.defaultValues()['verbosity']
-        proj_axis    = self.__model.defaultValues()['projection_axis']
-        location     = self.__model.defaultValues()['selection_criteria']
-        num = self.__model.addSyrthesCoupling(syrthes_name, verbosity, proj_axis, location)
-        self.modelSyrthes.addItem(syrthes_name, verbosity, proj_axis, location)
+        syrthes_name  = self.__model.defaultValues()['syrthes_name']
+        verbosity     = self.__model.defaultValues()['verbosity']
+        visualization = self.__model.defaultValues()['visualization']
+        proj_axis     = self.__model.defaultValues()['projection_axis']
+        location      = self.__model.defaultValues()['selection_criteria']
+        num = self.__model.addSyrthesCoupling(syrthes_name,
+                                              verbosity, visualization,
+                                              proj_axis, location)
+        self.modelSyrthes.addItem(syrthes_name, verbosity, visualization,
+                                  proj_axis, location)
         if len(self.__model.getSyrthesCouplingList()) > 1:
             self.tableViewSyrthes.showColumn(0)
 

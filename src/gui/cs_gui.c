@@ -1092,8 +1092,7 @@ static void cs_gui_output_value(const char *const param,
 
   if (cs_gui_strcmp(param, "auxiliary_restart_file_writing") ||
       cs_gui_strcmp(param, "fluid_domain") ||
-      cs_gui_strcmp(param, "domain_boundary") ||
-      cs_gui_strcmp(param, "syrthes_boundary") ) {
+      cs_gui_strcmp(param, "domain_boundary") ) {
 
     cs_xpath_add_attribute(&path, "status");
     if(cs_gui_get_status(path, &result)) *keyword = result;
@@ -3994,7 +3993,6 @@ void CS_PROCF (csenso, CSENSO)
           int *const ntlist,
           int *const ichrvl,
           int *const ichrbo,
-          int *const ichrsy,
           int *const ichrmd,
          char *const fmtchr,
           int *const size_fmt,
@@ -4028,7 +4026,6 @@ void CS_PROCF (csenso, CSENSO)
 
   cs_gui_output_value("fluid_domain", ichrvl);
   cs_gui_output_value("domain_boundary", ichrbo);
-  cs_gui_output_value("syrthes_boundary", ichrsy);
   cs_gui_output_value("auxiliary_restart_file_writing", iecaux);
   cs_gui_output_value("listing_printing_frequency", ntlist);
   cs_gui_output_value("postprocessing_frequency", ntchr);
@@ -4121,7 +4118,6 @@ void CS_PROCF (csenso, CSENSO)
   bft_printf("--iecaux = %i\n", *iecaux);
   bft_printf("--ichrvl = %i\n", *ichrvl);
   bft_printf("--ichrbo = %i\n", *ichrbo);
-  bft_printf("--ichrsy = %i\n", *ichrsy);
   bft_printf("--fmtchr = %s\n", "need to be checked in Fortran");
   bft_printf("--optchr = %s\n", "need to be checked in Fortran");
   bft_printf("--ntlist = %i\n", *ntlist);

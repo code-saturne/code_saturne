@@ -111,7 +111,7 @@ _init_join_writer(void)
   /* Default values */
 
   cs_int_t  writer_id = -3;
-  cs_int_t  indic_vol = -1, indic_brd = -1, indic_syr = -1, indic_ze = -1;
+  cs_int_t  indic_vol = -1, indic_brd = -1, indic_ze = -1;
   cs_int_t  indic_mod = -1;
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
@@ -127,7 +127,6 @@ _init_join_writer(void)
 
   CS_PROCF(inipst, INIPST)(&indic_vol,
                            &indic_brd,
-                           &indic_syr,
                            &indic_ze,
                            &indic_mod,
                            &ntchr,

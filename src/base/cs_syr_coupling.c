@@ -103,13 +103,14 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  int      match_id;    /* Id of matched application, -1 initially */
-  int      dim;         /* Coupled mesh dimension */
-  int      ref_axis;    /* Selected axis for edge extraction */
-  char    *app_name;    /* Application name */
-  char    *face_sel_c;  /* Face selection criteria */
-  char    *cell_sel_c;  /* Cell selection criteria */
-  int      verbosity;   /* Verbosity level */
+  int      match_id;       /* Id of matched application, -1 initially */
+  int      dim;            /* Coupled mesh dimension */
+  int      ref_axis;       /* Selected axis for edge extraction */
+  char    *app_name;       /* Application name */
+  char    *face_sel_c;     /* Face selection criteria */
+  char    *cell_sel_c;     /* Cell selection criteria */
+  int      verbosity;      /* Verbosity level */
+  int      visualization;  /* Visualization level */
 
 } _cs_syr_coupling_builder_t;
 
@@ -235,7 +236,8 @@ _syr4_add_mpi(int builder_id,
                        scb->face_sel_c,
                        scb->cell_sel_c,
                        scb->app_name,
-                       scb->verbosity);
+                       scb->verbosity,
+                       scb->visualization);
 
   syr_coupling = cs_syr4_coupling_by_id(cs_syr4_coupling_n_couplings() - 1);
 
@@ -266,7 +268,8 @@ _syr3_add_mpi(int builder_id,
                        scb->app_name,
                        syr_rank,
                        CS_SYR3_COMM_TYPE_MPI,
-                       scb->verbosity);
+                       scb->verbosity,
+                       scb->visualization);
 
   syr_coupling = cs_syr3_coupling_by_id(cs_syr3_coupling_n_couplings() - 1);
 
@@ -488,7 +491,8 @@ _syr3_add_socket(int builder_id)
                        scb->app_name,
                        -1,
                        CS_SYR3_COMM_TYPE_SOCKET,
-                       scb->verbosity);
+                       scb->verbosity,
+                       scb->visualization);
 
   syr_coupling = cs_syr3_coupling_by_id(cs_syr3_coupling_n_couplings() - 1);
 
@@ -582,13 +586,11 @@ void CS_PROCF(nbcsyr, NBCSYR)
  *
  * SUBROUTINE GEOSYR
  * *****************
- *
- * INTEGER          ICHRSY      : <-- : flag for associated postprocessing
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(geosyr, GEOSYR)
 (
- cs_int_t  *ichrsy
+ void
 )
 {
   int coupl_id;
@@ -601,14 +603,9 @@ void CS_PROCF(geosyr, GEOSYR)
     cs_syr3_coupling_init_mesh(syr_coupling);
   }
 
-  if (*ichrsy != 0) {
-    for (coupl_id = 0; coupl_id < _cs_glob_n_syr3_cp; coupl_id++)
-      cs_syr3_coupling_post_init(coupl_id, -1);
-  }
-
   for (coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
     cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
-    cs_syr4_coupling_init_mesh(syr_coupling, *ichrsy);
+    cs_syr4_coupling_init_mesh(syr_coupling);
   }
 }
 
@@ -874,6 +871,7 @@ void CS_PROCF (varsyo, VARSYO)
  *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
  *                         independent), or ' ' for standard 3D coupling
  *   verbosity         <-- verbosity level
+ *   visualization     <-- visualization output level (0 or 1)
  *----------------------------------------------------------------------------*/
 
 void
@@ -881,7 +879,8 @@ cs_syr_coupling_define(const char  *syrthes_name,
                        const char  *boundary_criteria,
                        const char  *volume_criteria,
                        char         projection_axis,
-                       int          verbosity)
+                       int          verbosity,
+                       int          visualization)
 {
   _cs_syr_coupling_builder_t *scb = NULL;
 
@@ -935,6 +934,7 @@ cs_syr_coupling_define(const char  *syrthes_name,
   }
 
   scb->verbosity = verbosity;
+  scb->visualization = visualization;
 
   _syr_coupling_builder_size += 1;
 }

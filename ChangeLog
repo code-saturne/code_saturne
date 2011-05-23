@@ -1,3 +1,33 @@
+* 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Make activation of SYRTHES postprocessing coupling-instance specific.
+  modified files:
+    preprocessor/pre-post/ecs_post_med.c
+    gui/Pages/ConjugateHeatTransferModel.py
+    gui/Pages/ConjugateHeatTransferView.py
+    gui/Pages/OutputControlForm.ui
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+    src/base/cregeo.f90
+    src/base/cs_join_post.c
+    src/base/cs_post.c
+    src/base/cs_prototypes.h
+    src/base/cs_syr3_coupling.c
+    src/base/cs_syr3_coupling.h
+    src/base/cs_syr4_coupling.c
+    src/base/cs_syr4_coupling.h
+    src/base/cs_syr_coupling.c
+    src/base/cs_syr_coupling.h
+    src/base/entsor.f90
+    src/base/iniini.f90
+    src/base/inipst.f90
+    src/base/iniusi.f90
+    src/gui/cs_gui.c
+    src/gui/cs_gui_conjugate_heat_transfer.c
+    src/gui/cs_gui.h
+    src/rayt/rayopt.f90
+    users/base/cs_user_syrthes_coupling.c
+    users/base/usini1.f90
+
 * 23/05/2011 - David Monfort <david.monfort@edf.fr>
   Use dynamic memory allocation for most of the memory management in the
   tridim subroutine (often related to the codits calls).

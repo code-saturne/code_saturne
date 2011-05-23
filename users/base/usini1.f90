@@ -1703,7 +1703,6 @@ endif
 
 ichrvl = 1
 ichrbo = 0
-ichrsy = 0
 
 ichrmd = 0
 

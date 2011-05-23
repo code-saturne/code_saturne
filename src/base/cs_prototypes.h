@@ -376,8 +376,6 @@ void CS_PROCF (inipst, INIPST)
 (
  const cs_int_t  *ichrvl,    /* <-- fluid volume post processing indicator */
  const cs_int_t  *ichrbo,    /* <-- boundary faces post processing indicator */
- const cs_int_t  *ichrsy,    /* <-- post processing indicator for faces
-                              *     coupled with SYRTHES */
  const cs_int_t  *ichrze,    /* <-- post processing indicator for cooling
                               *     tower exchange zones */
  const cs_int_t  *ipstmd,    /* <-- deformable mesh flag

@@ -111,6 +111,7 @@ cs_syr4_coupling_by_id(cs_int_t coupling_id);
  *   cell_sel_criterion <-- criterion for selection of cells
  *   app_name           <-- SYRTHES application name
  *   verbosity          <-- verbosity level
+ *   visualization      <-- visualization output flag
  *----------------------------------------------------------------------------*/
 
 void
@@ -119,7 +120,8 @@ cs_syr4_coupling_add(fvm_lnum_t   dim,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
                      const char  *app_name,
-                     int          verbosity);
+                     int          verbosity,
+                     int          visualization);
 
 /*----------------------------------------------------------------------------
  * Destroy cs_syr4_coupling_t structures
@@ -176,14 +178,14 @@ cs_syr4_coupling_new_time_step(int  nt_cur_abs,
 /*----------------------------------------------------------------------------
  * Define coupled mesh and send it to SYRTHES
  *
+ * Optional post-processing output is also built at this stage.
+ *
  * parameters:
  *   syr_coupling <-- SYRTHES coupling structure
- *   post_process <-- if 1, activate associated post-processing
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling,
-                           int                  post_process);
+cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------
  * Get number of associated coupled faces in main mesh

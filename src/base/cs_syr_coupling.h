@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -96,13 +96,11 @@ void CS_PROCF(nbcsyr, NBCSYR)
  *
  * SUBROUTINE GEOSYR
  * *****************
- *
- * INTEGER          ICHRSY      : <-- : flag for associated postprocessing
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(geosyr, GEOSYR)
 (
- cs_int_t  *ichrsy
+ void
 );
 
 /*----------------------------------------------------------------------------
@@ -265,6 +263,7 @@ void CS_PROCF (varsyo, VARSYO)
  *   projection_axis   <-- 'x', 'y', or 'y' for 2D projection axis (case
  *                         independent), or ' ' for standard 3D coupling
  *   verbosity         <-- verbosity level
+ *   visualization     <-- visualization output level (0 or 1)
  *----------------------------------------------------------------------------*/
 
 void
@@ -272,7 +271,8 @@ cs_syr_coupling_define(const char  *syrthes_name,
                        const char  *boundary_criteria,
                        const char  *volume_criteria,
                        char         projection_axis,
-                       int          verbosity);
+                       int          verbosity,
+                       int          visualization);
 
 /*----------------------------------------------------------------------------
  * Initialize SYRTHES couplings.

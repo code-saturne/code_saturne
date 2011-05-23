@@ -86,7 +86,6 @@ class OutputControlModel(Model):
         default['probe_format'] = "DAT"
         default['fluid_domain'] = "on"
         default['domain_boundary'] = "off"
-        default['syrthes_boundary'] = "on"
         default['postprocessing_mesh'] = '0'
         default['coordinate'] = 0.0
 
@@ -239,27 +238,6 @@ class OutputControlModel(Model):
         """
         self.isOnOff(status)
         node = self.node_out.xmlInitNode('domain_boundary', 'status')
-        node['status'] = status
-
-
-    def getSyrthesBoundaryPostProStatus(self):
-        """
-        Return status for traitment of syrthes boundary
-        """
-        nod = self.node_out.xmlInitNode('syrthes_boundary', 'status')
-        status = nod['status']
-        if not status:
-            status = self.defaultInitialValues()['syrthes_boundary']
-            self.setSyrthesBoundaryPostProStatus(status)
-        return status
-
-
-    def setSyrthesBoundaryPostProStatus(self, status):
-        """
-        Set status for traitment of syrthes boundary
-        """
-        self.isOnOff(status)
-        node = self.node_out.xmlInitNode('syrthes_boundary', 'status')
         node['status'] = status
 
 
@@ -614,22 +592,6 @@ class OutputControlModelTestCase(ModelTest):
         'Could not set status of post processing for domain boundary for output control model'
         assert model.getDomainBoundaryPostProStatus() == 'on', \
         'Could not get status of post processing for domain boundary for output control model'
-
-    def checkSetandGetSyrthesBoundaryPostProStatus(self):
-        """
-        Check whether the status of post processing for boundary
-        syrthes post processing could be set and get
-        """
-        model = OutputControlModel(self.case)
-        model.setSyrthesBoundaryPostProStatus('on')
-        doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
-                    <syrthes_boundary status="on"/>
-                 </output>'''
-        assert model.node_out== self.xmlNodeFromString(doc), \
-        'Could not set status of post processing for syrthes boundary for output control model'
-        assert model.getSyrthesBoundaryPostProStatus() == 'on', \
-        'Could not get status of post processing for syrthes boundary for output control model'
 
     def checkSetandGetTypePostMeshes(self):
         """Check whether the type of mesh's post processing could be set and get"""

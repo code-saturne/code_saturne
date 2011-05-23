@@ -129,7 +129,7 @@ call nbcsyr(nbrsyr)
 !==========
 
 if (nbrsyr .gt. 0) then
-  call geosyr(ichrsy)
+  call geosyr
   !==========
 endif
 

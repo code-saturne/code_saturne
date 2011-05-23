@@ -173,8 +173,6 @@ ntlal  = 1
 !         (1 oui, 0 non)
 !       ICHRBO : Post traitement du bord du domaine
 !         (1 oui, 0 non)
-!       ICHRSY : Post traitement des zones couplees avec SYRTHES
-!         (1 oui, 0 non)
 !       ICHRZE: Post traitement des zones d'echange aerorefrigerants
 !         (1 oui, 0 non)
 
@@ -196,7 +194,6 @@ ntlal  = 1
 
 ichrvl = 1
 ichrbo = 0
-ichrsy = 0
 ichrze = 0
 
 ichrmd = 0
