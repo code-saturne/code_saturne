@@ -1,3 +1,8 @@
+* 23/05/2011 - David Monfort <david.monfort@edf.fr>
+  Improve MPI auto-detection in Debian-based environment.
+  modified script:
+    m4/cs_mpi.m4
+
 * 16/05/2011 - David Monfort <david.monfort@edf.fr>
   Fix the order of arguments in a call to grdcel in usvist.
   modified routine:

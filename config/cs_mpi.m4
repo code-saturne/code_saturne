@@ -33,6 +33,7 @@ saved_LDFLAGS="$LDFLAGS"
 saved_LIBS="$LIBS"
 
 cs_have_mpi=no
+cs_have_mpi_header=no
 
 AC_ARG_WITH(mpi,
             [AS_HELP_STRING([--with-mpi=PATH],
@@ -114,12 +115,30 @@ if test "x$with_mpi" != "xno" -a "x$cs_have_mpi" = "xno" ; then
 
   # If failed, basic test
   if test "x$cs_have_mpi" = "xno"; then
+
+    CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
+
+    # First, check for mpi.h header
+    AC_CHECK_HEADERS([mpi.h],
+                     [cs_have_mpi_header=yes],
+                     [], 
+                     [])
+
+    if test $cs_have_mpi_header = no ; then
+      unset ac_cv_header_mpi_h
+      MPI_CPPFLAGS="-I/usr/include/mpi"
+      CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
+      AC_CHECK_HEADERS([mpi.h],
+                       [cs_have_mpi_header=yes],
+                       [], 
+                       [])
+    fi
+
     # Basic test
     AC_MSG_CHECKING([for MPI (basic test)])
     if test "$MPI_LIBS" = "" ; then
       MPI_LIBS="-lmpi $PTHREAD_LIBS"
     fi
-    CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
     LIBS="$saved_LIBS $MPI_LIBS"
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
