@@ -4,39 +4,23 @@ PREFIX=`dirname $0`
 PREFIX=`cd "$PREFIX/.." ; pwd`
 SUBDIR=`basename $PREFIX`
 
-ARCHNAME=ple.tar
-\rm -f $ARCHNAME.gz
+ARCHNAME=${SUBDIR}.tar.gz
 
 RUNDIR=`pwd`
 
-if [ `uname -s` = Linux ] ; then
-  TMPDIR=`mktemp -d /tmp/ple_backup.XXXXXX`
-else
-  TMPDIR=/tmp/ple_backup_`basename $0`
-  mkdir $TMPDIR
-fi
-if [ $? -ne 0 ]; then
-  echo "$0: Error creating temporary directory"
-  exit 1
-fi
-
-cp -p -r $PREFIX $TMPDIR/
-cd $TMPDIR || exit 1
-
-# Nettoyage de la copie
-
-find "$TMPDIR" -name *~ -exec \rm {} \;
-find "$TMPDIR" -name \#* -exec \rm {} \;
-find "$TMPDIR" -name \.\#* -exec \rm {} \;
-find "$TMPDIR" -name .svn -exec \rm -rf {} \;
+cd $PREFIX/.. || exit 1
 
 PREFIX_BASE=`basename $PREFIX`
 
-tar cvf $ARCHNAME $PREFIX_BASE
+tar cvzf $ARCHNAME --exclude='*.svn'  \
+                   --exclude='*.git'  \
+                   --exclude='.*.swp' \
+                   --exclude='build' \
+                   --exclude='arch' \
+                   --exclude=$ARCHNAME \
+                   $PREFIX_BASE
 
-gzip $ARCHNAME
-mv $ARCHNAME.gz $RUNDIR
+mv $ARCHNAME $RUNDIR
 
 cd $RUNDIR
-\rm -rf $TMPDIR
 

@@ -1,5 +1,9 @@
 2011-05-23  David Monfort <david.monfort@edf.fr>
 
+	* Update backup and bootstrap scripts.
+
+2011-05-23  David Monfort <david.monfort@edf.fr>
+
 	* Improve MPI auto-detection in Debian-based environments.
 
 2011-05-23  David Monfort <david.monfort@edf.fr>
