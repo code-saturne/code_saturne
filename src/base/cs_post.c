@@ -1610,9 +1610,9 @@ void CS_PROCF (pstcm1, PSTCM1)
                    *nbrcel,
                    *nbrfac,
                    *nbrfbr,
-                   lstcel,
-                   lstfac,
-                   lstfbr);
+                   (*nbrcel > 0 ? lstcel : NULL),
+                   (*nbrfac > 0 ? lstfac : NULL),
+                   (*nbrfbr > 0 ? lstfbr : NULL));
 
   /* Free temporary C strings */
 

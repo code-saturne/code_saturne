@@ -1,6 +1,12 @@
 * 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix Valgrind warning in definition of user postprocessing meshes.
+  modified files:
+    src/base/cs_post.c
+
+* 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Separate mesh joining verbosity and visualization level. Above verbosity
   level 2, output is directed to a processor-local log file.
+  modified files:
     gui/Pages/FacesSelectionView.py
     gui/Pages/SolutionDomainModel.py
     po/fr.po
