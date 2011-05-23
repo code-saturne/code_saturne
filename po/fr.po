@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-05-16 17:04+0200\n"
+"POT-Creation-Date: 2011-05-23 14:31+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5898,6 +5898,10 @@ msgstr "       faces intérieures : %12llu\n"
 msgid "       boundary faces: %12llu\n"
 msgstr "       faces de bord :     %12llu\n"
 
+#, c-format
+msgid "       isolated faces: %12llu\n"
+msgstr "       faces isolées : %12llu\n"
+
 msgid ""
 "\n"
 " Histogram of the number of cells per rank:\n"
@@ -5997,6 +6001,19 @@ msgstr ""
 "rangs :\n"
 "\n"
 
+#, c-format
+msgid ""
+"\n"
+" Removed %llu isolated faces\n"
+"     Number of initial vertices:  %llu\n"
+"     Number of vertices:          %llu\n"
+"\n"
+msgstr ""
+"\n"
+" %llu faces isolées supprimées\n"
+"     Nombre de sommets initiaux :  %llu\n"
+"     Nombre de sommets :           %llu\n"
+
 msgid ""
 "\n"
 " Global definition of the number of elements (cells, vertices, faces...)\n"
@@ -6068,6 +6085,14 @@ msgstr ""
 "                       X : %14.7e %14.7e\n"
 "                       Y : %14.7e %14.7e\n"
 "                       Z : %14.7e %14.7e\n"
+
+#, c-format
+msgid ""
+"\n"
+"     Number of isolated faces: %llu\n"
+msgstr ""
+"\n"
+"     Nombre de faces isolées : %llu\n"
 
 msgid "    Checking the face -> cells connectivity coherency\n"
 msgstr "    Test de cohérence de la connectivité faces -> cellules\n"
@@ -6285,6 +6310,13 @@ msgstr "Le calcul des surfaces des faces n'est implanté qu'en 3D."
 
 msgid "Cell centre computation is only implemented in 3D."
 msgstr "Le calcul des centres des cellules n'est implanté qu'en 3D."
+
+#, c-format
+msgid ""
+"\n"
+"%llu faces have a null distance between centers.\n"
+"For these faces, the weight is set to 0.5.\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9044,6 +9076,20 @@ msgid ""
 "MEDfamilyCr() failed to create family %dfor a new med_mesh.\n"
 "Associated med_mesh name: \"%s\"\n"
 "Associated writer name: \"%s\"\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Writer: \"%s\"\n"
+"Unable to build field name of size < %d\n"
+"for field: \"%s\" on mesh: \"%s\"."
+msgstr ""
+
+#, c-format
+msgid ""
+"Writer: \"%s\"\n"
+"Mesh: \"%s\" not defined,\n"
+"but referenced by field: \"%s\"."
 msgstr ""
 
 #, c-format
