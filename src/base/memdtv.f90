@@ -142,8 +142,8 @@ icofbr =       iw3    + ncelet
 igrarx =       icofbr + nfabor*iirocf
 igrary =       igrarx + ncelet*iirocf
 igrarz =       igrary + ncelet*iirocf
-iwcf   =       igrarz + nfabor*iirocf
-ifinra =       igrarz + ncelet*iipmcf
+iwcf   =       igrarz + ncelet*iirocf
+ifinra =       iwcf   + ncelet*iipmcf
 
 !---> VERIFICATION
 

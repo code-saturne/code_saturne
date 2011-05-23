@@ -1,4 +1,11 @@
 * 23/05/2011 - David Monfort <david.monfort@edf.fr>
+  Fix memory allocation for the time-step calculation with the compressible
+  algorithm. This memory bug had no impact on the calculations because the
+  temporary arrays were defined at the end of the macro-array RA.
+  modified routine:
+    src/base/memdtv.f90
+
+* 23/05/2011 - David Monfort <david.monfort@edf.fr>
   Improve MPI auto-detection in Debian-based environment.
   modified script:
     config/cs_mpi.m4
