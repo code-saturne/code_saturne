@@ -437,14 +437,16 @@ cs_join_gset_block_update(fvm_gnum_t             max_gnum,
  * This function is called according to the verbosity.
  *
  * parameters:
- *   type   <-- type of the array to display
- *   header <-- header to display in front of the array
- *   n_elts <-- number of elements to display
- *   array  <-- array to display
+ *   f       <-- handle to output file
+ *   type    <-- type of the array to display
+ *   header  <-- header to display in front of the array
+ *   n_elts  <-- number of elements to display
+ *   array   <-- array to display
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_dump_array(const char  *type,
+cs_join_dump_array(FILE        *f,
+                   const char  *type,
                    const char  *header,
                    int          n_elts,
                    const void  *array);
@@ -453,12 +455,12 @@ cs_join_dump_array(const char  *type,
  * Dump a cs_join_gset_t structure.
  *
  * parameters:
- *   file <-- pointer to an output file or NULL
+ *   f    <-- handle to output file
  *   set  <-- pointer to the cs_join_gset_t structure to dump
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_gset_dump(FILE                  *file,
+cs_join_gset_dump(FILE                  *f,
                   const cs_join_gset_t  *set);
 
 /*---------------------------------------------------------------------------*/

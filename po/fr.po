@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-05-23 16:18+0200\n"
+"POT-Creation-Date: 2011-05-23 16:52+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4893,6 +4893,7 @@ msgstr ""
 msgid ""
 "  Advanced joining parameters:\n"
 "    Verbosity level:                          %8d\n"
+"    Visualization level:                      %8d\n"
 "    Deepest level reachable in tree building: %8d\n"
 "    Max boxes by leaf:                        %8d\n"
 "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
@@ -4907,6 +4908,7 @@ msgid ""
 msgstr ""
 "  Paramètres de recollement avancés :\n"
 "    Niveau de verbosité :                          %8d\n"
+"    Niveau de visualisation :                      %8d\n"
 "    Profondeur max. pour construction de l'arbre : %8d\n"
 "    Nombre max. de boîtes par feuille :            %8d\n"
 "    Rapport max. de boîtes liées / initiales :     %8.5f\n"
@@ -4970,25 +4972,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"\n"
-"  Edge - Edge intersection warning between:\n"
-"    edge 1: %d (%u) [%d (%u), %d (%u)]\n"
-"    edge 2: %d (%u) [%d (%u), %d (%u)]\n"
-"  Intersection found for curv. abs. %f (e1) - %f (e2) will be ignored.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Failure for edge 1:  Distance [v_inter1, v_inter2]: %e > v_inter1.tol: %e\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Failure for edge 2:  Distance [v_inter1, v_inter2]: %e > v_inter2.tol: %e\n"
-msgstr ""
-
-#, c-format
-msgid ""
 "  Determination of possible face intersections:\n"
 "\n"
 "    bounding-box tree layout: %dD\n"
@@ -5001,46 +4984,46 @@ msgstr ""
 msgid ""
 "                                   rank mean      minimum      maximum\n"
 "    depth:                        %10d | %10d | %10d\n"
-"    number of leaves:             %10lu | %10lu | %10lu\n"
-"    number of boxes:              %10lu | %10lu | %10lu\n"
-"    leaves over threshold:        %10lu | %10lu | %10lu\n"
+"    number of leaves:             %10llu | %10llu | %10llu\n"
+"    number of boxes:              %10llu | %10llu | %10llu\n"
+"    leaves over threshold:        %10llu | %10llu | %10llu\n"
 "    boxes per leaf:               %10d | %10d | %10d\n"
 "    Memory footprint (kb):\n"
-"      final search structure:     %10lu | %10lu | %10lu\n"
-"      temporary search structure: %10lu | %10lu | %10lu\n"
+"      final search structure:     %10llu | %10llu | %10llu\n"
+"      temporary search structure: %10llu | %10llu | %10llu\n"
 "\n"
 msgstr ""
 "                               moyenne des rangs      minimum      maximum\n"
 "    profondeur :                      %10d | %10d | %10d\n"
-"    nombre de feuilles :              %10lu | %10lu | %10lu\n"
-"    nombre de boîtes :                %10lu | %10lu | %10lu\n"
-"    feuilles au-dessus du seuil :     %10lu | %10lu | %10lu\n"
+"    nombre de feuilles :              %10llu | %10llu | %10llu\n"
+"    nombre de boîtes :                %10llu | %10llu | %10llu\n"
+"    feuilles au-dessus du seuil :     %10llu | %10llu | %10llu\n"
 "    boîtes par feuilles :             %10d | %10d | %10d\n"
 "    Empreinte mémoire (ko):\n"
-"      structure de recherche finale : %10lu | %10lu | %10lu\n"
-"      structure intermédiaire :       %10lu | %10lu | %10lu\n"
+"      structure de recherche finale : %10llu | %10llu | %10llu\n"
+"      structure intermédiaire :       %10llu | %10llu | %10llu\n"
 "\n"
 
 #, c-format
 msgid ""
 "    depth:                        %10d\n"
-"    number of leaves:             %10lu\n"
-"    number of boxes:              %10lu\n"
-"    leaves over threshold:        %10lu\n"
+"    number of leaves:             %10llu\n"
+"    number of boxes:              %10llu\n"
+"    leaves over threshold:        %10llu\n"
 "    boxes per leaf:               %10d mean [%d min, %d max]\n"
 "    Memory footprint (kb):\n"
-"      final search structure:     %10lu\n"
-"      temporary search structure: %10lu\n"
+"      final search structure:     %10llu\n"
+"      temporary search structure: %10llu\n"
 "\n"
 msgstr ""
 "    profondeur :                      %10d\n"
-"    nombre de feuilles :              %10lu\n"
-"    nombre de boîtes :                %10lu\n"
-"    feuilles au-dessus du seuil :     %10lu\n"
+"    nombre de feuilles :              %10llu\n"
+"    nombre de boîtes :                %10llu\n"
+"    feuilles au-dessus du seuil :     %10llu\n"
 "    boîtes par feuille :              %10d moyenne [%d min, %d max]\n"
 "    Empreinte mémoire (ko) :\n"
-"      structure de recherche finale : %10lu\n"
-"      structure intermédiaire :       %10lu\n"
+"      structure de recherche finale : %10llu\n"
+"      structure intermédiaire :       %10llu\n"
 "\n"
 
 #, c-format
@@ -5108,13 +5091,6 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"  Add %d new vertices in the %s mesh definition during update of the edge "
-"definition.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
 "  Global number of intersections detected: %12llu\n"
 "    Vertex-Vertex intersections:    %12llu\n"
 "    Other intersections:            %12llu\n"
@@ -5123,34 +5099,6 @@ msgstr ""
 "  Nombre global d'intersections détectées :  %12llu\n"
 "    Intersections sommet-sommet :     %12llu\n"
 "    Autres intersections :            %12llu\n"
-
-#, c-format
-msgid ""
-"\n"
-"    Local number of intersections detected: %10d\n"
-"      Vertex-Vertex intersections:          %10d\n"
-"      Other intersections:                  %10d\n"
-msgstr ""
-"\n"
-"    Nombre local d'intersections détectées :  %10d\n"
-"      Intersections sommet-sommet :     %10d\n"
-"      Autres intersections :            %10d\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Local number of edge-edge intersection warnings: %9d\n"
-msgstr ""
-"\n"
-"  Nombre local d'avertissements pour intersections arête-arête: %9d\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Local number of equivalences between vertices: %9d\n"
-msgstr ""
-"\n"
-"  Nombre local d'équivalences entre sommets : %9d\n"
 
 #, c-format
 msgid ""
@@ -5193,37 +5141,10 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"  Number of local iterations to converge on vertex equivalences: %3d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"  Number of global iterations to converge on vertex equivalences: %3d\n"
-"\n"
-msgstr ""
-"  Nombre global d'itérations de convergence sur équivalences de sommets : "
-"%3d\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
 "  Pre-merge for %llu global element couples.\n"
 msgstr ""
 "\n"
 "  Pré-fusion pour %llu couples globaux d'éléments.\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Local number of pre-merges: %d\n"
-msgstr ""
-"\n"
-"  Nombre local de pré-fusions: %d\n"
-
-#, c-format
-msgid " Number of tolerance reductions:  %4d\n"
-msgstr " Nombre de réductions de tolérance : %4d\n"
 
 msgid ""
 "\n"
@@ -5243,14 +5164,6 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"  %3d loop(s) to get consistent subsets\n"
-msgstr ""
-"\n"
-"  %3d boucles pour obtenir des sous-ensembles consistents\n"
-
-#, c-format
-msgid ""
-"\n"
 "  Excessive transitivity for %llu set(s) of vertices.\n"
 msgstr ""
 "\n"
@@ -5263,10 +5176,6 @@ msgid ""
 msgstr ""
 "\n"
 "  Nombre max d'itérations pour résoudre un excès de transitivité : %llu\n"
-
-#, c-format
-msgid "  Number of sub-elements to add to edge definition: %8d\n"
-msgstr ""
 
 #, c-format
 msgid ""
@@ -5282,16 +5191,6 @@ msgid ""
 "    Vertex %d is defined by:\n"
 "      %u - [%7.4le, %7.4le, %7.4le] - %lg\n"
 msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"  Final number of equiv. between vertices; local: %9d\n"
-"                                          global: %9llu\n"
-msgstr ""
-"\n"
-"  Nombre final d'équivalences entre sommets ; local: %9d\n"
-"                                             global: %9llu\n"
 
 #, c-format
 msgid ""
@@ -5349,13 +5248,6 @@ msgstr ""
 
 msgid ""
 "\n"
-"  Local min/max. tolerance:\n"
-"\n"
-" Glob. Num. |  Tolerance  |              Coordinates\n"
-msgstr ""
-
-msgid ""
-"\n"
 "  Global min/max. tolerance:\n"
 "\n"
 " Glob. Num. |  Tolerance  |              Coordinates\n"
@@ -5382,140 +5274,6 @@ msgid ""
 " The face is defined by less than 3 points (excessive merging has occured).\n"
 "\n"
 " Modify joining parameters to reduce merging (fraction & merge).\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"\n"
-"  -- Dump a cs_join_mesh_t structure: (%p) --\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"\n"
-"  -- Dump a cs_join_mesh_t structure: %s (%p) --\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" mesh->n_faces:       %9d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" mesh->n_g_faces:   %11u\n"
-"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" face_id: %5d gnum: %9u n_vertices: %4d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"  Incoherency found in the current mesh definition\n"
-"  Face number: %d (global: %u)\n"
-"  Vertices: local (%d, %d), global (%u, %u) are defined twice\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" Dump vertex data\n"
-"   mesh->vertices     :  %p\n"
-"   mesh->n_vertices   : %11d\n"
-"   mesh->n_g_vertices : %11u\n"
-"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Local Num | Global Num |  Tolerance  |        Coordinates\n"
-"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" mesh->n_faces:     %11d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" mesh->n_g_faces:   %11llu\n"
-"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" face_id: %9d gnum: %10llu n_vertices : %4d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"  Incoherency found in the current mesh definition\n"
-"  Face number: %d (global: %llu)\n"
-"  Vertices: local (%d, %d), global (%llu, %llu) are defined twice\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" Dump vertex data\n"
-"   mesh->vertices     :  %p\n"
-"   mesh->n_vertices   : %11d\n"
-"   mesh->n_g_vertices : %11llu\n"
-"\n"
-msgstr ""
-
-msgid ""
-"\n"
-"  Edge connectivity used in the joining operation:\n"
-msgstr ""
-
-#, c-format
-msgid "  Number of edges:      %8d\n"
-msgstr "  Nombre d'arêtes :     %8d\n"
-
-#, c-format
-msgid "  Number of vertices:   %8d\n"
-msgstr ""
-
-#, c-format
-msgid "  Edge %6d  (%8u) <Vertex> [%8u %8u]\n"
-msgstr ""
-
-msgid ""
-"\n"
-"  Vertex -> Vertex connectivity :\n"
-"\n"
-msgstr ""
-
-#, c-format
-msgid "  Vertex %6d (%7u) - %3d - "
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"  Delete %d interior periodic faces locally\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"  Apply periodicity to the local join mesh structure\n"
-"  New number of faces to treat locally: %8d\n"
-msgstr ""
-
-msgid ""
-"\n"
-"  Selected faces for the joining operation:\n"
 msgstr ""
 
 #, c-format
@@ -5558,24 +5316,12 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid " Warning: open cycle for global face %u\n"
-msgstr ""
-
-#, c-format
-msgid " Warning: global face %u scanned twice\n"
-msgstr ""
-
-#, c-format
-msgid " Warning: loop limit reached for global face %u\n"
-msgstr ""
-
-#, c-format
 msgid ""
 "\n"
-"  Global number of faces after splitting: %10u\n"
+"  Global number of faces after splitting: %10llu\n"
 msgstr ""
 "\n"
-"  Nombre global de faces après subdivision : %10u\n"
+"  Nombre global de faces après subdivision : %10llu\n"
 
 #, c-format
 msgid ""
@@ -5583,10 +5329,6 @@ msgid ""
 "    block_info.local_size  %8d\n"
 "    builder->n_faces:      %8d\n"
 " These values should be equal.\n"
-msgstr ""
-
-#, c-format
-msgid "  Split face %d >> returned code: %d\n"
 msgstr ""
 
 #, c-format
@@ -5604,14 +5346,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-" At least one original face has been cut into more than %d subfaces\n"
-". You can increase this parameter in usjoin() or usperi() by setting the "
-"advanced parameter maxsf.\n"
-" Be careful. It may produce mesh with a poor quality.\n"
-msgstr ""
-
-#, c-format
-msgid "  Add %d new vertices from the single elements sync.\n"
+"At least one original face has been cut into more than%d subfaces\n"
+". You can increase this parameter incs_user_join() or cs_user_periodicity()\n"
+"by setting the advanced parameter max_sub_face.\n"
+"Be cautious, as this may produce a mesh witha poor quality.\n"
 msgstr ""
 
 #, c-format
@@ -5626,10 +5364,6 @@ msgid ""
 "  Face %d (%u): Edge with two different descriptions: (%d, %d) [%u, %u]\n"
 "  n_subs: %d - previous n_subs: %d\n"
 "  Impossible to continue the mesh update after the merge operation.\n"
-msgstr ""
-
-#, c-format
-msgid "  Join Face connectivity %d (%u): "
 msgstr ""
 
 msgid "  Cannot achieve to reorient the current joined face.\n"
@@ -5648,28 +5382,6 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "  Delete %d local vertices not used in mesh definition.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"  Warning: Face %d (%u) has more than two ancestors.\n"
-"  Old faces implied:"
-msgstr ""
-
-#, c-format
-msgid "  Warning: Face %d (%u) has no ancestor.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"  Local configuration after the joining operation:\n"
-"    Number of interior faces to add: %9d\n"
-"    Number of border faces to add  : %9d\n"
-msgstr ""
-
-#, c-format
 msgid ""
 " There are %u undefined faces with no ancestor.\n"
 " Cannot continue the joining algorithm.\n"
@@ -5685,24 +5397,6 @@ msgstr ""
 #, c-format
 msgid "     Global number of multiple border faces: %10llu\n"
 msgstr "     Nombre global de faces de bord multiples : %10llu\n"
-
-#, c-format
-msgid "  Clean border face %d. New number of vertices: %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"  Degenerate connectivity for %d final local boundary faces.\n"
-msgstr ""
-
-#, c-format
-msgid "  Clean interior face %d. New number of vertices: %d\n"
-msgstr ""
-
-#, c-format
-msgid "  Degenerate connectivity for %d final local interior faces.\n"
-msgstr ""
 
 #, c-format
 msgid ""
@@ -5724,45 +5418,22 @@ msgid ""
 "  It must be between [0, 90] and is here: %f\n"
 msgstr ""
 
-#, c-format
-msgid "  Global number of boundary faces selected for joining: %10u\n"
-msgstr ""
+msgid "The logs directory cannot be created"
+msgstr "Le répertoire de traces ne peut être créé"
 
-msgid ""
-"\n"
-"  Local information about selection structure:\n"
+#, c-format
+msgid "Unable to open file: \"%s\" for logging."
 msgstr ""
 
 #, c-format
-msgid "    number of faces:               %8d\n"
-msgstr ""
+msgid "Error closing log file for joining: %d."
+msgstr "Erreur à la fermeture du fichier de traces pour le recollement : %d."
 
 #, c-format
-msgid "    number of vertices:            %8d\n"
+msgid "  Global number of boundary faces selected for joining: %10llu\n"
 msgstr ""
-
-#, c-format
-msgid "    number of adj. border faces:   %8d\n"
-msgstr ""
-
-#, c-format
-msgid "    number of adj. interior faces: %8d\n"
-msgstr ""
-
-msgid ""
-"\n"
-"  Select vertices for the joining operation:\n"
-msgstr ""
-
-msgid ""
-"\n"
-"  Contiguous border faces for the joining operation:\n"
-msgstr ""
-
-msgid ""
-"\n"
-"  Contiguous interior faces for the joining operation:\n"
-msgstr ""
+"   Nombre global de faces frontières sélectionnées pour le recollement : "
+"%10llu\n"
 
 #, c-format
 msgid ""

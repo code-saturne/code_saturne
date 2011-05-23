@@ -217,6 +217,7 @@ class SolutionDomainModel(MeshModel, Model):
         defvalue['fraction']       = 0.1
         defvalue['plane']          = 25.0
         defvalue['verbosity']      = 1
+        defvalue['visualization']  = 1
         defvalue['angle']          = 0.01
         defvalue['syrth_status']   = "off"
         defvalue['syrth_mesh_2d']  = "off"
@@ -295,7 +296,8 @@ class SolutionDomainModel(MeshModel, Model):
         for sel, txt in [ (select['selector'],  'selector'),
                           (select['fraction'],  'fraction'),
                           (select['plane'],     'plane'),
-                          (select['verbosity'], 'verbosity')]:
+                          (select['verbosity'], 'verbosity'),
+                          (select['visualization'], 'visualization')]:
             if sel:
                 node.xmlSetData(txt, sel)
             else:
@@ -311,15 +313,26 @@ class SolutionDomainModel(MeshModel, Model):
         default['fraction'] = ""
         default['plane'] = ""
         default['verbosity'] = ""
+        default['visualization'] = ""
 
         if node:
             default['selector']  = node.xmlGetString('selector')
             default['fraction']  = node.xmlGetString('fraction')
             default['plane']     = node.xmlGetString('plane')
             default['verbosity'] = node.xmlGetString('verbosity')
+            default['visualization'] = node.xmlGetString('visualization')
+            if not default['selector']:
+                default['selector'] = "all[]"
+            if not default['fraction']:
+                default['fraction'] = 0.1
+            if not default['plane']:
+                default['plane'] = 25
+            if not default['verbosity']:
+                default['verbosity'] = 1
+            if not default['visualization']:
+                default['visualization'] = 1
 
-        if     default['selector'] == '' and default['fraction'] == "" \
-           and default['plane'] == "" and default['verbosity'] == "":
+        else:
             default = {}
 
         return default
@@ -332,7 +345,8 @@ class SolutionDomainModel(MeshModel, Model):
         for tag in ('selector',
                     'fraction',
                     'plane',
-                    'verbosity',):
+                    'verbosity',
+                    'visualization',):
             node.xmlRemoveChild(tag)
 
 
@@ -1011,7 +1025,7 @@ class SolutionDomainModel(MeshModel, Model):
     def addPeriodicFaces(self, select):
         """
         Add faces selection for periodic transformation.
-        Select is a dictionary with 'selector', 'fraction', 'plane', 'verbosity'
+        Select is a dictionary with 'selector', 'fraction', 'plane', 'verbosity', 'visualization'
         """
         nb = self.getPeriodicSelectionsCount()
         name = str(nb +1)
@@ -1064,7 +1078,7 @@ class SolutionDomainModel(MeshModel, Model):
     def addJoinFaces(self, select):
         """
         Add faces selection for face joining.
-        Select is a dictionary with 'selector', 'fraction', 'plane', 'verbosity'
+        Select is a dictionary with 'selector', 'fraction', 'plane', 'verbosity', 'visualization'
         """
         nb = self.getJoinSelectionsCount()
         name = str(nb +1)
@@ -1231,6 +1245,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '20'
         select['verbosity'] = 1
+        select['visualization'] = 1
         mdl = SolutionDomainModel(self.case)
         mdl.addPeriodicFaces(select)
         mdl.addPeriodicFaces(select)
@@ -1261,6 +1276,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '20'
         select['verbosity'] = 1
+        select['visualization'] = 1
         mdl = SolutionDomainModel(self.case)
         mdl.addPeriodicFaces(select)
         mdl.addPeriodicFaces(select)
@@ -1301,6 +1317,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '20'
         select['verbosity'] = 1
+        select['visualization'] = 1
         mdl = SolutionDomainModel(self.case)
         mdl.addPeriodicFaces(select)
         mdl.setTranslationDirection('1','translation_y',3.0)
@@ -1324,6 +1341,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '20'
         select['verbosity'] = 1
+        select['visualization'] = 1
         mdl = SolutionDomainModel(self.case)
         mdl.addPeriodicFaces(select)
         mdl.setTranslationDirection('1','translation_y', 3.0)
@@ -1373,6 +1391,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '20'
         select['verbosity'] = 1
+        select['visualization'] = 1
         mdl = SolutionDomainModel(self.case)
         mdl.addPeriodicFaces(select)
         mdl.updatePeriodicityMode('1','mixed')
@@ -1408,6 +1427,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '20'
         select['verbosity'] = 1
+        select['visualization'] = 1
         mdl = SolutionDomainModel(self.case)
         mdl.addJoinFaces(select)
         doc = '''<face_joining name="1">
@@ -1415,12 +1435,14 @@ class SolutionDomainTestCase(ModelTest):
                     <fraction>0.1</fraction>
                     <plane>20</plane>
                     <verbosity>1</verbosity>
+                    <visualization>1</visualization>
                  </face_joining>'''
 
         assert mdl.node_join == self.xmlNodeFromString(doc),\
             'Could not set values of faces join for face joining'
         assert mdl.getJoinFaces('1') == {'selector': '1 or 2 or 3 or toto', 'plane': '20',
-                                         'fraction': '0.1', 'verbosity': '1'},\
+                                         'fraction': '0.1', 'verbosity': '1',
+                                         'visualization': '1'},\
             'Could not get values of faces join for face joining'
 
     def checkReplaceandDeleteandSetandGetForJoinFaces(self):
@@ -1433,11 +1455,13 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '20'
         select['verbosity'] = '1'
+        select['visualization'] = '1'
         deux = {}
         deux['selector'] = '9 or 8 or 7 or coucou'
         deux['fraction'] = '0.2'
         deux['plane'] = '20'
         deux['verbosity'] = '2'
+        deux['visualization'] = '2'
         mdl = SolutionDomainModel(self.case)
         mdl.addJoinFaces(select)
         mdl.addJoinFaces(deux)
@@ -1447,12 +1471,14 @@ class SolutionDomainTestCase(ModelTest):
                             <fraction>0.1</fraction>
                             <plane>20</plane>
                             <verbosity>1</verbosity>
+                            <visualization>1</visualization>
                     </face_joining>
                     <face_joining name="2">
                             <selector>9 or 8 or 7 or coucou</selector>
                             <fraction>0.2</fraction>
                             <plane>30</plane>
                             <verbosity>2</verbosity>
+                            <visualization>2</visualization>
                     </face_joining>
                  </joining>'''
 
@@ -1460,7 +1486,7 @@ class SolutionDomainTestCase(ModelTest):
             'Could not set values of faces join for face joining'
         assert mdl.getJoinFaces('1') == {'selector': '1 or 2 or 3 or toto',
                                         'plane': '20', 'fraction': '0.1',
-                                        'verbosity': '1'},\
+                                        'verbosity': '1', 'visualization': '1'},\
             'Could not get values of faces join for face joining'
 
         select['selector'] = 'je vais partir'
@@ -1471,12 +1497,14 @@ class SolutionDomainTestCase(ModelTest):
                             <fraction>0.1</fraction>
                             <plane>20</plane>
                             <verbosity>1</verbosity>
+                            <visualization>1</visualization>
                     </face_joining>
                     <face_joining name="2">
                             <selector>9 or 8 or 7 or coucou</selector>
                             <fraction>0.2</fraction>
                             <plane>30</plane>
                             <verbosity>2</verbosity>
+                            <visualization>2</visualization>
                     </face_joining>
                  </joining>'''
 
@@ -1490,6 +1518,7 @@ class SolutionDomainTestCase(ModelTest):
                             <fraction>0.2</fraction>
                             <plane>30</plane>
                             <verbosity>2</verbosity>
+                            <visualization>2</visualization>
                     </face_joining>
                  </joining>'''
 
@@ -1503,12 +1532,14 @@ class SolutionDomainTestCase(ModelTest):
                             <fraction>0.2</fraction>
                             <plane>30</plane>
                             <verbosity>2</verbosity>
+                            <visualization>2</visualization>
                     </face_joining>
                     <face_joining name="2">
                             <selector>1 or 2 or 3 or toto</selector>
                             <fraction>0.1</fraction>
                             <plane>20</plane>
                             <verbosity>1</verbosity>
+                            <visualization>1</visualization>
                     </face_joining>
                  </joining>'''
 
@@ -1522,6 +1553,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '20'
         select['verbosity'] = '2'
+        select['visualization'] = '2'
         mdl = SolutionDomainModel(self.case)
         mdl.addPeriodicFaces(select)
         mdl.addPeriodicFaces(select)
@@ -1561,7 +1593,8 @@ class SolutionDomainTestCase(ModelTest):
         assert mdl.node_perio == self.xmlNodeFromString(doc),\
             'Could not add values of faces for periodicities'
         assert mdl.getPeriodicFaces('1') == {'selector': '5 or 6 or toto',
-                                        'plane': '30', 'fraction': '0.1', 'verbosity': '2'},\
+                                             'plane': '30', 'fraction': '0.1',
+                                             'verbosity': '2', 'visualization': '2'},\
             'Could not get values of faces for periodicities'
 
     def checkReplaceandDeleteandSetandGetStatusForPeriodicFaces(self):
@@ -1574,6 +1607,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane'] = '25'
         select['verbosity'] = '1'
+        select['visualization'] = '1'
         mdl = SolutionDomainModel(self.case)
         mdl.addPeriodicFaces(select)
         mdl.addPeriodicFaces(select)
@@ -1588,6 +1622,7 @@ class SolutionDomainTestCase(ModelTest):
                        <fraction>0.1</fraction>
                        <plane>25</plane>
                        <verbosity>1</verbosity>
+                       <visualization>1</visualization>
                  </face_periodicity>
                  <face_periodic mode="rotation" name="2">
                        <translation>
@@ -1613,6 +1648,7 @@ class SolutionDomainTestCase(ModelTest):
         select['fraction'] = '0.1'
         select['plane']  = '20'
         select['verbosity'] = '2'
+        select['visualization'] = '2'
         mdl.replacePeriodicFaces('1', select)
         doc = '''<face_periodicity mode="translation" name="1">
                      <translation>
@@ -1624,6 +1660,7 @@ class SolutionDomainTestCase(ModelTest):
                      <fraction>0.1</fraction>
                      <plane>30</plane>
                      <verbosity>1</verbosity>
+                     <visualization>1</visualization>
                  </face_periodicity>
                  </face_periodicity mode="rotation" name="2">
                      <translation>
@@ -1649,6 +1686,7 @@ class SolutionDomainTestCase(ModelTest):
                       <fraction>0.1</fraction>
                       <plane>30</plane>
                       <verbosity>1</verbosity>
+                      <visualization>1</visualization>
                       <translation>
                             <translation_x>0.0</translation_x>
                             <translation_y>0.0</translation_y>

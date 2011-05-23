@@ -172,6 +172,14 @@ typedef struct {
 
   int  verbosity;
 
+  /* Visualization level:
+       O : no visualization output
+       1 : visualization output of joined faces
+       2 : faces modified by joining
+  */
+
+  int  visualization;
+
 } cs_join_param_t;
 
 /*----------------------------------------------------------------------------
@@ -294,6 +302,8 @@ extern int  cs_glob_join_count;
 extern int  cs_glob_n_joinings;
 extern cs_join_t  **cs_glob_join_array;
 
+extern FILE  *cs_glob_join_log;
+
 /*============================================================================
  * Public function prototypes
  *===========================================================================*/
@@ -302,13 +312,14 @@ extern cs_join_t  **cs_glob_join_array;
  * Create and initialize a cs_join_t structure.
  *
  * parameters:
- *   join_number  <-- number related to the joining operation
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   perio_type   <-- periodicity type (FVM_PERIODICITY_NULL if not periodic)
- *   perio_matrix <-- periodicity transformation matrix
- *   verbosity    <-- level of verbosity required
+ *   join_number   <-- number related to the joining operation
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   perio_type    <-- periodicity type (FVM_PERIODICITY_NULL if none)
+ *   perio_matrix  <-- periodicity transformation matrix
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
  *
  * returns:
  *   a pointer to a new allocated cs_join_t structure
@@ -321,7 +332,8 @@ cs_join_create(int                      join_number,
                float                    plane,
                fvm_periodicity_type_t   perio_type,
                double                   perio_matrix[3][4],
-               int                      verbosity);
+               int                      verbosity,
+               int                      visualization);
 
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_t structure.

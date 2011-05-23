@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -445,14 +445,18 @@ _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
   cs_join_gset_destroy(&new_face_rank);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n Exchange to do after the splitting operation:\n");
-  for (i = 0; i < n_ranks; i++) {
-    start = _send_rank_index[i];
-    end = _send_rank_index[i+1];
-    bft_printf(" Send to rank %5d (n = %10d):", i, end - start);
-    for (j = start; j < end; j++)
-      bft_printf(" %d ", _send_faces[j]);
-    bft_printf("\n");
+  if (cs_glob_join_log != NULL) {
+    fprintf(cs_glob_join_log,
+            "\n Exchange to do after the splitting operation:\n");
+    for (i = 0; i < n_ranks; i++) {
+      start = _send_rank_index[i];
+      end = _send_rank_index[i+1];
+      fprintf(cs_glob_join_log,
+              " Send to rank %5d (n = %10d):", i, end - start);
+      for (j = start; j < end; j++)
+        fprintf(cs_glob_join_log, " %d ", _send_faces[j]);
+      fprintf(cs_glob_join_log, "\n");
+    }
   }
 #endif
 
@@ -614,11 +618,13 @@ _destroy_face_builder(face_builder_t  *builder)
  * parameters:
  *   face_id <-- face_id to dump
  *   builder <-- pointer to the structure to dump
+ *   logfile <-- handle to log file
  *---------------------------------------------------------------------------*/
 
 static void
 _dump_face_builder(cs_int_t               face_id,
-                   const face_builder_t  *builder)
+                   const face_builder_t  *builder,
+                   FILE                  *logfile)
 {
   cs_int_t  i, j;
   cs_int_t  subface_id = 0;
@@ -626,7 +632,7 @@ _dump_face_builder(cs_int_t               face_id,
   cs_int_t  face_e = builder->face_index[face_id+1];
   cs_int_t  n_subfaces = face_e - face_s;
 
-  bft_printf(" Face %9d (n_subfaces: %d):\n", face_id+1, n_subfaces);
+  fprintf(logfile, " Face %9d (n_subfaces: %d):\n", face_id+1, n_subfaces);
 
   for (i = face_s; i <face_e; i++, subface_id++) {
 
@@ -634,25 +640,27 @@ _dump_face_builder(cs_int_t               face_id,
     cs_int_t  subface_e = builder->subface_index->array[i+1];
 
     if (builder->subface_gnum == NULL)
-      bft_printf("   subface %4d: (%d, %d) -",
-                 subface_id, subface_s, subface_e);
+      fprintf(logfile, "   subface %4d: (%d, %d) -",
+              subface_id, subface_s, subface_e);
     else
-      bft_printf("   subface %4d (%10u) - (%d, %d) -",
-                 subface_id, builder->subface_gnum[face_s + subface_id],
-                 subface_s, subface_e);
+      fprintf(logfile, "   subface %4d (%10llu) - (%d, %d) -",
+              subface_id,
+              (unsigned long long)builder->subface_gnum[face_s + subface_id],
+              subface_s, subface_e);
 
     if (builder->subface_gconnect == NULL) {
       for (j = subface_s; j < subface_e; j++)
-        bft_printf(" %d ", builder->subface_connect->array[j]);
+        fprintf(logfile, " %d ", builder->subface_connect->array[j]);
     }
     else {
       for (j = subface_s; j < subface_e; j++)
-        bft_printf(" %u ", builder->subface_gconnect[j]);
+        fprintf(logfile, " %llu ",
+                (unsigned long long)builder->subface_gconnect[j]);
     }
-    bft_printf("\n");
+    fprintf(logfile, "\n");
 
   }
-  bft_printf_flush();
+  fflush(logfile);
 }
 
 /*----------------------------------------------------------------------------
@@ -721,11 +729,12 @@ _find_best_adj_face(cs_join_param_t         param,
       dprod2 = dprod * dprod;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-      if (tst_dbg)
-        bft_printf("\tAdjFace: %d dp: %10.8e dp2: %10.8e Vs plane2: %10.8e;"
-                   " AdjFNorm: [%g %g %g]; FNorm: [%g %g %g]\n",
-                   adj_fid+1, dprod, dprod2, plane2, test_fnorm[0],
-                   test_fnorm[1], test_fnorm[2], fnorm[0], fnorm[1], fnorm[2]);
+      if (tst_dbg && cs_glob_join_log != NULL)
+        fprintf(cs_glob_join_log,
+                "\tAdjFace: %d dp: %10.8e dp2: %10.8e Vs plane2: %10.8e;"
+                " AdjFNorm: [%g %g %g]; FNorm: [%g %g %g]\n",
+                adj_fid+1, dprod, dprod2, plane2, test_fnorm[0],
+                test_fnorm[1], test_fnorm[2], fnorm[0], fnorm[1], fnorm[2]);
 #endif
 
       if (dprod2 > plane2) { /* A better face has been found */
@@ -745,9 +754,10 @@ _find_best_adj_face(cs_join_param_t         param,
         }
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t-> Adj face OK (best: %d, max: %10.8e)\n",
-                     best_fid+1, max_plane);
+        if (tst_dbg && cs_glob_join_log != NULL)
+          fprintf(cs_glob_join_log,
+                  "\t-> Adj face OK (best: %d, max: %10.8e)\n",
+                  best_fid+1, max_plane);
 #endif
 
       } /* dprod2 > plane2 */
@@ -762,7 +772,8 @@ _find_best_adj_face(cs_join_param_t         param,
         adj_fnorm[k] = fnorm[k];
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-      if (tst_dbg) bft_printf("\t Adj face is current face\n");
+      if (tst_dbg && cs_glob_join_log != NULL)
+        fprintf(cs_glob_join_log, "\t Adj face is current face\n");
 #endif
 
       /* Anayway, it's the best choice  */
@@ -773,9 +784,9 @@ _find_best_adj_face(cs_join_param_t         param,
   } /* End of loop on faces sharing this edge */
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg && respect_plane)
-    bft_printf("\tAdjFace: %d AdjFNorm: [%5.3e %5.3e %5.3e]\n",
-               best_fid+1, adj_fnorm[0], adj_fnorm[1], adj_fnorm[2]);
+  if (tst_dbg && cs_glob_join_log != NULL && respect_plane)
+    fprintf(cs_glob_join_log, "\tAdjFace: %d AdjFNorm: [%5.3e %5.3e %5.3e]\n",
+            best_fid+1, adj_fnorm[0], adj_fnorm[1], adj_fnorm[2]);
 #endif
 
   return respect_plane;
@@ -871,9 +882,10 @@ _find_next(cs_join_param_t         param,
       cs_int_t  vid3 = edges->adj_vtx_lst[i]-1;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-      if (tst_dbg)
-        bft_printf("  Next vtx to test: << %9u >> (v2v_idx: %d)\n",
-                   vertices[vid3].gnum, i);
+      if (tst_dbg && cs_glob_join_log != NULL)
+        fprintf(cs_glob_join_log,
+                "  Next vtx to test: << %9llu >> (v2v_idx: %d)\n",
+                (unsigned long long)vertices[vid3].gnum, i);
 #endif
 
       if (vid3 != vid1) {
@@ -945,11 +957,12 @@ _find_next(cs_join_param_t         param,
             if (dprod >= -eps_dot_prod * _norm(cprod)) {
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\tLeft choice >> cos: %10.8e / min_cos: %10.8e\n"
-                           "\t         and dprod: %10.8e / crit: %10.8e\n",
-                           cosine, left_min_cos, dprod,
-                           -eps_dot_prod*_norm(cprod));
+              if (tst_dbg && cs_glob_join_log != NULL)
+                fprintf(cs_glob_join_log,
+                        "\tLeft choice >> cos: %10.8e / min_cos: %10.8e\n"
+                        "\t         and dprod: %10.8e / crit: %10.8e\n",
+                        cosine, left_min_cos, dprod,
+                        -eps_dot_prod*_norm(cprod));
 #endif
               /* Left part. We choose the edge with the smallest cosine */
               if (cosine < left_min_cos) {
@@ -963,11 +976,12 @@ _find_next(cs_join_param_t         param,
                       the biggest cosine. */
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\tRight choice >> cos: %10.8e / max_cos: %10.8e\n"
-                           "\t          and dprod: %10.8e / crit: %10.8e\n",
-                           cosine, right_max_cos, dprod,
-                           -eps_dot_prod*_norm(cprod));
+              if (tst_dbg && cs_glob_join_log != NULL)
+                fprintf(cs_glob_join_log,
+                        "\tRight choice >> cos: %10.8e / max_cos: %10.8e\n"
+                        "\t          and dprod: %10.8e / crit: %10.8e\n",
+                        cosine, right_max_cos, dprod,
+                        -eps_dot_prod*_norm(cprod));
 #endif
 
               if (cosine > right_max_cos) {
@@ -999,10 +1013,10 @@ _find_next(cs_join_param_t         param,
       return OPEN_CYCLE_ERROR;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf(" [Result] >> next_vtx: %u; next_edge: %u\n",
-                 vertices[*next_vertex-1].gnum,
-                 edges->gnum[CS_ABS(*next_edge)-1]);
+    if (tst_dbg && cs_glob_join_log != NULL)
+      fprintf(cs_glob_join_log, " [Result] >> next_vtx: %llu; next_edge: %llu\n",
+              (unsigned long long)vertices[*next_vertex-1].gnum,
+              (unsigned long long)edges->gnum[CS_ABS(*next_edge)-1]);
 #endif
 
   } /* End if n_connect_vertices > 2 */
@@ -1023,10 +1037,11 @@ _find_next(cs_join_param_t         param,
     } /* End of loop on connected vertices */
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf(" [Result] >> next_vtx: %u; next_edge: %u (ONLY 2)\n",
-                 vertices[*next_vertex-1].gnum,
-                 edges->gnum[CS_ABS(*next_edge)-1]);
+    if (tst_dbg && cs_glob_join_log != NULL)
+      fprintf(cs_glob_join_log,
+              " [Result] >> next_vtx: %llu; next_edge: %llu (ONLY 2)\n",
+              (unsigned long long)vertices[*next_vertex-1].gnum,
+              (unsigned long long)edges->gnum[CS_ABS(*next_edge)-1]);
 #endif
 
   }
@@ -1054,15 +1069,13 @@ _find_next(cs_join_param_t         param,
  * (check if two faces are coplanear).
  *
  * parameters:
- *   fid       <-- fid of the current in the cs_join_mesh_t struct.
+ *   fid           <-- fid of the current in the cs_join_mesh_t struct.
  *   block_id      <-- current id in face_builder_t structure
- *   plane         <-- tolerance parameter to check coplanearity
- *   max_subfaces  <-- maximum number of sub faces
- *   verbosity     <-- level of accuracy in information display
+ *   param         <-- set of user-defined parameters
  *   face_normal   <-- normal for each face of the mesh
  *   work          <-- cs_join_mesh_t structure
- *   e2f_idx <-- "edge -> face" connect. index
- *   e2f_lst <-- "edge -> face" connect. list
+ *   e2f_idx       <-- "edge -> face" connect. index
+ *   e2f_lst       <-- "edge -> face" connect. list
  *   builder       <-> face_builder structure
  *   head_edges    <-> pointer to a resizable set structure
  *   subface_edges <-> pointer to a resizable set structure
@@ -1105,6 +1118,7 @@ _split_face(cs_int_t                fid,
   const fvm_gnum_t  *fgnum = work->face_gnum;
   const int  max_subfaces = param.max_sub_faces;
   const int  verbosity = param.verbosity;
+  FILE  *logfile = cs_glob_join_log;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
 #define _DBGTST 1
@@ -1143,9 +1157,11 @@ _split_face(cs_int_t                fid,
       cs_int_t  edge_id = FVM_ABS(edge_num) - 1;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-      if (tst_dbg)
-        bft_printf(" fnum: %d, fgnum: %u, head_shift: %d, edge_num: %d\n",
-                   fid+1, fgnum[fid], head_edge_shift, edge_num);
+      if (tst_dbg && logfile != NULL)
+        fprintf(logfile,
+                " fnum: %d, fgnum: %llu, head_shift: %d, edge_num: %d\n",
+                fid+1, (unsigned long long)fgnum[fid],
+                head_edge_shift, edge_num);
 #endif
 
       if (edge_num > 0) {
@@ -1168,9 +1184,10 @@ _split_face(cs_int_t                fid,
       first_vid = vid1;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-      if (tst_dbg)
-        bft_printf(" Current edge (v1,v2): [%u,%u]\n",
-                   vertices[vid1].gnum, vertices[vid2].gnum);
+      if (tst_dbg && cs_glob_join_log != NULL)
+        fprintf(cs_glob_join_log, " Current edge (v1,v2): [%llu,%llu]\n",
+                (unsigned long long)vertices[vid1].gnum,
+                (unsigned long long)vertices[vid2].gnum);
 #endif
 
       while (vid2 != first_vid) {
@@ -1192,9 +1209,9 @@ _split_face(cs_int_t                fid,
           *int_edges = _int_edges;
           *subface_edges = _subface_edges;
 
-          if (verbosity > 2)
-            bft_printf(_(" Warning: open cycle for global face %u\n"),
-                       fgnum[fid]);
+          if (verbosity > 3)
+            fprintf(logfile, " Warning: open cycle for global face %llu\n",
+                    (unsigned long long)fgnum[fid]);
 
           return OPEN_CYCLE_ERROR; /* open cycle */
 
@@ -1233,9 +1250,9 @@ _split_face(cs_int_t                fid,
               *int_edges = _int_edges;
               *subface_edges = _subface_edges;
 
-              if (verbosity > 2)
-                bft_printf(_(" Warning: global face %u scanned twice\n"),
-                           fgnum[fid]);
+              if (verbosity > 3)
+                fprintf(logfile, " Warning: global face %llu scanned twice\n",
+                        (unsigned long long)fgnum[fid]);
 
               return EDGE_TRAVERSED_TWICE_ERROR;  /* Face building problem */
 
@@ -1309,8 +1326,9 @@ _split_face(cs_int_t                fid,
       n_subfaces++;
 
 #if _DBGTST && defined(DEBUG) && !defined(NDEBUG)
-      if (tst_dbg)
-        bft_printf(" END OF BUILDING subface %d\n\n", n_subfaces);
+      if (tst_dbg && cs_glob_join_log != NULL)
+        fprintf(cs_glob_join_log,
+                " END OF BUILDING subface %d\n\n", n_subfaces);
 #endif
 
       if (n_subfaces > max_subfaces) { /* Set return pointers */
@@ -1320,9 +1338,10 @@ _split_face(cs_int_t                fid,
         *int_edges = _int_edges;
         *subface_edges = _subface_edges;
 
-        if (verbosity > 2)
-          bft_printf(_(" Warning: loop limit reached for global face %u\n"),
-                     fgnum[fid]);
+        if (verbosity > 3)
+          fprintf(logfile,
+                  " Warning: loop limit reached for global face %llu\n",
+                  (unsigned long long)fgnum[fid]);
 
         return LOOP_LIMIT_ERROR;
       }
@@ -1582,27 +1601,28 @@ _get_subface_gnum(face_builder_t         *builder,
     builder->n_g_subfaces = gnum;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    for (i = 0; i < n_subfaces; i++) {
-
-      cs_int_t  start = index[i], end = index[i+1];
-      cs_int_t  n_elts = end - start;
-
-      bft_printf(" subface %5d - gnum: %10u - connect_size: %d - ",
-                 i+1, builder->subface_gnum[i], n_elts);
-      for (j = start; j < end; j++)
-        bft_printf(" %8u ", glob_list[j]);
-      bft_printf("\n");
-
+    if (cs_glob_join_log != NULL) {
+      for (i = 0; i < n_subfaces; i++) {
+        cs_int_t  start = index[i], end = index[i+1];
+        cs_int_t  n_elts = end - start;
+        fprintf(cs_glob_join_log,
+                " subface %5d - gnum: %10llu - connect_size: %d - ",
+                i+1, (unsigned long long)builder->subface_gnum[i], n_elts);
+        for (j = start; j < end; j++)
+          fprintf(cs_glob_join_log, " %8llu ",
+                  (unsigned long long)glob_list[j]);
+        fprintf(cs_glob_join_log, "\n");
+      }
+      fflush(cs_glob_join_log);
     }
-    bft_printf_flush();
 #endif
 
     BFT_FREE(order);
 
   }
 
-  bft_printf(_("\n  Global number of faces after splitting: %10u\n"),
-             builder->n_g_subfaces);
+  bft_printf(_("\n  Global number of faces after splitting: %10llu\n"),
+             (unsigned long long)builder->n_g_subfaces);
   bft_printf_flush();
 
   /* Free memory */
@@ -1922,9 +1942,10 @@ cs_join_split_faces(cs_join_param_t          param,
                          &ext_edges, &int_edges);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-      if (param.verbosity > 1 && code != NO_SPLIT_ERROR) {
-        bft_printf(_("  Split face %d >> returned code: %d\n"), fid+1, code);
-        _dump_face_builder(block_id, builder);
+      if (param.verbosity > 2 && code != NO_SPLIT_ERROR) {
+        fprintf(cs_glob_join_log,
+                "  Split face %d -> returned code: %d\n", fid+1, code);
+        _dump_face_builder(block_id, builder, cs_glob_join_log);
       }
 #endif
 
@@ -2025,10 +2046,11 @@ cs_join_split_faces(cs_join_param_t          param,
             builder->subface_connect->array[subface_s + j]
               = w->face_vtx_lst[j + w->face_vtx_idx[fid] - 1];
 
-          if (param.verbosity > 1) {
-            bft_printf("\n Keep initial connectivity for face %d [%u]:\n",
-                       fid+1, w->face_gnum[fid]);
-            _dump_face_builder(block_id, builder);
+          if (param.verbosity > 2) {
+            fprintf(cs_glob_join_log,
+                    "\n Keep initial connectivity for face %d [%llu]:\n",
+                    fid+1, (unsigned long long)w->face_gnum[fid]);
+            _dump_face_builder(block_id, builder, cs_glob_join_log);
           }
 
         } /* End if n_current_face_problems >= n_face_vertices */
@@ -2117,11 +2139,12 @@ cs_join_split_faces(cs_join_param_t          param,
                                   edge_traversed_twice->array);
 
       if (n_g_loop_limit > 0) {
-        bft_printf(_(" At least one original face has been cut into more than"
-                     " %d subfaces\n. You can increase this parameter in"
-                     " usjoin() or usperi() by setting the advanced parameter"
-                     " maxsf.\n Be careful. It may produce mesh with"
-                     " a poor quality.\n"), param.max_sub_faces);
+        bft_printf(_("At least one original face has been cut into more than"
+                     "%d subfaces\n. You can increase this parameter in"
+                     "cs_user_join() or cs_user_periodicity()\n"
+                     "by setting the advanced parameter max_sub_face.\n"
+                     "Be cautious, as this may produce a mesh with"
+                     "a poor quality.\n"), param.max_sub_faces);
         cs_join_post_faces_subset("LoopLimitErr",
                                   w,
                                   loop_limit->n_elts,
@@ -2161,9 +2184,11 @@ cs_join_split_faces(cs_join_param_t          param,
     _get_subface_gnum(builder, w);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf("\nFINAL BUILDER STATE\n");
-    for (fid = 0; fid < builder->n_faces; fid++)
-      _dump_face_builder(fid, builder);
+    if (cs_glob_join_log != NULL) {
+      fprintf(cs_glob_join_log, "\nFINAL BUILDER STATE\n");
+      for (fid = 0; fid < builder->n_faces; fid++)
+        _dump_face_builder(fid, builder, cs_glob_join_log);
+    }
 #endif
 
     BFT_FREE(builder->subface_gconnect);

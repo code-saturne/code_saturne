@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2010 EDF S.A., France
+ *     Copyright (C) 2008-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -38,6 +38,8 @@
  *---------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 
@@ -45,6 +47,7 @@
  * BFT library headers
  *---------------------------------------------------------------------------*/
 
+#include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
 
@@ -52,6 +55,7 @@
  * FVM library headers
  *---------------------------------------------------------------------------*/
 
+#include "fvm_defs.h"
 #include <fvm_parall.h>
 #include <fvm_io_num.h>
 #include <fvm_order.h>
@@ -83,6 +87,8 @@ int  cs_glob_join_count = 0;
 int  cs_glob_n_joinings = 0;
 cs_join_t  **cs_glob_join_array = NULL;
 
+FILE  *cs_glob_join_log = NULL;
+
 /*============================================================================
  * Macro and type definitions
  *===========================================================================*/
@@ -95,12 +101,13 @@ cs_join_t  **cs_glob_join_array = NULL;
  * Initialize a cs_join_param_t structure.
  *
  * parameters:
- *   join_num     <-- number of the current joining operation
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   perio_type   <-- periodicity type (FVM_PERIODICITY_NULL if not periodic)
- *   perio_matrix <-- periodicity transformation matrix
- *   verbosity    <-- level of verbosity required
+ *   join_num      <-- number of the current joining operation
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   perio_type    <-- periodicity type (FVM_PERIODICITY_NULL if none)
+ *   perio_matrix  <-- periodicity transformation matrix
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
  *
  * returns:
  *   a pointer to a cs_join_param_t structure
@@ -112,7 +119,8 @@ _join_param_define(int                      join_num,
                    float                    plane,
                    fvm_periodicity_type_t   perio_type,
                    double                   perio_matrix[3][4],
-                   int                      verbosity)
+                   int                      verbosity,
+                   int                      visualization)
 {
   double  cplane;
   cs_join_param_t  param;
@@ -210,6 +218,7 @@ _join_param_define(int                      join_num,
    /* Level of display */
 
    param.verbosity = verbosity;
+   param.visualization = visualization;
 
    return param;
 }
@@ -302,7 +311,7 @@ _join_select_destroy(cs_join_param_t     param,
 }
 
 /*----------------------------------------------------------------------------
- * Reduce numbering for the selected border faces.
+ * Reduce numbering for the selected boundary faces.
  * After this function, we have a compact global face numbering for the
  * selected faces.
  *
@@ -1036,13 +1045,13 @@ _get_missing_vertices(cs_int_t              n_vertices,
 
 /*----------------------------------------------------------------------------
  * Define a vertex -> vertex connectivity for vertices belonging to the
- * selected border faces.
+ * selected boundary faces.
  *
  * parameters:
  *   n_vertices  <--  number of vertices in the parent mesh
  *   selection   <--  pointer to a fvm_join_selection_t structure
- *   b_f2v_idx   <--  border "face -> vertex" connect. index
- *   b_f2v_lst   <--  border "face -> vertex" connect. list
+ *   b_f2v_idx   <--  boundary "face -> vertex" connect. index
+ *   b_f2v_lst   <--  boundary "face -> vertex" connect. list
  *   p_v2v_idx   <->  vertex -> vertex connect. index
  *   p_v2v_lst   <->  vertex -> vertex connect. list
  *---------------------------------------------------------------------------*/
@@ -1059,7 +1068,7 @@ _get_select_v2v_connect(cs_int_t               n_vertices,
 
   cs_int_t  *count = NULL, *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
 
-  /* Build a vertex -> vertex connectivity for the selected border faces  */
+  /* Build a vertex -> vertex connectivity for the selected boundary faces  */
 
   BFT_MALLOC(sel_v2v_idx, n_vertices + 1, cs_int_t);
 
@@ -1257,8 +1266,8 @@ _add_s_edge(cs_int_t         vertex_tag[],
  *   selection    <-- pointer to a fvm_join_selection_t structure
  *   sel_v2v_idx  <-- vertex -> vertex connect. index
  *   sel_v2v_lst  <-- vertex -> vertex connect. list
- *   b_f2v_idx    <-- border "face -> vertex" connect. index
- *   b_f2v_lst    <-- border "face -> vertex" connect. list
+ *   b_f2v_idx    <-- boundary "face -> vertex" connect. index
+ *   b_f2v_lst    <-- boundary "face -> vertex" connect. list
  *   i_f2v_idx    <-- interior "face -> vertex" connect. index
  *   i_f2v_lst    <-- interior "face -> vertex" connect. list
  *   i_face_cells <-- interior face -> cells connect.
@@ -1860,8 +1869,8 @@ _filter_edge_element(cs_join_select_t   *selection,
  * but you have to take them into account to have a good update of the mesh
  *
  * parameters:
- *  b_f2v_idx     <-- border "face -> vertex" connect. index
- *  b_f2v_lst     <-- border "face -> vertex" connect. list
+ *  b_f2v_idx     <-- boundary "face -> vertex" connect. index
+ *  b_f2v_lst     <-- boundary "face -> vertex" connect. list
  *  i_f2v_idx     <-- interior "face -> vertex" connect. index
  *  i_f2v_lst     <-- interior "face -> vertex" connect. list
  *  n_vertices    <-- number of vertices in the parent mesh
@@ -1990,13 +1999,14 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
  * Create and initialize a cs_join_t structure.
  *
  * parameters:
- *   join_number  <-- number related to the joining operation
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   perio_type   <-- periodicity type (FVM_PERIODICITY_NULL if not periodic)
- *   perio_matrix <-- periodicity transformation matrix
- *   verbosity    <-- level of verbosity required
+ *   join_number   <-- number related to the joining operation
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   perio_type    <-- periodicity type (FVM_PERIODICITY_NULL if none)
+ *   perio_matrix  <-- periodicity transformation matrix
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
  *
  * returns:
  *   a pointer to a new allocated cs_join_t structure
@@ -2009,7 +2019,8 @@ cs_join_create(int                      join_number,
                float                    plane,
                fvm_periodicity_type_t   perio_type,
                double                   perio_matrix[3][4],
-               int                      verbosity)
+               int                      verbosity,
+               int                      visualization)
 {
   size_t  l;
 
@@ -2042,13 +2053,44 @@ cs_join_create(int                      join_number,
                                    plane,
                                    perio_type,
                                    perio_matrix,
-                                   verbosity);
+                                   verbosity,
+                                   visualization);
 
   /* Copy the selection criteria for future use */
 
   l = strlen(sel_criteria);
   BFT_MALLOC(join->criteria, l + 1, char);
   strcpy(join->criteria, sel_criteria);
+
+  /* Initialize log file if necessary */
+
+  if (verbosity > 2) {
+    char logname[80];
+    char dir[] = "log";
+    char rank_add[16] = "";
+    char perio_add[16] = "";
+    if (bft_file_isdir(dir) == 0) {
+      if (cs_glob_rank_id < 1)
+        if (bft_file_mkdir_default(dir) != 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("The log directory cannot be created"));
+#if defined(HAVE_MPI)
+      if (cs_glob_n_ranks > 1)
+        MPI_Barrier(cs_glob_mpi_comm); /* to avoid race conditions */
+#endif
+    }
+    if (perio_type != FVM_PERIODICITY_NULL)
+      strcpy(perio_add, "_perio");
+    if (cs_glob_n_ranks > 1)
+      sprintf(rank_add, "_r%04d", cs_glob_rank_id);
+    sprintf(logname, "log%cjoin_%02d%s%s.log", CS_DIR_SEPARATOR,
+            join_number, perio_add, rank_add);
+    cs_glob_join_log = fopen(logname, "w");
+    if (cs_glob_join_log == NULL)
+      bft_error(__FILE__, __LINE__, errno,
+                _("Unable to open file: \"%s\" for logging."),
+                logname);
+  }
 
   return join;
 }
@@ -2066,6 +2108,14 @@ cs_join_destroy(cs_join_t  **join)
   if (*join != NULL) {
 
     cs_join_t  *_join = *join;
+
+    if (cs_glob_join_log != NULL) {
+      if (fclose(cs_glob_join_log) != 0)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Error closing log file for joining: %d."),
+                  _join->param.num);
+      cs_glob_join_log = NULL;
+    }
 
     _join_select_destroy(_join->param, &_join->selection);
 
@@ -2099,6 +2149,7 @@ cs_join_select_create(const char  *selection_criteria,
   fvm_lnum_t  *order = NULL, *ordered_faces = NULL;
   fvm_interface_set_t  *ifs = NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
+  FILE  *logfile = cs_glob_join_log;
 
   const int  n_ranks = cs_glob_n_ranks;
 
@@ -2147,7 +2198,7 @@ cs_join_select_create(const char  *selection_criteria,
   selection->s_edges = _create_join_sync();
   selection->c_edges = _create_join_sync();
 
-  /* Extract selected border faces */
+  /* Extract selected boundary faces */
 
   BFT_MALLOC(selection->faces, mesh->n_b_faces, fvm_lnum_t);
 
@@ -2182,10 +2233,11 @@ cs_join_select_create(const char  *selection_criteria,
 #endif
 
   if (verbosity > 0)
-    bft_printf(_("  Global number of boundary faces selected for joining: %10u\n"),
-               selection->n_g_faces);
+    bft_printf
+      (_("  Global number of boundary faces selected for joining: %10llu\n"),
+       (unsigned long long)selection->n_g_faces);
 
-  /* Define a compact global numbering on selected border faces and
+  /* Define a compact global numbering on selected boundary faces and
      build an index on ranks on this compact numbering */
 
   _compact_face_gnum_selection(selection->n_faces,
@@ -2194,7 +2246,7 @@ cs_join_select_create(const char  *selection_criteria,
 
   assert(selection->n_g_faces == selection->compact_rank_index[n_ranks]);
 
-  /* Extract selected vertices from the selected border faces */
+  /* Extract selected vertices from the selected boundary faces */
 
   cs_join_extract_vertices(selection->n_faces,
                            selection->faces,
@@ -2228,7 +2280,7 @@ cs_join_select_create(const char  *selection_criteria,
   }
 #endif
 
-  /* Extract list of border faces contiguous to the selected vertices  */
+  /* Extract list of boundary faces contiguous to the selected vertices  */
 
   _extract_contig_faces(mesh->n_vertices,
                         selection,
@@ -2238,7 +2290,7 @@ cs_join_select_create(const char  *selection_criteria,
                         &(selection->n_b_adj_faces),
                         &(selection->b_adj_faces));
 
-  /* Remove border faces already defined in selection->faces */
+  /* Remove boundary faces already defined in selection->faces */
 
   cs_join_clean_selection(&(selection->n_b_adj_faces),
                           &(selection->b_adj_faces),
@@ -2300,68 +2352,92 @@ cs_join_select_create(const char  *selection_criteria,
 
   /* Display information according to the level of verbosity */
 
-  if (verbosity > 1) {
+  if (verbosity > 2) {
 
-    bft_printf(_("\n  Local information about selection structure:\n"));
-    bft_printf(_("    number of faces:               %8d\n"),
-               selection->n_faces);
-    bft_printf(_("    number of vertices:            %8d\n"),
-               selection->n_vertices);
-    bft_printf(_("    number of adj. border faces:   %8d\n"),
-               selection->n_b_adj_faces);
-    bft_printf(_("    number of adj. interior faces: %8d\n"),
-               selection->n_i_adj_faces);
+    assert(logfile != NULL);
+
+    fprintf(logfile,
+            "\n  Local information about selection structure:\n");
+    fprintf(logfile,
+            "    number of faces:               %8d\n",
+            selection->n_faces);
+    fprintf(logfile,
+            "    number of vertices:            %8d\n",
+            selection->n_vertices);
+    fprintf(logfile,
+            "    number of adj. boundary faces:   %8d\n",
+            selection->n_b_adj_faces);
+    fprintf(logfile,
+            "    number of adj. interior faces: %8d\n",
+            selection->n_i_adj_faces);
 
     if (selection->do_single_sync == true) {
-      bft_printf("\n Information on single/coupled elements:\n");
-      bft_printf("   Number of single vertices : %6d with %3d related ranks\n",
-                 selection->s_vertices->n_elts, selection->s_vertices->n_ranks);
-      bft_printf("   Number of coupled vertices: %6d with %3d related ranks\n",
-                 selection->c_vertices->n_elts, selection->c_vertices->n_ranks);
-      bft_printf("   Number of single edges    : %6d with %3d related ranks\n",
-                 selection->s_edges->n_elts, selection->s_edges->n_ranks);
-      bft_printf("   Number of coupled edges   : %6d with %3d related ranks\n",
-                 selection->c_edges->n_elts, selection->c_edges->n_ranks);
+      fprintf(logfile,
+              "\n Information on single/coupled elements:\n");
+      fprintf(logfile,
+              "   Number of single vertices : %6d with %3d related ranks\n",
+              selection->s_vertices->n_elts, selection->s_vertices->n_ranks);
+      fprintf(logfile,
+              "   Number of coupled vertices: %6d with %3d related ranks\n",
+              selection->c_vertices->n_elts, selection->c_vertices->n_ranks);
+      fprintf(logfile,
+              "   Number of single edges    : %6d with %3d related ranks\n",
+              selection->s_edges->n_elts, selection->s_edges->n_ranks);
+      fprintf(logfile,
+              "   Number of coupled edges   : %6d with %3d related ranks\n",
+              selection->c_edges->n_elts, selection->c_edges->n_ranks);
     }
 
-    if (verbosity > 2) {
-      bft_printf("\n  Compact index on ranks for the selected faces:\n");
+    if (verbosity > 3) {
+      fprintf(logfile,
+              "\n  Compact index on ranks for the selected faces:\n");
       for (i = 0; i < n_ranks + 1; i++)
-        bft_printf(" %5d | %11u\n", i, selection->compact_rank_index[i]);
-      bft_printf("\n");
+        fprintf(logfile,
+                " %5d | %11llu\n", i,
+                (unsigned long long)selection->compact_rank_index[i]);
+      fprintf(logfile, "\n");
     }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Selected faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_faces; i++)
-    bft_printf(" %9d | %9d | %10u | %10u\n",
-               i, selection->faces[i], selection->compact_face_gnum[i],
-               selection->cell_gnum[i]);
-  bft_printf("\n");
+    fprintf(logfile,
+            "\n  Selected faces for the joining operation:\n");
+    for (i = 0; i < selection->n_faces; i++)
+      fprintf(logfile,
+              " %9d | %9d | %10llu\n",
+              i, selection->faces[i],
+              (unsigned long long)selection->compact_face_gnum[i]);
+    fprintf(logfile, "\n");
 #endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Select vertices for the joining operation:\n"));
-  for (i = 0; i < selection->n_vertices; i++)
-    bft_printf(" %9d | %9d\n", i, selection->vertices[i]);
-  bft_printf("\n");
+    fprintf(logfile,
+            "\n  Selected vertices for the joining operation:\n");
+    for (i = 0; i < selection->n_vertices; i++)
+      fprintf(logfile,
+              " %9d | %9d\n", i, selection->vertices[i]);
+    fprintf(logfile, "\n");
 #endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Contiguous border faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_b_adj_faces; i++)
-    bft_printf(" %9d | %9d\n", i, selection->b_adj_faces[i]);
-  bft_printf("\n");
+    fprintf(logfile,
+            "\n  Contiguous boundary faces for the joining operation:\n");
+    for (i = 0; i < selection->n_b_adj_faces; i++)
+      fprintf(logfile,
+              " %9d | %9d\n", i, selection->b_adj_faces[i]);
+    fprintf(logfile, "\n");
 #endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Contiguous interior faces for the joining operation:\n"));
-  for (i = 0; i < selection->n_i_adj_faces; i++)
-    bft_printf(" %9d | %9d\n", i, selection->i_adj_faces[i]);
-  bft_printf("\n");
+    fprintf(logfile,
+            "\n  Contiguous interior faces for the joining operation:\n");
+    for (i = 0; i < selection->n_i_adj_faces; i++)
+      fprintf(logfile, " %9d | %9d\n", i, selection->i_adj_faces[i]);
+    fprintf(logfile, "\n");
 #endif
 
-  } /* End if verbosity > 1 */
+    fflush(logfile);
+
+  } /* End if verbosity > 2 */
 
   bft_printf_flush();
 

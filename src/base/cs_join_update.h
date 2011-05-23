@@ -108,12 +108,11 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 
 /*----------------------------------------------------------------------------
  * Clean a cs_mesh_t struct.
- *
  * Delete redundant and empty edge definitions.
  *
  * parameters:
- *   para <-- set of parameters for the joining operation
- *   mesh <-> pointer to a cs_mesh_t structure
+ *   para    <-- set of parameters for the joining operation
+ *   mesh    <-> pointer to a cs_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void

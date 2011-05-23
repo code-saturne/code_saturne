@@ -170,11 +170,13 @@ class StandardItemModelFaces(QStandardItemModel):
         self.headers = [self.tr("Fraction"),
                         self.tr("Plane"),
                         self.tr("Verbosity"),
+                        self.tr("Visualization"),
                         self.tr("Selection criteria")]
 
         self.tooltip = [self.tr("Relative merge tolerance"),
                         self.tr("Maximum angle for normals of coplanar faces"),
-                        self.tr("Verbosity"),
+                        self.tr("Verbosity level"),
+                        self.tr("Visualization output level (0 for none)"),
                         self.tr("Selection criteria string")]
 
         self.setColumnCount(len(self.headers))
@@ -188,7 +190,7 @@ class StandardItemModelFaces(QStandardItemModel):
 
         # Default values
         self.default = {}
-        for key in ('selector', 'fraction', 'plane', 'verbosity'):
+        for key in ('selector', 'fraction', 'plane', 'verbosity', 'visualization'):
             self.default[key] = self.mdl.defaultValues()[key]
 
         if self.tag == "face_joining":
@@ -224,6 +226,8 @@ class StandardItemModelFaces(QStandardItemModel):
             elif col == 2:
                 return QVariant(self.dataFaces[row]['verbosity'])
             elif col == 3:
+                return QVariant(self.dataFaces[row]['visualization'])
+            elif col == 4:
                 return QVariant(self.dataFaces[row]['selector'])
 
         return QVariant()
@@ -252,6 +256,8 @@ class StandardItemModelFaces(QStandardItemModel):
         elif col == 2:
             self.dataFaces[row]['verbosity'] = str(value.toString())
         elif col == 3:
+            self.dataFaces[row]['visualization'] = str(value.toString())
+        elif col == 4:
             self.dataFaces[row]['selector'] = str(value.toString())
 
         if self.tag == "face_joining":
@@ -332,9 +338,10 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
 
         delegateVerbosity = LineEditDelegateVerbosity(self.tableView)
         self.tableView.setItemDelegateForColumn(2, delegateVerbosity)
+        self.tableView.setItemDelegateForColumn(3, delegateVerbosity)
 
         delegateSelector = LineEditDelegateSelector(self.tableView)
-        self.tableView.setItemDelegateForColumn(3, delegateSelector)
+        self.tableView.setItemDelegateForColumn(4, delegateSelector)
 
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableView.setSelectionMode(QAbstractItemView.SingleSelection)

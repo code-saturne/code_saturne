@@ -990,7 +990,7 @@ _remove_empty_edges(cs_join_mesh_t  *mesh,
     if (n_face_vertices < e - s) {
 
       n_simplified_faces++;
-      if (verbosity > 2)
+      if (verbosity > 3)
         bft_printf("  Simplified face %d (%u)\n", i+1, mesh->face_gnum[i]);
 
       if (n_face_vertices < 3)
@@ -1142,7 +1142,7 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
 
       /* Display the degenerate face */
 
-      if (verbosity > 4) {
+      if (verbosity > 5) {
 
         bft_printf("\n  Remove edge for face: %d [%u]:",
                    i+1, mesh->face_gnum[i]);
@@ -1336,6 +1336,30 @@ _add_new_vtx_to_edge(cs_int_t                v1_num,
 
   *p_shift = shift;
 }
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Dump a cs_join_vertex_t structure into a file.
+ *
+ * parameters:
+ *   f      <-- handle to output file
+ *   vertex <-- cs_join_vertex_t structure to dump
+ *---------------------------------------------------------------------------*/
+
+static void
+_log_vertex(cs_join_vertex_t  vertex)
+{
+  assert(vertex.gnum > 0);
+  assert(vertex.tolerance >= 0.0);
+
+  bft_printf(" %10llu | %11.6f | % 12.10e  % 12.10e  % 12.10e | %s\n",
+             (unsigned long long)vertex.gnum, vertex.tolerance,
+             vertex.coord[0], vertex.coord[1], vertex.coord[2],
+             _print_state(vertex.state));
+}
+
+#endif /* HAVE_MPI */
 
 /*============================================================================
  * Public function definitions
@@ -2059,11 +2083,12 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
 
     }
 
-    if (param.verbosity > 2) {
-      bft_printf(_("\n  Local min/max. tolerance:\n\n"
-                   " Glob. Num. |  Tolerance  |              Coordinates\n"));
-      cs_join_mesh_dump_vertex(_min);
-      cs_join_mesh_dump_vertex(_max);
+    if (param.verbosity > 3) {
+      fprintf(cs_glob_join_log,
+              "\n  Local min/max. tolerance:\n\n"
+              " Glob. Num. |  Tolerance  |              Coordinates\n");
+      cs_join_mesh_dump_vertex(cs_glob_join_log, _min);
+      cs_join_mesh_dump_vertex(cs_glob_join_log, _max);
     }
 
   }
@@ -2086,8 +2111,8 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
 
     bft_printf(_("\n  Global min/max. tolerance:\n\n"
                  " Glob. Num. |  Tolerance  |              Coordinates\n"));
-    cs_join_mesh_dump_vertex(g_min);
-    cs_join_mesh_dump_vertex(g_max);
+    _log_vertex(g_min);
+    _log_vertex(g_max);
 
     MPI_Op_free(&MPI_Vertex_min);
     MPI_Op_free(&MPI_Vertex_max);
@@ -3776,180 +3801,51 @@ cs_join_mesh_get_edge_face_adj(const cs_join_mesh_t   *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Dump a cs_join_vertex_t structure.
- *
- * parameters:
- *   vertex <-- cs_join_vertex_t structure to dump
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_mesh_dump_vertex(const cs_join_vertex_t   vertex)
-{
-  assert(vertex.gnum > 0);
-  assert(vertex.tolerance >= 0.0);
-
-  bft_printf(" %10u | %10.5e | % 10.8e % 10.8e % 10.8e | %s\n",
-             vertex.gnum, (double)(vertex.tolerance),
-             vertex.coord[0], vertex.coord[1], vertex.coord[2],
-             _print_state(vertex.state));
-}
-
-/*----------------------------------------------------------------------------
  * Dump a cs_join_vertex_t structure into a file.
  *
  * parameters:
- *   file   <-- pointer to a FILE structure
+ *   f      <-- handle to output file
  *   vertex <-- cs_join_vertex_t structure to dump
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_mesh_dump_vertex_file(FILE                   *file,
-                              const cs_join_vertex_t  vertex)
+cs_join_mesh_dump_vertex(FILE                   *f,
+                         const cs_join_vertex_t  vertex)
 {
   assert(vertex.gnum > 0);
   assert(vertex.tolerance >= 0.0);
 
-  fprintf(file," %10llu | %11.6f | % 12.10e  % 12.10e  % 12.10e | %s\n",
+  fprintf(f," %10llu | %11.6f | % 12.10e  % 12.10e  % 12.10e | %s\n",
           (unsigned long long)vertex.gnum, vertex.tolerance,
           vertex.coord[0], vertex.coord[1], vertex.coord[2],
           _print_state( vertex.state));
 }
 
 /*----------------------------------------------------------------------------
- * Dump a cs_join_mesh_t structure.
- *
- * parameters:
- *   mesh <-- pointer to a cs_join_mesh_t structure to dump
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_mesh_dump(const cs_join_mesh_t  *mesh)
-{
-  int  i, j;
-
-  if (mesh == NULL) {
-    bft_printf(_("\n\n  -- Dump a cs_join_mesh_t structure: (%p) --\n"),
-               mesh);
-    return;
-  }
-
-  bft_printf(_("\n\n  -- Dump a cs_join_mesh_t structure: %s (%p) --\n"),
-             mesh->name, mesh);
-  bft_printf(_("\n mesh->n_faces:       %9d\n"), mesh->n_faces);
-  bft_printf(_(" mesh->n_g_faces:   %11u\n\n"), mesh->n_g_faces);
-
-  if (mesh->face_vtx_idx != NULL) {
-
-    for (i = 0; i < mesh->n_faces; i++) {
-
-      cs_int_t  start = mesh->face_vtx_idx[i] - 1;
-      cs_int_t  end = mesh->face_vtx_idx[i+1] - 1;
-
-      bft_printf(_("\n face_id: %5d gnum: %9u n_vertices: %4d\n"),
-                 i, mesh->face_gnum[i], end-start);
-
-      for (j = start; j < end; j++) {
-
-        cs_int_t  vtx_id = mesh->face_vtx_lst[j]-1;
-        cs_join_vertex_t  v_data = mesh->vertices[vtx_id];
-
-        bft_printf(" %6d - %8u - [ %8.4f %8.4f %8.4f]\n",
-                   vtx_id+1, v_data.gnum,
-                   v_data.coord[0], v_data.coord[1], v_data.coord[2]);
-
-      }
-      bft_printf("\n");
-
-      /* Check if there is no incoherency in the mesh definition */
-
-      for (j = start; j < end - 1; j++) {
-
-        cs_int_t  vtx_id1 = mesh->face_vtx_lst[j]-1;
-        cs_int_t  vtx_id2 = mesh->face_vtx_lst[j+1]-1;
-
-        if (vtx_id1 == vtx_id2) {
-          bft_printf(_("  Incoherency found in the current mesh definition\n"
-                       "  Face number: %d (global: %u)\n"
-                       "  Vertices: local (%d, %d), global (%u, %u)"
-                       " are defined twice\n"),
-                     i+1, mesh->face_gnum[i], vtx_id1+1, vtx_id2+1,
-                     (mesh->vertices[vtx_id1]).gnum,
-                     (mesh->vertices[vtx_id2]).gnum);
-          bft_printf_flush();
-          assert(0);
-        }
-
-      }
-
-      {
-        cs_int_t  vtx_id1 = mesh->face_vtx_lst[end-1]-1;
-        cs_int_t  vtx_id2 = mesh->face_vtx_lst[start]-1;
-
-        if (vtx_id1 == vtx_id2) {
-          bft_printf(_("  Incoherency found in the current mesh definition\n"
-                       "  Face number: %d (global: %u)\n"
-                       "  Vertices: local (%d, %d), global (%u, %u)"
-                       " are defined twice\n"),
-                     i+1, mesh->face_gnum[i], vtx_id1+1, vtx_id2+1,
-                     (mesh->vertices[vtx_id1]).gnum,
-                     (mesh->vertices[vtx_id2]).gnum);
-          bft_printf_flush();
-          assert(0);
-        }
-      }
-
-    } /* End of loop on faces */
-
-  } /* End if face_vtx_idx != NULL */
-
-  bft_printf(_("\n Dump vertex data\n"
-               "   mesh->vertices     :  %p\n"
-               "   mesh->n_vertices   : %11d\n"
-               "   mesh->n_g_vertices : %11u\n\n"),
-             mesh->vertices, mesh->n_vertices, mesh->n_g_vertices);
-
-  if (mesh->n_vertices > 0) {
-
-    bft_printf(_(" Local Num | Global Num |  Tolerance  |"
-                 "        Coordinates\n\n"));
-
-    for (i = 0; i < mesh->n_vertices; i++) {
-
-      bft_printf(" %9d |", i+1);
-      cs_join_mesh_dump_vertex(mesh->vertices[i]);
-
-    }
-
-  }
-  bft_printf("\n");
-  bft_printf_flush();
-}
-
-/*----------------------------------------------------------------------------
  * Dump a cs_join_mesh_t structure into a file.
  *
  * parameters:
- *   file <-- pointer to a FILE structure
+ *   f    <-- handle to output file
  *   mesh <-- pointer to cs_join_mesh_t structure to dump
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_mesh_dump_file(FILE                  *file,
-                       const cs_join_mesh_t  *mesh)
+cs_join_mesh_dump(FILE                  *f,
+                  const cs_join_mesh_t  *mesh)
 {
   int  i, j;
 
   if (mesh == NULL) {
-    fprintf(file,
-            _("\n\n  -- Dump a cs_join_mesh_t structure: (%p) --\n"),
+    fprintf(f,
+            "\n\n  -- Dump a cs_join_mesh_t structure: (%p) --\n",
             (const void *)mesh);
     return;
   }
 
-  fprintf(file, _("\n\n  -- Dump a cs_join_mesh_t structure: %s (%p) --\n"),
+  fprintf(f, "\n\n  -- Dump a cs_join_mesh_t structure: %s (%p) --\n",
           mesh->name, (const void *)mesh);
-  fprintf(file, _("\n mesh->n_faces:     %11d\n"), mesh->n_faces);
-  fprintf(file, _(" mesh->n_g_faces:   %11llu\n\n"),
+  fprintf(f, "\n mesh->n_faces:     %11d\n", mesh->n_faces);
+  fprintf(f, " mesh->n_g_faces:   %11llu\n\n",
           (unsigned long long)mesh->n_g_faces);
 
   if (mesh->face_vtx_idx != NULL) {
@@ -3959,7 +3855,7 @@ cs_join_mesh_dump_file(FILE                  *file,
       cs_int_t  start = mesh->face_vtx_idx[i] - 1;
       cs_int_t  end = mesh->face_vtx_idx[i+1] - 1;
 
-      fprintf(file,_("\n face_id: %9d gnum: %10llu n_vertices : %4d\n"),
+      fprintf(f, "\n face_id: %9d gnum: %10llu n_vertices : %4d\n",
               i, (unsigned long long)mesh->face_gnum[i], end-start);
 
       for (j = start; j < end; j++) {
@@ -3967,13 +3863,13 @@ cs_join_mesh_dump_file(FILE                  *file,
         cs_int_t  vtx_id = mesh->face_vtx_lst[j]-1;
         cs_join_vertex_t  v_data = mesh->vertices[vtx_id];
 
-        fprintf(file," %8d - %10llu - [ % 7.5e % 7.5e % 7.5e] - %s\n",
+        fprintf(f," %8d - %10llu - [ % 7.5e % 7.5e % 7.5e] - %s\n",
                 vtx_id+1, (unsigned long long)v_data.gnum,
                 v_data.coord[0], v_data.coord[1], v_data.coord[2],
                 _print_state(v_data.state));
 
       }
-      fprintf(file,"\n");
+      fprintf(f,"\n");
 
       /* Check if there is no incoherency in the mesh definition */
 
@@ -3983,15 +3879,16 @@ cs_join_mesh_dump_file(FILE                  *file,
         cs_int_t  vtx_id2 = mesh->face_vtx_lst[j+1]-1;
 
         if (vtx_id1 == vtx_id2) {
-          fprintf(file,_("  Incoherency found in the current mesh definition\n"
-                         "  Face number: %d (global: %llu)\n"
-                         "  Vertices: local (%d, %d), global (%llu, %llu)"
-                         " are defined twice\n"),
+          fprintf(f,
+                  "  Incoherency found in the current mesh definition\n"
+                  "  Face number: %d (global: %llu)\n"
+                  "  Vertices: local (%d, %d), global (%llu, %llu)"
+                  " are defined twice\n",
                   i+1, (unsigned long long)mesh->face_gnum[i],
                   vtx_id1+1, vtx_id2+1,
                   (unsigned long long)(mesh->vertices[vtx_id1]).gnum,
                   (unsigned long long)(mesh->vertices[vtx_id2]).gnum);
-          fflush(file);
+          fflush(f);
           assert(0);
         }
 
@@ -4002,16 +3899,16 @@ cs_join_mesh_dump_file(FILE                  *file,
         cs_int_t  vtx_id2 = mesh->face_vtx_lst[start]-1;
 
         if (vtx_id1 == vtx_id2) {
-          fprintf(file,
-                  _("  Incoherency found in the current mesh definition\n"
-                    "  Face number: %d (global: %llu)\n"
-                    "  Vertices: local (%d, %d), global (%llu, %llu)"
-                    " are defined twice\n"),
+          fprintf(f,
+                  "  Incoherency found in the current mesh definition\n"
+                  "  Face number: %d (global: %llu)\n"
+                  "  Vertices: local (%d, %d), global (%llu, %llu)"
+                  " are defined twice\n",
                   i+1, (unsigned long long)(mesh->face_gnum[i]),
                   vtx_id1+1, vtx_id2+1,
                   (unsigned long long)((mesh->vertices[vtx_id1]).gnum),
                   (unsigned long long)((mesh->vertices[vtx_id2]).gnum));
-          fflush(file);
+          fflush(f);
           assert(0);
         }
       }
@@ -4020,38 +3917,41 @@ cs_join_mesh_dump_file(FILE                  *file,
 
   } /* End if face_vtx_idx != NULL */
 
-  fprintf(file,_("\n Dump vertex data\n"
-                 "   mesh->vertices     :  %p\n"
-                 "   mesh->n_vertices   : %11d\n"
-                 "   mesh->n_g_vertices : %11llu\n\n"),
+  fprintf(f,
+          "\n Dump vertex data\n"
+          "   mesh->vertices     :  %p\n"
+          "   mesh->n_vertices   : %11d\n"
+          "   mesh->n_g_vertices : %11llu\n\n",
           (const void *)mesh->vertices, mesh->n_vertices,
           (unsigned long long)mesh->n_g_vertices);
 
   if (mesh->n_vertices > 0) {
 
-    fprintf(file,_(" Local Num | Global Num |  Tolerance  |"
-                   "        Coordinates\n\n"));
+    fprintf(f,
+            " Local Num | Global Num |  Tolerance  |        Coordinates\n\n");
 
     for (i = 0; i < mesh->n_vertices; i++) {
-      fprintf(file," %9d |", i+1);
-      cs_join_mesh_dump_vertex_file(file, mesh->vertices[i]);
+      fprintf(f," %9d |", i+1);
+      cs_join_mesh_dump_vertex(f, mesh->vertices[i]);
     }
 
   }
-  fprintf(file,"\n");
-  fflush(file);
+  fprintf(f,"\n");
+  fflush(f);
 }
 
 /*----------------------------------------------------------------------------
  * Dump a list of cs_join_edge_t structures.
  *
  * parameters:
+ *   f     <-- handle to output file
  *   edges <-- cs_join_edges_t structure to dump
  *   mesh  <-- associated cs_join_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_mesh_dump_edges(const cs_join_edges_t  *edges,
+cs_join_mesh_dump_edges(FILE                   *f,
+                        const cs_join_edges_t  *edges,
                         const cs_join_mesh_t   *mesh)
 {
   cs_int_t  i, j;
@@ -4059,9 +3959,9 @@ cs_join_mesh_dump_edges(const cs_join_edges_t  *edges,
   if (edges == NULL)
     return;
 
-  bft_printf(_("\n  Edge connectivity used in the joining operation:\n"));
-  bft_printf(_("  Number of edges:      %8d\n"), edges->n_edges);
-  bft_printf(_("  Number of vertices:   %8d\n"), edges->n_vertices);
+  fprintf(f, "\n  Edge connectivity used in the joining operation:\n");
+  fprintf(f, "  Number of edges:      %8d\n", edges->n_edges);
+  fprintf(f, "  Number of vertices:   %8d\n", edges->n_vertices);
 
   for (i = 0; i < edges->n_edges; i++) { /* Dump edge connectivity */
 
@@ -4070,58 +3970,64 @@ cs_join_mesh_dump_edges(const cs_join_edges_t  *edges,
     fvm_gnum_t  v1_gnum = (mesh->vertices[v1_id]).gnum;
     fvm_gnum_t  v2_gnum = (mesh->vertices[v2_id]).gnum;
 
-    bft_printf(_("  Edge %6d  (%8u) <Vertex> [%8u %8u]\n"),
-               i+1, edges->gnum[i], v1_gnum, v2_gnum);
+    fprintf(f, "  Edge %6d  (%8llu) <Vertex> [%8llu %8llu]\n",
+            i+1, (unsigned long long)edges->gnum[i],
+            (unsigned long long)v1_gnum,
+            (unsigned long long)v2_gnum);
 
     /* Check coherency */
 
     if (v1_id == v2_id) {
-      bft_printf("  Incoherency found in the current edge definition\n"
+      fprintf(f, "  Incoherency found in the current edge definition\n"
                  "  Edge number: %d\n"
-                 "  Vertices: local (%d, %d), global (%u, %u)"
+                 "  Vertices: local (%d, %d), global (%llu, %llu)"
                  " are defined twice\n",
-                 i+1, v1_id+1, v2_id+1, v1_gnum, v2_gnum);
-      bft_printf_flush();
+                 i+1, v1_id+1, v2_id+1,
+              (unsigned long long)v1_gnum, (unsigned long long)v2_gnum);
+      fflush(f);
       assert(0);
     }
 
     if (v1_gnum == v2_gnum) {
-      bft_printf("  Incoherency found in the current edge definition\n"
+      fprintf(f, "  Incoherency found in the current edge definition\n"
                  "  Edge number: %d\n"
-                 "  Vertices: local (%d, %d), global (%u, %u)"
+                 "  Vertices: local (%d, %d), global (%llu, %llu)"
                  " are defined twice\n",
-                 i+1, v1_id+1, v2_id+1, v1_gnum, v2_gnum);
-      bft_printf_flush();
+                 i+1, v1_id+1, v2_id+1,
+              (unsigned long long)v1_gnum, (unsigned long long)v2_gnum);
+      fflush(f);
       assert(0);
     }
 
   } /* End of loop on edges */
 
-  bft_printf(_("\n  Vertex -> Vertex connectivity :\n\n"));
+  fprintf(f, "\n  Vertex -> Vertex connectivity :\n\n");
 
   for (i = 0; i < mesh->n_vertices; i++) {
 
     cs_int_t  start = edges->vtx_idx[i];
     cs_int_t  end = edges->vtx_idx[i+1];
 
-    bft_printf(_("  Vertex %6d (%7u) - %3d - "),
-               i+1, (mesh->vertices[i]).gnum, end - start);
+    fprintf(f, "  Vertex %6d (%7llu) - %3d - ",
+               i+1, (unsigned long long)(mesh->vertices[i]).gnum, end - start);
 
     for (j = start; j < end; j++) {
       if (edges->edge_lst[j] > 0)
-        bft_printf(" [ v: %7u, e: %7u] ",
-                   (mesh->vertices[edges->adj_vtx_lst[j]-1]).gnum,
-                   edges->gnum[edges->edge_lst[j] - 1]);
+        fprintf
+          (f, " [ v: %7llu, e: %7llu] ",
+           (unsigned long long)(mesh->vertices[edges->adj_vtx_lst[j]-1]).gnum,
+           (unsigned long long)edges->gnum[edges->edge_lst[j] - 1]);
       else
-        bft_printf(" [ v: %7u, e: %7u] ",
-                   (mesh->vertices[edges->adj_vtx_lst[j]-1]).gnum,
-                   edges->gnum[- edges->edge_lst[j] - 1]);
+        fprintf
+          (f, " [ v: %7llu, e: %7llu] ",
+           (unsigned long long)(mesh->vertices[edges->adj_vtx_lst[j]-1]).gnum,
+           (unsigned long long)edges->gnum[- edges->edge_lst[j] - 1]);
     }
-    bft_printf("\n");
+    fprintf(f, "\n");
 
   }
 
-  bft_printf_flush();
+  fflush(f);
 }
 
 /*---------------------------------------------------------------------------*/

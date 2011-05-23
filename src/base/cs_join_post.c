@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -52,6 +52,7 @@
  * FVM library headers
  *---------------------------------------------------------------------------*/
 
+#include <fvm_config_defs.h>
 #include <fvm_nodal.h>
 #include <fvm_nodal_order.h>
 #include <fvm_nodal_from_desc.h>
@@ -123,7 +124,7 @@ _init_join_writer(void)
   const char  dirname_def[] = ".";
   const char *dirname = NULL;
 
-  /* Get parameters from Fortran COMMON blocks */
+  /* Get parameters from Fortran module */
 
   CS_PROCF(inipst, INIPST)(&indic_vol,
                            &indic_brd,
@@ -521,6 +522,9 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
   const int  n_new_i_faces = mesh->n_i_faces - n_old_i_faces;
   const int  n_new_b_faces = mesh->n_b_faces - n_old_b_faces + n_select_faces;
 
+  if (join_param.visualization < 1)
+    return;
+
   if (_cs_join_post_initialized == false)
     return;
 
@@ -550,12 +554,12 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
 
   cs_post_associate(post_i_mesh_id, _cs_join_post_param.writer_num);
 
-  if (n_g_new_b_faces > 0) {
+  if (join_param.visualization > 1 && n_g_new_b_faces > 0) {
 
     cs_int_t  post_b_mesh_id = cs_post_get_free_mesh_id();
 
-    BFT_REALLOC(mesh_name, strlen("BorderJoinedFaces_j") + 2 + 1, char);
-    sprintf(mesh_name,"%s%02d", "BorderJoinedFaces_j", join_param.num);
+    BFT_REALLOC(mesh_name, strlen("BoundaryJoinedFaces_j") + 2 + 1, char);
+    sprintf(mesh_name,"%s%02d", "BoundaryJoinedFaces_j", join_param.num);
 
     cs_post_add_mesh(post_b_mesh_id,
                      mesh_name,
@@ -630,7 +634,7 @@ cs_join_post_cleaned_faces(cs_int_t         n_i_clean_faces,
 
 /*----------------------------------------------------------------------------
  * Output processor-specific post-processing data for a cs_join_mesh_t
- * structure according to the verbosity level.
+ * structure according to the visualization level.
  *
  * parameters:
  *   basename <-- generic name for the mesh to post
@@ -653,13 +657,13 @@ cs_join_post_dump_mesh(const char            *basename,
 
   /* Define a specific name for the output */
 
-  len = strlen("JoinDBG_.dat") + strlen(basename) + 4 + 2 + 1;
+  len = strlen("log/JoinDBG_.dat") + strlen(basename) + 4 + 2 + 1;
   BFT_MALLOC(fullname, len, char);
-  sprintf(fullname, "Join%02dDBG_%s%04d.dat",
+  sprintf(fullname, "log%cJoin%02dDBG_%s%04d.dat", FVM_DIR_SEPARATOR,
           param.num, basename, rank_id);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
-  if (param.verbosity > 2) {
+  if (param.verbosity > 3) {
     FILE  *dbg_file = NULL;
     dbg_file = fopen(fullname, "w");
     cs_join_mesh_dump_file(dbg_file, mesh);
@@ -668,7 +672,7 @@ cs_join_post_dump_mesh(const char            *basename,
   }
 #endif
 
-  if (_cs_join_post_initialized == true && param.verbosity > 3) {
+  if (_cs_join_post_initialized == true && param.visualization > 3) {
 
     if (n_ranks == 1)
       cs_join_post_mesh(fullname, mesh);

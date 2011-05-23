@@ -38,6 +38,7 @@
  *---------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -45,7 +46,6 @@
  *---------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -2352,28 +2352,30 @@ cs_join_gset_block_update(fvm_gnum_t             max_gnum,
  * This function is called according to the verbosity.
  *
  * parameters:
- *   type   <-- type of the array to display
- *   header <-- header to display in front of the array
- *   n_elts <-- number of elements to display
- *   array  <-- array to display
+ *   f       <-- handle to output file
+ *   type    <-- type of the array to display
+ *   header  <-- header to display in front of the array
+ *   n_elts  <-- number of elements to display
+ *   array   <-- array to display
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_dump_array(const char   *type,
-                   const char   *header,
-                   int           n_elts,
-                   const void   *array)
+cs_join_dump_array(FILE        *f,
+                   const char  *type,
+                   const char  *header,
+                   int          n_elts,
+                   const void  *array)
 {
   int  i;
 
-  bft_printf("  %s: ", header);
+  fprintf(f, "  %s: ", header);
 
   if (!strncmp(type, "int", strlen("int"))) { /* "int" array  */
 
     const int *i_array = array;
 
     for (i = 0; i < n_elts; i++)
-      bft_printf(" %8d", i_array[i]);
+      fprintf(f, " %8d", i_array[i]);
 
   }
   else if (!strncmp(type, "bool", strlen("bool"))) { /* "boolean" array  */
@@ -2382,10 +2384,10 @@ cs_join_dump_array(const char   *type,
 
     for (i = 0; i < n_elts; i++)
       if (b_array[i] == true)
-        bft_printf(" T");
+        fprintf(f, " T");
       else {
         assert(b_array[i] == false);
-        bft_printf(" F");
+        fprintf(f, " F");
       }
   }
   else if (!strncmp(type, "double", strlen("double"))) { /* "double" array */
@@ -2393,7 +2395,7 @@ cs_join_dump_array(const char   *type,
     const double  *d_array = array;
 
     for (i = 0; i < n_elts; i++)
-      bft_printf(" %10.8e", d_array[i]);
+      fprintf(f, " %10.8e", d_array[i]);
 
   }
   else if (!strncmp(type, "gnum", strlen("gnum"))) { /* "gnum" array */
@@ -2401,7 +2403,7 @@ cs_join_dump_array(const char   *type,
     const fvm_gnum_t  *u_array = array;
 
     for (i = 0; i < n_elts; i++)
-      bft_printf(" %9u", u_array[i]);
+      fprintf(f, " %9llu", (unsigned long long)u_array[i]);
 
   }
   else
@@ -2409,19 +2411,19 @@ cs_join_dump_array(const char   *type,
               _(" Unexpected type (%s) to display in the current dump.\n"),
               type);
 
-  bft_printf("\n");
+  fprintf(f, "\n");
 }
 
 /*----------------------------------------------------------------------------
  * Dump a cs_join_gset_t structure.
  *
  * parameters:
- *   file <-- pointer to an output file or NULL
+ *   f    <-- handle to output file
  *   set  <-- pointer to the cs_join_gset_t structure to dump
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_gset_dump(FILE                  *file,
+cs_join_gset_dump(FILE                  *f,
                   const cs_join_gset_t  *set)
 {
   int  i, j;
@@ -2429,12 +2431,12 @@ cs_join_gset_dump(FILE                  *file,
   if (set == NULL)
     return;
 
-  if (file == NULL)
-    file = stdout;
+  if (f == NULL)
+    f = stdout;
 
-  fprintf(file, "\nDump cs_join_gset_t structure: %p\n", (const void *)set);
-  fprintf(file,"number of elements: %10d\n", set->n_elts);
-  fprintf(file,"size of the list  : %10d\n\n", set->index[set->n_elts]);
+  fprintf(f, "\nDump cs_join_gset_t structure: %p\n", (const void *)set);
+  fprintf(f, "number of elements: %10d\n", set->n_elts);
+  fprintf(f, "size of the list  : %10d\n\n", set->index[set->n_elts]);
 
   for (i = 0; i < set->n_elts; i++) {
 
@@ -2442,12 +2444,12 @@ cs_join_gset_dump(FILE                  *file,
     int  n_matches = e-s;
     int  n_loops = n_matches/10;
 
-    fprintf(file, "Global num: %8llu | subsize: %3d |",
+    fprintf(f, "Global num: %8llu | subsize: %3d |",
             (unsigned long long)set->g_elts[i], n_matches);
 
     for (j = 0; j < n_loops; j++) {
       if (j == 0)
-        fprintf(file,
+        fprintf(f,
                 "%8llu %8llu %8llu %8llu %8llu "
                 "%8llu %8llu %8llu %8llu %8llu\n",
                 (unsigned long long)set->g_list[s+ 10*j],
@@ -2461,7 +2463,7 @@ cs_join_gset_dump(FILE                  *file,
                 (unsigned long long)set->g_list[s+ 10*j + 8],
                 (unsigned long long)set->g_list[s+ 10*j + 9]);
       else
-        fprintf(file, "                                     "
+        fprintf(f, "                                     "
                 "%8llu %8llu %8llu %8llu %8llu "
                 "%8llu %8llu %8llu %8llu %8llu\n",
                 (unsigned long long)set->g_list[s+ 10*j],
@@ -2479,18 +2481,18 @@ cs_join_gset_dump(FILE                  *file,
     if (e - s+10*n_loops > 0) {
       for (j = s + 10*n_loops; j < e; j++) {
         if (j == s + 10*n_loops && n_loops > 0)
-          fprintf(file,"                                     ");
-        fprintf(file,"%8llu ", (unsigned long long)set->g_list[j]);
+          fprintf(f, "                                     ");
+        fprintf(f, "%8llu ", (unsigned long long)set->g_list[j]);
       }
-      fprintf(file,"\n");
+      fprintf(f, "\n");
     }
 
     if (n_matches == 0)
-      fprintf(file,"\n");
+      fprintf(f, "\n");
 
   } /* End of loop on boxes */
 
-  fflush(file);
+  fflush(f);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -92,11 +92,12 @@ void CS_PROCF(tstjpe, tstjpe)
  * Define a translational periodicity
  *
  * parameters:
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
- *   trans        <-- translation vector
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
+ *   trans         <-- translation vector
  *
  * returns:
  *   number (1 to n) associated with new periodicity
@@ -107,19 +108,21 @@ cs_join_perio_add_translation(const char    *sel_criteria,
                               double         fraction,
                               double         plane,
                               int            verbosity,
+                              int            visualization,
                               const double   trans[3]);
 
 /*----------------------------------------------------------------------------
  * Define a rotational periodicity
  *
  * parameters:
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
- *   theta        <-- rotation angle (in degrees)
- *   axis         <-- axis vector
- *   invariant    <-- invariant point coordinates
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
+ *   theta         <-- rotation angle (in degrees)
+ *   axis          <-- axis vector
+ *   invariant     <-- invariant point coordinates
  *
  * returns:
  *   joining number (1 to n) associated with new periodicity
@@ -130,6 +133,7 @@ cs_join_perio_add_rotation(const char    *sel_criteria,
                            double         fraction,
                            double         plane,
                            int            verbosity,
+                           int            visualization,
                            double         theta,
                            const double   axis[3],
                            const double   invariant[3]);
@@ -138,11 +142,12 @@ cs_join_perio_add_rotation(const char    *sel_criteria,
  * Define a periodicity using a matrix
  *
  * parameters:
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
- *   matrix       <-- transformation matrix
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
+ *   matrix        <-- transformation matrix
  *
  * returns:
  *   joining number (1 to n) associated with new periodicity
@@ -153,6 +158,7 @@ cs_join_perio_add_mixed(const char    *sel_criteria,
                         double         fraction,
                         double         plane,
                         int            verbosity,
+                        int            visualization,
                         double         matrix[3][4]);
 
 /*----------------------------------------------------------------------------

@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -134,31 +134,36 @@ _initialize_merge_counter(void)
  * Dump an cs_join_eset_t structure on vertices.
  *
  * parameters:
- *   e_set <-- cs_join_eset_t structure to dump
- *   mesh  <-- cs_join_mesh_t structure associated
+ *   e_set   <-- cs_join_eset_t structure to dump
+ *   mesh    <-- cs_join_mesh_t structure associated
+ *   logfile <-- handle to log file
  *---------------------------------------------------------------------------*/
 
 static void
-_dump_vtx_eset(const cs_join_eset_t    *e_set,
-               const cs_join_mesh_t    *mesh)
+_dump_vtx_eset(const cs_join_eset_t  *e_set,
+               const cs_join_mesh_t  *mesh,
+               FILE                  *logfile)
 {
   int  i;
 
-  bft_printf("\n  Dump an cs_join_eset_t structure (%p)\n", e_set);
-  bft_printf("  n_max_equiv: %10d\n", e_set->n_max_equiv);
-  bft_printf("  n_equiv    : %10d\n\n", e_set->n_equiv);
+  fprintf(logfile, "\n  Dump an cs_join_eset_t structure (%p)\n",
+          (const void *)e_set);
+  fprintf(logfile, "  n_max_equiv: %10d\n", e_set->n_max_equiv);
+  fprintf(logfile, "  n_equiv    : %10d\n\n", e_set->n_equiv);
 
   for (i = 0; i < e_set->n_equiv; i++) {
 
     cs_int_t  v1_num = e_set->equiv_couple[2*i];
     cs_int_t  v2_num = e_set->equiv_couple[2*i+1];
 
-    bft_printf(" %10d - local: (%9d, %9d) - global: (%10u, %10u)\n",
-               i, v1_num, v2_num, (mesh->vertices[v1_num-1]).gnum,
-               (mesh->vertices[v2_num-1]).gnum);
+    fprintf(logfile,
+            " %10d - local: (%9d, %9d) - global: (%10llu, %10llu)\n",
+            i, v1_num, v2_num,
+            (unsigned long long)(mesh->vertices[v1_num-1]).gnum,
+            (unsigned long long)(mesh->vertices[v2_num-1]).gnum);
 
   }
-  bft_printf_flush();
+  fflush(logfile);
 }
 
 #endif /* Only in debug mode */
@@ -865,7 +870,7 @@ _parall_tag_init(fvm_gnum_t             n_g_vertices_to_treat,
  *   vtx_eset         <-- structure dealing with vertex equivalences
  *   work             <-- local cs_join_mesh_t structure which has initial
  *                        vertex data
- *   verbosity        <-- level of accuracy in information display
+ *   verbosity        <-- level of detail in information display
  *   p_vtx_tag        --> pointer to the vtx_tag for the local vertices
  *---------------------------------------------------------------------------*/
 
@@ -880,6 +885,7 @@ _tag_equiv_vertices(fvm_gnum_t             n_g_vertices_tot,
 
   fvm_gnum_t  *vtx_tag = NULL;
   fvm_gnum_t  *prev_vtx_tag = NULL;
+  FILE  *logfile = cs_glob_join_log;
 
   const cs_int_t  n_vertices = work->n_vertices;
   const int  n_ranks = cs_glob_n_ranks;
@@ -900,8 +906,9 @@ _tag_equiv_vertices(fvm_gnum_t             n_g_vertices_tot,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   for (i = 0; i < n_vertices; i++)
-    bft_printf(" Initial vtx_tag[%6d] = %9u\n", i, vtx_tag[i]);
-  bft_printf_flush();
+    fprintf(logfile, " Initial vtx_tag[%6d] = %9llu\n",
+            i, (unsigned long long)vtx_tag[i]);
+  fflush(logfile);
 #endif
 
   /* Compute vtx_tag */
@@ -974,19 +981,24 @@ _tag_equiv_vertices(fvm_gnum_t             n_g_vertices_tot,
 
   BFT_FREE(prev_vtx_tag);
 
-  if (verbosity > 2) {
-    bft_printf(_("\n  Number of local iterations to converge on vertex"
-                 " equivalences: %3d\n"), _loc_merge_counter);
+  if (verbosity > 3) {
+    fprintf(logfile,
+            "\n  Number of local iterations to converge on vertex"
+            " equivalences: %3d\n", _loc_merge_counter);
     if (n_ranks > 1)
-      bft_printf(_("  Number of global iterations to converge on vertex"
-                   " equivalences: %3d\n\n"), _glob_merge_counter);
-    bft_printf_flush();
+      fprintf(logfile,
+              "  Number of global iterations to converge on vertex"
+              " equivalences: %3d\n\n", _glob_merge_counter);
+    fflush(logfile);
   }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  for (i = 0; i < n_vertices; i++)
-    bft_printf(" Final vtx_tag[%6d] = %9u\n", i, vtx_tag[i]);
-  bft_printf_flush();
+  if (logfile != NULL) {
+    for (i = 0; i < n_vertices; i++)
+      fprintf(logfile, " Final vtx_tag[%6d] = %9llu\n",
+              i, (unsigned long long)vtx_tag[i]);
+    fflush(logfile);
+  }
 #endif
 
   /* Returns pointer */
@@ -1119,14 +1131,19 @@ _build_parall_merge_structures(const cs_join_mesh_t    *work,
   BFT_FREE(recv_gbuf);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n  Number of vertices to treat for the merge step: %d\n",
-             recv_shift[n_ranks]);
-  bft_printf("  List of vertices to treat:\n");
-  for (i = 0; i < recv_shift[n_ranks]; i++) {
-    bft_printf(" %9d - ", i);
-    cs_join_mesh_dump_vertex(recv_vtx_data[i]);
+  if (cs_glob_join_log != NULL) {
+    FILE *logfile = cs_glob_join_log;
+    fprintf(logfile,
+            "\n  Number of vertices to treat for the merge step: %d\n",
+            recv_shift[n_ranks]);
+    fprintf(logfile,
+            "  List of vertices to treat:\n");
+    for (i = 0; i < recv_shift[n_ranks]; i++) {
+      fprintf(logfile, " %9d - ", i);
+      cs_join_mesh_dump_vertex(logfile, recv_vtx_data[i]);
+    }
+    fflush(logfile);
   }
-  bft_printf_flush();
 #endif
 
   /* Set return pointers */
@@ -1437,9 +1454,9 @@ _pre_merge(cs_join_param_t     param,
     bft_printf(_("\n  Pre-merge for %llu global element couples.\n"),
                (unsigned long long)n_g_counter);
 
-    if (param.verbosity > 1) {
-      bft_printf(_("\n  Local number of pre-merges: %d\n"),
-                 n_local_pre_merge);
+    if (param.verbosity > 2) {
+      fprintf(cs_glob_join_log, "\n  Local number of pre-merges: %d\n",
+              n_local_pre_merge);
     }
   }
 
@@ -1585,8 +1602,9 @@ _build_subsets(cs_int_t          set_size,
   }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (n_loops >= CS_JOIN_MERGE_MAX_LOC_ITERS)
-    bft_printf("WARNING max sub_loops to build subset reached\n");
+  if (cs_glob_join_log != NULL && n_loops >= CS_JOIN_MERGE_MAX_LOC_ITERS)
+    fprintf(cs_glob_join_log,
+            "WARNING max sub_loops to build subset reached\n");
 #endif
 
 }
@@ -1620,6 +1638,7 @@ _check_tol_consistency(cs_int_t                set_size,
   cs_int_t  i1, i2, j, k;
 
   cs_int_t  n_issues = 0;
+  FILE  *logfile = cs_glob_join_log;
 
   for (k = 0, i1 = 0; i1 < set_size-1; i1++) {
     for (i2 = i1 + 1; i2 < set_size; i2++, k++) {
@@ -1628,9 +1647,11 @@ _check_tol_consistency(cs_int_t                set_size,
 
         if (subset_num[i1] == subset_num[i2]) {
 
-          if (verbosity > 3)
-            bft_printf(" Transitivity detected between (%u, %u)\n",
-                       set[i1].gnum, set[i2].gnum);
+          if (verbosity > 4)
+            fprintf(logfile,
+                    " Transitivity detected between (%llu, %llu)\n",
+                    (unsigned long long)set[i1].gnum,
+                    (unsigned long long)set[i2].gnum);
 
           for (j = 0; j < n_issues; j++)
             if (issues[j] == subset_num[i1])
@@ -1814,10 +1835,13 @@ _break_equivalence(cs_join_param_t         param,
 
             state[k] = 0; /* Break equivalence */
 
-            if (param.verbosity > 2)
-              bft_printf(" %2d - Break equivalence between [%u, %u]"
-                         " (dist_ref: %6.4e)\n",
-                         issues[i], set[i_save].gnum, set[i2].gnum, dist_save);
+            if (param.verbosity > 3)
+              fprintf(cs_glob_join_log,
+                      " %2d - Break equivalence between [%llu, %llu]"
+                      " (dist_ref: %6.4e)\n",
+                      issues[i],
+                      (unsigned long long)set[i_save].gnum,
+                      (unsigned long long)set[i2].gnum, dist_save);
 
           }
         }
@@ -1843,7 +1867,7 @@ _break_equivalence(cs_join_param_t         param,
  *   ibuf          <-> tmp buffer
  *
  * returns:
- *   number of loop necessary to build consistent subsets
+ *   number of loops necessary to build consistent subsets
  *---------------------------------------------------------------------------*/
 
 static cs_int_t
@@ -1901,8 +1925,12 @@ _solve_transitivity(cs_join_param_t    param,
     idx[k] = set_size - k + idx[k-1];
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_join_dump_array("double", "\nDist", set_size*(set_size-1)/2, distances);
-  cs_join_dump_array("int", "\nInit. State", set_size*(set_size-1)/2, state);
+  if (cs_glob_join_log != NULL) {
+    cs_join_dump_array(cs_glob_join_log, "double", "\nDist",
+                       set_size*(set_size-1)/2, distances);
+    cs_join_dump_array(cs_glob_join_log, "int", "\nInit. State",
+                       set_size*(set_size-1)/2, state);
+  }
 #endif
 
   _build_subsets(set_size, state, prev_num, subset_num);
@@ -1939,12 +1967,14 @@ _solve_transitivity(cs_join_param_t    param,
 
   } /* End of while */
 
-  if (param.verbosity > 2) {
+  if (param.verbosity > 3) {
 
-    bft_printf(_(" Number of tolerance reductions:  %4d\n"), n_loops);
+    fprintf(cs_glob_join_log,
+            " Number of tolerance reductions:  %4d\n", n_loops);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    cs_join_dump_array("int", "\nFinal Subset", set_size, subset_num);
+    cs_join_dump_array(cs_glob_join_log, "int", "\nFinal Subset",
+                       set_size, subset_num);
 #endif
 
   }
@@ -1988,6 +2018,7 @@ _merge_vertices(cs_join_param_t    param,
   fvm_gnum_t  *merge_list = NULL, *merge_ref_elts = NULL;
   fvm_gnum_t  *list = NULL;
   cs_join_vertex_t  *set = NULL, *vbuf = NULL;
+  FILE  *logfile = cs_glob_join_log;
 
   const int  verbosity = param.verbosity;
 
@@ -2093,15 +2124,18 @@ _merge_vertices(cs_join_param_t    param,
 
         n_transitivity++;
 
-        if (verbosity > 2) { /* Display information on vertices to merge */
-          bft_printf("\n Begin merge for ref. elt: %u - list_size: %d\n",
-                     merge_ref_elts[i], merge_index[i+1] - merge_index[i]);
+        /* Display information on vertices to merge */
+        if (verbosity > 3) {
+          fprintf(logfile,
+                  "\n Begin merge for ref. elt: %llu - list_size: %d\n",
+                  (unsigned long long)merge_ref_elts[i],
+                  merge_index[i+1] - merge_index[i]);
           for (j = 0; j < list_size; j++) {
-            bft_printf("%9u -", list[j]);
-            cs_join_mesh_dump_vertex(set[j]);
+            fprintf(logfile, "%9llu -", (unsigned long long)list[j]);
+            cs_join_mesh_dump_vertex(logfile, set[j]);
           }
-          bft_printf("\nMerged vertex rejected:\n");
-          cs_join_mesh_dump_vertex(merged_vertex);
+          fprintf(logfile, "\nMerged vertex rejected:\n");
+          cs_join_mesh_dump_vertex(logfile, merged_vertex);
         }
 
         n_loops = _solve_transitivity(param,
@@ -2116,16 +2150,17 @@ _merge_vertices(cs_join_param_t    param,
 
         n_max_loops = CS_MAX(n_max_loops, n_loops);
 
-        if (verbosity > 2) { /* Display information */
-          bft_printf(_("\n  %3d loop(s) to get consistent subsets\n"),
-                     n_loops);
-          bft_printf("\n End merge for ref. elt: %u - list_size: %d\n",
-                     merge_ref_elts[i], merge_index[i+1] - merge_index[i]);
+        if (verbosity > 3) { /* Display information */
+          fprintf(logfile, "\n  %3d loop(s) to get consistent subsets\n",
+                  n_loops);
+          fprintf(logfile, "\n End merge for ref. elt: %llu - list_size: %d\n",
+                  (unsigned long long)merge_ref_elts[i],
+                  merge_index[i+1] - merge_index[i]);
           for (j = 0; j < list_size; j++) {
-            bft_printf("%7u -", list[j]);
-            cs_join_mesh_dump_vertex(vertices[list[j]]);
+            fprintf(logfile, "%7llu -", (unsigned long long)list[j]);
+            cs_join_mesh_dump_vertex(logfile, vertices[list[j]]);
           }
-          bft_printf("\n");
+          fprintf(logfile, "\n");
         }
 
       }
@@ -2539,6 +2574,7 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
   cs_join_inter_edges_t  *new_inter_edges = NULL;
   cs_int_t  n_edges = inter_edges->n_edges;
   cs_int_t  init_list_size = inter_edges->index[n_edges];
+  FILE  *logfile = cs_glob_join_log;
 
   assert(n_edges == edges->n_edges);
 
@@ -2624,8 +2660,8 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
   BFT_REALLOC(inter_edges->abs_lst, inter_edges->index[n_edges], float);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
-  bft_printf(" AFTER REDUNDANCIES CLEAN\n");
-  cs_join_inter_edges_dump(inter_edges, edges, mesh);
+  fprintf(logfile, " AFTER REDUNDANCIES CLEAN\n");
+  cs_join_inter_edges_dump(logfile, inter_edges, edges, mesh);
 #endif
 
   /* Add new vertices from initial edges which are now sub-edges */
@@ -2633,9 +2669,10 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
   for (i = 0; i < n_edges; i++)
     n_adds += _count_new_sub_edge_elts(i, inter_edges, edges, n_iwm_vertices);
 
-  if (param.verbosity > 1)
-    bft_printf(_("  Number of sub-elements to add to edge definition: %8d\n"),
-               n_adds);
+  if (param.verbosity > 2)
+    fprintf(logfile,
+            "  Number of sub-elements to add to edge definition: %8d\n",
+            n_adds);
 
   if (n_adds > 0) { /* Define a new inter_edges structure */
 
@@ -2729,8 +2766,10 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
   } /* End if n_adds > 0 */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
-  bft_printf(" AFTER SUB ELTS ADD\n");
-  cs_join_inter_edges_dump(inter_edges, edges, mesh);
+  if (logfile != NULL) {
+    fprintf(logfile, " AFTER SUB ELTS ADD\n");
+    cs_join_inter_edges_dump(logfile, inter_edges, edges, mesh);
+  }
 #endif
 
   /* Update cs_join_inter_edges_t structure */
@@ -2888,12 +2927,16 @@ _get_faces_to_send(cs_int_t           n_faces,
   /* Free memory */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  for (rank = 0; rank < n_ranks; rank++) {
-    bft_printf(" rank %d: ", rank);
-    for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++)
-      bft_printf(" %d (%u)", send_faces[i], face_gnum[send_faces[i]]);
-    bft_printf("\n");
-    bft_printf_flush();
+  if (cs_glob_join_log != NULL) {
+    FILE *logfile = cs_glob_join_log;
+    for (rank = 0; rank < n_ranks; rank++) {
+      fprintf(logfile, " rank %d: ", rank);
+      for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++)
+        fprintf(logfile, " %d (%llu)",
+                send_faces[i], (unsigned long long)face_gnum[send_faces[i]]);
+      fprintf(logfile, "\n");
+      fflush(logfile);
+    }
   }
 #endif
 
@@ -3172,7 +3215,7 @@ cs_join_create_new_vertices(int                     verbosity,
   } /* End of loop on vertices */
 
 #if 0
-    _dump_vtx_eset(vtx_equiv, work);
+  _dump_vtx_eset(vtx_equiv, work, cs_glob_join_log);
 #endif
 
 #endif
@@ -3216,16 +3259,17 @@ cs_join_merge_vertices(cs_join_param_t        param,
   _initialize_merge_counter();
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump local structures */
-    _dump_vtx_eset(vtx_eset, work);
+  _dump_vtx_eset(vtx_eset, work, cs_glob_join_log);
 #endif
 
-  if (param.verbosity > 1) {
+  if (param.verbosity > 2) {
     fvm_gnum_t g_n_equiv = vtx_eset->n_equiv;
     fvm_parall_counter(&g_n_equiv, 1);
-    bft_printf(_("\n"
-                 "  Final number of equiv. between vertices; local: %9d\n"
-                 "                                          global: %9llu\n"),
-               vtx_eset->n_equiv, (unsigned long long)g_n_equiv);
+    fprintf(cs_glob_join_log,
+            "\n"
+            "  Final number of equiv. between vertices; local: %9d\n"
+            "                                          global: %9llu\n",
+            vtx_eset->n_equiv, (unsigned long long)g_n_equiv);
   }
 
   /* Operate merge between equivalent vertices.

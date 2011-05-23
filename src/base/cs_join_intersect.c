@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2009 EDF S.A., France
+ *     Copyright (C) 2008-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -122,20 +122,20 @@ static const double  _cs_join_tol_eps_coef = 1.0001;
  * Sort is realized thanks to a shell sort (Knuth algorithm).
  *
  * parameters:
- *   l     <--   left bound
- *   r     <--   right bound
- *   a     <->   array to sort
- *   b     <->   associated array
+ *   l <-- left bound
+ *   r <-- right bound
+ *   a <-> array to sort
+ *   b <-> associated array
  *---------------------------------------------------------------------------*/
 
 inline static void
-_adapted_lshellsort(cs_int_t   l,
-                    cs_int_t   r,
-                    float      a[],
-                    cs_int_t   b[])
+_adapted_lshellsort(fvm_lnum_t  l,
+                    fvm_lnum_t  r,
+                    float       a[],
+                    fvm_lnum_t  b[])
 {
   int  i, j, h;
-  cs_int_t  size = r - l;
+  fvm_lnum_t  size = r - l;
 
   if (size == 0)
     return;
@@ -149,7 +149,7 @@ _adapted_lshellsort(cs_int_t   l,
     for (i = l+h; i < r; i++) {
 
       float  va = a[i];
-      cs_int_t  vb = b[i];
+      fvm_lnum_t  vb = b[i];
 
       j = i;
       while ( (j >= l+h) && (va < a[j-h]) ) {
@@ -171,15 +171,15 @@ _adapted_lshellsort(cs_int_t   l,
  * Sort is realized thanks to a shell sort (Knuth algorithm).
  *
  * parameters:
- *   l     <--   left bound
- *   r     <--   right bound
- *   a     <->   array to sort
- *   b     <->   associated array
+ *   l <-- left bound
+ *   r <-- right bound
+ *   a <-> array to sort
+ *   b <-> associated array
  *---------------------------------------------------------------------------*/
 
 inline static void
-_adapted_gshellsort(cs_int_t    l,
-                    cs_int_t    r,
+_adapted_gshellsort(fvm_lnum_t  l,
+                    fvm_lnum_t  r,
                     float       a[],
                     fvm_gnum_t  b[])
 {
@@ -367,6 +367,7 @@ _get_new_vertex(float                  curv_abs,
  *   e2_id      <--  second edge implied in the equivalence
  *   curv_abs2  <--  curvilinear abscissa of the intersection on edge 2
  *   verbosity  <--  level of accuracy in information display
+ *   logfile    <--  handle to log file if verbosity > 1
  *
  * returns:
  *  true if the check is ok, false otherwise
@@ -379,7 +380,8 @@ _check_equiv(const cs_join_edges_t  *edges,
              float                   curv_abs1,
              cs_int_t                e2_id,
              float                   curv_abs2,
-             int                     verbosity)
+             int                     verbosity,
+             FILE                   *logfile)
 {
   cs_join_vertex_t  p1 = _get_new_vertex(curv_abs1, 1,
                                          &(edges->def[2*e1_id]), mesh);
@@ -396,30 +398,35 @@ _check_equiv(const cs_join_edges_t  *edges,
 
     _n_inter_tolerance_warnings++;
 
-    if (verbosity > 2)
-      bft_printf(_("\n"
-                   "  Edge - Edge intersection warning between:\n"
-                   "    edge 1: %d (%u) [%d (%u), %d (%u)]\n"
-                   "    edge 2: %d (%u) [%d (%u), %d (%u)]\n"
-                   "  Intersection found for curv. abs. %f (e1) - %f (e2)"
-                   " will be ignored.\n"),
-                 e1_id+1, edges->gnum[e1_id],
-                 v1e1_id+1, mesh->vertices[v1e1_id].gnum,
-                 v2e1_id+1, mesh->vertices[v2e1_id].gnum,
-                 e2_id+1, edges->gnum[e2_id],
-                 v1e2_id+1, mesh->vertices[v1e2_id].gnum,
-                 v2e2_id+1, mesh->vertices[v2e2_id].gnum,
-                 curv_abs1, curv_abs2);
+    if (verbosity > 3) {
 
-    if (p1.tolerance < d12 && verbosity > 3)
-      bft_printf(_(" Failure for edge 1: "
-                   " Distance [v_inter1, v_inter2]: %e > v_inter1.tol: %e\n"),
-                 d12, p1.tolerance);
-    if (p2.tolerance < d12 && verbosity > 3)
-      bft_printf(_(" Failure for edge 2: "
-                   " Distance [v_inter1, v_inter2]: %e > v_inter2.tol: %e\n"),
-                 d12, p1.tolerance);
+      fprintf(logfile,
+              "\n"
+              "  Edge - Edge intersection warning between:\n"
+              "    edge 1: %d (%llu) [%d (%llu), %d (%llu)]\n"
+              "    edge 2: %d (%llu) [%d (%llu), %d (%llu)]\n"
+              "  Intersection found for curv. abs. %f (e1) - %f (e2)"
+              " will be ignored.\n",
+              e1_id+1, (unsigned long long)edges->gnum[e1_id],
+              v1e1_id+1, (unsigned long long)mesh->vertices[v1e1_id].gnum,
+              v2e1_id+1, (unsigned long long)mesh->vertices[v2e1_id].gnum,
+              e2_id+1, (unsigned long long)edges->gnum[e2_id],
+              v1e2_id+1, (unsigned long long)mesh->vertices[v1e2_id].gnum,
+              v2e2_id+1, (unsigned long long)mesh->vertices[v2e2_id].gnum,
+              curv_abs1, curv_abs2);
 
+      if (p1.tolerance < d12 && verbosity > 4)
+        fprintf(logfile,
+                " Failure for edge 1: "
+                " Distance [v_inter1, v_inter2]: %e > v_inter1.tol: %e\n",
+                d12, p1.tolerance);
+
+      if (p2.tolerance < d12 && verbosity > 4)
+        fprintf(logfile,
+                " Failure for edge 2: "
+                " Distance [v_inter1, v_inter2]: %e > v_inter2.tol: %e\n",
+                d12, p1.tolerance);
+    }
     return false;
   }
   else
@@ -585,7 +592,8 @@ _break_equivalence(cs_int_t           n_elts,
   } /* End of loop on i1 */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(" Break equivalence between [%d, %d]\n", i1_save, i2_save);
+  fprintf(cs_glob_join_log,
+          " Break equivalence between [%d, %d]\n", i1_save, i2_save);
 #endif
 
   if (rtf > 0.0) { /* We have find an equivalence to break */
@@ -764,16 +772,16 @@ _find_edge_equiv(cs_join_param_t  param,
  *    v2 = vector (P1E1, P1E2)
  *
  * parameters:
- *   mesh     <-- pointer to joining mesh
- *   edges    <-- pointer to edges
- *   p1e1     <--  pointer to the associated P1E1 cs_join_vertex_t structure
- *   p2e1     <--  pointer to the associated P2E1 cs_join_vertex_t structure
- *   p1e2     <--  pointer to the associated P1E2 cs_join_vertex_t structure
- *   p2e2     <--  pointer to the associated P2E2 cs_join_vertex_t structure
- *   fraction <--  global tolerance for geometrical intersection.
- *   abs_e1   <--  intersection location on E1 (curvilinear abscissa)
- *   abs_e2   <--  intersection location on E2 (curvilinear abscissa)
- *   n_inter  <->  number of intersections detected.
+ *   mesh       <-- pointer to joining mesh
+ *   edges      <-- pointer to edges
+ *   fraction   <--  global tolerance for geometrical intersection.
+ *   e1_id      <--  id of edge 1
+ *   abs_e1     <--  intersection location on E1 (curvilinear abscissa)
+ *   e2_id      <--  id of edge 2
+ *   abs_e2     <--  intersection location on E2 (curvilinear abscissa)
+ *   verbosity  <--  level of accuracy in information display
+ *   logfile    <--  handle to optional log file
+ *   n_inter    <->  number of intersections detected.
  *---------------------------------------------------------------------------*/
 
 static void
@@ -786,6 +794,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
                         double                  abs_e2[2],
                         double                  parall_eps2,
                         int                     verbosity,
+                        FILE                   *logfile,
                         int                    *n_inter)
 {
   int  k;
@@ -808,7 +817,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   const cs_join_vertex_t  p2e2 = mesh->vertices[p2e2_id];
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_bool_t  tst_dbg = (verbosity > 5 &&
+  cs_bool_t  tst_dbg = (verbosity > 6 &&
                        (p1e1.gnum == 716852 || p2e1.gnum == 716852 ||
                         p1e2.gnum == 716852 || p2e2.gnum == 716852) ?
                         true : false);
@@ -843,24 +852,30 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   f =   _dot_product(v2, v2);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg) {
-    bft_printf("\n\np1e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p1e1.gnum, p1e1.coord[0], p1e1.coord[1], p1e1.coord[2],
-               p1e1.tolerance);
-    bft_printf("p2e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p2e1.gnum, p2e1.coord[0], p2e1.coord[1], p2e1.coord[2],
-               p2e1.tolerance);
-    bft_printf("p1e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p1e2.gnum, p1e2.coord[0], p1e2.coord[1], p1e2.coord[2],
-               p1e2.tolerance);
-    bft_printf("p2e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n\n",
-               p2e2.gnum, p2e2.coord[0], p2e2.coord[1], p2e2.coord[2],
-               p2e2.tolerance);
-    bft_printf("v0 : [ %10.8e %10.8e %10.8e]\n", v0[0], v0[1], v0[2]);
-    bft_printf("v1 : [ %10.8e %10.8e %10.8e]\n", v1[0], v1[1], v1[2]);
-    bft_printf("v2 : [ %10.8e %10.8e %10.8e]\n\n", v2[0], v2[1], v2[2]);
-    bft_printf("a : %10.8e, b : %10.8e, c : %10.8e\n", a, b, c);
-    bft_printf("d : %10.8e, e : %10.8e, f : %10.8e\n", d, e, f);
+  if (tst_dbg && logfile != NULL) {
+    fprintf(logfile,
+            "\n\np1e1 : %10llu - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+            (unsigned long long)p1e1.gnum,
+            p1e1.coord[0], p1e1.coord[1], p1e1.coord[2], p1e1.tolerance);
+    fprintf(logfile,
+            "p2e1 : %10llu - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+            (unsigned long long)p2e1.gnum,
+            p2e1.coord[0], p2e1.coord[1], p2e1.coord[2], p2e1.tolerance);
+    fprintf(logfile,
+            "p1e2 : %10llu - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+            (unsigned long long)p1e2.gnum,
+            p1e2.coord[0], p1e2.coord[1], p1e2.coord[2], p1e2.tolerance);
+    fprintf(logfile,
+            "p2e2 : %10llu - [%10.8e %10.8e %10.8e] - tol: %10.8g\n\n",
+            (unsigned long long)p2e2.gnum,
+            p2e2.coord[0], p2e2.coord[1], p2e2.coord[2], p2e2.tolerance);
+    fprintf(logfile,
+            "v0 : [ %10.8e %10.8e %10.8e]\n", v0[0], v0[1], v0[2]);
+    fprintf(logfile,
+            "v1 : [ %10.8e %10.8e %10.8e]\n", v1[0], v1[1], v1[2]);
+    fprintf(logfile, "v2 : [ %10.8e %10.8e %10.8e]\n\n", v2[0], v2[1], v2[2]);
+    fprintf(logfile, "a : %10.8e, b : %10.8e, c : %10.8e\n", a, b, c);
+    fprintf(logfile, "d : %10.8e, e : %10.8e, f : %10.8e\n", d, e, f);
   }
 #endif
 
@@ -897,10 +912,11 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   cross_norm2 = CS_ABS(a * c - b * b);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg)
-    bft_printf(" [I]: Test inter. E1 - E2: "
-               "\t cross_norm2: %12.8e - parall_limit: %12.8e\n",
-               cross_norm2, parall_eps2*a*c);
+  if (tst_dbg && logfile != NULL)
+    fprintf(logfile,
+            " [I]: Test inter. E1 - E2: "
+            "\t cross_norm2: %12.8e - parall_limit: %12.8e\n",
+            cross_norm2, parall_eps2*a*c);
 #endif
 
   if (cross_norm2 > parall_eps2 * a * c) {
@@ -924,9 +940,10 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
     t *= inv_cross_norm2;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg)
-    bft_printf(" [I]-1: Test inter. E1 - E2: "
-               "\t s: %12.8e - t: %12.8e\n", s, t);
+  if (tst_dbg && logfile != NULL)
+    fprintf(logfile,
+            " [I]-1: Test inter. E1 - E2: "
+            "\t s: %12.8e - t: %12.8e\n", s, t);
 #endif
 
     if (s >= 0. && s <= 1.0) {
@@ -941,11 +958,12 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         d2_limit_e2 = d_limit_e2 * d_limit_e2;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t[I]-2: s = %10.8e, t = %10.8e\n"
-                     "\t  d2_e1e2: %10.8e, d2_limit_e1: %10.8e, "
-                     "d2_limit_e2: %10.8e\n",
-                     s, t, d2_e1e2, d2_limit_e1, d2_limit_e2);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t[I]-2: s = %10.8e, t = %10.8e\n"
+                  "\t  d2_e1e2: %10.8e, d2_limit_e1: %10.8e, "
+                  "d2_limit_e2: %10.8e\n",
+                  s, t, d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
         if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
@@ -960,9 +978,10 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
           int_inter[1] = t;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[I]-3: Add int. inter. Edge-Edge (%10.8e,%10.8e)\n",
-                       s, t);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[I]-3: Add int. inter. Edge-Edge (%10.8e,%10.8e)\n",
+                    s, t);
 #endif
 
         } /* If we are under tolerance */
@@ -984,8 +1003,8 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   t = -e / c; /* Nearest point on E2 if s = 0 => t = -e/c */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg)
-    bft_printf(" [II] Test inter. P1E1 - E2: t = %10.8e\n", t);
+  if (tst_dbg && logfile != NULL)
+    fprintf(logfile, " [II] Test inter. P1E1 - E2: t = %10.8e\n", t);
 #endif
 
   if (t > -fraction && t < 1.0 + fraction) { /* filter */
@@ -1007,10 +1026,11 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
       if (d2_e1e2 <= d2_limit_e2) {
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t[II]-3: Under tol. for P1E1 and a point of E2\n"
-                     "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
-                     d2_e1e2, d2_limit_e1, d2_limit_e2);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t[II]-3: Under tol. for P1E1 and a point of E2\n"
+                  "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+                  d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
         /* We are under tolerance for edge E2. We try to find if it is
@@ -1023,7 +1043,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
 
-            if (_check_equiv(edges, mesh, e1_id, 0.0, e2_id, 0.0, verbosity)) {
+            if (_check_equiv(edges, mesh,
+                             e1_id, 0.0, e2_id, 0.0,
+                             verbosity, logfile)) {
 
               /* "extremity-extremity" intersection with s = t = 0.0
                  under the tolerance is possible */
@@ -1034,8 +1056,8 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
               ext_inter[1] = 0.0;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\t[II]-4: Add inter. Vtx-Vtx (0.00, 0.00)\n");
+              if (tst_dbg && logfile != NULL)
+                fprintf(logfile, "\t[II]-4: Add inter. Vtx-Vtx (0.00, 0.00)\n");
 #endif
             }
           }
@@ -1047,7 +1069,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
 
-            if (_check_equiv(edges, mesh, e1_id, 0.0, e2_id, 1.0, verbosity)) {
+            if (_check_equiv(edges, mesh,
+                             e1_id, 0.0, e2_id, 1.0,
+                             verbosity, logfile)) {
 
               /* "extremity-extremity" intersection with s = 0.0, t = 1.0
                  under the tolerance is possible */
@@ -1058,8 +1082,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
               ext_inter[1] = 1.0;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\t[II]-5: Add inter. Vtx-Vtx (0.00, 1.00)\n");
+              if (tst_dbg && logfile != NULL)
+                fprintf(logfile,
+                        "\t[II]-5: Add inter. Vtx-Vtx (0.00, 1.00)\n");
 #endif
 
             }
@@ -1081,8 +1106,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
             int_p2e2 = true;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[II]-6: Add inter. Vtx-Edge (0.00, %10.8e)\n", t);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[II]-6: Add inter. Vtx-Edge (0.00, %10.8e)\n", t);
 #endif
 
         }
@@ -1100,8 +1126,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
                        when s = 1. */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg)
-    bft_printf(" [III] Test inter. P2E1 - E2: t = %10.8e\n", t);
+  if (tst_dbg && logfile != NULL)
+    fprintf(logfile,
+            " [III] Test inter. P2E1 - E2: t = %10.8e\n", t);
 #endif
 
   if (t > -fraction && t < 1.0 + fraction) { /* filter */
@@ -1122,10 +1149,11 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
       if (d2_e1e2 <= d2_limit_e2) { /* Under tolerance for edge 2 */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t[III]-3: Under tol. for P2E1 and a point of E2\n"
-                     "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
-                     d2_e1e2, d2_limit_e1, d2_limit_e2);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t[III]-3: Under tol. for P2E1 and a point of E2\n"
+                  "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+                  d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
         /* We are under tolerance for edge E2. We try to find if it is
@@ -1138,7 +1166,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
 
-            if (_check_equiv(edges, mesh, e1_id, 1.0, e2_id, 0.0, verbosity)) {
+            if (_check_equiv(edges, mesh,
+                             e1_id, 1.0, e2_id, 0.0,
+                             verbosity, logfile)) {
 
               /* "extremity-extremity" intersection with s = 1.0, t = 0.0
                  under the tolerance is possible */
@@ -1149,8 +1179,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
               n_ext_inter += 1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\t[III]-4: Add inter. Vtx-Vtx (1.00, 0.00)\n");
+              if (tst_dbg && logfile != NULL)
+                fprintf(logfile,
+                        "\t[III]-4: Add inter. Vtx-Vtx (1.00, 0.00)\n");
 #endif
 
             }
@@ -1163,7 +1194,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
 
-            if (_check_equiv(edges, mesh, e1_id, 1.0, e2_id, 1.0, verbosity)) {
+            if (_check_equiv(edges, mesh,
+                             e1_id, 1.0, e2_id, 1.0,
+                             verbosity, logfile)) {
 
               /* "extremity-extremity" intersection with s = t = 1.0
                  under the tolerance is possible */
@@ -1174,8 +1207,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
               n_ext_inter += 1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\t[III]-5: Add inter. Vtx-Vtx (1.00, 1.00)\n");
+              if (tst_dbg && logfile != NULL)
+                fprintf(logfile,
+                        "\t[III]-5: Add inter. Vtx-Vtx (1.00, 1.00)\n");
 #endif
 
             }
@@ -1199,8 +1233,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
           assert(n_ext_inter <= 2);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[III]-6: Add inter. Vtx-Edge (1.00, %10.8e)\n", t);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[III]-6: Add inter. Vtx-Edge (1.00, %10.8e)\n", t);
 #endif
         }
 
@@ -1221,8 +1256,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
     s = -d / a; /* t = 0.0 */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf(" [IV] Test inter. P1E2 - E1: s = %10.8e\n", s);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile,
+              " [IV] Test inter. P1E2 - E1: s = %10.8e\n", s);
 #endif
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
@@ -1231,9 +1267,10 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
       d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf("\t [IV-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
-                 d2_e1e2, d2_limit_e2);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile,
+              "\t [IV-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
+              d2_e1e2, d2_limit_e2);
 #endif
 
       if (d2_e1e2 <= d2_limit_e2) { /* Under the tolerance for vertex P1E2 */
@@ -1242,18 +1279,21 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         d2_limit_e1 = d_limit_e1 * d_limit_e1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
-                     d2_e1e2, d2_limit_e1);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
+                  d2_e1e2, d2_limit_e1);
 #endif
 
         if (d2_e1e2 <= d2_limit_e1) {
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[IV]-2: Under tol. for P1E2 and a point of E1\n"
-                       "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
-                       d2_e1e2, d2_limit_e1, d2_limit_e2);
+          if (tst_dbg && logfile != NULL)
+            fprintf
+              (logfile,
+               "\t[IV]-2: Under tol. for P1E2 and a point of E1\n"
+               "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+               d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
           /* We are under tolerance for edge E1. There is an intersection
@@ -1265,8 +1305,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
           assert(n_ext_inter <= 2);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[IV]-3: Add inter. Edge-Vtx (%10.8e, 0.00)\n", s);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[IV]-3: Add inter. Edge-Vtx (%10.8e, 0.00)\n", s);
 #endif
 
         } /* End if d2_e1e2 < d2_limit_e1 */
@@ -1285,8 +1326,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
     s = -(b + d) / a; /* t = 1 */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf(" [V] Test inter. P2E2 - E1: s = %10.8e\n", s);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile,
+              " [V] Test inter. P2E2 - E1: s = %10.8e\n", s);
 #endif
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
@@ -1295,9 +1337,10 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
       d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf("\t [V-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
-                 d2_e1e2, d2_limit_e2);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile,
+              "\t [V-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
+              d2_e1e2, d2_limit_e2);
 #endif
 
       if (d2_e1e2 <= d2_limit_e2) { /* Under the tolerance for vertex P2E2 */
@@ -1306,18 +1349,21 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         d2_limit_e1 = d_limit_e1 * d_limit_e1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t [V-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
-                     d2_e1e2, d2_limit_e1);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t [V-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
+                  d2_e1e2, d2_limit_e1);
 #endif
 
         if (d2_e1e2 <= d2_limit_e1) {
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[V]-2: Under tol. for P2E2 and a point of E1\n"
-                       "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
-                       d2_e1e2, d2_limit_e1, d2_limit_e2);
+          if (tst_dbg && logfile != NULL)
+            fprintf
+              (logfile,
+               "\t[V]-2: Under tol. for P2E2 and a point of E1\n"
+               "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+               d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
           /* We are under tolerance for edge E1. There is an intersection
@@ -1329,8 +1375,9 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
           assert(n_ext_inter <= 2);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[V]-3: Add inter (%10.8e, 1.01)\n", s);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[V]-3: Add inter (%10.8e, 1.01)\n", s);
 #endif
 
         } /* End if d2_e1e2 < d2_limit_e1 */
@@ -1440,16 +1487,16 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
  *    v2 = vector (P1E1, P1E2)
  *
  * parameters:
- *   mesh     <-- pointer to joining mesh
- *   edges    <-- pointer to edges
- *   p1e1     <--  pointer to the associated P1E1 cs_join_vertex_t structure
- *   p2e1     <--  pointer to the associated P2E1 cs_join_vertex_t structure
- *   p1e2     <--  pointer to the associated P1E2 cs_join_vertex_t structure
- *   p2e2     <--  pointer to the associated P2E2 cs_join_vertex_t structure
- *   fraction <--  global tolerance for geometrical intersection.
- *   abs_e1   <--  intersection location on E1 (curvilinear abscissa)
- *   abs_e2   <--  intersection location on E2 (curvilinear abscissa)
- *   n_inter  <->  number of intersections detected.
+ *   mesh       <-- pointer to joining mesh
+ *   edges      <-- pointer to edges
+ *   fraction   <--  global tolerance for geometrical intersection.
+ *   e1_id      <--  id of edge 1
+ *   abs_e1     <--  intersection location on E1 (curvilinear abscissa)
+ *   e2_id      <--  id of edge 2
+ *   abs_e2     <--  intersection location on E2 (curvilinear abscissa)
+ *   verbosity  <--  level of detail in information display
+ *   logfile    <--  handle to log file if verbosity > 1
+ *   n_inter    <->  number of intersections detected.
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1462,6 +1509,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
                     double                  abs_e2[2],
                     double                  parall_eps2,
                     int                     verbosity,
+                    FILE                   *logfile,
                     int                    *n_inter)
 {
   int  k;
@@ -1482,7 +1530,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   const cs_join_vertex_t  p2e2 = mesh->vertices[p2e2_id];
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_bool_t  tst_dbg = (verbosity > 5 &&
+  cs_bool_t  tst_dbg = (verbosity > 6 &&
                        (p1e1.gnum == 716852 || p2e1.gnum == 716852 ||
                         p1e2.gnum == 716852 || p2e2.gnum == 716852) ?
                         true : false);
@@ -1517,24 +1565,28 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   f =   _dot_product(v2, v2);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg) {
-    bft_printf("\n\np1e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p1e1.gnum, p1e1.coord[0], p1e1.coord[1], p1e1.coord[2],
-               p1e1.tolerance);
-    bft_printf("p2e1 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p2e1.gnum, p2e1.coord[0], p2e1.coord[1], p2e1.coord[2],
-               p2e1.tolerance);
-    bft_printf("p1e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
-               p1e2.gnum, p1e2.coord[0], p1e2.coord[1], p1e2.coord[2],
-               p1e2.tolerance);
-    bft_printf("p2e2 : %10u - [%10.8e %10.8e %10.8e] - tol: %10.8g\n\n",
-               p2e2.gnum, p2e2.coord[0], p2e2.coord[1], p2e2.coord[2],
-               p2e2.tolerance);
-    bft_printf("v0 : [ %10.8e %10.8e %10.8e]\n", v0[0], v0[1], v0[2]);
-    bft_printf("v1 : [ %10.8e %10.8e %10.8e]\n", v1[0], v1[1], v1[2]);
-    bft_printf("v2 : [ %10.8e %10.8e %10.8e]\n\n", v2[0], v2[1], v2[2]);
-    bft_printf("a : %10.8e, b : %10.8e, c : %10.8e\n", a, b, c);
-    bft_printf("d : %10.8e, e : %10.8e, f : %10.8e\n", d, e, f);
+  if (tst_dbg && logfile != NULL) {
+    fprintf(logfile,
+            "\n\np1e1 : %10llu - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+            (unsigned long long)p1e1.gnum,
+            p1e1.coord[0], p1e1.coord[1], p1e1.coord[2], p1e1.tolerance);
+    fprintf(logfile,
+            "p2e1 : %10llu - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+            (unsigned long long)p2e1.gnum,
+            p2e1.coord[0], p2e1.coord[1], p2e1.coord[2], p2e1.tolerance);
+    fprintf(logfile,
+            "p1e2 : %10llu - [%10.8e %10.8e %10.8e] - tol: %10.8g\n",
+            (unsigned long long)p1e2.gnum,
+            p1e2.coord[0], p1e2.coord[1], p1e2.coord[2], p1e2.tolerance);
+    fprintf(logfile,
+            "p2e2 : %10llu - [%10.8e %10.8e %10.8e] - tol: %10.8g\n\n",
+            (unsigned long long)p2e2.gnum,
+            p2e2.coord[0], p2e2.coord[1], p2e2.coord[2], p2e2.tolerance);
+    fprintf(logfile, "v0 : [ %10.8e %10.8e %10.8e]\n", v0[0], v0[1], v0[2]);
+    fprintf(logfile, "v1 : [ %10.8e %10.8e %10.8e]\n", v1[0], v1[1], v1[2]);
+    fprintf(logfile, "v2 : [ %10.8e %10.8e %10.8e]\n\n", v2[0], v2[1], v2[2]);
+    fprintf(logfile, "a : %10.8e, b : %10.8e, c : %10.8e\n", a, b, c);
+    fprintf(logfile, "d : %10.8e, e : %10.8e, f : %10.8e\n", d, e, f);
   }
 #endif
 
@@ -1562,8 +1614,8 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   t = -e / c; /* Nearest point on E2 if s = 0 => t = -e/c */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg)
-    bft_printf(" [I] Test inter. P1E1 - E2: t = %10.8e\n", t);
+  if (tst_dbg && logfile != NULL)
+    fprintf(logfile, " [I] Test inter. P1E1 - E2: t = %10.8e\n", t);
 #endif
 
   if (t > -fraction && t < 1.0 + fraction) { /* filter */
@@ -1585,10 +1637,11 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
       if (d2_e1e2 <= d2_limit_e2) {
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t[I]-3: Under tol. for P1E1 and a point of E2\n"
-                     "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
-                     d2_e1e2, d2_limit_e1, d2_limit_e2);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t[I]-3: Under tol. for P1E1 and a point of E2\n"
+                  "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+                  d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
         /* We are under tolerance for edge E2. We try to find if it is
@@ -1601,7 +1654,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
 
-            if (_check_equiv(edges, mesh, e1_id, 0.0, e2_id, 0.0, verbosity)) {
+            if (_check_equiv(edges, mesh,
+                             e1_id, 0.0, e2_id, 0.0,
+                             verbosity, logfile)) {
 
               /* "extremity-extremity" intersection with s = t = 0.0
                  under the tolerance is possible */
@@ -1614,8 +1669,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
               assert(*n_inter == 1);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\t[I]-4: Add inter. Vtx-Vtx (0.00, 0.00)\n");
+              if (tst_dbg && logfile != NULL)
+                fprintf(logfile,
+                        "\t[I]-4: Add inter. Vtx-Vtx (0.00, 0.00)\n");
 #endif
             }
           }
@@ -1627,7 +1683,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
 
-            if (_check_equiv(edges, mesh, e1_id, 0.0, e2_id, 1.0, verbosity)) {
+            if (_check_equiv(edges, mesh,
+                             e1_id, 0.0, e2_id, 1.0,
+                             verbosity, logfile)) {
 
               /* "extremity-extremity" intersection with s = 0.0, t = 1.0
                  under the tolerance is possible */
@@ -1640,8 +1698,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
               assert(*n_inter == 1);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\t[I]-5: Add inter. Vtx-Vtx (0.00, 1.00)\n");
+              if (tst_dbg && logfile != NULL)
+                fprintf(logfile,
+                        "\t[I]-5: Add inter. Vtx-Vtx (0.00, 1.00)\n");
 #endif
 
             }
@@ -1666,8 +1725,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[I]-6: Add inter. Vtx-Edge (0.00, %10.8e)\n", t);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[I]-6: Add inter. Vtx-Edge (0.00, %10.8e)\n", t);
 #endif
 
         }
@@ -1685,8 +1745,8 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
                        when s = 1. */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (tst_dbg)
-    bft_printf(" [II] Test inter. P2E1 - E2: t = %10.8e\n", t);
+  if (tst_dbg && logfile != NULL)
+    fprintf(logfile, " [II] Test inter. P2E1 - E2: t = %10.8e\n", t);
 #endif
 
   if (t > -fraction && t < 1.0 + fraction) { /* filter */
@@ -1707,10 +1767,11 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
       if (d2_e1e2 <= d2_limit_e2) { /* Under tolerance for edge 2 */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t[II]-3: Under tol. for P2E1 and a point of E2\n"
-                     "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
-                     d2_e1e2, d2_limit_e1, d2_limit_e2);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t[II]-3: Under tol. for P2E1 and a point of E2\n"
+                  "\td2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+                  d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
         /* We are under tolerance for edge E2. We try to find if it is
@@ -1723,7 +1784,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
 
-            if (_check_equiv(edges, mesh, e1_id, 1.0, e2_id, 0.0, verbosity)) {
+            if (_check_equiv(edges, mesh,
+                             e1_id, 1.0, e2_id, 0.0,
+                             verbosity, logfile)) {
 
               /* "extremity-extremity" intersection with s = 1.0, t = 0.0
                  under the tolerance is possible */
@@ -1735,8 +1798,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
               *n_inter += 1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\t[II]-4: Add inter. Vtx-Vtx (1.00, 0.00)\n");
+              if (tst_dbg && logfile != NULL)
+                fprintf(logfile,
+                        "\t[II]-4: Add inter. Vtx-Vtx (1.00, 0.00)\n");
 #endif
 
             }
@@ -1749,7 +1813,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
           if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
 
-            if (_check_equiv(edges, mesh, e1_id, 1.0, e2_id, 1.0, verbosity)) {
+            if (_check_equiv(edges, mesh,
+                             e1_id, 1.0, e2_id, 1.0,
+                             verbosity, logfile)) {
 
               /* "extremity-extremity" intersection with s = t = 1.0
                  under the tolerance is possible */
@@ -1761,8 +1827,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
               *n_inter += 1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-              if (tst_dbg)
-                bft_printf("\t[II]-5: Add inter. Vtx-Vtx (1.00, 1.00)\n");
+              if (tst_dbg && logfile != NULL)
+                fprintf(logfile,
+                        "\t[II]-5: Add inter. Vtx-Vtx (1.00, 1.00)\n");
 #endif
 
             }
@@ -1786,8 +1853,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
           assert(*n_inter <= 2);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[II]-6: Add inter. Vtx-Edge (1.00, %10.8e)\n", t);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[II]-6: Add inter. Vtx-Edge (1.00, %10.8e)\n", t);
 #endif
         }
 
@@ -1813,8 +1881,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
     s = -d / a; /* t = 0.0 */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf(" [III] Test inter. P1E2 - E1: s = %10.8e\n", s);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile,
+              " [III] Test inter. P1E2 - E1: s = %10.8e\n", s);
 #endif
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
@@ -1823,9 +1892,10 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
       d2_limit_e2 = p1e2.tolerance * p1e2.tolerance;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf("\t [III-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
-                 d2_e1e2, d2_limit_e2);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile,
+              "\t [III-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
+              d2_e1e2, d2_limit_e2);
 #endif
 
       if (d2_e1e2 <= d2_limit_e2) { /* Under the tolerance for vertex P1E2 */
@@ -1834,18 +1904,21 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         d2_limit_e1 = d_limit_e1 * d_limit_e1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
-                     d2_e1e2, d2_limit_e1);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
+                  d2_e1e2, d2_limit_e1);
 #endif
 
         if (d2_e1e2 <= d2_limit_e1) {
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[III]-2: Under tol. for P1E2 and a point of E1\n"
-                       "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
-                       d2_e1e2, d2_limit_e1, d2_limit_e2);
+          if (tst_dbg && logfile != NULL)
+            fprintf
+              (logfile,
+               "\t[III]-2: Under tol. for P1E2 and a point of E1\n"
+               "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+               d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
           /* We are under tolerance for edge E1. There is an intersection
@@ -1858,8 +1931,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
           assert(*n_inter <= 2);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[III]-3: Add inter. Edge-Vtx (%10.8e, 0.00)\n", s);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[III]-3: Add inter. Edge-Vtx (%10.8e, 0.00)\n", s);
 #endif
 
           if (*n_inter == 2)
@@ -1881,8 +1955,8 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
     s = -(b + d) / a; /* t = 1 */
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf(" [IV] Test inter. P2E2 - E1: s = %10.8e\n", s);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile, " [IV] Test inter. P2E2 - E1: s = %10.8e\n", s);
 #endif
 
     if (s > 0.0 && s < 1.0) { /* s = 0.0 and s = 1.0 are already tested */
@@ -1891,9 +1965,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
       d2_limit_e2 = p2e2.tolerance * p2e2.tolerance;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf("\t [IV-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
-                 d2_e1e2, d2_limit_e2);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile, "\t [IV-1a] d2_e1e2: %10.8e - d2_lim_e2: %10.8e\n",
+              d2_e1e2, d2_limit_e2);
 #endif
 
       if (d2_e1e2 <= d2_limit_e2) { /* Under the tolerance for vertex P2E2 */
@@ -1902,18 +1976,20 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         d2_limit_e1 = d_limit_e1 * d_limit_e1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
-                     d2_e1e2, d2_limit_e1);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile, "\t [IV-1b] d2_e1e2: %10.8e - d2_lim_e1: %10.8e\n",
+                  d2_e1e2, d2_limit_e1);
 #endif
 
         if (d2_e1e2 <= d2_limit_e1) {
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[IV]-2: Under tol. for P2E2 and a point of E1\n"
-                       "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
-                       d2_e1e2, d2_limit_e1, d2_limit_e2);
+          if (tst_dbg && logfile != NULL)
+            fprintf
+              (logfile,
+               "\t[IV]-2: Under tol. for P2E2 and a point of E1\n"
+               "\t d2_e1e2 = %10.8e, d2_lim_e1: %10.8e, d2_lim_e2: %10.8e\n",
+               d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
           /* We are under tolerance for edge E1. There is an intersection
@@ -1926,8 +2002,8 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
           assert(*n_inter <= 2);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[IV]-3: Add inter (%10.8e, 1.01)\n", s);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile, "\t[IV]-3: Add inter (%10.8e, 1.01)\n", s);
 #endif
 
           if (*n_inter == 2)
@@ -1970,10 +2046,11 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
     double  cross_norm2 = CS_ABS(a * c - b * b);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    if (tst_dbg)
-      bft_printf(" [V]: Test inter. E1 - E2: cross_norm2: %10.8e\n"
-                 "\ta = %10.8e, b = %10.8e, c = %10.8e, a*c = %10.8e\n",
-                 cross_norm2, a, b, c, a*c);
+    if (tst_dbg && logfile != NULL)
+      fprintf(logfile,
+              " [V]: Test inter. E1 - E2: cross_norm2: %10.8e\n"
+              "\ta = %10.8e, b = %10.8e, c = %10.8e, a*c = %10.8e\n",
+              cross_norm2, a, b, c, a*c);
 #endif
 
     if (cross_norm2 < parall_eps2 * a * c) /* <=> 1 - b^2/(a.c) < epsilon^2
@@ -2008,11 +2085,12 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
         d2_limit_e2 = d_limit_e2 * d_limit_e2;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (tst_dbg)
-          bft_printf("\t[V]-2: s = %10.8e, t = %10.8e\n"
-                     "\t  d2_e1e2: %10.8e, d2_limit_e1: %10.8e, "
-                     "d2_limit_e2: %10.8e\n",
-                     s, t, d2_e1e2, d2_limit_e1, d2_limit_e2);
+        if (tst_dbg && logfile != NULL)
+          fprintf(logfile,
+                  "\t[V]-2: s = %10.8e, t = %10.8e\n"
+                  "\t  d2_e1e2: %10.8e, d2_limit_e1: %10.8e, "
+                  "d2_limit_e2: %10.8e\n",
+                  s, t, d2_e1e2, d2_limit_e1, d2_limit_e2);
 #endif
 
         if (d2_e1e2 <= d2_limit_e1 && d2_e1e2 <= d2_limit_e2) {
@@ -2026,8 +2104,9 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
           abs_e2[*n_inter] = t;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-          if (tst_dbg)
-            bft_printf("\t[V]-3: Add inter. Edge-Edge (%10.8e,%10.8e)\n", s, t);
+          if (tst_dbg && logfile != NULL)
+            fprintf(logfile,
+                    "\t[V]-3: Add inter. Edge-Edge (%10.8e,%10.8e)\n", s, t);
 #endif
 
           *n_inter += 1;
@@ -2193,37 +2272,43 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
       (_("                                   rank mean"
          "      minimum      maximum\n"
          "    depth:                        %10d | %10d | %10d\n"
-         "    number of leaves:             %10lu | %10lu | %10lu\n"
-         "    number of boxes:              %10lu | %10lu | %10lu\n"
-         "    leaves over threshold:        %10lu | %10lu | %10lu\n"
+         "    number of leaves:             %10llu | %10llu | %10llu\n"
+         "    number of boxes:              %10llu | %10llu | %10llu\n"
+         "    leaves over threshold:        %10llu | %10llu | %10llu\n"
          "    boxes per leaf:               %10d | %10d | %10d\n"
          "    Memory footprint (kb):\n"
-         "      final search structure:     %10lu | %10lu | %10lu\n"
-         "      temporary search structure: %10lu | %10lu | %10lu\n\n"),
-               depth[0], depth[1], depth[2],
-               n_leaves[0], n_leaves[1], n_leaves[2],
-               n_boxes[0], n_boxes[1], n_boxes[2],
-               n_threshold_leaves[0], n_threshold_leaves[1],
-               n_threshold_leaves[2],
-               n_leaf_boxes[0], n_leaf_boxes[1], n_leaf_boxes[2],
-               mem_final[0], mem_final[1], mem_final[2],
-               mem_required[0], mem_required[1], mem_required[2]);
+         "      final search structure:     %10llu | %10llu | %10llu\n"
+         "      temporary search structure: %10llu | %10llu | %10llu\n\n"),
+       depth[0], depth[1], depth[2],
+       (unsigned long long)n_leaves[0], (unsigned long long)n_leaves[1],
+       (unsigned long long) n_leaves[2],
+       (unsigned long long)n_boxes[0], (unsigned long long)n_boxes[1],
+       (unsigned long long)n_boxes[2],
+       (unsigned long long)n_threshold_leaves[0],
+       (unsigned long long)n_threshold_leaves[1],
+       (unsigned long long)n_threshold_leaves[2],
+       n_leaf_boxes[0], n_leaf_boxes[1], n_leaf_boxes[2],
+       (unsigned long long)mem_final[0], (unsigned long long)mem_final[1],
+       (unsigned long long)mem_final[2],
+       (unsigned long long)mem_required[0], (unsigned long long)mem_required[1],
+       (unsigned long long)mem_required[2]);
 
 #endif /* defined(HAVE_MPI) */
 
   if (cs_glob_n_ranks == 1)
     bft_printf
       (_("    depth:                        %10d\n"
-         "    number of leaves:             %10lu\n"
-         "    number of boxes:              %10lu\n"
-         "    leaves over threshold:        %10lu\n"
+         "    number of leaves:             %10llu\n"
+         "    number of boxes:              %10llu\n"
+         "    leaves over threshold:        %10llu\n"
          "    boxes per leaf:               %10d mean [%d min, %d max]\n"
          "    Memory footprint (kb):\n"
-         "      final search structure:     %10lu\n"
-         "      temporary search structure: %10lu\n\n"),
-       depth[0], n_leaves[0], n_boxes[0], n_threshold_leaves[0],
+         "      final search structure:     %10llu\n"
+         "      temporary search structure: %10llu\n\n"),
+       depth[0], (unsigned long long)n_leaves[0], (unsigned long long)n_boxes[0],
+       (unsigned long long)n_threshold_leaves[0],
        n_leaf_boxes[0], n_leaf_boxes[1], n_leaf_boxes[2],
-       mem_final[0], mem_required[0]);
+       (unsigned long long)mem_final[0], (unsigned long long)mem_required[0]);
 
   bft_printf(_("    Associated times:           construction        query\n"
                "      wall clock time:            %10.3g   %10.3g\n"),
@@ -2307,22 +2392,24 @@ cs_join_inter_set_destroy(cs_join_inter_set_t  **inter_set)
  * Dump a cs_join_inter_set_t structure.
  *
  * parameters:
+ *   f     <-- handle to output file
  *   i_set <-- cs_join_inter_set_t structure to dump
  *   edges <-- associated cs_join_edge_t structure
  *   mesh  <-- associated cs_join_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_inter_set_dump(const cs_join_inter_set_t  *i_set,
+cs_join_inter_set_dump(FILE                       *f,
+                       const cs_join_inter_set_t  *i_set,
                        const cs_join_edges_t      *edges,
                        const cs_join_mesh_t       *mesh)
 {
   int  i;
 
-  bft_printf("\n  Dump an inter_set_t structure (%p)\n", i_set);
+  fprintf(f, "\n  Dump an inter_set_t structure (%p)\n", (const void *)i_set);
 
-  bft_printf("  n_max_inter: %10d\n", i_set->n_max_inter);
-  bft_printf("  n_inter    : %10d\n\n", i_set->n_inter);
+  fprintf(f, "  n_max_inter: %10d\n", i_set->n_max_inter);
+  fprintf(f, "  n_inter    : %10d\n\n", i_set->n_inter);
 
   for (i = 0; i < i_set->n_inter; i++) {
 
@@ -2337,14 +2424,19 @@ cs_join_inter_set_dump(const cs_join_inter_set_t  *i_set,
     fvm_gnum_t  v1e2 = (mesh->vertices[v1e2_id]).gnum;
     fvm_gnum_t  v2e2 = (mesh->vertices[v2e2_id]).gnum;
 
-    bft_printf("\n%5d - (%9u - %9d)\n",
-               i, edges->gnum[inter1.edge_id], edges->gnum[inter2.edge_id]);
-    bft_printf("E1 [%5u %5u]  (%6.3f)\n", v1e1, v2e1, inter1.curv_abs);
-    bft_printf("E2 [%5u %5u]  (%6.3f)\n", v1e2, v2e2, inter2.curv_abs);
+    fprintf(f, "\n%5d - (%9llu - %9llu)\n",
+            i, (unsigned long long)edges->gnum[inter1.edge_id],
+            (unsigned long long)edges->gnum[inter2.edge_id]);
+    fprintf(f, "E1 [%5llu %5llu]  (%6.3f)\n",
+            (unsigned long long)v1e1, (unsigned long long)v2e1,
+            inter1.curv_abs);
+    fprintf(f, "E2 [%5llu %5llu]  (%6.3f)\n",
+            (unsigned long long)v1e2, (unsigned long long)v2e2,
+            inter2.curv_abs);
 
   } /* End of loop on edge intersections */
 
-  bft_printf_flush();
+  fflush(f);
 }
 
 /*----------------------------------------------------------------------------
@@ -2603,6 +2695,7 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
   cs_int_t  *vtx_lst = NULL, *tag_lst = NULL;
   float  *abs_lst = NULL;
   double  *tol_lst = NULL;
+  FILE  *logfile = cs_glob_join_log;
 
   int  n_break_counter = 0, n_max_breaks = 0;
 
@@ -2635,32 +2728,36 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
                                               mesh->vertices[v2_id]);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-        if (param.verbosity > 3) {
+        if (param.verbosity > 4) {
           int  vid;
           double  ds_tol;
           fvm_gnum_t  v1_gnum = (mesh->vertices[v1_num-1]).gnum;
           fvm_gnum_t  v2_gnum = (mesh->vertices[v2_num-1]).gnum;
 
-          bft_printf("\n%6d: [%9u] = (%7d [%9u] - %7d [%9u] - len: %8.6e)\n",
-                     i, edges->gnum[i], v1_num, v1_gnum, v2_num, v2_gnum,
-                     edge_length);
-          bft_printf_flush();
+          fprintf(logfile,
+                  "\n%6d: [%9llu] = (%7d [%9llu] - %7d [%9llu] - len: %8.6e)\n",
+                  i, (unsigned long long)edges->gnum[i],
+                  v1_num, (unsigned long long)v1_gnum,
+                  v2_num, (unsigned long long)v2_gnum,
+                  edge_length);
+          fflush(logfile);
 
           if (inter_edges->vtx_glst == NULL) {
 
             for (j = start, k = 0; j < end; j++, k++) {
               vid = inter_edges->vtx_lst[j] - 1;
               if (vid > mesh->n_vertices) {
-                cs_join_mesh_dump(mesh);
-                bft_printf("vid: %d - n_vertices: %d\n",
-                           vid, mesh->n_vertices);
+                cs_join_mesh_dump(logfile, mesh);
+                fprintf(logfile, "vid: %d - n_vertices: %d\n",
+                        vid, mesh->n_vertices);
                 bft_error(__FILE__, __LINE__, 0,
                           _("  Vertex number out of bounds.\n"));
               }
               ds_tol = mesh->vertices[vid].tolerance/edge_length;
-              bft_printf("    %7d (%9u) - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
-                         k+1, vid+1, mesh->vertices[vid].gnum,
-                         inter_edges->abs_lst[j], ds_tol);
+              fprintf(logfile,
+                      "    %7d (%9llu) - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
+                      vid+1, (unsigned long long)mesh->vertices[vid].gnum,
+                      k+1, inter_edges->abs_lst[j], ds_tol);
             }
           }
           else {
@@ -2668,19 +2765,20 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
             for (j = start, k = 0; j < end; j++, k++) {
               vid = inter_edges->vtx_lst[j] - 1;
               if (vid > mesh->n_vertices) {
-                cs_join_mesh_dump(mesh);
-                bft_printf("vid: %d - n_vertices: %d\n",
-                           vid, mesh->n_vertices);
+                cs_join_mesh_dump(logfile, mesh);
+                fprintf(logfile, "vid: %d - n_vertices: %d\n",
+                        vid, mesh->n_vertices);
                 bft_error(__FILE__, __LINE__, 0,
                           _("  Vertex number out of bounds.\n"));
               }
             ds_tol = mesh->vertices[vid].tolerance/edge_length;
-            bft_printf("   %9u - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
-                       k+1, inter_edges->vtx_glst[j],
-                       inter_edges->abs_lst[j], ds_tol);
+            fprintf(logfile,
+                    "   %9llu - (%7d, s = %8.6e, ds_tol = %8.6e)\n",
+                    (unsigned long long)inter_edges->vtx_glst[j],
+                    k+1, inter_edges->abs_lst[j], ds_tol);
             }
           }
-        } /* param.verbosity > 3 */
+        } /* param.verbosity > 4 */
 #endif
 
         /* Build temporary lists */
@@ -2714,8 +2812,9 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
 
         if (n_breaks > 0) {
           n_break_counter += 1;
-          if (param.verbosity > 2)
-            bft_printf(" Edge %8d: n_equiv. broken: %d\n", i+1, n_breaks);
+          if (param.verbosity > 3)
+            fprintf(logfile,
+                    " Edge %8d: n_equiv. broken: %d\n", i+1, n_breaks);
         }
 
         n_max_breaks = CS_MAX(n_max_breaks, n_breaks);
@@ -2732,10 +2831,12 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
                 cs_join_eset_check_size(equiv_id, &vtx_equiv);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-                bft_printf("  Add equiv %d between [%u, %u]\n",
-                           equiv_id+1,
-                           mesh->vertices[vtx_lst[i1]-1].gnum,
-                           mesh->vertices[vtx_lst[i2]-1].gnum);
+                if (logfile != NULL)
+                  fprintf
+                    (logfile, "  Add equiv %d between [%llu, %llu]\n",
+                     equiv_id+1,
+                     (unsigned long long)mesh->vertices[vtx_lst[i1]-1].gnum,
+                     (unsigned long long)mesh->vertices[vtx_lst[i2]-1].gnum);
 #endif
 
                 if (vtx_lst[i1] < vtx_lst[i2]) {
@@ -3095,7 +3196,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   BFT_FREE(recv_inter_list);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_join_inter_edges_dump(inter_edges, edges, mesh);
+  cs_join_inter_edges_dump(cs_glob_join_log, block, edges, mesh);
 #endif
 
   return block;
@@ -3509,10 +3610,11 @@ cs_join_intersect_update_struct(int                      verbosity,
 
   if (n_new_vertices > 0) {
 
-    if (verbosity > 1)
-      bft_printf(_("\n  Add %d new vertices in the %s mesh definition"
-                   " during update of the edge definition.\n"),
-                 n_new_vertices, mesh->name);
+    if (verbosity > 2)
+      fprintf(cs_glob_join_log,
+              "\n  Add %d new vertices in the %s mesh definition"
+              " during update of the edge definition.\n",
+              n_new_vertices, mesh->name);
 
     BFT_REALLOC(mesh->vertices,
                 n_init_vertices + n_new_vertices,
@@ -3572,6 +3674,7 @@ cs_join_intersect_edges(cs_join_param_t         param,
   fvm_gnum_t  n_g_inter[3] = {0, 0, 0};
   cs_join_inter_set_t  *_inter_set = NULL;
   cs_join_eset_t  *_vtx_eset = NULL;
+  FILE  *logfile = cs_glob_join_log;
 
   const float  merge_limit = param.fraction * param.pre_merge_factor;
   const double  parall_eps2 = 1e-6;
@@ -3584,8 +3687,9 @@ cs_join_intersect_edges(cs_join_param_t         param,
   clock_start = bft_timer_wtime();
   cpu_start = bft_timer_cpu_time();
 
-  if (param.verbosity > 2)
-    bft_printf("  Parallel intersection criterion: %8.5e\n", parall_eps2);
+  if (param.verbosity > 3)
+    fprintf(logfile, "  Parallel intersection criterion: %8.5e\n",
+            parall_eps2);
 
   /* Initialization of structures */
 
@@ -3618,6 +3722,7 @@ cs_join_intersect_edges(cs_join_param_t         param,
                             e2_id, abs_e2,
                             parall_eps2,
                             param.verbosity,
+                            logfile,
                             &n_inter);
 
       else if (param.icm == 2)
@@ -3628,27 +3733,33 @@ cs_join_intersect_edges(cs_join_param_t         param,
                                 e2_id, abs_e2,
                                 parall_eps2,
                                 param.verbosity,
+                                logfile,
                                 &n_inter);
 
       n_inter_detected += n_inter;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-      if (param.verbosity > 2 && n_inter > 0) {
+      if (param.verbosity > 3 && n_inter > 0) {
 
         fvm_lnum_t  v1e1 = edges->def[2*e1_id] - 1;
         fvm_lnum_t  v2e1 = edges->def[2*e1_id+1] - 1;
         fvm_lnum_t  v1e2 = edges->def[2*e2_id] - 1;
         fvm_lnum_t  v2e2 = edges->def[2*e2_id+1] - 1;
 
-        bft_printf("\n Intersection: E1 (%u) [%u - %u] / E2 (%u) [%u - %u]\n",
-                   edges->gnum[e1_id], mesh->vertices[v1e1].gnum,
-                   mesh->vertices[v2e1].gnum, edges->gnum[e2_id],
-                   mesh->vertices[v1e2].gnum, mesh->vertices[v2e2].gnum);
-        bft_printf("  n_inter: %d ", n_inter);
+        fprintf(logfile,
+                "\n Intersection: "
+                "E1 (%llu) [%llu - %llu] / E2 (%llu) [%llu - %llu]\n",
+                (unsigned long long)edges->gnum[e1_id],
+                (unsigned long long)mesh->vertices[v1e1].gnum,
+                (unsigned long long)mesh->vertices[v2e1].gnum,
+                (unsigned long long)edges->gnum[e2_id],
+                (unsigned long long)mesh->vertices[v1e2].gnum,
+                (unsigned long long)mesh->vertices[v2e2].gnum);
+        fprintf(logfile, "  n_inter: %d ", n_inter);
         for (k = 0; k < n_inter; k++)
-          bft_printf(" (%d) - s_e1 = %g, s_e2 = %g", k, abs_e1[k], abs_e2[k]);
-        bft_printf_flush();
-
+          fprintf(logfile,
+                  " (%d) - s_e1 = %g, s_e2 = %g", k, abs_e1[k], abs_e2[k]);
+        fflush(logfile);
       }
 #endif
 
@@ -3731,17 +3842,20 @@ cs_join_intersect_edges(cs_join_param_t         param,
                (unsigned long long)n_g_inter[1],
                (unsigned long long)n_g_inter[2]);
 
-    if (param.verbosity > 1) {
-      bft_printf(_("\n"
-                   "    Local number of intersections detected: %10d\n"
-                   "      Vertex-Vertex intersections:          %10d\n"
-                   "      Other intersections:                  %10d\n"),
-                 (int)n_inter_detected, (int)n_trivial_inter,
-                 (int)n_real_inter);
-      bft_printf(_("\n  Local number of edge-edge intersection warnings: %9d\n"),
-                 _n_inter_tolerance_warnings);
-      bft_printf(_("\n  Local number of equivalences between vertices: %9d\n"),
-                 _vtx_eset->n_equiv);
+    if (param.verbosity > 2) {
+      fprintf(logfile,
+              "\n"
+              "    Local number of intersections detected: %10d\n"
+              "      Vertex-Vertex intersections:          %10d\n"
+              "      Other intersections:                  %10d\n",
+              (int)n_inter_detected, (int)n_trivial_inter,
+              (int)n_real_inter);
+      fprintf(logfile,
+              "\n  Local number of edge-edge intersection warnings: %9d\n",
+              _n_inter_tolerance_warnings);
+      fprintf(logfile,
+              "\n  Local number of equivalences between vertices: %9d\n",
+              _vtx_eset->n_equiv);
     }
 
   }
@@ -4086,26 +4200,28 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
  * Dump a cs_join_inter_edges_t structure.
  *
  * parameters:
+ *   f           <-- handle to output file
  *   inter_edges <-- cs_join_inter_edges_t structure to dump
  *   edges       <-- list of edges
  *   mesh        <-- associated cs_join_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_inter_edges_dump(const cs_join_inter_edges_t  *inter_edges,
+cs_join_inter_edges_dump(FILE                         *f,
+                         const cs_join_inter_edges_t  *inter_edges,
                          const cs_join_edges_t        *edges,
                          const cs_join_mesh_t         *mesh)
 {
   int  i, j, k;
 
-  bft_printf("\n  Dump of a cs_join_inter_edges_t structure (%p)\n",
-             inter_edges);
+  fprintf(f, "\n  Dump of a cs_join_inter_edges_t structure (%p)\n",
+          (const void *)inter_edges);
 
   if (inter_edges == NULL)
     return;
 
-  bft_printf("  n_edges:      %10d\n", inter_edges->n_edges);
-  bft_printf("  max_sub_size: %10d\n\n", inter_edges->max_sub_size);
+  fprintf(f, "  n_edges:      %10d\n", inter_edges->n_edges);
+  fprintf(f, "  max_sub_size: %10d\n\n", inter_edges->max_sub_size);
 
   for (i = 0; i < inter_edges->n_edges; i++) {
 
@@ -4116,32 +4232,36 @@ cs_join_inter_edges_dump(const cs_join_inter_edges_t  *inter_edges,
     cs_int_t  start = inter_edges->index[i];
     cs_int_t  end = inter_edges->index[i+1];
 
-    bft_printf("\n%6d: [%9u] = (%7d [%9u] - %7d [%9u])\n",
-               i, edges->gnum[i], v1_num, v1_gnum, v2_num, v2_gnum);
+    fprintf(f, "\n%6d: [%9llu] = (%7d [%9llu] - %7d [%9llu])\n",
+            i, (unsigned long long)edges->gnum[i],
+            v1_num, (unsigned long long)v1_gnum,
+            v2_num, (unsigned long long)v2_gnum);
 
-    bft_printf("    n_sub_inter: %4d - index : %7d <-- %7d\n",
-               end-start, start, end);
+    fprintf(f, "    n_sub_inter: %4d - index : %7d <-- %7d\n",
+            end-start, start, end);
 
     if (inter_edges->vtx_glst == NULL) {
 
       for (j = start, k = 0; j < end; j++, k++)
-        bft_printf("       %7d (%9u) - (%7d, %8.6e)\n",
-                   k, inter_edges->vtx_lst[j],
-                   mesh->vertices[inter_edges->vtx_lst[j]-1].gnum,
-                   inter_edges->abs_lst[j]);
+        fprintf
+          (f, "       %7d (%9d) - (%7llu, %8.6e)\n",
+           k, inter_edges->vtx_lst[j],
+           (unsigned long long)mesh->vertices[inter_edges->vtx_lst[j]-1].gnum,
+           inter_edges->abs_lst[j]);
 
     }
     else {
 
       for (j = start, k = 0; j < end; j++, k++)
-        bft_printf("       %9u - (%7d, %8.6e)\n",
-                   k, inter_edges->vtx_glst[j], inter_edges->abs_lst[j]);
+        fprintf(f, "       %9d - (%7llu, %8.6e)\n",
+                k, (unsigned long long)inter_edges->vtx_glst[j],
+                inter_edges->abs_lst[j]);
 
     }
 
   } /* End of loop on edge intersections */
 
-  bft_printf_flush();
+  fflush(f);
 }
 
 /*---------------------------------------------------------------------------*/

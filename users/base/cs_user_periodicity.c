@@ -101,13 +101,14 @@ void
 cs_user_periodicity(void)
 {
   int    join_num;
-  int    verbosity = 1;
+  int    verbosity = 1, visualization = 1;
   float  fraction = 0.10, plane = 0.25;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
   fraction = 0.10;
   plane = 25.0;
-  verbosity = 1; /* debug level if >= 3 */
+  verbosity = 1; /* processor-local files if > 1, debug level if >= 3 */
+  visualization = 1; /* debug level if >= 3 */
 
   /* Example 1: define a periodicity of translation */
   /* ---------------------------------------------- */
@@ -119,6 +120,7 @@ cs_user_periodicity(void)
                                              fraction,
                                              plane,
                                              verbosity,
+                                             visualization,
                                              translation);
   }
 
@@ -138,6 +140,7 @@ cs_user_periodicity(void)
                                           fraction,
                                           plane,
                                           verbosity,
+                                          visualization,
                                           theta,
                                           axis,
                                           invariant);
@@ -171,6 +174,7 @@ cs_user_periodicity(void)
                                        fraction,
                                        plane,
                                        verbosity,
+                                       visualization,
                                        matrix);
   }
 

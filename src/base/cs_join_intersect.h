@@ -132,13 +132,15 @@ cs_join_inter_set_destroy(cs_join_inter_set_t  **inter_set);
  * Dump a cs_join_inter_set_t structure.
  *
  * parameters:
+ *   f     <-- handle to output file
  *   i_set <-- cs_join_inter_set_t structure to dump
  *   edges <-- associated cs_join_edge_t structure
  *   mesh  <-- associated cs_join_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_inter_set_dump(const cs_join_inter_set_t  *i_set,
+cs_join_inter_set_dump(FILE                       *f,
+                       const cs_join_inter_set_t  *i_set,
                        const cs_join_edges_t      *edges,
                        const cs_join_mesh_t       *mesh);
 
@@ -324,13 +326,15 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
  * Dump a cs_join_inter_edges_t structure.
  *
  * parameters:
+ *   f           <-- handle to output file
  *   inter_edges <-- cs_join_inter_edges_t structure to dump
  *   edges       <-- list of edges
  *   mesh        <-- associated cs_join_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_inter_edges_dump(const cs_join_inter_edges_t  *inter_edges,
+cs_join_inter_edges_dump(FILE                         *f,
+                         const cs_join_inter_edges_t  *inter_edges,
                          const cs_join_edges_t        *edges,
                          const cs_join_mesh_t         *mesh);
 

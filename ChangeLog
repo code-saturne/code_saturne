@@ -1,4 +1,31 @@
 * 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Separate mesh joining verbosity and visualization level. Above verbosity
+  level 2, output is directed to a processor-local log file.
+    gui/Pages/FacesSelectionView.py
+    gui/Pages/SolutionDomainModel.py
+    po/fr.po
+    src/base/cs_join.c
+    src/base/cs_join.h
+    src/base/cs_join_intersect.c
+    src/base/cs_join_intersect.h
+    src/base/cs_join_merge.c
+    src/base/cs_join_mesh.c
+    src/base/cs_join_mesh.h
+    src/base/cs_join_perio.c
+    src/base/cs_join_perio.h
+    src/base/cs_join_post.c
+    src/base/cs_join_set.c
+    src/base/cs_join_set.h
+    src/base/cs_join_split.c
+    src/base/cs_join_update.c
+    src/base/cs_join_update.h
+    src/base/cs_join_util.c
+    src/base/cs_join_util.h
+    src/gui/cs_gui_mesh.c
+    users/base/cs_user_join.c
+    users/base/cs_user_periodicity.c
+
+* 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   MPI-IO robustness improvements. When creating a new file, destroy
   previous file if present, and in individual file pointers mode,
   always convert seeking to seeks relative to file start.

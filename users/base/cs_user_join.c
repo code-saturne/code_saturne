@@ -96,13 +96,14 @@ void
 cs_user_join(void)
 {
   int    join_num;
-  int    verbosity = 1;
+  int    verbosity = 1, visualization;
   float  fraction = 0.10, plane = 0.25;
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
   fraction = 0.10;
   plane = 25.0;
   verbosity = 1; /* debug level if >= 3 */
+  visualization = 1; /* debug level if >= 3 */
 
   /* Add a joining operation */
   /* ----------------------- */
@@ -110,7 +111,8 @@ cs_user_join(void)
   join_num = cs_join_add("98 or 99",
                          fraction,
                          plane,
-                         verbosity);
+                         verbosity,
+                         visualization);
 
   /*--------------------------------------------------------------------------*/
 

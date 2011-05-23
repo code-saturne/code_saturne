@@ -516,59 +516,41 @@ cs_join_mesh_get_edge_face_adj(const cs_join_mesh_t   *mesh,
                                cs_int_t               *edge_face_lst[]);
 
 /*----------------------------------------------------------------------------
- * Dump a cs_join_vertex_t structure.
- *
- * parameters:
- *   vertex <-- cs_join_vertex_t structure to dump
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_mesh_dump_vertex(const cs_join_vertex_t   vertex);
-
-/*----------------------------------------------------------------------------
  * Dump a cs_join_vertex_t structure into a file.
  *
  * parameters:
- *   file   <-- pointer to a FILE structure
+ *   f      <-- handle to output file
  *   vertex <-- cs_join_vertex_t structure to dump
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_mesh_dump_vertex_file(FILE                   *file,
-                              const cs_join_vertex_t  vertex);
-
-/*----------------------------------------------------------------------------
- * Dump a cs_join_mesh_t structure.
- *
- * parameters:
- *   mesh <-- pointer to a cs_join_mesh_t structure to dump
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_mesh_dump(const cs_join_mesh_t  *mesh);
+cs_join_mesh_dump_vertex(FILE                   *f,
+                         const cs_join_vertex_t  vertex);
 
 /*----------------------------------------------------------------------------
  * Dump a cs_join_mesh_t structure into a file.
  *
  * parameters:
- *   file <-- pointer to a FILE structure
+ *   f    <-- handle to output file
  *   mesh <-- pointer to cs_join_mesh_t structure to dump
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_mesh_dump_file(FILE                  *file,
-                       const cs_join_mesh_t  *mesh);
+cs_join_mesh_dump(FILE                  *f,
+                  const cs_join_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Dump a list of cs_join_edge_t structures.
  *
  * parameters:
+ *   f     <-- handle to output file
  *   edges <-- cs_join_edges_t structure to dump
  *   mesh  <-- associated cs_join_mesh_t structure
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_mesh_dump_edges(const cs_join_edges_t  *edges,
+cs_join_mesh_dump_edges(FILE                   *f,
+                        const cs_join_edges_t  *edges,
                         const cs_join_mesh_t   *mesh);
 
 /*---------------------------------------------------------------------------*/

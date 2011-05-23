@@ -109,9 +109,9 @@ _dump_mesh(const  int          join_num,
   char  *filename = NULL;
 
   base_len = strlen(basename);
-  len = strlen("JoinDBG__.dat")+1+4+2+base_len;
+  len = strlen("log/JoinDBG__.dat")+1+4+2+base_len;
   BFT_MALLOC(filename, len, char);
-  sprintf(filename, "Join%02dDBG_%s_%04d.dat",
+  sprintf(filename, "log%cJoin%02dDBG_%s_%04d.dat", CS_DIR_SEPARATOR,
           join_num, basename, fvm_parall_get_rank());
   dbg_file = fopen(filename, "w");
 
@@ -141,9 +141,9 @@ _dump_gset(const  int               join_num,
   char  *filename = NULL;
 
   base_len = strlen(basename);
-  len = strlen("JoinDBG__.dat")+1+4+2+base_len;
+  len = strlen("log/JoinDBG__.dat")+1+4+2+base_len;
   BFT_MALLOC(filename, len, char);
-  sprintf(filename, "Join%02dDBG_%s_%04d.dat",
+  sprintf(filename, "log%cJoin%02dDBG_%s_%04d.dat", CS_DIR_SEPARATOR,
           join_num, basename, fvm_parall_get_rank());
   dbg_file = fopen(filename, "w");
 
@@ -413,7 +413,7 @@ _build_join_structures(cs_join_t            *this_join,
   clock_end = bft_timer_wtime();
   cpu_end = bft_timer_cpu_time();
 
-  if (param.verbosity > 2) {
+  if (param.visualization > 2) {
 
     bft_printf(_("\n    Definition of local joining mesh:\n"
                  "        wall clock time:            %10.3g\n"
@@ -1039,7 +1039,7 @@ _merge_vertices(cs_join_t                *this_join,
 
   /* Post if required and level of verbosity is reached */
 
-  if (param.verbosity > 3)
+  if (param.visualization > 3)
     cs_join_post_dump_mesh("MergeBeforePerioWorkMesh", work_jmesh, param);
 
   /* Define o2n_vtx_gnum for the current rank and
@@ -1089,7 +1089,7 @@ _merge_vertices(cs_join_t                *this_join,
 
   /* Post if required and level of verbosity is reached */
 
-  if (param.verbosity > 2)
+  if (param.visualization > 2)
     cs_join_post_dump_mesh("MergeWorkMesh", work_jmesh, param);
 
   /* Set return pointers */
@@ -1244,7 +1244,7 @@ _split_faces(cs_join_t           *this_join,
 
   /* Post if required and level of verbosity is reached */
 
-  if (param.verbosity > 2)
+  if (param.visualization > 2)
     cs_join_post_dump_mesh("SplitWorkMesh", *p_work_jmesh, param);
 
   /* Free memory */
@@ -1403,10 +1403,11 @@ _set_advanced_param(cs_join_t   *join,
  * Add a cs_join_t structure to the list of pending joinings.
  *
  * parameters:
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
  *
  * returns:
  *   number (1 to n) associated with new joining
@@ -1416,7 +1417,8 @@ int
 cs_join_add(const char  *sel_criteria,
             float        fraction,
             float        plane,
-            int          verbosity)
+            int          verbosity,
+            int          visualization)
 {
   /* Allocate and initialize a cs_join_t structure */
 
@@ -1429,7 +1431,8 @@ cs_join_add(const char  *sel_criteria,
                      plane,
                      FVM_PERIODICITY_NULL,
                      NULL,
-                     verbosity);
+                     verbosity,
+                     visualization);
 
   cs_glob_join_count++; // Store number of joining (without periodic ones)
   cs_glob_n_joinings++;
@@ -1568,6 +1571,7 @@ cs_join_all(void)
 
       bft_printf(_("  Advanced joining parameters:\n"
                    "    Verbosity level:                          %8d\n"
+                   "    Visualization level:                      %8d\n"
                    "    Deepest level reachable in tree building: %8d\n"
                    "    Max boxes by leaf:                        %8d\n"
                    "    Max ratio of linked boxes / init. boxes:  %8.5f\n"
@@ -1579,6 +1583,7 @@ cs_join_all(void)
                    "    Max. number of equiv. breaks:             %8d\n"
                    "    Max. number of subfaces by face:          %8d\n\n"),
                  join_param.verbosity,
+                 join_param.visualization,
                  join_param.tree_max_level,
                  join_param.tree_n_max_boxes,
                  join_param.tree_max_box_ratio,

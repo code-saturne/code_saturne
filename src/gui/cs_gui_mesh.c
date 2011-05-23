@@ -404,15 +404,18 @@ cs_gui_mesh_define_joinings(void)
     char *fraction_s  =  _get_face_joining("fraction", join_id+1);
     char *plane_s     =  _get_face_joining("plane", join_id+1);
     char *verbosity_s =  _get_face_joining("verbosity", join_id+1);
+    char *visu_s      =  _get_face_joining("visualization", join_id+1);
 
     double fraction = atof(fraction_s);
     double plane = atof(plane_s);
     int verbosity = atoi(verbosity_s);
+    int visualization = atoi(visu_s);
 
     cs_join_add(selector_s,
                 fraction,
                 plane,
-                verbosity);
+                verbosity,
+                visualization);
 
 #if _XML_DEBUG_
     bft_printf("==> cs_gui_mesh_define_joinings\n");
@@ -420,12 +423,13 @@ cs_gui_mesh_define_joinings(void)
     bft_printf("--fraction  = %s\n", fraction_s);
     bft_printf("--plane     = %s\n", plane_s);
     bft_printf("--verbosity = %s\n", verbosity_s);
+    bft_printf("--visualization = %s\n", visu_s);
 #endif
 
     BFT_FREE(selector_s);
     BFT_FREE(fraction_s);
     BFT_FREE(plane_s);
-    BFT_FREE(verbosity_s);
+    BFT_FREE(visu_s);
   }
 }
 
@@ -477,10 +481,12 @@ cs_gui_mesh_define_periodicities(void)
     char *fraction_s  =  _get_periodicity("fraction", perio_id+1);
     char *plane_s     =  _get_periodicity("plane", perio_id+1);
     char *verbosity_s =  _get_periodicity("verbosity", perio_id+1);
+    char *visu_s      =  _get_periodicity("visualization", perio_id+1);
 
     double fraction = atof(fraction_s);
     double plane = atof(plane_s);
     int verbosity = atoi(verbosity_s);
+    int visualization = atoi(visu_s);
 
     if (!strcmp(modes[perio_id], "translation")) {
       _get_periodicity_translation(perio_id+1, trans);
@@ -488,6 +494,7 @@ cs_gui_mesh_define_periodicities(void)
                                     fraction,
                                     plane,
                                     verbosity,
+                                    visualization,
                                     trans);
     }
 
@@ -497,6 +504,7 @@ cs_gui_mesh_define_periodicities(void)
                                  fraction,
                                  plane,
                                  verbosity,
+                                 visualization,
                                  angle,
                                  axis,
                                  invariant);
@@ -508,6 +516,7 @@ cs_gui_mesh_define_periodicities(void)
                               fraction,
                               plane,
                               verbosity,
+                              visualization,
                               matrix);
     }
 
@@ -517,16 +526,18 @@ cs_gui_mesh_define_periodicities(void)
 
 #if _XML_DEBUG_
     bft_printf("==> cs_gui_mesh_define_periodicities\n");
-    bft_printf("--selector  = %s\n", selector_s);
-    bft_printf("--fraction  = %s\n", fraction_s);
-    bft_printf("--plane     = %s\n", plane_s);
-    bft_printf("--verbosity = %s\n", verbosity_s);
+    bft_printf("--selector      = %s\n", selector_s);
+    bft_printf("--fraction      = %s\n", fraction_s);
+    bft_printf("--plane         = %s\n", plane_s);
+    bft_printf("--verbosity     = %s\n", verbosity_s);
+    bft_printf("--visualization = %s\n", visu_s);
 #endif
 
     BFT_FREE(selector_s);
     BFT_FREE(fraction_s);
     BFT_FREE(plane_s);
     BFT_FREE(verbosity_s);
+    BFT_FREE(visu_s);
   }
 
   for (perio_id = 0; perio_id < n_perio; perio_id++)

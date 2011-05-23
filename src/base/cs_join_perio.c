@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 2008-2010 EDF S.A., France
+ *     Copyright (C) 2008-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -98,12 +98,13 @@ BEGIN_C_DECLS
  * Add a new periodic cs_join_t structure.
  *
  * parameters:
- *   perio_type   <-- periodicity number
- *   perio_matrix <-- periodicity transformation matrix
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
+ *   perio_type    <-- periodicity number
+ *   perio_matrix  <-- periodicity transformation matrix
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
  *
  * returns:
  *   the global joining number associated with the periodic joining
@@ -115,7 +116,8 @@ _add_perio_join(fvm_periodicity_type_t  perio_type,
                 const char             *criteria,
                 float                   fraction,
                 float                   plane,
-                int                     verbosity)
+                int                     verbosity,
+                int                     visualization)
 {
    /* Allocate and initialize a cs_join_t structure */
 
@@ -128,7 +130,8 @@ _add_perio_join(fvm_periodicity_type_t  perio_type,
                      plane,
                      perio_type,
                      matrix,
-                     verbosity);
+                     verbosity,
+                     visualization);
 
   cs_glob_n_joinings++;
 
@@ -242,9 +245,10 @@ _perio_face_clean(cs_join_param_t      param,
 
   }
 
-  if (param.verbosity > 2)
-    bft_printf(_("\n  Delete %d interior periodic faces locally\n"),
-               n_ii_faces - n_fi_faces);
+  if (param.verbosity > 3)
+    fprintf(cs_glob_join_log,
+            "\n  Delete %d interior periodic faces locally\n",
+            n_ii_faces - n_fi_faces);
 
   mesh->n_i_faces = n_fi_faces;
   BFT_REALLOC(mesh->i_face_cells, 2*mesh->n_i_faces, cs_int_t);
@@ -333,11 +337,12 @@ void CS_PROCF(tstjpe, tstjpe)
  * Define a translational periodicity
  *
  * parameters:
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
- *   trans        <-- translation vector
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
+ *   trans         <-- translation vector
  *
  * returns:
  *   joining number (1 to n) associated with new periodicity
@@ -348,6 +353,7 @@ cs_join_perio_add_translation(const char    *sel_criteria,
                               double         fraction,
                               double         plane,
                               int            verbosity,
+                              int            visualization,
                               const double   trans[3])
 {
   double  matrix[3][4];
@@ -368,7 +374,8 @@ cs_join_perio_add_translation(const char    *sel_criteria,
                              sel_criteria,
                              fraction,
                              plane,
-                             verbosity);
+                             verbosity,
+                             visualization);
 
   tmp_perio = fvm_periodicity_destroy(tmp_perio);
 
@@ -379,14 +386,15 @@ cs_join_perio_add_translation(const char    *sel_criteria,
  * Define a rotational periodicity
  *
  * parameters:
- *   perio_num    <-- number related to the periodicity
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
- *   theta        <-- rotation angle (in degrees)
- *   axis         <-- axis vector
- *   invariant    <-- invariant point coordinates
+ *   perio_num     <-- number related to the periodicity
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
+ *   theta         <-- rotation angle (in degrees)
+ *   axis          <-- axis vector
+ *   invariant     <-- invariant point coordinates
  *
  * returns:
  *   joining number (1 to n) associated with new periodicity
@@ -397,6 +405,7 @@ cs_join_perio_add_rotation(const char    *sel_criteria,
                            double         fraction,
                            double         plane,
                            int            verbosity,
+                           int            visualization,
                            double         theta,
                            const double   axis[3],
                            const double   invariant[3])
@@ -424,7 +433,8 @@ cs_join_perio_add_rotation(const char    *sel_criteria,
                              sel_criteria,
                              fraction,
                              plane,
-                             verbosity);
+                             verbosity,
+                             visualization);
 
   tmp_perio = fvm_periodicity_destroy(tmp_perio);
 
@@ -438,12 +448,13 @@ cs_join_perio_add_rotation(const char    *sel_criteria,
  * Define a periodicity using a matrix
  *
  * parameters:
- *   perio_num    <-- number related to the periodicity
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
- *   matrix       <-- transformation matrix
+ *   perio_num     <-- number related to the periodicity
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
+ *   matrix        <-- transformation matrix
  *
  * returns:
  *   joining number (1 to n) associated with new periodicity
@@ -454,6 +465,7 @@ cs_join_perio_add_mixed(const char    *sel_criteria,
                         double         fraction,
                         double         plane,
                         int            verbosity,
+                        int            visualization,
                         double         matrix[3][4])
 {
   int join_num = 0;
@@ -463,7 +475,8 @@ cs_join_perio_add_mixed(const char    *sel_criteria,
                              sel_criteria,
                              fraction,
                              plane,
-                             verbosity);
+                             verbosity,
+                             visualization);
 
   /* Add a tag to indicate the use of rotation */
   cs_glob_mesh->have_rotation_perio = 1;
@@ -684,26 +697,31 @@ cs_join_perio_apply(cs_join_t          *this_join,
 
   cs_join_mesh_face_order(jmesh);
 
-  if (param.verbosity > 1)
-    bft_printf(_("  Apply periodicity to the local join mesh structure\n"
-                 "  New number of faces to treat locally: %8d\n"),
-               jmesh->n_faces);
+  if (param.verbosity > 2)
+    fprintf(cs_glob_join_log,
+            "  Apply periodicity to the local join mesh structure\n"
+            "  New number of faces to treat locally: %8d\n",
+            jmesh->n_faces);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n Periodic vertex couples:\n");
-  for (i = 0; i < n_init_vertices; i++)
-    bft_printf(" %6d  (%9u, %9u)\n", i+1,
-               select->per_v_couples[2*i],  select->per_v_couples[2*i+1]);
-  bft_printf_flush();
+  if (cs_glob_join_log != NULL) {
+    fprintf(cs_glob_join_log, "\n Periodic vertex couples:\n");
+    for (i = 0; i < n_init_vertices; i++)
+      fprintf(cs_glob_join_log, " %6d  (%9u, %9u)\n", i+1,
+              select->per_v_couples[2*i],  select->per_v_couples[2*i+1]);
+    fflush(cs_glob_join_log);
+  }
 #endif
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(_("\n  Selected faces for the joining operation:\n"));
-  for (i = 0; i < select->n_faces; i++)
-    bft_printf(" %9d | %9d | %10u | %10u\n",
-               i, select->faces[i], select->compact_face_gnum[i],
-               select->cell_gnum[i]);
-  bft_printf("\n");
+  if (cs_glob_join_log != NULL) {
+    fprintf(cs_glob_join_log, "\n  Selected faces for the joining operation:\n");
+    for (i = 0; i < select->n_faces; i++)
+      fprintf(cs_glob_join_log, " %9d | %9d | %10llu\n",
+              i, select->faces[i],
+              (unsigned long long)select->compact_face_gnum[i]);
+    fprintf(cs_glob_join_log, "\n");
+  }
 #endif
 
 }
@@ -1007,9 +1025,10 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
 
   /* Add new vertices to the periodic vertex list */
 
-  if (param.verbosity > 2)
-  bft_printf("  Add locally %d new vertices for periodicity\n",
-             n_new_vertices);
+  if (param.verbosity > 3)
+    fprintf(cs_glob_join_log,
+            "  Add locally %d new vertices for periodicity\n",
+            n_new_vertices);
 
   shift = select->n_couples;
   select->n_couples += n_new_vertices;
@@ -1077,11 +1096,13 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   *p_work_edges = work_edges;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n Periodic vertex couples:\n");
-  for (i = 0; i < select->n_couples; i++)
-    bft_printf(" %6d  (%9u, %9u)\n", i+1,
-               select->per_v_couples[2*i], select->per_v_couples[2*i+1]);
-  bft_printf_flush();
+  if (cs_glob_join_log != NULL) {
+    fprintf(cs_glob_join_log, "\n Periodic vertex couples:\n");
+    for (i = 0; i < select->n_couples; i++)
+      fprintf(cs_glob_join_log, " %6d  (%9u, %9u)\n", i+1,
+              select->per_v_couples[2*i], select->per_v_couples[2*i+1]);
+    fflush(cs_glob_join_log);
+  }
 #endif
 
 }

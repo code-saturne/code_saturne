@@ -67,10 +67,11 @@ BEGIN_C_DECLS
  * Add a cs_join_t structure to the list of pending joinings.
  *
  * parameters:
- *   sel_criteria <-- boundary face selection criteria
- *   fraction     <-- value of the fraction parameter
- *   plane        <-- value of the plane parameter
- *   verbosity    <-- level of verbosity required
+ *   sel_criteria  <-- boundary face selection criteria
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
  *
  * returns:
  *   number (1 to n) associated with new joining
@@ -80,7 +81,8 @@ int
 cs_join_add(const char  *sel_criteria,
             float        fraction,
             float        plane,
-            int          verbosity);
+            int          verbosity,
+            int          visualization);
 
 /*----------------------------------------------------------------------------
  * Set advanced parameters for the joining algorithm.
