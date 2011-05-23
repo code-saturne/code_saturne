@@ -659,7 +659,7 @@ cs_join_post_dump_mesh(const char            *basename,
 
   len = strlen("log/JoinDBG_.dat") + strlen(basename) + 4 + 2 + 1;
   BFT_MALLOC(fullname, len, char);
-  sprintf(fullname, "log%cJoin%02dDBG_%s%04d.dat", FVM_DIR_SEPARATOR,
+  sprintf(fullname, "log%cJoin%02dDBG_%s%04d.dat", CS_DIR_SEPARATOR,
           param.num, basename, rank_id);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */
