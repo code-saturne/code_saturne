@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -30,11 +30,11 @@ subroutine ctini1
 
 
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! --------
 
-!   INIT DES OPTIONS DES VARIABLES POUR LE MODULE AEROREFRIGERANTS
-!      EN COMPLEMENT DE CE QUI A DEJA ETE FAIT DANS USINI1
+! Initialize global settings for cooling towers module
+! in addition to what has been done in usini1.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -43,10 +43,9 @@ subroutine ctini1
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -76,9 +75,9 @@ integer ii, jj, isc, ipp
 !===============================================================================
 
 !===============================================================================
-! 0. VERIFICATION ISCALT, ISCSTH
+! 0. Check iscalt, iscsth
 !===============================================================================
-!     L'utilisateur ne doit pas y avoir touche.
+! The user should not have modified them.
 
 if(iscalt.ne.-1) then
   write(nfecra,1000)iscalt
@@ -95,7 +94,7 @@ enddo
 
 
 !===============================================================================
-! 1. VARIABLES TRANSPORTEES
+! 1. Transported variables
 !===============================================================================
 
 iscsth(itemp4) = 1
@@ -106,7 +105,7 @@ iscalt = itemp4
 irovar = 1
 ivivar = 0
 
-! --> Donnees physiques ou numeriques propres aux scalaires
+! --> Physical or numerical properties specific to scalars
 
 do isc = 1, nscapp
 
@@ -121,26 +120,30 @@ do isc = 1, nscapp
 enddo
 
 ipp = ipprtp(isca(itemp4))
-NOMVAR(IPP)  = 'Temperature'
+nomvar(ipp)  = 'Temperature'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
 ipp = ipprtp(isca(ihumid))
-NOMVAR(IPP)  = 'Humidite'
+nomvar(ipp)  = 'Humidity'
 ichrvr(ipp)  = 1
 ilisvr(ipp)  = 1
 ihisvr(ipp,1)= -1
 
+! Postprocessing output
+
+ichrze = 1
+
 !===============================================================================
-! 2. ON DONNE LA MAIN A L'UTLISATEUR
+! 2. Define user settings
 !===============================================================================
 
 call uscti1
 !==========
 
 !--------
-! FORMATS
+! Formats
 !--------
 
  1000 format(                                                           &

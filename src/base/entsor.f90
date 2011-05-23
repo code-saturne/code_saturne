@@ -78,7 +78,6 @@ module entsor
 
   !     ichrvl : Post traitement du domaine fluide
   !     ichrbo : Post traitement du bord du domaine
-  !     ichrze : Post traitement des zones d'echange aerorefrigerants
   !     ichrmd : Indique si les maillages ecrits seront :
   !               0 : fixes,
   !               1 : deformables a topologie constante,
@@ -90,11 +89,10 @@ module entsor
   !     ntchr  : frequence de sortie par defaut ( > 0 ou -1 (a la fin) )
   !     frchr  : frequence de sortie en secondes ( > 0 ou -1.0 )
   !     ichrvr : on sort la variable (1) ou non (0) ou non initialise
-  !     fmtchr : format de sortie ('EnSight Gold', 'MED_fichier', 'CGNS')
+  !     fmtchr : format de sortie ('EnSight Gold', 'MED', 'CGNS')
   !     optchr : options associees au format de sortie
 
-  integer, save :: ichrvl, ichrbo, ichrze,                 &
-                   ichrmd, ntchr, ichrvr(nvppmx)
+  integer, save :: ichrvl, ichrbo, ichrmd, ntchr, ichrvr(nvppmx)
   double precision, save :: frchr
 
   character*32, save :: fmtchr

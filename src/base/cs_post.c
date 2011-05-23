@@ -3810,7 +3810,7 @@ cs_post_init_main_writer(void)
 {
   /* Default values */
 
-  cs_int_t  indic_vol = -1, indic_brd = -1, indic_ze = -1;
+  cs_int_t  indic_vol = -1, indic_brd = -1;
   cs_int_t  indic_mod = -1;
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
@@ -3826,7 +3826,6 @@ cs_post_init_main_writer(void)
 
   CS_PROCF(inipst, INIPST)(&indic_vol,
                            &indic_brd,
-                           &indic_ze,
                            &indic_mod,
                            &ntchr,
                            &frchr,
@@ -3874,7 +3873,7 @@ cs_post_init_main_meshes(int check_mask)
 {
   /* Default values */
 
-  cs_int_t  indic_vol = -1, indic_brd = -1, indic_ze = -1;
+  cs_int_t  indic_vol = -1, indic_brd = -1;
   cs_int_t  indic_mod = -1;
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
@@ -3889,7 +3888,6 @@ cs_post_init_main_meshes(int check_mask)
 
   CS_PROCF(inipst, INIPST)(&indic_vol,
                            &indic_brd,
-                           &indic_ze,
                            &indic_mod,
                            &ntchr,
                            &frchr,
@@ -4005,7 +4003,7 @@ cs_post_add_free_faces(void)
   /* Create default writer */
 
   {
-    cs_int_t  indic_vol = -1, indic_brd = -1, indic_ze = -1;
+    cs_int_t  indic_vol = -1, indic_brd = -1;
     cs_int_t  indic_mod = -1, ntchr = -1;
     cs_real_t frchr = -1.0;
 
@@ -4013,7 +4011,6 @@ cs_post_add_free_faces(void)
 
     CS_PROCF(inipst, INIPST)(&indic_vol,
                              &indic_brd,
-                             &indic_ze,
                              &indic_mod,
                              &ntchr,
                              &frchr,
@@ -4222,7 +4219,7 @@ cs_post_init_error_writer(void)
 {
   /* Default values */
 
-  cs_int_t  indic_vol = -1, indic_brd = -1, indic_ze = -1;
+  cs_int_t  indic_vol = -1, indic_brd = -1;
   cs_int_t  indic_mod = -1;
   char  fmtchr[32 + 1] = "";
   char  optchr[96 + 1] = "";
@@ -4243,7 +4240,6 @@ cs_post_init_error_writer(void)
 
   CS_PROCF(inipst, INIPST)(&indic_vol,
                            &indic_brd,
-                           &indic_ze,
                            &indic_mod,
                            &ntchr,
                            &frchr,

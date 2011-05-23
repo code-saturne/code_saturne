@@ -1,4 +1,18 @@
 * 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Move activation of Cooling Towers postprocessing to that module.
+  modified files:
+   src/base/cregeo.f90
+    src/base/cs_join_post.c
+    src/base/cs_post.c
+    src/base/cs_prototypes.h
+    src/base/entsor.f90
+    src/base/iniini.f90
+    src/base/inipst.f90
+    src/ctwr/cs_ctwr.c
+    src/ctwr/ctincl.f90
+    src/ctwr/ctini1.f90
+
+* 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Make activation of SYRTHES postprocessing coupling-instance specific.
   modified files:
     preprocessor/pre-post/ecs_post_med.c

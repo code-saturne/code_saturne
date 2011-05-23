@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -185,8 +185,8 @@ cs_loc_ctwr_opnsuite(const char              *nomsui,
 void CS_PROCF (defct1, DEFCT1)
 (
   const cs_int_t   *const idimct,   /* Dimemsion du probleme 2:2D  3:3D       */
-  const char  *ze_name,              /* Name of Ct area */
-  cs_int_t    *ze_n_len,                  /* lenght of Name of Ct area */
+  const char  *ze_name,             /* Name of Ct area */
+  cs_int_t    *ze_n_len,            /* lenght of Name of Ct area */
   const cs_int_t   *const imctch,   /* 1: Modele de Poppe
                                        2: Merkel 0: Rien                      */
   const cs_int_t   *const ntypct,   /* 1: Contre courant  2: Courant croises

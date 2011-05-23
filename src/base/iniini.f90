@@ -173,8 +173,6 @@ ntlal  = 1
 !         (1 oui, 0 non)
 !       ICHRBO : Post traitement du bord du domaine
 !         (1 oui, 0 non)
-!       ICHRZE: Post traitement des zones d'echange aerorefrigerants
-!         (1 oui, 0 non)
 
 !       ICHRMD : indique si les maillages ecrits seront :
 !         0 : fixes,
@@ -194,7 +192,6 @@ ntlal  = 1
 
 ichrvl = 1
 ichrbo = 0
-ichrze = 0
 
 ichrmd = 0
 ntchr  = -1
