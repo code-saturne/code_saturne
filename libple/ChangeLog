@@ -1,3 +1,7 @@
+2011-05-23  David Monfort <david.monfort@edf.fr>
+
+	* Update configury setup according to recent Code_Saturne package changes.
+
 2011-03-23  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Update default compiler flags to avoid site-specific Itanium options.

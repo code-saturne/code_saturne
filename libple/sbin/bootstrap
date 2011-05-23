@@ -27,7 +27,7 @@ fi
 # fi
 
 echo "running aclocal"
-aclocal -I config
+aclocal -I m4
 
 echo "running autoconf"
 autoconf

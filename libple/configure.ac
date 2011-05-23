@@ -58,14 +58,13 @@ AC_INIT([ple],[ple_version_string],[yvan.fournier@edf.fr])
 AC_CONFIG_SRCDIR([src/ple_defs.h])
 
 # Use the config directory for libtool stuff ...
-AC_CONFIG_AUX_DIR(config)
-AC_CONFIG_MACRO_DIR(config)
-AC_SUBST(ac_aux_dir)
+AC_CONFIG_AUX_DIR(build-aux)
+AC_CONFIG_MACRO_DIR(m4)
 
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADERS([ple_config_priv.h:ple_config_priv.h.in])
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wall])
 
 AH_TOP([#ifndef __PLE_CONFIG_PRIV_H__
 #define __PLE_CONFIG_PRIV_H__
@@ -82,7 +81,13 @@ AH_BOTTOM([#endif /* __PLE_CONFIG_PRIV_H__ */])
 PLE_AC_CONFIG_PUBL_INIT([ple_config.h])
 PLE_AC_CONFIG_PUBL_VERBATIM([ple_licence_c_comment])
 
-AM_MAINTAINER_MODE
+# Enable maintainer mode by default for a developper checkout
+AS_IF([test -d ${srcdir}/.svn -o -d ${srcdir}/.git],
+      [AM_MAINTAINER_MODE([enable])],
+      [AM_MAINTAINER_MODE([disable])])
+
+# Enable silent rules with "./configure --enable-silent-rules" or "make V=0"
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
 # Version information
 
@@ -104,7 +109,7 @@ user_CPPFLAGS=$CPPFLAGS
 user_CFLAGS=$CFLAGS
 user_LDFLAGS=$LDFLAGS
 
-AC_PROG_CC(cc gcc)
+AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
@@ -301,17 +306,6 @@ PLE_AC_CONFIG_PUBL_SET(PLE_HAVE_MPI, $ple_have_mpi,
 #------------------------------------------------------------------------------
 # Internationalization
 #------------------------------------------------------------------------------
-
-if test "${prefix}" = "NONE"; then
-  localedir="/usr/local/share/locale"
-else
-  localedir="${prefix}/share/locale"
-fi
-AC_DEFINE_UNQUOTED(LOCALEDIR, "${localedir}", LOCALEDIR)
-
-# Set of available languages now in po/LINGUAS.
-
-# AM_GNU_GETTEXT
 
 #------------------------------------------------------------------------------
 # Compiler options and system characteristics

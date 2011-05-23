@@ -69,7 +69,7 @@ uninstall-local:
 
 DISTCLEANFILES = ple-config ple_config.h ple_config_priv.h
 
-ACLOCAL_AMFLAGS = -I config
+ACLOCAL_AMFLAGS = -I m4
 
 install-tests:
 	@cd tests ; $(MAKE) install-tests
