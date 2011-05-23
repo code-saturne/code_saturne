@@ -1,5 +1,9 @@
 2011-05-23  David Monfort <david.monfort@edf.fr>
 
+	* Improve MPI auto-detection in Debian-based environments.
+
+2011-05-23  David Monfort <david.monfort@edf.fr>
+
 	* Update configury setup according to recent Code_Saturne package changes.
 
 2011-03-23  Yvan Fournier <yvan.fournier@edf.fr>
