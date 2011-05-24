@@ -58,8 +58,6 @@ typedef struct {
 
   char          *app_name;      /* Application name */
 
-  cs_int_t       ifoenv;        /* 0 if not using Preprocessor, 1 otherwise */
-
   /* Redirection of standard output */
 
   cs_int_t       ilisr0;        /* Redirection for rank 0

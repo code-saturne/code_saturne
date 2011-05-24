@@ -94,7 +94,6 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_save.h"
-#include "cs_mesh_solcom.h"
 #include "cs_mesh_quality.h"
 #include "cs_mesh_warping.h"
 #include "cs_mesh_coherency.h"
@@ -238,26 +237,14 @@ cs_run(void)
 
   cs_sat_coupling_all_init();
 
-  if (opts.ifoenv == 0) {
+  /* Choose partitioning type */
 
-    /* Read file in obsolete "SolCom" format */
+  cs_preprocessor_data_part_choice(cs_gui_get_sfc_partition_type() + 2);
 
-    cs_mesh_solcom_read(cs_glob_mesh,
-                        cs_glob_mesh_quantities);
+  /* Read Preprocessor output */
 
-  }
-  else {
-
-    /* Choose partitioning type */
-
-    cs_preprocessor_data_part_choice(cs_gui_get_sfc_partition_type() + 2);
-
-    /* Read Preprocessor output */
-
-    cs_preprocessor_data_read_mesh(cs_glob_mesh,
-                                   cs_glob_mesh_builder);
-
-  }
+  cs_preprocessor_data_read_mesh(cs_glob_mesh,
+                                 cs_glob_mesh_builder);
 
   /* Initialize main post-processing */
 
@@ -623,8 +610,7 @@ main(int    argc,
     cs_int_t _n_threads = cs_glob_n_threads;
     cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
 
-    CS_PROCF(csinit, CSINIT)(&(opts.ifoenv),
-                             &_rank_id,
+    CS_PROCF(csinit, CSINIT)(&_rank_id,
                              &_n_ranks,
                              &_n_threads);
   }

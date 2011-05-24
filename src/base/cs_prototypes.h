@@ -157,7 +157,6 @@ extern void CS_PROCF (csflsh, CSFLSH)
 
 extern void CS_PROCF (csinit, CSINIT)
 (
- const cs_int_t  *ifoenv,  /* <-- 0: SolCom mesh; 1: Preprocesor mesh */
  const cs_int_t  *irgpar,  /* <-- MPI Rank in parallel, -1 otherwise */
  const cs_int_t  *nrgpar,  /* <-- Number of MPI processes, or 1 */
  const cs_int_t  *nthpar   /* <-- Number of threads */
@@ -384,49 +383,6 @@ void CS_PROCF (inipst, INIPST)
  const cs_real_t *frchr,     /* <-- frequency of post processing output */
  const char      *fmtchr,    /* <-- name of main output format */
  const char      *optchr     /* <-- options for main output format */
-);
-
-/*----------------------------------------------------------------------------
- * Read geometric entities in "SolCom" format
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (letgeo, LETGEO)
-(
- const cs_int_t  *ndim,      /* <-- space dimension */
- const cs_int_t  *ncelet,    /* <-- number of extended (real + ghost) cells */
- const cs_int_t  *ncel,      /* <-- number of cells */
- const cs_int_t  *nfac,      /* <-- number of interior faces */
- const cs_int_t  *nfabor,    /* <-- number of boundary faces */
- const cs_int_t  *nfml,      /* <-- number of familes */
- const cs_int_t  *nprfml,    /* <-- number of family properties */
- const cs_int_t  *nnod,      /* <-- number of vertices */
- const cs_int_t  *lndfac,    /* <-- size of interior faces -> vertices array */
- const cs_int_t  *lndfbr,    /* <-- size of boundary faces -> vertices array */
- const cs_int_t  *ntetra,    /* <-- number of tetrahedra */
- const cs_int_t  *npyram,    /* <-- number of pyramids */
- const cs_int_t  *nprism,    /* <-- number of prisms */
- const cs_int_t  *nhexae,    /* <-- number of hexahedra */
-       cs_int_t  *inodal,    /* --> indicates if we should read the nodal */
-                             /*     connectivity for post-processing */
-       cs_int_t   ifacel[],  /* --> interior faces -> cells connectivity */
-       cs_int_t   ifabor[],  /* --> boundary faces -> cells connectivity */
-       cs_int_t   ifmfbr[],  /* --> boundary face families */
-       cs_int_t   ifmcel[],  /* --> cell families */
-       cs_int_t   iprfml[],  /* --> list of family properties */
-       cs_int_t   icotet[],  /* --> nodal connectivity for tetrahedra */
-       cs_int_t   icopyr[],  /* --> nodal connectivity for pyramids */
-       cs_int_t   icopri[],  /* --> nodal conncetivity for prisms */
-       cs_int_t   icohex[],  /* --> nodal connectivity for hexahedra */
-       cs_int_t   ipnfac[],  /* --> interior faces -> vertices index */
-       cs_int_t   nodfac[],  /* --> interior faces -> vertices connectivity */
-       cs_int_t   ipnfbr[],  /* --> boundary faces -> vertices index */
-       cs_int_t   nodfbr[],  /* --> boundary faces -> vertices connectivity */
-       cs_real_t  xyzcen[],  /* --> cell centers */
-       cs_real_t  surfac[],  /* --> interior face surface vectors */
-       cs_real_t  surfbo[],  /* --> boundary face surface vectors */
-       cs_real_t  cdgfac[],  /* --> interior face centers */
-       cs_real_t  cdgfbo[],  /* --> boundary face centers */
-       cs_real_t  xyznod[]   /* --> vertex coordinates */
 );
 
 /*----------------------------------------------------------------------------

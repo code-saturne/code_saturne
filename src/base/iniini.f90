@@ -128,11 +128,6 @@ enddo
 
 ! ---> NFECRA vaut 6 par defaut ou 9 en parallele (CSINIT)
 
-! ---> Geometrie
-
-impgeo = 10
-ficgeo = 'geomet'
-
 !    Methode des vortex : on utilise la meme unite
 !                  Pour le fichier de donnees, on specifie l'unite ici, mais le
 !                  nom est laisse dans usvort. On utilise 20 et pas 11
@@ -404,11 +399,7 @@ enddo
 
 ! ---> Post traitement automatique (bord)
 
-if (ifoenv .eq. 0) then
-  ipstdv = 0
-else
-  ipstdv = ipstyp*ipstcl*ipstft*ipstfo
-endif
+ipstdv = ipstyp*ipstcl*ipstft*ipstfo
 
 
 ! ---> CPU
@@ -429,55 +420,36 @@ tmarus = -1.d0
 
 !---> LECTURE SELON UTILISATION PREPROCESSEUR OU ANCIEN FICHIER
 
-   ncel   = 0
-   ncelet = 0
-   nfac   = 0
-   nfabor = 0
-   nfml   = 0
-   nprfml = 0
-   nnod   = 0
-   lndfac = 0
-   lndfbr = 0
-   ncelbr = 0
+ncel   = 0
+ncelet = 0
+nfac   = 0
+nfabor = 0
+nfml   = 0
+nprfml = 0
+nnod   = 0
+lndfac = 0
+lndfbr = 0
+ncelbr = 0
 
-   ncelgb = 0
-   nfacgb = 0
-   nfbrgb = 0
-   nsomgb = 0
+ncelgb = 0
+nfacgb = 0
+nfbrgb = 0
+nsomgb = 0
 
 ! Par defaut, on suppose qu'il n'y a pas de periodicite
-   iperio = 0
-   iperot = 0
+iperio = 0
+iperot = 0
 
-if (ifoenv .eq. 0) then
+! Lecture des dimensions du maillage.
+! Les tableaux seront lus apres allocation.
+! On initialise les dimensions a 0 avant la lecture, certaines
+!   rubriques etant optionnelles.
 
-!        NECESSITE FICGEO
+call ledevi(ndim, nfml, nprfml, iperio, iperot)
+!==========
 
-   call ledgeo                                                    &
-   !==========
-        ( ndim   , ncelet , ncel   , nfac   , nfabor ,            &
-          nprfml , nfml   , nnod   , lndfac , lndfbr )
-
-
-! --- Pas de decoupage en parallele prevu sans preprocesseur.
-!     NCELET=NCEL est fait dans ledgeo
-
-else if (ifoenv .eq. 1) then
-
-! --- PASSAGE DANS LEDEVI :
-!        On ne lit ici que les dimensions.
-!        Les tableaux seront lus apres allocation.
-!        On initialise les dimensions a 0 avant la lecture, certaines
-!          rubriques etant optionnelles.
-
-   call ledevi(ndim, nfml, nprfml, iperio, iperot)
-   !==========
-
-   call tstjpe(iperio, iperot)
-   !==========
-
-endif
-
+call tstjpe(iperio, iperot)
+!==========
 
 !===============================================================================
 ! 4. DIMENSIONS de dimens.f90 (PHYSIQUE)

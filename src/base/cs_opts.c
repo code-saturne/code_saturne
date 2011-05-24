@@ -153,9 +153,6 @@ _arg_env_help(const char  *name)
     (e, _(" -q, --quality     mesh quality verification mode\n"));
 
   fprintf
-    (e, _(" --solcom          stand-alone kernel with \"geomet\" mesh in\n"
-          "                   SolCom format (obsolete)\n"));
-  fprintf
     (e, _(" --syr-socket      enable sockets for SYRTHES 3 coupling\n"
           "                   <port_num> port number on rank 0\n"));
 
@@ -249,8 +246,6 @@ cs_opts_define(int         argc,
   /* Default initialization */
 
   opts->app_name = NULL;
-
-  opts->ifoenv = 1;
 
   opts->ilisr0 = 1;
   opts->ilisrp = 2;
@@ -372,9 +367,6 @@ cs_opts_define(int         argc,
 
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
       opts->verif = true;
-
-    else if (strcmp(s, "--solcom") == 0)
-      opts->ifoenv = 0;
 
 #if defined(HAVE_SOCKET)
 

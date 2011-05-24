@@ -1,4 +1,23 @@
 * 24/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove support for obsolete "SolCom" format meshes.
+  removed files:
+    src/base/cs_mesh_solcom.c
+    src/base/cs_mesh_solcom.h
+    src/base/ledgeo.f90
+    src/base/letgeo.f90
+  modified files:
+    po/fr.po
+    po/POTFILES.in
+    src/apps/cs_solver.c
+    src/base/Makefile.am
+    src/base/cs_prototypes.h
+    src/base/csinit.f90
+    src/base/cs_opts.c
+    src/base/cs_opts.h
+    src/base/entsor.f90
+    src/base/iniini.f90
+
+* 24/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Place all postprocessing output by default in "postprocessing" subdirectory.
   modified files:
     src/base/cs_join_post.c

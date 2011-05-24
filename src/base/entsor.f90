@@ -41,12 +41,6 @@ module entsor
 
   integer, save :: nfecra, iwarni(nvarmx)
 
-  ! --- fichier geometrie
-
-  character*6, save :: ficgeo
-
-  integer, save :: impgeo
-
   ! --- fichier methode des vortex
 
   !     impmvo --> fichier suite methode des vortex (ASCII
@@ -69,10 +63,6 @@ module entsor
   character*6, save :: ficstp
 
   integer, save :: impstp
-
-  ! --- lecture preprocesseur
-
-  integer, save :: ifoenv
 
   ! --- Sorties post traitement (via FVM)
 

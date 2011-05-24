@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-05-24 12:29+0200\n"
+"POT-Creation-Date: 2011-05-24 16:58+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6034,9 +6034,6 @@ msgstr ""
 " En cas de recollement de maillage, ceci peut être dû à des paramètres\n"
 " de recollement trop agressifs."
 
-msgid "Fluid volume"
-msgstr "Volume fluide"
-
 msgid ""
 "The faces have been renumbered before cutting.\n"
 "This case should not arise, because the mesh entities\n"
@@ -6426,14 +6423,6 @@ msgstr " -q, --quality     vérification de la qualité du maillage\n"
 
 #, c-format
 msgid ""
-" --solcom          stand-alone kernel with \"geomet\" mesh in\n"
-"                   SolCom format (obsolete)\n"
-msgstr ""
-" --solcom          noyau autonome avec maillage \"geomet\" au\n"
-"                   format SolCom (obsolète)\n"
-
-#, c-format
-msgid ""
 " --syr-socket      enable sockets for SYRTHES 3 coupling\n"
 "                   <port_num> port number on rank 0\n"
 msgstr ""
@@ -6602,6 +6591,9 @@ msgstr ""
 "\n"
 "  Temps écoulé pour les maillages : %12.3f\n"
 "  Temps écoulé pour les champs :    %12.3f\n"
+
+msgid "Fluid volume"
+msgstr "Volume fluide"
 
 msgid "Boundary"
 msgstr "Bord"
@@ -9299,3 +9291,4 @@ msgstr ""
 msgid "IEEE 754 arithmetic is not supported by the current architecture."
 msgstr ""
 "L'arithmétique IEEE 754 n'est pas respectée par l'architecture courante."
+

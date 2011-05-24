@@ -100,7 +100,6 @@ cs_mesh_halo.h \
 cs_mesh_quality.h \
 cs_mesh_quantities.h \
 cs_mesh_save.h \
-cs_mesh_solcom.h \
 cs_mesh_warping.h \
 cs_multigrid.h \
 cs_numbering.h \
@@ -232,7 +231,6 @@ cs_mesh_halo.c \
 cs_mesh_quality.c \
 cs_mesh_quantities.c \
 cs_mesh_save.c \
-cs_mesh_solcom.c \
 cs_mesh_warping.c \
 cs_multigrid.c \
 cs_numbering.c \
@@ -291,8 +289,6 @@ itrmas.f90 \
 lecamo.f90 \
 lecamp.f90 \
 lecamx.f90 \
-ledgeo.f90 \
-letgeo.f90 \
 majgeo.f90 \
 matrdt.f90 \
 matrix.f90 \

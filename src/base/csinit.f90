@@ -28,7 +28,7 @@
 subroutine csinit &
 !================
 
- ( argifo , irgpar , nrgpar , nthpar )
+ ( irgpar , nrgpar , nthpar )
 
 !===============================================================================
 !  FONCTION  :
@@ -41,11 +41,6 @@ subroutine csinit &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! argifo           ! e  ! <-- ! valeur de ifoenv ;                             !
-!                  !    !     ! format de communication avec                   !
-!                  !    !     ! le preprocesseur                               !
-!                  !    !     !   0 : pas de communications                    !
-!                  !    !     !   1 : communication par fichiers               !
 ! irgpar           ! e  ! <-- ! rang si parallele ; -1 si sequentiel           !
 ! nrgpar           ! e  ! <-- ! nombre de processus ; 1 si sequentiel          !
 ! nthpar           ! e  ! <-- ! nombre de threads                              !
@@ -70,7 +65,7 @@ use parall
 
 implicit none
 
-integer          argifo, irgpar, nrgpar, nthpar
+integer  irgpar, nrgpar, nthpar
 
 !===============================================================================
 
@@ -85,12 +80,6 @@ nthrdi = 1
 nthrdb = 1
 ngrpi = 1
 ngrpb = 1
-
-!===============================================================================
-! Initialisation des paramètres de lecture des données Préprocesseur
-!===============================================================================
-
-ifoenv = argifo
 
 return
 end subroutine
