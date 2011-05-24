@@ -733,7 +733,7 @@ fi
 cs_have_malloc_hooks=no
 
 AC_ARG_ENABLE(malloc_hooks,
-  [AS_HELP_STRING([--disable-malloc-hooks], [Do not use malloc hooks when available])],
+  [AS_HELP_STRING([--enable-malloc-hooks], [use malloc hooks when available])],
   [
     case "${enableval}" in
       yes) malloc_hooks=yes ;;
@@ -741,7 +741,7 @@ AC_ARG_ENABLE(malloc_hooks,
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-malloc-hooks]) ;;
     esac
   ],
-  [ malloc_hooks=yes ]
+  [ malloc_hooks=no ]
 )
 
 # If we use malloc hooks, we may need to add a -lmalloc link flag.
