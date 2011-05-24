@@ -35,8 +35,6 @@ subroutine visdyn &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smagor ,                                                       &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     , w10    , xmij   , &
    ra     )
 
 !===============================================================================
@@ -85,8 +83,6 @@ subroutine visdyn &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smagor(ncelet)   ! tr ! <-- ! constante de smagorinsky dans le cas           !
 !                  !    !     ! d'un modlele dynamique                         !
-! w1..10(ncelet    ! tr ! --- ! tableau de travail                             !
-! xmij(ncelet,6    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -131,9 +127,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
-double precision w9(ncelet),w10(ncelet),xmij(ncelet,6)
 double precision ra(*)
 
 ! Local variables
@@ -144,6 +137,7 @@ integer          iuiph, iviph, iwiph
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
 integer          iclipc
+
 double precision coef, radeux, deux, delta, deltaf
 double precision s11, s22, s33, s11f, s22f, s33f
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
@@ -154,11 +148,24 @@ double precision xl11, xl22, xl33, xl12, xl13, xl23
 double precision xm11, xm22, xm33, xm12, xm13, xm23
 double precision smagma, smagmn, smagmy
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w10
+double precision, allocatable, dimension(:,:) :: xmij
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w10(ncelet))
+allocate(xmij(ncelet,6))
 
 ! --- Memoire
 idebia = idbia0
@@ -569,6 +576,13 @@ if(iwarni(iuiph).ge.1) then
   write(nfecra,2003)
 
 endif
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
+deallocate(w10)
+deallocate(xmij)
 
 !----
 ! FORMAT

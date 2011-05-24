@@ -37,7 +37,6 @@ subroutine ppray4 &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    tparop , hparop , tempk  ,                                     &
    ra     )
 
@@ -86,7 +85,6 @@ subroutine ppray4 &
 !  (nfabor, *)     !    !     !                                                !
 ! cofrua,cofrub    ! tr ! --> ! conditions aux limites aux                     !
 !(nfabor)          !    !     !    faces de bord pour la luminances            !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
 ! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
 ! hparop(nfabor    ! tr ! --> ! enthalpie massique de paroi en j/kg            !
 !                  !    !     ! (en degres celsius ou kelvin)                  !
@@ -138,8 +136,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)

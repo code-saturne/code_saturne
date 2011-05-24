@@ -34,8 +34,6 @@ subroutine d3pphy &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   dirmin , dirmax , fdeb   , ffin   , hrec   ,                   &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -68,12 +66,6 @@ subroutine d3pphy &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! dirmin           ! tr ! --- ! pdf : dirac en fmin                            !
-! dirmax           ! tr ! --- ! pdf : dirac en fmax                            !
-! fdeb             ! tr ! --- ! pdf : abscisse debut rectangle                 !
-! ffin             ! tr ! --- ! pdf : abscisse fin rectangle                   !
-! hrec             ! tr ! --- ! pdf : hauteur rectangle                        !
-! w1-w3(ncelet)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 ! rpp              ! tr ! --- ! macro tableau reel pp                          !
 !__________________!____!_____!________________________________________________!
@@ -120,10 +112,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision dirmin(ncelet),dirmax(ncelet)
-double precision fdeb(ncelet),ffin(ncelet)
-double precision hrec(ncelet)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -134,6 +122,11 @@ integer          ifac, mode, izone
 integer          ipbrom, ipcrom, ipbycg, ipcycg
 double precision coefg(ngazgm), fsir, hhloc, tstoea, tin
 double precision temsmm
+
+double precision, allocatable, dimension(:) :: dirmin, dirmax
+double precision, allocatable, dimension(:) :: fdeb, ffin
+double precision, allocatable, dimension(:) :: hrec
+double precision, allocatable, dimension(:) :: w1, w2
 
 integer       ipass
 data          ipass /0/
@@ -149,6 +142,14 @@ ipass = ipass + 1
 !===============================================================================
 ! 1. INITIALISATIONS A CONSERVER
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(dirmin(ncelet), dirmax(ncelet))
+allocate(fdeb(ncelet), ffin(ncelet))
+allocate(hrec(ncelet))
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet))
 
 ! --- Initialisation memoire
 
@@ -380,6 +381,12 @@ if ( iirayo.gt.0 ) then
   enddo
 endif
 
+
+! Free memory
+deallocate(dirmin, dirmax)
+deallocate(fdeb, ffin)
+deallocate(hrec)
+deallocate(w1, w2)
 
 !===============================================================================
 ! FORMATS

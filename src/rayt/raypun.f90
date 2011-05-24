@@ -37,8 +37,7 @@ subroutine raypun &
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
+   smbrs  , rovsdt ,                                              &
    theta4 , thetaa , sa     ,                                     &
    qx     , qy     , qz     ,                                     &
    qincid , eps    , tparoi ,                                     &
@@ -81,9 +80,6 @@ subroutine raypun &
 !(nfac)(nfabor)    !    !     !    et faces de bord )                          !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! theta4(ncelet    ! tr ! --- ! pseudo temperature radiative                   !
@@ -147,8 +143,7 @@ double precision cofrua(nfabor), cofrub(nfabor)
 double precision flurds(nfac), flurdb(nfabor)
 
 double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbrs(ncelet)
+double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
 
 double precision theta4(ncelet), thetaa(ncelet)
@@ -179,6 +174,7 @@ integer          inc, iccocg
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision aa, aaa, aaaa, relaxp, thetap
 
+double precision rvoid(1)
 
 !===============================================================================
 
@@ -237,7 +233,6 @@ idiff1 = 1
 !--> Remise a zero des tableaux avant resolution
 
 do iel = 1,ncel
-  drtp(iel)   = zero
   theta4(iel) = zero
   thetaa(iel) = zero
 enddo
@@ -294,9 +289,7 @@ call codits                                                       &
    flurds , flurdb ,                                              &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , theta4 ,                                     &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 !===============================================================================

@@ -118,12 +118,7 @@ integer          ispecf
 
 double precision, allocatable, dimension(:) :: dtr
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: drtp, smbrs, rovsdt
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: smbrs, rovsdt
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -140,13 +135,7 @@ save             ipass
 ! Allocate temporary arrays for the species resolution
 allocate(dtr(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
-allocate(drtp(ncelet), smbrs(ncelet), rovsdt(ncelet))
-
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(smbrs(ncelet), rovsdt(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -198,7 +187,6 @@ if (ippmod(iphpar).ge.1) then
     !==========
    ( idebia , idebra , ncelet , ncel   ,                          &
      rtpa   , propce , volume ,                                   &
-     w1     , w2     , w3     ,                                   &
      ra     )
 
   endif
@@ -212,7 +200,6 @@ if (ippmod(iphpar).ge.1) then
     !==========
    ( idebia , idebra , ncelet , ncel   ,                          &
      rtpa   , propce , volume ,                                   &
-     w1     , w2     , w3     ,                                   &
      ra     )
 
   endif
@@ -281,10 +268,7 @@ if (ippmod(iphpar).ge.1) then
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   smbrs  , rovsdt ,                                              &
    ra     )
 
       endif
@@ -345,10 +329,7 @@ if (ippmod(iphpar).ge.1) then
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   smbrs  , rovsdt ,                                              &
    ra     )
 
 
@@ -397,8 +378,6 @@ if (ippmod(iphpar).ge.1) then
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
    ra     )
 
 
@@ -444,8 +423,6 @@ if ( ippmod(ielarc).ge.1       ) then
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
    ra     )
 
 endif
@@ -527,10 +504,7 @@ if(nscaus.gt.0) then
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   smbrs  , rovsdt ,                                              &
    ra     )
 
 
@@ -546,11 +520,7 @@ endif
 ! Free memory
 deallocate(dtr)
 deallocate(viscf, viscb)
-deallocate(dam, xam)
-deallocate(drtp, smbrs, rovsdt)
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
+deallocate(smbrs, rovsdt)
 
 !===============================================================================
 ! 4.  FORMATS

@@ -37,7 +37,7 @@ subroutine lagich &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
    cpgd1  , cpgd2  , cpght  ,                                     &
    skp1   , skp2   , skglob ,                                     &
-   gamhet , deltah , tempf  ,                                     &
+   gamhet , deltah ,                                              &
    ra     )
 
 !===============================================================================
@@ -103,7 +103,6 @@ subroutine lagich &
 ! skglob(nbpmax    !    !     !                                                !
 ! gamhet(nbpmax    ! tr ! --- ! tableau de travail                             !
 ! deltah(nbpmax    ! tr ! --- ! tableau de travail                             !
-! tempf(ncelet)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -154,7 +153,7 @@ double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision skp1(nbpmax) , skp2(nbpmax) , skglob(nbpmax)
-double precision gamhet(nbpmax) , deltah(nbpmax) , tempf(ncelet)
+double precision gamhet(nbpmax) , deltah(nbpmax)
 double precision cpgd1(nbpmax), cpgd2(nbpmax), cpght(nbpmax)
 double precision ra(*)
 
@@ -171,6 +170,8 @@ double precision gamdv1(ncharm2) , gamdv2(ncharm2)
 double precision f1mc(ncharm2) , f2mc(ncharm2)
 double precision coefe(ngazem)
 
+double precision, allocatable, dimension(:) :: tempf
+
 double precision precis
 parameter ( precis = 1.d-15 )
 
@@ -179,6 +180,9 @@ parameter ( precis = 1.d-15 )
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+! Allocate a temporary array
+allocate(tempf(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -653,6 +657,9 @@ do npt = 1,nbpart
 enddo
 
 !===============================================================================
+
+! Free memory
+deallocate(tempf)
 
 !=======
 ! FORMAT

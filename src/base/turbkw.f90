@@ -140,6 +140,7 @@ integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
+
 double precision rnorm , d2s3, divp23, epz2
 double precision deltk , deltw, a11, a12, a22, a21
 double precision unsdet, romvsd
@@ -151,15 +152,16 @@ double precision tuexpk, tuexpw
 double precision cdkw, xarg1, xxf1, xgamma, xbeta, sigma, produc
 double precision var, vrmin, vrmax
 
+double precision rvoid(1)
+
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: drtp, smbrk, smbrw, rovsdt
+double precision, allocatable, dimension(:) :: smbrk, smbrw, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinstw, xf1
 double precision, allocatable, dimension(:) :: s2kw, divukw
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w7, w8
 
 !===============================================================================
 
@@ -169,15 +171,15 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
-allocate(drtp(ncelet), smbrk(ncelet), smbrw(ncelet), rovsdt(ncelet))
+allocate(dam(ncelet))
+allocate(smbrk(ncelet), smbrw(ncelet), rovsdt(ncelet))
 allocate(tinstk(ncelet), tinstw(ncelet), xf1(ncelet))
 allocate(s2kw(ncelet), divukw(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w7(ncelet), w8(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -538,7 +540,7 @@ endif
 !===============================================================================
 ! 9. PRISE EN COMPTE DES TERMES DE CONV/DIFF DANS LE SECOND MEMBRE
 
-!      Tableaux de travail              W7, W8, W1, TINSTK, TINSTW, DRTP
+!      Tableaux de travail              W7, W8, W1, TINSTK, TINSTW
 !      Les termes sont stockes dans     W5 et W6, puis ajoutes a SMBRK, SMBRW
 !      En sortie de l'etape on conserve W2-6,SMBRK,SMBRW,DAM
 !===============================================================================
@@ -622,7 +624,6 @@ if (ikecou.eq.1) then
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
    w5  ,                                                          &
 !        --
-   w7     , w8     , w1     , tinstk , tinstw , drtp ,            &
    ra     )
 
   if (iwarni(ivar).ge.2) then
@@ -701,7 +702,6 @@ if (ikecou.eq.1) then
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
    w6  ,                                                          &
 !        --
-   w7     , w8     , w1     , tinstk , tinstw , drtp ,            &
    ra     )
 
   if (iwarni(ivar).ge.2) then
@@ -1007,9 +1007,7 @@ call codits                                                       &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinstk , smbrk  , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 
@@ -1096,9 +1094,7 @@ call codits                                                       &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinstw , smbrw  , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 
@@ -1170,13 +1166,13 @@ iclpmn(ipprtp(iomgip)) = iclipw
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
-deallocate(drtp, smbrk, smbrw, rovsdt)
+deallocate(dam)
+deallocate(smbrk, smbrw, rovsdt)
 deallocate(tinstk, tinstw, xf1)
 deallocate(s2kw, divukw)
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
+deallocate(w7, w8)
 
 !--------
 ! FORMATS

@@ -36,7 +36,6 @@ subroutine cfdivs &
    coefa  , coefb  , ckupdc , smacel ,                            &
    diverg , ux     , uy     , uz     ,                            &
    vistot ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !===============================================================================
@@ -94,7 +93,6 @@ subroutine cfdivs &
 ! diverg(ncelet    ! tr ! --> ! div(sigma.u)                                   !
 ! ux,y,z(ncelet    ! tr ! <-- ! composantes du vecteur u                       !
 ! vistot(ncelet    ! tr ! --- ! tableau de travail pour mu                     !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -143,8 +141,6 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision diverg(ncelet)
 double precision ux(ncelet), uy(ncelet), uz(ncelet)
 double precision vistot(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -155,14 +151,22 @@ integer          iuiph, iviph, iwiph
 integer          iclvar
 integer          nswrgp, imligp, iwarnp
 integer          ipcvis, ipcvst, ipcvsv
+
 double precision epsrgp, climgp, extrap
 double precision vecfac, visttt
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
 
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -377,6 +381,9 @@ do isou = 1, 3
 
 enddo
 
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
 
 return
 

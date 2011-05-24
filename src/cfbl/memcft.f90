@@ -31,7 +31,7 @@ subroutine memcft &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
    iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
-   iviscf , icoefu , ixam   ,                                     &
+   iviscf , icoefu ,                                              &
    ifinia , ifinra )
 
 !===============================================================================
@@ -54,7 +54,6 @@ subroutine memcft &
 ! iw7..12          ! e  ! --> ! "pointeurs" sur w7 a w12                       !
 ! iviscf           ! e  ! --> ! "pointeur" sur viscf                           !
 ! icoefu           ! e  ! --> ! "pointeur" sur coefu                           !
-! ixam             ! e  ! --> ! "pointeur" sur xam                             !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
@@ -80,7 +79,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          iw7    , iw8    , iw9    , iw10   , iw11   , iw12
-integer          iviscf , icoefu , ixam
+integer          iviscf , icoefu
 integer          ifinia , ifinra
 
 
@@ -108,8 +107,7 @@ iw11   =       iw10   + ncelet
 iw12   =       iw11   + ncelet
 iviscf =       iw12   + ncelet
 icoefu =       iviscf + nfac
-ixam   =       icoefu + nfabor*3
-ifinra =       ixam   + nfac*2
+ifinra =       icoefu + nfabor*3
 
 !---> VERIFICATION
 

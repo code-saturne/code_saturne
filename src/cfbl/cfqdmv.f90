@@ -174,15 +174,11 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:), target :: viscf, viscb
 double precision, allocatable, dimension(:), target :: wvisfi, wvisbi
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
 double precision, allocatable, dimension(:,:) :: trav
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:,:) :: dfrcxt
-double precision, allocatable, dimension(:,:) :: coefu
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 
@@ -194,11 +190,9 @@ double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 
 ! Allocate temporary arrays for the velocity-pressure resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
 allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
 allocate(trav(ncelet,3))
 allocate(dfrcxt(ncelet,3))
-allocate(coefu(nfabor,3))
 
 ! Allocate other arrays, depending on user options
 if (itytur.eq.3.and.irijnu.eq.1) then
@@ -213,7 +207,6 @@ endif
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -510,8 +503,7 @@ if (ivisse.eq.1) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    trav   ,                                                       &
 !        ------
-   viscf  , viscb  , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   viscf  , viscb  ,                                              &
    ra     )
 
 endif
@@ -533,7 +525,6 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    ia     ,                                                       &
    rtp    , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 endif
@@ -558,8 +549,6 @@ if(itytur.eq.3 ) then
    rtp    , propce , propfa , propfb ,                            &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
     init = 1
@@ -794,9 +783,7 @@ do isou = 1, 3
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 
@@ -823,15 +810,12 @@ endif
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
 deallocate(drtp, smbr, rovsdt)
 deallocate(trav)
 deallocate(dfrcxt)
-deallocate(coefu)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
 
 !--------
 ! FORMATS

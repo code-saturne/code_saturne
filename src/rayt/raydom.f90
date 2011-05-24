@@ -139,9 +139,7 @@ double precision flux(nozrdm)
 double precision vv, sf, xlc, xkmin, pp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: drtp, smbrs, rovsdt
+double precision, allocatable, dimension(:) :: smbrs, rovsdt
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -162,8 +160,7 @@ save       ipadom
 
 ! Allocate temporary arrays for the radiative equations resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
-allocate(drtp(ncelet), smbrs(ncelet), rovsdt(ncelet))
+allocate(smbrs(ncelet), rovsdt(ncelet))
 
 ! Allocate specific arrays for the radiative transfert module
 allocate(tempk(ncelet,nrphas))
@@ -521,7 +518,6 @@ unspi = 1.d0/pi
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  ,              &
    ra     )
 
@@ -738,8 +734,7 @@ unspi = 1.d0/pi
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
+   smbrs  , rovsdt ,                                              &
 
    propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))), &
    propce(1,ipproc(itsre(1))) , propce(1,ipproc(iqx))  ,     &
@@ -839,8 +834,7 @@ unspi = 1.d0/pi
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
+   smbrs  , rovsdt ,                                              &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    ,                   &
    propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))) ,&
@@ -1311,8 +1305,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
-deallocate(drtp, smbrs, rovsdt)
+deallocate(smbrs, rovsdt)
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)

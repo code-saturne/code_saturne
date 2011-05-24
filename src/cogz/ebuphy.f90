@@ -34,9 +34,6 @@ subroutine ebuphy &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   yfuegf , yoxygf , yprogf ,                                     &
-   yfuegb , yoxygb , yprogb ,                                     &
-   temp   , masmel ,                                              &
    ra     )
 
 !===============================================================================
@@ -68,7 +65,6 @@ subroutine ebuphy &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -113,9 +109,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision yfuegf(ncelet),yoxygf(ncelet),yprogf(ncelet)
-double precision yfuegb(ncelet),yoxygb(ncelet),yprogb(ncelet)
-double precision temp(ncelet),masmel(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -129,6 +122,10 @@ integer          ipbrom, ipbycg, ipcycg, mode
 double precision coefg(ngazgm), ygfm, ygbm, epsi
 double precision nbmol , temsmm , fmel , ckabgf, ckabgb
 double precision masmgb, hgb, tgb, masmgf, masmg
+
+double precision, allocatable, dimension(:) :: yfuegf, yoxygf, yprogf
+double precision, allocatable, dimension(:) :: yfuegb, yoxygb, yprogb
+double precision, allocatable, dimension(:) :: temp, masmel
 
 integer       ipass
 data          ipass /0/
@@ -145,6 +142,11 @@ ipass = ipass + 1
 !===============================================================================
 ! 1. INITIALISATIONS A CONSERVER
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(yfuegf(ncelet), yoxygf(ncelet), yprogf(ncelet))
+allocate(yfuegb(ncelet), yoxygb(ncelet), yprogb(ncelet))
+allocate(temp(ncelet), masmel(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -426,6 +428,11 @@ if ( iirayo.gt.0 ) then
     enddo
   enddo
 endif
+
+! Free memory
+deallocate(yfuegf, yoxygf, yprogf)
+deallocate(yfuegb, yoxygb, yprogb)
+deallocate(temp, masmel)
 
 !===============================================================================
 ! FORMATS

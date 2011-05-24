@@ -159,10 +159,11 @@ double precision chi  , chi3, taussa, nusa, distbf, fw, fv1, fv2
 double precision gsa , rsa , dsigma, cv13
 double precision surfn, nu0, dsa0, hssa
 
+double precision rvoid(1)
+
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: drtp, smbrsa, tinssa, divu
+double precision, allocatable, dimension(:) :: smbrsa, tinssa, divu
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -175,8 +176,8 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
-allocate(drtp(ncelet), smbrsa(ncelet))
+allocate(dam(ncelet))
+allocate(smbrsa(ncelet))
 allocate(tinssa(ncelet), divu(ncelet))
 
 ! Allocate work arrays
@@ -400,7 +401,7 @@ enddo
 
 !      On passe 2 Omega**2 = TINSSA et la divergence DIVU
 !      Tableaux de travail                        W1, W2, W3, W4, W5, W6
-!                                VISCF VISCB XAM DRTP SMBRSA W8 W9
+!                                VISCF VISCB SMBRSA W8 W9
 !      La partie a expliciter est stockee dans    W7
 !      La partie a impliciter est stockee dans    DAM
 !      En sortie de l'etape on conserve           TINSSA, DIVU,
@@ -423,7 +424,7 @@ call ustssa                                                       &
    ra     )
 
 ! On libere W1, W2, W3, W4, W5, W6, W8, W9,
-!           VISCF, VISCB, XAM, DRTP, SMBRSA,
+!           VISCF, VISCB, SMBRSA,
 
 !===============================================================================
 ! 4. CALCUL DU TERME DE GRAVITE
@@ -801,9 +802,7 @@ call codits                                                       &
    viscf  , viscb  , viscf  , viscb  ,                            &
 !  ------   ------
    tinssa , smbrsa , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 
@@ -823,8 +822,8 @@ call clipsa                                                       &
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
-deallocate(drtp, smbrsa)
+deallocate(dam)
+deallocate(smbrsa)
 deallocate(tinssa, divu)
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)

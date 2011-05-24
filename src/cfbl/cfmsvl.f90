@@ -154,10 +154,10 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision diipbx, diipby, diipbz
 double precision pip   , pjp   , thetv, relaxp
 
+double precision rvoid(1)
+
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: drtp, smbrs, rovsdt
+double precision, allocatable, dimension(:) :: smbrs, rovsdt
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -172,8 +172,7 @@ double precision, allocatable, dimension(:,:) :: coefu
 
 ! Allocate temporary arrays for the mass resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
-allocate(drtp(ncelet), smbrs(ncelet), rovsdt(ncelet))
+allocate(smbrs(ncelet), rovsdt(ncelet))
 allocate(wflmas(nfac), wflmab(nfabor))
 allocate(coefu(nfabor,3))
 
@@ -261,7 +260,7 @@ call cfmsgs                                                       &
 !        ------   ------   ------   ------
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    , w11    , w12    ,          &
-   viscf  , viscb  , coefu  , xam    ,                            &
+   viscf  , viscb  , coefu  ,                                     &
    ra     )
 
 
@@ -487,9 +486,7 @@ call codits                                                       &
                      wflmas          , wflmab          ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 !===============================================================================
@@ -630,8 +627,7 @@ endif
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
-deallocate(drtp, smbrs, rovsdt)
+deallocate(smbrs, rovsdt)
 deallocate(wflmas, wflmab)
 deallocate(coefu)
 deallocate(w1, w2, w3)

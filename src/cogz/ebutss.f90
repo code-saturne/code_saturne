@@ -37,9 +37,6 @@ subroutine ebutss &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 
 !===============================================================================
@@ -110,10 +107,6 @@ subroutine ebutss &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
-! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
-! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! xam(nfac,2)      ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..11(ncelet    ! tr ! --- ! tableau de travail    cellules                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -162,12 +155,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
-double precision viscf(nfac), viscb(nfabor)
-double precision xam(nfac,2)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision w10(ncelet), w11(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -176,10 +163,15 @@ character*80     chaine
 integer          idebia, idebra
 integer          ivar, ipcrom, iel
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+
 !===============================================================================
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -254,6 +246,9 @@ if ( ivar.eq.isca(iygfm) ) then
   enddo
 
 endif
+
+! Free memory
+deallocate(w1, w2, w3)
 
 !--------
 ! FORMATS

@@ -37,9 +37,7 @@ subroutine csc2ts &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    crvexp , crvimp ,                                              &
-   dam    , xam    ,                                              &
    rvcpce ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !===============================================================================
@@ -67,9 +65,6 @@ subroutine csc2ts &
 !  (nfabor, *)     !    !     !                                                !
 ! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
 ! crvimp(ncelet    ! tr ! --> ! tableau de travail pour part implicit          !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -113,9 +108,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision crvexp(ncelet), crvimp(ncelet)
-double precision dam(ncelet ),xam(nfac ,2)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision ra(*)
 double precision rvcpce(ncecpl)
 

@@ -146,6 +146,7 @@ integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
+
 double precision rnorm , d2s3, divp23
 double precision deltk , delte, a11, a12, a22, a21
 double precision gravke, epssuk, unsdet, romvsd
@@ -157,10 +158,11 @@ double precision thetp1, thetak, thetae, thets, thetap
 double precision tuexpk, tuexpe
 double precision cmueta, sqrcmu, xs
 
+double precision rvoid(1)
+
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: drtp, smbrk, smbre, rovsdt
+double precision, allocatable, dimension(:) :: smbrk, smbre, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinste, divu
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -174,8 +176,8 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
-allocate(drtp(ncelet), smbrk(ncelet), smbre(ncelet), rovsdt(ncelet))
+allocate(dam(ncelet))
+allocate(smbrk(ncelet), smbre(ncelet), rovsdt(ncelet))
 allocate(tinstk(ncelet), tinste(ncelet), divu(ncelet))
 
 ! Allocate work arrays
@@ -362,13 +364,13 @@ enddo
 
 !      On passe 2 Sij.Sij = TINSTK et la divergence DIVU
 !      Tableaux de travail                        W1, W2, W3, W4, W5, W6
-!                                VISCF VISCB XAM DRTP SMBRK SMBRE TINSTE
+!                                VISCF VISCB SMBRK SMBRE TINSTE
 !      La partie a expliciter est stockee dans    W7, W8
 !      La partie a impliciter est stockee dans    DAM, W9
 !      En sortie de l'etape on conserve           TINSTK, DIVU,
 !                                                 W7 , W8, DAM, W9
 !===============================================================================
-! viscf viscb xam drtp smbrk smbre tinste
+! viscf viscb smbrk smbre tinste
 do iel = 1, ncel
   dam(iel) = 0.d0
   w9 (iel) = 0.d0
@@ -388,7 +390,7 @@ call ustske                                                       &
    ra     )
 
 ! On libere W1, W2, W3, W4, W5, W6
-!           VISCF, VISCB, XAM, DRTP, SMBRK, SMBRE, TINSTE
+!           VISCF, VISCB, SMBRK, SMBRE, TINSTE
 !===============================================================================
 ! 4. AJOUT DE - 2/3 DIV(U) * DIV(U)
 
@@ -440,8 +442,6 @@ if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3    ,                                      &
-   w4     , w5     , w6    ,                                      &
    tinstk , tinste ,                                              &
    ra     )
 
@@ -713,7 +713,7 @@ endif
 !===============================================================================
 ! 9. PRISE EN COMPTE DES TERMES DE CONV/DIFF DANS LE SECOND MEMBRE
 
-!      Tableaux de travail              W2, W3, W4, W5, W6, DRTP
+!      Tableaux de travail              W2, W3, W4, W5, W6
 !      Les termes sont stockes dans     W7 et W8, puis ajoutes a SMBRK, SMBRE
 !      En sortie de l'etape on conserve W1, TINSTK, TINSTE, DIVU,
 !                                       SMBRK, SMBRE
@@ -797,7 +797,6 @@ if (ikecou.eq.1) then
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
    w7  ,                                                          &
 !        --
-   w2     , w3     , w4     , w5     , w6     , drtp ,            &
    ra     )
 
   if (iwarni(ivar).ge.2) then
@@ -874,7 +873,6 @@ if (ikecou.eq.1) then
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
    w8  ,                                                          &
 !        --
-   w2     , w3     , w4     , w5     , w6     , drtp ,            &
    ra     )
 
   if (iwarni(ivar).ge.2) then
@@ -1286,9 +1284,7 @@ call codits                                                       &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinstk , smbrk  , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 
@@ -1373,9 +1369,7 @@ call codits                                                       &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinste , smbre  , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 
@@ -1394,8 +1388,8 @@ call clipke                                                       &
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
-deallocate(drtp, smbrk, smbre, rovsdt)
+deallocate(dam)
+deallocate(smbrk, smbre, rovsdt)
 deallocate(tinstk, tinste, divu)
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)

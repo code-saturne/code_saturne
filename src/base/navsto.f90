@@ -157,8 +157,6 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:), target :: viscf, viscb
 double precision, allocatable, dimension(:), target :: wvisfi, wvisbi
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
 double precision, allocatable, dimension(:,:) :: trav
 double precision, allocatable, dimension(:) :: w1, w2, w3
@@ -167,7 +165,6 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: dfrcxt
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
-double precision, allocatable, dimension(:,:) :: coefu
 double precision, allocatable, dimension(:) :: esflum, esflub
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
@@ -180,10 +177,8 @@ double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 
 ! Allocate temporary arrays for the velocity-pressure resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
 allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
 allocate(trav(ncelet,3))
-allocate(coefu(nfabor,3))
 
 ! Allocate other arrays, depending on user options
 !if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))
@@ -304,10 +299,9 @@ call preduv                                                      &
   ra(ickupd)        , ra(ismace)        ,  frcxt ,               &
   trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      ,  trav  , &
   viscf  , viscb  , viscfi , viscbi ,                            &
-  dam    , xam    ,                                              &
   drtp   , smbr   , rovsdt ,                                     &
   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-  w7     , w8     , w9     , w10    , coefu  ,                   &
+  w7     , w8     , w9     , w10    ,                            &
   ra     )
 
 ! --- Sortie si pas de pression continuite
@@ -358,8 +352,6 @@ if( iprco.le.0 ) then
   coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
   coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
   propfa(1,iflmas), propfb(1,iflmab) ,                           &
-  w1     , w2     , w3     , w4     , w5     , w6     ,          &
-  w7     , w8     , w9     , coefu  ,                            &
   ra     )
 
 !     En ALE on doit rajouter la composante en vitesse de maillage
@@ -427,8 +419,6 @@ if( iprco.le.0 ) then
    coefa(1,icluma), coefa(1,iclvma), coefa(1,iclwma),             &
    coefb(1,icluma), coefb(1,iclvma), coefb(1,iclwma),             &
    ra(iflint)     , propfb(1,iflmab) ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
     do iel = 1, ncelet
@@ -541,10 +531,8 @@ call resolp                                                       &
    ra(ickupd)        , ra(ismace)        ,                        &
    frcxt  , dfrcxt , ra(itpuco)      , trav   ,                   &
    viscf  , viscb  , viscfi , viscbi ,                            &
-   dam    , xam    ,                                              &
    drtp   , smbr   , rovsdt , tslagr ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , frchy  , dfrchy , coefu  , trava ,  &
+   frchy  , dfrchy , trava ,                                      &
    ra     )
 
 
@@ -640,8 +628,6 @@ if( irevmc.eq.1 ) then
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    ra(iflint), ra(iflbrd),                                        &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
   do ifac = 1, nfac
@@ -876,8 +862,6 @@ if (iale.eq.1) then
    coefa(1,icluma), coefa(1,iclvma), coefa(1,iclwma),             &
    coefb(1,icluma), coefb(1,iclvma), coefb(1,iclwma),             &
    ra(iflint)     , propfb(1,iflmab) ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
   do iel = 1, ncelet
@@ -1048,8 +1032,6 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    esflum , esflub ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
 
@@ -1115,10 +1097,9 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    ra(ickupd)        , ra(ismace)        , frcxt  ,               &
    trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      , trav   , &
    viscf  , viscb  , viscfi , viscbi ,                            &
-   dam    , xam    ,                                              &
    drtp   , smbr   , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    , coefu  ,                   &
+   w7     , w8     , w9     , w10    ,                            &
    ra     )
 
   endif
@@ -1319,10 +1300,8 @@ endif
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
 deallocate(drtp, smbr, rovsdt)
 deallocate(trav)
-deallocate(coefu)
 if (allocated(dfrcxt)) deallocate(dfrcxt)
 if (allocated(frchy))  deallocate(frchy, dfrchy)
 if (allocated(esflum)) deallocate(esflum, esflub)

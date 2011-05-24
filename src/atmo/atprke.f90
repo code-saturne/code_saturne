@@ -34,8 +34,6 @@ subroutine atprke &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3    ,                                      &
-   w4     , w5     , w6    ,                                      &
    tinstk , tinste ,                                              &
    ra     )
 
@@ -67,7 +65,6 @@ subroutine atprke &
 !  (nfabor,*)      !    !               !    faces de bord
 ! coefa, coefb     ! tr !  <- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !               !    faces de bord
-! w1...6(ncelet    ! tr ! --- ! tableaux de travail                            !
 !tinstk(ncelet)    ! tr ! <-- ! prod et terme de gravite pour eq k             !
 !tinste(ncelet)    ! tr ! <-- ! prod et terme de gravite pour eq eps           !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -115,8 +112,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rtp (ncelet,*), rtpa (ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision tinstk(ncelet), tinste(ncelet)
 double precision ra(*)
 
@@ -132,13 +127,16 @@ integer         iwarnp
 double precision gravke, prdtur
 double precision epsrgp, climgp, extrap
 
+double precision, allocatable, dimension(:) :: w4, w5, w6
 
-!
 !===============================================================================
 !
 !===============================================================================
 ! 1. Initialisation
 !===============================================================================
+
+! Allocate work arrays
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -207,6 +205,10 @@ if (ippmod(iatmos).eq.1) then
   endif
 
 endif
+
+! Allocate work arrays
+deallocate(w4, w5, w6)
+
 !----
 ! FIN
 !----

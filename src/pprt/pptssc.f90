@@ -36,9 +36,6 @@ subroutine pptssc &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr ,                                     &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 
 !===============================================================================
@@ -108,10 +105,6 @@ subroutine pptssc &
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
-! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
-! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! xam(nfac,2)      ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..11(ncelet    ! tr ! --- ! tableau de travail    cellules                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -163,12 +156,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
-double precision viscf(nfac), viscb(nfabor)
-double precision xam(nfac,2)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision w10(ncelet), w11(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -203,9 +190,6 @@ if ( ippmod(icoebu).ge.0 ) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 endif
 
@@ -229,9 +213,6 @@ if ( ippmod(icolwc).ge.0 ) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 endif
 
@@ -250,9 +231,6 @@ if ( ippmod(icp3pl).ge.0 ) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 endif
 
@@ -272,9 +250,6 @@ if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr ,                                     &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 endif
 
@@ -293,9 +268,6 @@ if ( ippmod(icfuel).ge.0 ) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 endif
 
@@ -319,9 +291,6 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 endif
 
@@ -340,9 +309,6 @@ if ( ippmod(iaeros).ge.0 ) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 endif
 

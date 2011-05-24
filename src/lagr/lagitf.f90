@@ -35,7 +35,7 @@ subroutine lagitf &
    itepa  , ibord  , ia     ,                                     &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
-   auxl1  , auxl2  , tempf  ,                                     &
+   auxl1  , auxl2  ,                                              &
    ra     )
 
 !===============================================================================
@@ -91,7 +91,6 @@ subroutine lagitf &
 !                  !    !     !   correction au 2eme sous-pas                  !
 ! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
 ! auxl2(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! tempf(ncelet)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -140,20 +139,25 @@ double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax) , auxl2(nbpmax)
-double precision tempf(ncelet)
 double precision ra(*)
 
 ! Local variables
 
 integer          npt   , iel   , mode
+
 double precision ct    , aux1  , aux2   , ter1   , ter2
 double precision energ , dissip
+
+double precision, allocatable, dimension(:) :: tempf
 
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+! Allocate a temporary array
+allocate(tempf(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -287,6 +291,9 @@ else if (nor.eq.2) then
     endif
   enddo
 endif
+
+! Free memory
+deallocate(tempf)
 
 !===============================================================================
 

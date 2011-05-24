@@ -33,12 +33,9 @@ subroutine lageqp &
    ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
+   smbrs  , rovsdt ,                                              &
    fmala  , fmalb  ,                                              &
    ul     , vl     , wl     , alphal , phia   , phi    ,          &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10     , w11    , w12 ,   &
    ra     )
 
 !===============================================================================
@@ -69,9 +66,6 @@ subroutine lageqp &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet)      ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! fmala(nfac)      ! tr ! --- ! flux de masse au faces internes                !
@@ -82,7 +76,6 @@ subroutine lageqp &
 ! (ncelet)         !    !     !                                                !
 ! phi , phia       ! tr ! --> ! terme de correction en n et n-1                !
 ! (ncelet)         !    !     !                                                !
-! w1..w9(ncelet    ! tr ! --- ! tableaux de travail                            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -125,13 +118,8 @@ double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbrs(ncelet)
+double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision w1(ncelet),  w2(ncelet),  w3(ncelet)
-double precision w4(ncelet),  w5(ncelet),  w6(ncelet)
-double precision w7(ncelet),  w8(ncelet),  w9(ncelet)
-double precision w10(ncelet), w11(ncelet), w12(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -147,14 +135,22 @@ integer          nswrsp, ircflp, ischcp, isstpp
 integer          imgrp, ncymxp, nitmfp
 integer          icoefax,icoefay,icoefaz,icefap
 integer          icoefbx,icoefby,icoefbz,icefbp
+
 double precision epsrgp, climgp, extrap, blencp, epsilp, epsrsp
 double precision relaxp, thetap
+
+double precision rvoid(1)
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -177,7 +173,6 @@ enddo
 do iel = 1, ncel
   phi(iel)  = 0.d0
   phia(iel) = 0.d0
-  drtp(iel) = 0.d0
 enddo
 
 !     "VITESSE" DE DIFFUSION FACE
@@ -238,8 +233,6 @@ call diverv                                                       &
    smbrs  , w1     , w2     , w3     ,                            &
    ra(icoefax) , ra(icoefay) , ra(icoefaz) ,                      &
    ra(icoefbx) , ra(icoefby) , ra(icoefbz) ,                      &
-   w4     , w5     , w6     , w7     , w8     ,                   &
-   w9     , w10    , w11    , w12    ,                            &
    ra     )
 
 !      On libere la place dans RA
@@ -377,11 +370,12 @@ call codits                                                       &
              fmala       , fmalb       ,                          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , phi    ,                                     &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
+
+! Free memory
+deallocate(w1, w2, w3)
 
 !--------
 ! FORMATS

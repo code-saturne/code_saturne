@@ -33,8 +33,6 @@ subroutine perinr &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    drdxyz  ,                                                      &
    ra     )
 
@@ -74,7 +72,6 @@ subroutine perinr &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 ! drdxyz           ! tr ! <-- ! gradient de r aux cellules halo pour           !
 !                  !    !     ! l'approche explicite en periodicite            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -116,8 +113,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
 double precision drdxyz(ncelet-ncel,6,3)
 double precision ra(*)
 
@@ -129,11 +124,16 @@ integer          isou, isou1
 
 double precision epsrgp, climgp,extrap
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -201,6 +201,8 @@ call peinr2  ( drdxyz )
 ! On a calcule les gradients dans DRDXYZ
 igrper = 1
 
+! Free memory
+deallocate(w1, w2, w3)
 
 !----
 ! FIN

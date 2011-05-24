@@ -31,7 +31,6 @@ subroutine cpflux &
  ( idbia0 , idbra0 ,                                              &
    ncelet , ncel   ,                                              &
    rtpa   , propce , volume ,                                     &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -54,7 +53,6 @@ subroutine cpflux &
 ! (ncelet,*)       !    !     !    cellules (instant precedent)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! w1, w2, w3       ! tr ! --- ! tableaux de travail                            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -92,7 +90,6 @@ integer          idbia0 , idbra0
 integer          ncelet , ncel
 
 double precision rtpa(ncelet,*), propce(ncelet,*)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision volume(ncelet)
 double precision ra(*)
 
@@ -119,10 +116,15 @@ double precision tmin, tmax, yvmin, yvmax, yymax
 integer          ipyco2
 double precision pprco2
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+
 !===============================================================================
 !===============================================================================
 ! 1. INITIALISATIONS ET CALCULS PRELIMINAIRES
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -643,6 +645,9 @@ if ( ippmod(icp3pl) .eq. 1 ) then
   enddo
 
 endif
+
+! Free memory
+deallocate(w1, w2, w3)
 
 !===============================================================================
 ! FORMATS

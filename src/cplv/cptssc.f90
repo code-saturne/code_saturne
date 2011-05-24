@@ -37,9 +37,6 @@ subroutine cptssc &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt ,                                              &
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    , w11    ,          &
    ra     )
 
 !===============================================================================
@@ -110,10 +107,6 @@ subroutine cptssc &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
-! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
-! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! xam(nfac,2)      ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..11(ncelet    ! tr ! --- ! tableau de travail    cellules                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -167,12 +160,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
-double precision viscf(nfac), viscb(nfabor)
-double precision xam(nfac,2)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision w10(ncelet), w11(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -211,11 +198,20 @@ double precision err1mx,err2mx,anmr0
 
 double precision errch,ter1,ddelta,xden
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w11
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w11(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -959,9 +955,6 @@ if ( ivar.eq.isca(if4p2m) ) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   viscb  ,                                                       &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     ,                                     &
    ra     )
 
 endif
@@ -1240,6 +1233,11 @@ if ( ieqco2 .ge. 1 ) then
   endif
 
 endif
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w11)
 
 !--------
 ! FORMATS

@@ -36,10 +36,7 @@ subroutine covofi &
    dt     , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   smbrs  , rovsdt ,                                              &
    ra     )
 
 !===============================================================================
@@ -85,12 +82,8 @@ subroutine covofi &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -144,12 +137,8 @@ double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbrs(ncelet)
+double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -171,17 +160,25 @@ integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          idbia1
+
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp
 
+double precision rvoid(1)
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -335,9 +332,6 @@ if (ippmod(iphpar).ge.1) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt , tslagr ,                                     &
 !        ------   ------
-   viscf  , viscb  , xam    ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , drtp   , dam    ,          &
    ra     )
 endif
 
@@ -679,9 +673,7 @@ call codits                                                       &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 !===============================================================================
@@ -719,6 +711,9 @@ if (iwarni(ivar).ge.2) then
   call prodsc(ncelet,ncel,isqrt,smbrs,smbrs,sclnor)
   write(nfecra,1200)chaine(1:8) ,sclnor
 endif
+
+! Free memory
+deallocate(w1, w2, w3)
 
 !--------
 ! FORMATS

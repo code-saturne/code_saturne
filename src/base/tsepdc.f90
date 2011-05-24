@@ -35,7 +35,6 @@ subroutine tsepdc &
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !===============================================================================
@@ -67,7 +66,6 @@ subroutine tsepdc &
 !  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
 ! trav(ncelet,3    ! tr ! <-- ! tableau des second membres                     !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
@@ -106,8 +104,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision trav(ncelet,3)
 double precision ra(*)
 

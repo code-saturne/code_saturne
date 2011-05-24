@@ -38,7 +38,7 @@ subroutine cfmsfl &
    flumas , flumab ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    w7     , w8     , w9     , w10    , w11    , w12    ,          &
-   trflms , trflmb , coefu  , xam    ,                            &
+   trflms , trflmb , coefu  ,                                     &
    ra     )
 
 !===============================================================================
@@ -77,7 +77,6 @@ subroutine cfmsfl &
 ! trflms(nfac)     ! tr ! --- ! tableau de travail                             !
 ! trflmb(nfabor    ! tr ! --- ! tableau de travail                             !
 ! coefu(nfabo,3    ! tr ! --- ! tableau de travail cl de la qdm                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -131,7 +130,7 @@ double precision w4(ncelet) , w5(ncelet) , w6(ncelet)
 double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
 double precision w10(ncelet), w11(ncelet), w12(ncelet)
 double precision trflms(nfac), trflmb(nfabor)
-double precision coefu(nfabor,3), xam(nfac,2)
+double precision coefu(nfabor,3)
 double precision ra(*)
 
 ! Local variables
@@ -316,8 +315,6 @@ if(itsqdm.ne.0) then
    coefb(1,icliup) , coefb(1,iclivp) , coefb(1,icliwp) ,          &
    flumas , flumab ,                                              &
 !        ------   ------
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
 !     Calcul du terme convecte suivant les 3 directions
@@ -384,7 +381,6 @@ if(itsqdm.ne.0) then
    w10    , w8     , w9     , w9     ,                            &
 !        ------
    w7     ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     call cfdivs                                                   &
@@ -398,7 +394,6 @@ if(itsqdm.ne.0) then
    w11    , w9     , w8     , w9     ,                            &
 !        ------
    w7     ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     call cfdivs                                                   &
@@ -412,7 +407,6 @@ if(itsqdm.ne.0) then
    w12    , w9     , w9     , w8     ,                            &
 !        ------
    w7     ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
   endif
@@ -642,8 +636,6 @@ call inimas                                                       &
    trflmb          , trflmb          , trflmb          ,          &
    flumas , flumab ,                                              &
 !        ------   ------
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
 !--------

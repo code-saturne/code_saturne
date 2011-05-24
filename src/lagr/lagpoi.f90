@@ -38,7 +38,6 @@ subroutine lagpoi &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , statis ,                                     &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -94,7 +93,6 @@ subroutine lagpoi &
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! statis           ! tr ! <-- ! moyennes statistiques                          !
 !(ncelet,nvlsta    !    !     !                                                !
-! w1...w3(ncel)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -143,7 +141,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -152,20 +149,24 @@ integer          idebia, idebra
 integer          ifinia, ifinra
 integer          npt , iel , ifac
 integer          iphila , iphil
-integer          iw1   , iw2   , iw3   , iw4 , iw5
-integer          iw6   , iw7   , iw8   , iw9
 integer          idtr   , ifmala , ifmalb
-integer          iviscf , iviscb , idam   , ixam
-integer          idrtp  , ismbr  , irovsd
+integer          iviscf , iviscb
+integer          ismbr  , irovsd
 integer          icoefap , icoefbp
 integer          ivar0
 integer          inc, iccocg
 integer          nswrgp , imligp , iwarnp
+
 double precision epsrgp , climgp , extrap
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -177,26 +178,14 @@ idebra = idbra0
 idtr   = idebra
 iviscf = idtr   + ncelet
 iviscb = iviscf + nfac
-idam   = iviscb + nfabor
-ixam   = idam   + ncelet
-idrtp  = ixam   + nfac*2
-ismbr  = idrtp  + ncelet
+ismbr  = iviscb + nfabor
 irovsd = ismbr  + ncelet
 ifmala = irovsd + ncelet
 ifmalb = ifmala + nfac
 
-iphila  = ifmalb + nfabor
-iphil   = iphila  + ncelet
-iw1    = iphil   + ncelet
-iw2    = iw1    + ncelet
-iw3    = iw2    + ncelet
-iw4    = iw3    + ncelet
-iw5    = iw4    + ncelet
-iw6    = iw5    + ncelet
-iw7    = iw6    + ncelet
-iw8    = iw7    + ncelet
-iw9    = iw8    + ncelet
-ifinra = iw9    + ncelet
+iphila = ifmalb + nfabor
+iphil  = iphila + ncelet
+ifinra = iphil  + ncelet
 call rasize('lagpoi',ifinra)
 !==========
 
@@ -225,15 +214,11 @@ call lageqp                                                       &
    ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
    ra(iviscf) , ra(iviscb) ,                                      &
-   ra(idam) , ra(ixam) ,                                          &
-   ra(idrtp) , ra(ismbr) , ra(irovsd) ,                           &
+   ra(ismbr) , ra(irovsd) ,                                       &
    ra(ifmala) , ra(ifmalb) ,                                      &
    statis(1,ilvx) , statis(1,ilvy) , statis(1,ilvz) ,             &
    statis(1,ilfv) ,                                               &
    ra(iphila) , ra(iphil) ,                                       &
-   w1     , w2     , w3     , ra(iw1) , ra(iw2) ,                 &
-   ra(iw3) , ra(iw4) , ra(iw5) , ra(iw6) ,                        &
-   ra(iw7) , ra(iw8) , ra(iw9) ,                                  &
    ra     )
 
 ! Calcul du gradient du Correcteur PHI
@@ -314,6 +299,9 @@ do npt = 1,nbpart
     ettp(npt,jwp) = ettp(npt,jwp) - w3(iel)
   endif
 enddo
+
+! Free memory
+deallocate(w1, w2, w3)
 
 !===============================================================================
 

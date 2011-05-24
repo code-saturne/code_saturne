@@ -36,10 +36,8 @@ subroutine resolp &
    coefa  , coefb  , ckupdc , smacel ,                            &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
-   dam    , xam    ,                                              &
    drtp   , smbr   , rovsdt , tslagr ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , frchy  , dfrchy , coefu  , trava  , &
+   frchy  , dfrchy , trava  ,                                     &
    ra     )
 
 !===============================================================================
@@ -92,19 +90,15 @@ subroutine resolp &
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! viscfi(nfac)     ! tr ! --- ! idem viscf pour increments                     !
 ! viscbi(nfabor    ! tr ! --- ! idem viscb pour increments                     !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
 ! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !  (ncelet,*)      !    !     !   lagrangien                                   !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! frchy(ncelet     ! tr ! --- ! tableau de travail                             !
 !  ndim  )         !    !     !                                                !
 ! dfrchy(ncelet    ! tr ! --- ! tableau de travail                             !
 !  ndim  )         !    !     !                                                !
-! coefu(nfab,3)    ! tr ! --- ! tableau de travail                             !
 ! trava            ! tr ! <-- ! tableau de travail pour couplage               !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
@@ -160,15 +154,11 @@ double precision frcxt(ncelet,3), dfrcxt(ncelet,3)
 double precision tpucou(ncelet,ndim), trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
-double precision dam(ncelet), xam(nfac,2)
 double precision drtp(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision frchy(ncelet,ndim), dfrchy(ncelet,ndim)
-double precision coefu(nfabor,3), trava(ncelet,ndim)
+double precision trava(ncelet,ndim)
 double precision ra(*)
 
 ! Local variables
@@ -201,11 +191,19 @@ double precision drom  , dronm1
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: w1, w7
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(dam(ncelet), xam(nfac,2))
+allocate(w1(ncelet), w7(ncelet))
 
 ! --- Memoire
 idebia = idbia0
@@ -344,8 +342,6 @@ if(irnpnw.ne.1) then
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
   init = 1
@@ -443,8 +439,6 @@ if (iphydr.eq.1) then
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbr   ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , rovsdt ,                            &
    ra     )
     else
       indhyd = 0
@@ -611,8 +605,6 @@ call inimas                                                       &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
 
@@ -700,7 +692,6 @@ if(arakph.gt.0.d0) then
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     Projection du terme source pour oter la partie hydrostat de la pression
@@ -767,7 +758,6 @@ if(arakph.gt.0.d0) then
    viscf  , viscb  ,                                              &
    tpucou(1,1)     , tpucou(1,2)     , tpucou(1,3)     ,          &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     Projection du terme source pour oter la partie hydrostat de la pression
@@ -993,7 +983,6 @@ do 100 isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     else
@@ -1011,7 +1000,6 @@ do 100 isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     endif
@@ -1106,7 +1094,6 @@ do 100 isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     pour le dernier increment, on ne reconstruit pas, on n'appelle donc
@@ -1129,7 +1116,6 @@ do 100 isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     else
@@ -1147,7 +1133,6 @@ do 100 isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     pour le dernier increment, on ne reconstruit pas, on n'appelle donc
@@ -1170,7 +1155,6 @@ do 100 isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
    propfa(1,iflmas), propfb(1,iflmab),                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     endif
@@ -1225,7 +1209,6 @@ do 100 isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    dt          , dt          , dt          ,                      &
    smbr   ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     else
@@ -1243,7 +1226,6 @@ do 100 isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    tpucou(1,1) , tpucou(1,2) , tpucou(1,3) ,                      &
    smbr   ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     endif
@@ -1283,6 +1265,10 @@ if (imgr(ipriph).gt.0) then
   call dsmlga(chaine(1:16), lchain)
   !==========
 endif
+
+! Free memory
+deallocate(dam, xam)
+deallocate(w1, w7)
 
 !--------
 ! FORMATS

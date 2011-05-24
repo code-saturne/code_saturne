@@ -136,9 +136,7 @@ integer          iitsla
 double precision epsrgp, climgp, extrap
 
 double precision, allocatable, dimension(:) :: viscf, viscb, coefax
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
+double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:,:) :: grdvit
 double precision, allocatable, dimension(:,:) :: produc
 double precision, allocatable, dimension(:) :: grarox, graroy, graroz
@@ -158,8 +156,7 @@ double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
-allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
+allocate(smbr(ncelet), rovsdt(ncelet))
 
 ! Allocate other arrays, depending on user options
 if (igrari.eq.1) then
@@ -520,7 +517,7 @@ do isou = 1, 6
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
-   dam    , xam    , drtp   , smbr   , rovsdt ,                   &
+   smbr   , rovsdt ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
@@ -539,7 +536,7 @@ do isou = 1, 6
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
-   dam    , xam    , drtp   , smbr   , rovsdt ,                   &
+   smbr   , rovsdt ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
@@ -573,7 +570,7 @@ call reseps                                                       &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
-   dam    , xam    , drtp   , smbr   , rovsdt ,                   &
+   smbr   , rovsdt ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
@@ -592,8 +589,7 @@ call clprij                                                       &
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
-deallocate(drtp, smbr, rovsdt)
+deallocate(smbr, rovsdt)
 if (allocated(grarox)) deallocate(grarox, graroy, graroz)
 if (allocated(coefax)) deallocate(coefax)
 if (allocated(produc)) deallocate(produc)

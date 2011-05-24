@@ -34,7 +34,6 @@ subroutine mmtycl &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    rcodcl ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !===============================================================================
@@ -78,8 +77,6 @@ subroutine mmtycl &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! depmob(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
 ! xyzno1(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -122,8 +119,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision depmob(nnod,3), xyzno1(3,nnod)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision ra(*)
 
 ! Local variables

@@ -34,7 +34,6 @@ subroutine cfxtcl &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
 !===============================================================================
@@ -88,10 +87,6 @@ subroutine cfxtcl &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! coefu            ! ra ! --- ! work array                                     !
-!  (nfabor, 3)     !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -140,9 +135,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision coefu(nfabor,ndim)
 double precision ra(*)
 
 ! Local variables
@@ -164,10 +156,21 @@ integer          ivarcf(nvcfmx)
 
 double precision hint  , gammag
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7
+
 !===============================================================================
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+
+! Allocate a work array on boundary faces (to be verified...)
+allocate(w7(nfabor))
 
 idebia = idbia0
 idebra = idbra0
@@ -220,7 +223,7 @@ if(icalep.ne.0) then
   iccfth , imodif ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
-  w5     , coefu(1,1) , w3 , w4     )
+  w5     , w7     , w3 , w4     )
 endif
 
 
@@ -1008,6 +1011,11 @@ do ifac = 1, nfabor
 
 ! --- Fin de boucle sur les faces de bord
  enddo
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7)
 
 !----
 ! FORMATS

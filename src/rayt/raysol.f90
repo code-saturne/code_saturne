@@ -37,8 +37,7 @@ subroutine raysol &
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
-   dam    , xam    ,                                              &
-   drtp   , smbrs  , rovsdt ,                                     &
+   smbrs  , rovsdt ,                                              &
    w1     , w2     , w3     , w4     , w5     ,                   &
    w6     , w7     , w8     , w9     , w10    ,                   &
    ru     , rua    ,                                              &
@@ -111,9 +110,6 @@ subroutine raysol &
 !(nfac)(nfabor)    !    !     !    et faces de bord )                          !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
@@ -172,8 +168,7 @@ double precision cofrua(nfabor), cofrub(nfabor)
 double precision flurds(nfac), flurdb(nfabor)
 
 double precision viscf(nfac), viscb(nfabor)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbrs(ncelet)
+double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
@@ -200,11 +195,14 @@ integer          imgr1 , imligp, ircflp, ischcp, isstpp, iescap
 integer          ncymap, nitmgp
 integer          idir  , ndirs , kdir  , ipp   , inum
 integer          ii, jj, kk, idtva0, ivar0
+
 double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision sx, sy, sz, domega
 double precision sxt(ndirs8), syt(ndirs8), szt(ndirs8)
 double precision aa
 double precision relaxp, thetap
+
+double precision rvoid(1)
 
 !===============================================================================
 
@@ -394,7 +392,6 @@ do ii = -1,1,2
         enddo
 
         do iel = 1,ncelet
-          drtp(iel) = zero
           ru(iel)   = zero
           rua(iel)  = zero
         enddo
@@ -438,9 +435,7 @@ do ii = -1,1,2
    cofrua , cofrub , cofrua , cofrub , flurds , flurdb ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , ru    ,                                      &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 !===============================================================================

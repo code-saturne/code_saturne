@@ -33,7 +33,6 @@ subroutine laggra &
    ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -64,7 +63,6 @@ subroutine laggra &
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! gradpr(ncel,3    ! tr ! --> ! gradient de pression                           !
 ! gradvf(ncel,9    ! tr ! --> ! gradient de vitesse fluide                     !
-! w1...w3(ncel)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -109,7 +107,6 @@ double precision coefa(ndimfb,*) , coefb(ndimfb,*)
 double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision ra(*)
 
 ! Local variables

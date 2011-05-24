@@ -36,7 +36,6 @@ subroutine raycli &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  , hbord  , tbord  ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    text   , tint   , tempk  ,                                     &
    ra     )
 
@@ -102,8 +101,6 @@ subroutine raycli &
 ! (nfabor)         !    !     !                                                !
 ! tbord            ! tr ! --> ! temperature aux bords           i              !
 ! (nfabor)         !    !     !                                                !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! text (nfabor     ! tr ! --> ! temperature de bord externe                    !
 ! tint (nfabor     ! tr ! --> ! temperature de bord interne                    !
 ! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
@@ -155,8 +152,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision hbord(nfabor),tbord(nfabor)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
 
 double precision tempk(ncelet)
 double precision text(nfabor), tint(nfabor)
@@ -643,7 +638,6 @@ endif
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , tbord  , tempk  ,                   &
 !                                   Resultat : T en K
    ra     )
@@ -813,7 +807,6 @@ endif
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
    tempk  ,                                                       &
 !                          HPAROI
@@ -860,7 +853,6 @@ endif
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    text   , tbord  , tempk  ,                                     &
 !                       HEXT
    ra     )

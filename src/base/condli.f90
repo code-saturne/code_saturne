@@ -35,8 +35,6 @@ subroutine condli &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  , uetbor , visvdr , hbord  , thbord , frcxt  , &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   coefu  , rijipb ,                                              &
    ra     )
 
 !===============================================================================
@@ -121,12 +119,6 @@ subroutine condli &
 ! (nfabor)         !    !     !    (plus exactmt : var. energetique)           !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! coefu            ! tr ! --- ! tab de trav pour valeurs en iprime             !
-! (nfabor,3   )    !    !     !  des comp de la vitesse au bord                !
-! rijipb           ! tr ! --- ! tab de trav pour valeurs en iprime             !
-! (nfabor,6   )    !    !     !  des rij au bord                               !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -179,9 +171,6 @@ double precision frcxt(ncelet,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision uetbor(nfabor), visvdr(ncelet)
 double precision hbord(nfabor),thbord(nfabor)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision coefu(nfabor,ndim), rijipb(nfabor,6)
 double precision ra(*)
 
 ! Local variables
@@ -208,6 +197,7 @@ integer          iclvar, iclvaf, icluma, iclvma, iclwma
 integer          iismph, iyplbp
 integer          nswrgp, imligp, iwarnp, icliva
 integer          iph
+
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , xdis
 double precision flumbf, visclc, visctc, distbf, srfbn2
@@ -216,11 +206,18 @@ double precision ro0iph, p0iph , pr0iph, xxp0, xyp0, xzp0
 double precision srfbnf, rnx   , rny   , rnz
 double precision upx   , upy   , upz   , vistot
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: coefu, rijipb
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(coefu(nfabor,3))
 
 !  On a besoin des COEFA et COEFB pour le calcul des gradients
 !     pour les cond lim turb en paroi
@@ -292,7 +289,6 @@ if(ippmod(iphpar).ge.1) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 endif
 
@@ -305,7 +301,6 @@ if (iale.eq.1) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    rcodcl , ra(ixyzn0)      , ra(idepal)      ,                   &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 endif
 
@@ -319,7 +314,6 @@ if (imobil.eq.1) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    rcodcl ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 endif
@@ -332,7 +326,6 @@ call typecl                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl , frcxt  ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
 !===============================================================================
@@ -711,6 +704,8 @@ endif
 if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
      .and.itytur.eq.3) then
 
+  ! Allocate a work array to store Rij values at boundary faces
+  allocate(rijipb(nfabor,6))
 
   do isou = 1 , 6
 
@@ -808,7 +803,6 @@ if (ipatur.ne.0) then
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  , uetbor , visvdr ,          &
    hbord  , thbord ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 endif
@@ -826,7 +820,6 @@ if (ipatrg.ne.0) then
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  , uetbor , visvdr ,          &
    hbord  , thbord ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 endif
@@ -852,7 +845,6 @@ if (iclsym.ne.0) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 endif
@@ -1664,6 +1656,11 @@ if (ineedf.eq.1) then
          + (coefb(ifac,iclwf)-1.d0)*coefu(ifac,3) )/distbf*srfbnf
   enddo
 endif
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(coefu)
+if (allocated(rijipb)) deallocate(rijipb)
 
 !===============================================================================
 ! 15.  FORMATS

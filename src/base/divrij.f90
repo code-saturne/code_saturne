@@ -35,8 +35,6 @@ subroutine divrij &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
 !===============================================================================
@@ -74,8 +72,6 @@ subroutine divrij &
 !  (nfabor, *)     !    !     !                                                !
 ! viscf(nfac)      ! tr ! --> ! resultat du calcul                             !
 ! viscb(nfabor)    ! tr ! --> ! resultat du calcul                             !
-! w1-w9(ncelet)    ! tr ! --- ! tableau de travail                             !
-! coefu(nfab,4)    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -115,10 +111,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscf(nfac), viscb(nfabor)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision coefu(nfabor,3)
 double precision ra(*)
 
 ! Local variables
@@ -214,8 +206,6 @@ call inimas                                                       &
    coefa(1,iclva1) , coefa(1,iclva2) , coefa(1,iclva3) ,          &
    coefb(1,iclva1) , coefb(1,iclva2) , coefb(1,iclva3) ,          &
    viscf  , viscb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
 

@@ -34,7 +34,6 @@ subroutine rijthe &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , grarox , graroy , graroz , smbr   ,          &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !===============================================================================
@@ -68,7 +67,6 @@ subroutine rijthe &
 ! grarox,y,z       ! tr ! <-- ! tableau de travail pour grad rom               !
 !  (ncelet)        !    !     !                                                !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -107,8 +105,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision grarox(ncelet), graroy(ncelet), graroz(ncelet)
 double precision smbr(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision ra(*)
 
 ! Local variables

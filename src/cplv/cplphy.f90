@@ -34,8 +34,6 @@ subroutine cplphy &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 !===============================================================================
@@ -124,7 +122,6 @@ subroutine cplphy &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -170,8 +167,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -186,6 +181,10 @@ integer          izone, ifac
 integer          ipbrom
 double precision srrom1
 double precision wmolme
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8
 
 integer       ipass
 data          ipass /0/
@@ -202,6 +201,11 @@ ipass = ipass + 1
 !===============================================================================
 ! 1. INITIALISATIONS A CONSERVER
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet))
 
 ! --- Initialisation memoire
 
@@ -366,6 +370,11 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
 
   enddo
 endif
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8)
 
 !----
 ! FIN

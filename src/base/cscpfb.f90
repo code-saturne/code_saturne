@@ -35,7 +35,6 @@ subroutine cscpfb &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    coopts , djppts , pndpts ,                                     &
    rvdis  , dofpts ,                                              &
    ra     )
@@ -96,8 +95,6 @@ integer          ia(*)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), djppts(3,nptdis)
 double precision pndpts(nptdis), dofpts(3,nptdis)
@@ -131,11 +128,16 @@ double precision xx, yy, zz
 double precision omegal(3), omegad(3), omegar(3), omgnrl, omgnrd, omgnrr
 double precision vitent, daxis2
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+
 !===============================================================================
 
 !=========================================================================
 ! 1.  INITIALISATIONS
 !=========================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -1749,6 +1751,8 @@ if (nscal.gt.0) then
 
 endif
 
+! Free memory
+deallocate(w1, w2, w3)
 
 return
 end subroutine

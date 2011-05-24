@@ -35,8 +35,6 @@ subroutine diverv &
    div    , ux     , vy     , wz     ,                            &
    coefax , coefay , coefaz ,                                     &
    coefbx , coefby , coefbz ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
    ra     )
 
 !===============================================================================
@@ -67,7 +65,6 @@ subroutine diverv &
 ! coefax,...       ! tr ! ->  ! conditions aux limites pour les                !
 ! coefbz           !    !     ! faces de bord                                  !
 ! (nfabor)         !    !     !                                                !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -109,9 +106,6 @@ double precision div(ncelet)
 double precision ux(ncelet) , vy(ncelet) , wz(ncelet)
 double precision coefax(nfabor) , coefay(nfabor) , coefaz(nfabor)
 double precision coefbx(nfabor) , coefby(nfabor) , coefbz(nfabor)
-double precision w1(ncelet) , w2(ncelet) , w3(ncelet)
-double precision w4(ncelet) , w5(ncelet) , w6(ncelet)
-double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -121,13 +115,21 @@ integer          ivar0
 integer          iel
 integer          inc, iccocg
 integer          nswrgp, imligp, iwarnp
+
 double precision epsrgp, climgp, extrap
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
 
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -197,6 +199,10 @@ call grdcel                                                       &
 do iel = 1,ncel
   div(iel) = w1(iel) + w2(iel) + w3(iel)
 enddo
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
 
 !----
 ! FIN

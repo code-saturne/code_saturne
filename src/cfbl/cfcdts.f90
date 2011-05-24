@@ -40,9 +40,7 @@ subroutine cfcdts &
    pvara  , coefap , coefbp , cofafp , cofbfp , flumas , flumab , &
    viscfm , viscbm , viscfs , viscbs ,                            &
    rovsdt , smbrp  , pvar   ,                                     &
-   dam    , xam    , dpvar  ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , smbini ,                            &
+   eswork ,                                                       &
    ra     )
 
 !===============================================================================
@@ -140,11 +138,7 @@ subroutine cfcdts &
 ! rovsdt(ncelet    ! tr ! <-- ! rho*volume/dt                                  !
 ! smbrp(ncelet     ! tr ! <-- ! bilan au second membre                         !
 ! pvar (ncelet     ! tr ! <-- ! variable resolue                               !
-! dam(ncelet       ! tr ! --> ! tableau de travail pour matrice                !
-!                  !    !     !  et resultat estimateur                        !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
-! smbini(ncelet    ! tr ! --- ! tableau de travail                             !
+! eswork(ncelet)   ! ra ! <-- ! prediction-stage error estimator (iescap > 0)  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -193,11 +187,7 @@ double precision viscfm(nfac), viscbm(nfabor)
 double precision viscfs(nfac), viscbs(nfabor)
 double precision rovsdt(ncelet), smbrp(ncelet)
 double precision pvar(ncelet)
-double precision dam(ncelet), xam(nfac ,2)
-double precision dpvar(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet), w4(ncelet)
-double precision w5(ncelet), w6(ncelet), w7(ncelet), w8(ncelet)
-double precision smbini(ncelet)
+double precision eswork(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -208,7 +198,12 @@ integer          idebia, idebra
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          idimte,itenso,iinvpe, iinvpp
+
 double precision residu,rnorm
+
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: dpvar, smbini, w1
 
 !===============================================================================
 
@@ -226,7 +221,6 @@ cnom   = chaine(1:16)
 ! MATRICE A PRIORI SYMETRIQUE ( = 1)
 isym  = 1
 if( iconvp.gt.0 ) isym  = 2
-
 
 ! METHODE DE RESOLUTION ET DEGRE DU PRECOND DE NEUMANN
 !     0 SI CHOIX AUTOMATIQUE GRADCO OU BICGSTAB
@@ -269,17 +263,17 @@ if(iperio.eq.1) then
        ivar.eq.ir13.or.ivar.eq.ir22.or.             &
        ivar.eq.ir23.or.ivar.eq.ir33) then
 
-!    Pour la vitesse et les tensions de Reynolds
-!      seules seront echangees les informations sur les faces periodiques
-!      de translation dans percom ; on ne touche pas aux informations
-!      relatives aux faces de periodicite de rotation.
+    !    Pour la vitesse et les tensions de Reynolds
+    !      seules seront echangees les informations sur les faces periodiques
+    !      de translation dans percom ; on ne touche pas aux informations
+    !      relatives aux faces de periodicite de rotation.
     idimte = 0
     itenso = 1
 
-!      Lors de la resolution par increments, on echangera egalement les
-!      informations relatives aux faces de periodicite de translation.
-!      Pour les faces de periodicite de rotation, l'increment sera
-!      annule dans percom (iinvpe=2).
+    !      Lors de la resolution par increments, on echangera egalement les
+    !      informations relatives aux faces de periodicite de translation.
+    !      Pour les faces de periodicite de rotation, l'increment sera
+    !      annule dans percom (iinvpe=2).
     iinvpe = 2
 
   endif
@@ -359,7 +353,6 @@ do 100 isweep = 1, nswmod
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
 !        ------
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 
@@ -378,6 +371,8 @@ do 100 isweep = 1, nswmod
 !         Pour les autres variables (scalaires) IINVPE=1 permettra de
 !         tout echanger, meme si c'est superflu.
   if( isweep.eq.1 ) then
+    ! Allocate a temporary array
+    allocate(w1(ncelet))
     if(iinvpe.eq.2) then
       iinvpp = 3
     else
@@ -390,6 +385,8 @@ do 100 isweep = 1, nswmod
     enddo
     call prodsc(ncelet,ncel,isqrt,w1,w1,rnorm)
     rnsmbr(ipp) = rnorm
+    ! Free memory
+    deallocate(w1)
   endif
 
 ! ---> RESOLUTION IMPLICITE SUR L'INCREMENT DPVAR
@@ -496,17 +493,20 @@ if (iescap.gt.0) then
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
 !        ------
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     CONTRIBUTION DES NORMES L2 DES DIFFERENTES COMPOSANTES
-!       DANS LE TABLEAU DAM QUI EST ICI DISPONIBLE.
+!       DANS LE TABLEAU ESWORK
 
   do iel = 1,ncel
-    dam(iel) = (smbrp(iel)/ volume(iel))**2
+    eswork(iel) = (smbrp(iel)/ volume(iel))**2
   enddo
 
 endif
+
+! Free memory
+deallocate(dam, xam)
+deallocate(dpvar, smbini)
 
 !--------
 ! FORMATS

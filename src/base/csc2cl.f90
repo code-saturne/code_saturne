@@ -36,7 +36,6 @@ subroutine csc2cl &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    rvcpfb , pndcpl , dofcpl ,                                     &
    ra     )
 
@@ -87,8 +86,6 @@ subroutine csc2cl &
 !                  !    !     ! for pressure:                dt*gradp          !
 !                  !    !     ! for scalars:                                   !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -134,9 +131,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision coefu(nfabor,ndim)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
 double precision dofcpl(3,nfbcpl)
 double precision ra(*)
@@ -159,6 +153,8 @@ double precision xipf, yipf, zipf, ipf
 double precision xif, yif, zif, xopf, yopf, zopf
 double precision gradi, pondj, flumab
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+
 !===============================================================================
 
 
@@ -169,6 +165,9 @@ idebra = idbra0
 !===============================================================================
 ! 1.  Translation of the coupling to boundary conditions
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ! Reminder: variables are received in the order of VARPOS;
 ! loopin on variables is thus sufficient.
@@ -401,6 +400,8 @@ do ivar = 1, nvcp
 
 enddo
 
+! Free memory
+deallocate(w1, w2, w3)
 
 !----
 ! Formats

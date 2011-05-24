@@ -32,8 +32,7 @@ subroutine memcli &
    nvar   , nscal  ,                                              &
    isvhb  , isvtb  ,                                              &
    iicodc , ircodc ,                                              &
-   iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
-   icoefu , irijip , iuetbo , ivsvdr , ihbord , itbord ,          &
+   iuetbo , ivsvdr , ihbord , itbord ,                            &
    ifinia , ifinra )
 
 !===============================================================================
@@ -54,11 +53,9 @@ subroutine memcli &
 ! isvhb            ! e  ! <-- ! indicateur de stockage de hbord                !
 ! isvtb            ! e  ! <-- ! indicateur de stockage de tbord                !
 ! iicodc,ircodc    ! e  ! --> ! "pointeur" sur icodlc rcodcl                   !
-! iw1,2,3,4,5,6    ! e  ! --> ! "pointeur" sur w1,2,3,4,5,6                    !
 ! iuetbo           ! e  ! --> ! "pointeur" sur uetbor                          !
 ! ihbord           ! e  ! --> ! "pointeur" sur hbord                           !
 ! itbord           ! e  ! --> ! "pointeur" sur hbord                           !
-! irijip           ! e  ! --> ! "pointeur" sur rijipb                          !
 ! ivsvdr           ! e  ! --> ! "pointeur" sur visvdr                          !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
@@ -90,12 +87,11 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          isvhb  , isvtb
 integer          iicodc , ircodc
-integer          iw1    , iw2    , iw3    , iw4    , iw5    , iw6
-integer          icoefu , irijip , iuetbo , ivsvdr
+integer          iuetbo , ivsvdr
 integer          ihbord , itbord
 integer          ifinia , ifinra
 
-integer          idebia , idebra, irij, iiuetb
+integer          idebia , idebra, iiuetb
 
 !===============================================================================
 
@@ -103,11 +99,6 @@ integer          idebia , idebra, irij, iiuetb
 
 idebia = idbia0
 idebra = idbra0
-
-irij = 0
-if(itytur.eq.3) then
-  irij = 1
-endif
 
 iiuetb = 0
 if(itytur.eq.4.and.idries.eq.1)then
@@ -120,15 +111,7 @@ iicodc =       idebia
 ifinia =       iicodc + nfabor*nvar
 
 ircodc =       idebra
-iw1    =       ircodc + nfabor*nvar*3
-iw2    =       iw1    + ncelet
-iw3    =       iw2    + ncelet
-iw4    =       iw3    + ncelet
-iw5    =       iw4    + ncelet
-iw6    =       iw5    + ncelet
-icoefu =       iw6    + ncelet
-irijip =       icoefu + nfabor*ndim
-iuetbo =       irijip + nfabor*6*irij
+iuetbo =       ircodc + nfabor*nvar*3
 ivsvdr =       iuetbo + nfabor*iiuetb
 ifinra =       ivsvdr + ncelet*iiuetb
 

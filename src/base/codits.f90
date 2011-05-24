@@ -41,9 +41,7 @@ subroutine codits &
    coefap , coefbp , cofafp , cofbfp , flumas , flumab ,          &
    viscfm , viscbm , viscfs , viscbs ,                            &
    rovsdt , smbrp  , pvar   ,                                     &
-   dam    , xam    , dpvar  ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , smbini ,                            &
+   eswork ,                                                       &
    ra     )
 
 !===============================================================================
@@ -170,11 +168,7 @@ subroutine codits &
 ! rovsdt(ncelet    ! tr ! <-- ! rho*volume/dt                                  !
 ! smbrp(ncelet     ! tr ! <-- ! bilan au second membre                         !
 ! pvar (ncelet     ! tr ! <-- ! variable resolue                               !
-! dam(ncelet       ! tr ! --> ! tableau de travail pour matrice                !
-!                  !    !     !  et resultat estimateur                        !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
-! smbini(ncelet    ! tr ! --- ! tableau de travail                             !
+! eswork(ncelet)   ! ra ! <-- ! prediction-stage error estimator (iescap > 0)  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -225,11 +219,7 @@ double precision viscfm(nfac), viscbm(nfabor)
 double precision viscfs(nfac), viscbs(nfabor)
 double precision rovsdt(ncelet), smbrp(ncelet)
 double precision pvar(ncelet)
-double precision dam(ncelet), xam(nfac ,2)
-double precision dpvar(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet), w4(ncelet)
-double precision w5(ncelet), w6(ncelet), w7(ncelet), w8(ncelet)
-double precision smbini(ncelet)
+double precision eswork(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -243,14 +233,23 @@ integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          idimte,itenso,iinvpe, iinvpp
 integer          idtva0
 integer          iagmax, nagmax, npstmg
+
 double precision residu,rnorm
 double precision thetex
+
+double precision, allocatable, dimension(:) :: dam
+double precision, allocatable, dimension(:,:) :: xam
+double precision, allocatable, dimension(:) :: dpvar, smbini, w1
 
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(dam(ncelet), xam(nfac,2))
+allocate(dpvar(ncelet), smbini(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -299,8 +298,7 @@ if(iperio.eq.1) then
 
   iinvpe = 1
 
-  if(ivar.eq.iu.or.ivar.eq.iv.or.                 &
-       ivar.eq.iw.or.                 &
+  if(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw.or.     &
        ivar.eq.ir11.or.ivar.eq.ir12.or.             &
        ivar.eq.ir13.or.ivar.eq.ir22.or.             &
        ivar.eq.ir23.or.ivar.eq.ir33) then
@@ -325,7 +323,6 @@ endif
 !===============================================================================
 ! 1.  CONSTRUCTION MATRICE "SIMPLIFIEE" DE RESOLUTION
 !===============================================================================
-
 
 call matrix                                                       &
 !==========
@@ -396,7 +393,6 @@ if(abs(thetex).gt.epzero) then
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
    !----
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 endif
 
@@ -464,7 +460,6 @@ do 100 isweep = 1, nswmod
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
    !----
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
   call prodsc(ncelet,ncel,isqrt,smbrp,smbrp,residu)
@@ -482,6 +477,8 @@ do 100 isweep = 1, nswmod
 !         Pour les autres variables (scalaires) IINVPE=1 permettra de
 !         tout echanger, meme si c'est superflu.
   if( isweep.eq.1 ) then
+    ! Allocate a temporary array
+    allocate(w1(ncelet))
     if(iinvpe.eq.2) then
       iinvpp = 3
     else
@@ -494,6 +491,8 @@ do 100 isweep = 1, nswmod
     enddo
     call prodsc(ncelet,ncel,isqrt,w1,w1,rnorm)
     rnsmbr(ipp) = rnorm
+    ! Free memory
+    deallocate(w1)
   endif
 
 ! ---> RESOLUTION IMPLICITE SUR L'INCREMENT DPVAR
@@ -547,7 +546,7 @@ call prodsc(ncelet,ncel,isqrt,smbrp,smbrp,residu)
 
 if( residu.le.epsrsp*rnorm ) then
    if(iwarnp.ge.1) then
-      write( nfecra,1000) cnom,isweep,residu,rnorm
+      write(nfecra,1000) cnom,isweep,residu,rnorm
    endif
    goto 200
 endif
@@ -601,14 +600,13 @@ if (iescap.gt.0) then
    flumas , flumab , viscfs , viscbs ,                            &
    smbrp  ,                                                       &
    !----
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     CONTRIBUTION DES NORMES L2 DES DIFFERENTES COMPOSANTES
-!       DANS LE TABLEAU DAM QUI EST ICI DISPONIBLE.
+!       DANS LE TABLEAU ESWORK
 
   do iel = 1,ncel
-    dam(iel) = (smbrp(iel)/ volume(iel))**2
+    eswork(iel) = (smbrp(iel)/ volume(iel))**2
   enddo
 
 endif
@@ -621,6 +619,10 @@ if (imgrp.gt.0) then
   call dsmlga(chaine(1:16), lchain)
   !==========
 endif
+
+! Free memory
+deallocate(dam, xam)
+deallocate(dpvar, smbini)
 
 !--------
 ! FORMATS

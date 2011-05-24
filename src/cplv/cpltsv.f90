@@ -37,9 +37,6 @@ subroutine cpltsv &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   wfb    ,                                                       &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     ,                                     &
    ra     )
 
 !===============================================================================
@@ -86,8 +83,6 @@ subroutine cpltsv &
 !  (nfabor, *)     !    !     !                                                !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
-! wfb(nfabor)      ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..8(ncelet)    ! tr ! --- ! tableau de travail    cellules                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -137,10 +132,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
-double precision wfb(nfabor)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -158,12 +149,18 @@ integer          ifinra , icoefa , icoefb
 double precision xk , xe , rhovst
 double precision epsrgp , climgp , extrap
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w7
 
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w7(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -241,9 +238,6 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     w1(iel) = zero
     w2(iel) = zero
     w3(iel) = zero
-    w4(iel) = zero
-    w5(iel) = zero
-    w6(iel) = zero
     w7(iel) = zero
   enddo
 
@@ -329,6 +323,10 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   enddo
 
 endif
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w7)
 
 !--------
 ! FORMATS

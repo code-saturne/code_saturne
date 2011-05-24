@@ -138,14 +138,11 @@ integer          ifinia, ifinra, ifnia1, ifnra1
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncp   , ncv   , iok
 integer          iicodc, ircodc
-integer          icoefu, irijip, ihbord, itbord
+integer          ihbord, itbord
 integer          iviscf, iviscb, ivisfi, ivisbi, iiptot
-integer          idam  , ixam
 integer          icofbd
 integer          idrtp , igrdp , ismbr , irovsd
 integer          itinsk, itinse, idivu , iprv2f, itinsa
-integer          iw1   , iw2   , iw3   , iw4   , iw5   , iw6
-integer          iw7   , iw8   , iw9   , iw10  , iw11  , iw12
 integer          ifrchy, idfrhy, idfrcx
 integer          igrdvt, iprodu, igrarx, igrary, igrarz
 integer          iesflm, iesflb
@@ -788,8 +785,7 @@ do while (iterns.le.nterup)
   nvar   , nscal  ,                                              &
   isvhb  , isvtb  ,                                              &
   iicodc , ircodc ,                                              &
-  iw1    , iw2    , iw3    , iw4    , iw5    , iw6    ,          &
-  icoefu , irijip , iuetbo , ivsvdr , ihbord , itbord ,          &
+  iuetbo , ivsvdr , ihbord , itbord ,                            &
   ifinia , ifinra )
 
   call precli &
@@ -800,9 +796,7 @@ do while (iterns.le.nterup)
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
-  ra(ircodc) , ra(icoefu) ,                                      &
-  ra(iw1   ) , ra(iw2   ) , ra(iw3   ) ,                         &
-  ra(iw4   ) , ra(iw5   ) , ra(iw6   ) ,                         &
+  ra(ircodc) ,                                                   &
   ra     )
 
 
@@ -849,8 +843,7 @@ do while (iterns.le.nterup)
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , ra(ircodc)      ,                            &
-      ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-      ra(icoefu)      , ra(iqcalc)      ,                            &
+      ra(iqcalc)      ,                                              &
       ra     )
 
     endif
@@ -883,8 +876,6 @@ do while (iterns.le.nterup)
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
-    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-    ra(icoefu)      ,                                              &
     ra     )
 
   endif
@@ -916,8 +907,6 @@ do while (iterns.le.nterup)
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
-    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-    ra(icoefu)       ,                                             &
     ra     )
 
   endif
@@ -936,8 +925,6 @@ do while (iterns.le.nterup)
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , ra(ircodc)      ,                            &
-    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-    ra(icoefu)      ,                                              &
     ra     )
 
   endif
@@ -1053,7 +1040,6 @@ do while (iterns.le.nterup)
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     ra(ircodc)      ,                                              &
     coefa  , coefb  , ra(ihbord)      , ra(itbord)      ,          &
-    ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
 
     ra(itext)  , ra(itint) ,  ra(itek)   ,                         &
 
@@ -1075,8 +1061,6 @@ do while (iterns.le.nterup)
   coefa  , coefb  , ra(iuetbo) , ra(ivsvdr)  ,                   &
   ra(ihbord)  , ra(itbord)      ,                                &
   frcxt  ,                                                       &
-  ra(iw1), ra(iw2), ra(iw3), ra(iw4), ra(iw5), ra(iw6),          &
-  ra(icoefu)      , ra(irijip)      ,                            &
   ra     )
 
 

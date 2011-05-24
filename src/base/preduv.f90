@@ -38,10 +38,9 @@ subroutine preduv &
    ckupdc , smacel , frcxt  ,                                     &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi ,                            &
-   dam    , xam    ,                                              &
    drtp   , smbr   , rovsdt ,                                     &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , xnormp , coefu  ,                   &
+   w7     , w8     , w9     , xnormp ,                            &
    ra     )
 
 !===============================================================================
@@ -116,14 +115,11 @@ subroutine preduv &
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! viscfi(nfac)     ! tr ! --- ! idem viscf pour increments                     !
 ! viscbi(nfabor    ! tr ! --- ! idem viscb pour increments                     !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
 ! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! xnormp(ncelet    ! tr ! <-- ! tableau reel pour norme resolp                 !
-! coefu(nfab,3)    ! tr ! --- ! tableau de travail                             !
 ! tslagr(ncelet    ! tr ! <-- ! terme de couplage retour du                    !
 !   ntersl)        !    !     !   lagrangien                                   !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -184,14 +180,12 @@ double precision ximpa(ncelet,ndim),uvwk(ncelet,ndim)
 double precision tpucou(ncelet,ndim), trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
-double precision dam(ncelet), xam(nfac,2)
 double precision drtp(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision xnormp(ncelet)
-double precision coefu(nfabor,3)
 double precision ra(*)
 
 ! Local variables
@@ -211,6 +205,7 @@ integer          iesprp, iestop
 integer          iptsna
 integer          iflmb0, nswrp , imaspe, iismph, ipbrom
 integer          idiaex, idtva0
+
 double precision rnorm , vitnor
 double precision romvom, ro0iph, drom
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
@@ -223,11 +218,18 @@ double precision cx    , cy    , cz
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:) :: eswork
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate a temporary array for the prediction-stage error estimator
+if (iescal(iespre).gt.0) then
+  allocate(eswork(ncelet))
+endif
 
 idebia = idbia0
 idebra = idbra0
@@ -467,8 +469,6 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    viscf  , viscb  ,                                              &
-   w4     , w5     , w6     , w7     , w8     , w9     ,          &
-   smbr   , drtp   , rovsdt , coefu  ,                            &
    ra     )
 
 !     Calcul de div(rho dt/rho*grad P)
@@ -736,8 +736,7 @@ if (ivisse.eq.1.and.iterns.eq.1) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    trav   ,                                                       &
 !        ------
-   viscf  , viscb  , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   viscf  , viscb  ,                                              &
    ra     )
 
 !     Si on extrapole les termes source en temps :
@@ -813,7 +812,6 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
@@ -864,7 +862,6 @@ if((ncepdp.gt.0).and.(iphydr.eq.0)) then
    ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , trav   ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 
@@ -988,8 +985,6 @@ if(itytur.eq.3.and.iterns.eq.1) then
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , coefu  ,                            &
    ra     )
 
     init = 1
@@ -1187,8 +1182,6 @@ do isou = 1, 3
    coefa  , coefb  ,                                              &
    w7     , drtp   ,                                              &
 !        ------   ------
-   dam    , xam    ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
     endif
 
@@ -1493,7 +1486,7 @@ do isou = 1, 3
 
     if(iterns.eq.1) then
 
-!  Attention, dans le cas des estimateurs, DAM fournit l'estimateur
+!  Attention, dans le cas des estimateurs, eswork fournit l'estimateur
 !     des vitesses predites
       call codits                                                 &
       !==========
@@ -1512,9 +1505,7 @@ do isou = 1, 3
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   eswork ,                                                       &
    ra     )
 
     elseif(iterns.gt.1) then
@@ -1536,9 +1527,7 @@ do isou = 1, 3
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   eswork ,                                                       &
    ra     )
 
     endif
@@ -1593,9 +1582,7 @@ do isou = 1, 3
                      flumas , flumab ,                            &
    viscfi , viscbi , viscf  , viscb  ,                            &
    rovsdt , smbr   , tpucou(1,isou)  ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
       do iel = 1, ncelet
@@ -1610,7 +1597,7 @@ do isou = 1, 3
     if(iescal(iespre).gt.0) then
       iesprp = ipproc(iestim(iespre))
       do iel = 1, ncel
-        propce(iel,iesprp) =  propce(iel,iesprp) + dam(iel)
+        propce(iel,iesprp) =  propce(iel,iesprp) + eswork(iel)
       enddo
     endif
 
@@ -1638,7 +1625,6 @@ do isou = 1, 3
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
    flumas , flumab , viscf  , viscb  ,                            &
    smbr   ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
     iestop = ipproc(iestim(iestot))
@@ -1695,8 +1681,6 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    viscf  , viscb  ,                                              &
-   w4     , w5     , w6     , w7     , w8     , w9     ,          &
-   smbr   , drtp   , rovsdt , coefu  ,                            &
    ra     )
 
   init = 0

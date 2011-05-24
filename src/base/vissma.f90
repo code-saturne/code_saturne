@@ -34,8 +34,6 @@ subroutine vissma &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 !===============================================================================
@@ -80,7 +78,6 @@ subroutine vissma &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -121,8 +118,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -132,16 +127,24 @@ integer          iel, iccocg, inc
 integer          iuiph, iviph, iwiph
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
+
 double precision coef, deux, delta
 double precision s11, s22, s33
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision xfil, xa  , xb  , radeux
+
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5
 
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet))
 
 ! --- Memoire
 idebia = idbia0
@@ -262,6 +265,9 @@ do iel = 1, ncel
     propce(iel,ipcrom) * delta * sqrt(propce(iel,ipcvst))
 enddo
 
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5)
 
 !----
 ! FORMAT

@@ -40,8 +40,6 @@ subroutine inimas &
    ux     , uy     , uz     ,                                     &
    coefax , coefay , coefaz , coefbx , coefby , coefbz ,          &
    flumas , flumab ,                                              &
-   dpdx   , dpdy   , dpdz   , dpdxa  , dpdya  , dpdza  ,          &
-   qdmx   , qdmy   , qdmz   , coefqa ,                            &
    ra     )
 
 !===============================================================================
@@ -110,11 +108,6 @@ subroutine inimas &
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! dpd. (ncelet     ! tr ! --- ! tableau de travail pour le grad de p           !
-! dpd.a(ncelet     ! tr ! --- ! tableau de travail pour le grad de p           !
-!                  !    !     !  avec decentrement amont                       !
-! qdm.(ncelet)     ! tr ! --- ! tableau de travail pour la qdm                 !
-! coefqa(nfab,3    ! tr ! --- ! tableau de travail cl de la qdm                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -157,10 +150,6 @@ double precision ux(ncelet), uy(ncelet), uz(ncelet)
 double precision coefax(nfabor), coefay(nfabor), coefaz(nfabor)
 double precision coefbx(nfabor), coefby(nfabor), coefbz(nfabor)
 double precision flumas(nfac), flumab(nfabor)
-double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
-double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
-double precision qdmx(ncelet),qdmy(ncelet),qdmz(ncelet)
-double precision coefqa(ndimfb,3)
 double precision ra(*)
 
 ! Local variables
@@ -168,15 +157,24 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifac, ii, jj, iel, iii
 integer          iappel
+
 double precision pfac,pip,uxfac,uyfac,uzfac
 double precision dofx,dofy,dofz,pnd
 double precision diipbx, diipby, diipbz
+
+double precision, allocatable, dimension(:) :: dpdx, dpdy, dpdz
+double precision, allocatable, dimension(:) :: qdmx, qdmy, qdmz
+double precision, allocatable, dimension(:,:) :: coefqa
 
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(qdmx(ncelet), qdmy(ncelet), qdmz(ncelet))
+allocate(coefqa(ndimfb,3))
 
 idebia = idbia0
 idebra = idbra0
@@ -265,6 +263,8 @@ endif
 if( nswrgu.gt.1 ) then
 
 
+  ! Allocate temporary arrays
+  allocate(dpdx(ncelet), dpdy(ncelet), dpdz(ncelet))
 
 
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS AU DEBUT
@@ -449,7 +449,8 @@ if( nswrgu.gt.1 ) then
 
   enddo
 
-
+  ! Free memory
+  deallocate(dpdx, dpdy, dpdz)
 
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS A LA FIN
 !     =========================================================
@@ -484,6 +485,10 @@ if(iflmb0.eq.1) then
     endif
   enddo
 endif
+
+! Free memory
+deallocate(qdmx, qdmy, qdmz)
+deallocate(coefqa)
 
 !--------
 ! FORMATS

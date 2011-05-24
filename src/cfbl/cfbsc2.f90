@@ -39,7 +39,6 @@ subroutine cfbsc2 &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscf  , viscb  ,                            &
    smbrp  ,                                                       &
-   dpdx   , dpdy   , dpdz   , dpdxa  , dpdya  , dpdza  ,          &
    ra     )
 
 !===============================================================================
@@ -111,10 +110,6 @@ subroutine cfbsc2 &
 ! viscb (nfabor    ! tr ! <-- ! visc*surface/dist aux faces de bord            !
 !                  !    !     !  pour second membre                            !
 ! smbrp(ncelet     ! tr ! <-- ! bilan au second membre                         !
-! dpdx,y,z         ! tr ! --- ! tableau de travail pour le grad de p           !
-!    (ncelet)      !    !     !                                                !
-! dpdxa,ya,za      ! tr ! --- ! tableau de travail pour le grad de p           !
-!    (ncelet)      !    !     !  avec decentrement amont                       !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -157,8 +152,6 @@ double precision                cofafp(nfabor), cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf (nfac), viscb (nfabor)
 double precision smbrp(ncelet)
-double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
-double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -172,6 +165,7 @@ integer          iiu,iiv,iiw
 integer          iitytu
 integer          iir11,iir22,iir33
 integer          iir12,iir13,iir23
+
 double precision pfac,pfacd,pip,pjp,flui,fluj,flux
 double precision difx,dify,difz,djfx,djfy,djfz,pif,pjf
 double precision testi,testj,testij
@@ -184,11 +178,18 @@ double precision diipbx, diipby, diipbz
 double precision pnd, srfan
 double precision pfac1, pfac2, pfac3, unsvol
 
+double precision, allocatable, dimension(:) :: dpdx, dpdy, dpdz
+double precision, allocatable, dimension(:) :: dpdxa, dpdya, dpdza
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(dpdx(ncelet), dpdy(ncelet), dpdz(ncelet))
+allocate(dpdxa(ncelet), dpdya(ncelet), dpdza(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -752,6 +753,10 @@ else
   enddo
 
 endif
+
+! Free memory
+deallocate(dpdx, dpdy, dpdz)
+deallocate(dpdxa, dpdya, dpdza)
 
 !--------
 ! FORMATS

@@ -36,7 +36,6 @@ subroutine clptur &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  , uetbor , visvdr ,          &
    hbord  , thbord ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !===============================================================================
@@ -102,8 +101,6 @@ subroutine clptur &
 ! (nfabor)         !    !     !                                                !
 ! thbord           ! tr ! <-- ! temperature aux bords en i'                    !
 ! (nfabor)         !    !     !    (plus exactmt : var. energetique)           !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -154,8 +151,6 @@ double precision coefu(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision uetbor(nfabor), visvdr(ncelet)
 double precision hbord(nfabor),thbord(nfabor)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
 double precision ra(*)
 
 ! Local variables

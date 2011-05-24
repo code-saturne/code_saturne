@@ -34,7 +34,6 @@ subroutine cscfbr &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
 !===============================================================================
@@ -65,9 +64,6 @@ subroutine cscfbr &
 !  (nfabor, *)     !    !     !                                                !
 ! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
 ! crvimp(ncelet    ! tr ! --> ! tableau de travail pour part implicit          !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -111,9 +107,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision coefu(nfabor,ndim)
 double precision ra(*)
 
 ! Local variables
@@ -225,7 +218,6 @@ do numcpl = 1, nbrcpl
     ia     ,                                                      &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
     coefa  , coefb  ,                                             &
-    w1     , w2     , w3     , w4     , w5     , w6     ,         &
     ra(icoopt)      , ra(idjppt)      , ra(ipndpt)      ,         &
     ra(irvdis)      , ra(idofpt)      ,                           &
     ra     )
@@ -269,7 +261,6 @@ do numcpl = 1, nbrcpl
     ia     ,                                                      &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
     coefa  , coefb  , rcodcl ,                                    &
-    w1     , w2     , w3     , w4     , w5     , w6     , coefu  ,&
     ra(irvfbr)      , ra(ipndcp)      , ra(idofcp)      ,         &
     ra     )
 

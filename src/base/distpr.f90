@@ -308,7 +308,6 @@ do isweep = 0, nswrsy
    rtpdp  , rtpdp  , coefad , coefbd , coefad , coefbd ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    smbdp  ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
   endif

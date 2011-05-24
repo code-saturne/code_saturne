@@ -143,20 +143,19 @@ integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
+
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision tuexpe, thets , thetv , thetap, thetp1
 double precision d2s3, d1s4, d3s2
 double precision xk, xe, xnu, xrom, ttke, ttmin, llke, llmin
 
+double precision rvoid(1)
+
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
+double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
-double precision, allocatable, dimension(:) :: w10
 
 !===============================================================================
 
@@ -166,14 +165,11 @@ double precision, allocatable, dimension(:) :: w10
 
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(dam(ncelet), xam(nfac,2))
-allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
+allocate(smbr(ncelet), rovsdt(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
-allocate(w10(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -387,7 +383,6 @@ call itrgrp                                                       &
    w3     , w3     , w3     ,                                     &
    w2     ,                                                       &
 !        --
-   w4     , w5     , w6     , w7     , w8     , w9     ,          &
    ra     )
 
 !      On stocke T dans W3 et L^2 dans W4
@@ -500,9 +495,7 @@ call codits                                                       &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w2     , w3     , w4     , w5     , w6     ,                   &
-   w7     , w8     , w9     , w10    ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 
@@ -783,9 +776,7 @@ call codits                                                       &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 !===============================================================================
@@ -801,12 +792,9 @@ call codits                                                       &
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(dam, xam)
-deallocate(drtp, smbr, rovsdt)
+deallocate(smbr, rovsdt)
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
-deallocate(w10)
 
 !--------
 ! FORMATS

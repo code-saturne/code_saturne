@@ -34,8 +34,6 @@ subroutine ppphyv &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 !===============================================================================
@@ -158,14 +156,11 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
 double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra , ifinia , ifinra
-integer          if3max, iw9    , iw10
+integer          idebia, idebra
 
 !===============================================================================
 
@@ -195,8 +190,6 @@ idebra = idbra0
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
   endif
@@ -218,8 +211,6 @@ idebra = idbra0
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
   endif
 
@@ -240,8 +231,6 @@ idebra = idbra0
    ia     ,                                                       &
    dt     , rtp    , rtpa  , propce , propfa , propfb ,           &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3    , w4     ,                             &
-   w5     , w6     , w7    , w8     ,                             &
    ra     )
   endif
 
@@ -249,26 +238,14 @@ idebra = idbra0
 
   if ( ippmod(icp3pl).ge.0 ) then
 
-    ifinia = idebia
-
-    if3max = idebra
-    iw9    = if3max + ncelet
-    iw10   = iw9    + ncelet
-    ifinra = iw10   + ncelet
-    call rasize('pppphy',ifinra)
-
      call cpphyv                                                  &
      !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    ibrom  , ia(iizfpp) ,                                          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(if3max),                                                    &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
-   ra(iw9), ra(iw10),                                             &
    ra     )
 
    endif
@@ -286,8 +263,6 @@ idebra = idbra0
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
    endif
@@ -304,8 +279,6 @@ idebra = idbra0
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
    endif
@@ -322,7 +295,6 @@ idebra = idbra0
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
    endif
@@ -349,8 +321,6 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 endif
@@ -367,8 +337,6 @@ if ( ippmod(iaeros).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 endif
@@ -386,8 +354,6 @@ if ( ippmod(iatmos).ge.1 ) then
    dt     , rtp    , rtpa   ,                                     &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 endif

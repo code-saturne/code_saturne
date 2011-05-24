@@ -123,12 +123,6 @@ double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
 double precision varmn(4), varmx(4), tt, ttmin, ttke, vistot
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
-double precision, allocatable, dimension(:) :: w10, w11, w12
-double precision, allocatable, dimension(:,:) :: xmij
-
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -138,19 +132,6 @@ save             ipass
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
-
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
-
-! Allocate other arrays, depending on the LES turbulence model
-if (iturb.eq.41) then
-  allocate(w10(ncelet))
-  allocate(xmij(ncelet,6))
-else if (iturb.eq.42) then
-  allocate(w10(ncelet), w11(ncelet), w12(ncelet))
-endif
 
 idebia = idbia0
 idebra = idbra0
@@ -172,8 +153,6 @@ if(iperot.gt.0) then
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
-  w1     , w2     , w3     , w4     ,                            &
-  w5     , w6     , w7     , w8     ,                            &
   ra(idudxy) ,                                                   &
   ra     )
 
@@ -186,8 +165,6 @@ if(iperot.gt.0) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra(idrdxy) ,                                                   &
    ra     )
 
@@ -211,8 +188,6 @@ if (ippmod(iphpar).ge.1) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 endif
@@ -333,8 +308,6 @@ elseif (iturb.eq.10) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd), ra(ismace),        &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 elseif (itytur.eq.2) then
@@ -387,8 +360,6 @@ elseif (iturb.eq.40) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd), ra(ismace),        &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 elseif(iturb.eq.41) then
@@ -408,8 +379,6 @@ elseif(iturb.eq.41) then
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd), ra(ismace),        &
    propce(1,ipproc(ismago)) ,                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     , w10    , xmij   , &
    ra     )
 
 elseif (iturb.eq.42) then
@@ -428,9 +397,6 @@ elseif (iturb.eq.42) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd), ra(ismace),        &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
-   w9     , w10    , w11    , w12    ,                            &
    ra     )
 
 elseif (iturb.eq.50) then
@@ -471,8 +437,6 @@ elseif (iturb.eq.60) then
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd), ra(ismace),        &
    ra(is2kw), ra(idvukw),                           &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 elseif (iturb.eq.70) then
@@ -833,13 +797,6 @@ if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(propce(1,ipcrom))
   !==========
 endif
-
-! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
-if (iturb.eq.41) deallocate(w10, xmij)
-if (iturb.eq.42) deallocate(w10, w11, w12)
 
 !----
 ! FORMATS

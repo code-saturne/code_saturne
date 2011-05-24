@@ -39,8 +39,6 @@ subroutine calhyd &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
    drtp   , smbr   ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    ,                            &
    ra     )
 
 !===============================================================================
@@ -78,7 +76,6 @@ subroutine calhyd &
 ! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
 ! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
-! w1..10(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -124,10 +121,6 @@ double precision viscf(nfac), viscb(nfabor)
 double precision dam(ncelet), xam(nfac,2)
 double precision drtp(ncelet)
 double precision smbr(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision w10(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -146,15 +139,21 @@ integer          iinvpe
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          iagmax, nagmax, npstmg
+
 double precision residu, rnorm , rnrmf , rnrmdf
 double precision epsrgp, climgp, extrap, epsilp
 double precision precre, precab, thetap
+
+double precision, allocatable, dimension(:) :: w1, w7, w10
 
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w7(ncelet), w10(ncelet))
 
 ! --- Memoire
 idebia = idbia0
@@ -443,7 +442,6 @@ do isweep = 1, nswmpr
    viscf  , viscb  ,                                              &
    w10         , w10         , w10         ,                      &
    smbr   ,                                                       &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
   endif
@@ -458,6 +456,8 @@ endif
 
  101  continue
 
+! Free memory
+deallocate(w1, w7, w10)
 
 !===============================================================================
 ! 7.  SUPPRESSION DE LA HIERARCHIE DE MAILLAGES

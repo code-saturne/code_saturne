@@ -38,7 +38,7 @@ subroutine resssg &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
-   dam    , xam    , drtp   , smbr   , rovsdt ,                   &
+   smbr   , rovsdt ,                                              &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
@@ -95,9 +95,6 @@ subroutine resssg &
 !                  ! tr ! --- !   de paroi et abs(icdpar) = 1                  !
 ! tslage(ncelet    ! tr ! <-- ! ts explicite couplage retour lagr.             !
 ! tslagi(ncelet    ! tr ! <-- ! ts implicite couplage retour lagr.             !
-! dam(ncelet       ! tr ! --- ! tableau de travail pour matrice                !
-! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
-! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
 ! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
@@ -153,8 +150,7 @@ double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
 double precision viscf(nfac), viscb(nfabor), coefax(nfabor)
 double precision tslage(ncelet),tslagi(ncelet)
-double precision dam(ncelet), xam(nfac,2)
-double precision drtp(ncelet), smbr(ncelet), rovsdt(ncelet)
+double precision smbr(ncelet), rovsdt(ncelet)
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
@@ -174,6 +170,7 @@ integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iptsta
+
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision trprod, trrij , rctse , deltij
@@ -181,6 +178,7 @@ double precision tuexpr, thets , thetv , thetp1
 double precision aiksjk, aikrjk, aii ,aklskl, aikakj
 double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3)
 
+double precision rvoid(1)
 
 !===============================================================================
 
@@ -535,7 +533,6 @@ if(igrari.eq.1) then
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , grarox , graroy , graroz , w7     ,          &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     Si on extrapole les T.S. : PROPCE
@@ -644,9 +641,7 @@ call codits                                                       &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     ,                            &
-   dam    , xam    , drtp   ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
+   rvoid  ,                                                       &
    ra     )
 
 

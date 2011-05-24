@@ -34,7 +34,6 @@ subroutine typecl &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl , frcxt  ,                            &
-   w1     , w2     , w3     , w4     , w5     , w6     , coefu  , &
    ra     )
 
 !===============================================================================
@@ -88,10 +87,6 @@ subroutine typecl &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
-!  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! rijipb           ! tr ! --- ! tab de trav pour valeurs en iprime             !
-! (nfabor,6   )    !    !     !  des rij au bord                               !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -140,9 +135,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision frcxt(ncelet,3)
-double precision w1(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),w5(ncelet),w6(ncelet)
-double precision coefu(nfabor,3)
 double precision ra(*)
 
 ! Local variables
@@ -168,6 +160,9 @@ double precision xyzref(4) ! xyzref(3) + coefup for broadcast
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: coefu
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -178,6 +173,10 @@ save             ipass
 !===============================================================================
 ! 1.  Initialization
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(coefu(nfabor))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -525,7 +524,7 @@ do ivar=1, nvar
 enddo
 
 !===============================================================================
-! 5.  Compute pressure at boundary (in coefu(*,1))
+! 5.  Compute pressure at boundary (in coefu(*))
 !     (if we need it, that is if there are outlet boudary faces).
 
 !     The loop on phases starts here and ends at the end of the next block.
@@ -638,7 +637,7 @@ if (itbslb.gt.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      coefu(ifac,1) = rtpa(ii,ipriph)                           &
+      coefu(ifac) = rtpa(ii,ipriph)                           &
            + diipbx*w1(ii)+ diipby*w2(ii) + diipbz*w3(ii)       &
            + ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
            + gy*(cdgfbo(2,ifac)-xyp0)                  &
@@ -648,7 +647,7 @@ if (itbslb.gt.0) then
   else
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      coefu(ifac,1) = rtpa(ii,ipriph)                           &
+      coefu(ifac) = rtpa(ii,ipriph)                           &
            + (cdgfbo(1,ifac)-xyzcen(1,ii))*w1(ii)               &
            + (cdgfbo(2,ifac)-xyzcen(2,ii))*w2(ii)               &
            + (cdgfbo(3,ifac)-xyzcen(3,ii))*w3(ii)               &
@@ -739,7 +738,7 @@ if (itbslb.gt.0) then
     xyzref(1) = cdgfbo(1,ifrslb)
     xyzref(2) = cdgfbo(2,ifrslb)
     xyzref(3) = cdgfbo(3,ifrslb)
-    xyzref(4) = coefu(ifrslb,1) ! coefup
+    xyzref(4) = coefu(ifrslb) ! coefup
     if (iphydr.eq.1) isostd(nfabor+1) = ifrslb
   endif
 
@@ -828,7 +827,7 @@ if (ixyzp0.eq.2) then
   if (itbslb.gt.0) then
     write(nfecra,8000)xxp0,xyp0,xzp0
     do ifac = 1, nfabor
-      coefu(ifac,1) = coefu(ifac,1)                             &
+      coefu(ifac) = coefu(ifac)                             &
            - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
     enddo
     coefup = coefup - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
@@ -867,7 +866,7 @@ do ivar = 1, nvar
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 1
-        rcodcl(ifac,ivar,1) = coefu(ifac,1) + pref
+        rcodcl(ifac,ivar,1) = coefu(ifac) + pref
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
       endif

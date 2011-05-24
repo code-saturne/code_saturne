@@ -37,7 +37,6 @@ subroutine lagphy &
    ettp   , ettpa  , tepa   , taup   , tlag   ,                   &
    tempct , tsvar  , auxl   ,                                     &
    cpgd1  , cpgd2  , cpght  ,                                     &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -102,7 +101,6 @@ subroutine lagphy &
 ! cpgd1,cpgd2,     ! tr ! --> ! termes de devolatilisation 1 et 2 et           !
 !  cpght(nbpmax    !    !     !   de combusion heterogene (charbon             !
 !                  !    !     !   avec couplage retour thermique)              !
-! w1..w3(ncelet    ! tr ! --- ! tableaux de travail                            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -148,7 +146,6 @@ double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1) , auxl(nbpmax,3)
 double precision cpgd1(nbpmax) , cpgd2(nbpmax) , cpght(nbpmax)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -186,7 +183,7 @@ if ( iphyla.eq.2 .or. (iphyla.eq.1 .and. itpvar.eq.1) ) then
     itepa  , ibord  , ia     ,                                    &
     dt     , rtp    , propce , propfa , propfb ,                  &
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,         &
-    tsvar  , auxl(1,1) , auxl(1,2)  , w1     ,                    &
+    tsvar  , auxl(1,1) , auxl(1,2)  ,                             &
     ra     )
 
 endif
@@ -275,7 +272,8 @@ if (iphyla.eq.2) then
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  ,&
     cpgd1  , cpgd2  , cpght  ,                                    &
     auxl(1,1) , auxl(1,2) , auxl(1,3) ,                           &
-    ra(iwl1)  , ra(iwl2)  , w1        , ra     )
+    ra(iwl1)  , ra(iwl2)  ,                                       &
+    ra     )
 
 endif
 

@@ -37,7 +37,6 @@ subroutine lagaff &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , statis , &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 !===============================================================================
@@ -94,7 +93,6 @@ subroutine lagaff &
 !  (nbpmax,2)      !    !     !                                                !
 ! statis(ncelet    ! tr ! <-- ! cumul des statistiques volumiques              !
 !    nvlsta)       !    !     !                                                !
-! w1..w3(ncelet    ! tr ! --- ! tableaux de travail                            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -142,7 +140,6 @@ double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision statis(ncelet,nvlsta)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision ra(*)
 
 ! Local variables

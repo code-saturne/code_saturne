@@ -38,7 +38,6 @@ subroutine itrmas &
    pvar   , coefap , coefbp , viscf  , viscb  ,                   &
    viselx , visely , viselz ,                                     &
    flumas , flumab ,                                              &
-   dpdx   , dpdy   , dpdz   , dpdxa  , dpdya  , dpdza  ,          &
    ra     )
 
 !===============================================================================
@@ -96,9 +95,6 @@ subroutine itrmas &
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
 ! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
 !   (ncelet)       !    !     !  hydrostatique                                 !
-! dpd.(ncelet      ! tr ! --- ! tableau de travail pour le grad de p           !
-! dpdxa,y,z        ! tr ! --- ! tableau de travail pour le grad de p           !
-!    (ncelet       !    !     !  avec decentrement amont                       !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -138,8 +134,6 @@ double precision viscf(nfac), viscb(nfabor)
 double precision viselx(ncelet), visely(ncelet), viselz(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
-double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
-double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -153,6 +147,8 @@ double precision diipbx, diipby, diipbz
 double precision dijx  , dijy  , dijz
 
 double precision rvoid(1)
+
+double precision, allocatable, dimension(:) :: dpdx, dpdy, dpdz
 
 !===============================================================================
 
@@ -227,6 +223,9 @@ endif
 
 if( nswrgp.gt.1 ) then
 
+  ! Allocate temporary arrays
+  allocate(dpdx(ncelet), dpdy(ncelet), dpdz(ncelet))
+
 !     CALCUL DU GRADIENT
 
   call grdpot                                                     &
@@ -294,6 +293,9 @@ endif
     flumab(ifac) = flumab(ifac) +viscb(ifac)*( pip -pfac )
 
   enddo
+
+  ! Free memory
+  deallocate(dpdx, dpdy, dpdz)
 
 endif
 

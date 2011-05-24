@@ -392,7 +392,6 @@ if ( ntcabs.eq.1 ) then
    ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 else
@@ -404,7 +403,6 @@ else
    ia     ,                                                       &
    rtpa   , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 endif
@@ -472,7 +470,6 @@ if (nor.eq.2 .and. iilagr.ne.3) then
    ia     ,                                                       &
    rtp    , propce , coefa  , coefb  ,                            &
    gradpr , gradvf ,                                              &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 endif
@@ -553,7 +550,6 @@ if ( iphyla.eq.1 .or. iphyla.eq.2 ) then
       dt     , rtpa   , propce , propfa , propfb ,                &
       ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
       tsvar  , auxl   , cpgd1  , cpgd2  , cpght  ,                &
-      w1     , w2     , w3     ,                                  &
       ra     )
   else
     call lagphy                                                   &
@@ -566,7 +562,6 @@ if ( iphyla.eq.1 .or. iphyla.eq.2 ) then
       dt     , rtp    , propce , propfa , propfb ,                &
       ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
       tsvar  , auxl   , cpgd1  , cpgd2  , cpght  ,                &
-      w1     , w2     , w3     ,                                  &
       ra     )
   endif
 
@@ -709,7 +704,6 @@ if (nor.eq.nordre .and. ilapoi.eq.1) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , statis ,                                     &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 endif
@@ -842,7 +836,6 @@ if (modntl.eq.0) then
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , statis , &
-   w1     , w2     , w3     ,                                     &
    ra     )
 
 endif

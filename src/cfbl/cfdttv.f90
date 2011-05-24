@@ -138,7 +138,7 @@ integer          idebia, idebra, ifinia, ifinra
 integer          ifac  , iel   , ivar  , iscal
 integer          init
 integer          iw7   , iw8   , iw9   , iw10  , iw11  , iw12
-integer          iviscf, icoefu, ixam
+integer          iviscf, icoefu
 
 !===============================================================================
 !===============================================================================
@@ -160,7 +160,7 @@ call memcft                                                       &
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
-   iviscf , icoefu , ixam   ,                                     &
+   iviscf , icoefu ,                                              &
    ifinia , ifinra )
 
 idebia = ifinia
@@ -191,7 +191,7 @@ call cfmsfl                                                       &
    wflmas , wflmab ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra(iw7), ra(iw8), ra(iw9), ra(iw10) , ra(iw11) , ra(iw12) ,    &
-   ra(iviscf) , viscb , ra(icoefu) , ra(ixam) ,                   &
+   ra(iviscf) , viscb , ra(icoefu) ,                              &
    ra     )
 
 ! ---> Sommation sur les faces (depend de si l'on explicite ou non

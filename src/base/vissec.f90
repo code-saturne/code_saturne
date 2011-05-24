@@ -35,8 +35,7 @@ subroutine vissec &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    trav   ,                                                       &
-   viscf  , viscb  , vistot ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
+   viscf  , viscb  ,                                              &
    ra     )
 
 !===============================================================================
@@ -97,8 +96,6 @@ subroutine vissec &
 ! trav(ncelet,3    ! tr ! <-- ! tableau de travail pour sec mem                !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! vistot(ncelet    ! tr ! --- ! tableau de travail pour mu                     !
-! w1...6(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -147,9 +144,6 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
-double precision vistot(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -166,11 +160,20 @@ integer          ipcvsv
 double precision epsrgp, climgp, extrap
 double precision romf, d2s3m, vecfac
 
+double precision, allocatable, dimension(:) :: vistot
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w6
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(vistot(ncelet))
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w6(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -438,6 +441,10 @@ do isou = 1, 3
 
 enddo
 
+! Free memory
+deallocate(vistot)
+deallocate(w1, w2, w3)
+deallocate(w4, w6)
 
 return
 

@@ -33,8 +33,6 @@ subroutine elflux &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , viscf  , viscb  ,                            &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     ,                            &
    ra     )
 
 !===============================================================================
@@ -74,7 +72,6 @@ subroutine elflux &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
 ! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! w1..9(ncelet     ! tr ! --- ! tableau de travail    cellules                 !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -119,9 +116,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscf(nfac), viscb(nfabor)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -138,11 +132,18 @@ integer          ivar  , modntl
 
 double precision epsrgp, climgp, extrap, vrmin, vrmax, var
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+
 !===============================================================================
 
 !===============================================================================
 ! 0. INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -804,6 +805,10 @@ if (iappel.eq.2) then
 
 endif
 !     Fin du test IAPPEL = 2
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
 
 !--------
 ! FORMATS

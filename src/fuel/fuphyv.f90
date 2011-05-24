@@ -34,8 +34,6 @@ subroutine fuphyv &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     ,                            &
    ra     )
 
 !===============================================================================
@@ -123,7 +121,6 @@ subroutine fuphyv &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1...8(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -170,8 +167,6 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision w1(ncelet),w2(ncelet),w3(ncelet),w4(ncelet)
-double precision w5(ncelet),w6(ncelet),w7(ncelet),w8(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -183,10 +178,15 @@ integer          ifinia, ifinra
 integer          iel, ipcrom, ipcro2 , ipcte1
 integer          izone, ifac , icla
 integer          ipbrom, iromf
+
 double precision qtotz
 double precision x1sro1, x2sro2, srrom1, uns1pw
 double precision x2tot, wmolme, unsro1
 double precision x2h2
+
+double precision, allocatable, dimension(:) :: w1, w2
+double precision, allocatable, dimension(:) :: w4, w6
+double precision, allocatable, dimension(:) :: w8
 
 integer       ipass
 data          ipass /0/
@@ -203,6 +203,11 @@ ipass = ipass + 1
 ! 1. INITIALISATIONS A CONSERVER
 !===============================================================================
 
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet))
+allocate(w4(ncelet), w6(ncelet))
+allocate(w8(ncelet))
+
 ! --- Initialisation memoire
 
 idebia = idbia0
@@ -213,11 +218,8 @@ idebra = idbra0
 do iel = 1, ncel
   w1(iel) = zero
   w2(iel) = zero
-  w3(iel) = zero
   w4(iel) = zero
-  w5(iel) = zero
   w6(iel) = zero
-  w7(iel) = zero
   w8(iel) = zero
 enddo
 
@@ -250,11 +252,8 @@ call fuphy2                                                       &
 ! --- Calcul de l'enthalpie du gaz     dans W8 si transport de H2
 !                           du melange         si pas de transport de H2
 !            de F1M                    dans W2
-!            de F2M                    dans W3
 !            de F3M                    dans W4
-!            de F4M                    dans W5
 !            de F3P2M                  dans W6
-!            de F4P2M                  dans W7
 
 ! ---- W1 = - Somme des X2(i)
 
@@ -468,6 +467,11 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
 
   enddo
 endif
+
+! Free memory
+deallocate(w1, w2)
+deallocate(w4, w6)
+deallocate(w8)
 
 !----
 ! FIN
