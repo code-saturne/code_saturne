@@ -195,8 +195,8 @@ do icas = 1, nbcas
 
   if (icas .eq. 1) then
 
-    nomcas = 'chr'
-    nomrep = 'EnSight'
+    nomcas = 'user'
+    nomrep = 'postprocessing'
     nomfmt = 'EnSight Gold'
     optfmt = 'binary, discard_polygons'
     indmod = 0
@@ -204,17 +204,17 @@ do icas = 1, nbcas
 
   else if (icas .eq. 2) then
 
-    nomcas = 'chr'
-    nomrep = 'EnSight_text'
+    nomcas = 'user_txt'
+    nomrep = 'postprocessing'
     nomfmt = 'ensight'
-    optfmt = 'text, discard_polyhedra'
+    optfmt = 'text, divide_polyhedra'
     indmod = 1
     ntchrl = ntchr
 
   else if (icas .eq. 3) then
 
     nomcas = 'modif'
-    nomrep = 'EnSight'
+    nomrep = 'postprocessing'
     nomfmt = 'ensight'
     optfmt = 'discard_polyhedra'
     indmod = 2
@@ -223,8 +223,8 @@ do icas = 1, nbcas
 
   else if (icas .eq. 4) then
 
-    nomcas = 'CHR'
-    nomrep = ' '
+    nomcas = 'exchange'
+    nomrep = 'postprocessing'
     nomfmt = 'MED'
     optfmt = ' '
     indmod = 1

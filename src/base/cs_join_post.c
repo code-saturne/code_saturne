@@ -119,9 +119,7 @@ _init_join_writer(void)
   cs_real_t  frchr = -1.0;
 
   const char  casename[] = "joining";
-  const char  dirname_ens[] = "joining.ensight";
-  const char  dirname_def[] = ".";
-  const char *dirname = NULL;
+  const char  dirname[] = "postprocessing";
 
   /* Get parameters from Fortran module */
 
@@ -137,11 +135,6 @@ _init_join_writer(void)
   optchr[96] = '\0';
 
   /* Create default writer */
-
-  if (fmtchr[0] == 'e' || fmtchr[0] == 'E')
-    dirname = dirname_ens;
-  else
-    dirname = dirname_def;
 
   writer_id = cs_post_get_free_writer_id();
 

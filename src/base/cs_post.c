@@ -204,8 +204,7 @@ static int                     *_cs_post_i_var_tp = NULL;
 
 /* Default directory name */
 
-static const char  _cs_post_dirname_ens[] = "chr.ensight";
-static const char  _cs_post_dirname_def[] = ".";
+static const char  _cs_post_dirname[] = "postprocessing";
 
 /*============================================================================
  * Private function definitions
@@ -1126,13 +1125,8 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
   /* Create default writer */
 
-  if (fmt_name[0] == 'e' || fmt_name[0] == 'E')
-    dir_name = _cs_post_dirname_ens;
-  else
-    dir_name = _cs_post_dirname_def;
-
   writer = fvm_writer_init("mesh_groups",
-                           dir_name,
+                           _cs_post_dirname,
                            fmt_name,
                            fmt_opts,
                            FVM_WRITER_FIXED_MESH);
@@ -1353,13 +1347,8 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 
   /* Create default writer */
 
-  if (fmt_name[0] == 'e' || fmt_name[0] == 'E')
-    dir_name = _cs_post_dirname_ens;
-  else
-    dir_name = _cs_post_dirname_def;
-
   writer = fvm_writer_init("boundary_groups",
-                           dir_name,
+                           _cs_post_dirname,
                            fmt_name,
                            fmt_opts,
                            FVM_WRITER_FIXED_MESH);
@@ -3817,7 +3806,7 @@ cs_post_init_main_writer(void)
   cs_int_t  ntchr = -1;
   cs_real_t frchr = -1.0;
 
-  const char  nomcas[] = "chr";
+  const char  nomcas[] = "results";
   const char *nomrep = NULL;
 
   const cs_int_t  writer_id = -1; /* Default (main) writer id */
@@ -3837,14 +3826,9 @@ cs_post_init_main_writer(void)
 
   /* Create default writer */
 
-  if (fmtchr[0] == 'e' || fmtchr[0] == 'E')
-    nomrep = _cs_post_dirname_ens;
-  else
-    nomrep = _cs_post_dirname_def;
-
   cs_post_add_writer(writer_id,
                      nomcas,
-                     nomrep,
+                     _cs_post_dirname,
                      fmtchr,
                      optchr,
                      indic_mod,
@@ -4020,13 +4004,8 @@ cs_post_add_free_faces(void)
     fmt_name[32] = '\0';
     fvm_opts[96] = '\0';
 
-    if (fmt_name[0] == 'e' || fmt_name[0] == 'E')
-      dir_name = _cs_post_dirname_ens;
-    else
-      dir_name = _cs_post_dirname_def;
-
     writer = fvm_writer_init("isolated_faces",
-                             dir_name,
+                             _cs_post_dirname,
                              fmt_name,
                              fvm_opts,
                              FVM_WRITER_FIXED_MESH);
@@ -4227,9 +4206,6 @@ cs_post_init_error_writer(void)
   cs_real_t frchr = -1.0;
 
   const char  nomcas[] = "error";
-  const char  nomrep_ens[] = "error.ensight";
-  const char  nomrep_def[] = ".";
-  const char *nomrep = NULL;
 
   const int writer_id = -2;
 
@@ -4251,14 +4227,9 @@ cs_post_init_error_writer(void)
 
   /* Create default writer */
 
-  if (fmtchr[0] == 'e' || fmtchr[0] == 'E')
-    nomrep = nomrep_ens;
-  else
-    nomrep = nomrep_def;
-
   cs_post_add_writer(writer_id,
                      nomcas,
-                     nomrep,
+                     _cs_post_dirname,
                      fmtchr,
                      optchr,
                      -1, /* No time dependency here */

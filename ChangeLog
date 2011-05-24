@@ -1,4 +1,11 @@
 * 24/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Place all postprocessing output by default in "postprocessing" subdirectory.
+  modified files:
+    src/base/cs_join_post.c
+    src/base/cs_post.c
+    users/base/usdpst.f90
+
+* 24/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Do not use malloc hooks by default.
   modified file:
     configure.ac
