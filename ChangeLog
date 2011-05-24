@@ -1,3 +1,8 @@
+* 24/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix send buffer resizing in cs_halo_sync_var_strided().
+  modified files:
+    src/base/cs_halo.c
+
 * 23/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix Valgrind warning in definition of user postprocessing meshes.
   modified files:

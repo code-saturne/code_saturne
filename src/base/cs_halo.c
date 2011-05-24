@@ -1102,7 +1102,8 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-    const size_t send_buffer_size =   halo->n_elts[sync_mode]
+    const size_t send_buffer_size =   CS_MAX(halo->n_send_elts[sync_mode],
+                                             halo->n_elts[sync_mode])
                                     * sizeof(cs_real_t) * stride;
 
     if (send_buffer_size > _cs_glob_halo_send_buffer_size) {
