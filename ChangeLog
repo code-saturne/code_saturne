@@ -1,3 +1,8 @@
+* 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve SLURM support.
+  modified files:
+    bin/cs_exec_environment.py
+
 * 23/05/2011 - David Monfort <david.monfort@edf.fr>
   Fix memory allocation for the time-step calculation with the compressible
   algorithm. This memory bug had no impact on the calculations because the
