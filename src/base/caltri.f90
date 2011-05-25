@@ -144,7 +144,7 @@ idebra = 1
 
 ! Initialize random number generator
 ! (not always necessary, but not at all costly)
-call zufalli(0)
+call zufalli(1)
 !===========
 
 !---> Stop test set to 1 if P-1 radiative module "sees" too many cells

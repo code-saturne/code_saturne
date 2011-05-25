@@ -1,3 +1,9 @@
+* 25/05/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
+  Prefer initializing the random-number generator with a seed equal
+  to 1 instead of 0 (as advised in the zufall.f90 comments).
+  modified routine:
+    src/base/caltri.f90
+
 * 25/05/2011 - Dorothée Sénéchal <dorothee.senechal@edf.fr>
   Move upward the allocation of an array to store friction velocity
   so as to allow further developements (namely particle deposition
