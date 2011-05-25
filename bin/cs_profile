@@ -69,18 +69,12 @@ ECS_HOME=${CS_ROOT}/Enveloppe/ecs-1.3.4
 CSGUI_HOME=${CS_ROOT}/Interface/ics-1.3.4
 SYRCS_HOME=${CS_ROOT}/opt/syr_cs-2.1.2
 
-if [ "$NOM_ARCH" = "Linux" -a -d /home/prevalcs/HOMARD ] ; then
-  CSHOMARD_HOME=/home/prevalcs/HOMARD
-else
-  CSHOMARD_HOME=
-fi
-
 # Path 
 PATH=$CS_HOME/bin:$ECS_HOME/bin:$PATH
 
 # Export variables
 export NOM_ARCH CS_ROOT CS_HOME ECS_HOME CSGUI_HOME
-export SYRCS_HOME CSHOMARD_HOME
+export SYRCS_HOME
 export PATH
 
 # Paths and libraries for MPI

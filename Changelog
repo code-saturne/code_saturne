@@ -1,3 +1,9 @@
+* 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove references to (non-operational) Homard support.
+  modified files:
+    bin/cs_profile
+    bin/lance
+
 * 11/04/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Updates for IVANOE port, which now uses SLURM.
   To avoid priority issues with multiple batch systems in cases where

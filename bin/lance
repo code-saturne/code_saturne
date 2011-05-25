@@ -105,9 +105,6 @@ ARG_CS_VERIF=""
 ARG_CS_OUTPUT=""
 ECHOCOMM=""
 #
-# Adaptation using HOMARD
-PILOTAGE_ADAPTATION=
-#
 resume=resume
 REPBASE=NOMREPBASE
 DATA=$REPBASE/DATA
@@ -168,6 +165,7 @@ export CS_HOME
 if [ "$NOM_ARCH" = "titane" ] ; then
   module load gcc/4.4.0 # some gcc path necessary for icc in bach mode
 elif [ "$NOM_ARCH" = "ivanoe" ] ; then
+  module purge
   module load intel_compilers/12.0.3.174
   module load open_mpi/intel/1.4.3
 fi
@@ -180,22 +178,7 @@ then
   exit 1
 fi
 #
-########################################################################
-#  Mesh Adaptation
-#
-if [ ! -z  "${PILOTAGE_ADAPTATION}" ] ; then
-  if [ "${PILOTAGE_ADAPTATION}" = "-aide" -o "${PILOTAGE_ADAPTATION}" = "-help" ] ; then
-    ${CSHOMARD_HOME}/saturne_homard ${PILOTAGE_ADAPTATION}
-    exit 0
-  else
-    Options_HOMARD="  -v"
-    ${CSHOMARD_HOME}/saturne_homard -Saturne_Script $0 -Donnees_Calcul $REPBASE \
-                    -Pilotage_Adaptation $PILOTAGE_ADAPTATION $Options_HOMARD || exit 1
-  fi
-fi
-#
 #########################################################################
-#  
 #
 N_COUPLAGE_SYRTHES=0
 N_COUPLAGE_SYRTHES=`echo $COMMANDE_SYRTHES | grep -c syrthes`
