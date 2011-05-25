@@ -112,6 +112,26 @@ def get_command_outputs(cmd):
 
 #-------------------------------------------------------------------------------
 
+def set_modules(pkg):
+    """
+    Set environment modules if present.
+    """
+
+    if pkg.env_modules == "no" or not os.environ.has_key('MODULESHOME'):
+        return
+
+    cmd_prefix = os.path.join(os.environ['MODULESHOME'], 'bin', 'modulecmd')
+
+    cmds = ['purge']
+    for m in pkg.env_modules.strip().split():
+        cmds.append('load ' + m)
+    for cmd in cmds:
+        (output, error) = subprocess.Popen([cmd_prefix, 'python'] + cmd.split(),
+                                           stdout=subprocess.PIPE).communicate()
+        exec output
+
+#-------------------------------------------------------------------------------
+
 class batch_info:
 
     #---------------------------------------------------------------------------

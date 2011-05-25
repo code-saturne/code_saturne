@@ -89,6 +89,8 @@ class package:
         self.mpi_bindir = "@mpi_bindir@"
         self.mpi_libdir = "@mpi_libdir@"
 
+        self.env_modules = "@cs_env_modules@"
+
     def get_preprocessor(self):
 
         preprocessordir = "@bindir@"

@@ -82,6 +82,10 @@ class case:
         else:
             self.package_compute = self.package
 
+        # Set environment modules if present
+
+        cs_exec_environment.set_modules(self.package_compute)
+
         # Ensure we have tuples or lists to simplify later tests
 
         if type(domains) == tuple or  type(domains) == list:
@@ -640,6 +644,14 @@ class case:
 
         s.write('#!' + user_shell + '\n\n')
 
+        # Set environment modules if necessary
+
+        if self.package_compute.env_modules != "no":
+            s.write('module purge\n')
+            for m in self.package_compute.env_modules.strip().split():
+                s.write('module load ' + m + '\n')
+            s.write('\n')
+            
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
@@ -1032,6 +1044,14 @@ fi
 """
         s.write(yacs_test + '\n')
 
+        # Set environment modules if necessary
+
+        if self.package_compute.env_modules != "no":
+            s.write('module purge\n')
+            for m in self.package_compute.env_modules.strip().split():
+                s.write('module load ' + m + '\n')
+            s.write('\n')
+            
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')

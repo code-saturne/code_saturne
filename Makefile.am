@@ -84,6 +84,7 @@ m4/cs_hdf5.m4 \
 m4/cs_libxml2.m4 \
 m4/cs_med.m4 \
 m4/cs_metis.m4 \
+m4/cs_modules.m4 \
 m4/cs_mpi.m4 \
 m4/cs_ple.m4 \
 m4/cs_scotch.m4 \
@@ -148,6 +149,7 @@ edit_config = sed \
 	-e 's|@mpi_type[@]|$(mpi_type)|g' \
 	-e 's|@mpi_bindir[@]|$(mpi_bindir)|g' \
 	-e 's|@mpi_libdir[@]|$(mpi_libdir)|g' \
+	-e 's|@cs_env_modules[@]|$(cs_env_modules)|g' \
 	-e 's|@CC[@]|$(CC)|g' \
 	-e 's|@CS_LD[@]|$(CS_LD)|g' \
 	-e 's|@CXX[@]|$(CXX)|g' \

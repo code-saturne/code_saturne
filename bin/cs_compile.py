@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Solver.
 #
-#   Copyright (C) 2009-2010  EDF
+#   Copyright (C) 2009-2011  EDF
 #
 #   The Code_Saturne Preprocessor is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@ from optparse import OptionParser
 
 from cs_config import build_syrthes
 
-from cs_exec_environment import run_command
+from cs_exec_environment import run_command, set_modules
 
 #-------------------------------------------------------------------------------
 
@@ -329,6 +329,8 @@ def main(argv, pkg):
 
     if (version):
         pkg = pkg.get_alternate_version(version)
+
+    set_modules(pkg) # Set environment modules if present
 
     if test_mode == True:
         dest_dir = None

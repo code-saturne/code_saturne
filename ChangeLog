@@ -1,3 +1,17 @@
+* 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added detection and handling of environment modules. The configuration
+  detected at configure/build time is saved and applied when compiling
+  user subroutines or when running a calculation script.
+  added files:
+   config/cs_modules.m4
+  modified files:
+    Makefile.am
+    configure.ac
+    bin/cs_case.py
+    bin/cs_compile.py
+    bin/cs_exec_environment.py
+    bin/cs_package.py.in
+
 * 25/05/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
                Dorothée Sénéchal <dorothee.senechal@edf.fr>
   Add a particle deposition model to the Lagrangian module.
