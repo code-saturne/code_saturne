@@ -56,6 +56,7 @@ $(ac_aux_dir)/cs_fortran.m4 \
 $(ac_aux_dir)/cs_fvm.m4 \
 $(ac_aux_dir)/cs_libxml2.m4 \
 $(ac_aux_dir)/cs_mei.m4 \
+$(ac_aux_dir)/cs_modules.m4 \
 $(ac_aux_dir)/cs_mpi.m4 \
 $(ac_aux_dir)/cs_syrthes.m4
 
