@@ -104,7 +104,7 @@ if (isens.eq.1) then
   vrlx = a11*vrgx + a21*vrgy + a31*vrgz
   vrly = a12*vrgx + a22*vrgy + a32*vrgz
   vrlz = a13*vrgx + a23*vrgy + a33*vrgz
- 
+
 !===============================================================================
 ! 2. Projection from the local reference frame to the local reference frame
 !                              ( local ---> global )

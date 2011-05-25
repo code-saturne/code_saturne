@@ -651,7 +651,7 @@ class case:
             for m in self.package_compute.env_modules.strip().split():
                 s.write('module load ' + m + '\n')
             s.write('\n')
-            
+
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
@@ -1051,7 +1051,7 @@ fi
             for m in self.package_compute.env_modules.strip().split():
                 s.write('module load ' + m + '\n')
             s.write('\n')
-            
+
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
