@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -982,6 +982,12 @@ dnbpar = 0.d0
 nbperr = 0
 dnbper = 0.d0
 
+!     NBPDEP/DNBDEP : NOMBRE DE PARTICULES DEPOSEES
+
+nbpdep = 0
+dnbdep = 0.d0
+
+
 !     NBPERT : NOMBRE DE PARTICULES ELIMINEES EN ERREUR DANS
 !              LE CALCUL DEPUIS LE DEBUT SUITE COMPRISE
 
@@ -1170,6 +1176,14 @@ else if (iphyla.eq.2) then
 
 endif
 
+! Modele de deposition : 2 tableaux supp dans TEPA  : YPLUS , JRINPF
+!                        6 tableaux supp dans ITEPA : MARKO , DIEL,DFAC, DIFEL, TRAJ, JPTDET
+
+if ( idepst .eq. 1 ) then
+  nvep  = nvep  + 2
+  nivep = nivep + 7
+endif
+
 !-->  VARIABLES UTILISATEURS SUPPLEMENTAIRES : NVLS
 
 if (nvls.gt.0) nvp = nvp + nvls
@@ -1299,10 +1313,21 @@ if (iphyla.eq.2) then
   irf   = jrr0p
 endif
 
+! Modele de deposition : 2 tableaux supp dans TEPA  : YPLUS et DX
+
+if ( idepst .eq. 1 ) then
+  jryplu = irf    +1
+  jrinpf = jryplu +1
+  irf    = jrinpf
+endif
+
+
 if (irf.ne.nvep) then
   write(nfecra,3005) irf, nvep
   call csexit(1)
 endif
+
+
 
 !   3.3.3 TABLEAU ITEPA
 !   ~~~~~~~~~~~~~~~~~~~
@@ -1332,6 +1357,24 @@ if (iphyla.eq.2) then
   jinch = irf + 1
   irf   = jinch
 endif
+
+! Modele de Deposition :  tableaux supp dans ITEPA : MARKO
+!                                                    JDIEL
+!                                                    JDFAC
+
+
+if ( idepst .eq. 1 ) then
+  jimark = irf    + 1
+  jdiel  = jimark + 1
+  jdfac  = jdiel  + 1
+  jdifel = jdfac  + 1
+  jtraj  = jdifel + 1
+  jptdet = jtraj  + 1
+  jinjst = jptdet + 1
+  irf    = jinjst
+endif
+
+
 
 if (irf.ne.nivep) then
   write(nfecra,3006) irf, nivep
@@ -1660,6 +1703,14 @@ if (ltsdyn.eq.1) then
     !==========
   endif
 
+endif
+
+! Modele de depot
+
+if (idepst.eq.1 .and. nordre.eq.2) then
+    write(nfecra,3014)
+    call csexit (1)
+    !==========
 endif
 
 ! Masse
@@ -3322,10 +3373,10 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
 '@    =========                                       (LAGOPT)',/,&
-'@    LE NOMBRE DE POINTEURS DANS LE TABLEAUX DE              ',/,&
+'@    LE NOMBRE DE POINTEURS DANS LE TABLEAU DE               ',/,&
 '@      PARAMETRES PARTICULAIRES TEPA                         ',/,&
 '@      IRF = ', I10                                           ,/,&
-'@    EST SUPERIEUR AU NOMBRE MAXIMAL CALCULE                 ',/,&
+'@    EST DIFFERENT DU NOMBRE MAXIMAL CALCULE                 ',/,&
 '@      NVEP = ', I10                                          ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
@@ -3377,6 +3428,27 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+
+
+ 3014 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
+'@    =========                                               ',/,&
+'@    LE MODELE SPECIFIQUE DE DEPOT (Guingo & Minier, 2008)   ',/,&
+'@     EST ACTIVABLE UNIQUEMENT AVEC  UN SCHEMA D''ORDRE  1   ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier les valeurs de idepst et nordre dans la          ',/,&
+'@  subroutine USLAG1.                                        ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+
 
 return
 

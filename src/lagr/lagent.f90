@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -180,6 +180,7 @@ double precision xxpart , yypart , zzpart
 double precision tvpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 double precision surf   , volp , vitp
+double precision dintrf(1)
 
 !===============================================================================
 
@@ -406,14 +407,6 @@ do ii = 1,nfrlag
        iusclb(nb).ne.idepfa ) then
     iok = iok + 1
     write(nfecra,1040) nb
-  endif
-enddo
-
-do ii = 1,nfrlag
-  nb = ilflag(ii)
-  if (iusclb(nb).eq.idepo2 .and. iensi2.ne.1) then
-    iok = iok + 1
-    write(nfecra,1041) nb
   endif
 enddo
 
@@ -1079,6 +1072,17 @@ do ii = 1,nfrlag
 
          endif
 
+! Modele de Deposition : Initialisation
+
+         if ( idepst .eq. 1 ) then
+           call zufall(1,dintrf(1))
+           tepa(ip,jrinpf) = 5.d0 + 15.d0*dintrf(1)
+           tepa(ip,jryplu) = 1000.d0
+           itepa(ip,jimark) = -1
+           itepa(ip,jdiel)  = 0
+           itepa(ip,jdfac)  = 0
+         endif
+
       enddo
 
       npt = npt + iuslag(nc,nb,ijnbp)
@@ -1479,7 +1483,7 @@ nbptot = nbptot + nbpnew
 '@   = IREBOL  rebond des particules                          ',/,&
 '@   = IDEPO1  deposition definitive                          ',/,&
 '@   = IDEPO2  deposition definitive mais la particule reste  ',/,&
-'@             en memoire (utile si IENSI2 = 1 uniquement)    ',/,&
+'@             en memoire                                     ',/,&
 '@   = IDEPO3  deposition et remise en suspension possible    ',/,&
 '@             suivant les condition de l''ecoulement         ',/,&
 '@   = IENCRL  encrassement (Charbon uniquement IPHYLA = 2)   ',/,&
@@ -1495,28 +1499,6 @@ nbptot = nbptot + nbpnew
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Verifier USLAG2.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 1041 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========   (LAGENT)                                    ',/,&
-'@                                                            ',/,&
-'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
-'@                                                            ',/,&
-'@  La condition a la limite representee par la variable      ',/,&
-'@    IDEPO2 n''est admissible que pour un post-processing    ',/,&
-'@    en mode deplacement IENSI2 = 1 .                        ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de IENSI2 dans USLAG1 et les           ',/,&
-'@  conditions aux limites pour la frontiere NB =',I10         ,/,&
-'@  dans USLAG2.                                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

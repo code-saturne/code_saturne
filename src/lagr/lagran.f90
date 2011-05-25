@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -63,6 +63,8 @@ module lagran
 
   !     NBPERR/DNBPER : NOMBRE DE PARTICULES ELIMINEES EN ERREUR
 
+  !     NBPDEP/DNBDEP : NOMBRE DE PARTICULES DEPOSEES
+
   !     NBPERT : NOMBRE DE PARTICULES ELIMINEES EN ERREUR DANS
   !                LE CALCUL DEPUIS LE DEBUT, SUITES COMPRISES
 
@@ -84,8 +86,8 @@ module lagran
 
 
   integer, save ::           nbpart , nbpnew , nbperr , nbptot , nbpout ,    &
-                             nbpert , ndepot
-  double precision, save ::  dnbpar , dnbpnw , dnbper ,          dnbpou
+                             nbpert , ndepot , nbpdep
+  double precision, save ::  dnbpar , dnbpnw , dnbper , dnbpou, dnbdep
 
   integer, save ::           npclon , npkill , npcsup
   double precision, save ::  dnpclo , dnpkil , dnpcsu
@@ -107,6 +109,26 @@ module lagran
   !          CPPART : Chaleur massique specifique (J/kg/K)
 
   double precision, save ::  tpart , cppart
+
+  ! 4.1 Particules deposition submodel (Guingo & Minier, 2008)
+  !==================================
+
+
+  !     IDEPST = 0 : no deposition submodel activated
+  !            = 1 : deposition submodel used
+
+  integer, save ::     idepst
+
+  !     NGEOL : geometric parameters stored
+
+  integer ngeol
+  parameter (ngeol = 13)
+
+  ! Additional pointers in the ITEPA array
+  ! ITEPA contains the particule state
+
+  integer, save ::   jimark , jdiel  , jdfac , jdifel , jtraj , jptdet , jinjst
+  integer, save ::   jryplu , jrinpf
 
   !=============================================================================
   ! 5. Pas de temps Lagrangien

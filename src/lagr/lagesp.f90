@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -29,11 +29,13 @@ subroutine lagesp &
 !================
 
  ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+   nvar   , nscal  , lndnod ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
+   icocel , itycel, ifrlag,                                       &
    itepa  , ibord  ,                                              &
    ia     ,                                                       &
+   dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
@@ -42,15 +44,19 @@ subroutine lagesp &
    ra     )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! ----------
 
-!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
-!   -------------------------------------
+!   Subroutine of the Lagrangian particle-tracking module :
+!   ------------------------------------------------------
 
-!    INTEGRATION DES EDS PAR UN SCHEMA D'ORDRE 2 : LAGES2
-!    INTEGRATION DES EDS PAR UN SCHEMA D'ORDRE 1 : LAGES1
-
+!   Integration of particle equations of motion :
+!
+!   * Standard Model : First order  -> call of subroutine lages1
+!                      Second order -> call of subroutine lages2
+!
+!   * Deposition submodel (Guingo & Minier, 2008) if needed
+!
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -58,6 +64,7 @@ subroutine lagesp &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
+! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -68,11 +75,19 @@ subroutine lagesp &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
+! icocel           ! te ! --> ! connectivite cellules -> faces                 !
+!   (lndnod)       !    !     !    face de bord si numero negatif              !
+! itycel           ! te ! --> ! connectivite cellules -> faces                 !
+!   (ncelet+1)     !    !     !    pointeur du tableau icocel                  !
+! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
+!   (nfabor)       !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
+! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
+! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -140,9 +155,10 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          ntersl , nvlsta , nvisbr , lndnod
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
+integer          icocel(lndnod),  ifrlag(nfabor), itycel(ncelet+1)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
@@ -155,6 +171,7 @@ double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
 double precision tsfext(nbpmax)
+double precision dlgeo(nfabor,ngeol)
 double precision vagaus(nbpmax,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
@@ -163,24 +180,32 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
-integer          ip , ifinia , ifinra, ifexla
+integer          idebia , idebra , ifinia , ifinra
+integer          iel , ifac , ip
+integer          iauxp , ifexla , nbfac
+integer          icrit , itirag , inb , iifacl
+integer           ii
+
 double precision d3 , aa
 
 !===============================================================================
 
 !===============================================================================
-! 0.  GESTION MEMOIRE
+! 0.  Memory management
 !===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 !===============================================================================
-! 1.  INITIALISATION
+! 1.  Initialization
 !===============================================================================
+! Initialize variables to avoid compiler warnings
 
-! Calcul de la masse volumique des particules
+iifacl = 0
+
+
+! Computation of particle density
 
 aa = 6.d0 / pi
 do ip = 1,nbpart
@@ -191,7 +216,7 @@ do ip = 1,nbpart
 enddo
 
 !===============================================================================
-! 2.  PRISE EN COMPTE DES FORCES UTILISATEURS EXTERIEURES
+! 2.  Management of user external force fields
 !===============================================================================
 
 ifinia = idebia
@@ -220,9 +245,9 @@ call uslafe                                                       &
    ra     )
 
 !===============================================================================
-! 3.  PRISE EN COMPTE DES FORCES CHIMIQUES
-!       - Forces de Van der Vaals
-!       - Forces electrostatiques
+! 3.  Management of physici-chemical forces (DLVO theory)
+!       - Van der Waals forces
+!       - Electrostatic forces
 !===============================================================================
 
 if ( ladlvo .eq. 1 ) then
@@ -246,10 +271,17 @@ if ( ladlvo .eq. 1 ) then
  endif
 
 !===============================================================================
-! 4.  ORDRE 1
+! 4.  First order
 !===============================================================================
 
 if (nordre.eq.1) then
+
+!=============================================================================
+! 4.1 If no deposition sub-model is activated, call of subroutine lages1
+!     for every particle
+!=============================================================================
+
+  if (idepst.le.0) then
 
   call lages1                                                     &
   !==========
@@ -266,8 +298,32 @@ if (nordre.eq.1) then
      brgaus , terbru , ra(ifexla) ,                               &
      ra     )
 
+
+!=============================================================================
+! 4.2 Management of the deposition submodel
+!=============================================================================
+
+  else
+
+     call lagdep                                                  &
+    !==========
+   ( ifinia , ifinra ,                                            &
+     nvar   , nscal  , lndnod , icocel , itycel, ifrlag ,         &
+     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
+     ntersl , nvlsta , nvisbr ,                                   &
+     itepa  ,                                                     &
+     ia     , dlgeo  ,                                            &
+     dt     , rtpa   , propce , propfa , propfb ,                 &
+     ettp   , ettpa  , tepa   ,                                   &
+     statis , taup   , tlag   , piil   ,                          &
+     bx     , vagaus , gradpr , gradvf , romp   ,                 &
+     brgaus , terbru , ra(ifexla) ,                               &
+     ra     )
+
+  endif
+
 !===============================================================================
-! 5.  ORDRE 2
+! 5.  Second order
 !===============================================================================
 
 else

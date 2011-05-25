@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -32,7 +32,7 @@ subroutine memla1 &
    lndnod ,                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   iiitep , iicoce , iityce ,                                     &
+   iiitep , iicoce , iityce , ilageo ,                            &
    iettp  , iettpa , iitepa , istatc , istatv ,                   &
    itslag , istatf ,                                              &
    ifinia , ifinra )
@@ -73,6 +73,7 @@ subroutine memla1 &
 ! iiitep           ! e  ! --> ! pointeur sur itepa                             !
 ! iicoce           ! e  ! --> ! pointeur sur icocel                            !
 ! iityce           ! e  ! --> ! pointeur sur itycel                            !
+! ilageo           ! e  ! --> ! pointeur sur dlgeo                             !
 ! iettp            ! e  ! --> ! pointeur sur ettp                              !
 ! iettpa           ! e  ! --> ! pointeur sur ettpa (simple init. ici)          !
 ! iitepa           ! e  ! --> ! pointeur sur tepa                              !
@@ -109,7 +110,7 @@ integer          idbia0 , idbra0
 integer          lndnod
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          iiitep , iicoce , iityce
+integer          iiitep , iicoce , iityce , ilageo
 integer          iettp  , iettpa
 integer          iitepa , istatc , istatv , itslag , istatf
 integer          ifinia , ifinra
@@ -166,6 +167,13 @@ else
                         + ncelet * max((nvlsta-1),0) * nbclst
   istatf =       itslag + ntersl * ncelet
   ifinra =       istatf + nfabor * nvisbr
+
+if ( idepst .eq. 1 ) then
+  ilageo = ifinra
+  ifinra = ilageo + nfabor*ngeol
+else
+  ilageo = 1
+endif
 
 endif
 

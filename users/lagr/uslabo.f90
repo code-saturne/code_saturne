@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -327,6 +327,19 @@ yk = yp + ypq * aa
 zk = zp + zpq * aa
 
 !===============================================================================
+! 3. If the particle deposits, the number of deposited particles is updated
+!===============================================================================
+
+if (iusclb(kzone).eq.idepo1 .or.                                 &
+    iusclb(kzone).eq.idepo2 .or.                                 &
+    iusclb(kzone).eq.idepo3      ) then
+
+  nbpdep = nbpdep + 1
+  dnbdep = dnbdep + tepa(ip,jrpoi)
+
+endif
+
+!===============================================================================
 ! 3. Departure of the particle from the calculation domain
 !    or deposition on a boundary
 !===============================================================================
@@ -411,6 +424,9 @@ else if (iusclb(kzone).eq.idepfa) then
   if ( energ .ge. energt )then
 
 ! The particle deposits:
+
+    nbpdep = nbpdep + 1
+    dnbdep = dnbdep + tepa(ip,jrpoi)
 
     isuivi = 0
     itepa(ip,jisor) = -itepa(ip,jisor)

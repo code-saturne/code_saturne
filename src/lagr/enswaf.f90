@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -192,8 +192,11 @@ if ( (mod(ipwaf-1,nvisla).eq.0 .and. nfin.eq.0)   .or.            &
     np = liste(nl)
     if (np.ge.1) then
       if (itepa(np,jisor).ne.0) then
-        write(impla1,'(I8,3E12.5)') np, &
-          ettp(np,jxp), ettp(np,jyp), ettp(np,jzp)
+        write(impla1,'(I8,3E12.5)') &
+                  np,               &
+        ettp(np,jxp),               &
+        ettp(np,jyp),               &
+        ettp(np,jzp)
       endif
     endif
   enddo
@@ -239,7 +242,7 @@ if (ivistp.eq.1) then
         trav(ipt,1) = tepa(np,jrtsp)
       endif
     endif
-  enddo
+ enddo
 
   FICH = ' '
   fich = entet

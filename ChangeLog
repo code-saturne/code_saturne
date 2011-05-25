@@ -1,4 +1,39 @@
 * 25/05/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
+               Dorothée Sénéchal <dorothee.senechal@edf.fr>
+  Add a particle deposition model to the Lagrangian module.
+  added routines:
+    src/lagr/lagcli.f90
+    src/lagr/lagdcl.f90
+    src/lagr/lagdep.f90
+    src/lagr/lagdif.f90
+    src/lagr/lageje.f90
+    src/lagr/lagesd.f90
+    src/lagr/laggeo.f90
+    src/lagr/lagprj.f90
+    src/lagr/lagswe.f90
+  modified script:
+    src/lagr/Makefile.am
+  modified routines:
+    src/base/caltri.f90
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/memtri.f90
+    src/lagr/enswaf.f90
+    src/lagr/lagaff.f90
+    src/lagr/lagcel.f90
+    src/lagr/lagent.f90
+    src/lagr/lagesp.f90
+    src/lagr/laglec.f90
+    src/lagr/laglis.f90
+    src/lagr/lagopt.f90
+    src/lagr/lagout.f90
+    src/lagr/lagran.f90
+    src/lagr/lagune.f90
+    src/lagr/memla1.f90
+    users/lagr/uslabo.f90
+    users/lagr/uslag1.f90
+
+* 25/05/2011 - Mathieu Guingo <mathieu.guingo@edf.fr>
   Prefer initializing the random-number generator with a seed equal
   to 1 instead of 0 (as advised in the zufall.f90 comments).
   modified routine:

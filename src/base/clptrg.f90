@@ -596,6 +596,9 @@ do ifac = 1, nfabor
 ! apres amortissement de van Driest pour la LES
 ! On n'amortit pas mu_t une seconde fois si on l'a deja fait
 ! (car une cellule peut avoir plusieurs faces de paroi)
+! ou
+! Sauvegarde de la vitesse de frottement et distance a la paroi yplus
+! si le modele de depot de particules est active.
 
     if(itytur.eq.4.and.idries.eq.1) then
       ra(iuetbo+ifac-1) = uet
@@ -606,6 +609,8 @@ do ifac = 1, nfabor
         visvdr(iel) = propce(iel,ipcvst)
         visctc = propce(iel,ipcvst)
       endif
+    else if (iilagr.gt.0.and.idepst.gt.0) then
+      ra(iuetbo+ifac-1) = uet
     endif
 
 

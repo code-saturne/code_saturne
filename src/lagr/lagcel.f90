@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -36,6 +36,7 @@ subroutine lagcel &
    itypfb , itrifb , icocel , itycel , ifrlag , itepa  , ibord  , &
    indep  ,                                                       &
    ia     ,                                                       &
+   dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , auxl   ,                   &
@@ -86,6 +87,8 @@ subroutine lagcel &
 ! indep            ! te ! --> ! pour chaque particule :                        !
 !   (nbpmax)       !    !     !   numero de la cellule de depart               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
+! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
+! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
@@ -154,20 +157,30 @@ double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision parbor(nfabor,nvisbr) , auxl(nbpmax,3)
+double precision dlgeo(nfabor,ngeol)
 double precision ra(*)
 
 ! Local variables
 
 integer          idebia, idebra, ifinia
-
 integer          iel, ifac, kfac, nbp, icecpt
 integer          ii, jj, in, ip
 integer          indian, ifaold, ifanew
 integer          isuivi, ierror, ierrie
 integer          itypfo, iconfo(100)
-
 integer          icelcr , ipercr, itepas, iper
+integer          il,ltest,ifacb,ifacp,ielnew,izone,isens
+
 double precision pta(3), ptb(3), vect(3), vectn(3)
+double precision xp,yp,zp,xq,yq,zq,xpq,ypq,zpq,aa
+double precision xk,yk,zk
+double precision vpart(6),vvue(6)
+double precision det, xn,yn,zn,xpp,ypp,zpp, xnor
+double precision xt,yt,zt,xtt,ytt,ztt,xkp,ykp,zkp
+double precision xxp,yyp,zzp,kk,deplx,deply,deplz
+double precision distp
+double precision ist,istt,dept,deptt
+
 
 !===============================================================================
 ! -1.  MACRO DE DEBUGGAGE DEVELOPPEUR
@@ -213,6 +226,7 @@ idebra = idbra0
 
 icelcr = 0
 ipercr = 0
+ifacp  = 0
 
 do ip = 1,nbpmax
   ibord(ip) = 0
@@ -478,7 +492,7 @@ do ip = 1,nbpart
           endif
 
 ! Traitement de la periodicite (debut).
-!  Ne marchera pas si on passe en parallele. Le fait d'être dans le halo
+!  Ne marchera pas si on passe en parallele. Le fait d'etre dans le halo
 !  n'est pas suffisant pour conclure si la cellule est periodique.
 
           if (itepa(ip,jisor).gt.ncel) then
@@ -496,7 +510,7 @@ do ip = 1,nbpart
             iper  = ia(ipercr+itepas-ncel-1)
 
 ! Faire un test si IPER           != -1 pour ne traiter que les cellules periodiques
-! Finir l'implémentation dans PERLOC
+! Finir l'implementation dans PERLOC
 
 !                 POINT DE DEPART
 
@@ -580,11 +594,374 @@ do ip = 1,nbpart
 
 ! Traitement de la periodicite (fin)
 
+! deposition model treatment
+
+          if (idepst.gt.0) then
+
+             if (itepa(ip,jimark).ge.0) then
+
+               !Test on the new cell if it is a boundary cell at the wall
+
+               ltest = 0
+               do il = itycel(itepa(ip,jisor)), itycel(itepa(ip,jisor)+1)-1
+                 if (icocel(il) .lt. 0) then
+                   ifacp = -icocel(il)
+                   izone = ifrlag(ifacp)
+                   if (iusclb(izone).eq.idepo1 .or.           &
+                       iusclb(izone).eq.idepo2 .or.           &
+                       iusclb(izone).eq.idepo3 .or.           &
+                       iusclb(izone).eq.idepfa .or.           &
+                       iusclb(izone).eq.irebol     ) then
+                     ltest = ltest+1
+                   endif
+                 endif
+               enddo
+
+               if (ltest.gt.0) then
+
+                 ! Computation of the intersection position between the crossed
+                 ! face and the trajectory
+
+                 xp = ettpa(ip,jxp)
+                 yp = ettpa(ip,jyp)
+                 zp = ettpa(ip,jzp)
+
+                 xq = ettp(ip,jxp)
+                 yq = ettp(ip,jyp)
+                 zq = ettp(ip,jzp)
+
+                 xpq = xq - xp
+                 ypq = yq - yp
+                 zpq = zq - zp
+
+                 aa = xpq * surfac(1,ifac)                         &
+                     +ypq * surfac(2,ifac)                         &
+                     +zpq * surfac(3,ifac)
+
+                 if (abs(aa).lt.1.d-15) then
+                   ! Problematic case: we eliminate the particle
+                   if (ierrie.eq.0) then
+                     itepa(ip,jisor) = 0
+                     nbperr = nbperr + 1
+                     dnbper = dnbper + tepa(ip,jrpoi)
+#if DEBUG_LAGCEL
+                     if (impltg.eq.1)  write(nfecra,9102) iel,ip
+#endif
+                     goto 200
+                   else
+                     write(nfecra,9102) iel,ip
+                     ierr = 1
+                     goto 300
+                   endif
+
+                 endif
+                 ! end of the problematic case treatement
+
+                 aa = ( surfac(1,ifac) * cdgfac(1,ifac)            &
+                       +surfac(2,ifac) * cdgfac(2,ifac)            &
+                       +surfac(3,ifac) * cdgfac(3,ifac)            &
+                       -surfac(1,ifac) * xp                        &
+                       -surfac(2,ifac) * yp                        &
+                       -surfac(3,ifac) * zp )                      &
+                    / aa
+
+                 xk = xp + xpq * aa
+                 yk = yp + ypq * aa
+                 zk = zp + zpq * aa
+
+                 ! We locate the particle at the intersection
+                 ! and we stop the treatment
+
+                 ielnew = itepa(ip,jisor)
+
+                 distp = sqrt( (xyzcen(1,ielnew)-xk)**2            &
+                              +(xyzcen(2,ielnew)-yk)**2            &
+                              +(xyzcen(3,ielnew)-zk)**2 )
+
+                 dept  = (xyzcen(1,ielnew)-xk)*dlgeo(ifacp, 8)     &
+                        +(xyzcen(2,ielnew)-yk)*dlgeo(ifacp, 9)     &
+                        +(xyzcen(3,ielnew)-zk)*dlgeo(ifacp,10)
+                 deptt = (xyzcen(1,ielnew)-xk)*dlgeo(ifacp,11)     &
+                        +(xyzcen(2,ielnew)-yk)*dlgeo(ifacp,12)     &
+                        +(xyzcen(3,ielnew)-zk)*dlgeo(ifacp,13)
+
+                 if (dept.ge.0) then
+                   ist = 1.d0
+                 else
+                   ist =-1.d0
+                 endif
+
+                 if (deptt.ge.0) then
+                   istt = 1.d0
+                 else
+                   istt =-1.d0
+                 endif
+
+                 ettp(ip,jxp) = xk+1.d-4*distp*dlgeo(ifacp, 8)*ist  &
+                                  +1.d-4*distp*dlgeo(ifacp,11)*istt
+                 ettp(ip,jyp) = yk+1.d-4*distp*dlgeo(ifacp, 9)*ist  &
+                                  +1.d-4*distp*dlgeo(ifacp,12)*istt
+                 ettp(ip,jzp) = zk+1.d-4*distp*dlgeo(ifacp,10)*ist  &
+                                  +1.d-4*distp*dlgeo(ifacp,13)*istt
+
+                 ! Switch of the normal and tagential velocities between the
+                 ! previous and new reference frame
+
+                 ! normal and tangential velocities computation in the previous
+                 ! mesh element
+
+                 ifacb = 0
+                 do il = itycel(indep(ip)), itycel(indep(ip)+1)-1
+
+                   ifacp = icocel(il)
+                   if (ifacp.lt.0) then
+                     ifacp = -ifacp
+                     izone = ifrlag(ifacp)
+                     if (iusclb(izone).eq.idepo1 .or.           &
+                         iusclb(izone).eq.idepo2 .or.           &
+                         iusclb(izone).eq.idepo3 .or.           &
+                         iusclb(izone).eq.idepfa .or.           &
+                         iusclb(izone).eq.irebol) then
+                       ifacb = ifacp
+                     endif
+                   endif
+                 enddo
+                 if (ifacb.eq.0) then
+                   write(nfecra,*) ' Erreur lagcel particule ', ip, iel
+                   write(nfecra,*) ' On a pas trouve de face de paroi '
+                   write(nfecra,*) ' dans la maille precedente '
+                   call csexit(1)
+                 endif
+
+                 xnor= sqrt( surfbo(1,ifacb)*surfbo(1,ifacb)       &
+                            +surfbo(2,ifacb)*surfbo(2,ifacb)       &
+                            +surfbo(3,ifacb)*surfbo(3,ifacb) )
+
+                 xn = dlgeo(ifacb,1)
+                 yn = dlgeo(ifacb,2)
+                 zn = dlgeo(ifacb,3)
+
+                 ! Trajectory projection on the face
+
+                 xxp = xp
+                 yyp = yp
+                 zzp = zp
+
+                 kk  = (-dlgeo(ifacb,1)*xxp-dlgeo(ifacb,2)*yyp     &
+                        -dlgeo(ifacb,3)*zzp-dlgeo(ifacb,4) )       &
+                      /( dlgeo(ifacb,1)*dlgeo(ifacb,1)             &
+                        +dlgeo(ifacb,2)*dlgeo(ifacb,2)             &
+                        +dlgeo(ifacb,3)*dlgeo(ifacb,3) )
+
+                 xpp = kk*xn+xxp
+                 ypp = kk*yn+yyp
+                 zpp = kk*zn+zzp
+
+                 xxp = xk
+                 yyp = yk
+                 zzp = zk
+
+                 kk  = (-dlgeo(ifacb,1)*xxp-dlgeo(ifacb,2)*yyp     &
+                        -dlgeo(ifacb,3)*zzp-dlgeo(ifacb,4) )       &
+                      /( dlgeo(ifacb,1)*dlgeo(ifacb,1)             &
+                        +dlgeo(ifacb,2)*dlgeo(ifacb,2)             &
+                        +dlgeo(ifacb,3)*dlgeo(ifacb,3) )
+
+                 xkp = kk*xn+xxp
+                 ykp = kk*yn+yyp
+                 zkp = kk*zn+zzp
+
+                 xnor = sqrt( (xkp-xpp)*(xkp-xpp)                  &
+                             +(ykp-ypp)*(ykp-ypp)                  &
+                             +(zkp-zpp)*(zkp-zpp) )
+
+                 if (xnor.gt.1.d-15) then
+
+                   xt = (xkp-xpp)/xnor
+                   yt = (ykp-ypp)/xnor
+                   zt = (zkp-zpp)/xnor
+
+                   xtt = yn*zt-zn*yt
+                   ytt = zn*xt-xn*zt
+                   ztt = xn*yt-yn*xt
+                   xnor=sqrt(xtt*xtt+ytt*ytt+ztt*ztt)
+                   xtt = xtt/xnor
+                   ytt = ytt/xnor
+                   ztt = ztt/xnor
+
+                 else
+
+                   xt = dlgeo(ifacb, 8)
+                   yt = dlgeo(ifacb, 9)
+                   zt = dlgeo(ifacb,10)
+
+                   xtt = dlgeo(ifacb,11)
+                   ytt = dlgeo(ifacb,12)
+                   ztt = dlgeo(ifacb,13)
+
+                 endif
+
+                 isens = 1
+                 call  lagprj                                        &
+                 !===========
+               ( isens        ,                               &
+                 ettp(ip,jup) , ettp(ip,jvp) , ettp(ip,jwp) , &
+                 vpart(1)     , vpart(2)     , vpart(3)     , &
+                 xn           , yn           , zn           , &
+                 xt           , yt           , zt           , &
+                 xtt          , ytt          , ztt  )
+
+                 call  lagprj                                        &
+                 !============
+               ( isens,                                       &
+                 ettp(ip,juf) , ettp(ip,jvf) , ettp(ip,jwf) , &
+                 vvue(1)      , vvue(2)      , vvue(3)      , &
+                 xn           , yn           , zn           , &
+                 xt           , yt           , zt           , &
+                 xtt          , ytt          , ztt  )
+
+                 ! normal and tagential velocities computation in the previous
+                 ! mesh element
+
+                 ifacb = 0
+                 do il = itycel(itepa(ip,jisor)), itycel(itepa(ip,jisor)+1)-1
+
+                   ifacp = icocel(il)
+                   if ( ifacp .lt. 0 ) then
+                     ifacp = -ifacp
+                     izone = ifrlag(ifacp)
+                     if (iusclb(izone).eq.idepo1 .or.            &
+                         iusclb(izone).eq.idepo2 .or.            &
+                         iusclb(izone).eq.idepo3 .or.            &
+                         iusclb(izone).eq.idepfa .or.            &
+                         iusclb(izone).eq.irebol) then
+                       ifacb = ifacp
+                     endif
+                   endif
+                 enddo
+
+                 if (ifacb.eq.0) then
+                   write(nfecra,*) ' Erreur lagcel particule ', ip
+                   write(nfecra,*) ' On a pas trouve de face de paroi '
+                   write(nfecra,*) ' dans la nouvelle maille '
+                   call csexit(1)
+                 endif
+
+                 xn = dlgeo(ifacb,1)
+                 yn = dlgeo(ifacb,2)
+                 zn = dlgeo(ifacb,3)
+
+                 ! Trajectory projection on the face
+
+                 det = dlgeo(ifacb,1)*xn+dlgeo(ifacb,2)*yn         &
+                                        +dlgeo(ifacb,3)*zn
+
+                 xxp = xp
+                 yyp = yp
+                 zzp = zp
+
+                 kk  = (-dlgeo(ifacb,1)*xxp-dlgeo(ifacb,2)*yyp     &
+                        -dlgeo(ifacb,3)*zzp-dlgeo(ifacb,4) )       &
+                      /( dlgeo(ifacb,1)*dlgeo(ifacb,1)             &
+                        +dlgeo(ifacb,2)*dlgeo(ifacb,2)             &
+                        +dlgeo(ifacb,3)*dlgeo(ifacb,3) )
+
+                 xpp = kk*xn+xxp
+                 ypp = kk*yn+yyp
+                 zpp = kk*zn+zzp
+
+                 xxp = xk
+                 yyp = yk
+                 zzp = zk
+
+                 kk  = (-dlgeo(ifacb,1)*xxp-dlgeo(ifacb,2)*yyp     &
+                        -dlgeo(ifacb,3)*zzp-dlgeo(ifacb,4) )       &
+                      /( dlgeo(ifacb,1)*dlgeo(ifacb,1)             &
+                        +dlgeo(ifacb,2)*dlgeo(ifacb,2)             &
+                        +dlgeo(ifacb,3)*dlgeo(ifacb,3) )
+
+                 xkp = kk*xn+xxp
+                 ykp = kk*yn+yyp
+                 zkp = kk*zn+zzp
+
+                 xnor = sqrt( (xkp-xpp)*(xkp-xpp)                  &
+                             +(ykp-ypp)*(ykp-ypp)                  &
+                             +(zkp-zpp)*(zkp-zpp) )
+
+                 if (xnor.gt.1.d-15) then
+
+                   xt = (xkp-xpp)/xnor
+                   yt = (ykp-ypp)/xnor
+                   zt = (zkp-zpp)/xnor
+
+                   xtt = yn*zt-zn*yt
+                   ytt = zn*xt-xn*zt
+                   ztt = xn*yt-yn*xt
+                   xnor=sqrt(xtt*xtt+ytt*ytt+ztt*ztt)
+                   xtt = xtt/xnor
+                   ytt = ytt/xnor
+                   ztt = ztt/xnor
+
+                 else
+
+                   xt = dlgeo(ifacb, 8)
+                   yt = dlgeo(ifacb, 9)
+                   zt = dlgeo(ifacb,10)
+
+                   xtt = dlgeo(ifacb,11)
+                   ytt = dlgeo(ifacb,12)
+                   ztt = dlgeo(ifacb,13)
+
+                 endif
+
+                 isens = 2
+                 call  lagprj                                        &
+                 !===========
+               ( isens    ,                                   &
+                 vpart(4) , vpart(5) , vpart(6) ,             &
+                 vpart(1) , vpart(2) , vpart(3) ,             &
+                 xn       , yn       , zn       ,             &
+                 xt       , yt       , zt       ,             &
+                 xtt      , ytt      , ztt  )
+
+                 call  lagprj                                        &
+                 !===========
+               ( isens   ,                                    &
+                 vvue(4) , vvue(5) , vvue(6) ,                &
+                 vvue(1) , vvue(2) , vvue(3) ,                &
+                 xn      , yn      , zn      ,                &
+                 xt      , yt      , zt      ,                &
+                 xtt     , ytt     , ztt  )
+
+                 ettp(ip,jup) = vpart(4)
+                 ettp(ip,jvp) = vpart(5)
+                 ettp(ip,jwp) = vpart(6)
+
+                 ettp(ip,juf) = vvue(4)
+                 ettp(ip,jvf) = vvue(5)
+                 ettp(ip,jwf) = vvue(6)
+
+               goto 200
+
+             else
+
+               itepa(ip,jimark) = -1
+               tepa(ip,jryplu)  = 1000.d0
+
+             endif
+
+           endif
+
+         endif
+
+! deposition model treatment End
+
+
 !--> Retour pour balayage des faces de la cellule suivante
 
-          goto 100
+         goto 100
 
-        endif
+       endif
 
 !--> Balayage des faces de bord (reperees par leur valeur negative
 !    dans ICOCEL)
@@ -594,72 +971,72 @@ do ip = 1,nbpart
 !               INDIAN = -1 meme cellule
 !               INDIAN =  1 interaction avec la frontiere
 
-      else if (ifac.lt.0 .and. ifac.ne.ifaold) then
+     else if (ifac.lt.0 .and. ifac.ne.ifaold) then
 
-        ifac = -ifac
+       ifac = -ifac
 
-        in = 0
-        do nbp = ipnfbr(ifac),ipnfbr(ifac+1)-1
-          in = in + 1
-          iconfo(in) = nodfbr(nbp)
-        enddo
-        itypfo = ipnfbr(ifac+1) - ipnfbr(ifac) + 1
-        iconfo(itypfo) = iconfo(1)
+       in = 0
+       do nbp = ipnfbr(ifac),ipnfbr(ifac+1)-1
+         in = in + 1
+         iconfo(in) = nodfbr(nbp)
+       enddo
+       itypfo = ipnfbr(ifac+1) - ipnfbr(ifac) + 1
+       iconfo(itypfo) = iconfo(1)
 
 #if DEBUG_LAGCEL
-        nbp = ipnfbr(ifac+1) - ipnfbr(ifac)
-        write(impla4)                                             &
-        nbp, -ifac, iel,                                          &
-        (nodfbr(in),in=ipnfbr(ifac),ipnfbr(ifac+1)-1)
-        if (nbp.eq.4) then
-          nquad4 = nquad4 + 1
-        else if (nbp.eq.3) then
-          ntria3 = ntria3 + 1
-        else if (nbp.ge.5) then
-          nsided = nsided + 1
-        endif
+       nbp = ipnfbr(ifac+1) - ipnfbr(ifac)
+       write(impla4)                                             &
+       nbp, -ifac, iel,                                          &
+       (nodfbr(in),in=ipnfbr(ifac),ipnfbr(ifac+1)-1)
+       if (nbp.eq.4) then
+         nquad4 = nquad4 + 1
+       else if (nbp.eq.3) then
+         ntria3 = ntria3 + 1
+       else if (nbp.ge.5) then
+         nsided = nsided + 1
+       endif
 #endif
 
-        call ouestu                                               &
-        !==========
-   (    nfecra , ndim   , nnod ,                                  &
-        ierror ,                                                  &
-        ettpa(ip,jxp)  , ettpa(ip,jyp)  , ettpa(ip,jzp)  ,        &
-        ettp(ip,jxp)   , ettp(ip,jyp)   , ettp(ip,jzp)   ,        &
-        cdgfbo(1,ifac)    , cdgfbo(2,ifac)    , cdgfbo(3,ifac)   ,&
-        xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
-        itypfo , iconfo , xyznod ,                                &
-        indian )
+       call ouestu                                               &
+       !==========
+  (    nfecra , ndim   , nnod ,                                  &
+       ierror ,                                                  &
+       ettpa(ip,jxp)  , ettpa(ip,jyp)  , ettpa(ip,jzp)  ,        &
+       ettp(ip,jxp)   , ettp(ip,jyp)   , ettp(ip,jzp)   ,        &
+       cdgfbo(1,ifac)    , cdgfbo(2,ifac)    , cdgfbo(3,ifac)   ,&
+       xyzcen(1,iel)     , xyzcen(2,iel)     , xyzcen(3,iel)    ,&
+       itypfo , iconfo , xyznod ,                                &
+       indian )
 
 #if DEBUG_LAGCEL
-        if (impltg.eq.1) write(nfecra,9002) ip , ifac , indian
+       if (impltg.eq.1) write(nfecra,9002) ip , ifac , indian
 #endif
 
 !         ---> Elimination des particules qui posent problemes
 
-        if (ierror.eq.1) then
-          ierror = 0
-          itepa(ip,jisor) = 0
-          nbperr = nbperr + 1
-          dnbper = dnbper + tepa(ip,jrpoi)
-          if (ierrie.eq.0) then
+       if (ierror.eq.1) then
+         ierror = 0
+         itepa(ip,jisor) = 0
+         nbperr = nbperr + 1
+         dnbper = dnbper + tepa(ip,jrpoi)
+         if (ierrie.eq.0) then
 #if DEBUG_LAGCEL
-            if (impltg.eq.1) write(nfecra,9101) ifac,ip
+           if (impltg.eq.1) write(nfecra,9101) ifac,ip
 #endif
-            goto 200
-          else
-            write(nfecra,9101) ifac,ip
-            ierr = 1
-            goto 300
-          endif
+           goto 200
+         else
+           write(nfecra,9101) ifac,ip
+           ierr = 1
+           goto 300
+         endif
 
 !--> Si la trajectoire de la particule traverse la face de bord
 
-        else if (indian.eq.1) then
-          if (nordre.eq.2) ibord(ip) = ifac
+       else if (indian.eq.1) then
+         if (nordre.eq.2) ibord(ip) = ifac
 
 #if DEBUG_LAGCEL
-          if (impltg.eq.1) write(nfecra,9003) ifac
+         if (impltg.eq.1) write(nfecra,9003) ifac
 #endif
 
 !--> Traitement de l'interaction particule/frontiere
@@ -680,8 +1057,8 @@ do ip = 1,nbpart
 
 !   Blindage dans USLABO : ISUIVI ne peut que valoir 0 ou 1 apres.
 
-          call uslabo                                             &
-          !==========
+         call uslabo                                             &
+         !==========
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
@@ -698,35 +1075,35 @@ do ip = 1,nbpart
 !--> Si la particule continue sa route (ex : rebond) apres l'interaction
 !    avec la frontiere, il faut continuer a la suivre donc GOTO 100
 
-          if (isuivi.eq.1) then
-            ifanew = -ifac
-            goto 100
-          else if (isuivi.ne.0 .and. isuivi.ne.1) then
-            write (nfecra,8010) ifrlag(ifac) , isuivi
-            call csexit (1)
-            !==========
-          endif
+         if (isuivi.eq.1) then
+           ifanew = -ifac
+           goto 100
+         else if (isuivi.ne.0 .and. isuivi.ne.1) then
+           write (nfecra,8010) ifrlag(ifac) , isuivi
+           call csexit (1)
+           !==========
+         endif
 
-        endif
+       endif
 
 !  fin de IF (IFAC.GT.0 .AND. IFAC.NE.IFAOLD) THEN
-      endif
+     endif
 
 ! fin de DO WHILE
-    enddo
+   enddo
 
 !--> Fin de la boucle sur les faces entourant la cellule courante
 
  200      continue
 
 #if DEBUG_LAGCEL
-    if (impltg.eq.1) write(nfecra,9005) ip , itepa(ip,jisor)
-    CLOSE(IMPLA4, STATUS='DELETE')
+   if (impltg.eq.1) write(nfecra,9005) ip , itepa(ip,jisor)
+   CLOSE(IMPLA4, STATUS='DELETE')
 #endif
 
 !-->Fin de la boucle principale sur les particules
 
-  endif
+ endif
 
 enddo
 
@@ -1193,17 +1570,17 @@ call csexit (1)
 '@                                                            ',/)
 
 #if DEBUG_LAGCEL
- 9001 format(3X,'@@ Particule N°',I6,' >> cellule de depart : ',I7)
+ 9001 format(3X,'@@ Particule NÂ°',I6,' >> cellule de depart : ',I7)
 
- 9002 format(3X,'@@ Particule N°',I6,'  > face de bord : ',I7           &
+ 9002 format(3X,'@@ Particule NÂ°',I6,'  > face de bord : ',I7           &
            ,' REPERE = ',I2)
 
  9003 format(3X,'@@ Interaction frontiere -> face de bord : ',I7)
 
- 9004 format(3X,'@@ Particule N°',I6,'  > face interne : ',I7           &
+ 9004 format(3X,'@@ Particule NÂ°',I6,'  > face interne : ',I7           &
            ,' REPERE = ',I2)
 
- 9005 format(3X,'@@ Particule N°',I6,' >> cellule d''arrive : ',I7,/)
+ 9005 format(3X,'@@ Particule NÂ°',I6,' >> cellule d''arrive : ',I7,/)
 
 
  9050 format(/3X,'** ECRITURE DU FICHIER debug1.geom ',                 &

@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -35,6 +35,7 @@ subroutine lagune &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , ifrlag , itepa  , indep  , ibord  ,          &
    ia     ,                                                       &
+   dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
@@ -85,6 +86,8 @@ subroutine lagune &
 ! ibord            ! te ! --> ! contient le numero de la                       !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
+! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
+! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
@@ -153,12 +156,15 @@ use optcal
 use entsor
 use cstphy
 use cstnum
-use pointe
 use parall
 use period
+use pointe
 use lagpar
 use lagran
 use mesh
+use ppppar
+use ppthch
+use ppincl
 
 !===============================================================================
 
@@ -193,6 +199,7 @@ double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
 double precision tsvar(nbpmax,nvp1)
 double precision tempct(nbpmax,2) , tsfext(nbpmax)
 double precision cpgd1(nbpmax) , cpgd2(nbpmax) , cpght(nbpmax)
+double precision dlgeo(nfabor,ngeol)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision croule(ncelet)
@@ -209,9 +216,16 @@ integer          ip     , npt    , iok
 integer          nfin   , npars  , iel    , ivf
 integer          npar1  , npar2
 integer          iforce , iitslg
-integer          modntl
+integer          modntl , iromf
 
 double precision dnpars
+
+integer          ifac , nn , ifab , ifap , kfap
+integer          n10,n20,n30,n50,n100,nmax
+integer          ius
+
+double precision distp , d1 , px,py,pz, lvisq, visccf, romf
+double precision tvisq, ustar, ustarmoy
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -243,6 +257,7 @@ npkill = 0
 npencr = 0
 nbpout = 0
 nbperr = 0
+nbpdep = 0
 
 dnbpnw = 0.d0
 dnpcsu = 0.d0
@@ -251,6 +266,7 @@ dnpkil = 0.d0
 dnpenc = 0.d0
 dnbpou = 0.d0
 dnbper = 0.d0
+dnbdep = 0.d0
 
 !-->Sur Champ fige Lagrangien : RTPA = RTP
 !   Rem : cette boucle pourrait etre faite au 1er passage
@@ -277,6 +293,140 @@ if (iplar.eq.1) then
    icocel , itycel ,                                              &
    ia     ,                                                       &
    ra     )
+
+!
+! --> if the deposition model is activated
+!
+
+  if (idepst.ge.1) then
+
+     ustarmoy = 0.d0
+     ius = 0
+
+    ! boundary faces data
+
+     call laggeo                                                  &
+     !==========
+ ( idebia , idebra ,                                              &
+   lndnod ,                                                       &
+   ia     , dlgeo  , ra     )
+
+    ! the mesh elements yplus checking
+
+     n10  = 0
+     n20  = 0
+     n30  = 0
+     n50  = 0
+     n100 = 0
+     nmax = 0
+
+     do ifac=1, nfabor
+
+       if ((ia(iitypf+ifac-1) .eq. iparoi) .or.       &
+           (ia(iitypf+ifac-1) .eq. iparug)) then
+
+         distp = 0.d0
+         iel = ifabor(ifac)
+
+      ! the density pointer according to the flow location
+
+         if ( ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0 ) then
+           iromf = ipproc(irom1)
+         else
+           iromf = ipproc(irom)
+         endif
+
+         romf = propce(iel,iromf)
+         visccf = propce(iel,ipproc(iviscl)) / romf
+
+         do kfap = itycel(iel), itycel(iel+1)-1
+
+           ifap = icocel(kfap)
+
+           if (ifap.gt.0) then
+
+             do nn = ipnfac(ifap), ipnfac(ifap+1)-1
+
+               px = xyznod(1,nodfac(nn))
+               py = xyznod(2,nodfac(nn))
+               pz = xyznod(3,nodfac(nn))
+               d1 = abs( px*dlgeo(ifac,1)+py*dlgeo(ifac,2)            &
+                    +pz*dlgeo(ifac,3)+   dlgeo(ifac,4) )              &
+                    /sqrt( dlgeo(ifac,1)*dlgeo(ifac,1)                &
+                    +dlgeo(ifac,2)*dlgeo(ifac,2)                      &
+                    +dlgeo(ifac,3)*dlgeo(ifac,3) )
+
+               if ( d1 .gt. distp ) then
+                 distp = d1
+               endif
+
+             enddo
+
+           else
+
+             ifab = -ifap
+
+             do nn = ipnfbr(ifab), ipnfbr(ifab+1)-1
+
+               px = xyznod(1,nodfbr(nn))
+               py = xyznod(2,nodfbr(nn))
+               pz = xyznod(3,nodfbr(nn))
+
+               d1 = abs( px*dlgeo(ifac,1)+py*dlgeo(ifac,2)           &
+                        +pz*dlgeo(ifac,3)+ dlgeo(ifac,4))            &
+                  /sqrt( dlgeo(ifac,1)*dlgeo(ifac,1)                 &
+                       + dlgeo(ifac,2)*dlgeo(ifac,2)                 &
+                       + dlgeo(ifac,3)*dlgeo(ifac,3))
+
+               if ( d1.gt.distp) then
+                 distp = d1
+               endif
+
+             enddo
+
+           endif
+
+         enddo
+
+         ustar = ra(iuetbo+ifac-1)
+
+         if (ustar.gt.0.d0) then
+
+           ustarmoy = ustarmoy + ustar
+           ius = ius + 1
+
+           lvisq = visccf / ustar
+
+
+           distp = distp/lvisq
+
+           if ( distp .le. 10.d0 ) then
+             n10 = n10+1
+           else if ( distp .le. 20.d0 ) then
+             n20 = n20+1
+           else if ( distp .le. 30.d0 ) then
+             n30 = n30+1
+           else if ( distp .le. 50.d0 ) then
+             n50 = n50+1
+           else if ( distp .le. 100.d0 ) then
+             n100 = n100+1
+           else
+             nmax = nmax +1
+           endif
+
+         endif
+
+       endif
+
+     enddo
+
+     ustarmoy = ustarmoy / ius
+
+! the mesh edge yplus and average friction velocity display
+
+     write(nfecra,4100) nfabor,n10,n20,n30,n50,n100,nmax,ustarmoy
+!
+  endif
 
 endif
 
@@ -518,14 +668,17 @@ endif
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     POSITION, VITESSE FLUIDE, VITESSE PARTICULE
 
+
 call lagesp                                                       &
 !==========
    ( idebia , idebra ,                                            &
-     nvar   , nscal  ,                                            &
+     nvar   , nscal  , lndnod ,                                   &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
+     icocel , itycel , ifrlag,                                    &
      itepa  , ibord  ,                                            &
      ia     ,                                                     &
+     dlgeo  ,                                                     &
      dt     , rtpa   , rtp    , propce , propfa , propfb ,        &
      ettp   , ettpa  , tepa   ,                                   &
      statis , stativ , taup   , tlag   , piil   ,                 &
@@ -614,6 +767,7 @@ if (nor.eq.1) then
    ia(iitypf)      , ia(iitrif)      ,                            &
    icocel , itycel , ifrlag , itepa  , ibord  , indep  ,          &
    ia     ,                                                       &
+   dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , auxl   ,                   &
@@ -866,6 +1020,23 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+
+ 4100 format(                                                     &
+'                                                               '/,&
+'   ** LAGRANGIAN MODULE:  '                                     /,&
+'   ** Check of the mesh for the deposition submodel  '         ,/,&
+'      ---------------------------------------------  '         ,/,&
+'                                                               '/,&
+' Number of boundary faces                        ',I10         ,/,&
+' Number of boundary faces with 0  < y^+ < 10     ',I10         ,/,&
+' Number of boundary faces with 10 < y^+ < 20     ',I10         ,/,&
+' Number of boundary faces with 20 < y^+ < 30     ',I10         ,/,&
+' Number of boundary faces with 30 < y^+ < 50     ',I10         ,/,&
+' Number of boundary faces with 50 < y^+ < 100    ',I10         ,/,&
+' Number of boundary faces with y^+ > 100         ',I10         ,/,&
+'                                                               '/,&
+'   ** Mean friction velocity  (ustar) =  ',F7.3                ,/,&
+'---------------------------------------------------------------  ',/)
 
 !----
 ! FIN

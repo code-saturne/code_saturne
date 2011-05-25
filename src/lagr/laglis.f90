@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -190,6 +190,7 @@ if (iphyla.eq.2 .and. iencra.eq.1) then
   write(nfecra,1038) npencr, dnpenc
 endif
 write(nfecra,1033) nbpout-nbperr, (dnbpou-dnbper)
+write(nfecra,1039) nbpdep, dnbdep
 write(nfecra,1035) nbperr, dnbper
 write(nfecra,1036) nbpart, dnbpar
 write(nfecra,1001)
@@ -415,12 +416,13 @@ endif
        '   (sans et avec leur poids statistique) :')
  1031 format('ln  nouvelles injectees                ',I8,3X,E14.5)
  1032 format('ln  nouvelles par clonage              ',I8,3X,E14.5)
- 1033 format('ln  sorties ou deposees definitivement ',I8,3X,E14.5)
+ 1033 format('ln  sorties, ou deposees et supprimees ',I8,3X,E14.5)
  1034 format('ln  eliminees par roulette russe       ',I8,3X,E14.5)
  1035 format('ln  perdues par erreur de reperage     ',I8,3X,E14.5)
  1036 format('ln  total restantes en fin de passage  ',I8,3X,E14.5)
  1037 format('ln  qui ont subit le clonage           ',I8,3X,E14.5)
  1038 format('ln  de charbon encrassees              ',I8,3X,E14.5)
+ 1039 format('ln  deposees                           ',I8,3X,E14.5)
 
  1050 format('% de particules perdues (suites comprises) : ',E10.4)
 

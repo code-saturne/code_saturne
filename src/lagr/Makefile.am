@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009-2010 EDF S.A., France
+#   Copyright (C) 2009-2011 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -57,16 +57,23 @@ enswaf.f90 \
 lagaff.f90 \
 lagcar.f90 \
 lagcel.f90 \
+lagcli.f90 \
 lagcou.f90 \
+lagdcl.f90 \
 lagdeb.f90 \
+lagdep.f90 \
+lagdif.f90 \
+lageje.f90 \
 lageli.f90 \
 lagent.f90 \
 lageqp.f90 \
 lagerr.f90 \
 lages1.f90 \
 lages2.f90 \
+lagesd.f90 \
 lagesp.f90 \
 lagfch.f90 \
+laggeo.f90 \
 laggra.f90 \
 laghis.f90 \
 lagich.f90 \
@@ -86,9 +93,11 @@ lagopt.f90 \
 lagout.f90 \
 lagphy.f90 \
 lagpoi.f90 \
+lagprj.f90 \
 lagrus.f90 \
 lagsta.f90 \
 lagstf.f90 \
+lagswe.f90 \
 lagtri.f90 \
 lagune.f90 \
 memla1.f90 \

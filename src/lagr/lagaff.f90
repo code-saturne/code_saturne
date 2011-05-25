@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -210,6 +210,7 @@ if (irangp.le.0) then
          nbpart        , dnbpar        ,                          &
          nbpnew        , dnbpnw        ,                          &
          nbpout-nbperr , dnbpou-dnbper ,                          &
+         nbpdep        , dnbdep        ,                          &
          nbperr        , dnbper        ,                          &
          dnbpr         ,                                          &
          npcsup        , dnpcsu        ,                          &
@@ -224,6 +225,7 @@ if (irangp.le.0) then
          nbpart        , dnbpar        ,                          &
          nbpnew        , dnbpnw        ,                          &
          nbpout-nbperr , dnbpou-dnbper ,                          &
+         nbpdep        , dnbdep        ,                          &
          nbperr        , dnbper        ,                          &
          dnbpr         ,                                          &
          npcsup        , dnpcsu        ,                          &
@@ -237,6 +239,7 @@ if (irangp.le.0) then
          nbpart        , dnbpar        ,                          &
          nbpnew        , dnbpnw        ,                          &
          nbpout-nbperr , dnbpou-dnbper ,                          &
+         nbpdep        , dnbdep        ,                          &
          nbperr        , dnbper        ,                          &
          dnbpr         ,                                          &
          npencr        , dnpenc
@@ -247,6 +250,7 @@ if (irangp.le.0) then
          nbpart        , dnbpar        ,                          &
          nbpnew        , dnbpnw        ,                          &
          nbpout-nbperr , dnbpou-dnbper ,                          &
+         nbpdep        , dnbdep        ,                          &
          nbperr        , dnbper        ,                          &
          dnbpr
 
@@ -262,115 +266,127 @@ endif
 !--------
 
  1000 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     ',/, &
-       '#                                         ',/,      &
-       '# colonne  1 : numero de pas de temps      ',/,     &
-       '# colonne  2 : temps physique              ',/,     &
-       '# colonne  3 : nbre inst. de part.    ',/,          &
-       '# colonne  4 : nbre inst. de part. (avec poids)',/, &
-       '# colonne  5 : nbre inst. de part. injectees',/,    &
-       '# colonne  6 : nbre inst. de part. injectees',            &
-       ' (avec poids)',/,                                   &
-       '# colonne  7 : nbre inst. de part. sorties ou deposees',/,&
-       '# colonne  8 : nbre inst. de part. sorties ou deposees',  &
-       ' (avec poids)',/,                                   &
-       '# colonne  9 : nbre inst. de part. perdues (reperage) ',/,&
-       '# colonne 10 : nbre inst. de part. perdues',              &
-        ' (reperage, avec poids)',/,                        &
-       '# colonne 11 : % de part. perdues',/,               &
-       '# colonne 12 : nbre inst. de part. qui ont subi le',      &
-       ' clonage',/,                                        &
-       '# colonne 13 : nbre inst. de part. qui ont subi le',      &
-       ' clonage (avec poids)',/,                           &
-       '# colonne 14 : nbre inst. de nouvel. part. par clonage',/,&
-       '# colonne 15 : nbre inst. de nouvel. part. par clonage',  &
-       ' (avec poids)',/,                                   &
-       '# colonne 16 : nbre inst. de nouvel. part. eliminees par',&
-       ' roulette russe ',/,                                &
-       '# colonne 17 : nbre inst. de nouvel. part. eliminees par',&
-       ' roulette russe (avec poids)',/,                    &
-       '# colonne 18 : nbre inst. de part encrassees',            &
-       ' (Charbon)) '/,                                     &
-       '# colonne 19 : nbre inst. de part encrassees',            &
-       ' (Charbon, avec poids))',/,                         &
+       '#    -------------------------------------     '      ,/, &
+       '#                                              '      ,/, &
+       '# colonne  1 : numero de pas de temps          '      ,/, &
+       '# colonne  2 : temps physique                  '      ,/, &
+       '# colonne  3 : nbre inst. de part.             '      ,/, &
+       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
+       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
+       '# colonne  6 : nbre inst. de part. injectees   '      ,   &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
+       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  9 : nbre inst. de part. deposees '         ,/, &
+       '# colonne 10 : nbre inst. de part. deposees '         ,   &
+       ' (avec poids)'                                        ,/, &
+       '# colonne 11 : nbre inst. de part. perdues (reperage)',/, &
+       '# colonne 12 : nbre inst. de part. perdues'           ,   &
+       ' (reperage, avec poids)'                              ,/, &
+       '# colonne 13 : % de part. perdues'                    ,/, &
+       '# colonne 14 : nbre inst. de part. qui ont subi le'   ,   &
+       ' clonage'                                             ,/, &
+       '# colonne 15 : nbre inst. de part. qui ont subi le'   ,   &
+       ' clonage (avec poids)'                                ,/, &
+       '# colonne 16 : nbre inst. de nouvel. part. par clonage',/,&
+       '# colonne 17 : nbre inst. de nouvel. part. par clonage',  &
+       ' (avec poids)'                                        ,/, &
+       '# colonne 18 : nbre inst. de nouvel. part. eliminees par',&
+       ' roulette russe '                                     ,/, &
+       '# colonne 19 : nbre inst. de nouvel. part. eliminees par',&
+       ' roulette russe (avec poids)'                         ,/, &
+       '# colonne 20 : nbre inst. de part encrassees'         ,   &
+       ' (Charbon) '                                          ,/, &
+       '# colonne 21 : nbre inst. de part encrassees'         ,   &
+       ' (Charbon, avec poids)'                               ,/, &
        '# ')
 
  1001 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     ',/, &
-       '#                                         ',/,      &
-       '# colonne  1 : numero de pas de temps      ',/,     &
-       '# colonne  2 : temps physique              ',/,     &
-       '# colonne  3 : nbre inst. de part.    ',/,          &
-       '# colonne  4 : nbre inst. de part. (avec poids)',/, &
-       '# colonne  5 : nbre inst. de part. injectees',/,    &
-       '# colonne  6 : nbre inst. de part. injectees',            &
-       ' (avec poids)',/,                                   &
-       '# colonne  7 : nbre inst. de part. sorties ou deposees',/,&
-       '# colonne  8 : nbre inst. de part. sorties ou deposees',  &
-       ' (avec poids)',/,                                   &
-       '# colonne  9 : nbre inst. de part. perdues (reperage) ',/,&
-       '# colonne 10 : nbre inst. de part. perdues',              &
-        ' (reperage, avec poids)',/,                        &
-       '# colonne 11 : % de part. perdues',/,               &
-       '# colonne 12 : nbre inst. de part. qui ont subi le',      &
-       ' clonage',/,                                        &
-       '# colonne 13 : nbre inst. de part. qui ont subi le',      &
-       ' clonage (avec poids)',/,                           &
-       '# colonne 14 : nbre inst. de nouvel. part. par clonage',/,&
-       '# colonne 15 : nbre inst. de nouvel. part. par clonage',  &
-       ' (avec poids)',/,                                   &
-       '# colonne 16 : nbre inst. de nouvel. part. eliminees par',&
-       ' roulette russe ',/,                                &
-       '# colonne 17 : nbre inst. de nouvel. part. eliminees par',&
-       ' roulette russe (avec poids)',/,                    &
+       '#    -------------------------------------     '      ,/, &
+       '#                                              '      ,/, &
+       '# colonne  1 : numero de pas de temps          '      ,/, &
+       '# colonne  2 : temps physique                  '      ,/, &
+       '# colonne  3 : nbre inst. de part.             '      ,/, &
+       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
+       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
+       '# colonne  6 : nbre inst. de part. injectees   '        , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
+       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  9 : nbre inst. de part. deposees    '      ,/, &
+       '# colonne 10 : nbre inst. de part. deposees    '        , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne 11 : nbre inst. de part. perdues (reperage) ',/,&
+       '# colonne 12 : nbre inst. de part. perdues'             , &
+       ' (reperage, avec poids)'                              ,/, &
+       '# colonne 13 : % de part. perdues'                    ,/, &
+       '# colonne 14 : nbre inst. de part. qui ont subi le'     , &
+       ' clonage'                                             ,/, &
+       '# colonne 15 : nbre inst. de part. qui ont subi le'     , &
+       ' clonage (avec poids)'                                ,/, &
+       '# colonne 16 : nbre inst. de nouvel. part. par clonage',/,&
+       '# colonne 17 : nbre inst. de nouvel. part. par clonage'  ,&
+       ' (avec poids)'                                        ,/, &
+       '# colonne 18 : nbre inst. de nouvel. part. eliminees par',&
+       ' roulette russe '                                     ,/, &
+       '# colonne 19 : nbre inst. de nouvel. part. eliminees par',&
+       ' roulette russe (avec poids) '                        ,/, &
        '# ')
 
  1002 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     ',/, &
-       '#                                         ',/,      &
-       '# colonne  1 : numero de pas de temps      ',/,     &
-       '# colonne  2 : temps physique              ',/,     &
-       '# colonne  3 : nbre inst. de part.    ',/,          &
-       '# colonne  4 : nbre inst. de part. (avec poids)',/, &
-       '# colonne  5 : nbre inst. de part. injectees',/,    &
-       '# colonne  6 : nbre inst. de part. injectees',            &
-       ' (avec poids)',/,                                   &
-       '# colonne  7 : nbre inst. de part. sorties ou deposees',/,&
-       '# colonne  8 : nbre inst. de part. sorties ou deposees',  &
-       ' (avec poids)',/,                                   &
-       '# colonne  9 : nbre inst. de part. perdues (reperage)',/, &
-       '# colonne 10 : nbre inst. de part. perdues',              &
-        ' (reperage, avec poids)',/,                        &
-       '# colonne 11 : % de part. perdues ',/,              &
-       '# colonne 12 : nbre inst. de part. encrassees',           &
-       ' (Charbon)) '/,                                     &
-       '# colonne 13 : nbre inst. de part. encrassees',           &
-       ' (Charbon, avec poids))',/,                         &
+       '#    -------------------------------------     '      ,/, &
+       '#                                              '      ,/, &
+       '# colonne  1 : numero de pas de temps          '      ,/, &
+       '# colonne  2 : temps physique                  '      ,/, &
+       '# colonne  3 : nbre inst. de part.             '      ,/, &
+       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
+       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
+       '# colonne  6 : nbre inst. de part. injectees   '        , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
+       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  9 : nbre inst. de part. deposees'          ,/, &
+       '# colonne 10 : nbre inst. de part. deposees'            , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne 11 : nbre inst. de part. perdues (reperage)',/, &
+       '# colonne 12 : nbre inst. de part. perdues'             , &
+       ' (reperage, avec poids)'                              ,/, &
+       '# colonne 13 : % de part. perdues'                    ,/, &
+       '# colonne 14 : nbre inst. de part. encrassees'          , &
+       ' (Charbon) '                                          ,/, &
+       '# colonne 15 : nbre inst. de part. encrassees'          , &
+       ' (Charbon, avec poids)'                               ,/, &
        '# ')
 
  1003 format('# ** INFORMATIONS SUR LE CALCUL LAGRANGIEN     ',/, &
-       '#    -------------------------------------     ',/, &
-       '#                                         ',/,      &
-       '# colonne  1 : numero de pas de temps      ',/,     &
-       '# colonne  2 : temps physique              ',/,     &
-       '# colonne  3 : nbre inst. de part.    ',/,          &
-       '# colonne  4 : nbre inst. de part. (avec poids)',/, &
-       '# colonne  5 : nbre inst. de part. injectees',/,    &
-       '# colonne  6 : nbre inst. de part. injectees',            &
-       ' (avec poids)',/,                                   &
-       '# colonne  7 : nbre inst. de part. sorties ou deposees',/,&
-       '# colonne  8 : nbre inst. de part. sorties ou deposees',  &
-       ' (avec poids)',/,                                   &
-       '# colonne  9 : nbre inst. de part. perdues (reperage)',/, &
-       '# colonne 10 : nbre inst. de part. perdues',              &
-        ' (reperage, avec poids)',/,                        &
-       '# colonne 11 : % de part. perdues ',/,              &
+       '#    -------------------------------------     '      ,/, &
+       '#                                              '      ,/, &
+       '# colonne  1 : numero de pas de temps          '      ,/, &
+       '# colonne  2 : temps physique                  '      ,/, &
+       '# colonne  3 : nbre inst. de part.             '      ,/, &
+       '# colonne  4 : nbre inst. de part. (avec poids)'      ,/, &
+       '# colonne  5 : nbre inst. de part. injectees   '      ,/, &
+       '# colonne  6 : nbre inst. de part. injectees   '        , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  7 : nbre inst. de part. sorties, ou deposees et supprimees',/,&
+       '# colonne  8 : nbre inst. de part. sorties, ou deposees et supprimees',  &
+       ' (avec poids)'                                        ,/, &
+       '# colonne  9 : nbre inst. de part. deposees'          ,/, &
+       '# colonne 10 : nbre inst. de part. deposees'            , &
+       ' (avec poids)'                                        ,/, &
+       '# colonne 11 : nbre inst. de part. perdues (reperage) ',/,&
+       '# colonne 12 : nbre inst. de part. perdues'             , &
+        ' (reperage, avec poids)'                             ,/, &
+       '# colonne 13 : % de part. perdues'                    ,/, &
        '# ')
 
- 2000 format(1x,i8,2x,e10.4,2x,4(i8,2x,e10.4),2x,e10.4,4(i8,2x,e10.4))
- 2001 format(1x,i8,2x,e10.4,2x,4(i8,2x,e10.4),2x,e10.4,3(i8,2x,e10.4))
- 2002 format(1x,i8,2x,e10.4,2x,4(i8,2x,e10.4),2x,e10.4,1(i8,2x,e10.4))
- 2003 format(1x,i8,2x,e10.4,2x,4(i8,2x,e10.4),2x,e10.4)
+ 2000 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,4(i8,2x,e10.4))
+ 2001 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,3(i8,2x,e10.4))
+ 2002 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4,1(i8,2x,e10.4))
+ 2003 format(1x,i8,2x,e10.4,2x,5(i8,2x,e10.4),2x,e10.4)
 
 !====
 ! FIN

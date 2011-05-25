@@ -123,6 +123,7 @@ integer          ilagia , ilagra , iiwork
 integer          iw1    , iw2    , iw3
 integer          inod   , idim
 integer          itrale , indact , indwri
+integer          ilageo
 
 double precision titer1, titer2
 double precision tecrf1, tecrf2
@@ -250,7 +251,7 @@ call memla1                                                       &
     lndnod ,                                                      &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
-    iiitep , iicoce , iityce ,                                    &
+    iiitep , iicoce , iityce , ilageo ,                           &
     iettp  , iettpa , iitepa , istatc , istatv, itslag , istatf , &
     ifinia , ifinra )
 
@@ -811,7 +812,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
    ntersl , nvlsta , nvisbr ,                                     &
    ia(iicoce) , ia(iityce) , ia(iifrla) , ia(iiitep) ,            &
    ia(iindep) , ia(iibord) ,                                      &
-   ia     ,                                                       &
+   ia     ,     ra(ilageo) ,                                      &
    ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(icoefa) , ra(icoefb) ,                                      &

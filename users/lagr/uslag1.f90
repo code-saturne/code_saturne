@@ -6,7 +6,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -673,18 +673,27 @@ dparmn = 1.d-10
 
 lamvbr = 0
 
+!===============================================================================
+! 12. Activation of deposition model (Guingo & Minier, 2008)
+!===============================================================================
+
+!--> Activation of the deposition model
+
+!    (default off: 0 ; on: 1)
+
+idepst = 0
 
 !===============================================================================
-! 12. Post-processing
+! 13. Post-processing
 !===============================================================================
 
-! 12.1 Post-processing of the trajectories and particle displacements
+! 13.1 Post-processing of the trajectories and particle displacements
 
 
-!     CAUTION: COMPUTIONALLY EXPENSIVE
+!     CAUTION: COMPUTATIONALLY EXPENSIVE
 !     ^^^^^^^^^^
 
-!   12.1.1 Generic parameters
+!   13.1.1 Generic parameters
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !     Trajectory mode
@@ -738,7 +747,7 @@ enddo
 !
 !
 
-!   12.1.2 Variables to visualize on the trajectories or the particles
+!   13.1.2 Variables to visualize on the trajectories or the particles
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !     Variable: velocity of the flow seen
@@ -796,10 +805,10 @@ if (iphyla.eq.2) then
 endif
 
 
-! 12.2 Boundary statistics: visualization of the particle/boundaries interactions
+! 13.2 Boundary statistics: visualization of the particle/boundaries interactions
 ! ------------------------------------------------
 
-!   12.2.1 Generic parameters
+!   13.2.1 Generic parameters
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !     Particle/boundary interaction mode
@@ -831,7 +840,7 @@ nstbor = 1
 seuilf = 0.d0
 
 
-!   12.2.2 Information to be recorded
+!   13.2.2 Information to be recorded
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
 !   * Some information that may interest the user are already written
@@ -878,7 +887,7 @@ ivitbd = 0
 nusbor = 0
 
 
-!   12.2.3 Name of the recordings for display,
+!   13.2.3 Name of the recordings for display,
 !          Average in time of particle average
 !          of the boundary statistics
 !   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -960,7 +969,7 @@ if (iensi3.eq.1) then
 endif
 
 !===============================================================================
-! 13. Lagrangian listing
+! 14. Lagrangian listing
 !===============================================================================
 ! Lagrangian period for the writing of the Lagrangian listing
 

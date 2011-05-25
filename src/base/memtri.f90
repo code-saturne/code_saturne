@@ -226,10 +226,12 @@ if(ineedf.eq.1) then
 endif
 
 ! Stokage de la vitesse de frottement aux faces de bord
-! si on fait de la LES+VanDriest
+! si on fait de la LES+VanDriest ou si le modele de depot
+! en lagrangien est active
 
 iiuetb = 0
-if (itytur.eq.4.and.idries.eq.1) then
+if (    (itytur.eq.4.and.idries.eq.1) &
+    .or.(iilagr.gt.0.and.idepst.gt.0)) then
   iiuetb = 1
 endif
 

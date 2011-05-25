@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -48,7 +48,7 @@ subroutine laglec &
 !    volumiques et aux frontieres, ainsi que les termes sources
 !    de couplage retour.
 
-!    Tous les tableaux sont initialise a zero avant d'être remplis
+!    Tous les tableaux sont initialise a zero avant d'Ãªtre remplis
 !    dans le cas d'une suite (sinon ils restent a zero).
 !    On realise donc ici l'initialisation des tableaux ouverts
 !    dans MEMLA1, ce qui termine l'etape d'initialisation debutee
@@ -467,6 +467,16 @@ endif
 if (iphyla.eq.2) then
   NOMITE(JINCH) = 'numero_charbon'
 endif
+! deposition submodel
+if (idepst.eq.1) then
+  NOMITE(jimark) = 'indicateur_de_saut'
+  NOMITE(JDIEL) = 'diel_particules'
+  NOMITE(JDFAC) = 'dfac_particules'
+  NOMITE(JDIFEL) = 'difel_particules'
+  NOMITE(JTRAJ) = 'traj_particules'
+  NOMITE(JPTDET) = 'ptdet_particules'
+  NOMITE(jinjst) = 'indic_stat'
+endif
 
 nbval  = nbpart
 irtyp  = 1
@@ -489,6 +499,12 @@ if (iphyla.eq.2) then
   NOMRTE(JRDCK) = 'diametre_coeur_retrecissant_charbon'
   NOMRTE(JRD0P) = 'diametre_initial_charbon'
   NOMRTE(JRR0P) = 'masse_volumique_initial_charbon'
+endif
+
+! Deposition submodel
+if (idepst.eq.1) then
+   NOMRTE(jryplu) = 'yplus_particules'
+   NOMRTE(jrinpf) = 'dx_particules'
 endif
 
 nbval  = nbpart

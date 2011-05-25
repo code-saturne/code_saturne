@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -391,18 +391,30 @@ if (iphyla.eq.2) then
   NOMITE(JINCH) = 'numero_charbon'
 endif
 
+! Deposition submodel
+if (idepst.eq.1) then
+   NOMITE(jimark) = 'indicateur_de_saut'
+   NOMITE(JDIEL) = 'diel_particules'
+   NOMITE(JDFAC) = 'dfac_particules'
+   NOMITE(JDIFEL) = 'difel_particules'
+   NOMITE(JTRAJ) = 'traj_particules'
+   NOMITE(JPTDET) = 'ptdet_particules'
+   NOMITE(jinjst) = 'indic_stat'
+endif
+
 itysup = 0
 nbval  = nbpart
 irtyp  = 1
 
-rubriq = nomite(jisor)
-call ecrsui(impavl,rubriq,len(rubriq),itysup,nbval,irtyp,         &
-            itepa(1,jisor),ierror)
+do ii = 1, nivep
+  rubriq = nomite(ii)
+  call ecrsui(impavl      , rubriq,len(rubriq),itysup,nbval,irtyp,&
+              itepa(1,ii) , ierror )
 if(ierror.ne.0) then
-!         advienne que pourra sur le format
   write(nfecra,9100) rubriq
   goto 9998
 endif
+enddo
 
 ! groupe statistique particules
 
@@ -447,6 +459,13 @@ if (iphyla.eq.2) then
   NOMRTE(JRD0P) = 'diametre_initial_charbon'
   NOMRTE(JRR0P) = 'masse_volumique_initial_charbon'
 endif
+
+! Deposition submodel
+if (idepst.eq.1) then
+   NOMRTE(jryplu) = 'yplus_particules'
+   NOMRTE(jrinpf) = 'dx_particules'
+endif
+
 
 itysup = 0
 nbval  = nbpart
