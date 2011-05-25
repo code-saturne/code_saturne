@@ -820,6 +820,14 @@ class case:
 
         s.write('#!' + user_shell + '\n\n')
 
+        # Set environment modules if necessary
+
+        if cs_config.env_modules.modules != "no":
+            s.write('module purge\n')
+            for m in cs_config.env_modules.modules.strip().split():
+                s.write('module load ' + m + '\n')
+            s.write('\n')
+            
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')

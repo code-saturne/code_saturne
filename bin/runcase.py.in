@@ -166,7 +166,6 @@ EXEC_SOLVER = True
 SOLCOM = False
 
 # Adaptation (not operational yet)
-
 HOMARD_PREFIX = None
 
 # CS_TMP_PREFIX variable allows the user to specify in which temporary
@@ -224,6 +223,10 @@ def def_exec_prefix():
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+
+    # Set environment modules if present
+
+    set_modules()
 
     # Values in case and associated domain set from global variables
 

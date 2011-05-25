@@ -29,7 +29,7 @@ from optparse import OptionParser
 from cs_config import dirs
 from cs_config_build import build, build_syrthes
 
-from cs_exec_environment import run_command
+from cs_exec_environment import run_command, set_modules
 
 #-------------------------------------------------------------------------------
 
@@ -284,6 +284,8 @@ def main(argv):
     """
     Main function.
     """
+
+    set_modules() # Set environment modules if present
 
     test_mode, force_link, src_dir, dest_dir, opt_libs, link_syrthes = process_cmd_line(argv)
 

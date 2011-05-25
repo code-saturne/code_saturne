@@ -1,4 +1,20 @@
 * 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added detection and handling of environment modules. The configuration
+  detected at configure/build time are saved and applied when compiling
+  user subroutines or when running a calculation script.
+  added files:
+   config/cs_modules.m4
+  modified files:
+    Makefile.am
+    configure.ac
+    bin/cs_case.py
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/cs_exec_environment.py
+    bin/runcase.in
+    bin/runcase.py.in
+
+* 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve SLURM support.
   modified files:
     bin/cs_exec_environment.py

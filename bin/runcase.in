@@ -152,6 +152,10 @@ ecs_bindir=@ecs_bindir@
 #
 homard_prefix=
 #
+# Environment modules
+#
+env_modules="@cs_env_modules@"
+#
 ########################################################################
 #  Mesh Adaptation
 #
@@ -252,6 +256,15 @@ if [ "$ARG_CS_OUTPUT" = "--log 0" ] ; then
   echo $RUN > $SCRIPTS/runningstd.$DATE
 else
   echo $RUN > $SCRIPTS/runningext.$DATE
+fi
+#
+# Load environment modules if necessary
+#
+if [ "$env_modules" != "no" ] ; then
+  module purge
+  for m in "$env_modules" ; do
+    module load $m
+  done
 fi
 #
 cd $RUN

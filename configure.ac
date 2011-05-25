@@ -80,6 +80,11 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 # Checks for programs.
 #------------------------------------------------------------------------------
 
+# Check for environment modules
+#------------------------------
+
+CS_AC_TEST_ENV_MODULES
+
 # Check for C and Fortran compilers
 #----------------------------------
 
@@ -608,6 +613,7 @@ if test "x$cs_batch_template" != "x"; then
 else
   echo " batch job template: no"
 fi
+echo " environment modules: "$cs_env_modules""
 echo
 echo "The package has been configured. Type:"
 echo " make"

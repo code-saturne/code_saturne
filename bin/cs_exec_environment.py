@@ -37,7 +37,7 @@ except ImportError:
 
 from optparse import OptionParser
 
-from cs_config import mpi_lib
+from cs_config import mpi_lib, env_modules
 
 #===============================================================================
 # Utility functions
@@ -129,6 +129,35 @@ def get_command_output(cmd):
             return ''
         else:
             return p.fromchild.read()
+
+#-------------------------------------------------------------------------------
+
+def set_modules():
+    """
+    Set environment modules if present.
+    """
+    if env_modules.modules == "no" or not os.environ.has_key('MODULESHOME'):
+        return
+
+    cmd_prefix = os.path.join(os.environ['MODULESHOME'], 'bin', 'modulecmd')
+
+    if have_subprocess == True:
+        cmds = ['purge']
+        for m in env_modules.modules.strip().split():
+            cmds.append('load ' + m)
+        for cmd in cmds:
+            (output, error) \
+                = subprocess.Popen([cmd_prefix, 'python'] + cmd.split(),
+                                   stdout=subprocess.PIPE).communicate()
+            exec output
+
+    else:
+        cmds = ['purge']
+        for m in env_modules.modules.strip().split():
+            cmds.append('load ' + m)
+        for cmd in cmds:
+            p = os.popen(cmd_prefix + ' python ' + cmd).read()
+            exec p
 
 #-------------------------------------------------------------------------------
 
