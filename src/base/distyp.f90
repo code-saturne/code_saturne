@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2010 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -32,7 +32,7 @@ subroutine distyp &
    nvar   , nscal  ,                                              &
    itypfb , isympa ,                                              &
    ia     ,                                                       &
-   distpa , propce , uetbor , disty  ,                            &
+   distpa , propce , disty  ,                                     &
    ra     )
 
 !===============================================================================
@@ -68,8 +68,6 @@ subroutine distyp &
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! <-- ! tab des distances a la paroi                   !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! uetbor(nfabor)   ! tr ! <-- ! vitesse de frottement au bord                  !
-!                  !    !     !  pour van driest en les                        !
 ! disty(ncelet)    ! tr ! --> ! distance y+                                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
@@ -110,7 +108,6 @@ integer          itypfb(nfabor),isympa(nfabor)
 integer          ia(*)
 
 double precision distpa(ncelet),propce(ncelet,*)
-double precision uetbor(nfabor)
 double precision disty(ncelet)
 double precision ra(*)
 
@@ -340,7 +337,7 @@ do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi .or.                            &
      itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
-    coefax(ifac) = uetbor(ifac)                             &
+    coefax(ifac) = ra(iuetbo+ifac-1)                             &
                   *propce(iel,ipcrom)/propce(iel,ipcvis)
     coefbx(ifac) = 0.0d0
   else

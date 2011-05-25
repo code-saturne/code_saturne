@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -34,7 +34,7 @@ subroutine condli &
    icodcl , isostd ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  , uetbor , visvdr , hbord  , thbord , frcxt  , &
+   coefa  , coefb  , visvdr , hbord  , thbord , frcxt  ,          &
    ra     )
 
 !===============================================================================
@@ -109,8 +109,6 @@ subroutine condli &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! uetbor(nfabor)   ! tr ! --> ! vitesse de frottement au bord                  !
-!                  !    !     !  pour van driest en les                        !
 ! visvdr(ncelet)   ! tr ! --> ! viscosite dynamique ds les cellules            !
 !                  !    !     !  de bord apres amortisst de v driest           !
 ! hbord            ! tr ! --> ! coefficients d'echange aux bords               !
@@ -169,7 +167,7 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision frcxt(ncelet,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision uetbor(nfabor), visvdr(ncelet)
+double precision visvdr(ncelet)
 double precision hbord(nfabor),thbord(nfabor)
 double precision ra(*)
 
@@ -801,7 +799,7 @@ if (ipatur.ne.0) then
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefu  , rijipb , coefa  , coefb  , uetbor , visvdr ,          &
+   coefu  , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , thbord ,                                              &
    ra     )
 
@@ -818,7 +816,7 @@ if (ipatrg.ne.0) then
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefu  , rijipb , coefa  , coefb  , uetbor , visvdr ,          &
+   coefu  , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , thbord ,                                              &
    ra     )
 

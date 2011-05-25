@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -34,7 +34,7 @@ subroutine clptur &
    icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefu  , rijipb , coefa  , coefb  , uetbor , visvdr ,          &
+   coefu  , rijipb , coefa  , coefb  , visvdr ,                   &
    hbord  , thbord ,                                              &
    ra     )
 
@@ -93,8 +93,6 @@ subroutine clptur &
 ! (nfabor,6   )    !    !     !  des rij au bord                               !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! uetbor(nfabor)   ! tr ! --> ! vitesse de frottement au bord                  !
-!                  !    !     !  pour van driest en les                        !
 ! visvdr(ncelet)   ! tr ! <-- ! viscosite dynamique ds les cellules            !
 !                  !    !     !  de bord apres amortisst de v driest           !
 ! hbord            ! tr ! --> ! coefficients d'echange aux bords               !
@@ -129,6 +127,7 @@ use ppincl
 use radiat
 use cplsat
 use mesh
+use lagran
 
 !===============================================================================
 
@@ -149,7 +148,7 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision coefu(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision uetbor(nfabor), visvdr(ncelet)
+double precision visvdr(ncelet)
 double precision hbord(nfabor),thbord(nfabor)
 double precision ra(*)
 
@@ -652,7 +651,7 @@ do ifac = 1, nfabor
 ! (car une cellule peut avoir plusieurs faces de paroi)
 
     if(itytur.eq.4.and.idries.eq.1) then
-      uetbor(ifac) = uet
+      ra(iuetbo+ifac-1) = uet
       if (visvdr(iel).lt.-900.d0) then
         propce(iel,ipcvst) = propce(iel,ipcvst)                   &
              *(1.d0-exp(-yplus/cdries))**2

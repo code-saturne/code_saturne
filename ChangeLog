@@ -1,3 +1,18 @@
+* 25/05/2011 - Dorothée Sénéchal <dorothee.senechal@edf.fr>
+  Move upward the allocation of an array to store friction velocity
+  so as to allow further developements (namely particle deposition
+  and aerosol transport).
+  modified routines:
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/condli.f90
+    src/base/distyp.f90
+    src/base/memcli.f90
+    src/base/memtri.f90
+    src/base/pointe.f90
+    src/base/tridim.f90
+    src/base/vandri.f90
+
 * 24/05/2011 - David Monfort <david.monfort@edf.fr>
   Lots of memory management cleaning... Add dynamic allocation when
   necessary, remove useless work arrays and move work arrays where

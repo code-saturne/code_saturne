@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -120,7 +120,7 @@ integer          ifinia , ifinra
 integer          idebia , idebra
 integer          iis, ippu, ippv, ippw, ivar, iprop
 integer          iipero , iiirij , imom, idtnm
-integer          idpar1 , idpar2 , iypar1, iiyplb, iiforb, iicoci
+integer          idpar1 , idpar2 , iypar1, iiyplb, iiforb, iicoci, iiuetb
 
 !===============================================================================
 
@@ -225,6 +225,13 @@ if(ineedf.eq.1) then
   iiforb = 1
 endif
 
+! Stokage de la vitesse de frottement aux faces de bord
+! si on fait de la LES+VanDriest
+
+iiuetb = 0
+if (itytur.eq.4.and.idries.eq.1) then
+  iiuetb = 1
+endif
 
 ! --> Reservation de memoire entiere
 
@@ -265,6 +272,7 @@ endif
 
 ! --> Reservation de memoire reelle
 
+
 icoefa = idebra
 icoefb = icoefa + ndimfb *ncofab
 irtp   = icoefb + ndimfb *ncofab
@@ -287,7 +295,8 @@ iwdrdx = idrdxy + (ncelet-ncel) * 6 * 3 * iipero*iiirij
 ifrcx  = iwdrdx + (ncelet-ncel) * 6 * 3 * iipero*iiirij
 iyplbr = ifrcx  + ncelet*ndim*iphydr
 iforbr = iyplbr + nfabor*iiyplb
-ifinra = iforbr + nfabor*ndim*iiforb
+iuetbo = iforbr + nfabor*ndim*iiforb
+ifinra = iuetbo + nfabor*iiuetb
 
 !     On rajoute des tableaux pour le k-omega SST si necessaire
 !     En k-omega, on a besoin de calculer 2 Sij.Sij pour etre utilise

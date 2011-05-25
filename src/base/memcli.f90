@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -32,7 +32,7 @@ subroutine memcli &
    nvar   , nscal  ,                                              &
    isvhb  , isvtb  ,                                              &
    iicodc , ircodc ,                                              &
-   iuetbo , ivsvdr , ihbord , itbord ,                            &
+   ivsvdr , ihbord , itbord ,                                     &
    ifinia , ifinra )
 
 !===============================================================================
@@ -53,7 +53,6 @@ subroutine memcli &
 ! isvhb            ! e  ! <-- ! indicateur de stockage de hbord                !
 ! isvtb            ! e  ! <-- ! indicateur de stockage de tbord                !
 ! iicodc,ircodc    ! e  ! --> ! "pointeur" sur icodlc rcodcl                   !
-! iuetbo           ! e  ! --> ! "pointeur" sur uetbor                          !
 ! ihbord           ! e  ! --> ! "pointeur" sur hbord                           !
 ! itbord           ! e  ! --> ! "pointeur" sur hbord                           !
 ! ivsvdr           ! e  ! --> ! "pointeur" sur visvdr                          !
@@ -87,11 +86,11 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          isvhb  , isvtb
 integer          iicodc , ircodc
-integer          iuetbo , ivsvdr
+integer          ivsvdr
 integer          ihbord , itbord
 integer          ifinia , ifinra
 
-integer          idebia , idebra, iiuetb
+integer          idebia , idebra, iivvdr
 
 !===============================================================================
 
@@ -100,9 +99,9 @@ integer          idebia , idebra, iiuetb
 idebia = idbia0
 idebra = idbra0
 
-iiuetb = 0
+iivvdr = 0
 if(itytur.eq.4.and.idries.eq.1)then
-  iiuetb = 1
+  iivvdr = 1
 endif
 
 !---> PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
@@ -111,9 +110,8 @@ iicodc =       idebia
 ifinia =       iicodc + nfabor*nvar
 
 ircodc =       idebra
-iuetbo =       ircodc + nfabor*nvar*3
-ivsvdr =       iuetbo + nfabor*iiuetb
-ifinra =       ivsvdr + ncelet*iiuetb
+ivsvdr =       ircodc + nfabor*nvar*3
+ifinra =       ivsvdr + ncelet*iivvdr
 
 ihbord =       ifinra
 if(isvhb.gt.0) then

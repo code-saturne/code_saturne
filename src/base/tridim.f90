@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -167,7 +167,7 @@ integer          iirho , iirhob, icoefx
 integer          irtdp , idrtdp, icofay, icofby, iismph
 integer          iisoth, itext , itint , itek
 integer          icorua, icorub, iflxma, iflxmb
-integer          iterns, inslst, icvrge, iuetbo, ivsvdr
+integer          iterns, inslst, icvrge, ivsvdr
 integer          iwflms, iwflmb
 integer          iwcf  , iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
@@ -785,7 +785,7 @@ do while (iterns.le.nterup)
   nvar   , nscal  ,                                              &
   isvhb  , isvtb  ,                                              &
   iicodc , ircodc ,                                              &
-  iuetbo , ivsvdr , ihbord , itbord ,                            &
+  ivsvdr , ihbord , itbord ,                                     &
   ifinia , ifinra )
 
   call precli &
@@ -1058,7 +1058,7 @@ do while (iterns.le.nterup)
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   ra(ircodc)      ,                                              &
-  coefa  , coefb  , ra(iuetbo) , ra(ivsvdr)  ,                   &
+  coefa  , coefb  , ra(ivsvdr)  ,                                &
   ra(ihbord)  , ra(itbord)      ,                                &
   frcxt  ,                                                       &
   ra     )
@@ -1250,7 +1250,7 @@ do while (iterns.le.nterup)
       nvar   , nscal  ,                                              &
       ia(iitypf) , ia(iismph),                                       &
       ia     ,                                                       &
-      ra(idipar), propce    , ra(iuetbo), ra(iyppar),                &
+      ra(idipar), propce    , ra(iyppar),                            &
       ra     )
 
     endif
@@ -1271,7 +1271,7 @@ do while (iterns.le.nterup)
     ( ndim   , ncelet , ncel   , nfac   , nfabor ,                 &
       ia(iitypf) , ifabor, ia(iiifap),                             &
       ia     ,                                                     &
-      xyzcen , cdgfbo , ra(iuetbo) , ra(ivsvdr) , ra(iyppar) ,     &
+      xyzcen , cdgfbo , ra(ivsvdr) , ra(iyppar) ,                  &
       propce ,                                                     &
       ra     )
     endif

@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -31,7 +31,7 @@ subroutine vandri &
  (  ndim   , ncelet , ncel   , nfac   , nfabor ,                  &
     itypfb , ifabor , ifapat ,                                    &
     ia    ,                                                       &
-    xyzcen , cdgfbo , uetbor , visvdr , yplusc , propce ,         &
+    xyzcen , cdgfbo , visvdr , yplusc , propce ,                  &
     ra     )
 
 !===============================================================================
@@ -60,8 +60,6 @@ subroutine vandri &
 !  (ndim, ncelet)  !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
 !  (ndim, nfabor)  !    !     !                                                !
-! uetbor(nfabor)   ! tr ! <-- ! vitesse de frottement au bord                  !
-!                  !    !     !  pour van driest en les                        !
 ! visvdr(ncelet)   ! tr ! <-- ! viscosite dynamique ds les cellules            !
 !                  !    !     !  de bord apres amortisst de v driest           !
 ! yplusc           ! tr ! <-- ! valeur de yplus aux cellules                   !
@@ -87,6 +85,7 @@ use optcal
 use entsor
 use cstphy
 use parall
+use pointe
 
 !===============================================================================
 
@@ -100,7 +99,7 @@ integer          ifapat(ncelet)
 integer          ia(*)
 
 double precision xyzcen(ndim,ncelet),cdgfbo(ndim,nfabor)
-double precision uetbor(nfabor), visvdr(ncelet)
+double precision visvdr(ncelet)
 double precision yplusc(ncelet)
 double precision propce(ncelet,*)
 double precision ra(*)
@@ -127,7 +126,7 @@ if(abs(icdpar).eq.2) then
       yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
            +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2             &
            +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
-      yplus = uetbor(ifac) * yminpa/ viscos
+      yplus = ra(iuetbo+ifac-1) * yminpa/ viscos
       propce(iel,ipcvst) = propce(iel,ipcvst)*                    &
            (1.0d0-exp(-yplus/cdries))**2
     enddo
@@ -144,7 +143,7 @@ if(abs(icdpar).eq.2) then
         yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2           &
              +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2           &
              +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
-        yplus = uetbor(ifac) * yminpa/ viscos
+        yplus = ra(iuetbo+ifac-1) * yminpa/ viscos
         propce(iel,ipcvst) = propce(iel,ipcvst)*                  &
              (1.0d0-exp(-yplus/cdries))**2
       endif

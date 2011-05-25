@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2010 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -80,6 +80,8 @@ module pointe
   ! iitypf ! nfabor                  ! type des faces de bord
   ! iitrif ! nfabor                  ! indirection pour tri faces de bord
   ! iyplbr ! nfabor                  ! yplus bord (si post-traite)
+  ! iuetbo ! nfabor                  ! uetbor  bord (si LES+VanDriest)
+  !        !                         ! ou si le modele de depot est actif
   ! iisymp ! nfabor                  ! zero pour annuler le flux de masse
   !        !                         !   (symetries et parois avec cl couplees)
   !        !                         ! un sinon
@@ -96,7 +98,7 @@ module pointe
   !                                    temps que s2kw)
 
   integer, save :: iitypf        , iitrif        ,                 &
-                   iisymp        , iyplbr        ,                 &
+                   iisymp        , iyplbr        , iuetbo        , &
                    iifapa, ncepdc,                 &
                    iicepd, ickupd, ncetsm, &
                    iicesm, iitpsm, ismace, &
