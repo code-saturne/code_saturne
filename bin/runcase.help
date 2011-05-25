@@ -276,9 +276,3 @@ Option CS_LIB_ADD is more advanced, mainly for developers.
     Reasonable activation value:
       ECHO_SYR_COMM="10"
 
-  ADAPTATION allows use of mesh adaptation with the HOMARD tool.
-    If the variable is absent or empty, no adaptation occurs.
-    To activate adaptation, ADAPTATION will contain the name of a file
-    containing adaptation directives. To obtain the syntax of this
-    file, use ADAPTATION=help and run the script.
-    THIS FUNCTIONALITY IS NOT YET IN PRODUCTION

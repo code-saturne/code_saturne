@@ -165,9 +165,6 @@ EXEC_SOLVER = True
 
 SOLCOM = False
 
-# Adaptation (not operational yet)
-HOMARD_PREFIX = None
-
 # CS_TMP_PREFIX variable allows the user to specify in which temporary
 # directory the calculation will run. If set to None, a default directory
 # will be used (architecture dependent). If a value is specified,

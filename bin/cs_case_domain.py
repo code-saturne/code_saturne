@@ -367,8 +367,7 @@ class domain(base_domain):
                  meteo_data = None,           # meteo. profileFile name
                  user_input_files = None,     # file name or names
                  user_output_files = None,    # file or directory name or names
-                 lib_add = None,              # linker command-line options
-                 adaptation = None):           # HOMARD adaptation script
+                 lib_add = None):             # linker command-line options
 
         base_domain.__init__(self, n_procs, n_procs_min, n_procs_max)
 
@@ -420,9 +419,6 @@ class domain(base_domain):
         self.user_output_files = user_output_files
 
         self.lib_add = lib_add
-
-        # Adaptation using HOMARD
-        self.adaptation = adaptation
 
         # Steps to execute
         self.exec_preprocess = True

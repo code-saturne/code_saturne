@@ -78,9 +78,6 @@ VALGRIND=
 ARG_CS_VERIF=""
 ARG_CS_OUTPUT=""
 #
-# Adaptation using HOMARD
-ADAPTATION=
-#
 summary=summary
 CASEDIR=CASEDIRNAME
 DATA=$CASEDIR/DATA
@@ -620,8 +617,6 @@ echo '   Start time       : ' $CURDATE                         >>$summary
 echo '  ----------------------------------------------------'  >>$summary
 echo '    Kernel          : ' $prefix                          >>$summary
 echo '    Preprocessor    : ' $ecs_bindir                      >>$summary
-echo '    ------------------------------------------------  '  >>$summary
-echo '    HOMARD          : ' $homard_prefix                   >>$summary
 echo '    ------------------------------------------------  '  >>$summary
 echo '    CS_MPI_PATH     : ' $CS_MPI_PATH                     >>$summary
 echo '    PATH            : ' $PATH                            >>$summary

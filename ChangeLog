@@ -1,4 +1,12 @@
 * 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove references to (non-operational) Homard support.
+  modified files:
+    bin/runcase.help
+    bin/runcase.in
+    bin/runcase.py.in
+    bin/cs_case_domain
+
+* 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Added detection and handling of environment modules. The configuration
   detected at configure/build time are saved and applied when compiling
   user subroutines or when running a calculation script.
