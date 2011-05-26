@@ -406,10 +406,10 @@ cs_gui_mesh_define_joinings(void)
     char *verbosity_s =  _get_face_joining("verbosity", join_id+1);
     char *visu_s      =  _get_face_joining("visualization", join_id+1);
 
-    double fraction = atof(fraction_s);
-    double plane = atof(plane_s);
-    int verbosity = atoi(verbosity_s);
-    int visualization = atoi(visu_s);
+    double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
+    double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
+    int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
+    int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
 
     cs_join_add(selector_s,
                 fraction,
@@ -483,10 +483,10 @@ cs_gui_mesh_define_periodicities(void)
     char *verbosity_s =  _get_periodicity("verbosity", perio_id+1);
     char *visu_s      =  _get_periodicity("visualization", perio_id+1);
 
-    double fraction = atof(fraction_s);
-    double plane = atof(plane_s);
-    int verbosity = atoi(verbosity_s);
-    int visualization = atoi(visu_s);
+    double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
+    double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
+    int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
+    int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
 
     if (!strcmp(modes[perio_id], "translation")) {
       _get_periodicity_translation(perio_id+1, trans);

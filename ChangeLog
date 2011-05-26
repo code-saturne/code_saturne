@@ -1,4 +1,9 @@
 * 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow defaults for Joining or Periodicity options not specified in XML file.
+  modified files:
+    src/gui/cs_gui_mesh.c
+
+* 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Added detection and handling of environment modules. The configuration
   detected at configure/build time is saved and applied when compiling
   user subroutines or when running a calculation script.
