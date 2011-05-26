@@ -84,7 +84,7 @@ XML_LIB  =-lxml2
 
 # BLAS support
 BLAS            =1
-BLAS_HOME       =/applications/intel/cmkl/10.0.1.014
+BLAS_HOME       =/applications/intel/cproc/11.1.056/mkl
 BLAS_INC        =-I$(BLAS_HOME)/include
 BLAS_CFLAGS     =-D_CS_HAVE_MKL
 BLAS_LDFLAGS    =-L$(BLAS_HOME)/lib/64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
