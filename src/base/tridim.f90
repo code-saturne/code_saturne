@@ -186,7 +186,7 @@ save             ipass
 integer          infpar
 save             infpar
 
-double precision, allocatable, dimension(:) :: dtr, prdv2f
+double precision, allocatable, dimension(:) :: prdv2f
 
 !===============================================================================
 
@@ -1532,20 +1532,7 @@ if (iccvfg.eq.0) then
 
   if( (itytur.eq.2) .or. (iturb.eq.50) ) then
 
-    ! Allocate a work array for the time-step
-    allocate(dtr(ncelet))
-
     ikiph  = ik
-
-    if(cdtvar(ikiph).ne.1.d0) then
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)*cdtvar(ikiph)
-      enddo
-    else
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)
-      enddo
-    endif
 
     call turbke &
     !==========
@@ -1554,7 +1541,7 @@ if (iccvfg.eq.0) then
     ncepdc , ncetsm ,                                              &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
     ia     ,                                                       &
-    dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr ,                                                       &
     coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
     prdv2f ,                                                       &
@@ -1564,16 +1551,6 @@ if (iccvfg.eq.0) then
 
       iphiph  = iphi
 
-      if(cdtvar(iphiph).ne.1.d0) then
-        do iel = 1, ncel
-          dtr(iel) = dt(iel)*cdtvar(iphiph)
-        enddo
-      else
-        do iel = 1, ncel
-          dtr(iel) = dt(iel)
-        enddo
-      endif
-
       call resv2f &
       !==========
     ( idebia , idebra ,                                              &
@@ -1581,7 +1558,7 @@ if (iccvfg.eq.0) then
       ncepdc , ncetsm ,                                              &
       ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
       ia     ,                                                       &
-      dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
       prdv2f ,                                                       &
       ra     )
@@ -1603,25 +1580,9 @@ if (iccvfg.eq.0) then
       enddo
     endif
 
-    ! Free memory
-    deallocate(dtr)
-
   else if(itytur.eq.3) then
 
-    ! Allocate a work array for the time-step
-    allocate(dtr(ncelet))
-
     ir11ip = ir11
-
-    if(cdtvar(ir11ip).ne.1.d0) then
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)*cdtvar(ir11ip)
-      enddo
-    else
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)
-      enddo
-    endif
 
     call turrij &
     !==========
@@ -1630,30 +1591,14 @@ if (iccvfg.eq.0) then
     ncepdc , ncetsm ,                                              &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
     ia     ,                                                       &
-    dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
     coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
     ra     )
 
-    ! Free memory
-    deallocate(dtr)
-
   else if( iturb.eq.60 ) then
 
-    ! Allocate a work array for the time-step
-    allocate(dtr(ncelet))
-
     ikiph  = ik
-
-    if(cdtvar(ikiph).ne.1.d0) then
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)*cdtvar(ikiph)
-      enddo
-    else
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)
-      enddo
-    endif
 
     call turbkw &
     !==========
@@ -1662,7 +1607,7 @@ if (iccvfg.eq.0) then
     ncepdc , ncetsm ,                                              &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
     ia     ,                                                       &
-    dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
     coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
     ra     )
@@ -1679,25 +1624,9 @@ if (iccvfg.eq.0) then
       enddo
     endif
 
-    ! Free memory
-    deallocate(dtr)
-
   else if( iturb.eq.70 ) then
 
-    ! Allocate a work array for the time-step
-    allocate(dtr(ncelet))
-
     inuiph = inusa
-
-    if(cdtvar(inuiph).ne.1.d0) then
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)*cdtvar(inuiph)
-      enddo
-    else
-      do iel = 1, ncel
-        dtr(iel) = dt(iel)
-      enddo
-    endif
 
     call turbsa &
     !==========
@@ -1706,7 +1635,7 @@ if (iccvfg.eq.0) then
     ncepdc , ncetsm ,                                              &
     ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
     ia     ,                                                       &
-    dtr    , rtp    , rtpa   , propce , propfa , propfb ,          &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
     coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
     ia(iitypf) ,                                                   &
@@ -1720,9 +1649,6 @@ if (iccvfg.eq.0) then
         rtp(iel,inuiph) = relaxn*rtp(iel,inuiph)+(1.d0-relaxn)*rtpa(iel,inuiph)
       enddo
     endif
-
-    ! Free memory
-    deallocate(dtr)
 
   endif
 

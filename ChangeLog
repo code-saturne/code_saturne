@@ -1,3 +1,9 @@
+* 26/05/2009 - Sofiane Benhamadouche <sofiane.benhamadouche@edf.fr>
+  Remove the possible use of a time-step factor for turbulence as it should
+  not be decorrelated from the dynamics.
+  modified routine:
+    src/base/tridim.f90
+
 * 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow defaults for Joining or Periodicity options not specified in XML file.
   modified files:
