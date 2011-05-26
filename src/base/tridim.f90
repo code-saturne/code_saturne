@@ -139,16 +139,9 @@ integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncp   , ncv   , iok
 integer          iicodc, ircodc
 integer          ihbord, itbord
-integer          iviscf, iviscb, ivisfi, ivisbi, iiptot
-integer          icofbd
-integer          idrtp , igrdp , ismbr , irovsd
-integer          itinsk, itinse, idivu , iprv2f, itinsa
-integer          ifrchy, idfrhy, idfrcx
-integer          igrdvt, iprodu, igrarx, igrary, igrarz
-integer          iesflm, iesflb
+integer          iiptot
 integer          itrava, iximpa, iuvwk
 integer          nbccou
-integer          icofbr
 integer          ntrela
 
 integer          isvhb , isvtb
@@ -158,18 +151,12 @@ integer          iuiph , iviph , iwiph , ipriph, iphiph
 integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          inuiph
 integer          ipcrom, ipcroa
-integer          iprnew, idimte, itenso
+integer          idimte, itenso
 integer          ifinib, ifinrb, iiifap
 integer          iflua , iflub
-integer          icoax , icobx , icoay , icoby , icoaz , icobz
-integer          iqfx  , iqfy  , iqfz  , icoefq
-integer          iirho , iirhob, icoefx
-integer          irtdp , idrtdp, icofay, icofby, iismph
-integer          iisoth, itext , itint , itek
-integer          icorua, icorub, iflxma, iflxmb
+integer          iismph
 integer          iterns, inslst, icvrge, ivsvdr
-integer          iwflms, iwflmb
-integer          iwcf  , iflmas, iflmab
+integer          iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
 integer          iflalf, iflalb, iprale, icoale
 integer          iilzfb, nbzfmx, nozfmx, iqcalc
@@ -1020,29 +1007,17 @@ do while (iterns.le.nterup)
 
   if(iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call memra3 &
+    call raycli &
     !==========
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  ,                                              &
-    iisoth , itek   , itext  , itint  ,                            &
-    ifinib , ifinrb )
-
-    call raycli &
-    !==========
-  ( ifinib , ifinrb ,                                              &
-    nvar   , nscal  ,                                              &
     isvhb  , isvtb  ,                                              &
     ia(iicodc) , ia(iitrif)   , ia(iitypf)   ,                     &
-
-    ia(iizfrd) , ia(iisoth)      ,                                 &
-
+    ia(iizfrd) ,                                                   &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     ra(ircodc)      ,                                              &
     coefa  , coefb  , ra(ihbord)      , ra(itbord)      ,          &
-
-    ra(itext)  , ra(itint) ,  ra(itek)   ,                         &
-
     ra     )
 
   endif

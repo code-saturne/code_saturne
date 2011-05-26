@@ -55,10 +55,7 @@ cfprop.f90 \
 cfqdmv.f90 \
 cfrusb.f90 \
 cfvarp.f90 \
-cfxtcl.f90 \
-memcfe.f90 \
-memcft.f90 \
-memcfv.f90
+cfxtcl.f90
 libcscfbl_la_LDFLAGS = -no-undefined
 
 cfblusers = \

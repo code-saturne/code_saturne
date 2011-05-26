@@ -171,10 +171,9 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ntbcpi, icpwi, ntbcpr, icpwr
-integer          ntbmci, imcwi, ntbmcr, imcwr
-integer          ntbwoi, iwori, ntbwor, iworr
-integer          ifinia, ifinra
+integer          ntbcpi, ntbcpr
+integer          ntbmci, ntbmcr
+integer          ntbwoi, ntbwor
 integer          iel, icha, icla, ipcrom, ipcro2
 integer          izone, ifac
 integer          ipbrom, ipcx2c, iromf , ioxy
@@ -354,9 +353,6 @@ do iel = 1, ncel
   w8(iel) = (rtp(iel,isca(ihm))+w8(iel))/ ( 1.d0+w1(iel) )
 enddo
 
-! --- Gestion memoire
-!     Autres tableaux
-
 ! ------ Macro tableau d'entiers TBCPI : NTBCPI
 !        Macro tableau de reels  TBCPR : NTBCPR
 !        Macro tableau d'entiers TBMCI : NTBMCI
@@ -374,21 +370,9 @@ ntbmcr = 2*ncharb + 8
 ntbwoi = 1
 ntbwor = 4
 
-call memcp1                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   nvar   ,                                                       &
-   ntbcpi , icpwi  ,                                              &
-   ntbcpr , icpwr  ,                                              &
-   ntbmci , imcwi  ,                                              &
-   ntbmcr , imcwr  ,                                              &
-   ntbwoi , iwori  ,                                              &
-   ntbwor , iworr  ,                                              &
-   ifinia , ifinra )
-
 call cpphy1                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    ncelet , ncel   ,                                              &
    ntbcpi , ntbcpr , ntbmci , ntbmcr , ntbwoi , ntbwor ,          &
    w2     , w3     , w4     , w5     , w6    ,                    &
@@ -397,11 +381,8 @@ call cpphy1                                                       &
 !         F6M      F7M      F4P2M
    w8     ,                                                       &
 !         ENTH
-   rtp    , propce  , propce(1,iromf) ,                           &
+   rtp    , propce  , propce(1,iromf) )
 !                          ---------------- (masse vol. gaz)
-   ia(icpwi) , ra(icpwr) ,                                        &
-   ia(imcwi) , ra(imcwr) ,                                        &
-   ia(iwori) , ra(iworr)  )
 
 !===============================================================================
 ! 4. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE

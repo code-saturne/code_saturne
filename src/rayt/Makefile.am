@@ -39,7 +39,6 @@ saturneinclude_HEADERS =
 noinst_LTLIBRARIES = libcsrayt.la
 libcsrayt_la_SOURCES = \
 memra1.f90 \
-memra3.f90 \
 raycli.f90 \
 raydak.f90 \
 raydir.f90 \

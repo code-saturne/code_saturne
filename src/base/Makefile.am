@@ -293,8 +293,6 @@ majgeo.f90 \
 matrdt.f90 \
 matrix.f90 \
 memcli.f90 \
-memcs1.f90 \
-memcs2.f90 \
 memfin.f90 \
 memini.f90 \
 mempdc.f90 \

@@ -172,9 +172,8 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ntbfui, ifuwi, ntbfur, ifuwr
-integer          ntbwoi, iwori, ntbwor, iworr
-integer          ifinia, ifinra
+integer          ntbfui, ntbfur
+integer          ntbwoi, ntbwor
 integer          iel, ipcrom, ipcro2 , ipcte1
 integer          izone, ifac , icla
 integer          ipbrom, iromf
@@ -314,9 +313,6 @@ do iel = 1, ncel
 enddo
 
 
-! --- Gestion memoire
-!     Autres tableaux
-
 ! ------ Macro tableau d'entiers TBFUI : NTBFUI
 !        Macro tableau de reels  TBFUR : NTBFUR
 !        Macro tableau d'entiers TBWOI : NTBWOI
@@ -331,29 +327,17 @@ endif
 ntbwoi = 0
 ntbwor = 2
 
-call memfu1                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   nvar   ,                                                       &
-   ntbfui , ifuwi  ,                                              &
-   ntbfur , ifuwr  ,                                              &
-   ntbwoi , iwori  ,                                              &
-   ntbwor , iworr  ,                                              &
-   ifinia , ifinra )
-
 call fuphy1                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    ncelet , ncel   ,                                              &
    ntbfui , ntbfur , ntbwoi , ntbwor ,                            &
    w2     , w4     , w6     ,                                     &
 !         FVAP    FHTF    F4P2M
    w8     ,                                                       &
 !         ENTH du gaz
-   rtp    , propce  , propce(1,iromf) ,                           &
+   rtp    , propce  , propce(1,iromf) )
 !                          ---------------- (masse vol. gaz)
-   ia(ifuwi) , ra(ifuwr) ,                                        &
-   ia(iwori) , ra(iworr)  )
 
 !===============================================================================
 ! 4. CALCUL DES PROPRIETES PHYSIQUES DE LA PHASE DISPERSEE

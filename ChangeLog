@@ -1,4 +1,37 @@
-* 26/05/2009 - Sofiane Benhamadouche <sofiane.benhamadouche@edf.fr>
+* 26/05/2011 - David Monfort <david.monfort@edf.fr>
+  Replace old-style memory allocation by dynamic memory allocation.
+  removed routines:
+    src/base/memcs1.f90
+    src/base/memcs2.f90
+    src/cfbl/memcfe.f90
+    src/cfbl/memcft.f90
+    src/cfbl/memcfv.f90
+    src/cplv/memcp1.f90
+    src/fuel/memfu1.f90
+    src/rayt/memra3.f90
+  modified scripts:
+    src/base/Makefile.am
+    src/cfbl/Makefile.am
+    src/fuel/Makefile.am
+    src/rayt/Makefile.am
+  modified routines:
+    src/base/csccel.f90
+    src/base/cscfbr.f90
+    src/base/cs_sat_coupling.c
+    src/base/cs_sat_coupling.h
+    src/base/tridim.f90
+    src/cfbl/cfdttv.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfiniv.f90
+    src/cplv/cplph1.f90
+    src/cplv/cplphy.f90
+    src/cplv/cpphy1.f90
+    src/cplv/cpphyv.f90
+    src/fuel/fuphy1.f90
+    src/fuel/fuphyv.f90
+    src/rayt/raycli.f90
+
+* 26/05/2011 - Sofiane Benhamadouche <sofiane.benhamadouche@edf.fr>
   Remove the possible use of a time-step factor for turbulence as it should
   not be decorrelated from the dynamics.
   modified routine:

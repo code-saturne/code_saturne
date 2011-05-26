@@ -137,13 +137,24 @@ double precision ra(*)
 integer          idebia, idebra, ifinia, ifinra
 integer          ifac  , iel   , ivar  , iscal
 integer          init
-integer          iw7   , iw8   , iw9   , iw10  , iw11  , iw12
-integer          iviscf, icoefu
+
+double precision, allocatable, dimension(:) :: viscf
+double precision, allocatable, dimension(:,:) :: coefu
+double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w10, w11, w12
 
 !===============================================================================
 !===============================================================================
 ! 0.  INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(viscf(nfac))
+allocate(coefu(nfabor,3))
+
+! Allocate work arrays
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w10(ncelet), w11(ncelet), w12(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -152,22 +163,7 @@ iscal  = irho
 ivar   = isca(iscal)
 
 !===============================================================================
-! 1. MEMOIRE
-!===============================================================================
-
-call memcft                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   iw7    , iw8    , iw9    , iw10   , iw11   , iw12   ,          &
-   iviscf , icoefu ,                                              &
-   ifinia , ifinra )
-
-idebia = ifinia
-idebra = ifinra
-
-!===============================================================================
-! 2. CALCUL DE LA CONDITION CFL ASSOCIEE A LA MASSE VOLUMIQUE
+! 1. CALCUL DE LA CONDITION CFL ASSOCIEE A LA MASSE VOLUMIQUE
 !===============================================================================
 
 ! ---> Calcul du "flux de masse" associe a la masse volumique
@@ -190,8 +186,8 @@ call cfmsfl                                                       &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab ,                                              &
    w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   ra(iw7), ra(iw8), ra(iw9), ra(iw10) , ra(iw11) , ra(iw12) ,    &
-   ra(iviscf) , viscb , ra(icoefu) ,                              &
+   w7     , w8     , w9     , w10    , w11    , w12    ,          &
+   viscf  , viscb  , coefu  ,                                     &
    ra     )
 
 ! ---> Sommation sur les faces (depend de si l'on explicite ou non
@@ -217,6 +213,12 @@ do iel = 1, ncel
   wcf(iel) = max( -dble(iconv(ivar))*w1(iel)/volume(iel),         &
        max( dble(1-iconv(ivar))*w2(iel)/volume(iel), 0.d0 ) )
 enddo
+
+! Free memory
+deallocate(viscf)
+deallocate(coefu)
+deallocate(w7, w8, w9)
+deallocate(w10, w11, w12)
 
 !--------
 ! FORMATS

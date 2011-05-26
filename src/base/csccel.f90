@@ -111,28 +111,31 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , ifinia , ifinra
-integer          numcpl , iun
+integer          idebia , idebra
+integer          numcpl
 integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
 integer          ncedis , nfbdis
 integer          ncecpg , ncedig
-integer          ilfbsu , ilcesu
-integer          ilcecp , ilfbcp , ilcenc , ilfbnc
-integer          ilocpt , icoopt , idjppt , idofpt , ipndpt
-integer          irvdis , irvcel , ipndcp , idofcp
 integer          ityloc , ityvar
 
-!====================================================================================
+integer, allocatable, dimension(:) :: lcecpl , lfbcpl
+integer, allocatable, dimension(:) :: locpts
+
+double precision, allocatable, dimension(:,:) :: coopts , djppts , dofpts
+double precision, allocatable, dimension(:) :: pndpts
+double precision, allocatable, dimension(:) :: rvdis , rvcel
+
+!===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 do numcpl = 1, nbrcpl
 
-!======================================================================================
+!===============================================================================
 ! 1.  DEFINITION DE CHAQUE COUPLAGE
-!======================================================================================
+!===============================================================================
 
   call nbecpl                                                     &
   !==========
@@ -140,23 +143,21 @@ do numcpl = 1, nbrcpl
    ncesup , nfbsup ,                                              &
    ncecpl , nfbcpl , ncencp , nfbncp )
 
-  call memcs1                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   ncesup , nfbsup , ncecpl , nfbcpl , ncencp , nfbncp ,          &
-   ilcesu , ilfbsu , ilcecp , ilfbcp , ilcenc , ilfbnc ,          &
-   ifinia , ifinra )
+  ! Allocate temporary arrays for coupling information
+  allocate(lcecpl(ncecpl))
+  allocate(lfbcpl(nfbcpl))
 
   call lelcpl                                                     &
   !==========
  ( numcpl ,                                                       &
    ncecpl , nfbcpl ,                                              &
-   ia(ilcecp) , ia(ilfbcp) )
+   lcecpl , lfbcpl )
 
+  deallocate(lfbcpl)
 
-!====================================================================================
+!===============================================================================
 ! 2.  PREPARATION DES VARIABLES A ENVOYER SUR LES CELLULES
-!====================================================================================
+!===============================================================================
 
   ityvar = 1
 
@@ -165,21 +166,20 @@ do numcpl = 1, nbrcpl
   call npdcpl(numcpl, ncedis, nfbdis)
   !==========
 
-!       On n'échangera qu'une composante de la vitesse à la fois
-  iun = 1
+  ! Allocate temporary arrays for geometric quantities
+  allocate(locpts(ncedis))
+  allocate(coopts(3,ncedis), djppts(3,ncedis), dofpts(3,ncedis))
+  allocate(pndpts(ncedis))
 
-  call memcs2                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   ncecpl , ncedis , iun    ,                                     &
-   irvcel , ipndcp , idofcp ,                                     &
-   irvdis , ilocpt , icoopt , idjppt , idofpt , ipndpt ,          &
-   ifinia , ifinra )
+  ! Allocate temporary arrays for variables exchange
+  allocate(rvdis(ncedis))
+  allocate(rvcel(ncecpl))
 
-  call coocpl(numcpl, ncedis, ityvar,                             &
+  call coocpl &
   !==========
-              ityloc, ia(ilocpt), ra(icoopt),                     &
-              ra(idjppt), ra(idofpt), ra(ipndpt) )
+( numcpl , ncedis , ityvar , &
+  ityloc , locpts , coopts , &
+  djppts , dofpts , pndpts )
 
   if (ityloc.eq.2) then
     write(nfecra,1000)
@@ -205,18 +205,23 @@ do numcpl = 1, nbrcpl
 
     call cscpce                                                   &
     !==========
-  ( ifinia , ifinra ,                                             &
+  ( idebia , idebra ,                                             &
     nvar   , nscal  ,                                             &
     ncedis , ityloc ,                                             &
     ivar   ,                                                      &
-    ia(ilocpt) ,                                                  &
-    ia     ,                                    &
+    locpts ,                                                      &
+    ia     ,                                                      &
     dt     , rtpa   , propce , propfa , propfb ,                  &
     coefa  , coefb  ,                                             &
-    ra(icoopt)      , ra(irvdis)      ,                           &
+    coopts , rvdis  ,                                             &
     ra     )
 
   endif
+
+  ! Free memory
+  deallocate(locpts)
+  deallocate(coopts, djppts, dofpts)
+  deallocate(pndpts)
 
 !       Cet appel est symétrique, donc on teste sur NCEDIG et NCECPG
 !       (rien a envoyer, rien a recevoir)
@@ -225,34 +230,40 @@ do numcpl = 1, nbrcpl
     call varcpl                                                   &
     !==========
   ( numcpl , ncedis , ncecpl , ityvar ,                           &
-    ra(irvdis) ,                                                  &
-    ra(irvcel) )
+    rvdis  ,                                                  &
+    rvcel  )
 
   endif
 
+  ! Free memory
+  deallocate(rvdis)
 
-!====================================================================================
+!===============================================================================
 ! 3.  TRADUCTION DU COUPLAGE EN TERME DE TERMES SOURCES
-!====================================================================================
+!===============================================================================
 
   if (ncecpg.gt.0) then
 
     call csc2ts                                                   &
     !==========
-  ( ifinia , ifinra ,                                             &
+  ( idebia , idebra ,                                             &
     nvar   , nscal  ,                                             &
     ncecpl ,                                                      &
     ivar   ,                                                      &
-    ia(ilcecp)      ,                                             &
-    ia     ,                                    &
+    lcecpl ,                                                      &
+    ia     ,                                                      &
     dt     , rtpa   , propce , propfa , propfb ,                  &
     coefa  , coefb  ,                                             &
     crvexp , crvimp ,                                             &
 !         ------   ------
-    ra(irvcel)      ,                                             &
+    rvcel  ,                                                      &
     ra     )
 
   endif
+
+  ! Free memory
+  deallocate(rvcel)
+  deallocate(lcecpl)
 
 enddo
 !     Fin de la boucle sur les couplages

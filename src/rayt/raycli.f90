@@ -32,11 +32,10 @@ subroutine raycli &
    nvar   , nscal  ,                                              &
    isvhb  , isvtb  ,                                              &
    icodcl , itrifb , itypfb ,                                     &
-   izfrad , isothm ,                                              &
+   izfrad ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  , hbord  , tbord  ,                            &
-   text   , tint   , tempk  ,                                     &
    ra     )
 
 !===============================================================================
@@ -75,7 +74,6 @@ subroutine raycli &
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! isothm(nfabor    ! te ! <-- ! type de condition de paroi                     !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -101,9 +99,6 @@ subroutine raycli &
 ! (nfabor)         !    !     !                                                !
 ! tbord            ! tr ! --> ! temperature aux bords           i              !
 ! (nfabor)         !    !     !                                                !
-! text (nfabor     ! tr ! --> ! temperature de bord externe                    !
-! tint (nfabor     ! tr ! --> ! temperature de bord interne                    !
-! tempk(ncelet)    ! tr ! --> ! temperature en kelvin                          !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -144,7 +139,7 @@ integer          isvhb  , isvtb
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          ia(*)
-integer          izfrad(nfabor),isothm(nfabor)
+integer          izfrad(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -152,9 +147,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision hbord(nfabor),tbord(nfabor)
-
-double precision tempk(ncelet)
-double precision text(nfabor), tint(nfabor)
 
 double precision ra(*)
 
@@ -167,6 +159,11 @@ integer          mode, iok, ifvu, ii, izonem, izone
 double precision tmin , tmax   , tx
 double precision cpp, xmtk
 
+integer, allocatable, dimension(:) :: isothm
+
+double precision, allocatable, dimension(:) :: tempk
+double precision, allocatable, dimension(:) :: text, tint
+
 integer    ipacli
 data       ipacli /0/
 save       ipacli
@@ -175,6 +172,12 @@ save       ipacli
 !===============================================================================
 ! 0 - GESTION MEMOIRE
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(isothm(nfabor))
+
+allocate(tempk(ncelet))
+allocate(text(nfabor), tint(nfabor))
 
 idebia = idbia0
 idebra = idbra0
@@ -893,6 +896,11 @@ endif
     enddo
 
   endif
+
+! Free memory
+deallocate(isothm)
+deallocate(tempk)
+deallocate(text, tint)
 
 !--------
 ! FORMATS

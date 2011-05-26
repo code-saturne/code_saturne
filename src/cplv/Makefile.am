@@ -71,8 +71,7 @@ cptssc.f90 \
 cptsvc.f90 \
 cptsvi.f90 \
 cpvarp.f90 \
-cpveri.f90 \
-memcp1.f90
+cpveri.f90
 libcscplv_la_LDFLAGS = -no-undefined
 
 cplvusers = \

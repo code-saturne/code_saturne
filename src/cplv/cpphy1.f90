@@ -34,10 +34,7 @@ subroutine cpphy1 &
    f1m    , f2m    , f3m    , f4m    , f5m    ,                   &
    f6m    , f7m    , f4p2m  , f3max  ,                            &
    enth   ,                                                       &
-   rtp    , propce , rom1   ,                                     &
-   itbcp  , rtbcp  ,                                              &
-   itbmc  , rtbmc  ,                                              &
-   itbwo  , rtbwo   )
+   rtp    , propce , rom1   )
 
 !===============================================================================
 ! FONCTION :
@@ -114,12 +111,6 @@ subroutine cpphy1 &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! itbcp            ! tr ! <-- ! macro tableau entier cp travail                !
-! rtbcp            ! tr ! <-- ! macro tableau reel   cp travail                !
-! itbmc            ! tr ! <-- ! macro tableau entier mc travail                !
-! rtbmc            ! tr ! <-- ! macro tableau reel   mc travail                !
-! itbwo            ! tr ! <-- ! macro tableau entier travail                   !
-! rtbwo            ! tr ! <-- ! macro tableau reel   travail                   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -158,9 +149,6 @@ integer          ncelet , ncel
 integer          nitbcp , nrtbcp
 integer          nitbmc , nrtbmc
 integer          nitbwo , nrtbwo
-integer          itbcp(ncelet,nitbcp)
-integer          itbmc(ncelet,nitbmc)
-integer          itbwo(ncelet,nitbwo)
 
 double precision f1m(ncelet), f2m(ncelet)
 double precision f3m(ncelet), f4m(ncelet) , f5m(ncelet)
@@ -170,9 +158,6 @@ double precision f3max(ncelet)
 double precision enth(ncelet)
 double precision rtp(ncelet,*), propce(ncelet,*)
 double precision rom1(ncelet)
-double precision rtbcp(ncelet,nrtbcp)
-double precision rtbmc(ncelet,nrtbmc)
-double precision rtbwo(ncelet,nrtbwo)
 
 ! Local variables
 
@@ -191,11 +176,24 @@ double precision fp1  , fp2  , fp4  , fp5, fp6, fp7
 double precision xalpha , xbeta , xgam
 double precision f4cmin,f4cmax,xden
 
+integer, allocatable, dimension(:,:) :: itbcp, itbmc, itbwo
+
+double precision, allocatable, dimension(:,:) :: rtbcp, rtbmc, rtbwo
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(itbcp(ncelet,nitbcp))
+allocate(itbmc(ncelet,nitbmc))
+allocate(itbwo(ncelet,nitbwo))
+
+allocate(rtbcp(ncelet,nrtbcp))
+allocate(rtbmc(ncelet,nrtbmc))
+allocate(rtbwo(ncelet,nrtbwo))
 
 ! --- Initialisation memoire
 
@@ -422,9 +420,15 @@ do iel = 1, ncel
   rom1(iel) = p0 / (wmolme*rr*propce(iel,ipcte1))
 enddo
 
+! Free memory
+deallocate(itbcp, itbmc, itbwo)
+deallocate(rtbcp, rtbmc, rtbwo)
+
 !===============================================================================
+
+!--------
 ! FORMATS
-!----
+!--------
 
 
 !----

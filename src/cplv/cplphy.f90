@@ -172,10 +172,9 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ntbcpi, icpwi, ntbcpr, icpwr
-integer          ntbmci, imcwi, ntbmcr, imcwr
-integer          ntbwoi, iwori, ntbwor, iworr
-integer          ifinia, ifinra
+integer          ntbcpi, ntbcpr
+integer          ntbmci, ntbmcr
+integer          ntbwoi, ntbwor
 integer          iel, icha, ipcrom
 integer          izone, ifac
 integer          ipbrom
@@ -262,9 +261,6 @@ do iel = 1,ncel
   w8(iel) = rtp(iel,isca(ihm))
 enddo
 
-! --- Gestion memoire
-!     Autres tableaux
-
 ! ------ Macro tableau d'entiers TBCPI : NTBCPI
 !        Macro tableau de reels  TBCPR : NTBCPR
 !        Macro tableau d'entiers TBMCI : NTBMCI
@@ -283,34 +279,18 @@ ntbmcr = 2 + 2*ncharb + 4
 ntbwoi = 1
 ntbwor = 4
 
-call memcp1                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   nvar   ,                                                       &
-   ntbcpi , icpwi  ,                                              &
-   ntbcpr , icpwr  ,                                              &
-   ntbmci , imcwi  ,                                              &
-   ntbmcr , imcwr  ,                                              &
-   ntbwoi , iwori  ,                                              &
-   ntbwor , iworr  ,                                              &
-   ifinia , ifinra )
-
 call cplph1                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    ncelet , ncel   ,                                              &
    ntbcpi , ntbcpr , ntbmci , ntbmcr , ntbwoi , ntbwor ,          &
    w2     , w3     , w4     , w5     , w6     , w7     ,          &
 !         F1M      F2M      F3M      F4M      F3P2M    F4P2M
    w8     ,                                                       &
 !         ENTH
-   rtp    , propce  , w1 ,                                        &
+   rtp    , propce  , w1    )
 !                          ----
 !                 ATTENTION W1 contient RHO1
-   ia(icpwi) , ra(icpwr) ,                                        &
-   ia(imcwi) , ra(imcwr) ,                                        &
-   ia(iwori) , ra(iworr)  )
-
 
 !===============================================================================
 ! 3. Relaxation de la masse volumique de la phase gazeuse

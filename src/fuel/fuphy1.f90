@@ -33,9 +33,7 @@ subroutine fuphy1 &
    nitbfu , nrtbfu , nitbwo , nrtbwo ,                            &
    fvap   , fhtf   , f4p2m  ,                                     &
    enth   ,                                                       &
-   rtp    , propce , rom1   ,                                     &
-   itbfu  , rtbfu  ,                                              &
-   itbwo  , rtbwo   )
+   rtp    , propce , rom1   )
 
 !===============================================================================
 ! FONCTION :
@@ -108,10 +106,6 @@ subroutine fuphy1 &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! itbfu            ! tr ! <-- ! macro tableau entier fuel travail              !
-! rtbfu            ! tr ! <-- ! macro tableau reel   fuel travail              !
-! itbwo            ! tr ! <-- ! macro tableau entier travail                   !
-! rtbwo            ! tr ! <-- ! macro tableau reel   travail                   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -148,15 +142,11 @@ integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nitbfu , nrtbfu
 integer          nitbwo , nrtbwo
-integer          itbfu(ncelet,nitbfu)
-integer          itbwo(ncelet,nitbwo)
 
 double precision fvap(ncelet), fhtf(ncelet)
 double precision f4p2m(ncelet), enth(ncelet)
 double precision rtp(ncelet,*), propce(ncelet,*)
 double precision rom1(ncelet)
-double precision rtbfu(ncelet,nrtbfu)
-double precision rtbwo(ncelet,nrtbwo)
 
 ! Local variables
 
@@ -166,14 +156,26 @@ integer          ipcte1
 integer          ipcyf1 , ipcyf3 , ipcyox
 integer          ipcyp1 , ipcyp2 , ipcyin , ipcyce
 integer          ipcy2s , ipcyso
+
 double precision wmolme
 double precision f1m,f3m,f4m,f1cl,f3cl,f4cl
+
+integer, allocatable, dimension(:,:) :: itbfu, itbwo
+
+double precision, allocatable, dimension(:,:) :: rtbfu, rtbwo
 
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(itbfu(ncelet,nitbfu))
+allocate(itbwo(ncelet,nitbwo))
+
+allocate(rtbfu(ncelet,nrtbfu))
+allocate(rtbwo(ncelet,nrtbwo))
 
 ! --- Initialisation memoire
 
@@ -348,6 +350,10 @@ do iel = 1, ncel
 
   rom1(iel) = p0 / (wmolme * rr * propce(iel,ipcte1) )
 enddo
+
+! Free memory
+deallocate(itbfu, itbwo)
+deallocate(rtbfu, rtbwo)
 
 !===============================================================================
 ! FORMATS

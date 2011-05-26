@@ -151,7 +151,7 @@ integer          imgrp , ncymxp, nitmfp
 double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision sclnor, thetap, epsrsp
 
-integer          iwb    , inc    , iccocg , icoefa , icoefb
+integer          inc    , iccocg , icoefa , icoefb
 integer          ivar0  , iij , ii , jj
 integer          iccfth , imodif
 integer          iel1  , iel2, iifru, iifbe
@@ -164,6 +164,7 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:) :: wb
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -172,6 +173,9 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate a temporary array
+allocate(wb(nfabor))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -220,17 +224,6 @@ chaine = nomvar(ippvar)
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
-
-! --- Reservation de la memoire
-
-call memcfe                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   iwb    ,                                                       &
-   ifinia , ifinra )
-
-idebia = ifinia
-idebra = ifinra
 
 !===============================================================================
 ! 2. TERMES SOURCES
@@ -584,7 +577,7 @@ if( idiff(ivar).ge. 1 ) then
    iccfth , imodif ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w9     , ra(iwb), w8     , w1     )
+   w9     , wb     , w8     , w1     )
 
 !     Calcul de la divergence avec reconstruction
 
@@ -700,7 +693,7 @@ enddo
       if(ia(iifbe+ifac-1).eq.0) then
         iel = ifabor(ifac)
 
-        flux = viscb(ifac)*( w9(iel) - ra(iwb +ifac-1)            &
+        flux = viscb(ifac)*( w9(iel) - wb(ifac)            &
            + 0.5d0*( rtp(iel,iu)**2 -                      &
    ( coefa(ifac,iclrtp(iu,icoef))                          &
    + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2  &
@@ -724,7 +717,7 @@ enddo
 
       iel = ifabor(ifac)
 
-      flux = viscb(ifac)*( w9(iel) - ra(iwb +ifac-1)              &
+      flux = viscb(ifac)*( w9(iel) - wb(ifac)              &
            + 0.5d0*( rtp(iel,iu)**2 -                      &
    ( coefa(ifac,iclrtp(iu,icoef))                          &
    + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2  &

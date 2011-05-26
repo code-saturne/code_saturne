@@ -135,10 +135,10 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ifinia, ifinra
-integer          iwcel1, iwcel2, iwcel3, iwcel4
 integer          iel   , iccfth, imodif
 integer          iirom , iiromb, ifac
 
+double precision, allocatable, dimension(:) :: w1, w2, w3, w4
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -156,16 +156,8 @@ ipass = ipass + 1
 idebia = idbia0
 idebra = idbra0
 
-! --- Reservation de la memoire pour appel à uscfth
-
-call memcfv                                                       &
-!==========
- ( idebia , idebra ,                                              &
-   iwcel1 , iwcel2 , iwcel3 , iwcel4 ,                            &
-   ifinia , ifinra )
-
-idebia = ifinia
-idebra = ifinra
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet), w4(ncelet))
 
 !===============================================================================
 ! 2. INITIALISATION DES INCONNUES :
@@ -193,7 +185,7 @@ if ( isuite.eq.0 ) then
    iccfth , imodif ,                                              &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )
+   w1     , w2     , w3     , w4     )
 
 !     On initialise la diffusivite thermique
     visls0(ienerg) = visls0(itempk)/cv0
@@ -273,7 +265,7 @@ else
    iccfth , imodif ,                                              &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(iwcel1), ra(iwcel2), ra(iwcel3), ra(iwcel4) )
+   w1     , w2     , w3     , w4     )
 
   endif
 

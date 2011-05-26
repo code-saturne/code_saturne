@@ -59,8 +59,7 @@ futssc.f90 \
 futsvc.f90 \
 futsvi.f90 \
 fuvarp.f90 \
-fuveri.f90 \
-memfu1.f90
+fuveri.f90
 libcsfuel_la_LDFLAGS = -no-undefined
 
 fuelusers = \

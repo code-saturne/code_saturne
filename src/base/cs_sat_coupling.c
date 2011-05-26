@@ -1487,22 +1487,22 @@ void CS_PROCF (coocpl, COOCPL)
  *
  * Fortran interface:
  *
- * SUBROUTINE PNDCPL
+ * SUBROUTINE PONDCP
  * *****************
  *
  * INTEGER          NUMCPL         : --> : coupling number
  * INTEGER          NBRCPL         : --> : number of distant points
  * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
  *                                 :     : 2 : localization on the local faces
- * DOUBLE PRECISION PONDCP(*)      : <-- : weighting coefficients
+ * DOUBLE PRECISION PNDCPL(*)      : <-- : weighting coefficients
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (pndcpl, PNDCPL)
+void CS_PROCF (pondcp, PONDCP)
 (
  const cs_int_t  *const numcpl,
  const cs_int_t  *const nbrpts,
        cs_int_t  *const ityloc,
-       cs_real_t *const pondcp,
+       cs_real_t *const pndcpl,
        cs_real_t *const distof
 )
 {
@@ -1546,7 +1546,7 @@ void CS_PROCF (pndcpl, PNDCPL)
     if (nfbcpl > 0) {
 
       for (ind = 0 ; ind < nfbcpl ; ind++) {
-        pondcp[ind] = coupl->local_pond_fbr[ind];
+        pndcpl[ind] = coupl->local_pond_fbr[ind];
         for (icoo = 0 ; icoo < 3 ; icoo++)
           distof[ind*3 + icoo] = coupl->local_of[ind*3 + icoo];
       }

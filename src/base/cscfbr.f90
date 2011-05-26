@@ -111,28 +111,33 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , ifinia , ifinra
+integer          idebia , idebra
 integer          numcpl , ivarcp
 integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
 integer          ncedis , nfbdis
 integer          nfbcpg , nfbdig
-integer          ilcesu , ilfbsu
-integer          ilcecp , ilfbcp , ilcenc , ilfbnc
-integer          ilocpt , icoopt , idjppt , ipndpt , idofpt
-integer          irvdis , irvfbr , ipndcp , idofcp
 integer          ityloc , ityvar
 
-!====================================================================================
+integer, allocatable, dimension(:) :: lcecpl , lfbcpl , lcencp , lfbncp
+integer, allocatable, dimension(:) :: locpts
+
+double precision, allocatable, dimension(:,:) :: coopts , djppts , dofpts
+double precision, allocatable, dimension(:,:) :: dofcpl
+double precision, allocatable, dimension(:) :: pndpts
+double precision, allocatable, dimension(:) :: pndcpl
+double precision, allocatable, dimension(:,:) :: rvdis , rvfbr
+
+!===============================================================================
 
 idebia = idbia0
 idebra = idbra0
 
 do numcpl = 1, nbrcpl
 
-!======================================================================================
+!===============================================================================
 ! 1.  DEFINITION DE CHAQUE COUPLAGE
-!======================================================================================
+!===============================================================================
 
   call nbecpl                                                     &
   !==========
@@ -140,31 +145,30 @@ do numcpl = 1, nbrcpl
    ncesup , nfbsup ,                                              &
    ncecpl , nfbcpl , ncencp , nfbncp )
 
-  call memcs1                                                     &
-  !==========
- ( idebia , idebra ,                                              &
-   ncesup , nfbsup , ncecpl , nfbcpl , ncencp , nfbncp ,          &
-   ilcesu , ilfbsu , ilcecp , ilfbcp , ilcenc , ilfbnc ,          &
-   ifinia , ifinra )
+  ! Allocate temporary arrays for coupling information
+  allocate(lcecpl(ncecpl), lcencp(ncencp))
+  allocate(lfbcpl(nfbcpl), lfbncp(nfbncp))
 
 !       Liste des cellules et faces de bord localisées
   call lelcpl                                                     &
   !==========
  ( numcpl ,                                                       &
    ncecpl , nfbcpl ,                                              &
-   ia(ilcecp) , ia(ilfbcp) )
+   lcecpl , lfbcpl )
 
 !       Liste des cellules et faces de bord non localisées
   call lencpl                                                     &
   !==========
  ( numcpl ,                                                       &
    ncencp , nfbncp ,                                              &
-   ia(ilcenc) , ia(ilfbnc) )
+   lcencp , lfbncp )
 
+  ! Free memory
+  deallocate(lcecpl, lcencp)
 
-!====================================================================================
+!===============================================================================
 ! 2.  PREPARATION DES VARIABLES A ENVOYER SUR LES FACES DE BORD
-!====================================================================================
+!===============================================================================
 
   ityvar = 2
 
@@ -173,18 +177,20 @@ do numcpl = 1, nbrcpl
   call npdcpl(numcpl, ncedis, nfbdis)
   !==========
 
-  call memcs2                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   nfbcpl , nfbdis , nvarto(numcpl) ,                             &
-   irvfbr , ipndcp , idofcp ,                                     &
-   irvdis , ilocpt , icoopt , idjppt , idofpt , ipndpt ,          &
-   ifinia , ifinra )
+  ! Allocate temporary arrays for geometric quantities
+  allocate(locpts(nfbdis))
+  allocate(coopts(3,nfbdis), djppts(3,nfbdis), dofpts(3,nfbdis))
+  allocate(pndpts(nfbdis))
 
-  call coocpl(numcpl, nfbdis, ityvar,                             &
+  ! Allocate temporary arrays for variables exchange
+  allocate(rvdis(nfbdis,nvarto(numcpl)))
+  allocate(rvfbr(nfbcpl,nvarto(numcpl)))
+
+  call coocpl &
   !==========
-              ityloc, ia(ilocpt), ra(icoopt),                     &
-              ra(idjppt), ra(idofpt), ra(ipndpt))
+( numcpl , nfbdis , ityvar , &
+  ityloc , locpts , coopts , &
+  djppts , dofpts , pndpts )
 
   if (ityloc.eq.2) then
     write(nfecra,1000)
@@ -210,19 +216,24 @@ do numcpl = 1, nbrcpl
 
     call cscpfb                                                   &
     !==========
-  ( ifinia , ifinra ,                                             &
+  ( idebia , idebra ,                                             &
     nvar   , nscal  ,                                             &
     nfbdis , ityloc , nvarcp(numcpl) , numcpl ,                   &
     nvarto(numcpl) ,                                              &
-    ia(ilocpt) ,                                                  &
+    locpts ,                                                      &
     ia     ,                                                      &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
     coefa  , coefb  ,                                             &
-    ra(icoopt)      , ra(idjppt)      , ra(ipndpt)      ,         &
-    ra(irvdis)      , ra(idofpt)      ,                           &
+    coopts , djppts , pndpts ,                                    &
+    rvdis  , dofpts ,                                             &
     ra     )
 
   endif
+
+  ! Free memory
+  deallocate(locpts)
+  deallocate(coopts, djppts, dofpts)
+  deallocate(pndpts)
 
 !       Cet appel est symétrique, donc on teste sur NFBDIG et NFBCPG
 !       (rien a envoyer, rien a recevoir)
@@ -230,41 +241,54 @@ do numcpl = 1, nbrcpl
 
     do ivarcp = 1, nvarto(numcpl)
 
-      call varcpl                                                 &
+      call varcpl &
       !==========
-    ( numcpl , nfbdis , nfbcpl , ityvar ,                         &
-      ra(irvdis + (ivarcp-1)*nfbdis) ,                            &
-      ra(irvfbr + (ivarcp-1)*nfbcpl) )
+    ( numcpl , nfbdis , nfbcpl , ityvar , &
+      rvdis(1, ivarcp) ,             &
+      rvfbr(1, ivarcp) )
 
     enddo
 
   endif
 
+  ! Free memory
+  deallocate(rvdis)
 
-!====================================================================================
+!===============================================================================
 ! 3.  TRADUCTION DU COUPLAGE EN TERME DE CONDITIONS AUX LIMITES
-!====================================================================================
+!===============================================================================
 
   if (nfbcpg.gt.0) then
 
-    call pndcpl                                                   &
-    !==========
-  ( numcpl , nfbcpl , ityvar , ra(ipndcp) , ra(idofcp) )
+    ! Allocate temporary arrays for geometric quantities
+    allocate(dofcpl(3,nfbcpl))
+    allocate(pndcpl(nfbcpl))
 
-    call csc2cl                                                   &
+    call pondcp &
     !==========
-  ( ifinia , ifinra ,                                             &
+  ( numcpl , nfbcpl , ityvar , pndcpl , dofcpl )
+
+    call csc2cl &
+    !==========
+  ( idebia , idebra ,                                             &
     nvar   , nscal  ,                                             &
     nvarcp(numcpl), nvarto(numcpl) , nfbcpl , nfbncp ,            &
     icodcl , itrifb , itypfb ,                                    &
-    ia(ilfbcp) , ia(ilfbnc) ,                                     &
+    lfbcpl , lfbncp ,                                             &
     ia     ,                                                      &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
     coefa  , coefb  , rcodcl ,                                    &
-    ra(irvfbr)      , ra(ipndcp)      , ra(idofcp)      ,         &
+    rvfbr  , pndcpl , dofcpl ,                                    &
     ra     )
 
+    ! Free memory
+    deallocate(dofcpl, pndcpl)
+
   endif
+
+  ! Free memory
+  deallocate(rvfbr)
+  deallocate(lfbcpl, lfbncp)
 
 enddo
 !     Fin de la boucle sur les couplages
