@@ -146,10 +146,6 @@ integer          ntrela
 
 integer          isvhb , isvtb
 integer          ii    , jj    , ippcp , ientha, ippcv
-integer          ikiph , ieiph , iomiph
-integer          iuiph , iviph , iwiph , ipriph, iphiph
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
-integer          inuiph
 integer          ipcrom, ipcroa
 integer          idimte, itenso
 integer          ifinib, ifinrb, iiifap
@@ -162,7 +158,7 @@ integer          iflalf, iflalb, iprale, icoale
 integer          iilzfb, nbzfmx, nozfmx, iqcalc
 
 double precision cpcst , tditot, tdist2, tdist1, cvcst
-double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0
+double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision ctheta, stheta, omgnrm, rrotgb(3,3)
 
@@ -247,16 +243,13 @@ if( ntcabs.le.2 .and. isuite.eq.0 .and. iphydr.eq.0               &
     write(nfecra,2000) ntcabs
   endif
   iiptot = ipproc(iprtot)
-  ro0iph = ro0
-  p0iph  = p0
-  pr0iph = pred0
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
   do iel = 1, ncel
-    rtp(iel,ipr) = pr0iph
-    propce(iel,iiptot) = p0iph                                &
-         + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
+    rtp(iel,ipr) = pred0
+    propce(iel,iiptot) = p0                                &
+         + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
          + gy*(xyzcen(2,iel)-xyp0)                   &
          + gz*(xyzcen(3,iel)-xzp0) )
   enddo
@@ -313,35 +306,26 @@ if(iperio.eq.1) then
 
 !  -- Vitesse
 
-  iuiph = iu
-  iviph = iv
-  iwiph = iw
   idimte = 1
   itenso = 0
-  call percve                                                   &
+  call percve &
   !==========
-( idimte , itenso ,                                           &
-  rtp(1,iuiph), rtp(1,iuiph), rtp(1,iuiph),                   &
-  rtp(1,iviph), rtp(1,iviph), rtp(1,iviph),                   &
-  rtp(1,iwiph), rtp(1,iwiph), rtp(1,iwiph))
+( idimte , itenso ,                                  &
+  rtp(1,iu), rtp(1,iu), rtp(1,iu),                   &
+  rtp(1,iv), rtp(1,iv), rtp(1,iv),                   &
+  rtp(1,iw), rtp(1,iw), rtp(1,iw))
 
 !  -- Tenseur de Reynolds
 
   if(itytur.eq.3) then
     idimte = 2
     itenso = 0
-    ir11ip = ir11
-    ir22ip = ir22
-    ir33ip = ir33
-    ir12ip = ir12
-    ir13ip = ir13
-    ir23ip = ir23
-    call percve                                                 &
+    call percve &
     !==========
-  ( idimte , itenso ,                                           &
-    rtp(1,ir11ip), rtp(1,ir12ip), rtp(1,ir13ip),                &
-    rtp(1,ir12ip), rtp(1,ir22ip), rtp(1,ir23ip),                &
-    rtp(1,ir13ip), rtp(1,ir23ip), rtp(1,ir33ip) )
+  ( idimte , itenso ,                                     &
+    rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),                &
+    rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),                &
+    rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
   endif
 
 !  -- Remarque pour le v2f
@@ -1239,7 +1223,7 @@ do while (iterns.le.nterup)
       if(iifapa.gt.0) then
         iiifap = iifapa
       else
-        iiifap = ifinib
+        iiifap = ifinia
       endif
       call vandri &
       !==========
@@ -1344,9 +1328,8 @@ do while (iterns.le.nterup)
     !     SI LE COMPRESSIBLE SANS CHOC EST ACTIF, ON RESOUT AVEC CFQDMV
     if ( ippmod(icompf).ge.0 ) then
 
-      iuiph  = iu
-      iflmas = ipprof(ifluma(iuiph))
-      iflmab = ipprob(ifluma(iuiph))
+      iflmas = ipprof(ifluma(iu))
+      iflmab = ipprob(ifluma(iu))
 
       call cfqdmv &
       !==========
@@ -1380,9 +1363,8 @@ do while (iterns.le.nterup)
       !       par point fixe
       !     En parallele, l'echange est fait au debut de navsto.
       if(nterup.gt.1) then
-        ipriph  = ipr
         do iel = 1, ncel
-          rtpa(iel,ipriph) = rtp(iel,ipriph)
+          rtpa(iel,ipr) = rtp(iel,ipr)
         enddo
       endif
 
@@ -1507,8 +1489,6 @@ if (iccvfg.eq.0) then
 
   if( (itytur.eq.2) .or. (iturb.eq.50) ) then
 
-    ikiph  = ik
-
     call turbke &
     !==========
   ( idebia , idebra ,                                              &
@@ -1523,8 +1503,6 @@ if (iccvfg.eq.0) then
     ra     )
 
     if( iturb.eq.50 )  then
-
-      iphiph  = iphi
 
       call resv2f &
       !==========
@@ -1545,19 +1523,15 @@ if (iccvfg.eq.0) then
 
     !  RELAXATION DE K ET EPSILON SI IKECOU=0 EN INSTATIONNAIRE
     if (ikecou.eq.0 .and. idtvar.ge.0) then
-      ikiph  = ik
-      ieiph  = iep
-      relaxk = relaxv(ikiph)
-      relaxe = relaxv(ieiph)
+      relaxk = relaxv(ik)
+      relaxe = relaxv(iep)
       do iel = 1,ncel
-        rtp(iel,ikiph) = relaxk*rtp(iel,ikiph) + (1.d0-relaxk)*rtpa(iel,ikiph)
-        rtp(iel,ieiph) = relaxe*rtp(iel,ieiph) + (1.d0-relaxe)*rtpa(iel,ieiph)
+        rtp(iel,ik) = relaxk*rtp(iel,ik) + (1.d0-relaxk)*rtpa(iel,ik)
+        rtp(iel,iep) = relaxe*rtp(iel,iep) + (1.d0-relaxe)*rtpa(iel,iep)
       enddo
     endif
 
   else if(itytur.eq.3) then
-
-    ir11ip = ir11
 
     call turrij &
     !==========
@@ -1573,8 +1547,6 @@ if (iccvfg.eq.0) then
 
   else if( iturb.eq.60 ) then
 
-    ikiph  = ik
-
     call turbkw &
     !==========
   ( idebia , idebra ,                                              &
@@ -1589,19 +1561,15 @@ if (iccvfg.eq.0) then
 
     !  RELAXATION DE K ET OMEGA SI IKECOU=0
     if (ikecou.eq.0 .and. idtvar.ge.0) then
-      ikiph   = ik
-      iomiph  = iomg
-      relaxk = relaxv(ikiph )
-      relaxw = relaxv(iomiph)
+      relaxk = relaxv(ik )
+      relaxw = relaxv(iomg)
       do iel = 1,ncel
-        rtp(iel,ikiph)  = relaxk*rtp(iel,ikiph) +(1.d0-relaxk)*rtpa(iel,ikiph)
-        rtp(iel,iomiph) = relaxw*rtp(iel,iomiph)+(1.d0-relaxw)*rtpa(iel,iomiph)
+        rtp(iel,ik)  = relaxk*rtp(iel,ik) +(1.d0-relaxk)*rtpa(iel,ik)
+        rtp(iel,iomg) = relaxw*rtp(iel,iomg)+(1.d0-relaxw)*rtpa(iel,iomg)
       enddo
     endif
 
   else if( iturb.eq.70 ) then
-
-    inuiph = inusa
 
     call turbsa &
     !==========
@@ -1618,10 +1586,9 @@ if (iccvfg.eq.0) then
 
     !  RELAXATION DE NUSA
     if (idtvar.ge.0) then
-      inuiph = inusa
-      relaxn = relaxv(inuiph)
+      relaxn = relaxv(inusa)
       do iel = 1,ncel
-        rtp(iel,inuiph) = relaxn*rtp(iel,inuiph)+(1.d0-relaxn)*rtpa(iel,inuiph)
+        rtp(iel,inusa) = relaxn*rtp(iel,inusa)+(1.d0-relaxn)*rtpa(iel,inusa)
       enddo
     endif
 

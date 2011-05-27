@@ -179,7 +179,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          iel, ikiph, ieiph, ipcrom
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -203,14 +203,10 @@ if(1.eq.1) return
 allocate(lstelt(ncel))
 
 
-! --- Index numbers of variables k and epsilon
-ikiph = ik
-ieiph = iep
-
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(ikiph).ge.1) then
+if(iwarni(ik).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -236,7 +232,7 @@ tau = 4.d0
 xx  = 2.d0
 
 do iel = 1, ncel
-  crkexp(iel) = -propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,ieiph)
+  crkexp(iel) = -propce(iel,ipcrom)*volume(iel)*ff*rtpa(iel,iep)
   creexp(iel) =  propce(iel,ipcrom)*volume(iel)*xx
 enddo
 

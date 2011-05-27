@@ -147,7 +147,6 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          iccocg, inc, iel, ifac, ivar, isou, ii, jj
-integer          iuiph, iviph, iwiph
 integer          iclvar
 integer          nswrgp, imligp, iwarnp
 integer          ipcvis, ipcvst, ipcvsv
@@ -170,10 +169,6 @@ allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
 idebia = idbia0
 idebra = idbra0
-
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
 
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
@@ -222,9 +217,9 @@ endif
 
 do isou = 1, 3
 
-  if (isou.eq.1) ivar = iuiph
-  if (isou.eq.2) ivar = iviph
-  if (isou.eq.3) ivar = iwiph
+  if (isou.eq.1) ivar = iu
+  if (isou.eq.2) ivar = iv
+  if (isou.eq.3) ivar = iw
 
 ! Ceci pointe eventuellement sur ICLRTP(IVAR,ICOEF)
   iclvar = iclrtp(ivar,icoeff)

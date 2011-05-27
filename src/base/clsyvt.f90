@@ -138,8 +138,6 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ifac, ii, isou
-integer          iuiph , iviph , iwiph
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          iclu  , iclv  , iclw
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf
@@ -159,12 +157,6 @@ double precision srfbnf, rcodcn
 
 ! Initialize variables to avoid compiler warnings
 
-ir11ip = 0
-ir22ip = 0
-ir33ip = 0
-ir12ip = 0
-ir13ip = 0
-ir23ip = 0
 icl11 = 0
 icl22 = 0
 icl33 = 0
@@ -177,42 +169,29 @@ iclvar = 0
 idebia = idbia0
 idebra = idbra0
 
-! --- Variables
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-if(itytur.eq.3) then
-  ir11ip = ir11
-  ir22ip = ir22
-  ir33ip = ir33
-  ir12ip = ir12
-  ir13ip = ir13
-  ir23ip = ir23
-endif
-
 ! --- Conditions aux limites
-iclu   = iclrtp(iuiph ,icoef)
-iclv   = iclrtp(iviph ,icoef)
-iclw   = iclrtp(iwiph ,icoef)
+iclu   = iclrtp(iu ,icoef)
+iclv   = iclrtp(iv ,icoef)
+iclw   = iclrtp(iw ,icoef)
 if(itytur.eq.3) then
-  icl11  = iclrtp(ir11ip,icoef)
-  icl22  = iclrtp(ir22ip,icoef)
-  icl33  = iclrtp(ir33ip,icoef)
-  icl12  = iclrtp(ir12ip,icoef)
-  icl13  = iclrtp(ir13ip,icoef)
-  icl23  = iclrtp(ir23ip,icoef)
+  icl11  = iclrtp(ir11,icoef)
+  icl22  = iclrtp(ir22,icoef)
+  icl33  = iclrtp(ir33,icoef)
+  icl12  = iclrtp(ir12,icoef)
+  icl13  = iclrtp(ir13,icoef)
+  icl23  = iclrtp(ir23,icoef)
 endif
 
-icluf  = iclrtp(iuiph ,icoeff)
-iclvf  = iclrtp(iviph ,icoeff)
-iclwf  = iclrtp(iwiph ,icoeff)
+icluf  = iclrtp(iu ,icoeff)
+iclvf  = iclrtp(iv ,icoeff)
+iclwf  = iclrtp(iw ,icoeff)
 
 
 ! --- Boucle sur les faces de bord : debut
 do ifac = 1, nfabor
 
 ! --- Test sur la presence d'une condition de symetrie vitesse : debut
-  if( icodcl(ifac,iuiph).eq.4 ) then
+  if( icodcl(ifac,iu).eq.4 ) then
 
 ! --- Pour annuler le flux de masse
     isympa(ifac) = 0
@@ -238,9 +217,9 @@ do ifac = 1, nfabor
 !       de TX et T2X est sans importance pour les symetries)
     rcodcn = 0.d0
     if (iale.eq.1) then
-      rcodcn = rcodcl(ifac,iuiph,1)*rnx                           &
-             + rcodcl(ifac,iviph,1)*rny                           &
-             + rcodcl(ifac,iwiph,1)*rnz
+      rcodcn = rcodcl(ifac,iu,1)*rnx                           &
+             + rcodcl(ifac,iv,1)*rny                           &
+             + rcodcl(ifac,iw,1)*rnz
     endif
 
     upx = coefu(ifac,1)
@@ -430,7 +409,7 @@ enddo
 
   if(iclu.ne.icluf) then
     do ifac = 1, nfabor
-      if( icodcl(ifac,iuiph).eq.4) then
+      if( icodcl(ifac,iu).eq.4) then
         coefa(ifac,icluf) = coefa(ifac,iclu)
         coefb(ifac,icluf) = coefb(ifac,iclu)
         coefa(ifac,iclvf) = coefa(ifac,iclv)

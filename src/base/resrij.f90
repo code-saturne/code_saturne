@@ -161,8 +161,6 @@ double precision ra(*)
 integer          idebia, idebra, ifinia
 integer          init  , ifac  , iel   , inc   , iccocg
 integer          ii    , jj    , iiun
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
-integer          ieiph , iuiph
 integer          ipcrom, ipcvis, iflmas, iflmab, ipcroo
 integer          iclvar, iclvaf
 integer          nswrgp, imligp, iwarnp
@@ -195,19 +193,10 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
 endif
 
-iuiph  = iu
-ir11ip = ir11
-ir22ip = ir22
-ir33ip = ir33
-ir12ip = ir12
-ir13ip = ir13
-ir23ip = ir23
-ieiph  = iep
-
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 
 iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
@@ -359,8 +348,7 @@ enddo
 ! ---> Calcul de k pour la suite du sous-programme
 !       on utilise un tableau de travail puisqu'il y en a...
 do iel = 1, ncel
-  w8(iel) = 0.5d0 * (rtpa(iel,ir11ip) + rtpa(iel,ir22ip) +        &
-                     rtpa(iel,ir33ip))
+  w8(iel) = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
 enddo
 
 ! ---> Terme source
@@ -403,18 +391,18 @@ if(isto2t.gt.0) then
                           + propce(iel,ipcroo) * volume(iel)      &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
-            +(crij1-1.d0)* rtpa(iel,ieiph)  )                     &
+            +(crij1-1.d0)* rtpa(iel,iep)  )                     &
          +(1.0d0-crij2)*produc(isou,iel)               )
 !       Dans SMBR
 !       =       -C1rho eps/k(Rij         )
 !       = rho{                                     -C1eps/kRij}
     smbr(iel) = smbr(iel) + propce(iel,ipcrom) * volume(iel)      &
-      *( -crij1*rtpa(iel,ieiph)/trrij * rtpa(iel,ivar)  )
+      *( -crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar)  )
 
 !     Calcul de la partie implicite issue de Phi1
 !       = C1rho eps/k(1        )
     rovsdt(iel) = rovsdt(iel) + propce(iel,ipcrom) * volume(iel)  &
-                            *crij1*rtpa(iel,ieiph)/trrij*thetv
+                            *crij1*rtpa(iel,iep)/trrij*thetv
 
   enddo
 
@@ -429,16 +417,16 @@ if(isto2t.gt.0) then
 !       =       -C1rho eps/k(   -1/3Rij dij)
       propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1)       &
                           - propce(iel,ipcroo) * volume(iel)      &
-      *(deltij*d1s3*crij1*rtpa(iel,ieiph)/trrij * rtpa(iel,ivar))
+      *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar))
 !    On ajoute a SMBR (avec IPCROM)
 !       =       -C1rho eps/k(   -1/3Rij dij)
       smbr(iel)                 = smbr(iel)                       &
                           + propce(iel,ipcrom) * volume(iel)      &
-      *(deltij*d1s3*crij1*rtpa(iel,ieiph)/trrij * rtpa(iel,ivar))
+      *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar))
 !    On ajoute a ROVSDT (avec IPCROM)
 !       =        C1rho eps/k(   -1/3    dij)
       rovsdt(iel) = rovsdt(iel) + propce(iel,ipcrom) * volume(iel)&
-      *(deltij*d1s3*crij1*rtpa(iel,ieiph)/trrij                 )
+      *(deltij*d1s3*crij1*rtpa(iel,iep)/trrij                 )
     enddo
 
   endif
@@ -458,14 +446,14 @@ else
     smbr(iel) = smbr(iel) + propce(iel,ipcrom) * volume(iel)      &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
-            +(crij1-1.d0)* rtpa(iel,ieiph)  )                     &
+            +(crij1-1.d0)* rtpa(iel,iep)  )                     &
          +(1.0d0-crij2)*produc(isou,iel)                          &
-         -crij1*rtpa(iel,ieiph)/trrij * rtpa(iel,ivar)  )
+         -crij1*rtpa(iel,iep)/trrij * rtpa(iel,ivar)  )
 
 !     Calcul de la partie implicite issue de Phi1
 !       = C1rho eps/k(1-1/3 dij)
     rovsdt(iel) = rovsdt(iel) + propce(iel,ipcrom) * volume(iel)  &
-         *(1.d0-d1s3*deltij)*crij1*rtpa(iel,ieiph)/trrij
+         *(1.d0-d1s3*deltij)*crij1*rtpa(iel,iep)/trrij
   enddo
 
 endif
@@ -575,13 +563,13 @@ call grdcel                                                       &
 
  do iel = 1, ncel
   trrij = w8(iel)
-  cstrij = propce(iel,ipcroo) * csrij *trrij / rtpa(iel,ieiph)
-  w4(iel) = cstrij * ( rtpa(iel,ir12ip) * w2(iel)                 &
-                      +rtpa(iel,ir13ip) * w3(iel) )
-  w5(iel) = cstrij * ( rtpa(iel,ir12ip) * w1(iel)                 &
-                      +rtpa(iel,ir23ip) * w3(iel) )
-  w6(iel) = cstrij * ( rtpa(iel,ir13ip) * w1(iel)                 &
-                      +rtpa(iel,ir23ip) * w2(iel) )
+  cstrij = propce(iel,ipcroo) * csrij *trrij / rtpa(iel,iep)
+  w4(iel) = cstrij * ( rtpa(iel,ir12) * w2(iel)                 &
+                      +rtpa(iel,ir13) * w3(iel) )
+  w5(iel) = cstrij * ( rtpa(iel,ir12) * w1(iel)                 &
+                      +rtpa(iel,ir23) * w3(iel) )
+  w6(iel) = cstrij * ( rtpa(iel,ir13) * w1(iel)                 &
+                      +rtpa(iel,ir23) * w2(iel) )
  enddo
 
 
@@ -630,10 +618,10 @@ if (idifre.eq.1) then
 
   do iel = 1, ncel
     trrij = w8(iel)
-    cstrij = propce(iel,ipcroo) * csrij *trrij / rtpa(iel,ieiph)
-    w4(iel) = cstrij*rtpa(iel,ir11ip)
-    w5(iel) = cstrij*rtpa(iel,ir22ip)
-    w6(iel) = cstrij*rtpa(iel,ir33ip)
+    cstrij = propce(iel,ipcroo) * csrij *trrij / rtpa(iel,iep)
+    w4(iel) = cstrij*rtpa(iel,ir11)
+    w5(iel) = cstrij*rtpa(iel,ir22)
+    w6(iel) = cstrij*rtpa(iel,ir33)
   enddo
 
 ! --->  TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
@@ -699,13 +687,10 @@ endif
 if( idiff(ivar).ge. 1 ) then
   do iel = 1, ncel
     trrij = w8(iel)
-    rctse = propce(iel,ipcrom) * csrij * trrij / rtpa(iel,ieiph)
-    w1(iel) = propce(iel,ipcvis)                                  &
-                            + idifft(ivar)*rctse*rtpa(iel,ir11ip)
-    w2(iel) = propce(iel,ipcvis)                                  &
-                            + idifft(ivar)*rctse*rtpa(iel,ir22ip)
-    w3(iel) = propce(iel,ipcvis)                                  &
-                            + idifft(ivar)*rctse*rtpa(iel,ir33ip)
+    rctse = propce(iel,ipcrom) * csrij * trrij / rtpa(iel,iep)
+    w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir11)
+    w2(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir22)
+    w3(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir33)
   enddo
 
   call visort                                                     &

@@ -115,9 +115,7 @@ integer          idebia, idebra, ifinia
 integer          ivar  , iscal , imom
 integer          iel
 integer          iclip , ipp  , iok   , ii
-integer          ikiph , ieiph , ir11ip, ir22ip, ir33ip, iphiph
-integer          inuiph
-integer          iomgip, idtcm , ipcmom, iiptot, ipriph
+integer          idtcm , ipcmom, iiptot
 integer          ibormo(nbmomx)
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
@@ -125,7 +123,7 @@ double precision xekmin, xepmin, xomgmn, xphmin, xphmax
 double precision xnumin
 double precision x11min, x22min, x33min, valmom
 double precision vmomax(nbmomx), vmomin(nbmomx)
-double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0
+double precision xxp0, xyp0, xzp0
 
 !===============================================================================
 
@@ -200,27 +198,23 @@ endif
 ! En compressible, Ptot n'est pas defini (correspond directement a RTP(.,IPR)
 
 if  (ippmod(icompf).lt.0) then
-  ipriph = ipr
   iiptot = ipproc(iprtot)
-  ro0iph = ro0
-  p0iph  = p0
-  pr0iph = pred0
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
   do iel = 1, ncel
     if (propce(iel,iiptot).gt.-0.5d0*rinfin) then
-      rtp(iel,ipriph) = propce(iel,iiptot)                      &
-           - ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
+      rtp(iel,ipr) = propce(iel,iiptot)                      &
+           - ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
            + gy*(xyzcen(2,iel)-xyp0)                   &
            + gz*(xyzcen(3,iel)-xzp0) )                 &
-           + pr0iph - p0iph
+           + pred0 - p0
     else
-      propce(iel,iiptot) = rtp(iel,ipriph)                      &
-           + ro0iph*( gx*(xyzcen(1,iel)-xxp0)                   &
+      propce(iel,iiptot) = rtp(iel,ipr)                      &
+           + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
            + gy*(xyzcen(2,iel)-xyp0)                   &
            + gz*(xyzcen(3,iel)-xzp0) )                 &
-           + p0iph - pr0iph
+           + p0 - pred0
     endif
   enddo
 endif
@@ -266,14 +260,11 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
   if(itytur.eq.2 .or. iturb.eq.50) then
 
-    ikiph  = ik
-    ieiph  = iep
-
-    xekmin = rtp(1,ikiph)
-    xepmin = rtp(1,ieiph)
+    xekmin = rtp(1,ik)
+    xepmin = rtp(1,iep)
     do iel = 1, ncel
-      xekmin = min(xekmin,rtp(iel,ikiph) )
-      xepmin = min(xepmin,rtp(iel,ieiph))
+      xekmin = min(xekmin,rtp(iel,ik) )
+      xepmin = min(xepmin,rtp(iel,iep))
     enddo
     if (irangp.ge.0) then
       call parmin (xekmin)
@@ -286,7 +277,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       iclip = 1
       call clipke( ncelet , ncel   , nvar   ,          &
       !==========
-                   iclip  , iwarni(ikiph) ,            &
+                   iclip  , iwarni(ik) ,            &
                    propce , rtp    )
     else
       write(nfecra,3020) xekmin,xepmin
@@ -295,13 +286,12 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
     !     En v2-f, on verifie aussi que phi est compris entre 0 et 2
     if (iturb.eq.50) then
-      iphiph = iphi
 
-      xphmin = rtp(1,iphiph)
-      xphmax = rtp(1,iphiph)
+      xphmin = rtp(1,iphi)
+      xphmax = rtp(1,iphi)
       do iel = 1, ncel
-        xphmin = min(xphmin,rtp(iel,iphiph) )
-        xphmax = max(xphmax,rtp(iel,iphiph) )
+        xphmin = min(xphmin,rtp(iel,iphi) )
+        xphmax = max(xphmax,rtp(iel,iphi) )
       enddo
       if (irangp.ge.0) then
         call parmin (xphmin)
@@ -321,20 +311,15 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
   elseif(itytur.eq.3) then
 
-    ir11ip = ir11
-    ir22ip = ir22
-    ir33ip = ir33
-    ieiph  = iep
-
-    x11min = rtp(1,ir11ip)
-    x22min = rtp(1,ir22ip)
-    x33min = rtp(1,ir33ip)
-    xepmin = rtp(1,ieiph)
+    x11min = rtp(1,ir11)
+    x22min = rtp(1,ir22)
+    x33min = rtp(1,ir33)
+    xepmin = rtp(1,iep)
     do iel = 1, ncel
-      x11min = min(x11min,rtp(iel,ir11ip))
-      x22min = min(x22min,rtp(iel,ir22ip))
-      x33min = min(x33min,rtp(iel,ir33ip))
-      xepmin = min(xepmin,rtp(iel,ieiph) )
+      x11min = min(x11min,rtp(iel,ir11))
+      x22min = min(x22min,rtp(iel,ir22))
+      x33min = min(x33min,rtp(iel,ir33))
+      xepmin = min(xepmin,rtp(iel,iep) )
     enddo
     if (irangp.ge.0) then
       call parmin (x11min)
@@ -360,14 +345,11 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
   elseif(iturb.eq.60) then
 
-    ikiph   = ik
-    iomgip  = iomg
-
-    xekmin = rtp(1,ikiph )
-    xomgmn = rtp(1,iomgip)
+    xekmin = rtp(1,ik )
+    xomgmn = rtp(1,iomg)
     do iel = 1, ncel
-      xekmin = min(xekmin,rtp(iel,ikiph ))
-      xomgmn = min(xomgmn,rtp(iel,iomgip))
+      xekmin = min(xekmin,rtp(iel,ik ))
+      xomgmn = min(xomgmn,rtp(iel,iomg))
     enddo
     if (irangp.ge.0) then
       call parmin (xekmin)
@@ -384,11 +366,9 @@ if(iusini.eq.1.or.isuite.eq.1) then
 
   elseif(iturb.eq.70) then
 
-    inuiph  = inusa
-
-    xnumin = rtp(1,inuiph)
+    xnumin = rtp(1,inusa)
     do iel = 1, ncel
-      xnumin = min(xnumin,rtp(iel,inuiph))
+      xnumin = min(xnumin,rtp(iel,inusa))
     enddo
     if (irangp.ge.0) then
       call parmin (xnumin)

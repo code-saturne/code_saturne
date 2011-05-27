@@ -469,7 +469,7 @@ unspi = 1.d0/pi
   endif
 
 !===============================================================================
-! 4. STOCKAGE DE LA TEMPERATURE (en Kelvin) dans TEMPK(IEL,IPH)
+! 4. STOCKAGE DE LA TEMPERATURE (en Kelvin) dans TEMPK(IEL,IRPHAS)
 !===============================================================================
 
   if (idiver.ge.0) then

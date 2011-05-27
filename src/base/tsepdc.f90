@@ -111,7 +111,7 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          iel   , ielpdc
-integer          iuiph , iviph , iwiph , ipcrom, ipcroo
+integer          ipcrom, ipcroo
 double precision romvom, vit1  , vit2  , vit3
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 
@@ -120,9 +120,6 @@ double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 idebia = idbia0
 idebra = idbra0
 
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
 ipcrom = ipproc(irom  )
 
 ipcroo = ipcrom
@@ -141,9 +138,9 @@ if(idiaex.eq.1) then
     cpdc11 = ckupdc(ielpdc,1)
     cpdc22 = ckupdc(ielpdc,2)
     cpdc33 = ckupdc(ielpdc,3)
-    vit1   = rtpa(iel,iuiph)
-    vit2   = rtpa(iel,iviph)
-    vit3   = rtpa(iel,iwiph)
+    vit1   = rtpa(iel,iu)
+    vit2   = rtpa(iel,iv)
+    vit3   = rtpa(iel,iw)
 
     trav(iel,1) = trav(iel,1) +                                   &
          romvom * ( cpdc11*vit1                             )
@@ -167,9 +164,9 @@ if(idiaex.eq.2) then
     cpdc12 = ckupdc(ielpdc,4)
     cpdc13 = ckupdc(ielpdc,5)
     cpdc23 = ckupdc(ielpdc,6)
-    vit1   = rtpa(iel,iuiph)
-    vit2   = rtpa(iel,iviph)
-    vit3   = rtpa(iel,iwiph)
+    vit1   = rtpa(iel,iu)
+    vit2   = rtpa(iel,iv)
+    vit3   = rtpa(iel,iw)
 
     trav(iel,1) = trav(iel,1) +                                   &
          romvom * (               cpdc12*vit2 + cpdc13*vit3 )

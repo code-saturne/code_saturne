@@ -111,7 +111,6 @@ double precision ra(*)
 
 integer          idebia , idebra
 integer          iel    , ifac   , iscal
-integer          iuiph
 integer          ipcrom , ipcroa
 integer          ipbrom , ipbroa
 integer          iflmas , iflmab , iflmba, iflmsa
@@ -157,11 +156,10 @@ if(iappel.eq.1) then
 !       en suite de calcul, les deux ont ete relus.
 
   if(istmpf.eq.2) then
-    iuiph  = iu
-    iflmas = ipprof(ifluma(iuiph))
-    iflmab = ipprob(ifluma(iuiph))
-    iflmsa = ipprof(ifluaa(iuiph))
-    iflmba = ipprob(ifluaa(iuiph))
+    iflmas = ipprof(ifluma(iu))
+    iflmab = ipprob(ifluma(iu))
+    iflmsa = ipprof(ifluaa(iu))
+    iflmba = ipprob(ifluaa(iu))
     do ifac = 1 , nfac
       flux                =      propfa(ifac,iflmas)
       propfa(ifac,iflmas) = 2.d0*propfa(ifac,iflmas)            &
@@ -419,12 +417,11 @@ elseif(iappel.eq.3) then
 !     - a toutes les iterations si ISTMPF.NE.0
 !     - a toutes les iterations sauf la derniere si ISTMPF.EQ.0
 
-  iuiph  = iu
-  iflmas = ipprof(ifluma(iuiph))
-  iflmab = ipprob(ifluma(iuiph))
+  iflmas = ipprof(ifluma(iu))
+  iflmab = ipprob(ifluma(iu))
   if(istmpf.eq.2) then
-    iflmsa = ipprof(ifluaa(iuiph))
-    iflmba = ipprob(ifluaa(iuiph))
+    iflmsa = ipprof(ifluaa(iu))
+    iflmba = ipprob(ifluaa(iu))
     theta  = thetfl
     aa = 1.d0/(2.d0-theta)
     bb = (1.d0-theta)/(2.d0-theta)
@@ -437,8 +434,8 @@ elseif(iappel.eq.3) then
            + bb * propfb(ifac,iflmba)
     enddo
   elseif(istmpf.eq.0) then
-    iflmsa = ipprof(ifluaa(iuiph))
-    iflmba = ipprob(ifluaa(iuiph))
+    iflmsa = ipprof(ifluaa(iu))
+    iflmba = ipprob(ifluaa(iu))
     do ifac = 1 , nfac
       propfa(ifac,iflmas) = propfa(ifac,iflmsa)
     enddo
@@ -476,12 +473,11 @@ elseif(iappel.eq.4) then
 !          suppose que l'utilisateur a choisi de faire des sous-iter
 !          aussi pour impliciter le flux de masse)
 
-  iuiph  = iu
-  iflmas = ipprof(ifluma(iuiph))
-  iflmab = ipprob(ifluma(iuiph))
+  iflmas = ipprof(ifluma(iu))
+  iflmab = ipprob(ifluma(iu))
   if(istmpf.eq.2) then
-    iflmsa = ipprof(ifluaa(iuiph))
-    iflmba = ipprob(ifluaa(iuiph))
+    iflmsa = ipprof(ifluaa(iu))
+    iflmba = ipprob(ifluaa(iu))
     theta  = thetfl
     aa = 1.d0/(2.d0-theta)
     bb = (1.d0-theta)/(2.d0-theta)
@@ -494,8 +490,8 @@ elseif(iappel.eq.4) then
            + bb * propfb(ifac,iflmba)
     enddo
   elseif(istmpf.eq.0) then
-    iflmsa = ipprof(ifluaa(iuiph))
-    iflmba = ipprob(ifluaa(iuiph))
+    iflmsa = ipprof(ifluaa(iu))
+    iflmba = ipprob(ifluaa(iu))
     do ifac = 1 , nfac
       flux = propfa(ifac,iflmas)
       propfa(ifac,iflmas) = propfa(ifac,iflmsa)
@@ -529,11 +525,10 @@ elseif(iappel.eq.5) then
 !       de sorte que les deux flux contiennent la meme chose
 
   if(istmpf.eq.0) then
-    iuiph  = iu
-    iflmas = ipprof(ifluma(iuiph))
-    iflmab = ipprob(ifluma(iuiph))
-    iflmsa = ipprof(ifluaa(iuiph))
-    iflmba = ipprob(ifluaa(iuiph))
+    iflmas = ipprof(ifluma(iu))
+    iflmab = ipprob(ifluma(iu))
+    iflmsa = ipprof(ifluaa(iu))
+    iflmba = ipprob(ifluaa(iu))
     do ifac = 1 , nfac
       propfa(ifac,iflmas) = propfa(ifac,iflmsa)
     enddo

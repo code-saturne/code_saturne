@@ -118,8 +118,6 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifac, ivar1, ivar2, ivar3, init, inc
 integer          iccocg,iflmb0
-integer          iuiph , iviph , iwiph
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          ipcrom, ipbrom
 integer          iclva1, iclva2, iclva3
 integer          nswrgp, imligp, iwarnp
@@ -136,34 +134,23 @@ double precision epsrgp, climgp, extrap
 idebia = idbia0
 idebra = idbra0
 
-! --- Variables
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-ir11ip = ir11
-ir22ip = ir22
-ir33ip = ir33
-ir12ip = ir12
-ir13ip = ir13
-ir23ip = ir23
-
 ! --- Masse volumique
 ipcrom = ipproc(irom  )
 ipbrom = ipprob(irom  )
 
 ! --- Variables locales (Rij)
-if(ivar.eq.iuiph) then
-   ivar1 = ir11ip
-   ivar2 = ir12ip
-   ivar3 = ir13ip
-elseif(ivar.eq.iviph) then
-   ivar1 = ir12ip
-   ivar2 = ir22ip
-   ivar3 = ir23ip
-elseif(ivar.eq.iwiph) then
-   ivar1 = ir13ip
-   ivar2 = ir23ip
-   ivar3 = ir33ip
+if(ivar.eq.iu) then
+   ivar1 = ir11
+   ivar2 = ir12
+   ivar3 = ir13
+elseif(ivar.eq.iv) then
+   ivar1 = ir12
+   ivar2 = ir22
+   ivar3 = ir23
+elseif(ivar.eq.iw) then
+   ivar1 = ir13
+   ivar2 = ir23
+   ivar3 = ir33
 endif
 
 ! --- Conditions aux limites des variables locales (Rij)
@@ -180,12 +167,12 @@ init = 1
 inc  = 1
 iccocg = 1
 iflmb0 = 0
-nswrgp = nswrgr(ir11ip)
-imligp = imligr(ir11ip)
-iwarnp = iwarni(ir11ip)
-epsrgp = epsrgr(ir11ip)
-climgp = climgr(ir11ip)
-extrap = extrag(ir11ip)
+nswrgp = nswrgr(ir11)
+imligp = imligr(ir11)
+iwarnp = iwarni(ir11)
+epsrgp = epsrgr(ir11)
+climgp = climgr(ir11)
+extrap = extrag(ir11)
 
 iismph = iisymp
 

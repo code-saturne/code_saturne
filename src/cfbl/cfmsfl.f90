@@ -148,7 +148,6 @@ integer          iirom , iiromb
 integer          ivar0 , imvis1, iccfth, imodif, isou
 integer          imaspe, iflmb0, iismph
 integer          icliup, iclivp, icliwp, iclvar
-integer          iuiph , iviph , iwiph
 integer          itsqdm, iiun  , iextts
 
 double precision epsrgp, climgp, extrap, blencp
@@ -166,10 +165,6 @@ idebra = idbra0
 ! --- Numero des variables de calcul
 !     Masse volumique
 ivar   = isca(iscal)
-!     Vitesses
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
 
 !     Masse volumique dans PROPCE
 iirom  = ipproc(irom  )
@@ -241,7 +236,7 @@ if(itsqdm.ne.0) then
   call ustsns                                                     &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iuiph  ,                                                       &
+   iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -254,7 +249,7 @@ if(itsqdm.ne.0) then
   call ustsns                                                     &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iviph  ,                                                       &
+   iv  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -267,7 +262,7 @@ if(itsqdm.ne.0) then
   call ustsns                                                     &
   !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iwiph  ,                                                       &
+   iw  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
@@ -278,23 +273,23 @@ if(itsqdm.ne.0) then
 
 
 ! --- Terme de convection de quantite de mouvement
-  if(iconv(iuiph).ge.1) then
+  if(iconv(iu).ge.1) then
 
-    icliup = iclrtp(iuiph ,icoef)
-    iclivp = iclrtp(iviph ,icoef)
-    icliwp = iclrtp(iwiph ,icoef)
+    icliup = iclrtp(iu ,icoef)
+    iclivp = iclrtp(iv ,icoef)
+    icliwp = iclrtp(iw ,icoef)
 
     init   = 1
     inc    = 1
     iccocg = 1
     iflmb0 = 1
     iismph = iisymp
-    nswrgp = nswrgr(iuiph)
-    imligp = imligr(iuiph)
-    iwarnp = iwarni(iuiph)
-    epsrgp = epsrgr(iuiph)
-    climgp = climgr(iuiph)
-    extrap = extrag(iuiph)
+    nswrgp = nswrgr(iu)
+    imligp = imligr(iu)
+    iwarnp = iwarni(iu)
+    epsrgp = epsrgr(iu)
+    climgp = climgr(iu)
+    extrap = extrag(iu)
 
     imaspe = 1
 
@@ -303,14 +298,14 @@ if(itsqdm.ne.0) then
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   iuiph  , iviph  , iwiph  , imaspe ,                            &
+   iu  , iv  , iw  , imaspe ,                                     &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,iirom) , propfb(1,iiromb),                            &
-   rtpa (1,iuiph)  , rtpa (1,iviph)  , rtpa (1,iwiph)  ,          &
+   rtpa (1,iu)  , rtpa (1,iv)  , rtpa (1,iw)  ,                   &
    coefa(1,icliup) , coefa(1,iclivp) , coefa(1,icliwp) ,          &
    coefb(1,icliup) , coefb(1,iclivp) , coefb(1,icliwp) ,          &
    flumas , flumab ,                                              &
@@ -320,11 +315,11 @@ if(itsqdm.ne.0) then
 !     Calcul du terme convecte suivant les 3 directions
 !       sans reconstruction
     do isou = 1, 3
-      if(isou.eq.1) ivar0  = iuiph
+      if(isou.eq.1) ivar0  = iu
       if(isou.eq.1) iclvar = icliup
-      if(isou.eq.2) ivar0  = iviph
+      if(isou.eq.2) ivar0  = iv
       if(isou.eq.2) iclvar = iclivp
-      if(isou.eq.3) ivar0  = iwiph
+      if(isou.eq.3) ivar0  = iw
       if(isou.eq.3) iclvar = icliwp
 
       do ifac = 1, nfac
@@ -363,7 +358,7 @@ if(itsqdm.ne.0) then
 
 ! --- Terme de viscosite
 
-  if( idiff(iuiph).ge.1 ) then
+  if( idiff(iu).ge.1 ) then
 
     do iel = 1, ncelet
       w8(iel) = 1.d0
@@ -420,7 +415,7 @@ if(itsqdm.ne.0) then
   thetv  = 0.d0
   do isou = 1, 3
     if(isou.eq.1) then
-      ivar0  = iuiph
+      ivar0  = iu
       call catsma                                                 &
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
@@ -432,7 +427,7 @@ if(itsqdm.ne.0) then
       enddo
 
     elseif(isou.eq.2) then
-      ivar0  = iviph
+      ivar0  = iv
       call catsma                                                 &
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
@@ -444,7 +439,7 @@ if(itsqdm.ne.0) then
       enddo
 
     elseif(isou.eq.3) then
-      ivar0  = iwiph
+      ivar0  = iw
       call catsma                                                 &
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
@@ -573,9 +568,9 @@ call cfbsc3                                                       &
 ! --- Calcul des "vitesses" de convection au centre des cellules
 
 do iel = 1, ncel
-  w10(iel) = rtpa(iel,iuiph) + dt(iel)*w5(iel)
-  w11(iel) = rtpa(iel,iviph) + dt(iel)*w6(iel)
-  w12(iel) = rtpa(iel,iwiph) + dt(iel)*w7(iel)
+  w10(iel) = rtpa(iel,iu) + dt(iel)*w5(iel)
+  w11(iel) = rtpa(iel,iv) + dt(iel)*w6(iel)
+  w12(iel) = rtpa(iel,iw) + dt(iel)*w7(iel)
 enddo
 
 ! --- Calcul du flux par appel a INIMAS
@@ -599,9 +594,9 @@ do ifac = 1, nfabor
   trflmb(ifac) = 1.d0
 enddo
 
-icliup = iclrtp(iuiph ,icoef)
-iclivp = iclrtp(iviph ,icoef)
-icliwp = iclrtp(iwiph ,icoef)
+icliup = iclrtp(iu ,icoef)
+iclivp = iclrtp(iv ,icoef)
+icliwp = iclrtp(iw ,icoef)
 
 init   = 0
 !              ^ Il y a deja le flux de diffusion d'entropie dans FLUMAS

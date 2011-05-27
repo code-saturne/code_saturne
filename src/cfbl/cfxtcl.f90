@@ -144,8 +144,7 @@ integer          ivar  , ifac  , iel
 integer          ii    , iii   , imodif, iccfth
 integer          icalep, icalgm
 integer          iflmab
-integer          ipriph, iuiph , iviph , iwiph
-integer          irhiph, ieniph, itkiph
+integer          irh   , ien   , itk
 integer          iclp  , iclr
 integer          iclu  , iclv  , iclw
 integer          nvarcf
@@ -176,29 +175,25 @@ idebia = idbia0
 idebra = idbra0
 
 
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-irhiph = isca(irho  )
-ieniph = isca(ienerg)
-itkiph = isca(itempk)
-iclp   = iclrtp(ipriph,icoef)
-iclr   = iclrtp(irhiph,icoef)
-iclu   = iclrtp(iuiph ,icoef)
-iclv   = iclrtp(iviph ,icoef)
-iclw   = iclrtp(iwiph ,icoef)
+irh = isca(irho  )
+ien = isca(ienerg)
+itk = isca(itempk)
+iclp   = iclrtp(ipr,icoef)
+iclr   = iclrtp(irh,icoef)
+iclu   = iclrtp(iu ,icoef)
+iclv   = iclrtp(iv ,icoef)
+iclw   = iclrtp(iw ,icoef)
 
-iflmab = ipprob(ifluma(ieniph))
+iflmab = ipprob(ifluma(ien))
 
 !     Liste des variables compressible :
-ivarcf(1) = ipriph
-ivarcf(2) = iuiph
-ivarcf(3) = iviph
-ivarcf(4) = iwiph
-ivarcf(5) = irhiph
-ivarcf(6) = ieniph
-ivarcf(7) = itkiph
+ivarcf(1) = ipr
+ivarcf(2) = iu
+ivarcf(3) = iv
+ivarcf(4) = iw
+ivarcf(5) = irh
+ivarcf(6) = ien
+ivarcf(7) = itk
 nvarcf    = 7
 
 !     Calcul de epsilon_sup = e - CvT
@@ -210,7 +205,7 @@ nvarcf    = 7
 
 icalep = 0
 do ifac = 1, nfabor
-  if(icodcl(ifac,itkiph).eq.5) then
+  if(icodcl(ifac,itk).eq.5) then
     icalep = 1
   endif
 enddo
@@ -299,13 +294,13 @@ do ifac = 1, nfabor
 
     if(icfgrp.eq.1) then
 
-      icodcl(ifac,ipriph) = 3
+      icodcl(ifac,ipr) = 3
       hint = dt(iel)/distb(ifac)
-      rcodcl(ifac,ipriph,3) = -hint                             &
+      rcodcl(ifac,ipr,3) = -hint                             &
            * ( gx*(cdgfbo(1,ifac)-xyzcen(1,iel))                    &
            + gy*(cdgfbo(2,ifac)-xyzcen(2,iel))                    &
            + gz*(cdgfbo(3,ifac)-xyzcen(3,iel)) )                  &
-           * rtp(iel,irhiph)
+           * rtp(iel,irh)
 
     else
 
@@ -328,15 +323,14 @@ do ifac = 1, nfabor
 !        et COEFB directement, on gagnerait en simplicite, mais cela
 !        demanderait un test sur IPPMOD dans condli : à voir)
 
-      icodcl(ifac,ipriph) = 1
+      icodcl(ifac,ipr) = 1
       if(coefb(ifac,iclp).lt.rinfin*0.5d0.and.                  &
            coefb(ifac,iclp).gt.0.d0  ) then
         hint = dt(iel)/distb(ifac)
-        rcodcl(ifac,ipriph,1) = 0.d0
-        rcodcl(ifac,ipriph,2) =                                 &
-             hint*(1.d0/coefb(ifac,iclp)-1.d0)
+        rcodcl(ifac,ipr,1) = 0.d0
+        rcodcl(ifac,ipr,2) = hint*(1.d0/coefb(ifac,iclp)-1.d0)
       else
-        rcodcl(ifac,ipriph,1) = 0.d0
+        rcodcl(ifac,ipr,1) = 0.d0
       endif
 
     endif
@@ -357,14 +351,14 @@ do ifac = 1, nfabor
 !         aberrantes au voisinage de la couche limite)
 
 !       Par défaut : adiabatique
-    if(  icodcl(ifac,itkiph).eq.0.and.                          &
-         icodcl(ifac,ieniph).eq.0) then
-      icodcl(ifac,itkiph) = 3
-      rcodcl(ifac,itkiph,3) = 0.d0
+    if(  icodcl(ifac,itk).eq.0.and.                          &
+         icodcl(ifac,ien).eq.0) then
+      icodcl(ifac,itk) = 3
+      rcodcl(ifac,itk,3) = 0.d0
     endif
 
 !       Temperature imposee
-    if(icodcl(ifac,itkiph).eq.5) then
+    if(icodcl(ifac,itk).eq.5) then
 
 !           On impose la valeur de l'energie qui conduit au bon flux.
 !             On notera cependant qu'il s'agit de la condition à la
@@ -376,17 +370,15 @@ do ifac = 1, nfabor
 !               sachant que l'energie contient l'energie cinetique,
 !               ce qui rend le choix du profil délicat.
 
-      icodcl(ifac,ieniph) = 5
+      icodcl(ifac,ien) = 5
       if(icv.eq.0) then
-        rcodcl(ifac,ieniph,1) =                                 &
-             cv0*rcodcl(ifac,itkiph,1)
+        rcodcl(ifac,ien,1) = cv0*rcodcl(ifac,itk,1)
       else
-        rcodcl(ifac,ieniph,1) = propce(iel,ipproc(icv))  &
-             *rcodcl(ifac,itkiph,1)
+        rcodcl(ifac,ien,1) = propce(iel,ipproc(icv))  &
+             *rcodcl(ifac,itk,1)
       endif
-      rcodcl(ifac,ieniph,1) = rcodcl(ifac,ieniph,1)             &
-           + 0.5d0*(rtp(iel,iuiph)**2+                            &
-           rtp(iel,iviph)**2+rtp(iel,iwiph)**2)          &
+      rcodcl(ifac,ien,1) = rcodcl(ifac,ien,1)             &
+           + 0.5d0*(rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)          &
            + w5(iel)
 !                   ^epsilon sup (cf USCFTH)
 
@@ -396,15 +388,15 @@ do ifac = 1, nfabor
       ia(iifbet+ifac-1) = 1
 
 !           Flux nul pour la reconstruction éventuelle de température
-      icodcl(ifac,itkiph) = 3
-      rcodcl(ifac,itkiph,3) = 0.d0
+      icodcl(ifac,itk) = 3
+      rcodcl(ifac,itk,3) = 0.d0
 
 !       Flux impose
-    elseif(icodcl(ifac,itkiph).eq.3) then
+    elseif(icodcl(ifac,itk).eq.3) then
 
 !           On impose le flux sur l'energie
-      icodcl(ifac,ieniph) = 3
-      rcodcl(ifac,ieniph,3) = rcodcl(ifac,itkiph,3)
+      icodcl(ifac,ien) = 3
+      rcodcl(ifac,ien,3) = rcodcl(ifac,itk,3)
 
 !           Les flux en grad epsilon sup et énergie cinétique doivent
 !             être nuls puisque tout est pris par le terme de
@@ -412,8 +404,8 @@ do ifac = 1, nfabor
       ia(iifbet+ifac-1) = 1
 
 !           Flux nul pour la reconstruction éventuelle de température
-      icodcl(ifac,itkiph) = 3
-      rcodcl(ifac,itkiph,3) = 0.d0
+      icodcl(ifac,itk) = 3
+      rcodcl(ifac,itk,3) = 0.d0
 
     endif
 
@@ -465,10 +457,10 @@ do ifac = 1, nfabor
 !        et COEFB directement, on gagnerait en simplicite, mais cela
 !        demanderait un test sur IPPMOD dans condli : à voir)
 
-    icodcl(ifac,ipriph) = 3
-    rcodcl(ifac,ipriph,1) = 0.d0
-    rcodcl(ifac,ipriph,2) = rinfin
-    rcodcl(ifac,ipriph,3) = 0.d0
+    icodcl(ifac,ipr) = 3
+    rcodcl(ifac,ipr,1) = 0.d0
+    rcodcl(ifac,ipr,2) = rinfin
+    rcodcl(ifac,ipr,3) = 0.d0
 
 !       Toutes les autres variables prennent un flux nul (sauf la vitesse
 !         normale, qui est nulle) : par defaut dans typecl pour isymet.
@@ -496,10 +488,10 @@ do ifac = 1, nfabor
 !       (si on a donne une valeur nulle, c'est pas adapte : on supposera
 !        qu'on n'a pas initialise et on sort en erreur)
     iccfth = 10000
-    if(rcodcl(ifac,ipriph,1).gt.0.d0) iccfth = 2*iccfth
-    if(rcodcl(ifac,irhiph,1).gt.0.d0) iccfth = 3*iccfth
-    if(rcodcl(ifac,itkiph,1).gt.0.d0) iccfth = 5*iccfth
-    if(rcodcl(ifac,ieniph,1).gt.0.d0) iccfth = 7*iccfth
+    if(rcodcl(ifac,ipr,1).gt.0.d0) iccfth = 2*iccfth
+    if(rcodcl(ifac,irh,1).gt.0.d0) iccfth = 3*iccfth
+    if(rcodcl(ifac,itk,1).gt.0.d0) iccfth = 5*iccfth
+    if(rcodcl(ifac,ien,1).gt.0.d0) iccfth = 7*iccfth
     if((iccfth.le.70000.and.iccfth.ne.60000).or.                &
          (iccfth.eq.350000)) then
       write(nfecra,1000)iccfth
@@ -568,11 +560,11 @@ do ifac = 1, nfabor
     enddo
 
 !     Valeurs de rho u E
-    rcodcl(ifac,irhiph,1) = rtp(iel,irhiph)
-    rcodcl(ifac,iuiph ,1) = rtp(iel,iuiph)
-    rcodcl(ifac,iviph ,1) = rtp(iel,iviph)
-    rcodcl(ifac,iwiph ,1) = rtp(iel,iwiph)
-    rcodcl(ifac,ieniph,1) = rtp(iel,ieniph)
+    rcodcl(ifac,irh,1) = rtp(iel,irh)
+    rcodcl(ifac,iu ,1) = rtp(iel,iu)
+    rcodcl(ifac,iv ,1) = rtp(iel,iv)
+    rcodcl(ifac,iw ,1) = rtp(iel,iw)
+    rcodcl(ifac,ien,1) = rtp(iel,ien)
 
 !     Valeurs de P et s déduites
     iccfth = 924
@@ -611,7 +603,7 @@ do ifac = 1, nfabor
 !     Si P n'est pas donné, erreur ; on sort aussi en erreur si P
 !       négatif, même si c'est possible, dans la plupart des cas ce
 !       sera une erreur
-    if(rcodcl(ifac,ipriph,1).lt.-rinfin*0.5d0) then
+    if(rcodcl(ifac,ipr,1).lt.-rinfin*0.5d0) then
       write(nfecra,1100)
       call csexit (1)
     endif
@@ -662,10 +654,10 @@ do ifac = 1, nfabor
 !       selon la thermo et on passe dans Rusanov ensuite pour lisser.
 
 !     Si rho et u ne sont pas donnés, erreur
-    if(rcodcl(ifac,irhiph,1).lt.-rinfin*0.5d0.or.               &
-         rcodcl(ifac,iuiph ,1).lt.-rinfin*0.5d0.or.               &
-         rcodcl(ifac,iviph ,1).lt.-rinfin*0.5d0.or.               &
-         rcodcl(ifac,iwiph ,1).lt.-rinfin*0.5d0) then
+    if(rcodcl(ifac,irh,1).lt.-rinfin*0.5d0.or.               &
+         rcodcl(ifac,iu ,1).lt.-rinfin*0.5d0.or.               &
+         rcodcl(ifac,iv ,1).lt.-rinfin*0.5d0.or.               &
+         rcodcl(ifac,iw ,1).lt.-rinfin*0.5d0) then
       write(nfecra,1200)
       call csexit (1)
     endif
@@ -854,14 +846,14 @@ do ifac = 1, nfabor
 
 !       Entree sortie imposee : Neumann
     if ( itypfb(ifac).eq.iesicf ) then
-      icodcl(ifac,ipriph)   = 3
+      icodcl(ifac,ipr)   = 3
 !       Entree subsonique
     else if ( itypfb(ifac).eq.ierucf ) then
-      icodcl(ifac,ipriph)   = 3
-      rcodcl(ifac,ipriph,3) = 0.d0
+      icodcl(ifac,ipr)   = 3
+      rcodcl(ifac,ipr,3) = 0.d0
 !       Autres entrees/sorties : Dirichlet
     else
-      icodcl(ifac,ipriph)   = 1
+      icodcl(ifac,ipr)   = 1
     endif
 
 !-------------------------------------------------------------------------------
@@ -869,15 +861,15 @@ do ifac = 1, nfabor
 !-------------------------------------------------------------------------------
 
 !     Masse volumique
-    icodcl(ifac,irhiph)   = 1
+    icodcl(ifac,irh)   = 1
 !     Vitesse
-    icodcl(ifac,iuiph)    = 1
-    icodcl(ifac,iviph)    = 1
-    icodcl(ifac,iwiph)    = 1
+    icodcl(ifac,iu)    = 1
+    icodcl(ifac,iv)    = 1
+    icodcl(ifac,iw)    = 1
 !     Energie totale
-    icodcl(ifac,ieniph)   = 1
+    icodcl(ifac,ien)   = 1
 !     Temperature
-    icodcl(ifac,itkiph)   = 1
+    icodcl(ifac,itk)   = 1
 
 !-------------------------------------------------------------------------------
 !     turbulence et scalaires passifs : Dirichlet/Neumann selon flux

@@ -130,7 +130,6 @@ integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          ii, iivar , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt
 integer          nswrgp, imligp
-integer          ipriph, ikiph , iomgip
 integer          iclikp, iclomg
 integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
@@ -186,18 +185,14 @@ idebra = idbra0
 
 epz2 = epzero**2
 
-ipriph = ipr
-ikiph  = ik
-iomgip = iomg
-
-iclikp = iclrtp(ikiph ,icoef)
-iclomg = iclrtp(iomgip,icoef)
+iclikp = iclrtp(ik ,icoef)
+iclomg = iclrtp(iomg,icoef)
 
 ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
-iflmas = ipprof(ifluma(ikiph))
-iflmab = ipprob(ifluma(ikiph))
+iflmas = ipprof(ifluma(ik))
+iflmab = ipprob(ifluma(ik))
 ipbrom = ipprob(irom  )
 
 thets  = thetst
@@ -223,7 +218,7 @@ else
   iptsta = 0
 endif
 
-if(iwarni(ikiph).ge.1) then
+if(iwarni(ik).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -238,37 +233,37 @@ iccocg = 1
 inc = 1
 
 
-nswrgp = nswrgr(ikiph)
-imligp = imligr(ikiph)
-iwarnp = iwarni(ikiph)
-epsrgp = epsrgr(ikiph)
-climgp = climgr(ikiph)
-extrap = extrag(ikiph)
+nswrgp = nswrgr(ik)
+imligp = imligr(ik)
+iwarnp = iwarni(ik)
+epsrgp = epsrgr(ik)
+climgp = climgr(ik)
+extrap = extrag(ik)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,ikiph)   , coefa(1,iclikp) , coefb(1,iclikp) ,          &
+   rtpa(1,ik)   , coefa(1,iclikp) , coefb(1,iclikp) ,             &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
 
 
-nswrgp = nswrgr(iomgip)
-imligp = imligr(iomgip)
-iwarnp = iwarni(iomgip)
-epsrgp = epsrgr(iomgip)
-climgp = climgr(iomgip)
-extrap = extrag(iomgip)
+nswrgp = nswrgr(iomg)
+imligp = imligr(iomg)
+iwarnp = iwarni(iomg)
+epsrgp = epsrgr(iomg)
+climgp = climgr(iomg)
+extrap = extrag(iomg)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iomgip , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iomg , imrgra , inc    , iccocg , nswrgp , imligp ,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iomgip)  , coefa(1,iclomg) , coefb(1,iclomg) ,          &
+   rtpa(1,iomg)  , coefa(1,iclomg) , coefb(1,iclomg) ,            &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -307,8 +302,8 @@ endif
 do iel = 1, ncel
   rom = propce(iel,ipcroo)
   xnu = propce(iel,ipcvlo)/rom
-  xk = rtpa(iel,ikiph)
-  xw  = rtpa(iel,iomgip)
+  xk = rtpa(iel,ik)
+  xw  = rtpa(iel,iomg)
   cdkw = 2*rom/ckwsw2/xw*w1(iel)
   cdkw = max(cdkw,1.d-20)
   xarg1 = max( sqrt(xk)/cmu/xw/w2(iel),                           &
@@ -326,8 +321,8 @@ enddo
 
 d2s3 = 2.d0/3.d0
 do iel = 1, ncel
-  xk   = rtpa(iel,ikiph)
-  xeps = cmu*rtpa(iel,iomgip)*xk
+  xk   = rtpa(iel,ik)
+  xeps = cmu*rtpa(iel,iomg)*xk
   tinstk(iel) = s2kw(iel) - d2s3*divukw(iel)*divukw(iel)
   tinstw(iel) = propce(iel,ipcvto)*tinstk(iel)                    &
        -d2s3*propce(iel,ipcroo)*xk*divukw(iel)
@@ -350,12 +345,12 @@ if(igrake.eq.1) then
 
 !     Le choix ci dessous a l'avantage d'etre simple
 
-  nswrgp = nswrgr(ikiph)
-  epsrgp = epsrgr(ikiph)
-  imligp = imligr(ikiph)
-  iwarnp = iwarni(ikiph)
-  climgp = climgr(ikiph)
-  extrap = extrag(ikiph)
+  nswrgp = nswrgr(ik)
+  epsrgp = epsrgr(ik)
+  imligp = imligr(ik)
+  iwarnp = iwarni(ik)
+  climgp = climgr(ik)
+  extrap = extrag(ik)
 
 !     Conditions aux limites sur ROM : Dirichlet ROMB
 !       On utilise VISCB pour stocker le COEFB relatif a ROM
@@ -445,8 +440,8 @@ do iel = 1, ncel
 
   visct  = propce(iel,ipcvto)
   rom    = propce(iel,ipcroo)
-  xk     = rtpa(iel,ikiph)
-  xw     = rtpa(iel,iomgip)
+  xk     = rtpa(iel,ik)
+  xw     = rtpa(iel,iomg)
   xxf1   = xf1(iel)
   xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
   xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
@@ -483,32 +478,30 @@ if(isto2t.gt.0) then
 !       Pour la suite et le pas de temps suivant
     propce(iel,iptsta) = smbrk(iel)
 !       Termes dependant de la variable resolue et theta PROPCE
-    smbrk(iel) = iconv(ikiph)*w4(iel)*rtpa(iel,ikiph)             &
-         - thets*tuexpk
+    smbrk(iel) = iconv(ik)*w4(iel)*rtpa(iel,ik) - thets*tuexpk
 !       On suppose -DAM > 0 : on implicite
 !         le terme utilisateur dependant de la variable resolue
-    smbrk(iel) = dam(iel)*rtpa(iel,ikiph) + smbrk(iel)
+    smbrk(iel) = dam(iel)*rtpa(iel,ik) + smbrk(iel)
 
 !       Sauvegarde pour echange
     tuexpw = propce(iel,iptsta+1)
 !       Pour la suite et le pas de temps suivant
     propce(iel,iptsta+1) = smbrw(iel)
 !       Termes dependant de la variable resolue et theta PROPCE
-    smbrw(iel) = iconv(iomgip)*w4(iel)*rtpa(iel,iomgip)           &
-         - thets*tuexpw
+    smbrw(iel) = iconv(iomg)*w4(iel)*rtpa(iel,iomg) - thets*tuexpw
 !       On suppose -W3 > 0 : on implicite
 !         le terme utilisateur dependant de la variable resolue
-    smbrw(iel) =  w3(iel)*rtpa(iel,iomgip) + smbrw(iel)
+    smbrw(iel) =  w3(iel)*rtpa(iel,iomg) + smbrw(iel)
 
   enddo
 
 !     Si on n'extrapole pas les T.S.
 else
   do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + dam(iel)*rtpa(iel,ikiph)            &
-         +iconv(ikiph)*w4(iel)*rtpa(iel,ikiph)
-    smbrw(iel) = smbrw(iel) + w3 (iel)*rtpa(iel,iomgip)           &
-         +iconv(iomgip)*w4(iel)*rtpa(iel,iomgip)
+    smbrk(iel) = smbrk(iel) + dam(iel)*rtpa(iel,ik)            &
+         +iconv(ik)*w4(iel)*rtpa(iel,ik)
+    smbrw(iel) = smbrw(iel) + w3 (iel)*rtpa(iel,iomg)           &
+         +iconv(iomg)*w4(iel)*rtpa(iel,iomg)
   enddo
 endif
 
@@ -556,7 +549,7 @@ if (ikecou.eq.1) then
 
 ! ---> Traitement de k
 
-  ivar   = ikiph
+  ivar   = ik
 
   ipp    = ipprtp(ivar)
 
@@ -635,7 +628,7 @@ if (ikecou.eq.1) then
 
 ! ---> Traitement de omega
 
-  ivar   = iomgip
+  ivar   = iomg
 
   ipp    = ipprtp(ivar)
 
@@ -738,21 +731,21 @@ if (ncesmp.gt.0) then
   iiun = 1
 
 !       On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma (*theta)
-  ivar = ikiph
-  call catsma                                                     &
+  ivar = ik
+  call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
                                  isto2t , thetav(ivar) ,   &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrk  , w7     , tinstk )
-  ivar = iomgip
-  call catsma                                                     &
+  ivar = iomg
+  call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
                                  isto2t , thetav(ivar) ,   &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrw  , w8     , tinstw )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
@@ -801,8 +794,8 @@ if(ikecou.eq.1) then
     smbrw(iel) = smbrw(iel)*romvsd
     divp23     = d2s3*max(divukw(iel),zero)
     produc     = s2kw(iel)-d2s3*divukw(iel)**2+w2(iel)
-    xk         = rtpa(iel,ikiph)
-    xw         = rtpa(iel,iomgip)
+    xk         = rtpa(iel,ik)
+    xw         = rtpa(iel,iomg)
     xxf1       = xf1(iel)
     xgamma     = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
     xbeta      = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
@@ -853,10 +846,8 @@ endif
 do iel = 1, ncel
   rom = propce(iel,ipcrom)
   romvsd = rom*volume(iel)/dt(iel)
-  tinstk(iel) = istat(ikiph)*romvsd                               &
-               -iconv(ikiph)*w4(iel)*thetav(ikiph)
-  tinstw(iel) = istat(iomgip)*romvsd                              &
-               -iconv(iomgip)*w4(iel)*thetav(iomgip)
+  tinstk(iel) = istat(ik)*romvsd   -iconv(ik)*w4(iel)*thetav(ik)
+  tinstw(iel) = istat(iomg)*romvsd -iconv(iomg)*w4(iel)*thetav(iomg)
 enddo
 
 ! --- Source de masse (le theta est deja inclus par catsma)
@@ -869,8 +860,8 @@ endif
 
 ! --- Termes sources utilisateurs
 if(isto2t.gt.0) then
-  thetak = thetav(ikiph)
-  thetaw = thetav(iomgip)
+  thetak = thetav(ik)
+  thetaw = thetav(iomg)
   do iel = 1, ncel
     tinstk(iel) = tinstk(iel) -dam(iel)*thetak
     tinstw(iel) = tinstw(iel) -w3 (iel)*thetaw
@@ -896,7 +887,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 ! Termes sources implicte sur omega
 
     tinstw(iel) = tinstw(iel)                                     &
-          + max( (-ce4*tslagr(iel,itske)/rtpa(iel,ikiph)) , zero)
+          + max( (-ce4*tslagr(iel,itske)/rtpa(iel,ik)) , zero)
 
   enddo
 
@@ -906,7 +897,7 @@ endif
 
 if(ikecou.eq.0)then
   do iel=1,ncel
-    xw    = rtpa(iel,iomgip)
+    xw    = rtpa(iel,iomg)
     xxf1  = xf1(iel)
     xbeta = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
     rom = propce(iel,ipcrom)
@@ -926,7 +917,7 @@ endif
 
 ! ---> Traitement de k
 
-ivar = ikiph
+ivar = ik
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
 
@@ -1013,7 +1004,7 @@ call codits                                                       &
 
 ! ---> Traitement de omega
 
-ivar = iomgip
+ivar = iomg
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
 
@@ -1105,9 +1096,9 @@ call codits                                                       &
 !     Calcul des Min/Max avant clipping, pour affichage
 do ii = 1, 2
   if(ii.eq.1) then
-    ivar = ikiph
+    ivar = ik
   elseif(ii.eq.2) then
-    ivar = iomgip
+    ivar = iomg
   endif
   ipp  = ipprtp(ivar)
 
@@ -1133,21 +1124,21 @@ enddo
 iclipk = 0
 iclipw = 0
 do iel = 1, ncel
-  xk = rtp(iel,ikiph )
-  xw = rtp(iel,iomgip)
+  xk = rtp(iel,ik )
+  xw = rtp(iel,iomg)
   if (abs(xk).le.epz2) then
     iclipk = iclipk + 1
-    rtp(iel,ikiph) = max(rtp(iel,ikiph),epz2)
+    rtp(iel,ik) = max(rtp(iel,ik),epz2)
   elseif(xk.le.0.d0) then
     iclipk = iclipk + 1
-    rtp(iel,ikiph) = -xk
+    rtp(iel,ik) = -xk
   endif
   if (abs(xw).le.epz2) then
     iclipw = iclipw + 1
-    rtp(iel,iomgip) = max(rtp(iel,iomgip),epz2)
+    rtp(iel,iomg) = max(rtp(iel,iomg),epz2)
   elseif(xw.le.0.d0) then
     iclipw = iclipw + 1
-    rtp(iel,iomgip) = -xw
+    rtp(iel,iomg) = -xw
   endif
 enddo
 
@@ -1160,8 +1151,8 @@ endif
 
 ! ---  Stockage nb de clippings pour listing
 
-iclpmn(ipprtp(ikiph )) = iclipk
-iclpmn(ipprtp(iomgip)) = iclipw
+iclpmn(ipprtp(ik )) = iclipk
+iclpmn(ipprtp(iomg)) = iclipw
 
 
 ! Free memory

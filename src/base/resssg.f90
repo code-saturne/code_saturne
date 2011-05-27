@@ -161,8 +161,6 @@ double precision ra(*)
 integer          idebia, idebra, ifinia
 integer          init  , ifac  , iel
 integer          ii    , jj    , kk    , iiun  , iii   , jjj
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
-integer          ieiph , iuiph
 integer          ipcrom, ipcvis, iflmas, iflmab, ipcroo
 integer          iclvar, iclvaf
 integer          nswrgp, imligp, iwarnp
@@ -200,19 +198,10 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
 endif
 
-iuiph  = iu
-ir11ip = ir11
-ir22ip = ir22
-ir33ip = ir33
-ir12ip = ir12
-ir13ip = ir13
-ir23ip = ir23
-ieiph  = iep
-
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 
 iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
@@ -387,52 +376,51 @@ endif
 
 do iel=1,ncel
 
-  xprod(1,1) = -2.0d0*(rtpa(iel,ir11ip)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir12ip)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir13ip)*grdvit(iel,1,3) )
-  xprod(1,2) = -(      rtpa(iel,ir11ip)*grdvit(iel,2,1) +         &
-                       rtpa(iel,ir12ip)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir13ip)*grdvit(iel,2,3) )         &
-               -(      rtpa(iel,ir12ip)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir22ip)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir23ip)*grdvit(iel,1,3) )
-  xprod(1,3) = -(      rtpa(iel,ir11ip)*grdvit(iel,3,1) +         &
-                       rtpa(iel,ir12ip)*grdvit(iel,3,2) +         &
-                       rtpa(iel,ir13ip)*grdvit(iel,3,3) )         &
-               -(      rtpa(iel,ir13ip)*grdvit(iel,1,1) +         &
-                       rtpa(iel,ir23ip)*grdvit(iel,1,2) +         &
-                       rtpa(iel,ir33ip)*grdvit(iel,1,3) )
-  xprod(2,2) = -2.0d0*(rtpa(iel,ir12ip)*grdvit(iel,2,1) +         &
-                       rtpa(iel,ir22ip)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir23ip)*grdvit(iel,2,3) )
-  xprod(2,3) = -(      rtpa(iel,ir12ip)*grdvit(iel,3,1) +         &
-                       rtpa(iel,ir22ip)*grdvit(iel,3,2) +         &
-                       rtpa(iel,ir23ip)*grdvit(iel,3,3) )         &
-               -(      rtpa(iel,ir13ip)*grdvit(iel,2,1) +         &
-                       rtpa(iel,ir23ip)*grdvit(iel,2,2) +         &
-                       rtpa(iel,ir33ip)*grdvit(iel,2,3) )
-  xprod(3,3) = -2.0d0*(rtpa(iel,ir13ip)*grdvit(iel,3,1) +         &
-                       rtpa(iel,ir23ip)*grdvit(iel,3,2) +         &
-                       rtpa(iel,ir33ip)*grdvit(iel,3,3) )
+  xprod(1,1) = -2.0d0*(rtpa(iel,ir11)*grdvit(iel,1,1) +         &
+                       rtpa(iel,ir12)*grdvit(iel,1,2) +         &
+                       rtpa(iel,ir13)*grdvit(iel,1,3) )
+  xprod(1,2) = -(      rtpa(iel,ir11)*grdvit(iel,2,1) +         &
+                       rtpa(iel,ir12)*grdvit(iel,2,2) +         &
+                       rtpa(iel,ir13)*grdvit(iel,2,3) )         &
+               -(      rtpa(iel,ir12)*grdvit(iel,1,1) +         &
+                       rtpa(iel,ir22)*grdvit(iel,1,2) +         &
+                       rtpa(iel,ir23)*grdvit(iel,1,3) )
+  xprod(1,3) = -(      rtpa(iel,ir11)*grdvit(iel,3,1) +         &
+                       rtpa(iel,ir12)*grdvit(iel,3,2) +         &
+                       rtpa(iel,ir13)*grdvit(iel,3,3) )         &
+               -(      rtpa(iel,ir13)*grdvit(iel,1,1) +         &
+                       rtpa(iel,ir23)*grdvit(iel,1,2) +         &
+                       rtpa(iel,ir33)*grdvit(iel,1,3) )
+  xprod(2,2) = -2.0d0*(rtpa(iel,ir12)*grdvit(iel,2,1) +         &
+                       rtpa(iel,ir22)*grdvit(iel,2,2) +         &
+                       rtpa(iel,ir23)*grdvit(iel,2,3) )
+  xprod(2,3) = -(      rtpa(iel,ir12)*grdvit(iel,3,1) +         &
+                       rtpa(iel,ir22)*grdvit(iel,3,2) +         &
+                       rtpa(iel,ir23)*grdvit(iel,3,3) )         &
+               -(      rtpa(iel,ir13)*grdvit(iel,2,1) +         &
+                       rtpa(iel,ir23)*grdvit(iel,2,2) +         &
+                       rtpa(iel,ir33)*grdvit(iel,2,3) )
+  xprod(3,3) = -2.0d0*(rtpa(iel,ir13)*grdvit(iel,3,1) +         &
+                       rtpa(iel,ir23)*grdvit(iel,3,2) +         &
+                       rtpa(iel,ir33)*grdvit(iel,3,3) )
   xprod(2,1) = xprod(1,2)
   xprod(3,1) = xprod(1,3)
   xprod(3,2) = xprod(2,3)
 
   trprod = 0.5d0 * (xprod(1,1) + xprod(2,2) + xprod(3,3) )
-  trrij = 0.5d0 * (rtpa(iel,ir11ip) + rtpa(iel,ir22ip) +          &
-                   rtpa(iel,ir33ip))
+  trrij = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
 !-----> aII = aijaij
   aii    = 0.d0
   aklskl = 0.d0
   aiksjk = 0.d0
   aikrjk = 0.d0
   aikakj = 0.d0
-  xaniso(1,1) = rtpa(iel,ir11ip)/trrij-2.d0/3.d0
-  xaniso(2,2) = rtpa(iel,ir22ip)/trrij-2.d0/3.d0
-  xaniso(3,3) = rtpa(iel,ir33ip)/trrij-2.d0/3.d0
-  xaniso(1,2) = rtpa(iel,ir12ip)/trrij
-  xaniso(1,3) = rtpa(iel,ir13ip)/trrij
-  xaniso(2,3) = rtpa(iel,ir23ip)/trrij
+  xaniso(1,1) = rtpa(iel,ir11)/trrij-2.d0/3.d0
+  xaniso(2,2) = rtpa(iel,ir22)/trrij-2.d0/3.d0
+  xaniso(3,3) = rtpa(iel,ir33)/trrij-2.d0/3.d0
+  xaniso(1,2) = rtpa(iel,ir12)/trrij
+  xaniso(1,3) = rtpa(iel,ir13)/trrij
+  xaniso(2,3) = rtpa(iel,ir23)/trrij
   xaniso(2,1) = xaniso(1,2)
   xaniso(3,1) = xaniso(1,3)
   xaniso(3,2) = xaniso(2,3)
@@ -485,16 +473,16 @@ do iel=1,ncel
 !     SMBR et pas PROPCE et en utilisant IPCROM ... a modifier si le
 !     besoin s'en fait vraiment sentir           !
   w1(iel) = propce(iel,ipcroo) * volume(iel) *(                   &
-       xprod(iii,jjj) -rtpa(iel,ieiph)                            &
+       xprod(iii,jjj) -rtpa(iel,iep)                            &
        *(cssgs1*xaniso(iii,jjj)+cssgs2*(                          &
        aikakj -1.d0/3.d0*deltij*aii))                             &
        -cssgr1*trprod*xaniso(iii,jjj)                             &
        +trrij*xstrai(iii,jjj)*(cssgr2-cssgr3*sqrt(aii))           &
        +cssgr4*trrij*(aiksjk-2.d0/3.d0*deltij*aklskl)             &
-       +cssgr5*trrij*(aikrjk)-2.d0/3.d0*rtpa(iel,ieiph)*deltij)
+       +cssgr5*trrij*(aikrjk)-2.d0/3.d0*rtpa(iel,iep)*deltij)
 
   w2(iel) = volume(iel)/trrij*propce(iel,ipcrom)*(                &
-         cssgs1*rtpa(iel,ieiph) + cssgr1*max(trprod,0.d0) )
+         cssgs1*rtpa(iel,iep) + cssgr1*max(trprod,0.d0) )
 
 enddo
 
@@ -538,8 +526,7 @@ if(igrari.eq.1) then
 !     Si on extrapole les T.S. : PROPCE
 if(isto2t.gt.0) then
   do iel = 1, ncel
-     propce(iel,iptsta+isou-1) =                                  &
-     propce(iel,iptsta+isou-1) + w7(iel)
+     propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
    enddo
 !     Sinon SMBR
  else
@@ -558,12 +545,9 @@ endif
 
 if( idiff(ivar).ge. 1 ) then
   do iel = 1, ncel
-    trrij = 0.5d0 * (rtpa(iel,ir11ip) + rtpa(iel,ir22ip) +        &
-                   rtpa(iel,ir33ip))
-    rctse = 2.d0/3.d0 * propce(iel,ipcrom) * csrij * trrij**2     &
-                  / rtpa(iel,ieiph)
-    w1(iel) = propce(iel,ipcvis)                                  &
-                            + idifft(ivar)*rctse
+    trrij = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
+    rctse = 2.d0/3.d0 * propce(iel,ipcrom) * csrij * trrij**2 / rtpa(iel,iep)
+    w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse
   enddo
 
   call viscfa                                                     &

@@ -169,9 +169,9 @@ endif
 
 ! --> Cp et visls (ihm) variables
 if(icp.le.0) then
-  WRITE(NFECRA,2012)'       ICP(1)',    ICP,               &
-                    '       ICP(1)','la chaleur massique     ',   &
-                    '       ICP(1)'
+  WRITE(NFECRA,2012)'       ICP',    ICP,               &
+                    '       ICP','la chaleur massique     ',   &
+                    '       ICP'
   iok = iok + 1
 endif
 if(ivisls(ihm).le.0) then
@@ -397,7 +397,7 @@ endif
 '@    =========                                               ',/,&
 '@                MODULE ELECTRIQUE                           ',/,&
 '@                                                            ',/,&
-'@    IROVAR(1) DOIT ETRE UN ENTIER EGAL A 1                  ',/,&
+'@    IROVAR DOIT ETRE UN ENTIER EGAL A 1                     ',/,&
 '@                                                            ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&
@@ -421,7 +421,7 @@ endif
 '@    =========                                               ',/,&
 '@                MODULE ELECTRIQUE                           ',/,&
 '@                                                            ',/,&
-'@    IVIVAR(1) DOIT ETRE UN ENTIER EGAL A 1                  ',/,&
+'@    IVIVAR DOIT ETRE UN ENTIER EGAL A 1                     ',/,&
 '@                                                            ',/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&

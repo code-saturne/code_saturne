@@ -175,17 +175,13 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ifac  , iel   , ivar
-integer          isou  , ii    , iii   , iiph
+integer          isou  , ii    , iii
 integer          ihcp  , iscal , iscat
 integer          inc   , iccocg
 integer          iok   , iok1
 integer          icodcu
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
-integer          iuiph , iviph , iwiph , ipriph
-integer          ikiph , iepiph, iphiph, ifbiph, iomgip
-integer          inuiph
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          ipcvis, ipcvst, ipccp , ipcvsl, ipccv
 integer          iclpr , iclu  , iclv  , iclw  , iclk  , iclep
 integer          iclnu
@@ -200,7 +196,7 @@ double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , xdis
 double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision epsrgp, climgp, extrap
-double precision ro0iph, p0iph , pr0iph, xxp0, xyp0, xzp0
+double precision xxp0, xyp0, xzp0
 double precision srfbnf, rnx   , rny   , rnz
 double precision upx   , upy   , upz   , vistot
 
@@ -227,18 +223,6 @@ allocate(coefu(nfabor,3))
 
 ! Initialize variables to avoid compiler warnings
 
-iepiph = 0
-ifbiph = 0
-ikiph = 0
-iomgip = 0
-iphiph = 0
-inuiph = 0
-ir11ip = 0
-ir22ip = 0
-ir33ip = 0
-ir12ip = 0
-ir13ip = 0
-ir23ip = 0
 iclep = 0
 iclk = 0
 iclomg = 0
@@ -257,6 +241,7 @@ icluf = 0
 iclvf = 0
 iclwf = 0
 ipccv = 0
+
 ! Memoire
 
 idebia = idbia0
@@ -360,10 +345,8 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
       w1(iel) = grand
     enddo
 
-    iuiph = iu
-
     do ifac = 1, nfabor
-      icodcu = icodcl(ifac,iuiph)
+      icodcu = icodcl(ifac,iu)
       if( icodcu.eq.5 .or. icodcu.eq.6 ) then
         do iel = 1, ncel
           xdis =                                                &
@@ -411,70 +394,41 @@ endif
 !===============================================================================
 
 ! --- Variables
-ro0iph = ro0
-p0iph  = p0
-pr0iph = pred0
 xxp0   = xyzp0(1)
 xyp0   = xyzp0(2)
 xzp0   = xyzp0(3)
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-if(itytur.eq.2) then
-  ikiph  = ik
-  iepiph = iep
-elseif(itytur.eq.3) then
-  ir11ip = ir11
-  ir22ip = ir22
-  ir33ip = ir33
-  ir12ip = ir12
-  ir13ip = ir13
-  ir23ip = ir23
-  iepiph = iep
-elseif(iturb.eq.50) then
-  ikiph  = ik
-  iepiph = iep
-  iphiph = iphi
-  ifbiph = ifb
-elseif(iturb.eq.60) then
-  ikiph  = ik
-  iomgip = iomg
-elseif(iturb.eq.70) then
-  inuiph = inusa
-endif
 
 ! --- Conditions aux limites
-iclpr  = iclrtp(ipriph,icoef)
-iclu   = iclrtp(iuiph ,icoef)
-iclv   = iclrtp(iviph ,icoef)
-iclw   = iclrtp(iwiph ,icoef)
+iclpr  = iclrtp(ipr,icoef)
+iclu   = iclrtp(iu ,icoef)
+iclv   = iclrtp(iv ,icoef)
+iclw   = iclrtp(iw ,icoef)
 if(itytur.eq.2) then
-  iclk   = iclrtp(ikiph ,icoef)
-  iclep  = iclrtp(iepiph,icoef)
+  iclk   = iclrtp(ik ,icoef)
+  iclep  = iclrtp(iep,icoef)
 elseif(itytur.eq.3) then
-  icl11  = iclrtp(ir11ip,icoef)
-  icl22  = iclrtp(ir22ip,icoef)
-  icl33  = iclrtp(ir33ip,icoef)
-  icl12  = iclrtp(ir12ip,icoef)
-  icl13  = iclrtp(ir13ip,icoef)
-  icl23  = iclrtp(ir23ip,icoef)
-  iclep  = iclrtp(iepiph,icoef)
+  icl11  = iclrtp(ir11,icoef)
+  icl22  = iclrtp(ir22,icoef)
+  icl33  = iclrtp(ir33,icoef)
+  icl12  = iclrtp(ir12,icoef)
+  icl13  = iclrtp(ir13,icoef)
+  icl23  = iclrtp(ir23,icoef)
+  iclep  = iclrtp(iep,icoef)
 elseif(iturb.eq.50) then
-  iclk   = iclrtp(ikiph ,icoef)
-  iclep  = iclrtp(iepiph,icoef)
-  iclphi = iclrtp(iphiph,icoef)
-  iclfb  = iclrtp(ifbiph,icoef)
+  iclk   = iclrtp(ik ,icoef)
+  iclep  = iclrtp(iep,icoef)
+  iclphi = iclrtp(iphi,icoef)
+  iclfb  = iclrtp(ifb,icoef)
 elseif(iturb.eq.60) then
-  iclk   = iclrtp(ikiph ,icoef)
-  iclomg = iclrtp(iomgip,icoef)
+  iclk   = iclrtp(ik ,icoef)
+  iclomg = iclrtp(iomg,icoef)
 elseif(iturb.eq.70) then
-  iclnu  = iclrtp(inuiph,icoef)
+  iclnu  = iclrtp(inusa,icoef)
 endif
 
-icluf  = iclrtp(iuiph ,icoeff)
-iclvf  = iclrtp(iviph ,icoeff)
-iclwf  = iclrtp(iwiph ,icoeff)
+icluf  = iclrtp(iu ,icoeff)
+iclvf  = iclrtp(iv ,icoeff)
+iclwf  = iclrtp(iw ,icoeff)
 
 ! --- Grandeurs physiques
 ipcvis = ipproc(iviscl)
@@ -624,11 +578,11 @@ iclsym = 0
 ipatur = 0
 ipatrg = 0
 do ifac = 1, nfabor
-  if ( icodcl(ifac,iuiph).eq.4 ) then
+  if ( icodcl(ifac,iu).eq.4 ) then
     iclsym = 1
-  elseif ( icodcl(ifac,iuiph).eq.5 ) then
+  elseif ( icodcl(ifac,iu).eq.5 ) then
     ipatur = 1
-  elseif ( icodcl(ifac,iuiph).eq.6 ) then
+  elseif ( icodcl(ifac,iu).eq.6 ) then
     ipatrg = 1
   endif
   if (iclsym.ne.0.and.ipatur.ne.0.and.ipatrg.ne.0 ) goto 100
@@ -649,9 +603,9 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
 
   do isou = 1, 3
 
-    if(isou.eq.1) ivar = iuiph
-    if(isou.eq.2) ivar = iviph
-    if(isou.eq.3) ivar = iwiph
+    if(isou.eq.1) ivar = iu
+    if(isou.eq.2) ivar = iv
+    if(isou.eq.3) ivar = iw
 
     if(ntcabs.gt.1) then
 
@@ -707,12 +661,12 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
 
   do isou = 1 , 6
 
-    if(isou.eq.1) ivar = ir11ip
-    if(isou.eq.2) ivar = ir22ip
-    if(isou.eq.3) ivar = ir33ip
-    if(isou.eq.4) ivar = ir12ip
-    if(isou.eq.5) ivar = ir13ip
-    if(isou.eq.6) ivar = ir23ip
+    if(isou.eq.1) ivar = ir11
+    if(isou.eq.2) ivar = ir22
+    if(isou.eq.3) ivar = ir33
+    if(isou.eq.4) ivar = ir12
+    if(isou.eq.5) ivar = ir13
+    if(isou.eq.6) ivar = ir23
 
 
     if(ntcabs.gt.1.and.irijrb.eq.1) then
@@ -857,9 +811,9 @@ isoent = 0
 isorti = 0
 do ifac = 1, nfabor
 
-  flumbf = propfb(ifac,ipprob(ifluma(iuiph)))
+  flumbf = propfb(ifac,ipprob(ifluma(iu)))
 
-  if( icodcl(ifac,iuiph).eq.9 ) then
+  if( icodcl(ifac,iu).eq.9 ) then
 
     isorti = isorti + 1
     if( flumbf.lt.-epzero) then
@@ -890,7 +844,7 @@ if (mod(ntcabs,ntlist).eq.0 .or. iwarni(iu).ge. 0) then
     ncpt = 2
     call parism(ncpt, isocpt)
   endif
-  if (isocpt(2).gt.0 .and. (iwarni(iuiph).ge.2.or.isocpt(1).gt.0)) then
+  if (isocpt(2).gt.0 .and. (iwarni(iu).ge.2.or.isocpt(1).gt.0)) then
     write(nfecra,3010) isocpt(1), isocpt(2)
   endif
 endif
@@ -900,13 +854,13 @@ endif
 do ii = 1, 3
 
   if(ii.eq.1) then
-    ivar   = iuiph
+    ivar   = iu
     iclvar = iclu
   elseif(ii.eq.2) then
-    ivar   = iviph
+    ivar   = iv
     iclvar = iclv
   elseif(ii.eq.3) then
-    ivar   = iwiph
+    ivar   = iw
     iclvar = iclw
   endif
 
@@ -956,15 +910,15 @@ enddo
 do ii = 1, 3
 
   if(ii.eq.1) then
-    ivar   = iuiph
+    ivar   = iu
     iclvar = iclu
     iclvaf = icluf
   elseif(ii.eq.2) then
-    ivar   = iviph
+    ivar   = iv
     iclvar = iclv
     iclvaf = iclvf
   elseif(ii.eq.3) then
-    ivar   = iwiph
+    ivar   = iw
     iclvar = iclw
     iclvaf = iclwf
   endif
@@ -1004,16 +958,16 @@ do ifac = 1, nfabor
 
   !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
 
-  if( icodcl(ifac,ipriph).eq.1 ) then
-    hext = rcodcl(ifac,ipriph,2)
+  if( icodcl(ifac,ipr).eq.1 ) then
+    hext = rcodcl(ifac,ipr,2)
     if ( ippmod(icompf).ge.0 ) then
-      pimp = rcodcl(ifac,ipriph,1)
+      pimp = rcodcl(ifac,ipr,1)
     else
-      pimp = rcodcl(ifac,ipriph,1)                              &
-           - ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
+      pimp = rcodcl(ifac,ipr,1)                              &
+           - ro0*( gx*(cdgfbo(1,ifac)-xxp0)                  &
            + gy*(cdgfbo(2,ifac)-xyp0)                  &
            + gz*(cdgfbo(3,ifac)-xzp0) )                &
-           + pr0iph - p0iph
+           + pred0 - p0
     endif
     if( abs(hext).gt.rinfin*0.5d0 ) then
       coefa(ifac,iclpr) = pimp
@@ -1025,8 +979,8 @@ do ifac = 1, nfabor
   endif
 
   !      C.L DE TYPE FLUX
-  if( icodcl(ifac,ipriph).eq.3 ) then
-    coefa(ifac,iclpr) = -rcodcl(ifac,ipriph,3)/hint
+  if( icodcl(ifac,ipr).eq.3 ) then
+    coefa(ifac,iclpr) = -rcodcl(ifac,ipr,3)/hint
     coefb(ifac,iclpr) = 1.d0
   endif
 
@@ -1048,19 +1002,19 @@ if(itytur.eq.2 .or. iturb.eq.60) then
     !     ne concerne en pratique que les entrees (pas de pb en paroi ou en flux
     !     nul)
     if(ii.eq.1 .and. itytur.eq.2) then
-      ivar   = ikiph
+      ivar   = ik
       iclvar = iclk
       sigma  = sigmak
     elseif(ii.eq.1 .and. iturb.eq.60) then
-      ivar   = ikiph
+      ivar   = ik
       iclvar = iclk
       sigma  = ckwsk2
     elseif (itytur.eq.2) then
-      ivar   = iepiph
+      ivar   = iep
       iclvar = iclep
       sigma  = sigmae
     else
-      ivar   = iomgip
+      ivar   = iomg
       iclvar = iclomg
       sigma  = ckwsw2
     endif
@@ -1072,7 +1026,7 @@ if(itytur.eq.2 .or. iturb.eq.60) then
       ! --- Proprietes physiques
       visclc = propce(iel,ipcvis)
       visctc = propce(iel,ipcvst)
-      flumbf = propfb(ifac,ipprob(ifluma(ikiph)))
+      flumbf = propfb(ifac,ipprob(ifluma(ik)))
 
       ! --- Grandeurs geometriques
       distbf = distb(ifac)
@@ -1104,22 +1058,22 @@ elseif(itytur.eq.3) then
   do isou = 1, 6
 
     if(isou.eq.1) then
-      ivar   = ir11ip
+      ivar   = ir11
       iclvar = icl11
     elseif(isou.eq.2) then
-      ivar   = ir22ip
+      ivar   = ir22
       iclvar = icl22
     elseif(isou.eq.3) then
-      ivar   = ir33ip
+      ivar   = ir33
       iclvar = icl33
     elseif(isou.eq.4) then
-      ivar   = ir12ip
+      ivar   = ir12
       iclvar = icl12
     elseif(isou.eq.5) then
-      ivar   = ir13ip
+      ivar   = ir13
       iclvar = icl13
     elseif(isou.eq.6) then
-      ivar   = ir23ip
+      ivar   = ir23
       iclvar = icl23
     endif
 
@@ -1129,7 +1083,7 @@ elseif(itytur.eq.3) then
 
       ! --- Proprietes physiques
       visclc = propce(iel,ipcvis)
-      flumbf = propfb(ifac,ipprob(ifluma(ir11ip)))
+      flumbf = propfb(ifac,ipprob(ifluma(ir11)))
 
       ! --- Grandeurs geometriques
       distbf = distb(ifac)
@@ -1158,7 +1112,7 @@ elseif(itytur.eq.3) then
 
   !   --> EPSILON
 
-  ivar   = iepiph
+  ivar   = iep
   iclvar = iclep
 
   do ifac = 1, nfabor
@@ -1167,7 +1121,7 @@ elseif(itytur.eq.3) then
 
     ! --- Proprietes physiques
     visclc = propce(iel,ipcvis)
-    flumbf = propfb(ifac,ipprob(ifluma(iepiph)))
+    flumbf = propfb(ifac,ipprob(ifluma(iep)))
 
     ! --- Grandeurs geometriques
     distbf = distb(ifac)
@@ -1193,7 +1147,7 @@ elseif(itytur.eq.3) then
 
 elseif(iturb.eq.70) then
 
-  ivar   = inuiph
+  ivar   = inusa
   iclvar = iclnu
 
   do ifac = 1, nfabor
@@ -1202,7 +1156,7 @@ elseif(iturb.eq.70) then
 
     ! --- Proprietes physiques
     visclc = propce(iel,ipcvis)
-    flumbf = propfb(ifac,ipprob(ifluma(inuiph)))
+    flumbf = propfb(ifac,ipprob(ifluma(inusa)))
 
     ! --- Grandeurs geometriques
     distbf = distb(ifac)
@@ -1232,15 +1186,15 @@ elseif(iturb.eq.50) then
   do ii = 1, 3
 
     if(ii.eq.1) then
-      ivar   = ikiph
+      ivar   = ik
       iclvar = iclk
       sigma  = sigmak
     elseif(ii.eq.2) then
-      ivar   = iepiph
+      ivar   = iep
       iclvar = iclep
       sigma  = sigmae
     else
-      ivar   = iphiph
+      ivar   = iphi
       iclvar = iclphi
       sigma  = sigmak
     endif
@@ -1252,7 +1206,7 @@ elseif(iturb.eq.50) then
       ! --- Proprietes physiques
       visclc = propce(iel,ipcvis)
       visctc = propce(iel,ipcvst)
-      flumbf = propfb(ifac,ipprob(ifluma(ikiph)))
+      flumbf = propfb(ifac,ipprob(ifluma(ik)))
 
       ! --- Grandeurs geometriques
       distbf = distb(ifac)
@@ -1277,14 +1231,14 @@ elseif(iturb.eq.50) then
 
   !   --> FB
 
-  ivar   = ifbiph
+  ivar   = ifb
   iclvar = iclfb
 
   do ifac = 1, nfabor
 
     ! --- Proprietes physiques
     visclc = 1.d0
-    flumbf = propfb(ifac,ipprob(ifluma(ifbiph)))
+    flumbf = propfb(ifac,ipprob(ifluma(ifb)))
 
     ! --- Grandeurs geometriques
     distbf = distb(ifac)

@@ -86,14 +86,11 @@ double precision rtp(ncelet,nvar)
 ! Local variables
 
 integer          iclpnu,iel
-integer          ivar,ipp,inuiph
+integer          ivar,ipp
 double precision xnu, vmin, vmax, var
 double precision epz2
 
 !===============================================================================
-
-inuiph = inusa
-
 
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
@@ -103,12 +100,12 @@ epz2 = epzero**2
 ! ---> Stockage Min et Max pour listing
 !===============================================================================
 
-ipp  = ipprtp(inuiph)
+ipp  = ipprtp(inusa)
 
 vmin =  grand
 vmax = -grand
 do iel = 1, ncel
-  var = rtp(iel,inuiph)
+  var = rtp(iel,inusa)
   vmin = min(vmin,var)
   vmax = max(vmax,var)
 enddo
@@ -128,10 +125,10 @@ varmxa(ipp) = vmax
 
 iclpnu = 0
 do iel = 1, ncel
-  xnu = rtp(iel,inuiph)
+  xnu = rtp(iel,inusa)
   if (xnu.lt.0.D0) then
     iclpnu = iclpnu + 1
-    rtp(iel,inuiph) = 0.d0
+    rtp(iel,inusa) = 0.d0
   endif
 enddo
 
@@ -142,7 +139,7 @@ endif
 
 ! ---  Stockage nb de clippings pour listing
 
-iclpmn(ipprtp(inuiph)) = iclpnu
+iclpmn(ipprtp(inusa)) = iclpnu
 
 
 !===============================================================================

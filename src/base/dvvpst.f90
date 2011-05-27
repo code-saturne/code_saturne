@@ -157,14 +157,14 @@ integer          isorva, isaut
 integer          ifac  , iloc  , ivar , iclvar
 integer          ira   , idivdt, ineeyp
 integer          ipp   , idimt , ii    , kk   , iel
-integer          ivarl , iip   , iph
+integer          ivarl , iip
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          iscal , ipcvsl, ipcvst, iflmab
 integer          ientla, ivarpr
 integer          iyplbp
 integer          ipccp , ipcrom
 
-double precision cp0iph, xcp   , xvsl  , srfbn, distbr
+double precision xcp   , xvsl  , srfbn, distbr
 double precision visct , flumab, diipbx, diipby, diipbz
 double precision epsrgp, climgp, extrap
 double precision omgnrm, daxis2
@@ -176,7 +176,6 @@ double precision rbid(1)
 ! Initialize variables to avoid compiler warnings
 
 ipp = 0
-cp0iph = 0
 
 ! Memoire
 
@@ -725,7 +724,6 @@ else if  (numtyp .eq. -2) then
           ipccp  = ipproc(icp   )
         else
           ipccp  = 0
-          cp0iph = cp0
         endif
         do iloc = 1, nfbrps
           ifac = lstfbr(iloc)
@@ -733,7 +731,7 @@ else if  (numtyp .eq. -2) then
           if(ipccp.gt.0) then
             xcp = propce(iel,ipccp)
           else
-            xcp    = cp0iph
+            xcp    = cp0
           endif
           trafbr(1 + (iloc-1)*idimt)                            &
                = xcp*trafbr(1 + (iloc-1)*idimt)

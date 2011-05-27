@@ -194,7 +194,6 @@ integer          idebia, idebra, ifinia
 integer          iel   , ielpdc, ifac  , ivar  , isou
 integer          iccocg, inc   , init  , ii    , isqrt
 integer          ireslp, nswrgp, imligp, iwarnp, ippt  , ipp
-integer          ipriph, ikiph , iuiph , iviph , iwiph
 integer                  iclipr, icliup, iclivp, icliwp
 integer                          iclik , iclvar, iclvaf
 integer          ipcrom, ipcroa, ipcroo , ipcvis, ipcvst
@@ -207,7 +206,7 @@ integer          iflmb0, nswrp , imaspe, iismph, ipbrom
 integer          idiaex, idtva0
 
 double precision rnorm , vitnor
-double precision romvom, ro0iph, drom
+double precision romvom, drom
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision vit1  , vit2  , vit3, xkb, pip, pfac, pfac1
@@ -234,28 +233,16 @@ endif
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-if(itytur.eq.2 .or. iturb.eq.50                     &
-     .or. iturb.eq.60) then
-  ikiph  = ik
-endif
+iclipr = iclrtp(ipr,icoef)
+icliup = iclrtp(iu ,icoef)
+iclivp = iclrtp(iv ,icoef)
+icliwp = iclrtp(iw ,icoef)
 
-iclipr = iclrtp(ipriph,icoef)
-icliup = iclrtp(iuiph ,icoef)
-iclivp = iclrtp(iviph ,icoef)
-icliwp = iclrtp(iwiph ,icoef)
-
-if(itytur.eq.2 .or. iturb.eq.50                     &
-     .or. iturb.eq.60) then
-  iclik  = iclrtp(ikiph ,icoef)
+if(itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
+  iclik  = iclrtp(ik ,icoef)
 else
   iclik = 0
 endif
-
-ro0iph = ro0
 
 !     Reperage de rho au bord
 ipbrom = ipprob(irom  )
@@ -297,7 +284,7 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   do iel = 1, ncel
 
 ! variation de force (utilise dans resolp)
-    drom = (propce(iel,ipcrom)-ro0iph)
+    drom = (propce(iel,ipcrom)-ro0)
     dfrcxt(iel,1) = drom*gx - frcxt(iel,1)
     dfrcxt(iel,2) = drom*gy - frcxt(iel,2)
     dfrcxt(iel,3) = drom*gz - frcxt(iel,3)
@@ -306,9 +293,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   if (ncepdp.gt.0) then
     do ielpdc = 1, ncepdp
       iel=icepdc(ielpdc)
-      vit1   = rtpa(iel,iuiph)
-      vit2   = rtpa(iel,iviph)
-      vit3   = rtpa(iel,iwiph)
+      vit1   = rtpa(iel,iu)
+      vit2   = rtpa(iel,iv)
+      vit3   = rtpa(iel,iw)
       cpdc11 = ckupdc(ielpdc,1)
       cpdc22 = ckupdc(ielpdc,2)
       cpdc33 = ckupdc(ielpdc,3)
@@ -329,9 +316,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 !     Ajout eventuel de la force de Coriolis
   if (icorio.eq.1) then
     do iel = 1, ncel
-      cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
-      cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
-      cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
+      cx = omegay*rtpa(iel,iw) - omegaz*rtpa(iel,iv)
+      cy = omegaz*rtpa(iel,iu) - omegax*rtpa(iel,iw)
+      cz = omegax*rtpa(iel,iv) - omegay*rtpa(iel,iu)
       dfrcxt(iel,1) = dfrcxt(iel,1) - 2.d0*propce(iel,ipcrom)*cx
       dfrcxt(iel,2) = dfrcxt(iel,2) - 2.d0*propce(iel,ipcrom)*cy
       dfrcxt(iel,3) = dfrcxt(iel,3) - 2.d0*propce(iel,ipcrom)*cz
@@ -351,22 +338,22 @@ endif
 
 iccocg = 1
 inc    = 1
-nswrgp = nswrgr(ipriph)
-imligp = imligr(ipriph)
-iwarnp = iwarni(ipriph)
-epsrgp = epsrgr(ipriph)
-climgp = climgr(ipriph)
-extrap = extrag(ipriph)
+nswrgp = nswrgr(ipr)
+imligp = imligr(ipr)
+iwarnp = iwarni(ipr)
+epsrgp = epsrgr(ipr)
+climgp = climgr(ipr)
+extrap = extrag(ipr)
 
 
-call grdpot                                                       &
+call grdpot &
 !==========
- ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
+ ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rvoid  ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
-   rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -383,20 +370,20 @@ if (ineedf.eq.1 .and. iterns.eq.1) then
     diipbx = diipb(1,ifac)
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
-    pip =  rtpa(iel,ipriph)                                       &
+    pip =  rtpa(iel,ipr)                                          &
          +diipbx*w1(iel) +diipby*w2(iel)                          &
          +diipbz*w3(iel)
     pfac = coefa(ifac,iclipr) +coefb(ifac,iclipr)*pip
-    pfac1= rtpa(iel,ipriph)                                       &
+    pfac1= rtpa(iel,ipr)                                          &
          +(cdgfbo(1,ifac)-xyzcen(1,iel))*w1(iel)                  &
          +(cdgfbo(2,ifac)-xyzcen(2,iel))*w2(iel)                  &
          +(cdgfbo(3,ifac)-xyzcen(3,iel))*w3(iel)
-    pfac = coefb(ifac,iclipr)*(extrag(ipriph)*pfac1               &
-         +(1.d0-extrag(ipriph))*pfac)                             &
+    pfac = coefb(ifac,iclipr)*(extrag(ipr)*pfac1                  &
+         +(1.d0-extrag(ipr))*pfac)                                &
          +(1.d0-coefb(ifac,iclipr))*pfac                          &
-         + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1))         &
-         + gy*(cdgfbo(2,ifac)-xyzp0(2))                     &
-         + gz*(cdgfbo(3,ifac)-xyzp0(3)) )                   &
+         + ro0*(gx*(cdgfbo(1,ifac)-xyzp0(1))                      &
+         + gy*(cdgfbo(2,ifac)-xyzp0(2))                           &
+         + gz*(cdgfbo(3,ifac)-xyzp0(3)) )                         &
          - pred0
 ! on ne rajoute pas P0, pour garder un maximum de precision
 !     &         + P0
@@ -444,21 +431,21 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   iccocg = 1
   iflmb0 = 1
   nswrp  = 1
-  imligp = imligr(iuiph )
-  iwarnp = iwarni(ipriph)
-  epsrgp = epsrgr(iuiph )
-  climgp = climgr(iuiph )
-  extrap = extrag(iuiph )
+  imligp = imligr(iu )
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(iu )
+  climgp = climgr(iu )
+  extrap = extrag(iu )
 
   imaspe = 1
 
   iismph = iisymp
 
-  call inimas                                                     &
+  call inimas &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   iuiph  , iviph  , iwiph  , imaspe ,                            &
+   iu  , iv  , iw  , imaspe ,                                     &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -480,7 +467,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      xnormp(iel) = xnormp(iel)-volume(iel)*smacel(ii,ipriph)
+      xnormp(iel) = xnormp(iel)-volume(iel)*smacel(ii,ipr)
     enddo
   endif
 
@@ -511,7 +498,7 @@ if(iappel.eq.1) then
     enddo
   else
     do iel = 1, ncel
-      drom = (propce(iel,ipcrom)-ro0iph)
+      drom = (propce(iel,ipcrom)-ro0)
       trav(iel,1) = ( drom*gx - w1(iel) ) * volume(iel)
       trav(iel,2) = ( drom*gy - w2(iel) ) * volume(iel)
       trav(iel,3) = ( drom*gz - w3(iel) ) * volume(iel)
@@ -534,7 +521,7 @@ elseif(iappel.eq.2) then
     enddo
   else
     do iel = 1, ncel
-      drom = (propce(iel,ipcrom)-ro0iph)
+      drom = (propce(iel,ipcrom)-ro0)
       trav(iel,1) =                                               &
            trav(iel,1) + ( drom*gx - w1(iel) )*volume(iel)
       trav(iel,2) =                                               &
@@ -628,20 +615,20 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
        .and.igrhok.eq.1.and.iterns.eq.1)then
   iccocg = 1
   inc    = 1
-  nswrgp = nswrgr(ikiph)
-  imligp = imligr(ikiph)
-  epsrgp = epsrgr(ikiph)
-  climgp = climgr(ikiph)
-  extrap = extrag(ikiph)
+  nswrgp = nswrgr(ik)
+  imligp = imligr(ik)
+  epsrgp = epsrgr(ik)
+  climgp = climgr(ik)
+  extrap = extrag(ik)
 
-  iwarnp = iwarni(iuiph)
+  iwarnp = iwarni(iu)
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,ikiph)   , coefa(1,iclik)  , coefb(1,iclik)  ,          &
+   rtpa(1,ik)   , coefa(1,iclik)  , coefb(1,iclik)  ,             &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -692,7 +679,7 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      xkb = rtpa(iel,ikiph) + diipbx*w1(iel)                      &
+      xkb = rtpa(iel,ik) + diipbx*w1(iel)                      &
            + diipby*w2(iel) + diipbz*w3(iel)
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb
       xkb = d2s3*propce(iel,ipcrom)*xkb
@@ -921,9 +908,9 @@ if (icorio.eq.1.and.iphydr.eq.0) then
     if(isno2t.gt.0) then
 
       do iel = 1, ncel
-        cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
-        cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
-        cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
+        cx = omegay*rtpa(iel,iw) - omegaz*rtpa(iel,iv)
+        cy = omegaz*rtpa(iel,iu) - omegax*rtpa(iel,iw)
+        cz = omegax*rtpa(iel,iv) - omegay*rtpa(iel,iu)
         romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
         propce(iel,iptsna  ) = propce(iel,iptsna  ) + romvom*cx
         propce(iel,iptsna+1) = propce(iel,iptsna+1) + romvom*cy
@@ -937,9 +924,9 @@ if (icorio.eq.1.and.iphydr.eq.0) then
       if (nterup.eq.1) then
 
         do iel = 1, ncel
-          cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
-          cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
-          cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
+          cx = omegay*rtpa(iel,iw) - omegaz*rtpa(iel,iv)
+          cy = omegaz*rtpa(iel,iu) - omegax*rtpa(iel,iw)
+          cz = omegax*rtpa(iel,iv) - omegay*rtpa(iel,iu)
           romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
           trav(iel,1) = trav(iel,1) + romvom*cx
           trav(iel,2) = trav(iel,2) + romvom*cy
@@ -950,9 +937,9 @@ if (icorio.eq.1.and.iphydr.eq.0) then
       else
 
         do iel = 1, ncel
-          cx = omegay*rtpa(iel,iwiph) - omegaz*rtpa(iel,iviph)
-          cy = omegaz*rtpa(iel,iuiph) - omegax*rtpa(iel,iwiph)
-          cz = omegax*rtpa(iel,iviph) - omegay*rtpa(iel,iuiph)
+          cx = omegay*rtpa(iel,iw) - omegaz*rtpa(iel,iv)
+          cy = omegaz*rtpa(iel,iu) - omegax*rtpa(iel,iw)
+          cz = omegax*rtpa(iel,iv) - omegay*rtpa(iel,iu)
           romvom = -2.d0*propce(iel,ipcrom)*volume(iel)
           trava(iel,1) = trava(iel,1) + romvom*cx
           trava(iel,2) = trava(iel,2) + romvom*cy
@@ -972,9 +959,9 @@ if(itytur.eq.3.and.iterns.eq.1) then
 
   do isou = 1, 3
 
-    if(isou.eq.1) ivar = iuiph
-    if(isou.eq.2) ivar = iviph
-    if(isou.eq.3) ivar = iwiph
+    if(isou.eq.1) ivar = iu
+    if(isou.eq.2) ivar = iv
+    if(isou.eq.3) ivar = iw
 
     call divrij                                                   &
     !==========
@@ -1022,7 +1009,7 @@ endif
 !      SI ON FAIT AUTRE CHOSE QUE DU K EPS, IL FAUDRA LA METTRE
 !        DANS LA BOUCLE
 
-if( idiff(iuiph).ge. 1 ) then
+if( idiff(iu).ge. 1 ) then
 
 ! --- Si la vitesse doit etre diffusee, on calcule la viscosite
 !       pour le second membre (selon Rij ou non)
@@ -1034,7 +1021,7 @@ if( idiff(iuiph).ge. 1 ) then
   else
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis)                                &
-                            + idifft(iuiph)*propce(iel,ipcvst)
+                            + idifft(iu)*propce(iel,ipcvst)
     enddo
   endif
 
@@ -1056,7 +1043,7 @@ if( idiff(iuiph).ge. 1 ) then
   if(itytur.eq.3.and.irijnu.eq.1) then
     do iel = 1, ncel
       w1(iel) = propce(iel,ipcvis)                                &
-                            + idifft(iuiph)*propce(iel,ipcvst)
+                            + idifft(iu)*propce(iel,ipcvst)
     enddo
     call viscfa                                                   &
     !==========
@@ -1131,15 +1118,15 @@ endif
 do isou = 1, 3
 
   if(isou.eq.1) then
-    ivar = iuiph
+    ivar = iu
     ippt = ipptx
   endif
   if(isou.eq.2) then
-    ivar = iviph
+    ivar = iv
     ippt = ippty
   endif
   if(isou.eq.3) then
-    ivar = iwiph
+    ivar = iw
     ippt = ipptz
   endif
   ipp  = ipprtp(ivar)
@@ -1646,7 +1633,7 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 !     Calcul de div(rho u*)
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
+    call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
     !==========
   endif
 
@@ -1656,28 +1643,28 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
   iccocg = 1
   iflmb0 = 1
   nswrp  = 1
-  imligp = imligr(iuiph )
-  iwarnp = iwarni(ipriph)
-  epsrgp = epsrgr(iuiph )
-  climgp = climgr(iuiph )
-  extrap = extrag(iuiph )
+  imligp = imligr(iu )
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(iu )
+  climgp = climgr(iu )
+  extrap = extrag(iu )
 
   imaspe = 1
 
   iismph = iisymp
 
-  call inimas                                                     &
+  call inimas &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   iuiph  , iviph  , iwiph  , imaspe ,                            &
+   iu  , iv  , iw  , imaspe ,                                     &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
-   rtp(1,iuiph) , rtp(1,iviph) , rtp(1,iwiph) ,                   &
+   rtp(1,iu) , rtp(1,iv) , rtp(1,iw) ,                            &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    viscf  , viscb  ,                                              &
@@ -1717,11 +1704,11 @@ if(iappel.eq.1) then
 
 ! ---> IMPRESSION DE NORME
 
-  if (iwarni(iuiph).ge.2) then
+  if (iwarni(iu).ge.2) then
     rnorm = -1.d0
     do iel = 1, ncel
       vitnor =                                                    &
-       sqrt(rtp(iel,iuiph)**2+rtp(iel,iviph)**2+rtp(iel,iwiph)**2)
+       sqrt(rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)
       rnorm = max(rnorm,vitnor)
     enddo
     if (irangp.ge.0) call parmax (rnorm)

@@ -132,8 +132,6 @@ integer          idebia, idebra, ifinia
 integer          init  , ifac  , iel   , inc   , iccocg
 integer          ivar, ipp
 integer          iiun
-integer          ipriph,iuiph
-integer          ikiph, ieiph, iphiph, ifbiph
 integer          iclvar, iclvaf
 integer          iclikp, iclphi, iclfbp
 integer          ipcrom, ipcroo, ipcvis, ipcvlo, ipcvst, ipcvso
@@ -174,22 +172,15 @@ allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr
-iuiph  = iu
-ikiph  = ik
-ieiph  = iep
-iphiph = iphi
-ifbiph = ifb
-
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 
-iclikp = iclrtp(ikiph,icoef)
-iclphi = iclrtp(iphiph,icoef)
-iclfbp = iclrtp(ifbiph,icoef)
+iclikp = iclrtp(ik,icoef)
+iclphi = iclrtp(iphi,icoef)
+iclfbp = iclrtp(ifb,icoef)
 
 if(isto2t.gt.0) then
   iptsta = ipproc(itstua)
@@ -201,7 +192,7 @@ d2s3 = 2.0d0/3.0d0
 d1s4 = 1.0d0/4.0d0
 d3s2 = 3.0d0/2.0d0
 
-if(iwarni(iphiph).ge.1) then
+if(iwarni(iphi).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -211,7 +202,7 @@ endif
 
   iccocg = 1
   inc = 1
-  ivar = iphiph
+  ivar = iphi
 
   nswrgp = nswrgr(ivar )
   imligp = imligr(ivar )
@@ -220,19 +211,19 @@ endif
   climgp = climgr(ivar )
   extrap = extrag(ivar )
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iphiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iphi , imrgra , inc    , iccocg , nswrgp , imligp ,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iphiph ) , coefa(1,iclphi) , coefb(1,iclphi) ,          &
+   rtpa(1,iphi ) , coefa(1,iclphi) , coefb(1,iclphi) ,            &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
 
   iccocg = 1
   inc = 1
-  ivar = ikiph
+  ivar = ik
 
   nswrgp = nswrgr(ivar )
   imligp = imligr(ivar )
@@ -241,12 +232,12 @@ endif
   climgp = climgr(ivar )
   extrap = extrag(ivar )
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,ikiph )  , coefa(1,iclikp) , coefb(1,iclikp) ,          &
+   rtpa(1,ik )  , coefa(1,iclikp) , coefb(1,iclikp) ,             &
    w4     , w5     , w6     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -259,7 +250,7 @@ endif
 ! 3. RESOLUTION DE L'EQUATION DE F_BARRE
 !===============================================================================
 
-ivar = ifbiph
+ivar = ifb
 iclvar = iclfbp
 iclvaf = iclfbp
 ipp    = ipprtp(ivar)
@@ -361,15 +352,15 @@ iccocg = 1
 inc = 1
 init = 1
 
-nswrgp = nswrgr(iphiph)
-imligp = imligr(iphiph)
-iwarnp = iwarni(iphiph)
-epsrgp = epsrgr(iphiph)
-climgp = climgr(iphiph)
-extrap = extrag(iphiph)
+nswrgp = nswrgr(iphi)
+imligp = imligr(iphi)
+iwarnp = iwarni(iphi)
+epsrgp = epsrgr(iphi)
+climgp = climgr(iphi)
+extrap = extrag(iphi)
 iphydp = 0
 
-call itrgrp                                                       &
+call itrgrp &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
@@ -378,7 +369,7 @@ call itrgrp                                                       &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    w2     , w2     , w2     ,                                     &
-   rtpa(1,iphiph)   , coefa(1,iclphi) , coefb(1,iclphi) ,         &
+   rtpa(1,iphi)   , coefa(1,iclphi) , coefb(1,iclphi) ,           &
    viscf  , viscb  ,                                              &
    w3     , w3     , w3     ,                                     &
    w2     ,                                                       &
@@ -389,8 +380,8 @@ call itrgrp                                                       &
 !      Dans le cas de l'ordre 2 en temps, T est calcule en n
 !      (il sera extrapole) et L^2 en n+theta (meme si k et eps restent en n)
 do iel=1,ncel
-  xk = rtpa(iel,ikiph)
-  xe = rtpa(iel,ieiph)
+  xk = rtpa(iel,ik)
+  xe = rtpa(iel,iep)
   xnu  = propce(iel,ipcvlo)/propce(iel,ipcroo)
   ttke = xk / xe
   ttmin = cv2fct*sqrt(xnu/xe)
@@ -408,10 +399,10 @@ enddo
 do iel = 1, ncel
     xrom = propce(iel,ipcroo)
     xnu  = propce(iel,ipcvlo)/xrom
-    xk = rtpa(iel,ikiph)
-    xe = rtpa(iel,ieiph)
+    xk = rtpa(iel,ik)
+    xe = rtpa(iel,iep)
     w5(iel) = - volume(iel)*                                      &
-         ( (cv2fc1-1.d0)*(rtpa(iel,iphiph)-d2s3)/w3(iel)          &
+         ( (cv2fc1-1.d0)*(rtpa(iel,iphi)-d2s3)/w3(iel)          &
            -cv2fc2*prdv2f(iel)/xrom/xk                            &
            -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
 enddo
@@ -432,8 +423,7 @@ endif
 
 !     Terme implicite
 do iel = 1, ncel
-  smbr(iel) = ( - volume(iel)*rtpa(iel,ifbiph) + smbr(iel) )      &
-       /w4(iel)
+  smbr(iel) = ( - volume(iel)*rtpa(iel,ifb) + smbr(iel) ) / w4(iel)
 enddo
 
 ! ---> Matrice
@@ -503,7 +493,7 @@ call codits                                                       &
 ! 4. RESOLUTION DE L'EQUATION DE PHI
 !===============================================================================
 
-ivar = iphiph
+ivar = iphi
 iclvar = iclphi
 iclvaf = iclphi
 ipp    = ipprtp(ivar)
@@ -586,7 +576,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,    &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,    &
    smbr   ,  rovsdt , w2 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
@@ -644,8 +634,8 @@ do iel = 1, ncel
 !  Rq : si on reste en RTP, il faut modifier le cas de l'ordre 2 (qui
 !       necessite RTPA pour l'extrapolation).
   w2(iel)   =  volume(iel)*                                       &
-       ( propce(iel,ipcroo)*rtp(iel,ifbiph)                       &
-         +2.d0/rtpa(iel,ikiph)*propce(iel,ipcvso)/sigmak*w1(iel) )
+       ( propce(iel,ipcroo)*rtp(iel,ifb)                       &
+         +2.d0/rtpa(iel,ik)*propce(iel,ipcvso)/sigmak*w1(iel) )
 enddo
 
 !     Si on extrapole les T.S : PROPCE
@@ -666,7 +656,7 @@ endif
 !     Terme implicite
 do iel = 1, ncel
   smbr(iel) = smbr(iel)                                           &
-       - volume(iel)*prdv2f(iel)*rtpa(iel,iphiph)/rtpa(iel,ikiph)
+       - volume(iel)*prdv2f(iel)*rtpa(iel,iphi)/rtpa(iel,ik)
 enddo
 
 ! ---> Matrice
@@ -678,7 +668,7 @@ else
 endif
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                       &
-       + volume(iel)*prdv2f(iel)/rtpa(iel,ikiph)*thetap
+       + volume(iel)*prdv2f(iel)/rtpa(iel,ik)*thetap
 enddo
 
 

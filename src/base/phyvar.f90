@@ -115,9 +115,7 @@ integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct
 integer          nn
 integer          ibrom , ipcrom, ipbrom, ipcvst
-integer          ikiph , ieiph , ir11ip, ir22ip, ir33ip
-integer          inuiph
-integer          ipccp , ipcvis, iphiph, ipcvma
+integer          ipccp , ipcvis, ipcvma
 integer          iclipc
 double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision nusa, xi3, fv1, cv13
@@ -315,14 +313,12 @@ elseif (itytur.eq.2) then
 ! 3.3 K-EPSILON
 ! ==============
 
-  ikiph  = ik
-  ieiph  = iep
   ipcvst = ipproc(ivisct)
   ipcrom = ipproc(irom  )
 
   do iel = 1, ncel
-    xk = rtp(iel,ikiph)
-    xe = rtp(iel,ieiph)
+    xk = rtp(iel,ik)
+    xe = rtp(iel,iep)
     propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
   enddo
 
@@ -331,16 +327,12 @@ elseif (itytur.eq.3) then
 ! 3.4 Rij-EPSILON
 ! ================
 
-  ir11ip = ir11
-  ir22ip = ir22
-  ir33ip = ir33
-  ieiph  = iep
   ipcvst = ipproc(ivisct)
   ipcrom = ipproc(irom  )
 
   do iel = 1, ncel
-    xk = 0.5d0*(rtp(iel,ir11ip)+rtp(iel,ir22ip)+rtp(iel,ir33ip))
-    xe = rtp(iel,ieiph)
+    xk = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
+    xe = rtp(iel,iep)
     propce(iel,ipcvst) = propce(iel,ipcrom)*cmu*xk**2/xe
   enddo
 
@@ -403,23 +395,19 @@ elseif (iturb.eq.50) then
 
 ! 3.8 v2f phi-model
 ! =================
-  ikiph  = ik
-  ieiph  = iep
-  iphiph = iphi
   ipcvis = ipproc(iviscl)
   ipcvst = ipproc(ivisct)
   ipcrom = ipproc(irom  )
 
   do iel = 1, ncel
-    xk = rtp(iel,ikiph)
-    xe = rtp(iel,ieiph)
+    xk = rtp(iel,ik)
+    xe = rtp(iel,iep)
     xrom = propce(iel,ipcrom)
     xnu = propce(iel,ipcvis)/xrom
     ttke = xk / xe
     ttmin = cv2fct*sqrt(xnu/xe)
     tt = max(ttke,ttmin)
-    propce(iel,ipcvst) = cv2fmu*xrom*tt*rtp(iel,iphiph)         &
-         *rtp(iel,ikiph)
+    propce(iel,ipcvst) = cv2fmu*xrom*tt*rtp(iel,iphi)*rtp(iel,ik)
   enddo
 
 elseif (iturb.eq.60) then
@@ -446,14 +434,13 @@ elseif (iturb.eq.70) then
 
   cv13 = csav1**3
 
-  inuiph = inusa
   ipcvst = ipproc(ivisct)
   ipcrom = ipproc(irom  )
   ipcvis = ipproc(iviscl)
 
   do iel = 1, ncel
     xrom = propce(iel,ipcrom)
-    nusa = rtp(iel,inuiph)
+    nusa = rtp(iel,inusa)
     xi3  = (xrom*nusa/propce(iel,ipcvis))**3
     fv1  = xi3/(xi3+cv13)
     propce(iel,ipcvst) = xrom*nusa*fv1

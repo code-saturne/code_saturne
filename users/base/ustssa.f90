@@ -168,7 +168,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          iel, inuiph, ipcrom
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -192,13 +192,10 @@ if(1.eq.1) return
 allocate(lstelt(ncel))
 
 
-! --- Index numbers of variables nusa
-inuiph = inusa
-
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(inuiph).ge.1) then
+if(iwarni(inusa).ge.1) then
   write(nfecra,1000)
 endif
 

@@ -126,7 +126,7 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifac, iel, iuiph, iviph, iwiph
+integer          ifac, iel
 integer          ii, inod, iecrw, icpt, ierror
 double precision ddepx, ddepy, ddepz
 double precision srfbnf, rnx, rny, rnz
@@ -320,18 +320,15 @@ endif
 !   et on prend la vitesse de maillage pour la composante normale.
 ! On se base uniquement sur ITYPFB, a l'utilisateur de gere les choses
 !   s'il rentre en CL non standards.
-iuiph = iu
-iviph = iv
-iwiph = iw
 
 do ifac = 1, nfabor
 
   if (ialtyb(ifac).eq.ivimpo) then
 
     if ( itypfb(ifac).eq.isymet ) then
-      rcodcl(ifac,iuiph,1) = rcodcl(ifac,iuma,1)
-      rcodcl(ifac,iviph,1) = rcodcl(ifac,ivma,1)
-      rcodcl(ifac,iwiph,1) = rcodcl(ifac,iwma,1)
+      rcodcl(ifac,iu,1) = rcodcl(ifac,iuma,1)
+      rcodcl(ifac,iv,1) = rcodcl(ifac,ivma,1)
+      rcodcl(ifac,iw,1) = rcodcl(ifac,iwma,1)
     endif
 
     if ( itypfb(ifac).eq.iparoi .or.                        &
@@ -339,34 +336,34 @@ do ifac = 1, nfabor
 ! Si une des composantes de vitesse de glissement a ete
 !    modifiee par l'utilisateur, on ne fixe que la vitesse
 !    normale
-      if (rcodcl(ifac,iuiph,1).gt.rinfin*0.5d0 .and.              &
-           rcodcl(ifac,iviph,1).gt.rinfin*0.5d0 .and.             &
-           rcodcl(ifac,iwiph,1).gt.rinfin*0.5d0) then
-        rcodcl(ifac,iuiph,1) = rcodcl(ifac,iuma,1)
-        rcodcl(ifac,iviph,1) = rcodcl(ifac,ivma,1)
-        rcodcl(ifac,iwiph,1) = rcodcl(ifac,iwma,1)
+      if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.              &
+           rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.             &
+           rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
+        rcodcl(ifac,iu,1) = rcodcl(ifac,iuma,1)
+        rcodcl(ifac,iv,1) = rcodcl(ifac,ivma,1)
+        rcodcl(ifac,iw,1) = rcodcl(ifac,iwma,1)
       else
 ! On met a 0 les composantes de RCODCL non specifiees
-        if (rcodcl(ifac,iuiph,1).gt.rinfin*0.5d0)                 &
-             rcodcl(ifac,iuiph,1) = 0.d0
-        if (rcodcl(ifac,iviph,1).gt.rinfin*0.5d0)                 &
-             rcodcl(ifac,iviph,1) = 0.d0
-        if (rcodcl(ifac,iwiph,1).gt.rinfin*0.5d0)                 &
-             rcodcl(ifac,iwiph,1) = 0.d0
+        if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0)                 &
+             rcodcl(ifac,iu,1) = 0.d0
+        if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0)                 &
+             rcodcl(ifac,iv,1) = 0.d0
+        if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0)                 &
+             rcodcl(ifac,iw,1) = 0.d0
 
         srfbnf = surfbn(ifac)
         rnx = surfbo(1,ifac)/srfbnf
         rny = surfbo(2,ifac)/srfbnf
         rnz = surfbo(3,ifac)/srfbnf
-        rcodcx = rcodcl(ifac,iuiph,1)
-        rcodcy = rcodcl(ifac,iviph,1)
-        rcodcz = rcodcl(ifac,iwiph,1)
+        rcodcx = rcodcl(ifac,iu,1)
+        rcodcy = rcodcl(ifac,iv,1)
+        rcodcz = rcodcl(ifac,iw,1)
         rcodsn = (rcodcl(ifac,iuma,1)-rcodcx)*rnx                 &
              +   (rcodcl(ifac,ivma,1)-rcodcy)*rny                 &
              +   (rcodcl(ifac,ivma,1)-rcodcz)*rnz
-        rcodcl(ifac,iuiph,1) = rcodcx + rcodsn*rnx
-        rcodcl(ifac,iviph,1) = rcodcy + rcodsn*rny
-        rcodcl(ifac,iwiph,1) = rcodcz + rcodsn*rnz
+        rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
+        rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
+        rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz
       endif
     endif
 

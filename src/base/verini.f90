@@ -87,7 +87,6 @@ integer          iok
 character        chaine*80, chain2*80
 integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
-integer          iuiph , iviph , iwiph, ikiph, ieiph
 integer          itrbph, nbsccp
 integer          ipp   , imgrok, nbccou
 integer          iokpre, indest, itests, iiidef, istop
@@ -435,12 +434,9 @@ endif
 !       - iphydr et icalhy
 !       - dt variable en espace ou en temps et stationnaire
 !     Ici on s'arrete si on n'est pas dans le cas du schema std
-iuiph = iu
-iviph = iv
-iwiph = iw
-if( (abs(thetav(iuiph)-1.0d0).gt.1.d-3).or.                     &
-     (abs(thetav(iviph)-1.0d0).gt.1.d-3).or.                     &
-     (abs(thetav(iwiph)-1.0d0).gt.1.d-3).or.                     &
+if( (abs(thetav(iu)-1.0d0).gt.1.d-3).or.                     &
+     (abs(thetav(iv)-1.0d0).gt.1.d-3).or.                     &
+     (abs(thetav(iw)-1.0d0).gt.1.d-3).or.                     &
      (    thetsn       .gt.0.d0 ).or.                     &
      (    isno2t       .gt.0    ).or.                     &
      (    thetro       .gt.0.d0 ).or.                     &
@@ -451,7 +447,7 @@ if( (abs(thetav(iuiph)-1.0d0).gt.1.d-3).or.                     &
        iphydr.eq.1.or.icalhy.eq.1.or.                            &
        idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
     write(nfecra,2140)                                         &
-         thetav(iuiph),thetav(iviph),thetav(iwiph),            &
+         thetav(iu),thetav(iv),thetav(iw),            &
          isno2t,thetsn,                          &
          iroext,thetro,                          &
          iviext,thetvi
@@ -993,21 +989,29 @@ if(itytur.eq.2 .or. iturb.eq.50                    &
   !     pas egal a 0, on previent que ce sera sans effet
   !     Sinon on verifie que RELAXV(IK) est bien compris entre 0 et 1
   !     (en stationnaire cela a deja ete fait plus haut)
-  ikiph = ik
   if (itytur.eq.6) then
-    ieiph = iomg
+    if ( (abs(relaxv(ik)+999.d0).gt.epzero .or.                &
+         abs(relaxv(iomg)+999.d0).gt.epzero ) .and.             &
+         ikecou.ne.0) write(nfecra,2623)                  &
+         relaxv(ik),relaxv(iomg)
+    if (ikecou.eq.0 .and. idtvar.ge.0) then
+      if(relaxv(ik).gt.1.d0.or.relaxv(ik).lt.0.d0 .or.      &
+           relaxv(iomg).gt.1.d0.or.relaxv(iomg).lt.0.d0) then
+        write(nfecra,2624) relaxv(ik),relaxv(iomg)
+        iok = iok + 1
+      endif
+    endif
   else
-    ieiph = iep
-  endif
-  if ( (abs(relaxv(ikiph)+999.d0).gt.epzero .or.                &
-       abs(relaxv(ieiph)+999.d0).gt.epzero ) .and.             &
-       ikecou.ne.0) write(nfecra,2623)                  &
-       relaxv(ikiph),relaxv(ieiph)
-  if (ikecou.eq.0 .and. idtvar.ge.0) then
-    if(relaxv(ikiph).gt.1.d0.or.relaxv(ikiph).lt.0.d0 .or.      &
-         relaxv(ieiph).gt.1.d0.or.relaxv(ieiph).lt.0.d0) then
-      write(nfecra,2624) relaxv(ikiph),relaxv(ieiph)
-      iok = iok + 1
+    if ( (abs(relaxv(ik)+999.d0).gt.epzero .or.                &
+         abs(relaxv(iep)+999.d0).gt.epzero ) .and.             &
+         ikecou.ne.0) write(nfecra,2623)                  &
+         relaxv(ik),relaxv(iep)
+    if (ikecou.eq.0 .and. idtvar.ge.0) then
+      if(relaxv(ik).gt.1.d0.or.relaxv(ik).lt.0.d0 .or.      &
+           relaxv(iep).gt.1.d0.or.relaxv(iep).lt.0.d0) then
+        write(nfecra,2624) relaxv(ik),relaxv(iep)
+        iok = iok + 1
+      endif
     endif
   endif
 
@@ -1599,14 +1603,11 @@ endif
 
 ! --- periodicite de rotation douteuse avec ordre 2 vitesse
 if(iperot.gt.0) then
-  iuiph = iu
-  iviph = iv
-  iwiph = iw
-  if( (abs(thetav(iuiph)-0.5d0).lt.1.d-3).or.                   &
-       (abs(thetav(iviph)-0.5d0).lt.1.d-3).or.                   &
-        (abs(thetav(iwiph)-0.5d0).lt.1.d-3)) then
+  if( (abs(thetav(iu)-0.5d0).lt.1.d-3).or.                   &
+       (abs(thetav(iv)-0.5d0).lt.1.d-3).or.                   &
+        (abs(thetav(iw)-0.5d0).lt.1.d-3)) then
     write(nfecra,5010)iperio,                                   &
-         thetav(iuiph),thetav(iviph),thetav(iwiph)
+         thetav(iu),thetav(iv),thetav(iw)
     !            IOK = IOK + 1
   endif
 endif

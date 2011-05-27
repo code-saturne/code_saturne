@@ -88,14 +88,12 @@ double precision rtp(ncelet,nvar)
 ! Local variables
 
 integer          iclpke,iel,iclpk2,iclpe2
-integer          ivar,ipp,ii,iikiph,iieiph,iivisc,iiromc
+integer          ivar,ipp,ii,iivisc,iiromc
 double precision xepmin,xepm,xe,xkmin,xkm,xk, vmin, vmax, var
 double precision epz2
 
 !===============================================================================
 
-iikiph = ik
-iieiph = iep
 iivisc = ipproc(iviscl)
 iiromc = ipproc(irom)
 
@@ -110,9 +108,9 @@ epz2 = epzero**2
 
 do ii = 1, 2
   if(ii.eq.1) then
-    ivar = iikiph
+    ivar = ik
   elseif(ii.eq.2) then
-    ivar = iieiph
+    ivar = iep
   endif
   ipp  = ipprtp(ivar)
 
@@ -148,14 +146,14 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
     xepm = 46656.d0*cmu/almax**4
     iclpke = 0
     do iel=1,ncel
-      xk = rtp(iel,iikiph)
-      xe = rtp(iel,iieiph)
+      xk = rtp(iel,ik)
+      xe = rtp(iel,iep)
       xkmin = xkm*(propce(iel,iivisc)/propce(iel,iiromc))**2
       xepmin = xepm*(propce(iel,iivisc)/propce(iel,iiromc))**3
       if(xk.le.xkmin.or.xe.le.xepmin) then
         if(iclkep.eq.1) then
-          rtp(iel,iikiph)  = xkmin
-          rtp(iel,iieiph) = xepmin
+          rtp(iel,ik)  = xkmin
+          rtp(iel,iep) = xepmin
         endif
         iclpke = iclpke + 1
       endif
@@ -169,12 +167,12 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
             (viscl0/ro0)**3
     iclpke = 0
     do iel=1,ncel
-      xk = rtp(iel,iikiph)
-      xe = rtp(iel,iieiph)
+      xk = rtp(iel,ik)
+      xe = rtp(iel,iep)
       if(xk.le.xkmin.or.xe.le.xepmin) then
         if(iclkep.eq.1) then
-          rtp(iel,iikiph)  = xkmin
-          rtp(iel,iieiph) = xepmin
+          rtp(iel,ik)  = xkmin
+          rtp(iel,iep) = xepmin
         endif
         iclpke = iclpke + 1
       endif
@@ -201,8 +199,8 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
 ! ---  Stockage nb de clippings pour listing
 
   if(iclkep.eq.1) then
-    iclpmn(ipprtp(iikiph)) = iclpke
-    iclpmn(ipprtp(iieiph)) = iclpke
+    iclpmn(ipprtp(ik)) = iclpke
+    iclpmn(ipprtp(iep)) = iclpke
   endif
 
 endif
@@ -216,21 +214,21 @@ if(iclkep.eq.0) then
   iclpk2 = 0
   iclpe2 = 0
   do iel = 1, ncel
-    xk = rtp(iel,iikiph)
-    xe = rtp(iel,iieiph)
+    xk = rtp(iel,ik)
+    xe = rtp(iel,iep)
     if (abs(xk).le.epz2) then
       iclpk2 = iclpk2 + 1
-      rtp(iel,iikiph) = max(rtp(iel,iikiph),epz2)
+      rtp(iel,ik) = max(rtp(iel,ik),epz2)
     elseif(xk.le.0.d0) then
       iclpk2 = iclpk2 + 1
-      rtp(iel,iikiph) = -xk
+      rtp(iel,ik) = -xk
     endif
     if (abs(xe).le.epz2) then
       iclpe2 = iclpe2 + 1
-      rtp(iel,iieiph) = max(rtp(iel,iieiph),epz2)
+      rtp(iel,iep) = max(rtp(iel,iep),epz2)
     elseif(xe.le.0.d0) then
       iclpe2 = iclpe2 + 1
-      rtp(iel,iieiph) = -xe
+      rtp(iel,iep) = -xe
     endif
   enddo
 
@@ -243,8 +241,8 @@ if(iclkep.eq.0) then
 
 ! ---  Stockage nb de clippings pour listing
 
-  iclpmn(ipprtp(iikiph)) = iclpk2
-  iclpmn(ipprtp(iieiph)) = iclpe2
+  iclpmn(ipprtp(ik)) = iclpk2
+  iclpmn(ipprtp(iep)) = iclpe2
 
 endif
 

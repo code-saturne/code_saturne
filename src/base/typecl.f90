@@ -146,16 +146,13 @@ integer          iok, inc, iccocg, ideb, ifin, inb, isum, iwrnp
 integer          ifrslb, itbslb
 integer          ityp, ii, jj, iwaru, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          ipriph, iuiph, iviph, iwiph
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip,ir23ip
-integer          ikiph , iepiph, iphiph, ifbiph, iomgip,inuiph
-integer          iprnew, iii
+integer          iii
 integer          irangd, iclipr, iiptot
 integer          ifadir
 double precision pref, epsrgp, climgp, extrap, coefup
 double precision diipbx, diipby, diipbz
 double precision flumbf, flumty(ntypmx)
-double precision ro0iph, p0iph, pr0iph, xxp0, xyp0, xzp0, d0, d0min
+double precision xxp0, xyp0, xzp0, d0, d0min
 double precision xyzref(4) ! xyzref(3) + coefup for broadcast
 
 double precision rvoid(1)
@@ -179,22 +176,6 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(coefu(nfabor))
 
 ! Initialize variables to avoid compiler warnings
-
-iuiph = 0
-iviph = 0
-iwiph = 0
-iepiph = 0
-ifbiph = 0
-ikiph = 0
-iomgip = 0
-iphiph = 0
-ir11ip = 0
-ir22ip = 0
-ir33ip = 0
-ir12ip = 0
-ir13ip = 0
-ir23ip = 0
-inuiph = 0
 
 pref = 0.d0
 
@@ -530,38 +511,9 @@ enddo
 !     The loop on phases starts here and ends at the end of the next block.
 !===============================================================================
 
-ro0iph = ro0
-p0iph  = p0
-pr0iph = pred0
 xxp0   = xyzp0(1)
 xyp0   = xyzp0(2)
 xzp0   = xyzp0(3)
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-if(itytur.eq.2) then
-  ikiph  = ik
-  iepiph = iep
-elseif(itytur.eq.3) then
-  ir11ip = ir11
-  ir22ip = ir22
-  ir33ip = ir33
-  ir12ip = ir12
-  ir13ip = ir13
-  ir23ip = ir23
-  iepiph = iep
-elseif(iturb.eq.50) then
-  ikiph  = ik
-  iepiph = iep
-  iphiph = iphi
-  ifbiph = ifb
-elseif(iturb.eq.60) then
-  ikiph  = ik
-  iomgip = iomg
-elseif(iturb.eq.70) then
-  inuiph  = inusa
-endif
 
 ! ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
 ! itbslb = max of ifrslb on all ranks, standard outlet face presence indicator
@@ -579,7 +531,7 @@ ifin = ifinty(isolib)
 
 do ii = ideb, ifin
   ifac = itrifb(ii)
-  if (icodcl(ifac,ipriph).eq.0) then
+  if (icodcl(ifac,ipr).eq.0) then
     d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
          + (cdgfbo(2,ifac)-xyp0)**2  &
          + (cdgfbo(3,ifac)-xzp0)**2
@@ -607,22 +559,22 @@ if (itbslb.gt.0) then
 
   inc = 1
   iccocg = 1
-  nswrgp = nswrgr(ipriph)
-  imligp = imligr(ipriph)
-  iwarnp = iwarni(ipriph)
-  epsrgp = epsrgr(ipriph)
-  climgp = climgr(ipriph)
-  extrap = extrag(ipriph)
-  iclipr = iclrtp(ipriph,icoef)
+  nswrgp = nswrgr(ipr)
+  imligp = imligr(ipr)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(ipr)
+  climgp = climgr(ipr)
+  extrap = extrag(ipr)
+  iclipr = iclrtp(ipr,icoef)
 
-  call grdpot                                                         &
+  call grdpot &
   !==========
-     ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
+     ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
        iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
        ia     ,                                                       &
        rvoid  ,                                                       &
        frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
-       rtpa(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,          &
+       rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
        w1     , w2     , w3     ,                                     &
        !        ------   ------   ------
        ra     )
@@ -637,24 +589,24 @@ if (itbslb.gt.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      coefu(ifac) = rtpa(ii,ipriph)                           &
+      coefu(ifac) = rtpa(ii,ipr)                                &
            + diipbx*w1(ii)+ diipby*w2(ii) + diipbz*w3(ii)       &
-           + ro0iph*( gx*(cdgfbo(1,ifac)-xxp0)                  &
-           + gy*(cdgfbo(2,ifac)-xyp0)                  &
-           + gz*(cdgfbo(3,ifac)-xzp0))                 &
-           + p0iph - pr0iph
+           + ro0*( gx*(cdgfbo(1,ifac)-xxp0)                     &
+           + gy*(cdgfbo(2,ifac)-xyp0)                           &
+           + gz*(cdgfbo(3,ifac)-xzp0))                          &
+           + p0 - pred0
     enddo
   else
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      coefu(ifac) = rtpa(ii,ipriph)                           &
+      coefu(ifac) = rtpa(ii,ipr)                                &
            + (cdgfbo(1,ifac)-xyzcen(1,ii))*w1(ii)               &
            + (cdgfbo(2,ifac)-xyzcen(2,ii))*w2(ii)               &
            + (cdgfbo(3,ifac)-xyzcen(3,ii))*w3(ii)               &
-           + ro0iph*(  gx*(cdgfbo(1,ifac)-xxp0)                 &
+           + ro0*(  gx*(cdgfbo(1,ifac)-xxp0)                    &
            + gy*(cdgfbo(2,ifac)-xyp0)                           &
            + gz*(cdgfbo(3,ifac)-xzp0))                          &
-           + p0iph - pr0iph
+           + p0 - pred0
     enddo
   endif
 
@@ -678,7 +630,7 @@ ideb = idebty(ientre)
 ifin = ifinty(ientre)
 
 do ivar = 1, nvar
-  if (ivar.eq.ipriph) then
+  if (ivar.eq.ipr) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -712,7 +664,7 @@ if (iphydr.eq.1) then
   do ifac = 1,nfabor
     isostd(ifac) = 0
     if ((itypfb(ifac).eq.isolib).and.                     &
-         (icodcl(ifac,ipriph).eq.0)) then
+         (icodcl(ifac,ipr).eq.0)) then
       isostd(ifac) = 1
     endif
   enddo
@@ -768,7 +720,7 @@ elseif (ixyzp0.lt.0) then
 
   ifadir = -1
   do ifac = 1, nfabor
-    if (icodcl(ifac,ipriph).eq.1) then
+    if (icodcl(ifac,ipr).eq.1) then
       d0 =   (cdgfbo(1,ifac)-xxp0)**2  &
            + (cdgfbo(2,ifac)-xyp0)**2  &
            + (cdgfbo(3,ifac)-xzp0)**2
@@ -821,16 +773,15 @@ if (ixyzp0.eq.2) then
     iiptot = ipproc(iprtot)
     do iel = 1, ncelet
       propce(iel,iiptot) = propce(iel,iiptot)       &
-           - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+           - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
     enddo
   endif
   if (itbslb.gt.0) then
     write(nfecra,8000)xxp0,xyp0,xzp0
     do ifac = 1, nfabor
-      coefu(ifac) = coefu(ifac)                             &
-           - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+      coefu(ifac) = coefu(ifac) - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
     enddo
-    coefup = coefup - ro0iph*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
+    coefup = coefup - ro0*( gx*xxp0 + gy*xyp0 + gz*xzp0 )
   else
     write(nfecra,8001)xxp0,xyp0,xzp0
   endif
@@ -848,7 +799,7 @@ if (itbslb.gt.0) then
   xyp0 = xyzp0(2)
   xzp0 = xyzp0(3)
   pref = p0                                            &
-       + ro0iph*( gx*(xyzref(1)-xxp0)                  &
+       + ro0*( gx*(xyzref(1)-xxp0)                     &
        + gy*(xyzref(2)-xyp0)                           &
        + gz*(xyzref(3)-xzp0) )                         &
        - coefup
@@ -861,7 +812,7 @@ ideb = idebty(isolib)
 ifin = ifinty(isolib)
 
 do ivar = 1, nvar
-  if (ivar.eq.ipriph) then
+  if (ivar.eq.ipr) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -871,7 +822,7 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
-  elseif(ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
+  elseif(ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -895,10 +846,10 @@ ideb = idebty(isymet)
 ifin = ifinty(isymet)
 
 do ivar = 1, nvar
-  if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph.or.      &
-       ( itytur.eq.3.and.                                       &
-       (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or.  &
-       ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip)      &
+  if ( ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw.or.         &
+       ( itytur.eq.3.and.                                 &
+       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
+       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)      &
        ) ) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
@@ -909,7 +860,7 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
-  elseif(ivar.eq.ipriph) then
+  elseif(ivar.eq.ipr) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -932,7 +883,7 @@ ideb = idebty(iparoi)
 ifin = ifinty(iparoi)
 
 do ivar = 1, nvar
-  if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
+  if ( ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -944,18 +895,18 @@ do ivar = 1, nvar
     enddo
   elseif (                                                      &
        ( itytur.eq.2.and.                                  &
-       (ivar.eq.ikiph  .or.ivar.eq.iepiph) ).or.               &
+       (ivar.eq.ik  .or.ivar.eq.iep) ).or.               &
        ( itytur.eq.3.and.                                  &
-       (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
-       ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip.or. &
-       ivar.eq.iepiph)                    ).or.               &
+       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or. &
+       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or. &
+       ivar.eq.iep)                    ).or.               &
        ( iturb.eq.50.and.                                  &
-       (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
-       ivar.eq.ifbiph)                    ).or.               &
+       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
+       ivar.eq.ifb)                    ).or.               &
        ( iturb.eq.60.and.                                  &
-       (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
+       (ivar.eq.ik.or.ivar.eq.iomg)   ).or.               &
        ( iturb.eq.70.and.                                  &
-       (ivar.eq.inuiph)                    )    ) then
+       (ivar.eq.inusa)                    )    ) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -965,7 +916,7 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
-  elseif(ivar.eq.ipriph) then
+  elseif(ivar.eq.ipr) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -989,7 +940,7 @@ ideb = idebty(iparug)
 ifin = ifinty(iparug)
 
 do ivar = 1, nvar
-  if ( ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph) then
+  if ( ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -1001,18 +952,18 @@ do ivar = 1, nvar
     enddo
   elseif (                                                      &
        ( itytur.eq.2.and.                                  &
-       (ivar.eq.ikiph  .or.ivar.eq.iepiph) ).or.               &
+       (ivar.eq.ik  .or.ivar.eq.iep) ).or.               &
        ( itytur.eq.3.and.                                  &
-       (ivar.eq.ir11ip.or.ivar.eq.ir22ip.or.ivar.eq.ir33ip.or. &
-       ivar.eq.ir12ip.or.ivar.eq.ir13ip.or.ivar.eq.ir23ip.or. &
-       ivar.eq.iepiph)                    ).or.               &
+       (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or. &
+       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23.or. &
+       ivar.eq.iep)                    ).or.               &
        ( iturb.eq.50.and.                                  &
-       (ivar.eq.ikiph.or.ivar.eq.iepiph.or.ivar.eq.iphiph.or.  &
-       ivar.eq.ifbiph)                    ).or.               &
+       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
+       ivar.eq.ifb)                    ).or.               &
        ( iturb.eq.60.and.                                  &
-       (ivar.eq.ikiph.or.ivar.eq.iomgip)   ).or.               &
+       (ivar.eq.ik.or.ivar.eq.iomg)   ).or.               &
        ( iturb.eq.70.and.                                  &
-       (ivar.eq.inuiph)                    )    ) then
+       (ivar.eq.inusa)                    )    ) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -1022,7 +973,7 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,3) = 0.d0
       endif
     enddo
-  elseif(ivar.eq.ipriph) then
+  elseif(ivar.eq.ipr) then
     do ii = ideb, ifin
       ifac = itrifb(ii)
       if(icodcl(ifac,ivar).eq.0) then
@@ -1060,7 +1011,7 @@ do ivar = 1, nvar
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
 
-      if (ivar.eq.iuiph.or.ivar.eq.iviph.or.ivar.eq.iwiph)      &
+      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw)      &
            then
         if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
           itypfb(ifac) = - abs(itypfb(ifac))
@@ -1074,7 +1025,7 @@ do ivar = 1, nvar
 
       elseif (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
 
-        flumbf = propfb(ifac,ipprob(ifluma(iuiph)))
+        flumbf = propfb(ifac,ipprob(ifluma(iu)))
         if( flumbf.ge.-epzero) then
           icodcl(ifac,ivar)   = 3
           rcodcl(ifac,ivar,1) = 0.d0
@@ -1243,8 +1194,7 @@ enddo
 !===============================================================================
 
 iwaru = -1
-iuiph  = iu
-iwaru = max(iwarni(iuiph),iwaru)
+iwaru = max(iwarni(iu),iwaru)
 if (irangp.ge.0) call parcmx(iwaru)
 
 if(iwaru.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
@@ -1252,8 +1202,7 @@ if(iwaru.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
   write(nfecra,7010)
 endif
 
-iuiph  = iu
-iflmab = ipprob(ifluma(iuiph))
+iflmab = ipprob(ifluma(iu))
 
 iwrnp = iwarni(iu)
 if (irangp.ge.0) call parcmx (iwrnp)

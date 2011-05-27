@@ -110,9 +110,6 @@ integer          itrav6 , itrav7 , itrav8 , itrav
 
 integer          ipt    , ifac   , iel    , isou
 integer          ivar   , iscal  , ipcrom
-integer          ipriph , iuiph  , iviph  , iwiph
-integer          ikiph  , iepiph , ifbiph , iomiph , iphiph
-integer          ir11ip , ir22ip , ir33ip , ir12ip , ir13ip , ir23ip
 integer          itravx , itravy , itravz
 integer          igradx , igrady , igradz
 integer          inc    , iccocg , iclvar, nswrgp
@@ -220,35 +217,30 @@ ipos = 1
 ! 1.  PREPARATION DE LA PRESSION
 !=========================================================================
 
-! La pression est unique pour chaque phase, inutile donc de
-! le faire pour toutes les phases.
-
-ipriph = ipr
-
 ! --- Calcul du gradient de la pression pour interpolation
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtp(1,ipriph))
+  call synsca(rtp(1,ipr))
   !==========
 endif
 
 inc    = 1
 iccocg = 1
-iclvar = iclrtp(ipriph,icoef)
-nswrgp = nswrgr(ipriph)
-imligp = imligr(ipriph)
-iwarnp = iwarni(ipriph)
-epsrgp = epsrgr(ipriph)
-climgp = climgr(ipriph)
-extrap = extrag(ipriph)
+iclvar = iclrtp(ipr,icoef)
+nswrgp = nswrgr(ipr)
+imligp = imligr(ipr)
+iwarnp = iwarni(ipr)
+epsrgp = epsrgr(ipr)
+climgp = climgr(ipr)
+extrap = extrag(ipr)
 
-call grdcel                                                   &
+call grdcel &
 !==========
-  ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+  ( ipr , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,ipriph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
+    ia     ,                                                      &
+    rtp(1,ipr) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -269,7 +261,7 @@ if (ifaccp.eq.1) then
     yjjp = djppts(2,ipt)
     zjjp = djppts(3,ipt)
 
-    rvdis(ipt,ipos) = rtp(iel,ipriph) &
+    rvdis(ipt,ipos) = rtp(iel,ipr) &
          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     ! On prend en compte le potentiel centrifuge en repère relatif
@@ -326,14 +318,10 @@ endif
 ! 2.  PREPARATION DE LA VITESSE
 !=========================================================================
 
-iuiph = iu
-iviph = iv
-iwiph = iw
-
 ! --- Calcul du gradient de la vitesse pour interpolation
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
+  call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
   !==========
 endif
 
@@ -341,9 +329,9 @@ do isou = 1, 3
 
   ipos = ipos + 1
 
-  if(isou.eq.1) ivar = iuiph
-  if(isou.eq.2) ivar = iviph
-  if(isou.eq.3) ivar = iwiph
+  if(isou.eq.1) ivar = iu
+  if(isou.eq.2) ivar = iv
+  if(isou.eq.3) ivar = iw
 
   inc    = 1
   iccocg = 1
@@ -470,29 +458,28 @@ if (itytur.eq.2) then
 
 !         Préparation des données: interpolation de k en J'
 
-  ikiph  = ik
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ikiph))
+    call synsca(rtp(1,ik))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(ikiph,icoef)
-  nswrgp = nswrgr(ikiph)
-  imligp = imligr(ikiph)
-  iwarnp = iwarni(ikiph)
-  epsrgp = epsrgr(ikiph)
-  climgp = climgr(ikiph)
-  extrap = extrag(ikiph)
+  iclvar = iclrtp(ik,icoef)
+  nswrgp = nswrgr(ik)
+  imligp = imligr(ik)
+  iwarnp = iwarni(ik)
+  epsrgp = epsrgr(ik)
+  climgp = climgr(ik)
+  extrap = extrag(ik)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+  ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
+    ia     ,                                                      &
+    rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -510,7 +497,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -527,7 +514,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -536,30 +523,28 @@ if (itytur.eq.2) then
 
   !         Préparation des données: interpolation de epsilon en J'
 
-  iepiph  = iep
-
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iepiph))
+    call synsca(rtp(1,iep))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(iepiph,icoef)
-  nswrgp = nswrgr(iepiph)
-  imligp = imligr(iepiph)
-  iwarnp = iwarni(iepiph)
-  epsrgp = epsrgr(iepiph)
-  climgp = climgr(iepiph)
-  extrap = extrag(iepiph)
+  iclvar = iclrtp(iep,icoef)
+  nswrgp = nswrgr(iep)
+  imligp = imligr(iep)
+  iwarnp = iwarni(iep)
+  epsrgp = epsrgr(iep)
+  climgp = climgr(iep)
+  extrap = extrag(iep)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+  ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
+    ia     ,                                                      &
+    rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -577,7 +562,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+      ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -594,7 +579,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+      ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -611,7 +596,6 @@ if (itytur.eq.2) then
     !           Energie turbulente
     !           ------------------
     ipos = ipos + 1
-    ikiph  = ik
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
@@ -620,7 +604,6 @@ if (itytur.eq.2) then
     !           Dissipation turbulente
     !           ----------------------
     ipos = ipos + 1
-    iepiph = iep
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
@@ -648,17 +631,13 @@ if (itytur.eq.2) then
 
     !           Termes R12,R13,R23
 
-    iuiph = iu
-    iviph = iv
-    iwiph = iw
-
     !           La synchronisation des halos a deja ete faite plus haut
 
     do isou = 1, 3
 
-      if(isou.eq.1) ivar = iuiph
-      if(isou.eq.2) ivar = iviph
-      if(isou.eq.3) ivar = iwiph
+      if(isou.eq.1) ivar = iu
+      if(isou.eq.2) ivar = iv
+      if(isou.eq.3) ivar = iw
 
       inc    = 1
       iccocg = 1
@@ -732,7 +711,6 @@ if (itytur.eq.2) then
     !           Dissipation turbulente
     !           ----------------------
     ipos = ipos + 1
-    iepiph = iep
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav2 + ipt -1)
@@ -755,7 +733,6 @@ if (itytur.eq.2) then
     !           Energie turbulente
     !           -----------------
     ipos = ipos + 1
-    ikiph  = ik
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav1 + ipt -1)
@@ -764,7 +741,6 @@ if (itytur.eq.2) then
     !           Omega
     !           -----
     ipos = ipos + 1
-    iomiph = iomg
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav2 + ipt-1)/cmu                  &
@@ -871,30 +847,28 @@ elseif (itytur.eq.3) then
 
   !         Préparation des données: interpolation de epsilon en J'
 
-  iepiph  = iep
-
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iepiph))
+    call synsca(rtp(1,iep))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(iepiph,icoef)
-  nswrgp = nswrgr(iepiph)
-  imligp = imligr(iepiph)
-  iwarnp = iwarni(iepiph)
-  epsrgp = epsrgr(iepiph)
-  climgp = climgr(iepiph)
-  extrap = extrag(iepiph)
+  iclvar = iclrtp(iep,icoef)
+  nswrgp = nswrgr(iep)
+  imligp = imligr(iep)
+  iwarnp = iwarni(iep)
+  epsrgp = epsrgr(iep)
+  climgp = climgr(iep)
+  extrap = extrag(iep)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+  ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
+    ia     ,                                                      &
+    rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -912,7 +886,7 @@ elseif (itytur.eq.3) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
+      ra(itrav7 + ipt-1) = rtp(iel,iep)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -929,7 +903,7 @@ elseif (itytur.eq.3) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav7 + ipt-1) = rtp(iel,iepiph)                        &
+      ra(itrav7 + ipt-1) = rtp(iel,iep)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -964,7 +938,6 @@ elseif (itytur.eq.3) then
     !           Dissipation turbulente
     !           ----------------------
     ipos = ipos + 1
-    iepiph = iep
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
@@ -979,7 +952,6 @@ elseif (itytur.eq.3) then
     !           Energie turbulente
     !           ------------------
     ipos = ipos + 1
-    ikiph = ik
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
@@ -989,7 +961,6 @@ elseif (itytur.eq.3) then
     !           Dissipation turbulente
     !           ----------------------
     ipos = ipos + 1
-    iepiph = iep
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
@@ -1012,7 +983,6 @@ elseif (itytur.eq.3) then
     !           Energie turbulente
     !           ------------------
     ipos = ipos + 1
-    ikiph = ik
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
@@ -1022,7 +992,6 @@ elseif (itytur.eq.3) then
     !           Omega
     !           -----
     ipos = ipos + 1
-    iomiph = iomg
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav7 + ipt-1)/cmu                  &
@@ -1043,30 +1012,28 @@ elseif (iturb.eq.50) then
 
   !         Préparation des données: interpolation de k en J'
 
-  ikiph  = ik
-
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ikiph))
+    call synsca(rtp(1,ik))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(ikiph,icoef)
-  nswrgp = nswrgr(ikiph)
-  imligp = imligr(ikiph)
-  iwarnp = iwarni(ikiph)
-  epsrgp = epsrgr(ikiph)
-  climgp = climgr(ikiph)
-  extrap = extrag(ikiph)
+  iclvar = iclrtp(ik,icoef)
+  nswrgp = nswrgr(ik)
+  imligp = imligr(ik)
+  iwarnp = iwarni(ik)
+  epsrgp = epsrgr(ik)
+  climgp = climgr(ik)
+  extrap = extrag(ik)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+  ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
+    ia     ,                                                      &
+    rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -1084,7 +1051,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1101,7 +1068,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1110,30 +1077,28 @@ elseif (iturb.eq.50) then
 
   !         Préparation des données: interpolation de epsilon en J'
 
-  iepiph  = iep
-
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iepiph))
+    call synsca(rtp(1,iep))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(iepiph,icoef)
-  nswrgp = nswrgr(iepiph)
-  imligp = imligr(iepiph)
-  iwarnp = iwarni(iepiph)
-  epsrgp = epsrgr(iepiph)
-  climgp = climgr(iepiph)
-  extrap = extrag(iepiph)
+  iclvar = iclrtp(iep,icoef)
+  nswrgp = nswrgr(iep)
+  imligp = imligr(iep)
+  iwarnp = iwarni(iep)
+  epsrgp = epsrgr(iep)
+  climgp = climgr(iep)
+  extrap = extrag(iep)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( iepiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+  ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,iepiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
+    ia     ,                                                      &
+    rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -1151,7 +1116,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+      ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1168,7 +1133,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iepiph)                        &
+      ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1177,30 +1142,28 @@ elseif (iturb.eq.50) then
 
   !         Préparation des données: interpolation de Phi en J'
 
-  iphiph = iphi
-
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iphiph))
+    call synsca(rtp(1,iphi))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(iphiph,icoef)
-  nswrgp = nswrgr(iphiph)
-  imligp = imligr(iphiph)
-  iwarnp = iwarni(iphiph)
-  epsrgp = epsrgr(iphiph)
-  climgp = climgr(iphiph)
-  extrap = extrag(iphiph)
+  iclvar = iclrtp(iphi,icoef)
+  nswrgp = nswrgr(iphi)
+  imligp = imligr(iphi)
+  iwarnp = iwarni(iphi)
+  epsrgp = epsrgr(iphi)
+  climgp = climgr(iphi)
+  extrap = extrag(iphi)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( iphiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+  ( iphi , imrgra , inc    , iccocg , nswrgp , imligp ,           &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,iphiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
+    ia     ,                                                      &
+    rtp(1,iphi) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -1214,37 +1177,35 @@ elseif (iturb.eq.50) then
     yjjp = djppts(2,ipt)
     zjjp = djppts(3,ipt)
 
-    ra(itrav3 + ipt-1) = rtp(iel,iphiph)                        &
+    ra(itrav3 + ipt-1) = rtp(iel,iphi)                        &
          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
   enddo
 
   !         Préparation des données: interpolation de F-barre en J'
 
-  ifbiph = ifb
-
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ifbiph))
+    call synsca(rtp(1,ifb))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(ifbiph,icoef)
-  nswrgp = nswrgr(ifbiph)
-  imligp = imligr(ifbiph)
-  iwarnp = iwarni(ifbiph)
-  epsrgp = epsrgr(ifbiph)
-  climgp = climgr(ifbiph)
-  extrap = extrag(ifbiph)
+  iclvar = iclrtp(ifb,icoef)
+  nswrgp = nswrgr(ifb)
+  imligp = imligr(ifb)
+  iwarnp = iwarni(ifb)
+  epsrgp = epsrgr(ifb)
+  climgp = climgr(ifb)
+  extrap = extrag(ifb)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( ifbiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+  ( ifb , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,ifbiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
+    ia     ,                                                      &
+    rtp(1,ifb) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -1262,7 +1223,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
+      ra(itrav4 + ipt-1) = rtp(iel,ifb)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1279,7 +1240,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav4 + ipt-1) = rtp(iel,ifbiph)                        &
+      ra(itrav4 + ipt-1) = rtp(iel,ifb)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1295,7 +1256,6 @@ elseif (iturb.eq.50) then
     !           Energie turbulente
     !           ------------------
     ipos = ipos + 1
-    ikiph  = ik
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
@@ -1304,7 +1264,6 @@ elseif (iturb.eq.50) then
     !           Dissipation turbulente
     !           ----------------------
     ipos = ipos + 1
-    iepiph = iep
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
@@ -1313,7 +1272,6 @@ elseif (iturb.eq.50) then
     !           Phi
     !           ---
     ipos = ipos + 1
-    iphiph = iphi
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav3 + ipt-1)
@@ -1322,7 +1280,6 @@ elseif (iturb.eq.50) then
     !           F-barre
     !           -------
     ipos = ipos + 1
-    ifbiph = ifb
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav4 + ipt-1)
@@ -1349,30 +1306,28 @@ elseif (iturb.eq.60) then
 
   !         Préparation des données: interpolation de k en J'
 
-  ikiph  = ik
-
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,ikiph))
+    call synsca(rtp(1,ik))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(ikiph,icoef)
-  nswrgp = nswrgr(ikiph)
-  imligp = imligr(ikiph)
-  iwarnp = iwarni(ikiph)
-  epsrgp = epsrgr(ikiph)
-  climgp = climgr(ikiph)
-  extrap = extrag(ikiph)
+  iclvar = iclrtp(ik,icoef)
+  nswrgp = nswrgr(ik)
+  imligp = imligr(ik)
+  iwarnp = iwarni(ik)
+  epsrgp = epsrgr(ik)
+  climgp = climgr(ik)
+  extrap = extrag(ik)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( ikiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+  ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,ikiph) , coefa(1,iclvar) , coefb(1,iclvar) ,            &
+    ia     ,                                                      &
+    rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -1390,7 +1345,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1407,7 +1362,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ikiph)                         &
+      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1416,30 +1371,28 @@ elseif (iturb.eq.60) then
 
   !         Préparation des données: interpolation de omega en J'
 
-  iomiph  = iomg
-
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtp(1,iomiph))
+    call synsca(rtp(1,iomg))
     !==========
   endif
 
   inc    = 1
   iccocg = 1
-  iclvar = iclrtp(iomiph,icoef)
-  nswrgp = nswrgr(iomiph)
-  imligp = imligr(iomiph)
-  iwarnp = iwarni(iomiph)
-  epsrgp = epsrgr(iomiph)
-  climgp = climgr(iomiph)
-  extrap = extrag(iomiph)
+  iclvar = iclrtp(iomg,icoef)
+  nswrgp = nswrgr(iomg)
+  imligp = imligr(iomg)
+  iwarnp = iwarni(iomg)
+  epsrgp = epsrgr(iomg)
+  climgp = climgr(iomg)
+  extrap = extrag(iomg)
 
-  call grdcel                                                   &
+  call grdcel &
   !==========
-  ( iomiph , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+  ( iomg , imrgra , inc    , iccocg , nswrgp , imligp ,           &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
-    rtp(1,iomiph) , coefa(1,iclvar) , coefb(1,iclvar) ,           &
+    ia     ,                                                      &
+    rtp(1,iomg) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------
     ra     )
@@ -1456,7 +1409,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
+      ra(itrav2 + ipt-1) = rtp(iel,iomg)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1473,7 +1426,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iomiph)                        &
+      ra(itrav2 + ipt-1) = rtp(iel,iomg)                        &
            + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
 
     enddo
@@ -1489,7 +1442,6 @@ elseif (iturb.eq.60) then
     !           Energie turbulente
     !           ------------------
     ipos = ipos + 1
-    ikiph  = ik
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
@@ -1498,7 +1450,6 @@ elseif (iturb.eq.60) then
     !           Omega
     !           -----
     ipos = ipos + 1
-    iomiph = iomg
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
@@ -1512,7 +1463,6 @@ elseif (iturb.eq.60) then
     !           Energie turbulente
     !           ------------------
     ipos = ipos + 1
-    ikiph  = ik
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
@@ -1521,7 +1471,6 @@ elseif (iturb.eq.60) then
     !           Omega
     !           -----
     ipos = ipos + 1
-    iomiph = iomg
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
@@ -1550,15 +1499,11 @@ elseif (iturb.eq.60) then
 
     !           Termes R12,R13,R23
 
-    iuiph = iu
-    iviph = iv
-    iwiph = iw
-
     do isou = 1, 3
 
-      if(isou.eq.1) ivar = iuiph
-      if(isou.eq.2) ivar = iviph
-      if(isou.eq.3) ivar = iwiph
+      if(isou.eq.1) ivar = iu
+      if(isou.eq.2) ivar = iv
+      if(isou.eq.3) ivar = iw
 
       inc    = 1
       iccocg = 1
@@ -1632,7 +1577,6 @@ elseif (iturb.eq.60) then
     !           Dissipation turbulente
     !           ----------------------
     ipos = ipos + 1
-    iepiph = iep
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
@@ -1681,12 +1625,12 @@ if (nscal.gt.0) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    call grdcel                                                   &
+    call grdcel &
     !==========
   ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
+    ia     ,                                                      &
     rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,         &
     w1     , w2     , w3     ,                                    &
 !         ------   ------   ------

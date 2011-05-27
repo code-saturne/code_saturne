@@ -180,7 +180,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          iel, ifbiph, iphiph, ipcrom
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -204,14 +204,10 @@ if(1.eq.1) return
 allocate(lstelt(ncel))
 
 
-! --- Index numbers of variables f_bar and phi
-ifbiph = ifb
-iphiph = iphi
-
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(ifbiph).ge.1) then
+if(iwarni(ifb).ge.1) then
   write(nfecra,1000)
 endif
 

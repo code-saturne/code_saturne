@@ -159,10 +159,6 @@ integer          ifac, iel, ivar, isou, ii, jj, kk, ll, isvhbl
 integer          ihcp, iscal
 integer          imprim, modntl
 integer          inturb, inlami, iuiptn
-integer          iuiph , iviph , iwiph
-integer          ikiph , iepiph, iphiph, ifbiph, iomgip
-integer          inuiph
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          iclu  , iclv  , iclw  , iclk  , iclep
 integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
@@ -198,18 +194,6 @@ save             ntlast , iaff
 
 ! Initialize variables to avoid compiler warnings
 
-iepiph = 0
-ifbiph = 0
-ikiph = 0
-iomgip = 0
-iphiph = 0
-inuiph = 0
-ir11ip = 0
-ir22ip = 0
-ir33ip = 0
-ir12ip = 0
-ir13ip = 0
-ir23ip = 0
 iclep = 0
 iclk = 0
 iclomg = 0
@@ -239,63 +223,36 @@ sqrcmu = sqrt(cmu)
 und0   = 1.d0
 deuxd0 = 2.d0
 
-! --- Variables
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-if(itytur.eq.2) then
-  ikiph  = ik
-  iepiph = iep
-elseif(itytur.eq.3) then
-  ir11ip = ir11
-  ir22ip = ir22
-  ir33ip = ir33
-  ir12ip = ir12
-  ir13ip = ir13
-  ir23ip = ir23
-  iepiph = iep
-elseif(iturb.eq.50) then
-  ikiph  = ik
-  iepiph = iep
-  iphiph = iphi
-  ifbiph = ifb
-elseif(iturb.eq.60) then
-  ikiph  = ik
-  iomgip = iomg
-elseif(iturb.eq.70) then
-  inuiph  = inusa
-endif
-
 ! --- Conditions aux limites
-iclu   = iclrtp(iuiph ,icoef)
-iclv   = iclrtp(iviph ,icoef)
-iclw   = iclrtp(iwiph ,icoef)
+iclu   = iclrtp(iu ,icoef)
+iclv   = iclrtp(iv ,icoef)
+iclw   = iclrtp(iw ,icoef)
 if(itytur.eq.2) then
-  iclk   = iclrtp(ikiph ,icoef)
-  iclep  = iclrtp(iepiph,icoef)
+  iclk   = iclrtp(ik ,icoef)
+  iclep  = iclrtp(iep,icoef)
 elseif(itytur.eq.3) then
-  icl11  = iclrtp(ir11ip,icoef)
-  icl22  = iclrtp(ir22ip,icoef)
-  icl33  = iclrtp(ir33ip,icoef)
-  icl12  = iclrtp(ir12ip,icoef)
-  icl13  = iclrtp(ir13ip,icoef)
-  icl23  = iclrtp(ir23ip,icoef)
-  iclep  = iclrtp(iepiph,icoef)
+  icl11  = iclrtp(ir11,icoef)
+  icl22  = iclrtp(ir22,icoef)
+  icl33  = iclrtp(ir33,icoef)
+  icl12  = iclrtp(ir12,icoef)
+  icl13  = iclrtp(ir13,icoef)
+  icl23  = iclrtp(ir23,icoef)
+  iclep  = iclrtp(iep,icoef)
 elseif(iturb.eq.50) then
-  iclk   = iclrtp(ikiph ,icoef)
-  iclep  = iclrtp(iepiph,icoef)
-  iclphi = iclrtp(iphiph,icoef)
-  iclfb  = iclrtp(ifbiph,icoef)
+  iclk   = iclrtp(ik ,icoef)
+  iclep  = iclrtp(iep,icoef)
+  iclphi = iclrtp(iphi,icoef)
+  iclfb  = iclrtp(ifb,icoef)
 elseif(iturb.eq.60) then
-  iclk   = iclrtp(ikiph ,icoef)
-  iclomg = iclrtp(iomgip,icoef)
+  iclk   = iclrtp(ik ,icoef)
+  iclomg = iclrtp(iomg,icoef)
 elseif(iturb.eq.70) then
-  iclnu  = iclrtp(inuiph,icoef)
+  iclnu  = iclrtp(inusa,icoef)
 endif
 
-icluf  = iclrtp(iuiph ,icoeff)
-iclvf  = iclrtp(iviph ,icoeff)
-iclwf  = iclrtp(iwiph ,icoeff)
+icluf  = iclrtp(iu ,icoeff)
+iclvf  = iclrtp(iv ,icoeff)
+iclwf  = iclrtp(iw ,icoeff)
 
 ! --- Grandeurs physiques
 ipcrom = ipproc(irom  )
@@ -353,7 +310,7 @@ endif
 do ifac = 1, nfabor
 
 ! --- Test sur la presence d'une condition de paroi vitesse : debut
-  if( icodcl(ifac,iuiph).eq.5 ) then
+  if( icodcl(ifac,iu).eq.5 ) then
 
     iel = ifabor(ifac)
 
@@ -379,9 +336,9 @@ do ifac = 1, nfabor
 
 ! ---> PRISE EN COMPTE DE LA VITESSE DE DEFILEMENT
 
-    rcodcx = rcodcl(ifac,iuiph,1)
-    rcodcy = rcodcl(ifac,iviph,1)
-    rcodcz = rcodcl(ifac,iwiph,1)
+    rcodcx = rcodcl(ifac,iu,1)
+    rcodcy = rcodcl(ifac,iv,1)
+    rcodcz = rcodcl(ifac,iw,1)
 
 !     Si on n'est pas en ALE, on force la vitesse de deplacement
 !       de la face a etre tangentielle (et on met a jour rcodcl
@@ -391,9 +348,9 @@ do ifac = 1, nfabor
       rcodcx = rcodcx -rcodsn*rnx
       rcodcy = rcodcy -rcodsn*rny
       rcodcz = rcodcz -rcodsn*rnz
-      rcodcl(ifac,iuiph,1) = rcodcx
-      rcodcl(ifac,iviph,1) = rcodcy
-      rcodcl(ifac,iwiph,1) = rcodcz
+      rcodcl(ifac,iu,1) = rcodcx
+      rcodcl(ifac,iv,1) = rcodcy
+      rcodcl(ifac,iw,1) = rcodcz
     endif
 
 
@@ -544,7 +501,7 @@ do ifac = 1, nfabor
         uet = (utau/(apow*(1.0d0/nusury)**bpow))**dpow
       else
 ! AVEC LOI LOG
-        imprim = max(iwarni(iuiph),2)
+        imprim = max(iwarni(iu),2)
         xnuii = visclc/romc
         call causta                                               &
         !==========
@@ -561,12 +518,10 @@ do ifac = 1, nfabor
     else
 ! Si IDEUCH=1 ou 2 on calcule uk et uet
 
-      if(itytur.eq.2 .or. iturb.eq.50               &
-           .or. iturb.eq.60) then
-        ek = rtp(iel,ikiph)
-      elseif(itytur.eq.3) then
-        ek = 0.5d0*                                               &
-               (rtp(iel,ir11ip)+rtp(iel,ir22ip)+rtp(iel,ir33ip))
+      if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
+        ek = rtp(iel,ik)
+      else if (itytur.eq.3) then
+        ek = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
       endif
 
       uk = cmu025*sqrt(ek)
@@ -948,7 +903,7 @@ do ifac = 1, nfabor
       coefb(ifac,iclk) = 0.d0
       coefa(ifac,iclep) =                                         &
            2.0d0*propce(iel,ipcvis)/propce(iel,ipcrom)            &
-           *rtp(iel,ikiph)/distbf**2
+           *rtp(iel,ik)/distbf**2
       coefb(ifac,iclep) = 0.d0
       coefa(ifac,iclphi) = 0.0d0
       coefb(ifac,iclphi) = 0.0d0
@@ -1140,12 +1095,12 @@ do ifac = 1, nfabor
 !     donc :
 
 !       lorsque la variable transportee est la temperature
-!         ABS(ISCSTH(II)).EQ.1 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT
+!         ABS(ISCSTH(II)).EQ.1 : RA(IHCONV-1+IFAC) = HINT
 !         puisque HINT = VISLS * CP / DISTBR
 !                      = lambda/distance en W/(m2 K)
 
 !       lorsque la variable transportee est l'enthalpie
-!         ISCSTH(II).EQ.2 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT*CPR
+!         ISCSTH(II).EQ.2 : RA(IHCONV-1+IFAC) = HINT*CPR
 !         avec
 !            IF(IPCCP.GT.0) THEN
 !              CPR = PROPCE(IEL,IPCCP )
@@ -1258,7 +1213,7 @@ endif
 !       On indique aussi le numero du dernier pas de temps auquel on
 !       a rencontre des yplus hors bornes admissibles
 
-if(iwarni(iuiph).ge.0) then
+if(iwarni(iu).ge.0) then
   if(ntlist.gt.0) then
     modntl = mod(ntcabs,ntlist)
   elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
@@ -1275,7 +1230,7 @@ if(iwarni(iuiph).ge.0) then
 
   if ( (ntlast.eq.ntcabs.and.iaff.lt.2         ).or.              &
        (ntlast.ge.0     .and.ntcabs.ge.ntmabs-1).or.              &
-       (ntlast.eq.ntcabs.and.iwarni(iuiph).ge.2)    ) then
+       (ntlast.eq.ntcabs.and.iwarni(iu).ge.2)    ) then
     iaff = iaff + 1
     write(nfecra,2010) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
@@ -1286,13 +1241,13 @@ if(iwarni(iuiph).ge.0) then
          write(nfecra,2030)  ntlast,ypluli
     if (itytur.eq.2.or.itytur.eq.3)                 &
          write(nfecra,2040)  ntlast,ypluli
-    if (iwarni(iuiph).lt.2) then
+    if (iwarni(iu).lt.2) then
       write(nfecra,2050)
     else
       write(nfecra,2060)
     endif
 
-  else if (modntl.eq.0 .or. iwarni(iuiph).ge.2) then
+  else if (modntl.eq.0 .or. iwarni(iu).ge.2) then
     write(nfecra,2010) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
          iuiptn,inlami,inlami+inturb

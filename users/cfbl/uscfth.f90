@@ -249,11 +249,10 @@ double precision sorti1(*), sorti2(*), gamagr(*), xmasmr(*)
 
 ! Local variables
 
-integer          iiph   , ifac0
+integer          ifac0
 integer          ierr
 integer          iel    , ifac   , ivar
-integer          ipriph , irhiph , itkiph , ieniph
-integer          iuiph  , iviph  , iwiph
+integer          irh    , itk    , ien
 integer          iclp   , iclr   , iclt   , icle
 integer          iclu   , iclv   , iclw
 integer          iutile
@@ -291,20 +290,16 @@ ierr   = 0
 
 ! Rank of the variables in their associated arrays
 if(iccfth.ge.0.or.iccfth.le.-2) then
-  ipriph = ipr
-  irhiph = isca(irho  )
-  itkiph = isca(itempk)
-  ieniph = isca(ienerg)
-  iuiph = iu
-  iviph = iv
-  iwiph = iw
-  iclp = iclrtp(ipriph,icoef)
-  iclr = iclrtp(irhiph,icoef)
-  iclt = iclrtp(itkiph,icoef)
-  icle = iclrtp(ieniph,icoef)
-  iclu = iclrtp(iuiph,icoef)
-  iclv = iclrtp(iviph,icoef)
-  iclw = iclrtp(iwiph,icoef)
+  irh = isca(irho  )
+  itk = isca(itempk)
+  ien = isca(ienerg)
+  iclp = iclrtp(ipr,icoef)
+  iclr = iclrtp(irh,icoef)
+  iclt = iclrtp(itk,icoef)
+  icle = iclrtp(ien,icoef)
+  iclu = iclrtp(iu,icoef)
+  iclv = iclrtp(iv,icoef)
+  iclw = iclrtp(iw,icoef)
 endif
 
 ! For calculation of values at the cell centers,
@@ -401,8 +396,8 @@ if(ieos.eq.1) then
 
     if ( isuite .eq. 0 ) then
       do iel = 1, ncel
-        rtp(iel,irhiph) = p0*xmasml/(rr*t0)
-        rtp(iel,ieniph) = cv0*t0
+        rtp(iel,irh) = p0*xmasml/(rr*t0)
+        rtp(iel,ien) = cv0*t0
       enddo
     endif
 
@@ -419,8 +414,8 @@ if(ieos.eq.1) then
 
     ierr = 0
     do iel = 1, ncel
-      if(rtp(iel,irhiph).le.0.d0) then
-        rtp(iel,irhiph) = epzero
+      if(rtp(iel,irh).le.0.d0) then
+        rtp(iel,irh) = epzero
         ierr = ierr + 1
       endif
     enddo
@@ -443,15 +438,15 @@ if(ieos.eq.1) then
 
     ierr = 0
     do iel = 1, ncel
-      enint = rtp(iel,ieniph)                                     &
-               - 0.5d0*( rtp(iel,iuiph)**2                        &
-                       + rtp(iel,iviph)**2                        &
-                       + rtp(iel,iwiph)**2 )
+      enint = rtp(iel,ien)                                     &
+               - 0.5d0*( rtp(iel,iu)**2                        &
+                       + rtp(iel,iv)**2                        &
+                       + rtp(iel,iw)**2 )
       if(enint.le.0.d0) then
-        rtp(iel,ieniph) = epzero                                  &
-               + 0.5d0*( rtp(iel,iuiph)**2                        &
-                       + rtp(iel,iviph)**2                        &
-                       + rtp(iel,iwiph)**2 )
+        rtp(iel,ien) = epzero                                  &
+               + 0.5d0*( rtp(iel,iu)**2                        &
+                       + rtp(iel,iv)**2                        &
+                       + rtp(iel,iw)**2 )
         ierr = ierr + 1
       endif
     enddo
@@ -471,8 +466,8 @@ if(ieos.eq.1) then
     ! Verification of the values of the density
     ierr = 0
     do iel = 1, ncel
-      if(rtp(iel,irhiph).le.0.d0) then
-        write(nfecra,3010)rtp(iel,irhiph),iel
+      if(rtp(iel,irh).le.0.d0) then
+        write(nfecra,3010)rtp(iel,irh),iel
       endif
     enddo
     ! Stop if a negative value is detected (since the density has been
@@ -484,18 +479,17 @@ if(ieos.eq.1) then
 
     do iel = 1, ncel
       ! Temperature
-      sorti1(iel) = xmasml*rtp(iel,ipriph)/(rr*rtp(iel,irhiph))
+      sorti1(iel) = xmasml*rtp(iel,ipr)/(rr*rtp(iel,irh))
       ! Total energy
       sorti2(iel) = cv0*sorti1(iel)                        &
-           + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
-                                       + rtp(iel,iwiph)**2 )
+           + 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 )
     enddo
 
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,itkiph) = sorti1(iel)
-        rtp(iel,ieniph) = sorti2(iel)
+        rtp(iel,itk) = sorti1(iel)
+        rtp(iel,ien) = sorti2(iel)
       enddo
     endif
 
@@ -507,8 +501,8 @@ if(ieos.eq.1) then
     ! Verification of the values of the temperature
     ierr = 0
     do iel = 1, ncel
-      if(rtp(iel,itkiph).le.0.d0) then
-        write(nfecra,2010)rtp(iel,itkiph),iel
+      if(rtp(iel,itk).le.0.d0) then
+        write(nfecra,2010)rtp(iel,itk),iel
       endif
     enddo
     ! Stop if a negative value is detected (since the temperature has been
@@ -520,18 +514,17 @@ if(ieos.eq.1) then
 
     do iel = 1, ncel
       ! Density
-      sorti1(iel) = xmasml*rtp(iel,ipriph)/(rr*rtp(iel,itkiph))
+      sorti1(iel) = xmasml*rtp(iel,ipr)/(rr*rtp(iel,itk))
       ! Total energy
-      sorti2(iel) = cv0*rtp(iel,itkiph)                    &
-           + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
-                                       + rtp(iel,iwiph)**2 )
+      sorti2(iel) = cv0*rtp(iel,itk)                    &
+           + 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 )
     enddo
 
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,irhiph) = sorti1(iel)
-        rtp(iel,ieniph) = sorti2(iel)
+        rtp(iel,irh) = sorti1(iel)
+        rtp(iel,ien) = sorti2(iel)
       enddo
     endif
 
@@ -543,12 +536,12 @@ if(ieos.eq.1) then
     do iel = 1, ncel
       ! Internal energy (to avoid the need to divide by the temperature
       ! to compute density)
-      enint = rtp(iel,ieniph)                                     &
-               - 0.5d0*( rtp(iel,iuiph)**2                        &
-                       + rtp(iel,iviph)**2                        &
-                       + rtp(iel,iwiph)**2 )
+      enint = rtp(iel,ien)                                     &
+               - 0.5d0*( rtp(iel,iu)**2                        &
+                       + rtp(iel,iv)**2                        &
+                       + rtp(iel,iw)**2 )
       ! Density
-      sorti1(iel) = rtp(iel,ipriph) / ( (gamagp-1.d0) * enint )
+      sorti1(iel) = rtp(iel,ipr) / ( (gamagp-1.d0) * enint )
       ! Temperature
       sorti2(iel) = xmasml * (gamagp-1.d0) * enint / rr
     enddo
@@ -556,8 +549,8 @@ if(ieos.eq.1) then
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,irhiph) = sorti1(iel)
-        rtp(iel,itkiph) = sorti2(iel)
+        rtp(iel,irh) = sorti1(iel)
+        rtp(iel,itk) = sorti2(iel)
       enddo
     endif
 
@@ -568,18 +561,17 @@ if(ieos.eq.1) then
 
     do iel = 1, ncel
       ! Pressure
-      sorti1(iel) = rtp(iel,irhiph)*rtp(iel,itkiph)*rr/xmasml
+      sorti1(iel) = rtp(iel,irh)*rtp(iel,itk)*rr/xmasml
       ! Total energy
-      sorti2(iel) = cv0*rtp(iel,itkiph)                    &
-           + 0.5d0*( rtp(iel,iuiph)**2 + rtp(iel,iviph)**2        &
-                                       + rtp(iel,iwiph)**2 )
+      sorti2(iel) = cv0*rtp(iel,itk)                    &
+           + 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 )
     enddo
 
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,ipriph) = sorti1(iel)
-        rtp(iel,ieniph) = sorti2(iel)
+        rtp(iel,ipr) = sorti1(iel)
+        rtp(iel,ien) = sorti2(iel)
       enddo
     endif
 
@@ -591,12 +583,12 @@ if(ieos.eq.1) then
     do iel = 1, ncel
       ! Internal energy (to avoid the need to divide by the temperature
       ! to compute density)
-      enint = rtp(iel,ieniph)                                     &
-               - 0.5d0*( rtp(iel,iuiph)**2                        &
-                       + rtp(iel,iviph)**2                        &
-                       + rtp(iel,iwiph)**2 )
+      enint = rtp(iel,ien)                                     &
+               - 0.5d0*( rtp(iel,iu)**2                        &
+                       + rtp(iel,iv)**2                        &
+                       + rtp(iel,iw)**2 )
       ! Pressure
-      sorti1(iel) = (gamagp-1.d0) * rtp(iel,irhiph) * enint
+      sorti1(iel) = (gamagp-1.d0) * rtp(iel,irh) * enint
       ! Temperature
       sorti2(iel) = xmasml * (gamagp-1.d0) * enint / rr
     enddo
@@ -604,8 +596,8 @@ if(ieos.eq.1) then
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,ipriph) = sorti1(iel)
-        rtp(iel,itkiph) = sorti2(iel)
+        rtp(iel,ipr) = sorti1(iel)
+        rtp(iel,itk) = sorti2(iel)
       enddo
     endif
 
@@ -624,8 +616,8 @@ if(ieos.eq.1) then
     if(iutile.eq.1) then
       ierr = 0
       do iel = 1, ncel
-        if(rtp(iel,irhiph).le.0.d0) then
-          write(nfecra,4010)rtp(iel,irhiph),iel
+        if(rtp(iel,irh).le.0.d0) then
+          write(nfecra,4010)rtp(iel,irh),iel
         endif
       enddo
       if(ierr.eq.1) then
@@ -634,7 +626,7 @@ if(ieos.eq.1) then
     endif
 
     do iel = 1, ncel
-      sorti1(iel) = gamagp * rtp(iel,ipriph) / rtp(iel,irhiph)
+      sorti1(iel) = gamagp * rtp(iel,ipr) / rtp(iel,irh)
     enddo
 
 
@@ -651,8 +643,8 @@ if(ieos.eq.1) then
     if(iutile.eq.1) then
       ierr = 0
       do iel = 1, ncel
-        if(rtp(iel,irhiph).lt.0.d0) then
-          write(nfecra,4020)rtp(iel,irhiph),iel
+        if(rtp(iel,irh).lt.0.d0) then
+          write(nfecra,4020)rtp(iel,irh),iel
         endif
       enddo
       if(ierr.eq.1) then
@@ -661,7 +653,7 @@ if(ieos.eq.1) then
     endif
 
     do iel = 1, ncel
-      sorti1(iel) = rtp(iel,irhiph)**gamagp
+      sorti1(iel) = rtp(iel,irh)**gamagp
     enddo
 
 
@@ -682,8 +674,8 @@ if(ieos.eq.1) then
     !     density is <= 0, the calculation will simply fail)
     ierr = 0
     do iel = 1, ncel
-      if(rtp(iel,irhiph).le.0.d0) then
-        write(nfecra,4030)rtp(iel,irhiph),iel
+      if(rtp(iel,irh).le.0.d0) then
+        write(nfecra,4030)rtp(iel,irh),iel
       endif
     enddo
     if(ierr.eq.1) then
@@ -691,7 +683,7 @@ if(ieos.eq.1) then
     endif
 
     do iel = 1, ncel
-      sorti1(iel) = rtp(iel,ipriph) / (rtp(iel,irhiph)**gamagp)
+      sorti1(iel) = rtp(iel,ipr) / (rtp(iel,irh)**gamagp)
     enddo
 
 
@@ -724,10 +716,10 @@ if(ieos.eq.1) then
     ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
     xmach =                                                       &
-         ( rtp(iel,iuiph)*surfbo(1,ifac)                          &
-         + rtp(iel,iviph)*surfbo(2,ifac)                          &
-         + rtp(iel,iwiph)*surfbo(3,ifac) ) / surfbn(ifac)         &
-         / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
+         ( rtp(iel,iu)*surfbo(1,ifac)                          &
+         + rtp(iel,iv)*surfbo(2,ifac)                          &
+         + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)         &
+         / sqrt( gamagp * rtp(iel,ipr) / rtp(iel,irh) )
 
     ! Pressure
 
@@ -803,22 +795,22 @@ if(ieos.eq.1) then
     ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
     xmachi =                                                      &
-         ( rtp(iel,iuiph)*surfbo(1,ifac)                          &
-         + rtp(iel,iviph)*surfbo(2,ifac)                          &
-         + rtp(iel,iwiph)*surfbo(3,ifac) ) / surfbn(ifac)         &
-         / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
+         ( rtp(iel,iu)*surfbo(1,ifac)                          &
+         + rtp(iel,iv)*surfbo(2,ifac)                          &
+         + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)         &
+         / sqrt( gamagp * rtp(iel,ipr) / rtp(iel,irh) )
     xmache =                                                      &
          ( coefa(ifac,iclu)*surfbo(1,ifac)                        &
          + coefa(ifac,iclv)*surfbo(2,ifac)                        &
          + coefa(ifac,iclw)*surfbo(3,ifac) ) /surfbn(ifac)        &
-         / sqrt( gamagp * rtp(iel,ipriph) / rtp(iel,irhiph) )
+         / sqrt( gamagp * rtp(iel,ipr) / rtp(iel,irh) )
     dxmach = xmachi - xmache
 
     ! Pressure: rarefaction wave (Rusanov)
     if(dxmach.le.0.d0) then
 
       if(dxmach.gt.2.d0/(1.d0-gamagp)) then
-        coefa(ifac,iclp) = rtp(iel,ipriph)*                       &
+        coefa(ifac,iclp) = rtp(iel,ipr)*                       &
              ( (1.d0 + (gamagp-1.d0)*0.50d0*dxmach)               &
                ** (2.d0*gamagp/(gamagp-1.d0))    )
       elseif(dxmach.le.2.d0/(1.d0-gamagp) ) then
@@ -827,14 +819,14 @@ if(ieos.eq.1) then
 
       ! Pressure: shock (Rusanov)
     else
-      coefa(ifac,iclp) = rtp(iel,ipriph)*                         &
+      coefa(ifac,iclp) = rtp(iel,ipr)*                         &
            (  1.d0 + gamagp*dxmach                                &
            *( (gamagp+1.d0)*0.25d0*dxmach                         &
            + sqrt(1.d0 + (gamagp+1.d0)**2/16.d0*dxmach**2) )  )
     endif
 
     ! This choice overrides the previous Rusanov choice
-    coefa(ifac,iclp) = rtp(iel,ipriph)
+    coefa(ifac,iclp) = rtp(iel,ipr)
 
     ! Total energy
     coefa(ifac,icle) =                                            &
@@ -877,31 +869,31 @@ if(ieos.eq.1) then
     iel  = ifabor(ifac)
 
     ! Rarefaction case
-    if(coefa(ifac,iclp).le.rtp(iel,ipriph)) then
+    if(coefa(ifac,iclp).le.rtp(iel,ipr)) then
 
       ! Density
-      coefa(ifac,iclr) = rtp(iel,irhiph)                          &
-           * (coefa(ifac,iclp)/rtp(iel,ipriph))**(1.d0/gamagp)
+      coefa(ifac,iclr) = rtp(iel,irh)                          &
+           * (coefa(ifac,iclp)/rtp(iel,ipr))**(1.d0/gamagp)
 
       ! Velocity
-      coefa(ifac,iclu) = rtp(iel,iuiph)                           &
+      coefa(ifac,iclu) = rtp(iel,iu)                           &
            + 2.d0/(gamagp-1.d0)                                   &
-           * sqrt(gamagp*rtp(iel,ipriph)/rtp(iel,irhiph))         &
-           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipriph)              &
+           * sqrt(gamagp*rtp(iel,ipr)/rtp(iel,irh))         &
+           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipr)              &
                         )**((gamagp-1.d0)/(2.d0*gamagp)))         &
            * surfbo(1,ifac)/surfbn(ifac)
 
-      coefa(ifac,iclv) = rtp(iel,iviph)                           &
+      coefa(ifac,iclv) = rtp(iel,iv)                           &
            + 2.d0/(gamagp-1.d0)                                   &
-           * sqrt( gamagp*rtp(iel,ipriph)/rtp(iel,irhiph))        &
-           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipriph)              &
+           * sqrt( gamagp*rtp(iel,ipr)/rtp(iel,irh))        &
+           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipr)              &
                         )**((gamagp-1.d0)/(2.d0*gamagp)))         &
            * surfbo(2,ifac)/surfbn(ifac)
 
-      coefa(ifac,iclw) = rtp(iel,iwiph)                           &
+      coefa(ifac,iclw) = rtp(iel,iw)                           &
            + 2.d0/(gamagp-1.d0)                                   &
-           * sqrt( gamagp*rtp(iel,ipriph)/rtp(iel,irhiph))        &
-           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipriph)              &
+           * sqrt( gamagp*rtp(iel,ipr)/rtp(iel,irh))        &
+           * (1.d0-(coefa(ifac,iclp)/rtp(iel,ipr)              &
                         )**((gamagp-1.d0)/(2.d0/gamagp)))         &
            * surfbo(3,ifac)/surfbn(ifac)
 
@@ -915,35 +907,35 @@ if(ieos.eq.1) then
     else
 
       ! Density
-      coefa(ifac,iclr) = rtp(iel,irhiph)                          &
+      coefa(ifac,iclr) = rtp(iel,irh)                          &
            * ( (gamagp+1.d0)*coefa(ifac,iclp)                     &
-             + (gamagp-1.d0)*rtp(iel,ipriph) )                    &
+             + (gamagp-1.d0)*rtp(iel,ipr) )                    &
            / ( (gamagp-1.d0)*coefa(ifac,iclp)                     &
-             + (gamagp+1.d0)*rtp(iel,ipriph) )
+             + (gamagp+1.d0)*rtp(iel,ipr) )
 
       ! Velocity
-      coefa(ifac,iclu) = rtp(iel,iuiph)                           &
-           - (coefa(ifac,iclp)-rtp(iel,ipriph))                   &
+      coefa(ifac,iclu) = rtp(iel,iu)                           &
+           - (coefa(ifac,iclp)-rtp(iel,ipr))                   &
            * sqrt(2.d0/                                           &
-                  (rtp(iel,irhiph)                                &
+                  (rtp(iel,irh)                                &
                    *((gamagp+1.d0)*coefa(ifac,iclp)               &
-                    +(gamagp-1.d0)*rtp(iel,ipriph) )))            &
+                    +(gamagp-1.d0)*rtp(iel,ipr) )))            &
            * surfbo(1,ifac)/surfbn(ifac)
 
-      coefa(ifac,iclv) = rtp(iel,iviph)                           &
-           - (coefa(ifac,iclp)-rtp(iel,ipriph))                   &
+      coefa(ifac,iclv) = rtp(iel,iv)                           &
+           - (coefa(ifac,iclp)-rtp(iel,ipr))                   &
            * sqrt(2.d0/                                           &
-                  (rtp(iel,irhiph)                                &
+                  (rtp(iel,irh)                                &
                    *((gamagp+1.d0)*coefa(ifac,iclp)               &
-                    +(gamagp-1.d0)*rtp(iel,ipriph) )))            &
+                    +(gamagp-1.d0)*rtp(iel,ipr) )))            &
            * surfbo(2,ifac)/surfbn(ifac)
 
-      coefa(ifac,iclw) = rtp(iel,iwiph)                           &
-           - (coefa(ifac,iclp)-rtp(iel,ipriph))                   &
+      coefa(ifac,iclw) = rtp(iel,iw)                           &
+           - (coefa(ifac,iclp)-rtp(iel,ipr))                   &
            * sqrt(2.d0/                                           &
-                  (rtp(iel,irhiph)                                &
+                  (rtp(iel,irh)                                &
                    *((gamagp+1.d0)*coefa(ifac,iclp)               &
-                    +(gamagp-1.d0)*rtp(iel,ipriph) )))            &
+                    +(gamagp-1.d0)*rtp(iel,ipr) )))            &
            * surfbo(3,ifac)/surfbn(ifac)
 
       ! Total energy
@@ -1145,9 +1137,8 @@ elseif(ieos.eq.2) then
       propce(iel,ipproc(icp)) = cp0
       propce(iel,ipproc(icv)) =                            &
            cp0 - rr/xmasmr(iel)
-      rtp(iel,irhiph) = p0*xmasmr(iel)/rr/t0
-      rtp(iel,ieniph) =                                           &
-           propce(iel,ipproc(icv))*t0
+      rtp(iel,irh) = p0*xmasmr(iel)/rr/t0
+      rtp(iel,ien) = propce(iel,ipproc(icv))*t0
     enddo
 
 
@@ -1159,20 +1150,19 @@ elseif(ieos.eq.2) then
 
       ! Temperature
       sorti1(iel) =                                               &
-           xmasmr(iel)/rr*rtp(iel,ipriph)/rtp(iel,irhiph)
+           xmasmr(iel)/rr*rtp(iel,ipr)/rtp(iel,irh)
 
       ! Total energy
       sorti2(iel) = propce(iel,ipproc(icv))*sorti1(iel)    &
-    + 0.5d0*( rtp(iel,iuiph)**2                                   &
-           + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 )
+    + 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 )
 
     enddo
 
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,itkiph) = sorti1(iel)
-        rtp(iel,ieniph) = sorti2(iel)
+        rtp(iel,itk) = sorti1(iel)
+        rtp(iel,ien) = sorti2(iel)
       enddo
     endif
 
@@ -1185,21 +1175,20 @@ elseif(ieos.eq.2) then
 
       ! Density
       sorti1(iel) =                                               &
-           xmasmr(iel)/rr*rtp(iel,ipriph)/rtp(iel,itkiph)
+           xmasmr(iel)/rr*rtp(iel,ipr)/rtp(iel,itk)
 
       ! Total energy
       sorti2(iel) =                                               &
-           propce(iel,ipproc(icv))*rtp(iel,itkiph)         &
-    + 0.5d0*( rtp(iel,iuiph)**2                                   &
-           + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 )
+           propce(iel,ipproc(icv))*rtp(iel,itk)         &
+    + 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 )
 
     enddo
 
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,irhiph) = sorti1(iel)
-        rtp(iel,ieniph) = sorti2(iel)
+        rtp(iel,irh) = sorti1(iel)
+        rtp(iel,ien) = sorti2(iel)
       enddo
     endif
 
@@ -1212,20 +1201,19 @@ elseif(ieos.eq.2) then
 
       ! Density
       sorti1(iel) =                                               &
-           rtp(iel,ipriph)/(gamagr(iel)-1.d0)/( rtp(iel,ieniph)   &
-  - 0.5d0*( rtp(iel,iuiph)**2                                     &
-           + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 ) )
+           rtp(iel,ipr)/(gamagr(iel)-1.d0)/( rtp(iel,ien)   &
+  - 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 ) )
 
       ! Temperature
-      sorti2(iel) = xmasmr(iel)/rr*rtp(iel,ipriph)/sorti1(iel)
+      sorti2(iel) = xmasmr(iel)/rr*rtp(iel,ipr)/sorti1(iel)
 
     enddo
 
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,irhiph) = sorti1(iel)
-        rtp(iel,itkiph) = sorti2(iel)
+        rtp(iel,irh) = sorti1(iel)
+        rtp(iel,itk) = sorti2(iel)
       enddo
     endif
 
@@ -1238,21 +1226,20 @@ elseif(ieos.eq.2) then
 
       ! Pressure
       sorti1(iel) =                                               &
-           rtp(iel,irhiph)*rr/xmasmr(iel)*rtp(iel,itkiph)
+           rtp(iel,irh)*rr/xmasmr(iel)*rtp(iel,itk)
 
       ! Total energy
       sorti2(iel) =                                               &
-           propce(iel,ipproc(icv))*rtp(iel,itkiph)         &
-    + 0.5d0*( rtp(iel,iuiph)**2                                   &
-           + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 )
+           propce(iel,ipproc(icv))*rtp(iel,itk)         &
+    + 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 )
 
     enddo
 
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,ipriph) = sorti1(iel)
-        rtp(iel,ieniph) = sorti2(iel)
+        rtp(iel,ipr) = sorti1(iel)
+        rtp(iel,ien) = sorti2(iel)
       enddo
     endif
 
@@ -1265,20 +1252,19 @@ elseif(ieos.eq.2) then
 
       ! Pressure
       sorti1(iel) =                                               &
-           (gamagr(iel)-1.d0)*rtp(iel,irhiph)*( rtp(iel,ieniph)   &
-  - 0.5d0*( rtp(iel,iuiph)**2                                     &
-           + rtp(iel,iviph)**2 + rtp(iel,iwiph)**2 ) )
+           (gamagr(iel)-1.d0)*rtp(iel,irh)*( rtp(iel,ien)   &
+  - 0.5d0*( rtp(iel,iu)**2 + rtp(iel,iv)**2 + rtp(iel,iw)**2 ) )
 
       ! Temperature
-      sorti2(iel) = xmasmr(iel)/rr*sorti1(iel)/rtp(iel,irhiph)
+      sorti2(iel) = xmasmr(iel)/rr*sorti1(iel)/rtp(iel,irh)
 
     enddo
 
     ! Transfer to the array rtp
     if(imodif.gt.0) then
       do iel = 1, ncel
-        rtp(iel,ipriph) = sorti1(iel)
-        rtp(iel,itkiph) = sorti2(iel)
+        rtp(iel,ipr) = sorti1(iel)
+        rtp(iel,itk) = sorti2(iel)
       enddo
     endif
 
@@ -1291,20 +1277,20 @@ elseif(ieos.eq.2) then
     do iel = 1, ncel
 
       ! Verification of the positivity of the pressure
-      if(rtp(iel,ipriph).lt.0.d0) then
-        write(nfecra,1110) iel , rtp(iel,ipriph)
+      if(rtp(iel,ipr).lt.0.d0) then
+        write(nfecra,1110) iel , rtp(iel,ipr)
         ierr = 1
 
       ! Verification of the positivity of the density
-      elseif(rtp(iel,irhiph).le.0.d0) then
-        write(nfecra,1120) iel , rtp(iel,irhiph)
+      elseif(rtp(iel,irh).le.0.d0) then
+        write(nfecra,1120) iel , rtp(iel,irh)
         ierr = 1
 
       else
 
         ! Computation
         sorti1(iel) =                                             &
-             gamagr(iel) * rtp(iel,ipriph) / rtp(iel,irhiph)
+             gamagr(iel) * rtp(iel,ipr) / rtp(iel,irh)
 
       endif
 
@@ -1322,14 +1308,14 @@ elseif(ieos.eq.2) then
     do iel = 1, ncel
 
       ! Verification of the positivity of the density
-      if(rtp(iel,irhiph).lt.0.d0) then
-        write(nfecra,1220) iel , rtp(iel,irhiph)
+      if(rtp(iel,irh).lt.0.d0) then
+        write(nfecra,1220) iel , rtp(iel,irh)
         ierr = 1
 
       else
 
         ! Computation
-        sorti1(iel) = rtp(iel,irhiph)**gamagr(iel)
+        sorti1(iel) = rtp(iel,irh)**gamagr(iel)
 
       endif
 
@@ -1362,20 +1348,20 @@ elseif(ieos.eq.2) then
     do iel = 1, ncel
 
       ! Verification of the positivity of the pressure
-      if(rtp(iel,ipriph).lt.0.d0) then
-        write(nfecra,1310) iel , rtp(iel,ipriph)
+      if(rtp(iel,ipr).lt.0.d0) then
+        write(nfecra,1310) iel , rtp(iel,ipr)
         ierr = 1
 
       ! Verification of the positivity of the density
-      elseif(rtp(iel,irhiph).le.0.d0) then
-        write(nfecra,1320) iel , rtp(iel,irhiph)
+      elseif(rtp(iel,irh).le.0.d0) then
+        write(nfecra,1320) iel , rtp(iel,irh)
         ierr = 1
 
       else
 
         ! Computation
         sorti1(iel) =                                             &
-             rtp(iel,ipriph) / (rtp(iel,irhiph)**gamagr(iel))
+             rtp(iel,ipr) / (rtp(iel,irh)**gamagr(iel))
 
       endif
 
@@ -1416,10 +1402,10 @@ elseif(ieos.eq.2) then
 
     ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
-    xmach = ( rtp(iel,iuiph)*surfbo(1,ifac)                       &
-           + rtp(iel,iviph)*surfbo(2,ifac)                        &
-           + rtp(iel,iwiph)*surfbo(3,ifac) ) / surfbn(ifac)       &
-         / sqrt( gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph) )
+    xmach = ( rtp(iel,iu)*surfbo(1,ifac)                       &
+           + rtp(iel,iv)*surfbo(2,ifac)                        &
+           + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)       &
+         / sqrt( gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh) )
 
     coefa(ifac,iclp) = 0.d0
 
@@ -1441,10 +1427,9 @@ elseif(ieos.eq.2) then
             *( (gamagr(iel)+1.d0)/4.d0*xmach                      &
            + sqrt(1.d0 + (gamagr(iel)+1.d0)**2/16.d0*xmach**2) )
       coefb(ifac,iclt) = coefb(ifac,iclp)/(1.d0-coefb(ifac,iclp)) &
-          / rtp(iel,ipriph) * ( rtp(iel,irhiph)                   &
-              * (rtp(iel,iuiph)**2                                &
-                +rtp(iel,iviph)**2+rtp(iel,iwiph)**2)             &
-              + rtp(iel,ipriph) *(1.d0-coefb(ifac,iclp)) )
+          / rtp(iel,ipr) * ( rtp(iel,irh)                         &
+              * (rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)    &
+              + rtp(iel,ipr) *(1.d0-coefb(ifac,iclp)) )
     endif
 
     ! Total energy: 'internal energy - Cv T'
@@ -1464,21 +1449,21 @@ elseif(ieos.eq.2) then
 
     ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
-    xmachi = ( rtp(iel,iuiph)*surfbo(1,ifac)                      &
-         + rtp(iel,iviph)*surfbo(2,ifac)                          &
-         + rtp(iel,iwiph)*surfbo(3,ifac) )/surfbn(ifac)           &
-         / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
+    xmachi = ( rtp(iel,iu)*surfbo(1,ifac)                      &
+         + rtp(iel,iv)*surfbo(2,ifac)                          &
+         + rtp(iel,iw)*surfbo(3,ifac) )/surfbn(ifac)           &
+         / sqrt(gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh))
     xmache = ( coefa(ifac,iclu)*surfbo(1,ifac)                    &
          + coefa(ifac,iclv)*surfbo(2,ifac)                        &
          + coefa(ifac,iclw)*surfbo(3,ifac) )/surfbn(ifac)         &
-         / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
+         / sqrt(gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh))
     dxmach = xmachi - xmache
 
     ! Pressure: rarefaction wave
     if(dxmach.le.0.d0) then
 
       if(dxmach.gt.2.d0/(1.d0-gamagr(iel))) then
-        coefa(ifac,iclp) = rtp(iel,ipriph)*                       &
+        coefa(ifac,iclp) = rtp(iel,ipr)*                       &
              ( (1.d0 + (gamagr(iel)-1.d0)*0.50d0*dxmach)          &
                ** (2.d0*gamagr(iel)/(gamagr(iel)-1.d0))  )
       elseif(dxmach.le.2.d0/(1.d0-gamagr(iel)) ) then
@@ -1487,7 +1472,7 @@ elseif(ieos.eq.2) then
 
     ! Pressure: shock
     else
-      coefa(ifac,iclp) = rtp(iel,ipriph)*                         &
+      coefa(ifac,iclp) = rtp(iel,ipr)*                         &
            (  1.d0 + gamagr(iel)*dxmach                           &
            *( (gamagr(iel)+1.d0)*0.25d0*dxmach                    &
            + sqrt(1.d0 + (gamagr(iel)+1.d0)**2/16.d0              &
@@ -1495,7 +1480,7 @@ elseif(ieos.eq.2) then
     endif
 
     ! This choice overrides the previous Rusanov choice
-    coefa(ifac,iclp) = rtp(iel,ipriph)
+    coefa(ifac,iclp) = rtp(iel,ipr)
 
     ! Total energy
     coefa(ifac,icle) =                                            &
@@ -1512,10 +1497,10 @@ elseif(ieos.eq.2) then
 
     ! Calculation of the Mach number at the boundary face, using the
     !   cell center velocity projected on the vector normal to the boundary
-    xmach = ( rtp(iel,iuiph)*surfbo(1,ifac)                       &
-           + rtp(iel,iviph)*surfbo(2,ifac)                        &
-           + rtp(iel,iwiph)*surfbo(3,ifac) ) / surfbn(ifac)       &
-         / sqrt(gamagr(iel)*rtp(iel,ipriph)/rtp(iel,irhiph))
+    xmach = ( rtp(iel,iu)*surfbo(1,ifac)                       &
+           + rtp(iel,iv)*surfbo(2,ifac)                        &
+           + rtp(iel,iw)*surfbo(3,ifac) ) / surfbn(ifac)       &
+         / sqrt(gamagr(iel)*rtp(iel,ipr)/rtp(iel,irh))
 
     ! Supersonic outlet: Dirichlet for all variables
     if(xmach.ge.1.d0) then
@@ -1525,41 +1510,41 @@ elseif(ieos.eq.2) then
 
       ! Entropy
       coefa(ifac,iclt) =                                          &
-           rtp(iel,ipriph)/rtp(iel,irhiph)**gamagr(iel)
+           rtp(iel,ipr)/rtp(iel,irh)**gamagr(iel)
 
     ! Subsonic outlet
     elseif(xmach.lt.1.d0 .and. xmach.ge.0.d0) then
 
       ! Rarefaction:
-      if(coefa(ifac,iclp).le.rtp(iel,ipriph)) then
+      if(coefa(ifac,iclp).le.rtp(iel,ipr)) then
 
         ! Density
-        coefa(ifac,iclr) = rtp(iel,irhiph)                        &
-             * (coefa(ifac,iclp)/rtp(iel,ipriph))                 &
+        coefa(ifac,iclr) = rtp(iel,irh)                        &
+             * (coefa(ifac,iclp)/rtp(iel,ipr))                 &
                 **(1.d0/gamagr(iel))
 
         ! Velocity
-        coefa(ifac,iclu) = rtp(iel,iuiph)                         &
+        coefa(ifac,iclu) = rtp(iel,iu)                         &
              + 2.d0/(gamagr(iel)-1.d0)                            &
- * sqrt( gamagr(iel) * rtp(iel,ipriph) / rtp(iel,irhiph) )        &
+ * sqrt( gamagr(iel) * rtp(iel,ipr) / rtp(iel,irh) )        &
              * ( 1.d0                                             &
- - (coefa(ifac,iclp)/rtp(iel,ipriph))                             &
+ - (coefa(ifac,iclp)/rtp(iel,ipr))                             &
                **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
  * surfbo(1,ifac) / surfbn(ifac)
 
-        coefa(ifac,iclv) = rtp(iel,iviph)                         &
+        coefa(ifac,iclv) = rtp(iel,iv)                         &
              + 2.d0/(gamagr(iel)-1.d0)                            &
- * sqrt( gamagr(iel) * rtp(iel,ipriph) / rtp(iel,irhiph) )        &
+ * sqrt( gamagr(iel) * rtp(iel,ipr) / rtp(iel,irh) )        &
              * ( 1.d0                                             &
- - (coefa(ifac,iclp)/rtp(iel,ipriph))                             &
+ - (coefa(ifac,iclp)/rtp(iel,ipr))                             &
                **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
  * surfbo(2,ifac) / surfbn(ifac)
 
-        coefa(ifac,iclw) = rtp(iel,iwiph)                         &
+        coefa(ifac,iclw) = rtp(iel,iw)                         &
              + 2.d0/(gamagr(iel)-1.d0)                            &
- * sqrt( gamagr(iel) * rtp(iel,ipriph) / rtp(iel,irhiph) )        &
+ * sqrt( gamagr(iel) * rtp(iel,ipr) / rtp(iel,irh) )        &
              * ( 1.d0                                             &
- - (coefa(ifac,iclp)/rtp(iel,ipriph))                             &
+ - (coefa(ifac,iclp)/rtp(iel,ipr))                             &
                **((gamagr(iel)-1.d0)/2.d0/gamagr(iel)) )          &
  * surfbo(3,ifac) / surfbn(ifac)
 
@@ -1578,29 +1563,29 @@ elseif(ieos.eq.2) then
       else
 
         ! Density
-        coefa(ifac,iclr) = rtp(iel,irhiph)                        &
+        coefa(ifac,iclr) = rtp(iel,irh)                        &
  * ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)-1.d0)*rtp(iel,ipriph) )                         &
+   + (gamagr(iel)-1.d0)*rtp(iel,ipr) )                         &
  / ( (gamagr(iel)-1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)+1.d0)*rtp(iel,ipriph) )
+   + (gamagr(iel)+1.d0)*rtp(iel,ipr) )
 
         ! Velocity
-        coefa(ifac,iclu) = rtp(iel,iuiph)                         &
- - (coefa(ifac,iclp)-rtp(iel,ipriph))*sqrt(2.d0/rtp(iel,irhiph)   &
+        coefa(ifac,iclu) = rtp(iel,iu)                         &
+ - (coefa(ifac,iclp)-rtp(iel,ipr))*sqrt(2.d0/rtp(iel,irh)   &
  / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)-1.d0)*rtp(iel,ipriph) ))                        &
+   + (gamagr(iel)-1.d0)*rtp(iel,ipr) ))                        &
  * surfbo(1,ifac) / surfbn(ifac)
 
-        coefa(ifac,iclv) = rtp(iel,iviph)                         &
- - (coefa(ifac,iclp)-rtp(iel,ipriph))*sqrt(2.d0/rtp(iel,irhiph)   &
+        coefa(ifac,iclv) = rtp(iel,iv)                         &
+ - (coefa(ifac,iclp)-rtp(iel,ipr))*sqrt(2.d0/rtp(iel,irh)   &
  / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)-1.d0)*rtp(iel,ipriph) ))                        &
+   + (gamagr(iel)-1.d0)*rtp(iel,ipr) ))                        &
  * surfbo(2,ifac) / surfbn(ifac)
 
-        coefa(ifac,iclw) = rtp(iel,iwiph)                         &
- - (coefa(ifac,iclp)-rtp(iel,ipriph))*sqrt(2.d0/rtp(iel,irhiph)   &
+        coefa(ifac,iclw) = rtp(iel,iw)                         &
+ - (coefa(ifac,iclp)-rtp(iel,ipr))*sqrt(2.d0/rtp(iel,irh)   &
  / ( (gamagr(iel)+1.d0)*coefa(ifac,iclp)                          &
-   + (gamagr(iel)-1.d0)*rtp(iel,ipriph) ))                        &
+   + (gamagr(iel)-1.d0)*rtp(iel,ipr) ))                        &
  * surfbo(3,ifac) / surfbn(ifac)
 
         ! Total energy

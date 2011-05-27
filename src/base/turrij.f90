@@ -126,9 +126,6 @@ integer          idebia, idebra
 integer          ifac  , iel   , ivar  , isou  , ii
 integer          inc   , iccocg
 integer          ipp   , iwarnp, iclip
-integer          ipriph, iuiph , iviph , iwiph
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
-integer          ieiph
 integer          icliup, iclivp, icliwp
 integer          nswrgp, imligp
 integer          ipcrom, ipbrom, ipcroo, ipbroo, iivar
@@ -179,26 +176,14 @@ allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-ir11ip = ir11
-ir22ip = ir22
-ir33ip = ir33
-ir12ip = ir12
-ir13ip = ir13
-ir23ip = ir23
-ieiph  = iep
-
-icliup = iclrtp(iuiph,icoef)
-iclivp = iclrtp(iviph,icoef)
-icliwp = iclrtp(iwiph,icoef)
+icliup = iclrtp(iu,icoef)
+iclivp = iclrtp(iv,icoef)
+icliwp = iclrtp(iw,icoef)
 
 ipcrom = ipproc(irom  )
 ipbrom = ipprob(irom  )
 
-if(iwarni(ieiph).ge.1) then
+if(iwarni(iep).ge.1) then
   if (iturb.eq.30) then
     write(nfecra,1000)
   else
@@ -233,19 +218,19 @@ if (iturb.eq.30) then
 
 ! GRADIENT SUIVANT X
 
-  nswrgp = nswrgr(iuiph)
-  imligp = imligr(iuiph)
-  iwarnp = iwarni(iuiph)
-  epsrgp = epsrgr(iuiph)
-  climgp = climgr(iuiph)
-  extrap = extrag(iuiph)
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
+   rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -254,37 +239,37 @@ if (iturb.eq.30) then
   do iel = 1 , ncel
 
     produc(1,iel) = produc(1,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir11ip)*w1(iel) +                      &
-         rtpa(iel,ir12ip)*w2(iel) +                               &
-         rtpa(iel,ir13ip)*w3(iel) )
+         - 2.0d0*(rtpa(iel,ir11)*w1(iel) +                      &
+         rtpa(iel,ir12)*w2(iel) +                               &
+         rtpa(iel,ir13)*w3(iel) )
 
     produc(4,iel) = produc(4,iel)                                 &
-         - (rtpa(iel,ir12ip)*w1(iel) +                            &
-         rtpa(iel,ir22ip)*w2(iel) +                               &
-         rtpa(iel,ir23ip)*w3(iel) )
+         - (rtpa(iel,ir12)*w1(iel) +                            &
+         rtpa(iel,ir22)*w2(iel) +                               &
+         rtpa(iel,ir23)*w3(iel) )
 
     produc(5,iel) = produc(5,iel)                                 &
-         - (rtpa(iel,ir13ip)*w1(iel) +                            &
-         rtpa(iel,ir23ip)*w2(iel) +                               &
-         rtpa(iel,ir33ip)*w3(iel) )
+         - (rtpa(iel,ir13)*w1(iel) +                            &
+         rtpa(iel,ir23)*w2(iel) +                               &
+         rtpa(iel,ir33)*w3(iel) )
 
   enddo
 
 ! Gradient suivant Y
 
-  nswrgp = nswrgr(iviph)
-  imligp = imligr(iviph)
-  iwarnp = iwarni(iviph)
-  epsrgp = epsrgr(iviph)
-  climgp = climgr(iviph)
-  extrap = extrag(iviph)
+  nswrgp = nswrgr(iv)
+  imligp = imligr(iv)
+  iwarnp = iwarni(iv)
+  epsrgp = epsrgr(iv)
+  climgp = climgr(iv)
+  extrap = extrag(iv)
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
+   rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -292,37 +277,37 @@ if (iturb.eq.30) then
   do iel = 1 , ncel
 
     produc(2,iel) = produc(2,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir12ip)*w1(iel) +                      &
-         rtpa(iel,ir22ip)*w2(iel) +                               &
-         rtpa(iel,ir23ip)*w3(iel) )
+         - 2.0d0*(rtpa(iel,ir12)*w1(iel) +                      &
+         rtpa(iel,ir22)*w2(iel) +                               &
+         rtpa(iel,ir23)*w3(iel) )
 
     produc(4,iel) = produc(4,iel)                                 &
-         - (rtpa(iel,ir11ip)*w1(iel) +                            &
-         rtpa(iel,ir12ip)*w2(iel) +                               &
-         rtpa(iel,ir13ip)*w3(iel) )
+         - (rtpa(iel,ir11)*w1(iel) +                            &
+         rtpa(iel,ir12)*w2(iel) +                               &
+         rtpa(iel,ir13)*w3(iel) )
 
     produc(6,iel) = produc(6,iel)                                 &
-         - (rtpa(iel,ir13ip)*w1(iel) +                            &
-         rtpa(iel,ir23ip)*w2(iel) +                               &
-         rtpa(iel,ir33ip)*w3(iel) )
+         - (rtpa(iel,ir13)*w1(iel) +                            &
+         rtpa(iel,ir23)*w2(iel) +                               &
+         rtpa(iel,ir33)*w3(iel) )
 
   enddo
 
 ! Gradient suivant Z
 
-  nswrgp = nswrgr(iwiph)
-  imligp = imligr(iwiph)
-  iwarnp = iwarni(iwiph)
-  epsrgp = epsrgr(iwiph)
-  climgp = climgr(iwiph)
-  extrap = extrag(iwiph)
+  nswrgp = nswrgr(iw)
+  imligp = imligr(iw)
+  iwarnp = iwarni(iw)
+  epsrgp = epsrgr(iw)
+  climgp = climgr(iw)
+  extrap = extrag(iw)
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
+   rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -330,19 +315,19 @@ if (iturb.eq.30) then
   do iel = 1 , ncel
 
     produc(3,iel) = produc(3,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir13ip)*w1(iel) +                      &
-         rtpa(iel,ir23ip)*w2(iel) +                               &
-         rtpa(iel,ir33ip)*w3(iel) )
+         - 2.0d0*(rtpa(iel,ir13)*w1(iel) +                      &
+         rtpa(iel,ir23)*w2(iel) +                               &
+         rtpa(iel,ir33)*w3(iel) )
 
     produc(5,iel) = produc(5,iel)                                 &
-         - (rtpa(iel,ir11ip)*w1(iel) +                            &
-         rtpa(iel,ir12ip)*w2(iel) +                               &
-         rtpa(iel,ir13ip)*w3(iel) )
+         - (rtpa(iel,ir11)*w1(iel) +                            &
+         rtpa(iel,ir12)*w2(iel) +                               &
+         rtpa(iel,ir13)*w3(iel) )
 
     produc(6,iel) = produc(6,iel)                                 &
-         - (rtpa(iel,ir12ip)*w1(iel) +                            &
-         rtpa(iel,ir22ip)*w2(iel) +                               &
-         rtpa(iel,ir23ip)*w3(iel) )
+         - (rtpa(iel,ir12)*w1(iel) +                            &
+         rtpa(iel,ir22)*w2(iel) +                               &
+         rtpa(iel,ir23)*w3(iel) )
 
   enddo
 
@@ -360,19 +345,19 @@ else
 
 ! GRADIENT SUIVANT X
 
-  nswrgp = nswrgr(iuiph)
-  imligp = imligr(iuiph)
-  iwarnp = iwarni(iuiph)
-  epsrgp = epsrgr(iuiph)
-  climgp = climgr(iuiph)
-  extrap = extrag(iuiph)
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
+   rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
    grdvit(1,1,1)   , grdvit(1,1,2)   , grdvit(1,1,3)   ,          &
 !        -------------     -------------     -------------
    ra     )
@@ -380,19 +365,19 @@ else
 
 ! Gradient suivant Y
 
-  nswrgp = nswrgr(iviph)
-  imligp = imligr(iviph)
-  iwarnp = iwarni(iviph)
-  epsrgp = epsrgr(iviph)
-  climgp = climgr(iviph)
-  extrap = extrag(iviph)
+  nswrgp = nswrgr(iv)
+  imligp = imligr(iv)
+  iwarnp = iwarni(iv)
+  epsrgp = epsrgr(iv)
+  climgp = climgr(iv)
+  extrap = extrag(iv)
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
+   rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
    grdvit(1,2,1)   , grdvit(1,2,2)   , grdvit(1,2,3)   ,          &
 !        -------------     -------------     -------------
    ra     )
@@ -400,19 +385,19 @@ else
 
 ! Gradient suivant Z
 
-  nswrgp = nswrgr(iwiph)
-  imligp = imligr(iwiph)
-  iwarnp = iwarni(iwiph)
-  epsrgp = epsrgr(iwiph)
-  climgp = climgr(iwiph)
-  extrap = extrag(iwiph)
+  nswrgp = nswrgr(iw)
+  imligp = imligr(iw)
+  iwarnp = iwarni(iw)
+  epsrgp = epsrgr(iw)
+  climgp = climgr(iw)
+  extrap = extrag(iw)
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
+   rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
    grdvit(1,3,1)   , grdvit(1,3,2)   , grdvit(1,3,3)   ,          &
 !        -------------     -------------     -------------
    ra     )
@@ -436,12 +421,12 @@ if(igrari.eq.1) then
 
 ! Le choix ci dessous a l'avantage d'etre simple
 
-  nswrgp = nswrgr(ir11ip)
-  imligp = imligr(ir11ip)
-  iwarnp = iwarni(ir11ip)
-  epsrgp = epsrgr(ir11ip)
-  climgp = climgr(ir11ip)
-  extrap = extrag(ir11ip)
+  nswrgp = nswrgr(ir11)
+  imligp = imligr(ir11)
+  iwarnp = iwarni(ir11)
+  epsrgp = epsrgr(ir11)
+  climgp = climgr(ir11)
+  extrap = extrag(ir11)
 
   iivar = 0
 
@@ -477,17 +462,17 @@ endif
 
 do isou = 1, 6
   if    (isou.eq.1) then
-    ivar   = ir11ip
+    ivar   = ir11
   elseif(isou.eq.2) then
-    ivar   = ir22ip
+    ivar   = ir22
   elseif(isou.eq.3) then
-    ivar   = ir33ip
+    ivar   = ir33
   elseif(isou.eq.4) then
-    ivar   = ir12ip
+    ivar   = ir12
   elseif(isou.eq.5) then
-    ivar   = ir13ip
+    ivar   = ir13
   elseif(isou.eq.6) then
-    ivar   = ir23ip
+    ivar   = ir23
   endif
   ipp    = ipprtp(ivar)
 
@@ -500,7 +485,7 @@ do isou = 1, 6
   if (ncesmp.gt.0) then
     itpsmp = itypsm(1,ivar)
     smcelp = smacel(1,ivar)
-    gammap = smacel(1,ipriph)
+    gammap = smacel(1,ipr)
   endif
 
   !     Rij-epsilon standard (LRR)
@@ -548,14 +533,14 @@ enddo
 ! 5.  RESOLUTION DE EPSILON
 !===============================================================================
 
-ivar   = ieiph
+ivar   = iep
 ipp    = ipprtp(ivar)
 isou   = 7
 
 if (ncesmp.gt.0) then
   itpsmp = itypsm(1,ivar)
   smcelp = smacel(1,ivar)
-  gammap = smacel(1,ipriph)
+  gammap = smacel(1,ipr)
 endif
 
 call reseps                                                       &

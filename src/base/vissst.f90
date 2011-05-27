@@ -137,7 +137,6 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          iel, iccocg, inc
-integer          iuiph, iviph, iwiph, ikiph, iomgip
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvis, ipcvst
 integer          nswrgp, imligp, iwarnp
@@ -163,13 +162,6 @@ allocate(w4(ncelet), w5(ncelet))
 idebia = idbia0
 idebra = idbra0
 
-! --- Numero des variables (dans RTP)
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-ikiph  = ik
-iomgip = iomg
-
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
@@ -177,9 +169,9 @@ ipcrom = ipproc(irom  )
 
 ! --- Rang des c.l. des variables dans COEFA COEFB
 !        (c.l. std, i.e. non flux)
-ipcliu = iclrtp(iuiph,icoef)
-ipcliv = iclrtp(iviph,icoef)
-ipcliw = iclrtp(iwiph,icoef)
+ipcliu = iclrtp(iu,icoef)
+ipcliv = iclrtp(iv,icoef)
+ipcliw = iclrtp(iw,icoef)
 
 !===============================================================================
 ! 2.  CALCUL DES GRADIENTS DE VITESSE ET DE
@@ -192,19 +184,19 @@ inc = 1
 
 ! SMBRK  = DUDX ,W4 = DUDY ,W5 = DUDZ
 
-nswrgp = nswrgr(iuiph)
-imligp = imligr(iuiph)
-iwarnp = iwarni(iuiph)
-epsrgp = epsrgr(iuiph)
-climgp = climgr(iuiph)
-extrap = extrag(iuiph)
+nswrgp = nswrgr(iu)
+imligp = imligr(iu)
+iwarnp = iwarni(iu)
+epsrgp = epsrgr(iu)
+climgp = climgr(iu)
+extrap = extrag(iu)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iuiph)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,          &
+   rtpa(1,iu)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,             &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -219,20 +211,20 @@ do iel = 1, ncel
 enddo
 
 
-nswrgp = nswrgr(iviph)
-imligp = imligr(iviph)
-iwarnp = iwarni(iviph)
-epsrgp = epsrgr(iviph)
-climgp = climgr(iviph)
-extrap = extrag(iviph)
+nswrgp = nswrgr(iv)
+imligp = imligr(iv)
+iwarnp = iwarni(iv)
+epsrgp = epsrgr(iv)
+climgp = climgr(iv)
+extrap = extrag(iv)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
-   rtpa(1,iviph)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,          &
-   w1     , w4     , w5     ,                                     &
+ ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , nfecra , epsrgp , climgp , extrap ,                &
+   ia     ,                                                    &
+   rtpa(1,iv)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,          &
+   w1     , w4     , w5     ,                                  &
 !        ------   ------   ------
    ra     )
 
@@ -246,20 +238,20 @@ do iel = 1, ncel
   divukw(iel)   = divukw(iel) + w4(iel)
 enddo
 
-nswrgp = nswrgr(iwiph)
-imligp = imligr(iwiph)
-iwarnp = iwarni(iwiph)
-epsrgp = epsrgr(iwiph)
-climgp = climgr(iwiph)
-extrap = extrag(iwiph)
+nswrgp = nswrgr(iw)
+imligp = imligr(iw)
+iwarnp = iwarni(iw)
+epsrgp = epsrgr(iw)
+climgp = climgr(iw)
+extrap = extrag(iw)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
-   rtpa(1,iwiph)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,          &
-   w1     , w2     , w4     ,                                     &
+ ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , nfecra , epsrgp , climgp , extrap ,                &
+   ia     ,                                                    &
+   rtpa(1,iw)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,          &
+   w1     , w2     , w4     ,                                  &
 !        ------   ------   ------
    ra     )
 
@@ -303,8 +295,8 @@ endif
 
 do iel = 1, ncel
 
-  xk = rtpa(iel,ikiph)
-  xw = rtpa(iel,iomgip)
+  xk = rtpa(iel,ik)
+  xw = rtpa(iel,iomg)
   rom = propce(iel,ipcrom)
   xmu = propce(iel,ipcvis)
   xdist = w1(iel)

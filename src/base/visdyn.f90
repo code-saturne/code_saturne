@@ -133,7 +133,6 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          ii, iel, iccocg, inc
-integer          iuiph, iviph, iwiph
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
 integer          iclipc
@@ -171,20 +170,15 @@ allocate(xmij(ncelet,6))
 idebia = idbia0
 idebra = idbra0
 
-! --- Numero des variables (dans RTP)
-iuiph = iu
-iviph = iv
-iwiph = iw
-
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvst = ipproc(ivisct)
 ipcrom = ipproc(irom  )
 
 ! --- Rang des c.l. des variables dans COEFA COEFB
 !        (c.l. std, i.e. non flux)
-ipcliu = iclrtp(iuiph,icoef)
-ipcliv = iclrtp(iviph,icoef)
-ipcliw = iclrtp(iwiph,icoef)
+ipcliu = iclrtp(iu,icoef)
+ipcliv = iclrtp(iv,icoef)
+ipcliw = iclrtp(iw,icoef)
 
 ! --- Pour le calcul de la viscosite de sous-maille
 xfil   = xlesfl
@@ -208,20 +202,20 @@ inc = 1
 
 ! W1 = DUDX, W2 = DUDY, W3=DUDZ
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iuiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iuiph) , imligr(iuiph) , iwarni(iuiph) ,                &
-   nfecra , epsrgr(iuiph) , climgr(iuiph) , extrag(iuiph) ,       &
-   ia     ,                                                       &
-   rtpa(1,iuiph) , coefa(1,ipcliu) , coefb(1,ipcliu) ,            &
-   w1     , w2     , w3     ,                                     &
+ ( iu  , imrgra , inc    , iccocg ,                      &
+   nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
+   nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+   ia     ,                                              &
+   rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
+   w1     , w2     , w3     ,                            &
 !        ------   ------   ------
    ra     )
 
 ! Filtrage de W1, LE RESULTAT EST DANS W6
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w1     , w6     , w7     , w8     )
 
@@ -237,18 +231,18 @@ enddo
 !            W2 = DUDY, W3=DUDZ
 ! W4 = DVDX, W1 = DVDY, W5=DVDZ
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iviph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iviph) , imligr(iviph) , iwarni(iviph) ,                &
-   nfecra , epsrgr(iviph) , climgr(iviph) , extrag(iviph) ,       &
-   ia     ,                                                       &
-   rtpa(1,iviph) , coefa(1,ipcliv) , coefb(1,ipcliv) ,            &
-   w4     , w1     , w5     ,                                     &
+ ( iv  , imrgra , inc    , iccocg ,                      &
+   nswrgr(iv) , imligr(iv) , iwarni(iv) ,                &
+   nfecra , epsrgr(iv) , climgr(iv) , extrag(iv) ,       &
+   ia     ,                                              &
+   rtpa(1,iv) , coefa(1,ipcliv) , coefb(1,ipcliv) ,      &
+   w4     , w1     , w5     ,                            &
 !        ------   ------   ------
    ra     )
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w1     , w6     , w7     , w8    )
 
@@ -260,11 +254,11 @@ do iel = 1, ncel
   w9(iel) = w9(iel) + s22f**2
 enddo
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w2     , w6     , w8     , w1     )
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w4     , w7     , w8     , w1     )
 
@@ -282,18 +276,18 @@ enddo
 !                       W5=DVDZ
 ! W2 = DWDX, W4 = DWDY, W1=DWDZ
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iwiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iwiph) , imligr(iwiph) , iwarni(iwiph) ,                &
-   nfecra , epsrgr(iwiph) , climgr(iwiph) , extrag(iwiph) ,       &
-   ia     ,                                                       &
-   rtpa(1,iwiph) , coefa(1,ipcliw) , coefb(1,ipcliw) ,            &
-   w2     , w4     , w1     ,                                     &
+ ( iw  , imrgra , inc    , iccocg ,                      &
+   nswrgr(iw) , imligr(iw) , iwarni(iw) ,                &
+   nfecra , epsrgr(iw) , climgr(iw) , extrag(iw) ,       &
+   ia     ,                                              &
+   rtpa(1,iw) , coefa(1,ipcliw) , coefb(1,ipcliw) ,      &
+   w2     , w4     , w1     ,                            &
 !        ------   ------   ------
    ra     )
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w1     , w6     , w7     , w8     )
 
@@ -305,11 +299,11 @@ do iel = 1, ncel
   w9(iel) = w9(iel) + s33f**2
 enddo
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w2     , w1     , w7     , w8     )
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w3     , w6     , w7     , w8     )
 
@@ -319,16 +313,15 @@ do iel = 1, ncel
   dudzf = w6(iel)
   dwdxf = w1(iel)
   xmij(iel,5) = 0.5d0*(dudz+dwdx)
-  propce(iel,ipcvst) =                                            &
-    propce(iel,ipcvst) + 0.5d0*(dudz+dwdx)**2
+  propce(iel,ipcvst) = propce(iel,ipcvst) + 0.5d0*(dudz+dwdx)**2
   w9(iel) = w9(iel) + 0.5d0*(dudzf+dwdxf)**2
 enddo
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w4     , w1     , w7     , w8     )
 
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w5     , w6     , w7     , w8     )
 
@@ -338,8 +331,7 @@ do iel = 1, ncel
   dvdzf = w6(iel)
   dwdyf = w1(iel)
   xmij(iel,6) = 0.5d0*(dvdz+dwdy)
-  propce(iel,ipcvst) =                                            &
-    propce(iel,ipcvst) + 0.5d0*(dvdz+dwdy)**2
+  propce(iel,ipcvst) = propce(iel,ipcvst) + 0.5d0*(dvdz+dwdy)**2
   w9(iel) = w9(iel) + 0.5d0*(dvdzf+dwdyf)**2
 enddo
 
@@ -364,7 +356,7 @@ enddo
 
 do ii = 1, 6
 
-  call cfiltr                                                     &
+  call cfiltr &
   !==========
  ( xmij(1,ii) , w1     , w2     , w3     )
 
@@ -373,7 +365,7 @@ do ii = 1, 6
     w2(iel) = -deux*delta**2*propce(iel,ipcvst)*xmij(iel,ii)
   enddo
 
-  call cfiltr                                                     &
+  call cfiltr &
   !==========
  ( w2     , w3     , w4     , w5     )
 
@@ -399,66 +391,66 @@ enddo
 
 ! U**2
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iuiph)*rtp(iel,iuiph)
+  w9(iel) = rtp(iel,iu)*rtp(iel,iu)
 enddo
-call cfiltr                                                       &
+call cfiltr  &
 !==========
  ( w9     , w1     , w7     , w8     )
 
 ! V**2
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iviph)*rtp(iel,iviph)
+  w9(iel) = rtp(iel,iv)*rtp(iel,iv)
 enddo
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w9     , w2     , w7     , w8     )
 
 ! W**2
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iwiph)*rtp(iel,iwiph)
+  w9(iel) = rtp(iel,iw)*rtp(iel,iw)
 enddo
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w9     , w3     , w7     , w8     )
 
 ! UV
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iuiph)*rtp(iel,iviph)
+  w9(iel) = rtp(iel,iu)*rtp(iel,iv)
 enddo
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w9     , w4     , w7     , w8     )
 
 ! UW
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iuiph)*rtp(iel,iwiph)
+  w9(iel) = rtp(iel,iu)*rtp(iel,iw)
 enddo
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w9     , w5     , w7     , w8     )
 
 ! VW
 do iel = 1,ncel
-  w9(iel) = rtp(iel,iviph)*rtp(iel,iwiph)
+  w9(iel) = rtp(iel,iv)*rtp(iel,iw)
 enddo
-call cfiltr                                                       &
+call cfiltr &
 !==========
  ( w9     , w6     , w7     , w8     )
 
 ! U
-call cfiltr                                                       &
+call cfiltr &
 !==========
- ( rtp(1,iuiph)    , w7     , w8     , w9     )
+ ( rtp(1,iu)    , w7     , w8     , w9     )
 
 ! V
-call cfiltr                                                       &
+call cfiltr &
 !==========
- ( rtp(1,iviph)    , w8     , w9     , smagor )
+ ( rtp(1,iv)    , w8     , w9     , smagor )
 
 ! W
-call cfiltr                                                       &
+call cfiltr &
 !==========
- ( rtp(1,iwiph)    , w9     , smagor , w10    )
+ ( rtp(1,iw)    , w9     , smagor , w10    )
 
 do iel = 1, ncel
 
@@ -549,7 +541,7 @@ do iel = 1, ncel
 enddo
 
 !     Quelques impressions
-if(iwarni(iuiph).ge.1) then
+if(iwarni(iu).ge.1) then
 
   smagma = -1.0d12
   smagmn =  1.0d12

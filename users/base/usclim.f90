@@ -691,8 +691,8 @@ do ilelt = 1, nlelt
 
   itypfb(ifac)   = iparoi
 
-  ! If sliding wall with velocity u(1) = 1:
-  ! rcodcl(ifac, iu(1), 1) = 1.d0
+  ! If sliding wall with velocity u = 1:
+  ! rcodcl(ifac, iu, 1) = 1.d0
 
   ! If sliding wall with velocity u = 0: nothing to do
 
@@ -737,8 +737,8 @@ do ilelt = 1, nlelt
   ! Roughness for scalar (if required): 1cm
   ! rcodcl(ifac,iv,3) = 0.01d0
 
-  ! If sliding wall with velocity u(1) = 1:
-  ! rcodcl(ifac, iu(1), 1) = 1.d0
+  ! If sliding wall with velocity u = 1:
+  ! rcodcl(ifac, iu, 1) = 1.d0
 
   ! If sliding wall with velocity u = 0: nothing to do
   if(nscal.gt.0) then

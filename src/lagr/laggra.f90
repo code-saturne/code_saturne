@@ -113,8 +113,7 @@ double precision ra(*)
 
 integer          idebia, idebra
 
-integer          inc , iccocg , ipriph , iclipr
-integer          iuiph , iviph , iwiph
+integer          inc , iccocg , iclipr
 integer          ipcliu , ipcliv , ipcliw
 integer          iromf
 integer          iel
@@ -150,8 +149,7 @@ iccocg  = 1
 ! 1. CALCUL DE :  - (GRADIENT DE PRESSION)/ROM
 !===============================================================================
 
-ipriph = ipr
-iclipr = iclrtp(ipriph,icoef)
+iclipr = iclrtp(ipr,icoef)
 
 ! Calcul du gradient de pression
 
@@ -159,19 +157,19 @@ iclipr = iclrtp(ipriph,icoef)
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtp(1,ipriph))
+  call synsca(rtp(1,ipr))
   !==========
 endif
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( ipriph , imrgra , inc    , iccocg ,                            &
-   nswrgr(ipriph)  , imligr(ipriph)  ,                            &
-   iwarni(ipriph)  , nfecra ,                                     &
-   epsrgr(ipriph)  , climgr(ipriph)  , extrag(ipriph)  ,          &
-   ia     ,                                                       &
-   rtp(1,ipriph)  , coefa(1,iclipr) , coefb(1,iclipr) ,           &
-   gradpr(1,1)     , gradpr(1,2)     , gradpr(1,3)     ,          &
+ ( ipr , imrgra , inc    , iccocg ,                            &
+   nswrgr(ipr)  , imligr(ipr)  ,                               &
+   iwarni(ipr)  , nfecra ,                                     &
+   epsrgr(ipr)  , climgr(ipr)  , extrag(ipr)  ,                &
+   ia     ,                                                    &
+   rtp(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,           &
+   gradpr(1,1)     , gradpr(1,2)     , gradpr(1,3)     ,       &
    ra     )
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
@@ -197,60 +195,57 @@ enddo
 
 if (modcpl.gt.0 .and. iplas.ge.modcpl) then
 
-  iuiph = iu
-  iviph = iv
-  iwiph = iw
-  ipcliu = iclrtp(iuiph,icoef)
-  ipcliv = iclrtp(iviph,icoef)
-  ipcliw = iclrtp(iwiph,icoef)
+  ipcliu = iclrtp(iu,icoef)
+  ipcliv = iclrtp(iv,icoef)
+  ipcliw = iclrtp(iw,icoef)
 
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
+    call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
     !==========
   endif
 
 !     COMPOSANTE X
 !     ============
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iuiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iuiph)   , imligr(iuiph)  ,                             &
-   iwarni(iuiph)   , nfecra ,                                     &
-   epsrgr(iuiph)   , climgr(iuiph)  , extrag(iuiph)  ,            &
-   ia     ,                                                       &
-   rtp(1,iuiph)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,           &
-   gradvf(1,1)     , gradvf(1,2)     , gradvf(1,3)     ,          &
+ ( iu  , imrgra , inc    , iccocg ,                        &
+   nswrgr(iu)   , imligr(iu)  ,                            &
+   iwarni(iu)   , nfecra ,                                 &
+   epsrgr(iu)   , climgr(iu)  , extrag(iu)  ,              &
+   ia     ,                                                &
+   rtp(1,iu)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,       &
+   gradvf(1,1)     , gradvf(1,2)     , gradvf(1,3)     ,   &
    ra     )
 
 !     COMPOSANTE Y
 !     ============
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iviph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iviph)   , imligr(iviph)  ,                             &
-   iwarni(iviph)   , nfecra ,                                     &
-   epsrgr(iviph)   , climgr(iviph)  , extrag(iviph)  ,            &
-   ia     ,                                                       &
-   rtp(1,iviph)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,           &
-   gradvf(1,4)     , gradvf(1,5)     , gradvf(1,6)     ,          &
+ ( iv  , imrgra , inc    , iccocg ,                         &
+   nswrgr(iv)   , imligr(iv)  ,                             &
+   iwarni(iv)   , nfecra ,                                  &
+   epsrgr(iv)   , climgr(iv)  , extrag(iv)  ,               &
+   ia     ,                                                 &
+   rtp(1,iv)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,        &
+   gradvf(1,4)     , gradvf(1,5)     , gradvf(1,6)     ,    &
    ra     )
 
 !     COMPOSANTE Z
 !     ============
 
-  call grdcel                                                     &
+  call grdcel &
   !==========
- ( iwiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iwiph)   , imligr(iwiph)  ,                             &
-   iwarni(iwiph)   , nfecra ,                                     &
-   epsrgr(iwiph)   , climgr(iwiph)  , extrag(iwiph)  ,            &
-   ia     ,                                                       &
-   rtp(1,iwiph)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,           &
-   gradvf(1,7)     , gradvf(1,8)     , gradvf(1,9)     ,          &
+ ( iw  , imrgra , inc    , iccocg ,                         &
+   nswrgr(iw)   , imligr(iw)  ,                             &
+   iwarni(iw)   , nfecra ,                                  &
+   epsrgr(iw)   , climgr(iw)  , extrag(iw)  ,               &
+   ia     ,                                                 &
+   rtp(1,iw)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,        &
+   gradvf(1,7)     , gradvf(1,8)     , gradvf(1,9)     ,    &
    ra     )
 
 endif

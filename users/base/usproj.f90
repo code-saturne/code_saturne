@@ -220,7 +220,7 @@ double precision xbilmi , xbilma
 double precision epsrgp , climgp , extrap
 double precision xfluxf , xgamma
 double precision diipbx, diipby, diipbz, distbr
-double precision visct, flumab , xcp , xvsl, cp0iph, rrr
+double precision visct, flumab , xcp , xvsl, rrr
 double precision xfor(3), xyz(3), xabs, xu, xv, xw, xk, xeps
 
 integer, allocatable, dimension(:) :: lstelt
@@ -349,8 +349,7 @@ allocate(lstelt(max(ncel,nfac,nfabor)))
 ! - replace iscalt by the number iscal of the required scalar,
 !   iscal having an allowed range of 1 to nscal.
 
-! - set ipccp to 0 independently of the value of icp and assign
-!   1 to cp0iph (instead of cp0).
+! - set ipccp to 0 independently of the value of icp and use 1 instead of cp0
 
 !===============================================================================
 
@@ -403,7 +402,6 @@ if (inpdt0.eq.0) then
     ipccp  = ipproc(icp   )
   else
     ipccp  = 0
-    cp0iph = cp0
   endif
 
   ! We save in ipcvsl a flag allowing to determine if the diffusivity is
@@ -573,7 +571,7 @@ if (inpdt0.eq.0) then
       xrtpa = rtpa(iel,ivar)
       xrtp  = rtp (iel,ivar)
       xbilvl =   xbilvl  &
-               + volume(iel) * cp0iph * propce(iel,ipcrom) * (xrtpa - xrtp)
+               + volume(iel) * cp0 * propce(iel,ipcrom) * (xrtpa - xrtp)
     enddo
   endif
 
@@ -610,14 +608,14 @@ if (inpdt0.eq.0) then
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
       xbildv = xbildv +   (dt(iel1)+ dt(iel2))*0.5d0         &
-                        * cp0iph                             &
+                        * cp0                                &
                         * propfa(ifac,iflmas)                &
                         * (rtp(iel1,ivar) - rtp(iel2,ivar))
     enddo
 
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      xbildv = xbildv + dt(iel) * cp0iph               &
+      xbildv = xbildv + dt(iel) * cp0                  &
                                 * propfb(ifac,iflmab)  &
                                 * rtp(iel,ivar)
     enddo
@@ -640,7 +638,7 @@ if (inpdt0.eq.0) then
                                * xgamma * xrtp
       else
         xbildv =   xbildv  &
-                 - volume(iel) * cp0iph * dt(iel) * xgamma * xrtp
+                 - volume(iel) * cp0 * dt(iel) * xgamma * xrtp
       endif
     enddo
   endif
@@ -674,7 +672,7 @@ if (inpdt0.eq.0) then
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
-      xcp    = cp0iph
+      xcp    = cp0
     endif
 
     if (ipcvsl.gt.0) then
@@ -721,7 +719,7 @@ if (inpdt0.eq.0) then
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
-      xcp    = cp0iph
+      xcp    = cp0
     endif
 
     if (ipcvsl.gt.0) then
@@ -767,7 +765,7 @@ if (inpdt0.eq.0) then
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
-      xcp    = cp0iph
+      xcp    = cp0
     endif
 
     if (ipcvsl.gt.0) then
@@ -811,7 +809,7 @@ if (inpdt0.eq.0) then
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
-      xcp    = cp0iph
+      xcp    = cp0
     endif
 
     if (ipcvsl.gt.0) then
@@ -857,7 +855,7 @@ if (inpdt0.eq.0) then
     if (ipccp.gt.0) then
       xcp = propce(iel,ipccp)
     else
-      xcp    = cp0iph
+      xcp    = cp0
     endif
 
     if (ipcvsl.gt.0) then
@@ -917,10 +915,10 @@ if (inpdt0.eq.0) then
       else
         if (xgamma.lt.0.d0) then
           xbilma =   xbilma  &
-                   + volume(iel) * cp0iph * dt(iel) * xgamma * xrtp
+                   + volume(iel) * cp0 * dt(iel) * xgamma * xrtp
         else
           xbilmi =   xbilmi  &
-                   + volume(iel) * cp0iph * dt(iel) * xgamma * xrtp
+                   + volume(iel) * cp0 * dt(iel) * xgamma * xrtp
         endif
       endif
     enddo

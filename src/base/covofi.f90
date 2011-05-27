@@ -150,8 +150,6 @@ integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc, iscala
 integer          iiscav, iicp
-integer          ikiph , ieiph , iomgip
-integer          ir11ip, ir22ip, ir33ip
 integer          iclvar, iclvaf
 integer          ipcrom, ipcvst, ipcvsl, iflmas, iflmab
 integer          ippvar, ipp   , iptsca, ipcvso
@@ -182,13 +180,6 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
-ieiph = 0
-ikiph = 0
-iomgip = 0
-ir11ip = 0
-ir22ip = 0
-ir33ip = 0
-
 xe = 0.d0
 xk = 0.d0
 
@@ -208,20 +199,6 @@ if(iiscav.gt.0.and.iiscav.le.nscal) then
   ivarsc = isca(iiscav)
 else
   ivarsc = 0
-endif
-
-! --- Numero des variables de calcul
-if(itytur.eq.2 .or. iturb.eq.50) then
-  ikiph  = ik
-  ieiph  = iep
-elseif(itytur.eq.3) then
-  ir11ip = ir11
-  ir22ip = ir22
-  ir33ip = ir33
-  ieiph  = iep
-elseif(iturb.eq.60) then
-  ikiph  = ik
-  iomgip = iomg
 endif
 
 ! --- Numero des conditions aux limites
@@ -558,15 +535,15 @@ if (itspdv.eq.1) then
     endif
     do iel = 1, ncel
       if(itytur.eq.2 .or. iturb.eq.50) then
-        xk     = rtpa(iel,ikiph)
-        xe     = rtpa(iel,ieiph)
+        xk     = rtpa(iel,ik)
+        xe     = rtpa(iel,iep)
       elseif(itytur.eq.3) then
         xk     =                                                  &
-        0.5d0*(rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))
-        xe     = rtpa(iel,ieiph)
+        0.5d0*(rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))
+        xe     = rtpa(iel,iep)
       elseif(iturb.eq.60) then
-        xk     = rtpa(iel,ikiph)
-        xe     = cmu*xk*rtpa(iel,iomgip)
+        xk     = rtpa(iel,ik)
+        xe     = cmu*xk*rtpa(iel,iomg)
       endif
       rhovst = propce(iel,ipcrom)*xe/                             &
                  (xk * rvarfl(iscal))*volume(iel)

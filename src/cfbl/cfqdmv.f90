@@ -154,7 +154,6 @@ integer          idebia, idebra, ifinia
 integer          iel   , ielpdc, ifac  , ivar  , isou  , iii
 integer          iccocg, inc   , init  , ii
 integer          ireslp, nswrgp, imligp, iwarnp, ipp
-integer          ipriph, ikiph , iuiph , iviph , iwiph
 integer          iclik , iclvar, iclvaf, iclipr
 integer          ipcrom, ipcvis, ipcvst
 integer          iconvp, idiffp, ndircp, nitmap, nswrsp
@@ -217,18 +216,8 @@ iclik = 0
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-if(itytur.eq.2 .or. iturb.eq.50                     &
-     .or. iturb.eq.60) then
-  ikiph  = ik
-endif
-
-if(itytur.eq.2 .or. iturb.eq.50                     &
-     .or. iturb.eq.60) then
-  iclik  = iclrtp(ikiph ,icoef)
+if(itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
+  iclik = iclrtp(ik ,icoef)
 endif
 
 ipcrom = ipproc(irom  )
@@ -280,9 +269,9 @@ if (iphydr.eq.1) then
   if (ncepdp.gt.0) then
     do ielpdc = 1, ncepdp
       iel=icepdc(ielpdc)
-      vit1   = rtp(iel,iuiph)
-      vit2   = rtp(iel,iviph)
-      vit3   = rtp(iel,iwiph)
+      vit1   = rtp(iel,iu)
+      vit2   = rtp(iel,iv)
+      vit3   = rtp(iel,iw)
       cpdc11 = ckupdc(ielpdc,1)
       cpdc22 = ckupdc(ielpdc,2)
       cpdc33 = ckupdc(ielpdc,3)
@@ -312,22 +301,22 @@ endif
 
 iccocg = 1
 inc    = 1
-nswrgp = nswrgr(ipriph)
-imligp = imligr(ipriph)
-iwarnp = iwarni(ipriph)
-epsrgp = epsrgr(ipriph)
-climgp = climgr(ipriph)
-extrap = extrag(ipriph)
+nswrgp = nswrgr(ipr)
+imligp = imligr(ipr)
+iwarnp = iwarni(ipr)
+epsrgp = epsrgr(ipr)
+climgp = climgr(ipr)
+extrap = extrag(ipr)
 
 call grdpot                                                       &
 !==========
- ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
+ ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rvoid  ,                                                       &
-   frcxt(1,1), frcxt(1,2), frcxt(1,3),          &
-   rtp(1,ipriph)   , coefa(1,iclrtp(ipriph,icoef))  ,             &
-                     coefb(1,iclrtp(ipriph,icoef))  ,             &
+   frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
+   rtp(1,ipr)   , coefa(1,iclrtp(ipr,icoef))  ,                   &
+                  coefb(1,iclrtp(ipr,icoef))  ,                   &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -357,22 +346,21 @@ endif
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc
 if (ineedf.eq.1) then
-  iclipr = iclrtp(ipriph,icoef)
+  iclipr = iclrtp(ipr,icoef)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     diipbx = diipb(1,ifac)
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
-    pip =  rtpa(iel,ipriph)                                       &
-         +diipbx*w1(iel) +diipby*w2(iel)                          &
-         +diipbz*w3(iel)
+    pip =  rtpa(iel,ipr)                                          &
+         +diipbx*w1(iel) +diipby*w2(iel) +diipbz*w3(iel)
     pfac = coefa(ifac,iclipr) +coefb(ifac,iclipr)*pip
-    pfac1= rtpa(iel,ipriph)                                       &
+    pfac1= rtpa(iel,ipr)                                          &
          +(cdgfbo(1,ifac)-xyzcen(1,iel))*w1(iel)                  &
          +(cdgfbo(2,ifac)-xyzcen(2,iel))*w2(iel)                  &
          +(cdgfbo(3,ifac)-xyzcen(3,iel))*w3(iel)
-    pfac = coefb(ifac,iclipr)*(extrag(ipriph)*pfac1               &
-         +(1.d0-extrag(ipriph))*pfac)                             &
+    pfac = coefb(ifac,iclipr)*(extrag(ipr)*pfac1                  &
+         +(1.d0-extrag(ipr))*pfac)                                &
          +(1.d0-coefb(ifac,iclipr))*pfac
     do isou = 1, 3
       ra(iforbr+(ifac-1)*ndim + isou-1) =                         &
@@ -399,11 +387,11 @@ if(iifbru.gt.0) then
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
 
-      pip = rtp(iel,ipriph)                                       &
+      pip = rtp(iel,ipr)                                       &
            +(w1(iel)*diipbx+w2(iel)*diipby+w3(iel)*diipbz)
 
-      pbord = coefa(ifac,iclrtp(ipriph,icoef))                    &
-           + coefb(ifac,iclrtp(ipriph,icoef))*pip
+      pbord = coefa(ifac,iclrtp(ipr,icoef))                    &
+           + coefb(ifac,iclrtp(ipr,icoef))*pip
 
       trav(iel,1) = trav(iel,1) + pbord*surfbo(1,ifac)
       trav(iel,2) = trav(iel,2) + pbord*surfbo(2,ifac)
@@ -440,20 +428,20 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
      .or. iturb.eq.60) .and.igrhok.eq.1) then
   iccocg = 1
   inc    = 1
-  nswrgp = nswrgr(ikiph)
-  imligp = imligr(ikiph)
-  epsrgp = epsrgr(ikiph)
-  climgp = climgr(ikiph)
-  extrap = extrag(ikiph)
+  nswrgp = nswrgr(ik)
+  imligp = imligr(ik)
+  epsrgp = epsrgr(ik)
+  climgp = climgr(ik)
+  extrap = extrag(ik)
 
-  iwarnp = iwarni(iuiph)
+  iwarnp = iwarni(iu)
 
   call grdcel                                                     &
   !==========
- ( ikiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtp(1,ikiph)    , coefa(1,iclik)  , coefb(1,iclik)  ,          &
+   rtp(1,ik)    , coefa(1,iclik)  , coefb(1,iclik)  ,             &
    w1     , w2     , w3     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -473,8 +461,7 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      xkb = rtpa(iel,ikiph) + diipbx*w1(iel)                      &
-           + diipby*w2(iel) + diipbz*w3(iel)
+      xkb = rtpa(iel,ik) + diipbx*w1(iel) + diipby*w2(iel) + diipbz*w3(iel)
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb
       xkb = d2s3*propce(iel,ipcrom)*xkb
       do isou = 1, 3
@@ -536,9 +523,9 @@ if(itytur.eq.3 ) then
 
   do isou = 1, 3
 
-    if(isou.eq.1) ivar = iuiph
-    if(isou.eq.2) ivar = iviph
-    if(isou.eq.3) ivar = iwiph
+    if(isou.eq.1) ivar = iu
+    if(isou.eq.2) ivar = iv
+    if(isou.eq.3) ivar = iw
 
     call divrij                                                   &
     !==========
@@ -569,7 +556,7 @@ endif
 !      SI ON FAIT AUTRE CHOSE QUE DU K EPS, IL FAUDRA LA METTRE
 !        DANS LA BOUCLE
 
-if( idiff(iuiph).ge. 1 ) then
+if( idiff(iu).ge. 1 ) then
 
 ! --- Si la vitesse doit etre diffusee, on calcule la viscosite
 !       pour le second membre (selon Rij ou non)
@@ -650,13 +637,13 @@ endif
 do isou = 1, 3
 
   if(isou.eq.1) then
-    ivar = iuiph
+    ivar = iu
   endif
   if(isou.eq.2) then
-    ivar = iviph
+    ivar = iv
   endif
   if(isou.eq.3) then
-    ivar = iwiph
+    ivar = iw
   endif
   ipp  = ipprtp(ivar)
 
@@ -796,11 +783,11 @@ enddo
 
 ! ---> IMPRESSION DE NORME
 
-if (iwarni(iuiph).ge.2) then
+if (iwarni(iu).ge.2) then
   rnorm = -1.d0
   do iel = 1, ncel
     vitnor =                                                      &
-     sqrt(rtp(iel,iuiph)**2+rtp(iel,iviph)**2+rtp(iel,iwiph)**2)
+     sqrt(rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)
     rnorm = max(rnorm,vitnor)
   enddo
   if (irangp.ge.0) call parmax (rnorm)

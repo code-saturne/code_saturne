@@ -134,7 +134,6 @@ integer          ireslp, nswmpr
 integer          isweep, niterf, icycle
 integer          iphydp
 integer          nswrgp, imligp, iwarnp
-integer          ipriph
 integer          iinvpe
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
@@ -159,22 +158,16 @@ allocate(w1(ncelet), w7(ncelet), w10(ncelet))
 idebia = idbia0
 idebra = idbra0
 
-
-! --- Variables
-ipriph = ipr
-
-
-
 ! --- Options de resolution
 !     Symetrique
 !     Preconditionnement diagonal par defaut
 isym  = 1
-if (iresol(ipriph).eq.-1) then
+if (iresol(ipr).eq.-1) then
   ireslp = 0
   ipol   = 0
 else
-  ireslp = mod(iresol(ipriph),1000)
-  ipol   = (iresol(ipriph)-ireslp)/1000
+  ireslp = mod(iresol(ipr),1000)
+  ipol   = (iresol(ipr)-ireslp)/1000
 endif
 
 isqrt = 1
@@ -279,11 +272,11 @@ call matrix                                                       &
 init   = 1
 inc    = 0
 iccocg = 1
-nswrgp = nswrgr(ipriph)
-imligp = imligr(ipriph)
-iwarnp = iwarni(ipriph)
-epsrgp = epsrgr(ipriph)
-climgp = climgr(ipriph)
+nswrgp = nswrgr(ipr)
+imligp = imligr(ipr)
+iwarnp = iwarni(ipr)
+epsrgp = epsrgr(ipr)
+climgp = climgr(ipr)
 
 call projts                                                       &
 !==========
@@ -310,15 +303,15 @@ call prodsc(ncelet,ncel,isqrt,w7,w7,rnorm)
 ! 5.  PREPARATION DU MULTIGRILLE ALGEBRIQUE
 !===============================================================================
 
-if (imgr(ipriph).gt.0) then
+if (imgr(ipr).gt.0) then
 
 !   --- Creation de la hierarchie de maillages
 
   CHAINE = 'PresHydr'
-  iwarnp = iwarni(ipriph)
-  iagmax = iagmx0(ipriph)
-  nagmax = nagmx0(ipriph)
-  npstmg = ncpmgr(ipriph)
+  iwarnp = iwarni(ipr)
+  iagmax = iagmx0(ipr)
+  nagmax = nagmx0(ipr)
+  npstmg = ncpmgr(ipr)
   lchain = 8
 
   call clmlga                                                     &
@@ -337,7 +330,7 @@ endif
 !===============================================================================
 
 ! --- Nombre de sweeps
-nswmpr = nswrsm(ipriph)
+nswmpr = nswrsm(ipr)
 
 ! --- Mise a zero des variables
 !       RTP(.,IPR) sera l'increment de pression cumule
@@ -362,14 +355,14 @@ do isweep = 1, nswmpr
 ! --- Test de convergence du calcul
 
   call prodsc(ncelet,ncel,isqrt,smbr,smbr,residu)
-  if (iwarni(ipriph).ge.2) then
+  if (iwarni(ipr).ge.2) then
      chaine = 'PresHydr'
      write(nfecra,1400)chaine(1:16),isweep,residu
   endif
 
 !MO IL FAUDRA VERIFIER LA PERTINENCE DU TEST
 
-  if( residu .le. 10.d0*epsrsm(ipriph)*rnorm ) then
+  if( residu .le. 10.d0*epsrsm(ipr)*rnorm ) then
 !     Si convergence,  sortie
 
     goto 101
@@ -382,12 +375,12 @@ do isweep = 1, nswmpr
   enddo
 
   chaine = 'PresHydr'
-  nitmap = nitmax(ipriph)
-  imgrp  = imgr  (ipriph)
-  ncymap = ncymax(ipriph)
-  nitmgp = nitmgf(ipriph)
-  iwarnp = iwarni(ipriph)
-  epsilp = epsilo(ipriph)
+  nitmap = nitmax(ipr)
+  imgrp  = imgr  (ipr)
+  ncymap = ncymax(ipr)
+  nitmgp = nitmgf(ipr)
+  iwarnp = iwarni(ipr)
+  epsilp = epsilo(ipr)
   iinvpe = 1
 
   call invers                                                     &
@@ -420,11 +413,11 @@ do isweep = 1, nswmpr
     iccocg = 1
     init = 1
     inc  = 1
-    nswrgp = nswrgr(ipriph)
-    imligp = imligr(ipriph)
-    iwarnp = iwarni(ipriph)
-    epsrgp = epsrgr(ipriph)
-    climgp = climgr(ipriph)
+    nswrgp = nswrgr(ipr)
+    imligp = imligr(ipr)
+    iwarnp = iwarni(ipr)
+    epsrgp = epsrgr(ipr)
+    climgp = climgr(ipr)
     extrap = 0.d0
     iphydp = 1
 
@@ -449,7 +442,7 @@ do isweep = 1, nswmpr
 enddo
 ! --- Boucle de reconstruction : fin
 
-if(iwarni(ipriph).ge.2) then
+if(iwarni(ipr).ge.2) then
    chaine = 'PresHydr'
    write( nfecra,1600)chaine(1:16),nswmpr
 endif
@@ -463,7 +456,7 @@ deallocate(w1, w7, w10)
 ! 7.  SUPPRESSION DE LA HIERARCHIE DE MAILLAGES
 !===============================================================================
 
-if (imgr(ipriph).gt.0) then
+if (imgr(ipr).gt.0) then
   chaine = 'PresHydr'
   lchain = 16
   call dsmlga(chaine(1:16), lchain)

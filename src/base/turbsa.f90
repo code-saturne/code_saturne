@@ -135,8 +135,6 @@ integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          iivar , iiun
 integer          iclip , isqrt
 integer          nswrgp, imligp
-integer          ipriph, iuiph , iviph , iwiph
-integer          inuiph
 integer          icliup, iclivp, icliwp
 integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
@@ -188,28 +186,22 @@ allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-inuiph = inusa
-
-icliup = iclrtp(iuiph,icoef)
-iclivp = iclrtp(iviph,icoef)
-icliwp = iclrtp(iwiph,icoef)
+icliup = iclrtp(iu,icoef)
+iclivp = iclrtp(iv,icoef)
+icliwp = iclrtp(iw,icoef)
 
 ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 ipbrom = ipprob(irom  )
 
 ! S pour source, V pour variable
 !terme source grandeur turbulente
 thets  = thetst
 
-ivar   = inuiph
+ivar   = inusa
 thetv  = thetav(ivar)
 
 ipcroo = ipcrom
@@ -265,21 +257,21 @@ inc = 1
 
 
 
-nswrgp = nswrgr(iuiph)
-imligp = imligr(iuiph)
-iwarnp = iwarni(inuiph)
-epsrgp = epsrgr(iuiph)
-climgp = climgr(iuiph)
-extrap = extrag(iuiph)
+nswrgp = nswrgr(iu)
+imligp = imligr(iu)
+iwarnp = iwarni(inusa)
+epsrgp = epsrgr(iu)
+climgp = climgr(iu)
+extrap = extrag(iu)
 
 ! SMBRSA  = DUDX ,W4 = DUDY ,W5 = DUDZ
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
+   rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
    smbrsa , w4     , w5     ,                                     &
 !  ------   ------   ------
    ra     )
@@ -297,19 +289,19 @@ enddo
 
 ! W6     = DVDX ,W7     = DVDY ,W8     = DVDZ
 
-nswrgp = nswrgr(iviph)
-imligp = imligr(iviph)
-iwarnp = iwarni(inuiph)
-epsrgp = epsrgr(iviph)
-climgp = climgr(iviph)
-extrap = extrag(iviph)
+nswrgp = nswrgr(iv)
+imligp = imligr(iv)
+iwarnp = iwarni(inusa)
+epsrgp = epsrgr(iv)
+climgp = climgr(iv)
+extrap = extrag(iv)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
+   rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
 !  dpdx     dpdy     dpdz
    w6     , w7     , w8     ,                                     &
 !  ------   ------   ------
@@ -331,19 +323,19 @@ enddo
 !               ,              ,W8     = DVDZ
 ! W4     = DWDX ,W6     = DWDY ,W7     = DWDZ
 
-nswrgp = nswrgr(iwiph)
-imligp = imligr(iwiph)
-iwarnp = iwarni(inuiph)
-epsrgp = epsrgr(iwiph)
-climgp = climgr(iwiph)
-extrap = extrag(iwiph)
+nswrgp = nswrgr(iw)
+imligp = imligr(iw)
+iwarnp = iwarni(inusa)
+epsrgp = epsrgr(iw)
+climgp = climgr(iw)
+extrap = extrag(iw)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
+   rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
    w4     , w6     , w7     ,                                     &
 !  ------   ------   ------
    ra     )
@@ -366,21 +358,21 @@ enddo
 ! CALCUL DE GRAD nusa
 ! W4     = DNUDX ,W5 = DNUDY ,W6  = DNUDZ
 
-nswrgp = nswrgr(inuiph)
-imligp = imligr(inuiph)
-iwarnp = iwarni(inuiph)
-epsrgp = epsrgr(inuiph)
-climgp = climgr(inuiph)
-extrap = extrag(inuiph)
+nswrgp = nswrgr(inusa)
+imligp = imligr(inusa)
+iwarnp = iwarni(inusa)
+epsrgp = epsrgr(inusa)
+climgp = climgr(inusa)
+extrap = extrag(inusa)
 
-iclvar = iclrtp(inuiph,icoef)
+iclvar = iclrtp(inusa,icoef)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( inuiph , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( inusa , imrgra , inc    , iccocg , nswrgp , imligp ,           &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,inuiph)  , coefa(1,iclvar) , coefb(1,iclvar) ,          &
+   rtpa(1,inusa)  , coefa(1,iclvar) , coefb(1,iclvar) ,           &
    w4     , w5     , w6     ,                                     &
 !  ------   ------   ------
    ra     )
@@ -460,7 +452,7 @@ call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
 ipatrg = 0
 dsa0   = -999.d0
 
-iclvar = iclrtp(inuiph,icoef)
+iclvar = iclrtp(inusa,icoef)
 do ifac = 1, nfabor
   if ( itypfb(ifac).eq.iparug ) then
     ipatrg = 1
@@ -491,7 +483,7 @@ do iel = 1, ncel
   nu0   = propce(iel,ipcvis)/rom
   distbf= ra(idipar+iel-1)
   ! viscosity of SA
-  nusa  = rtpa(iel,inuiph)
+  nusa  = rtpa(iel,inusa)
   chi   = nusa/nu0
   ! If we have a rough wall
   if(ipatrg.ne.0) then
@@ -547,7 +539,7 @@ if(isto2t.gt.0) then
 
 !                               Div(rhoU)*nusa^n
 !                               -------   ---------------
-    smbrsa(iel) = iconv(inuiph)*w1(iel)  *rtpa(iel,inuiph)            &
+    smbrsa(iel) = iconv(inusa)*w1(iel)  *rtpa(iel,inusa)            &
 !        -Thetas*PROPCE^(n-1)
 !          ----- ------
          - thets*tuexpn
@@ -557,15 +549,15 @@ if(isto2t.gt.0) then
 
 !                 Ts_imp  * nusa^n
 !                 --------  ---------------
-    smbrsa(iel) = dam(iel)*rtpa(iel,inuiph) + smbrsa(iel)
+    smbrsa(iel) = dam(iel)*rtpa(iel,inusa) + smbrsa(iel)
 
   enddo
 
 !     Si on n'extrapole pas les T.S. : W7 --> TS explicite
 else
   do iel = 1, ncel
-    smbrsa(iel) = smbrsa(iel) + dam(iel)*rtpa(iel,inuiph) + w7(iel)  &
-         +iconv(inuiph)*w1(iel)*rtpa(iel,inuiph)
+    smbrsa(iel) = smbrsa(iel) + dam(iel)*rtpa(iel,inusa) + w7(iel)  &
+         +iconv(inusa)*w1(iel)*rtpa(iel,inusa)
   enddo
 endif
 
@@ -599,14 +591,14 @@ if (ncesmp.gt.0) then
   iiun = 1
 
 !       On incremente SMBRSA par -Gamma RTPA et ROVSDT par Gamma (*theta)
-  ivar = inuiph
+  ivar = inusa
 
-  call catsma                                                     &
+  call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
                                  isto2t , thetv        ,          &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrsa , w2     , w4 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
@@ -655,8 +647,8 @@ do iel = 1, ncel
 
 ! TINSSA already contains the negativ implicited source term
   tinssa(iel) = tinssa(iel)                                        &
-               +istat(inuiph)*romvsd                               &
-               -iconv(inuiph)*w1(iel)*thetv
+               +istat(inusa)*romvsd                                &
+               -iconv(inusa)*w1(iel)*thetv
 enddo
 
 ! --- Source de masse (le theta est deja inclus par catsma)
@@ -688,7 +680,7 @@ endif
 
 ! ---> Traitement de nusa
 
-ivar = inuiph
+ivar = inusa
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
 
@@ -701,9 +693,9 @@ if( idiff(ivar).ge. 1 ) then
   do iel = 1, ncel
     rom = propce(iel,ipcrom)
     ! diffusibility: 1/SIGMA*(mu_laminaire+ rho*nusa)
-    ! nusa  = rtpa(iel,inuiph)
+    ! nusa  = rtpa(iel,inusa)
     w1(iel) = dsigma *( propce(iel,ipcvis)                        &
-                        + idifft(ivar)*rtpa(iel,inuiph)*rom )
+                        + idifft(ivar)*rtpa(iel,inusa)*rom )
   enddo
 
   call viscfa                                                     &
@@ -739,7 +731,7 @@ if( idiff(ivar).ge. 1 ) then
       hssa   = exp(8.5d0*xkappa)*dsa0
       ! For rough walls: nusa_F*(IprF/d0+1) = nusa_Ipr
       viscb(ifac) = dsigma * ( propce(iel,ipcvis)                    &
-                   + idifft(ivar)*rtpa(iel,inuiph)*rom               &
+                   + idifft(ivar)*rtpa(iel,inusa)*rom                &
                    * dsa0/(distb(ifac)+dsa0)            )*surfn/distb(ifac)
 
     endif
@@ -812,7 +804,7 @@ call codits                                                       &
 
 iclip = 0
 
-iwarnp = iwarni(inuiph)
+iwarnp = iwarni(inusa)
 call clipsa                                                       &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &

@@ -134,7 +134,7 @@ integer          idebia, idebra
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax, iii
 integer          ii    , inod
 integer          isou, ivar, iitsm, igamm1
-integer          ipriph, iuiph , iviph , iwiph , iclipr, iclipf
+integer          iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
 integer          icluma, iclvma, iclwma
 integer          iflmas, iflmab, ipcrom, ipbrom
@@ -148,7 +148,7 @@ double precision rnorm , rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, surf  , rhom
 double precision epsrgp, climgp, extrap, xyzmax(3)
 double precision thetap, xdu, xdv, xdw
-double precision ro0iph, p0iph, pr0iph, xxp0 , xyp0 , xzp0
+double precision xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis
 double precision vitbox, vitboy, vitboz
@@ -219,14 +219,10 @@ idebra = idbra0
 
 if(nterup.gt.1) then
 
-  iuiph   = iu
-  iviph   = iv
-  iwiph   = iw
-  ipriph  = ipr
   do isou = 1, 3
-    if(isou.eq.1) ivar = iuiph
-    if(isou.eq.2) ivar = iviph
-    if(isou.eq.3) ivar = iwiph
+    if(isou.eq.1) ivar = iu
+    if(isou.eq.2) ivar = iv
+    if(isou.eq.3) ivar = iw
     !     La boucle sur NCELET est une securite au cas
     !       ou on utiliserait UVWK par erreur a ITERNS = 1
     do iel = 1,ncelet
@@ -237,13 +233,10 @@ if(nterup.gt.1) then
   ! Calcul de la norme L2 de la vitesse
   if(iterns.eq.1) then
     xnrmu0 = 0.d0
-    iuiph   = iu
-    iviph   = iv
-    iwiph   = iw
     do iel = 1, ncel
-      xnrmu0 = xnrmu0 +(rtpa(iel,iuiph)**2        &
-           + rtpa(iel,iviph)**2        &
-           + rtpa(iel,iwiph)**2)       &
+      xnrmu0 = xnrmu0 +(rtpa(iel,iu)**2        &
+           + rtpa(iel,iv)**2        &
+           + rtpa(iel,iw)**2)       &
            * volume(iel)
     enddo
     if(irangp.ge.0) then
@@ -268,7 +261,7 @@ if(nterup.gt.1) then
     if (irangp.ge.0.or.iperio.eq.1) then
       call synvec(uvwk(1,1), uvwk(1,2), uvwk(1,3))
       !==========
-      call synsca(rtpa(1,ipriph))
+      call synsca(rtpa(1,ipr))
       !==========
     endif
   endif
@@ -281,9 +274,8 @@ endif
 !===============================================================================
 
 iappel = 1
-iuiph  = iu
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 
 call preduv                                                      &
 !==========
@@ -309,16 +301,12 @@ call preduv                                                      &
 
 if( iprco.le.0 ) then
 
-  iuiph  = iu
-  iviph  = iv
-  iwiph  = iw
+  icliup = iclrtp(iu ,icoef)
+  iclivp = iclrtp(iv ,icoef)
+  icliwp = iclrtp(iw ,icoef)
 
-  icliup = iclrtp(iuiph ,icoef)
-  iclivp = iclrtp(iviph ,icoef)
-  icliwp = iclrtp(iwiph ,icoef)
-
-  iflmas = ipprof(ifluma(iuiph))
-  iflmab = ipprob(ifluma(iuiph))
+  iflmas = ipprof(ifluma(iu))
+  iflmab = ipprob(ifluma(iu))
   ipcrom = ipproc(irom  )
   ipbrom = ipprob(irom  )
 
@@ -328,27 +316,27 @@ if( iprco.le.0 ) then
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
   iismph = iisymp
-  nswrgp = nswrgr(iuiph)
-  imligp = imligr(iuiph)
-  iwarnp = iwarni(iuiph)
-  epsrgp = epsrgr(iuiph)
-  climgp = climgr(iuiph)
-  extrap = extrag(iuiph)
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
 
   imaspe = 1
 
-  call inimas                                                    &
+  call inimas &
   !==========
 ( idebia , idebra ,                                              &
   nvar   , nscal  ,                                              &
-  iuiph  , iviph  , iwiph  , imaspe ,                            &
+  iu  , iv  , iw  , imaspe ,                                     &
   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
   ia(iismph) ,                                                   &
   ia     ,                                                       &
   propce(1,ipcrom), propfb(1,ipbrom),                            &
-  rtp(1,iuiph) , rtp(1,iviph) , rtp(1,iwiph) ,                   &
+  rtp(1,iu) , rtp(1,iv) , rtp(1,iw) ,                            &
   coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
   coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
   propfa(1,iflmas), propfb(1,iflmab) ,                           &
@@ -404,11 +392,11 @@ if( iprco.le.0 ) then
       ra(iflint+ifac-1) = 0.d0
     enddo
 
-    call inimas                                                   &
+    call inimas &
     !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
-   iuiph  , iviph  , iwiph  , imaspe ,                            &
+   iu  , iv  , iw  , imaspe ,                                     &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -540,20 +528,14 @@ call resolp                                                       &
 ! 4.  REACTUALISATION DU CHAMP DE VITESSE
 !===============================================================================
 
+iclipr = iclrtp(ipr,icoef)
+iclipf = iclrtp(ipr,icoeff)
+icliup = iclrtp(iu ,icoef)
+iclivp = iclrtp(iv ,icoef)
+icliwp = iclrtp(iw ,icoef)
 
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-
-iclipr = iclrtp(ipriph,icoef)
-iclipf = iclrtp(ipriph,icoeff)
-icliup = iclrtp(iuiph ,icoef)
-iclivp = iclrtp(iviph ,icoef)
-icliwp = iclrtp(iwiph ,icoef)
-
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 ipcrom = ipproc(irom  )
 ipbrom = ipprob(irom  )
 iismph = iisymp
@@ -604,27 +586,27 @@ if( irevmc.eq.1 ) then
   iccocg = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iuiph )
-  imligp = imligr(iuiph )
-  iwarnp = iwarni(iuiph )
-  epsrgp = epsrgr(iuiph )
-  climgp = climgr(iuiph )
-  extrap = extrag(iuiph )
+  nswrgp = nswrgr(iu )
+  imligp = imligr(iu )
+  iwarnp = iwarni(iu )
+  epsrgp = epsrgr(iu )
+  climgp = climgr(iu )
+  extrap = extrag(iu )
 
   imaspe = 1
 
-  call inimas                                                     &
+  call inimas &
   !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
-   iuiph  , iviph  , iwiph  , imaspe ,                            &
+   iu  , iv  , iw  , imaspe ,                                     &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
-   rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
+   rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    ra(iflint), ra(iflbrd),                                        &
@@ -648,9 +630,9 @@ if( irevmc.eq.1 ) then
    ra     )
 
   do iel = 1, ncel
-    rtp(iel,iuiph) = rtp(iel,iuiph) + w1(iel)
-    rtp(iel,iviph) = rtp(iel,iviph) + w2(iel)
-    rtp(iel,iwiph) = rtp(iel,iwiph) + w3(iel)
+    rtp(iel,iu) = rtp(iel,iu) + w1(iel)
+    rtp(iel,iv) = rtp(iel,iv) + w2(iel)
+    rtp(iel,iw) = rtp(iel,iw) + w3(iel)
   enddo
 
 elseif( irevmc.eq.2 ) then
@@ -664,13 +646,13 @@ elseif( irevmc.eq.2 ) then
   call rasize('navsto',ifinra)
   !==========
 
-  call recvmc                                                         &
+  call recvmc &
   !==========
        ( idebia , ifinra ,                                            &
        nvar   , nscal  ,                                              &
        ia     ,                                                       &
        propce(1,ipcrom), propfa(1,iflmas), propfb(1,iflmab),          &
-       rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph),                      &
+       rtp(1,iu), rtp(1,iv), rtp(1,iw),                               &
        w4     , w5     , w6     , ra(icocgv)   ,                      &
        ra     )
 
@@ -684,12 +666,12 @@ else
 
   if (idtvar.lt.0) then
     do iel = 1, ncel
-      drtp(iel) = (rtp(iel,ipriph) -rtpa(iel,ipriph))           &
-           /relaxv(ipriph)
+      drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr))           &
+           /relaxv(ipr)
     enddo
   else
     do iel = 1, ncel
-      drtp(iel) = rtp(iel,ipriph) -rtpa(iel,ipriph)
+      drtp(iel) = rtp(iel,ipr) -rtpa(iel,ipr)
     enddo
   endif
 
@@ -704,16 +686,16 @@ else
   iccocg = 1
   inc = 0
   if (iphydr.eq.1) inc = 1
-  nswrgp = nswrgr(ipriph)
-  imligp = imligr(ipriph)
-  iwarnp = iwarni(ipriph)
-  epsrgp = epsrgr(ipriph)
-  climgp = climgr(ipriph)
-  extrap = extrag(ipriph)
+  nswrgp = nswrgr(ipr)
+  imligp = imligr(ipr)
+  iwarnp = iwarni(ipr)
+  epsrgp = epsrgr(ipr)
+  climgp = climgr(ipr)
+  extrap = extrag(ipr)
 
-  call grdpot                                                     &
+  call grdpot &
   !==========
- ( ipriph , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
+ ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rvoid  ,                                                       &
@@ -725,49 +707,43 @@ else
 
   !     REACTUALISATION DU CHAMP DE VITESSES
 
-  thetap = thetav(ipriph)
+  thetap = thetav(ipr)
   if (iphydr.eq.0) then
     if (idtsca.eq.0) then
       do iel = 1, ncel
         dtsrom = -thetap*dt(iel)/propce(iel,ipcrom)
-        rtp(iel,iuiph) = rtp(iel,iuiph)+dtsrom*trav(iel,1)
-        rtp(iel,iviph) = rtp(iel,iviph)+dtsrom*trav(iel,2)
-        rtp(iel,iwiph) = rtp(iel,iwiph)+dtsrom*trav(iel,3)
+        rtp(iel,iu) = rtp(iel,iu)+dtsrom*trav(iel,1)
+        rtp(iel,iv) = rtp(iel,iv)+dtsrom*trav(iel,2)
+        rtp(iel,iw) = rtp(iel,iw)+dtsrom*trav(iel,3)
       enddo
     else
       do iel = 1, ncel
         unsrom = -thetap/propce(iel,ipcrom)
         iii = itpuco-1+iel
-        rtp(iel,iuiph) = rtp(iel,iuiph)                         &
-             +unsrom*ra(iii         )*trav(iel,1)
-        rtp(iel,iviph) = rtp(iel,iviph)                         &
-             +unsrom*ra(iii+ncelet  )*trav(iel,2)
-        rtp(iel,iwiph) = rtp(iel,iwiph)                         &
-             +unsrom*ra(iii+2*ncelet)*trav(iel,3)
+        rtp(iel,iu) = rtp(iel,iu) + unsrom*ra(iii         )*trav(iel,1)
+        rtp(iel,iv) = rtp(iel,iv) + unsrom*ra(iii+ncelet  )*trav(iel,2)
+        rtp(iel,iw) = rtp(iel,iw) + unsrom*ra(iii+2*ncelet)*trav(iel,3)
       enddo
     endif
   else
     if (idtsca.eq.0) then
       do iel = 1, ncel
         dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
-        rtp(iel,iuiph) = rtp(iel,iuiph)                         &
-             +dtsrom*(dfrcxt(iel,1)-trav(iel,1) )
-        rtp(iel,iviph) = rtp(iel,iviph)                         &
-             +dtsrom*(dfrcxt(iel,2)-trav(iel,2) )
-        rtp(iel,iwiph) = rtp(iel,iwiph)                         &
-             +dtsrom*(dfrcxt(iel,3)-trav(iel,3) )
+        rtp(iel,iu) = rtp(iel,iu) + dtsrom*(dfrcxt(iel,1)-trav(iel,1) )
+        rtp(iel,iv) = rtp(iel,iv) + dtsrom*(dfrcxt(iel,2)-trav(iel,2) )
+        rtp(iel,iw) = rtp(iel,iw) + dtsrom*(dfrcxt(iel,3)-trav(iel,3) )
       enddo
     else
       do iel = 1, ncel
         unsrom = thetap/propce(iel,ipcrom)
         iii = itpuco-1+iel
-        rtp(iel,iuiph) = rtp(iel,iuiph)                         &
+        rtp(iel,iu) = rtp(iel,iu)                         &
              +unsrom*ra(iii         )                           &
              *(dfrcxt(iel,1)-trav(iel,1) )
-        rtp(iel,iviph) = rtp(iel,iviph)                         &
+        rtp(iel,iv) = rtp(iel,iv)                         &
              +unsrom*ra(iii+ncelet  )                           &
              *(dfrcxt(iel,2)-trav(iel,2) )
-        rtp(iel,iwiph) = rtp(iel,iwiph)                         &
+        rtp(iel,iw) = rtp(iel,iw)                         &
              +unsrom*ra(iii+2*ncelet)                           &
              *(dfrcxt(iel,3)-trav(iel,3) )
       enddo
@@ -786,8 +762,8 @@ else
       !==========
     endif
     !     mise a jour des Dirichlets de pression en sortie dans COEFA
-    iclipr = iclrtp(ipriph,icoef)
-    iclipf = iclrtp(ipriph,icoeff)
+    iclipr = iclrtp(ipr,icoef)
+    iclipf = iclrtp(ipr,icoeff)
     do ifac = 1,nfabor
       if (isostd(ifac).eq.1)                              &
            coefa(ifac,iclipr) = coefa(ifac,iclipr)              &
@@ -847,11 +823,11 @@ if (iale.eq.1) then
     ra(iflint+ifac-1) = 0.d0
   enddo
 
-  call inimas                                                   &
+  call inimas &
   !==========
  ( idebia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
-   iuiph  , iviph  , iwiph  , imaspe ,                            &
+   iu  , iv  , iw  , imaspe ,                                     &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
@@ -956,14 +932,9 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   ! ---> REPERAGE DES VARIABLES
 
-  ipriph = ipr
-  iuiph  = iu
-  iviph  = iv
-  iwiph  = iw
-
-  icliup = iclrtp(iuiph ,icoef)
-  iclivp = iclrtp(iviph ,icoef)
-  icliwp = iclrtp(iwiph ,icoef)
+  icliup = iclrtp(iu ,icoef)
+  iclivp = iclrtp(iv ,icoef)
+  icliwp = iclrtp(iw ,icoef)
 
   ipcrom = ipproc(irom  )
   ipbrom = ipprob(irom  )
@@ -984,7 +955,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   ! --- Vitesse
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(rtp(1,iuiph), rtp(1,iviph), rtp(1,iwiph))
+    call synvec(rtp(1,iu), rtp(1,iv), rtp(1,iw))
     !==========
   endif
 
@@ -994,7 +965,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   if(iescal(iestot).gt.0) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,ipriph))
+      call synsca(rtp(1,ipr))
       !==========
     endif
 
@@ -1008,27 +979,27 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   iccocg = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iuiph )
-  imligp = imligr(iuiph )
-  iwarnp = iwarni(iuiph )
-  epsrgp = epsrgr(iuiph )
-  climgp = climgr(iuiph )
-  extrap = extrag(iuiph )
+  nswrgp = nswrgr(iu )
+  imligp = imligr(iu )
+  iwarnp = iwarni(iu )
+  epsrgp = epsrgr(iu )
+  climgp = climgr(iu )
+  extrap = extrag(iu )
 
   imaspe = 1
 
-  call inimas                                                   &
+  call inimas &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   iuiph  , iviph  , iwiph  , imaspe ,                            &
+   iu  , iv  , iw  , imaspe ,                                     &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
-   rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
+   rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    esflum , esflub ,                                              &
@@ -1044,7 +1015,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
          ifacel,ifabor,esflum,esflub,w1)
 
     if (ncetsm.gt.0) then
-      igamm1 = ismace+(ipriph-1)*ncetsm-1
+      igamm1 = ismace+(ipr-1)*ncetsm-1
       do iitsm = 1, ncetsm
         iel = ia(iicesm+iitsm-1)
         w1(iel) = w1(iel)-volume(iel)*ra(igamm1+iitsm)
@@ -1073,11 +1044,11 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
     do iel = 1, ncel
       trav(iel,1) = propce(iel,ipcrom) * volume(iel) *          &
-           ( rtpa(iel,iuiph)- rtp(iel,iuiph) )/dt(iel)
+           ( rtpa(iel,iu)- rtp(iel,iu) )/dt(iel)
       trav(iel,2) = propce(iel,ipcrom) * volume(iel) *          &
-           ( rtpa(iel,iviph)- rtp(iel,iviph) )/dt(iel)
+           ( rtpa(iel,iv)- rtp(iel,iv) )/dt(iel)
       trav(iel,3) = propce(iel,ipcrom) * volume(iel) *          &
-           ( rtpa(iel,iwiph)- rtp(iel,iwiph) )/dt(iel)
+           ( rtpa(iel,iw)- rtp(iel,iw) )/dt(iel)
     enddo
 
     !   APPEL A PREDUV AVEC RTP ET RTP AU LIEU DE RTP ET RTPA
@@ -1119,9 +1090,9 @@ if(nterup.gt.1) then
 
   xnrmu = 0.d0
   do iel = 1,ncel
-    xdu = rtp(iel,iuiph) - uvwk(iel,1)
-    xdv = rtp(iel,iviph) - uvwk(iel,2)
-    xdw = rtp(iel,iwiph) - uvwk(iel,3)
+    xdu = rtp(iel,iu) - uvwk(iel,1)
+    xdv = rtp(iel,iv) - uvwk(iel,2)
+    xdw = rtp(iel,iw) - uvwk(iel,3)
     xnrmu = xnrmu +(xdu**2 + xdv**2 + xdw**2)     &
          * volume(iel)
   enddo
@@ -1147,19 +1118,18 @@ endif
 !  calcule dans typecl.F est NDIRCL si IDIRCL=1 et NDIRCL-1 si IDIRCL=0
 !  (ISTAT vaut toujours 0 pour la pression)
 
-ipriph  = ipr
 if (idircl(ipr).eq.1) then
   ndircp = ndircl(ipr)
 else
   ndircp = ndircl(ipr)-1
 endif
 if(ndircp.le.0) then
-  call prmoy0                                                 &
+  call prmoy0 &
   !==========
 ( idebia , idebra ,                                           &
   ncelet , ncel   , nfac   , nfabor ,                         &
   ia     ,                                                    &
-  volume , rtp(1,ipriph) ,                                    &
+  volume , rtp(1,ipr) ,                                       &
   ra     )
 endif
 
@@ -1167,18 +1137,15 @@ endif
 ! En compressible, la pression resolue est deja la pression totale
 
 if (ippmod(icompf).lt.0) then
-  ro0iph = ro0
-  p0iph  = p0
-  pr0iph = pred0
   xxp0   = xyzp0(1)
   xyp0   = xyzp0(2)
   xzp0   = xyzp0(3)
   do iel=1,ncel
     propce(iel,ipproc(iprtot))= rtp(iel,ipr)           &
-         + ro0iph*( gx*(xyzcen(1,iel)-xxp0)            &
+         + ro0*( gx*(xyzcen(1,iel)-xxp0)               &
          + gy*(xyzcen(2,iel)-xyp0)                     &
          + gz*(xyzcen(3,iel)-xzp0) )                   &
-         + p0iph - pr0iph
+         + p0 - pred0
   enddo
 endif
 
@@ -1186,23 +1153,18 @@ endif
 ! 7.  IMPRESSIONS
 !===============================================================================
 
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 ipcrom = ipproc(irom  )
 ipbrom = ipprob(irom  )
 
-if (iwarni(iuiph).ge.1) then
+if (iwarni(iu).ge.1) then
 
   write(nfecra,2000)
 
   rnorm = -1.d0
   do iel = 1, ncel
-    rnorm  = max(rnorm,abs(rtp(iel,ipriph)))
+    rnorm  = max(rnorm,abs(rtp(iel,ipr)))
   enddo
   if (irangp.ge.0) call parmax (rnorm)
   !==========
@@ -1210,7 +1172,7 @@ if (iwarni(iuiph).ge.1) then
 
   rnorm = -1.d0
   do iel = 1, ncel
-    vitnor = sqrt(rtp(iel,iuiph)**2+rtp(iel,iviph)**2+rtp(iel,iwiph)**2)
+    vitnor = sqrt(rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)
     if(vitnor.ge.rnorm) then
       rnorm = vitnor
       imax  = iel

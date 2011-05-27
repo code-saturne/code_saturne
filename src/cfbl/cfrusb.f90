@@ -126,8 +126,7 @@ double precision ra(*)
 integer          idebia , idebra
 integer          ifac0
 integer          iel    , ifac
-integer          ipriph , irhiph , ieniph
-integer          iuiph  , iviph  , iwiph
+integer          irh    , ien
 integer          iclp   , iclr   , icle
 integer          iclu   , iclv   , iclw
 integer          iflmab
@@ -144,20 +143,16 @@ double precision rrus   , runb
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr
-irhiph = isca(irho  )
-ieniph = isca(ienerg)
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-iclp = iclrtp(ipriph,icoef)
-iclr = iclrtp(irhiph,icoef)
-icle = iclrtp(ieniph,icoef)
-iclu = iclrtp(iuiph,icoef)
-iclv = iclrtp(iviph,icoef)
-iclw = iclrtp(iwiph,icoef)
+irh = isca(irho  )
+ien = isca(ienerg)
+iclp = iclrtp(ipr,icoef)
+iclr = iclrtp(irh,icoef)
+icle = iclrtp(ien,icoef)
+iclu = iclrtp(iu,icoef)
+iclv = iclrtp(iv,icoef)
+iclw = iclrtp(iw,icoef)
 
-iflmab = ipprob(ifluma(ieniph))
+iflmab = ipprob(ifluma(ien))
 
 ifac0 = imodif
 ifac  = ifac0
@@ -171,17 +166,17 @@ iel   = ifabor(ifac)
 und   = (coefa(ifac,iclu)*surfbo(1,ifac)                          &
        + coefa(ifac,iclv)*surfbo(2,ifac)                          &
        + coefa(ifac,iclw)*surfbo(3,ifac))/surfbn(ifac)
-uni   = (rtp(iel,iuiph)*surfbo(1,ifac)                            &
-       + rtp(iel,iviph)*surfbo(2,ifac)                            &
-       + rtp(iel,iwiph)*surfbo(3,ifac))/surfbn(ifac)
+uni   = (rtp(iel,iu)*surfbo(1,ifac)                            &
+       + rtp(iel,iv)*surfbo(2,ifac)                            &
+       + rtp(iel,iw)*surfbo(3,ifac))/surfbn(ifac)
 rund  = coefa(ifac,iclr)*und
-runi  = rtp(iel,irhiph)     *uni
+runi  = rtp(iel,irh)     *uni
 cd    = sqrt(gammag*coefa(ifac,iclp)/coefa(ifac,iclr))
-ci    = sqrt(gammag*rtp(iel,ipriph)/rtp(iel,irhiph))
+ci    = sqrt(gammag*rtp(iel,ipr)/rtp(iel,irh))
 rrus  = max(abs(und)+cd,abs(uni)+ci)
 
-runb  = 0.5d0*(coefa(ifac,iclr)*und+rtp(iel,irhiph)*uni)          &
-      - 0.5d0*rrus*(coefa(ifac,iclr)-rtp(iel,irhiph))
+runb  = 0.5d0*(coefa(ifac,iclr)*und+rtp(iel,irh)*uni)          &
+      - 0.5d0*rrus*(coefa(ifac,iclr)-rtp(iel,irh))
 
 !===============================================================================
 ! 2. FLUX CONVECTIFS DE RUSANOV
@@ -204,34 +199,34 @@ propfb(ifac,iflmab) = runb*surfbn(ifac)
 !       flexibilité quant à la condition à la limite de pression utilisee
 !       pour la reconstruction du gradient, si le maillage est non
 !       orthogonal en entree)
-propfb(ifac,ipprob(ifbrhu)) = surfbn(ifac)*                &
+propfb(ifac,ipprob(ifbrhu)) = surfbn(ifac)*                       &
              0.5d0*(                                              &
-             (rund*coefa(ifac,iclu)+runi*rtp(iel,iuiph))          &
+             (rund*coefa(ifac,iclu)+runi*rtp(iel,iu))             &
              -rrus*( coefa(ifac,iclr)*coefa(ifac,iclu)            &
-                    -rtp(iel,irhiph)     *rtp(iel,iuiph)     ))   &
+                    -rtp(iel,irh)     *rtp(iel,iu)     ))         &
                         + surfbo(1,ifac)*                         &
-             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipriph))
-propfb(ifac,ipprob(ifbrhv)) = surfbn(ifac)*                &
+             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipr))
+propfb(ifac,ipprob(ifbrhv)) = surfbn(ifac)*                       &
              0.5d0*(                                              &
-             (rund*coefa(ifac,iclv)+runi*rtp(iel,iviph))          &
+             (rund*coefa(ifac,iclv)+runi*rtp(iel,iv))             &
              -rrus*( coefa(ifac,iclr)*coefa(ifac,iclv)            &
-                    -rtp(iel,irhiph)     *rtp(iel,iviph)     ))   &
+                    -rtp(iel,irh)     *rtp(iel,iv)     ))         &
                         + surfbo(2,ifac)*                         &
-             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipriph))
-propfb(ifac,ipprob(ifbrhw)) = surfbn(ifac)*                &
+             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipr))
+propfb(ifac,ipprob(ifbrhw)) = surfbn(ifac)*                       &
              0.5d0*(                                              &
-             (rund*coefa(ifac,iclw)+runi*rtp(iel,iwiph))          &
+             (rund*coefa(ifac,iclw)+runi*rtp(iel,iw))             &
              -rrus*( coefa(ifac,iclr)*coefa(ifac,iclw)            &
-                    -rtp(iel,irhiph)     *rtp(iel,iwiph)     ))   &
+                    -rtp(iel,irh)     *rtp(iel,iw)     ))         &
                         + surfbo(3,ifac)*                         &
-             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipriph))
+             0.5d0*(coefa(ifac,iclp)+rtp(iel,ipr))
 !     Flux de E
-propfb(ifac,ipprob(ifbene)) = surfbn(ifac)*                &
+propfb(ifac,ipprob(ifbene)) = surfbn(ifac)*                       &
              0.5d0*(                                              &
-              rund*coefa(ifac,icle)+runi*rtp(iel,ieniph)          &
-              +und*coefa(ifac,iclp)+ uni*rtp(iel,ipriph)          &
+              rund*coefa(ifac,icle)+runi*rtp(iel,ien)             &
+              +und*coefa(ifac,iclp)+ uni*rtp(iel,ipr)             &
              -rrus*( coefa(ifac,iclr)*coefa(ifac,icle)            &
-                    -rtp(iel,irhiph)     *rtp(iel,ieniph)     ))
+                    -rtp(iel,irh)     *rtp(iel,ien)     ))
 
 
 

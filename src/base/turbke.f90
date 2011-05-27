@@ -135,8 +135,6 @@ integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          iivar , iiun
 integer          iclip , isqrt
 integer          nswrgp, imligp
-integer          ipriph, iuiph , iviph , iwiph
-integer          ikiph , ieiph , iphiph
 integer          icliup, iclivp, icliwp
 integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
@@ -188,23 +186,15 @@ allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 idebia = idbia0
 idebra = idbra0
 
-ipriph = ipr
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-ikiph  = ik
-ieiph  = iep
-iphiph = iphi
-
-icliup = iclrtp(iuiph,icoef)
-iclivp = iclrtp(iviph,icoef)
-icliwp = iclrtp(iwiph,icoef)
+icliup = iclrtp(iu,icoef)
+iclivp = iclrtp(iv,icoef)
+icliwp = iclrtp(iw,icoef)
 
 ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
 ipcvis = ipproc(iviscl)
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 ipbrom = ipprob(irom  )
 
 thets  = thetst
@@ -230,7 +220,7 @@ else
   iptsta = 0
 endif
 
-if(iwarni(ikiph).ge.1) then
+if(iwarni(ik).ge.1) then
   if (iturb.eq.20) then
     write(nfecra,1000)
   else if (iturb.eq.21) then
@@ -267,19 +257,19 @@ inc = 1
 
 ! SMBRK  = DUDX ,W4 = DUDY ,W5 = DUDZ
 
-nswrgp = nswrgr(iuiph)
-imligp = imligr(iuiph)
-iwarnp = iwarni(ikiph)
-epsrgp = epsrgr(iuiph)
-climgp = climgr(iuiph)
-extrap = extrag(iuiph)
+nswrgp = nswrgr(iu)
+imligp = imligr(iu)
+iwarnp = iwarni(ik)
+epsrgp = epsrgr(iu)
+climgp = climgr(iu)
+extrap = extrag(iu)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iuiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iuiph)   , coefa(1,icliup) , coefb(1,icliup) ,          &
+   rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
    smbrk  , w4     , w5     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -296,19 +286,19 @@ enddo
 !               ,W4     = DUDY ,W5     = DUDZ
 ! TINSTE = DVDX ,SMBRK  = DVDY ,W6     = DVDZ
 
-nswrgp = nswrgr(iviph)
-imligp = imligr(iviph)
-iwarnp = iwarni(ikiph)
-epsrgp = epsrgr(iviph)
-climgp = climgr(iviph)
-extrap = extrag(iviph)
+nswrgp = nswrgr(iv)
+imligp = imligr(iv)
+iwarnp = iwarni(ik)
+epsrgp = epsrgr(iv)
+climgp = climgr(iv)
+extrap = extrag(iv)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iviph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iviph)   , coefa(1,iclivp) , coefb(1,iclivp) ,          &
+   rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
    tinste , smbrk  , w6     ,                                     &
 !        ------   ------   ------
    ra     )
@@ -328,19 +318,19 @@ enddo
 !               ,              ,W6     = DVDZ
 ! W4     = DWDX ,TINSTE = DWDY ,SMBRK  = DWDZ
 
-nswrgp = nswrgr(iwiph)
-imligp = imligr(iwiph)
-iwarnp = iwarni(ikiph)
-epsrgp = epsrgr(iwiph)
-climgp = climgr(iwiph)
-extrap = extrag(iwiph)
+nswrgp = nswrgr(iw)
+imligp = imligr(iw)
+iwarnp = iwarni(ik)
+epsrgp = epsrgr(iw)
+climgp = climgr(iw)
+extrap = extrag(iw)
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iwiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   rtpa(1,iwiph)   , coefa(1,icliwp) , coefb(1,icliwp) ,          &
+   rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
    w4     , tinste , smbrk  ,                                     &
 !        ------   ------   ------
    ra     )
@@ -408,9 +398,9 @@ if (iturb.eq.21) then
     rom   = propce(iel,ipcroo)
     visct = propce(iel,ipcvto)
     xs = sqrt(tinstk(iel))
-    cmueta = cmu*rtpa(iel,ikiph)/rtpa(iel,ieiph)*xs
+    cmueta = cmu*rtpa(iel,ik)/rtpa(iel,iep)*xs
     cmueta = min(cmueta,sqrcmu)
-    tinstk(iel) = rom*cmueta*xs*rtpa(iel,ikiph)                   &
+    tinstk(iel) = rom*cmueta*xs*rtpa(iel,ik)                   &
          - d2s3*visct*divu(iel)*divu(iel)
   enddo
 else
@@ -455,12 +445,12 @@ else if (igrake.eq.1) then
 
 !     Le choix ci dessous a l'avantage d'etre simple
 
-  nswrgp = nswrgr(ikiph)
-  epsrgp = epsrgr(ikiph)
-  imligp = imligr(ikiph)
-  iwarnp = iwarni(ikiph)
-  climgp = climgr(ikiph)
-  extrap = extrag(ikiph)
+  nswrgp = nswrgr(ik)
+  epsrgp = epsrgr(ik)
+  imligp = imligr(ik)
+  iwarnp = iwarni(ik)
+  climgp = climgr(ik)
+  extrap = extrag(ik)
 
 !     Conditions aux limites sur ROM : Dirichlet ROMB
 !       On utilise VISCB pour stocker le COEFB relatif a ROM
@@ -569,13 +559,13 @@ if (iturb.eq.20) then
 
     smbrk(iel) = volume(iel)*(                                    &
          visct*tinstk(iel)                                        &
-         -d2s3*rom*rtpa(iel,ikiph)*divu(iel)                      &
-         -rom*rtpa(iel,ieiph) )
+         -d2s3*rom*rtpa(iel,ik)*divu(iel)                         &
+         -rom*rtpa(iel,iep) )
 
-    smbre(iel) = volume(iel)*rtpa(iel,ieiph)/rtpa(iel,ikiph)*(    &
+    smbre(iel) = volume(iel)*rtpa(iel,iep)/rtpa(iel,ik)*(         &
          ce1*( visct*tinste(iel)                                  &
-         -d2s3*rom*rtpa(iel,ikiph)*divu(iel) )                    &
-         -ce2*rom*rtpa(iel,ieiph) )
+         -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
+         -ce2*rom*rtpa(iel,iep) )
 
   enddo
 
@@ -587,13 +577,13 @@ else if (iturb.eq.21) then
 
     smbrk(iel) = volume(iel)*(                                    &
          tinstk(iel)                                              &
-         -d2s3*rom*rtpa(iel,ikiph)*divu(iel)                      &
-         -rom*rtpa(iel,ieiph) )
+         -d2s3*rom*rtpa(iel,ik)*divu(iel)                         &
+         -rom*rtpa(iel,iep) )
 
-    smbre(iel) = volume(iel)*rtpa(iel,ieiph)/rtpa(iel,ikiph)*(    &
+    smbre(iel) = volume(iel)*rtpa(iel,iep)/rtpa(iel,ik)*(         &
          ce1*(tinste(iel)                                         &
-         -d2s3*rom*rtpa(iel,ikiph)*divu(iel) )                    &
-         -ce2*rom*rtpa(iel,ieiph) )
+         -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
+         -ce2*rom*rtpa(iel,iep) )
 
   enddo
 
@@ -603,9 +593,9 @@ else if (iturb.eq.50) then
 
     visct = propce(iel,ipcvto)
     rom   = propce(iel,ipcroo)
-    xeps = rtpa(iel,ieiph )
-    xk   = rtpa(iel,ikiph )
-    xphi = rtpa(iel,iphiph)
+    xeps = rtpa(iel,iep )
+    xk   = rtpa(iel,ik )
+    xphi = rtpa(iel,iphi)
     xphi = max(xphi,epzero)
     xnu  = propce(iel,ipcvlo)/rom
     ceps1= 1.4d0*(1.d0+cv2fa1*sqrt(1.d0/xphi))
@@ -615,17 +605,17 @@ else if (iturb.eq.50) then
 
     smbrk(iel) = volume(iel)*(                                    &
          visct*tinstk(iel)                                        &
-         -d2s3*rom*rtpa(iel,ikiph)*divu(iel)                      &
-         -rom*rtpa(iel,ieiph) )
+         -d2s3*rom*rtpa(iel,ik)*divu(iel)                         &
+         -rom*rtpa(iel,iep) )
 
     smbre(iel) = volume(iel)/tt*(                                 &
          ceps1*( visct*tinste(iel)                                &
-         -d2s3*rom*rtpa(iel,ikiph)*divu(iel) )                    &
-         -cv2fe2*rom*rtpa(iel,ieiph) )
+         -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
+         -cv2fe2*rom*rtpa(iel,iep) )
 
 !     On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
     prdv2f(iel) = visct*prdv2f(iel)                               &
-         -d2s3*rom*rtpa(iel,ikiph)*divu(iel)
+         -d2s3*rom*rtpa(iel,ik)*divu(iel)
 
   enddo
 
@@ -655,32 +645,30 @@ if(isto2t.gt.0) then
 !       Pour la suite et le pas de temps suivant
     propce(iel,iptsta) = smbrk(iel) + w7(iel)
 !       Termes dependant de la variable resolue et theta PROPCE
-    smbrk(iel) = iconv(ikiph)*w1(iel)*rtpa(iel,ikiph)             &
-         - thets*tuexpk
+    smbrk(iel) = iconv(ik)*w1(iel)*rtpa(iel,ik) - thets*tuexpk
 !       On suppose -DAM > 0 : on implicite
 !         le terme utilisateur dependant de la variable resolue
-    smbrk(iel) = dam(iel)*rtpa(iel,ikiph) + smbrk(iel)
+    smbrk(iel) = dam(iel)*rtpa(iel,ik) + smbrk(iel)
 
 !       Sauvegarde pour echange
     tuexpe = propce(iel,iptsta+1)
 !       Pour la suite et le pas de temps suivant
     propce(iel,iptsta+1) = smbre(iel) + w8(iel)
 !       Termes dependant de la variable resolue et theta PROPCE
-    smbre(iel) = iconv(ieiph)*w1(iel)*rtpa(iel,ieiph)             &
-         - thets*tuexpe
+    smbre(iel) = iconv(iep)*w1(iel)*rtpa(iel,iep) - thets*tuexpe
 !       On suppose -W9 > 0 : on implicite
 !         le terme utilisateur dependant de la variable resolue
-    smbre(iel) =  w9(iel)*rtpa(iel,ieiph) + smbre(iel)
+    smbre(iel) =  w9(iel)*rtpa(iel,iep) + smbre(iel)
 
   enddo
 
 !     Si on n'extrapole pas les T.S.
 else
   do iel = 1, ncel
-    smbrk(iel) = smbrk(iel) + dam(iel)*rtpa(iel,ikiph) + w7(iel)  &
-         +iconv(ikiph)*w1(iel)*rtpa(iel,ikiph)
-    smbre(iel) = smbre(iel) + w9 (iel)*rtpa(iel,ieiph) + w8(iel)  &
-         +iconv(ieiph)*w1(iel)*rtpa(iel,ieiph)
+    smbrk(iel) = smbrk(iel) + dam(iel)*rtpa(iel,ik) + w7(iel)  &
+         +iconv(ik)*w1(iel)*rtpa(iel,ik)
+    smbre(iel) = smbre(iel) + w9 (iel)*rtpa(iel,iep) + w8(iel)  &
+         +iconv(iep)*w1(iel)*rtpa(iel,iep)
   enddo
 endif
 
@@ -701,8 +689,8 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 ! Termes sources explicte sur Eps
 
     smbre(iel)  = smbre(iel)                                      &
-                + ce4 *tslagr(iel,itske) *rtpa(iel,ieiph)         &
-                                         /rtpa(iel,ikiph)
+                + ce4 *tslagr(iel,itske) *rtpa(iel,iep)         &
+                                         /rtpa(iel,ik)
 
   enddo
 
@@ -731,7 +719,7 @@ if (ikecou.eq.1) then
 
 ! ---> Traitement de k
 
-  ivar   = ikiph
+  ivar   = ik
 
   ipp    = ipprtp(ivar)
 
@@ -808,7 +796,7 @@ if (ikecou.eq.1) then
 
 ! ---> Traitement de epsilon
 
-  ivar   = ieiph
+  ivar   = iep
 
   ipp    = ipprtp(ivar)
 
@@ -911,21 +899,21 @@ if (ncesmp.gt.0) then
   iiun = 1
 
 !       On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma (*theta)
-  ivar = ikiph
-  call catsma                                                     &
+  ivar = ik
+  call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
                                  isto2t , thetav(ivar) ,   &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrk  , w2     , w4 )
-  ivar = ieiph
-  call catsma                                                     &
+  ivar = iep
+  call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
                                  isto2t , thetav(ivar) ,   &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipriph) ,    &
+   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbre  , w3     , w5 )
 
 !       Si on extrapole les TS on met Gamma Pinj dans PROPCE
@@ -980,10 +968,10 @@ if(ikecou.eq.1) then
       smbre(iel)=smbre(iel)*romvsd
       divp23= d2s3*max(divu(iel),zero)
 
-      epssuk = rtpa(iel,ieiph)/rtpa(iel,ikiph)
+      epssuk = rtpa(iel,iep)/rtpa(iel,ik)
 
       a11 = 1.d0/dt(iel)                                          &
-           -2.d0*rtpa(iel,ikiph)/rtpa(iel,ieiph)                  &
+           -2.d0*rtpa(iel,ik)/rtpa(iel,iep)                       &
            *cmu*min(tinstk(iel),zero)+divp23
       a12 = 1.d0
       a21 = -ce1*cmu*tinste(iel)-ce2*epssuk*epssuk
@@ -1026,9 +1014,9 @@ if(ikecou.eq.1) then
       smbre(iel)=smbre(iel)*romvsd
       divp23= d2s3*max(divu(iel),zero)
 
-      xeps = rtpa(iel,ieiph )
-      xk   = rtpa(iel,ikiph )
-      xphi = rtpa(iel,iphiph)
+      xeps = rtpa(iel,iep )
+      xk   = rtpa(iel,ik )
+      xphi = rtpa(iel,iphi)
       xphi = max(xphi,epzero)
       xnu  = propce(iel,ipcvis)/propce(iel,ipcrom)
       ctsqnu= cv2fct*sqrt(xnu)
@@ -1109,10 +1097,10 @@ endif
 do iel = 1, ncel
   rom = propce(iel,ipcrom)
   romvsd = rom*volume(iel)/dt(iel)
-  tinstk(iel) = istat(ikiph)*romvsd                               &
-               -iconv(ikiph)*w1(iel)*thetav(ikiph)
-  tinste(iel) = istat(ieiph)*romvsd                               &
-               -iconv(ieiph)*w1(iel)*thetav(ieiph)
+  tinstk(iel) = istat(ik)*romvsd                               &
+               -iconv(ik)*w1(iel)*thetav(ik)
+  tinste(iel) = istat(iep)*romvsd                               &
+               -iconv(iep)*w1(iel)*thetav(iep)
 enddo
 
 ! --- Source de masse (le theta est deja inclus par catsma)
@@ -1125,8 +1113,8 @@ endif
 
 ! --- Termes sources utilisateurs
 if(isto2t.gt.0) then
-  thetak = thetav(ikiph)
-  thetae = thetav(ieiph)
+  thetak = thetav(ik)
+  thetae = thetav(iep)
   do iel = 1, ncel
     tinstk(iel) = tinstk(iel) -dam(iel)*thetak
     tinste(iel) = tinste(iel) -w9 (iel)*thetae
@@ -1152,7 +1140,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 ! Termes sources implicte sur Eps
 
     tinste(iel) = tinste(iel)                                     &
-          + max( (-ce4*tslagr(iel,itske)/rtpa(iel,ikiph)) , zero)
+          + max( (-ce4*tslagr(iel,itske)/rtpa(iel,ik)) , zero)
 
   enddo
 
@@ -1163,8 +1151,8 @@ endif
 if(ikecou.eq.0)then
   if(itytur.eq.2)then
     do iel=1,ncel
-      xeps = rtpa(iel,ieiph )
-      xk   = rtpa(iel,ikiph )
+      xeps = rtpa(iel,iep )
+      xk   = rtpa(iel,ik )
       rom = propce(iel,ipcrom)
       ttke = xk / xeps
       if(xk.gt.1.d-12) then
@@ -1176,8 +1164,8 @@ if(ikecou.eq.0)then
     enddo
   else if(iturb.eq.50)then
     do iel=1,ncel
-      xeps = rtpa(iel,ieiph )
-      xk   = rtpa(iel,ikiph )
+      xeps = rtpa(iel,iep )
+      xk   = rtpa(iel,ik )
       rom = propce(iel,ipcrom)
       xnu  = propce(iel,ipcvis)/rom
       ttke = xk / xeps
@@ -1205,7 +1193,7 @@ endif
 
 ! ---> Traitement de k
 
-ivar = ikiph
+ivar = ik
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
 
@@ -1290,7 +1278,7 @@ call codits                                                       &
 
 ! ---> Traitement de epsilon
 
-ivar = ieiph
+ivar = iep
 iclvar = iclrtp(ivar,icoef )
 iclvaf = iclrtp(ivar,icoeff)
 
@@ -1378,7 +1366,7 @@ call codits                                                       &
 !===============================================================================
 
 iclip = 1
-iwarnp = iwarni(ikiph)
+iwarnp = iwarni(ik)
 call clipke                                                       &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &

@@ -130,7 +130,6 @@ double precision ra(*)
 ! Local variables
 
 integer          iel, iccocg, inc
-integer          iuiph, iviph, iwiph
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
 double precision dudx, dudy, dudz, sqdu, visct, rom
@@ -170,11 +169,6 @@ if(1.eq.1) return
 ! Allocate work arrays
 allocate(grad(ncelet,3))
 
-! --- Number associated to variables (in RTP)
-iuiph = iu
-iviph = iv
-iwiph = iw
-
 ! --- Physical quantity numbers in PROPCE (physical quantities defined
 !     at each cell center)
 ipcvst = ipproc(ivisct)
@@ -182,9 +176,9 @@ ipcrom = ipproc(irom  )
 
 ! --- Boundary condition number associated to variables in COEFA and COEFB
 !      JB=>?  (c.l. std, i.e. non flux)
-ipcliu = iclrtp(iuiph,icoef)
-ipcliv = iclrtp(iviph,icoef)
-ipcliw = iclrtp(iwiph,icoef)
+ipcliu = iclrtp(iu,icoef)
+ipcliv = iclrtp(iv,icoef)
+ipcliw = iclrtp(iw,icoef)
 
 !===============================================================================
 ! 1.3 Compute velocity gradient
@@ -193,15 +187,15 @@ ipcliw = iclrtp(iwiph,icoef)
 iccocg = 1
 inc = 1
 
-call grdcel                                                       &
+call grdcel &
 !==========
- ( iuiph  , imrgra , inc    , iccocg ,                            &
-   nswrgr(iuiph) , imligr(iuiph) ,                                &
-   iwarni(iuiph) , nfecra ,                                       &
-   epsrgr(iuiph) , climgr(iuiph) , extrag(iuiph) ,                &
-   ia     ,                                                       &
-   rtpa(1,iuiph) , coefa(1,ipcliu) , coefb(1,ipcliu) ,            &
-   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
+ ( iu  , imrgra , inc    , iccocg ,                      &
+   nswrgr(iu) , imligr(iu) ,                             &
+   iwarni(iu) , nfecra ,                                 &
+   epsrgr(iu) , climgr(iu) , extrag(iu) ,                &
+   ia     ,                                              &
+   rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
+   grad(1,1) , grad(1,2) , grad(1,3) ,                   &
    !---------   ----------   ----------
    ra     )
 

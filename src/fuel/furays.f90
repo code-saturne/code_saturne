@@ -100,7 +100,7 @@ integer          iel , numcla , ipcl
 !===============================================================================
 
 !===============================================================================
-! 1. RECHERCHE DE LA ZONE MEMOIRE (IPH) POUR TROUVER LES BONS TERMES SOURCES
+! 1. RECHERCHE DE LA ZONE MEMOIRE POUR TROUVER LES BONS TERMES SOURCES
 !===============================================================================
 
 numcla = ivar-isca(ihlf(1))+1

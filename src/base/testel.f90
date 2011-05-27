@@ -97,7 +97,6 @@ double precision ra(*)
 integer          idebia, idebra, ifinia, ifinra
 integer          ifac  , iel   , ivar
 integer          inc   , iccocg
-integer          iuiph , iviph , iwiph
 integer          nswrgp, imligp, iwarnp
 integer          ipclip
 integer          indwri, indact, ipart, idimt, ientla, ivarpr
@@ -129,10 +128,6 @@ enddo
 !===============================================================================
 ! 1. FONCTION ANALYTIQUE SIN(X+2Y+3Z)
 !===============================================================================
-
-iuiph = iu
-iviph = iv
-iwiph = iw
 
 ivar   = ipr
 ipclip = iclrtp(ivar,icoef)
@@ -195,14 +190,14 @@ extrap = extrag(ivar)
 imrgra = 0
 imligp = -1
 
-call grdcel                                                       &
+call grdcel &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
+   rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
    ra     )
 
 ! On sort le gradient
@@ -211,7 +206,7 @@ namevr = 'Grad_RC'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 ! Calcul de l'erreur absolue
@@ -220,9 +215,9 @@ do iel = 1, ncelet
   xx = xyzcen(1,iel)
   yy = xyzcen(2,iel)
   zz = xyzcen(3,iel)
-  rtp(iel,iuiph) = rtp(iel,iuiph)-     cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iviph) = rtp(iel,iviph)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iwiph) = rtp(iel,iwiph)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iu) = rtp(iel,iu)-     cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iv) = rtp(iel,iv)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iw) = rtp(iel,iw)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
 enddo
 
 ! On sort l'erreur
@@ -231,7 +226,7 @@ namevr = 'Err_Grad_RC'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 
@@ -241,14 +236,14 @@ endif
 imrgra = 1
 imligp = 1
 
-call grdcel                                                       &
+call grdcel &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
+   rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
    ra     )
 
 
@@ -258,7 +253,7 @@ namevr = 'Grad_LSQ'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 ! Calcul de l'erreur absolue
@@ -267,9 +262,9 @@ do iel = 1, ncelet
   xx = xyzcen(1,iel)
   yy = xyzcen(2,iel)
   zz = xyzcen(3,iel)
-  rtp(iel,iuiph) = rtp(iel,iuiph)-     cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iviph) = rtp(iel,iviph)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iwiph) = rtp(iel,iwiph)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iu) = rtp(iel,iu)-     cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iv) = rtp(iel,iv)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iw) = rtp(iel,iw)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
 enddo
 
 ! On sort l'erreur
@@ -278,7 +273,7 @@ namevr = 'Err_Grad_LSQ'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 
@@ -288,14 +283,14 @@ endif
 imrgra = 2
 imligp = 1
 
-call grdcel                                                       &
+call grdcel &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
+   rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
    ra     )
 
 ! On sort le gradient
@@ -304,7 +299,7 @@ namevr = 'Grad_LSQ_Ext'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 ! Calcul de l'erreur absolue
@@ -313,9 +308,9 @@ do iel = 1, ncelet
   xx = xyzcen(1,iel)
   yy = xyzcen(2,iel)
   zz = xyzcen(3,iel)
-  rtp(iel,iuiph) = rtp(iel,iuiph)-     cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iviph) = rtp(iel,iviph)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iwiph) = rtp(iel,iwiph)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iu) = rtp(iel,iu)-     cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iv) = rtp(iel,iv)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iw) = rtp(iel,iw)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
 enddo
 
 ! On sort l'erreur
@@ -324,7 +319,7 @@ namevr = 'Err_Grad_LSQ_Ext'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 
@@ -334,14 +329,14 @@ endif
 imrgra = 4
 imligp = -1
 
-call grdcel                                                       &
+call grdcel &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
+   rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
    ra     )
 
 ! On sort le gradient
@@ -350,7 +345,7 @@ namevr = 'Grad_LSQ_RC'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 ! Calcul de l'erreur absolue
@@ -359,9 +354,9 @@ do iel = 1, ncelet
   xx = xyzcen(1,iel)
   yy = xyzcen(2,iel)
   zz = xyzcen(3,iel)
-  rtp(iel,iuiph) = rtp(iel,iuiph)-     cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iviph) = rtp(iel,iviph)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iwiph) = rtp(iel,iwiph)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iu) = rtp(iel,iu)-     cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iv) = rtp(iel,iv)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iw) = rtp(iel,iw)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
 enddo
 
 ! On sort l'erreur
@@ -370,7 +365,7 @@ namevr = 'Err_Grad_LSQ_RC'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 
@@ -385,14 +380,14 @@ call redvse(anomax)
 imrgra = 3
 imligp = 1
 
-call grdcel                                                       &
+call grdcel &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   rtp(1,iuiph)    , rtp(1,iviph)    , rtp(1,iwiph)    ,          &
+   rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
    ra     )
 
 ! On sort le gradient
@@ -401,7 +396,7 @@ namevr = 'Grad_LSQ_ExtRed'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 ! Calcul de l'erreur absolue
@@ -410,9 +405,9 @@ do iel = 1, ncelet
   xx = xyzcen(1,iel)
   yy = xyzcen(2,iel)
   zz = xyzcen(3,iel)
-  rtp(iel,iuiph) = rtp(iel,iuiph)-     cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iviph) = rtp(iel,iviph)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
-  rtp(iel,iwiph) = rtp(iel,iwiph)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iu) = rtp(iel,iu)-     cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iv) = rtp(iel,iv)-2.d0*cos(xx+2.d0*yy+3.d0*zz)
+  rtp(iel,iw) = rtp(iel,iw)-3.d0*cos(xx+2.d0*yy+3.d0*zz)
 enddo
 
 ! On sort l'erreur
@@ -421,7 +416,7 @@ namevr = 'Err_Grad_LSQ_ExtRed'
 if (ichrvl.eq.1) then
   call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
   !==========
-              ntcabs, ttcabs, rtp(1,iuiph), rbid, rbid)
+              ntcabs, ttcabs, rtp(1,iu), rbid, rbid)
 endif
 
 !----

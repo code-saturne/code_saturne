@@ -123,11 +123,7 @@ integer          iivisl, iivist, iivisa, iivism
 integer          iicp  , iicpa
 integer          iiviss, iiptot
 integer          iptsna, iptsta, iptsca
-integer          ikiph , ieiph , iphiph, ifbiph, iomgip
-integer          inuiph
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
 integer          nn
-double precision ro0iph, visiph
 double precision xxk, xcmu, trii
 
 !===============================================================================
@@ -169,11 +165,10 @@ enddo
 !     Masse volumique
 iirom  = ipproc(irom  )
 iiromb = ipprob(irom  )
-ro0iph = ro0
 
 !     Masse volumique aux cellules (et au pdt precedent si ordre2 ou icalhy)
 do iel = 1, ncel
-  propce(iel,iirom)  = ro0iph
+  propce(iel,iirom)  = ro0
 enddo
 if(iroext.gt.0.or.icalhy.eq.1) then
   iiroma = ipproc(iroma )
@@ -183,7 +178,7 @@ if(iroext.gt.0.or.icalhy.eq.1) then
 endif
 !     Masse volumique aux faces de bord (et au pdt precedent si ordre2)
 do ifac = 1, nfabor
-  propfb(ifac,iiromb) = ro0iph
+  propfb(ifac,iiromb) = ro0
 enddo
 if(iroext.gt.0) then
   iiroma = ipprob(iroma )
@@ -195,11 +190,10 @@ endif
 !     Viscosite moleculaire
 iivisl = ipproc(iviscl)
 iivist = ipproc(ivisct)
-visiph = viscl0
 
 !     Viscosite moleculaire aux cellules (et au pdt precedent si ordre2)
 do iel = 1, ncel
-  propce(iel,iivisl) = visiph
+  propce(iel,iivisl) = viscl0
 enddo
 if(iviext.gt.0) then
   iivisa = ipproc(ivisla)
@@ -309,64 +303,51 @@ endif
 
 if(itytur.eq.2 .or. iturb.eq.50) then
 
-  ikiph  = ik
-  ieiph  = iep
-
   xcmu = cmu
   if (iturb.eq.50) xcmu = cv2fmu
 
 
   if (uref.ge.0.d0) then
     do iel = 1, ncel
-      rtp(iel,ikiph) = 1.5d0*(0.02d0*uref)**2
-      rtp(iel,ieiph) = rtp(iel,ikiph)**1.5d0*xcmu/almax
+      rtp(iel,ik) = 1.5d0*(0.02d0*uref)**2
+      rtp(iel,iep) = rtp(iel,ik)**1.5d0*xcmu/almax
     enddo
 
     iclip = 1
     call clipke(ncelet , ncel   , nvar    ,     &
-         iclip  , iwarni(ikiph),                &
+         iclip  , iwarni(ik),                   &
          propce , rtp    )
 
   else
     do iel = 1, ncel
-      rtp(iel,ikiph) = -grand
-      rtp(iel,ieiph) = -grand
+      rtp(iel,ik) = -grand
+      rtp(iel,iep) = -grand
     enddo
   endif
 
   if (iturb.eq.50) then
-    iphiph = iphi
-    ifbiph = ifb
     do iel = 1, ncel
-      rtp(iel,iphiph) = 2.d0/3.d0
-      rtp(iel,ifbiph) = 0.d0
+      rtp(iel,iphi) = 2.d0/3.d0
+      rtp(iel,ifb) = 0.d0
     enddo
   endif
 
 elseif(itytur.eq.3) then
-
-  ir11ip = ir11
-  ir22ip = ir22
-  ir33ip = ir33
-  ir12ip = ir12
-  ir13ip = ir13
-  ir23ip = ir23
-  ieiph  = iep
 
   if (uref.ge.0.d0) then
 
     trii   = (0.02d0*uref)**2
 
     do iel = 1, ncel
-      rtp(iel,ir11ip) = trii
-      rtp(iel,ir22ip) = trii
-      rtp(iel,ir33ip) = trii
-      rtp(iel,ir12ip) = 0.d0
-      rtp(iel,ir13ip) = 0.d0
-      rtp(iel,ir23ip) = 0.d0
-      xxk = 0.5d0*(rtp(iel,ir11ip)+                             &
-           rtp(iel,ir22ip)+rtp(iel,ir33ip))
-      rtp(iel,ieiph) = xxk**1.5d0*cmu/almax
+      rtp(iel,ir11) = trii
+      rtp(iel,ir22) = trii
+      rtp(iel,ir33) = trii
+      rtp(iel,ir12) = 0.d0
+      rtp(iel,ir13) = 0.d0
+      rtp(iel,ir23) = 0.d0
+      xxk = 0.5d0*(rtp(iel,ir11)+                             &
+           rtp(iel,ir22)+rtp(iel,ir33))
+      rtp(iel,iep) = xxk**1.5d0*cmu/almax
     enddo
     iclip = 1
     call clprij(ncelet , ncel   , nvar    ,     &
@@ -376,48 +357,43 @@ elseif(itytur.eq.3) then
   else
 
     do iel = 1, ncel
-      rtp(iel,ir11ip) = -grand
-      rtp(iel,ir22ip) = -grand
-      rtp(iel,ir33ip) = -grand
-      rtp(iel,ir12ip) = -grand
-      rtp(iel,ir13ip) = -grand
-      rtp(iel,ir23ip) = -grand
-      rtp(iel,ieiph)  = -grand
+      rtp(iel,ir11) = -grand
+      rtp(iel,ir22) = -grand
+      rtp(iel,ir33) = -grand
+      rtp(iel,ir12) = -grand
+      rtp(iel,ir13) = -grand
+      rtp(iel,ir23) = -grand
+      rtp(iel,iep)  = -grand
     enddo
 
   endif
 
 elseif(iturb.eq.60) then
 
-  ikiph   = ik
-  iomgip  = iomg
-
   if (uref.ge.0.d0) then
 
     do iel = 1, ncel
-      rtp(iel,ikiph ) = 1.5d0*(0.02d0*uref)**2
+      rtp(iel,ik ) = 1.5d0*(0.02d0*uref)**2
       !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX et omega=eps/Cmu/k
-      rtp(iel,iomgip) = rtp(iel,ikiph)**0.5d0/almax
+      rtp(iel,iomg) = rtp(iel,ik)**0.5d0/almax
     enddo
     !     pas la peine de clipper, les valeurs sont forcement positives
 
   else
 
     do iel = 1, ncel
-      rtp(iel,ikiph ) = -grand
-      rtp(iel,iomgip) = -grand
+      rtp(iel,ik ) = -grand
+      rtp(iel,iomg) = -grand
     enddo
 
   endif
 
 elseif(iturb.eq.70) then
 
-  inuiph  = inusa
-
   if (uref.ge.0.d0) then
 
     do iel = 1, ncel
-      rtp(iel,inuiph ) = sqrt(1.5d0)*(0.02d0*uref)*almax
+      rtp(iel,inusa ) = sqrt(1.5d0)*(0.02d0*uref)*almax
       !     on utilise la formule classique eps=k**1.5/Cmu/ALMAX
       !     et nusa=Cmu*k**2/eps
     enddo
@@ -426,7 +402,7 @@ elseif(iturb.eq.70) then
   else
 
     do iel = 1, ncel
-      rtp(iel,inuiph ) = -grand
+      rtp(iel,inusa ) = -grand
     enddo
 
   endif

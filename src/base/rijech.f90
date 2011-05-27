@@ -127,8 +127,7 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifacpt, iel   , ii    , jj    , kk    , mm
 integer          irkm  , irki  , irkj  , iskm  , iski  , iskj
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
-integer          ieiph , ipcrom, ipcroo
+integer          ipcrom, ipcroo
 integer          ifac
 integer          inc   , iccocg, ivar0 , iityph
 
@@ -164,14 +163,6 @@ vnm = 0.d0
 
 idebia = idbia0
 idebra = idbra0
-
-ir11ip = ir11
-ir22ip = ir22
-ir33ip = ir33
-ir12ip = ir12
-ir13ip = ir13
-ir23ip = ir23
-ieiph  = iep
 
 ipcrom = ipproc(irom  )
 ipcroo = ipcrom
@@ -268,11 +259,9 @@ endif
 ! ---> Production et k
 
 do iel = 1 , ncel
-  produk(iel) = 0.5d0 * (produc(1,iel)  + produc(2,iel)  +        &
-                         produc(3,iel))
-  xk          = 0.5d0 * (rtpa(iel,ir11ip) + rtpa(iel,ir22ip) +    &
-                         rtpa(iel,ir33ip))
-  epsk(iel)   = rtpa(iel,ieiph)/xk
+  produk(iel) = 0.5d0 * (produc(1,iel)  + produc(2,iel)  + produc(3,iel))
+  xk          = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
+  epsk(iel)   = rtpa(iel,iep)/xk
 enddo
 
 
@@ -318,22 +307,22 @@ do kk = 1, 3
 !  --> R km
 
     if     ((kk*mm).eq.1) then
-      irkm = ir11ip
+      irkm = ir11
       iskm = 1
     elseif ((kk*mm).eq.4) then
-      irkm = ir22ip
+      irkm = ir22
       iskm = 2
     elseif ((kk*mm).eq.9) then
-      irkm = ir33ip
+      irkm = ir33
       iskm = 3
     elseif ((kk*mm).eq.2) then
-      irkm = ir12ip
+      irkm = ir12
       iskm = 4
     elseif ((kk*mm).eq.3) then
-      irkm = ir13ip
+      irkm = ir13
       iskm = 5
     elseif ((kk*mm).eq.6) then
-      irkm = ir23ip
+      irkm = ir23
       iskm = 6
     endif
 
@@ -371,44 +360,44 @@ do kk = 1, 3
 !  --> R ki
 
   if     ((kk*ii).eq.1) then
-    irki = ir11ip
+    irki = ir11
     iski = 1
   elseif ((kk*ii).eq.4) then
-    irki = ir22ip
+    irki = ir22
     iski = 2
   elseif ((kk*ii).eq.9) then
-    irki = ir33ip
+    irki = ir33
     iski = 3
   elseif ((kk*ii).eq.2) then
-    irki = ir12ip
+    irki = ir12
     iski = 4
   elseif ((kk*ii).eq.3) then
-    irki = ir13ip
+    irki = ir13
     iski = 5
   elseif ((kk*ii).eq.6) then
-    irki = ir23ip
+    irki = ir23
     iski = 6
   endif
 
 !  --> R kj
 
   if     ((kk*jj).eq.1) then
-    irkj = ir11ip
+    irkj = ir11
     iskj = 1
   elseif ((kk*jj).eq.4) then
-    irkj = ir22ip
+    irkj = ir22
     iskj = 2
   elseif ((kk*jj).eq.9) then
-    irkj = ir33ip
+    irkj = ir33
     iskj = 3
   elseif ((kk*jj).eq.2) then
-    irkj = ir12ip
+    irkj = ir12
     iskj = 4
   elseif ((kk*jj).eq.3) then
-    irkj = ir13ip
+    irkj = ir13
     iskj = 5
   elseif ((kk*jj).eq.6) then
-    irkj = ir23ip
+    irkj = ir23
     iskj = 6
   endif
 
@@ -477,19 +466,17 @@ if(abs(icdpar).eq.2) then
          +(cdgfbo(2,ifacpt)-xyzcen(2,iel))**2                     &
          +(cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
     distxn = sqrt(distxn)
-    trrij  = 0.5d0 * (rtpa(iel,ir11ip) + rtpa(iel,ir22ip) +       &
-                         rtpa(iel,ir33ip))
+    trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
     aa = 1.d0
-    bb = cmu075*trrij**1.5d0/(xkappa*rtpa(iel,ieiph)*distxn)
+    bb = cmu075*trrij**1.5d0/(xkappa*rtpa(iel,iep)*distxn)
     w3(iel) = min(aa, bb)
   enddo
 else
   do iel = 1 , ncel
     distxn =  max(ra(idipar+iel-1),epzero)
-    trrij  = 0.5d0 * (rtpa(iel,ir11ip) + rtpa(iel,ir22ip) +       &
-                         rtpa(iel,ir33ip))
+    trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
     aa = 1.d0
-    bb = cmu075*trrij**1.5d0/(xkappa*rtpa(iel,ieiph)*distxn)
+    bb = cmu075*trrij**1.5d0/(xkappa*rtpa(iel,iep)*distxn)
     w3(iel) = min(aa, bb)
   enddo
 endif

@@ -111,8 +111,6 @@ double precision ra(*)
 
 integer          idebia, idebra
 integer          iel
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
-integer          ieiph
 
 double precision uns3, const, kseps
 double precision prdtur, r1t, r2t, r3t
@@ -130,14 +128,6 @@ double precision aa, bb
 
 idebia = idbia0
 idebra = idbra0
-
-ir11ip = ir11
-ir22ip = ir22
-ir33ip = ir33
-ir12ip = ir12
-ir13ip = ir13
-ir23ip = ir23
-ieiph  = iep
 
 if(iscalt.gt.0.and.nscal.ge.iscalt) then
   prdtur = sigmas(iscalt)
@@ -157,22 +147,22 @@ uns3  = 1.d0/3.d0
 !===============================================================================
 
 
-if     (ivar.eq.ir11ip) then
+if     (ivar.eq.ir11) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11ip)*grarox(iel)                            &
-        + rtpa(iel,ir12ip)*graroy(iel)                            &
-        + rtpa(iel,ir13ip)*graroz(iel)
-    r2t = rtpa(iel,ir12ip)*grarox(iel)                            &
-        + rtpa(iel,ir22ip)*graroy(iel)                            &
-        + rtpa(iel,ir23ip)*graroz(iel)
-    r3t = rtpa(iel,ir13ip)*grarox(iel)                            &
-        + rtpa(iel,ir23ip)*graroy(iel)                            &
-        + rtpa(iel,ir33ip)*graroz(iel)
+    r1t = rtpa(iel,ir11)*grarox(iel)                            &
+        + rtpa(iel,ir12)*graroy(iel)                            &
+        + rtpa(iel,ir13)*graroz(iel)
+    r2t = rtpa(iel,ir12)*grarox(iel)                            &
+        + rtpa(iel,ir22)*graroy(iel)                            &
+        + rtpa(iel,ir23)*graroz(iel)
+    r3t = rtpa(iel,ir13)*grarox(iel)                            &
+        + rtpa(iel,ir23)*graroy(iel)                            &
+        + rtpa(iel,ir33)*graroz(iel)
 
-    kseps = (rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))  &
-           /(2.d0*rtpa(iel,ieiph))
+    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
+           /(2.d0*rtpa(iel,iep))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
     g22 = const*kseps*2.d0*(r2t*gy       )
@@ -185,22 +175,22 @@ if     (ivar.eq.ir11ip) then
 
   enddo
 
-elseif (ivar.eq.ir22ip) then
+elseif (ivar.eq.ir22) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11ip)*grarox(iel)                            &
-        + rtpa(iel,ir12ip)*graroy(iel)                            &
-        + rtpa(iel,ir13ip)*graroz(iel)
-    r2t = rtpa(iel,ir12ip)*grarox(iel)                            &
-        + rtpa(iel,ir22ip)*graroy(iel)                            &
-        + rtpa(iel,ir23ip)*graroz(iel)
-    r3t = rtpa(iel,ir13ip)*grarox(iel)                            &
-        + rtpa(iel,ir23ip)*graroy(iel)                            &
-        + rtpa(iel,ir33ip)*graroz(iel)
+    r1t = rtpa(iel,ir11)*grarox(iel)                            &
+        + rtpa(iel,ir12)*graroy(iel)                            &
+        + rtpa(iel,ir13)*graroz(iel)
+    r2t = rtpa(iel,ir12)*grarox(iel)                            &
+        + rtpa(iel,ir22)*graroy(iel)                            &
+        + rtpa(iel,ir23)*graroz(iel)
+    r3t = rtpa(iel,ir13)*grarox(iel)                            &
+        + rtpa(iel,ir23)*graroy(iel)                            &
+        + rtpa(iel,ir33)*graroz(iel)
 
-    kseps = (rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))  &
-           /(2.d0*rtpa(iel,ieiph))
+    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
+           /(2.d0*rtpa(iel,iep))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
     g22 = const*kseps*2.d0*(r2t*gy       )
@@ -213,22 +203,22 @@ elseif (ivar.eq.ir22ip) then
 
   enddo
 
-elseif (ivar.eq.ir33ip) then
+elseif (ivar.eq.ir33) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11ip)*grarox(iel)                            &
-        + rtpa(iel,ir12ip)*graroy(iel)                            &
-        + rtpa(iel,ir13ip)*graroz(iel)
-    r2t = rtpa(iel,ir12ip)*grarox(iel)                            &
-        + rtpa(iel,ir22ip)*graroy(iel)                            &
-        + rtpa(iel,ir23ip)*graroz(iel)
-    r3t = rtpa(iel,ir13ip)*grarox(iel)                            &
-        + rtpa(iel,ir23ip)*graroy(iel)                            &
-        + rtpa(iel,ir33ip)*graroz(iel)
+    r1t = rtpa(iel,ir11)*grarox(iel)                            &
+        + rtpa(iel,ir12)*graroy(iel)                            &
+        + rtpa(iel,ir13)*graroz(iel)
+    r2t = rtpa(iel,ir12)*grarox(iel)                            &
+        + rtpa(iel,ir22)*graroy(iel)                            &
+        + rtpa(iel,ir23)*graroz(iel)
+    r3t = rtpa(iel,ir13)*grarox(iel)                            &
+        + rtpa(iel,ir23)*graroy(iel)                            &
+        + rtpa(iel,ir33)*graroz(iel)
 
-    kseps = (rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))  &
-           /(2.d0*rtpa(iel,ieiph))
+    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
+           /(2.d0*rtpa(iel,iep))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
     g22 = const*kseps*2.d0*(r2t*gy       )
@@ -241,19 +231,19 @@ elseif (ivar.eq.ir33ip) then
 
   enddo
 
-elseif (ivar.eq.ir12ip) then
+elseif (ivar.eq.ir12) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11ip)*grarox(iel)                            &
-        + rtpa(iel,ir12ip)*graroy(iel)                            &
-        + rtpa(iel,ir13ip)*graroz(iel)
-    r2t = rtpa(iel,ir12ip)*grarox(iel)                            &
-        + rtpa(iel,ir22ip)*graroy(iel)                            &
-        + rtpa(iel,ir23ip)*graroz(iel)
+    r1t = rtpa(iel,ir11)*grarox(iel)                            &
+        + rtpa(iel,ir12)*graroy(iel)                            &
+        + rtpa(iel,ir13)*graroz(iel)
+    r2t = rtpa(iel,ir12)*grarox(iel)                            &
+        + rtpa(iel,ir22)*graroy(iel)                            &
+        + rtpa(iel,ir23)*graroz(iel)
 
-    kseps = (rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))  &
-           /(2.d0*rtpa(iel,ieiph))
+    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
+           /(2.d0*rtpa(iel,iep))
 
     g12 = const*kseps*     (r1t*gy+r2t*gx)
 
@@ -263,19 +253,19 @@ elseif (ivar.eq.ir12ip) then
 
   enddo
 
-elseif (ivar.eq.ir13ip) then
+elseif (ivar.eq.ir13) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11ip)*grarox(iel)                            &
-        + rtpa(iel,ir12ip)*graroy(iel)                            &
-        + rtpa(iel,ir13ip)*graroz(iel)
-    r3t = rtpa(iel,ir13ip)*grarox(iel)                            &
-        + rtpa(iel,ir23ip)*graroy(iel)                            &
-        + rtpa(iel,ir33ip)*graroz(iel)
+    r1t = rtpa(iel,ir11)*grarox(iel)                            &
+        + rtpa(iel,ir12)*graroy(iel)                            &
+        + rtpa(iel,ir13)*graroz(iel)
+    r3t = rtpa(iel,ir13)*grarox(iel)                            &
+        + rtpa(iel,ir23)*graroy(iel)                            &
+        + rtpa(iel,ir33)*graroz(iel)
 
-    kseps = (rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))  &
-           /(2.d0*rtpa(iel,ieiph))
+    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
+           /(2.d0*rtpa(iel,iep))
 
     g13 = const*kseps*     (r1t*gz+r3t*gx)
 
@@ -285,19 +275,19 @@ elseif (ivar.eq.ir13ip) then
 
   enddo
 
-elseif (ivar.eq.ir23ip) then
+elseif (ivar.eq.ir23) then
 
   do iel = 1, ncel
 
-    r2t = rtpa(iel,ir12ip)*grarox(iel)                            &
-        + rtpa(iel,ir22ip)*graroy(iel)                            &
-        + rtpa(iel,ir23ip)*graroz(iel)
-    r3t = rtpa(iel,ir13ip)*grarox(iel)                            &
-        + rtpa(iel,ir23ip)*graroy(iel)                            &
-        + rtpa(iel,ir33ip)*graroz(iel)
+    r2t = rtpa(iel,ir12)*grarox(iel)                            &
+        + rtpa(iel,ir22)*graroy(iel)                            &
+        + rtpa(iel,ir23)*graroz(iel)
+    r3t = rtpa(iel,ir13)*grarox(iel)                            &
+        + rtpa(iel,ir23)*graroy(iel)                            &
+        + rtpa(iel,ir33)*graroz(iel)
 
-    kseps = (rtpa(iel,ir11ip)+rtpa(iel,ir22ip)+rtpa(iel,ir33ip))  &
-           /(2.d0*rtpa(iel,ieiph))
+    kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
+           /(2.d0*rtpa(iel,iep))
 
     g23 = const*kseps*(r2t*gz+r3t*gy)
 
@@ -320,19 +310,19 @@ elseif (ivar.eq.ir23ip) then
 !===============================================================================
 
 
-elseif (ivar.eq.ieiph ) then
+elseif (ivar.eq.iep ) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11ip)*grarox(iel)                            &
-        + rtpa(iel,ir12ip)*graroy(iel)                            &
-        + rtpa(iel,ir13ip)*graroz(iel)
-    r2t = rtpa(iel,ir12ip)*grarox(iel)                            &
-        + rtpa(iel,ir22ip)*graroy(iel)                            &
-        + rtpa(iel,ir23ip)*graroz(iel)
-    r3t = rtpa(iel,ir13ip)*grarox(iel)                            &
-        + rtpa(iel,ir23ip)*graroy(iel)                            &
-        + rtpa(iel,ir33ip)*graroz(iel)
+    r1t = rtpa(iel,ir11)*grarox(iel)                            &
+        + rtpa(iel,ir12)*graroy(iel)                            &
+        + rtpa(iel,ir13)*graroz(iel)
+    r2t = rtpa(iel,ir12)*grarox(iel)                            &
+        + rtpa(iel,ir22)*graroy(iel)                            &
+        + rtpa(iel,ir23)*graroz(iel)
+    r3t = rtpa(iel,ir13)*grarox(iel)                            &
+        + rtpa(iel,ir23)*graroy(iel)                            &
+        + rtpa(iel,ir33)*graroz(iel)
 
     g11p = const*      2.d0*(r1t*gx)
     g22p = const*      2.d0*(r2t*gy)

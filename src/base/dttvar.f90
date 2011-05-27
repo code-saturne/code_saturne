@@ -135,7 +135,7 @@ character*8      cnom
 integer          idebia, idebra
 integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym
 integer          modntl
-integer          iuiph, ipcvis, ipcvst
+integer          ipcvis, ipcvst
 integer          iflmas, iflmab
 integer          icou, ifou , icoucf
 integer          inc, iccocg
@@ -186,9 +186,8 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 idebia = idbia0
 idebra = idbra0
 
-iuiph   = iu
-iflmas  = ipprof(ifluma(iuiph))
-iflmab  = ipprob(ifluma(iuiph))
+iflmas  = ipprof(ifluma(iu))
+iflmab  = ipprob(ifluma(iu))
 ipcvis  = ipproc(iviscl)
 ipcvst  = ipproc(ivisct)
 ipcrom  = ipproc(irom  )
@@ -205,15 +204,15 @@ else
 endif
 
 if (                                                              &
-   .not. ( iconv(iuiph).ge.1.and.                                 &
+   .not. ( iconv(iu).ge.1.and.                                 &
            (iwarnp.ge.2.or.modntl.eq.0) ) .and.                   &
-   .not. ( idiff(iuiph).ge.1.and.                                 &
+   .not. ( idiff(iu).ge.1.and.                                 &
            (iwarnp.ge.2.or.modntl.eq.0) ) .and.                   &
    .not. ( ippmod(icompf).ge.0.and.                               &
            (iwarnp.ge.2.or.modntl.eq.0) ) .and.                   &
    .not. ( idtvar.eq.1.or.idtvar.eq.2.or.                         &
            ( (iwarnp.ge.2.or.modntl.eq.0).and.                    &
-             (idiff(iuiph).ge.1.or.iconv(iuiph).ge.1              &
+             (idiff(iu).ge.1.or.iconv(iu).ge.1              &
                                .or.ippmod(icompf).ge.0)  ) )      &
    ) then
 
@@ -270,10 +269,10 @@ enddo
 
 !     "VITESSE" DE DIFFUSION FACETTE
 
-if( idiff(iuiph).ge. 1 ) then
+if( idiff(iu).ge. 1 ) then
   do iel = 1, ncel
     w1    (iel) = propce(iel,ipcvis)                              &
-                                +idifft(iuiph)*propce(iel,ipcvst)
+                                +idifft(iu)*propce(iel,ipcvst)
   enddo
   call viscfa                                                     &
   !==========
@@ -354,7 +353,7 @@ if (idtvar.ge.0) then
 ! 4.1.1 LIMITATION PAR LE COURANT
 ! =============================
 
-    if ( coumax.gt.0.d0.and.iconv(iuiph).ge.1 ) then
+    if ( coumax.gt.0.d0.and.iconv(iu).ge.1 ) then
 
 !     ICOU = 1 marque l'existence d'une limitation par le COURANT
       icou = 1
@@ -366,10 +365,10 @@ if (idtvar.ge.0) then
 !     Matrice a priori non symetrique
       isym = 2
 
-      call matrdt                                                 &
+      call matrdt &
       !==========
  ( idebia , idebra ,                                              &
-   iconv(iuiph)    , idiff0          , isym   ,                   &
+   iconv(iu)    , idiff0          , isym   ,                      &
    ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
@@ -408,7 +407,7 @@ if (idtvar.ge.0) then
 ! 4.1.2 LIMITATION PAR LE FOURIER
 ! =============================
 
-    if ( foumax.gt.0.d0.and.idiff(iuiph).ge.1 ) then
+    if ( foumax.gt.0.d0.and.idiff(iu).ge.1 ) then
 
 !     IFOU = 1 marque l'existence d'une limitation par le FOURIER
       ifou = 1
@@ -420,10 +419,10 @@ if (idtvar.ge.0) then
 !     Matrice a priori symetrique
       isym = 1
 
-      call matrdt                                                 &
+      call matrdt &
       !==========
  ( idebia , idebra ,                                              &
-   iconv0          , idiff(iuiph)    , isym   ,                   &
+   iconv0          , idiff(iu)    , isym   ,                      &
    ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
@@ -645,7 +644,7 @@ if (idtvar.ge.0) then
 ! 4.2  CALCUL DU NOMBRE DE COURANT POUR AFFICHAGE
 !===============================================================================
 
-  if ( iconv(iuiph).ge.1.and.                                     &
+  if ( iconv(iu).ge.1.and.                                     &
        (iwarnp.ge.2.or.modntl.eq.0) ) then
 
     idiff0 = 0
@@ -657,10 +656,10 @@ if (idtvar.ge.0) then
 
     isym = 2
 
-    call matrdt                                                   &
+    call matrdt &
     !==========
  ( idebia , idebra ,                                              &
-   iconv(iuiph)    , idiff0          , isym   ,                   &
+   iconv(iu)    , idiff0          , isym   ,                      &
    ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
@@ -731,7 +730,7 @@ if (idtvar.ge.0) then
 ! 4.3  CALCUL DU NOMBRE DE FOURIER POUR AFFICHAGE
 !===============================================================================
 
-  if ( idiff(iuiph).ge.1.and.                                     &
+  if ( idiff(iu).ge.1.and.                                     &
        (iwarnp.ge.2.or.modntl.eq.0) ) then
 
     iconv0 = 0
@@ -743,10 +742,10 @@ if (idtvar.ge.0) then
 
     isym = 1
 
-    call matrdt                                                   &
+    call matrdt &
     !==========
  ( idebia , idebra ,                                              &
-   iconv0          , idiff(iuiph)    , isym   ,                   &
+   iconv0          , idiff(iu)    , isym   ,                      &
    ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
@@ -821,7 +820,7 @@ if (idtvar.ge.0) then
 !       afficher la contrainte liee a la masse volumique)
 
   if ( (iwarnp.ge.2.or.modntl.eq.0).and.                          &
-      (idiff(iuiph).ge.1.or.iconv(iuiph).ge.1)                    &
+      (idiff(iu).ge.1.or.iconv(iu).ge.1)                    &
       .and.(ippmod(icompf).lt.0)               ) then
 
     CNOM   =' COU/FOU'
@@ -831,12 +830,12 @@ if (idtvar.ge.0) then
 ! MATRICE A PRIORI NON SYMETRIQUE
 
     isym = 1
-    if (iconv(iuiph).gt.0) isym = 2
+    if (iconv(iu).gt.0) isym = 2
 
-    call matrdt                                                   &
+    call matrdt &
     !==========
  ( idebia , idebra ,                                              &
-   iconv(iuiph)    , idiff(iuiph)    , isym   ,                   &
+   iconv(iu)    , idiff(iu)    , isym   ,                         &
    ia     ,                                                       &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
    dam    ,                                                       &
@@ -975,20 +974,20 @@ if (idtvar.ge.0) then
 else
 
   isym = 1
-  if (iconv(iuiph).gt.0) isym = 2
+  if (iconv(iu).gt.0) isym = 2
 
-  call matrdt                                                     &
+  call matrdt &
   !==========
  ( idebia , idebra ,                                              &
-   iconv(iuiph)    , idiff(iuiph)    , isym,                      &
+   iconv(iu)    , idiff(iu)    , isym,                            &
    ia     ,                                                       &
-   coefb(1,iuiph)  , propfa(1,iflmas), propfb(1,iflmab),          &
+   coefb(1,iu)  , propfa(1,iflmas), propfb(1,iflmab),             &
                                                 viscf  , viscb  , &
    dt     ,                                                       &
    ra     )
 
   do iel = 1, ncel
-    dt(iel) = relaxv(iuiph)*propce(iel,ipcrom)                    &
+    dt(iel) = relaxv(iu)*propce(iel,ipcrom)                    &
          *volume(iel)/max(dt(iel),epzero)
   enddo
 

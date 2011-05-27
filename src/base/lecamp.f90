@@ -112,9 +112,6 @@ integer          idebia, idebra
 integer          iel
 integer          ivar  , iscal , ii    ,  ivers
 integer          jphas , jvar  , jscal , jscaus, jscapp
-integer          ikiph , ieiph , iomgip
-integer          ir11ip, ir22ip, ir33ip
-integer          ir12ip, ir13ip, ir23ip
 integer          iok   , ncelok, nfaiok, nfabok, nsomok
 integer          ierror, irtyp,  itysup, nbval
 integer          nberro, ilecec
@@ -529,48 +526,42 @@ if (itytph.eq.2) then
 
   elseif(jtytph.eq.3) then
 
-    ikiph  = ik
-    ieiph  = iep
-
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     RUBRIQ = 'R11_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ikiph),ierror)
+         rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     !            La variable epsilon sert de tableau de travail
     RUBRIQ = 'R22_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,ieiph)
+      rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iep)
     enddo
 
     RUBRIQ = 'R33_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,ieiph))
+      rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iep))
     enddo
 
     RUBRIQ = 'eps_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
 
     !     * k-omega -> k-e
 
   else if(jturph.eq.60) then
-
-    ikiph = ik
-    ieiph = iep
 
     itysup = 1
     nbval  = 1
@@ -578,16 +569,16 @@ if (itytph.eq.2) then
 
     RUBRIQ = 'k_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ikiph),ierror)
+         rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     RUBRIQ = 'omega_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
     !           On transforme ensuite omega en epsilon
     do iel = 1, ncel
-      rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ikiph)
+      rtp(iel,iep) = cmu*rtp(iel,iep)*rtp(iel,ik)
     enddo
 
   endif
@@ -602,31 +593,24 @@ elseif(itytph.eq.3) then
 
   if (jtytph.eq.2 .or. jturph.eq.50) then
 
-    ir11ip=ir11
-    ir22ip=ir22
-    ir33ip=ir33
-    ir12ip=ir12
-    ir13ip=ir13
-    ir23ip=ir23
-
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     RUBRIQ = 'k_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ir11ip),ierror)
+         rtp(1,ir11),ierror)
     nberro=nberro+ierror
 
     d2s3 = 2.d0/3.d0
     do iel = 1, ncel
-      d2s3xk = rtp(iel,ir11ip)*d2s3
-      rtp(iel,ir11ip) = d2s3xk
-      rtp(iel,ir22ip) = d2s3xk
-      rtp(iel,ir33ip) = d2s3xk
-      rtp(iel,ir12ip) = 0.d0
-      rtp(iel,ir13ip) = 0.d0
-      rtp(iel,ir23ip) = 0.d0
+      d2s3xk = rtp(iel,ir11)*d2s3
+      rtp(iel,ir11) = d2s3xk
+      rtp(iel,ir22) = d2s3xk
+      rtp(iel,ir33) = d2s3xk
+      rtp(iel,ir12) = 0.d0
+      rtp(iel,ir13) = 0.d0
+      rtp(iel,ir23) = 0.d0
     enddo
 
     RUBRIQ = 'eps_ce_phase'//CPHASE
@@ -673,41 +657,33 @@ elseif(itytph.eq.3) then
 
   else if (jturph.eq.60) then
 
-    ir11ip=ir11
-    ir22ip=ir22
-    ir33ip=ir33
-    ir12ip=ir12
-    ir13ip=ir13
-    ir23ip=ir23
-    ieiph =iep
-
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     RUBRIQ = 'k_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ir11ip),ierror)
+         rtp(1,ir11),ierror)
     nberro=nberro+ierror
 
     RUBRIQ = 'omega_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
     !     On transforme ensuite omega en epsilon
     do iel = 1, ncel
-      rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ir11ip)
+      rtp(iel,iep) = cmu*rtp(iel,iep)*rtp(iel,ir11)
     enddo
 
     d2s3 = 2.d0/3.d0
     do iel = 1, ncel
-      d2s3xk = rtp(iel,ir11ip)*d2s3
-      rtp(iel,ir11ip) = d2s3xk
-      rtp(iel,ir22ip) = d2s3xk
-      rtp(iel,ir33ip) = d2s3xk
-      rtp(iel,ir12ip) = 0.d0
-      rtp(iel,ir13ip) = 0.d0
-      rtp(iel,ir23ip) = 0.d0
+      d2s3xk = rtp(iel,ir11)*d2s3
+      rtp(iel,ir11) = d2s3xk
+      rtp(iel,ir22) = d2s3xk
+      rtp(iel,ir33) = d2s3xk
+      rtp(iel,ir12) = 0.d0
+      rtp(iel,ir13) = 0.d0
+      rtp(iel,ir23) = 0.d0
     enddo
 
   endif
@@ -740,40 +716,37 @@ elseif(iturph.eq.50) then
 
   elseif(jtytph.eq.3) then
 
-    ikiph  = ik
-    ieiph  = iep
-
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     RUBRIQ = 'R11_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ikiph),ierror)
+         rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     !            La variable epsilon sert de tableau de travail
     RUBRIQ = 'R22_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,ieiph)
+      rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iep)
     enddo
 
     RUBRIQ = 'R33_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,ieiph))
+      rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iep))
     enddo
 
     RUBRIQ = 'eps_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
     !     On laisse pour phi et fb l'initialisations de iniva0
     !     (le v2 qui intervient dans phi n'est pas vraiment une composante de Rij
@@ -810,25 +783,22 @@ elseif(iturph.eq.50) then
 
   else if(jturph.eq.60) then
 
-    ikiph = ik
-    ieiph = iep
-
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     RUBRIQ = 'k_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ikiph),ierror)
+         rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     RUBRIQ = 'omega_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ieiph),ierror)
+         rtp(1,iep),ierror)
     nberro=nberro+ierror
     !           On transforme ensuite omega en epsilon
     do iel = 1, ncel
-      rtp(iel,ieiph) = cmu*rtp(iel,ieiph)*rtp(iel,ikiph)
+      rtp(iel,iep) = cmu*rtp(iel,iep)*rtp(iel,ik)
     enddo
     !     On laisse pour phi et fb l'initialisations de iniva0
 
@@ -845,33 +815,27 @@ else if (iturph.eq.60) then
 
   if(jtytph.eq.2 .or. jturph.eq.50) then
 
-    ikiph  = ik
-    iomgip = iomg
-
     itysup = 1
     nbval  = 1
     irtyp  = 2
 
     RUBRIQ = 'k_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ikiph),ierror)
+         rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     RUBRIQ = 'eps_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iomgip),ierror)
+         rtp(1,iomg),ierror)
     nberro=nberro+ierror
     !           On transforme ensuite epsilon en omega
     do iel = 1, ncel
-      rtp(iel,iomgip) = rtp(iel,iomgip)/cmu/rtp(iel,ikiph)
+      rtp(iel,iomg) = rtp(iel,iomg)/cmu/rtp(iel,ik)
     enddo
 
     !     * rij -> k-omega
 
   elseif(jtytph.eq.3) then
-
-    ikiph  = ik
-    iomgip = iomg
 
     itysup = 1
     nbval  = 1
@@ -879,43 +843,40 @@ else if (iturph.eq.60) then
 
     RUBRIQ = 'R11_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,ikiph),ierror)
+         rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     !            La variable omega sert de tableau de travail
     RUBRIQ = 'R22_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iomgip),ierror)
+         rtp(1,iomg),ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ikiph) = rtp(iel,ikiph) + rtp(iel,iomgip)
+      rtp(iel,ik) = rtp(iel,ik) + rtp(iel,iomg)
     enddo
 
     RUBRIQ = 'R33_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iomgip),ierror)
+         rtp(1,iomg),ierror)
     nberro=nberro+ierror
 
     do iel = 1, ncel
-      rtp(iel,ikiph) = 0.5d0*(rtp(iel,ikiph)+rtp(iel,iomgip))
+      rtp(iel,ik) = 0.5d0*(rtp(iel,ik)+rtp(iel,iomg))
     enddo
 
     RUBRIQ = 'eps_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,  &
-         rtp(1,iomgip),ierror)
+         rtp(1,iomg),ierror)
     nberro=nberro+ierror
     !           On transforme ensuite epsilon en omega
     do iel = 1, ncel
-      rtp(iel,iomgip) = rtp(iel,iomgip)/cmu/rtp(iel,ikiph)
+      rtp(iel,iomg) = rtp(iel,iomg)/cmu/rtp(iel,ik)
     enddo
 
     !     * k-omega -> k-omega
 
   else if(jturph.eq.60) then
-
-    ikiph = ik
-    iomgip= iomg
 
     itysup = 1
     nbval  = 1
@@ -923,12 +884,12 @@ else if (iturph.eq.60) then
 
     RUBRIQ = 'k_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,ikiph),ierror)
+         rtp(1,ik),ierror)
     nberro=nberro+ierror
 
     RUBRIQ = 'omega_ce_phase'//CPHASE
     call lecsui(impamo,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-         rtp(1,iomgip),ierror)
+         rtp(1,iomg),ierror)
     nberro=nberro+ierror
 
   endif

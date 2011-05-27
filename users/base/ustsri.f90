@@ -187,7 +187,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          iel, ir11ip, ieiph, ipcrom
+integer          iel, ipcrom
 double precision ff, tau, xx
 
 integer, allocatable, dimension(:) :: lstelt
@@ -211,14 +211,10 @@ if(1.eq.1) return
 allocate(lstelt(ncel))
 
 
-! --- Index numbers of variables R11 and epsilon
-ir11ip = ir11
-ieiph  = iep
-
 ! --- Index number of the density in the propce array
 ipcrom = ipproc(irom)
 
-if(iwarni(ir11ip).ge.1) then
+if(iwarni(ir11).ge.1) then
   write(nfecra,1000)
 endif
 
@@ -250,7 +246,7 @@ if(ivar.eq.ir11) then
 
   do iel = 1, ncel
     crvexp(iel) = -propce(iel,ipcrom)*volume(iel)                 &
-                                               *ff*rtpa(iel,ieiph)
+                                               *ff*rtpa(iel,iep)
   enddo
 
 !    -- Implicit source term

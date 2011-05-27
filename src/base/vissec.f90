@@ -151,7 +151,6 @@ double precision ra(*)
 integer          idebia, idebra
 integer          iccocg, inc, iel, ifac, ivar, isou, ii, jj, init
 integer          idim
-integer          iuiph, iviph, iwiph
 integer          iclvar
 integer          nswrgp, imligp, iwarnp
 integer          ipcrom, ipbrom, ipcvis, ipcvst, iflmas, iflmab
@@ -178,10 +177,6 @@ allocate(w4(ncelet), w6(ncelet))
 idebia = idbia0
 idebra = idbra0
 
-iuiph  = iu
-iviph  = iv
-iwiph  = iw
-
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
@@ -198,10 +193,10 @@ else
 endif
 
 
-iflmas = ipprof(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
 
 ipbrom = ipprob(irom  )
-iflmab = ipprob(ifluma(iuiph))
+iflmab = ipprob(ifluma(iu))
 
 
 !     Si on extrapole les termes sources, on prend les prop a l'instant n
@@ -247,9 +242,9 @@ endif
 
 do isou = 1, 3
 
-  if (isou.eq.1) ivar = iuiph
-  if (isou.eq.2) ivar = iviph
-  if (isou.eq.3) ivar = iwiph
+  if (isou.eq.1) ivar = iu
+  if (isou.eq.2) ivar = iv
+  if (isou.eq.3) ivar = iw
 
 ! Ceci pointe eventuellement sur ICLRTP(IVAR,ICOEF)
   iclvar = iclrtp(ivar,icoeff)

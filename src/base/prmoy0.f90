@@ -88,7 +88,7 @@ double precision ra(*)
 ! Local variables
 
 integer          iel
-double precision pmoy, pr0iph
+double precision pmoy
 
 !===============================================================================
 
@@ -102,9 +102,8 @@ if (irangp.ge.0) then
 endif
 
 pmoy = pmoy / voltot
-pr0iph = pred0
 do iel = 1, ncel
-  pvar(iel) = pvar(iel) - pmoy + pr0iph
+  pvar(iel) = pvar(iel) - pmoy + pred0
 enddo
 
 !----

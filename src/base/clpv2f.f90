@@ -84,25 +84,21 @@ double precision rtp(ncelet,nvar)
 ! Local variables
 
 integer          iel, ipp
-integer          iphiph
 integer          nclpmx, nclpmn
 double precision xphi, vmin, vmax, var
 
 !===============================================================================
 
-
-iphiph = iphi
-
 !===============================================================================
 !  ---> Stockage Min et Max pour listing
 !===============================================================================
 
-ipp = ipprtp(iphiph)
+ipp = ipprtp(iphi)
 
 vmin =  grand
 vmax = -grand
 do iel = 1, ncel
-  var = rtp(iel,iphiph)
+  var = rtp(iel,iphi)
   vmin = min(vmin,var)
   vmax = max(vmax,var)
 enddo
@@ -122,7 +118,7 @@ varmxa(ipp) = vmax
 if (iwaphi.ge.2) then
   nclpmx = 0
   do iel = 1, ncel
-    if (rtp(iel,iphiph).gt.2.d0) nclpmx = nclpmx+1
+    if (rtp(iel,iphi).gt.2.d0) nclpmx = nclpmx+1
   enddo
   if(irangp.ge.0) call parcpt(nclpmx)
                   !==========
@@ -135,9 +131,9 @@ endif
 
 nclpmn = 0
 do iel = 1, ncel
-  xphi = rtp(iel,iphiph)
+  xphi = rtp(iel,iphi)
   if (xphi.lt.0.d0) then
-    rtp(iel,iphiph) = -xphi
+    rtp(iel,iphi) = -xphi
     nclpmn = nclpmn + 1
   endif
 enddo

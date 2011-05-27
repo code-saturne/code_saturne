@@ -160,8 +160,6 @@ double precision ra(*)
 integer          idebia, idebra, ifinia
 integer          init  , ifac  , iel   , inc   , iccocg
 integer          ii    ,jj     , iiun
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
-integer          ieiph , iuiph
 integer          iclvar, iclvaf
 integer          ipcrom, ipcroo, ipcvis, ipcvst, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
@@ -193,20 +191,11 @@ if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
 endif
 
-iuiph  = iu
-ir11ip = ir11
-ir22ip = ir22
-ir33ip = ir33
-ir12ip = ir12
-ir13ip = ir13
-ir23ip = ir23
-ieiph  = iep
-
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-iflmas = ipprof(ifluma(iuiph))
-iflmab = ipprob(ifluma(iuiph))
+iflmas = ipprof(ifluma(iu))
+iflmab = ipprob(ifluma(iu))
 
 iclvar = iclrtp(ivar,icoef)
 iclvaf = iclrtp(ivar,icoeff)
@@ -289,12 +278,12 @@ endif
                       + tslagr(iel,itsr22)                        &
                       + tslagr(iel,itsr33) )
 ! rapport k/eps
-     kseps = 0.5d0 * ( rtpa(iel,ir11ip)                           &
-                     + rtpa(iel,ir22ip)                           &
-                     + rtpa(iel,ir33ip) )                         &
-                     / rtpa(iel,ieiph)
+     kseps = 0.5d0 * ( rtpa(iel,ir11)                           &
+                     + rtpa(iel,ir22)                           &
+                     + rtpa(iel,ir33) )                         &
+                     / rtpa(iel,iep)
 
-     smbr(iel)   = smbr(iel) + ce4 *tseps *rtpa(iel,ieiph) /kseps
+     smbr(iel)   = smbr(iel) + ce4 *tseps *rtpa(iel,iep) /kseps
      rovsdt(iel) = rovsdt(iel) + max( (-ce4*tseps/kseps) , zero)
    enddo
 
@@ -370,8 +359,7 @@ enddo
 ! ---> Calcul de k pour la suite du sous-programme
 !       on utilise un tableau de travail puisqu'il y en a...
 do iel = 1, ncel
-  w8(iel) = 0.5d0 * (rtpa(iel,ir11ip) + rtpa(iel,ir22ip) +        &
-                     rtpa(iel,ir33ip))
+  w8(iel) = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
 enddo
 ! ---> Calcul de la trace de la production, suivant qu'on est en
 !     Rij standard ou en SSG (utilisation de PRODUC ou GRDVIT)
@@ -381,15 +369,15 @@ if (iturb.eq.30) then
   enddo
 else
   do iel = 1, ncel
-    w9(iel) = -( rtpa(iel,ir11ip)*grdvit(iel,1,1) +               &
-                 rtpa(iel,ir12ip)*grdvit(iel,1,2) +               &
-                 rtpa(iel,ir13ip)*grdvit(iel,1,3) +               &
-                 rtpa(iel,ir12ip)*grdvit(iel,2,1) +               &
-                 rtpa(iel,ir22ip)*grdvit(iel,2,2) +               &
-                 rtpa(iel,ir23ip)*grdvit(iel,2,3) +               &
-                 rtpa(iel,ir13ip)*grdvit(iel,3,1) +               &
-                 rtpa(iel,ir23ip)*grdvit(iel,3,2) +               &
-                 rtpa(iel,ir33ip)*grdvit(iel,3,3) )
+    w9(iel) = -( rtpa(iel,ir11)*grdvit(iel,1,1) +               &
+                 rtpa(iel,ir12)*grdvit(iel,1,2) +               &
+                 rtpa(iel,ir13)*grdvit(iel,1,3) +               &
+                 rtpa(iel,ir12)*grdvit(iel,2,1) +               &
+                 rtpa(iel,ir22)*grdvit(iel,2,2) +               &
+                 rtpa(iel,ir23)*grdvit(iel,2,3) +               &
+                 rtpa(iel,ir13)*grdvit(iel,3,1) +               &
+                 rtpa(iel,ir23)*grdvit(iel,3,2) +               &
+                 rtpa(iel,ir33)*grdvit(iel,3,3) )
   enddo
 endif
 
@@ -401,7 +389,7 @@ do iel = 1, ncel
   trprod = w9(iel)
   trrij  = w8(iel)
   w1(iel)   =             propce(iel,ipcroo)*volume(iel)*         &
-       ce1*rtpa(iel,ieiph)/trrij*trprod
+       ce1*rtpa(iel,iep)/trrij*trprod
 enddo
 
 !     Si on extrapole les T.S : PROPCE
@@ -421,7 +409,7 @@ endif
 do iel = 1, ncel
   trrij  = w8(iel)
   smbr(iel) = smbr(iel) - propce(iel,ipcrom)*volume(iel)*         &
-                         ceps2*rtpa(iel,ieiph)**2/trrij
+                         ceps2*rtpa(iel,iep)**2/trrij
 enddo
 
 ! ---> Matrice
@@ -434,7 +422,7 @@ endif
 do iel = 1, ncel
   trrij  = w8(iel)
   rovsdt(iel) = rovsdt(iel) + ceps2*propce(iel,ipcrom)*volume(iel)&
-                     *rtpa(iel,ieiph)/trrij*thetap
+                     *rtpa(iel,iep)/trrij*thetap
 enddo
 
 !===============================================================================
@@ -507,13 +495,10 @@ if (iturb.eq.30) then
 
   do iel = 1 , ncel
     trrij  = w8(iel)
-    csteps  = propce(iel,ipcroo) * crijep *trrij / rtpa(iel,ieiph)
-    w4(iel) = csteps * ( rtpa(iel,ir12ip) * w2(iel) +             &
-         rtpa(iel,ir13ip) * w3(iel) )
-    w5(iel) = csteps * ( rtpa(iel,ir12ip) * w1(iel) +             &
-         rtpa(iel,ir23ip) * w3(iel) )
-    w6(iel) = csteps * ( rtpa(iel,ir13ip) * w1(iel) +             &
-         rtpa(iel,ir23ip) * w2(iel) )
+    csteps  = propce(iel,ipcroo) * crijep *trrij / rtpa(iel,iep)
+    w4(iel) = csteps * ( rtpa(iel,ir12) * w2(iel) + rtpa(iel,ir13) * w3(iel) )
+    w5(iel) = csteps * ( rtpa(iel,ir12) * w1(iel) + rtpa(iel,ir23) * w3(iel) )
+    w6(iel) = csteps * ( rtpa(iel,ir13) * w1(iel) + rtpa(iel,ir23) * w2(iel) )
   enddo
 
 ! ---> Assemblage de { A.grad(Eps) } .S aux faces
@@ -560,10 +545,10 @@ if (iturb.eq.30) then
 
     do iel = 1, ncel
       trrij  = w8(iel)
-      csteps = propce(iel,ipcroo) * crijep *trrij/rtpa(iel,ieiph)
-      w4(iel)=csteps*rtpa(iel,ir11ip)
-      w5(iel)=csteps*rtpa(iel,ir22ip)
-      w6(iel)=csteps*rtpa(iel,ir33ip)
+      csteps = propce(iel,ipcroo) * crijep *trrij/rtpa(iel,iep)
+      w4(iel)=csteps*rtpa(iel,ir11)
+      w5(iel)=csteps*rtpa(iel,ir22)
+      w6(iel)=csteps*rtpa(iel,ir33)
     enddo
 
 ! --->  TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
@@ -625,13 +610,10 @@ if (iturb.eq.30) then
   if( idiff(ivar).ge. 1 ) then
     do iel = 1, ncel
       trrij  = w8(iel)
-      rctse = propce(iel,ipcrom) * crijep * trrij/rtpa(iel,ieiph)
-      w1(iel) = propce(iel,ipcvis)                                &
-           + idifft(ivar)*rctse*rtpa(iel,ir11ip)
-      w2(iel) = propce(iel,ipcvis)                                &
-           + idifft(ivar)*rctse*rtpa(iel,ir22ip)
-      w3(iel) = propce(iel,ipcvis)                                &
-           + idifft(ivar)*rctse*rtpa(iel,ir33ip)
+      rctse = propce(iel,ipcrom) * crijep * trrij/rtpa(iel,iep)
+      w1(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir11)
+      w2(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir22)
+      w3(iel) = propce(iel,ipcvis) + idifft(ivar)*rctse*rtpa(iel,ir33)
     enddo
 
     call visort                                                   &

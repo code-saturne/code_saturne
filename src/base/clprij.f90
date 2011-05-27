@@ -89,21 +89,10 @@ double precision rtp(ncelet,nvar)
 ! Local variables
 
 integer          icleps, iel, ivar, ivar1, ivar2, isou, ipp
-integer          ir11ip, ir22ip, ir33ip, ir12ip, ir13ip, ir23ip
-integer          iepip
 integer          iclrij(6)
 double precision vmin, vmax, var, rijmin, varrel, und0, epz2
 
 !===============================================================================
-
-
-ir11ip = ir11
-ir22ip = ir22
-ir33ip = ir33
-ir12ip = ir12
-ir13ip = ir13
-ir23ip = ir23
-iepip  = iep
 
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
@@ -115,19 +104,19 @@ epz2 = epzero**2
 
 do isou = 1, 7
   if    (isou.eq.1) then
-    ivar = ir11ip
+    ivar = ir11
   elseif(isou.eq.2) then
-    ivar = ir22ip
+    ivar = ir22
   elseif(isou.eq.3) then
-    ivar = ir33ip
+    ivar = ir33
   elseif(isou.eq.4) then
-    ivar = ir12ip
+    ivar = ir12
   elseif(isou.eq.5) then
-    ivar = ir13ip
+    ivar = ir13
   elseif(isou.eq.6) then
-    ivar = ir23ip
+    ivar = ir23
   elseif(isou.eq.7) then
-    ivar = iepip
+    ivar = iep
   endif
   ipp = ipprtp(ivar)
 
@@ -157,9 +146,9 @@ if(iclip.eq.1) then
 
     iclrij(isou) = 0
 
-    if(isou.eq.1) ivar=ir11ip
-    if(isou.eq.2) ivar=ir22ip
-    if(isou.eq.3) ivar=ir33ip
+    if(isou.eq.1) ivar=ir11
+    if(isou.eq.2) ivar=ir22
+    if(isou.eq.3) ivar=ir33
 
     do iel = 1, ncel
       if (abs(rtp(iel,ivar)).le.epz2) then
@@ -175,12 +164,12 @@ if(iclip.eq.1) then
 
   icleps = 0
   do iel = 1, ncel
-    if (abs(rtp(iel,iepip)).le.epz2) then
+    if (abs(rtp(iel,iep)).le.epz2) then
       icleps = icleps + 1
-      rtp(iel,iepip) = max(rtp(iel,iepip),epz2)
-    elseif(rtp(iel,iepip).le.0.d0) then
+      rtp(iel,iep) = max(rtp(iel,iep),epz2)
+    elseif(rtp(iel,iep).le.0.d0) then
       icleps = icleps + 1
-      rtp(iel,iepip) = abs(rtp(iel,iepip))
+      rtp(iel,iep) = abs(rtp(iel,iep))
     endif
   enddo
 
@@ -192,9 +181,9 @@ else
 
     iclrij(isou) = 0
 
-    if(isou.eq.1) ivar=ir11ip
-    if(isou.eq.2) ivar=ir22ip
-    if(isou.eq.3) ivar=ir33ip
+    if(isou.eq.1) ivar=ir11
+    if(isou.eq.2) ivar=ir22
+    if(isou.eq.3) ivar=ir33
 
     do iel = 1, ncel
       if (abs(rtp(iel,ivar)).le.epz2) then
@@ -211,13 +200,12 @@ else
 
   icleps = 0
   do iel = 1, ncel
-    if (abs(rtp(iel,iepip)).lt.epz2) then
+    if (abs(rtp(iel,iep)).lt.epz2) then
       icleps = icleps + 1
-      rtp(iel,iepip) = max(rtp(iel,iepip),epz2)
-    elseif(rtp(iel,iepip).le.0.d0) then
+      rtp(iel,iep) = max(rtp(iel,iep),epz2)
+    elseif(rtp(iel,iep).le.0.d0) then
       icleps = icleps + 1
-      rtp(iel,iepip) =                                            &
-          min(abs(rtp(iel,iepip )), varrel*abs(rtpa(iel,iepip )))
+      rtp(iel,iep) = min(abs(rtp(iel,iep )), varrel*abs(rtpa(iel,iep )))
     endif
   enddo
 
@@ -230,17 +218,17 @@ do isou = 4, 6
   iclrij(isou) = 0
 
   if(isou.eq.4) then
-    ivar  = ir12ip
-    ivar1 = ir11ip
-    ivar2 = ir22ip
+    ivar  = ir12
+    ivar1 = ir11
+    ivar2 = ir22
   elseif(isou.eq.5) then
-    ivar  = ir13ip
-    ivar1 = ir11ip
-    ivar2 = ir33ip
+    ivar  = ir13
+    ivar1 = ir11
+    ivar2 = ir33
   elseif(isou.eq.6) then
-    ivar  = ir23ip
-    ivar1 = ir22ip
-    ivar2 = ir33ip
+    ivar  = ir23
+    ivar1 = ir22
+    ivar2 = ir33
   endif
   und0 = 1.d0
   do iel = 1 , ncel
@@ -273,13 +261,13 @@ if (irangp.ge.0) then
   !==========
 endif
 
-iclpmn(ipprtp(ir11ip)) = iclrij(1)
-iclpmn(ipprtp(ir22ip)) = iclrij(2)
-iclpmn(ipprtp(ir33ip)) = iclrij(3)
-iclpmn(ipprtp(ir12ip)) = iclrij(4)
-iclpmn(ipprtp(ir13ip)) = iclrij(5)
-iclpmn(ipprtp(ir23ip)) = iclrij(6)
-iclpmn(ipprtp(iepip )) = icleps
+iclpmn(ipprtp(ir11)) = iclrij(1)
+iclpmn(ipprtp(ir22)) = iclrij(2)
+iclpmn(ipprtp(ir33)) = iclrij(3)
+iclpmn(ipprtp(ir12)) = iclrij(4)
+iclpmn(ipprtp(ir13)) = iclrij(5)
+iclpmn(ipprtp(ir23)) = iclrij(6)
+iclpmn(ipprtp(iep )) = icleps
 
 return
 
