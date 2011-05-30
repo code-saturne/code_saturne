@@ -1,3 +1,19 @@
+* 30/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Refactor time resource allocation management and safety stop.
+  added files:
+    src/base/cs_resource.c
+    src/base/cs_resource.h
+  removed files:
+    src/base/armtps.f90
+    src/base/tcpumx.c
+    src/base/tcpumx.h
+    src/base/tremai.c
+    src/base/tremai.h
+  modified files:
+    po/fr.po
+    po/POTFILES.in
+    src/base/Makefile.am
+
 * 30/05/2011 - David Monfort <david.monfort@edf.fr>
   Fix the definition of the boolean type so as to have a correct
   behaviour when linking with C++ code (the boolean type was not

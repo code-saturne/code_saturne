@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -25,94 +25,93 @@
  *
  *============================================================================*/
 
+#ifndef __CS_RESOURCE_H__
+#define __CS_RESOURCE_H__
+
 /*============================================================================
- * Query time allocated to this process (useful mainly under PBS)
+ * Resource allocation management (available time).
  *============================================================================*/
 
 #if defined(HAVE_CONFIG_H)
 #include "cs_config.h"
 #endif
 
-#undef _POSIX_SOURCE /* Otherwise compilation problem on VPP 5000 */
-#undef _XOPEN_SOURCE /* Otherwise, compilation problem on SunOS */
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
+/*----------------------------------------------------------------------------
+ * BFT library headers
+ *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * FVM library headers
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "tcpumx.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Macro Definitions
+ *============================================================================*/
+
+/*=============================================================================
+ * Type Definitions
+ *============================================================================*/
+
 /*============================================================================
- * Public function definitions for Fortran API
+ *  Global variables
+ *============================================================================*/
+
+/*============================================================================
+ *  Public function prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Query CPU time allocated to this process
+ * Limit number of remaining time steps if the remaining allocated time is
+ * too small to attain the requested number of steps.
  *
  * Fortran interface:
  *
- * SUBROUTINE TCPUMX (TPS   , RET)
+ * subroutine armtsp (ntcabs, ntmabs)
  * *****************
  *
- * DOUBLE PRECISION TPS        : <-- : remaining time (default: 7 days)
- * INTEGER          RET        : <-- : return code:
- *                             :     :  -1: error
- *                             :     :   0: no limit using this method
- *                             :     :   1: CPU limit determined
+ * integer          ntcabs      : <-- : current time step number
+ * integer          ntmabs      : <-> : maximum time step number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (tcpumx, TCPUMX) (double  *tps,
-                                int     *ret)
+void CS_PROCF (armtps, ARMTPS)
+(
+ const cs_int_t  *ntcabs,
+       cs_int_t  *ntmabs
+);
 
-{
-  char * cs_maxtime;
-  int    hrs, min, sec;
-  int    nchamps = 0;
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
 
-  *tps = 3600.0 * 24.0 * 7; /* "unlimited" values by default */
-  *ret = 0;
+/*----------------------------------------------------------------------------
+ * Limit number of remaining time steps if the remaining allocated time is
+ * too small to attain the requested number of steps.
+ *
+ * parameters:
+ *   ts_cur <-- current time step number
+ *   ts_max <-> maximum time step number
+ *----------------------------------------------------------------------------*/
 
-  /* Get environment variable; for example, 100:10:10 */
-
-  if ((cs_maxtime = getenv("CS_MAXTIME")) != NULL) {;
-
-    nchamps = sscanf (cs_maxtime,"%d:%d:%d",&hrs,&min,&sec);
-
-    /* If we only have 2 fields, they are hours and minutes (under PBS);
-     * otherwise, if we do not have 3 fields, the information is unusable */
-
-    if (nchamps == 2) {
-      sec = 0;
-      nchamps = 3;
-    }
-
-    /* Compute allocated CPU time in seconds */
-    if (nchamps == 3) {
-      *tps = ((double)hrs)*3600. + ((double)min)*60. + ((double)sec);
-      *ret = 1;
-#if 0
-      printf("tcpumx nchamps = %d,hrs = %d, min = %d, sec = %d\n tps = %f\n",
-             ret, hrs, min, sec, *tps);
-#endif
-    }
-    else
-      *ret = -1;
-
-  }
-}
+void
+cs_resource_get_max_timestep(int   ts_cur,
+                             int  *ts_max);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#endif /* __CS_RESOURCE_H__ */

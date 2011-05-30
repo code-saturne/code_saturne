@@ -88,6 +88,7 @@ src/base/cs_post.c
 src/base/cs_preprocessor_data.c
 src/base/cs_proxy_comm.c
 src/base/cs_renumber.c
+src/base/cs_resource.c
 src/base/cs_restart.c
 src/base/cs_sat_coupling.c
 src/base/cs_search.c
@@ -101,8 +102,6 @@ src/base/cs_syr4_coupling.c
 src/base/cs_syr_coupling.c
 src/base/cs_tpar1d.c
 src/base/cs_ventil.c
-src/base/tcpumx.c
-src/base/tremai.c
 src/bft/bft_backtrace.c
 src/bft/bft_error.c
 src/bft/bft_file.c

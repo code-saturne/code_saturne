@@ -111,6 +111,7 @@ cs_preprocessor_data.h \
 cs_prototypes.h \
 cs_proxy_comm.h \
 cs_renumber.h \
+cs_resource.h \
 cs_restart.h \
 cs_sat_coupling.h \
 cs_search.h \
@@ -124,9 +125,7 @@ cs_syr4_coupling.h \
 cs_syr_coupling.h \
 cs_time_plot.h \
 cs_tpar1d.h \
-cs_ventil.h \
-tcpumx.h \
-tremai.h
+cs_ventil.h
 
 # Library source files
 
@@ -167,7 +166,6 @@ libcsbase_la_SOURCES = \
 alelap.f90 \
 alemaj.f90 \
 altycl.f90 \
-armtps.f90 \
 autmgr.f90 \
 bilsc2.f90 \
 calhyd.f90 \
@@ -243,6 +241,7 @@ cs_post_f2c.f90 \
 cs_preprocessor_data.c \
 cs_proxy_comm.c \
 cs_renumber.c \
+cs_resource.c \
 cs_restart.c \
 cs_sat_coupling.c \
 cs_search.c \
@@ -331,10 +330,8 @@ strdep.f90 \
 strhis.f90 \
 strini.f90 \
 strpre.f90 \
-tcpumx.c \
 tdesi1.f90 \
 testel.f90 \
-tremai.c \
 tridim.f90 \
 tsepdc.f90 \
 tstvec.f90 \
