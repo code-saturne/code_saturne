@@ -180,11 +180,9 @@ mei_hash_table_find(hash_table_t *const htable, const char *const key)
 
 
 /*----------------------------------------------------------------------------
- *
+ * Insertion d'un identificateur dans une table
  *----------------------------------------------------------------------------*/
 
-
-// Insertion d'un identificateur dans une table
 void
 mei_hash_table_insert(hash_table_t *const htable,
                       const char *const  key,

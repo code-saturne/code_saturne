@@ -846,7 +846,8 @@ _arg_to_int(int    arg_id,
     start = argv[arg_id];
     end = start + strlen(start);
     retval = strtol(start, &end, 0);
-    if (end != start + strlen(start)) *argerr = 1;
+    if (end != start + strlen(start))
+      _usage(argv[0], EXIT_FAILURE);
   }
   else
     _usage(argv[0], EXIT_FAILURE);

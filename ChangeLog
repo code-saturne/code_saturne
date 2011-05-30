@@ -1,3 +1,10 @@
+* 30/05/2011 - David Monfort <david.monfort@edf.fr>
+  Fix minor issues to compile with a C89-only compiler.
+  modified routines:
+    src/apps/cs_io_dump.c
+    src/base/cs_join.c
+    src/mei/mei_hash_table.c
+
 * 26/05/2011 - David Monfort <david.monfort@edf.fr>
   Remove now useless phase-dependent local variables (like iuiph).
   modified routines:

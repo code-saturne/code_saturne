@@ -1434,7 +1434,7 @@ cs_join_add(const char  *sel_criteria,
                      verbosity,
                      visualization);
 
-  cs_glob_join_count++; // Store number of joining (without periodic ones)
+  cs_glob_join_count++; /* Store number of joining (without periodic ones) */
   cs_glob_n_joinings++;
 
   return cs_glob_n_joinings;
