@@ -1,4 +1,11 @@
 * 30/05/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the definition of the boolean type so as to have a correct
+  behaviour when linking with C++ code (the boolean type was not
+  properly defined in Code_Saturne header).
+  modified routines:
+    src/base/cs_base.h
+
+* 30/05/2011 - David Monfort <david.monfort@edf.fr>
   Fix minor issues to compile with a C89-only compiler.
   modified routines:
     src/apps/cs_io_dump.c

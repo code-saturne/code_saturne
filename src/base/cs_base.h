@@ -66,7 +66,24 @@
 
 #if (_CS_STDC_VERSION >= 199901L)
 #include <stdint.h>
+#endif
+
+/* C99 _Bool type */
+
+#if HAVE_STDBOOL_H
 #include <stdbool.h>
+#else
+# if !HAVE__BOOL
+#  ifdef __cplusplus
+typedef bool _Bool;
+#  else
+    define _Bool signed char;
+#  endif
+# endif
+# define bool _Bool
+# define false 0
+# define true 1
+# define __bool_true_false_are_defined 1
 #endif
 
 #if defined(HAVE_MPI)
@@ -197,29 +214,9 @@ BEGIN_C_DECLS
 typedef int              cs_int_t;      /* Integer */
 typedef double           cs_real_t;     /* Floating-point real */
 typedef char             cs_byte_t;     /* Byte (untyped memory unit) */
+typedef _Bool            cs_bool_t;     /* Boolean */
 
 typedef cs_real_t        cs_point_t[3];
-
-#if (_CS_STDC_VERSION >= 199901L)
-
-typedef _Bool cs_bool_t;                /* Boolean */
-
-#else
-
-typedef enum {                          /* Boolean */
-  CS_FALSE,
-  CS_TRUE
-} cs_bool_t;
-
-#if !defined(false)
-#define false CS_FALSE
-#endif
-
-#if !defined(true)
-#define true CS_TRUE
-#endif
-
-#endif /* (_CS_STDC_VERSION >= 199901L) */
 
 /* Mappings to MPI datatypes */
 
