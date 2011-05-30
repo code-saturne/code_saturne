@@ -1,3 +1,8 @@
+* 30/05/2011 - David Monfort <david.monfort@edf.fr>
+  Add missing term in the calculation of Oij.Oij (-2*DuDz*DwDx).
+  modified routine:
+    src/base/turbsa.f90
+
 * 30/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Refactor time resource allocation management and safety stop.
   added files:

@@ -347,7 +347,7 @@ call grdcel &
 ! DIVU = DUDX + DVDY + DWDZ
 
 do iel = 1, ncel
-  tinssa (iel)   = tinssa(iel) - 2.d0*w8(iel)*W6(iel)             &
+  tinssa (iel)   = tinssa(iel) - 2.d0*w8(iel)*W6(iel) - 2.d0*w5(iel)*w4(iel) &
            +  w4(iel)**2 +w6(iel)**2
   divu  (iel)   = divu(iel) + w7   (iel)
 enddo
