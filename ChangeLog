@@ -1,3 +1,9 @@
+* 30/05/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the gradient calculation (least-square method) when the mesh is
+  moving (we know compute the geometric quantities at each pass).
+  modifed routine:
+    src/base/gradmc.f90
+
 * 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove references to (non-operational) Homard support.
   modified files:

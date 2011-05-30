@@ -155,6 +155,7 @@ implicit none
 include "paramx.h"
 include "vector.h"
 include "albase.h"
+include "cplsat.h"
 include "period.h"
 include "parall.h"
 
@@ -442,7 +443,7 @@ endif
 !===============================================================================
 
 
-if( (inicoc.eq.1.or.iale.eq.1) .and.iccocg.eq.1) then
+if( (inicoc.eq.1.or.iale.eq.1.or.imobil.eq.1) .and.iccocg.eq.1) then
 
 
 ! --->  2.1 CALCUL COMPLET DE COCG ET
