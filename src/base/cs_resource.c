@@ -393,7 +393,7 @@ cs_resource_get_max_timestep(int   ts_cur,
            "===============================================================\n"),
          trestc, t_it_sup, tmoy00, t_it_prev, t_margin);
 
-  }      
+  }
 
 }
 
