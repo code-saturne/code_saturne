@@ -36,8 +36,6 @@ subroutine cfmsfl &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    flumas , flumab ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    , w11    , w12    ,          &
    trflms , trflmb , coefu  ,                                     &
    ra     )
 
@@ -73,7 +71,6 @@ subroutine cfmsfl &
 !  (nfabor, *)     !    !     !                                                !
 ! flumas(nfac)     ! tr ! --> ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! --> ! flux de masse aux faces de bord                !
-! w1..12(ncelet    ! tr ! --- ! tableau de travail                             !
 ! trflms(nfac)     ! tr ! --- ! tableau de travail                             !
 ! trflmb(nfabor    ! tr ! --- ! tableau de travail                             !
 ! coefu(nfabo,3    ! tr ! --- ! tableau de travail cl de la qdm                !
@@ -125,10 +122,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision flumas(nfac), flumab(nfabor)
-double precision w1(ncelet) , w2(ncelet) , w3(ncelet)
-double precision w4(ncelet) , w5(ncelet) , w6(ncelet)
-double precision w7(ncelet) , w8(ncelet) , w9(ncelet)
-double precision w10(ncelet), w11(ncelet), w12(ncelet)
 double precision trflms(nfac), trflmb(nfabor)
 double precision coefu(nfabor,3)
 double precision ra(*)
@@ -153,11 +146,22 @@ integer          itsqdm, iiun  , iextts
 double precision epsrgp, climgp, extrap, blencp
 double precision flui  , fluj  , pfac  , thetv
 
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w10, w11, w12
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w10(ncelet), w11(ncelet), w12(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -375,7 +379,6 @@ if(itsqdm.ne.0) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    w10    , w8     , w9     , w9     ,                            &
 !        ------
-   w7     ,                                                       &
    ra     )
 
     call cfdivs                                                   &
@@ -388,7 +391,6 @@ if(itsqdm.ne.0) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    w11    , w9     , w8     , w9     ,                            &
 !        ------
-   w7     ,                                                       &
    ra     )
 
     call cfdivs                                                   &
@@ -401,7 +403,6 @@ if(itsqdm.ne.0) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    w12    , w9     , w9     , w8     ,                            &
 !        ------
-   w7     ,                                                       &
    ra     )
 
   endif
@@ -558,7 +559,6 @@ call cfbsc3                                                       &
    trflms , trflmb , trflms , trflmb ,                            &
    flumas , flumab ,                                              &
 !        ------   ------
-   w2     , w3     , w4     , w8     , w9     , w10    ,          &
    ra     )
 
 
@@ -632,6 +632,13 @@ call inimas                                                       &
    flumas , flumab ,                                              &
 !        ------   ------
    ra     )
+
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8, w9)
+deallocate(w10, w11, w12)
+
 
 !--------
 ! FORMATS

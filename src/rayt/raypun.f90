@@ -41,8 +41,7 @@ subroutine raypun &
    theta4 , thetaa , sa     ,                                     &
    qx     , qy     , qz     ,                                     &
    qincid , eps    , tparoi ,                                     &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , ckmel  ,                   &
+   ckmel  ,                                                       &
    ra     )
 
 !===============================================================================
@@ -90,7 +89,6 @@ subroutine raypun &
 ! qincid(nfabor    ! tr ! --> ! densite de flux radiatif aux bords             !
 ! eps (nfabor)     ! tr ! <-- ! emissivite des facettes de bord                !
 ! tparoi(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ckmel(ncelet)    ! tr ! <-- ! coeff d'absorption du melange                  !
 !                  !    !     !   gaz-particules de charbon                    !
 ! ra(*)            ! ra ! --- ! main real work array                           !
@@ -151,9 +149,6 @@ double precision sa(ncelet)
 double precision qx(ncelet), qy(ncelet), qz(ncelet)
 double precision qincid(nfabor), tparoi(nfabor), eps(nfabor)
 
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ckmel(ncelet)
 double precision ra(*)
 
@@ -175,6 +170,8 @@ double precision epsrgp, blencp, climgp, epsilp, extrap, epsrsp
 double precision aa, aaa, aaaa, relaxp, thetap
 
 double precision rvoid(1)
+
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -296,6 +293,9 @@ call codits                                                       &
 ! 4. Vecteur densite de flux radiatif
 !===============================================================================
 
+! Allocate a temporary array for gradient computation
+allocate(grad(ncelet,3))
+
 !    En periodique et parallele, echange avant calcul du gradient
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(theta4)
@@ -320,17 +320,20 @@ call grdcel                                                       &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                 &
      ia     ,                                                     &
      theta4 , cofrua , cofrub ,                                   &
-     w1     , w2     , w3     ,                                   &
+     grad   ,                                                     &
      ra     )
 
 aa = - stephn * 4.d0 / 3.d0
 
 do iel = 1,ncel
   aaa = aa * ckmel(iel)
-  qx(iel) = w1(iel) * aaa
-  qy(iel) = w2(iel) * aaa
-  qz(iel) = w3(iel) * aaa
+  qx(iel) = grad(iel,1) * aaa
+  qy(iel) = grad(iel,2) * aaa
+  qz(iel) = grad(iel,3) * aaa
 enddo
+
+! Free memory
+deallocate(grad)
 
 !===============================================================================
 ! 5. Terme Source Radiatif d'absorption et densite de flux incident

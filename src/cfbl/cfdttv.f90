@@ -36,8 +36,7 @@ subroutine cfdttv &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
-   wflmas , wflmab , viscb  , w1     , w2     , w3     ,          &
-   w4     , w5     , w6     ,                                     &
+   wflmas , wflmab , viscb  ,                                     &
    ra     )
 
 !===============================================================================
@@ -80,7 +79,6 @@ subroutine cfdttv &
 ! wflmas(nfac)     ! tr ! --- ! tab de trav aux faces internes                 !
 ! wflmab(nfabor    ! tr ! --- ! tab de trav aux faces de bord                  !
 ! viscb(nfabor     ! tr ! --- ! tab de trav aux faces de bord                  !
-! w1..6 (ncelet    ! tr ! --- ! tableaux de travail                            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -128,8 +126,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
 double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -140,8 +136,7 @@ integer          init
 
 double precision, allocatable, dimension(:) :: viscf
 double precision, allocatable, dimension(:,:) :: coefu
-double precision, allocatable, dimension(:) :: w7, w8, w9
-double precision, allocatable, dimension(:) :: w10, w11, w12
+double precision, allocatable, dimension(:) :: w1, w2
 
 !===============================================================================
 !===============================================================================
@@ -153,8 +148,7 @@ allocate(viscf(nfac))
 allocate(coefu(nfabor,3))
 
 ! Allocate work arrays
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
-allocate(w10(ncelet), w11(ncelet), w12(ncelet))
+allocate(w1(ncelet), w2(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -185,8 +179,6 @@ call cfmsfl                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    , w11    , w12    ,          &
    viscf  , viscb  , coefu  ,                                     &
    ra     )
 
@@ -217,8 +209,7 @@ enddo
 ! Free memory
 deallocate(viscf)
 deallocate(coefu)
-deallocate(w7, w8, w9)
-deallocate(w10, w11, w12)
+deallocate(w1, w2)
 
 !--------
 ! FORMATS

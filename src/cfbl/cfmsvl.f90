@@ -158,12 +158,11 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
-double precision, allocatable, dimension(:) :: w10, w11, w12
+double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:) :: wflmas, wflmab
-double precision, allocatable, dimension(:,:) :: coefu
 
 !===============================================================================
 !===============================================================================
@@ -174,13 +173,11 @@ double precision, allocatable, dimension(:,:) :: coefu
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 allocate(wflmas(nfac), wflmab(nfabor))
-allocate(coefu(nfabor,3))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
-allocate(w10(ncelet), w11(ncelet), w12(ncelet))
+allocate(w10(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -258,14 +255,15 @@ call cfmsgs                                                       &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab , ra(iwfabg) , ra(iwfbbg) ,                    &
 !        ------   ------   ------   ------
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    , w11    , w12    ,          &
-   viscf  , viscb  , coefu  ,                                     &
+   viscf  , viscb  ,                                              &
    ra     )
 
 
 !     Calcul du gradient de rho pour la reconstruction de rho
 !       (contribution du terme convectif)
+
+! Allocate a work array
+allocate(grad(ncelet,3))
 
 ircflp = ircflu(ivar)
 
@@ -287,15 +285,14 @@ if(ircflp.gt.0) then
    ia     ,                                                       &
    rtpa(1,ivar)    ,                                              &
    coefa(1,iclrtp(ivar,icoef)) , coefb(1,iclrtp(ivar,icoef)) ,    &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
   else
     do ii = 1, ncelet
-      w1(ii) = 0.d0
-      w2(ii) = 0.d0
-      w3(ii) = 0.d0
+      grad(ii,1) = 0.d0
+      grad(ii,2) = 0.d0
+      grad(ii,3) = 0.d0
     enddo
   endif
 
@@ -326,23 +323,17 @@ if(iconv(ivar).le.0) then
 
       pnd   = pond(ifac)
 
-      diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                    &
-               (1.d0-pnd) * dijpfx)
-      diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                    &
-               (1.d0-pnd) * dijpfy)
-      diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                    &
-               (1.d0-pnd) * dijpfz)
-      djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                    &
-                   pnd  * dijpfx
-      djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                    &
-                   pnd  * dijpfy
-      djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
-                   pnd  * dijpfz
+      diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
+      diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
+      diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
+      djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) + pnd  * dijpfx
+      djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) + pnd  * dijpfy
+      djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) + pnd  * dijpfz
 
       pip = rtpa(ii,ivar)                                         &
-           + ircflp*(w1(ii)*diipfx+w2(ii)*diipfy+w3(ii)*diipfz)
+           + ircflp*(grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz)
       pjp = rtpa(jj,ivar)                                         &
-           + ircflp*(w1(jj)*djjpfx+w2(jj)*djjpfy+w3(jj)*djjpfz)
+           + ircflp*(grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz)
 
       wflmas(ifac) = -0.5d0*                                      &
            ( pip          *(wflmas(ifac)+abs(wflmas(ifac)))       &
@@ -389,7 +380,7 @@ else
       diipbz = diipb(3,ifac)
 
       pip = rtpa(ii,ivar)                                         &
-           +ircflp*(w1(ii)*diipbx+w2(ii)*diipby+w3(ii)*diipbz)
+           +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
       wflmab(ifac) = -propfb(ifac,iflmab)/                        &
            ( coefa(ifac,iclrtp(ivar,icoef))                       &
@@ -407,6 +398,8 @@ else
 
 endif
 
+! Free memory
+deallocate(grad)
 
 !     On calcule VISCF et VISCB
 
@@ -568,7 +561,6 @@ call cfbsc3                                                       &
    viscf  , viscb  ,                                              &
    propfa(1,iflmas), propfb(1,iflmab),                            &
 !        ----------------  ----------------
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 
@@ -629,11 +621,9 @@ endif
 deallocate(viscf, viscb)
 deallocate(smbrs, rovsdt)
 deallocate(wflmas, wflmab)
-deallocate(coefu)
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(w1)
 deallocate(w7, w8, w9)
-deallocate(w10, w11, w12)
+deallocate(w10)
 
 !--------
 ! FORMATS

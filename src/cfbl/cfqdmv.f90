@@ -174,9 +174,8 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:), target :: viscf, viscb
 double precision, allocatable, dimension(:), target :: wvisfi, wvisbi
 double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
-double precision, allocatable, dimension(:,:) :: trav
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:,:) :: trav, grad
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: dfrcxt
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
@@ -204,8 +203,7 @@ else
 endif
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w1(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -299,6 +297,9 @@ endif
 
 ! ---> PRISE EN COMPTE DU GRADIENT DE PRESSION
 
+! Allocate a work array for the gradient calculation
+allocate(grad(ncelet,3))
+
 iccocg = 1
 inc    = 1
 nswrgp = nswrgr(ipr)
@@ -317,16 +318,15 @@ call grdpot                                                       &
    frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    rtp(1,ipr)   , coefa(1,iclrtp(ipr,icoef))  ,                   &
                   coefb(1,iclrtp(ipr,icoef))  ,                   &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
 if (iphydr.eq.1) then
   do iel = 1, ncel
-    trav(iel,1) = ( frcxt(iel,1) - w1(iel) )*volume(iel)
-    trav(iel,2) = ( frcxt(iel,2) - w2(iel) )*volume(iel)
-    trav(iel,3) = ( frcxt(iel,3) - w3(iel) )*volume(iel)
+    trav(iel,1) = ( frcxt(iel,1) - grad(iel,1) )*volume(iel)
+    trav(iel,2) = ( frcxt(iel,2) - grad(iel,2) )*volume(iel)
+    trav(iel,3) = ( frcxt(iel,3) - grad(iel,3) )*volume(iel)
   enddo
 else
   do iel = 1, ncel
@@ -337,9 +337,9 @@ else
       rtprom = rtpa(iel,isca(irho))
     endif
 
-    trav(iel,1) = ( rtprom*gx - w1(iel) )*volume(iel)
-    trav(iel,2) = ( rtprom*gy - w2(iel) )*volume(iel)
-    trav(iel,3) = ( rtprom*gz - w3(iel) )*volume(iel)
+    trav(iel,1) = ( rtprom*gx - grad(iel,1) )*volume(iel)
+    trav(iel,2) = ( rtprom*gy - grad(iel,2) )*volume(iel)
+    trav(iel,3) = ( rtprom*gz - grad(iel,3) )*volume(iel)
   enddo
 endif
 
@@ -352,13 +352,13 @@ if (ineedf.eq.1) then
     diipbx = diipb(1,ifac)
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
-    pip =  rtpa(iel,ipr)                                          &
-         +diipbx*w1(iel) +diipby*w2(iel) +diipbz*w3(iel)
+    pip =  rtpa(iel,ipr) &
+        +diipbx*grad(iel,1) +diipby*grad(iel,2) +diipbz*grad(iel,3)
     pfac = coefa(ifac,iclipr) +coefb(ifac,iclipr)*pip
     pfac1= rtpa(iel,ipr)                                          &
-         +(cdgfbo(1,ifac)-xyzcen(1,iel))*w1(iel)                  &
-         +(cdgfbo(2,ifac)-xyzcen(2,iel))*w2(iel)                  &
-         +(cdgfbo(3,ifac)-xyzcen(3,iel))*w3(iel)
+         +(cdgfbo(1,ifac)-xyzcen(1,iel))*grad(iel,1)              &
+         +(cdgfbo(2,ifac)-xyzcen(2,iel))*grad(iel,2)              &
+         +(cdgfbo(3,ifac)-xyzcen(3,iel))*grad(iel,3)
     pfac = coefb(ifac,iclipr)*(extrag(ipr)*pfac1                  &
          +(1.d0-extrag(ipr))*pfac)                                &
          +(1.d0-coefb(ifac,iclipr))*pfac
@@ -387,8 +387,8 @@ if(iifbru.gt.0) then
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
 
-      pip = rtp(iel,ipr)                                       &
-           +(w1(iel)*diipbx+w2(iel)*diipby+w3(iel)*diipbz)
+      pip = rtp(iel,ipr) &
+          +diipbx*grad(iel,1) +diipby*grad(iel,2) +diipbz*grad(iel,3)
 
       pbord = coefa(ifac,iclrtp(ipr,icoef))                    &
            + coefb(ifac,iclrtp(ipr,icoef))*pip
@@ -402,6 +402,9 @@ if(iifbru.gt.0) then
   enddo
 
 endif
+
+! Free memory
+deallocate(grad)
 
 !     Flux de C    .L. associé à Rusanov (PROPFB contient la contribution
 !       de - div(rho u u) - grad P si on est passé dans cfrusb
@@ -424,8 +427,11 @@ enddo
 !      NB : ON NE PREND PAS LE GRADIENT DE (RHO K), MAIS
 !           CA COMPLIQUERAIT LA GESTION DES CL ...
 
-if( (itytur.eq.2 .or. iturb.eq.50                   &
-     .or. iturb.eq.60) .and.igrhok.eq.1) then
+if( (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) .and. igrhok.eq.1) then
+
+  ! Allocate a work array for the gradient calculation
+  allocate(grad(ncelet,3))
+
   iccocg = 1
   inc    = 1
   nswrgp = nswrgr(ik)
@@ -442,16 +448,15 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtp(1,ik)    , coefa(1,iclik)  , coefb(1,iclik)  ,             &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
   d2s3 = 2.d0/3.d0
   do iel = 1, ncel
     romvom = -rtp(iel,isca(irho))*volume(iel)*d2s3
-    trav(iel,1) = trav(iel,1) + w1(iel) * romvom
-    trav(iel,2) = trav(iel,2) + w2(iel) * romvom
-    trav(iel,3) = trav(iel,3) + w3(iel) * romvom
+    trav(iel,1) = trav(iel,1) + grad(iel,1) * romvom
+    trav(iel,2) = trav(iel,2) + grad(iel,2) * romvom
+    trav(iel,3) = trav(iel,3) + grad(iel,3) * romvom
   enddo
 
 !    Calcul des efforts aux parois (partie 3/5), si demande
@@ -461,7 +466,8 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      xkb = rtpa(iel,ik) + diipbx*w1(iel) + diipby*w2(iel) + diipbz*w3(iel)
+      xkb = rtpa(iel,ik) &
+          + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb
       xkb = d2s3*propce(iel,ipcrom)*xkb
       do isou = 1, 3
@@ -471,6 +477,9 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
       enddo
     enddo
   endif
+
+  ! Free memory
+  deallocate(grad)
 
 endif
 
@@ -801,8 +810,7 @@ deallocate(drtp, smbr, rovsdt)
 deallocate(trav)
 deallocate(dfrcxt)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(w1)
 
 !--------
 ! FORMATS

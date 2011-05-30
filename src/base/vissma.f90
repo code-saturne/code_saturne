@@ -132,8 +132,7 @@ double precision s11, s22, s33
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision xfil, xa  , xb  , radeux
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5
+double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
 
 !===============================================================================
 
@@ -141,9 +140,8 @@ double precision, allocatable, dimension(:) :: w4, w5
 ! 1.  INITIALISATION
 !===============================================================================
 
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet))
+! Allocate temporary arrays for gradients calculation
+allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
 
 ! --- Memoire
 idebia = idbia0
@@ -182,18 +180,8 @@ call grdcel &
    nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
    ia     ,                                              &
    rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   w1     , w2     , w3     ,                            &
-!        ------   ------   ------
+   gradu  ,                                              &
    ra     )
-
-do iel = 1, ncel
-  s11  = w1(iel)
-  propce(iel,ipcvst) = s11**2
-enddo
-
-
-!            W2 = DUDY, W3=DUDZ
-! W4 = DVDX, W1 = DVDY, W5=DVDZ
 
 call grdcel &
 !==========
@@ -202,24 +190,8 @@ call grdcel &
    nfecra , epsrgr(iv) , climgr(iv) , extrag(iv) ,       &
    ia     ,                                              &
    rtpa(1,iv) , coefa(1,ipcliv) , coefb(1,ipcliv) ,      &
-   w4     , w1     , w5     ,                            &
-!        ------   ------   ------
+   gradv  ,                                              &
    ra     )
-
-do iel = 1, ncel
-  s22 = w1(iel)
-  propce(iel,ipcvst) = propce(iel,ipcvst) + s22**2
-enddo
-do iel = 1, ncel
-  dudy = w2(iel)
-  dvdx = w4(iel)
-  propce(iel,ipcvst) = propce(iel,ipcvst) + 0.5d0*(dudy+dvdx)**2
-enddo
-
-
-!                       W3=DUDZ
-!            W1 = DVDY, W5=DVDZ
-! W2 = DWDX, W4 = DWDY, W1=DWDZ
 
 call grdcel &
 !==========
@@ -228,23 +200,19 @@ call grdcel &
    nfecra , epsrgr(iw) , climgr(iw) , extrag(iw) ,       &
    ia     ,                                              &
    rtpa(1,iw) , coefa(1,ipcliw) , coefb(1,ipcliw) ,      &
-   w2     , w4     , w1     ,                            &
-!        ------   ------   ------
+   gradw  ,                                              &
    ra     )
 
 do iel = 1, ncel
-  s33 = w1(iel)
-  propce(iel,ipcvst) = propce(iel,ipcvst) + s33**2
-enddo
-do iel = 1, ncel
-  dudz = w3(iel)
-  dwdx = w2(iel)
-  dvdz = w5(iel)
-  dwdy = w4(iel)
-  propce(iel,ipcvst) =                                            &
-    propce(iel,ipcvst) + 0.5d0*((dudz+dwdx)**2+(dvdz+dwdy)**2)
+  propce(iel,ipcvst) = &
+      gradu(iel,1)**2 + gradv(iel,2)**2 + gradw(iel,3)**2  &
+    + 0.5d0*( (gradu(iel,2) + gradv(iel,1))**2             &
+            + (gradu(iel,3) + gradw(iel,1))**2             &
+            + (gradv(iel,3) + gradw(iel,2))**2 )
 enddo
 
+! Free memory
+deallocate(gradu, gradv, gradw)
 
 !===============================================================================
 ! 3.  CALCUL DE LA VISCOSITE (DYNAMIQUE)
@@ -258,10 +226,6 @@ do iel = 1, ncel
   propce(iel,ipcvst) =                                            &
     propce(iel,ipcrom) * delta * sqrt(propce(iel,ipcvst))
 enddo
-
-! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5)
 
 !----
 ! FORMAT

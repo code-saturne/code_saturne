@@ -133,7 +133,7 @@ integer          ivar  , modntl
 double precision epsrgp, climgp, extrap, vrmin, vrmax, var
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -143,7 +143,7 @@ double precision, allocatable, dimension(:) :: w4, w5, w6
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(grad(ncelet,3))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -204,7 +204,7 @@ if(iappel.eq.1) then
 !      produit de la densite de courant par le champ electrique
 
 
-!   2.1 Calcul du grad (potR) (W4, W5, W6)
+!   2.1 Calcul du grad (potR)
 !  ---------------------------
 
   ivar = isca(ipotr)
@@ -237,24 +237,23 @@ if(iappel.eq.1) then
    ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
-   w4     , w5     , w6     ,                                     &
-!       d POTR /dx   d POTR /dy   d POTR /dz
+   grad   ,                                                       &
    ra     )
 
 
-!   2.2 Calcul du champ electrique E = - grad (potR) : (-W4, -W5, -W6)
+!   2.2 Calcul du champ electrique E = - grad (potR)
 !  -------------------------------------------------
 
 !   2.3 Calcul de la densite de courant j = sig E  :
 !  -------------------------------------------------
-!                                   PROPCE(IEL,IPCSIG) (-W4, -W5, -W6)
+!                                   PROPCE(IEL,IPCSIG)
 
 
   if( ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1 ) then
     do iel = 1, ncel
-      propce(iel,ipcdc1)= - propce(iel,ipcsig) * w4(iel)
-      propce(iel,ipcdc2)= - propce(iel,ipcsig) * w5(iel)
-      propce(iel,ipcdc3)= - propce(iel,ipcsig) * w6(iel)
+      propce(iel,ipcdc1)= - propce(iel,ipcsig) * grad(iel,1)
+      propce(iel,ipcdc2)= - propce(iel,ipcsig) * grad(iel,2)
+      propce(iel,ipcdc3)= - propce(iel,ipcsig) * grad(iel,3)
     enddo
   endif
 
@@ -263,7 +262,7 @@ if(iappel.eq.1) then
 !                                                           sig E.E
   do iel = 1, ncel
     propce(iel,ipcefj)=                                           &
-         propce(iel,ipcsig)*(w4(iel)**2+w5(iel)**2+w6(iel)**2)
+         propce(iel,ipcsig)*(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2)
   enddo
 
 
@@ -275,11 +274,11 @@ if(iappel.eq.1) then
     write(nfecra,1000)
 
 !     Grad PotR = -E
-    var    = w4(1)
+    var    = grad(1,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var    = w4(iel)
+      var    = grad(iel,1)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -289,11 +288,11 @@ if(iappel.eq.1) then
     endif
     WRITE(NFECRA,1010)'Gr_PotRX',VRMIN,VRMAX
 
-    var    = w5(1)
+    var    = grad(1,2)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var    = w5(iel)
+      var    = grad(iel,2)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -303,11 +302,11 @@ if(iappel.eq.1) then
     endif
     WRITE(NFECRA,1010)'Gr_PotRY',VRMIN,VRMAX
 
-    var    = w6(1)
+    var    = grad(1,3)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var    = w6(iel)
+      var    = grad(iel,3)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -317,11 +316,11 @@ if(iappel.eq.1) then
     endif
     WRITE(NFECRA,1010)'Gr_PotRZ',VRMIN,VRMAX
 
-    var    = -propce(1,ipcsig) * w4(1)
+    var    = -propce(1,ipcsig) * grad(1,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * w4(iel)
+      var = -propce(iel,ipcsig) * grad(iel,1)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -331,11 +330,11 @@ if(iappel.eq.1) then
     endif
     WRITE(NFECRA,1010)'Cour_ReX',VRMIN,VRMAX
 
-    var    = -propce(1,ipcsig) * w5(1)
+    var    = -propce(1,ipcsig) * grad(1,2)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * w5(iel)
+      var = -propce(iel,ipcsig) * grad(iel,2)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -345,11 +344,11 @@ if(iappel.eq.1) then
     endif
     WRITE(NFECRA,1010)'Cour_ReY',VRMIN,VRMAX
 
-    var    = -propce(1,ipcsig) * w6(1)
+    var    = -propce(1,ipcsig) * grad(1,3)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * w6(iel)
+      var = -propce(iel,ipcsig) * grad(iel,3)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -372,7 +371,7 @@ if(iappel.eq.1) then
   if(ippmod(ieljou).ge.2 .or. ippmod(ieljou).eq.4) then
 
 
-!   3.1 Calcul du grad (potI) :  (W4, W5, W6)
+!   3.1 Calcul du grad (potI) :
 !  ----------------------------
 
     ivar = isca(ipoti)
@@ -404,23 +403,22 @@ if(iappel.eq.1) then
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    w4     , w5     , w6     ,                                    &
-!       d POTI /dx   d POTI /dy   d POTI /dz
+    grad   ,                                                      &
     ra     )
 
 
-!   3.2 Calcul du champ electrique Ei = - grad (potI) : (-W4, -W5, -W6)
+!   3.2 Calcul du champ electrique Ei = - grad (potI) :
 !  -------------------------------------------------
 
 !   3.3 Partie imaginaire de la densite de courant :
 !  ------------------------------------------------
-!                                   PROPCE(IEL,IPCSIG) (-W4, -W5, -W6)
+!                                   PROPCE(IEL,IPCSIG)
 
   if ( ippmod(ieljou).eq.4 ) then
     do iel = 1, ncel
-      propce(iel,ipcdi1)= -propce(iel,ipcsig)*w4(iel)
-      propce(iel,ipcdi2)= -propce(iel,ipcsig)*w5(iel)
-      propce(iel,ipcdi3)= -propce(iel,ipcsig)*w6(iel)
+      propce(iel,ipcdi1)= -propce(iel,ipcsig)*grad(iel,1)
+      propce(iel,ipcdi2)= -propce(iel,ipcsig)*grad(iel,2)
+      propce(iel,ipcdi3)= -propce(iel,ipcsig)*grad(iel,3)
     enddo
   endif
 
@@ -432,7 +430,7 @@ if(iappel.eq.1) then
 
 !             ajout de la partie imaginaire et ...
       propce(iel,ipcefj) = propce(iel,ipcefj)                     &
-         + propce(iel,ipcsii)*(w4(iel)**2+w5(iel)**2+w6(iel)**2)
+         + propce(iel,ipcsii)*(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2)
 !             .    ..division par 2
       propce(iel,ipcefj) = 0.5d0*propce(iel,ipcefj)
 
@@ -446,11 +444,11 @@ if(iappel.eq.1) then
     if(modntl.eq.0) then
 
 !     Grad PotI = -Ei
-      var    = w4(1)
+      var    = grad(1,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var    = w4(iel)
+        var    = grad(iel,1)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -460,11 +458,11 @@ if(iappel.eq.1) then
       endif
       WRITE(NFECRA,1010)'Gr_PotIX',VRMIN,VRMAX
 
-      var    = w5(1)
+      var    = grad(1,2)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var    = w5(iel)
+        var    = grad(iel,2)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -474,11 +472,11 @@ if(iappel.eq.1) then
       endif
       WRITE(NFECRA,1010)'Gr_PotIY',VRMIN,VRMAX
 
-      var    = w6(1)
+      var    = grad(1,3)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var    = w6(iel)
+        var    = grad(iel,3)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -489,11 +487,11 @@ if(iappel.eq.1) then
       WRITE(NFECRA,1010)'Gr_PotIZ',VRMIN,VRMAX
 
 !     j=sigma E
-      var    = -propce(1,ipcsii) * w4(1)
+      var    = -propce(1,ipcsii) * grad(1,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * w4(iel)
+        var = -propce(iel,ipcsii) * grad(iel,1)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -503,11 +501,11 @@ if(iappel.eq.1) then
       endif
       WRITE(NFECRA,1010)'Cour_ImX',VRMIN,VRMAX
 
-      var    = -propce(1,ipcsii) * w5(1)
+      var    = -propce(1,ipcsii) * grad(1,2)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * w5(iel)
+        var = -propce(iel,ipcsii) * grad(iel,2)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -517,11 +515,11 @@ if(iappel.eq.1) then
       endif
       WRITE(NFECRA,1010)'Cour_ImY',VRMIN,VRMAX
 
-      var    = -propce(1,ipcsii) * w6(1)
+      var    = -propce(1,ipcsii) * grad(1,3)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * w6(iel)
+        var = -propce(iel,ipcsii) * grad(iel,3)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -604,16 +602,15 @@ if (iappel.eq.2) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-   w4     , w5     , w6     ,                                     &
-!       d Ax /dx   d Ax /dy   d Ax /dz
+   grad   ,                                                       &
    ra     )
 
 !       B = rot A
 
     do iel = 1, ncel
       w1(iel)=  zero
-      w2(iel)=  w6(iel)
-      w3(iel)= -w5(iel)
+      w2(iel)=  grad(iel,3)
+      w3(iel)= -grad(iel,2)
     enddo
 
 !    Sur Ay
@@ -648,16 +645,15 @@ if (iappel.eq.2) then
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    w4     , w5     , w6     ,                                    &
-!       d Ay /dx   d Ay /dy   d Ay /dz
+    grad   ,                                                      &
     ra     )
 
 !       B = rot A
 
     do iel = 1, ncel
-      w1(iel)= w1(iel) - w6(iel)
+      w1(iel)= w1(iel) - grad(iel,3)
       w2(iel)= w2(iel) + zero
-      w3(iel)= w3(iel) + w4(iel)
+      w3(iel)= w3(iel) + grad(iel,1)
     enddo
 
 !    Sur Az
@@ -692,15 +688,14 @@ if (iappel.eq.2) then
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    w4     , w5     , w6     ,                                    &
-!       d Az /dx   d Az /dy   d Az /dz
+    grad   ,                                                      &
     ra     )
 
 !       B = rot A
 
     do iel = 1, ncel
-      w1(iel)= w1(iel) + w5(iel)
-      w2(iel)= w2(iel) - w4(iel)
+      w1(iel)= w1(iel) + grad(iel,2)
+      w2(iel)= w2(iel) - grad(iel,1)
       w3(iel)= w3(iel) + zero
     enddo
 
@@ -808,7 +803,7 @@ endif
 
 ! Free memory
 deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(grad)
 
 !--------
 ! FORMATS

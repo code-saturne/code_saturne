@@ -38,8 +38,6 @@ subroutine raysol &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    ,                   &
    ru     , rua    ,                                              &
    sa     ,                                                       &
    qx     , qy     , qz     ,                                     &
@@ -112,7 +110,6 @@ subroutine raysol &
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ru  (ncelet)     ! tr ! --- ! luminance                                      !
 ! rua (ncelet)     ! tr ! --- ! luminance pdt precedent (nulle)                !
 ! sa (ncelet)      ! tr ! --> ! part d'absorption du terme source rad          !
@@ -170,10 +167,6 @@ double precision flurds(nfac), flurdb(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision w10(ncelet)
 
 double precision ru(ncelet), rua(ncelet)
 double precision sa(ncelet)
@@ -204,11 +197,16 @@ double precision relaxp, thetap
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:) :: w10
+
 !===============================================================================
 
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
+
+! Allocate a work array
+allocate(w10(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -474,6 +472,8 @@ do ii = -1,1,2
   enddo
 enddo
 
+! Free memory
+deallocate(w10)
 
 !--------
 ! FORMATS

@@ -157,8 +157,8 @@ double precision xyzref(4) ! xyzref(3) + coefup for broadcast
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: coefu
+double precision, allocatable, dimension(:,:) :: grad
 
 integer          ipass
 data             ipass /0/
@@ -172,7 +172,6 @@ save             ipass
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(coefu(nfabor))
 
 ! Initialize variables to avoid compiler warnings
@@ -557,6 +556,9 @@ endif
 
 if (itbslb.gt.0) then
 
+  ! Allocate a work array for the gradient calculation
+  allocate(grad(ncelet,3))
+
   inc = 1
   iccocg = 1
   nswrgp = nswrgr(ipr)
@@ -575,8 +577,7 @@ if (itbslb.gt.0) then
        rvoid  ,                                                       &
        frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
        rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
-       w1     , w2     , w3     ,                                     &
-       !        ------   ------   ------
+       grad   ,                                                       &
        ra     )
 
 
@@ -589,26 +590,29 @@ if (itbslb.gt.0) then
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      coefu(ifac) = rtpa(ii,ipr)                                &
-           + diipbx*w1(ii)+ diipby*w2(ii) + diipbz*w3(ii)       &
-           + ro0*( gx*(cdgfbo(1,ifac)-xxp0)                     &
-           + gy*(cdgfbo(2,ifac)-xyp0)                           &
-           + gz*(cdgfbo(3,ifac)-xzp0))                          &
+      coefu(ifac) = rtpa(ii,ipr)                                      &
+           + diipbx*grad(ii,1)+ diipby*grad(ii,2) + diipbz*grad(ii,3) &
+           + ro0*( gx*(cdgfbo(1,ifac)-xxp0)                           &
+           + gy*(cdgfbo(2,ifac)-xyp0)                                 &
+           + gz*(cdgfbo(3,ifac)-xzp0))                                &
            + p0 - pred0
     enddo
   else
     do ifac = 1, nfabor
       ii = ifabor(ifac)
       coefu(ifac) = rtpa(ii,ipr)                                &
-           + (cdgfbo(1,ifac)-xyzcen(1,ii))*w1(ii)               &
-           + (cdgfbo(2,ifac)-xyzcen(2,ii))*w2(ii)               &
-           + (cdgfbo(3,ifac)-xyzcen(3,ii))*w3(ii)               &
+           + (cdgfbo(1,ifac)-xyzcen(1,ii))*grad(ii,1)           &
+           + (cdgfbo(2,ifac)-xyzcen(2,ii))*grad(ii,2)           &
+           + (cdgfbo(3,ifac)-xyzcen(3,ii))*grad(ii,3)           &
            + ro0*(  gx*(cdgfbo(1,ifac)-xxp0)                    &
            + gy*(cdgfbo(2,ifac)-xyp0)                           &
            + gz*(cdgfbo(3,ifac)-xzp0))                          &
            + p0 - pred0
     enddo
   endif
+
+  ! Free memory
+  deallocate(grad)
 
 endif
 
@@ -834,6 +838,9 @@ do ivar = 1, nvar
     enddo
   endif
 enddo
+
+! Free memory
+deallocate(coefu)
 
 
 ! 6.3 SYMETRIE

@@ -152,6 +152,7 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
+double precision, allocatable, dimension(:,:) :: gradp, gradk
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 
@@ -200,51 +201,57 @@ endif
 ! 2. CALCUL DU TERME EN GRAD PHI.GRAD K
 !===============================================================================
 
-  iccocg = 1
-  inc = 1
-  ivar = iphi
+! Allocate temporary arrays gradients calculation
+allocate(gradp(ncelet,3), gradk(ncelet,3))
 
-  nswrgp = nswrgr(ivar )
-  imligp = imligr(ivar )
-  iwarnp = iwarni(ivar )
-  epsrgp = epsrgr(ivar )
-  climgp = climgr(ivar )
-  extrap = extrag(ivar )
+iccocg = 1
+inc = 1
+ivar = iphi
 
-  call grdcel &
-  !==========
+nswrgp = nswrgr(ivar )
+imligp = imligr(ivar )
+iwarnp = iwarni(ivar )
+epsrgp = epsrgr(ivar )
+climgp = climgr(ivar )
+extrap = extrag(ivar )
+
+call grdcel &
+!==========
  ( iphi , imrgra , inc    , iccocg , nswrgp , imligp ,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iphi ) , coefa(1,iclphi) , coefb(1,iclphi) ,            &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   gradp  ,                                                       &
    ra     )
 
-  iccocg = 1
-  inc = 1
-  ivar = ik
+iccocg = 1
+inc = 1
+ivar = ik
 
-  nswrgp = nswrgr(ivar )
-  imligp = imligr(ivar )
-  iwarnp = iwarni(ivar )
-  epsrgp = epsrgr(ivar )
-  climgp = climgr(ivar )
-  extrap = extrag(ivar )
+nswrgp = nswrgr(ivar )
+imligp = imligr(ivar )
+iwarnp = iwarni(ivar )
+epsrgp = epsrgr(ivar )
+climgp = climgr(ivar )
+extrap = extrag(ivar )
 
-  call grdcel &
-  !==========
+call grdcel &
+!==========
  ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,ik )  , coefa(1,iclikp) , coefb(1,iclikp) ,             &
-   w4     , w5     , w6     ,                                     &
-!        ------   ------   ------
+   gradk  ,                                                       &
    ra     )
 
-  do iel = 1, ncel
-    w1(iel) = w1(iel)*w4(iel) + w2(iel)*w5(iel) + w3(iel)*w6(iel)
-  enddo
+do iel = 1, ncel
+  w1(iel) = gradp(iel,1)*gradk(iel,1) &
+          + gradp(iel,2)*gradk(iel,2) &
+          + gradp(iel,3)*gradk(iel,3)
+enddo
+
+! Free memory
+deallocate(gradp, gradk)
 
 !===============================================================================
 ! 3. RESOLUTION DE L'EQUATION DE F_BARRE

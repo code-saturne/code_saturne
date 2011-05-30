@@ -34,13 +34,11 @@ subroutine resssg &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , grdvit , grarox , graroy , graroz ,          &
+   coefa  , coefb  , grdvit , gradro ,                            &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
    smbr   , rovsdt ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
 
 !===============================================================================
@@ -81,8 +79,7 @@ subroutine resssg &
 !  (nfabor, *)     !    !     !                                                !
 ! grdvit           ! tr ! --- ! tableau de travail pour terme grad             !
 !  (ncelet,3,3)    !    !     !                         de vitesse             !
-! grarox,y,z       ! tr ! <-- ! tableau de travail pour grad rom               !
-!  (ncelet)        !    !     !                                                !
+! gradro(ncelet,3) ! tr ! <-- ! tableau de travail pour grad rom               !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smcelp(ncesmp    ! tr ! <-- ! valeur de la variable associee a la            !
@@ -97,7 +94,6 @@ subroutine resssg &
 ! tslagi(ncelet    ! tr ! <-- ! ts implicite couplage retour lagr.             !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -145,15 +141,12 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision grdvit(ncelet,3,3)
-double precision grarox(ncelet), graroy(ncelet), graroz(ncelet)
+double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
 double precision viscf(nfac), viscb(nfabor), coefax(nfabor)
 double precision tslage(ncelet),tslagi(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -178,11 +171,18 @@ double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3)
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:) :: w1, w2
+double precision, allocatable, dimension(:) :: w7
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet))
+allocate(w7(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -520,7 +520,7 @@ if(igrari.eq.1) then
    ivar   , isou   , ipp    ,                                     &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , grarox , graroy , graroz , w7     ,          &
+   coefa  , coefb  , gradro , w7     ,                            &
    ra     )
 
 !     Si on extrapole les T.S. : PROPCE
@@ -633,6 +633,9 @@ call codits                                                       &
 ! 11. IMPRESSIONS
 !===============================================================================
 
+! Free memory
+deallocate(w1, w2)
+deallocate(w7)
 
 !--------
 ! FORMATS

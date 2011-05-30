@@ -125,7 +125,7 @@ double precision xx, yy, zz
 double precision omegal(3), omegad(3), omegar(3), omgnrl, omgnrd, omgnrr
 double precision vitent, daxis2
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -133,8 +133,8 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 ! 1.  INITIALISATIONS
 !=========================================================================
 
-! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+! Allocate a temporary array
+allocate(grad(ncelet,3))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -241,8 +241,7 @@ call grdcel &
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,ipr) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 ! For a specific face to face coupling, geometric assumptions are made
@@ -262,7 +261,7 @@ if (ifaccp.eq.1) then
     zjjp = djppts(3,ipt)
 
     rvdis(ipt,ipos) = rtp(iel,ipr) &
-         + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+         + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     ! On prend en compte le potentiel centrifuge en repère relatif
     if (icormx(numcpl).eq.1) then
@@ -305,7 +304,7 @@ else
       jpf =       sqrt(xjpf**2+yjpf**2+zjpf**2)
     endif
 
-    rvdis(ipt,ipos) = (xjpf*w1(iel)+yjpf*w2(iel)+zjpf*w3(iel))  &
+    rvdis(ipt,ipos) = (xjpf*grad(iel,1)+yjpf*grad(iel,2)+zjpf*grad(iel,3))  &
          /jpf
 
   enddo
@@ -350,8 +349,7 @@ do isou = 1, 3
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -384,7 +382,7 @@ do isou = 1, 3
       !        zjf = coopts(3,ipt) - xyzcen(3,iel)
 
       !        rvdis(ipt,ipos) = rtp(iel,ivar) &
-      !          + xjf*w1(iel) + yjf*w2(iel) + zjf*W3(iel)
+      !          + xjf*grad(iel,1) + yjf*grad(iel,2) + zjf*grad(iel,3)
 
       ! -- CENTRE
 
@@ -393,7 +391,7 @@ do isou = 1, 3
       zjjp = djppts(3,ipt)
 
       rvdis(ipt,ipos) = rtp(iel,ivar) &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
       ! On prend en compte la vitesse d'entrainement en repère relatif
       if (icormx(numcpl).eq.1) then
@@ -429,7 +427,7 @@ do isou = 1, 3
 
 
       rvdis(ipt,ipos) = rtp(iel,ivar)                             &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -480,8 +478,7 @@ if (itytur.eq.2) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -498,7 +495,7 @@ if (itytur.eq.2) then
       zjjp = djppts(3,ipt)
 
       ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -515,7 +512,7 @@ if (itytur.eq.2) then
       zjjp = djppts(3,ipt)
 
       ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -545,8 +542,7 @@ if (itytur.eq.2) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -563,7 +559,7 @@ if (itytur.eq.2) then
       zjjp = djppts(3,ipt)
 
       ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -580,7 +576,7 @@ if (itytur.eq.2) then
       zjjp = djppts(3,ipt)
 
       ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -656,8 +652,7 @@ if (itytur.eq.2) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -666,14 +661,14 @@ if (itytur.eq.2) then
         iel = locpts(ipt)
 
         if(isou.eq.1) then
-          ra(itrav3 + ipt-1) = w2(iel)
-          ra(itrav4 + ipt-1) = w3(iel)
+          ra(itrav3 + ipt-1) = grad(iel,2)
+          ra(itrav4 + ipt-1) = grad(iel,3)
         elseif(isou.eq.2) then
-          ra(itrav5 + ipt-1) = w1(iel)
-          ra(itrav6 + ipt-1) = w3(iel)
+          ra(itrav5 + ipt-1) = grad(iel,1)
+          ra(itrav6 + ipt-1) = grad(iel,3)
         elseif(isou.eq.3) then
-          ra(itrav7 + ipt-1) = w1(iel)
-          ra(itrav8 + ipt-1) = w2(iel)
+          ra(itrav7 + ipt-1) = grad(iel,1)
+          ra(itrav8 + ipt-1) = grad(iel,2)
         endif
 
       enddo
@@ -796,8 +791,7 @@ elseif (itytur.eq.3) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
     if (isou.eq.1) itrav = itrav1
@@ -820,7 +814,7 @@ elseif (itytur.eq.3) then
         zjjp = djppts(3,ipt)
 
         ra(itrav + ipt-1) = rtp(iel,ivar)                         &
-             + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
       enddo
 
@@ -837,7 +831,7 @@ elseif (itytur.eq.3) then
         zjjp = djppts(3,ipt)
 
         ra(itrav + ipt-1) = rtp(iel,ivar)                         &
-             + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
       enddo
 
@@ -869,8 +863,7 @@ elseif (itytur.eq.3) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -887,7 +880,7 @@ elseif (itytur.eq.3) then
       zjjp = djppts(3,ipt)
 
       ra(itrav7 + ipt-1) = rtp(iel,iep)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -904,7 +897,7 @@ elseif (itytur.eq.3) then
       zjjp = djppts(3,ipt)
 
       ra(itrav7 + ipt-1) = rtp(iel,iep)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1034,8 +1027,7 @@ elseif (iturb.eq.50) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -1052,7 +1044,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1069,7 +1061,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1099,8 +1091,7 @@ elseif (iturb.eq.50) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -1117,7 +1108,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1134,7 +1125,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1164,8 +1155,7 @@ elseif (iturb.eq.50) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,iphi) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -1178,7 +1168,7 @@ elseif (iturb.eq.50) then
     zjjp = djppts(3,ipt)
 
     ra(itrav3 + ipt-1) = rtp(iel,iphi)                        &
-         + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+         + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
   enddo
 
@@ -1206,8 +1196,7 @@ elseif (iturb.eq.50) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,ifb) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -1224,7 +1213,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       ra(itrav4 + ipt-1) = rtp(iel,ifb)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1241,7 +1230,7 @@ elseif (iturb.eq.50) then
       zjjp = djppts(3,ipt)
 
       ra(itrav4 + ipt-1) = rtp(iel,ifb)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1328,8 +1317,7 @@ elseif (iturb.eq.60) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -1346,7 +1334,7 @@ elseif (iturb.eq.60) then
       zjjp = djppts(3,ipt)
 
       ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1363,7 +1351,7 @@ elseif (iturb.eq.60) then
       zjjp = djppts(3,ipt)
 
       ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1393,8 +1381,7 @@ elseif (iturb.eq.60) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,iomg) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -1410,7 +1397,7 @@ elseif (iturb.eq.60) then
       zjjp = djppts(3,ipt)
 
       ra(itrav2 + ipt-1) = rtp(iel,iomg)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1427,7 +1414,7 @@ elseif (iturb.eq.60) then
       zjjp = djppts(3,ipt)
 
       ra(itrav2 + ipt-1) = rtp(iel,iomg)                        &
-           + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+           + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
 
@@ -1522,8 +1509,7 @@ elseif (iturb.eq.60) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
 
@@ -1532,14 +1518,14 @@ elseif (iturb.eq.60) then
         iel = locpts(ipt)
 
         if (isou.eq.1) then
-          ra(itrav3 + ipt-1) = w2(iel)
-          ra(itrav4 + ipt-1) = w3(iel)
+          ra(itrav3 + ipt-1) = grad(iel,2)
+          ra(itrav4 + ipt-1) = grad(iel,3)
         elseif (isou.eq.2) then
-          ra(itrav5 + ipt-1) = w1(iel)
-          ra(itrav6 + ipt-1) = w3(iel)
+          ra(itrav5 + ipt-1) = grad(iel,1)
+          ra(itrav6 + ipt-1) = grad(iel,3)
         elseif (isou.eq.3) then
-          ra(itrav7 + ipt-1) = w1(iel)
-          ra(itrav8 + ipt-1) = w2(iel)
+          ra(itrav7 + ipt-1) = grad(iel,1)
+          ra(itrav8 + ipt-1) = grad(iel,2)
         endif
 
       enddo
@@ -1632,8 +1618,7 @@ if (nscal.gt.0) then
     epsrgp , climgp , extrap ,                                    &
     ia     ,                                                      &
     rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,         &
-    w1     , w2     , w3     ,                                    &
-!         ------   ------   ------
+    grad   ,                                                      &
     ra     )
 
     ! For a specific face to face coupling, geometric assumptions are made
@@ -1659,7 +1644,7 @@ if (nscal.gt.0) then
 !        zjf = coopts(3,ipt) - xyzcen(3,iel)
 
 !        rvdis(ipt,ipos) = rtp(iel,ivar) &
-!          + xjf*w1(iel) + yjf*w2(iel) + zjf*w3(iel)
+!          + xjf*grad(iel,1) + yjf*grad(iel,2) + zjf*grad(iel,3)
 
 ! -- CENTRE
 
@@ -1668,7 +1653,7 @@ if (nscal.gt.0) then
         zjjp = djppts(3,ipt)
 
         rvdis(ipt,ipos) = rtp(iel,ivar) &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+          + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
       enddo
 
@@ -1685,7 +1670,7 @@ if (nscal.gt.0) then
         zjjp = djppts(3,ipt)
 
         rvdis(ipt,ipos) = rtp(iel,ivar)                             &
-          + xjjp*w1(iel) + yjjp*w2(iel) + zjjp*w3(iel)
+          + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
       enddo
 
@@ -1696,7 +1681,7 @@ if (nscal.gt.0) then
 endif
 
 ! Free memory
-deallocate(w1, w2, w3)
+deallocate(grad)
 
 return
 end subroutine

@@ -160,7 +160,8 @@ double precision epsrgp, climgp, extrap
 double precision romf, d2s3m, vecfac
 
 double precision, allocatable, dimension(:) :: vistot
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w6
 
 !===============================================================================
@@ -171,8 +172,6 @@ double precision, allocatable, dimension(:) :: w4, w6
 
 ! Allocate temporary arrays
 allocate(vistot(ncelet))
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w6(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -240,6 +239,10 @@ endif
 ! 2.  CALCUL DES TERMES EN GRAD_TRANSPOSE
 !===============================================================================
 
+! Allocate a temporary array for the gradient calculation
+allocate(grad(ncelet,3))
+allocate(w4(ncelet), w6(ncelet))
+
 do isou = 1, 3
 
   if (isou.eq.1) ivar = iu
@@ -266,8 +269,7 @@ do isou = 1, 3
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -286,15 +288,15 @@ do isou = 1, 3
 
     if(idim.eq.1) then
       do iel = 1, ncelet
-        w4(iel) = vistot(iel)*w1(iel)
+        w4(iel) = vistot(iel)*grad(iel,1)
       enddo
     elseif(idim.eq.2) then
       do iel = 1, ncelet
-        w4(iel) = vistot(iel)*w2(iel)
+        w4(iel) = vistot(iel)*grad(iel,2)
       enddo
     elseif(idim.eq.3) then
       do iel = 1, ncelet
-        w4(iel) = vistot(iel)*w3(iel)
+        w4(iel) = vistot(iel)*grad(iel,3)
       enddo
     endif
 
@@ -334,6 +336,10 @@ do isou = 1, 3
 
 enddo
 
+! Free memory
+deallocate(grad)
+deallocate(w6)
+
 !===============================================================================
 ! 3.  CALCUL DES TERMES EN DIV
 !===============================================================================
@@ -342,6 +348,8 @@ enddo
 
 !  Ici pour l'ordre 2 en temps, il faudrait tout prendre en n...
 
+! Allocate a temporary array
+allocate(w1(ncelet))
 
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
@@ -384,6 +392,10 @@ else
     enddo
   endif
 endif
+
+! Free memory
+deallocate(vistot)
+deallocate(w1)
 
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
@@ -437,9 +449,7 @@ do isou = 1, 3
 enddo
 
 ! Free memory
-deallocate(vistot)
-deallocate(w1, w2, w3)
-deallocate(w4, w6)
+deallocate(w4)
 
 return
 

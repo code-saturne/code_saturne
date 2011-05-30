@@ -152,9 +152,9 @@ double precision dtsdtm,dtsdt0
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:) :: grarox, graroy, graroz
 double precision, allocatable, dimension(:) :: wcf
 double precision, allocatable, dimension(:) :: cofbdt, coefbr
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
@@ -169,15 +169,8 @@ allocate(dam(ncelet))
 allocate(cofbdt(nfabor))
 
 ! Allocate other arrays, depending on user options
-if (iptlro.eq.1 .or. ippmod(icompf).ge.0) then
-  allocate(grarox(ncelet), graroy(ncelet), graroz(ncelet))
-  allocate(coefbr(nfabor))
-endif
 if (ippmod(icompf).ge.0) then
   allocate(wcf(ncelet))
-endif
-if (iptlro.eq.1) then
-  allocate(coefbr(nfabor))
 endif
 
 ! Allocate work arrays
@@ -253,8 +246,7 @@ enddo
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
 !        ---
-   viscf  , viscb  , cofbdt , w1     , w2     , dam    ,          &
-   grarox , graroy , graroz ,                                     &
+   viscf  , viscb  , cofbdt ,                                     &
    ra     )
 
   endif
@@ -307,6 +299,10 @@ if (idtvar.ge.0) then
 
   if (iptlro.eq.1) then
 
+    ! Allocate a temporary array for the gradient calculation
+    allocate(grad(ncelet,3))
+    allocate(coefbr(nfabor))
+
     do ifac = 1, nfabor
       coefbr(ifac) = 0.d0
     enddo
@@ -328,16 +324,19 @@ if (idtvar.ge.0) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom), coefbr ,                   &
-   grarox , graroy , graroz ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
     do iel = 1, ncel
-      w3(iel) = (grarox(iel)*gx + graroy(iel)*gy + graroz(iel)*gz)&
+      w3(iel) = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)&
            /propce(iel,ipcrom)
       w3(iel) = 1.d0/sqrt(max(epzero,w3(iel)))
 
     enddo
+
+    ! Free memory
+    deallocate(grad)
+    deallocate(coefbr)
 
 !     On met le nombre de clippings a 0 (il le restera pour IDTVAR=0)
     nclptr = 0
@@ -997,8 +996,6 @@ endif
 deallocate(viscf, viscb)
 deallocate(dam)
 deallocate(cofbdt)
-if (allocated(grarox)) deallocate(grarox, graroy, graroz)
-if (allocated(coefbr)) deallocate(coefbr)
 if (allocated(wcf)) deallocate(wcf)
 deallocate(w1, w2, w3)
 

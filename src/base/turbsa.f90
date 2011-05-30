@@ -162,9 +162,10 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:) :: smbrsa, tinssa, divu
+double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw, grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w4
+double precision, allocatable, dimension(:) :: w7
 
 !===============================================================================
 
@@ -180,8 +181,8 @@ allocate(tinssa(ncelet), divu(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w4(ncelet))
+allocate(w7(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -242,20 +243,11 @@ cv13 = csav1**3
 !      En sortie de l'etape on conserve TINSSA, DIVU, SMBRSA
 !===============================================================================
 
+! Allocate temporary arrays for gradients calculation
+allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+
 iccocg = 1
 inc = 1
-
-! ON S'APPUIE SUR LES TABLEAUX DE TRAVAIL W4,W5,W6
-!     ON UTILISE EGALEMENT SMBRSA ET TINSSA COMME
-!                           TABLEAUX DE TRAVAIL TEMPORAIRES
-!     W1,W2,W3 SONT UTILISES DANS GRDCEL
-!     TINSSA RECOIT OMEGA**2
-!        TINSSA = {          DUDY**2 - 2*DUDY*DVDX + DUDZ**2 -2*DUDZ*DWDX
-!                  DVDX**2                         + DVDZ**2 -2*DVDZ*DWDY
-!                  DWDX**2 + DWDY**2
-!               = 2 Oij.Oij
-
-
 
 nswrgp = nswrgr(iu)
 imligp = imligr(iu)
@@ -264,30 +256,15 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-! SMBRSA  = DUDX ,W4 = DUDY ,W5 = DUDZ
-
 call grdcel &
 !==========
  ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   smbrsa , w4     , w5     ,                                     &
-!  ------   ------   ------
+   gradu  ,                                                       &
    ra     )
 
-
-! TINSSA = DUDY**2 + DUDZ**2
-! DIVU   = DUDX
-
-do iel = 1, ncel
-  tinssa(iel)   = w4(iel)**2 + w5(iel)**2
-  divu  (iel)   = smbrsa(iel)
-enddo
-
-!               ,W4     = DUDY ,W5     = DUDZ
-
-! W6     = DVDX ,W7     = DVDY ,W8     = DVDZ
 
 nswrgp = nswrgr(iv)
 imligp = imligr(iv)
@@ -302,26 +279,9 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-!  dpdx     dpdy     dpdz
-   w6     , w7     , w8     ,                                     &
-!  ------   ------   ------
+   gradv  ,                                                       &
    ra     )
 
-! W6     = DVDX ,W7     = DVDY ,W8     = DVDZ
-
-! TINSSA =           DUDY**2 - 2*DUDY*DVDX + DUDZ**2 -2*DUDZ*DWDX
-!          DVDX**2                         + DVDZ**2
-! DIVU = DUDX + DVDY
-
-do iel = 1, ncel
-  tinssa(iel)   = tinssa(iel) - 2.d0*w4(iel)*w6(iel)              &
-           + w6(iel)**2 + w8(iel)**2
-  divu  (iel)   = divu(iel) + w7   (iel)
-enddo
-
-!               ,              ,W5     = DUDZ
-!               ,              ,W8     = DVDZ
-! W4     = DWDX ,W6     = DWDY ,W7     = DWDZ
 
 nswrgp = nswrgr(iw)
 imligp = imligr(iw)
@@ -336,27 +296,32 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   w4     , w6     , w7     ,                                     &
-!  ------   ------   ------
+   gradw  ,                                                       &
    ra     )
 
-! TINSSA = 2 OMEGA**2 =
-!                            DUDY**2 - 2*DUDY*DVDX + DUDZ**2 -2*DUDZ*DWDX
-!                  DVDX**2                         + DVDZ**2 -2*DVDZ*DWDY
-!                  DWDX**2 + DWDY**2
+! TINSSA = 2 OMEGA**2 = DUDY**2 + DVDX**2 + DUDZ**2 + DWDX**2 + DVDZ**2 + DWDY**2
+!                     - 2*DUDY*DVDX - 2*DUDZ*DWDX - 2*DVDZ*DWDY
+!
+!        = 2 Oij.Oij
 ! DIVU = DUDX + DVDY + DWDZ
 
 do iel = 1, ncel
-  tinssa (iel)   = tinssa(iel) - 2.d0*w8(iel)*W6(iel) - 2.d0*w5(iel)*w4(iel) &
-           +  w4(iel)**2 +w6(iel)**2
-  divu  (iel)   = divu(iel) + w7   (iel)
+  tinssa(iel) = gradu(iel,2)**2 + gradv(iel,1)**2   &
+              + gradu(iel,3)**2 + gradw(iel,1)**2   &
+              + gradv(iel,3)**2 + gradw(iel,2)**2   &
+              - 2.d0*(gradu(iel,2)*gradv(iel,1))    &
+              - 2.d0*(gradu(iel,3)*gradw(iel,1))    &
+              - 2.d0*(gradv(iel,3)*gradw(iel,2))
+  divu(iel) = gradu(iel,1) + gradv(iel,2) + gradw(iel,3)
 enddo
 
-! On libere   SMBRSA,W1,W2,W3,W4,W5,W6,W7,W8
-! On garde tinssa et divu
+! Free memory
+deallocate(gradu, gradv, gradw)
+
+! Allocate a temporary array for the gradient calculation
+allocate(grad(ncelet,3))
 
 ! CALCUL DE GRAD nusa
-! W4     = DNUDX ,W5 = DNUDY ,W6  = DNUDZ
 
 nswrgp = nswrgr(inusa)
 imligp = imligr(inusa)
@@ -373,19 +338,17 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,inusa)  , coefa(1,iclvar) , coefb(1,iclvar) ,           &
-   w4     , w5     , w6     ,                                     &
-!  ------   ------   ------
+   grad   ,                                                       &
    ra     )
+
 ! SMBRSA = GRADnu**2
 
 do iel = 1, ncel
-  smbrsa(iel)   = w4(iel)**2 + w5(iel)**2 + w6(iel)**2
+  smbrsa(iel) = grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2
 enddo
 
-! On libere
-! W1,..,W9
-
-
+! Free memory
+deallocate(grad)
 
 !===============================================================================
 ! 3. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
@@ -818,8 +781,8 @@ deallocate(dam)
 deallocate(smbrsa)
 deallocate(tinssa, divu)
 deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
+deallocate(w4)
+deallocate(w7)
 
 !--------
 ! FORMATS

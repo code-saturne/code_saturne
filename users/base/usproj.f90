@@ -467,7 +467,7 @@ if (inpdt0.eq.0) then
 
   if (iortho.eq.0) then
 
-    ! Allocate work arrays
+    ! Allocate a work array for the gradient calculation
     allocate(grad(ncelet,3))
 
     ! --- Compute temperature gradient
@@ -515,8 +515,7 @@ if (inpdt0.eq.0) then
         epsrgp , climgp , extrap ,                                     &
         ia     ,                                                       &
         rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-        grad(1,1) , grad(1,2) , grad(1,3) ,                            &
-        !---------   ----------   ----------
+        grad   ,                                                       &
         ra     )
 
     ! - Compute reconstructed value in boundary cells

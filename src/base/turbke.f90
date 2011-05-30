@@ -162,8 +162,9 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:) :: smbrk, smbre, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinste, divu
+double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw, grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: w7, w8, w9
 
 !===============================================================================
@@ -180,7 +181,7 @@ allocate(tinstk(ncelet), tinste(ncelet), divu(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w4(ncelet), w5(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 idebia = idbia0
@@ -242,20 +243,11 @@ sqrcmu = sqrt(cmu)
 !      En sortie de l'etape on conserve TINSTK, DIVU
 !===============================================================================
 
+! Allocate temporary arrays for gradients calculation
+allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+
 iccocg = 1
 inc = 1
-
-! ON S'APPUIE SUR LES TABLEAUX DE TRAVAIL W4,W5,W6
-!     ON UTILISE EGALEMENT SMBRK  ET TINSTE COMME
-!                           TABLEAUX DE TRAVAIL TEMPORAIRES
-!     W1,W2,W3 SONT UTILISES DANS GRDCEL
-!     TINSTK RECOIT LA PRODUCTION
-!        TINSTK = {(2 (S11)**2 + 2 (S22)**2 +2 (S33)**2 )
-!           +         ((2 S12)**2 + (2 S13)**2 +(2 S23)**2 )}
-!               = 2 Sij.Sij
-
-
-! SMBRK  = DUDX ,W4 = DUDY ,W5 = DUDZ
 
 nswrgp = nswrgr(iu)
 imligp = imligr(iu)
@@ -270,21 +262,8 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   smbrk  , w4     , w5     ,                                     &
-!        ------   ------   ------
+   gradu  ,                                                       &
    ra     )
-
-
-! TINSTK = (S11)**2
-! DIVU = DUDX
-
-do iel = 1, ncel
-  tinstk(iel)   = smbrk(iel)**2
-  divu  (iel)   = smbrk(iel)
-enddo
-
-!               ,W4     = DUDY ,W5     = DUDZ
-! TINSTE = DVDX ,SMBRK  = DVDY ,W6     = DVDZ
 
 nswrgp = nswrgr(iv)
 imligp = imligr(iv)
@@ -299,24 +278,8 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   tinste , smbrk  , w6     ,                                     &
-!        ------   ------   ------
+   gradv  ,                                                       &
    ra     )
-
-
-! TINSTK = 2 (S11)**2 + 2 (S22)**2
-!      + (2 S12)**2
-! DIVU = DUDX + DVDY
-
-do iel = 1, ncel
-  tinstk (iel)   = 2.d0*(tinstk(iel) + smbrk(iel)**2 )            &
-           +  (tinste(iel)+w4(iel))**2
-  divu  (iel)   = divu(iel) + smbrk(iel)
-enddo
-
-!               ,              ,W5     = DUDZ
-!               ,              ,W6     = DVDZ
-! W4     = DWDX ,TINSTE = DWDY ,SMBRK  = DWDZ
 
 nswrgp = nswrgr(iw)
 imligp = imligr(iw)
@@ -331,23 +294,24 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   w4     , tinste , smbrk  ,                                     &
-!        ------   ------   ------
+   gradw  ,                                                       &
    ra     )
 
-! TINSTK = PRODUCTION = (
-!      2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
-!      + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )
+! TINSTK = PRODUCTION = ( 2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
+!                       + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )
+!        = 2 Sij.Sij
 ! DIVU = DUDX + DVDY + DWDZ
 
 do iel = 1, ncel
-  tinstk (iel)   = tinstk(iel) + 2.d0*smbrk(iel)**2               &
-           +  (w4(iel)+w5(iel))**2                                &
-           +  (tinste(iel)+w6(iel))**2
-  divu  (iel)   = divu(iel) + smbrk(iel)
+  tinstk(iel) = 2.d0*(gradu(iel,1)**2 + gradv(iel,2)**2 + gradw(iel,3)**2) &
+              + (gradu(iel,2) + gradv(iel,1))**2                           &
+              + (gradu(iel,3) + gradw(iel,1))**2                           &
+              + (gradv(iel,3) + gradw(iel,2))**2
+  divu(iel) = gradu(iel,1) + gradv(iel,2) + gradw(iel,3)
 enddo
 
-! On libere   SMBRK,TINSTE,W1,W2,W3,W4,W5,W6
+! Free memory
+deallocate(gradu, gradv, gradw)
 
 !===============================================================================
 ! 3. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS
@@ -437,6 +401,9 @@ if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
 
 else if (igrake.eq.1) then
 
+  ! Allocate a temporary for the gradient calculation
+  allocate(grad(ncelet,3))
+
 ! --- Terme de gravite G = BETA*G*GRAD(SCA)/PRDTUR/RHO
 !     Ici on calcule   G =-G*GRAD(RHO)/PRDTUR/RHO
 
@@ -468,8 +435,7 @@ else if (igrake.eq.1) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
-   w4     , w5     , w6     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -487,19 +453,22 @@ else if (igrake.eq.1) then
 !     Dans les autres cas, la multiplication est faite plus tard.
   if (iturb.eq.21) then
     do iel = 1, ncel
-      gravke = -(w4(iel)*gx+w5(iel)*gy+w6(iel)*gz)/               &
-           (propce(iel,ipcroo)*prdtur)
-      tinste(iel)=tinstk(iel)+propce(iel,ipcvto)*max(gravke,zero)
-      tinstk(iel)=tinstk(iel)+propce(iel,ipcvto)*gravke
+      gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
+                (propce(iel,ipcroo)*prdtur)
+      tinste(iel) = tinstk(iel) + propce(iel,ipcvto)*max(gravke,zero)
+      tinstk(iel) = tinstk(iel) + propce(iel,ipcvto)*gravke
     enddo
   else
     do iel = 1, ncel
-      gravke = -(w4(iel)*gx+w5(iel)*gy+w6(iel)*gz)/               &
-           (propce(iel,ipcroo)*prdtur)
+      gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
+                (propce(iel,ipcroo)*prdtur)
       tinste(iel) = tinstk(iel) + max( gravke,zero )
       tinstk(iel) = tinstk(iel) + gravke
     enddo
   endif
+
+  ! Free memory
+  deallocate(grad)
 
 else
 
@@ -1380,7 +1349,7 @@ deallocate(dam)
 deallocate(smbrk, smbre, rovsdt)
 deallocate(tinstk, tinste, divu)
 deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(w4, w5)
 deallocate(w7, w8, w9)
 
 !--------

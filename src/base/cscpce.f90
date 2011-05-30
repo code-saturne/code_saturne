@@ -110,12 +110,12 @@ integer          iwarnp , imligp
 double precision epsrgp , climgp , extrap
 double precision dx     , dy     , dz
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
-! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+! Allocate a temporary array
+allocate(grad(ncelet,3))
 
 idebia = idbia0
 idebra = idbra0
@@ -142,8 +142,7 @@ call grdcel                                                       &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -157,12 +156,12 @@ do ipt = 1, nptdis
   dy = coopts(2,ipt) - xyzcen(2,iel)
   dz = coopts(3,ipt) - xyzcen(3,iel)
 
-  rvdis(ipt) = rtpa(iel,ivar) + w1(iel)*dx+w2(iel)*dy+w3(iel)*dz
+  rvdis(ipt) = rtpa(iel,ivar) + grad(iel,1)*dx+grad(iel,2)*dy+grad(iel,3)*dz
 
 enddo
 
 ! Free memory
-deallocate(w1, w2, w3)
+deallocate(grad)
 
 !--------
 ! FORMATS

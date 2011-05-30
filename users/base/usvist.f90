@@ -195,8 +195,7 @@ call grdcel &
    epsrgr(iu) , climgr(iu) , extrag(iu) ,                &
    ia     ,                                              &
    rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   grad(1,1) , grad(1,2) , grad(1,3) ,                   &
-   !---------   ----------   ----------
+   grad   ,                                              &
    ra     )
 
 !===============================================================================

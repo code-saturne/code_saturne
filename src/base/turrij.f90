@@ -136,10 +136,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb, coefax
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:,:) :: grdvit
 double precision, allocatable, dimension(:,:) :: produc
-double precision, allocatable, dimension(:) :: grarox, graroy, graroz
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw, gradro
 
 integer,          pointer, dimension(:) :: itpsmp => null()
 double precision, pointer, dimension(:) :: smcelp => null(), gammap => null()
@@ -156,9 +153,6 @@ allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
 
 ! Allocate other arrays, depending on user options
-if (igrari.eq.1) then
-  allocate(grarox(ncelet), graroy(ncelet), graroz(ncelet))
-endif
 if (abs(icdpar).eq.1.and.irijec.eq.1) then
   allocate(coefax(nfabor))
 endif
@@ -167,11 +161,6 @@ if (iturb.eq.30) then
 else
   allocate(grdvit(ncelet,3,3))
 endif
-
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -198,12 +187,12 @@ endif
 
 !===============================================================================
 ! 2.a CALCUL DU TENSEUR DE PRODUCTION POUR LE RIJ STANDARD
-!     W7 = P11 , W8 = P22 , W9 = P33
-!     W10 = P12 , W11 = P13 , W9 = P23
 !===============================================================================
 
 if (iturb.eq.30) then
-! INITIALISATIONS DE W7 ... W12
+
+  ! Allocate temporary arrays for gradients calculation
+  allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
 
   do ii = 1 , 6
     do iel = 1, ncel
@@ -231,27 +220,26 @@ if (iturb.eq.30) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   gradu  ,                                                       &
    ra     )
 
 
   do iel = 1 , ncel
 
     produc(1,iel) = produc(1,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir11)*w1(iel) +                      &
-         rtpa(iel,ir12)*w2(iel) +                               &
-         rtpa(iel,ir13)*w3(iel) )
+         - 2.0d0*(rtpa(iel,ir11)*gradu(iel,1) +                   &
+                  rtpa(iel,ir12)*gradu(iel,2) +                   &
+                  rtpa(iel,ir13)*gradu(iel,3) )
 
     produc(4,iel) = produc(4,iel)                                 &
-         - (rtpa(iel,ir12)*w1(iel) +                            &
-         rtpa(iel,ir22)*w2(iel) +                               &
-         rtpa(iel,ir23)*w3(iel) )
+         - (rtpa(iel,ir12)*gradu(iel,1) +                         &
+            rtpa(iel,ir22)*gradu(iel,2) +                         &
+            rtpa(iel,ir23)*gradu(iel,3) )
 
     produc(5,iel) = produc(5,iel)                                 &
-         - (rtpa(iel,ir13)*w1(iel) +                            &
-         rtpa(iel,ir23)*w2(iel) +                               &
-         rtpa(iel,ir33)*w3(iel) )
+         - (rtpa(iel,ir13)*gradu(iel,1) +                         &
+            rtpa(iel,ir23)*gradu(iel,2) +                         &
+            rtpa(iel,ir33)*gradu(iel,3) )
 
   enddo
 
@@ -270,26 +258,25 @@ if (iturb.eq.30) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   gradv  ,                                                       &
    ra     )
 
   do iel = 1 , ncel
 
     produc(2,iel) = produc(2,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir12)*w1(iel) +                      &
-         rtpa(iel,ir22)*w2(iel) +                               &
-         rtpa(iel,ir23)*w3(iel) )
+         - 2.0d0*(rtpa(iel,ir12)*gradv(iel,1) +                   &
+                  rtpa(iel,ir22)*gradv(iel,2) +                   &
+                  rtpa(iel,ir23)*gradv(iel,3) )
 
     produc(4,iel) = produc(4,iel)                                 &
-         - (rtpa(iel,ir11)*w1(iel) +                            &
-         rtpa(iel,ir12)*w2(iel) +                               &
-         rtpa(iel,ir13)*w3(iel) )
+         - (rtpa(iel,ir11)*gradv(iel,1) +                         &
+            rtpa(iel,ir12)*gradv(iel,2) +                         &
+            rtpa(iel,ir13)*gradv(iel,3) )
 
     produc(6,iel) = produc(6,iel)                                 &
-         - (rtpa(iel,ir13)*w1(iel) +                            &
-         rtpa(iel,ir23)*w2(iel) +                               &
-         rtpa(iel,ir33)*w3(iel) )
+         - (rtpa(iel,ir13)*gradv(iel,1) +                         &
+            rtpa(iel,ir23)*gradv(iel,2) +                         &
+            rtpa(iel,ir33)*gradv(iel,3) )
 
   enddo
 
@@ -308,28 +295,30 @@ if (iturb.eq.30) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   gradw  ,                                                       &
    ra     )
 
   do iel = 1 , ncel
 
     produc(3,iel) = produc(3,iel)                                 &
-         - 2.0d0*(rtpa(iel,ir13)*w1(iel) +                      &
-         rtpa(iel,ir23)*w2(iel) +                               &
-         rtpa(iel,ir33)*w3(iel) )
+         - 2.0d0*(rtpa(iel,ir13)*gradw(iel,1) +                   &
+                  rtpa(iel,ir23)*gradw(iel,2) +                   &
+                  rtpa(iel,ir33)*gradw(iel,3) )
 
     produc(5,iel) = produc(5,iel)                                 &
-         - (rtpa(iel,ir11)*w1(iel) +                            &
-         rtpa(iel,ir12)*w2(iel) +                               &
-         rtpa(iel,ir13)*w3(iel) )
+         - (rtpa(iel,ir11)*gradw(iel,1) +                         &
+            rtpa(iel,ir12)*gradw(iel,2) +                         &
+            rtpa(iel,ir13)*gradw(iel,3) )
 
     produc(6,iel) = produc(6,iel)                                 &
-         - (rtpa(iel,ir12)*w1(iel) +                            &
-         rtpa(iel,ir22)*w2(iel) +                               &
-         rtpa(iel,ir23)*w3(iel) )
+         - (rtpa(iel,ir12)*gradw(iel,1) +                         &
+            rtpa(iel,ir22)*gradw(iel,2) +                         &
+            rtpa(iel,ir23)*gradw(iel,3) )
 
   enddo
+
+  ! Free memory
+  deallocate(gradu, gradv, gradw)
 
 else
 
@@ -358,8 +347,7 @@ else
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   grdvit(1,1,1)   , grdvit(1,1,2)   , grdvit(1,1,3)   ,          &
-!        -------------     -------------     -------------
+   grdvit(1,1,1)   ,                                              &
    ra     )
 
 
@@ -378,8 +366,7 @@ else
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   grdvit(1,2,1)   , grdvit(1,2,2)   , grdvit(1,2,3)   ,          &
-!        -------------     -------------     -------------
+   grdvit(1,2,1)   ,                                              &
    ra     )
 
 
@@ -398,8 +385,7 @@ else
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   grdvit(1,3,1)   , grdvit(1,3,2)   , grdvit(1,3,3)   ,          &
-!        -------------     -------------     -------------
+   grdvit(1,3,1)   ,                                              &
    ra     )
 
 endif
@@ -410,6 +396,9 @@ endif
 !===============================================================================
 
 if(igrari.eq.1) then
+
+  ! Allocate a temporary array for the gradient calculation
+  allocate(gradro(ncelet,3))
 
 ! Conditions aux limites : Dirichlet ROMB
 !   On utilise VISCB pour stocker le coefb relatif a ROM
@@ -444,8 +433,7 @@ if(igrari.eq.1) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    propce(1,ipcroo), propfb(1,ipbroo), viscb           ,          &
-   grarox , graroy , graroz ,                                     &
-!        ------   ------   ------
+   gradro ,                                                       &
    ra     )
 
 endif
@@ -498,13 +486,11 @@ do isou = 1, 6
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , produc , grarox , graroy , graroz ,          &
+   coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
    smbr   , rovsdt ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
 
   else
@@ -517,13 +503,11 @@ do isou = 1, 6
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , grdvit , grarox , graroy , graroz ,          &
+   coefa  , coefb  , grdvit , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
    smbr   , rovsdt ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
   endif
 
@@ -551,13 +535,11 @@ call reseps                                                       &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , grdvit , produc ,grarox , graroy , graroz ,  &
+   coefa  , coefb  , grdvit , produc , gradro ,                   &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
    smbr   , rovsdt ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
 
 !===============================================================================
@@ -575,13 +557,10 @@ call clprij                                                       &
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
-if (allocated(grarox)) deallocate(grarox, graroy, graroz)
+if (allocated(gradro)) deallocate(gradro)
 if (allocated(coefax)) deallocate(coefax)
 if (allocated(produc)) deallocate(produc)
 if (allocated(grdvit)) deallocate(grdvit)
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
 
 !--------
 ! FORMATS

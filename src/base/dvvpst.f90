@@ -149,7 +149,6 @@ character*32     namevr, namev1, namev2
 character*80     name80
 
 integer          idebia, idebra, ifinia, ifinra
-integer          igradx, igrady, igradz
 integer          itreco
 integer          iw1   , iw2
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
@@ -168,8 +167,10 @@ double precision xcp   , xvsl  , srfbn, distbr
 double precision visct , flumab, diipbx, diipby, diipbz
 double precision epsrgp, climgp, extrap
 double precision omgnrm, daxis2
+
 double precision rbid(1)
 
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -604,10 +605,7 @@ else if  (numtyp .eq. -2) then
 
       ifinia = idebia
 
-      igradx = idebra
-      igrady = igradx+ncelet
-      igradz = igrady+ncelet
-      itreco = igradz+ncelet
+      itreco = idebra
       ifinra = itreco+nfabor
 
       !          Verification de la disponibilite de la memoire
@@ -647,6 +645,8 @@ else if  (numtyp .eq. -2) then
         !==========
       endif
 
+      ! Allocate a temporary array for the gradient calculation
+      allocate(grad(ncelet,3))
 
       !          Calcul du gradient
 
@@ -659,15 +659,14 @@ else if  (numtyp .eq. -2) then
       climgp = climgr(ivar)
       extrap = extrag(ivar)
 
-      call grdcel                                               &
+      call grdcel &
       !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-   ra(igradx) , ra(igrady) , ra(igradz) ,                         &
-!        ----------   ----------   ----------
+   grad   ,                                                       &
    ra     )
 
 
@@ -678,11 +677,15 @@ else if  (numtyp .eq. -2) then
         diipbx = diipb(1,ifac)
         diipby = diipb(2,ifac)
         diipbz = diipb(3,ifac)
-        ra(itreco+ifac-1) = rtp(iel,ivar)                       &
-             + diipbx*ra(igradx+iel-1)                          &
-             + diipby*ra(igrady+iel-1)                          &
-             + diipbz*ra(igradz+iel-1)
+        ra(itreco+ifac-1) = rtp(iel,ivar)                  &
+             + diipbx*grad(iel,1)                          &
+             + diipby*grad(iel,2)                          &
+             + diipbz*grad(iel,3)
       enddo
+
+      ! Free memory
+      deallocate(grad)
+
 
       !          Calcul du flux (ouf          !) convectif et diffusif
 

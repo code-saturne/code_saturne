@@ -727,9 +727,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                              on boundary's internal faces     */
        cs_real_t         coci[],      /* <-> contribution to COCG of cells
                                              on boundary's boundary faces     */
-       cs_real_t         dpdx[],      /* <-- gradient x component             */
-       cs_real_t         dpdy[],      /* <-- gradient y component             */
-       cs_real_t         dpdz[]       /* <-- gradient z component             */
+       cs_real_t         grad[]       /* <-- gradient x component             */
 )
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -748,6 +746,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict bx, *restrict by, *restrict bz;
+  cs_real_t  *restrict dpdx, *restrict dpdy, *restrict dpdz;
 
   cs_bool_t update_stats = true;
   cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
@@ -759,6 +758,12 @@ void CS_PROCF (cgdcel, CGDCEL)
   bx = _aux_vectors;
   by = _aux_vectors +  *ncelet;
   bz = _aux_vectors + (*ncelet)*2;
+
+  /* Associate gradient component arrays */
+
+  dpdx = grad;
+  dpdy = grad +  *ncelet;
+  dpdz = grad + (*ncelet)*2;
 
   /* Choose gradient type */
 

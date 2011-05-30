@@ -158,6 +158,7 @@ double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:) :: smbrk, smbrw, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinstw, xf1
 double precision, allocatable, dimension(:) :: s2kw, divukw
+double precision, allocatable, dimension(:,:) :: gradk, grado, grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8
@@ -229,9 +230,11 @@ endif
 !      En sortie de l'etape on conserve W1
 !===============================================================================
 
+! Allocate temporary arrays for gradients calculation
+allocate(gradk(ncelet,3), grado(ncelet,3))
+
 iccocg = 1
 inc = 1
-
 
 nswrgp = nswrgr(ik)
 imligp = imligr(ik)
@@ -246,10 +249,8 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,ik)   , coefa(1,iclikp) , coefb(1,iclikp) ,             &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   gradk  ,                                                       &
    ra     )
-
 
 nswrgp = nswrgr(iomg)
 imligp = imligr(iomg)
@@ -264,13 +265,17 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iomg)  , coefa(1,iclomg) , coefb(1,iclomg) ,            &
-   w4     , w5     , w6     ,                                     &
-!        ------   ------   ------
+   grado  ,                                                       &
    ra     )
 
 do iel = 1, ncel
-  w1(iel) = w1(iel)*w4(iel)+w2(iel)*w5(iel)+w3(iel)*w6(iel)
+  w1(iel) = gradk(iel,1)*grado(iel,1) &
+          + gradk(iel,2)*grado(iel,2) &
+          + gradk(iel,3)*grado(iel,3)
 enddo
+
+! Free memory
+deallocate(gradk, grado)
 
 !====================================================
 ! 3. CALCUL DU COEFFICIENT DE PONDERATION F1
@@ -282,10 +287,9 @@ enddo
 if(abs(icdpar).eq.2) then
   do iel = 1, ncel
     ifacpt = ia(iifapa-1+iel)
-    w2(iel) =                                                     &
-         (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2                      &
-         +(cdgfbo(2,ifacpt)-xyzcen(2,iel))**2                     &
-         +(cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
+    w2(iel) = (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2 &
+            + (cdgfbo(2,ifacpt)-xyzcen(2,iel))**2 &
+            + (cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
     w2(iel) = sqrt(w2(iel))
   enddo
 else
@@ -306,10 +310,8 @@ do iel = 1, ncel
   xw  = rtpa(iel,iomg)
   cdkw = 2*rom/ckwsw2/xw*w1(iel)
   cdkw = max(cdkw,1.d-20)
-  xarg1 = max( sqrt(xk)/cmu/xw/w2(iel),                           &
-       500.d0*xnu/xw/w2(iel)**2 )
-  xarg1 = min(xarg1,                                              &
-       4.d0*rom*xk/ckwsw2/cdkw/w2(iel)**2)
+  xarg1 = max(sqrt(xk)/cmu/xw/w2(iel), 500.d0*xnu/xw/w2(iel)**2)
+  xarg1 = min(xarg1, 4.d0*rom*xk/ckwsw2/cdkw/w2(iel)**2)
   xf1(iel) = tanh(xarg1**4)
 enddo
 
@@ -336,6 +338,9 @@ enddo
 !===============================================================================
 
 if(igrake.eq.1) then
+
+  ! Allocate a temporary array for the gradient calculation
+  allocate(grad(ncelet,3))
 
 ! --- Terme de gravite G = BETA*G*GRAD(SCA)/PRDTUR/RHO
 !     Ici on calcule   G =-G*GRAD(RHO)/PRDTUR/RHO
@@ -368,8 +373,7 @@ if(igrake.eq.1) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
-   w2     , w3     , w4     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -384,11 +388,14 @@ if(igrake.eq.1) then
   endif
 
   do iel = 1, ncel
-    w2(iel) = -(w2(iel)*gx+w3(iel)*gy+w4(iel)*gz)/                &
-         (propce(iel,ipcroo)*prdtur)
+    w2(iel) = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
+               (propce(iel,ipcroo)*prdtur)
     tinstw(iel)=tinstw(iel)+propce(iel,ipcvto)*max(w2(iel),zero)
     tinstk(iel)=tinstk(iel)+propce(iel,ipcvto)*w2(iel)
   enddo
+
+  ! Free memory
+  deallocate(grad)
 
 endif
 

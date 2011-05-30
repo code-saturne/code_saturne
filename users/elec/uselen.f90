@@ -186,8 +186,7 @@ if(nummai.eq.-1) then
    ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
-   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
-!       d POTR /dx   d POTR /dy   d POTR /dz
+   grad   ,                                                       &
    ra     )
 
 !
@@ -229,8 +228,7 @@ if(nummai.eq.-1) then
    ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
-   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
-!       d POTI /dx   d POTI /dy   d POTI /dz
+   grad   ,                                                       &
    ra     )
 
 !
@@ -277,8 +275,7 @@ if(nummai.eq.-1) then
    ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
-   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
-!       d POTI /dx   d POTI /dy   d POTI /dz
+   grad   ,                                                       &
    ra     )
 
     do iloc = 1, ncelps
@@ -328,8 +325,7 @@ if(nummai.eq.-1) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
-!       d Ax /dx   d Ax /dy   d Ax /dz
+   grad   ,                                                       &
    ra     )
 
 !       B = rot A ( B = curl A)
@@ -363,8 +359,7 @@ if(nummai.eq.-1) then
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                                      &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad(1,1) , grad(1,2) , grad(1,3) ,                           &
-!       d Ay /dx   d Ay /dy   d Ay /dz
+    grad   ,                                                      &
     ra     )
 
 !       B = rot A (B = curl A)
@@ -398,8 +393,7 @@ if(nummai.eq.-1) then
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
     ia     ,                                                      &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad(1,1) , grad(1,2) , grad(1,3) ,                           &
-!       d Az /dx   d Az /dy   d Az /dz
+    grad   ,                                                      &
     ra     )
 
 !       B = rot A (B = curl A)

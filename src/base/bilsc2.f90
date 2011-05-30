@@ -189,7 +189,7 @@ double precision diipbx, diipby, diipbz
 double precision pnd, distf, srfan
 double precision pfac1, pfac2, pfac3, unsvol
 
-double precision, allocatable, dimension(:) :: dpdx, dpdy, dpdz
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpdxa, dpdya, dpdza
 
 !===============================================================================
@@ -199,7 +199,7 @@ double precision, allocatable, dimension(:) :: dpdxa, dpdya, dpdza
 !===============================================================================
 
 ! Allocate work arrays
-allocate(dpdx(ncelet), dpdy(ncelet), dpdz(ncelet))
+allocate(grad(ncelet,3))
 allocate(dpdxa(ncelet), dpdya(ncelet), dpdza(ncelet))
 
 ! Initialize variables to avoid compiler warnings
@@ -239,7 +239,7 @@ if(blencp.eq.0.d0) iupwin = 1
 ! ======================================================================
 ! ---> CALCUL DU GRADIENT DE P
 ! ======================================================================
-!    DPDX sert a la fois pour la reconstruction des flux et pour le test
+!    GRAD sert a la fois pour la reconstruction des flux et pour le test
 !    de pente. On doit donc le calculer :
 !        - quand on a de la diffusion et qu'on reconstruit les flux
 !        - quand on a de la convection SOLU
@@ -258,15 +258,14 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or.                          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    pvar   , coefap , coefbp ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 else
   do iel = 1, ncelet
-    dpdx(iel) = 0.d0
-    dpdy(iel) = 0.d0
-    dpdz(iel) = 0.d0
+    grad(iel,1) = 0.d0
+    grad(iel,2) = 0.d0
+    grad(iel,3) = 0.d0
   enddo
 endif
 
@@ -295,8 +294,8 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
     djfy = cdgfac(2,ifac) - xyzcen(2,jj)
     djfz = cdgfac(3,ifac) - xyzcen(3,jj)
 
-    pif = pvar(ii) +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-    pjf = pvar(jj) +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+    pif = pvar(ii) +difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
+    pjf = pvar(jj) +djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
     pfac = pjf
     if( flumas(ifac ).gt.0.d0 ) pfac = pif
@@ -321,8 +320,8 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
     pfac = inc*coefap(ifac )                                    &
-         +coefbp(ifac )*(pvar(ii)+diipbx*dpdx(ii)              &
-         +diipby*dpdy(ii)+diipbz*dpdz(ii) )
+         +coefbp(ifac )*(pvar(ii)+diipbx*grad(ii,1)              &
+         +diipby*grad(ii,2)+diipbz*grad(ii,3) )
     dpdxa(ii) = dpdxa(ii) +pfac*surfbo(1,ifac )
     dpdya(ii) = dpdya(ii) +pfac*surfbo(2,ifac )
     dpdza(ii) = dpdza(ii) +pfac*surfbo(3,ifac )
@@ -437,9 +436,9 @@ if(iupwin.eq.1) then
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
                    pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+      dpxf = 0.5d0*(grad(ii,1) + grad(jj,1))
+      dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
+      dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
 !     reconstruction uniquement si IRCFLP = 1
       pip = pvar(ii)                                              &
@@ -503,9 +502,9 @@ if(iupwin.eq.1) then
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
                    pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+      dpxf = 0.5d0*(grad(ii,1) + grad(jj,1))
+      dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
+      dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
       pip = pvar(ii)                                              &
            + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
@@ -565,9 +564,9 @@ elseif(isstpp.eq.1) then
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
                    pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+      dpxf = 0.5d0*(grad(ii,1) + grad(jj,1))
+      dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
+      dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
 
       pip = pvar(ii)                                              &
@@ -610,12 +609,12 @@ elseif(isstpp.eq.1) then
 
 !     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
 !     sinon cela revient a faire de l'upwind
-        pifri = pir + difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
+        pifri = pir + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
         pifrj = pvar(ii)                                          &
-             +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-        pjfrj = pjr + djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+             +difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
+        pjfrj = pjr + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
         pjfri = pvar(jj)                                          &
-             +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+             +djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
       else
         write(nfecra,9000)ischcp
@@ -686,9 +685,9 @@ elseif(isstpp.eq.1) then
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
                    pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+      dpxf = 0.5d0*(grad(ii,1) + grad(jj,1))
+      dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
+      dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
       pip = pvar(ii)                                              &
            + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
@@ -723,9 +722,9 @@ elseif(isstpp.eq.1) then
 !     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
 !     sinon cela revient a faire de l'upwind
         pif = pvar(ii)                                            &
-             +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
+             +difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
         pjf = pvar(jj)                                            &
-             +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+             +djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
       else
         write(nfecra,9000)ischcp
@@ -804,9 +803,9 @@ else
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
                    pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+      dpxf = 0.5d0*(grad(ii,1) + grad(jj,1))
+      dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
+      dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
       pip = pvar(ii)                                              &
            + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
@@ -834,13 +833,13 @@ else
             + dpdza(ii)*dpdza(jj)
 
       if( flumas(ifac).gt.0.d0) then
-        dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
-            + dpdz(ii)*surfac(3,ifac)
+        dcc = grad(ii,1)*surfac(1,ifac) +grad(ii,2)*surfac(2,ifac)    &
+            + grad(ii,3)*surfac(3,ifac)
         ddi = testi
         ddj = ( pvar(jj)-pvar(ii) )/distf *srfan
       else
-        dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
-            + dpdz(jj)*surfac(3,ifac)
+        dcc = grad(jj,1)*surfac(1,ifac) +grad(jj,2)*surfac(2,ifac)    &
+            + grad(jj,3)*surfac(3,ifac)
         ddi = ( pvar(jj)-pvar(ii) )/distf *srfan
         ddj = testj
       endif
@@ -890,12 +889,12 @@ else
 
 !     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
 !     sinon cela revient a faire de l'upwind
-          pifri = pir + difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
+          pifri = pir + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
           pifrj = pvar(ii)                                        &
-               +difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
-          pjfrj = pjr + djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+               +difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
+          pjfrj = pjr + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
           pjfri = pvar(jj)                                        &
-               +djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+               +djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
         else
           write(nfecra,9000)ischcp
@@ -970,9 +969,9 @@ else
       djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                    &
                    pnd  * dijpfz
 
-      dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-      dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-      dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+      dpxf = 0.5d0*(grad(ii,1) + grad(jj,1))
+      dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
+      dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
       pip = pvar(ii)                                              &
            + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
@@ -994,13 +993,13 @@ else
             + dpdza(ii)*dpdza(jj)
 
       if( flumas(ifac).gt.0.d0) then
-        dcc = dpdx(ii)*surfac(1,ifac) +dpdy(ii)*surfac(2,ifac)    &
-            + dpdz(ii)*surfac(3,ifac)
+        dcc = grad(ii,1)*surfac(1,ifac) +grad(ii,2)*surfac(2,ifac)    &
+            + grad(ii,3)*surfac(3,ifac)
         ddi = testi
         ddj = ( pvar(jj)-pvar(ii) )/distf *srfan
       else
-        dcc = dpdx(jj)*surfac(1,ifac) +dpdy(jj)*surfac(2,ifac)    &
-            + dpdz(jj)*surfac(3,ifac)
+        dcc = grad(jj,1)*surfac(1,ifac) +grad(jj,2)*surfac(2,ifac)    &
+            + grad(jj,3)*surfac(3,ifac)
         ddi = ( pvar(jj)-pvar(ii) )/distf *srfan
         ddj = testj
       endif
@@ -1047,9 +1046,9 @@ else
 !     on laisse la reconstruction de PIF et PJF meme si IRCFLP=0
 !     sinon cela revient a faire de l'upwind
           pif = pvar(ii)                                          &
-              + difx*dpdx(ii)+dify*dpdy(ii)+difz*dpdz(ii)
+              + difx*grad(ii,1)+dify*grad(ii,2)+difz*grad(ii,3)
           pjf = pvar(jj)                                          &
-              + djfx*dpdx(jj)+djfy*dpdy(jj)+djfz*dpdz(jj)
+              + djfx*grad(jj,1)+djfy*grad(jj,2)+djfz*grad(jj,3)
 
         else
           write(nfecra,9000)ischcp
@@ -1126,7 +1125,7 @@ if (idtvar.lt.0) then
 
     pir  = pvar(ii)/relaxp - (1.d0-relaxp)/relaxp*pvara(ii)
     pipr = pir                                                    &
-       +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
+       +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
     pfac  = inc*coefap(ifac) +coefbp(ifac)*pipr
     pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pipr
@@ -1158,7 +1157,7 @@ else
     endif
 
     pip = pvar(ii)                                                &
-       +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
+       +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
     pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
     pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
@@ -1172,7 +1171,7 @@ else
 endif
 
 ! Free memory
-deallocate(dpdx, dpdy, dpdz)
+deallocate(grad)
 deallocate(dpdxa, dpdya, dpdza)
 
 !--------

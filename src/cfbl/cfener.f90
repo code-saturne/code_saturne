@@ -165,7 +165,8 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: wb
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 
@@ -178,7 +179,8 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 allocate(wb(nfabor))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(grad(ncelet,3))
+allocate(w1(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
@@ -323,7 +325,6 @@ if( idiff(iu).ge. 1 ) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rtp(1,iu), rtp(1,iv), rtp(1,iw), &
 !        ------
-   w9     ,                                                       &
    ra     )
 
 endif
@@ -394,7 +395,7 @@ endif
 !     &   iwarnp , nfecra , epsrgp , climgp , extrap ,
 !     &   ia     ,
 !     &   w7     , ra(icoefa) , ra(icoefb)  ,
-!     &   w1     , w2     , w3     ,
+!     &   grad   ,
 !     &   ra     )
 
 !       On libere la place dans RA
@@ -429,10 +430,10 @@ endif
 !     &               pnd  * dijpfz
 
 !        pip = w7(ii)
-!     &       +w1(ii)*diipfx+w2(ii)*diipfy+w3(ii)*diipfz
+!     &       +grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
 
 !        pjp = w7(jj)
-!     &       +w1(jj)*djjpfx+w2(jj)*djjpfy+w3(jj)*djjpfz
+!     &       +grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
 
 !        flui = (propfa(ifac,iflmas)+abs(propfa(ifac,iflmas)))
 !        fluj = (propfa(ifac,iflmas)-abs(propfa(ifac,iflmas)))
@@ -632,7 +633,7 @@ call grdcel                                                       &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    w7     , ra(icoefa) , ra(icoefb)  ,                            &
-   w1     , w2     , w3     ,                                     &
+   grad   ,                                                       &
    ra     )
 
 !       On libere la place dans RA
@@ -654,24 +655,15 @@ do ifac = 1, nfac
 
 !        Calcul II' et JJ'
 
-  diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+                        &
-           (1.d0-pnd) * dijpfx)
-  diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+                        &
-           (1.d0-pnd) * dijpfy)
-  diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+                        &
-           (1.d0-pnd) * dijpfz)
-  djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+                        &
-               pnd  * dijpfx
-  djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+                        &
-               pnd  * dijpfy
-  djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+                        &
-               pnd  * dijpfz
+  diipfx = cdgfac(1,ifac) - (xyzcen(1,ii) + (1.d0-pnd) * dijpfx)
+  diipfy = cdgfac(2,ifac) - (xyzcen(2,ii) + (1.d0-pnd) * dijpfy)
+  diipfz = cdgfac(3,ifac) - (xyzcen(3,ii) + (1.d0-pnd) * dijpfz)
+  djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj) +  pnd  * dijpfx
+  djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) +  pnd  * dijpfy
+  djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) +  pnd  * dijpfz
 
-  pip = w7(ii)                                                    &
-       +w1(ii)*diipfx+w2(ii)*diipfy+w3(ii)*diipfz
-
-  pjp = w7(jj)                                                    &
-       +w1(jj)*djjpfx+w2(jj)*djjpfy+w3(jj)*djjpfz
+  pip = w7(ii) + grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
+  pjp = w7(jj) + grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
 
   flux = viscf(ifac)*(pip-pjp)
 
@@ -862,7 +854,9 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 ! Free memory
-deallocate(w1, w2, w3)
+deallocate(wb)
+deallocate(grad)
+deallocate(w1)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)
 

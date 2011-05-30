@@ -35,7 +35,6 @@ subroutine rijech &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , produc , smbr   ,                            &
    coefax , coefbx ,                                              &
-   produk , w2     , w3     , w4     , epsk   , w6     ,          &
    ra     )
 
 !===============================================================================
@@ -72,9 +71,6 @@ subroutine rijech &
 ! smbr(ncelet      ! tr ! <-- ! tableau de travail pour sec mem                !
 ! coefax,coefbx    ! tr ! --- ! tableau de travail pour les cond.              !
 !  (nfabor)        !    !     !    aux limites de la dist. paroi               !
-! produk(ncelet    ! tr ! --- ! tableau de travail production                  !
-! epsk  (ncelet    ! tr ! --- ! tableau de travail epsilon/k                   !
-! w2...6(ncelet    ! tr ! --- ! tableau de travail production                  !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -118,8 +114,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision produc(6,ncelet)
 double precision smbr(ncelet)
 double precision coefax(nfabor), coefbx(nfabor)
-double precision produk(ncelet),w2(ncelet),w3(ncelet)
-double precision w4(ncelet),epsk(ncelet),w6(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -136,12 +130,19 @@ double precision unssur, vnk   , vnm   , vni   , vnj
 double precision deltki, deltkj, deltkm, deltij
 double precision aa    , bb    , xnorme
 
+double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: produk, epsk
+double precision, allocatable, dimension(:) :: w2, w3, w4, w6
 
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(produk(ncelet), epsk(ncelet))
+allocate(w2(ncelet), w3(ncelet), w4(ncelet), w6(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -218,6 +219,9 @@ elseif(abs(icdpar).eq.1) then
 
 !       Calcul du gradient
 
+  ! Allcoate a temporary array for the gradient calculation
+  allocate(grad(ncelet,3))
+
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(ra(idipar))
     !==========
@@ -234,19 +238,21 @@ elseif(abs(icdpar).eq.1) then
    epsrgy , climgy , extray ,                                     &
    ia     ,                                                       &
    ra(idipar) , coefax , coefbx ,                                 &
-   w2     , w3     , w4     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
 !     Normalisation (attention, le gradient peut etre nul, parfois)
 
   do iel = 1 ,ncel
-    xnorme = max(sqrt(w2(iel)**2+w3(iel)**2+w4(iel)**2),epzero)
-    w2(iel) = -w2(iel)/xnorme
-    w3(iel) = -w3(iel)/xnorme
-    w4(iel) = -w4(iel)/xnorme
+    xnorme = max(sqrt(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2),epzero)
+    w2(iel) = -grad(iel,1)/xnorme
+    w3(iel) = -grad(iel,2)/xnorme
+    w4(iel) = -grad(iel,3)/xnorme
   enddo
+
+  ! Free memory
+  deallocate(grad)
 
 endif
 
@@ -489,7 +495,10 @@ do iel = 1, ncel
             + propce(iel,ipcroo)*volume(iel)*w6(iel)*w3(iel)
 enddo
 
+! Allocate temporary arrays
+deallocate(produk, epsk)
+deallocate(w2, w3, w4, w6)
+
 
 return
-
 end subroutine

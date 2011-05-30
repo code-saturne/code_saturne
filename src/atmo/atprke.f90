@@ -127,7 +127,7 @@ integer         iwarnp
 double precision gravke, prdtur
 double precision epsrgp, climgp, extrap
 
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 !
@@ -136,7 +136,7 @@ double precision, allocatable, dimension(:) :: w4, w5, w6
 !===============================================================================
 
 ! Allocate work arrays
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(grad(ncelet,3))
 
 idebia = idbia0
 idebra = idbra0
@@ -171,8 +171,7 @@ if (ippmod(iatmos).eq.1) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
-   w4     , w5     , w6     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -190,14 +189,14 @@ if (ippmod(iatmos).eq.1) then
 !     Dans les autres cas, la multiplication est faite plus tard.
   if (iturb.eq.21) then
     do iel = 1, ncel
-      gravke =   (w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
+      gravke =   (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
                / (rtp(iel,itpp)*prdtur)
       tinste(iel) = tinstk(iel) + propce(iel,ipcvto)*max(gravke,zero)
       tinstk(iel) = tinstk(iel) + propce(iel,ipcvto)*gravke
     enddo
   else
     do iel = 1, ncel
-      gravke =   (w4(iel)*gx + w5(iel)*gy + w6(iel)*gz) &
+      gravke =   (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
                / (rtp(iel,itpp)*prdtur)
       tinste(iel) = tinstk(iel) + max(gravke,zero)
       tinstk(iel) = tinstk(iel) + gravke
@@ -207,7 +206,7 @@ if (ippmod(iatmos).eq.1) then
 endif
 
 ! Allocate work arrays
-deallocate(w4, w5, w6)
+deallocate(grad)
 
 !----
 ! FIN

@@ -162,7 +162,7 @@ double precision pfac,pip,uxfac,uyfac,uzfac
 double precision dofx,dofy,dofz,pnd
 double precision diipbx, diipby, diipbz
 
-double precision, allocatable, dimension(:) :: dpdx, dpdy, dpdz
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: qdmx, qdmy, qdmz
 double precision, allocatable, dimension(:,:) :: coefqa
 
@@ -263,8 +263,8 @@ endif
 if( nswrgu.gt.1 ) then
 
 
-  ! Allocate temporary arrays
-  allocate(dpdx(ncelet), dpdy(ncelet), dpdz(ncelet))
+  ! Allocate a temporary array for the gradient calculation
+  allocate(grad(ncelet,3))
 
 
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS AU DEBUT
@@ -292,8 +292,7 @@ if( nswrgu.gt.1 ) then
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
    qdmx   , coefqa(1,1) , coefbx ,                                &
-   dpdx   , dpdy   , dpdz   ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -312,9 +311,9 @@ if( nswrgu.gt.1 ) then
 
     flumas(ifac) = flumas(ifac)                                   &
          +( pnd*qdmx(ii) +(1.d0-pnd)*qdmx(jj)                     &
-           +0.5d0*( dpdx(ii) +dpdx(jj) )*dofx                     &
-           +0.5d0*( dpdy(ii) +dpdy(jj) )*dofy                     &
-           +0.5d0*( dpdz(ii) +dpdz(jj) )*dofz    )*surfac(1,ifac)
+           +0.5d0*( grad(ii,1) +grad(jj,1) )*dofx                     &
+           +0.5d0*( grad(ii,2) +grad(jj,2) )*dofy                     &
+           +0.5d0*( grad(ii,3) +grad(jj,3) )*dofz    )*surfac(1,ifac)
 
   enddo
 
@@ -329,8 +328,8 @@ if( nswrgu.gt.1 ) then
     diipbz = diipb(3,ifac)
 
     pip = romb(ifac) * ux(ii)                                     &
-          +dpdx(ii)*diipbx                                        &
-          +dpdy(ii)*diipby +dpdz(ii)*diipbz
+          +grad(ii,1)*diipbx                                      &
+          +grad(ii,2)*diipby +grad(ii,3)*diipbz
     pfac = inc*coefqa(ifac,1) +coefbx(ifac)*pip
 
     flumab(ifac) = flumab(ifac) +pfac*surfbo(1,ifac)
@@ -349,8 +348,7 @@ if( nswrgu.gt.1 ) then
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
    qdmy   , coefqa(1,2) , coefby ,                                &
-   dpdx   , dpdy   , dpdz   ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -369,9 +367,9 @@ if( nswrgu.gt.1 ) then
 
     flumas(ifac) = flumas(ifac)                                   &
          +( pnd*qdmy(ii) +(1.d0-pnd)*qdmy(jj)                     &
-           +0.5d0*( dpdx(ii) +dpdx(jj) )*dofx                     &
-           +0.5d0*( dpdy(ii) +dpdy(jj) )*dofy                     &
-           +0.5d0*( dpdz(ii) +dpdz(jj) )*dofz    )*surfac(2,ifac)
+           +0.5d0*( grad(ii,1) +grad(jj,1) )*dofx                     &
+           +0.5d0*( grad(ii,2) +grad(jj,2) )*dofy                     &
+           +0.5d0*( grad(ii,3) +grad(jj,3) )*dofz    )*surfac(2,ifac)
 
   enddo
 
@@ -386,8 +384,8 @@ if( nswrgu.gt.1 ) then
     diipbz = diipb(3,ifac)
 
     pip = romb(ifac) * uy(ii)                                     &
-        +dpdx(ii)*diipbx                                          &
-        +dpdy(ii)*diipby +dpdz(ii)*diipbz
+        +grad(ii,1)*diipbx                                        &
+        +grad(ii,2)*diipby +grad(ii,3)*diipbz
     pfac = inc*coefqa(ifac,2) +coefby(ifac)*pip
 
     flumab(ifac) = flumab(ifac) +pfac*surfbo(2,ifac)
@@ -405,8 +403,7 @@ if( nswrgu.gt.1 ) then
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
    ia     ,                                                       &
    qdmz     , coefqa(1,3) , coefbz ,                              &
-   dpdx   , dpdy   , dpdz   ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 !     FLUX DE MASSE SUR LES FACETTES FLUIDES
@@ -424,9 +421,9 @@ if( nswrgu.gt.1 ) then
 
     flumas(ifac) = flumas(ifac)                                   &
          +( pnd*qdmz(ii) +(1.d0-pnd)*qdmz(jj)                     &
-           +0.5d0*( dpdx(ii) +dpdx(jj) )*dofx                     &
-           +0.5d0*( dpdy(ii) +dpdy(jj) )*dofy                     &
-           +0.5d0*( dpdz(ii) +dpdz(jj) )*dofz    )*surfac(3,ifac)
+           +0.5d0*( grad(ii,1) +grad(jj,1) )*dofx                     &
+           +0.5d0*( grad(ii,2) +grad(jj,2) )*dofy                     &
+           +0.5d0*( grad(ii,3) +grad(jj,3) )*dofz    )*surfac(3,ifac)
 
   enddo
 
@@ -441,8 +438,8 @@ if( nswrgu.gt.1 ) then
     diipbz = diipb(3,ifac)
 
     pip = romb(ifac) * uz(ii)                                     &
-        +dpdx(ii)*diipbx                                          &
-        +dpdy(ii)*diipby +dpdz(ii)*diipbz
+        +grad(ii,1)*diipbx                                        &
+        +grad(ii,2)*diipby +grad(ii,3)*diipbz
     pfac = inc*coefqa(ifac,3) +coefbz(ifac)*pip
 
     flumab(ifac) = flumab(ifac) +pfac*surfbo(3,ifac)
@@ -450,7 +447,7 @@ if( nswrgu.gt.1 ) then
   enddo
 
   ! Free memory
-  deallocate(dpdx, dpdy, dpdz)
+  deallocate(grad)
 
 !     TRAITEMENT DE LA PERIODICITE SPEFICIQUE A INIMAS A LA FIN
 !     =========================================================

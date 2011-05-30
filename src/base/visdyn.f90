@@ -147,6 +147,7 @@ double precision xl11, xl22, xl33, xl12, xl13, xl23
 double precision xm11, xm22, xm33, xm12, xm13, xm23
 double precision smagma, smagmn, smagmy
 
+double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -197,6 +198,9 @@ xsmgmx = smagmx
 !     Les RTPA ont ete echange pour les calculs en parallele,
 !       au debut du pas de temps (donc pas utile de le refaire ici)
 
+! Allocate temporary arrays for gradients calculation
+allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+
 iccocg = 1
 inc = 1
 
@@ -209,18 +213,17 @@ call grdcel &
    nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
    ia     ,                                              &
    rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   w1     , w2     , w3     ,                            &
-!        ------   ------   ------
+   gradu  ,                                              &
    ra     )
 
 ! Filtrage de W1, LE RESULTAT EST DANS W6
 
 call cfiltr &
 !==========
- ( w1     , w6     , w7     , w8     )
+ ( gradu(1,1) , w6     , w7     , w8     )
 
 do iel = 1, ncel
-  s11   = w1(iel)
+  s11   = gradu(iel,1)
   s11f  = w6(iel)
   xmij(iel,1)        = s11
   propce(iel,ipcvst) = s11**2
@@ -238,16 +241,15 @@ call grdcel &
    nfecra , epsrgr(iv) , climgr(iv) , extrag(iv) ,       &
    ia     ,                                              &
    rtpa(1,iv) , coefa(1,ipcliv) , coefb(1,ipcliv) ,      &
-   w4     , w1     , w5     ,                            &
-!        ------   ------   ------
+   gradv  ,                                              &
    ra     )
 
 call cfiltr &
 !==========
- ( w1     , w6     , w7     , w8    )
+ ( gradv(1,2) , w6     , w7     , w8    )
 
 do iel = 1, ncel
-  s22  = w1(iel)
+  s22  = gradv(iel,2)
   s22f = w6(iel)
   xmij(iel,2) = s22
   propce(iel,ipcvst) = propce(iel,ipcvst) + s22**2
@@ -256,15 +258,15 @@ enddo
 
 call cfiltr &
 !==========
- ( w2     , w6     , w8     , w1     )
+ ( gradu(1,2) , w6     , w8     , w1     )
 
 call cfiltr &
 !==========
- ( w4     , w7     , w8     , w1     )
+ ( gradv(1,1) , w7     , w8     , w1     )
 
 do iel = 1, ncel
-  dudy  = w2(iel)
-  dvdx  = w4(iel)
+  dudy  = gradu(iel,2)
+  dvdx  = gradv(iel,1)
   dudyf = w6(iel)
   dvdxf = w7(iel)
   xmij(iel,4) = 0.5d0*(dudy+dvdx)
@@ -283,16 +285,15 @@ call grdcel &
    nfecra , epsrgr(iw) , climgr(iw) , extrag(iw) ,       &
    ia     ,                                              &
    rtpa(1,iw) , coefa(1,ipcliw) , coefb(1,ipcliw) ,      &
-   w2     , w4     , w1     ,                            &
-!        ------   ------   ------
+   gradw  ,                                              &
    ra     )
 
 call cfiltr &
 !==========
- ( w1     , w6     , w7     , w8     )
+ ( gradw(1,3) , w6     , w7     , w8     )
 
 do iel = 1, ncel
-  s33  = w1(iel)
+  s33  = gradw(iel,3)
   s33f = w6(iel)
   xmij(iel,3) = s33
   propce(iel,ipcvst) = propce(iel,ipcvst) + s33**2
@@ -301,15 +302,15 @@ enddo
 
 call cfiltr &
 !==========
- ( w2     , w1     , w7     , w8     )
+ ( gradw(1,1) , w1     , w7     , w8     )
 
 call cfiltr &
 !==========
- ( w3     , w6     , w7     , w8     )
+ ( gradu(1,3) , w6     , w7     , w8     )
 
 do iel = 1, ncel
-  dudz  = w3(iel)
-  dwdx  = w2(iel)
+  dudz  = gradu(iel,3)
+  dwdx  = gradw(iel,1)
   dudzf = w6(iel)
   dwdxf = w1(iel)
   xmij(iel,5) = 0.5d0*(dudz+dwdx)
@@ -319,15 +320,15 @@ enddo
 
 call cfiltr &
 !==========
- ( w4     , w1     , w7     , w8     )
+ ( gradw(1,2) , w1     , w7     , w8     )
 
 call cfiltr &
 !==========
- ( w5     , w6     , w7     , w8     )
+ ( gradv(1,3) , w6     , w7     , w8     )
 
 do iel = 1, ncel
-  dvdz  = w5(iel)
-  dwdy  = w4(iel)
+  dvdz  = gradv(iel,3)
+  dwdy  = gradw(iel,2)
   dvdzf = w6(iel)
   dwdyf = w1(iel)
   xmij(iel,6) = 0.5d0*(dvdz+dwdy)
@@ -339,6 +340,9 @@ do iel = 1, ncel
   propce(iel,ipcvst) = radeux*sqrt(propce(iel,ipcvst))
   w9(iel)            = radeux*sqrt(w9(iel)           )
 enddo
+
+! Free memory
+deallocate(gradu, gradv, gradw)
 
 !     Ici XMIJ contient Sij
 !         PROPCE(IEL,IPCVST) contient ||S||

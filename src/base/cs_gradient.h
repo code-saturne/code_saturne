@@ -130,9 +130,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                              on boundary's internal faces     */
        cs_real_t         coci[],      /* <-> contribution to COCG of cells
                                              on boundary's boundary faces     */
-       cs_real_t         dpdx[],      /* <-- gradient x component             */
-       cs_real_t         dpdy[],      /* <-- gradient y component             */
-       cs_real_t         dpdz[]       /* <-- gradient z component             */
+       cs_real_t         grad[]       /* <-- gradient                         */
 );
 
 /*=============================================================================

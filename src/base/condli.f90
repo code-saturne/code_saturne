@@ -200,7 +200,8 @@ double precision xxp0, xyp0, xzp0
 double precision srfbnf, rnx   , rny   , rnz
 double precision upx   , upy   , upz   , vistot
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w1
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: coefu, rijipb
 
 !===============================================================================
@@ -210,7 +211,6 @@ double precision, allocatable, dimension(:,:) :: coefu, rijipb
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(coefu(nfabor,3))
 
 !  On a besoin des COEFA et COEFB pour le calcul des gradients
@@ -338,6 +338,9 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
 
   if(ia(iifapa).le.0) then
 
+    ! Allocate a temporary array
+    allocate(w1(ncelet))
+
     ! ON FERA ATTENTION EN PARALLELISME OU PERIODICITE
     !    (UNE PAROI PEUT ETRE PLUS PROCHE EN TRAVERSANT UN BORD ...)
 
@@ -360,6 +363,9 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
         enddo
       endif
     enddo
+
+    ! Free memory
+    deallocate(w1)
 
   endif
 
@@ -469,6 +475,9 @@ endif
 
 !===============================================================================
 
+! Allocate a temporary array for the gradient reconstruction
+allocate(grad(ncelet,3))
+
 !  Pour le couplage SYRTHES ou module thermique 1D
 !  -----------------------------------------------
 !  Ici, on fait une boucle "inutile"  (on ne fait quelque chose
@@ -544,15 +553,15 @@ if (iscat .gt. 0) then
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
     do ifac = 1 , nfabor
       iel = ifabor(ifac)
-      thbord(ifac)       =                                                 &
-           w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac)  &
-           + rtpa(iel,ivar)
+      thbord(ifac) = rtpa(iel,ivar) &
+                     + grad(iel,1)*diipb(1,ifac) &
+                     + grad(iel,2)*diipb(2,ifac) &
+                     + grad(iel,3)*diipb(3,ifac)
     enddo
 
   else
@@ -626,15 +635,15 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
       do ifac = 1, nfabor
         iel = ifabor(ifac)
-        coefu(ifac,isou) =                                                  &
-             w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac) &
-             + rtpa(iel,ivar)
+        coefu(ifac,isou) = rtpa(iel,ivar) &
+                         + grad(iel,1)*diipb(1,ifac) &
+                         + grad(iel,2)*diipb(2,ifac) &
+                         + grad(iel,3)*diipb(3,ifac)
       enddo
 
     else
@@ -690,8 +699,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -699,9 +707,10 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
-        rijipb(ifac,isou) =                                                 &
-             w1(iel)*diipb(1,ifac)+w2(iel)*diipb(2,ifac)+w3(iel)*diipb(3,ifac) &
-             + rtpa(iel,ivar)
+        rijipb(ifac,isou) = rtpa(iel,ivar) &
+                          + grad(iel,1)*diipb(1,ifac) &
+                          + grad(iel,2)*diipb(2,ifac) &
+                          + grad(iel,3)*diipb(3,ifac)
       enddo
 
 
@@ -720,6 +729,9 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
   enddo
 
 endif
+
+! Free memory
+deallocate(grad)
 
 !===============================================================================
 ! 7.  TURBULENCE EN PAROI : TOUTES LES VARIABLES CONCERNEES PAR PHASE
@@ -1610,7 +1622,6 @@ if (ineedf.eq.1) then
 endif
 
 ! Free memory
-deallocate(w1, w2, w3)
 deallocate(coefu)
 if (allocated(rijipb)) deallocate(rijipb)
 

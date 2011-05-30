@@ -145,18 +145,14 @@ integer          ifacpt
 double precision epsrgp, climgp, extrap
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5
+double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
+double precision, allocatable, dimension(:) :: w1
 
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
-
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet))
 
 ! --- Memoire
 idebia = idbia0
@@ -178,11 +174,11 @@ ipcliw = iclrtp(iw,icoef)
 !       S2KW = 2* (S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
 !===============================================================================
 
+! Allocate temporary arrays for gradients calculation
+allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+
 iccocg = 1
 inc = 1
-
-
-! SMBRK  = DUDX ,W4 = DUDY ,W5 = DUDZ
 
 nswrgp = nswrgr(iu)
 imligp = imligr(iu)
@@ -197,19 +193,8 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,iu)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,             &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   gradu  ,                                                       &
    ra     )
-
-
-! S2KW    = (S11)**2
-! DIVUKW = S11
-
-do iel = 1, ncel
-  s2kw   (iel)   = w1(iel)**2
-  divukw(iel)   = w1(iel)
-enddo
-
 
 nswrgp = nswrgr(iv)
 imligp = imligr(iv)
@@ -224,19 +209,8 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                &
    ia     ,                                                    &
    rtpa(1,iv)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,          &
-   w1     , w4     , w5     ,                                  &
-!        ------   ------   ------
+   gradv  ,                                                    &
    ra     )
-
-
-! S2KW    = 2 (S11)**2 + 2 (S22)**2 + (2 S12)**2
-! DIVUKW = S11 + S22
-
-do iel = 1, ncel
-  s2kw  (iel)   = 2.d0*(s2kw(iel) + w4(iel)**2)                   &
-           +  (w1(iel)+w2(iel))**2
-  divukw(iel)   = divukw(iel) + w4(iel)
-enddo
 
 nswrgp = nswrgr(iw)
 imligp = imligr(iw)
@@ -251,33 +225,34 @@ call grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                &
    ia     ,                                                    &
    rtpa(1,iw)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,          &
-   w1     , w2     , w4     ,                                  &
-!        ------   ------   ------
+   gradw  ,                                                    &
    ra     )
 
-! S2KW    =  2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
-!        + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )
-! DIVUKW = S11 + S22 + S33
-
 do iel = 1, ncel
-  s2kw   (iel)   = s2kw(iel) + 2.d0*w4(iel)**2                    &
-           + (w1(iel)+w3(iel))**2                                 &
-           + (w2(iel)+w5(iel))**2
-  divukw(iel)   = divukw(iel) + w4(iel)
+  s2kw(iel) = 2.d0*(gradu(iel,1)**2 + gradv(iel,2)**2 + gradw(iel,3)**2)  &
+            + (gradu(iel,2) + gradv(iel,1))**2                            &
+            + (gradu(iel,3) + gradw(iel,1))**2                            &
+            + (gradv(iel,3) + gradw(iel,2))**2
+  divukw(iel) = gradu(iel,1) + gradv(iel,2) + gradw(iel,3)
 enddo
+
+! Free memory
+deallocate(gradu, gradv, gradw)
 
 !===============================================================================
 ! 3.  CALCUL DE LA DISTANCE A LA PAROI
 !===============================================================================
 
+! Allocate a work array
+allocate(w1(ncelet))
+
 if(abs(icdpar).eq.2) then
   do iel = 1 , ncel
     ifacpt = ia(iifapa-1+iel)
     if (ifacpt.gt.0) then
-      w1(iel) =                                                   &
-            (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2                   &
-           +(cdgfbo(2,ifacpt)-xyzcen(2,iel))**2                   &
-           +(cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
+      w1(iel) =  (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2           &
+               + (cdgfbo(2,ifacpt)-xyzcen(2,iel))**2           &
+               + (cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
       w1(iel) = sqrt(w1(iel))
     else
       w1(iel) = grand
@@ -311,8 +286,7 @@ do iel = 1, ncel
 enddo
 
 ! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5)
+deallocate(w1)
 
 !----
 ! FORMAT

@@ -133,6 +133,7 @@ double precision, allocatable, dimension(:) :: flumas, flumab
 double precision, allocatable, dimension(:) :: rom, romb
 double precision, allocatable, dimension(:) :: coefax, coefay, coefaz
 double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w2
 
 integer          ipass
@@ -206,6 +207,9 @@ do ifac = 1, nfabor
   endif
 enddo
 
+! Allocate a temporary array for the gradient calculation
+allocate(grad(ncelet,3))
+
 !     Calcul du gradient
 
 if (irangp.ge.0.or.iperio.eq.1) then
@@ -223,19 +227,21 @@ call grdcel                                                       &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
    ia     ,                                                       &
    distpa , coefax , coefbx ,                                     &
-   qx     , qy     , qz     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
 !     Normalisation (attention, le gradient peut etre nul, parfois)
 
 do iel = 1, ncel
-  xnorme = max(sqrt(qx(iel)**2+qy(iel)**2+qz(iel)**2),epzero)
-  qx(iel) = qx(iel)/xnorme
-  qy(iel) = qy(iel)/xnorme
-  qz(iel) = qz(iel)/xnorme
+  xnorme = max(sqrt(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2),epzero)
+  qx(iel) = grad(iel,1)/xnorme
+  qy(iel) = grad(iel,2)/xnorme
+  qz(iel) = grad(iel,3)/xnorme
 enddo
+
+! Free memory
+deallocate(grad)
 
 !===============================================================================
 ! 4. CALCUL DU FLUX DE Q ET DE GAMMA = div(Q)

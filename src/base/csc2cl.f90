@@ -153,7 +153,7 @@ double precision xipf, yipf, zipf, ipf
 double precision xif, yif, zif, xopf, yopf, zopf
 double precision gradi, pondj, flumab
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -166,8 +166,8 @@ idebra = idbra0
 ! 1.  Translation of the coupling to boundary conditions
 !===============================================================================
 
-! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+! Allocate a temporary array for gradient computation
+allocate(grad(ncelet,3))
 
 ! Reminder: variables are received in the order of VARPOS;
 ! loopin on variables is thus sufficient.
@@ -196,8 +196,7 @@ do ivar = 1, nvcp
    epsrgp , climgp , extrap ,                                     &
    ia     ,                                                       &
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -236,7 +235,8 @@ do ivar = 1, nvcp
         !     the pressure gradient through the coupling and remain consistent
         !     with the resolution of the pressure gradient on an orthogonal mesh.
 
-        xip = rtp(iel,ivar) + (w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip)
+        xip = rtp(iel,ivar) &
+            + (grad(iel,1)*xiip + grad(iel,2)*yiip + grad(iel,3)*ziip)
 
       else if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
 
@@ -252,11 +252,13 @@ do ivar = 1, nvcp
 
         ! -- SOLU
 
-        !        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
+        !        xip =  rtp(iel,ivar) &
+        !            + (grad(iel,1)*xif + grad(iel,2)*yif + grad(iel,3)*zif)
 
         ! -- CENTERED
 
-        xip =  rtp(iel,ivar) + w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip
+        xip = rtp(iel,ivar) &
+            + (grad(iel,1)*xiip + grad(iel,2)*yiip + grad(iel,3)*ziip)
 
       else
 
@@ -266,11 +268,13 @@ do ivar = 1, nvcp
 
         ! -- SOLU
 
-        !        xip =  rtp(iel,ivar) + (w1(iel)*xif + w2(iel)*yif + w3(iel)*zif)
+        !        xip = rtp(iel,ivar) &
+        !            + (grad(iel,1)*xif + grad(iel,2)*yif + grad(iel,3)*zif)
 
         ! -- CENTERED
 
-        xip =  rtp(iel,ivar) + (w1(iel)*xiip + w2(iel)*yiip + w3(iel)*ziip)
+        xip =  rtp(iel,ivar) &
+            + (grad(iel,1)*xiip + grad(iel,2)*yiip + grad(iel,3)*ziip)
 
       endif
 
@@ -360,14 +364,16 @@ do ivar = 1, nvcp
 
       ! Local information interpolated at I'/O'
 
-      xip =  rtp(iel,ivar)                                          &
-        + (w1(iel)*(xiip+xopf) + w2(iel)*(yiip+yopf) + w3(iel)*(ziip+zopf))
+      xip =  rtp(iel,ivar) &
+          + grad(iel,1)*(xiip+xopf) &
+          + grad(iel,2)*(yiip+yopf) &
+          + grad(iel,3)*(ziip+zopf)
 
       ! Information received from distant instance at J'/O'
       xjp = rvcpfb(ipt,ivar)
 
 
-      gradi = (w1(iel)*xipf+w2(iel)*yipf+w3(iel)*zipf)/ipf
+      gradi = (grad(iel,1)*xipf+grad(iel,2)*yipf+grad(iel,3)*zipf)/ipf
 
       itypfb(ifac)  = icscpl
 
@@ -401,7 +407,7 @@ do ivar = 1, nvcp
 enddo
 
 ! Free memory
-deallocate(w1, w2, w3)
+deallocate(grad)
 
 !----
 ! Formats

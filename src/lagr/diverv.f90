@@ -118,8 +118,7 @@ integer          nswrgp, imligp, iwarnp
 
 double precision epsrgp, climgp, extrap
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
 
 !===============================================================================
 
@@ -128,8 +127,7 @@ double precision, allocatable, dimension(:) :: w4, w5, w6
 !===============================================================================
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
 
 idebia = idbia0
 idebra = idbra0
@@ -163,7 +161,7 @@ call grdcel                                                       &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
   ux     , coefax , coefbx ,                                      &
-  w1     , w4     , w5     ,                                      &
+  gradu  ,                                                        &
   ra     )
 
 !===============================================================================
@@ -176,7 +174,7 @@ call grdcel                                                       &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
   vy     , coefay , coefby ,                                      &
-  w4     , w2     , w5     ,                                      &
+  gradv  ,                                                        &
   ra     )
 
 !===============================================================================
@@ -189,7 +187,7 @@ call grdcel                                                       &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
   ia     ,                                                        &
   wz     , coefaz , coefbz ,                                      &
-  w5     , w6     , w3     ,                                      &
+  gradw  ,                                                        &
   ra     )
 
 !===============================================================================
@@ -197,12 +195,11 @@ call grdcel                                                       &
 !===============================================================================
 
 do iel = 1,ncel
-  div(iel) = w1(iel) + w2(iel) + w3(iel)
+  div(iel) = gradu(iel,1) + gradv(iel,2) + gradw(iel,3)
 enddo
 
 ! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(gradu, gradv, gradw)
 
 !----
 ! FIN

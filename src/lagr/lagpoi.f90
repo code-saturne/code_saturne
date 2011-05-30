@@ -159,14 +159,11 @@ integer          nswrgp , imligp , iwarnp
 
 double precision epsrgp , climgp , extrap
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
 !===============================================================================
-
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -191,14 +188,10 @@ call rasize('lagpoi',ifinra)
 
 do iel=1,ncel
   if ( statis(iel,ilpd) .gt. seuil ) then
-    statis(iel,ilvx) = statis(iel,ilvx)                           &
-                      /statis(iel,ilpd)
-    statis(iel,ilvy) = statis(iel,ilvy)                           &
-                      /statis(iel,ilpd)
-    statis(iel,ilvz) = statis(iel,ilvz)                           &
-                      /statis(iel,ilpd)
-    statis(iel,ilfv) = statis(iel,ilfv)                           &
-                      /( dble(npst) * volume(iel) )
+    statis(iel,ilvx) = statis(iel,ilvx) / statis(iel,ilpd)
+    statis(iel,ilvy) = statis(iel,ilvy) / statis(iel,ilpd)
+    statis(iel,ilvz) = statis(iel,ilvz) / statis(iel,ilpd)
+    statis(iel,ilfv) = statis(iel,ilfv) / ( dble(npst) * volume(iel) )
   else
     statis(iel,ilvx) = 0.d0
     statis(iel,ilvy) = 0.d0
@@ -226,7 +219,7 @@ call lageqp                                                       &
 
 
 !       On alloue localement 2 tableaux de NFABOR pour le calcul
-!         de COEFA et COEFB de W1,W2,W3
+!         de COEFA et COEFB
 
 icoefap = ifinra
 icoefbp = icoefap + nfabor
@@ -249,6 +242,8 @@ epsrgp = 1.d-8
 climgp = 1.5d0
 extrap = 0.d0
 
+! Allocate a work array
+allocate(grad(ncelet,3))
 
 ! En periodique et parallele, echange avant calcul du gradient
 if (irangp.ge.0.or.iperio.eq.1) then
@@ -266,16 +261,16 @@ call grdcel                                                       &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    ra(iphil) , ra(icoefap) , ra(icoefbp) ,                        &
-   w1       , w2    , w3 ,                                        &
+   grad   ,                                                       &
    ra     )
 
 ! CORRECTION DES VITESSES MOYENNES ET RETOUR AU CUMUL
 
 do iel = 1,ncel
   if ( statis(iel,ilpd) .gt. seuil ) then
-    statis(iel,ilvx) = statis(iel,ilvx) - w1(iel)
-    statis(iel,ilvy) = statis(iel,ilvy) - w2(iel)
-    statis(iel,ilvz) = statis(iel,ilvz) - w3(iel)
+    statis(iel,ilvx) = statis(iel,ilvx) - grad(iel,1)
+    statis(iel,ilvy) = statis(iel,ilvy) - grad(iel,2)
+    statis(iel,ilvz) = statis(iel,ilvz) - grad(iel,3)
   endif
 enddo
 
@@ -284,8 +279,7 @@ do iel = 1,ncel
     statis(iel,ilvx) = statis(iel,ilvx)*statis(iel,ilpd)
     statis(iel,ilvy) = statis(iel,ilvy)*statis(iel,ilpd)
     statis(iel,ilvz) = statis(iel,ilvz)*statis(iel,ilpd)
-    statis(iel,ilfv) = statis(iel,ilfv)                           &
-                      *( dble(npst) * volume(iel) )
+    statis(iel,ilfv) = statis(iel,ilfv)*( dble(npst) * volume(iel) )
   endif
 enddo
 
@@ -294,14 +288,14 @@ enddo
 do npt = 1,nbpart
   if ( itepa(npt,jisor).gt.0 ) then
     iel = itepa(npt,jisor)
-    ettp(npt,jup) = ettp(npt,jup) - w1(iel)
-    ettp(npt,jvp) = ettp(npt,jvp) - w2(iel)
-    ettp(npt,jwp) = ettp(npt,jwp) - w3(iel)
+    ettp(npt,jup) = ettp(npt,jup) - grad(iel,1)
+    ettp(npt,jvp) = ettp(npt,jvp) - grad(iel,2)
+    ettp(npt,jwp) = ettp(npt,jwp) - grad(iel,3)
   endif
 enddo
 
 ! Free memory
-deallocate(w1, w2, w3)
+deallocate(grad)
 
 !===============================================================================
 

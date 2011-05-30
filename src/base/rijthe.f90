@@ -33,7 +33,7 @@ subroutine rijthe &
    ivar   , isou   , ipp    ,                                     &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , grarox , graroy , graroz , smbr   ,          &
+   coefa  , coefb  , gradro , smbr   ,                            &
    ra     )
 
 !===============================================================================
@@ -64,8 +64,7 @@ subroutine rijthe &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! grarox,y,z       ! tr ! <-- ! tableau de travail pour grad rom               !
-!  (ncelet)        !    !     !                                                !
+! gradro(ncelet,3) ! tr ! <-- ! tableau de travail pour grad rom               !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
@@ -103,7 +102,7 @@ double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision grarox(ncelet), graroy(ncelet), graroz(ncelet)
+double precision gradro(ncelet,3)
 double precision smbr(ncelet)
 double precision ra(*)
 
@@ -151,15 +150,15 @@ if     (ivar.eq.ir11) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*grarox(iel)                            &
-        + rtpa(iel,ir12)*graroy(iel)                            &
-        + rtpa(iel,ir13)*graroz(iel)
-    r2t = rtpa(iel,ir12)*grarox(iel)                            &
-        + rtpa(iel,ir22)*graroy(iel)                            &
-        + rtpa(iel,ir23)*graroz(iel)
-    r3t = rtpa(iel,ir13)*grarox(iel)                            &
-        + rtpa(iel,ir23)*graroy(iel)                            &
-        + rtpa(iel,ir33)*graroz(iel)
+    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
+        + rtpa(iel,ir12)*gradro(iel,2)                            &
+        + rtpa(iel,ir13)*gradro(iel,3)
+    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
+        + rtpa(iel,ir22)*gradro(iel,2)                            &
+        + rtpa(iel,ir23)*gradro(iel,3)
+    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
+        + rtpa(iel,ir23)*gradro(iel,2)                            &
+        + rtpa(iel,ir33)*gradro(iel,3)
 
     kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
            /(2.d0*rtpa(iel,iep))
@@ -179,15 +178,15 @@ elseif (ivar.eq.ir22) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*grarox(iel)                            &
-        + rtpa(iel,ir12)*graroy(iel)                            &
-        + rtpa(iel,ir13)*graroz(iel)
-    r2t = rtpa(iel,ir12)*grarox(iel)                            &
-        + rtpa(iel,ir22)*graroy(iel)                            &
-        + rtpa(iel,ir23)*graroz(iel)
-    r3t = rtpa(iel,ir13)*grarox(iel)                            &
-        + rtpa(iel,ir23)*graroy(iel)                            &
-        + rtpa(iel,ir33)*graroz(iel)
+    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
+        + rtpa(iel,ir12)*gradro(iel,2)                            &
+        + rtpa(iel,ir13)*gradro(iel,3)
+    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
+        + rtpa(iel,ir22)*gradro(iel,2)                            &
+        + rtpa(iel,ir23)*gradro(iel,3)
+    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
+        + rtpa(iel,ir23)*gradro(iel,2)                            &
+        + rtpa(iel,ir33)*gradro(iel,3)
 
     kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
            /(2.d0*rtpa(iel,iep))
@@ -207,15 +206,15 @@ elseif (ivar.eq.ir33) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*grarox(iel)                            &
-        + rtpa(iel,ir12)*graroy(iel)                            &
-        + rtpa(iel,ir13)*graroz(iel)
-    r2t = rtpa(iel,ir12)*grarox(iel)                            &
-        + rtpa(iel,ir22)*graroy(iel)                            &
-        + rtpa(iel,ir23)*graroz(iel)
-    r3t = rtpa(iel,ir13)*grarox(iel)                            &
-        + rtpa(iel,ir23)*graroy(iel)                            &
-        + rtpa(iel,ir33)*graroz(iel)
+    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
+        + rtpa(iel,ir12)*gradro(iel,2)                            &
+        + rtpa(iel,ir13)*gradro(iel,3)
+    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
+        + rtpa(iel,ir22)*gradro(iel,2)                            &
+        + rtpa(iel,ir23)*gradro(iel,3)
+    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
+        + rtpa(iel,ir23)*gradro(iel,2)                            &
+        + rtpa(iel,ir33)*gradro(iel,3)
 
     kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
            /(2.d0*rtpa(iel,iep))
@@ -235,12 +234,12 @@ elseif (ivar.eq.ir12) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*grarox(iel)                            &
-        + rtpa(iel,ir12)*graroy(iel)                            &
-        + rtpa(iel,ir13)*graroz(iel)
-    r2t = rtpa(iel,ir12)*grarox(iel)                            &
-        + rtpa(iel,ir22)*graroy(iel)                            &
-        + rtpa(iel,ir23)*graroz(iel)
+    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
+        + rtpa(iel,ir12)*gradro(iel,2)                            &
+        + rtpa(iel,ir13)*gradro(iel,3)
+    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
+        + rtpa(iel,ir22)*gradro(iel,2)                            &
+        + rtpa(iel,ir23)*gradro(iel,3)
 
     kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
            /(2.d0*rtpa(iel,iep))
@@ -257,12 +256,12 @@ elseif (ivar.eq.ir13) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*grarox(iel)                            &
-        + rtpa(iel,ir12)*graroy(iel)                            &
-        + rtpa(iel,ir13)*graroz(iel)
-    r3t = rtpa(iel,ir13)*grarox(iel)                            &
-        + rtpa(iel,ir23)*graroy(iel)                            &
-        + rtpa(iel,ir33)*graroz(iel)
+    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
+        + rtpa(iel,ir12)*gradro(iel,2)                            &
+        + rtpa(iel,ir13)*gradro(iel,3)
+    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
+        + rtpa(iel,ir23)*gradro(iel,2)                            &
+        + rtpa(iel,ir33)*gradro(iel,3)
 
     kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
            /(2.d0*rtpa(iel,iep))
@@ -279,12 +278,12 @@ elseif (ivar.eq.ir23) then
 
   do iel = 1, ncel
 
-    r2t = rtpa(iel,ir12)*grarox(iel)                            &
-        + rtpa(iel,ir22)*graroy(iel)                            &
-        + rtpa(iel,ir23)*graroz(iel)
-    r3t = rtpa(iel,ir13)*grarox(iel)                            &
-        + rtpa(iel,ir23)*graroy(iel)                            &
-        + rtpa(iel,ir33)*graroz(iel)
+    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
+        + rtpa(iel,ir22)*gradro(iel,2)                            &
+        + rtpa(iel,ir23)*gradro(iel,3)
+    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
+        + rtpa(iel,ir23)*gradro(iel,2)                            &
+        + rtpa(iel,ir33)*gradro(iel,3)
 
     kseps = (rtpa(iel,ir11)+rtpa(iel,ir22)+rtpa(iel,ir33))  &
            /(2.d0*rtpa(iel,iep))
@@ -314,15 +313,15 @@ elseif (ivar.eq.iep ) then
 
   do iel = 1, ncel
 
-    r1t = rtpa(iel,ir11)*grarox(iel)                            &
-        + rtpa(iel,ir12)*graroy(iel)                            &
-        + rtpa(iel,ir13)*graroz(iel)
-    r2t = rtpa(iel,ir12)*grarox(iel)                            &
-        + rtpa(iel,ir22)*graroy(iel)                            &
-        + rtpa(iel,ir23)*graroz(iel)
-    r3t = rtpa(iel,ir13)*grarox(iel)                            &
-        + rtpa(iel,ir23)*graroy(iel)                            &
-        + rtpa(iel,ir33)*graroz(iel)
+    r1t = rtpa(iel,ir11)*gradro(iel,1)                            &
+        + rtpa(iel,ir12)*gradro(iel,2)                            &
+        + rtpa(iel,ir13)*gradro(iel,3)
+    r2t = rtpa(iel,ir12)*gradro(iel,1)                            &
+        + rtpa(iel,ir22)*gradro(iel,2)                            &
+        + rtpa(iel,ir23)*gradro(iel,3)
+    r3t = rtpa(iel,ir13)*gradro(iel,1)                            &
+        + rtpa(iel,ir23)*gradro(iel,2)                            &
+        + rtpa(iel,ir33)*gradro(iel,3)
 
     g11p = const*      2.d0*(r1t*gx)
     g22p = const*      2.d0*(r2t*gy)

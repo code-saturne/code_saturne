@@ -144,6 +144,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: tempk
 double precision, allocatable, dimension(:) :: cofrua, cofrub
 double precision, allocatable, dimension(:) :: flurds, flurdb
@@ -742,8 +743,7 @@ unspi = 1.d0/pi
    propfb(1,ipprob(iqinci)), propfb(1,ipprob(ieps)) ,             &
    propfb(1,ipprob(itparo)),                                      &
 
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    ,                   &
+   w10    ,                                                       &
    ra     )
 
 !===============================================================================
@@ -835,8 +835,6 @@ unspi = 1.d0/pi
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   w1     , w2     , w3     , w4     , w5     ,                   &
-   w6     , w7     , w8     , w9     , w10    ,                   &
    propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))) ,&
    propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,&
    propce(1,ipproc(iqy))    , propce(1,ipproc(iqz))   ,           &
@@ -1135,6 +1133,9 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 
   if (idiver.eq.1 .or. idiver.eq.2) then
 
+    ! Allocate a temporary array for gradient computation
+    allocate(grad(ncelet,3))
+
     do ifac = 1,nfabor
       cofrub(ifac) = zero
     enddo
@@ -1176,11 +1177,11 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    propce(1,ipproc(iqx))    , cofrua , cofrub ,                   &
-   w1     , w2     , w3     ,                                     &
+   grad   ,                                                       &
    ra     )
 
     do iel = 1,ncel
-      propce(iel,ipproc(itsre(1))) = - w1(iel)
+      propce(iel,ipproc(itsre(1))) = - grad(iel,1)
     enddo
 
 !------->>direction Y
@@ -1199,11 +1200,11 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    propce(1,ipproc(iqy))    , cofrua , cofrub ,                   &
-   w1     , w2     , w3     ,                                     &
+   grad   ,                                                       &
    ra     )
 
     do iel = 1,ncel
-      propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(itsre(1))) - w2(iel)
+      propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(itsre(1))) - grad(iel,2)
     enddo
 
 !------->>direction Z
@@ -1222,13 +1223,16 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    propce(1,ipproc(iqz))    , cofrua , cofrub ,                   &
-   w1     , w2     , w3     ,                                     &
+   grad   ,                                                       &
    ra     )
 
     do iel = 1,ncel
       propce(iel,ipproc(itsre(1))) =                         &
-          propce(iel,ipproc(itsre(1))) - w3(iel)
+          propce(iel,ipproc(itsre(1))) - grad(iel,3)
     enddo
+
+    ! Free memory
+    deallocate(grad)
 
 ! Fin du calcul de la divergence
   endif

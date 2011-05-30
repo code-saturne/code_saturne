@@ -39,8 +39,7 @@ subroutine preduv &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , xnormp ,                            &
+   w1     , w7     , w8     , w9     , xnormp ,                   &
    ra     )
 
 !===============================================================================
@@ -182,8 +181,7 @@ double precision viscf(nfac), viscb(nfabor)
 double precision viscfi(nfac), viscbi(nfabor)
 double precision drtp(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
+double precision w1(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision xnormp(ncelet)
 double precision ra(*)
@@ -218,6 +216,7 @@ double precision cx    , cy    , cz
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: eswork
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -336,6 +335,9 @@ endif
 
 ! ---> PRISE EN COMPTE DU GRADIENT DE PRESSION
 
+! Allocate a work array for the gradient calculation
+allocate(grad(ncelet,3))
+
 iccocg = 1
 inc    = 1
 nswrgp = nswrgr(ipr)
@@ -354,8 +356,7 @@ call grdpot &
    rvoid  ,                                                       &
    frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -370,14 +371,13 @@ if (ineedf.eq.1 .and. iterns.eq.1) then
     diipbx = diipb(1,ifac)
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
-    pip =  rtpa(iel,ipr)                                          &
-         +diipbx*w1(iel) +diipby*w2(iel)                          &
-         +diipbz*w3(iel)
+    pip = rtpa(iel,ipr) &
+        + diipbx*grad(iel,1) + diipby*grad(iel,2) + diipbz*grad(iel,3)
     pfac = coefa(ifac,iclipr) +coefb(ifac,iclipr)*pip
     pfac1= rtpa(iel,ipr)                                          &
-         +(cdgfbo(1,ifac)-xyzcen(1,iel))*w1(iel)                  &
-         +(cdgfbo(2,ifac)-xyzcen(2,iel))*w2(iel)                  &
-         +(cdgfbo(3,ifac)-xyzcen(3,iel))*w3(iel)
+         +(cdgfbo(1,ifac)-xyzcen(1,iel))*grad(iel,1)              &
+         +(cdgfbo(2,ifac)-xyzcen(2,iel))*grad(iel,2)              &
+         +(cdgfbo(3,ifac)-xyzcen(3,iel))*grad(iel,3)
     pfac = coefb(ifac,iclipr)*(extrag(ipr)*pfac1                  &
          +(1.d0-extrag(ipr))*pfac)                                &
          +(1.d0-coefb(ifac,iclipr))*pfac                          &
@@ -414,9 +414,9 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 !     Calcul de dt/rho*grad P
   do iel = 1, ncel
     dtsrom = dt(iel)/propce(iel,ipcrom)
-    trav(iel,1) = w1(iel)*dtsrom
-    trav(iel,2) = w2(iel)*dtsrom
-    trav(iel,3) = w3(iel)*dtsrom
+    trav(iel,1) = grad(iel,1)*dtsrom
+    trav(iel,2) = grad(iel,2)*dtsrom
+    trav(iel,3) = grad(iel,3)*dtsrom
   enddo
 
   if (irangp.ge.0.or.iperio.eq.1) then
@@ -492,16 +492,16 @@ if(iappel.eq.1) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(iel,1) = (frcxt(iel,1) - w1(iel)) * volume(iel)
-      trav(iel,2) = (frcxt(iel,2) - w2(iel)) * volume(iel)
-      trav(iel,3) = (frcxt(iel,3) - w3(iel)) * volume(iel)
+      trav(iel,1) = (frcxt(iel,1) - grad(iel,1)) * volume(iel)
+      trav(iel,2) = (frcxt(iel,2) - grad(iel,2)) * volume(iel)
+      trav(iel,3) = (frcxt(iel,3) - grad(iel,3)) * volume(iel)
     enddo
   else
     do iel = 1, ncel
       drom = (propce(iel,ipcrom)-ro0)
-      trav(iel,1) = ( drom*gx - w1(iel) ) * volume(iel)
-      trav(iel,2) = ( drom*gy - w2(iel) ) * volume(iel)
-      trav(iel,3) = ( drom*gz - w3(iel) ) * volume(iel)
+      trav(iel,1) = ( drom*gx - grad(iel,1) ) * volume(iel)
+      trav(iel,2) = ( drom*gy - grad(iel,2) ) * volume(iel)
+      trav(iel,3) = ( drom*gz - grad(iel,3) ) * volume(iel)
     enddo
   endif
 
@@ -509,29 +509,24 @@ elseif(iappel.eq.2) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(iel,1) =                                               &
-           trav(iel,1) + ( frcxt(iel,1) -                   &
-                           w1(iel) )*volume(iel)
-      trav(iel,2) =                                               &
-           trav(iel,2) + ( frcxt(iel,2) -                   &
-                           w2(iel) )*volume(iel)
-      trav(iel,3) =                                               &
-           trav(iel,3) + ( frcxt(iel,3) -                   &
-                           w3(iel) )*volume(iel)
+      trav(iel,1) = trav(iel,1) + ( frcxt(iel,1) - grad(iel,1) )*volume(iel)
+      trav(iel,2) = trav(iel,2) + ( frcxt(iel,2) - grad(iel,2) )*volume(iel)
+      trav(iel,3) = trav(iel,3) + ( frcxt(iel,3) - grad(iel,3) )*volume(iel)
     enddo
   else
     do iel = 1, ncel
       drom = (propce(iel,ipcrom)-ro0)
-      trav(iel,1) =                                               &
-           trav(iel,1) + ( drom*gx - w1(iel) )*volume(iel)
-      trav(iel,2) =                                               &
-           trav(iel,2) + ( drom*gy - w2(iel) )*volume(iel)
-      trav(iel,3) =                                               &
-           trav(iel,3) + ( drom*gz - w3(iel) )*volume(iel)
+      trav(iel,1) =  trav(iel,1) + ( drom*gx - grad(iel,1) )*volume(iel)
+      trav(iel,2) =  trav(iel,2) + ( drom*gy - grad(iel,2) )*volume(iel)
+      trav(iel,3) =  trav(iel,3) + ( drom*gz - grad(iel,3) )*volume(iel)
     enddo
   endif
 
 endif
+
+! Free memory
+deallocate(grad)
+
 
 !   Pour IAPPEL = 1 (ie appel standard sans les estimateurs)
 !     TRAV rassemble les termes sources  qui seront recalcules
@@ -564,16 +559,14 @@ if(iterns.eq.1) then
       if(nterup.eq.1) then
         do ii = 1, ndim
           do iel = 1, ncel
-            trav (iel,ii)        = trav (iel,ii)                  &
-                 - thets*propce(iel,iptsna+ii-1)
+            trav (iel,ii) = trav (iel,ii) - thets*propce(iel,iptsna+ii-1)
           enddo
         enddo
 !         S'il   y a plusieurs iter : TRAVA initialise
       else
         do ii = 1, ndim
           do iel = 1, ncel
-            trava(iel,ii)  =                                &
-                 - thets*propce(iel,iptsna+ii-1)
+            trava(iel,ii) = - thets*propce(iel,iptsna+ii-1)
           enddo
         enddo
       endif
@@ -610,9 +603,12 @@ if(iterns.eq.1) then
 !       doit l'extrapoler en temps ; il va dans TRAVA si on n'extrapole
 !       pas mais qu'on itere sur navsto. Il va dans TRAV si on
 !       n'extrapole pas et qu'on n'itere pas sur navsto.
-if( (itytur.eq.2 .or. iturb.eq.50                   &
-     .or. iturb.eq.60)                                     &
-       .and.igrhok.eq.1.and.iterns.eq.1)then
+if(     (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) &
+   .and. igrhok.eq.1 .and. iterns.eq.1) then
+
+  ! Allocate a work array for the gradient calculation
+  allocate(grad(ncelet,3))
+
   iccocg = 1
   inc    = 1
   nswrgp = nswrgr(ik)
@@ -629,8 +625,7 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,ik)   , coefa(1,iclik)  , coefb(1,iclik)  ,             &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
   d2s3 = 2.d0/3.d0
@@ -643,31 +638,25 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
     if(iroext.gt.0) ipcroo = ipcroa
     do iel = 1, ncel
       romvom = -propce(iel,ipcroo)*volume(iel)*d2s3
-      propce(iel,iptsna  )=propce(iel,iptsna  )+w1(iel)*romvom
-      propce(iel,iptsna+1)=propce(iel,iptsna+1)+w2(iel)*romvom
-      propce(iel,iptsna+2)=propce(iel,iptsna+2)+w3(iel)*romvom
+      propce(iel,iptsna  )=propce(iel,iptsna  )+grad(iel,1)*romvom
+      propce(iel,iptsna+1)=propce(iel,iptsna+1)+grad(iel,2)*romvom
+      propce(iel,iptsna+2)=propce(iel,iptsna+2)+grad(iel,3)*romvom
     enddo
 !     Si on n'extrapole pas les termes sources en temps : TRAV ou TRAVA
   else
     if(nterup.eq.1) then
       do iel = 1, ncel
         romvom = -propce(iel,ipcrom)*volume(iel)*d2s3
-        trav (iel,1)       =                                      &
-        trav (iel,1)       + w1(iel) * romvom
-        trav (iel,2)       =                                      &
-        trav (iel,2)       + w2(iel) * romvom
-        trav (iel,3)       =                                      &
-        trav (iel,3)       + w3(iel) * romvom
+        trav (iel,1) = trav (iel,1) + grad(iel,1) * romvom
+        trav (iel,2) = trav (iel,2) + grad(iel,2) * romvom
+        trav (iel,3) = trav (iel,3) + grad(iel,3) * romvom
       enddo
     else
       do iel = 1, ncel
         romvom = -propce(iel,ipcrom)*volume(iel)*d2s3
-        trava(iel,1) =                                      &
-        trava(iel,1) + w1(iel) * romvom
-        trava(iel,2) =                                      &
-        trava(iel,2) + w2(iel) * romvom
-        trava(iel,3) =                                      &
-        trava(iel,3) + w3(iel) * romvom
+        trava(iel,1) = trava(iel,1) + grad(iel,1) * romvom
+        trava(iel,2) = trava(iel,2) + grad(iel,2) * romvom
+        trava(iel,3) = trava(iel,3) + grad(iel,3) * romvom
       enddo
     endif
   endif
@@ -679,8 +668,8 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
       diipbx = diipb(1,ifac)
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
-      xkb = rtpa(iel,ik) + diipbx*w1(iel)                      &
-           + diipby*w2(iel) + diipbz*w3(iel)
+      xkb = rtpa(iel,ik) + diipbx*grad(iel,1)                      &
+           + diipby*grad(iel,2) + diipbz*grad(iel,3)
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb
       xkb = d2s3*propce(iel,ipcrom)*xkb
       do isou = 1, 3
@@ -690,6 +679,10 @@ if( (itytur.eq.2 .or. iturb.eq.50                   &
       enddo
     enddo
   endif
+
+  ! Free memory
+  deallocate(grad)
+
 endif
 
 
@@ -1020,8 +1013,7 @@ if( idiff(iu).ge. 1 ) then
     enddo
   else
     do iel = 1, ncel
-      w1(iel) = propce(iel,ipcvis)                                &
-                            + idifft(iu)*propce(iel,ipcvst)
+      w1(iel) = propce(iel,ipcvis) + idifft(iu)*propce(iel,ipcvst)
     enddo
   endif
 
@@ -1192,13 +1184,11 @@ do isou = 1, 3
   if(iterns.eq.1) then
     if(nterup.gt.1) then
       do iel = 1, ncel
-        trava(iel,isou) = trava(iel,isou)             &
-               + drtp(iel)*rtpa(iel,ivar)
+        trava(iel,isou) = trava(iel,isou) + drtp(iel)*rtpa(iel,ivar)
       enddo
     else
       do iel = 1, ncel
-        trav(iel,isou) = trav(iel,isou)                           &
-               + drtp(iel)*rtpa(iel,ivar)
+        trav(iel,isou) = trav(iel,isou) + drtp(iel)*rtpa(iel,ivar)
       enddo
     endif
   endif
@@ -1210,8 +1200,7 @@ do isou = 1, 3
 !       PROPCE recoit les termes explicites
     if(isno2t.gt.0) then
       do iel = 1, ncel
-        propce(iel,iptsna+isou-1 ) =                              &
-        propce(iel,iptsna+isou-1 ) + w7(iel)
+        propce(iel,iptsna+isou-1 ) = propce(iel,iptsna+isou-1 ) + w7(iel)
       enddo
 !     Si on n'extrapole pas les termes source en temps :
     else
@@ -1223,8 +1212,7 @@ do isou = 1, 3
 !       si on itere sur navsto : TRAVA
       else
         do iel = 1, ncel
-          trava(iel,isou) =                                 &
-          trava(iel,isou) + w7(iel)
+          trava(iel,isou) = trava(iel,isou) + w7(iel)
         enddo
       endif
     endif
@@ -1242,13 +1230,11 @@ do isou = 1, 3
   if(iterns.eq.1) then
     if(nterup.gt.1) then
       do iel = 1, ncel
-        trava(iel,isou) = trava(iel,isou)             &
-               +iconv(ivar)*w1(iel)*rtpa(iel,ivar)
+        trava(iel,isou) = trava(iel,isou) + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
       enddo
     else
       do iel = 1, ncel
-        trav(iel,isou) = trav(iel,isou)                           &
-               +iconv(ivar)*w1(iel)*rtpa(iel,ivar)
+        trav(iel,isou) = trav(iel,isou) + iconv(ivar)*w1(iel)*rtpa(iel,ivar)
       enddo
     endif
   endif
@@ -1286,13 +1272,11 @@ do isou = 1, 3
     else
       if(iterns.gt.1) then
         do iel = 1, ncel
-          rovsdt(iel) = rovsdt(iel)                               &
-               + max(-ximpa(iel,isou),zero)
+          rovsdt(iel) = rovsdt(iel) + max(-ximpa(iel,isou),zero)
         enddo
       else
         do iel = 1, ncel
-          rovsdt(iel) = rovsdt(iel)                               &
-               + max(-drtp(iel),zero)
+          rovsdt(iel) = rovsdt(iel) + max(-drtp(iel),zero)
         enddo
       endif
     endif
@@ -1380,8 +1364,7 @@ do isou = 1, 3
 !       Si on n'itere pas sur navsto : TRAVA n'existe pas
     if(nterup.eq.1) then
       do iel = 1, ncel
-        smbr(iel) =  trav(iel,isou)                               &
-             + thetp1*propce(iel,iptsna+isou-1)
+        smbr(iel) =  trav(iel,isou) + thetp1*propce(iel,iptsna+isou-1)
       enddo
 !       Si on   itere     sur navsto : tout existe
     else
@@ -1431,8 +1414,7 @@ do isou = 1, 3
 
   if ( ippmod(ielarc) .ge. 1 ) then
     do iel = 1,ncel
-      smbr(iel) = smbr(iel)                                       &
-                 + volume(iel)*propce(iel,ipproc(ilapla(isou)))
+      smbr(iel) = smbr(iel) + volume(iel)*propce(iel,ipproc(ilapla(isou)))
     enddo
   endif
 
@@ -1529,8 +1511,7 @@ do isou = 1, 3
       enddo
       do ielpdc = 1, ncepdp
         iel=icepdc(ielpdc)
-        tpucou(iel,isou) = 1.d0/(                                 &
-             1.d0/dt(iel)+ckupdc(ielpdc,isou))
+        tpucou(iel,isou) = 1.d0 / (1.d0/dt(iel) + ckupdc(ielpdc,isou))
       enddo
     endif
 
@@ -1616,8 +1597,7 @@ do isou = 1, 3
 
     iestop = ipproc(iestim(iestot))
     do iel = 1, ncel
-      propce(iel,iestop) =                                        &
-           propce(iel,iestop)+ (smbr(iel)/volume(iel))**2
+      propce(iel,iestop) = propce(iel,iestop)+ (smbr(iel)/volume(iel))**2
     enddo
 
   endif
@@ -1707,8 +1687,7 @@ if(iappel.eq.1) then
   if (iwarni(iu).ge.2) then
     rnorm = -1.d0
     do iel = 1, ncel
-      vitnor =                                                    &
-       sqrt(rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)
+      vitnor = sqrt(rtp(iel,iu)**2+rtp(iel,iv)**2+rtp(iel,iw)**2)
       rnorm = max(rnorm,vitnor)
     enddo
     if (irangp.ge.0) call parmax (rnorm)

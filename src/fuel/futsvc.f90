@@ -140,7 +140,7 @@ integer          ifinra , icoefa , icoefb
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp , extrap
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w7, w8
 
 !===============================================================================
@@ -148,10 +148,6 @@ double precision, allocatable, dimension(:) :: w7, w8
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
-
-! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w7(ncelet), w8(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -204,12 +200,12 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   climgp = climgr(ivarut)
   extrap = extrag(ivarut)
 
+  ! Allocate work arrays
+  allocate(w7(ncelet), w8(ncelet))
+
 ! --> Calcul de FIM et X2 dans W7 et W8
 
   do iel = 1, ncel
-    w1(iel) = zero
-    w2(iel) = zero
-    w3(iel) = zero
     w7(iel) = zero
     w8(iel) = 1.d0
   enddo
@@ -266,6 +262,9 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     !==========
   endif
 
+  ! Allocate a temporary array for gradient computation
+  allocate(grad(ncelet,3))
+
 !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
 !     n'est pas la vitesse ni Rij)
   ivar0  = 0
@@ -276,8 +275,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
    ia     ,                                                       &
    w7     , ra(icoefa) , ra(icoefb)  ,                            &
 !          FIM      COEFA        COEFB
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
   do iel = 1, ncel
@@ -295,18 +293,17 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     rhovst = propce(iel,ipcrom)*xe/                               &
              (xk * rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
-    smbrs (iel) = smbrs (iel) +                                   &
-                2.d0*propce(iel,ipcvst)*volume(iel)/sigmas(iscal) &
-                * (w1(iel)**2 + w2(iel)**2 + w3(iel)**2) * w8(iel)&
+    smbrs(iel) = smbrs(iel) +                                                 &
+                2.d0*propce(iel,ipcvst)*volume(iel)/sigmas(iscal)             &
+               * (grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2) * w8(iel) &
                 - rhovst*rtpa(iel,ivar)
-
   enddo
 
-endif
+  ! Free memory
+  deallocate(grad)
+  deallocate(w7, w8)
 
-! Free memory
-deallocate(w1, w2, w3)
-deallocate(w7, w8)
+endif
 
 !--------
 ! FORMATS

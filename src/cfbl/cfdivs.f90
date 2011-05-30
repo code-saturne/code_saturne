@@ -35,7 +35,6 @@ subroutine cfdivs &
    rtp    , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    diverg , ux     , uy     , uz     ,                            &
-   vistot ,                                                       &
    ra     )
 
 !===============================================================================
@@ -92,7 +91,6 @@ subroutine cfdivs &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! diverg(ncelet    ! tr ! --> ! div(sigma.u)                                   !
 ! ux,y,z(ncelet    ! tr ! <-- ! composantes du vecteur u                       !
-! vistot(ncelet    ! tr ! --- ! tableau de travail pour mu                     !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -140,7 +138,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision diverg(ncelet)
 double precision ux(ncelet), uy(ncelet), uz(ncelet)
-double precision vistot(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -154,7 +151,8 @@ integer          ipcvis, ipcvst, ipcvsv
 double precision epsrgp, climgp, extrap
 double precision vecfac, visttt
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: vistot
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w4, w5, w6
 
 !===============================================================================
@@ -163,8 +161,11 @@ double precision, allocatable, dimension(:) :: w4, w5, w6
 ! 1.  INITIALISATION
 !===============================================================================
 
+! Allocate temporary arrays
+allocate(vistot(ncelet))
+allocate(grad(ncelet,3))
+
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
 idebia = idbia0
@@ -241,8 +242,7 @@ do isou = 1, 3
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 
@@ -255,40 +255,40 @@ do isou = 1, 3
     if    (isou.eq.1) then
       do iel = 1, ncelet
         visttt = propce(iel,ipcvsv) - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*( 2.d0*w1(iel)*ux(iel)              &
-                                   + w2(iel)*uy(iel)              &
-                                   + w3(iel)*uz(iel) )            &
-                     + visttt*w1(iel)*ux(iel)
-        w5(iel) = vistot(iel)*w2(iel)*ux(iel)                     &
-                     + visttt*w1(iel)*uy(iel)
-        w6(iel) = vistot(iel)*w3(iel)*ux(iel)                     &
-                     + visttt*w1(iel)*uz(iel)
+        w4(iel) = vistot(iel)*( 2.d0*grad(iel,1)*ux(iel)          &
+                                   + grad(iel,2)*uy(iel)          &
+                                   + grad(iel,3)*uz(iel) )        &
+                     + visttt*grad(iel,1)*ux(iel)
+        w5(iel) = vistot(iel)*grad(iel,2)*ux(iel)                 &
+                     + visttt*grad(iel,1)*uy(iel)
+        w6(iel) = vistot(iel)*grad(iel,3)*ux(iel)                 &
+                     + visttt*grad(iel,1)*uz(iel)
       enddo
 
     elseif(isou.eq.2) then
       do iel = 1, ncelet
         visttt = propce(iel,ipcvsv) - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*w1(iel)*uy(iel)                     &
-                     + visttt*w2(iel)*ux(iel)
-        w5(iel) = vistot(iel)*(      w1(iel)*ux(iel)              &
-                              + 2.d0*w2(iel)*uy(iel)              &
-                                   + w3(iel)*uz(iel) )            &
-                     + visttt*w2(iel)*uy(iel)
-        w6(iel) = vistot(iel)*w3(iel)*uy(iel)                     &
-                     + visttt*w2(iel)*uz(iel)
+        w4(iel) = vistot(iel)*grad(iel,1)*uy(iel)                 &
+                     + visttt*grad(iel,2)*ux(iel)
+        w5(iel) = vistot(iel)*(      grad(iel,1)*ux(iel)          &
+                              + 2.d0*grad(iel,2)*uy(iel)          &
+                                   + grad(iel,3)*uz(iel) )        &
+                     + visttt*grad(iel,2)*uy(iel)
+        w6(iel) = vistot(iel)*grad(iel,3)*uy(iel)                 &
+                     + visttt*grad(iel,2)*uz(iel)
       enddo
 
     elseif(isou.eq.3) then
       do iel = 1, ncelet
         visttt = propce(iel,ipcvsv) - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*w1(iel)*uz(iel)                     &
-                     + visttt*w3(iel)*ux(iel)
-        w5(iel) = vistot(iel)*w2(iel)*uz(iel)                     &
-                     + visttt*w3(iel)*uy(iel)
-        w6(iel) = vistot(iel)*(      w1(iel)*ux(iel)              &
-                                   + w2(iel)*uy(iel)              &
-                              + 2.d0*w3(iel)*uz(iel) )            &
-                     + visttt*w3(iel)*uz(iel)
+        w4(iel) = vistot(iel)*grad(iel,1)*uz(iel)                 &
+                     + visttt*grad(iel,3)*ux(iel)
+        w5(iel) = vistot(iel)*grad(iel,2)*uz(iel)                 &
+                     + visttt*grad(iel,3)*uy(iel)
+        w6(iel) = vistot(iel)*(      grad(iel,1)*ux(iel)          &
+                                   + grad(iel,2)*uy(iel)          &
+                              + 2.d0*grad(iel,3)*uz(iel) )        &
+                     + visttt*grad(iel,3)*uz(iel)
       enddo
 
     endif
@@ -298,40 +298,40 @@ do isou = 1, 3
     if    (isou.eq.1) then
       do iel = 1, ncelet
         visttt = viscv0 - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*( 2.d0*w1(iel)*ux(iel)              &
-                                   + w2(iel)*uy(iel)              &
-                                   + w3(iel)*uz(iel) )            &
-                     + visttt*w1(iel)*ux(iel)
-        w5(iel) = vistot(iel)*w2(iel)*ux(iel)                     &
-                     + visttt*w1(iel)*uy(iel)
-        w6(iel) = vistot(iel)*w3(iel)*ux(iel)                     &
-                     + visttt*w1(iel)*uz(iel)
+        w4(iel) = vistot(iel)*( 2.d0*grad(iel,1)*ux(iel)          &
+                                   + grad(iel,2)*uy(iel)          &
+                                   + grad(iel,3)*uz(iel) )        &
+                     + visttt*grad(iel,1)*ux(iel)
+        w5(iel) = vistot(iel)*grad(iel,2)*ux(iel)                 &
+                     + visttt*grad(iel,1)*uy(iel)
+        w6(iel) = vistot(iel)*grad(iel,3)*ux(iel)                 &
+                     + visttt*grad(iel,1)*uz(iel)
       enddo
 
     elseif(isou.eq.2) then
       do iel = 1, ncelet
         visttt = viscv0 - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*w1(iel)*uy(iel)                     &
-                     + visttt*w2(iel)*ux(iel)
-        w5(iel) = vistot(iel)*(      w1(iel)*ux(iel)              &
-                              + 2.d0*w2(iel)*uy(iel)              &
-                                   + w3(iel)*uz(iel) )            &
-                     + visttt*w2(iel)*uy(iel)
-        w6(iel) = vistot(iel)*w3(iel)*uy(iel)                     &
-                     + visttt*w2(iel)*uz(iel)
+        w4(iel) = vistot(iel)*grad(iel,1)*uy(iel)                 &
+                     + visttt*grad(iel,2)*ux(iel)
+        w5(iel) = vistot(iel)*(      grad(iel,1)*ux(iel)          &
+                              + 2.d0*grad(iel,2)*uy(iel)          &
+                                   + grad(iel,3)*uz(iel) )        &
+                     + visttt*grad(iel,2)*uy(iel)
+        w6(iel) = vistot(iel)*grad(iel,3)*uy(iel)                 &
+                     + visttt*grad(iel,2)*uz(iel)
       enddo
 
     elseif(isou.eq.3) then
       do iel = 1, ncelet
         visttt = viscv0 - 2.d0/3.d0*vistot(iel)
-        w4(iel) = vistot(iel)*w1(iel)*uz(iel)                     &
-                     + visttt*w3(iel)*ux(iel)
-        w5(iel) = vistot(iel)*w2(iel)*uz(iel)                     &
-                     + visttt*w3(iel)*uy(iel)
-        w6(iel) = vistot(iel)*(      w1(iel)*ux(iel)              &
-                                   + w2(iel)*uy(iel)              &
-                              + 2.d0*w3(iel)*uz(iel) )            &
-                     + visttt*w3(iel)*uz(iel)
+        w4(iel) = vistot(iel)*grad(iel,1)*uz(iel)                 &
+                     + visttt*grad(iel,3)*ux(iel)
+        w5(iel) = vistot(iel)*grad(iel,2)*uz(iel)                 &
+                     + visttt*grad(iel,3)*uy(iel)
+        w6(iel) = vistot(iel)*(      grad(iel,1)*ux(iel)          &
+                                   + grad(iel,2)*uy(iel)          &
+                              + 2.d0*grad(iel,3)*uz(iel) )        &
+                     + visttt*grad(iel,3)*uz(iel)
       enddo
 
     endif
@@ -377,7 +377,6 @@ do isou = 1, 3
 enddo
 
 ! Free memory
-deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 
 return

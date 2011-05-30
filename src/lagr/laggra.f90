@@ -169,7 +169,7 @@ call grdcel &
    epsrgr(ipr)  , climgr(ipr)  , extrag(ipr)  ,                &
    ia     ,                                                    &
    rtp(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,           &
-   gradpr(1,1)     , gradpr(1,2)     , gradpr(1,3)     ,       &
+   gradpr ,                                                    &
    ra     )
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
@@ -217,7 +217,7 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    epsrgr(iu)   , climgr(iu)  , extrag(iu)  ,              &
    ia     ,                                                &
    rtp(1,iu)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,       &
-   gradvf(1,1)     , gradvf(1,2)     , gradvf(1,3)     ,   &
+   gradvf(1,1) ,                                           &
    ra     )
 
 !     COMPOSANTE Y
@@ -231,7 +231,7 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    epsrgr(iv)   , climgr(iv)  , extrag(iv)  ,               &
    ia     ,                                                 &
    rtp(1,iv)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,        &
-   gradvf(1,4)     , gradvf(1,5)     , gradvf(1,6)     ,    &
+   gradvf(1,4) ,                                            &
    ra     )
 
 !     COMPOSANTE Z
@@ -245,7 +245,7 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    epsrgr(iw)   , climgr(iw)  , extrag(iw)  ,               &
    ia     ,                                                 &
    rtp(1,iw)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,        &
-   gradvf(1,7)     , gradvf(1,8)     , gradvf(1,9)     ,    &
+   gradvf(1,7) ,                                            &
    ra     )
 
 endif

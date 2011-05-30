@@ -127,8 +127,8 @@ double precision, allocatable, dimension(:) :: coefad, coefbd
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:) :: rtpdp, smbdp, rovsdp
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 
 !===============================================================================
@@ -147,7 +147,6 @@ allocate(rtpdp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 ! Initialize variables to avoid compiler warnings
@@ -324,6 +323,9 @@ enddo
 ! 5. CALCUL DE LA DISTANCE A LA PAROI
 !===============================================================================
 
+! Allocate a temporary array for the gradient calculation
+allocate(grad(ncelet,3))
+
 !    - Echange pour le parallelisme et pour la periodicite
 
 if (irangp.ge.0.or.iperio.eq.1) then
@@ -344,19 +346,20 @@ call grdcel                                                       &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
    ia     ,                                                       &
    rtpdp  , coefad , coefbd ,                                     &
-   w4     , w5     , w6     ,                                     &
+   grad   ,                                                       &
    ra     )
 
 do iel = 1, ncel
-  w1(iel) = w4(iel)**2.d0+w5(iel)**2.d0+w6(iel)**2.d0
+  w1(iel) = grad(iel,1)**2.d0+grad(iel,2)**2.d0+grad(iel,3)**2.d0
   if(w1(iel)+2.d0*rtpdp(iel).gt.0.d0) then
-    distpa(iel) = - sqrt(w1(iel))                                 &
-                  + sqrt(w1(iel)+2.d0*rtpdp(iel))
+    distpa(iel) = - sqrt(w1(iel)) + sqrt(w1(iel)+2.d0*rtpdp(iel))
   else
-    write(nfecra,8000)iel, xyzcen(1,iel)                          &
-                     ,xyzcen(2,iel),xyzcen(3,iel)
+    write(nfecra,8000)iel, xyzcen(1,iel),xyzcen(2,iel),xyzcen(3,iel)
   endif
 enddo
+
+! Free memory
+deallocate(grad)
 
 !===============================================================================
 ! 6. CALCUL DES BORNES ET IMPRESSIONS
@@ -385,7 +388,6 @@ deallocate(coefad, coefbd)
 deallocate(dam, xam)
 deallocate(rtpdp, smbdp, rovsdp)
 deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)
 
 !===============================================================================

@@ -34,13 +34,11 @@ subroutine resrij &
    icepdc , icetsm , itpsmp ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , produc , grarox , graroy , graroz ,          &
+   coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
    smbr   , rovsdt ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   w5     , w6     , w7     , w8     , w9     ,                   &
    ra     )
 
 !===============================================================================
@@ -81,8 +79,7 @@ subroutine resrij &
 !  (nfabor, *)     !    !     !                                                !
 ! produc           ! tr ! <-- ! tableau de travail pour production             !
 !  (6,ncelet)      !    !     ! (sans rho volume)                              !
-! grarox,y,z       ! tr ! <-- ! tableau de travail pour grad rom               !
-!  (ncelet)        !    !     !                                                !
+! gradro(ncelet,3) ! tr ! <-- ! tableau de travail pour grad rom               !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! smcelp(ncesmp    ! tr ! <-- ! valeur de la variable associee a la            !
@@ -97,7 +94,6 @@ subroutine resrij &
 ! tslagi(ncelet    ! tr ! <-- ! ts implicite couplage retour lagr.             !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! w1...9(ncelet    ! tr ! --- ! tableau de travail                             !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -145,15 +141,12 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision produc(6,ncelet)
-double precision grarox(ncelet), graroy(ncelet), graroz(ncelet)
+double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
 double precision viscf(nfac), viscb(nfabor), coefax(nfabor)
 double precision tslage(ncelet),tslagi(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-double precision w4(ncelet), w5(ncelet), w6(ncelet)
-double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -180,11 +173,21 @@ double precision d1s3  , d2s3
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w7, w8
+
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w7(ncelet), w8(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -477,7 +480,6 @@ if(irijec.eq.1) then
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , produc , w7   ,                              &
    coefax , viscb  ,                                              &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
    ra     )
 
 !     Si on extrapole les T.S. : PROPCE
@@ -513,7 +515,7 @@ if(igrari.eq.1) then
    ivar   , isou   , ipp    ,                                     &
    ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , grarox , graroy , graroz , w7     ,          &
+   coefa  , coefb  , gradro , w7     ,                            &
    ra     )
 
 !     Si on extrapole les T.S. : PROPCE
@@ -536,6 +538,9 @@ endif
 ! 8. TERMES DE DIFFUSION  A.grad(Rij) : PARTIE EXTRADIAGONALE EXPLICITE
 !===============================================================================
 
+! Allocate a temporary array for the gradient calculation
+allocate(grad(ncelet,3))
+
 ! ---> Calcul du grad(Rij)
 
 
@@ -555,8 +560,7 @@ call grdcel                                                       &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtpa(1,ivar )   , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 ! ---> Calcul des termes extradiagonaux de A.grad(Rij)
@@ -564,12 +568,12 @@ call grdcel                                                       &
  do iel = 1, ncel
   trrij = w8(iel)
   cstrij = propce(iel,ipcroo) * csrij *trrij / rtpa(iel,iep)
-  w4(iel) = cstrij * ( rtpa(iel,ir12) * w2(iel)                 &
-                      +rtpa(iel,ir13) * w3(iel) )
-  w5(iel) = cstrij * ( rtpa(iel,ir12) * w1(iel)                 &
-                      +rtpa(iel,ir23) * w3(iel) )
-  w6(iel) = cstrij * ( rtpa(iel,ir13) * w1(iel)                 &
-                      +rtpa(iel,ir23) * w2(iel) )
+  w4(iel) = cstrij * ( rtpa(iel,ir12) * grad(iel,2)                 &
+                      +rtpa(iel,ir13) * grad(iel,3) )
+  w5(iel) = cstrij * ( rtpa(iel,ir12) * grad(iel,1)                 &
+                      +rtpa(iel,ir23) * grad(iel,3) )
+  w6(iel) = cstrij * ( rtpa(iel,ir13) * grad(iel,1)                 &
+                      +rtpa(iel,ir23) * grad(iel,2) )
  enddo
 
 
@@ -628,7 +632,7 @@ if (idifre.eq.1) then
 !        (il reste des doutes sur la periodicite)
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(w1, w2, w3)
+    call synvec(grad(1,1), grad(1,2), grad(1,3))
     !==========
     call syndia(w4, w5, w6)
     !==========
@@ -642,9 +646,9 @@ if (idifre.eq.1) then
 
     surfn2 = surfan(ifac)**2
 
-    grdpx = 0.5d0*(w1(ii)+w1(jj))
-    grdpy = 0.5d0*(w2(ii)+w2(jj))
-    grdpz = 0.5d0*(w3(ii)+w3(jj))
+    grdpx = 0.5d0*(grad(ii,1)+grad(jj,1))
+    grdpy = 0.5d0*(grad(ii,2)+grad(jj,2))
+    grdpz = 0.5d0*(grad(ii,3)+grad(jj,3))
     grdsn = grdpx*surfac(1,ifac)+grdpy*surfac(2,ifac)             &
            +grdpz*surfac(3,ifac)
     grdpx = grdpx-grdsn*surfac(1,ifac)/surfn2
@@ -657,6 +661,9 @@ if (idifre.eq.1) then
          +(w6(ii)+w6(jj))*grdpz*surfac(3,ifac))
 
   enddo
+
+  ! Free memory
+  deallocate(grad)
 
   do ifac = 1, nfabor
     viscb(ifac) = 0.d0
@@ -776,6 +783,10 @@ call codits                                                       &
 ! 11. IMPRESSIONS
 !===============================================================================
 
+! Free memory
+deallocate(w1, w2, w3)
+deallocate(w4, w5, w6)
+deallocate(w7, w8)
 
 !--------
 ! FORMATS

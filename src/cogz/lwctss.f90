@@ -172,9 +172,7 @@ integer          ipfmel(ndracm), iprhol(ndracm)
 double precision sum, epsi
 double precision tsgrad, tschim, tsdiss
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:,:) :: gradf, grady
 double precision, allocatable, dimension(:) :: w10, w11
 
 !===============================================================================
@@ -182,12 +180,6 @@ double precision, allocatable, dimension(:) :: w10, w11
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
-
-! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
-allocate(w10(ncelet), w11(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -259,6 +251,12 @@ endif
 
 if ( ivar.eq.isca(icoyfp)) then
 
+  ! Allocate a temporary array for gradient computation
+  allocate(gradf(ncelet,3), grady(ncelet,3))
+
+  ! Allocate work arrays
+  allocate(w10(ncelet), w11(ncelet))
+
 ! --- Calcul du gradient de F
 !     =======================
 
@@ -287,8 +285,7 @@ if ( ivar.eq.isca(icoyfp)) then
    ia     ,                                                       &
    w10    , coefa(1,iclrtp(ii,icoef))  ,                          &
             coefb(1,iclrtp(ii,icoef))  ,                          &
-   w1              , w2              , w3     ,                   &
-!        d./dx1          , d./dx2          , d./dx3 ,
+   gradf  ,                                                       &
    ra     )
 
 ! --- Calcul du gradient de Yfuel
@@ -319,8 +316,7 @@ if ( ivar.eq.isca(icoyfp)) then
    ia     ,                                                       &
    w11    , coefa(1,iclrtp(ii,icoef))  ,                          &
             coefb(1,iclrtp(ii,icoef))  ,                          &
-   w7              , w8              , w9     ,                   &
-!        d./dx1          , d./dx2          , d./dx3 ,
+   grady  ,                                                       &
    ra     )
 
 
@@ -384,8 +380,10 @@ if ( ivar.eq.isca(icoyfp)) then
 
     tsgrad =  (2.0d0                                              &
          * propce(iel,ipcvst)/(sigmas(iscal))                     &
-         *(w1(iel)*w7(iel)+w2(iel)*w8(iel)+w3(iel)*w9(iel)))      &
-         *volume(iel)
+         * (  gradf(iel,1)*grady(iel,1)                           &
+            + gradf(iel,2)*grady(iel,2)                           &
+            + gradf(iel,3)*grady(iel,3) ))                        &
+         * volume(iel)
 
 
 ! terme de dissipation
@@ -406,15 +404,13 @@ if ( ivar.eq.isca(icoyfp)) then
 
     smbrs(iel) = smbrs(iel) + tschim + tsgrad + tsdiss
 
-   enddo
+  enddo
 
- endif
+  ! Free memory
+  deallocate(gradf, grady)
+  deallocate(w10, w11)
 
-! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
-deallocate(w10, w11)
+endif
 
 !----
 ! FIN

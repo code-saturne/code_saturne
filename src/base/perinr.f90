@@ -124,7 +124,7 @@ integer          isou, isou1
 
 double precision epsrgp, climgp,extrap
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -132,8 +132,8 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 ! 1.  INITIALISATIONS
 !===============================================================================
 
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+! Allocate a work array
+allocate(grad(ncelet,3))
 
 idebia = idbia0
 idebra = idbra0
@@ -179,8 +179,7 @@ do isou = 1,6
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    rtp(1,ipiph)  , coefa(1,ipiph) , coefb(1,ipiph) ,              &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
   isou1 = isou
@@ -188,7 +187,7 @@ do isou = 1,6
   !==========
   ( isou1  ,                                                      &
     drdxyz ,                                                      &
-    w1     , w2      , w3     )
+    grad(1,1) , grad(1,2) , grad(1,3) )
 
 enddo
 
@@ -202,7 +201,7 @@ call peinr2  ( drdxyz )
 igrper = 1
 
 ! Free memory
-deallocate(w1, w2, w3)
+deallocate(grad)
 
 !----
 ! FIN

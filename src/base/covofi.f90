@@ -168,6 +168,7 @@ double precision smbexp
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -176,7 +177,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w1(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -467,8 +468,11 @@ if (itspdv.eq.1) then
   if(itytur.eq.2.or.itytur.eq.3                     &
        .or.iturb.eq.50 .or. iturb.eq.60) then
 
-! Remarque : on a prevu la possibilite de scalaire associe non
-!  variable de calcul, mais des adaptations sont requises
+    ! Allocate a temporary array for the gradient reconstruction
+    allocate(grad(ncelet,3))
+
+    ! Remarque : on a prevu la possibilite de scalaire associe non
+    !  variable de calcul, mais des adaptations sont requises
 
     if(ivarsc.gt.0) then
       iii = ivarsc
@@ -494,8 +498,7 @@ if (itspdv.eq.1) then
    ia     ,                                                       &
    rtpa(1,iii) , coefa(1,iclrtp(iii,icoef)) ,                     &
                  coefb(1,iclrtp(iii,icoef)) ,                     &
-   w1     , w2     , w3     ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 !     Traitement de la production
@@ -514,7 +517,7 @@ if (itspdv.eq.1) then
         propce(iel,iptsca) = propce(iel,iptsca)                   &
              + 2.d0*max(propce(iel,ipcvso),zero)                  &
              *volume(iel)/sigmas(iscal)                           &
-               *(w1(iel)**2 + w2(iel)**2 + w3(iel)**2)
+             *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
       enddo
 !       Sinon : dans SMBRS
     else
@@ -523,9 +526,12 @@ if (itspdv.eq.1) then
         smbrs(iel) = smbrs(iel)                                   &
              + 2.d0*max(propce(iel,ipcvso),zero)                  &
              *volume(iel)/sigmas(iscal)                           &
-             *(w1(iel)**2 + w2(iel)**2 + w3(iel)**2)
+             *(grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2)
       enddo
     endif
+
+    ! Free memory
+    deallocate(grad)
 
 !     Traitement de la dissipation
     if (isso2t(iscal).gt.0) then
@@ -690,7 +696,7 @@ if (iwarni(ivar).ge.2) then
 endif
 
 ! Free memory
-deallocate(w1, w2, w3)
+deallocate(w1)
 
 !--------
 ! FORMATS

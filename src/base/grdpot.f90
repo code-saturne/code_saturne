@@ -34,7 +34,7 @@ subroutine grdpot &
    ppond  ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
+   grad   ,                                                       &
    ra     )
 
 !===============================================================================
@@ -87,8 +87,7 @@ subroutine grdpot &
 ! ppond(ncelet)    ! tr ! <-- ! ponderation "physique"                         !
 ! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
 !   (ncelet)       !    !     !  hydrostatique                                 !
-! dpdx,dpdy        ! tr ! --> ! gradient de pvar                               !
-! dpdz (ncelet     !    !     !                                                !
+! grad(ncelet,3)   ! tr ! --> ! gradient de pvar                               !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -123,7 +122,7 @@ integer          ia(*)
 double precision ppond(ncelet)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
-double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
+double precision grad(ncelet,3)
 double precision ra(*)
 
 ! Local variables
@@ -165,7 +164,7 @@ call cgdcel                                                       &
    xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
    ra(icocgb) , ra(icocg)   ,                                     &
    ra(icocib) , ra(icoci)   ,                                     &
-   dpdx   , dpdy   , dpdz   )
+   grad   )
 
 return
 end subroutine

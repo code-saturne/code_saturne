@@ -158,7 +158,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:), target :: viscf, viscb
 double precision, allocatable, dimension(:), target :: wvisfi, wvisbi
 double precision, allocatable, dimension(:) :: drtp, smbr, rovsdt
-double precision, allocatable, dimension(:,:) :: trav
+double precision, allocatable, dimension(:,:) :: trav, grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -292,8 +292,7 @@ call preduv                                                      &
   trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      ,  trav  , &
   viscf  , viscb  , viscfi , viscbi ,                            &
   drtp   , smbr   , rovsdt ,                                     &
-  w1     , w2     , w3     , w4     , w5     , w6     ,          &
-  w7     , w8     , w9     , w10    ,                            &
+  w1     , w7     , w8     , w9     , w10    ,                   &
   ra     )
 
 ! --- Sortie si pas de pression continuite
@@ -659,6 +658,9 @@ elseif( irevmc.eq.2 ) then
 
 else
 
+  ! Allocate a work array for the gradient calculation
+  allocate(grad(ncelet,3))
+
   !     On corrige la vitesse predite par le gradient cellule de
   !       l'increment de pression
 
@@ -666,8 +668,7 @@ else
 
   if (idtvar.lt.0) then
     do iel = 1, ncel
-      drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr))           &
-           /relaxv(ipr)
+      drtp(iel) = (rtp(iel,ipr) -rtpa(iel,ipr)) / relaxv(ipr)
     enddo
   else
     do iel = 1, ncel
@@ -701,8 +702,7 @@ else
    rvoid  ,                                                       &
    dfrcxt(1,1),dfrcxt(1,2),dfrcxt(1,3),                           &
    drtp   , coefa(1,iclipf) , coefb(1,iclipr)  ,                  &
-   trav(1,1)       , trav(1,2)       , trav(1,3) ,                &
-   !--------         ---------         ---------
+   grad   ,                                                       &
    ra     )
 
   !     REACTUALISATION DU CHAMP DE VITESSES
@@ -712,50 +712,44 @@ else
     if (idtsca.eq.0) then
       do iel = 1, ncel
         dtsrom = -thetap*dt(iel)/propce(iel,ipcrom)
-        rtp(iel,iu) = rtp(iel,iu)+dtsrom*trav(iel,1)
-        rtp(iel,iv) = rtp(iel,iv)+dtsrom*trav(iel,2)
-        rtp(iel,iw) = rtp(iel,iw)+dtsrom*trav(iel,3)
+        rtp(iel,iu) = rtp(iel,iu)+dtsrom*grad(iel,1)
+        rtp(iel,iv) = rtp(iel,iv)+dtsrom*grad(iel,2)
+        rtp(iel,iw) = rtp(iel,iw)+dtsrom*grad(iel,3)
       enddo
     else
       do iel = 1, ncel
         unsrom = -thetap/propce(iel,ipcrom)
         iii = itpuco-1+iel
-        rtp(iel,iu) = rtp(iel,iu) + unsrom*ra(iii         )*trav(iel,1)
-        rtp(iel,iv) = rtp(iel,iv) + unsrom*ra(iii+ncelet  )*trav(iel,2)
-        rtp(iel,iw) = rtp(iel,iw) + unsrom*ra(iii+2*ncelet)*trav(iel,3)
+        rtp(iel,iu) = rtp(iel,iu) + unsrom*ra(iii         )*grad(iel,1)
+        rtp(iel,iv) = rtp(iel,iv) + unsrom*ra(iii+ncelet  )*grad(iel,2)
+        rtp(iel,iw) = rtp(iel,iw) + unsrom*ra(iii+2*ncelet)*grad(iel,3)
       enddo
     endif
   else
     if (idtsca.eq.0) then
       do iel = 1, ncel
         dtsrom = thetap*dt(iel)/propce(iel,ipcrom)
-        rtp(iel,iu) = rtp(iel,iu) + dtsrom*(dfrcxt(iel,1)-trav(iel,1) )
-        rtp(iel,iv) = rtp(iel,iv) + dtsrom*(dfrcxt(iel,2)-trav(iel,2) )
-        rtp(iel,iw) = rtp(iel,iw) + dtsrom*(dfrcxt(iel,3)-trav(iel,3) )
+        rtp(iel,iu) = rtp(iel,iu) + dtsrom*(dfrcxt(iel,1)-grad(iel,1) )
+        rtp(iel,iv) = rtp(iel,iv) + dtsrom*(dfrcxt(iel,2)-grad(iel,2) )
+        rtp(iel,iw) = rtp(iel,iw) + dtsrom*(dfrcxt(iel,3)-grad(iel,3) )
       enddo
     else
       do iel = 1, ncel
         unsrom = thetap/propce(iel,ipcrom)
         iii = itpuco-1+iel
-        rtp(iel,iu) = rtp(iel,iu)                         &
-             +unsrom*ra(iii         )                           &
-             *(dfrcxt(iel,1)-trav(iel,1) )
-        rtp(iel,iv) = rtp(iel,iv)                         &
-             +unsrom*ra(iii+ncelet  )                           &
-             *(dfrcxt(iel,2)-trav(iel,2) )
-        rtp(iel,iw) = rtp(iel,iw)                         &
-             +unsrom*ra(iii+2*ncelet)                           &
-             *(dfrcxt(iel,3)-trav(iel,3) )
+        rtp(iel,iu) = rtp(iel,iu) &
+             +unsrom*ra(iii         )*(dfrcxt(iel,1)-grad(iel,1) )
+        rtp(iel,iv) = rtp(iel,iv) &
+             +unsrom*ra(iii+ncelet  )*(dfrcxt(iel,2)-grad(iel,2) )
+        rtp(iel,iw) = rtp(iel,iw) &
+             +unsrom*ra(iii+2*ncelet)*(dfrcxt(iel,3)-grad(iel,3) )
       enddo
     endif
     !     mise a jour des forces exterieures pour le calcul des gradients
     do iel=1,ncel
-      frcxt(iel,1) = frcxt(iel,1)                   &
-           + dfrcxt(iel,1)
-      frcxt(iel,2) = frcxt(iel,2)                   &
-           + dfrcxt(iel,2)
-      frcxt(iel,3) = frcxt(iel,3)                   &
-           + dfrcxt(iel,3)
+      frcxt(iel,1) = frcxt(iel,1) + dfrcxt(iel,1)
+      frcxt(iel,2) = frcxt(iel,2) + dfrcxt(iel,2)
+      frcxt(iel,3) = frcxt(iel,3) + dfrcxt(iel,3)
     enddo
     if (irangp.ge.0.or.iperio.eq.1) then
       call synvec(frcxt(1,1), frcxt(1,2), frcxt(1,3))
@@ -770,6 +764,9 @@ else
            + coefa(ifac,iclipf)
     enddo
   endif
+
+  ! Free memory
+  deallocate(grad)
 
 endif
 
@@ -1069,8 +1066,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      , trav   , &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt ,                                     &
-   w1     , w2     , w3     , w4     , w5     , w6     ,          &
-   w7     , w8     , w9     , w10    ,                            &
+   w1     , w7     , w8     , w9     , w10    ,                   &
    ra     )
 
   endif

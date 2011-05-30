@@ -32,7 +32,7 @@ subroutine grdcel &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    pvar   , coefap , coefbp ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
+   grad   ,                                                       &
    ra     )
 
 !===============================================================================
@@ -80,8 +80,7 @@ subroutine grdcel &
 ! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
 ! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
-! dpdx,dpdy        ! tr ! --> ! gradient de pvar                               !
-! dpdz (ncelet     !    !     !                                                !
+! grad(ncelet,3)   ! tr ! --> ! gradient de pvar                               !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -114,7 +113,7 @@ double precision epsrgp , climgp , extrap
 integer          ia(*)
 
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
-double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
+double precision grad(ncelet,3)
 double precision ra(*)
 
 ! Local variables
@@ -176,7 +175,7 @@ if(iperio.eq.1) then
     idimte , itenso , iperot , iguper , igrper ,                  &
     iiu    , iiv    , iiw    , iitytu ,                           &
     iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
-    dpdx   , dpdy   , dpdz   ,                                    &
+    grad(1,1) , grad(1,2) , grad(1,3) ,                           &
     ra(idudxy) , ra(idrdxy)  )
 endif
 
@@ -199,7 +198,7 @@ call cgdcel                                                       &
    xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
    ra(icocgb) , ra(icocg)   ,                                     &
    ra(icocib) , ra(icoci)   ,                                     &
-   dpdx   , dpdy   , dpdz   )
+   grad   )
 
 return
 end subroutine

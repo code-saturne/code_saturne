@@ -139,20 +139,13 @@ double precision sij, sijd, s, sd, sinv
 double precision xfil, xa  , xb  , radeux, con
 double precision dudx(ndim,ndim), kdelta(ndim,ndim)
 
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
 
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
-
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
 ! --- Memoire
 idebia = idbia0
@@ -184,6 +177,9 @@ tiers  = 1.d0/3.d0
 !       W7 = DW/DX, W8 = DW/DY, W9 = DW/DZ
 !===============================================================================
 
+! Allocate temporary arrays for gradients calculation
+allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+
 iccocg = 1
 inc = 1
 
@@ -194,8 +190,7 @@ call grdcel &
    nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
    ia     ,                                              &
    rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   w1            , w2              , w3              ,   &
-!        ------   ------   ------
+   gradu  ,                                              &
    ra     )
 
 call grdcel &
@@ -205,8 +200,7 @@ call grdcel &
    nfecra , epsrgr(iv) , climgr(iv) , extrag(iv) ,       &
    ia     ,                                              &
    rtpa(1,iv) , coefa(1,ipcliv) , coefb(1,ipcliv) ,      &
-   w4            , w5              , w6              ,   &
-!        ------   ------   ------
+   gradv  ,                                              &
    ra     )
 
 call grdcel &
@@ -216,8 +210,7 @@ call grdcel &
    nfecra , epsrgr(iw) , climgr(iw) , extrag(iw) ,       &
    ia     ,                                              &
    rtpa(1,iw) , coefa(1,ipcliw) , coefb(1,ipcliw) ,      &
-   w7            , w8              , w9            ,     &
-!        ------   ------   ------
+   gradw  ,                                              &
    ra     )
 
 ! Kronecker delta Dij
@@ -236,15 +229,15 @@ coef = cwale**2 * radeux
 
 do iel = 1, ncel
 
-  dudx(1,1) = w1(iel)
-  dudx(1,2) = w2(iel)
-  dudx(1,3) = w3(iel)
-  dudx(2,1) = w4(iel)
-  dudx(2,2) = w5(iel)
-  dudx(2,3) = w6(iel)
-  dudx(3,1) = w7(iel)
-  dudx(3,2) = w8(iel)
-  dudx(3,3) = w9(iel)
+  dudx(1,1) = gradu(iel,1)
+  dudx(1,2) = gradu(iel,2)
+  dudx(1,3) = gradu(iel,3)
+  dudx(2,1) = gradv(iel,1)
+  dudx(2,2) = gradv(iel,2)
+  dudx(2,3) = gradv(iel,3)
+  dudx(3,1) = gradw(iel,1)
+  dudx(3,2) = gradw(iel,2)
+  dudx(3,3) = gradw(iel,3)
 
   s  = 0.d0
   sd = 0.d0
@@ -294,9 +287,7 @@ do iel = 1, ncel
 enddo
 
 ! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
+deallocate(gradu, gradv, gradw)
 
 !----
 ! FORMAT

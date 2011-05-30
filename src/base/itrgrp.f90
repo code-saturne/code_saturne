@@ -147,7 +147,7 @@ double precision dijx  , dijy  , dijz
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: dpdx, dpdy, dpdz
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -220,8 +220,8 @@ endif
 
 if( nswrgp.gt.1 ) then
 
-  ! Allocate temporary arrays
-  allocate(dpdx(ncelet), dpdy(ncelet), dpdz(ncelet))
+  ! Allocate a work array for the gradient calculation
+  allocate(grad(ncelet,3))
 
 !     CALCUL DU GRADIENT
 
@@ -239,8 +239,7 @@ if( nswrgp.gt.1 ) then
    rvoid  ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
@@ -266,9 +265,9 @@ endif
     dijy = (xyzcen(2,jj)-xyzcen(2,ii))-dijpfy
     dijz = (xyzcen(3,jj)-xyzcen(3,ii))-dijpfz
 
-    dpxf = 0.5d0*(viselx(ii)*dpdx(ii) + viselx(jj)*dpdx(jj))
-    dpyf = 0.5d0*(visely(ii)*dpdy(ii) + visely(jj)*dpdy(jj))
-    dpzf = 0.5d0*(viselz(ii)*dpdz(ii) + viselz(jj)*dpdz(jj))
+    dpxf = 0.5d0*(viselx(ii)*grad(ii,1) + viselx(jj)*grad(jj,1))
+    dpyf = 0.5d0*(visely(ii)*grad(ii,2) + visely(jj)*grad(jj,2))
+    dpzf = 0.5d0*(viselz(ii)*grad(ii,3) + viselz(jj)*grad(jj,3))
 
     flumas = viscf(ifac)*( pvar(ii) -pvar(jj) )                   &
      + ( dpxf * dijx                                              &
@@ -289,8 +288,7 @@ endif
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
 
-    pip = pvar(ii) +                                              &
-      dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz
+    pip = pvar(ii) + grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz
     pfac = inc*coefap(ifac) +coefbp(ifac)*pip
 
     flumab = viscb(ifac)*( pip -pfac )
@@ -299,7 +297,7 @@ endif
   enddo
 
   ! Free memory
-  deallocate(dpdx, dpdy, dpdz)
+  deallocate(grad)
 
 endif
 

@@ -38,7 +38,6 @@ subroutine cfbsc3 &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscf  , viscb  ,                            &
    flvarf , flvarb ,                                              &
-   dpdx   , dpdy   , dpdz   , dpdxa  , dpdya  , dpdza  ,          &
    ra     )
 
 !===============================================================================
@@ -109,10 +108,6 @@ subroutine cfbsc3 &
 !                  !    !     !  aux faces internes                            !
 ! flvarb(nfabor    ! tr ! --> ! flux de convection-diffusion                   !
 !                  !    !     !  aux faces de bord                             !
-! dpdx,y,z         ! tr ! --- ! tableau de travail pour le grad de p           !
-!    (ncelet)      !    !     !                                                !
-! dpdxa,ya,za      ! tr ! --- ! tableau de travail pour le grad de p           !
-!    (ncelet)      !    !     !  avec decentrement amont                       !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -154,8 +149,6 @@ double precision                cofafp(nfabor), cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf (nfac), viscb (nfabor)
 double precision flvarf(nfac), flvarb(nfabor)
-double precision dpdx (ncelet),dpdy (ncelet),dpdz (ncelet)
-double precision dpdxa(ncelet),dpdya(ncelet),dpdza(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -173,11 +166,16 @@ double precision djjpfx, djjpfy, djjpfz
 double precision diipbx, diipby, diipbz
 double precision pnd
 
+double precision, allocatable, dimension(:,:) :: grad
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+! Allocate work arrays
+allocate(grad(ncelet,3))
 
 idebia = idbia0
 idebra = idbra0
@@ -206,15 +204,14 @@ if( idiffp.ne.0 .and. ircflp.eq.1 ) then
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
    pvar   , coefap , coefbp ,                                     &
-   dpdx   , dpdy   , dpdz   ,                                     &
-!        ------   ------   ------
+   grad   ,                                                       &
    ra     )
 
 else
   do iel = 1, ncelet
-    dpdx(iel) = 0.d0
-    dpdy(iel) = 0.d0
-    dpdz(iel) = 0.d0
+    grad(iel,1) = 0.d0
+    grad(iel,2) = 0.d0
+    grad(iel,3) = 0.d0
   enddo
 endif
 
@@ -257,9 +254,9 @@ do ifac = 1, nfac
   djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) + pnd  * dijpfy
   djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) + pnd  * dijpfz
 
-  dpxf = 0.5d0*(dpdx(ii) + dpdx(jj))
-  dpyf = 0.5d0*(dpdy(ii) + dpdy(jj))
-  dpzf = 0.5d0*(dpdz(ii) + dpdz(jj))
+  dpxf = 0.5d0*(grad(ii,1) + grad(jj,1))
+  dpyf = 0.5d0*(grad(ii,2) + grad(jj,2))
+  dpzf = 0.5d0*(grad(ii,3) + grad(jj,3))
 
   pip = pvar(ii) + ircflp*(dpxf*diipfx+dpyf*diipfy+dpzf*diipfz)
   pjp = pvar(jj) + ircflp*(dpxf*djjpfx+dpyf*djjpfy+dpzf*djjpfz)
@@ -296,7 +293,7 @@ do ifac = 1, nfabor
   flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
   fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
 
-  pip = pvar(ii) +ircflp*(dpdx(ii)*diipbx+dpdy(ii)*diipby+dpdz(ii)*diipbz)
+  pip = pvar(ii) +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
   pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
   pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
@@ -309,6 +306,9 @@ do ifac = 1, nfabor
   flvarb(ifac) = flux
 
 enddo
+
+! Free memory
+deallocate(grad)
 
 !--------
 ! FORMATS

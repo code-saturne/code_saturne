@@ -194,6 +194,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
 double precision, allocatable, dimension(:) :: w1, w7
+double precision, allocatable, dimension(:,:) :: grad
 
 !===============================================================================
 
@@ -514,6 +515,9 @@ if (nbrcpl.ge.1) then
   enddo
 endif
 
+! Allocate a work array for the gradient calculation
+allocate(grad(ncelet,3))
+
 iccocg = 1
 inc    = 1
 nswrgp = nswrgr(ipr)
@@ -531,39 +535,38 @@ call grdpot &
    rvoid  ,                                                       &
    frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
    rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr)  ,            &
-   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
-!        ---------   ---------   ---------
+   grad   ,                                                       &
    ra     )
 
 
 if (iphydr.eq.1) then
   do iel = 1, ncel
-    trav(iel,1) = trav(iel,1) - frcxt(iel,1)
-    trav(iel,2) = trav(iel,2) - frcxt(iel,2)
-    trav(iel,3) = trav(iel,3) - frcxt(iel,3)
+    grad(iel,1) = grad(iel,1) - frcxt(iel,1)
+    grad(iel,2) = grad(iel,2) - frcxt(iel,2)
+    grad(iel,3) = grad(iel,3) - frcxt(iel,3)
   enddo
 endif
 
 if (idtsca.eq.0) then
   do iel = 1, ncel
     ardtsr  = arakph*(dt(iel)/propce(iel,ipcrom))
-    trav(iel,1) = rtp(iel,iu) + ardtsr*trav(iel,1)
-    trav(iel,2) = rtp(iel,iv) + ardtsr*trav(iel,2)
-    trav(iel,3) = rtp(iel,iw) + ardtsr*trav(iel,3)
+    grad(iel,1) = rtp(iel,iu) + ardtsr*grad(iel,1)
+    grad(iel,2) = rtp(iel,iv) + ardtsr*grad(iel,2)
+    grad(iel,3) = rtp(iel,iw) + ardtsr*grad(iel,3)
   enddo
 else
   do iel=1,ncel
     arsr  = arakph/propce(iel,ipcrom)
-    trav(iel,1) = rtp(iel,iu)+arsr*tpucou(iel,1)*trav(iel,1)
-    trav(iel,2) = rtp(iel,iv)+arsr*tpucou(iel,2)*trav(iel,2)
-    trav(iel,3) = rtp(iel,iw)+arsr*tpucou(iel,3)*trav(iel,3)
+    grad(iel,1) = rtp(iel,iu)+arsr*tpucou(iel,1)*grad(iel,1)
+    grad(iel,2) = rtp(iel,iv)+arsr*tpucou(iel,2)*grad(iel,2)
+    grad(iel,3) = rtp(iel,iw)+arsr*tpucou(iel,3)*grad(iel,3)
   enddo
 endif
 
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synvec(trav(1,1), trav(1,2), trav(1,3))
+  call synvec(grad(1,1), grad(1,2), grad(1,3))
   !==========
 endif
 
@@ -593,11 +596,14 @@ call inimas &
    ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
-   trav(1,1) , trav(1,2) , trav(1,3) ,                            &
+   grad(1,1) , grad(1,2) , grad(1,3) ,                            &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
    propfa(1,iflmas), propfb(1,iflmab) ,                           &
    ra     )
+
+! Free memory
+deallocate(grad)
 
 
 ! --- Projection aux faces des forces exterieures
