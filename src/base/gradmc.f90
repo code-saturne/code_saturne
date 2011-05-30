@@ -151,6 +151,7 @@ subroutine gradmc &
 
 use paramx
 use albase
+use cplsat
 use parall
 use period
 
@@ -352,7 +353,7 @@ endif
 !===============================================================================
 
 
-if( (inicoc.eq.1.or.iale.eq.1) .and.iccocg.eq.1) then
+if( (inicoc.eq.1.or.iale.eq.1.or.imobil.eq.1) .and.iccocg.eq.1) then
 
 
 ! --->  2.1 CALCUL COMPLET DE COCG ET

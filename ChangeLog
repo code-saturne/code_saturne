@@ -1,4 +1,10 @@
 * 30/05/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the gradient calculation (least-square method) when the mesh is
+  moving (we know compute the geometric quantities at each pass).
+  modifed routine:
+    src/base/gradmc.f90
+
+* 30/05/2011 - David Monfort <david.monfort@edf.fr>
   Change the gradient API so as to pass the ful gradient vector as an
   argument instead of the three components seperately. This should make
   easier the transition to interleaved algorithms for the gradients
