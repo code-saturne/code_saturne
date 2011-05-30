@@ -1,4 +1,9 @@
 * 30/05/2011 - David Monfort <david.monfort@edf.fr>
+  Mis-spelled preprocessor option during the mesh verification stage.
+  modified routine:
+    gui/Pages/SolutionVerifView.py
+
+* 30/05/2011 - David Monfort <david.monfort@edf.fr>
   Fix the gradient calculation (least-square method) when the mesh is
   moving (we know compute the geometric quantities at each pass).
   modifed routine:

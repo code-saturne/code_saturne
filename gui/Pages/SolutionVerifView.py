@@ -151,7 +151,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
 
                 # Define postprocessing output for errors and warnings.
 
-                cmd += ' --post-err ' + self.fmt
+                cmd += ' --post-error ' + self.fmt
 
                 cmd += ' --case preprocess'
                 if len(nodeList) > 1:
