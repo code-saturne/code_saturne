@@ -1,4 +1,11 @@
 * 31/05/2011 - David Monfort <david.monfort@edf.fr>
+  Minor corrections in the definition of the boolean type.
+  modified routines:
+    src/base/cs_base.h
+    src/bft/bft_config_defs.h
+    src/fvm/fvm_config_defs.h
+
+* 31/05/2011 - David Monfort <david.monfort@edf.fr>
   Move Code_Saturne headers in a pkginclude directory and executables
   in a pkglibexec directory. Remove relevant manpages.
   removed files:

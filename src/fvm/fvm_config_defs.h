@@ -95,11 +95,11 @@ extern "C" {
 #if HAVE_STDBOOL_H
 # include <stdbool.h>
 #else
-# if !HAVE__BOOL
+# ifndef HAVE__BOOL
 #  ifdef __cplusplus
 typedef bool _Bool;
 #  else
-    define _Bool signed char;
+#   define _Bool signed char;
 #  endif
 # endif
 # define bool _Bool
