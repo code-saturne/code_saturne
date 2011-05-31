@@ -1,3 +1,8 @@
+* 31/05/2011 - David Monfort <david.monfort@edf.fr>
+  Use proper association of Fortran pointers to account for source terms.
+  modified routine:
+    src/base/turrij.f90
+
 * 30/05/2011 - David Monfort <david.monfort@edf.fr>
   Fix the gradient calculation (least-square method) when the mesh is
   moving (we know compute the geometric quantities at each pass).

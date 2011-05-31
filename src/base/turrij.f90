@@ -191,9 +191,11 @@ integer          iprfml(nfml,nprfml)
 integer          ipnfac(nfac+1), nodfac(lndfac)
 integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          icetsm(ncesmp)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
+
+integer, dimension(ncesmp,nvar), target :: itypsm
 
 double precision xyzcen(ndim,ncelet)
 double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
@@ -202,9 +204,8 @@ double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(ncepdp,6)
 double precision viscf(nfac), viscb(nfabor), coefax(nfabor)
 double precision dam(ncelet), xam(nfac,2)
 double precision drtp(ncelet), smbr(ncelet), rovsdt(ncelet)
@@ -214,6 +215,9 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+
+double precision, dimension(ncesmp,nvar), target ::  smacel
+double precision, dimension(ncelet,*), target :: tslagr
 
 ! Local variables
 
@@ -627,14 +631,14 @@ do isou = 1, 6
 
   if (iilagr.eq.2 .and. iphas.eq.1) then
     iitsla = itsr11 + (isou-1)
-    tslage = tslagr(1, iitsla)
-    tslagi = tslagr(1, itsli)
+    tslage => tslagr(1:ncelet, iitsla)
+    tslagi => tslagr(1:ncelet, itsli)
   endif
 
   if (ncesmp.gt.0) then
-    itpsmp = itypsm(1,ivar)
-    smcelp = smacel(1,ivar)
-    gammap = smacel(1,ipriph)
+    itpsmp => itypsm(1:ncesmp,ivar)
+    smcelp => smacel(1:ncesmp,ivar)
+    gammap => smacel(1:ncesmp,ipriph)
   endif
 
   !     Rij-epsilon standard (LRR)
@@ -699,9 +703,9 @@ ipp    = ipprtp(ivar)
 isou   = 7
 
 if (ncesmp.gt.0) then
-  itpsmp = itypsm(1,ivar)
-  smcelp = smacel(1,ivar)
-  gammap = smacel(1,ipriph)
+  itpsmp => itypsm(1:ncesmp,ivar)
+  smcelp => smacel(1:ncesmp,ivar)
+  gammap => smacel(1:ncesmp,ipriph)
 endif
 
 call reseps                                                       &
