@@ -827,7 +827,7 @@ class case:
             for m in cs_config.env_modules.modules.strip().split():
                 s.write('module load ' + m + '\n')
             s.write('\n')
-            
+
         # Add MPI directories to PATH if in nonstandard path
 
         s.write('# Export paths here if necessary or recommended.\n')
