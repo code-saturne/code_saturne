@@ -362,10 +362,10 @@ if (imode.eq.1) then
   endif
   write(nfecra, *) 'year, quant-day , hour, minute, second'
   write(nfecra, 7995) year, quant, hour, minute, second
- 7995   format(1x, i4, i5, 2i4, f8.2)
+ 7995   format(1x, i4, i5, 2i4, f10.2)
   write(nfecra, *) 'tmprom(itp)'
   write(nfecra, 7996) tmprom(itp)
- 7996   format(1x, f8.2)
+ 7996   format(1x, f10.2)
   write(nfecra, *) 'zdprom, uprom, vprom, ekprom, epprom'
   do ii=1, nbmetd
     write(nfecra, 7997)                                            &

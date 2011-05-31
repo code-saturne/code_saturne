@@ -592,26 +592,33 @@ do ifac = 1, nfabor
         itytur.eq.3 .or. itytur.eq.4 .or.        &
          iturb.eq.70        ) then
 
-! Pseudo decalage de la paroi de la distance RUGD :
-! modified for non neutral boundary layer (cfnnu)
-      distbf0=distbf+rugd
-      xmutlm = xkappa*uk*distbf0*romc
+      if(visctc.gt.epzero) then
 
-      rcprod = max(distbf/distbf0,                                &
-              deuxd0*distbf*sqrt(xmutlm/visctc/distbf0**2)        &
-              -1.d0/(2.d0+rugd/distbf0))
+        ! Pseudo decalage de la paroi de la distance RUGD :
+        ! modified for non neutral boundary layer (cfnnu)
+        distbf0=distbf+rugd
+        xmutlm = xkappa*uk*distbf0*romc
 
-      rcflux = max(xmutlm,visctc)/(visclc+visctc)*distbf/distbf0
+        rcprod = max(distbf/distbf0,                                &
+                deuxd0*distbf*sqrt(xmutlm/visctc/distbf0**2)        &
+                -1.d0/(2.d0+rugd/distbf0))
 
-      uiptn  = min(utau,max(utau - uk/xkappa*rcprod*cfnnu,0.d0))
-      uiptnf = utau - uet/xkappa*rcflux*cfnnu
+        rcflux = max(xmutlm,visctc)/(visclc+visctc)*distbf/distbf0
 
-!     Clipping :
-!     On borne U_f,grad entre 0 et Utau (il y a surement mieux...)
-!     - 0    : on interdit le retournement en face de bord, qui est en
-!              contradiction avec l'hypothèse de loi log.
-!     - Utau : la production turbulente ne peut etre nulle
-!     On empeche U_f,flux d'etre negatif
+        uiptn  = min(utau,max(utau - uk/xkappa*rcprod*cfnnu,0.d0))
+        uiptnf = utau - uet/xkappa*rcflux*cfnnu
+
+      else
+        uiptn  = 0.d0
+        uiptnf = 0.d0
+      endif
+
+      !     Clipping :
+      !     On borne U_f,grad entre 0 et Utau (il y a surement mieux...)
+      !     - 0    : on interdit le retournement en face de bord, qui est en
+      !              contradiction avec l'hypothèse de loi log.
+      !     - Utau : la production turbulente ne peut etre nulle
+      !     On empeche U_f,flux d'etre negatif
 
       if (uiptnf.lt.epzero) uiptnf = 0.d0
 
