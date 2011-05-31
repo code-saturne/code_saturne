@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2010 EDF S.A., France
+#   Copyright (C) 2010-2011 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -35,8 +35,7 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-saturneincludedir = $(includedir)
-saturneinclude_HEADERS = \
+pkginclude_HEADERS = \
 cs_gui.h \
 cs_gui_boundary_conditions.h \
 cs_gui_conjugate_heat_transfer.h \

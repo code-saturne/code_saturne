@@ -80,7 +80,10 @@ class package:
         self.exec_prefix = "@exec_prefix@"
         self.bindir = "@bindir@"
         self.includedir = "@includedir@"
+        self.pkgincludedir = "@pkgincludedir@"
         self.libdir = "@libdir@"
+        self.libexecdir = "@libexecdir@"
+        self.pkglibexecdir = "@pkglibexecdir@"
         self.pythondir = "@pythondir@"
         self.pkgpythondir = "@pkgpythondir@"
         self.datarootdir = "@datarootdir@"
@@ -99,22 +102,22 @@ class package:
 
     def get_preprocessor(self):
 
-        preprocessordir = "@bindir@"
+        preprocessordir = "@pkglibexecdir@"
         return os.path.join(preprocessordir, self.preprocessor)
 
     def get_partitioner(self):
 
-        partitionerdir = "@bindir@"
+        partitionerdir = "@pkglibexecdir@"
         return os.path.join(partitionerdir, self.partitioner)
 
     def get_solver(self):
 
-        solverdir = "@bindir@"
+        solverdir = "@pkglibexecdir@"
         return os.path.join(solverdir, self.solver)
 
     def get_check_syntax(self):
 
-        checksyntaxdir = "@bindir@"
+        checksyntaxdir = "@pkglibexecdir@"
         return os.path.join(checksyntaxdir, self.check_syntax)
 
     def get_configfile(self):

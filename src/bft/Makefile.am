@@ -2,7 +2,7 @@
 #   This file is part of the "Base Functions and Types" library, intended to
 #   simplify and enhance portability, memory and I/O use for scientific codes.
 #
-#   Copyright (C) 2004-2010  EDF
+#   Copyright (C) 2004-2011  EDF
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Lesser General Public
@@ -27,7 +27,7 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-include_HEADERS = \
+pkginclude_HEADERS = \
 bft_backtrace.h \
 bft_error.h \
 bft_file.h \

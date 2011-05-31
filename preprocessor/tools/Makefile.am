@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne Preprocessor.
 #
-#   Copyright (C) 2005-2010  EDF
+#   Copyright (C) 2005-2011  EDF
 #
 #   The Code_Saturne Preprocessor is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -27,10 +27,10 @@ AM_LDFLAGS =
 
 # Main program
 
-bin_PROGRAMS =
+pkglibexec_PROGRAMS =
 
 if HAVE_MED
-bin_PROGRAMS += igghexa_to_med
+pkglibexec_PROGRAMS += igghexa_to_med
 endif
 
 # Conditionally compiled executables

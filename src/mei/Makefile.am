@@ -3,7 +3,7 @@
 #------------------------------------------------------------------------------
 #   This file is part of the "Mathematical Expression Interpreter" library.
 #
-#   Copyright (C) 2008-2010  EDF
+#   Copyright (C) 2008-2011  EDF
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,7 @@ AM_YFLAGS = -d
 
 BUILT_SOURCES = mei_parser.h
 
-include_HEADERS = \
+pkginclude_HEADERS = \
 mei_evaluate.h \
 mei_hash_table.h \
 mei_node.h

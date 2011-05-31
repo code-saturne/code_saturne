@@ -2,7 +2,7 @@
 #   This file is part of the "Finite Volume Mesh" library, intended to provide
 #   finite volume mesh and associated fields I/O and manipulation services.
 #
-#   Copyright (C) 2004-2010  EDF
+#   Copyright (C) 2004-2011  EDF
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,7 @@ libfvm_med_la_CPPFLAGS = -I$(top_srcdir)/src/bft $(HDF5_CPPFLAGS) $(MED_CPPFLAGS
 
 # Public header files (to be installed)
 
-include_HEADERS = \
+pkginclude_HEADERS = \
 fvm_block_to_part.h \
 fvm_defs.h \
 fvm_file.h \

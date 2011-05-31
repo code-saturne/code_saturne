@@ -29,6 +29,9 @@ endif
 
 if HAVE_INTERNAL_PLE
 PLE = libple
+PLE_CPPFLAGS_TMP = -I$(includedir)
+else
+PLE_CPPFLAGS_TMP = $(PLE_CPPFLAGS)
 endif
 
 if HAVE_SALOME_KERNEL
@@ -96,7 +99,7 @@ m4/cs_zlib.m4
 # the number of extra files or patches can grow and change a lot.
 EXTRA_DIST += examples extras patches
 
-nodist_include_HEADERS = cs_config.h
+nodist_pkginclude_HEADERS = cs_config.h
 
 DISTCLEANFILES = cs_config.h
 
@@ -136,7 +139,10 @@ edit_config = sed \
 	-e 's|@exec_prefix[@]|$(exec_prefix)|g' \
 	-e 's|@bindir[@]|$(bindir)|g' \
 	-e 's|@includedir[@]|$(includedir)|g' \
+	-e 's|@pkgincludedir[@]|$(pkgincludedir)|g' \
 	-e 's|@libdir[@]|$(libdir)|g' \
+	-e 's|@libexecdir[@]|$(libexecdir)|g' \
+	-e 's|@pkglibexecdir[@]|$(pkglibexecdir)|g' \
 	-e 's|@pythondir[@]|$(pythondir)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
 	-e 's|@datarootdir[@]|$(datarootdir)|g' \
@@ -160,7 +166,7 @@ edit_config = sed \
 	-e 's|@CS_FCFLAGS[@]|$(CSFCFLAGS)|g' \
 	-e 's|@CS_LDFLAGS[@]|$(CSLDFLAGS)|g' \
 	-e 's|@CS_LIBS[@]|$(CSLIBS)|g' \
-	-e 's|@PLE_CPPFLAGS[@]|$(PLE_CPPFLAGS)|g' \
+	-e 's|@PLE_CPPFLAGS[@]|$(PLE_CPPFLAGS_TMP)|g' \
 	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
 	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \
 	-e 's|@LDFLAGS[@]|$(LDFLAGS)|g' \
@@ -274,12 +280,7 @@ extras/batch/batch.SLURM
 # Install man pages
 
 dist_man_MANS = \
-doc/manpages/code_saturne.1 \
-doc/manpages/cs_check_syntax.1 \
-doc/manpages/cs_io_dump.1 \
-doc/manpages/cs_partition.1 \
-doc/manpages/cs_preprocess.1 \
-doc/manpages/cs_solver.1
+doc/manpages/code_saturne.1
 
 # Install bash completion script
 

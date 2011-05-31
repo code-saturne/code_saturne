@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009-2010 EDF S.A., France
+#   Copyright (C) 2009-2011 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -70,8 +70,6 @@ $(top_srcdir)/src/pprt/ppppar.f90 \
 $(top_srcdir)/src/pprt/ppthch.f90 \
 $(top_srcdir)/src/rayt/radiat.f90
 
-saturneincludedir = $(includedir)
-
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
@@ -100,24 +98,24 @@ clean-local:
 
 install-exec-local: $(libcsmodules_la_SOURCES)
 	@$(NORMAL_INSTALL)
-	test -z "$(saturneincludedir)" || $(MKDIR_P) "$(DESTDIR)$(saturneincludedir)"
-	@list='$(libcsmodules_la_SOURCES)'; test -n "$(saturneincludedir)" || list=; \
+	test -z "$(pkgincludedir)" || $(MKDIR_P) "$(DESTDIR)$(pkgincludedir)"
+	@list='$(libcsmodules_la_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
 	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
 	files=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
 	for p in $$files; do \
-	  echo " $(INSTALL_HEADER) $$p '$(DESTDIR)$(saturneincludedir)'"; \
-	  $(INSTALL_HEADER) $$p "$(DESTDIR)$(saturneincludedir)" || exit $$?; \
+	  echo " $(INSTALL_HEADER) $$p '$(DESTDIR)$(pkgincludedir)'"; \
+	  $(INSTALL_HEADER) $$p "$(DESTDIR)$(pkgincludedir)" || exit $$?; \
 	done
 
 uninstall-local:
 	@$(NORMAL_UNINSTALL)
-	@list='$(libcsmodules_la_SOURCES)'; test -n "$(saturneincludedir)" || list=; \
+	@list='$(libcsmodules_la_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
 	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
 	files=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
-	test -d "$(DESTDIR)$(saturneincludedir)" || exit 0; \
+	test -d "$(DESTDIR)$(pkgincludedir)" || exit 0; \
 	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(saturneincludedir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(saturneincludedir)" && rm -f $$files
-	rmdir $(saturneincludedir) || exit 0
+	echo " ( cd '$(DESTDIR)$(pkgincludedir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(pkgincludedir)" && rm -f $$files
+	rmdir $(pkgincludedir) || exit 0
 

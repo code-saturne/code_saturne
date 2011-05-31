@@ -1,4 +1,39 @@
 * 31/05/2011 - David Monfort <david.monfort@edf.fr>
+  Move Code_Saturne headers in a pkginclude directory and executables
+  in a pkglibexec directory. Remove relevant manpages.
+  removed files:
+    doc/manpages/cs_check_syntax.1
+    doc/manpages/cs_io_dump.1
+    doc/manpages/cs_partition.1
+    doc/manpages/cs_preprocess.1
+    doc/manpages/cs_solver.1
+  modified scripts:
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/cs_package.py.in
+    extras/bash_completion/code_saturne
+    Makefile.am
+    preprocessor/appli/Makefile.am
+    preprocessor/tools/Makefile.am
+    src/apps/Makefile.am
+    src/atmo/Makefile.am
+    src/base/Makefile.am
+    src/bft/Makefile.am
+    src/cfbl/Makefile.am
+    src/cogz/Makefile.am
+    src/cplv/Makefile.am
+    src/ctwr/Makefile.am
+    src/elec/Makefile.am
+    src/fuel/Makefile.am
+    src/fvm/Makefile.am
+    src/gui/Makefile.am
+    src/lagr/Makefile.am
+    src/Makefile.am
+    src/mei/Makefile.am
+    src/pprt/Makefile.am
+    src/rayt/Makefile.am
+
+* 31/05/2011 - David Monfort <david.monfort@edf.fr>
   Make the PLE library particular in the user compilation flags.
   modified routines:
     bin/cs_compile.py

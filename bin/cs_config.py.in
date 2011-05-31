@@ -402,7 +402,7 @@ def main(argv, pkg):
 
     if opts.cppflags is not None:
         if opts.cppflags == "saturne":
-            print("@CPPFLAGS@ -I" + pkg.includedir)
+            print("@CPPFLAGS@ -I" + pkg.pkgincludedir)
         elif opts.cppflags == "ple":
             print(pkg.ple_cppflags)
         else:

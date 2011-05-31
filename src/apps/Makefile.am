@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009-2010 EDF S.A., France
+#   Copyright (C) 2009-2011 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -72,7 +72,7 @@ libsaturne_la_LDFLAGS = -no-undefined -version 0:0:0
 
 # Main program
 
-bin_PROGRAMS = cs_solver
+pkglibexec_PROGRAMS = cs_solver
 
 if HAVE_LINK_CXX
 # Dummy C++ source to cause C++ linking.
@@ -85,19 +85,19 @@ endif
 # Code_Saturne IO utility program
 
 if HAVE_FRONTEND
-bin_PROGRAMS += cs_io_dump
+pkglibexec_PROGRAMS += cs_io_dump
 endif
 
 # Code_Saturne syntax checker
 
 if HAVE_FRONTEND
-bin_PROGRAMS += cs_check_syntax
+pkglibexec_PROGRAMS += cs_check_syntax
 endif
 
 # MPI partitioning program
 
 if HAVE_PARTITIONER
-bin_PROGRAMS += cs_partition
+pkglibexec_PROGRAMS += cs_partition
 endif
 
 cs_solver_SOURCES =

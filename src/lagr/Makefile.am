@@ -40,8 +40,7 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-saturneincludedir = $(includedir)
-saturneinclude_HEADERS = \
+pkginclude_HEADERS = \
 cs_lagr.h \
 cs_lagr_perio.h
 

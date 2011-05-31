@@ -171,7 +171,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = pkg.cc
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + pkg.includedir
+        cmd = cmd + " -I" + pkg.pkgincludedir
         cmd = cmd + " " + pkg.ple_cppflags
         cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " " + pkg.cflags
@@ -185,7 +185,7 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = pkg.cxx
         if len(hxx_files) > 0:
             cmd = cmd + " -I" + srcdir
-        cmd = cmd + " -I" + pkg.includedir
+        cmd = cmd + " -I" + pkg.pkgincludedir
         cmd = cmd + " " + pkg.ple_cppflags
         cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " " + pkg.cxxflags
@@ -205,9 +205,9 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         cmd = cmd + " -I" + srcdir
         if pkg.fcmodinclude != "-I":
             cmd += " " + pkg.fcmodinclude + srcdir
-        cmd = cmd + " -I" + pkg.includedir
+        cmd = cmd + " -I" + pkg.pkgincludedir
         if pkg.fcmodinclude != "-I":
-            cmd += " " + pkg.fcmodinclude + pkg.includedir
+            cmd += " " + pkg.fcmodinclude + pkg.pkgincludedir
         cmd = cmd + " " + pkg.fcflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:
