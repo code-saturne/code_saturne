@@ -1,3 +1,9 @@
+* 31/05/2010 - Bertrand Carissimo <bertrand.carissimo@edf.fr>
+  Minor fixes for atmospheric modelling.
+  modified routines:
+    src/atmo/atlecm.f90
+    src/base/clptrg.f90
+
 * 31/05/2011 - David Monfort <david.monfort@edf.fr>
   Use proper association of Fortran pointers to account for source terms.
   modified routine:
