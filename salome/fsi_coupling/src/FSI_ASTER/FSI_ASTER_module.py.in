@@ -80,7 +80,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
        calcium.create_calcium_port(self.proxy,"DEPAST","CALCIUM_double","OUT","I")
        calcium.create_calcium_port(self.proxy,"VITAST","CALCIUM_double","OUT","I")
        calcium.create_calcium_port(self.proxy,"DTAST","CALCIUM_double","OUT","I")
-       return True 
+       return True
     return False
 
   def interpstring(self,text,args):
@@ -119,7 +119,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
 
       self.endService("FSI_ASTER.op0117")
       j=self.jdc
-      return 
+      return
     except:
       exc_typ,exc_val,exc_fr=sys.exc_info()
       l=traceback.format_exception(exc_typ,exc_val,exc_fr)
