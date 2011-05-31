@@ -1,4 +1,9 @@
 * 31/05/2011 - David Monfort <david.monfort@edf.fr>
+  Use proper association of Fortran pointers to account for source terms.
+  modified routine:
+    src/base/turrij.f90
+
+* 31/05/2011 - David Monfort <david.monfort@edf.fr>
   Use the "executable" mode of YACS instead of the "loader" one
   for both Code_Saturne and Code_Aster.
   added files:

@@ -109,16 +109,20 @@ integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          icetsm(ncesmp)
 integer          ia(*)
+
+integer, dimension(ncesmp,nvar), target :: itypsm
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
-double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(ncepdp,6)
 double precision ra(*)
+
+double precision, dimension(ncesmp,nvar), target ::  smacel
+double precision, dimension(ncelet,*), target :: tslagr
 
 ! Local variables
 
@@ -466,14 +470,14 @@ do isou = 1, 6
 
   if (iilagr.eq.2) then
     iitsla = itsr11 + (isou-1)
-    tslage = tslagr(1, iitsla)
-    tslagi = tslagr(1, itsli)
+    tslage => tslagr(1:ncelet, iitsla)
+    tslagi => tslagr(1:ncelet, itsli)
   endif
 
   if (ncesmp.gt.0) then
-    itpsmp = itypsm(1,ivar)
-    smcelp = smacel(1,ivar)
-    gammap = smacel(1,ipr)
+    itpsmp => itypsm(1:ncesmp,ivar)
+    smcelp => smacel(1:ncesmp,ivar)
+    gammap => smacel(1:ncesmp,ipr)
   endif
 
   !     Rij-epsilon standard (LRR)
@@ -522,9 +526,9 @@ ipp    = ipprtp(ivar)
 isou   = 7
 
 if (ncesmp.gt.0) then
-  itpsmp = itypsm(1,ivar)
-  smcelp = smacel(1,ivar)
-  gammap = smacel(1,ipr)
+  itpsmp => itypsm(1:ncesmp,ivar)
+  smcelp => smacel(1:ncesmp,ivar)
+  gammap => smacel(1:ncesmp,ipr)
 endif
 
 call reseps                                                       &
