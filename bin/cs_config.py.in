@@ -402,19 +402,25 @@ def main(argv, pkg):
 
     if opts.cppflags is not None:
         if opts.cppflags == "saturne":
-            print("@CPPFLAGS@ @PLE_CPPFLAGS@ -I" + pkg.includedir)
+            print("@CPPFLAGS@ -I" + pkg.includedir)
+        elif opts.cppflags == "ple":
+            print(pkg.ple_cppflags)
         else:
             print(cfg.libs[opts.cppflags].cppflags)
 
     if opts.ldflags is not None:
         if opts.ldflags == "saturne":
-            print("@PLE_LDFLAGS@ -L" + pkg.libdir)
+            print("-L" + pkg.libdir)
+        elif opts.ldflags == "ple":
+            print(pkg.ple_ldflags)
         else:
             print(cfg.libs[opts.ldflags].ldflags)
 
     if opts.libs is not None:
         if opts.libs == "saturne":
-            print("-lsaturne -lmei -lfvm_filters -lfvm -lbft @PLE_LIBS@")
+            print("-lsaturne -lmei -lfvm_filters -lfvm -lbft")
+        elif opts.libs == "ple":
+            print(pkg.ple_libs)
         else:
             print(cfg.libs[opts.libs].libs)
 

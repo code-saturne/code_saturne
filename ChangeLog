@@ -1,4 +1,12 @@
 * 31/05/2011 - David Monfort <david.monfort@edf.fr>
+  Make the PLE library particular in the user compilation flags.
+  modified routines:
+    bin/cs_compile.py
+    bin/cs_config.py.in
+    bin/cs_package.py.in
+    Makefile.am
+
+* 31/05/2011 - David Monfort <david.monfort@edf.fr>
   Do not call MPI routines in serial calculations.
   modified routine:
      src/base/cs_resource.c
