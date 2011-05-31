@@ -195,7 +195,6 @@ if [ $? -ne 0 ]
     exit 1
 else
     echo "  - $SAT_NAME sources compilation Ok"
-    SAT_EXE=${SAT_SCRATCH_PATH}/cs_solver
 fi
 #
 # Run the Saturne pre-processor
@@ -240,7 +239,6 @@ if [ ! -z "$SAT_PARAM" ]
         exit 1
     fi
 fi
-SAT_ARGS=${COMMAND_PARAM}
 #
 # =====================================================
 # Setting up Code_Aster temporary workdir
@@ -321,9 +319,6 @@ awk '{
        gsub(/@COCAS_WORKINGDIR@/,"'"$RUN_PATH"'",$0);
        gsub(/@CFD_WORKINGDIR@/,"'"$SAT_SCRATCH_PATH"'",$0);
        gsub(/@AST_MAIL@/,"'"$AST_MESH_GLOB_NAME"'",$0);
-       gsub(/@CFD_PROXY_EXEC@/,"'"$SAT_EXE"'",$0);
-       gsub(/@CFD_PROXY_ARGS@/,"'"$SAT_ARGS"'",$0);
-       gsub(/@CFD_PROXY_OPT_LAUNCH@/,"'"$CFD_LAUNCH"'",$0);
        gsub(/@NBPDTM@/,"'"$NBPDTM"'",$0);
        gsub(/@NBSSIT@/,"'"$NBSSIT"'",$0);
        gsub(/@ISYNCP@/,"'"$ISYNCP"'",$0);

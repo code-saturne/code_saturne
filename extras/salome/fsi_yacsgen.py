@@ -31,9 +31,6 @@ asterdir = "### TO BE MODIFIED - asterdir ###"
 asterpyt = "### TO BE MODIFIED - asterpyt ###"
 asterarg = ["### TO BE MODIFIED - asterarg ###"]
 
-cfdproxyinc = "-I$(top_srcdir)/salome/cfd_proxy"
-cfdproxylib = "$(top_builddir)/salome/cfd_proxy/libcfdproxy.la"
-
 milieuinc = "-I$(top_srcdir)/salome/libmilieu"
 milieulib = "$(top_builddir)/salome/libmilieu/libmilieu.la"
 
@@ -152,50 +149,35 @@ c1 = ASTERComponent("FSI_ASTER",
                     services = [aster_service],
                     aster_dir = asterdir,
                     python_path = [asterpyt],
-                    argv = asterarg)
+                    argv = asterarg,
+                    kind = "exe",
+                    exe_path = "./aster_by_yacs.sh")
 
 # Code_Saturne component
 
-cfd_proxy_defs = "#include <cfd_proxy_api.h>"
+saturne_defs = """extern "C" {
+  void cs_calcium_set_component(int comp_id, void *comp);
+  void cs_calcium_set_verbosity(int n_echo);
+  void cs_run(void);
+}"""
 
-cfd_proxy_load_body = """cfd_proxy_set_component(component, 0);
-cfd_proxy_set_dir(exec_dir);
-cfd_proxy_set_lib(library);
-cfd_proxy_set_args(args);
-retval = cfd_proxy_run_all();"""
+saturne_body = """cs_calcium_set_component(0, component);
+cs_calcium_set_verbosity(verbosity);
+cs_run();"""
 
-cfd_proxy_spawn_body = """cfd_proxy_set_component(component, 0);
-cfd_proxy_set_dir(exec_dir);
-cfd_proxy_set_launcher(optional_launcher);
-cfd_proxy_set_exe(executable);
-cfd_proxy_set_args(args);
-retval = cfd_proxy_run_all();"""
-
-saturne_load_service = Service("load_run",
-                               inport = [("exec_dir", "string"),
-                                         ("library",  "string"),
-                                         ("args",     "string")],
-                               outport = [("retval", "long")],
-                               instream  = saturne_instream,
-                               outstream = saturne_outstream,
-                               defs = cfd_proxy_defs,
-                               body = cfd_proxy_load_body)
-
-saturne_spawn_service = Service("spawn_run",
-                                inport = [("exec_dir",          "string"),
-                                          ("optional_launcher", "string"),
-                                          ("executable",        "string"),
-                                          ("args",              "string")],
-                                outport = [("retval", "long")],
-                                instream = saturne_instream,
-                                outstream = saturne_outstream,
-                                defs = cfd_proxy_defs,
-                                body = cfd_proxy_spawn_body)
+saturne_service = Service("run",
+                          inport = [("app_name", "string"),
+                                    ("verbosity",  "long")],
+                          outport = [("retval", "long")],
+                          instream  = saturne_instream,
+                          outstream = saturne_outstream,
+                          defs = saturne_defs,
+                          body = saturne_body)
 
 c2 = CPPComponent("FSI_SATURNE",
-                  services = [saturne_load_service, saturne_spawn_service],
-                  includes = cfdproxyinc,
-                  libs = cfdproxylib)
+                  services = [saturne_service],
+                  kind = "exe",
+                  exe_path = "./run_solver.sh")
 
 # Milieu component
 

@@ -74,14 +74,12 @@
 
   <service name="fluid_service" >
     <component>FSI_SATURNE</component>
-    <method>spawn_run</method>
+    <method>run</method>
     <load container="FSI_SATURNE"/>
 
     <!-- Declare input parameters -->
-    <inport name="exec_dir" type="string"/>          <!-- execution directory -->
-    <inport name="optional_launcher" type="string"/> <!-- -->
-    <inport name="executable" type="string"/>        <!-- -->
-    <inport name="args" type="string"/>              <!-- -->
+    <inport name="app_name" type="string"/>
+    <inport name="verbosity" type='long' />
     <outport name="retval" type='long' />            <!-- return value -->
 
     <!-- Declare I/O -->
@@ -394,20 +392,12 @@
 
   <!-- Code_Saturne parameters -->
   <parameter>
-    <tonode>fluid_service</tonode> <toport>exec_dir</toport>
-    <value><string>@CFD_WORKINGDIR@</string></value>
+    <tonode>fluid_service</tonode> <toport>app_name</toport>
+    <value><string>Fluid Domain</string></value>
   </parameter>
   <parameter>
-    <tonode>fluid_service</tonode> <toport>optional_launcher</toport>
-    <value><string>@CFD_PROXY_OPT_LAUNCH@</string></value>
-  </parameter>
-  <parameter>
-    <tonode>fluid_service</tonode> <toport>executable</toport>
-    <value><string>@CFD_PROXY_EXEC@</string></value>
-  </parameter>
-  <parameter>
-    <tonode>fluid_service</tonode> <toport>args</toport>
-    <value><string>@CFD_PROXY_ARGS@</string></value>
+    <tonode>fluid_service</tonode> <toport>verbosity</toport>
+    <value><int>2</int></value>
   </parameter>
 
   <!-- Supervisor parameters -->

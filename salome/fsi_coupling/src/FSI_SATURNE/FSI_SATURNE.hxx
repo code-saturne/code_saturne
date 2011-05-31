@@ -23,8 +23,7 @@ class FSI_SATURNE_i: public virtual POA_FSI_ORB::FSI_SATURNE,
     virtual ~FSI_SATURNE_i();
     void destroy();
     CORBA::Boolean init_service(const char * service_name);
-    void load_run(const char* exec_dir,const char* library,const char* args,CORBA::Long& retval);
-    void spawn_run(const char* exec_dir,const char* optional_launcher,const char* executable,const char* args,CORBA::Long& retval);
+    void run(const char* app_name,CORBA::Long verbosity,CORBA::Long& retval);
 };
 
 extern "C"

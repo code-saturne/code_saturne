@@ -27,13 +27,16 @@ MODULE_NAME = FSI
 edit_python = sed \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g'
 
-FSI_ASTER.py: Makefile
+FSI_ASTER_module.py: Makefile
 	rm -f $@ $@.tmp
 	srcdir=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
 	$(edit_python) $${srcdir}$@.in >$@.tmp
 	mv $@.tmp $@
 
-FSI_ASTER.py: $(srcdir)/FSI_ASTER.py.in 
+FSI_ASTER_module.py: $(srcdir)/FSI_ASTER_module.py.in 
 
-nodist_salomepython_PYTHON= FSI_ASTER.py
+nodist_salomepython_PYTHON = FSI_ASTER_module.py
+salomepython_PYTHON = FSI_ASTER_component.py
+salomescript_SCRIPTS = FSI_ASTER.exe
+#salomeres_DATA = FSI_ASTER_config.txt

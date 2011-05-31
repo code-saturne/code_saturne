@@ -37,32 +37,25 @@ module FSI_ORB
 {
   interface FSI_ASTER: Engines::Superv_Component
   {
-    void op0103(in string jdc) raises (SALOME::SALOME_Exception);
+    void op0117(in string jdc) raises (SALOME::SALOME_Exception);
   };
 
   interface FSI_SATURNE: Engines::Superv_Component
   {
-    void load_run(in string exec_dir,
-		  in string library,
-		  in string args,
-		  out long retval) raises (SALOME::SALOME_Exception);
-
-    void spawn_run(in string exec_dir,
-		   in string optional_launcher,
-		   in string executable,
-		   in string args,
-		   out long retval) raises (SALOME::SALOME_Exception);
+    void run(in string app_name,
+             in long verbosity,
+             out long retval) raises (SALOME::SALOME_Exception);
   };
 
   interface FSI_MILIEU: Engines::Superv_Component
   {
     void inter_run(in long NBPDTM,
-		   in long NBSSIT,
-		   in long ISYNCP,
-		   in long NTCHR,
-		   in double DTREF,
-		   in double TTINIT,
-		   in double EPSILO) raises (SALOME::SALOME_Exception);
+                   in long NBSSIT,
+                   in long ISYNCP,
+                   in long NTCHR,
+                   in double DTREF,
+                   in double TTINIT,
+                   in double EPSILO) raises (SALOME::SALOME_Exception);
   };
 };
 

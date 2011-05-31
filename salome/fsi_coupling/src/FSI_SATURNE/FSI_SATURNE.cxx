@@ -42,8 +42,8 @@ static void AttachDebugger()
   if(getenv ("DEBUGGER"))
     {
       std::stringstream exec;
-#if 0
-      exec << "$DEBUGGER " << "None " << getpid() << "&";
+#if 1
+      exec << "$DEBUGGER " << "./run_solver.sh " << getpid() << "&";
 #else
       exec << "$DEBUGGER SALOME_Container " << getpid() << "&";
 #endif
@@ -98,8 +98,11 @@ static void unexpectedHandler(void)
 #endif
 
 //DEFS
-#include <cfd_proxy_api.h>
-#include <cfd_proxy_api.h>
+extern "C" {
+  void cs_calcium_set_component(int comp_id, void *comp);
+  void cs_calcium_set_verbosity(int n_echo);
+  void cs_run(void);
+}
 //ENDDEF
 
 extern "C" void cp_exit(int err);
@@ -125,7 +128,7 @@ FSI_SATURNE_i::FSI_SATURNE_i(CORBA::ORB_ptr orb,
                      const char *interfaceName)
           : Superv_Component_i(orb, poa, contId, instanceName, interfaceName)
 {
-#if 0
+#if 1
   setsig(SIGSEGV,&THandler);
   set_terminate(&terminateHandler);
   set_unexpected(&unexpectedHandler);
@@ -141,7 +144,7 @@ FSI_SATURNE_i::FSI_SATURNE_i(CORBA::ORB_ptr orb,
                      const char *interfaceName)
           : Superv_Component_i(orb, poa, container, instanceName, interfaceName)
 {
-#if 0
+#if 1
   setsig(SIGSEGV,&THandler);
   set_terminate(&terminateHandler);
   set_unexpected(&unexpectedHandler);
@@ -157,7 +160,7 @@ FSI_SATURNE_i::~FSI_SATURNE_i()
 
 void FSI_SATURNE_i::destroy()
 {
-#if 0
+#if 1
   _remove_ref();
   if(!CORBA::is_nil(_orb))
     _orb->shutdown(0);
@@ -176,46 +179,7 @@ FSI_SATURNE_i::init_service(const char * service_name) {
   CORBA::Boolean rtn = false;
   string s_name(service_name);
 
-  if (s_name == "load_run")
-    {
-      try
-        {
-          //initialization CALCIUM ports IN
-          create_calcium_port(this,(char *)"DEPSAT",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"EPSILO",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"DTCALC",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"TTINIT",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"PDTREF",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"NBPDTM",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"NBSSIT",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"ISYNCP",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"NTCHRO",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"ICVEXT",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
-          //initialization CALCIUM ports OUT
-          create_calcium_port(this,(char *)"DTSAT",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"FORSAT",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"ALMAXI",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"COONOD",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"COOFAC",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"COLNOD",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"COLFAC",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"ICV",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"DONGEO",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-        }
-      catch(const PortAlreadyDefined& ex)
-        {
-          std::cerr << "FSI_SATURNE: " << ex.what() << std::endl;
-          //Ports already created : we use them
-        }
-      catch ( ... )
-        {
-          std::cerr << "FSI_SATURNE: unknown exception" << std::endl;
-        }
-      rtn = true;
-    }
-
-
-  if (s_name == "spawn_run")
+  if (s_name == "run")
     {
       try
         {
@@ -257,20 +221,18 @@ FSI_SATURNE_i::init_service(const char * service_name) {
 }
 
 
-void FSI_SATURNE_i::load_run(const char* exec_dir,const char* library,const char* args,CORBA::Long& retval)
+void FSI_SATURNE_i::run(const char* app_name,CORBA::Long verbosity,CORBA::Long& retval)
 {
-  beginService("FSI_SATURNE_i::load_run");
+  beginService("FSI_SATURNE_i::run");
   Superv_Component_i * component = dynamic_cast<Superv_Component_i*>(this);
   char       nom_instance[INSTANCE_LEN];
   int info = cp_cd(component,nom_instance);
   try
     {
 //BODY
-cfd_proxy_set_component(component, 0);
-cfd_proxy_set_dir(exec_dir);
-cfd_proxy_set_lib(library);
-cfd_proxy_set_args(args);
-retval = cfd_proxy_run_all();
+cs_calcium_set_component(0, component);
+cs_calcium_set_verbosity(verbosity);
+cs_run();
 //ENDBODY
       cp_fin(component,CP_ARRET);
     }
@@ -299,7 +261,7 @@ retval = cfd_proxy_run_all();
   catch (...)
     {
       std::cerr << "unknown exception" << std::endl;
-#if 0
+#if 1
       _exit(-1);
 #endif
       cp_fin(component,CP_ARRET);
@@ -308,64 +270,7 @@ retval = cfd_proxy_run_all();
       es.type=SALOME::INTERNAL_ERROR;
       throw SALOME::SALOME_Exception(es);
     }
-  endService("FSI_SATURNE_i::load_run");
-}
-
-
-
-void FSI_SATURNE_i::spawn_run(const char* exec_dir,const char* optional_launcher,const char* executable,const char* args,CORBA::Long& retval)
-{
-  beginService("FSI_SATURNE_i::spawn_run");
-  Superv_Component_i * component = dynamic_cast<Superv_Component_i*>(this);
-  char       nom_instance[INSTANCE_LEN];
-  int info = cp_cd(component,nom_instance);
-  try
-    {
-//BODY
-cfd_proxy_set_component(component, 0);
-cfd_proxy_set_dir(exec_dir);
-cfd_proxy_set_launcher(optional_launcher);
-cfd_proxy_set_exe(executable);
-cfd_proxy_set_args(args);
-retval = cfd_proxy_run_all();
-//ENDBODY
-      cp_fin(component,CP_ARRET);
-    }
-  catch ( const CalciumException & ex)
-    {
-      std::cerr << ex.what() << std::endl;
-      cp_fin(component,CP_ARRET);
-      SALOME::ExceptionStruct es;
-      es.text=CORBA::string_dup(ex.what());
-      es.type=SALOME::INTERNAL_ERROR;
-      throw SALOME::SALOME_Exception(es);
-    }
-  catch ( const SALOME_Exception & ex)
-    {
-      cp_fin(component,CP_ARRET);
-      SALOME::ExceptionStruct es;
-      es.text=CORBA::string_dup(ex.what());
-      es.type=SALOME::INTERNAL_ERROR;
-      throw SALOME::SALOME_Exception(es);
-    }
-  catch ( const SALOME::SALOME_Exception & ex)
-    {
-      cp_fin(component,CP_ARRET);
-      throw;
-    }
-  catch (...)
-    {
-      std::cerr << "unknown exception" << std::endl;
-#if 0
-      _exit(-1);
-#endif
-      cp_fin(component,CP_ARRET);
-      SALOME::ExceptionStruct es;
-      es.text=CORBA::string_dup(" unknown exception");
-      es.type=SALOME::INTERNAL_ERROR;
-      throw SALOME::SALOME_Exception(es);
-    }
-  endService("FSI_SATURNE_i::spawn_run");
+  endService("FSI_SATURNE_i::run");
 }
 
 

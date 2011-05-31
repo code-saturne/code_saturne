@@ -26,12 +26,12 @@ MODULE_NAME = FSI
 
 AM_CFLAGS = $(SALOME_INCLUDES) -fexceptions
 
-salomelib_LTLIBRARIES = libFSI_SATURNEEngine.la
+salomelib_LTLIBRARIES = libFSI_SATURNEExelib.la
+salomescript_SCRIPTS= FSI_SATURNE.exe
 salomeinclude_HEADERS = FSI_SATURNE.hxx
 
-libFSI_SATURNEEngine_la_SOURCES = FSI_SATURNE.cxx 
-nodist_libFSI_SATURNEEngine_la_SOURCES =
-libFSI_SATURNEEngine_la_CXXFLAGS = -I$(top_builddir)/salome/fsi_coupling/idl  $(SALOME_INCLUDES) -I$(top_srcdir)/salome/cfd_proxy
-libFSI_SATURNEEngine_la_LIBADD = $(top_builddir)/salome/cfd_proxy/libcfdproxy.la $(top_builddir)/salome/fsi_coupling/idl/libSalomeIDLFSI.la $(SALOME_LIBS)
-libFSI_SATURNEEngine_la_LDFLAGS = 
-
+libFSI_SATURNEExelib_la_SOURCES = FSI_SATURNE.cxx 
+nodist_libFSI_SATURNEExelib_la_SOURCES =
+libFSI_SATURNEExelib_la_CXXFLAGS = -I$(top_builddir)/salome/fsi_coupling/idl  $(SALOME_INCLUDES)
+libFSI_SATURNEExelib_la_LIBADD = $(top_builddir)/salome/fsi_coupling/idl/libSalomeIDLFSI.la $(SALOME_LIBS)
+libFSI_SATURNEExelib_la_LDFLAGS = 

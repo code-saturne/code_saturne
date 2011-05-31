@@ -1,4 +1,25 @@
 * 31/05/2011 - David Monfort <david.monfort@edf.fr>
+  Use the "executable" mode of YACS instead of the "loader" one
+  for both Code_Saturne and Code_Aster.
+  added files:
+    salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER_component.py
+    salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER.exe
+    salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER_module.py.in
+    salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.exe
+  removed files:
+    salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER.py.in
+  modified files:
+    bin/runcase_aster.in
+    extras/salome/fsi_yacsgen.py
+    extras/salome/fsi_yacs_scheme.xml
+    salome/fsi_coupling/idl/FSI.idl
+    salome/fsi_coupling/resources/FSICatalog.xml
+    salome/fsi_coupling/src/FSI_ASTER/Makefile.am
+    salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.cxx
+    salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.hxx
+    salome/fsi_coupling/src/FSI_SATURNE/Makefile.am
+
+* 31/05/2011 - David Monfort <david.monfort@edf.fr>
   Minor corrections in the definition of the boolean type.
   modified routines:
     src/base/cs_base.h

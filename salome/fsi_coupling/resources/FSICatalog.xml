@@ -34,7 +34,7 @@
             <component-service-list>
                 <component-service>
                     <!-- service-identification -->
-                    <service-name>op0103</service-name>
+                    <service-name>op0117</service-name>
                     <service-author>EDF-RD</service-author>
                     <service-version>1.0</service-version>
                     <service-comment></service-comment>
@@ -168,7 +168,7 @@
             <component-service-list>
                 <component-service>
                     <!-- service-identification -->
-                    <service-name>load_run</service-name>
+                    <service-name>run</service-name>
                     <service-author>EDF-RD</service-author>
                     <service-version>1.0</service-version>
                     <service-comment></service-comment>
@@ -176,146 +176,12 @@
                     <!-- service-connexion -->
                     <inParameter-list>
                         <inParameter>
-                          <inParameter-name>exec_dir</inParameter-name>
+                          <inParameter-name>app_name</inParameter-name>
                           <inParameter-type>string</inParameter-type>
                        </inParameter>
                         <inParameter>
-                          <inParameter-name>library</inParameter-name>
-                          <inParameter-type>string</inParameter-type>
-                       </inParameter>
-                        <inParameter>
-                          <inParameter-name>args</inParameter-name>
-                          <inParameter-type>string</inParameter-type>
-                       </inParameter>
-                    </inParameter-list>
-                    <outParameter-list>
-                        <outParameter>
-                          <outParameter-name>retval</outParameter-name>
-                          <outParameter-type>long</outParameter-type>
-                       </outParameter>
-                    </outParameter-list>
-                    <DataStream-list>
-                       <inParameter>
-                          <inParameter-name>DEPSAT</inParameter-name>
-                          <inParameter-type>CALCIUM_double</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>EPSILO</inParameter-name>
-                          <inParameter-type>CALCIUM_double</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>DTCALC</inParameter-name>
-                          <inParameter-type>CALCIUM_double</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>TTINIT</inParameter-name>
-                          <inParameter-type>CALCIUM_double</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>PDTREF</inParameter-name>
-                          <inParameter-type>CALCIUM_double</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>NBPDTM</inParameter-name>
-                          <inParameter-type>CALCIUM_integer</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>NBSSIT</inParameter-name>
-                          <inParameter-type>CALCIUM_integer</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>ISYNCP</inParameter-name>
-                          <inParameter-type>CALCIUM_integer</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>NTCHRO</inParameter-name>
-                          <inParameter-type>CALCIUM_integer</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <inParameter>
-                          <inParameter-name>ICVEXT</inParameter-name>
-                          <inParameter-type>CALCIUM_integer</inParameter-type>
-                          <inParameter-dependency>I</inParameter-dependency>
-                       </inParameter>
-                       <outParameter>
-                          <outParameter-name>DTSAT</outParameter-name>
-                          <outParameter-type>CALCIUM_double</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>FORSAT</outParameter-name>
-                          <outParameter-type>CALCIUM_double</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>ALMAXI</outParameter-name>
-                          <outParameter-type>CALCIUM_double</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>COONOD</outParameter-name>
-                          <outParameter-type>CALCIUM_double</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>COOFAC</outParameter-name>
-                          <outParameter-type>CALCIUM_double</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>COLNOD</outParameter-name>
-                          <outParameter-type>CALCIUM_integer</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>COLFAC</outParameter-name>
-                          <outParameter-type>CALCIUM_integer</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>ICV</outParameter-name>
-                          <outParameter-type>CALCIUM_integer</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                       <outParameter>
-                          <outParameter-name>DONGEO</outParameter-name>
-                          <outParameter-type>CALCIUM_integer</outParameter-type>
-                          <outParameter-dependency>I</outParameter-dependency>
-                       </outParameter>
-                    </DataStream-list>
-                </component-service>
-                <component-service>
-                    <!-- service-identification -->
-                    <service-name>spawn_run</service-name>
-                    <service-author>EDF-RD</service-author>
-                    <service-version>1.0</service-version>
-                    <service-comment></service-comment>
-                    <service-by-default>0</service-by-default>
-                    <!-- service-connexion -->
-                    <inParameter-list>
-                        <inParameter>
-                          <inParameter-name>exec_dir</inParameter-name>
-                          <inParameter-type>string</inParameter-type>
-                       </inParameter>
-                        <inParameter>
-                          <inParameter-name>optional_launcher</inParameter-name>
-                          <inParameter-type>string</inParameter-type>
-                       </inParameter>
-                        <inParameter>
-                          <inParameter-name>executable</inParameter-name>
-                          <inParameter-type>string</inParameter-type>
-                       </inParameter>
-                        <inParameter>
-                          <inParameter-name>args</inParameter-name>
-                          <inParameter-type>string</inParameter-type>
+                          <inParameter-name>verbosity</inParameter-name>
+                          <inParameter-type>long</inParameter-type>
                        </inParameter>
                     </inParameter-list>
                     <outParameter-list>
