@@ -999,7 +999,7 @@ if (ineedf.eq.1) then
     ifac = lstelt(ilelt)
 
     do ii = 1, ndim
-      xfor(ii) = xfor(ii) + ra(iforbr + (ifac-1)*ndim + ii-1)
+      xfor(ii) = xfor(ii) + forbr(ii, ifac)
     enddo
 
   enddo

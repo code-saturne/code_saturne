@@ -30,7 +30,7 @@ subroutine clsyvt &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
-   icodcl , isympa ,                                              &
+   icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  ,                            &
@@ -63,9 +63,6 @@ subroutine clsyvt &
 !                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
-! (nfabor     )    !    !     !(symetries et parois avec cl couplees)          !
-!                  !    !     ! un sinon                                       !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -123,7 +120,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvar), isympa(nfabor)
+integer          icodcl(nfabor,nvar)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)

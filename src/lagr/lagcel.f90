@@ -124,7 +124,6 @@ use numvar
 use optcal
 use entsor
 use cstphy
-use pointe
 use parall
 use period
 use lagpar
@@ -168,7 +167,7 @@ integer          ii, jj, in, ip
 integer          indian, ifaold, ifanew
 integer          isuivi, ierror, ierrie
 integer          itypfo, iconfo(100)
-integer          icelcr , ipercr, itepas, iper
+integer          itepas, iper
 integer          il,ltest,ifacb,ifacp,ielnew,izone,isens
 
 double precision pta(3), ptb(3), vect(3), vectn(3)
@@ -181,6 +180,7 @@ double precision xxp,yyp,zzp,kk,deplx,deply,deplz
 double precision distp
 double precision ist,istt,dept,deptt
 
+integer, allocatable, dimension(:) :: celcr, percr
 
 !===============================================================================
 ! -1.  MACRO DE DEBUGGAGE DEVELOPPEUR
@@ -224,8 +224,6 @@ idebra = idbra0
 
 ! Initialize variables to avoid compiler warnings
 
-icelcr = 0
-ipercr = 0
 ifacp  = 0
 
 do ip = 1,nbpmax
@@ -287,18 +285,15 @@ endif
 
 if (iperio.eq.1) then
 
-  icelcr = idebia
-  ipercr = icelcr + ncelet-ncel
-  ifinia = ipercr + ncelet-ncel
-  call iasize('lagcel', ifinia)
-  !==========
+  ! Allocate temporary arrays
+  allocate(celcr(ncelet-ncel), percr(ncelet-ncel))
 
   do iel = 1,ncelet-ncel
-    ia(icelcr+iel-1) = 0
-    ia(ipercr+iel-1) = -1
+    celcr(iel) = 0
+    percr(iel) = -1
   enddo
 
-  call perloc(ia(icelcr), ia(ipercr))
+  call perloc(celcr, percr)
   !==========
 
 endif
@@ -503,11 +498,11 @@ do ip = 1,nbpart
             ibord(ip) = -1
 
             itepas = itepa(ip,jisor)
-            itepa(ip,jisor) = ia(icelcr+itepas-ncel-1)
+            itepa(ip,jisor) = celcr(itepas-ncel)
 
 !                 On recupere les informations sur la peridodicite
 
-            iper  = ia(ipercr+itepas-ncel-1)
+            iper  = percr(itepas-ncel)
 
 ! Faire un test si IPER           != -1 pour ne traiter que les cellules periodiques
 ! Finir l'implementation dans PERLOC
@@ -531,7 +526,7 @@ do ip = 1,nbpart
             pta(2) = ettp(ip,jyp)
             pta(3) = ettp(ip,jzp)
 
-            iper  = ia(ipercr+itepas-ncel-1)
+            iper  = percr(itepas-ncel)
 
             call lagper(iper, pta, ptb)
             !==========
@@ -1106,6 +1101,11 @@ do ip = 1,nbpart
  endif
 
 enddo
+
+! Free memory
+if (iperio.eq.1) then
+  deallocate(celcr, percr)
+endif
 
 return
 

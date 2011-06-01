@@ -165,7 +165,6 @@ integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
 integer          iclvar, ipcvsl, iclvaf
-integer          iyplbp
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
 double precision utau, upx, upy, upz, usn
@@ -273,10 +272,6 @@ if ( ippmod(icompf) .ge. 0 ) then
     ipccv = 0
   endif
 endif
-
-! --- Post traitement de Yplus
-iyplbp = iyplbr
-
 
 ! MIN ET MAX DE LA VITESSE TANGENTIELLE EN PAROI
 uiptmx = -grand
@@ -609,7 +604,7 @@ do ifac = 1, nfabor
 ! si le modele de depot de particules est active.
 
     if(itytur.eq.4.and.idries.eq.1) then
-      ra(iuetbo+ifac-1) = uet
+      uetbor(ifac) = uet
       if (visvdr(iel).lt.-900.d0) then
         propce(iel,ipcvst) = propce(iel,ipcvst)                   &
              *(1.d0-exp(-yplus/cdries))**2
@@ -617,14 +612,14 @@ do ifac = 1, nfabor
         visctc = propce(iel,ipcvst)
       endif
     else if (iilagr.gt.0.and.idepst.gt.0) then
-      ra(iuetbo+ifac-1) = uet
+      uetbor(ifac) = uet
     endif
 
 
 ! Sauvegarde de yplus si post traite
 
     if(mod(ipstdv,ipstyp).eq.0) then
-      ra(iyplbp+ifac-1) = yplus
+      yplbr(ifac) = yplus
     endif
 
 

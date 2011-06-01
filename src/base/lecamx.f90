@@ -1075,7 +1075,7 @@ if (nfabok.eq.1) then
   nbval  = 1
   irtyp  = 1
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       ia(iisymp),ierror)
+       isympa,ierror)
   nberro = nberro+ierror
 
 endif
@@ -1631,16 +1631,14 @@ if(abs(icdpar).eq.2) then
     if(icdpar.eq.2.or.inpdt0.eq.1) then
       if(nfabok.eq.1) then
 
-        if(iifapa.gt.0) then
-          itysup = 1
-          nbval  = 1
-          irtyp  = 1
-          RUBRIQ = 'num_fac_par_ce_phase'//CPHASE
-          call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,   &
-               irtyp,ia(iifapa),ierror)
-          nberro=nberro+ierror
-          ilu   = ilu + 1
-        endif
+        itysup = 1
+        nbval  = 1
+        irtyp  = 1
+        RUBRIQ = 'num_fac_par_ce_phase'//CPHASE
+        call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,   &
+             irtyp,ifapat,ierror)
+        nberro=nberro+ierror
+        ilu   = ilu + 1
 
       endif
     endif
@@ -1670,7 +1668,7 @@ elseif(abs(icdpar).eq.1) then
         irtyp  = 2
         RUBRIQ = 'dist_fac_par_ce_phase'//CPHASE
         call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-                    ra(idipar),ierror)
+                    dispar,ierror)
         nberro=nberro+ierror
         if(ierror.eq.0 .and. iale.eq.0 ) then
           imajdy = 1
@@ -1940,7 +1938,7 @@ if ( ippmod(icod3p).ge.0 ) then
     irtyp  = 1
     RUBRIQ = 'num_zone_fb_cod3p'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 !       Type entree Fuel
@@ -1970,7 +1968,7 @@ if ( ippmod(icod3p).ge.0 ) then
 
     if(ierrch.ne.0) then
       do ifac = 1, nfabor
-        ia(iizfpp+ifac-1) = 0
+        izfppp(ifac) = 0
       enddo
     endif
 
@@ -2020,7 +2018,7 @@ if ( ippmod(icoebu).ge.0 ) then
     irtyp  = 1
     RUBRIQ = 'num_zone_fb_ebu'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 !       Type entree Gaz brulee
@@ -2070,7 +2068,7 @@ if ( ippmod(icoebu).ge.0 ) then
 
     if(ierrch.ne.0) then
       do ifac = 1, nfabor
-        ia(iizfpp+ifac-1) = 0
+        izfppp(ifac) = 0
       enddo
     endif
 
@@ -2144,7 +2142,7 @@ if ( ippmod(icolwc).ge.0 ) then
     irtyp  = 1
     RUBRIQ = 'num_zone_fb_lwc'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 !       Type entree Gaz brulee
@@ -2194,7 +2192,7 @@ if ( ippmod(icolwc).ge.0 ) then
 
     if(ierrch.ne.0) then
       do ifac = 1, nfabor
-        ia(iizfpp+ifac-1) = 0
+        izfppp(ifac) = 0
       enddo
     endif
 
@@ -2248,7 +2246,7 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
     irtyp  = 1
     RUBRIQ = 'num_zone_fb_charbon_pulverise'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 !       Type entree air ou cp (si ce n'est pas NOZPPM, erreur)
@@ -2325,7 +2323,7 @@ if ( ippmod(icp3pl).ge.0.or. ippmod(icpl3c).ge.0 ) then
 !       de TIMPAT dans cpphyv et cplphy.
     if(ierrch.ne.0) then
       do ifac = 1, nfabor
-        ia(iizfpp+ifac-1) = 0
+        izfppp(ifac) = 0
       enddo
     endif
 
@@ -2351,7 +2349,7 @@ if ( ippmod(icfuel).ge.0 ) then
     irtyp  = 1
     RUBRIQ = 'num_zone_fb_fuel'
     call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 !       Type entree air ou fuel (si ce n'est pas NOZPPM, erreur)
@@ -2410,7 +2408,7 @@ if ( ippmod(icfuel).ge.0 ) then
 !       de TIMPAT dans cpphyv et cplphy.
     if(ierrch.ne.0) then
       do ifac = 1, nfabor
-        ia(iizfpp+ifac-1) = 0
+        izfppp(ifac) = 0
       enddo
     endif
 

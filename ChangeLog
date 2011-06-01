@@ -1,3 +1,117 @@
+* 01/06/2011 - David Monfort <david.monfort@edf.fr>
+  Ye another dynamic memory allocation changeset...
+  This one fixes the calculation of Sij.Sij and div(u) for the
+  k-omega model, but it (temporarily) breaks the head-loss treatment.
+  removed routines:
+    src/atmo/mematm.f90
+    src/base/memcli.f90
+    src/pprt/memppt.f90
+    src/rayt/memra1.f90
+  modified scripts:
+    src/Makefile.am
+    src/atmo/Makefile.am
+    src/base/Makefile.am
+    src/rayt/Makefile.am
+    src/pprt/Makefile.am
+  modified routines:
+    src/atmo/atincl.f90
+    src/atmo/atini1.f90
+    src/atmo/atiniv.f90
+    src/atmo/atlecm.f90
+    src/atmo/atphyv.f90
+    src/base/altycl.f90
+    src/base/bilsc2.f90
+    src/base/caltri.f90
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/clsyvt.f90
+    src/base/condli.f90
+    src/base/cregeo.f90
+    src/base/csc2cl.f90
+    src/base/cscfbr.f90
+    src/base/cscini.f90
+    src/base/cstphy.f90
+    src/base/distpr.f90
+    src/base/distyp.f90
+    src/base/divrij.f90
+    src/base/dvvpst.f90
+    src/base/ecrava.f90
+    src/base/grdcel.f90
+    src/base/grdpot.f90
+    src/base/iniini.f90
+    src/base/inimas.f90
+    src/base/iniva0.f90
+    src/base/lecamx.f90
+    src/base/memfin.f90
+    src/base/mempdc.f90
+    src/base/memtri.f90
+    src/base/mmtycl.f90
+    src/base/navsto.f90
+    src/base/phyvar.f90
+    src/base/pointe.f90
+    src/base/precli.f90
+    src/base/preduv.f90
+    src/base/resolp.f90
+    src/base/rijech.f90
+    src/base/strdep.f90
+    src/base/strini.f90
+    src/base/strpre.f90
+    src/base/testel.f90
+    src/base/tridim.f90
+    src/base/turbkw.f90
+    src/base/turbsa.f90
+    src/base/typecl.f90
+    src/base/vandri.f90
+    src/base/vissec.f90
+    src/base/vissst.f90
+    src/base/vor2cl.f90
+    src/cfbl/cfbsc2.f90
+    src/cfbl/cfmsfl.f90
+    src/cfbl/cfmsgs.f90
+    src/cfbl/cfqdmv.f90
+    src/cfbl/cfxtcl.f90
+    src/cogz/d3pphy.f90
+    src/lagr/lagcel.f90
+    src/lagr/lagdep.f90
+    src/lagr/lagent.f90
+    src/lagr/lageqp.f90
+    src/lagr/lagnwc.f90
+    src/lagr/lagune.f90
+    src/pprt/ppcabs.f90
+    src/pprt/ppincl.f90
+    src/pprt/ppphyv.f90
+    src/pprt/ppprcl.f90
+    src/pprt/ppray4.f90
+    src/pprt/pptssc.f90
+    src/pprt/pptycl.f90
+    src/rayt/radiat.f90
+    src/rayt/raycli.f90
+    src/rayt/raydom.f90
+    src/rayt/raypar.f90
+    src/rayt/raypun.f90
+    src/rayt/raysol.f90
+    users/atmo/usatcl.f90
+    users/base/usalcl.f90
+    users/base/usaste.f90
+    users/base/usclim.f90
+    users/base/usproj.f90
+    users/base/usstru.f90
+    users/base/ustskw.f90
+    users/cfbl/uscfcl.f90
+    users/cogz/usd3pc.f90
+    users/cogz/usebuc.f90
+    users/cogz/uslwcc.f90
+    users/cplv/uscpcl.f90
+    users/cplv/uscplc.f90
+    users/ctwr/usctcl.f90
+    users/fuel/usfucl.f90
+    users/lagr/uslabo.f90
+    users/lagr/uslaru.f90
+    users/rayt/usray2.f90
+    users/rayt/usray3.f90
+    users/rayt/usray4.f90
+    users/rayt/usray5.f90
+
 * 01/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove obsolete input file for YACSGEN.
   removed file:

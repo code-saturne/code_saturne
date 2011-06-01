@@ -131,7 +131,6 @@ subroutine atphyv &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use optcal
 use cstphy
@@ -241,8 +240,8 @@ do iel = 1, ncel
   zent=xyzcen(3,iel)
   call intprf &
   !===========
-  ( nbmett, nbmetm,                                            &
-    ra(iztmet) , ra(itmmet) , ra(iphmet) , zent, ttcabs, pp )
+  ( nbmett, nbmetm,                          &
+    ztmet , tmmet , phmet , zent, ttcabs, pp )
 
   !   Temperature in Celsius in cell centers:
   !   ---------------------------------------

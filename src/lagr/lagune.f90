@@ -322,8 +322,7 @@ if (iplar.eq.1) then
 
      do ifac=1, nfabor
 
-       if ((ia(iitypf+ifac-1) .eq. iparoi) .or.       &
-           (ia(iitypf+ifac-1) .eq. iparug)) then
+       if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
 
          distp = 0.d0
          iel = ifabor(ifac)
@@ -388,7 +387,7 @@ if (iplar.eq.1) then
 
          enddo
 
-         ustar = ra(iuetbo+ifac-1)
+         ustar = uetbor(ifac)
 
          if (ustar.gt.0.d0) then
 
@@ -447,8 +446,8 @@ if ( ntcabs.eq.1 ) then
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itycel     , icocel      ,                                     &
-   ia(iitypf) , ia(iitrif)  , ifrlag , itepa  ,                   &
+   itycel , icocel ,                                              &
+   itypfb , itrifb , ifrlag , itepa  ,                            &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
@@ -464,8 +463,8 @@ else
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itycel     , icocel      ,                                     &
-   ia(iitypf) , ia(iitrif)  , ifrlag , itepa  ,                   &
+   itycel , icocel ,                                              &
+   itypfb , itrifb , ifrlag , itepa  ,                            &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
@@ -484,12 +483,12 @@ if (iroule.ge.1) then
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   ia(iitypf) , ia(iitrif)  , itepa ,                             &
+   itypfb , itrifb , itepa ,                                      &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl ,                     &
-   ra(idipar) , ra(iyppar) ,                                      &
+   dispar , yplpar ,                                              &
    ra     )
 
   iok = 0
@@ -764,7 +763,7 @@ if (nor.eq.1) then
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   ia(iitypf)      , ia(iitrif)      ,                            &
+   itypfb , itrifb ,                                              &
    icocel , itycel , ifrlag , itepa  , ibord  , indep  ,          &
    ia     ,                                                       &
    dlgeo  ,                                                       &

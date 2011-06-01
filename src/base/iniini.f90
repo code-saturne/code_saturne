@@ -550,11 +550,6 @@ enddo
 
 ! --- Auxiliaires independants du nb phases
 
-icocg  = 0
-icocgb = 0
-itpuco = 0
-idipar = 0
-iyppar = 0
 nfpt1d = 0
 nmxt1d = 0
 inppt1 = 0
@@ -572,11 +567,6 @@ idtpt1 = 0
 
 ! --- Autres auxiliaires dependant du nb de phases
 
-iitypf = 0
-iitrif = 0
-iisymp = 0
-
-iifapa = 0
 ncepdc = 0
 iicepd = 0
 ickupd = 0
@@ -584,15 +574,6 @@ ncetsm = 0
 iicesm = 0
 iitpsm = 0
 ismace = 0
-is2kw  = 0
-idvukw = 0
-
-! --- Auxiliaires pour la periodicite
-
-idudxy =0
-idrdxy =0
-iwdudx =0
-iwdrdx =0
 
 ! --- Ici tout pointe.f90 est initialise
 

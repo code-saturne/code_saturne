@@ -193,7 +193,7 @@ if (nbstru.gt.0) then
   endif
 
   do ifac = 1, nfabor
-    istr = ia(iidfst+ifac-1)
+    istr = idfstr(ifac)
     if (istr.gt.0) then
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
         inod = nodfbr(ii)
@@ -215,7 +215,7 @@ endif
 if (nbaste.gt.0) then
 
   do ifac = 1, nfabor
-    istr = ia(iidfst+ifac-1)
+    istr = idfstr(ifac)
     if (istr.lt.0) then
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
         inod = nodfbr(ii)
@@ -238,7 +238,7 @@ if (nbaste.gt.0) then
 
     indast = 0
     do ifac = 1, nfabor
-      istr = ia(iidfst+ifac-1)
+      istr = idfstr(ifac)
       if (istr.lt.0) then
         indast = indast + 1
         ia(ilstfa + indast-1) = ifac

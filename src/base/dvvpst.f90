@@ -160,7 +160,6 @@ integer          ivarl , iip
 integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          iscal , ipcvsl, ipcvst, iflmab
 integer          ientla, ivarpr
-integer          iyplbp
 integer          ipccp , ipcrom
 
 double precision xcp   , xvsl  , srfbn, distbr
@@ -284,7 +283,7 @@ if (numtyp .eq. -1) then
 
     call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
     !==========
-                ntcabs, ttcabs, ra(idipar), rbid, rbid)
+                ntcabs, ttcabs, dispar, rbid, rbid)
 
   endif
 
@@ -306,7 +305,7 @@ if (numtyp .eq. -1) then
 
       call psteva(nummai, namevr, idimt, ientla, ivarpr,          &
       !==========
-                  ntcabs, ttcabs, ra(iyppar), rbid, rbid)
+                  ntcabs, ttcabs, yplpar, rbid, rbid)
 
     endif
 
@@ -453,10 +452,9 @@ else if  (numtyp .eq. -2) then
 
     !       Calcul des valeurs de la variable sur les faces de bord
 
-    iyplbp = iyplbr
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
-      trafbr(1 + (iloc-1)*idimt) = ra(iyplbp+ifac-1)
+      trafbr(1 + (iloc-1)*idimt) = yplbr(ifac)
     enddo
 
     !           Valeurs non entrelacées, définies sur tableau de travail
@@ -603,14 +601,11 @@ else if  (numtyp .eq. -2) then
 
       !          Reservation de la memoire pour reconstruction
 
-      ifinia = idebia
-
       itreco = idebra
       ifinra = itreco+nfabor
 
       !          Verification de la disponibilite de la memoire
 
-      call iasize('dvvpst',ifinia)
       call rasize('dvvpst',ifinra)
 
 
@@ -776,12 +771,9 @@ else if  (numtyp .eq. -2) then
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
       srfbn = surfbn(ifac)
-      trafbr(1 + (iloc-1)*idimt ) =                               &
-             ra(iforbr+(ifac-1)*idimt  )/srfbn
-      trafbr(2 + (iloc-1)*idimt ) =                               &
-             ra(iforbr+(ifac-1)*idimt+1)/srfbn
-      trafbr(3 + (iloc-1)*idimt ) =                               &
-             ra(iforbr+(ifac-1)*idimt+2)/srfbn
+      trafbr(1 + (iloc-1)*idimt ) = forbr(1,ifac)/srfbn
+      trafbr(2 + (iloc-1)*idimt ) = forbr(2,ifac)/srfbn
+      trafbr(3 + (iloc-1)*idimt ) = forbr(3,ifac)/srfbn
     enddo
 
 !           Valeurs entrelacées, définies sur tableau de travail
@@ -1041,7 +1033,7 @@ if (nummai.eq.-2) then
 
     do iloc = 1, nfbrps
       ifac = lstfbr(iloc)
-      trafbr(iloc) = ia(iizfrd+ifac-1)
+      trafbr(iloc) = izfrad(ifac)
     enddo
 
     idimt  = 1

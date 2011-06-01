@@ -114,7 +114,6 @@ use numvar
 use optcal
 use entsor
 use cstphy
-use pointe
 use parall
 use period
 use lagpar

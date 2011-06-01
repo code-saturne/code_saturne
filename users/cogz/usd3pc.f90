@@ -406,7 +406,6 @@ subroutine usd3pc &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use optcal
 use cstphy

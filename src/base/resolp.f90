@@ -176,7 +176,6 @@ integer          iclipf
 integer                  iclipr, icliup, iclivp, icliwp
 integer          ipcrom, ipcroa, ipbrom, iflmas, iflmab
 integer          ipp
-integer          iismph
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe, imaspe, indhyd
@@ -220,8 +219,6 @@ iclipf = iclrtp(ipr,icoeff)
 icliup = iclrtp(iu ,icoef)
 iclivp = iclrtp(iv ,icoef)
 icliwp = iclrtp(iw ,icoef)
-
-iismph = iisymp
 
 ! --- Grandeurs physiques
 ipcrom = ipproc(irom  )
@@ -328,7 +325,6 @@ if(irnpnw.ne.1) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    trav(1,1) , trav(1,2) , trav(1,3) ,                            &
@@ -509,7 +505,7 @@ call matrix                                                       &
 ! de pression et le filtre sont annules.
 if (nbrcpl.ge.1) then
   do ifac = 1, nfabor
-    if (ifaccp.eq.1.and.ia(iitypf-1+ifac).eq.icscpl) then
+    if (ifaccp.eq.1.and.itypfb(ifac).eq.icscpl) then
       viscb(ifac) = 0.d0
     endif
   enddo
@@ -593,7 +589,6 @@ call inimas &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    grad(1,1) , grad(1,2) , grad(1,3) ,                            &

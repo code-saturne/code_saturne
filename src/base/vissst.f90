@@ -33,7 +33,7 @@ subroutine vissst &
    icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel , s2kw   , divukw ,          &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    ra     )
 
 !===============================================================================
@@ -85,9 +85,6 @@ subroutine vissst &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! s2kw(ncelet)     ! tr ! --> ! 2 sij.sij                                      !
-! divukw(ncelet    ! tr ! --> ! divergence du u pour utilisation dans          !
-!                  !    !     ! turbkw                                         !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -130,7 +127,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision s2kw(ncelet), divukw(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -248,7 +244,7 @@ allocate(w1(ncelet))
 
 if(abs(icdpar).eq.2) then
   do iel = 1 , ncel
-    ifacpt = ia(iifapa-1+iel)
+    ifacpt = ifapat(iel)
     if (ifacpt.gt.0) then
       w1(iel) =  (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2           &
                + (cdgfbo(2,ifacpt)-xyzcen(2,iel))**2           &
@@ -260,7 +256,7 @@ if(abs(icdpar).eq.2) then
   enddo
 else
   do iel = 1 , ncel
-    w1(iel) =  max(ra(idipar+iel-1),epzero)
+    w1(iel) =  max(dispar(iel),epzero)
   enddo
 endif
 

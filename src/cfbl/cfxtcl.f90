@@ -107,7 +107,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use pointe
 use entsor
 use parall
 use ppppar

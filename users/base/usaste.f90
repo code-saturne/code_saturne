@@ -77,7 +77,6 @@ use paramx
 use cstnum
 use optcal
 use entsor
-use pointe
 use albase
 use parall
 use period

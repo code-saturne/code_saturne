@@ -122,11 +122,6 @@ module radiat
   integer    nozrdm
   parameter (nozrdm=2000)
 
-  ! IIZFRD Pointeur dans IA sur IZFRAD pour reperage des zones
-  !          frontieres associees aux faces de bord
-
-  integer, save ::           iizfrd
-
   ! NZFRAD Nombre de zones de bord (sur le proc courant)
   ! ILZRAY Liste des numeros de zone de bord (du proc courant)
   ! NOZARM Numero de zone de bord atteint max

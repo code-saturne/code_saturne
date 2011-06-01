@@ -139,16 +139,9 @@ isyncp = 1
 ! 2.  RESERVATION DU TABLEAU IDFSTR
 !===============================================================================
 
-iidfst = idebia
-ifinia = iidfst + nfabor
-
-call iasize('strini',ifnia2)
-!==========
-
 do ifac = 1, nfabor
-  ia(iidfst+ifac-1) = 0
+  idfstr(ifac) = 0
 enddo
-
 
 !===============================================================================
 ! 2.  REMPLISSAGE DE IDFSTR PAR L'UTILISATEUR
@@ -162,7 +155,7 @@ if (iihmpr.eq.1) then
   call uistr1 &
   !==========
 ( nfabor,                  &
-  ia(iidfst),              &
+  idfstr,                  &
   aexxst, bexxst, cfopre,  &
   ihistr,                  &
   xstp, xstreq, xpstr )
@@ -171,7 +164,7 @@ endif
 
 call usstr1                                                       &
 !==========
- ( ia(iidfst),                                                    &
+ ( idfstr ,                                                       &
    ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstp   , xpstr  , xstreq ,                                     &
@@ -182,7 +175,7 @@ call usstr1                                                       &
 
 call usaste                                                       &
 !==========
- ( ia(iidfst),                                                    &
+ ( idfstr ,                                                       &
    ia     ,                                                       &
    ra     )
 
@@ -196,7 +189,7 @@ call usaste                                                       &
 
 nbstru = 0
 do ifac = 1, nfabor
-  if (ia(iidfst+ifac-1).gt.nbstru) nbstru = ia(iidfst+ifac-1)
+  if (idfstr(ifac).gt.nbstru) nbstru = idfstr(ifac)
 enddo
 
 if (irangp.ge.0) call parcmx(nbstru)
@@ -221,7 +214,7 @@ endif
 
 nbaste = 0
 do ifac = 1, nfabor
-  if (-ia(iidfst+ifac-1).gt.nbaste) nbaste = -ia(iidfst+ifac-1)
+  if (-idfstr(ifac).gt.nbaste) nbaste = -idfstr(ifac)
 enddo
 
 if (irangp.ge.0) call parcmx(nbaste)
@@ -261,7 +254,7 @@ if (nbaste.gt.0) then
 
 !       Calcul du nombre de faces et noeuds couples avec Code_Aster
   do ifac = 1, nfabor
-    istr = ia(iidfst+ifac-1)
+    istr = idfstr(ifac)
     if (istr.lt.0) then
       nbfast = nbfast + 1
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
@@ -282,7 +275,7 @@ if (nbaste.gt.0) then
 
   indast = 0
   do ifac = 1, nfabor
-    istr = ia(iidfst+ifac-1)
+    istr = idfstr(ifac)
     if (istr.lt.0) then
       indast = indast + 1
       ia(ilstfa + indast-1) = ifac

@@ -176,7 +176,7 @@ if(iperio.eq.1) then
     iiu    , iiv    , iiw    , iitytu ,                           &
     iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
     grad(1,1) , grad(1,2) , grad(1,3) ,                           &
-    ra(idudxy) , ra(idrdxy)  )
+    dudxy  , drdxy  )
 endif
 
 !===============================================================================
@@ -191,13 +191,13 @@ call cgdcel                                                       &
  ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivar   ,          &
    imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , icelbr , ia(iisymp) ,                        &
+   ifacel , ifabor , icelbr , isympa ,                            &
    volume , surfac , surfbo , surfbn , pond,                      &
    dist   , distb  , dijpf  , diipb  , dofij  ,                   &
    rvoid  , rvoid  , rvoid  ,                                     &
    xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
-   ra(icocgb) , ra(icocg)   ,                                     &
-   ra(icocib) , ra(icoci)   ,                                     &
+   cocgb  , cocg   ,                                              &
+   cocib  , coci   ,                                              &
    grad   )
 
 return

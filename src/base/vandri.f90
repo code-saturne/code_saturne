@@ -85,7 +85,7 @@ use optcal
 use entsor
 use cstphy
 use parall
-use pointe
+use pointe, only: uetbor
 
 !===============================================================================
 
@@ -126,7 +126,7 @@ if(abs(icdpar).eq.2) then
       yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
            +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2             &
            +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
-      yplus = ra(iuetbo+ifac-1) * yminpa/ viscos
+      yplus = uetbor(ifac) * yminpa/ viscos
       propce(iel,ipcvst) = propce(iel,ipcvst)*                    &
            (1.0d0-exp(-yplus/cdries))**2
     enddo
@@ -143,7 +143,7 @@ if(abs(icdpar).eq.2) then
         yminpa = sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2           &
              +        (cdgfbo(2,ifac)-xyzcen(2,iel))**2           &
              +        (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
-        yplus = ra(iuetbo+ifac-1) * yminpa/ viscos
+        yplus = uetbor(ifac) * yminpa/ viscos
         propce(iel,ipcvst) = propce(iel,ipcvst)*                  &
              (1.0d0-exp(-yplus/cdries))**2
       endif

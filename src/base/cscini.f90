@@ -58,7 +58,6 @@ subroutine cscini &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use optcal
 use cstphy

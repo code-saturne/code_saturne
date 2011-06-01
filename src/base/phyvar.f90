@@ -151,7 +151,7 @@ if(iperot.gt.0) then
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
-  ra(idudxy) ,                                                   &
+  dudxy  ,                                                       &
   ra     )
 
   if(itytur.eq.3) then
@@ -163,7 +163,7 @@ if(iperot.gt.0) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(idrdxy) ,                                                   &
+   drdxy  ,                                                       &
    ra     )
 
   endif
@@ -424,7 +424,6 @@ elseif (iturb.eq.60) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ra(ickupd), ra(ismace),        &
-   ra(is2kw), ra(idvukw),                           &
    ra     )
 
 elseif (iturb.eq.70) then

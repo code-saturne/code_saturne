@@ -150,15 +150,16 @@ idebra = idbra0
 if (imeteo.gt.0) then
 
   imode = 1
-  call atlecm                                                     &
+  call atlecm &
   !==========
- ( imode      ,                                                   &
-   ra(itmmet) , ra(iztmet) , ra(izdmet) ,                         &
-   ra(ixmet)  , ra(iymet)  , ra(ipmer)  ,                         &
-   ra(ittmet) , ra(iqvmet) ,                                      &
-   ra(iumet)  , ra(ivmet)  ,                                      &
-   ra(iekmet) , ra(iepmet) ,                                      &
-   ra(irmet)  , ra(itpmet) , ra(iphmet) )
+ ( imode  ,                     &
+   nbmetd , nbmett , nbmetm ,   &
+   tmmet  , ztmet  , zdmet  ,   &
+   xmet   , ymet   , pmer   ,   &
+   ttmet  , qvmet  ,            &
+   umet   , vmet   ,            &
+   ekmet  , epmet  ,            &
+   rmet   , tpmet  , phmet  )
 
 endif
 
@@ -189,11 +190,11 @@ call usativ                                                       &
    nbmetd , nbmett , nbmetm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra(itmmet)      , ra(iztmet)      , ra(izdmet)      ,          &
-   ra(ixmet)       , ra(iymet)       , ra(ipmer)       ,          &
-   ra(ittmet)      , ra(iqvmet)      , ra(iumet)       ,          &
-   ra(ivmet)       , ra(iekmet)      , ra(iepmet)      ,          &
-   ra(irmet)       , ra(itpmet)      , ra(iphmet)      ,          &
+   tmmet  , ztmet  , zdmet  ,                                     &
+   xmet   , ymet   , pmer   ,                                     &
+   ttmet  , qvmet  , umet   ,                                     &
+   vmet   , ekmet  , epmet  ,                                     &
+   rmet   , tpmet  , phmet  ,                                     &
    ra     )
 
 

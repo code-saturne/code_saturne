@@ -1093,7 +1093,7 @@ if (iecaux.eq.1) then
   nbval  = 1
   irtyp  = 1
   call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-       ia(iisymp),ierror)
+       isympa,ierror)
   nberro=nberro+ierror
 
   if (nberro.ne.0) then
@@ -1431,38 +1431,34 @@ if (iecaux.eq.1) then
 !     Ancien mode de calcul. On ecrit aussi la distance a la paroi,
 !       au cas ou on fait une suite en ICDPAR=1.
     if(abs(icdpar).eq.2) then
-      if(iifapa.gt.0) then
-        iecr   = 1
-        itysup = 1
-        nbval  = 1
-        irtyp  = 1
-        rubriq = 'num_fac_par_ce_phase'//cphase
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,     &
-             irtyp,ia(iifapa),ierror)
-        nberro=nberro+ierror
-      endif
+      iecr   = 1
+      itysup = 1
+      nbval  = 1
+      irtyp  = 1
+      rubriq = 'num_fac_par_ce_phase'//cphase
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,     &
+           irtyp,ifapat,ierror)
+      nberro=nberro+ierror
 !     Pour la distance reelle, on a besoin d'un tableau provisoire
 !     on ne prend que la phase 1
-      if(iifapa.gt.0) then
-        iw1    = idebra
-        ifinra = iw1 + ncelet
-        call rasize('ecrava',ifinra)
-        do iel = 1, ncel
-          ifac = ia(iifapa+iel-1)
-          ra(iw1+iel-1) =                                         &
-               sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
-               +       (cdgfbo(2,ifac)-xyzcen(2,iel))**2          &
-               +       (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
-        enddo
-        iecr   = 1
-        itysup = 1
-        nbval  = 1
-        irtyp  = 2
-        rubriq = 'dist_fac_par_ce_phase'//cphase
-        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-             ra(iw1),ierror)
-        nberro=nberro+ierror
-      endif
+      iw1    = idebra
+      ifinra = iw1 + ncelet
+      call rasize('ecrava',ifinra)
+      do iel = 1, ncel
+        ifac = ifapat(iel)
+        ra(iw1+iel-1) =                                         &
+             sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
+             +       (cdgfbo(2,ifac)-xyzcen(2,iel))**2          &
+             +       (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
+      enddo
+      iecr   = 1
+      itysup = 1
+      nbval  = 1
+      irtyp  = 2
+      rubriq = 'dist_fac_par_ce_phase'//cphase
+      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+           ra(iw1),ierror)
+      nberro=nberro+ierror
 
 !     Nouveau mode de calcul
     elseif(abs(icdpar).eq.1) then
@@ -1472,7 +1468,7 @@ if (iecaux.eq.1) then
       irtyp  = 2
       rubriq = 'dist_fac_par_ce_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
-                  ra(idipar),ierror)
+                  dispar,ierror)
       nberro=nberro+ierror
     endif
   endif
@@ -1728,7 +1724,7 @@ if (iecaux.eq.1) then
     irtyp  = 1
     rubriq = 'num_zone_fb_cod3p'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 !       Entree Fuel (si ce n'est pas NOZPPM, erreur)
@@ -1796,7 +1792,7 @@ if (iecaux.eq.1) then
     irtyp  = 1
     rubriq = 'num_zone_fb_ebu'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 !       Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
@@ -1898,7 +1894,7 @@ if (iecaux.eq.1) then
     irtyp  = 1
     rubriq = 'num_zone_fb_lwc'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 !       Entree Gaz brule(si ce n'est pas NOZPPM, erreur)
@@ -1988,7 +1984,7 @@ if (iecaux.eq.1) then
     irtyp  = 1
     rubriq = 'num_zone_fb_charbon_pulverise'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 
@@ -2088,7 +2084,7 @@ if (iecaux.eq.1) then
     irtyp  = 1
     rubriq = 'num_zone_fb_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ia(iizfpp), ierror)
+                izfppp, ierror)
     nberro=nberro+ierror
 
 

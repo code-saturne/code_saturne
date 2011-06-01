@@ -99,7 +99,6 @@ use cstnum
 use cstphy
 use entsor
 use parall
-use pointe
 use mesh
 
 !===============================================================================

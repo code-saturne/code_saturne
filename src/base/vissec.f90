@@ -440,9 +440,7 @@ do isou = 1, 3
   if (ineedf.eq.1) then
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      ra(iforbr+(ifac-1)*ndim+isou-1) =                           &
-             ra(iforbr+(ifac-1)*ndim+isou-1)                      &
-           + surfbo(isou,ifac)*w4(ii)
+      forbr(isou,ifac) = forbr(isou,ifac) + surfbo(isou,ifac)*w4(ii)
     enddo
   endif
 

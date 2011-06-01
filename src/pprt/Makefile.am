@@ -46,7 +46,6 @@ pkginclude_HEADERS =
 
 noinst_LTLIBRARIES = libcspprt.la
 libcspprt_la_SOURCES = \
-memppt.f90 \
 ppcabs.f90 \
 ppclim.f90 \
 ppcsca.f90 \

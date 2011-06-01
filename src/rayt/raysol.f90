@@ -136,7 +136,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe
 use ppppar
 use ppthch
 use cpincl

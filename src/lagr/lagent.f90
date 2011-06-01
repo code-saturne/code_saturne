@@ -125,7 +125,6 @@ use optcal
 use entsor
 use cstnum
 use cstphy
-use pointe
 use parall
 use period
 use lagpar
@@ -168,10 +167,9 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          ifinia, ifinra
 
 integer          iel , ifac , ip , nb , nc, ii, ifvu
-integer          iiwork , iok , n1 , nd , icha
+integer          iok , n1 , nd , icha
 integer          npt , nfin , npar1  , npar2 , mode , idvar
 
 double precision vn1 , vn2 , vn3 , pis6 , d3
@@ -181,6 +179,8 @@ double precision tvpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 double precision surf   , volp , vitp
 double precision dintrf(1)
+
+integer, allocatable, dimension(:) :: iwork
 
 !===============================================================================
 
@@ -698,14 +698,8 @@ if (nbpnew.eq.0) return
 
 npt = nbpart
 
-!     On reserve d'abord la memoire si on a de nouvelles particules
-!       on garde IIWORK jusqu'a lagnwc
-
-iiwork = idebia
-ifinia = iiwork + nbpmax
-ifinra = idebra
-call iasize('lagent',ifinia)
-!==========
+! Allocate a work array
+allocate(iwork(nbpmax))
 
 !     Ensuite, on regarde ou on les met
 
@@ -721,12 +715,12 @@ do ii = 1,nfrlag
 
       call lagnew                                                 &
       !==========
-  ( ifinia , ifinra ,                                             &
+  ( idebia , idebra ,                                             &
     lndnod ,                                                      &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     nb     ,                                                      &
-    ifrlag , itepa(1,jisor)  , ia(iiwork)      ,                  &
+    ifrlag , itepa(1,jisor)  , iwork  ,                           &
     ia     ,                                                      &
     ettp   ,                                                      &
     ra     )
@@ -735,12 +729,12 @@ do ii = 1,nfrlag
 
         call lagnpr                                               &
         !==========
-  ( ifinia , ifinra ,                                             &
+  ( idebia , idebra ,                                             &
     lndnod ,                                                      &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     nb     ,                                                      &
-    ifrlag , itepa(1,jisor)  , ia(iiwork)      ,                  &
+    ifrlag , itepa(1,jisor)  , iwork  ,                           &
     ia     ,                                                      &
     ettp   ,                                                      &
     ra     )
@@ -780,12 +774,12 @@ if ( injcon.eq.1 ) then
 
         call lagnwc                                               &
         !==========
-  ( ifinia , ifinra ,                                             &
+  ( idebia , idebra ,                                             &
     lndnod ,                                                      &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     itycel , icocel ,                                             &
-    ifrlag , itepa(1,jisor)  , ia(iiwork) ,                       &
+    ifrlag , itepa(1,jisor)  , iwork  ,                           &
     ia     ,                                                      &
     ettp   ,                                                      &
     ra     )
@@ -822,7 +816,7 @@ do ii = 1,nfrlag
 
       do ip = npt+1 , npt+iuslag(nc,nb,ijnbp)
         iel = itepa(ip,jisor)
-        ifac = ia(iiwork+ip-1)
+        ifac = iwork(ip)
 
 !-->COMPOSANTES DE LA VITESSE DES PARTICULES
 
@@ -1231,7 +1225,7 @@ call uslain                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    nbpnew ,                                                       &
-   itypfb , itrifb , itepa  , ifrlag , ia(iiwork) ,               &
+   itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
@@ -1269,8 +1263,8 @@ do ii = 1,nfrlag
   enddo
 enddo
 
-!     Ici on peut laisser choir IIWORK (et donc reprendre
-!       IDEBIA et IDEBRA comme indicateur de la zone de memoire libre)
+! Free memory
+deallocate(iwork)
 
 !===============================================================================
 ! 8. IMPRESSIONS POUR POST-PROCESSING EN MODE TRAJECTOIRES

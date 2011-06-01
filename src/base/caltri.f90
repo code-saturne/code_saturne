@@ -78,6 +78,7 @@ use vorinc
 use ihmpre
 use radiat
 use cplsat
+use atincl
 use mesh
 
 !===============================================================================
@@ -97,7 +98,7 @@ double precision ra(*)
 integer          ipropc , ipropf , ipropb
 integer          icoefa , icoefb
 integer          irtp   , irtpa
-integer          idt
+integer          idt    , itpuco
 integer          iisstd , ifrcx
 
 integer          idebia , idebra
@@ -203,36 +204,16 @@ call memtri                                                       &
    nvar   , nscal  ,                                              &
    ncofab , nproce , nprofa , nprofb ,                            &
    iisstd , ifrcx  ,                                              &
-   idt    , irtp   , irtpa  , ipropc , ipropf , ipropb ,          &
+   idt    , itpuco , irtp   , irtpa  , ipropc , ipropf , ipropb , &
    icoefa , icoefb ,                                              &
    ifinia , ifinra )
 
-! Memory reservation for additional arrays required by specific physics.
+call init_aux_arrays ( ncelet , ncel   , ncelbr , nfac  , nfabor , iverif )
+!===================
 
-idbia1 = ifinia
-idbra1 = ifinra
-
-call memppt                                                       &
-!==========
- ( idbia1 , idbra1 ,                                              &
-   nvar   , nscal  ,                                              &
-   ifinia , ifinra )
-
-!===============================================================================
-! 4.1 Memory reservation for semi-transparent radiation module
-!===============================================================================
-
-if (iirayo.gt.0) then
-
-  idbia1 = ifinia
-  idbra1 = ifinra
-
-  call memra1                                                     &
-  !==========
- ( idbia1 , idbra1 ,                                              &
-   nvar   , nscal  ,                                              &
-   ifinia , ifinra )
-
+if (ippmod(iatmos).ge.0) then
+  call init_meteo
+  !==============
 endif
 
 !===============================================================================
@@ -284,7 +265,8 @@ call iniva0                                                       &
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , ncofab ,                                     &
    ia     ,                                                       &
-   ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
+   ra(idt)    , ra(itpuco) ,                                      &
+   ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),             &
    ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
    ra     )
 
@@ -762,7 +744,7 @@ call tridim                                                       &
    nvar   , nscal  ,                                              &
    ia(iisstd),                                                    &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
+   ra(idt)    , ra(itpuco) , ra(irtpa)  , ra(irtp)   ,            &
    ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
    ra(itslag) , ra(icoefa) , ra(icoefb) ,                         &
    ra(ifrcx)  ,                                                   &

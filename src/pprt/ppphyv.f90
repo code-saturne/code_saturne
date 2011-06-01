@@ -186,7 +186,7 @@ idebra = idbra0
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -207,7 +207,7 @@ idebra = idbra0
     !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -227,7 +227,7 @@ idebra = idbra0
      !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa  , propce , propfa , propfb ,           &
    coefa  , coefb  ,                                              &
@@ -242,7 +242,7 @@ idebra = idbra0
      !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -259,7 +259,7 @@ idebra = idbra0
      !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -275,7 +275,7 @@ idebra = idbra0
      !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -291,7 +291,7 @@ idebra = idbra0
      !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -317,7 +317,7 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -333,7 +333,7 @@ if ( ippmod(iaeros).ge.0 ) then
    !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -349,7 +349,7 @@ if ( ippmod(iatmos).ge.1 ) then
    !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ibrom  , ia(iizfpp) ,                                          &
+   ibrom  , izfppp ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   ,                                     &
    propce , propfa , propfb ,                                     &

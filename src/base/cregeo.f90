@@ -83,44 +83,29 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
-integer          ilcel  , ilfaci , ilfacb
-integer          ifinia , ifinra , nbrsyr , nbzech
-
+integer          nbrsyr , nbzech
 character        ficsui*32
 
+integer, allocatable, dimension(:) :: lcel, lfac, lfabor
+
 !===============================================================================
-! 1. INITIALISATION DE LA MEMOIRE EN LOCAL POUR LES TAB DE TRAV
+! 1. DEFINITION DE MAILLAGES ET FORMATS DE POST TRAITEMENT UTILISATEUR
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
+! Allocate temporary arrays
+allocate(lcel(ncel), lfac(nfac), lfabor(nfabor))
 
-!     MEMOIRE DE TRAVAIL POUR LA DEFINITION DE COUPES
-
-ilcel  = idebia
-ilfaci = ilcel  + ncelet
-ilfacb = ilfaci + nfac
-ifinia = ilfacb + nfabor
-
-!     VERIFICATION DE LA DISPONIBILITE DE LA MEMOIRE
-
-call iasize ('cregeo', ifinia)
+call usdpst &
 !==========
-
-!===============================================================================
-! 2. DEFINITION DE MAILLAGES ET FORMATS DE POST TRAITEMENT UTILISATEUR
-!===============================================================================
-
-call usdpst                                                       &
-!==========
- ( ia(ilcel) , ia(ilfaci) , ia(ilfacb)  ,                         &
-   ia     ,                                                       &
+ ( lcel , lfac , lfabor ,   &
+   ia     ,                 &
    ra     )
 
+! Free memory
+deallocate(lcel, lfac, lfabor)
 
 !===============================================================================
-! 3. CREATION DU MAILLAGE EXTRAIT COUPLE AVEC SYRTHES
+! 2. CREATION DU MAILLAGE EXTRAIT COUPLE AVEC SYRTHES
 !    ENVOI DES DONNEES GEOMETRIQUES A SYRTHES SI NECESSAIRE
 !===============================================================================
 

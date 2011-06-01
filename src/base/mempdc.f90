@@ -131,20 +131,6 @@ ifinia        = iicepd + ncepdc
 ickupd = ifinra
 ifinra        = ickupd + ncepdc*6
 
-!     Si pour une des phases on a des pertes de charge
-!       sur un des processeurs
-!     et que les tableaux TPUCOU n'ont pas encore ete definis (IPUCOU=0)
-!     il faut les dimensionner
-if (ipucou.eq.0) then
-  iok=0
-  if (ncpdct.gt.0) iok = 1
-  if (iok.eq.1) then
-    itpuco = ifinra
-    ifinra = itpuco + ncelet *ndim
-  endif
-endif
-
-
 
 !---> VERIFICATION
 

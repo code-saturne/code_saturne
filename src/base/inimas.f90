@@ -34,7 +34,6 @@ subroutine inimas &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
-   isympa ,                                                       &
    ia     ,                                                       &
    rom    , romb   ,                                              &
    ux     , uy     , uz     ,                                     &
@@ -97,9 +96,6 @@ subroutine inimas &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrau           ! r  ! <-- ! coef extrap gradient                           !
-! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
-! (nfabor     )    !    !     !(symetries et parois avec cl couplees)          !
-!                  !    !     ! un sinon                                       !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rom(ncelet       ! tr ! <-- ! masse volumique aux cellules                   !
 ! romb(nfabor)     ! tr ! <-- ! masse volumique aux bords                      !
@@ -142,7 +138,6 @@ integer          nswrgu , imligu
 integer          iwarnu , nfecra
 double precision epsrgu , climgu , extrau
 
-integer          isympa(nfabor)
 integer          ia(*)
 
 double precision rom(ncelet), romb(nfabor)
@@ -273,11 +268,11 @@ if( nswrgu.gt.1 ) then
   if(iperot.gt.0) then
     iappel = 1
 
-    call permas                                                   &
+    call permas &
     !==========
- ( imaspe , iappel ,                                              &
-   rom    ,                                                       &
-   ra(idudxy) , ra(idrdxy) , ra(iwdudx) , ra(iwdrdx) )
+ ( imaspe , iappel ,                 &
+   rom    ,                          &
+   dudxy  , drdxy  , wdudxy , wdrdxy )
 
   endif
 
@@ -455,11 +450,11 @@ if( nswrgu.gt.1 ) then
   if(iperot.gt.0) then
     iappel = 2
 
-    call permas                                                   &
+    call permas &
     !==========
- ( imaspe , iappel ,                                              &
-   rom    ,                                                       &
-   ra(idudxy) , ra(idrdxy) , ra(iwdudx) , ra(iwdrdx) )
+ ( imaspe , iappel ,                 &
+   rom    ,                          &
+   dudxy  , drdxy  , wdudxy , wdrdxy )
 
   endif
 

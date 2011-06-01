@@ -31,7 +31,7 @@ subroutine iniva0 &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , ncofab ,                                     &
    ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb ,                   &
+   dt     , tpucou , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , frcxt  ,                                     &
    ra     )
 
@@ -105,7 +105,7 @@ integer          nvar   , nscal  , ncofab
 
 integer          ia(*)
 
-double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
+double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 double precision frcxt(ncelet,3)
@@ -146,7 +146,7 @@ idebra = idbra0
 
 if ( ippmod(icompf).ge.0 ) then
   do ifac = 1, nfabor
-    ia(iisymp+ifac-1) = 1
+    isympa(ifac) = 1
   enddo
 endif
 
@@ -286,9 +286,9 @@ enddo
 !     Couplage U-P
 if(ipucou.eq.1) then
   do iel = 1, ncel
-    ra(itpuco+iel-1         ) = 0.d0
-    ra(itpuco+iel-1+  ncelet) = 0.d0
-    ra(itpuco+iel-1+2*ncelet) = 0.d0
+    tpucou(iel,1) = 0.d0
+    tpucou(iel,2) = 0.d0
+    tpucou(iel,3) = 0.d0
   enddo
 endif
 
@@ -468,8 +468,8 @@ do ii = 1, ncofab
 enddo
 
 do ifac = 1, nfabor
-  ia(iitypf-1+ifac) = 0
-  ia(iitrif-1+ifac) = 0
+  itypfb(ifac) = 0
+  itrifb(ifac) = 0
 enddo
 
 ! Type symétrie : on en a besoin dans le cas du calcul des gradients
@@ -479,7 +479,7 @@ enddo
 !     pour ne pas tomber sur une indétermination et une matrice 3*3 non
 !     inversible dans les configurations 2D).
 do ifac = 1, nfabor
-  ia(iisymp-1+ifac) = 0
+  isympa(ifac) = 0
 enddo
 
 ! Flux de masse (on essaye de ne pas trop faire les choses 2 fois,
@@ -586,12 +586,12 @@ endif
 ! 11.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE
 !===============================================================================
 
-!     Si IFAPA existe,
+!     Si IFAPAT existe,
 !     on suppose qu'il faut le (re)calculer : on init le tab a -1.
 
-if(iifapa.gt.0) then
+if(abs(icdpar).eq.2) then
   do iel = 1, ncel
-    ia(iifapa-1+ iel) = -1
+    ifapat(iel) = -1
   enddo
 endif
 

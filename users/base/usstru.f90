@@ -102,7 +102,6 @@ use paramx
 use cstnum
 use optcal
 use entsor
-use pointe
 use albase
 use parall
 use period
@@ -325,7 +324,6 @@ subroutine usstr2 &
 use paramx
 use cstnum
 use optcal
-use pointe
 use albase
 use parall
 use period

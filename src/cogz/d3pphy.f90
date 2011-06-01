@@ -101,7 +101,6 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          iinpdf
 integer          nvar   , nscal
 
 integer          ibrom
@@ -120,8 +119,11 @@ integer          idebia, idebra, ifinia
 integer          if, ih, iel, icg
 integer          ifac, mode, izone
 integer          ipbrom, ipcrom, ipbycg, ipcycg
+
 double precision coefg(ngazgm), fsir, hhloc, tstoea, tin
 double precision temsmm
+
+integer, allocatable, dimension(:) :: indpdf
 
 double precision, allocatable, dimension(:) :: dirmin, dirmax
 double precision, allocatable, dimension(:) :: fdeb, ffin
@@ -155,13 +157,11 @@ allocate(w1(ncelet), w2(ncelet))
 
 idebia = idbia0
 idebra = idbra0
+
 !     On reserve la memoire pour le tabeau INDPDF : passage ou non
 !     par les PDF (on le garde pendant tout le sous-programme
 
-iinpdf = idebia
-ifinia = iinpdf + ncelet
-call iasize('d3pphy',ifinia)
-!==========
+allocate(indpdf(ncelet))
 
 !===============================================================================
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES
@@ -276,9 +276,9 @@ do iel = 1, ncel
   w2(iel) = 1.d0
 enddo
 
-call pppdfr                                                       &
+call pppdfr &
 !==========
- ( ncelet,ncel, ia(iinpdf),                                       &
+ ( ncelet, ncel, indpdf ,                                         &
    rtp(1,isca(ifm)), rtp(1,isca(ifp2m)),                          &
    w1, w2,                                                        &
    dirmin, dirmax, fdeb, ffin, hrec )
@@ -296,26 +296,28 @@ call pppdfr                                                       &
 
 if ( ippmod(icod3p).eq.1 ) then
 
-  call d3pint                                                     &
+  call d3pint &
   !==========
- ( ncelet,ncel, ia(iinpdf),                                       &
+ ( ncelet , ncel , indpdf ,                                       &
    dirmin,dirmax,fdeb,ffin,hrec,                                  &
-   rtp(1,isca(ifm)),rtp(1,isca(ihm)),rtp(1,ipr),               &
+   rtp(1,isca(ifm)),rtp(1,isca(ihm)),rtp(1,ipr),                  &
    propce,                                                        &
    w1 )
 
 else
 
-  call d3pint                                                     &
+  call d3pint &
   !==========
- ( ncelet,ncel, ia(iinpdf),                                       &
+ ( ncelet , ncel , indpdf ,                                       &
    dirmin,dirmax,fdeb,ffin,hrec,                                  &
-   rtp(1,isca(ifm)),w2,rtp(1,ipr),                             &
+   rtp(1,isca(ifm)),w2,rtp(1,ipr),                                &
    propce,                                                        &
    w1 )
 
 endif
 
+! Free memory
+deallocate(indpdf)
 
 !===============================================================================
 ! 4. CALCUL DE RHO ET DES FRACTIONS MASSIQUES DES ESPECES GLOBALES

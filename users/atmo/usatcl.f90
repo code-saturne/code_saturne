@@ -118,7 +118,6 @@ subroutine usatcl &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use optcal
 use cstphy

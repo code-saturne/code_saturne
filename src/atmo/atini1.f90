@@ -104,9 +104,6 @@ endif
 ! 1. INFORMATIONS GENERALES
 !===============================================================================
 
-! ---> Initialisation
-rair = 287.d0
-
 ! ---> Masse volumique et viscosite
 irovar = 0
 ivivar = 0

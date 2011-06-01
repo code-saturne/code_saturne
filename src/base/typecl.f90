@@ -108,7 +108,6 @@ use cstnum
 use cstphy
 use entsor
 use parall
-use pointe
 use ppppar
 use ppthch
 use ppincl

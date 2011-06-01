@@ -200,7 +200,7 @@ integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
 integer          iptsna
-integer          iflmb0, nswrp , imaspe, iismph, ipbrom
+integer          iflmb0, nswrp , imaspe, ipbrom
 integer          idiaex, idtva0
 
 double precision rnorm , vitnor
@@ -388,9 +388,7 @@ if (ineedf.eq.1 .and. iterns.eq.1) then
 ! on ne rajoute pas P0, pour garder un maximum de precision
 !     &         + P0
     do isou = 1, 3
-      ra(iforbr+(ifac-1)*ndim + isou-1) =                         &
-           ra(iforbr+(ifac-1)*ndim + isou-1)                      &
-           + pfac*surfbo(isou,ifac)
+      forbr(isou,ifac) = forbr(isou,ifac) + pfac*surfbo(isou,ifac)
     enddo
   enddo
 endif
@@ -439,8 +437,6 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 
   imaspe = 1
 
-  iismph = iisymp
-
   call inimas &
   !==========
  ( idebia , idebra ,                                              &
@@ -449,7 +445,6 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    trav(1,1) , trav(1,2) , trav(1,3) ,                            &
@@ -673,9 +668,7 @@ if(     (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) &
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb
       xkb = d2s3*propce(iel,ipcrom)*xkb
       do isou = 1, 3
-        ra(iforbr+(ifac-1)*ndim + isou-1) =                       &
-             ra(iforbr+(ifac-1)*ndim + isou-1)                    &
-             + xkb*surfbo(isou,ifac)
+        forbr(isou,ifac) = forbr(isou,ifac) + xkb*surfbo(isou,ifac)
       enddo
     enddo
   endif
@@ -1631,8 +1624,6 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
 
   imaspe = 1
 
-  iismph = iisymp
-
   call inimas &
   !==========
  ( idebia , idebra ,                                              &
@@ -1641,7 +1632,6 @@ if(iappel.eq.1.and.irnpnw.eq.1) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrp  , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iu) , rtp(1,iv) , rtp(1,iw) ,                            &

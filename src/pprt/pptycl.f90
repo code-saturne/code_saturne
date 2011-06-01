@@ -378,11 +378,11 @@ elseif ( ippmod(iatmos).ge.0 ) then
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   ra(itmmet)      , ra(iztmet)      , ra(izdmet)      ,          &
-   ra(ixmet)       , ra(iymet)       , ra(ipmer)       ,          &
-   ra(ittmet)      , ra(iqvmet)      , ra(iumet)       ,          &
-   ra(ivmet)       , ra(iekmet)      , ra(iepmet)      ,          &
-   ra(irmet)       , ra(itpmet)      , ra(iphmet)      ,          &
+   tmmet  , ztmet  , zdmet  ,                                     &
+   xmet   , ymet   , pmer   ,                                     &
+   ttmet  , qvmet  , umet   ,                                     &
+   vmet   , ekmet  , epmet  ,                                     &
+   rmet   , tpmet  , phmet  ,                                     &
    ra     )
 
 endif

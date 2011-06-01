@@ -30,7 +30,7 @@ subroutine precli &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
-   icodcl , izfppp ,                                              &
+   icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
@@ -65,8 +65,6 @@ subroutine precli &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! izfppp           ! te ! --> ! numero de zone de la face de bord              !
-! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -124,7 +122,6 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
-integer          izfppp(nfabor)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -157,7 +154,7 @@ idebra = idbra0
 !      RINFIN : VALEUR INFINIE
 
 do ifac = 1, nfabor
-  ia(iitypf-1+ifac) = 0
+  itypfb(ifac) = 0
 enddo
 
 ! Pour toutes les variables, on initialise RCODCL(1)a RINFIN

@@ -32,7 +32,7 @@ subroutine navsto &
    nvar   , nscal  , iterns , icvrge ,                            &
    isostd ,                                                       &
    ia     ,                                                       &
-   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
    tslagr , coefa  , coefb  , frcxt  ,                            &
    trava  , ximpa  , uvwk   ,                                     &
    ra     )
@@ -59,6 +59,7 @@ subroutine navsto &
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! tpucou(ncelet,3) ! ra ! <-- ! velocity-pressure coupling                     !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -118,7 +119,7 @@ integer          nvar   , nscal  , iterns , icvrge
 integer          isostd(nfabor+1)
 integer          ia(*)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
@@ -131,14 +132,14 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra
-integer          iccocg, inc, iel, iel1, iel2, ifac, imax, iii
+integer          iccocg, inc, iel, iel1, iel2, ifac, imax
 integer          ii    , inod
 integer          isou, ivar, iitsm, igamm1
 integer          iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
 integer          icluma, iclvma, iclwma
 integer          iflmas, iflmab, ipcrom, ipbrom
-integer          iflms1, iflmb1, iflmb0, iismph
+integer          iflms1, iflmb1, iflmb0
 integer          nswrgp, imligp, iwarnp, imaspe
 integer          nbrval, iappel, iescop, idtsca
 integer          iflint, iflbrd, icocgv, ifinra
@@ -208,7 +209,6 @@ endif
 
 ivar = 0
 iflmas = 0
-iismph = 0
 ipcrom = 0
 imax = 0
 
@@ -289,7 +289,7 @@ call preduv                                                      &
   propfa(1,iflmas), propfb(1,iflmab),                            &
   tslagr , coefa  , coefb  ,                                     &
   ra(ickupd)        , ra(ismace)        ,  frcxt ,               &
-  trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      ,  trav  , &
+  trava  , ximpa  , uvwk   , dfrcxt , tpucou ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi ,                            &
   drtp   , smbr   , rovsdt ,                                     &
   w1     , w7     , w8     , w9     , w10    ,                   &
@@ -314,7 +314,6 @@ if( iprco.le.0 ) then
   iccocg = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
-  iismph = iisymp
   nswrgp = nswrgr(iu)
   imligp = imligr(iu)
   iwarnp = iwarni(iu)
@@ -332,7 +331,6 @@ if( iprco.le.0 ) then
   iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
   iwarnp , nfecra ,                                              &
   epsrgp , climgp , extrap ,                                     &
-  ia(iismph) ,                                                   &
   ia     ,                                                       &
   propce(1,ipcrom), propfb(1,ipbrom),                            &
   rtp(1,iu) , rtp(1,iv) , rtp(1,iw) ,                            &
@@ -399,7 +397,6 @@ if( iprco.le.0 ) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iuma )    , rtp(1,ivma )    , rtp(1,iwma)     ,          &
@@ -516,7 +513,7 @@ call resolp                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ra(ickupd)        , ra(ismace)        ,                        &
-   frcxt  , dfrcxt , ra(itpuco)      , trav   ,                   &
+   frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt , tslagr ,                            &
    frchy  , dfrchy , trava ,                                      &
@@ -537,8 +534,6 @@ iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 ipcrom = ipproc(irom  )
 ipbrom = ipprob(irom  )
-iismph = iisymp
-
 
 
 !       IREVMC = 0 : Methode standard (pas par moindres carres) : on
@@ -602,7 +597,6 @@ if( irevmc.eq.1 ) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
@@ -719,10 +713,9 @@ else
     else
       do iel = 1, ncel
         unsrom = -thetap/propce(iel,ipcrom)
-        iii = itpuco-1+iel
-        rtp(iel,iu) = rtp(iel,iu) + unsrom*ra(iii         )*grad(iel,1)
-        rtp(iel,iv) = rtp(iel,iv) + unsrom*ra(iii+ncelet  )*grad(iel,2)
-        rtp(iel,iw) = rtp(iel,iw) + unsrom*ra(iii+2*ncelet)*grad(iel,3)
+        rtp(iel,iu) = rtp(iel,iu) + unsrom*tpucou(iel,1)*grad(iel,1)
+        rtp(iel,iv) = rtp(iel,iv) + unsrom*tpucou(iel,2)*grad(iel,2)
+        rtp(iel,iw) = rtp(iel,iw) + unsrom*tpucou(iel,3)*grad(iel,3)
       enddo
     endif
   else
@@ -736,13 +729,12 @@ else
     else
       do iel = 1, ncel
         unsrom = thetap/propce(iel,ipcrom)
-        iii = itpuco-1+iel
         rtp(iel,iu) = rtp(iel,iu) &
-             +unsrom*ra(iii         )*(dfrcxt(iel,1)-grad(iel,1) )
+             +unsrom*tpucou(iel,1)*(dfrcxt(iel,1)-grad(iel,1))
         rtp(iel,iv) = rtp(iel,iv) &
-             +unsrom*ra(iii+ncelet  )*(dfrcxt(iel,2)-grad(iel,2) )
+             +unsrom*tpucou(iel,2)*(dfrcxt(iel,2)-grad(iel,2))
         rtp(iel,iw) = rtp(iel,iw) &
-             +unsrom*ra(iii+2*ncelet)*(dfrcxt(iel,3)-grad(iel,3) )
+             +unsrom*tpucou(iel,3)*(dfrcxt(iel,3)-grad(iel,3))
       enddo
     endif
     !     mise a jour des forces exterieures pour le calcul des gradients
@@ -828,7 +820,6 @@ if (iale.eq.1) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iuma )    , rtp(1,ivma )    , rtp(1,iwma)     ,          &
@@ -935,8 +926,6 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   ipcrom = ipproc(irom  )
   ipbrom = ipprob(irom  )
-  iismph = iisymp
-
 
 
   ! ---> ECHANGE DES VITESSES ET PRESSION EN PERIODICITE ET PARALLELISME
@@ -993,7 +982,6 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
@@ -1063,7 +1051,7 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  ,                                     &
    ra(ickupd)        , ra(ismace)        , frcxt  ,               &
-   trava  , ximpa  , uvwk   , dfrcxt , ra(itpuco)      , trav   , &
+   trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt ,                                     &
    w1     , w7     , w8     , w9     , w10    ,                   &

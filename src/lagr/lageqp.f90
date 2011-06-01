@@ -255,35 +255,35 @@ call rasize ('lageqp',ifinra)
 do ifac = 1, nfabor
   iel = ifabor(ifac)
 
-  if ( ia(iitypf+ifac-1) .eq. ientre ) then
+  if ( itypfb(ifac) .eq. ientre ) then
 
 !      Flux Nul
 
     ra(icefap+ifac-1) = zero
     ra(icefbp+ifac-1) = 1.d0
 
-  else if ( ia(iitypf+ifac-1) .eq. iparoi) then
+  else if ( itypfb(ifac) .eq. iparoi) then
 
 !      FLux nul
 
     ra(icefap+ifac-1) = zero
     ra(icefbp+ifac-1) = 1.d0
 
-  else if ( ia(iitypf+ifac-1) .eq. iparug) then
+  else if ( itypfb(ifac) .eq. iparug) then
 
 !      FLux nul
 
     ra(icefap+ifac-1) = zero
     ra(icefbp+ifac-1) = 1.d0
 
-  else if ( ia(iitypf+ifac-1) .eq. isymet) then
+  else if ( itypfb(ifac) .eq. isymet) then
 
 !      FLux nul
 
     ra(icefap+ifac-1) = zero
     ra(icefbp+ifac-1) = 1.d0
 
-  else if ( ia(iitypf+ifac-1) .eq. isolib ) then
+  else if ( itypfb(ifac) .eq. isolib ) then
 
 !      Valeur Imposee
 
@@ -291,7 +291,7 @@ do ifac = 1, nfabor
     ra(icefbp+ifac-1) = zero
 
   else
-    write(nfecra,1100) ia(iitypf+ifac-1)
+    write(nfecra,1100) itypfb(ifac)
     call csexit (1)
 !              ======
   endif

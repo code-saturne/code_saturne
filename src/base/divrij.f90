@@ -121,7 +121,7 @@ integer          iccocg,iflmb0
 integer          ipcrom, ipbrom
 integer          iclva1, iclva2, iclva3
 integer          nswrgp, imligp, iwarnp
-integer          iismph, imaspe
+integer          imaspe
 double precision epsrgp, climgp, extrap
 
 !===============================================================================
@@ -174,8 +174,6 @@ epsrgp = epsrgr(ir11)
 climgp = climgr(ir11)
 extrap = extrag(ir11)
 
-iismph = iisymp
-
 imaspe = 2
 
 call inimas                                                       &
@@ -186,7 +184,6 @@ call inimas                                                       &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtpa(1,ivar1)   , rtpa(1,ivar2)   , rtpa(1,ivar3)   ,          &
@@ -200,8 +197,7 @@ call inimas                                                       &
 
 if (ineedf.eq.1) then
   do ifac = 1, nfabor
-    ra(iforbr+(ifac-1)*ndim+idim-1) =                             &
-         ra(iforbr+(ifac-1)*ndim+idim-1) + viscb(ifac)
+    forbr(idim,ifac) = forbr(idim,ifac) + viscb(ifac)
   enddo
 endif
 

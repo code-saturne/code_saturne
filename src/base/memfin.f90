@@ -52,6 +52,9 @@ subroutine memfin
 
 use paramx
 use parall
+use ppincl
+use pointe
+use atincl
 
 !===============================================================================
 
@@ -62,6 +65,11 @@ implicit none
 !===============================================================================
 
 call finalize_fortran_omp
+call finalize_aux_arrays
+
+if (ippmod(iatmos).ge.0) then
+  call finalize_meteo
+endif
 
 return
 end subroutine

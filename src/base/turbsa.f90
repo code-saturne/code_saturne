@@ -102,7 +102,7 @@ use ppincl
 use mesh
 !We have to know if there is any rough wall
 use parall
-use pointe
+use pointe, only: dispar
 
 !===============================================================================
 
@@ -444,7 +444,7 @@ do iel = 1, ncel
   rom   = propce(iel,ipcroo)
   ! Kinematic viscosity
   nu0   = propce(iel,ipcvis)/rom
-  distbf= ra(idipar+iel-1)
+  distbf= dispar(iel)
   ! viscosity of SA
   nusa  = rtpa(iel,inusa)
   chi   = nusa/nu0

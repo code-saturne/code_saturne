@@ -128,12 +128,14 @@ integer          ii , jj  , in  , isort
 integer          indian , ifaold , ifanew
 integer          itypfo , iconfo(100)
 integer          idehor , ierrie , icecpt
-integer          icelcr, ipercr ,itepas, iper
+integer          itepas, iper
 
 double precision rd(1)
 double precision xf, yf, zf
 double precision up, vp, wp, uf, vf, wf
 double precision pta(3), ptb(3), vect(3), vectn(3)
+
+integer, allocatable, dimension(:) :: celcr, percr
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
@@ -146,26 +148,18 @@ idebra = idbra0
 ! 1. INITIALISATION
 !===============================================================================
 
-! Initialize variables to avoid compiler warnings
-
-icelcr = 0
-ipercr = 0
-
 ! Traitement de la periodicite
 
 if (iperio.eq.1) then
 
-  icelcr = idebia
-  ipercr = icelcr + ncelet-ncel
-  ifinia = ipercr + ncelet-ncel
-  call iasize('lagnwc', ifinia)
-  !==========
+  ! Allocate temporary arrays
+  allocate(celcr(ncelet-ncel), percr(ncelet-ncel))
 
   do iel = 1,ncelet-ncel
-    ia(icelcr+iel-1) = 0
-    ia(ipercr+iel-1) = -1
+    celcr(iel) = 0
+    percr(iel) = -1
   enddo
-  call perloc(ia(icelcr), ia(ipercr))
+  call perloc(celcr, percr)
   !==========
 
 endif
@@ -316,11 +310,11 @@ do np = 1,new
           if (isort.gt.ncel) then
 
             itepas = isort
-            isort = ia(icelcr+itepas-ncel-1)
+            isort = celcr(itepas-ncel)
 
 !                On recupere les informations sur la periodicite
 
-            iper  = ia(ipercr+itepas-ncel-1)
+            iper  = percr(itepas-ncel)
 
 !                 MODIFICATION DE LA POSITION
 
@@ -433,6 +427,11 @@ do np = 1,new
  300      continue
 
 enddo
+
+! Free memory
+if (iperio.eq.1) then
+  deallocate(celcr, percr)
+endif
 
 !==============================================================================
 

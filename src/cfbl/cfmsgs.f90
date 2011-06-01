@@ -138,7 +138,7 @@ integer          ircflp, ischcp, isstpp
 
 integer          iirom , iiromb
 integer          ivar0 , imvis1, iccfth, imodif, isou
-integer          imaspe, iflmb0, iismph
+integer          imaspe, iflmb0
 integer          icliup, iclivp, icliwp, iclvar
 integer          itsqdm, iiun  , iextts
 
@@ -296,7 +296,6 @@ if(itsqdm.ne.0) then
     inc    = 1
     iccocg = 1
     iflmb0 = 1
-    iismph = iisymp
     nswrgp = nswrgr(iu)
     imligp = imligr(iu)
     iwarnp = iwarni(iu)
@@ -315,7 +314,6 @@ if(itsqdm.ne.0) then
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    propce(1,iirom) , propfb(1,iiromb),                            &
    rtpa (1,iu)  , rtpa (1,iv)  , rtpa (1,iw)  ,                   &
@@ -613,7 +611,6 @@ inc    = 0
 iccocg = 1
 ivar0  = 0
 iflmb0 = 1
-iismph = iisymp
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
 iwarnp = iwarni(ivar)
@@ -631,7 +628,6 @@ call inimas                                                       &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia(iismph) ,                                                   &
    ia     ,                                                       &
    w1     , trflmb ,                                              &
    w10    , w11    , w12    ,                                     &

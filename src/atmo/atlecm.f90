@@ -28,7 +28,9 @@
 subroutine atlecm &
 !================
 
- ( imode  , tmprom , ztprom , zdprom ,                            &
+ ( imode  ,                                                       &
+   nbmetd , nbmett , nbmetm ,                                     &
+   tmprom , ztprom , zdprom ,                                     &
    xmet   , ymet   , pmer   ,                                     &
    ttprom , qvprom ,                                              &
    uprom  , vprom  , ekprom , epprom,                             &
@@ -70,8 +72,6 @@ use cstnum
 use cstphy
 use ppppar
 
-use atincl
-
 !===============================================================================
 
 implicit none
@@ -79,6 +79,7 @@ implicit none
 ! Arguments
 
 integer           imode
+integer           nbmetd , nbmett , nbmetm
 
 double precision  tmprom(nbmetm)
 double precision  ztprom(nbmett) , zdprom(nbmetd)

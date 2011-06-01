@@ -157,13 +157,13 @@ call cgdcel                                                       &
  ( ncelet , ncel   , nfac   , nfabor , ncelbr , ivar   ,          &
    imrgra , inc    , iccocg , nswrgp , idimte , itenso , iphydp , &
    iwarnp , nfecra , imligp , epsrgp , extrap , climgp ,          &
-   ifacel , ifabor , icelbr , ia(iisymp) ,                        &
+   ifacel , ifabor , icelbr , isympa ,                            &
    volume , surfac , surfbo , surfbn , pond,                      &
    dist   , distb  , dijpf  , diipb  , dofij  ,                   &
    fextx  , fexty  , fextz  ,                                     &
    xyzcen , cdgfac , cdgfbo, coefap , coefbp , pvar   ,           &
-   ra(icocgb) , ra(icocg)   ,                                     &
-   ra(icocib) , ra(icoci)   ,                                     &
+   cocgb  , cocg   ,                                              &
+   cocib  , coci   ,                                              &
    grad   )
 
 return

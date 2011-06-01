@@ -46,8 +46,7 @@ atprke.f90 \
 atprop.f90 \
 attycl.f90 \
 atvarp.f90 \
-intprf.f90 \
-mematm.f90
+intprf.f90
 libcsatmo_la_LDFLAGS = -no-undefined
 
 atmousers =  \

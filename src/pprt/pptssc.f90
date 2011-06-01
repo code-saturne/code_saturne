@@ -185,7 +185,7 @@ if ( ippmod(icoebu).ge.0 ) then
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia(iizfpp) ,                                                   &
+   izfppp ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -208,7 +208,7 @@ if ( ippmod(icolwc).ge.0 ) then
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia(iizfpp) ,                                                   &
+   izfppp ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -224,9 +224,9 @@ if ( ippmod(icp3pl).ge.0 ) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
-   ia(iitypf)      ,                                              &
+   itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia(iizfpp) ,                                                   &
+   izfppp ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -243,9 +243,9 @@ if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
-   ia(iitypf)      ,                                              &
+   itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia(iizfpp) ,                                                   &
+   izfppp ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -261,9 +261,9 @@ if ( ippmod(icfuel).ge.0 ) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
-   ia(iitypf)      ,                                              &
+   itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia(iizfpp) ,                                                   &
+   izfppp ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -284,9 +284,9 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
  ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
-   ia(iitypf)      ,                                              &
+   itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia(iizfpp) ,                                                   &
+   izfppp ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -302,9 +302,9 @@ if ( ippmod(iaeros).ge.0 ) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
-   ia(iitypf)      ,                                              &
+   itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia(iizfpp) ,                                                   &
+   izfppp ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &

@@ -157,7 +157,6 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:) :: smbrk, smbrw, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinstw, xf1
-double precision, allocatable, dimension(:) :: s2kw, divukw
 double precision, allocatable, dimension(:,:) :: gradk, grado, grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -174,7 +173,6 @@ allocate(viscf(nfac), viscb(nfabor))
 allocate(dam(ncelet))
 allocate(smbrk(ncelet), smbrw(ncelet), rovsdt(ncelet))
 allocate(tinstk(ncelet), tinstw(ncelet), xf1(ncelet))
-allocate(s2kw(ncelet), divukw(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -286,7 +284,7 @@ deallocate(gradk, grado)
 
 if(abs(icdpar).eq.2) then
   do iel = 1, ncel
-    ifacpt = ia(iifapa-1+iel)
+    ifacpt = ifapat(iel)
     w2(iel) = (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2 &
             + (cdgfbo(2,ifacpt)-xyzcen(2,iel))**2 &
             + (cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
@@ -294,7 +292,7 @@ if(abs(icdpar).eq.2) then
   enddo
 else
   do iel = 1, ncel
-    w2(iel) =  max(ra(idipar+iel-1),epzero)
+    w2(iel) =  max(dispar(iel),epzero)
   enddo
 endif
 
@@ -1167,7 +1165,6 @@ deallocate(viscf, viscb)
 deallocate(dam)
 deallocate(smbrk, smbrw, rovsdt)
 deallocate(tinstk, tinstw, xf1)
-deallocate(s2kw, divukw)
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8)

@@ -30,7 +30,7 @@ subroutine distyp &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
-   itypfb , isympa ,                                              &
+   itypfb ,                                                       &
    ia     ,                                                       &
    distpa , propce , disty  ,                                     &
    ra     )
@@ -63,8 +63,6 @@ subroutine distyp &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! isympa           ! te ! <-- ! zero pour annuler le flux de masse             !
-! (nfabor     )    !    !     ! (transmis mais non utilise)                    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! <-- ! tab des distances a la paroi                   !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -88,7 +86,7 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe
+use pointe, only: uetbor
 use ppppar
 use coincl
 use parall
@@ -104,7 +102,7 @@ implicit none
 integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          itypfb(nfabor),isympa(nfabor)
+integer          itypfb(nfabor)
 integer          ia(*)
 
 double precision distpa(ncelet),propce(ncelet,*)
@@ -310,7 +308,6 @@ call inimas                                                       &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
-   isympa ,                                                       &
    ia     ,                                                       &
    rom    , romb   ,                                              &
    qx     , qy     , qz     ,                                     &
@@ -343,8 +340,7 @@ do ifac = 1, nfabor
   if(itypfb(ifac).eq.iparoi .or.                            &
      itypfb(ifac).eq.iparug) then
     iel = ifabor(ifac)
-    coefax(ifac) = ra(iuetbo+ifac-1)                             &
-                  *propce(iel,ipcrom)/propce(iel,ipcvis)
+    coefax(ifac) = uetbor(ifac)*propce(iel,ipcrom)/propce(iel,ipcvis)
     coefbx(ifac) = 0.0d0
   else
     coefax(ifac) = 0.0d0

@@ -32,7 +32,7 @@ subroutine memtri &
    nvar   , nscal  ,                                              &
    ncofab , nproce , nprofa , nprofb ,                            &
    iisstd , ifrcx  ,                                              &
-   idt    , irtp   , irtpa  , ipropc , ipropf , ipropb ,          &
+   idt    , itpuco , irtp   , irtpa  , ipropc , ipropf , ipropb , &
    icoefa , icoefb ,                                              &
    ifinia , ifinra )
 
@@ -58,6 +58,7 @@ subroutine memtri &
 ! nprofb           ! e  ! <-- ! nombre de prop phy aux faces de bord           !
 ! iisstd           ! e  ! --> ! "pointeur" sur isostd(reperage sortie          !
 ! idt              ! e  ! --> ! "pointeur" sur dt                              !
+! itpuco           ! e  ! --> ! "pointeur" sur tpucou                          !
 ! irtp, irtpa      ! e  ! --> ! "pointeur" sur rtp, rtpa                       !
 ! ipropc           ! e  ! --> ! "pointeur" sur propce                          !
 ! ipropf           ! e  ! --> ! "pointeur" sur propfa                          !
@@ -109,7 +110,7 @@ integer          iverif
 integer          nvar   , nscal
 integer          ncofab , nproce , nprofa , nprofb
 integer          iisstd , ifrcx
-integer          idt
+integer          idt    , itpuco
 integer          irtp   , irtpa
 integer          ipropc , ipropf , ipropb
 integer          icoefa , icoefb
@@ -119,8 +120,8 @@ integer          ifinia , ifinra
 
 integer          idebia , idebra
 integer          iis, ippu, ippv, ippw, ivar, iprop
-integer          iipero , iiirij , imom, idtnm
-integer          idpar1 , idpar2 , iypar1, iiyplb, iiforb, iicoci, iiuetb
+integer          imom, idtnm
+integer          iipuco
 
 !===============================================================================
 
@@ -158,107 +159,14 @@ idebra = idbra0
 
 ! --> Preparations :
 
-!     On regarde s'il existe au moins une periodicite de rotation
-!                                 une phase avec Rij
-
-iipero = 0
-if (iperot.gt.0) then
-  iipero = 1
-endif
-iiirij = 0
-if(itytur.eq.3) then
-  iiirij = 1
-endif
-
-
-!     Distance a la paroi
-
-!       On reserve ici idipar (distance a la paroi) : c'est oblige
-!       On reserve aussi iyppar (yplus) : on pourrait s'en passer
-!         et en faire un tableau local a reserver dans memdyp
-!         mais ca facilite la visualisation et l'initialisation
-!         de yplus pour son calcul a tous les pas de temps
-
-!     Distance a la paroi, tableau selon le mode de calcul
-idpar1 = 0
-idpar2 = 0
-!     Calcul par eq de diffusion
-if(ineedy.eq.1.and.abs(icdpar).eq.1) then
-  idpar1 = 1
-endif
-!     Calcul direct
-if(ineedy.eq.1.and.abs(icdpar).eq.2) then
-  idpar2 = 1
-endif
-!     Yplus associe (calcul par mode de diffusion et LES+VanDriest
-!       ou lagrangien+IROULE=2)
-iypar1 = 0
-if(ineedy.eq.1.and.abs(icdpar).eq.1) then
-  if(itytur.eq.4) then
-    if(idries.eq.1) then
-      iypar1 = 1
-    endif
-  endif
-  if (iilagr.ge.1 .and. iroule.eq.2) iypar1 = 1
-endif
-
-!     Stockage supplémentaire si on initialise le gradient
-!       par moindre carre
-
-iicoci = 0
-if(imrgra.eq.4 .or. iverif.eq.1) then
-  iicoci = 1
-endif
-
-
-!     Post-traitements particuliers  (faces de bord)
-
-
-iiyplb = 0
-!     Yplus au bord
-if(mod(ipstdv,ipstyp).eq.0) then
-  iiyplb = 1
-endif
-!     Efforts aux bords
-iiforb = 0
-if(ineedf.eq.1) then
-  iiforb = 1
-endif
-
-! Stokage de la vitesse de frottement aux faces de bord
-! si on fait de la LES+VanDriest ou si le modele de depot
-! en lagrangien est active
-
-iiuetb = 0
-if (    (itytur.eq.4.and.idries.eq.1) &
-    .or.(iilagr.gt.0.and.idepst.gt.0)) then
-  iiuetb = 1
+!     Tableaux de travail tpucou
+iipuco = 0
+if (ipucou.eq.1 .or. ncpdct.gt.0) then
+  iipuco = 1
 endif
 
 ! --> Reservation de memoire entiere
 
-
-iitypf = idebia
-iitrif = iitypf + nfabor
-iisymp = iitrif + nfabor
-ifinia = iisymp + nfabor
-if(idpar2.eq.1) then
-  iifapa = ifinia
-  ifinia        = iifapa + ncelet
-else
-  !         cette valeur nulle est utilisee dans les tests
-  iifapa = 0
-endif
-
-!  Zones de face de bord : on utilise provisoirement les zones des physiques
-!    particulieres, meme sans physique particuliere
-!    -> sera modifie lors de la restructuration des zones de bord
-iizfpp = ifinia
-if(ippmod(iphpar).ge.1 .or. iihmpr.eq.1) then
-  ifinia = iizfpp + nfabor
-else
-  ifinia = iizfpp
-endif
 
 iisstd = ifinia
 ifinia = iisstd + (nfabor+1)*iphydr
@@ -283,33 +191,9 @@ ipropc = irtpa  + ncelet *nvar
 ipropf = ipropc + ncelet *nproce
 ipropb = ipropf + nfac   *nprofa
 idt    = ipropb + ndimfb *nprofb
-icocg  = idt    + ncelet
-icocgb = icocg  + ncelet *9
-icoci  = icocgb + ncelbr *9
-icocib = icoci  + ncelet *9 * iicoci
-itpuco = icocib + ncelbr *9 * iicoci
-idipar = itpuco + ncelet *ndim*ipucou
-iyppar = idipar + ncelet *idpar1
-idudxy = iyppar + ncelet *iypar1
-iwdudx = idudxy + (ncelet-ncel) * 3 * 3 * iipero
-idrdxy = iwdudx + (ncelet-ncel) * 3 * 3 * iipero
-iwdrdx = idrdxy + (ncelet-ncel) * 6 * 3 * iipero*iiirij
-ifrcx  = iwdrdx + (ncelet-ncel) * 6 * 3 * iipero*iiirij
-iyplbr = ifrcx  + ncelet*ndim*iphydr
-iforbr = iyplbr + nfabor*iiyplb
-iuetbo = iforbr + nfabor*ndim*iiforb
-ifinra = iuetbo + nfabor*iiuetb
-
-!     On rajoute des tableaux pour le k-omega SST si necessaire
-!     En k-omega, on a besoin de calculer 2 Sij.Sij pour etre utilise
-!     dans PHYVAR et dans TURBKW. On reserve un tableau pour divU en meme temps.
-
-is2kw  = ifinra
-idvukw = ifinra
-if (iturb.eq.60) then
-  idvukw = is2kw  + ncelet
-  ifinra        = idvukw + ncelet
-endif
+itpuco = idt    + ncelet
+ifrcx  = itpuco + ncelet *ndim*iipuco
+ifinra = ifrcx  + ncelet *ndim*iphydr
 
 ! En ALE ou maillage mobile, on reserve des tableaux supplementaires
 ! de position initiale

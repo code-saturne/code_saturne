@@ -188,7 +188,6 @@ integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
 integer          iclvar, iclvaf, icluma, iclvma, iclwma
-integer          iismph, iyplbp
 integer          nswrgp, imligp, iwarnp, icliva
 integer          iph
 
@@ -251,9 +250,8 @@ idebra = idbra0
 !     On le remplit dans clptur
 
 if(mod(ipstdv,ipstyp).eq.0) then
-  iyplbp = iyplbr
   do ifac = 1, nfabor
-    ra(iyplbp+ifac-1) = 0.d0
+    yplbr(ifac) = 0.d0
   enddo
 endif
 
@@ -268,7 +266,7 @@ if(ippmod(iphpar).ge.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   icodcl , ia(iitrif) , ia(iitypf)  , ia(iizfpp) ,               &
+   icodcl , itrifb , itypfb , izfppp ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
@@ -280,7 +278,7 @@ if (iale.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ia(iitypf)      , ia(iialty)      , icodcl , ia(iimpal)      , &
+   itypfb , ia(iialty)      , icodcl , ia(iimpal)      ,          &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    rcodcl , ra(ixyzn0)      , ra(idepal)      ,                   &
@@ -293,7 +291,7 @@ if (imobil.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ia(iitypf)      , icodcl ,                                     &
+   itypfb , icodcl ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    rcodcl ,                                                       &
@@ -305,7 +303,7 @@ call typecl                                                       &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ia(iitypf)      , ia(iitrif)      , icodcl , isostd ,          &
+   itypfb , itrifb , icodcl , isostd ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl , frcxt  ,                            &
@@ -336,42 +334,38 @@ iok1 = 0
 
 if(ineedy.eq.1.and.abs(icdpar).eq.2) then
 
-  if(ia(iifapa).le.0) then
+  ! Allocate a temporary array
+  allocate(w1(ncelet))
 
-    ! Allocate a temporary array
-    allocate(w1(ncelet))
+  ! ON FERA ATTENTION EN PARALLELISME OU PERIODICITE
+  !    (UNE PAROI PEUT ETRE PLUS PROCHE EN TRAVERSANT UN BORD ...)
 
-    ! ON FERA ATTENTION EN PARALLELISME OU PERIODICITE
-    !    (UNE PAROI PEUT ETRE PLUS PROCHE EN TRAVERSANT UN BORD ...)
+  do iel = 1, ncel
+    w1(iel) = grand
+  enddo
 
-    do iel = 1, ncel
-      w1(iel) = grand
-    enddo
+  do ifac = 1, nfabor
+    icodcu = icodcl(ifac,iu)
+    if( icodcu.eq.5 .or. icodcu.eq.6 ) then
+      do iel = 1, ncel
+        xdis =                                                &
+             (cdgfbo(1,ifac)-xyzcen(1,iel))**2                   &
+             +(cdgfbo(2,ifac)-xyzcen(2,iel))**2                   &
+             +(cdgfbo(3,ifac)-xyzcen(3,iel))**2
+        if(w1(iel).gt.xdis) then
+          w1(iel) = xdis
+          ifapat(iel) = ifac
+        endif
+      enddo
+    endif
+  enddo
 
-    do ifac = 1, nfabor
-      icodcu = icodcl(ifac,iu)
-      if( icodcu.eq.5 .or. icodcu.eq.6 ) then
-        do iel = 1, ncel
-          xdis =                                                &
-               (cdgfbo(1,ifac)-xyzcen(1,iel))**2                   &
-               +(cdgfbo(2,ifac)-xyzcen(2,iel))**2                   &
-               +(cdgfbo(3,ifac)-xyzcen(3,iel))**2
-          if(w1(iel).gt.xdis) then
-            w1(iel) = xdis
-            ia(iifapa-1+iel) = ifac
-          endif
-        enddo
-      endif
-    enddo
-
-    ! Free memory
-    deallocate(w1)
-
-  endif
+  ! Free memory
+  deallocate(w1)
 
   iok = 0
   do iel = 1, ncel
-    if(ia(iifapa-1+iel).le.0)then
+    if(ifapat(iel).le.0)then
       iok = iok + 1
     endif
   enddo
@@ -794,9 +788,8 @@ endif
 !===============================================================================
 !   On a besoin de COEFU et de RIJIPB
 
-iismph = iisymp
 do ifac = 1, nfabor
-  ia(iismph+ifac-1) = 1
+  isympa(ifac) = 1
 enddo
 
 if (iclsym.ne.0) then
@@ -805,7 +798,7 @@ if (iclsym.ne.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   icodcl , ia(iismph) ,                                          &
+   icodcl ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  ,                            &
@@ -1612,11 +1605,11 @@ if (ineedf.eq.1) then
     endif
     distbf = distb(ifac)
     srfbnf = surfbn(ifac)
-    ra(iforbr+(ifac-1)*ndim)     = -vistot * ( coefa(ifac,icluf)  &
+    forbr(1,ifac) = -vistot * ( coefa(ifac,icluf)  &
          + (coefb(ifac,icluf)-1.d0)*coefu(ifac,1) )/distbf*srfbnf
-    ra(iforbr+(ifac-1)*ndim + 1) = -vistot * ( coefa(ifac,iclvf)  &
+    forbr(2,ifac) = -vistot * ( coefa(ifac,iclvf)  &
          + (coefb(ifac,iclvf)-1.d0)*coefu(ifac,2) )/distbf*srfbnf
-    ra(iforbr+(ifac-1)*ndim + 2) = -vistot * ( coefa(ifac,iclwf)  &
+    forbr(3,ifac) = -vistot * ( coefa(ifac,iclwf)  &
          + (coefb(ifac,iclwf)-1.d0)*coefu(ifac,3) )/distbf*srfbnf
   enddo
 endif

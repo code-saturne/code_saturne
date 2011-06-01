@@ -91,7 +91,6 @@ use optcal
 use cstphy
 use cstnum
 use parall
-use pointe
 use ppppar
 use ppthch
 use coincl

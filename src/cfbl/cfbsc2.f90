@@ -357,7 +357,7 @@ if( iconvp.gt.0.and.iupwin.eq.0.and.isstpp.eq.0 ) then
     iiu    , iiv    , iiw    , iitytu ,                           &
     iir11  , iir22  , iir33  , iir12  , iir13  , iir23  ,         &
     dpdxa  , dpdya  , dpdza  ,                                    &
-    ra(idudxy) , ra(idrdxy)  )
+    dudxy  , drdxy  )
 
     call percom                                                   &
     !==========

@@ -32,7 +32,7 @@ subroutine tridim &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
    ia     ,                                                       &
-   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   dt     , tpucou , rtpa   , rtp    , propce , propfa , propfb , &
    tslagr , coefa  , coefb  , frcxt  ,                            &
    ra     )
 
@@ -57,6 +57,7 @@ subroutine tridim &
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
+! tpucou(ncelet,3) ! ra ! <-- ! velocity-pressure coupling                     !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -122,7 +123,7 @@ integer          nvar   , nscal
 integer          isostd(nfabor+1)
 integer          ia(*)
 
-double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
+double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
@@ -148,9 +149,8 @@ integer          isvhb , isvtb
 integer          ii    , jj    , ippcp , ientha, ippcv
 integer          ipcrom, ipcroa
 integer          idimte, itenso
-integer          ifinib, ifinrb, iiifap
+integer          ifinib, ifinrb
 integer          iflua , iflub
-integer          iismph
 integer          iterns, inslst, icvrge, ivsvdr
 integer          iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
@@ -169,6 +169,11 @@ save             ipass
 integer          infpar
 save             infpar
 
+integer, allocatable, dimension(:,:) :: icodcl
+
+double precision, allocatable, dimension(:,:,:) :: rcodcl
+double precision, allocatable, dimension(:) :: hbord, tbord
+double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
 
 !===============================================================================
@@ -220,7 +225,7 @@ endif
 if(ipass.eq.1.and.ineedy.eq.1.and.abs(icdpar).eq.1.and.           &
                                   imajdy.eq.0) then
   do iel = 1, ncel
-    ra(idipar+iel-1) = grand
+    dispar(iel) = grand
   enddo
 endif
 
@@ -749,25 +754,28 @@ inslst = 0
 iterns = 1
 do while (iterns.le.nterup)
 
-
-  call memcli &
-  !==========
-( idbia1 , idbra1 ,                                              &
-  nvar   , nscal  ,                                              &
-  isvhb  , isvtb  ,                                              &
-  iicodc , ircodc ,                                              &
-  ivsvdr , ihbord , itbord ,                                     &
-  ifinia , ifinra )
+  ! Allocate temporary arrays for boundary conditions
+  allocate(icodcl(nfabor,nvar))
+  allocate(rcodcl(nfabor,nvar,3))
+  if (isvhb.gt.0) then
+    allocate(hbord(nfabor))
+  endif
+  if (isvtb.gt.0 .or. iirayo.gt.0) then
+    allocate(tbord(nfabor))
+  endif
+  if (itytur.eq.4 .and. idries.eq.1) then
+    allocate(visvdr(ncelet))
+  endif
 
   call precli &
   !==========
-( ifinia , ifinra ,                                              &
+( idbia1 , idbra1 ,                                              &
   nvar   , nscal  ,                                              &
-  ia(iicodc)      , ia(iizfpp)      ,                            &
+  icodcl ,                                                       &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
-  ra(ircodc) ,                                                   &
+  rcodcl ,                                                       &
   ra     )
 
 
@@ -786,10 +794,10 @@ do while (iterns.le.nterup)
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iparoi, iparug, isymet, isolib,                &
     iqimp,  icalke, ientat, ientcp, inmoxy, iprofm,                &
-    ia(iitypf), ia(iizfpp), ia(iicodc),                            &
+    itypfb, izfppp, icodcl,                                    &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, distch, ra(ircodc) )
+    timpat, timpcp, distch, rcodcl)
 
     if (ippmod(iphpar).eq.0) then
 
@@ -809,11 +817,11 @@ do while (iterns.le.nterup)
     ( ifnia1 , ifnra1 ,                                              &
       nvar   , nscal  , nbzfmx , nozfmx ,                            &
       iqimp  , icalke , qimp   , dh , xintur,                        &
-      ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp)   , &
+      icodcl , itrifb , itypfb , izfppp ,                            &
       ia(iilzfb)      ,                                              &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  , ra(ircodc)      ,                            &
+      coefa  , coefb  , rcodcl ,                                     &
       ra(iqcalc)      ,                                              &
       ra     )
 
@@ -829,10 +837,10 @@ do while (iterns.le.nterup)
     call usclim &
     !==========
   ( nvar   , nscal  ,                                              &
-    ia(iicodc)      , ia(iitrif)   , ia(iitypf)   ,                &
+    icodcl , itrifb , itypfb ,                                     &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , ra(ircodc)      ,                            &
+    coefa  , coefb  , rcodcl ,                                     &
     ra     )
 
   else
@@ -843,10 +851,10 @@ do while (iterns.le.nterup)
     !==========
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  ,                                              &
-    ia(iicodc)      , ia(iitrif)   , ia(iitypf)   , ia(iizfpp) ,   &
+    icodcl , itrifb , itypfb , izfppp ,                            &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , ra(ircodc)      ,                            &
+    coefa  , coefb  , rcodcl ,                                     &
     ra     )
 
   endif
@@ -860,7 +868,7 @@ do while (iterns.le.nterup)
     !==========
   ( nfabor, nozppm,                                                &
     iindef, ientre, iparoi, iparug, isymet, isolib,                &
-    ia(iitypf), ia(iizfpp) )
+    itypfb, izfppp )
 
   endif
 
@@ -873,11 +881,11 @@ do while (iterns.le.nterup)
     !==========
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  ,                                              &
-    ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
+    icodcl , itrifb , itypfb ,                                     &
     ia(iirepv)      ,                                              &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , ra(ircodc)      ,                            &
+    coefa  , coefb  , rcodcl ,                                     &
     ra     )
 
   endif
@@ -892,10 +900,10 @@ do while (iterns.le.nterup)
     !==========
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  ,                                              &
-    ia(iicodc)      , ia(iitrif)      , ia(iitypf)   ,             &
+    icodcl , itrifb , itypfb ,                                     &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , ra(ircodc)      ,                            &
+    coefa  , coefb  , rcodcl ,                                     &
     ra     )
 
   endif
@@ -922,7 +930,7 @@ do while (iterns.le.nterup)
       ra(idepal),                        &
       dtref, ttcabs, ntcabs,             &
       iuma, ivma, iwma,                  &
-      ra(ircodc)  )
+      rcodcl)
 
     endif
 
@@ -930,11 +938,11 @@ do while (iterns.le.nterup)
     !==========
   ( itrale ,                                                       &
     nvar   , nscal  ,                                              &
-    ia(iicodc)      , ia(iitypf)      , ia(iialty)      ,          &
+    icodcl , itypfb , ia(iialty)      ,                            &
     ia(iimpal)      ,                                              &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , ra(ircodc)      ,                            &
+    coefa  , coefb  , rcodcl ,                                     &
     ra(ixyzn0)      , ra(idepal)      ,                            &
     ra     )
 
@@ -971,7 +979,7 @@ do while (iterns.le.nterup)
 
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call coupbi(nfabor, nvar, nscal, ia(iicodc), ra(ircodc))
+    call coupbi(nfabor, nvar, nscal, icodcl, rcodcl)
     !==========
 
     if (nfpt1t.gt.0) then
@@ -980,9 +988,9 @@ do while (iterns.le.nterup)
     ( ifinia , ifinra ,                                              &
       nfabor ,                                                       &
       nvar   , nscal  ,                                              &
-      isvtb  , ia(iicodc) ,                                          &
+      isvtb  , icodcl ,                                              &
       ia     ,                                                       &
-      ra(ircodc) ,                                                   &
+      rcodcl ,                                                       &
       ra     )
     endif
 
@@ -996,12 +1004,12 @@ do while (iterns.le.nterup)
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  ,                                              &
     isvhb  , isvtb  ,                                              &
-    ia(iicodc) , ia(iitrif)   , ia(iitypf)   ,                     &
-    ia(iizfrd) ,                                                   &
+    icodcl , itrifb , itypfb ,                                     &
+    izfrad ,                                                       &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    ra(ircodc)      ,                                              &
-    coefa  , coefb  , ra(ihbord)      , ra(itbord)      ,          &
+    rcodcl ,                                                       &
+    coefa  , coefb  , hbord  , tbord  ,                            &
     ra     )
 
   endif
@@ -1013,12 +1021,12 @@ do while (iterns.le.nterup)
 ( ifinia , ifinra ,                                              &
   nvar   , nscal  ,                                              &
   isvhb  , isvtb  ,                                              &
-  ia(iicodc)      , isostd ,                                     &
+  icodcl , isostd ,                                              &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  ra(ircodc)      ,                                              &
-  coefa  , coefb  , ra(ivsvdr)  ,                                &
-  ra(ihbord)  , ra(itbord)      ,                                &
+  rcodcl ,                                                       &
+  coefa  , coefb  , visvdr ,                                     &
+  hbord  , tbord  ,                                              &
   frcxt  ,                                                       &
   ra     )
 
@@ -1088,7 +1096,7 @@ do while (iterns.le.nterup)
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
     cpcst  , propce(1,ippcp) , cvcst  , propce(1,ippcv),           &
-    ra(ihbord)      , ra(itbord)      )
+    hbord  , tbord  )
 
 
     if (nfpt1t.gt.0) then
@@ -1102,7 +1110,7 @@ do while (iterns.le.nterup)
       ra(ifept1), ra(ixlmt1), ra(ircpt1), ra(idtpt1),                &
       dt     , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
-      cpcst  , propce(1,ippcp) , ra(ihbord) , ra(itbord)  ,          &
+      cpcst  , propce(1,ippcp) , hbord  , tbord  ,                   &
       ra     )
     endif
   endif
@@ -1138,8 +1146,7 @@ do while (iterns.le.nterup)
       if(ineedy.eq.1) then
         infpar = 0
         do ifac = 1, nfabor
-          if(ia(iitypf-1+ifac).eq.iparoi .or.                       &
-               ia(iitypf-1+ifac).eq.iparug) then
+          if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
             infpar = infpar+1
           endif
         enddo
@@ -1171,9 +1178,9 @@ do while (iterns.le.nterup)
         !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  ,                                              &
-      ia(iitypf)      ,                                              &
+      itypfb ,                                                       &
       ia     ,                                                       &
-      ra(idipar)      ,                                              &
+      dispar ,                                                       &
       ra     )
 
         !     La distance n'a plus a etre mise a jour sauf en ALE
@@ -1198,8 +1205,6 @@ do while (iterns.le.nterup)
     !               et s'il y a des parois (si pas de paroi, pas de y+)
     if(abs(icdpar).eq.1.and.infpar.gt.0) then
 
-      iismph = iisymp
-
       !     On doit conserver la memoire de memcli a cause de RA(IUETBO)
       !       dans DISTYP
 
@@ -1207,9 +1212,9 @@ do while (iterns.le.nterup)
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  ,                                              &
-      ia(iitypf) , ia(iismph),                                       &
+      itypfb ,                                                       &
       ia     ,                                                       &
-      ra(idipar), propce    , ra(iyppar),                            &
+      dispar , propce    , yplpar ,                                  &
       ra     )
 
     endif
@@ -1220,17 +1225,12 @@ do while (iterns.le.nterup)
 
     !     Pas d'amortissement si pas de paroi
     if(infpar.gt.0) then
-      if(iifapa.gt.0) then
-        iiifap = iifapa
-      else
-        iiifap = ifinia
-      endif
       call vandri &
       !==========
     ( ndim   , ncelet , ncel   , nfac   , nfabor ,                 &
-      ia(iitypf) , ifabor, ia(iiifap),                             &
+      itypfb , ifabor , ifapat,                                    &
       ia     ,                                                     &
-      xyzcen , cdgfbo , ra(ivsvdr) , ra(iyppar) ,                  &
+      xyzcen , cdgfbo , visvdr , yplpar ,                          &
       propce ,                                                     &
       ra     )
     endif
@@ -1245,6 +1245,10 @@ do while (iterns.le.nterup)
     write(nfecra,4010)tditot
   endif
 
+  ! Free memory
+  deallocate(icodcl, rcodcl)
+  deallocate(hbord, tbord)
+  deallocate(visvdr)
 
 !===============================================================================
 ! 10. DANS LE CAS  "zero pas de temps" EN "NON SUITE" DE CALCUL
@@ -1343,7 +1347,7 @@ do while (iterns.le.nterup)
       propfa(1,iflmas), propfb(1,iflmab),                            &
       coefa  , coefb  ,                                              &
       ra(ickupd)        , ra(ismace)        ,                        &
-      frcxt  , ra(itpuco)      ,                                     &
+      frcxt  , tpucou ,                                              &
       ra     )
 
     else
@@ -1354,7 +1358,7 @@ do while (iterns.le.nterup)
       nvar   , nscal  , iterns , icvrge ,                            &
       isostd ,                                                       &
       ia     ,                                                       &
-      dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+      dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
       tslagr , coefa  , coefb  , frcxt  ,                            &
       ra(itrava) , ra(iximpa) , ra(iuvwk ) ,                         &
       ra     )
@@ -1581,7 +1585,7 @@ if (iccvfg.eq.0) then
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
     coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
-    ia(iitypf) ,                                                   &
+    itypfb ,                                                       &
     ra     )
 
     !  RELAXATION DE NUSA
@@ -1614,8 +1618,8 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ia(iitypf) ,                                                   &
-   ia(iizfrd) ,                                                   &
+   itypfb ,                                                       &
+   izfrad ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &

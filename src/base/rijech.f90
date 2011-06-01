@@ -123,7 +123,7 @@ integer          ifacpt, iel   , ii    , jj    , kk    , mm
 integer          irkm  , irki  , irkj  , iskm  , iski  , iskj
 integer          ipcrom, ipcroo
 integer          ifac
-integer          inc   , iccocg, ivar0 , iityph
+integer          inc   , iccocg, ivar0
 
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision unssur, vnk   , vnm   , vni   , vnj
@@ -190,7 +190,7 @@ if(abs(icdpar).eq.2) then
 !     On connait la face de paroi correspondante
 
     do iel = 1, ncel
-      ifacpt = ia(iifapa-1+iel)
+      ifacpt = ifapat(iel)
       unssur = 1.d0/surfbn(ifacpt)
       w2(iel)= surfbo(1,ifacpt)*unssur
       w3(iel)= surfbo(2,ifacpt)*unssur
@@ -205,10 +205,8 @@ elseif(abs(icdpar).eq.1) then
 !       La distance a la paroi vaut 0 en paroi
 !         par definition et obeit a un flux nul ailleurs
 
-  iityph = iitypf
   do ifac = 1, nfabor
-    if(ia(iityph+ifac-1).eq.iparoi .or.                           &
-       ia(iityph+ifac-1).eq.iparug) then
+    if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
       coefax(ifac) = 0.0d0
       coefbx(ifac) = 0.0d0
     else
@@ -223,7 +221,7 @@ elseif(abs(icdpar).eq.1) then
   allocate(grad(ncelet,3))
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(ra(idipar))
+    call synsca(dispar)
     !==========
   endif
 
@@ -237,7 +235,7 @@ elseif(abs(icdpar).eq.1) then
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
    ia     ,                                                       &
-   ra(idipar) , coefax , coefbx ,                                 &
+   dispar , coefax , coefbx ,                                     &
    grad   ,                                                       &
    ra     )
 
@@ -466,7 +464,7 @@ enddo
 
 if(abs(icdpar).eq.2) then
   do iel = 1 , ncel
-    ifacpt = ia(iifapa-1+iel)
+    ifacpt = ifapat(iel)
     distxn =                                                      &
           (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2                     &
          +(cdgfbo(2,ifacpt)-xyzcen(2,iel))**2                     &
@@ -479,7 +477,7 @@ if(abs(icdpar).eq.2) then
   enddo
 else
   do iel = 1 , ncel
-    distxn =  max(ra(idipar+iel-1),epzero)
+    distxn =  max(dispar(iel),epzero)
     trrij  = 0.5d0 * (rtpa(iel,ir11) + rtpa(iel,ir22) + rtpa(iel,ir33))
     aa = 1.d0
     bb = cmu075*trrij**1.5d0/(xkappa*rtpa(iel,iep)*distxn)

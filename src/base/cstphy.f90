@@ -40,20 +40,23 @@ module cstphy
   ! tkelvi       --> =  273,15
   ! tkelvn       --> = -273,15
 
-  double precision   tkelvi            , tkelvn
-  parameter (        tkelvi =  273.15d0, tkelvn = -273.15d0)
+  double precision :: tkelvi, tkelvn
+  parameter(tkelvi = 273.15d0, tkelvn = -273.15d0)
 
-  ! calories
+  ! Calories (1 cal = xcal2j J)
 
-  !       1 cal = xcal2j J
-
-  double precision   xcal2j
-  parameter (        xcal2j = 4.1855d0)
+  double precision :: xcal2j
+  parameter(xcal2j = 4.1855d0)
 
   ! Stephan Boltzmann
 
-  double precision   stephn
-  parameter (        stephn = 5.6703d-8)
+  double precision :: stephn
+  parameter(stephn = 5.6703d-8)
+
+  ! Perfect gas constant for air (mixture)
+
+  double precision :: rair
+  parameter(rair = 287.d0)
 
   ! Gravity
 

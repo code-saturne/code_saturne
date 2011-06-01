@@ -249,12 +249,6 @@ module ppincl
   integer, save ::          iqimp(nozppm)  , icalke(nozppm)
   double precision, save :: xintur(nozppm) , dh(nozppm)
 
-  ! Pointeur dans IA sur IZFPPP pour reperage des zones frontieres associees
-  !   aux faces de bord
-  ! Peut etre serait il plus approprie de le verser dans pointe
-
-  integer, save ::           iizfpp
-
   ! NZFPPP Nombre de zones de bord (sur le proc courant)
   ! ILZPPP Liste des numeros de zone de bord (du proc courant)
   ! NOZAPM Numero de zone de bord atteint max

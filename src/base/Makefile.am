@@ -290,7 +290,6 @@ lecamx.f90 \
 majgeo.f90 \
 matrdt.f90 \
 matrix.f90 \
-memcli.f90 \
 memfin.f90 \
 memini.f90 \
 mempdc.f90 \

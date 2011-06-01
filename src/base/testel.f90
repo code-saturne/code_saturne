@@ -127,7 +127,7 @@ iale = 1
 ! Symmetry type:
 ! value 0 avoids extrapolating the gradient on boundary faces.
 do ifac = 1, nfabor
-   ia(iisymp-1+ifac) = 0
+   isympa(ifac) = 0
 enddo
 
 !===============================================================================

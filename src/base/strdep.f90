@@ -163,17 +163,15 @@ call rasize('strdep',ifinra)
 
 indast = 0
 do ifac = 1, nfabor
-  istr = ia(iidfst+ifac-1)
+  istr = idfstr(ifac)
   if (istr.gt.0) then
     do ii = 1, 3
-      forstr(ii,istr) = forstr(ii,istr)                           &
-           + ra(iforbr+(ifac-1)*ndim+ii-1)
+      forstr(ii,istr) = forstr(ii,istr) + forbr(ii,ifac)
     enddo
   else if (istr.lt.0) then
     indast = indast + 1
     do ii = 1, 3
-      ra(iforas+(indast-1)*ndim+ii-1) = asddlf(ii,-istr)          &
-           * ra(iforbr+(ifac-1)*ndim+ii-1)
+      ra(iforas+(indast-1)*ndim+ii-1) = asddlf(ii,-istr)*forbr(ii,ifac)
     enddo
   endif
 enddo
@@ -226,7 +224,7 @@ if (nbstru.gt.0) then
   call usstr2                                                     &
   !==========
  ( nbstru ,                                                       &
-   ia(iidfst),                                                    &
+   idfstr ,                                                       &
    ia     ,                                                       &
    dt     ,                                                       &
    xmstru , xcstru , xkstru , xstreq , xstr   , xpstr  , forstp , &

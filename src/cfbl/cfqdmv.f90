@@ -363,9 +363,7 @@ if (ineedf.eq.1) then
          +(1.d0-extrag(ipr))*pfac)                                &
          +(1.d0-coefb(ifac,iclipr))*pfac
     do isou = 1, 3
-      ra(iforbr+(ifac-1)*ndim + isou-1) =                         &
-           ra(iforbr+(ifac-1)*ndim + isou-1)                      &
-           + pfac*surfbo(isou,ifac)
+      forbr(isou,ifac) = forbr(isou,ifac) + pfac*surfbo(isou,ifac)
     enddo
   enddo
 endif
@@ -471,9 +469,7 @@ if( (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) .and. igrhok.eq.1) then
       xkb = coefa(ifac,iclik)+coefb(ifac,iclik)*xkb
       xkb = d2s3*propce(iel,ipcrom)*xkb
       do isou = 1, 3
-        ra(iforbr+(ifac-1)*ndim + isou-1) =                       &
-             ra(iforbr+(ifac-1)*ndim + isou-1)                    &
-             + xkb*surfbo(isou,ifac)
+        forbr(isou,ifac) = forbr(isou,ifac) + xkb*surfbo(isou,ifac)
       enddo
     enddo
   endif

@@ -97,7 +97,6 @@ use optcal
 use cstnum
 use cstphy
 use entsor
-use pointe
 use parall
 use mesh
 

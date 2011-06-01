@@ -127,7 +127,6 @@ use parall
 use optcal
 use cstphy
 use cstnum
-use pointe
 use ppppar
 use radiat
 use mesh
