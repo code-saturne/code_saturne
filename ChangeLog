@@ -1,3 +1,8 @@
+* 01/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove obsolete input file for YACSGEN.
+  removed file:
+    extras/cs_component.py
+
 * 31/05/2011 - Bertrand Carissimo <bertrand.carissimo@edf.fr>
   Minor fixes for atmospheric modelling.
   modified routines:
