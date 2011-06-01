@@ -30,8 +30,8 @@ subroutine eltssc &
 
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  , ncepdp , ncesmp ,                            &
-   itypfb ,                                                       &
    iscal  ,                                                       &
+   itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
    ia     ,                                                       &
