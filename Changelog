@@ -1,3 +1,8 @@
+* 03/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix machine-name detection for Clamart2 cluster.
+  modified files:
+    bin/cs_profile
+
 * 25/05/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Improved module settings for known architectures.
   modified files:

@@ -39,15 +39,17 @@ if [ "$NOM_ARCH" = "Linux" ] ; then
       NOM_ARCH=calibre7
     fi
   elif [ $(grep -c "Calibre 5" /etc/issue) -ne 0 ] ; then
-    NOM_ARCH=calibre5
+    if [ "`hostname | cut -c1-5`" = "clala" -o "`hostname`" = "clay1pfr" ] ; then
+      NOM_ARCH=clamart2
+    else
+      NOM_ARCH=calibre5
+    fi
   elif [ -d /bgsys/drivers/ppcfloor ] ; then
     NOM_ARCH=Blue_Gene_P
   elif [ "`hostname | cut -c1-6`" = "titane" ] ; then
     NOM_ARCH=titane
   elif [ "`hostname | cut -c1-7`" = "platine" ] ; then
     NOM_ARCH=platine
-  elif [ "`hostname | cut -c1-5`" = "clala" -o "`hostname`" = "clay1pfr" ] ; then
-    NOM_ARCH=clamart2
   fi
 fi
 
