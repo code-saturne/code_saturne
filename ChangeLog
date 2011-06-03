@@ -1,3 +1,10 @@
+* 03/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix error when selecting an invalid preprocessor log file in the boundary
+  conditions definition. Thanks to Bruce Duncan for reporting this issue
+  and providing a patch.
+  modified files:
+    Pages/PreProcessingInformationsView.py
+
 * 31/05/2010 - Bertrand Carissimo <bertrand.carissimo@edf.fr>
   Minor fixes for atmospheric modelling.
   modified routines:

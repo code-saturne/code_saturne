@@ -67,7 +67,7 @@ log.setLevel(GuiParam.DEBUG)
 
 def preprocessorFile(parent, initdir):
     """
-    Verify if the choses of file is correct
+    Verify if the choice of file is correct
     """
     file_name = ""
     title = tr("Select a Code_Saturne Preprocessor listing")
@@ -93,7 +93,7 @@ def preprocessorFile(parent, initdir):
             msg = tr("Warning : the selected file is not a correct file.\n\n"\
                      "Verify your selection")
             QMessageBox.information(parent, title, msg)
-            preprocessorFile(initdir) # ???
+            preprocessorFile(parent, initdir)
 
     return file_name
 
