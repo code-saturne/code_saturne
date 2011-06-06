@@ -28,7 +28,7 @@
 subroutine vorin0 &
 !================
 
- ( nfabor , irepvo )
+ ( nfabor )
 
 !===============================================================================
 !  FONCTION  :
@@ -43,8 +43,6 @@ subroutine vorin0 &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! irepvo           ! te ! --> ! numero de l'entree associe a chaque            !
-!     (nfabor)     !    !     ! face de bord (=0 si pas de vortex)             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -65,7 +63,7 @@ implicit none
 
 ! Arguments
 
-integer          nfabor, irepvo(nfabor)
+integer          nfabor
 
 ! Local variables
 

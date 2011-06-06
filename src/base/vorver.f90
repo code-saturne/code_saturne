@@ -28,7 +28,7 @@
 subroutine vorver &
 !================
 
- ( nfabor , irepvo , iappel )
+ ( nfabor , iappel )
 
 !===============================================================================
 !  FONCTION  :
@@ -43,8 +43,6 @@ subroutine vorver &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! irepvo           ! te ! <-- ! numero de l'entree associe a chaque            !
-!     (nfabor)     !    !     ! face de bord (=0 si pas de vortex)             !
 ! iappel           ! e  ! <-- ! indique les donnes a verifier                  !
 !__________________!____!_____!________________________________________________!
 
@@ -71,7 +69,7 @@ implicit none
 
 ! Arguments
 
-integer          nfabor , irepvo(nfabor)  , iappel
+integer          nfabor , iappel
 
 ! Local variables
 

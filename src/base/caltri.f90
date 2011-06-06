@@ -691,41 +691,36 @@ if (ivrtex.eq.1) then
   idbia1 = ifinia
   idbra1 = ifinra
 
+  allocate(irepvo(nfabor))
+
+  call vorin0(nfabor)
+  !==========
+
   iappel = 1
 
-!  On met une valeur factice a certains parametres non utilise en IAPPEL=1
-
-  call memvor(idbia1, idbra1, iappel, nfabor, ifinia, ifinra)
-  !==========
-
-  call vorin0(nfabor, ia(iirepv))
-  !==========
-
-  call usvort                                                     &
+  call usvort &
   !==========
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   ia(iirepv)      ,                                              &
    ia     ,                                                       &
    ra(idt)    , ra(irtpa) ,                                       &
    ra(ipropc) , propfa , propfb ,                                 &
    coefa  , coefb  ,                                              &
    ra     )
 
-  call vorver ( nfabor , ia(iirepv)  , iappel )
+  call vorver ( nfabor , iappel )
   !==========
 
   idbia1 = ifinia
   idbra1 = ifinra
 
-! Attention, vorpre reserve de la memoire qu'il faut garder ensuite
-!           (-> on utilise IFINIA/IFINRA ensuite)
+  call init_vortex
+  !===============
 
   call vorpre                                                     &
   !==========
  ( idbia1 , idbra1 , ifinia , ifinra ,                            &
    nvar   , nscal  ,                                              &
-   ia(iirepv),                                                    &
    ia     ,                                                       &
    ra(ipropc) , propfa , propfb ,                                 &
    ra     )
@@ -1276,6 +1271,10 @@ deallocate(propfa, propfb)
 if (iphydr.eq.1) then
   deallocate(isostd)
   deallocate(frcxt)
+endif
+
+if (ivrtex.eq.1) then
+  deallocate(irepvo)
 endif
 
 if (iilagr.gt.0) then

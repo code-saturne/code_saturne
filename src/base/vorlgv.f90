@@ -29,7 +29,7 @@ subroutine vorlgv &
 !================
 
  ( ncevor , ient   , dtref  ,                                     &
-   yzcel  , xu     , xv     , xw     )
+   yzc    , xu     , xv     , xw     )
 
 !===============================================================================
 !  FONCTION  :
@@ -47,7 +47,7 @@ subroutine vorlgv &
 !                  !    !     ! utilise la methode                             !
 ! ient             ! e  ! <-- ! numero de l'entree                             !
 ! dtref            ! r  ! <-- ! pas de temps                                   !
-! yzcel            ! tr ! <-- ! coordonnees des faces d'entree dans            !
+! yzc              ! tr ! <-- ! coordonnees des faces d'entree dans            !
 !   (icvmax ,2)    !    !     ! le referentiel local                           !
 ! xu(icvmax)       ! tr ! <-- ! composante de vitesse principale               !
 ! xv(icvmax)       ! tr ! <-- ! composantes de vitesse transverses             !
@@ -77,7 +77,7 @@ implicit none
 integer          ncevor, ient
 
 double precision dtref
-double precision yzcel(icvmax ,2)
+double precision yzc(icvmax ,2)
 double precision xu(icvmax ), xv(icvmax ), xw(icvmax )
 
 !     VARIABLES LOCALES
@@ -100,8 +100,8 @@ double precision phidat, vfluc, yy, zz
 iun = 1
 
 do ii = 1, ncevor
-  yy = yzcel(ii,1)
-  zz = yzcel(ii,2)
+  yy = yzc(ii,1)
+  zz = yzc(ii,2)
 
   iii = 0
   u_vor = phidat(nfecra,icas(ient),ndat(ient),yy,zz,              &
@@ -117,9 +117,9 @@ do ii = 1, ncevor
 
     ufluc = xu(ii) - u_vor
 
-    norme = sqrt(yzcel(ii,1)**2+yzcel(ii,2)**2)
-    costh = yzcel(ii,1) / norme
-    sinth = yzcel(ii,2) / norme
+    norme = sqrt(yzc(ii,1)**2+yzc(ii,2)**2)
+    costh = yzc(ii,1) / norme
+    sinth = yzc(ii,2) / norme
     vfluc = - costh*xv(ii) - sinth*xw(ii)
 
 ! le signe - vient du fait que l'on veut

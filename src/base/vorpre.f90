@@ -30,7 +30,6 @@ subroutine vorpre &
 
  ( idbia0 , idbra0 , ifinia , ifinra ,                            &
    nvar   , nscal  ,                                              &
-   irepvo ,                                                       &
    ia     ,                                                       &
    propce , propfa , propfb ,                                     &
    ra     )
@@ -52,8 +51,6 @@ subroutine vorpre &
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! irepvo           ! te ! <-- ! tab entier pour reperage des faces de          !
-!                  !    !     ! bord pour la methode des vortex                !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -95,7 +92,6 @@ implicit none
 integer          idbia0 , idbra0 , ifinia , ifinra
 integer          nvar   , nscal
 
-integer          irepvo(nfabor)
 integer          ia(*)
 
 double precision propce(ncelet,*)
@@ -109,12 +105,19 @@ integer          ifac, iel, ii
 integer          ient, ipcvis, ipcrom
 integer          iappel
 integer          isurf(nentmx)
+
 double precision xx, yy, zz
 double precision xxv, yyv, zzv
+
+double precision, allocatable, dimension(:,:) :: w1x, w1y, w1z, w1v
 
 !===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(w1x(icvmax,nnent), w1y(icvmax,nnent), w1z(icvmax,nnent))
+allocate(w1v(icvmax,nnent))
 
 idebia = idbia0
 idebra = idbra0
@@ -155,16 +158,6 @@ else
   enddo
 endif
 
-! ICVOR = nombre global de faces utilisant des vortex a l'entree IENT
-
-! ICVMAX = max du nombre global de faces utilisant des vortex
-! (toutes entrees confondues).
-
-iappel = 2
-call memvor                                                       &
-!==========
- ( idebia , idebra , iappel , nfabor , ifinia , ifinra )
-
 idebia = ifinia
 idebra = ifinra
 
@@ -178,7 +171,7 @@ do ient = 1, nnent
   isurf(ient)  = 0
 enddo
 
-! Chaque processeur stocke dans les tableaux RA(IW1X),...
+! Chaque processeur stocke dans les tableaux 'w1x', ...
 ! les coordonnees des faces ou il doit ensuite utiliser des vortex
 
 ipcvis = ipproc(iviscl)
@@ -188,11 +181,10 @@ do ifac = 1, nfabor
   if(ient.ne.0) then
     iel = ifabor(ifac)
     icvor2(ient) = icvor2(ient) + 1
-    ra(iw1x+(ient-1)*icvmax+icvor2(ient)-1)= cdgfbo(1,ifac)
-    ra(iw1y+(ient-1)*icvmax+icvor2(ient)-1)= cdgfbo(2,ifac)
-    ra(iw1z+(ient-1)*icvmax+icvor2(ient)-1)= cdgfbo(3,ifac)
-    ra(iw1v+(ient-1)*icvmax+icvor2(ient)-1) =                     &
-      propce(iel,ipcvis)/propce(iel,ipcrom)
+    w1x(icvor2(ient),ient)= cdgfbo(1,ifac)
+    w1y(icvor2(ient),ient)= cdgfbo(2,ifac)
+    w1z(icvor2(ient),ient)= cdgfbo(3,ifac)
+    w1v(icvor2(ient),ient) = propce(iel,ipcvis)/propce(iel,ipcrom)
     xsurfv(ient) = xsurfv(ient) + sqrt(surfbo(1,ifac)**2          &
       + surfbo(2,ifac)**2 + surfbo(3,ifac)**2)
 !         Vecteur surface d'une face de l'entree
@@ -217,26 +209,22 @@ endif
 ! -------------
 if(irangp.ge.0) then
   do ient = 1, nnent
-    call paragv                                                   &
+    call paragv &
     !==========
- ( icvor2(ient), icvor(ient),                                     &
-   ra(iw1x  + (ient-1)*icvmax)   ,                                &
-   ra(ixyzv + (ient-1)*3*icvmax) )
-    call paragv                                                   &
+ ( icvor2(ient) , icvor(ient)    ,  &
+   w1x(1,ient)  , xyzv(1,1,ient) )
+    call paragv &
     !==========
- ( icvor2(ient), icvor(ient),                                     &
-   ra(iw1y  + (ient-1)*icvmax)              ,                     &
-   ra(ixyzv + (ient-1)*3*icvmax +   icvmax) )
-    call paragv                                                   &
+ ( icvor2(ient) , icvor(ient)    ,  &
+   w1y(1,ient)  , xyzv(1,2,ient) )
+    call paragv &
     !==========
- ( icvor2(ient), icvor(ient),                                     &
-   ra(iw1z  + (ient-1)*icvmax)              ,                     &
-   ra(ixyzv + (ient-1)*3*icvmax + 2*icvmax) )
-    call paragv                                                   &
+ ( icvor2(ient) , icvor(ient)    ,  &
+   w1z(1,ient)  , xyzv(1,3,ient) )
+    call paragv &
     !==========
- ( icvor2(ient), icvor(ient),                                     &
-   ra(iw1v  + (ient-1)*icvmax)   ,                                &
-   ra(ivisv + (ient-1)*3*icvmax) )
+ ( icvor2(ient) , icvor(ient)  ,  &
+   w1v(1,ient)  , visv(1,ient) )
   enddo
 
 !  -> A la fin de cette etape, tous les processeurs connaissent
@@ -248,14 +236,10 @@ else
 ! ----------------------
   do ient = 1,nnent
     do ii = 1, icvor(ient)
-      ra(ixyzv+(ient-1)*3*icvmax+ii-1)=                           &
-           ra(iw1x+(ient-1)*icvmax + ii -1)
-      ra(ixyzv+(ient-1)*3*icvmax+icvmax + ii-1) =                 &
-           ra(iw1y+(ient-1)*icvmax + ii -1)
-      ra(ixyzv+(ient-1)*3*icvmax+2*icvmax + ii-1) =               &
-           ra(iw1z+(ient-1)*icvmax + ii -1)
-      ra(ivisv+(ient-1)*icvmax+ii-1) =                            &
-           ra(iw1v+(ient-1)*icvmax+ii-1)
+      xyzv(ii,1,ient) = w1x(ii,ient)
+      xyzv(ii,2,ient) = w1y(ii,ient)
+      xyzv(ii,3,ient) = w1z(ii,ient)
+      visv(ii,ient) = w1v(ii,ient)
     enddo
   enddo
 endif
@@ -267,11 +251,11 @@ endif
 do ient = 1, nnent
   icvor2(ient) = 0
   do ifac = 1, icvmax
-    ia(iifagl+(ient-1)*icvmax+ifac-1) = 0
+    ifacgl(ifac,ient) = 0
   enddo
 enddo
 
-! On cherche ensuite le numero de la ligne du tableau RA(IXYZV) qui est
+! On cherche ensuite le numero de la ligne du tableau 'xyzv' qui est
 ! associe a la Ieme face d'entree utilisant des vortex (dans la
 ! numerotation chronologique que suit ICVOR2).
 
@@ -283,26 +267,20 @@ do ifac = 1, nfabor
       xx = cdgfbo(1,ifac)
       yy = cdgfbo(2,ifac)
       zz = cdgfbo(3,ifac)
-      xxv = ra(ixyzv+(ient-1)*3*icvmax+ii-1)
-      yyv = ra(ixyzv+(ient-1)*3*icvmax+icvmax+ii-1)
-      zzv = ra(ixyzv+(ient-1)*3*icvmax+2*icvmax+ii-1)
+      xxv = xyzv(ii,1,ient)
+      yyv = xyzv(ii,2,ient)
+      zzv = xyzv(ii,3,ient)
       if(abs(xxv-xx).lt.epzero.and.abs(yyv-yy).lt.epzero.and.     &
            abs(zzv-zz).lt.epzero) then
-        ia(iifagl+(ient-1)*icvmax+icvor2(ient)-1) = ii
+        ifacgl(icvor2(ient),ient) = ii
       endif
     enddo
   endif
 enddo
 
-! La methode de vortex va generer un tableau de vitesse RA(IUVOR)
-! qui aura la meme structure que RA(IXYZV).
-! Le tableau RA(IXYZV) sera envoyee a tous les processeurs
-! la vitesse a imposer à la Ieme face se trouvera à la ligne IA(IIFAGL+I)
-
-iappel = 3
-call memvor                                                       &
-!==========
- ( idebia , idebra , iappel , nfabor , ifinia , ifinra )
+! Allocate temporary arrays
+deallocate(w1x, w1y, w1z)
+deallocate(w1v)
 
 ! ---
 ! FIN

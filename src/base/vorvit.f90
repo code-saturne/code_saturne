@@ -28,9 +28,9 @@
 subroutine vorvit &
 !================
 
- ( ncevor , nvor   , ient   , ivorce , visco  ,                   &
-   yzcel  , xu     , xv     , xw     ,                            &
-   yzvor  , signv  , sigma  , gamma  , temps )
+ ( ncevor , nvor   , ient   , ivocel , visco  ,                   &
+   yzc    , xu     , xv     , xw     ,                            &
+   yzv    , xsignv , xsigma , xgamma , xtmps  )
 
 !===============================================================================
 !  FONCTION  :
@@ -50,23 +50,23 @@ subroutine vorvit &
 !                  !    !     ! utilisee la methode                            !
 ! ient             ! e  ! <-- ! numero de l'entree ou est utilisee             !
 !                  !    !     ! la methode                                     !
-! ivorce           ! te ! <-- ! numero du vortex le plus proche d'une          !
+! ivocel           ! te ! <-- ! numero du vortex le plus proche d'une          !
 !     (nvomax)     !    !     ! face donnee                                    !
 ! visco            ! tr ! <-- ! viscosite cinematique sur les faces            !
 !(icvmax,nnent)    !    !     ! d'entree                                       !
-! yzcel            ! tr ! <-- ! coordonnees des faces d'entree dans            !
+! yzc              ! tr ! <-- ! coordonnees des faces d'entree dans            !
 !   (icvmax ,2)    !    !     ! le referentiel local                           !
 ! xu(icvmax)       ! tr ! <-- ! composante de vitesse principale               !
 ! xv(icvmax)       ! tr ! <-- ! composantes de vitesse transverses             !
 ! xw(icvmax)       ! tr ! <-- !                                                !
-! yzvor            ! tr ! <-- ! coordonnees du centre des vortex               !
+! yzv              ! tr ! <-- ! coordonnees du centre des vortex               !
 !   (nvomax,2)     !    !     !                                                !
-! signv(nvomax)    ! tr ! <-- ! sens de rotation des vortex                    !
-! sigma            ! tr ! <-- ! taille des vortex                              !
+! xsignv(nvomax)   ! tr ! <-- ! sens de rotation des vortex                    !
+! xsigma           ! tr ! <-- ! taille des vortex                              !
 !(nvomax,nnent)    !    !     !                                                !
-! gamma            ! tr ! <-- ! intensite (circulation) des vortex             !
+! xgamma           ! tr ! <-- ! intensite (circulation) des vortex             !
 !(nvomax,2,nnen    !    !     ! dans les deux directions du plan               !
-! temps            ! tr ! <-- ! temps ecoule depuis la creation                !
+! xtmps            ! tr ! <-- ! temps ecoule depuis la creation                !
 !     (nvomax)     !    !     ! du vortex                                      !
 !__________________!____!_____!________________________________________________!
 
@@ -93,12 +93,12 @@ implicit none
 ! Arguments
 
 integer          ncevor , nvor   , ient
-integer          ivorce(nvomax)
+integer          ivocel(nvomax)
 
-double precision yzcel(icvmax,2) , visco(icvmax)
+double precision yzc(icvmax,2) , visco(icvmax)
 double precision xu(icvmax )     , xv(icvmax )     , xw(icvmax )
-double precision yzvor(nvomax,2) , signv(nvomax)   , sigma(nvomax)
-double precision gamma(nvomax,2) , temps(nvomax)
+double precision yzv(nvomax,2) , xsignv(nvomax)   , xsigma(nvomax)
+double precision xgamma(nvomax,2) , xtmps(nvomax)
 
 ! Local variables
 
@@ -120,13 +120,13 @@ alpha = 4.d0 * sqrt(pi * xsurfv(ient)/                            &
        (3.d0 * nvor*(2.d0*log(3.d0)-3.d0*log(2.d0))))
 
 do ii = 1, nvor
-  yy = yzvor(ii,1)
-  zz = yzvor(ii,2)
+  yy = yzv(ii,1)
+  zz = yzv(ii,2)
   iii = 0
   ek_vor =  phidat(nfecra,icas(ient),ndat(ient),yy,zz,            &
        ydat(1,ient),zdat(1,ient),kdat(1,ient),iii)
-  gamma(ii,1) = alpha*sqrt(ek_vor)*signv(ii)
-  gamma(ii,2) = gamma(ii,1)
+  xgamma(ii,1) = alpha*sqrt(ek_vor)*xsignv(ii)
+  xgamma(ii,2) = xgamma(ii,1)
 enddo
 
 !===============================================================================
@@ -135,32 +135,32 @@ enddo
 
 if(isgmvo(ient).eq.1) then
   do ii = 1, nvor
-    sigma(ii) = xsgmvo(ient)
+    xsigma(ii) = xsgmvo(ient)
   enddo
 elseif (isgmvo(ient).eq.2) then
   do ii = 1, nvor
-    yy = yzvor(ii,1)
-    zz = yzvor(ii,2)
+    yy = yzv(ii,1)
+    zz = yzv(ii,2)
     iii = 0
     ek_vor =  phidat(nfecra,icas(ient),ndat(ient),yy,zz,          &
          ydat(1,ient),zdat(1,ient),kdat(1,ient),iii)
     ee_vor =  phidat(nfecra,icas(ient),ndat(ient),yy,zz,          &
          ydat(1,ient),zdat(1,ient),epsdat(1,ient),iii)
-    sigma(ii) = (cmu**(0.75d0))*(ek_vor**(1.5d0))/ee_vor
+    xsigma(ii) = (cmu**(0.75d0))*(ek_vor**(1.5d0))/ee_vor
   enddo
 elseif (isgmvo(ient).eq.3) then
   do ii = 1, nvor
-    yy = yzvor(ii,1)
-    zz = yzvor(ii,2)
+    yy = yzv(ii,1)
+    zz = yzv(ii,2)
     iii = 0
     ek_vor =  phidat(nfecra,icas(ient),ndat(ient),yy,zz,          &
          ydat(1,ient),zdat(1,ient),kdat(1,ient),iii)
     ee_vor =  phidat(nfecra,icas(ient),ndat(ient),yy,zz,          &
          ydat(1,ient),zdat(1,ient),epsdat(1,ient),iii)
-    xvisc  =  visco(ivorce(ii))
+    xvisc  =  visco(ivocel(ii))
     lt = sqrt(5.d0*xvisc*ek_vor/ee_vor)
     lk = 200.d0*(xvisc**3/ee_vor)**(0.25d0)
-    sigma(ii) = max(lt,lk)
+    xsigma(ii) = max(lt,lk)
   enddo
 endif
 
@@ -174,15 +174,15 @@ do ii = 1, ncevor
   vv = 0.d0
   ww = 0.d0
   do jj = 1, nvor
-    yy = yzvor(jj,1)-yzcel(ii,1)
-    zz = yzvor(jj,2)-yzcel(ii,2)
+    yy = yzv(jj,1)-yzc(ii,1)
+    zz = yzv(jj,2)-yzc(ii,2)
     norme = yy**2+zz**2
-    alpha = sigma(jj)
+    alpha = xsigma(jj)
     if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
       theta = -norme/(2.d0*alpha**2)
       theta = exp(theta)
-      dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
-      dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+      dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
+      dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
       vv = vv - dv
       ww = ww + dw
     endif
@@ -199,44 +199,44 @@ do ii = 1, ncevor
 ! Periodicites
 
       if(iclvor(1,ient).eq.3) then
-        if(yzvor(jj,1).gt.0.d0) then
-          yperio = yzvor(jj,1) - lly(ient)
-          zperio = yzvor(jj,2)
+        if(yzv(jj,1).gt.0.d0) then
+          yperio = yzv(jj,1) - lly(ient)
+          zperio = yzv(jj,2)
         else
-          yperio = yzvor(jj,1) + lly(ient)
-          zperio = yzvor(jj,2)
+          yperio = yzv(jj,1) + lly(ient)
+          zperio = yzv(jj,2)
         endif
-        yy = yperio - yzcel(ii,1)
-        zz = zperio - yzcel(ii,2)
+        yy = yperio - yzc(ii,1)
+        zz = zperio - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
-          dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+          dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
+          dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
           vv = vv - dv
           ww = ww + dw
         endif
       endif
 
       if(iclvor(2,ient).eq.3) then
-        if(yzvor(jj,2).gt.0.d0) then
-          yperio = yzvor(jj,1)
-          zperio = yzvor(jj,2) - llz(ient)
+        if(yzv(jj,2).gt.0.d0) then
+          yperio = yzv(jj,1)
+          zperio = yzv(jj,2) - llz(ient)
         else
-          yperio = yzvor(jj,1)
-          zperio = yzvor(jj,2) + llz(ient)
+          yperio = yzv(jj,1)
+          zperio = yzv(jj,2) + llz(ient)
         endif
-        yy = yperio - yzcel(ii,1)
-        zz = zperio - yzcel(ii,2)
+        yy = yperio - yzc(ii,1)
+        zz = zperio - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
-          dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+          dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
+          dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
           vv = vv - dv
           ww = ww + dw
         endif
@@ -246,18 +246,18 @@ do ii = 1, ncevor
 
       if(iclvor(1,ient).eq.1) then
         yparoi = lly(ient)/2.d0
-        zparoi = yzcel(ii,2)
-        yparoi = 2.d0*yparoi - yzvor(jj,1)
-        zparoi = 2.d0*zparoi - yzvor(jj,2)
-        yy = yparoi - yzcel(ii,1)
-        zz = zparoi - yzcel(ii,2)
+        zparoi = yzc(ii,2)
+        yparoi = 2.d0*yparoi - yzv(jj,1)
+        zparoi = 2.d0*zparoi - yzv(jj,2)
+        yy = yparoi - yzc(ii,1)
+        zz = zparoi - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
-          dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+          dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
+          dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
           vv = vv - dv
           ww = ww + dw
         endif
@@ -265,56 +265,56 @@ do ii = 1, ncevor
 
       if(iclvor(3,ient).eq.1) then
         yparoi = - lly(ient)/2.d0
-        zparoi = yzcel(ii,2)
-        yparoi = 2.d0*yparoi - yzvor(jj,1)
-        zparoi = 2.d0*zparoi - yzvor(jj,2)
-        yy = yparoi - yzcel(ii,1)
-        zz = zparoi - yzcel(ii,2)
+        zparoi = yzc(ii,2)
+        yparoi = 2.d0*yparoi - yzv(jj,1)
+        zparoi = 2.d0*zparoi - yzv(jj,2)
+        yy = yparoi - yzc(ii,1)
+        zz = zparoi - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
-          dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+          dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
+          dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
           vv = vv - dv
           ww = ww + dw
         endif
       endif
 
       if(iclvor(2,ient).eq.1) then
-        yparoi = yzcel(ii,1)
+        yparoi = yzc(ii,1)
         zparoi = llz(ient)/2.d0
-        yparoi = 2.d0*yparoi - yzvor(jj,1)
-        zparoi = 2.d0*zparoi - yzvor(jj,2)
-        yy = yparoi - yzcel(ii,1)
-        zz = zparoi - yzcel(ii,2)
+        yparoi = 2.d0*yparoi - yzv(jj,1)
+        zparoi = 2.d0*zparoi - yzv(jj,2)
+        yy = yparoi - yzc(ii,1)
+        zz = zparoi - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
-          dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+          dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
+          dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
           vv = vv - dv
           ww = ww + dw
         endif
       endif
 
       if(iclvor(4,ient).eq.1) then
-        yparoi = yzcel(ii,1)
+        yparoi = yzc(ii,1)
         zparoi = -llz(ient)/2.d0
-        yparoi = 2.d0*yparoi - yzvor(jj,1)
-        zparoi = 2.d0*zparoi - yzvor(jj,2)
-        yy = yparoi - yzcel(ii,1)
-        zz = zparoi - yzcel(ii,2)
+        yparoi = 2.d0*yparoi - yzv(jj,1)
+        zparoi = 2.d0*zparoi - yzv(jj,2)
+        yy = yparoi - yzc(ii,1)
+        zz = zparoi - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
-          dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+          dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
+          dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
           vv = vv - dv
           ww = ww + dw
         endif
@@ -324,68 +324,68 @@ do ii = 1, ncevor
 
       if(iclvor(1,ient).eq.2) then
         ysym = lly(ient)/2.d0
-        zsym = yzcel(ii,2)
-        ysym = 2.d0*ysym - yzvor(jj,1)
-        zsym = 2.d0*zsym - yzvor(jj,2)
-        yy = ysym - yzcel(ii,1)
-        zz = zsym - yzcel(ii,2)
+        zsym = yzc(ii,2)
+        ysym = 2.d0*ysym - yzv(jj,1)
+        zsym = 2.d0*zsym - yzv(jj,2)
+        yy = ysym - yzc(ii,1)
+        zz = zsym - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
+          dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
           vv = vv - dv
         endif
       endif
 
       if(iclvor(3,ient).eq.2) then
         ysym = - lly(ient)/2.d0
-        zsym = yzcel(ii,2)
-        ysym = 2.d0*ysym - yzvor(jj,1)
-        zsym = 2.d0*zsym - yzvor(jj,2)
-        yy = ysym - yzcel(ii,1)
-        zz = zsym - yzcel(ii,2)
+        zsym = yzc(ii,2)
+        ysym = 2.d0*ysym - yzv(jj,1)
+        zsym = 2.d0*zsym - yzv(jj,2)
+        yy = ysym - yzc(ii,1)
+        zz = zsym - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
+          dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
           vv = vv - dv
         endif
       endif
 
       if(iclvor(2,ient).eq.2) then
-        ysym = yzcel(ii,1)
+        ysym = yzc(ii,1)
         zsym = llz(ient)/2.d0
-        ysym = 2.d0*ysym - yzvor(jj,1)
-        zsym = 2.d0*zsym - yzvor(jj,2)
-        yy = ysym - yzcel(ii,1)
-        zz = zsym - yzcel(ii,2)
+        ysym = 2.d0*ysym - yzv(jj,1)
+        zsym = 2.d0*zsym - yzv(jj,2)
+        yy = ysym - yzc(ii,1)
+        zz = zsym - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+          dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
           ww = ww + dw
         endif
       endif
 
       if(iclvor(4,ient).eq.2) then
-        ysym = yzcel(ii,1)
+        ysym = yzc(ii,1)
         zsym = -llz(ient)/2.d0
-        ysym = 2.d0*ysym - yzvor(jj,1)
-        zsym = 2.d0*zsym - yzvor(jj,2)
-        yy = ysym - yzcel(ii,1)
-        zz = zsym - yzcel(ii,2)
+        ysym = 2.d0*ysym - yzv(jj,1)
+        zsym = 2.d0*zsym - yzv(jj,2)
+        yy = ysym - yzc(ii,1)
+        zz = zsym - yzc(ii,2)
         norme = yy**2+zz**2
-        alpha = sigma(jj)
+        alpha = xsigma(jj)
         if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
           theta = -norme/(2.d0*alpha**2)
           theta = exp(theta)
-          dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+          dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
           ww = ww + dw
         endif
       endif
@@ -395,23 +395,23 @@ do ii = 1, ncevor
 ! --------------------
     elseif(icas(ient).eq.2) then
 
-      yparoi = yzcel(ii,1)*((lld(ient)/2.0d0)                     &
-           /sqrt(yzcel(ii,1)**2 + yzcel(ii,2)**2))
-      zparoi = yzcel(ii,2)*((lld(ient)/2.0d0)                     &
-           /sqrt(yzcel(ii,1)**2 + yzcel(ii,2)**2))
-      yparoi = 2.d0*yparoi - yzvor(jj,1)
-      zparoi = 2.d0*zparoi - yzvor(jj,2)
+      yparoi = yzc(ii,1)*((lld(ient)/2.0d0)                     &
+           /sqrt(yzc(ii,1)**2 + yzc(ii,2)**2))
+      zparoi = yzc(ii,2)*((lld(ient)/2.0d0)                     &
+           /sqrt(yzc(ii,1)**2 + yzc(ii,2)**2))
+      yparoi = 2.d0*yparoi - yzv(jj,1)
+      zparoi = 2.d0*zparoi - yzv(jj,2)
 
-      yy = yparoi - yzcel(ii,1)
-      zz = zparoi - yzcel(ii,2)
+      yy = yparoi - yzc(ii,1)
+      zz = zparoi - yzc(ii,2)
       norme = yy**2+zz**2
-      alpha = sigma(jj)
+      alpha = xsigma(jj)
 
       if(norme.gt.epzero.and.norme.lt.4.d0*alpha) then
         theta = -norme/(2.d0*alpha**2)
         theta = exp(theta)
-        dv = zz/norme*(1.d0-theta)*gamma(jj,1)*theta/deuxpi
-        dw = yy/norme*(1.d0-theta)*gamma(jj,2)*theta/deuxpi
+        dv = zz/norme*(1.d0-theta)*xgamma(jj,1)*theta/deuxpi
+        dw = yy/norme*(1.d0-theta)*xgamma(jj,2)*theta/deuxpi
         vv = vv - dv
         ww = ww + dw
       endif
@@ -428,8 +428,8 @@ enddo
 !===============================================================================
 if(icas(ient).eq.1.or.icas(ient).eq.2.or.icas(ient).eq.3) then
   do ii = 1, ncevor
-    yy = yzcel(ii,1)
-    zz = yzcel(ii,2)
+    yy = yzc(ii,1)
+    zz = yzc(ii,2)
     iii = 0
     v_vor = phidat(nfecra,icas(ient),ndat(ient),yy,zz,            &
          ydat(1,ient),zdat(1,ient),vdat(1,ient),iii)

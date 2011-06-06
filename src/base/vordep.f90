@@ -29,8 +29,8 @@ subroutine vordep &
 !================
 
  ( ncevor , nvor   , ient   , dtref  ,                            &
-   ivorce , yzcel  , xu     , xv     , xw     ,                   &
-   yzvor  , yzvora , signv  , temps  , tpslim )
+   ivocel , yzc    , xu     , xv     , xw     ,                   &
+   yzv    , yzva   , xsignv , xtps   , xtpsli )
 
 !===============================================================================
 !  FONCTION  :
@@ -50,21 +50,21 @@ subroutine vordep &
 ! nvor             ! e  ! <-- ! nombre de vortex a l'entree                    !
 ! ient             ! e  ! <-- ! numero de l'entree                             !
 ! dtref            ! r  ! <-- ! pas de temps                                   !
-! ivorce           ! te ! <-- ! numero du vortex le plus proche d'une          !
+! ivocel           ! te ! <-- ! numero du vortex le plus proche d'une          !
 !     (nvomax)     !    !     ! face donnee                                    !
-! yzcel            ! tr ! <-- ! coordonnees des faces d'entree dans            !
+! yzc              ! tr ! <-- ! coordonnees des faces d'entree dans            !
 !   (icvmax ,2)    !    !     ! le referentiel local                           !
 ! xu(icvmax)       ! tr ! --- ! composante de vitesse principale               !
 ! xv(icvmax)       ! tr ! <-- ! composantes de vitesse transverses             !
 ! xw(icvmax)       ! tr ! <-- !                                                !
-! yzvor            ! tr ! --> ! nouvelles coordonnees du centre                !
+! yzv              ! tr ! --> ! nouvelles coordonnees du centre                !
 !   (nvomax,2)     !    !     ! des vortex                                     !
-! yzvora           ! tr ! <-- ! anciennes coordonnees du centre                !
+! yzva             ! tr ! <-- ! anciennes coordonnees du centre                !
 !   (nvomax,2)     !    !     ! des vortex                                     !
-! signv(nvomax)    ! tr ! <-- ! sens de rotation des vortex                    !
-! temps            ! tr ! <-- ! temps ecoule depuis la creation                !
+! xsignv(nvomax)   ! tr ! <-- ! sens de rotation des vortex                    !
+! xtps             ! tr ! <-- ! temps ecoule depuis la creation                !
 !     (nvomax)     !    !     ! du vortex                                      !
-! tpslim           ! tr ! <-- ! duree de vie du vortex                         !
+! xtpsli           ! tr ! <-- ! duree de vie du vortex                         !
 !     (nvomax)     !    !     !                                                !
 !__________________.____._____.________________________________________________.
 
@@ -91,14 +91,14 @@ implicit none
 ! Arguments
 
 integer          ncevor , nvor   , ient
-integer          ivorce(nvomax)
+integer          ivocel(nvomax)
 
 double precision dtref
-double precision yzcel(icvmax ,2)
+double precision yzc(icvmax ,2)
 double precision xu(icvmax)      , xv(icvmax)      , xw(icvmax)
-double precision yzvor(nvomax,2) , yzvora(nvomax,2)
-double precision signv(nvomax)
-double precision temps(nvomax)   , tpslim(nvomax)
+double precision yzv(nvomax,2) , yzva(nvomax,2)
+double precision xsignv(nvomax)
+double precision xtps(nvomax)   , xtpsli(nvomax)
 
 ! Local variables
 
@@ -115,7 +115,7 @@ double precision phidat
 !===============================================================================
 iun = 1
 do ii = 1, nvor
-  temps(ii) = temps(ii) + dtref
+  xtps(ii) = xtps(ii) + dtref
 enddo
 
 ! - Deplacement aleatoire
@@ -123,8 +123,8 @@ enddo
 if(idepvo(ient).eq.1)then
 
   do ii = 1, nvor
-    yzvora(ii,1) = yzvor(ii,1)
-    yzvora(ii,2) = yzvor(ii,2)
+    yzva(ii,1) = yzv(ii,1)
+    yzva(ii,2) = yzv(ii,2)
   enddo
   do ii = 1, nvor
     sens = 1.d0
@@ -132,13 +132,13 @@ if(idepvo(ient).eq.1)then
     if (drand(1).lt.0.5d0) sens = -1.d0
     call zufall(iun,drand(1))
     dy = drand(1) * ud(ient) * dtref
-    yzvor(ii,1) = yzvor(ii,1) + sens * dy
+    yzv(ii,1) = yzv(ii,1) + sens * dy
     sens = 1.d0
     call zufall(iun,drand(1))
     if (drand(1).lt.0.5d0) sens = -1.d0
     call zufall(iun,drand(1))
     dz = drand(1) * ud(ient) * dtref
-    yzvor(ii,2) = yzvor(ii,2) + sens * dz
+    yzv(ii,2) = yzv(ii,2) + sens * dz
   enddo
 
 ! - Convection des vortex
@@ -146,16 +146,16 @@ if(idepvo(ient).eq.1)then
 elseif(idepvo(ient).eq.2) then
 
   do ii = 1, nvor
-    yzvora(ii,1) = yzvor(ii,1)
-    yzvora(ii,2) = yzvor(ii,2)
+    yzva(ii,1) = yzv(ii,1)
+    yzva(ii,2) = yzv(ii,2)
   enddo
 
   do ii = 1, nvor
-    kk = ivorce(ii)
+    kk = ivocel(ii)
     xxv = xv(kk)
     xxw = xw(kk)
-    yzvor(ii,1) = yzvor(ii,1) + dtref * xxv
-    yzvor(ii,2) = yzvor(ii,2) + dtref * xxw
+    yzv(ii,1) = yzv(ii,1) + dtref * xxv
+    yzv(ii,2) = yzv(ii,2) + dtref * xxw
   enddo
 
 endif
@@ -168,80 +168,80 @@ if(icas(ient).eq.1) then
 
   if(iclvor(1,ient).eq.1.or.iclvor(1,ient).eq.2) then
     do ii = 1, nvor
-      if(yzvor(ii,1).gt.(lly(ient)/2.d0)) then
-        yzvor(ii,1) = yzvora(ii,1)
+      if(yzv(ii,1).gt.(lly(ient)/2.d0)) then
+        yzv(ii,1) = yzva(ii,1)
       endif
     enddo
   elseif(iclvor(1,ient).eq.3) then
     do ii = 1, nvor
-      if(yzvor(ii,1).gt.(lly(ient)/2.d0).and.                     &
-        yzvor(ii,1).lt.(3.d0*lly(ient)/2.d0)) then
-        yzvor(ii,1) = yzvor(ii,1) - lly(ient)
-      elseif(yzvor(ii,1).lt.-(lly(ient)/2.d0).and.                &
-        yzvor(ii,1).gt.-(3.d0*lly(ient)/2.d0)) then
-        yzvor(ii,1) = yzvor(ii,1) + lly(ient)
-      elseif(yzvor(ii,1).gt.(3.d0*lly(ient)/2.d0).or.             &
-        yzvor(ii,1).lt.-(3.d0*lly(ient)/2.d0)) then
-        yzvor(ii,1) = yzvora(ii,1)
+      if(yzv(ii,1).gt.(lly(ient)/2.d0).and.                     &
+        yzv(ii,1).lt.(3.d0*lly(ient)/2.d0)) then
+        yzv(ii,1) = yzv(ii,1) - lly(ient)
+      elseif(yzv(ii,1).lt.-(lly(ient)/2.d0).and.                &
+        yzv(ii,1).gt.-(3.d0*lly(ient)/2.d0)) then
+        yzv(ii,1) = yzv(ii,1) + lly(ient)
+      elseif(yzv(ii,1).gt.(3.d0*lly(ient)/2.d0).or.             &
+        yzv(ii,1).lt.-(3.d0*lly(ient)/2.d0)) then
+        yzv(ii,1) = yzva(ii,1)
       endif
     enddo
   endif
 
   if(iclvor(2,ient).eq.1.or.iclvor(2,ient).eq.2) then
     do ii = 1, nvor
-      if(yzvor(ii,2).gt.(llz(ient)/2.d0)) then
-        yzvor(ii,2) = yzvora(ii,2)
+      if(yzv(ii,2).gt.(llz(ient)/2.d0)) then
+        yzv(ii,2) = yzva(ii,2)
       endif
     enddo
   elseif(iclvor(2,ient).eq.3) then
     do ii = 1, nvor
-      if(yzvor(ii,2).gt.(llz(ient)/2.d0).and.                     &
-         yzvor(ii,2).lt.(3.d0*llz(ient)/2.d0)) then
-        yzvor(ii,2) = yzvor(ii,2) - llz(ient)
-      elseif(yzvor(ii,2).lt.-(llz(ient)/2.d0).and.                &
-        yzvor(ii,2).gt.-(3.d0*llz(ient)/2.d0)) then
-        yzvor(ii,2) = yzvor(ii,2) + llz(ient)
-      elseif(yzvor(ii,2).gt.(3.d0*llz(ient)/2.d0).or.             &
-        yzvor(ii,2).lt.-(3.d0*llz(ient)/2.d0)) then
-        yzvor(ii,2) = yzvora(ii,2)
+      if(yzv(ii,2).gt.(llz(ient)/2.d0).and.                     &
+         yzv(ii,2).lt.(3.d0*llz(ient)/2.d0)) then
+        yzv(ii,2) = yzv(ii,2) - llz(ient)
+      elseif(yzv(ii,2).lt.-(llz(ient)/2.d0).and.                &
+        yzv(ii,2).gt.-(3.d0*llz(ient)/2.d0)) then
+        yzv(ii,2) = yzv(ii,2) + llz(ient)
+      elseif(yzv(ii,2).gt.(3.d0*llz(ient)/2.d0).or.             &
+        yzv(ii,2).lt.-(3.d0*llz(ient)/2.d0)) then
+        yzv(ii,2) = yzva(ii,2)
       endif
     enddo
   endif
 
   if(iclvor(3,ient).eq.1.or.iclvor(3,ient).eq.2) then
     do ii = 1, nvor
-      if(yzvor(ii,1).lt.-(lly(ient)/2.d0)) then
-        yzvor(ii,1) = yzvora(ii,1)
+      if(yzv(ii,1).lt.-(lly(ient)/2.d0)) then
+        yzv(ii,1) = yzva(ii,1)
       endif
     enddo
   endif
 
   if(iclvor(4,ient).eq.1.or.iclvor(4,ient).eq.2) then
     do ii = 1, nvor
-      if(yzvor(ii,2).lt.-(llz(ient)/2.d0)) then
-        yzvor(ii,2) = yzvora(ii,2)
+      if(yzv(ii,2).lt.-(llz(ient)/2.d0)) then
+        yzv(ii,2) = yzva(ii,2)
       endif
     enddo
   endif
 
 elseif(icas(ient).eq.2) then
   do ii = 1, nvor
-    if((yzvor(ii,1)**2+yzvor(ii,2)**2).gt.                        &
+    if((yzv(ii,1)**2+yzv(ii,2)**2).gt.                        &
       (lld(ient)/2.0d0)**2)then
-      yzvor(ii,1) = yzvora(ii,1)
-      yzvor(ii,2) = yzvora(ii,2)
+      yzv(ii,1) = yzva(ii,1)
+      yzv(ii,2) = yzva(ii,2)
     endif
   enddo
 
 elseif(icas(ient).eq.3.or.icas(ient).eq.4) then
   do ii = 1, nvor
-    if(yzvor(ii,1).lt.ymin(ient).or.                              &
-      yzvor(ii,1).gt.ymax(ient)) then
-      yzvor(ii,1) = yzvora(ii,1)
+    if(yzv(ii,1).lt.ymin(ient).or.                              &
+      yzv(ii,1).gt.ymax(ient)) then
+      yzv(ii,1) = yzva(ii,1)
     endif
-    if(yzvor(ii,2).lt.zmin(ient).or.                              &
-      yzvor(ii,2).gt.zmax(ient)) then
-      yzvor(ii,2) = yzvora(ii,2)
+    if(yzv(ii,2).lt.zmin(ient).or.                              &
+      yzv(ii,2).gt.zmax(ient)) then
+      yzv(ii,2) = yzva(ii,2)
     endif
   enddo
 endif
@@ -251,40 +251,40 @@ endif
 !===============================================================================
 
 do ii = 1, nvor
-  if(temps(ii).gt.tpslim(ii))then
-    temps(ii) = 0.d0
+  if(xtps(ii).gt.xtpsli(ii))then
+    xtps(ii) = 0.d0
 
 ! - Position
 
     if(icas(ient).eq.1) then
       call zufall(iun,drand(1))
-      yzvor(ii,1) = lly(ient) * drand(1) - lly(ient) / 2.d0
+      yzv(ii,1) = lly(ient) * drand(1) - lly(ient) / 2.d0
       call zufall(iun,drand(1))
-      yzvor(ii,2) = llz(ient) * drand(1) - llz(ient) / 2.d0
+      yzv(ii,2) = llz(ient) * drand(1) - llz(ient) / 2.d0
     elseif(icas(ient).eq.2) then
  15   continue
       call zufall(iun,drand(1))
-      yzvor(ii,1) = lld(ient) * drand(1) - lld(ient) / 2.0d0
+      yzv(ii,1) = lld(ient) * drand(1) - lld(ient) / 2.0d0
       call zufall(iun,drand(1))
-      yzvor(ii,2) = lld(ient) * drand(1) - lld(ient) / 2.0d0
-      if((yzvor(ii,1)**2+yzvor(ii,2)**2).gt.                      &
+      yzv(ii,2) = lld(ient) * drand(1) - lld(ient) / 2.0d0
+      if((yzv(ii,1)**2+yzv(ii,2)**2).gt.                      &
          (lld(ient)/2.0d0)**2) then
         goto 15
       endif
     elseif(icas(ient).eq.3.or.icas(ient).eq.4) then
       call zufall(iun,drand(1))
-      yzvor(ii,1) = ymin(ient) + lly(ient) * drand(1)
+      yzv(ii,1) = ymin(ient) + lly(ient) * drand(1)
       call zufall(iun,drand(1))
-      yzvor(ii,2) = zmin(ient) + llz(ient) * drand(1)
+      yzv(ii,2) = zmin(ient) + llz(ient) * drand(1)
     endif
 
 ! - Duree de vie
 
     if(itlivo(ient).eq.1) then
-      tpslim(ii) = tlimvo(ient)
+      xtpsli(ii) = tlimvo(ient)
     elseif(itlivo(ient).eq.2) then
-      yy = yzvor(ii,1)
-      zz = yzvor(ii,2)
+      yy = yzv(ii,1)
+      zz = yzv(ii,2)
       iii = 0
       u_vor  = phidat(nfecra,icas(ient),ndat(ient),yy,zz,         &
                ydat(1,ient),zdat(1,ient),udat(1,ient),iii)
@@ -292,14 +292,14 @@ do ii = 1, nvor
                ydat(1,ient),zdat(1,ient),kdat(1,ient),iii)
       ee_vor = phidat(nfecra,icas(ient),ndat(ient),yy,zz,         &
                ydat(1,ient),zdat(1,ient),epsdat(1,ient),iii)
-      tpslim(ii) = 5.d0*cmu*ek_vor**(3.d0/2.d0)/ee_vor
-      tpslim(ii) = tpslim(ii)/u_vor
+      xtpsli(ii) = 5.d0*cmu*ek_vor**(3.d0/2.d0)/ee_vor
+      xtpsli(ii) = xtpsli(ii)/u_vor
     endif
 
 ! - Sens de rotation
 
     call zufall(iun,drand(1))
-    if(drand(1).gt.0.5d0) signv(ii) = -1.0d0*signv(ii)
+    if(drand(1).gt.0.5d0) xsignv(ii) = -1.0d0*xsignv(ii)
   endif
 enddo
 
@@ -311,14 +311,14 @@ do ii = 1, nvor
    kk = 0
    dd = grand
    do jj = 1, ncevor
-     if(((yzcel(jj,1)-yzvor(ii,1))**2+                            &
-         (yzcel(jj,2)-yzvor(ii,2))**2).lt.dd)then
-       dd = (yzcel(jj,1)-yzvor(ii,1))**2                          &
-           +(yzcel(jj,2)-yzvor(ii,2))**2
+     if(((yzc(jj,1)-yzv(ii,1))**2+                            &
+         (yzc(jj,2)-yzv(ii,2))**2).lt.dd)then
+       dd = (yzc(jj,1)-yzv(ii,1))**2                          &
+           +(yzc(jj,2)-yzv(ii,2))**2
        kk = jj
      endif
    enddo
-   ivorce(ii) = kk
+   ivocel(ii) = kk
 enddo
 
 ! ---

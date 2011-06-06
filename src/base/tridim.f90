@@ -667,7 +667,6 @@ if (ivrtex.eq.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   ia(iirepv)      ,                                              &
    ia     ,                                                       &
    dt     , rtpa   ,                                              &
    propce , propfa , propfb ,                                     &
@@ -677,19 +676,13 @@ if (ivrtex.eq.1) then
 !     Verification des donnees entrees par l'utilisateur
 !       (au premier passage seulement)
   if (ipass.eq.1) then
-    call vorver ( nfabor , ia(iirepv)  , iappel )
+    call vorver ( nfabor , iappel )
     !==========
   endif
 
   if(irangp.le.0) then
-    call vortex &
+    call vortex
     !==========
- ( ia(iivrce) , ra(ivisv)  , ra(ixyzv) ,                          &
-   ra(iyzcel) , ra(iuvort) , ra(ivvort),                          &
-   ra(iwvort) ,                                                   &
-   ra(iyzvor) , ra(iyzvoa) , ra(isignv),                          &
-   ra(ixsigm) , ra(ixgamm) , ra(ixtmp) ,                          &
-   ra(ixtmpl) )
   endif
 
 ! -- Fin de zone Methode des vortex
@@ -880,7 +873,6 @@ do while (iterns.le.nterup)
   ( ifinia , ifinra ,                                              &
     nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb ,                                     &
-    ia(iirepv)      ,                                              &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , rcodcl ,                                     &

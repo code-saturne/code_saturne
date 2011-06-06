@@ -25,13 +25,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine vortex &
+subroutine vortex
 !================
-
- ( ivorce , visco  , xyz    ,                                     &
-   yzcel  , xu     , xv     , xw     ,                            &
-   yzvor  , yzvora , signv  ,                                     &
-   sigma  , gamma  , temps  , tpslim )
 
 !===============================================================================
 !  FONCTION  :
@@ -44,30 +39,6 @@ subroutine vortex &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ivorce           ! te ! <-- ! numero du vortex le plus proche d'un           !
-!     (nvomax)     !    !     ! vortex donne                                   !
-! visco            ! tr ! <-- ! viscosite cinematique sur les faces            !
-!(icvmax,nnent)    !    !     ! d'entree                                       !
-! xyz(icvmax,3)    !    ! <-- ! coordonnees des cellules d'entree              !
-!                  !    !     ! dans le referentiel global                     !
-! yzcel            ! tr ! <-- ! coordonnees des faces d'entree dans            !
-!   (nelvmx ,2)    !    !     ! le referentiel local                           !
-! xu(nelvmx)       ! tr ! <-- ! composante de vitesse principale               !
-! xv(nelvmx)       ! tr ! <-- ! composantes de vitesse transverses             !
-! xw(nelvmx)       ! tr ! <-- !                                                !
-! yzvor            ! tr ! <-- ! coordonnees du centre des vortex               !
-!   (nvomax,2)     !    !     !                                                !
-! yzvora           ! tr ! <-- ! anciennes coordonnees du centre                !
-!   (nvomax,2)     !    !     ! des vortex                                     !
-! signv(nvomax)    ! tr ! <-- ! sens de rotation des vortex                    !
-! sigma            ! tr ! <-- ! taille des vortex                              !
-!(nvomax,nnent)    !    !     !                                                !
-! gamma            ! tr ! <-- ! intensite des vortex                           !
-!(nvomax,2,nnen    !    !     ! (dans les deux directions du plan)             !
-! temps            ! tr ! <-- ! temps ecoule depuis la creation                !
-!     (nvomax)     !    !     ! du vortex                                      !
-! tpslim           ! tr ! <-- ! duree de vie du vortex                         !
-!(nvomax,nnent)    !    !     !                                                !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -91,17 +62,7 @@ implicit none
 
 ! Arguments
 
-integer          ivorce(nvomax,nnent)
-
-double precision yzcel(icvmax,2,nnent)    , visco(icvmax,nnent)
-double precision xyz(icvmax,3,nnent)      , xu(icvmax,nnent)
-double precision xv(icvmax,nnent)         , xw(icvmax,nnent)
-double precision yzvor(nvomax,2,nnent)    , yzvora(nvomax,2,nnent)
-double precision signv(nvomax,nnent)
-double precision sigma(nvomax,nnent)      , gamma(nvomax,2,nnent)
-double precision temps(nvomax,nnent)      , tpslim(nvomax,nnent)
-
-!     VARIABLES LOCALES
+! Local variables
 
 character        ficsui*32
 
@@ -127,12 +88,12 @@ do ient = 1, nnent
 
   if (ipass.eq.1)then
 
-    call vorini                                                   &
+    call vorini &
     !==========
  ( icvor(ient)     , nvort(ient)     ,                            &
    ient   , ivorce(1,ient)  ,                                     &
-   xyz(1,1,ient)   , yzcel(1,1,ient) ,                            &
-   xu(1,ient)      , xv(1,ient)      , xw(1,ient)      ,          &
+   xyzv(1,1,ient)  , yzcel(1,1,ient) ,                            &
+   uvort(1,ient)   , vvort(1,ient)   , wvort(1,ient)   ,          &
    yzvor(1,1,ient) , signv(1,ient)   , temps(1,ient)   ,          &
    tpslim(1,ient)  )
 
@@ -142,11 +103,11 @@ do ient = 1, nnent
 ! 2. DEPLACEMENT DU VORTEX
 !===============================================================================
 
-  call vordep                                                     &
+  call vordep &
   !==========
  ( icvor(ient)     , nvort(ient)     , ient   , dtref  ,          &
    ivorce(1,ient)  , yzcel(1,1,ient) ,                            &
-   xu(1,ient)      , xv(1,ient)      , xw(1,ient)      ,          &
+   uvort(1,ient)   , vvort(1,ient)   , wvort(1,ient)   ,          &
    yzvor(1,1,ient) , yzvora(1,1,ient), signv(1,ient)   ,          &
    temps(1,ient)   , tpslim(1,ient)  )
 
@@ -157,9 +118,10 @@ do ient = 1, nnent
   call vorvit                                                     &
   !==========
  ( icvor(ient)     , nvort(ient)     , ient   ,                   &
-   ivorce(1,ient)  , visco(1,ient)   ,                            &
-   yzcel(1,1,ient) , xu(1,ient)      , xv(1,ient)       ,         &
-   xw(1,ient)      , yzvor(1,1,ient) , signv(1,ient)    ,         &
+   ivorce(1,ient)  , visv(1,ient)    ,                            &
+   yzcel(1,1,ient) ,                                              &
+   uvort(1,ient)   , vvort(1,ient)   , wvort(1,ient)   ,          &
+   yzvor(1,1,ient) , signv(1,ient)   ,                            &
    sigma(1,ient)   , gamma(1,1,ient) , temps(1,ient)    )
 
 !===============================================================================
@@ -169,8 +131,8 @@ do ient = 1, nnent
   call vorlgv                                                     &
   !==========
  ( icvor(ient)     , ient   , dtref  ,                            &
-   yzcel(1,1,ient) , xu(1,ient)      ,                            &
-   xv(1,ient)      , xw(1,ient)      )
+   yzcel(1,1,ient) ,                                              &
+   uvort(1,ient)   , vvort(1,ient)   , wvort(1,ient)   )
 
 enddo
 

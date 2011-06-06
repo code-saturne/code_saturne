@@ -57,39 +57,37 @@ module vorinc
   ! pointeurs
   ! ---------
 
-  integer, save ::  iirepv , iifagl , iivrce ,                    &
-                    ixyzv  , ivisv  ,                             &
-                    iyzcel , iuvort , ivvort , iwvort ,           &
-                    iyzvor , iyzvoa , isignv , ixsigm ,           &
-                    ixgamm , ixtmp  , ixtmpl ,                    &
-                    iw1x   , iw1y   , iw1z   , iw1v   ,           &
-                    iw2x   , iw2y   , iw2z   , iw2v
+  integer, allocatable, dimension(:) :: irepvo
+  integer, allocatable, dimension(:,:) :: ifacgl, ivorce
 
-  ! iirepv    : debut du tableau associant aux faces de bord
-  !             le numero d'une entree
-  ! iifagl    : debut du tableau de connectivite
-  ! iivrce    : debut du tableau reperant la cellule la plus voisine
+  double precision, allocatable, dimension(:,:,:) :: xyzv, yzcel
+  double precision, allocatable, dimension(:,:,:) :: yzvor , yzvora
+  double precision, allocatable, dimension(:,:) :: uvort, vvort, wvort
+  double precision, allocatable, dimension(:,:) :: visv
+  double precision, allocatable, dimension(:,:) :: signv, sigma
+  double precision, allocatable, dimension(:,:,:) :: gamma
+  double precision, allocatable, dimension(:,:) :: temps, tpslim
+
+  ! irepv    : tableau associant aux faces de bord le numero d'une entree
+  ! ifagl    : tableau de connectivite
+  ! ivrce    : tableau reperant la cellule la plus voisine
   !             de chaque vortex
-  ! ixyzv     : debut du tableaux contenant les coordonnees de
+  ! xyzv     : tableaux contenant les coordonnees de
   !             toutes les faces d'entree
-  ! ivisv     : debut du tableau contenant la viscosite sur
+  ! visv     : tableau contenant la viscosite sur
   !             toutes les faces d'entree
-  ! iyzcel    : debut du tableau contenant les coordonnees des
+  ! yzcel    : tableau contenant les coordonnees des
   !             faces d'entree dans le repere local
-  ! iuvort,...: debuts des tableaux contenant les composantes de vitesse
-  ! iyzvor    : debut du tableau contenant la position des vortex
-  !             dans le repere local
-  ! iyzvoa    : debut du tableau contenant la position des vortex
+  ! uvort,...: tableaux contenant les composantes de vitesse
+  ! yzvor    : du tableau contenant la position des vortex dans le repere local
+  ! yzvoa    : debut du tableau contenant la position des vortex
   !             dans le repere local au pas de temps precedent
-  ! isignv    : debut du tableau contenant le sens de rotation des
+  ! signv    : debut du tableau contenant le sens de rotation des
   !             vortex
-  ! ixsigm    : debut du tableau contenant la taille des vortex
-  ! ixgamm    : debut du tableau contenant l'intensite des vortex
-  ! ixtmp     : debut du tableau contenant le temps cumule
-  ! ixtmpl    : debut du tableau contenant le temps de vie des vortex
-  ! iw1x,...  : debut des tableaux de travails servant a communiquer
-  !             les donnees aux entrees a tous les processeurs
-  !             (plus utilise apres vorpre)
+  ! xsigm    : debut du tableau contenant la taille des vortex
+  ! xgamm    : debut du tableau contenant l'intensite des vortex
+  ! xtmp     : debut du tableau contenant le temps cumule
+  ! xtmpl    : debut du tableau contenant le temps de vie des vortex
 
   ! -----------------
   ! Options de calcul
@@ -151,6 +149,50 @@ module vorinc
 
   ! ficvor : nom du fichier de donnee
   !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  subroutine init_vortex
+
+    allocate(ivorce(nvomax,nnent))
+    allocate(yzcel(icvmax,2,nnent))
+    allocate(visv(icvmax,nnent))
+    allocate(xyzv(icvmax,3,nnent))
+    allocate(uvort(icvmax,nnent))
+    allocate(vvort(icvmax,nnent))
+    allocate(wvort(icvmax,nnent))
+    allocate(yzvor(nvomax,2,nnent))
+    allocate(yzvora(nvomax,2,nnent))
+    allocate(signv(nvomax,nnent))
+    allocate(sigma(nvomax,nnent))
+    allocate(gamma(nvomax,2,nnent))
+    allocate(temps(nvomax,nnent))
+    allocate(tpslim(nvomax,nnent))
+
+  end subroutine init_vortex
+
+  !=============================================================================
+
+  subroutine finalize_vortex
+
+    deallocate(ivorce)
+    deallocate(yzcel)
+    deallocate(visv)
+    deallocate(xyzv)
+    deallocate(uvort)
+    deallocate(vvort)
+    deallocate(wvort)
+    deallocate(yzvor)
+    deallocate(yzvora)
+    deallocate(signv)
+    deallocate(sigma)
+    deallocate(gamma)
+    deallocate(temps)
+    deallocate(tpslim)
+
+  end subroutine finalize_vortex
 
 end module vorinc
 

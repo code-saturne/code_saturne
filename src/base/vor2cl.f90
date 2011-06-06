@@ -31,7 +31,6 @@ subroutine vor2cl &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb ,                                     &
-   irepvo ,                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
@@ -63,8 +62,6 @@ subroutine vor2cl &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-! irepvo           ! te ! <-- ! numero de l'entree associe a chaque            !
-!     (nfabor)     !    !     ! face de bord (=0 si pas de vortex)             !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -121,7 +118,6 @@ integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
-integer          irepvo(nfabor)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -164,11 +160,11 @@ endif
 
 if(irangp.ge.0) then
   do ient = 1, nnent
-    call parbcr(0,icvmax,ra(iuvort+(ient-1)*icvmax))
+    call parbcr(0,icvmax,uvort(1,ient))
     !==========
-    call parbcr(0,icvmax,ra(ivvort+(ient-1)*icvmax))
+    call parbcr(0,icvmax,vvort(1,ient))
     !==========
-    call parbcr(0,icvmax,ra(iwvort+(ient-1)*icvmax))
+    call parbcr(0,icvmax,wvort(1,ient))
     !==========
   enddo
 endif
@@ -181,22 +177,22 @@ do ifac = 1, nfabor
 
   iel = ifabor(ifac)
   ient = irepvo(ifac)
+
   if(ient.ne.0) then
+
     icvor2(ient) = icvor2(ient) + 1
 
     itypfb(ifac) = ientre
-    ii = ia(iifagl+(ient-1)*icvmax+icvor2(ient)-1)
 
-    xu = ra(iuvort+(ient-1)*icvmax+ii-1)
-    xv = ra(ivvort+(ient-1)*icvmax+ii-1)
-    xw = ra(iwvort+(ient-1)*icvmax+ii-1)
+    ii = ifacgl(icvor2(ient),ient)
 
-    rcodcl(ifac,iu,1) = xu*dir3(1,ient)+xv*dir1(1,ient)  &
-         + xw*dir2(1,ient)
-    rcodcl(ifac,iv,1) = xu*dir3(2,ient)+xv*dir1(2,ient)  &
-         + xw*dir2(2,ient)
-    rcodcl(ifac,iw,1) = xu*dir3(3,ient)+xv*dir1(3,ient)  &
-         + xw*dir2(3,ient)
+    xu = uvort(ii,ient)
+    xv = vvort(ii,ient)
+    xw = wvort(ii,ient)
+
+    rcodcl(ifac,iu,1) = xu*dir3(1,ient) + xv*dir1(1,ient) + xw*dir2(1,ient)
+    rcodcl(ifac,iv,1) = xu*dir3(2,ient) + xv*dir1(2,ient) + xw*dir2(2,ient)
+    rcodcl(ifac,iw,1) = xu*dir3(3,ient) + xv*dir1(3,ient) + xw*dir2(3,ient)
 
   endif
 

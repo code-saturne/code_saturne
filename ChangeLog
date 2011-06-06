@@ -1,4 +1,27 @@
 * 06/06/2011 - David Monfort <david.monfort@edf.fr>
+  Translate the remaining specific module (vortex method) into dynamic
+  allocation.
+  removed routines:
+    src/base/memvor.f90
+  modified script:
+    src/base/Makefile.am
+  modified routines:
+    src/base/caltri.f90
+    src/base/memfin.f90
+    src/base/tridim.f90
+    src/base/vor2cl.f90
+    src/base/vordep.f90
+    src/base/vorin0.f90
+    src/base/vorinc.f90
+    src/base/vorini.f90
+    src/base/vorlgv.f90
+    src/base/vorpre.f90
+    src/base/vortex.f90
+    src/base/vorver.f90
+    src/base/vorvit.f90
+    users/base/usvort.f90
+
+* 06/06/2011 - David Monfort <david.monfort@edf.fr>
   Translate memory management of specific modules (head loss, mass source
   terms, 1d thermal wall) into dynamic allocation.
   Also add "zone" arrays for future use (especially in conjunction with GUI).

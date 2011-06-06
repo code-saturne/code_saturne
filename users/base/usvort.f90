@@ -33,7 +33,6 @@ subroutine usvort &
 
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   irepvo ,                                                       &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
@@ -65,8 +64,6 @@ subroutine usvort &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! irepvo           ! te ! <-- ! numero de l'entree associe a chaque            !
-!     (nfabor)     !    !     ! face de bord (=0 si pas de vortex)             !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -103,7 +100,6 @@ implicit none
 integer          nvar   , nscal
 integer          iappel
 
-integer          irepvo(nfabor)
 integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)

@@ -59,6 +59,7 @@ use atincl
 use cfpoin
 use albase
 use cplsat
+use vorinc
 
 !===============================================================================
 
@@ -93,6 +94,10 @@ endif
 
 if (nfpt1d.gt.0) then
   call finalize_pt1d
+endif
+
+if (ivrtex.eq.1) then
+  call finalize_vortex
 endif
 
 return
