@@ -190,6 +190,9 @@ endif
 idebia = idbia0
 idebra = idbra0
 
+ifinia = idebia
+ifinra = idebra
+
 
 ipass = ipass + 1
 
