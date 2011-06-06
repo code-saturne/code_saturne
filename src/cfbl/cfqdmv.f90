@@ -160,7 +160,6 @@ integer          iconvp, idiffp, ndircp, nitmap, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          idiaex, iterns
-integer          iifru
 double precision rnorm , vitnor
 double precision romvom, rtprom
 double precision epsrgp, climgp, extrap, blencp, epsilp
@@ -221,13 +220,6 @@ endif
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
-
-!     Indicateur flux de bord Rusanov
-if(iifbru.gt.0) then
-  iifru = iifbru+nfabor
-else
-  iifru = 1
-endif
 
 !===============================================================================
 ! 2.  GRADIENT DE PRESSION ET GRAVITE
@@ -373,33 +365,29 @@ endif
 !       il est pris en compte par les conditions aux limites dans
 !       le flux de Rusanov
 
-if(iifbru.gt.0) then
+do ifac = 1, nfabor
 
-  do ifac = 1, nfabor
+  if(ifbrus(ifac).eq.1) then
 
-    if(ia(iifru+ifac-1).eq.1) then
+    iel = ifabor(ifac)
 
-      iel = ifabor(ifac)
+    diipbx = diipb(1,ifac)
+    diipby = diipb(2,ifac)
+    diipbz = diipb(3,ifac)
 
-      diipbx = diipb(1,ifac)
-      diipby = diipb(2,ifac)
-      diipbz = diipb(3,ifac)
+    pip = rtp(iel,ipr) &
+        +diipbx*grad(iel,1) +diipby*grad(iel,2) +diipbz*grad(iel,3)
 
-      pip = rtp(iel,ipr) &
-          +diipbx*grad(iel,1) +diipby*grad(iel,2) +diipbz*grad(iel,3)
+    pbord = coefa(ifac,iclrtp(ipr,icoef))                    &
+         + coefb(ifac,iclrtp(ipr,icoef))*pip
 
-      pbord = coefa(ifac,iclrtp(ipr,icoef))                    &
-           + coefb(ifac,iclrtp(ipr,icoef))*pip
+    trav(iel,1) = trav(iel,1) + pbord*surfbo(1,ifac)
+    trav(iel,2) = trav(iel,2) + pbord*surfbo(2,ifac)
+    trav(iel,3) = trav(iel,3) + pbord*surfbo(3,ifac)
 
-      trav(iel,1) = trav(iel,1) + pbord*surfbo(1,ifac)
-      trav(iel,2) = trav(iel,2) + pbord*surfbo(2,ifac)
-      trav(iel,3) = trav(iel,3) + pbord*surfbo(3,ifac)
+  endif
 
-    endif
-
-  enddo
-
-endif
+enddo
 
 ! Free memory
 deallocate(grad)
@@ -765,10 +753,9 @@ do isou = 1, 3
    nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , ireslp , ndircp ,  nitmap ,         &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , iifbru ,                            &
+   ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap , thetap , &
-   ia(iifru) ,                                                    &
    ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &

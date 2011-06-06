@@ -32,7 +32,6 @@ subroutine lagini &
    ncelet , ncel   , nfac   , nfabor ,                            &
    lndnod ,                                                       &
    ifacel , ifabor ,                                              &
-   nbrfac ,                                                       &
    ia     , ra     )
 
 !===============================================================================
@@ -58,7 +57,6 @@ subroutine lagini &
 ! lndnod           ! e  ! --> ! dim. connect. cellules->faces                  !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! nbrfac(ncel)     ! te ! --- ! tableau de travail entier                      !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
@@ -90,20 +88,24 @@ integer          ncelet , ncel
 integer          nfac   , nfabor
 integer          lndnod
 integer          ifacel(2,nfac)  , ifabor(nfabor)
-integer          nbrfac(ncelet)
 integer          ia(*)
 
 double precision ra(*)
 
 ! Local variables
 
-
 integer          idebia , idebra
 integer          iel , ifac , ip
+
+integer, allocatable, dimension(:) :: nbrfac
+
 !===============================================================================
 !===============================================================================
 ! 0. GESTION DE LA MEMOIRE
 !===============================================================================
+
+! Allocate a temporary array
+allocate(nbrfac(ncelet))
 
 idebia = idbia0
 idebra = idbra0
@@ -171,6 +173,9 @@ lndnod = 0
 do iel = 1,ncelet
   lndnod = lndnod + nbrfac(iel)
 enddo
+
+! Free memory
+deallocate(nbrfac)
 
 !===============================================================================
 ! 2. Ouverture du fichier listing specifique lagrangien

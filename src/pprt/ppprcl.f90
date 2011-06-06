@@ -271,8 +271,8 @@ elseif ( ippmod(icompf).ge.0 ) then
 !     Marqueur d'utilisation de Rusanov au bord (0 = non)
 !     Marqueur de flux conductif impose au bord (0 = non)
   do ifac = 1, nfabor
-    ia(iifbru+ifac-1) = 0
-    ia(iifbet+ifac-1) = 0
+    ifbrus(ifac) = 0
+    ifbet(ifac) = 0
   enddo
 
 !     Flux de Rusanov au bord pour Qdm et E

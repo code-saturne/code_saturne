@@ -145,6 +145,8 @@ integer          ivff , iflu , icla , ii , nb
 double precision aa , bb , gmax , gmin , gmoy
 character        chcond*16
 
+double precision, allocatable, dimension(:) :: tabvr
+
 !===============================================================================
 !===============================================================================
 ! 0.  GESTION MEMOIRE
@@ -158,8 +160,6 @@ idebra = idbra0
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
-
-itabvr = 0
 
 if (nbpart.ne.0) then
   aa = 100.d0 / dble(nbpart)
@@ -253,11 +253,8 @@ if (istala.eq.1) then
       write(nfecra,3010)
       write(nfecra,1002)
 
-      ifinia = idebia
-      itabvr = idebra
-      ifinra = itabvr + ncelet
-      call rasize('laglis',ifinra)
-      !==========
+      ! Allocate a work array
+      allocate(tabvr(ncelet))
 
 !     MOYENNE
 
@@ -273,7 +270,7 @@ if (istala.eq.1) then
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis , stativ , ra(itabvr),                &
+   coefa  , coefb  , statis , stativ , tabvr  ,                   &
    ra     )
 
         nbrcel = 0
@@ -283,7 +280,7 @@ if (istala.eq.1) then
         gmoy =  0.d0
 
         do iel = 1,ncel
-          bb = ra(itabvr+iel-1)
+          bb = tabvr(iel)
           if (statis(iel,ilpd).gt.seuil) then
             nbrcel = nbrcel + 1
             gmax = max (gmax, bb)
@@ -302,6 +299,10 @@ if (istala.eq.1) then
         write(nfecra,3020) nomlag(ivf),  gmin, gmax, gmoy
 
       enddo
+
+      ! Free memory
+      deallocate(tabvr)
+
     endif
   endif
 
@@ -331,16 +332,14 @@ if (iensi3.eq.1) then
 
     if (nvisbr.gt.1) then
 
-      itabvr = idebra
-      ifinra = itabvr + nfabor
-      call rasize('laglis',ifinra)
-      !==========
+      ! Allocate a work array
+      allocate(tabvr(nfabor))
 
       do ifac = 1,nfabor
         if (parbor(ifac,inbr).gt.seuilf) then
-          ra(itabvr+ifac-1) = 1.d0 / parbor(ifac,inbr)
+          tabvr(ifac) = 1.d0 / parbor(ifac,inbr)
         else
-          ra(itabvr+ifac-1) = 0.d0
+          tabvr(ifac) = 0.d0
         endif
       enddo
 
@@ -354,11 +353,14 @@ if (iensi3.eq.1) then
        ( ncelet , nfabor , nvisbr ,                               &
          ivff   ,                                                 &
          gmin   , gmax   , gmoy   ,                               &
-         parbor , ra(itabvr)      )
+         parbor , tabvr  )
 
       write(nfecra,6010) nombrd(ivf),  gmin, gmax, gmoy
 
     enddo
+
+    ! Free memory
+    if (allocated(tabvr)) deallocate(tabvr)
 
     write(nfecra,1001)
 

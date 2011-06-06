@@ -172,7 +172,7 @@ enddo
 ! En ALE, on initialise aussi le tableau IALTYB
 if (iale.eq.1) then
   do ifac = 1, nfabor
-    ia(iialty-1+ifac) = 0
+    ialtyb(ifac) = 0
   enddo
 endif
 

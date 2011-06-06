@@ -898,18 +898,12 @@ endif
 
 if (iensi2.eq.1) then
 
-  ifinia = idebia
-  itrav1 = idebra
-  ifinra = itrav1 + 3*nbpmax
-  call rasize ('lagout',ifinra)
-  !==========
-
   call enswaf                                                     &
   !==========
    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      nfin   ,                                                     &
      itepa  ,                                                     &
-     ettp   , tepa , ra(itrav1)   )
+     ettp   , tepa   )
 
 endif
 

@@ -28,12 +28,10 @@
 subroutine memtri &
 !================
 
- ( idbia0 , idbra0 , iverif ,                                     &
+ ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
-   ncofab , nproce , nprofa , nprofb ,                            &
-   iisstd , ifrcx  ,                                              &
-   idt    , itpuco , irtp   , irtpa  , ipropc , ipropf , ipropb , &
-   icoefa , icoefb ,                                              &
+   nproce ,                                                       &
+   idt    , itpuco , irtp   , irtpa  , ipropc ,                   &
    ifinia , ifinra )
 
 !===============================================================================
@@ -49,22 +47,13 @@ subroutine memtri &
 !__________________!____!_____!________________________________________________!
 ! idbia0           ! i  ! <-- ! number of first free position in ia            !
 ! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! iverif           ! e  ! <-- ! indicateur des tests elementaires              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncofab           ! e  ! <-- ! nombre de couple de cl a prevoir               !
 ! nproce           ! e  ! <-- ! nombre de prop phy aux centres                 !
-! nprofa           ! e  ! <-- ! nombre de prop phy aux faces internes          !
-! nprofb           ! e  ! <-- ! nombre de prop phy aux faces de bord           !
-! iisstd           ! e  ! --> ! "pointeur" sur isostd(reperage sortie          !
 ! idt              ! e  ! --> ! "pointeur" sur dt                              !
 ! itpuco           ! e  ! --> ! "pointeur" sur tpucou                          !
 ! irtp, irtpa      ! e  ! --> ! "pointeur" sur rtp, rtpa                       !
 ! ipropc           ! e  ! --> ! "pointeur" sur propce                          !
-! ipropf           ! e  ! --> ! "pointeur" sur propfa                          !
-! ipropb           ! e  ! --> ! "pointeur" sur propfb                          !
-! icoefa, b        ! e  ! --> ! "pointeur" sur coefa, coefb                    !
-! ifrcx            ! e  ! --> ! "pointeur" sur frcxt                           !
 ! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
 ! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
@@ -106,14 +95,11 @@ implicit none
 ! Arguments
 
 integer          idbia0 , idbra0
-integer          iverif
 integer          nvar   , nscal
-integer          ncofab , nproce , nprofa , nprofb
-integer          iisstd , ifrcx
+integer          nproce
 integer          idt    , itpuco
 integer          irtp   , irtpa
-integer          ipropc , ipropf , ipropb
-integer          icoefa , icoefb
+integer          ipropc
 integer          ifinia , ifinra
 
 ! Local variables
@@ -130,102 +116,35 @@ integer          iipuco
 ! 1. INITIALISATION
 !===============================================================================
 
-
 idebia = idbia0
 idebra = idbra0
-
-
-
-
 
 !===============================================================================
 ! 2. PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
 !===============================================================================
 
-! --> Remarques :
-
-!     IPUCOU = 1 ne depend pas de la phase
-
-!     NCOFAB, NPROCE, NPROFA et NPROFB ont ete determines dans VARPOS
-!         et ne servent en tant que dimensions que dans le present
-!         sous programme. On pourrait les passer en common dans numvar.h
-
-!     ITYPFB, ITRIFB et ISYMPA peuvent passer en entier dans certains
-!         sous-pgm, il convient donc qu'ils soient en un seul bloc.
-
-!     Le tableau des zones frontieres des faces de bord pour les
-!         physiques particulieres est de declare ci-dessous (voir PPCLIM)
-
-
-! --> Preparations :
-
-!     Tableaux de travail tpucou
+! Work arrays "tpucou"
 iipuco = 0
 if (ipucou.eq.1 .or. ncpdct.gt.0) then
   iipuco = 1
 endif
 
-! --> Reservation de memoire entiere
+! No integer array
+ifinia = idebia
 
-iisstd = idebia
-ifinia = iisstd + (nfabor+1)*iphydr
-
-if(ippmod(icompf).ge.0) then
-  iifbet = ifinia
-  iifbru = iifbet + nfabor
-  ifinia = iifbru + nfabor
-else
-  iifbet = 0
-  iifbru = 0
-endif
-
-! --> Reservation de memoire reelle
-
-
-icoefa = idebra
-icoefb = icoefa + ndimfb *ncofab
-irtp   = icoefb + ndimfb *ncofab
+! Allocate main real arrays
+irtp   = idebra
 irtpa  = irtp   + ncelet *nvar
 ipropc = irtpa  + ncelet *nvar
-ipropf = ipropc + ncelet *nproce
-ipropb = ipropf + nfac   *nprofa
-idt    = ipropb + ndimfb *nprofb
+idt    = ipropc + ncelet *nproce
 itpuco = idt    + ncelet
-ifrcx  = itpuco + ncelet *ndim*iipuco
-ifinra = ifrcx  + ncelet *ndim*iphydr
-
-! En ALE ou maillage mobile, on reserve des tableaux supplementaires
-! de position initiale
-if (iale.eq.1.or.imobil.eq.1) then
-  ixyzn0 = ifinra
-  ifinra = ixyzn0 + ndim*nnod
-else
-  ixyzn0 = 0
-endif
-
-! En ALE, on reserve des tableaux supplementaires
-! de deplacement et de type de faces de bord
-if (iale.eq.1) then
-  iimpal = ifinia
-  iialty = iimpal + nnod
-  ifinia = iialty + nfabor
-
-  idepal = ifinra
-  ifinra = idepal + ndim*nnod
-else
-  iimpal = 0
-  iialty = 0
-  idepal = 0
-endif
-
-! --> Verification
+ifinra = itpuco + ncelet *ndim*iipuco
 
 call iasize('memtri',ifinia)
 !==========
 
 call rasize('memtri',ifinra)
 !==========
-
 
 !===============================================================================
 ! 3. CORRESPONDANCE POUR POST-TRAITEMENT
@@ -319,8 +238,7 @@ do imom = 1, nbmomt
 !       Type de DT cumule et numero
   idtnm = idtmom(imom)
   if(idtnm.gt.0) then
-    ippmom(ipppro(iprop)) =                                       &
-         ipropc+(ipproc(icdtmo(idtnm))-1)*ncelet
+    ippmom(ipppro(iprop)) = ipropc+(ipproc(icdtmo(idtnm))-1)*ncelet
   elseif(idtnm.lt.0) then
     ippmom(ipppro(iprop)) = idtnm
   endif
@@ -363,8 +281,7 @@ if (iale.eq.1) then
   ippu = ipprtp(iuma)
   ippv = ipprtp(ivma)
   ippw = ipprtp(iwma)
-  if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.                 &
-    ichrvr(ippw).eq.1) then
+  if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.ichrvr(ippw).eq.1) then
     ichrvr(ippv) = 0
     ichrvr(ippw) = 0
     ipp2ra(ippu) = - ipp2ra(ippu)
@@ -375,8 +292,7 @@ if(ippmod(ielarc).ge.2) then
   ippu = ipprtp(isca(ipotva(1)))
   ippv = ipprtp(isca(ipotva(2)))
   ippw = ipprtp(isca(ipotva(3)))
-  if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.                 &
-                           ichrvr(ippw).eq.1) then
+  if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.ichrvr(ippw).eq.1) then
     ichrvr(ippv) = 0
     ichrvr(ippw) = 0
     ipp2ra(ippu) = - ipp2ra(ippu)
@@ -387,8 +303,7 @@ if(ippmod(ielarc).ge.1) then
   ippu = ipppro(ipproc(ilapla(1)))
   ippv = ipppro(ipproc(ilapla(2)))
   ippw = ipppro(ipproc(ilapla(3)))
-  if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.                 &
-                           ichrvr(ippw).eq.1) then
+  if(ichrvr(ippu).eq.1.and.ichrvr(ippv).eq.1.and.ichrvr(ippw).eq.1) then
     ichrvr(ippv) = 0
     ichrvr(ippw) = 0
     ipp2ra(ippu) = - ipp2ra(ippu)

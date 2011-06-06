@@ -83,19 +83,18 @@ double precision ra(*)
 
 ! Local variables
 
-integer          ii, iel, imom, icmom, idtcm, itravm, ifinra
+integer          ii, iel, imom, icmom, idtcm, ifinra
 integer          jmom, icumut
+
+double precision, allocatable, dimension(:) :: travm
 
 !===============================================================================
 
 !     PHASE DE CUMUL DES TERMES
 !     =========================
 
-! Pour un tableau, on reserve la memoire ici.
-
-itravm = idbra0
-ifinra  = itravm + ncelet
-call rasize('calmom',ifinra)
+! Allocate a temporary array
+allocate(travm(ncelet))
 
 ! Boucle et test sur les moments a calculer
 do imom = 1, nbmomt
@@ -106,7 +105,7 @@ do imom = 1, nbmomt
 
 !   Tableau de travail pour recueillir la correlation par cellule
     do iel = 1, ncel
-      ra(itravm+iel-1) = 1.d0
+      travm(iel) = 1.d0
     enddo
 
 !   Calcul de la correlation (on suppose qu'il y a au moins une variable)
@@ -115,14 +114,12 @@ do imom = 1, nbmomt
 !     Si la variable est dans RTP
       if(idfmom(ii,imom).gt.0) then
         do iel = 1, ncel
-          ra(itravm+iel-1) =                                      &
-          ra(itravm+iel-1) * rtp(iel,idfmom(ii,imom))
+          travm(iel) = travm(iel) * rtp(iel,idfmom(ii,imom))
         enddo
 !     Si la variable est dans PROPCE
       elseif(idfmom(ii,imom).lt.0) then
         do iel = 1, ncel
-          ra(itravm+iel-1) =                                      &
-          ra(itravm+iel-1) * propce(iel,ipproc(-idfmom(ii,imom)))
+          travm(iel) = travm(iel) * propce(iel,ipproc(-idfmom(ii,imom)))
         enddo
       endif
 
@@ -130,8 +127,7 @@ do imom = 1, nbmomt
 
 !   Incrementation du tableau de cumul des correlations
     do iel = 1, ncel
-      propce(iel,icmom) =                                         &
-      propce(iel,icmom) + dt(iel)*ra(itravm+iel-1)
+      propce(iel,icmom) = propce(iel,icmom) + dt(iel)*travm(iel)
     enddo
 
 !   Incrementation du tableau de cumul du temps (ncel ou constante)
@@ -164,6 +160,9 @@ do imom = 1, nbmomt
 
   endif
 enddo
+
+! Free memory
+deallocate(travm)
 
 return
 

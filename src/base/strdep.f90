@@ -33,7 +33,7 @@ subroutine strdep &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   flmalf , flmalb , cofale , xprale , depale ,                   &
+   flmalf , flmalb , cofale , xprale ,                            &
    ra     )
 
 !===============================================================================
@@ -109,7 +109,6 @@ integer          nvar
 
 integer          ia(*)
 
-double precision depale(nnod,3)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
@@ -127,6 +126,8 @@ integer          indast
 integer          icvext, icvint, icv
 
 double precision delta
+
+double precision, allocatable, dimension(:,:) :: forast
 
 !===============================================================================
 
@@ -156,10 +157,8 @@ do istr = 1, nbstru
   enddo
 enddo
 
-iforas = idebra
-ifinra = iforas + 3*nbfast
-call rasize('strdep',ifinra)
-!==========
+! Allocate a temporary array
+allocate(forast(3,nbfast))
 
 indast = 0
 do ifac = 1, nfabor
@@ -171,7 +170,7 @@ do ifac = 1, nfabor
   else if (istr.lt.0) then
     indast = indast + 1
     do ii = 1, 3
-      ra(iforas+(indast-1)*ndim+ii-1) = asddlf(ii,-istr)*forbr(ii,ifac)
+      forast(ii,indast) = asddlf(ii,-istr)*forbr(ii,ifac)
     enddo
   endif
 enddo
@@ -191,9 +190,12 @@ enddo
 
 !     Envoi de l'effort applique aux structures externes
 if (nbaste.gt.0) then
-  call astfor(ntcast, nbfast, ra(iforas))
+  call astfor(ntcast, nbfast, forast)
   !==========
 endif
+
+! Free memory
+deallocate(forast)
 
 !     Si on est en phase d'initialisation du fluide
 if (itrale.le.nalinf) then

@@ -35,10 +35,6 @@ module albase
   !  iale   : utilisation de la methode ALE
   !         = 0 sans methode ALE
   !         = 1 avec methode ALE
-  !  iimpal : pointeur sur impale, indicateur de deplacement impose
-  !  ixyzn0 : pointeur sur xyzno0, position initiale du maillage
-  !  idepal : pointeur sur depale, deplacement du maillage
-  !  iialty : pointeur sur ialtyb, type de bord
   !  nalinf : nombre d'iterations d'initialisation du fluide
   !  nalimx : nombre maximal d'iterations d'implicitation du deplacement
   !           des structures
@@ -51,10 +47,61 @@ module albase
   !         = 0 non
   !         = 1 oui
 
-  integer, save :: iale  , iimpal, ixyzn0, idepal, iialty, nalinf
+  integer, save :: iale  , nalinf
   integer, save :: nalimx, iortvm, italin
 
   double precision, save :: epalim
+
+  !  impale : indicateur de deplacement impose
+  !  xyzno0 : position initiale du maillage
+  !  depale : deplacement du maillage
+  !  ialtyb : type de bord
+
+  integer, allocatable, dimension(:) :: impale, ialtyb
+
+  double precision, allocatable, dimension(:,:) :: xyzno0, depale
+
+contains
+
+  !=============================================================================
+
+  subroutine init_ale ( ncelet , ncel , nfac , nfabor , nnod )
+
+    use cplsat
+
+    ! Arguments
+
+    integer, intent(in) :: ncelet, ncel, nfac, nfabor, nnod
+
+    if (iale.eq.1.or.imobil.eq.1) then
+      allocate(xyzno0(3,nnod))
+    endif
+
+    if (iale.eq.1) then
+      allocate(impale(nnod))
+      allocate(ialtyb(nfabor))
+      allocate(depale(nnod,3))
+    endif
+
+  end subroutine init_ale
+
+  !=============================================================================
+
+  subroutine finalize_ale
+
+    use cplsat
+
+    if (iale.eq.1.or.imobil.eq.1) then
+      deallocate(xyzno0)
+    endif
+
+    if (iale.eq.1) then
+      deallocate(impale)
+      deallocate(depale)
+      deallocate(ialtyb)
+    endif
+
+  end subroutine finalize_ale
 
   !=============================================================================
 

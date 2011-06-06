@@ -31,18 +31,39 @@ module cfpoin
 
   !=============================================================================
 
-  !      Accessibles directement dans ia, ra
-
-  ! Pointeur Dimension       Description
-  ! iifbet ! nfabor        ! indicateur flux thermique au bord impose
+  ! Tableau Dimension       Description
+  ! ifbet  ! nfabor        ! indicateur flux thermique au bord impose
   !                          (il faut annuler des contributions de bord
   !                           de l'eq de E)
-  ! iifbru ! nfabor        ! indicateur flux de bord calcule par rusanov
+  ! ifbrus ! nfabor        ! indicateur flux de bord calcule par rusanov
   !                          (il faut annuler des contributions de bord
   !                           de l'eq de Qdm et de l'eq de E)
 
-  integer, save :: iifbet , iifbru
+  integer, allocatable, dimension(:) :: ifbet , ifbrus
+
+contains
 
   !=============================================================================
+
+  subroutine init_compf ( nfabor)
+
+    implicit none
+
+    integer nfabor
+
+    allocate(ifbet(nfabor))
+    allocate(ifbrus(nfabor))
+
+  end subroutine init_compf
+
+  !=============================================================================
+
+  subroutine finalize_compf
+
+    implicit none
+
+    deallocate(ifbet, ifbrus)
+
+  end subroutine finalize_compf
 
 end module cfpoin

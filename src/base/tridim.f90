@@ -141,7 +141,6 @@ integer          ncp   , ncv   , iok
 integer          iicodc, ircodc
 integer          ihbord, itbord
 integer          iiptot
-integer          itrava, iximpa, iuvwk
 integer          nbccou
 integer          ntrela
 
@@ -154,8 +153,7 @@ integer          iflua , iflub
 integer          iterns, inslst, icvrge, ivsvdr
 integer          iflmas, iflmab
 integer          italim, itrfin, itrfup, ineefl
-integer          iflalf, iflalb, iprale, icoale
-integer          iilzfb, nbzfmx, nozfmx, iqcalc
+integer          nbzfmx, nozfmx
 
 double precision cpcst , tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
@@ -170,7 +168,12 @@ integer          infpar
 save             infpar
 
 integer, allocatable, dimension(:,:) :: icodcl
+integer, allocatable, dimension(:) :: ilzfbr
 
+double precision, allocatable, dimension(:,:) :: uvwk, ximpa, trava
+double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
+double precision, allocatable, dimension(:,:) :: cofale
+double precision, allocatable, dimension(:) :: qcalc
 double precision, allocatable, dimension(:,:,:) :: rcodcl
 double precision, allocatable, dimension(:) :: hbord, tbord
 double precision, allocatable, dimension(:) :: visvdr
@@ -498,9 +501,7 @@ if (imobil.eq.1) then
     do ii = 1, 3
       xyznod(ii,inod) = 0.d0
       do jj = 1, 3
-        xyznod(ii,inod) = xyznod(ii,inod) &
-                        + rrotgb(ii,jj)*ra(ixyzn0+(inod-1)*ndim+jj-1)
-
+        xyznod(ii,inod) = xyznod(ii,inod) + rrotgb(ii,jj)*xyzno0(jj,inod)
       enddo
     enddo
   enddo
@@ -701,10 +702,6 @@ italim = 1
 itrfin = 1
 idbia1 = idebia
 idbra1 = idebra
-iflalf = 1
-iflalb = 1
-icoale = 1
-iprale = 1
 ineefl = 0
 if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 !     On reserve certains tableaux pour permettre le retour a l'etat
@@ -718,11 +715,10 @@ if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 !         necessaire ...
 !       Pas la peine de tester les depassements car on passe dans
 !       memcli juste apres.
-  iflalf = idebra
-  iflalb = iflalf + nfac
-  icoale = iflalb + nfabor
-  iprale = icoale + 8*nfabor
-  idbra1 = iprale + ncelet
+  allocate(flmalf(nfac))
+  allocate(flmalb(nfabor))
+  allocate(cofale(nfabor,8))
+  allocate(xprale(ncelet))
   ineefl = 1
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfin = 0
@@ -738,14 +734,11 @@ endif
 !     pour Syrthes, T1D ou rayonnement.
 itrfup = 1
 
-iximpa = 1
-iuvwk  = 1
-itrava = 1
 if (nterup.gt.1) then
-  iximpa = idbra1
-  iuvwk  = iximpa + ncelet*ndim
-  itrava = iuvwk  + ncelet*ndim
-  idbra1 = itrava + ncelet*ndim
+
+  allocate(ximpa(ncelet,ndim))
+  allocate(uvwk(ncelet,ndim))
+  allocate(trava(ncelet,ndim))
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 
@@ -808,25 +801,25 @@ do while (iterns.le.nterup)
 
       nbzfmx = nbzppm
       nozfmx = nozppm
-      iilzfb = ifinia
-      ifnia1 = iilzfb + nbzfmx
-      iqcalc = ifinra
-      ifnra1 = iqcalc + nozfmx
-      call iasize('tridim',ifnia1)
-      call rasize('tridim',ifnra1)
+      allocate(ilzfbr(nbzfmx))
+      allocate(qcalc(nozfmx))
 
       call stdtcl &
       !==========
-    ( ifnia1 , ifnra1 ,                                              &
+    ( ifinia , ifinra ,                                              &
       nvar   , nscal  , nbzfmx , nozfmx ,                            &
       iqimp  , icalke , qimp   , dh , xintur,                        &
       icodcl , itrifb , itypfb , izfppp ,                            &
-      ia(iilzfb)      ,                                              &
+      ilzfbr ,                                                       &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , rcodcl ,                                     &
-      ra(iqcalc)      ,                                              &
+      qcalc  ,                                                       &
       ra     )
+
+      ! Free memory
+      deallocate(ilzfbr)
+      deallocate(qcalc)
 
     endif
 
@@ -916,7 +909,7 @@ do while (iterns.le.nterup)
   if (iale.eq.1) then
 
     do ii = 1, nnod
-      ia(iimpal+ii-1) = 0
+      impale(ii) = 0
     enddo
 
     ! - Interface Code_Saturne
@@ -928,9 +921,9 @@ do while (iterns.le.nterup)
       !==========
     ( nfabor, nozppm,                    &
       ibfixe, igliss, ivimpo,            &
-      ia(iialty), ipnfbr, nnod, nodfbr,  &
-      ia(iimpal),                        &
-      ra(idepal),                        &
+      ialtyb, ipnfbr, nnod, nodfbr,      &
+      impale,                            &
+      depale,                            &
       dtref, ttcabs, ntcabs,             &
       iuma, ivma, iwma,                  &
       rcodcl)
@@ -941,21 +934,21 @@ do while (iterns.le.nterup)
     !==========
   ( itrale ,                                                       &
     nvar   , nscal  ,                                              &
-    icodcl , itypfb , ia(iialty)      ,                            &
-    ia(iimpal)      ,                                              &
+    icodcl , itypfb , ialtyb ,                                     &
+    impale ,                                                       &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , rcodcl ,                                     &
-    ra(ixyzn0)      , ra(idepal)      ,                            &
+    xyzno0 , depale ,                                              &
     ra     )
 
     !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
     !       remet le deplacement initial
     do ii  = 1, nnod
-      if (ia(iimpal+ii-1).eq.0) then
-        ra(idepal+ii-1       ) = xyznod(1,ii)-ra(ixyzn0+(ii-1)*ndim  )
-        ra(idepal+ii-1+  nnod) = xyznod(2,ii)-ra(ixyzn0+(ii-1)*ndim+1)
-        ra(idepal+ii-1+2*nnod) = xyznod(3,ii)-ra(ixyzn0+(ii-1)*ndim+2)
+      if (impale(ii).eq.0) then
+        depale(ii,1) = xyznod(1,ii)-xyzno0(1,ii)
+        depale(ii,2) = xyznod(2,ii)-xyzno0(2,ii)
+        depale(ii,3) = xyznod(3,ii)-xyzno0(3,ii)
       endif
     enddo
 
@@ -965,11 +958,11 @@ do while (iterns.le.nterup)
       call strpre &
       !==========
     ( ifinia , ifinra , itrale , italim , ineefl ,                   &
-      ia(iimpal)      ,                                              &
+      impale ,                                                       &
       ia     ,                                                       &
       rtp    , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
-      ra(iflalf), ra(iflalb), ra(iprale), ra(icoale), ra(idepal),    &
+      flmalf , flmalb , xprale , cofale , depale ,                   &
       ra     )
 
     endif
@@ -1136,8 +1129,8 @@ do while (iterns.le.nterup)
     endif
 
 
-    ! On ne fait le calcul que s'il y a des parois (RA(IDIPAR) est reserve
-    !   et initialise a GRAND avant. S'il n'y a pas de paroi, il restera = GRAND)
+    ! On ne fait le calcul que s'il y a des parois, 'dispar'  est reserve
+    ! et initialise a GRAND avant. S'il n'y a pas de paroi, il restera = GRAND)
 
     ! Pour le moment, on suppose que l'on peut se contenter de faire
     !  cela au premier passage, sauf avec les maillages mobiles. Attention donc
@@ -1174,7 +1167,7 @@ do while (iterns.le.nterup)
       else
 
 
-        !     On doit conserver la memoire de memcli a cause de RA(IUETBO)
+        !     On doit conserver la memoire de memcli a cause de 'uetbor'
         !       dans DISTYP (uniquement en LES avec van Driest mais tant pis)
 
         call distpr &
@@ -1208,7 +1201,7 @@ do while (iterns.le.nterup)
     !               et s'il y a des parois (si pas de paroi, pas de y+)
     if(abs(icdpar).eq.1.and.infpar.gt.0) then
 
-      !     On doit conserver la memoire de memcli a cause de RA(IUETBO)
+      !     On doit conserver la memoire de memcli a cause de 'uetbor'
       !       dans DISTYP
 
       call distyp                                                 &
@@ -1364,7 +1357,7 @@ do while (iterns.le.nterup)
       ia     ,                                                       &
       dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
       tslagr , coefa  , coefb  , frcxt  ,                            &
-      ra(itrava) , ra(iximpa) , ra(iuvwk ) ,                         &
+      trava  , ximpa  , uvwk   ,                                     &
       ra     )
 
       !     Mise a jour de la pression si on utilise un couplage vitesse/pression
@@ -1427,6 +1420,13 @@ enddo
 
 100 continue
 
+! Free memory
+if (nterup.gt.1) then
+  deallocate(uvwk)
+  deallocate(ximpa)
+  deallocate(trava)
+endif
+
 ! Calcul sur champ de vitesse fige SUITE (a cause de la boule U/P)
 if (iccvfg.eq.0) then
 !===============
@@ -1444,7 +1444,7 @@ if (iccvfg.eq.0) then
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
-    ra(iflalf), ra(iflalb), ra(icoale), ra(iprale), ra(idepal),    &
+    flmalf , flmalb , cofale , xprale ,                            &
     ra     )
 
     !     On boucle eventuellement sur de deplacement des structures
@@ -1453,9 +1453,12 @@ if (iccvfg.eq.0) then
       goto 300
     endif
 
-  endif
+    ! Free memory
+    deallocate(flmalf, flmalb)
+    deallocate(cofale)
+    deallocate(xprale)
 
-  ! --- On libere les tableaux IFLALF, IFLALB ICOALE et IPRALE
+  endif
 
   !     On ne passe dans SCHTMP que si ISTMPF.EQ.0 (explicite)
   !     On teste le flux de masse de la phase 1 (toutes les phases sont

@@ -33,7 +33,7 @@ subroutine recvmc &
    ia     ,                                                       &
    rom    , flumas , flumab ,                                     &
    ux     , uy     , uz     ,                                     &
-   bx     , by     , bz     , cocg   ,                            &
+   bx     , by     , bz     ,                                     &
    ra     )
 
 !===============================================================================
@@ -59,8 +59,6 @@ subroutine recvmc &
 ! ux   uy          ! tr ! --> ! vitesse reconstruite                           !
 ! uz   (ncelet     ! tr !     !                                                !
 ! bx,y,z(ncelet    ! tr ! --- ! tableau de travail                             !
-! cocg             ! tr ! --- ! tableau de travail                             !
-!   (ncelet,3,3    !    !     !                                                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -92,7 +90,6 @@ double precision rom(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision ux  (ncelet), uy  (ncelet), uz  (ncelet)
 double precision bx(ncelet),   by(ncelet),   bz(ncelet)
-double precision cocg(ncelet,3,3)
 double precision ra(*)
 
 ! Local variables
@@ -109,6 +106,8 @@ double precision cocg31, cocg32, cocg33
 double precision smbx, smby, smbz, unsrho
 double precision vecfac, pfacx, pfacy, pfacz
 
+double precision, allocatable, dimension(:,:,:) :: cocg
+
 !===============================================================================
 
 idebia = idbia0
@@ -117,6 +116,9 @@ idebra = idbra0
 !===============================================================================
 ! 1. CALCUL DE LA MATRICE
 !===============================================================================
+
+! Allocate a temporary array
+allocate(cocg(ncelet,3,3))
 
 !   INITIALISATION
 
@@ -321,6 +323,9 @@ do iel = 1, ncel
   uz  (iel) = (cocg(iel,3,1)*smbx+cocg(iel,3,2)*smby              &
               +cocg(iel,3,3)*smbz)*unsrho
 enddo
+
+! Free memory
+deallocate(cocg)
 
 !----
 ! FIN

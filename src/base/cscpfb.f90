@@ -105,13 +105,8 @@ double precision ra(*)
 
 integer          idebia , idebra , ifinia , ifinra
 
-integer          itrav1 , itrav2 , itrav3 , itrav4 , itrav5
-integer          itrav6 , itrav7 , itrav8 , itrav
-
 integer          ipt    , ifac   , iel    , isou
 integer          ivar   , iscal  , ipcrom
-integer          itravx , itravy , itravz
-integer          igradx , igrady , igradz
 integer          inc    , iccocg , iclvar, nswrgp
 integer          iwarnp , imligp
 integer          ipos
@@ -126,6 +121,8 @@ double precision omegal(3), omegad(3), omegar(3), omgnrl, omgnrd, omgnrr
 double precision vitent, daxis2
 
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: trav1, trav2, trav3, trav4
+double precision, allocatable, dimension(:) :: trav5, trav6, trav7, trav8
 
 !===============================================================================
 
@@ -138,8 +135,6 @@ allocate(grad(ncelet,3))
 
 ! Initialize variables to avoid compiler warnings
 
-itrav = 0
-
 vitent = 0.d0
 
 ! Memoire
@@ -147,18 +142,16 @@ vitent = 0.d0
 idebia = idbia0
 idebra = idbra0
 
-itrav1 = idebra
-itrav2 = itrav1 + nptdis
-itrav3 = itrav2 + nptdis
-itrav4 = itrav3 + nptdis
-itrav5 = itrav4 + nptdis
-itrav6 = itrav5 + nptdis
-itrav7 = itrav6 + nptdis
-itrav8 = itrav7 + nptdis
-ifinra = itrav8 + nptdis
+! Allocate temporary arrays
 
-call rasize('cscpfb',ifinra)
-
+allocate(trav1(nptdis))
+allocate(trav2(nptdis))
+allocate(trav3(nptdis))
+allocate(trav4(nptdis))
+allocate(trav5(nptdis))
+allocate(trav6(nptdis))
+allocate(trav7(nptdis))
+allocate(trav8(nptdis))
 
 d2s3 = 2.d0/3.d0
 
@@ -494,7 +487,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
+      trav1(ipt) = rtp(iel,ik)                         &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -511,7 +504,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
+      trav1(ipt) = rtp(iel,ik)                         &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -558,7 +551,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
+      trav2(ipt) = rtp(iel,iep)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -575,7 +568,7 @@ if (itytur.eq.2) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
+      trav2(ipt) = rtp(iel,iep)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -594,7 +587,7 @@ if (itytur.eq.2) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+      rvdis(ipt,ipos) = trav1(ipt)
     enddo
 
     !           Dissipation turbulente
@@ -602,7 +595,7 @@ if (itytur.eq.2) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
+      rvdis(ipt,ipos) = trav2(ipt)
     enddo
 
     !=======================================================================
@@ -620,7 +613,7 @@ if (itytur.eq.2) then
       ipos = ipos + 1
 
       do ipt = 1, nptdis
-        rvdis(ipt,ipos) = d2s3*ra(itrav1 + ipt-1)
+        rvdis(ipt,ipos) = d2s3*trav1(ipt)
       enddo
 
     enddo
@@ -661,14 +654,14 @@ if (itytur.eq.2) then
         iel = locpts(ipt)
 
         if(isou.eq.1) then
-          ra(itrav3 + ipt-1) = grad(iel,2)
-          ra(itrav4 + ipt-1) = grad(iel,3)
+          trav3(ipt) = grad(iel,2)
+          trav4(ipt) = grad(iel,3)
         elseif(isou.eq.2) then
-          ra(itrav5 + ipt-1) = grad(iel,1)
-          ra(itrav6 + ipt-1) = grad(iel,3)
+          trav5(ipt) = grad(iel,1)
+          trav6(ipt) = grad(iel,3)
         elseif(isou.eq.3) then
-          ra(itrav7 + ipt-1) = grad(iel,1)
-          ra(itrav8 + ipt-1) = grad(iel,2)
+          trav7(ipt) = grad(iel,1)
+          trav8(ipt) = grad(iel,2)
         endif
 
       enddo
@@ -680,27 +673,24 @@ if (itytur.eq.2) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
-           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-           *0.5d0*(ra(itrav3 + ipt-1) + ra(itrav5 + ipt-1))
+      rvdis(ipt,ipos) = -2.0d0*trav1(ipt)**2*cmu / max(1.0d-10, trav2(ipt)) &
+           *0.5d0*(trav3(ipt) + trav5(ipt))
     enddo
 
     !           R13
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
-           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-           *0.5d0*(ra(itrav4 + ipt-1) + ra(itrav7 + ipt-1))
+      rvdis(ipt,ipos) = -2.0d0*trav1(ipt)**2*cmu / max(1.0d-10, trav2(ipt)) &
+           *0.5d0*(trav4(ipt) + trav7(ipt))
     enddo
 
     !           R23
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)**2*cmu        &
-           /max(1.0d-10,ra(itrav2 + ipt-1))                        &
-           *0.5d0*(ra(itrav6 + ipt-1) + ra(itrav8 + ipt-1))
+      rvdis(ipt,ipos) = -2.0d0*trav1(ipt)**2*cmu / max(1.0d-10,trav2(ipt)) &
+           *0.5d0*(trav6(ipt) + trav8(ipt))
     enddo
 
     !           Dissipation turbulente
@@ -708,7 +698,7 @@ if (itytur.eq.2) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav2 + ipt -1)
+      rvdis(ipt,ipos) = trav2(ipt)
     enddo
 
     !=======================================================================
@@ -730,7 +720,7 @@ if (itytur.eq.2) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav1 + ipt -1)
+      rvdis(ipt,ipos) = trav1(ipt)
     enddo
 
     !           Omega
@@ -738,8 +728,7 @@ if (itytur.eq.2) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)/cmu                  &
-           /max(1.0d-10, ra(itrav1 + ipt-1))
+      rvdis(ipt,ipos) = trav2(ipt) / cmu / max(1.0d-10, trav1(ipt))
     enddo
 
 
@@ -794,13 +783,6 @@ elseif (itytur.eq.3) then
     grad   ,                                                      &
     ra     )
 
-    if (isou.eq.1) itrav = itrav1
-    if (isou.eq.2) itrav = itrav2
-    if (isou.eq.3) itrav = itrav3
-    if (isou.eq.4) itrav = itrav4
-    if (isou.eq.5) itrav = itrav5
-    if (isou.eq.6) itrav = itrav6
-
     ! For a specific face to face coupling, geometric assumptions are made
 
     if (ifaccp.eq.1) then
@@ -813,8 +795,25 @@ elseif (itytur.eq.3) then
         yjjp = djppts(2,ipt)
         zjjp = djppts(3,ipt)
 
-        ra(itrav + ipt-1) = rtp(iel,ivar)                         &
+        if (isou.eq.1) then
+          trav1(ipt) = rtp(iel,ivar) &
              + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.2) then
+          trav2(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.3) then
+          trav3(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.4) then
+          trav4(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.5) then
+          trav5(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.6) then
+          trav6(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        endif
 
       enddo
 
@@ -830,8 +829,25 @@ elseif (itytur.eq.3) then
         yjjp = djppts(2,ipt)
         zjjp = djppts(3,ipt)
 
-        ra(itrav + ipt-1) = rtp(iel,ivar)                         &
+        if (isou.eq.1) then
+          trav1(ipt) = rtp(iel,ivar) &
              + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.2) then
+          trav2(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.3) then
+          trav3(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.4) then
+          trav4(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.5) then
+          trav5(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        else if (isou.eq.6) then
+          trav6(ipt) = rtp(iel,ivar) &
+             + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
+        endif
 
       enddo
 
@@ -879,7 +895,7 @@ elseif (itytur.eq.3) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav7 + ipt-1) = rtp(iel,iep)                        &
+      trav7(ipt) = rtp(iel,iep)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -896,7 +912,7 @@ elseif (itytur.eq.3) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav7 + ipt-1) = rtp(iel,iep)                        &
+      trav7(ipt) = rtp(iel,iep)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -915,16 +931,31 @@ elseif (itytur.eq.3) then
 
       ipos = ipos + 1
 
-      if (isou.eq.1) itrav = itrav1
-      if (isou.eq.2) itrav = itrav2
-      if (isou.eq.3) itrav = itrav3
-      if (isou.eq.4) itrav = itrav4
-      if (isou.eq.5) itrav = itrav5
-      if (isou.eq.6) itrav = itrav6
-
-      do ipt = 1, nptdis
-        rvdis(ipt,ipos) = ra(itrav + ipt-1)
-      enddo
+      if (isou.eq.1) then
+        do ipt = 1, nptdis
+          rvdis(ipt,ipos) = trav1(ipt)
+        enddo
+      else if (isou.eq.2) then
+        do ipt = 1, nptdis
+          rvdis(ipt,ipos) = trav2(ipt)
+        enddo
+      else if (isou.eq.3) then
+        do ipt = 1, nptdis
+          rvdis(ipt,ipos) = trav3(ipt)
+        enddo
+      else if (isou.eq.4) then
+        do ipt = 1, nptdis
+          rvdis(ipt,ipos) = trav4(ipt)
+        enddo
+      else if (isou.eq.5) then
+        do ipt = 1, nptdis
+          rvdis(ipt,ipos) = trav5(ipt)
+        enddo
+      else if (isou.eq.6) then
+        do ipt = 1, nptdis
+          rvdis(ipt,ipos) = trav6(ipt)
+        enddo
+      endif
 
     enddo
 
@@ -933,7 +964,7 @@ elseif (itytur.eq.3) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
+      rvdis(ipt,ipos) = trav7(ipt)
     enddo
 
     !=======================================================================
@@ -947,8 +978,7 @@ elseif (itytur.eq.3) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
-           + ra(itrav2 + ipt-1) + ra(itrav3 + ipt-1))
+      rvdis(ipt,ipos) = 0.5d0*(trav1(ipt) + trav2(ipt) + trav3(ipt))
     enddo
 
     !           Dissipation turbulente
@@ -956,7 +986,7 @@ elseif (itytur.eq.3) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav7 + ipt-1)
+      rvdis(ipt,ipos) = trav7(ipt)
     enddo
 
     !=======================================================================
@@ -978,8 +1008,7 @@ elseif (itytur.eq.3) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = 0.5d0*(ra(itrav1 + ipt-1)               &
-           + ra(itrav2 + ipt-1) + ra(itrav3 + ipt-1))
+      rvdis(ipt,ipos) = 0.5d0*(trav1(ipt) + trav2(ipt) + trav3(ipt))
     enddo
 
     !           Omega
@@ -987,8 +1016,7 @@ elseif (itytur.eq.3) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav7 + ipt-1)/cmu                  &
-           /max(1.0d-10, rvdis(ipt,ipos-1))
+      rvdis(ipt,ipos) = trav7(ipt) / cmu / max(1.0d-10, rvdis(ipt,ipos-1))
     enddo
 
   endif
@@ -1043,7 +1071,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
+      trav1(ipt) = rtp(iel,ik)                         &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1060,7 +1088,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
+      trav1(ipt) = rtp(iel,ik)                         &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1107,7 +1135,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
+      trav2(ipt) = rtp(iel,iep)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1124,7 +1152,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iep)                        &
+      trav2(ipt) = rtp(iel,iep)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1167,7 +1195,7 @@ elseif (iturb.eq.50) then
     yjjp = djppts(2,ipt)
     zjjp = djppts(3,ipt)
 
-    ra(itrav3 + ipt-1) = rtp(iel,iphi)                        &
+    trav3(ipt) = rtp(iel,iphi)                        &
          + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
   enddo
@@ -1212,7 +1240,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav4 + ipt-1) = rtp(iel,ifb)                        &
+      trav4(ipt) = rtp(iel,ifb)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1229,7 +1257,7 @@ elseif (iturb.eq.50) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav4 + ipt-1) = rtp(iel,ifb)                        &
+      trav4(ipt) = rtp(iel,ifb)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1247,7 +1275,7 @@ elseif (iturb.eq.50) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+      rvdis(ipt,ipos) = trav1(ipt)
     enddo
 
     !           Dissipation turbulente
@@ -1255,7 +1283,7 @@ elseif (iturb.eq.50) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
+      rvdis(ipt,ipos) = trav2(ipt)
     enddo
 
     !           Phi
@@ -1263,7 +1291,7 @@ elseif (iturb.eq.50) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav3 + ipt-1)
+      rvdis(ipt,ipos) = trav3(ipt)
     enddo
 
     !           F-barre
@@ -1271,7 +1299,7 @@ elseif (iturb.eq.50) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav4 + ipt-1)
+      rvdis(ipt,ipos) = trav4(ipt)
     enddo
 
 
@@ -1333,7 +1361,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
+      trav1(ipt) = rtp(iel,ik)                         &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1350,7 +1378,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav1 + ipt-1) = rtp(iel,ik)                         &
+      trav1(ipt) = rtp(iel,ik)                         &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1396,7 +1424,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iomg)                        &
+      trav2(ipt) = rtp(iel,iomg)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1413,7 +1441,7 @@ elseif (iturb.eq.60) then
       yjjp = djppts(2,ipt)
       zjjp = djppts(3,ipt)
 
-      ra(itrav2 + ipt-1) = rtp(iel,iomg)                        &
+      trav2(ipt) = rtp(iel,iomg)                        &
            + xjjp*grad(iel,1) + yjjp*grad(iel,2) + zjjp*grad(iel,3)
 
     enddo
@@ -1431,7 +1459,7 @@ elseif (iturb.eq.60) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+      rvdis(ipt,ipos) = trav1(ipt)
     enddo
 
     !           Omega
@@ -1439,7 +1467,7 @@ elseif (iturb.eq.60) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)
+      rvdis(ipt,ipos) = trav2(ipt)
     enddo
 
   elseif (itytu0.eq.2) then
@@ -1452,7 +1480,7 @@ elseif (iturb.eq.60) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav1 + ipt-1)
+      rvdis(ipt,ipos) = trav1(ipt)
     enddo
 
     !           Omega
@@ -1460,8 +1488,7 @@ elseif (iturb.eq.60) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
-           *ra(itrav1 + ipt-1)
+      rvdis(ipt,ipos) = trav2(ipt)*cmu*trav1(ipt)
     enddo
 
     !========================================================================
@@ -1479,7 +1506,7 @@ elseif (iturb.eq.60) then
       ipos = ipos + 1
 
       do ipt = 1, nptdis
-        rvdis(ipt,ipos) = d2s3*ra(itrav1 + ipt-1)
+        rvdis(ipt,ipos) = d2s3*trav1(ipt)
       enddo
 
     enddo
@@ -1518,14 +1545,14 @@ elseif (iturb.eq.60) then
         iel = locpts(ipt)
 
         if (isou.eq.1) then
-          ra(itrav3 + ipt-1) = grad(iel,2)
-          ra(itrav4 + ipt-1) = grad(iel,3)
+          trav3(ipt) = grad(iel,2)
+          trav4(ipt) = grad(iel,3)
         elseif (isou.eq.2) then
-          ra(itrav5 + ipt-1) = grad(iel,1)
-          ra(itrav6 + ipt-1) = grad(iel,3)
+          trav5(ipt) = grad(iel,1)
+          trav6(ipt) = grad(iel,3)
         elseif (isou.eq.3) then
-          ra(itrav7 + ipt-1) = grad(iel,1)
-          ra(itrav8 + ipt-1) = grad(iel,2)
+          trav7(ipt) = grad(iel,1)
+          trav8(ipt) = grad(iel,2)
         endif
 
       enddo
@@ -1537,27 +1564,24 @@ elseif (iturb.eq.60) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
-           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-           *0.5d0*(ra(itrav3 + ipt-1) + ra(itrav5 + ipt-1))
+      rvdis(ipt,ipos) = -2.0d0*trav1(ipt) / max(1.0d-10, trav2(ipt))  &
+           *0.5d0*(trav3(ipt) + trav5(ipt))
     enddo
 
     !           R13
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
-           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-           *0.5d0*(ra(itrav4 + ipt-1) + ra(itrav7 + ipt-1))
+      rvdis(ipt,ipos) = -2.0d0*trav1(ipt) / max(1.0d-10, trav2(ipt))  &
+           *0.5d0*(trav4(ipt) + trav7(ipt))
     enddo
 
     !           R23
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = -2.0d0*ra(itrav1 + ipt-1)               &
-           /max(1.0d-10, ra(itrav2 + ipt-1))                       &
-           *0.5d0*(ra(itrav6 + ipt-1) + ra(itrav8 + ipt-1))
+      rvdis(ipt,ipos) = -2.0d0*trav1(ipt) / max(1.0d-10, trav2(ipt))  &
+           *0.5d0*(trav6(ipt) + trav8(ipt))
     enddo
 
     !           Dissipation turbulente
@@ -1565,8 +1589,7 @@ elseif (iturb.eq.60) then
     ipos = ipos + 1
 
     do ipt = 1, nptdis
-      rvdis(ipt,ipos) = ra(itrav2 + ipt-1)*cmu                  &
-           *ra(itrav1 + ipt-1)
+      rvdis(ipt,ipos) = trav2(ipt)*cmu*trav1(ipt)
     enddo
 
 
@@ -1682,6 +1705,8 @@ endif
 
 ! Free memory
 deallocate(grad)
+deallocate(trav1, trav2, trav3, trav4)
+deallocate(trav5, trav6, trav7, trav8)
 
 return
 end subroutine

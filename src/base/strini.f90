@@ -93,7 +93,7 @@ double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra, itrav
+integer          idebia, idebra
 integer          ifac  , istr, icompt, ii
 integer          mbstru, mbaste
 integer          ifnia2
@@ -103,6 +103,9 @@ integer          ilstfa, indast, iidflo, iidnlo
 integer          nbpdt, nbssit, ihi, chro
 
 double precision delta, pdt, tt
+
+integer, allocatable, dimension(:) :: itrav
+integer, allocatable, dimension(:) :: lstfac, idfloc, idnloc
 
 !===============================================================================
 
@@ -241,12 +244,11 @@ endif
 
 if (nbaste.gt.0) then
 
-  itrav  = ifinia
-  ifnia2 = itrav + nnod
-  call iasize('strini',ifnia2)
+  ! Allocate a work array
+  allocate(itrav(nnod))
 
   do inod = 1, nnod
-     ia(itrav + inod-1) = 0
+     itrav(inod) = 0
   enddo
 
   nbfast = 0
@@ -259,40 +261,40 @@ if (nbaste.gt.0) then
       nbfast = nbfast + 1
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
         inod = nodfbr(ii)
-        ia(itrav + inod-1) = istr
+        itrav(inod) = istr
       enddo
     endif
   enddo
   do inod = 1, nnod
-    if (ia(itrav+inod-1).gt.0) nbnast = nbnast + 1
+    if (itrav(inod).gt.0) nbnast = nbnast + 1
   enddo
 
-  ilstfa = ifnia2
-  iidflo = ilstfa + nbfast
-  iidnlo = iidflo + nbfast
-  ifnia2 = iidnlo + nbnast
-  call iasize('strini',ifnia2)
+  ! Allocate temporary arrays
+  allocate(lstfac(nbfast))
+  allocate(idfloc(nbfast), idnloc(nbnast))
 
   indast = 0
   do ifac = 1, nfabor
     istr = idfstr(ifac)
     if (istr.lt.0) then
       indast = indast + 1
-      ia(ilstfa + indast-1) = ifac
-      ia(iidflo + indast-1) = -istr
+      lstfac(indast) = ifac
+      idfloc(indast) = -istr
     endif
   enddo
   nbfast = indast
 
   indast = 0
   do inod = 1, nnod
-    istr = ia(itrav+inod-1)
+    istr = itrav(inod)
     if (istr.lt.0) then
       indast = indast + 1
-      ia(iidnlo + indast-1) = -istr
+      idnloc(indast) = -istr
     endif
   enddo
   nbnast = indast
+
+  ! Free memory
 
 !       Recuperation des parametres commun du couplage
   call astpar                                                     &
@@ -302,7 +304,11 @@ if (nbaste.gt.0) then
 !       Envoi des donnees geometriques a Code_Aster
   call astgeo                                                     &
   !==========
- ( nbfast, nbnast, ia(ilstfa), ia(iidflo), ia(iidnlo), almax )
+ ( nbfast, nbnast, lstfac, idfloc, idnloc, almax )
+
+  ! Free memory
+  deallocate(lstfac)
+  deallocate(idfloc, idnloc)
 
 endif
 

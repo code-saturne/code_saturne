@@ -32,10 +32,7 @@ subroutine lageqp &
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
-   viscf  , viscb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   fmala  , fmalb  ,                                              &
-   ul     , vl     , wl     , alphal , phia   , phi    ,          &
+   ul     , vl     , wl     , alphal , phi    ,                   &
    ra     )
 
 !===============================================================================
@@ -64,18 +61,9 @@ subroutine lageqp &
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
-! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! fmala(nfac)      ! tr ! --- ! flux de masse au faces internes                !
-! fmalb(nfabor)    ! tr ! --- ! flux de masse au faces de bord                 !
-! ul,vl,wl         ! tr ! <-- ! vitesse lagrangien                             !
-! (ncelet)         !    !     !                                                !
-! alphal           ! tr ! <-- ! taux de presence                               !
-! (ncelet)         !    !     !                                                !
-! phi , phia       ! tr ! --> ! terme de correction en n et n-1                !
-! (ncelet)         !    !     !                                                !
+! ul,vl,wl(ncelet) ! tr ! <-- ! vitesse lagrangien                             !
+! alphal(ncelet)   ! tr ! <-- ! taux de presence                               !
+! phi(ncelet)      ! tr ! --> ! terme de correction                            !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -112,14 +100,10 @@ integer          nvar   , nscal
 integer          ia(*)
 
 double precision ul(ncelet), vl(ncelet), wl(ncelet)
-double precision phia(ncelet), phi(ncelet), alphal(ncelet)
-double precision fmala(nfac) , fmalb(nfabor)
+double precision phi(ncelet), alphal(ncelet)
 double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision viscf(nfac), viscb(nfabor)
-double precision smbrs(ncelet)
-double precision rovsdt(ncelet)
 double precision ra(*)
 
 ! Local variables
@@ -133,21 +117,32 @@ integer          nswrgp, imligp, iwarnp , iescap
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp
 integer          imgrp, ncymxp, nitmfp
-integer          icoefax,icoefay,icoefaz,icefap
-integer          icoefbx,icoefby,icoefbz,icefbp
 
 double precision epsrgp, climgp, extrap, blencp, epsilp, epsrsp
 double precision relaxp, thetap
 
 double precision rvoid(1)
 
+double precision, allocatable, dimension(:) :: viscf, viscb
+double precision, allocatable, dimension(:) :: smbrs, rovsdt
+double precision, allocatable, dimension(:) :: fmala, fmalb
+double precision, allocatable, dimension(:) :: phia
 double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:) :: coefax, coefay, coefaz
+double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
+double precision, allocatable, dimension(:) :: coefap, coefbp
 
 !===============================================================================
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(viscf(nfac), viscb(nfabor))
+allocate(smbrs(ncelet), rovsdt(ncelet))
+allocate(fmala(nfac), fmalb(nfabor))
+allocate(phia(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -197,60 +192,44 @@ enddo
 ! --> Calcul du gradient de W1
 !     ========================
 
-!       On alloue localement 6 tableaux de NFABOR pour le calcul
-!         de COEFA et COEFB de W1,W2,W3
-
-icoefax = idebra
-icoefbx = icoefax + nfabor
-icoefay = icoefbx + nfabor
-icoefby = icoefay + nfabor
-icoefaz = icoefby + nfabor
-icoefbz = icoefaz + nfabor
-ifinra  = icoefbz + nfabor
-call rasize ('lageqp',ifinra)
-!==========
+! Allocate temporary arrays
+allocate(coefax(nfabor), coefay(nfabor), coefaz(nfabor))
+allocate(coefbx(nfabor), coefby(nfabor), coefbz(nfabor))
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
 
-  ra(icoefax+ifac-1) = w1(iel)
-  ra(icoefbx+ifac-1) = zero
+  coefax(ifac) = w1(iel)
+  coefbx(ifac) = zero
 
-  ra(icoefay+ifac-1) = w2(iel)
-  ra(icoefby+ifac-1) = zero
+  coefay(ifac) = w2(iel)
+  coefby(ifac) = zero
 
-  ra(icoefaz+ifac-1) = w3(iel)
-  ra(icoefbz+ifac-1) = zero
+  coefaz(ifac) = w3(iel)
+  coefbz(ifac) = zero
 
 enddo
 
 call diverv                                                       &
 !==========
- ( idebia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     ,                                                       &
    smbrs  , w1     , w2     , w3     ,                            &
-   ra(icoefax) , ra(icoefay) , ra(icoefaz) ,                      &
-   ra(icoefbx) , ra(icoefby) , ra(icoefbz) ,                      &
+   coefax , coefay , coefaz ,                                     &
+   coefbx , coefby , coefbz ,                                     &
    ra     )
 
-!      On libere la place dans RA
-
-ifinra = idebra
+! Free memory
+deallocate(coefax, coefay, coefaz)
+deallocate(coefbx, coefby, coefbz)
 
 ! --> Conditions aux limites sur PHI
 !     ==============================
 
-!       On alloue localement 2 tableaux de NFABOR pour le calcul
-!         de COEFA et COEFB de PHI
-
-ifinia = idebia
-icefap = idebra
-icefbp = icefap + nfabor
-ifinra = icefbp + nfabor
-call rasize ('lageqp',ifinra)
-!==========
+! Allocate temporary arrays
+allocate(coefap(nfabor), coefbp(nfabor))
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
@@ -259,36 +238,36 @@ do ifac = 1, nfabor
 
 !      Flux Nul
 
-    ra(icefap+ifac-1) = zero
-    ra(icefbp+ifac-1) = 1.d0
+    coefap(ifac) = zero
+    coefbp(ifac) = 1.d0
 
   else if ( itypfb(ifac) .eq. iparoi) then
 
 !      FLux nul
 
-    ra(icefap+ifac-1) = zero
-    ra(icefbp+ifac-1) = 1.d0
+    coefap(ifac) = zero
+    coefbp(ifac) = 1.d0
 
   else if ( itypfb(ifac) .eq. iparug) then
 
 !      FLux nul
 
-    ra(icefap+ifac-1) = zero
-    ra(icefbp+ifac-1) = 1.d0
+    coefap(ifac) = zero
+    coefbp(ifac) = 1.d0
 
   else if ( itypfb(ifac) .eq. isymet) then
 
 !      FLux nul
 
-    ra(icefap+ifac-1) = zero
-    ra(icefbp+ifac-1) = 1.d0
+    coefap(ifac) = zero
+    coefbp(ifac) = 1.d0
 
   else if ( itypfb(ifac) .eq. isolib ) then
 
 !      Valeur Imposee
 
-    ra(icefap+ifac-1) = phia(iel)
-    ra(icefbp+ifac-1) = zero
+    coefap(ifac) = phia(iel)
+    coefbp(ifac) = zero
 
   else
     write(nfecra,1100) itypfb(ifac)
@@ -365,9 +344,9 @@ call codits                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    ia     ,                                                       &
-   phia   , phia   , ra(icefap) , ra(icefbp) ,                    &
-             ra(icefap) , ra(icefbp) ,                            &
-             fmala       , fmalb       ,                          &
+   phia   , phia   , coefap , coefbp ,                            &
+            coefap , coefbp ,                                     &
+            fmala  , fmalb  ,                                     &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , phi    ,                                     &
    rvoid  ,                                                       &
@@ -375,6 +354,11 @@ call codits                                                       &
 
 
 ! Free memory
+deallocate(viscf, viscb)
+deallocate(smbrs, rovsdt)
+deallocate(fmala, fmalb)
+deallocate(coefap, coefbp)
+deallocate(phia)
 deallocate(w1, w2, w3)
 
 !--------

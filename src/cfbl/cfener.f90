@@ -151,10 +151,10 @@ integer          imgrp , ncymxp, nitmfp
 double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision sclnor, thetap, epsrsp
 
-integer          inc    , iccocg , icoefa , icoefb
+integer          inc    , iccocg
 integer          ivar0  , iij , ii , jj
 integer          iccfth , imodif
-integer          iel1  , iel2, iifru, iifbe
+integer          iel1  , iel2
 integer          iterns
 integer          idbia1
 
@@ -165,6 +165,7 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: wb
+double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -204,20 +205,6 @@ if(ivisls(iscal).gt.0) then
   ipcvsl = ipproc(ivisls(iscal))
 else
   ipcvsl = 0
-endif
-
-! --- Indicateur flux de bord Rusanov
-if(iifbru.gt.0) then
-  iifru = iifbru
-else
-  iifru = 1
-endif
-
-! --- Indicateur flux conductif de bord imposé
-if(iifbet.gt.0) then
-  iifbe = iifbet
-else
-  iifbe = 1
 endif
 
 ! --- Impressions
@@ -369,15 +356,12 @@ endif
 !       On alloue localement 2 tableaux de NFABOR pour le calcul
 !       de COEFA et COEFB de P/RHO
 
-!      icoefa = idebra
-!      icoefb = icoefa + nfabor
-!      ifinra = icoefb + nfabor
-!      call rasize ('cfener',ifinra)
-!      !==========
+!      allocate(coefap(nfabor))
+!      allocate(coefbp(nfabor))
 
 !      do ifac = 1, nfabor
-!        ra(icoefa+ifac-1) = zero
-!        ra(icoefb+ifac-1) = 1.d0
+!        coefap(ifac) = zero
+!        coefbp(ifac) = 1.d0
 !      enddo
 
 ! En periodique et parallele, echange avant calcul du gradient
@@ -394,13 +378,9 @@ endif
 !     & ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,
 !     &   iwarnp , nfecra , epsrgp , climgp , extrap ,
 !     &   ia     ,
-!     &   w7     , ra(icoefa) , ra(icoefb)  ,
+!     &   w7     , coefap , coefbp ,
 !     &   grad   ,
 !     &   ra     )
-
-!       On libere la place dans RA
-
-!      ifinra = idebra
 
 !     Faces internes
 !      do ifac = 1, nfac
@@ -416,24 +396,15 @@ endif
 
 !        Calcul II' et JJ'
 
-!        diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+
-!     &           (1.d0-pnd) * dijpfx)
-!        diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+
-!     &           (1.d0-pnd) * dijpfy)
-!        diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+
-!     &           (1.d0-pnd) * dijpfz)
-!        djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+
-!     &               pnd  * dijpfx
-!        djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+
-!     &               pnd  * dijpfy
-!        djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+
-!     &               pnd  * dijpfz
+!        diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+ (1.d0-pnd) * dijpfx)
+!        diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+ (1.d0-pnd) * dijpfy)
+!        diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+ (1.d0-pnd) * dijpfz)
+!        djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+       pnd  * dijpfx
+!        djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+       pnd  * dijpfy
+!        djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+       pnd  * dijpfz
 
-!        pip = w7(ii)
-!     &       +grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
-
-!        pjp = w7(jj)
-!     &       +grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
+!        pip = w7(ii) +grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
+!        pjp = w7(jj) +grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
 
 !        flui = (propfa(ifac,iflmas)+abs(propfa(ifac,iflmas)))
 !        fluj = (propfa(ifac,iflmas)-abs(propfa(ifac,iflmas)))
@@ -467,35 +438,20 @@ enddo
 !       contient tous les flux convectifs (et il faudra donc eliminer le
 !       flux convectif dans cfbsc2)
 
-if(iifbru.gt.0) then
-
-  do ifac = 1, nfabor
-    if(ia(iifru+ifac-1).eq.0) then
-
-      iel = ifabor(ifac)
-      viscb(ifac) = - propfb(ifac,iflmab)                         &
-    * ( coefa(ifac,iclrtp(ipr,icoef))                      &
-      + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )&
-    / ( coefa(ifac,iclrtp(isca(irho),icoef))               &
-      + coefb(ifac,iclrtp(isca(irho),icoef))*w9(iel) )
-
-    else
-      viscb(ifac) = - propfb(ifac,ipprob(ifbene))
-    endif
-  enddo
-
-else
-  do ifac = 1, nfabor
+do ifac = 1, nfabor
+  if (ifbrus(ifac).eq.0) then
 
     iel = ifabor(ifac)
-    viscb(ifac) = - propfb(ifac,iflmab)                           &
-    * ( coefa(ifac,iclrtp(ipr,icoef))                      &
-      + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )&
-    / ( coefa(ifac,iclrtp(isca(irho),icoef))               &
-      + coefb(ifac,iclrtp(isca(irho),icoef))*w9(iel) )
+    viscb(ifac) = - propfb(ifac,iflmab)                         &
+  * ( coefa(ifac,iclrtp(ipr,icoef))                      &
+    + coefb(ifac,iclrtp(ipr,icoef))*rtp(iel,ipr) )&
+  / ( coefa(ifac,iclrtp(isca(irho),icoef))               &
+    + coefb(ifac,iclrtp(isca(irho),icoef))*w9(iel) )
 
-  enddo
-endif
+  else
+    viscb(ifac) = - propfb(ifac,ipprob(ifbene))
+  endif
+enddo
 
 !     Divergence
 init = 0
@@ -604,18 +560,13 @@ epsrgp = epsrgr(iii)
 climgp = climgr(iii)
 extrap = extrag(iii)
 
-!       On alloue localement 2 tableaux de NFABOR pour le calcul
-!       de COEFA et COEFB
-
-icoefa = idebra
-icoefb = icoefa + nfabor
-ifinra = icoefb + nfabor
-call rasize ('cfener',ifinra)
-!==========
+! Allocate temporary arrays
+allocate(coefap(nfabor))
+allocate(coefbp(nfabor))
 
 do ifac = 1, nfabor
-  ra(icoefa+ifac-1) = zero
-  ra(icoefb+ifac-1) = 1.d0
+  coefap(ifac) = zero
+  coefbp(ifac) = 1.d0
 enddo
 
 ! En periodique et parallele, echange avant calcul du gradient
@@ -632,13 +583,12 @@ call grdcel                                                       &
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w7     , ra(icoefa) , ra(icoefb)  ,                            &
+   w7     , coefap , coefbp ,                                     &
    grad   ,                                                       &
    ra     )
 
-!       On libere la place dans RA
-
-ifinra = idebra
+! Free memory
+deallocate(coefap, coefbp)
 
 !     Faces internes
 
@@ -679,37 +629,13 @@ enddo
 !       pas prendre en compte la contribution des termes en u2 et e-CvT
 !       quand IA(IIFBE+IFAC-1).NE.0
 
-  if(iifbet.gt.0) then
-    do ifac = 1, nfabor
+  do ifac = 1, nfabor
 
-      if(ia(iifbe+ifac-1).eq.0) then
-        iel = ifabor(ifac)
-
-        flux = viscb(ifac)*( w9(iel) - wb(ifac)            &
-           + 0.5d0*( rtp(iel,iu)**2 -                      &
-   ( coefa(ifac,iclrtp(iu,icoef))                          &
-   + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2  &
-                   + rtp(iel,iv)**2 -                      &
-   ( coefa(ifac,iclrtp(iv,icoef))                          &
-   + coefb(ifac,iclrtp(iv,icoef))*rtp(iel,iv) )**2  &
-                   + rtp(iel,iw)**2 -                      &
-   ( coefa(ifac,iclrtp(iw,icoef))                          &
-   + coefb(ifac,iclrtp(iw,icoef))*rtp(iel,iw) )**2))
-
-        smbrs(iel) = smbrs(iel) - flux
-
-      endif
-
-    enddo
-
-!     Sinon : meme code, mais sans le test
-  else
-
-    do ifac = 1, nfabor
+    if (ifbet(ifac).eq.0) then
 
       iel = ifabor(ifac)
 
-      flux = viscb(ifac)*( w9(iel) - wb(ifac)              &
+      flux = viscb(ifac)*( w9(iel) - wb(ifac)            &
            + 0.5d0*( rtp(iel,iu)**2 -                      &
    ( coefa(ifac,iclrtp(iu,icoef))                          &
    + coefb(ifac,iclrtp(iu,icoef))*rtp(iel,iu) )**2  &
@@ -722,8 +648,9 @@ enddo
 
       smbrs(iel) = smbrs(iel) - flux
 
-    enddo
-  endif
+    endif
+
+  enddo
 
 else
 
@@ -771,10 +698,9 @@ call cfcdts                                                       &
    nvar   , nscal  ,                                              &
    iscal  , iconvp , idiffp , ireslp , ndircp , nitmap ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , iifbru ,                            &
+   ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap , thetap , &
-   ia(iifru) ,                                                    &
    ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &

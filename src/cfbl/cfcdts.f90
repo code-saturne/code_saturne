@@ -32,10 +32,9 @@ subroutine cfcdts &
    nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , ireslp , ndircp , nitmap ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , iifbru ,                            &
+   ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap , thetap , &
-   ifrusb ,                                                       &
    ia     ,                                                       &
    pvara  , coefap , coefbp , cofafp , cofbfp , flumas , flumab , &
    viscfm , viscbm , viscfs , viscbs ,                            &
@@ -107,7 +106,6 @@ subroutine cfcdts &
 ! isstpp           ! e  ! <-- ! indicateur = 1 sans test de pente              !
 !                  !    !     !            = 0 avec test de pente              !
 ! iescap           ! e  ! <-- ! =1 calcul de l'indicateur prediction           !
-! iifbru           ! e  ! <-- ! pointeur flux de bord rusanov                  !
 ! imgrp            ! e  ! <-- ! indicateur = 0 pas de mgm                      !
 !                  !    !     !            = 1 sinon                           !
 ! nitmap           ! e  ! <-- ! nombre max d'iter pour resol iterativ          !
@@ -120,7 +118,6 @@ subroutine cfcdts &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! ifrusb(nfabor    ! te ! <-- ! indicateur flux de rusanov                     !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! pvara(ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
 ! coefap, b        ! tr ! <-- ! tableaux des cond lim pour p                   !
@@ -171,13 +168,12 @@ integer          nvar   , nscal
 integer          ivar   , iconvp , idiffp , ndircp
 integer          nitmap
 integer          imrgra , nswrsp , nswrgp , imligp , ircflp
-integer          ischcp , isstpp , iescap , iifbru , imgrp
+integer          ischcp , isstpp , iescap , imgrp
 integer          ncymxp , nitmfp
 integer          ipp    , iwarnp
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision thetap , epsrsp
 
-integer          ifrusb(nfabor)
 integer          ia(*)
 
 double precision pvara(ncelet), coefap(nfabor), coefbp(nfabor)
@@ -344,10 +340,9 @@ do 100 isweep = 1, nswmod
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
-   ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
+   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   ifrusb ,                                                       &
    ia     ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscfs , viscbs ,                            &
@@ -484,10 +479,9 @@ if (iescap.gt.0) then
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
-   ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
+   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   ifrusb ,                                                       &
    ia     ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscfs , viscbs ,                            &

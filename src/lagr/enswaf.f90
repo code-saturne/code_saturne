@@ -31,7 +31,7 @@ subroutine enswaf &
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    nfin   ,                                                       &
    itepa  ,                                                       &
-   ettp   , tepa , trav   )
+   ettp   , tepa   )
 
 !===============================================================================
 ! FONCTION :
@@ -66,7 +66,6 @@ subroutine enswaf &
 !                  !    !     !   etape courante ou precedente                 !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! trav(nbpmax,3    ! tr ! --- ! tableaux de travail                            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,7 +95,6 @@ integer          itepa(nbpmax,nivep)
 
 double precision ettp(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision trav(nbpmax,3)
 
 ! Local variables
 
@@ -105,6 +103,8 @@ integer          np , nl
 integer          ii1 , ii2 , lpos , n1 , n2
 
 character        fich*80 , name*80 , entet*80
+
+double precision, allocatable, dimension(:,:) :: trav
 
 integer          ipwaf
 data             ipwaf /0/
@@ -115,6 +115,9 @@ save             ipwaf
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
+
+! Allocate a work array
+allocate(trav(nbpmax,3))
 
 !===============================================================================
 ! 1. Initialisations
@@ -600,6 +603,9 @@ if (ivisv2.eq.1) then
   close(impla1)
 
 endif
+
+! Free memory
+deallocate(trav)
 
 !===============================================================================
 ! 13. Ecriture du deplacement.case au dernier passage

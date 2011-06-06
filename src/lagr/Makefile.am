@@ -99,8 +99,6 @@ lagstf.f90 \
 lagswe.f90 \
 lagtri.f90 \
 lagune.f90 \
-memla1.f90 \
-memla2.f90 \
 ouestu.f90
 libcslagr_la_LDFLAGS = -no-undefined
 

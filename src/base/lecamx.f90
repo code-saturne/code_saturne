@@ -1743,15 +1743,15 @@ if (iale.eq.1 .and. jale.eq.1) then
 
   RUBRIQ = 'deplact_x_no'
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              ra(idepal),ierror)
+              depale(1,1),ierror)
   nberro=nberro+ierror
   RUBRIQ = 'deplact_y_no'
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              ra(idepal+nnod),ierror)
+              depale(1,2),ierror)
   nberro=nberro+ierror
   RUBRIQ = 'deplact_z_no'
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,       &
-              ra(idepal+2*nnod),ierror)
+              depale(1,3),ierror)
   nberro=nberro+ierror
 
 ! Si JALE=1, on doit avoir le deplacement dans le fichier suite, sinon

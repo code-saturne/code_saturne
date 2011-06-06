@@ -148,11 +148,6 @@ double precision ra(*)
 integer          idebia, idebra
 integer          ifinia, ifinra
 integer          npt , iel , ifac
-integer          iphila , iphil
-integer          idtr   , ifmala , ifmalb
-integer          iviscf , iviscb
-integer          ismbr  , irovsd
-integer          icoefap , icoefbp
 integer          ivar0
 integer          inc, iccocg
 integer          nswrgp , imligp , iwarnp
@@ -160,6 +155,8 @@ integer          nswrgp , imligp , iwarnp
 double precision epsrgp , climgp , extrap
 
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: phil
+double precision, allocatable, dimension(:) :: coefap, coefbp
 
 !===============================================================================
 ! 0.  GESTION MEMOIRE
@@ -172,19 +169,8 @@ idebra = idbra0
 ! 1.  INITIALISATIONS
 !===============================================================================
 
-idtr   = idebra
-iviscf = idtr   + ncelet
-iviscb = iviscf + nfac
-ismbr  = iviscb + nfabor
-irovsd = ismbr  + ncelet
-ifmala = irovsd + ncelet
-ifmalb = ifmala + nfac
-
-iphila = ifmalb + nfabor
-iphil  = iphila + ncelet
-ifinra = iphil  + ncelet
-call rasize('lagpoi',ifinra)
-!==========
+! Allocate a temporary array
+allocate(phil(ncelet))
 
 do iel=1,ncel
   if ( statis(iel,ilpd) .gt. seuil ) then
@@ -206,31 +192,22 @@ call lageqp                                                       &
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
    dt     , propce , propfa , propfb ,                            &
-   ra(iviscf) , ra(iviscb) ,                                      &
-   ra(ismbr) , ra(irovsd) ,                                       &
-   ra(ifmala) , ra(ifmalb) ,                                      &
-   statis(1,ilvx) , statis(1,ilvy) , statis(1,ilvz) ,             &
-   statis(1,ilfv) ,                                               &
-   ra(iphila) , ra(iphil) ,                                       &
+   statis(1,ilvx)  , statis(1,ilvy)  , statis(1,ilvz)  ,          &
+   statis(1,ilfv)  ,                                              &
+   phil   ,                                                       &
    ra     )
 
 ! Calcul du gradient du Correcteur PHI
 ! ====================================
 
-
-!       On alloue localement 2 tableaux de NFABOR pour le calcul
-!         de COEFA et COEFB
-
-icoefap = ifinra
-icoefbp = icoefap + nfabor
-ifinra  = icoefbp + nfabor
-call rasize ('lageqp',ifinra)
-!==========
+! Allocate temporary arrays
+allocate(coefap(nfabor))
+allocate(coefbp(nfabor))
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
-  ra(icoefap+ifac-1) = ra(iphil+iel-1)
-  ra(icoefbp+ifac-1) = zero
+  coefap(ifac) = phil(iel)
+  coefbp(ifac) = zero
 enddo
 
 inc = 1
@@ -247,7 +224,7 @@ allocate(grad(ncelet,3))
 
 ! En periodique et parallele, echange avant calcul du gradient
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(ra(iphil))
+  call synsca(phil)
   !==========
 endif
 
@@ -260,9 +237,13 @@ call grdcel                                                       &
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   ra(iphil) , ra(icoefap) , ra(icoefbp) ,                        &
+   phil   , coefap , coefbp ,                                     &
    grad   ,                                                       &
    ra     )
+
+! Free memory
+deallocate(phil)
+deallocate(coefap, coefbp)
 
 ! CORRECTION DES VITESSES MOYENNES ET RETOUR AU CUMUL
 

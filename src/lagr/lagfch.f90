@@ -172,11 +172,13 @@ double precision ra(*)
 ! Local variables
 
 integer          idebia, idebra,ifinia , ifinra
-integer          idppar, inxpar, inypar, inzpar
 integer          ip , iel , mode
 
 double precision val , tempf , dnorm
 double precision debye, aa
+
+double precision, allocatable, dimension(:) :: dppar
+double precision, allocatable, dimension(:) :: dnxpar, dnypar, dnzpar
 
 !===============================================================================
 
@@ -191,20 +193,15 @@ idebra = idbra0
 ! 1. CALCUL DE LA DISTANCE A LA PAROI + NORMAL A LA PAROI
 !===============================================================================
 
-ifinia = idebia
-idppar = idebra
-inxpar = idppar + nbpart
-inypar = inxpar + nbpart
-inzpar = inypar + nbpart
-ifinra = inzpar + nbpart
-call rasize('lagfch',ifinra)
-!==========
+! Allocate temporary arrays
+allocate(dppar(nbpart))
+allocate(dnxpar(nbpart), dnypar(nbpart), dnzpar(nbpart))
 
 do ip = 1,nbpart
-  ra(idppar+ip-1) = 0.d0
-  ra(inxpar+ip-1) = 0.d0
-  ra(inypar+ip-1) = 0.d0
-  ra(inzpar+ip-1) = 0.d0
+  dppar(ip) = 0.d0
+  dnxpar(ip) = 0.d0
+  dnypar(ip) = 0.d0
+  dnzpar(ip) = 0.d0
 enddo
 
 call usladp                                                       &
@@ -219,7 +216,7 @@ call usladp                                                       &
    taup   , tlag   , piil   ,                                     &
    vagaus , gradpr , gradvf ,                                     &
    romp   ,                                                       &
-   ra(idppar) ,ra(inxpar) , ra(inypar) , ra(inzpar) ,             &
+   dppar  , dnxpar  , dnypar  , dnzpar  ,                            &
    ra     )
 
 !===============================================================================
@@ -231,22 +228,22 @@ do ip = 1,nbpart
 
 ! Force = -A/6 dp/2 /D**2
 
-  if ( ra(idppar+ip-1) .gt. dparmn ) then
+  if ( dppar(ip) .gt. dparmn ) then
 
     val = (cstham*ettp(ip,jdp)/2.d0)                              &
-         /(6.d0*ra(idppar+ip-1)*ra(idppar+ip-1))
+         /(6.d0*dppar(ip)*dppar(ip))
 
-    dnorm = sqrt( ra(inxpar+ip-1)*ra(inxpar+ip-1)                 &
-                 +ra(inypar+ip-1)*ra(inypar+ip-1)                 &
-                 +ra(inzpar+ip-1)*ra(inzpar+ip-1) )
+    dnorm = sqrt( dnxpar(ip)*dnxpar(ip)                 &
+                 +dnypar(ip)*dnypar(ip)                 &
+                 +dnzpar(ip)*dnzpar(ip) )
 
 ! Attention la normale est oriente du fluide vers l'exterieur
 
     aa = dnorm*ettp(ip,jmp)
 
-    fextla(ip,1) = fextla(ip,1) + val*ra(inxpar+ip-1) /aa
-    fextla(ip,2) = fextla(ip,2) + val*ra(inypar+ip-1) /aa
-    fextla(ip,3) = fextla(ip,3) + val*ra(inzpar+ip-1) /aa
+    fextla(ip,1) = fextla(ip,1) + val*dnxpar(ip) /aa
+    fextla(ip,2) = fextla(ip,2) + val*dnypar(ip) /aa
+    fextla(ip,3) = fextla(ip,3) + val*dnzpar(ip) /aa
 
   endif
 
@@ -264,7 +261,7 @@ do ip = 1,nbpart
 ! Calcul de la temperature du fluide en fonction du type
 ! d'ecoulement
 
-  if ( ra(idppar+ip-1) .gt. dparmn ) then
+  if ( dppar(ip) .gt. dparmn ) then
 
     if ( ippmod(icp3pl).ge.0 .or.                                 &
          ippmod(icpl3c).ge.0      ) then
@@ -312,20 +309,20 @@ do ip = 1,nbpart
     endif
 
     val = -4.d0*pi*epseau*epsvid*phi1*phi2*(ettp(ip,jdp)/2.d0)    &
-            *exp(-ra(idppar+ip-1)/debye)                          &
+            *exp(-dppar(ip)/debye)                          &
             /debye
 
-    dnorm = sqrt( ra(inxpar+ip-1)*ra(inxpar+ip-1)                 &
-                 +ra(inypar+ip-1)*ra(inypar+ip-1)                 &
-                 +ra(inzpar+ip-1)*ra(inzpar+ip-1) )
+    dnorm = sqrt( dnxpar(ip)*dnxpar(ip)                 &
+                 +dnypar(ip)*dnypar(ip)                 &
+                 +dnzpar(ip)*dnzpar(ip) )
 
 ! Attention la normale est oriente du fluide vers l'exterieur
 
-    fextla(ip,1)= fextla(ip,1)+val*ra(inxpar+ip-1)                &
+    fextla(ip,1)= fextla(ip,1)+val*dnxpar(ip)                &
                  /(dnorm*ettp(ip,jmp))
-    fextla(ip,2)= fextla(ip,2)+val*ra(inypar+ip-1)                &
+    fextla(ip,2)= fextla(ip,2)+val*dnypar(ip)                &
                  /(dnorm*ettp(ip,jmp))
-    fextla(ip,3)= fextla(ip,3)+val*ra(inzpar+ip-1)                &
+    fextla(ip,3)= fextla(ip,3)+val*dnzpar(ip)                &
                  /(dnorm*ettp(ip,jmp))
 
   endif
@@ -347,26 +344,30 @@ do ip = 1,nbpart
 
 ! Force = 3*PI*(Dp/2)*Gamma_SV + SIG2*PI*(Dp/2)/Eps0
 
-  if ( ra(idppar+ip-1) .le. dparmn ) then
+  if ( dppar(ip) .le. dparmn ) then
 
     val = 3.d0*pi*(ettp(ip,jdp)/2.d0)*gamasv                      &
         + sigch*sigch*pi*(ettp(ip,jdp)/2.d0)/epsvid
 
-    dnorm = sqrt( ra(inxpar+ip-1)*ra(inxpar+ip-1)                 &
-                 +ra(inypar+ip-1)*ra(inypar+ip-1)                 &
-                 +ra(inzpar+ip-1)*ra(inzpar+ip-1) )
+    dnorm = sqrt( dnxpar(ip)*dnxpar(ip)                 &
+                 +dnypar(ip)*dnypar(ip)                 &
+                 +dnzpar(ip)*dnzpar(ip) )
 
 ! Attention la normale est oriente du fluide vers l'exterieur
 
     aa = dnorm*ettp(ip,jmp)
 
-    fextla(ip,1)= fextla(ip,1)+val*ra(inxpar+ip-1) /aa
-    fextla(ip,2)= fextla(ip,2)+val*ra(inypar+ip-1) /aa
-    fextla(ip,3)= fextla(ip,3)+val*ra(inzpar+ip-1) /aa
+    fextla(ip,1)= fextla(ip,1)+val*dnxpar(ip) /aa
+    fextla(ip,2)= fextla(ip,2)+val*dnypar(ip) /aa
+    fextla(ip,3)= fextla(ip,3)+val*dnzpar(ip) /aa
 
   endif
 
 enddo
+
+! Free memory
+deallocate(dppar)
+deallocate(dnxpar, dnypar, dnzpar)
 
 !==============================================================================
 

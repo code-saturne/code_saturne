@@ -152,7 +152,6 @@ double precision ra(*)
 
 integer          idebia , idebra
 integer          ifinia , ifinra
-integer          iwl1   , iwl2
 
 !===============================================================================
 
@@ -254,16 +253,9 @@ endif
 
 if (iphyla.eq.2) then
 
-  ifinia = idebia
-  iwl1   = idebra
-  iwl2   = iwl1 + nbpmax
-  ifinra = iwl2 + nbpmax
-  call rasize('lagphy',ifinra)
-  !==========
-
   call lagich                                                     &
   !==========
-  ( ifinia , ifinra ,                                             &
+  ( idebia , idebra ,                                             &
     nvar   , nscal  ,                                             &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     ntersl , nvlsta , nvisbr ,                                    &
@@ -272,7 +264,6 @@ if (iphyla.eq.2) then
     ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  ,&
     cpgd1  , cpgd2  , cpght  ,                                    &
     auxl(1,1) , auxl(1,2) , auxl(1,3) ,                           &
-    ra(iwl1)  , ra(iwl2)  ,                                       &
     ra     )
 
 endif

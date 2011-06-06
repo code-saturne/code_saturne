@@ -182,11 +182,13 @@ double precision ra(*)
 
 integer          idebia , idebra , ifinia , ifinra
 integer          iel , ifac , ip
-integer          iauxp , ifexla , nbfac
+integer          iauxp , nbfac
 integer          icrit , itirag , inb , iifacl
 integer           ii
 
 double precision d3 , aa
+
+double precision, allocatable, dimension(:,:) :: fextla
 
 !===============================================================================
 
@@ -219,14 +221,13 @@ enddo
 ! 2.  Management of user external force fields
 !===============================================================================
 
-ifinia = idebia
-ifexla = idebra
-ifinra = ifexla + 3*nbpmax
-call rasize('lagesp',ifinra)
-!==========
+! Allocate a temporay array
+allocate(fextla(nbpmax,3))
 
-do ip = 1,3*nbpmax
-  ra(ifexla+ip-1) = 0.d0
+do ip = 1, nbpmax
+  fextla(ip,1) = 0.d0
+  fextla(ip,2) = 0.d0
+  fextla(ip,3) = 0.d0
 enddo
 
 call uslafe                                                       &
@@ -241,7 +242,7 @@ call uslafe                                                       &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
-   romp   , ra(ifexla) ,                                          &
+   romp   , fextla ,                                              &
    ra     )
 
 !===============================================================================
@@ -254,7 +255,7 @@ if ( ladlvo .eq. 1 ) then
 
   call lagfch                                                     &
   !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
@@ -265,7 +266,7 @@ if ( ladlvo .eq. 1 ) then
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
-   romp   , ra(ifexla)      ,                                     &
+   romp   , fextla ,                                              &
    ra     )
 
  endif
@@ -285,7 +286,7 @@ if (nordre.eq.1) then
 
   call lages1                                                     &
   !==========
-   ( ifinia , ifinra ,                                            &
+   ( idebia , idebra ,                                            &
      nvar   , nscal  ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
@@ -295,7 +296,7 @@ if (nordre.eq.1) then
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      bx     , vagaus , gradpr , gradvf , romp   ,                 &
-     brgaus , terbru , ra(ifexla) ,                               &
+     brgaus , terbru , fextla ,                                   &
      ra     )
 
 
@@ -307,7 +308,7 @@ if (nordre.eq.1) then
 
      call lagdep                                                  &
     !==========
-   ( ifinia , ifinra ,                                            &
+   ( idebia , idebra ,                                            &
      nvar   , nscal  , lndnod , icocel , itycel, ifrlag ,         &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
@@ -317,7 +318,7 @@ if (nordre.eq.1) then
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      bx     , vagaus , gradpr , gradvf , romp   ,                 &
-     brgaus , terbru , ra(ifexla) ,                               &
+     brgaus , terbru , fextla ,                                   &
      ra     )
 
   endif
@@ -330,7 +331,7 @@ else
 
   call lages2                                                     &
   !==========
-   ( ifinia , ifinra ,                                            &
+   ( idebia , idebra ,                                            &
      nvar   , nscal  ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
@@ -341,10 +342,13 @@ else
      statis , taup   , tlag   , piil   ,                          &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &
      auxl2  , gradpr , gradvf ,                                   &
-     romp   , brgaus , terbru , ra(ifexla) ,                      &
+     romp   , brgaus , terbru , fextla ,                          &
      ra     )
 
 endif
+
+! Free memory
+deallocate(fextla)
 
 !===============================================================================
 

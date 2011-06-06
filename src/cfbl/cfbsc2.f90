@@ -31,10 +31,9 @@ subroutine cfbsc2 &
  ( idbia0 , idbra0 ,                                              &
    nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
-   ischcp , isstpp , inc    , imrgra , iccocg , iifbru ,          &
+   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   ifrusb ,                                                       &
    ia     ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscf  , viscb  ,                            &
@@ -88,7 +87,6 @@ subroutine cfbsc2 &
 !                  ! e  ! <-- !            = 1 gradmc 99                       !
 ! iccocg           ! e  ! <-- ! indicateur = 1 pour recalcul de cocg           !
 !                  !    !     !              0 sinon                           !
-! iifbru           ! e  ! <-- ! pointeur flux de bord rusanov                  !
 ! ipp              ! e  ! <-- ! numero de variable pour post                   !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
 ! blencp           ! r  ! <-- ! 1 - proportion d'upwind                        !
@@ -96,7 +94,6 @@ subroutine cfbsc2 &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! ifrusb(nfabor    ! te ! <-- ! indicateur flux de rusanov                     !
 ! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! pvar (ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
 ! coefap, b        ! tr ! <-- ! tableaux des cond lim pour p                   !
@@ -128,6 +125,7 @@ use pointe
 use entsor
 use parall
 use period
+use cfpoin, only: ifbrus
 use mesh
 
 !===============================================================================
@@ -140,11 +138,10 @@ integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
-integer          inc    , imrgra , iccocg , iifbru
+integer          inc    , imrgra , iccocg
 integer          iwarnp , ipp
 double precision blencp , epsrgp , climgp, extrap
 
-integer          ifrusb(nfabor)
 integer          ia(*)
 
 double precision pvar (ncelet), coefap(nfabor), coefbp(nfabor)
@@ -700,58 +697,29 @@ endif
 
 !     On n'impose pas le flux convectif sur les faces pour lesquelles
 !       il sera imposé par les C.L.
-if(iifbru.gt.0) then
+do ifac = 1, nfabor
 
-  do ifac = 1, nfabor
+  ii = ifabor(ifac)
 
-    ii = ifabor(ifac)
+  diipbx = diipb(1,ifac)
+  diipby = diipb(2,ifac)
+  diipbz = diipb(3,ifac)
 
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
+  flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
+  fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
 
-    flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-    fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
+  pip = pvar(ii) +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
 
-    pip = pvar(ii) +ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
-
-    pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
-    pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
+  pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
+  pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
 
 !            FLUX = ICONVP*( FLUI*PVAR(II) +FLUJ*PFAC )
 !     &           + IDIFFP*VISCB(IFAC)*( PIP -PFACD )
-    flux = iconvp*( flui*pvar(ii) +fluj*pfac ) *dble(1-ifrusb(ifac)) &
-         + idiffp*viscb(ifac)*( pip -pfacd )
-    smbrp(ii) = smbrp(ii) -flux
+  flux = iconvp*( flui*pvar(ii) +fluj*pfac ) *dble(1-ifbrus(ifac)) &
+       + idiffp*viscb(ifac)*( pip -pfacd )
+  smbrp(ii) = smbrp(ii) -flux
 
-  enddo
-
-!     On ne dispose pas de flux issu des C.L. : traitement std
-else
-
-  do ifac = 1, nfabor
-
-    ii = ifabor(ifac)
-
-    diipbx = diipb(1,ifac)
-    diipby = diipb(2,ifac)
-    diipbz = diipb(3,ifac)
-
-    flui = 0.5d0*( flumab(ifac) +abs(flumab(ifac)) )
-    fluj = 0.5d0*( flumab(ifac) -abs(flumab(ifac)) )
-
-    pip = pvar(ii) + ircflp*(grad(ii,1)*diipbx+grad(ii,2)*diipby+grad(ii,3)*diipbz)
-
-    pfac  = inc*coefap(ifac) +coefbp(ifac)*pip
-    pfacd = inc*cofafp(ifac) +cofbfp(ifac)*pip
-
-    flux = iconvp*( flui*pvar(ii) +fluj*pfac )                  &
-         + idiffp*viscb(ifac)*( pip -pfacd )
-    smbrp(ii) = smbrp(ii) -flux
-
-  enddo
-
-endif
+enddo
 
 ! Free memory
 deallocate(grad)

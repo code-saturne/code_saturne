@@ -135,11 +135,12 @@ integer          iel    , ifac
 integer          ipcrom , ipcvst
 integer          ixchcl , ixckcl , ixnpcl , icla   , icha
 integer          inc    , iccocg , nswrgp , imligp , iwarnp
-integer          ifinra , icoefa , icoefb
+integer          ifinra
 
 double precision x2     , xk     , xe     , rhovst
 double precision epsrgp , climgp , extrap
 
+double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w7, w8
@@ -252,23 +253,16 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     enddo
   endif
 
-! --> Calcul des COEFA et COEFB de FIM afin d'en calculer son gradient
-!     On alloue localement 2 tableaux de NFABOR pour le calcul
-!       de COEFA et COEFB de FIM
-
-  icoefa = idebra
-  icoefb = icoefa + nfabor
-  ifinra = icoefb + nfabor
-  call rasize ('cptsvc',ifinra)
-  !==========
+  ! Allocate temporary arrays
+  allocate(coefap(nfabor), coefbp(nfabor))
 
   do ifac = 1, nfabor
-    ra(icoefa+ifac-1) = zero
-    ra(icoefb+ifac-1) = 1.d0
+    coefap(ifac) = zero
+    coefbp(ifac) = 1.d0
     if ( itypfb(ifac).eq.ientre ) then
-      ra(icoefa+ifac-1) = zero
-      ra(icoefb+ifac-1) = zero
-      if (ivarsc.eq.0) ra(icoefa+ifac-1) = 1.d0
+      coefap(ifac) = zero
+      coefbp(ifac) = zero
+      if (ivarsc.eq.0) coefap(ifac) = 1.d0
     endif
   enddo
 
@@ -289,10 +283,13 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    ia     ,                                                       &
-   w7     , ra(icoefa) , ra(icoefb)  ,                            &
+   w7     , coefap , coefbp ,                                     &
 !          FIM      COEFA        COEFB
    grad   ,                                                       &
    ra     )
+
+  ! Free memory
+  deallocate(coefap, coefbp)
 
   do iel = 1, ncel
     if ( itytur.eq.2 .or. iturb.eq.50 ) then
@@ -318,9 +315,6 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   ! Free memory
   deallocate(grad)
   deallocate(w7, w8)
-
-!     On libere COEFA COEFB
-  ifinra = idebra
 
 endif
 

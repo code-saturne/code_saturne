@@ -278,10 +278,10 @@ if (iale.eq.1) then
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   itypfb , ia(iialty)      , icodcl , ia(iimpal)      ,          &
+   itypfb , ialtyb , icodcl , impale ,                            &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   rcodcl , ra(ixyzn0)      , ra(idepal)      ,                   &
+   rcodcl , xyzno0 , depale ,                                     &
    ra     )
 endif
 

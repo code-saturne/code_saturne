@@ -79,6 +79,7 @@ use ihmpre
 use radiat
 use cplsat
 use atincl
+use cfpoin
 use mesh
 
 !===============================================================================
@@ -95,11 +96,9 @@ double precision ra(*)
 
 ! Local variables
 
-integer          ipropc , ipropf , ipropb
-integer          icoefa , icoefb
+integer          ipropc
 integer          irtp   , irtpa
 integer          idt    , itpuco
-integer          iisstd , ifrcx
 
 integer          idebia , idebra
 integer          ifinia , ifinra , idbia1 , idbra1, idbia2
@@ -111,28 +110,35 @@ integer          modhis, iappel, modntl, iisuit, iwarn0
 integer          ntsdef, ntcam1
 integer          ivar
 
-integer          iicoce , iityce
-integer          iiitep , iitepa , istatc , istatf
-integer          iettp  , iettpa , iauxl  , itslag , istatv
-integer          itaup  , iitlag , ipiil  , iindep , iibord
-integer          ivagau , itsuf  , itsup  , ibx    , iauxl2
-integer          ibrgau , itebru
-integer          igradp , igradv , icroul
-integer          itepct , itsfex , itsvar
-integer          icpgd1 , icpgd2 , icpght
-integer          ilagia , ilagra , iiwork
-integer          iw1    , iw2    , iw3
 integer          inod   , idim
 integer          itrale , indact , indwri
-integer          ilageo
 
 double precision titer1, titer2
 double precision tecrf1, tecrf2
+
+integer          ivoid(1)
+double precision rvoid(1)
 
 double precision, save :: ttchis
 
 character        ficsui*32
 
+integer, allocatable, dimension(:) :: isostd
+
+double precision, allocatable, dimension(:,:) :: coefa, coefb
+double precision, allocatable, dimension(:,:) :: propfa, propfb
+double precision, allocatable, dimension(:,:) :: frcxt
+
+! Lagrangian specific arrays
+
+integer, allocatable, dimension(:,:) :: itepa
+integer, allocatable, dimension(:) :: icocel, itycel
+integer, allocatable, dimension(:) :: ifrlag
+
+double precision, allocatable, dimension(:,:) :: ettp, ettpa, tepa
+double precision, allocatable, dimension(:,:) :: statis, stativ, parbor
+double precision, allocatable, dimension(:,:) :: tslagr
+double precision, allocatable, dimension(:,:) :: dlgeo
 
 !===============================================================================
 
@@ -174,39 +180,37 @@ if (iilagr.gt.0) then
 
   !--> Compute "lndnod" (lagran.f90)
 
-  ! Integer work array of size ncelet
-  iiwork = idebia
-  ifinia = iiwork + ncelet
-  call iasize ('lagini', ifinia)
-
-  ifinra = idebra
-
   call lagini                                                     &
   !==========
- ( ifinia , ifinra ,                                              &
+ ( idebia , idebra ,                                              &
    ncelet , ncel   , nfac   , nfabor ,                            &
    lndnod ,                                                       &
    ifacel , ifabor ,                                              &
-   ia(iiwork) ,                                                   &
    ia     , ra     )
 
 endif
 
 !===============================================================================
-! 4. Other arrays
+! 4. Memory management
 !===============================================================================
 
-!---> Memory management
-
-call memtri                                                       &
+! Allocate main real arrays
+call memtri &
 !==========
- ( idebia , idebra , iverif ,                                     &
+ ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncofab , nproce , nprofa , nprofb ,                            &
-   iisstd , ifrcx  ,                                              &
-   idt    , itpuco , irtp   , irtpa  , ipropc , ipropf , ipropb , &
-   icoefa , icoefb ,                                              &
+   nproce ,                                                       &
+   idt    , itpuco , irtp   , irtpa  , ipropc ,                   &
    ifinia , ifinra )
+
+! Allocate other main arrays
+allocate(coefa(nfabor,ncofab), coefb(nfabor,ncofab))
+allocate(propfa(nfac,nprofa), propfb(nfabor,nprofb))
+
+if (iphydr.eq.1) then
+  allocate(isostd(nfabor+1))
+  allocate(frcxt(ncelet,3))
+endif
 
 call init_aux_arrays ( ncelet , ncel   , ncelbr , nfac  , nfabor , iverif )
 !===================
@@ -216,28 +220,38 @@ if (ippmod(iatmos).ge.0) then
   !==============
 endif
 
+if (ippmod(icompf).ge.0) then
+  call init_compf ( nfabor )
+  !==============
+endif
+
+if (iale.eq.1.or.imobil.eq.1) then
+  call init_ale ( ncelet , ncel , nfac , nfabor , nnod )
+  !============
+endif
+
+! Memory reservation for Lagrangian module
+if (iilagr.gt.0) then
+
+  allocate(itepa(nbpmax,nivep))
+  allocate(icocel(lndnod), itycel(ncelet+1))
+  allocate(ifrlag(nfabor))
+
+  allocate(ettp(nbpmax,nvp), ettpa(nbpmax,nvp))
+  allocate(tepa(nbpmax,nvep))
+  allocate(statis(ncelet,nvlsta*(1+nbclst)))
+  if (nvlsta.gt.1) allocate(stativ(ncelet,(nvlsta-1)*(1+nbclst)))
+  allocate(tslagr(ncelet,ntersl))
+  allocate(parbor(nfabor,nvisbr))
+
+  if (idepst.eq.1) then
+    allocate(dlgeo(nfabor,ngeol))
+  endif
+
+endif
+
 !===============================================================================
-! 4.2 Memory reservation for Lagrangian module
-!===============================================================================
-
-!     Si on ne fait pas de Lagrangien, on initialise
-!       quand meme les "pointeurs".
-
-idbia1 = ifinia
-idbra1 = ifinra
-
-call memla1                                                       &
-!==========
-  ( idbia1 , idbra1 ,                                             &
-    lndnod ,                                                      &
-    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
-    ntersl , nvlsta , nvisbr ,                                    &
-    iiitep , iicoce , iityce , ilageo ,                           &
-    iettp  , iettpa , iitepa , istatc , istatv, itslag , istatf , &
-    ifinia , ifinra )
-
-!===============================================================================
-! 4.3 TESTS ELEMENTAIRES : appel a testel.f90
+! 4.1 TESTS ELEMENTAIRES : appel a testel.f90
 !===============================================================================
 
 if (iverif.eq.1) then
@@ -249,7 +263,7 @@ if (iverif.eq.1) then
  ( ifinia , ifinra ,                                              &
    nvar   ,                                                       &
    ia     ,                                                       &
-   ra(irtp) , ra(icoefa) , ra(icoefb) ,                           &
+   ra(irtp) , coefa  , coefb  ,                                   &
    ra     )
 
   goto 200
@@ -260,14 +274,15 @@ endif
 ! 5. INITIALISATIONS PAR DEFAUT
 !===============================================================================
 
-call iniva0                                                       &
+call iniva0 &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , ncofab ,                                     &
    ia     ,                                                       &
-   ra(idt)    , ra(itpuco) ,                                      &
-   ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),             &
-   ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
+   ra(idt)    , ra(itpuco) , ra(irtp) ,                           &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   frcxt  ,                                                       &
    ra     )
 
 !===============================================================================
@@ -276,14 +291,16 @@ call iniva0                                                       &
 
 if (isuite.eq.1) then
 
-  call lecamo                                                     &
+  call lecamo &
   !==========
  ( ifinia , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
-   ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
-   ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
+   ra(idt)    , ra(irtp) ,                                        &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   frcxt  ,                                                       &
    ra     )
 
   ! Using ALE, geometric parameters must be recalculated
@@ -291,8 +308,7 @@ if (isuite.eq.1) then
 
     do inod = 1, nnod
       do idim = 1, ndim
-        xyznod(idim,inod) =   ra(ixyzn0+(inod-1)*ndim+idim-1)     &
-                            + ra(idepal+(idim-1)*nnod+inod-1)
+        xyznod(idim,inod) =   xyzno0(idim,inod) + depale(inod,idim)
       enddo
     enddo
 
@@ -312,13 +328,15 @@ endif
 !    (TPUCOU en PERIODICITE)
 !===============================================================================
 
-call inivar                                                       &
+call inivar &
 !==========
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  , ncofab ,                                     &
    ia     ,                                                       &
-   ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
-   ra(icoefa) , ra(icoefb) , ra(ifrcx ) ,                         &
+   ra(idt)    , ra(irtp) ,                                        &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   frcxt  ,                                                       &
    ra     )
 
 !===============================================================================
@@ -332,7 +350,7 @@ if (iirayo.gt.0 .and. isuird.eq.1) then
  ( ifinia , ifinra ,                                              &
    ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    ia     ,                                                       &
-   ra(ipropc) , ra(ipropb) ,                                      &
+   ra(ipropc) , propfb ,                                          &
    ra     )
 
 endif
@@ -349,10 +367,11 @@ if (iilagr.gt.0) then
    ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   ia(iiitep) , ia ,                                              &
-   ra(irtpa)  , ra(ipropc) ,                                      &
-   ra(iettp)  , ra(iitepa) , ra(istatc) , ra(istatv) ,            &
-   ra(istatf) , ra(itslag) , ra         )
+   itepa  ,                                                       &
+   ia ,                                                           &
+   ra(irtpa) , ra(ipropc) ,                                       &
+   ettp   , tepa   , statis , stativ , parbor , tslagr ,          &
+   ra     )
 
 endif
 
@@ -373,24 +392,26 @@ iappel = 1
 call uspt1d                                                       &
 !==========
  ( nvar   , nscal  , nfpt1d , iappel ,                            &
-   ia(idbia1) , ia(idbia1) , ia(idbia1) ,                         &
+   ivoid  , ivoid  , ivoid  ,                                     &
    ia     ,                                                       &
-   ra(idbra1) , ra(idbra1) , ra(idbra1) ,                         &
-   ra(idbra1) , ra(idbra1) , ra(idbra1) ,                         &
-   ra(idbra1) , ra(idbra1) , ra(idbra1) ,                         &
-   ra(idt)    , ra(irtpa)  ,                                      &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
+   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  , rvoid  , rvoid  ,                                     &
+   ra(idt)    , ra(irtpa) ,                                       &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
    ra     )
 
 iappel = 1
-call vert1d                                                       &
+call vert1d &
 !==========
- (idbia1     , idbra1     ,                                       &
-  nfabor     , nfpt1d     , iappel     ,                          &
-  ia(idbia1) , ia(idbia1) , ia(idbia1) , ia     ,                 &
-  ra(idbra1) , ra(idbra1) ,                                       &
-  ra(idbra1) , ra(idbra1) , ra(idbra1) , ra     )
+ (idbia1 , idbra1 ,                                               &
+  nfabor , nfpt1d , iappel ,                                      &
+  ivoid  , ivoid  , ivoid  ,                                      &
+  ia     ,                                                        &
+  rvoid  , rvoid  ,                                               &
+  rvoid  , rvoid  , rvoid  ,                                      &
+  ra     )
 
 call memt1d                                                       &
 !==========
@@ -412,9 +433,9 @@ if (nfpt1t.gt.0) then
    ra(itppt1) , ra(irgpt1) , ra(ieppt1) ,                         &
    ra(itept1) , ra(ihept1) , ra(ifept1) ,                         &
    ra(ixlmt1) , ra(ircpt1) , ra(idtpt1) ,                         &
-   ra(idt)    , ra(irtpa)  ,                                      &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
+   ra(idt)    , ra(irtpa) ,                                       &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
    ra     )
 
   iappel = 2
@@ -477,19 +498,23 @@ iappel = 1
 if (iihmpr.eq.1) then
   call uikpdc &
   !==========
-( iappel, ncelet, ncepdc,     &
-  ia(idbia1), ra(idbra1) , ra(irtpa) )
+( iappel ,          &
+  ncelet , ncepdc , &
+  ivoid  ,          &
+  rvoid  ,          &
+  ra(irtpa) )
 endif
 
 call  uskpdc &
 !===========
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
-  ia(idbia1),                                                    &
+  ivoid  ,                                                       &
   ia     ,                                                       &
-  ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-  ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-  ra(icoefa) , ra(icoefb) , ra(idbra1) ,                         &
+  ra(idt)    , ra(irtpa) , ra(irtp)   ,                          &
+  ra(ipropc) , propfa , propfb ,                                 &
+  coefa  , coefb  ,                                              &
+  rvoid  ,                                                       &
   ra     )
 
 call mempdc                                                       &
@@ -508,9 +533,9 @@ if(ncpdct.gt.0) then
   iappel = 2
 
   if (iihmpr.eq.1) then
-    call uikpdc                              &
+    call uikpdc &
     !==========
-  ( iappel, ncelet, ncepdc,                  &
+  ( iappel, ncelet, ncepdc,           &
     ia(iicepd), ra(ickupd), ra(irtpa) )
   endif
 
@@ -520,9 +545,10 @@ if(ncpdct.gt.0) then
   ncepdc , iappel ,                                              &
   ia(iicepd),                                                    &
   ia     ,                                                       &
-  ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-  ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-  ra(icoefa) , ra(icoefb) , ra(ickupd) ,                         &
+  ra(idt)    , ra(irtpa) , ra(irtp)   ,                          &
+  ra(ipropc) , propfa , propfb ,                                 &
+  coefa  , coefb  ,                                              &
+  ra(ickupd) ,                                                   &
   ra     )
 
 endif
@@ -536,11 +562,12 @@ call ustsma                                                      &
 ( nvar   , nscal  , ncepdc   ,                                   &
   ncetsm ,   iappel ,                                            &
   ia(iicepd) ,                                                   &
-  ia(idbia1) , ia(idbia1),                                       &
+  ivoid  , ivoid  ,                                              &
   ia     ,                                                       &
-  ra(idt)    , ra(irtpa)  ,                                      &
-  ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-  ra(icoefa) , ra(icoefb) , ra(ickupd) , ra(idbra1),             &
+  ra(idt)    , ra(irtpa) ,                                       &
+  ra(ipropc) , propfa , propfb ,                                 &
+  coefa  , coefb  ,                                              &
+  ra(ickupd), rvoid  ,                                           &
   ra     )
 
 call memtsm                                                      &
@@ -565,9 +592,10 @@ if(nctsmt.gt.0) then
   ia(iicepd) ,                                                   &
   ia(iicesm) , ia(iitpsm),                                       &
   ia     ,                                                       &
-  ra(idt)    , ra(irtpa)  ,                                      &
-  ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-  ra(icoefa) , ra(icoefb) , ra(ickupd), ra(ismace),              &
+  ra(idt)    , ra(irtpa) ,                                       &
+  ra(ipropc) , propfa , propfb ,                                 &
+  coefa  , coefb  ,                                              &
+  ra(ickupd), ra(ismace),                                        &
   ra     )
 
 endif
@@ -596,9 +624,9 @@ if (ivrtex.eq.1) then
    iappel ,                                                       &
    ia(iirepv)      ,                                              &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  ,                                      &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
+   ra(idt)    , ra(irtpa) ,                                       &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
    ra     )
 
   call vorver ( nfabor , ia(iirepv)  , iappel )
@@ -616,7 +644,7 @@ if (ivrtex.eq.1) then
    nvar   , nscal  ,                                              &
    ia(iirepv),                                                    &
    ia     ,                                                       &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
+   ra(ipropc) , propfa , propfb ,                                 &
    ra     )
 
 endif
@@ -742,12 +770,12 @@ call tridim                                                       &
 !==========
  ( ifinia , ifinra , itrale ,                                     &
    nvar   , nscal  ,                                              &
-   ia(iisstd),                                                    &
+   isostd ,                                                       &
    ia     ,                                                       &
-   ra(idt)    , ra(itpuco) , ra(irtpa)  , ra(irtp)   ,            &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(itslag) , ra(icoefa) , ra(icoefb) ,                         &
-   ra(ifrcx)  ,                                                   &
+   ra(idt)    , ra(itpuco) , ra(irtpa) , ra(irtp)  ,              &
+   ra(ipropc) , propfa , propfb ,                                 &
+   tslagr , coefa  , coefb  ,                                     &
+   frcxt  ,                                                       &
    ra     )
 
 !===============================================================================
@@ -771,46 +799,20 @@ endif
 
 if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
 
-  call memla2                                                     &
-  !==========
- ( ifinia , ifinra ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   iindep , iibord , iettpa , iauxl  , iauxl2 ,                   &
-   itaup  , iitlag , ipiil  ,                                     &
-   ivagau , itsuf  , itsup  , ibx    ,                            &
-   igradp , igradv , icroul ,                                     &
-   itepct , itsfex , itsvar ,                                     &
-   icpgd1 , icpgd2 , icpght ,                                     &
-   ibrgau , itebru ,                                              &
-   iw1    , iw2    , iw3    ,                                     &
-   ilagia , ilagra  )
-
   call lagune                                                     &
   !==========
- ( ilagia , ilagra ,                                              &
+ ( ifinia , ifinra ,                                              &
    lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   ia(iicoce) , ia(iityce) , ia(iifrla) , ia(iiitep) ,            &
-   ia(iindep) , ia(iibord) ,                                      &
-   ia     ,     ra(ilageo) ,                                      &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   ra(iettp)  , ra(iettpa) , ra(iitepa) , ra(istatc) , ra(istatv),&
-   ra(itslag),                                                    &
-   ra(istatf) , ra(itaup)  , ra(iitlag) , ra(ipiil)  , ra(ibx  ) ,&
-   ra(ivagau) , ra(itsuf ) , ra(itsup ) , ra(itsvar) ,            &
-   ra(itepct) , ra(itsfex) ,                                      &
-   ra(icpgd1) , ra(icpgd2) , ra(icpght) ,                         &
-   ra(igradp) , ra(igradv) , ra(icroul) ,                         &
-   ra(ibrgau) , ra(itebru) ,                                      &
-   ra(iw1   ) , ra(iw2   ) , ra(iw3   ) , ra(iauxl)  , ra(iauxl2),&
+   icocel , itycel , ifrlag , itepa  ,                            &
+   ia     , dlgeo  ,                                              &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
    ra     )
-
-!--> Ici on libere la memoire reserve par MEMLA2
-!      (i.e. on oublie ILAGIA et ILAGRA)
 
 endif
 
@@ -834,13 +836,12 @@ if (itrale.gt.0) then
   !==========
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   ia(iiitep),                                                    &
+   itepa  ,                                                       &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   ra(iettp)  , ra(iettpa) , ra(iitepa) , ra(istatc) , ra(istatv),&
-   ra(itslag) , ra(istatf) ,                                      &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
    ra     )
 
 endif
@@ -857,12 +858,12 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
     !==========
  ( ifinia , ifinra , itrale ,                                     &
    nvar   , nscal  ,                                              &
-   ia(iimpal)      ,                                              &
+   impale ,                                                       &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   ra(idepal) , ra(ixyzn0) ,                                      &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   depale , xyzno0 ,                                              &
    ra     )
 
   endif
@@ -932,8 +933,10 @@ if (iisuit.eq.1) then
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
    xyzcen     , surfac     , surfbo     , cdgfac     , cdgfbo    ,&
-   ra(idt)    , ra(irtp)   , ra(ipropc) , ra(ipropf) , ra(ipropb),&
-   ra(icoefa) , ra(icoefb) , ra(ifrcx)  ,                         &
+   ra(idt)    , ra(irtp) ,                                        &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   frcxt  ,                                                       &
    ra     )
 
   if (nfpt1t.gt.0) then
@@ -959,13 +962,12 @@ if (iisuit.eq.1) then
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   ia(iicoce) , ia(iityce) , ia(iiitep) ,                         &
+   icocel , itycel , itepa  ,                                     &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   ra(iettp)  , ra(iitepa) , ra(istatf) ,                         &
-   ra(istatc) , ra(istatv) , ra(itslag) ,                         &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   ettp   , tepa   , parbor , statis , stativ , tslagr ,          &
    ra     )
 
   endif
@@ -976,9 +978,9 @@ if (iisuit.eq.1) then
  ( ifinia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
    ra     )
   endif
 
@@ -997,9 +999,10 @@ call usnpst                                                       &
 !==========
  ( nvar   , nscal  , nvlsta ,                                     &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) , ra(istatc) ,                         &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   statis ,                                                       &
    ra     )
 
 !===============================================================================
@@ -1022,10 +1025,10 @@ call pstvar                                                       &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
    ia     ,                                                       &
    ttcabs ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   ra(istatc) , ra(istatv) , ra(istatf) ,                         &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   statis , stativ , parbor ,                                     &
    ra     )
 
 !===============================================================================
@@ -1053,7 +1056,7 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
     if (iilagr.gt.0) then
       call laghis(ndim, ncelet, ncel, modhis, nvlsta,             &
       !==========
-                  xyzcen, volume, ra(istatc), ra(istatv))
+                  xyzcen, volume, statis, stativ)
     endif
 
     if (ihistr.eq.1) then
@@ -1069,9 +1072,9 @@ call ushist                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
    ra     )
 
 
@@ -1093,7 +1096,7 @@ if(modntl.eq.0) then
     nvar   , ndim   , ncelet , ncel   ,                           &
     irtp   ,                                                      &
     ia     ,                                                      &
-    ra(irtp  ) , ra(irtpa ) , ra(idt ) , volume , xyzcen,         &
+    ra(irtp  ) , ra(irtpa) , ra(idt ) , volume , xyzcen,          &
     ra     )
 
   if (iilagr.gt.0) then
@@ -1104,13 +1107,12 @@ if(modntl.eq.0) then
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   ia(iiitep),                                                    &
+   itepa  ,                                                       &
    ia     ,                                                       &
-   ra(idt)    , ra(irtpa)  , ra(irtp)   ,                         &
-   ra(ipropc) , ra(ipropf) , ra(ipropb) ,                         &
-   ra(icoefa) , ra(icoefb) ,                                      &
-   ra(iettp)  , ra(iitepa) , ra(istatc) ,  ra(istatv) ,           &
-   ra(itslag) , ra(istatf),                                       &
+   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
+   ra(ipropc) , propfa , propfb ,                                 &
+   coefa  , coefb  ,                                              &
+   ettp   , tepa   , statis , stativ , tslagr , parbor ,          &
    ra     )
 
   endif
@@ -1164,7 +1166,7 @@ call ecrhis(ndim, ncelet, ncel, modhis, xyzcen, ra)
 if (iilagr.gt.0) then
   call laghis(ndim, ncelet, ncel, modhis , nvlsta,                &
   !==========
-              xyzcen, volume, ra(istatc), ra(istatv))
+              xyzcen, volume, statis, stativ)
 endif
 if (ihistr.eq.1) then
   call strhis(modhis)
@@ -1184,7 +1186,34 @@ if (iale.gt.0) then
   !==========
 endif
 
-if (iilagr.gt.0) close(implal)
+! Free other main arrays
+deallocate(coefa, coefb)
+deallocate(propfa, propfb)
+
+if (iphydr.eq.1) then
+  deallocate(isostd)
+  deallocate(frcxt)
+endif
+
+if (iilagr.gt.0) then
+
+  close(implal)
+
+  deallocate(itepa)
+  deallocate(icocel, itycel)
+  deallocate(ifrlag)
+
+  deallocate(ettp)
+  deallocate(ettpa)
+  deallocate(tepa)
+  deallocate(statis)
+  if (allocated(stativ)) deallocate(stativ)
+  deallocate(tslagr)
+  deallocate(parbor)
+
+  if (allocated(dlgeo)) deallocate(dlgeo)
+
+endif
 
 call dmtmps(tecrf2)
 !==========

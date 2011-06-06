@@ -87,7 +87,7 @@ use dimens, only: ndimfb
 use optcal
 use numvar
 use pointe
-use albase
+use albase, only: nalimx
 use alstru
 use alaste
 use parall
@@ -120,7 +120,8 @@ double precision ra(*)
 integer          idebia, idebra, ifinia
 integer          istr, ii, ifac, inod, iel, indast
 integer          iflmas, iflmab,iclp,iclu,iclv,iclw
-integer          ilstfa
+
+integer, allocatable, dimension(:) :: lstfac
 
 !===============================================================================
 
@@ -232,21 +233,23 @@ if (nbaste.gt.0) then
 
 ! Reception des deplacements predits et remplissage de depale
 
-    ilstfa = idebia
-    ifinia = ilstfa + nbfast
-    call iasize('strpre',ifinia)
+    ! Allocate a temporary array
+    allocate(lstfac(nbfast))
 
     indast = 0
     do ifac = 1, nfabor
       istr = idfstr(ifac)
       if (istr.lt.0) then
         indast = indast + 1
-        ia(ilstfa + indast-1) = ifac
+        lstfac(indast) = ifac
       endif
     enddo
 
-    call astcin(ntcast, nbfast, ia(ilstfa), depale)
+    call astcin(ntcast, nbfast, lstfac, depale)
     !==========
+
+    ! Free memory
+    deallocate(lstfac)
 
   endif
 

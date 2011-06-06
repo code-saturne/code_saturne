@@ -1,4 +1,61 @@
 * 06/06/2011 - David Monfort <david.monfort@edf.fr>
+  Yet another dynamic memory allocation changeset...
+  This focuses on remaining specific physics memory management, local
+  arrays allocated in ia/ra, and pointers defined in memtri.
+  It also completely removes the main integer array in standard cases.
+  removed routines:
+    src/lagr/memla1.f90
+    src/lagr/memla2.f90
+  modified scripts:
+    src/lagr/Makefile.am
+    src/Makefile.am
+  modified routines:
+    src/base/albase.f90
+    src/base/alemaj.f90
+    src/base/calmom.f90
+    src/base/caltri.f90
+    src/base/condli.f90
+    src/base/cscpfb.f90
+    src/base/dvvpst.f90
+    src/base/ecrava.f90
+    src/base/ecrlis.f90
+    src/base/iniva0.f90
+    src/base/lecamx.f90
+    src/base/memfin.f90
+    src/base/memtri.f90
+    src/base/navsto.f90
+    src/base/precli.f90
+    src/base/recvmc.f90
+    src/base/strdep.f90
+    src/base/strini.f90
+    src/base/strpre.f90
+    src/base/tridim.f90
+    src/cfbl/cfbsc2.f90
+    src/cfbl/cfcdts.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfmsvl.f90
+    src/cfbl/cfmsvs.f90
+    src/cfbl/cfpoin.f90
+    src/cfbl/cfqdmv.f90
+    src/cfbl/cfrusb.f90
+    src/cfbl/cfxtcl.f90
+    src/cplv/cpltsv.f90
+    src/cplv/cptsvc.f90
+    src/fuel/futsvc.f90
+    src/lagr/enswaf.f90
+    src/lagr/lageqp.f90
+    src/lagr/lagesp.f90
+    src/lagr/lagfch.f90
+    src/lagr/lagich.f90
+    src/lagr/lagini.f90
+    src/lagr/laglis.f90
+    src/lagr/lagout.f90
+    src/lagr/lagphy.f90
+    src/lagr/lagpoi.f90
+    src/lagr/lagune.f90
+    src/pprt/ppprcl.f90
+
+* 06/06/2011 - David Monfort <david.monfort@edf.fr>
   Fix a couple of issues in previous commit.
   modified routines:
     src/base/memtri.f90

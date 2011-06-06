@@ -114,9 +114,9 @@ integer          idebia, idebra
 integer          ifinra
 integer          inod
 integer          iel
-integer          idproj
-
 integer          icluma, iclvma, iclwma, idim
+
+double precision, allocatable, dimension(:,:) :: dproj
 
 !===============================================================================
 
@@ -143,10 +143,8 @@ iclwma = iclrtp(iwma,icoef )
 
 !     Projection du deplacement calcule sur les noeuds
 
-idproj = idebra
-ifinra = idproj + ndim*nnod
-call rasize('alemaj',ifinra)
-!==========
+! Allocate a temporary array
+allocate(dproj(nnod,3))
 
 call aldepl                                                       &
 !==========
@@ -154,7 +152,7 @@ call aldepl                                                       &
    rtp(1,iuma), rtp(1,ivma), rtp(1,iwma),                         &
    coefa(1,icluma), coefa(1,iclvma), coefa(1,iclwma),             &
    coefb(1,icluma), coefb(1,iclvma), coefb(1,iclwma),             &
-   dt, ra(idproj) )
+   dt, dproj  )
 
 !     Mise a jour du deplacement sur les noeuds ou on ne l'a pas impose
 !       (DEPALE a alors la valeur du deplacement au pas de temps precedent)
@@ -162,11 +160,13 @@ call aldepl                                                       &
 do inod = 1, nnod
   if (impale(inod).eq.0) then
     do idim = 1, 3
-      depale(inod,idim) = depale(inod,idim) +                     &
-           ra(idproj+(idim-1)*nnod+inod-1)
+      depale(inod,idim) = depale(inod,idim) + dproj(inod,idim)
     enddo
   endif
 enddo
+
+! Free memory
+deallocate(dproj)
 
 !     Mise a jour de la geometrie
 

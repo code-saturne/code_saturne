@@ -613,9 +613,9 @@ endif
 
 if (iale.eq.1) then
   do ii = 1, nnod
-    ia(iimpal+ii-1) = 0
+    impale(ii) = 0
     do idim = 1, 3
-      ra(idepal+(idim-1)*nnod+ii-1) = 0.d0
+      depale(ii,idim) = 0.d0
     enddo
   enddo
 endif
@@ -623,7 +623,7 @@ endif
 if (iale.eq.1.or.imobil.eq.1) then
   do ii = 1, nnod
     do idim = 1, 3
-      ra(ixyzn0+(ii-1)*ndim+idim-1) = xyznod(idim,ii)
+      xyzno0(idim,ii) = xyznod(idim,ii)
     enddo
   enddo
 endif

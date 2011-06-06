@@ -156,6 +156,8 @@ integer          iw1, ifinra, ifac, iel, istr
 integer          impava, impavx
 double precision tmpstr(27)
 
+double precision, allocatable, dimension(:) :: w1
+
 !===============================================================================
 !     A noter :
 !        Lorsque qu'il est necessaire d'utiliser un ordre implicite
@@ -1441,15 +1443,12 @@ if (iecaux.eq.1) then
       nberro=nberro+ierror
 !     Pour la distance reelle, on a besoin d'un tableau provisoire
 !     on ne prend que la phase 1
-      iw1    = idebra
-      ifinra = iw1 + ncelet
-      call rasize('ecrava',ifinra)
+      allocate(w1(ncelet))
       do iel = 1, ncel
         ifac = ifapat(iel)
-        ra(iw1+iel-1) =                                         &
-             sqrt((cdgfbo(1,ifac)-xyzcen(1,iel))**2             &
-             +       (cdgfbo(2,ifac)-xyzcen(2,iel))**2          &
-             +       (cdgfbo(3,ifac)-xyzcen(3,iel))**2)
+        w1(iel) = sqrt( (cdgfbo(1,ifac)-xyzcen(1,iel))**2 &
+                      + (cdgfbo(2,ifac)-xyzcen(2,iel))**2 &
+                      + (cdgfbo(3,ifac)-xyzcen(3,iel))**2 )
       enddo
       iecr   = 1
       itysup = 1
@@ -1457,8 +1456,10 @@ if (iecaux.eq.1) then
       irtyp  = 2
       rubriq = 'dist_fac_par_ce_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           ra(iw1),ierror)
+           w1,ierror)
       nberro=nberro+ierror
+      ! Free memory
+      deallocate(w1)
 
 !     Nouveau mode de calcul
     elseif(abs(icdpar).eq.1) then
@@ -1544,15 +1545,15 @@ if (iecaux.eq.1) then
 
     rubriq = 'deplact_x_no'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ra(idepal),ierror)
+                depale(1,1),ierror)
     nberro=nberro+ierror
     rubriq = 'deplact_y_no'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ra(idepal+nnod),ierror)
+                depale(1,2),ierror)
     nberro=nberro+ierror
     rubriq = 'deplact_z_no'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-                ra(idepal+2*nnod),ierror)
+                depale(1,3),ierror)
     nberro=nberro+ierror
 
     if (nberro.ne.0) then

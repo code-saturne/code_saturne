@@ -55,6 +55,9 @@ use parall
 use ppincl
 use pointe
 use atincl
+use cfpoin
+use albase
+use cplsat
 
 !===============================================================================
 
@@ -69,6 +72,14 @@ call finalize_aux_arrays
 
 if (ippmod(iatmos).ge.0) then
   call finalize_meteo
+endif
+
+if (ippmod(icompf).ge.0) then
+  call finalize_compf
+endif
+
+if (iale.eq.1.or.imobil.eq.1) then
+  call finalize_ale
 endif
 
 return

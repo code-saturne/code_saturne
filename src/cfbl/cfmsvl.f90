@@ -148,7 +148,6 @@ double precision sclnor
 
 integer          iccfth, imodif
 integer          iij
-integer          iwfabg, iwfbbg
 double precision dijpfx, dijpfy, dijpfz, pnd
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision diipbx, diipby, diipbz
@@ -163,6 +162,7 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:) :: wflmas, wflmab
+double precision, allocatable, dimension(:) :: wfabg, wfbbg
 
 !===============================================================================
 !===============================================================================
@@ -173,6 +173,7 @@ double precision, allocatable, dimension(:) :: wflmas, wflmab
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 allocate(wflmas(nfac), wflmab(nfabor))
+allocate(wfabg(nfac), wfbbg(nfabor))
 
 ! Allocate work arrays
 allocate(w1(ncelet))
@@ -181,11 +182,6 @@ allocate(w10(ncelet))
 
 idebia = idbia0
 idebra = idbra0
-
-iwfabg = idebra
-iwfbbg = iwfabg+nfac
-idebra = iwfbbg+nfabor
-call rasize('cfmsvl',idebra)
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
@@ -253,7 +249,7 @@ call cfmsgs                                                       &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   wflmas , wflmab , ra(iwfabg) , ra(iwfbbg) ,                    &
+   wflmas , wflmab , wfabg  , wfbbg  ,                            &
 !        ------   ------   ------   ------
    viscf  , viscb  ,                                              &
    ra     )
@@ -359,14 +355,14 @@ if(iconv(ivar).le.0) then
               ifacel,ifabor,wflmas,wflmab,smbrs)
 
   do ifac = 1, nfac
-    ra(iwfabg+ifac-1) = - ra(iwfabg+ifac-1)
+    wfabg(ifac) = - wfabg(ifac)
   enddo
   do ifac = 1, nfabor
-    ra(iwfbbg+ifac-1) = - ra(iwfbbg+ifac-1)
+    wfbbg(ifac) = - wfbbg(ifac)
   enddo
   init = 0
   call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                &
-              ifacel,ifabor,ra(iwfabg),ra(iwfbbg),smbrs)
+              ifacel,ifabor,wfabg,wfbbg,smbrs)
 
 else
 
@@ -572,15 +568,15 @@ call cfbsc3                                                       &
 !        car WFLMAB etait, ci-dessus, utilise au second membre)
 if(iconv(ivar).le.0) then
   do ifac = 1, nfac
-    propfa(ifac,iflmas) = propfa(ifac,iflmas) - wflmas(ifac)      &
-                                              - ra(iwfabg+ifac-1)
+    propfa(ifac,iflmas) = propfa(ifac,iflmas) - wflmas(ifac) - wfabg(ifac)
   enddo
   do ifac = 1, nfabor
-    propfb(ifac,iflmab) = propfb(ifac,iflmab) - wflmab(ifac)      &
-                                              - ra(iwfbbg+ifac-1)
+    propfb(ifac,iflmab) = propfb(ifac,iflmab) - wflmab(ifac) - wfbbg(ifac)
   enddo
 endif
 
+! Free memory
+deallocate(wfabg, wfbbg)
 
 !===============================================================================
 ! 8. ACTUALISATION DE LA PRESSION

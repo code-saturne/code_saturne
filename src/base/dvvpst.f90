@@ -149,8 +149,6 @@ character*32     namevr, namev1, namev2
 character*80     name80
 
 integer          idebia, idebra, ifinia, ifinra
-integer          itreco
-integer          iw1   , iw2
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
 integer          isorva, isaut
 integer          ifac  , iloc  , ivar , iclvar
@@ -170,6 +168,7 @@ double precision omgnrm, daxis2
 double precision rbid(1)
 
 double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:) :: treco
 
 !===============================================================================
 
@@ -601,13 +600,7 @@ else if  (numtyp .eq. -2) then
 
       !          Reservation de la memoire pour reconstruction
 
-      itreco = idebra
-      ifinra = itreco+nfabor
-
-      !          Verification de la disponibilite de la memoire
-
-      call rasize('dvvpst',ifinra)
-
+      allocate(treco(nfabor))
 
       !          Calcul du gradient de la temperature / enthalpie
 
@@ -672,7 +665,7 @@ else if  (numtyp .eq. -2) then
         diipbx = diipb(1,ifac)
         diipby = diipb(2,ifac)
         diipbz = diipb(3,ifac)
-        ra(itreco+ifac-1) = rtp(iel,ivar)                  &
+        treco(ifac) = rtp(iel,ivar)                  &
              + diipbx*grad(iel,1)                          &
              + diipby*grad(iel,2)                          &
              + diipbz*grad(iel,3)
@@ -680,6 +673,7 @@ else if  (numtyp .eq. -2) then
 
       ! Free memory
       deallocate(grad)
+      deallocate(treco)
 
 
       !          Calcul du flux (ouf          !) convectif et diffusif
@@ -1053,15 +1047,6 @@ endif
 if (     ippmod(ieljou).ge.1                                      &
     .or. ippmod(ielarc).ge.1                                      &
     .or. ippmod(ielion).ge.1) then
-
-  ifinia = idebia
-
-  iw1    = idebra
-  iw2    = iw1    + ncelet*3
-  ifinra = iw2    + ncelet*3
-
-  call rasize ('dvvpst', ifinra)
-  !==========
 
   call uselen                                                     &
   !==========

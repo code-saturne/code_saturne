@@ -98,7 +98,7 @@ integer          ia(*)
 double precision rtpa(ncelet,nvar), rtp(ncelet,nvar)
 double precision dt(ncelet), volume(ncelet)
 double precision xyzcen(ndim,ncelet)
-double precision ra(*)
+double precision, dimension(*), target :: ra
 
 ! Local variables
 
@@ -110,6 +110,8 @@ integer          idivdt, ixmsdt, idebia, idebra, ifinra, iel
 double precision petit,xyzmin(3),xyzmax(3)
 character*200    chain, chainc
 
+double precision, dimension(:), allocatable, target :: momtmp
+double precision, dimension(:), pointer :: varptr => null()
 
 !===============================================================================
 ! 0. INITIALISATIONS LOCALES
@@ -130,34 +132,27 @@ do ipp = 2, nvppmx
     varmax(ipp) = petit
     ira = abs(ipp2ra(ipp))
 
-!     Pour les moments, il faut eventuellement diviser par le temps cumule
+    ! For moments, we must divide by the cumulative time
     idivdt = ippmom(ipp)
-    if(idivdt.eq.0) then
-      ixmsdt = ira
+    if (idivdt.eq.0) then
+      varptr => ra(ira:ira+ncel)
     else
-      ixmsdt = idebra
-      ifinra = ixmsdt + ncel
-      call rasize ('ecrlis', ifinra)
-      !==========
-    endif
-    if(idivdt.gt.0) then
-      do iel = 1, ncel
-        ra(ixmsdt+iel-1) = ra(ira+iel-1)/ max(ra(idivdt+iel-1),epzero)
-      enddo
-    elseif(idivdt.lt.0) then
-      do iel = 1, ncel
-        ra(ixmsdt+iel-1) = ra(ira+iel-1)/ max(dtcmom(-idivdt),epzero)
-      enddo
-!   else
-!     ra(ixmsdt+iel-1) = ra(ira+iel-1)
-!     inutile car on a pose ixmsdt = ira
+      allocate(momtmp(ncel))
+      varptr => momtmp
+      if (idivdt.gt.0) then
+        do iel = 1, ncel
+          momtmp(iel) = ra(ira+iel-1)/max(ra(idivdt+iel-1),epzero)
+        enddo
+      elseif (idivdt.lt.0) then
+        do iel = 1, ncel
+          momtmp(iel) = ra(ira+iel-1)/max(dtcmom(-idivdt),epzero)
+        enddo
+      endif
     endif
 
     do icel = 1, ncel
-      if(ra(ixmsdt+icel-1).lt.varmin(ipp)) &
-         varmin(ipp) = ra(ixmsdt+icel-1)
-      if(ra(ixmsdt+icel-1).gt.varmax(ipp)) &
-         varmax(ipp) = ra(ixmsdt+icel-1)
+      if(varptr(icel).lt.varmin(ipp)) varmin(ipp) = varptr(icel)
+      if(varptr(icel).gt.varmax(ipp)) varmax(ipp) = varptr(icel)
     enddo
     if (irangp.ge.0) then
       call parmin (varmin(ipp))
@@ -167,6 +162,9 @@ do ipp = 2, nvppmx
     endif
   endif
 enddo
+
+! Free memory
+deallocate(momtmp)
 
 !==================================================================
 ! 2. DERIVE POUR LES VARIABLES TRANSPORTEES (sauf pression)

@@ -39,10 +39,6 @@ subroutine lagune &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
-   taup   , tlag   , piil   , bx     , vagaus , tsuf   , tsup   , &
-   tsvar  , tempct , tsfext , cpgd1  , cpgd2  , cpght  ,          &
-   gradpr , gradvf , croule , brgaus , terbru ,                   &
-   w1     , w2     , w3     , auxl   , auxl2  ,                   &
    ra     )
 
 !===============================================================================
@@ -81,10 +77,6 @@ subroutine lagune &
 !   (nfabor)       !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! indep            ! te ! --> ! pour chaque particule :                        !
-!   (nbpmax)       !    !     !   numero de la cellule de depart               !
-! ibord            ! te ! --> ! contient le numero de la                       !
-!   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 ! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
@@ -98,7 +90,7 @@ subroutine lagune &
 !  (nfabor, *)     !    !     !                                                !
 ! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! --> ! tableaux des variables liees                   !
+! ettp             ! tr ! --> ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! --> ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
@@ -111,32 +103,6 @@ subroutine lagune &
 !(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
 ! parbor           ! tr ! --> ! infos sur interaction des particules           !
 !(nfabor,nvisbr    !    !     !   aux faces de bord                            !
-! taup(nbpmax)     ! tr ! --> ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! --> ! temps caracteristique fluide                   !
-! piil(nbpmax,3    ! tr ! --> ! terme dans l'integration des eds up            !
-! bx(nbpmax,3,2    ! tr ! --> ! caracteristiques de la turbulence              !
-! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
-!(nbpmax,nvgaus    !    !     !                                                !
-! tsup(nbpmax,3    ! tr ! --> ! prediction 1er sous-pas pour                   !
-!                  !    !     !   la vitesse des particules                    !
-! tsuf(nbpmax,3    ! tr ! --> ! prediction 1er sous-pas pour                   !
-!                  !    !     !   la vitesse du fluide vu                      !
-! tsvar            ! tr ! --> ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable courante, utilise pour la           !
-! tempct           ! tr ! --> ! temps caracteristique thermique                !
-! (nbpmax,2)       !    !     !                                                !
-! tsfext(nbpmax    ! tr ! --> ! forces externes                                !
-! cpgd1,cpgd2,     ! tr ! --> ! termes de devolatilisation 1 et 2 et           !
-!  cpght(nbpmax    !    !     !   de combusion heterogene (charbon             !
-!                  !    !     !   avec couplage retour thermique)              !
-! gradpr(ncel,3    ! tr ! --> ! gradient de pression                           !
-! gradvf(ncel,9    ! tr ! --> ! gradient de vitesse fluide                     !
-! croule           ! tr ! --> ! fonction d'importance pour roulette            !
-!   (ncelet)       !    !     !   russe                                        !
-! w1..w3(ncelet    ! tr ! --- ! tableaux de travail                            !
-! auxl(nbpmax,3    ! tr ! --- ! tableau de travail                             !
-! auxl2            ! tr ! --- ! tableau de travail                             !
-!    (nbpmax,7)    !    !     !                                                !
 ! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
@@ -180,31 +146,19 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
-integer          indep(nbpmax) , ibord(nbpmax)
 integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
+double precision ettp(nbpmax,nvp), ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
-double precision taup(nbpmax) , tlag(nbpmax,3) , piil(nbpmax,3)
-double precision vagaus(nbpmax,*) , bx(nbpmax,3,2)
-double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
-double precision tsvar(nbpmax,nvp1)
-double precision tempct(nbpmax,2) , tsfext(nbpmax)
-double precision cpgd1(nbpmax) , cpgd2(nbpmax) , cpght(nbpmax)
 double precision dlgeo(nfabor,ngeol)
-double precision brgaus(nbpmax,*) , terbru(nbpmax)
-double precision gradpr(ncelet,3) , gradvf(ncelet,9)
-double precision croule(ncelet)
-double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
-double precision auxl(nbpmax,3) , auxl2(nbpmax,7)
 double precision ra(*)
 
 ! Local variables
@@ -227,6 +181,26 @@ integer          ius
 double precision distp , d1 , px,py,pz, lvisq, visccf, romf
 double precision tvisq, ustar, ustarmoy
 
+integer, allocatable, dimension(:) :: indep, ibord
+
+double precision, allocatable, dimension(:) :: taup
+double precision, allocatable, dimension(:,:) :: tlag, piil
+double precision, allocatable, dimension(:,:) :: vagaus
+double precision, allocatable, dimension(:,:,:) :: bx
+double precision, allocatable, dimension(:,:) :: tsuf, tsup
+double precision, allocatable, dimension(:,:) :: tsvar
+double precision, allocatable, dimension(:,:) :: tempct
+double precision, allocatable, dimension(:) :: tsfext
+double precision, allocatable, dimension(:) :: cpgd1, cpgd2, cpght
+double precision, allocatable, dimension(:,:) :: brgaus
+double precision, allocatable, dimension(:) :: terbru
+double precision, allocatable, dimension(:,:) :: gradpr, gradvf
+double precision, allocatable, dimension(:) :: croule
+double precision, allocatable, dimension(:) :: w1, w2, w3
+double precision, allocatable, dimension(:,:) :: auxl, auxl2
+
+double precision, allocatable, dimension(:,:) :: tslag
+
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
 integer          ipass
@@ -237,6 +211,47 @@ save             ipass
 !===============================================================================
 ! 0.  GESTION MEMOIRE ET COMPTEUR DE PASSAGE
 !===============================================================================
+
+! Allocate temporary arrays
+allocate(indep(nbpmax), ibord(nbpmax))
+allocate(auxl(nbpmax,3))
+allocate(taup(nbpmax))
+allocate(tlag(nbpmax,3))
+allocate(piil(nbpmax,3))
+allocate(vagaus(nbpmax,nvgaus))
+allocate(tsuf(nbpmax,3))
+allocate(tsup(nbpmax,3))
+allocate(bx(nbpmax,3,2))
+allocate(tsvar(nbpmax,nvp1))
+allocate(gradpr(ncelet,3))
+allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+
+! Allocate other arrays depending on user options
+if ((iphyla.eq.1 .and. itpvar.eq.1) .or. iphyla.eq.2) then
+  allocate(tempct(nbpmax,2))
+endif
+if (iilagr.eq.2) then
+  allocate(tsfext(nbpmax))
+endif
+if (iilagr.eq.2 .and. iphyla.eq.2 .and. ltsthe.eq.1) then
+  allocate(cpgd1(nbpmax))
+  allocate(cpgd2(nbpmax))
+  allocate(cpght(nbpmax))
+endif
+if (modcpl.gt.0) then
+  allocate(gradvf(ncelet,9))
+endif
+if (iroule.eq.1) then
+  allocate(croule(ncelet))
+endif
+if (lamvbr.eq.1) then
+  allocate(brgaus(nbpmax,nbrgau))
+  allocate(terbru(nbpmax))
+endif
+if (nordre.eq.2) then
+  allocate(auxl2(nbpmax,7))
+endif
+
 
 ipass = ipass + 1
 
@@ -725,11 +740,8 @@ endif
 
 if (iilagr.eq.2 .and. nor.eq.nordre) then
 
-  ifinia = idebia
-  iitslg = idebra
-  ifinra = iitslg + ntersl*nbpmax
-  call rasize('lagune',ifinra)
-  !==========
+  ! Allocate a temporary array
+  allocate(tslag(nbpmax,ntersl))
 
   call lagcou                                                     &
   !==========
@@ -743,9 +755,12 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
      ettp   , ettpa  , tepa   , taup   ,                          &
      tempct , tsfext , tslagr ,                                   &
      cpgd1  , cpgd2  , cpght  ,                                   &
-     ra(iitslg)      , w1     , w2   ,                            &
+     tslag  , w1     , w2   ,                            &
      auxl(1,1) , auxl(1,2)   , auxl(1,3) ,                        &
      ra     )
+
+     ! Free memory
+     deallocate(tslag)
 
 endif
 
@@ -949,7 +964,7 @@ if (iensi2.eq.1) then
    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      nfin   ,                                                     &
      itepa  ,                                                     &
-     ettp   , tepa , auxl   )
+     ettp   , tepa   )
 endif
 
 !===============================================================================
@@ -991,6 +1006,44 @@ if (modntl.eq.0) then
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , statis , &
    ra     )
 
+endif
+
+! Free memory
+deallocate(indep, ibord)
+deallocate(auxl)
+deallocate(taup)
+deallocate(tlag)
+deallocate(piil)
+deallocate(vagaus)
+deallocate(tsuf)
+deallocate(tsup)
+deallocate(bx)
+deallocate(tsvar)
+deallocate(gradpr)
+deallocate(w1, w2, w3)
+if ((iphyla.eq.1 .and. itpvar.eq.1) .or. iphyla.eq.2) then
+  deallocate(tempct)
+endif
+if (iilagr.eq.2) then
+  deallocate(tsfext)
+endif
+if (iilagr.eq.2 .and. iphyla.eq.2 .and. ltsthe.eq.1) then
+  deallocate(cpgd1)
+  deallocate(cpgd2)
+  deallocate(cpght)
+endif
+if (modcpl.gt.0) then
+  deallocate(gradvf)
+endif
+if (iroule.eq.1) then
+  deallocate(croule)
+endif
+if (lamvbr.eq.1) then
+  deallocate(brgaus)
+  deallocate(terbru)
+endif
+if (nordre.eq.2) then
+  deallocate(auxl2)
 endif
 
 !===============================================================================

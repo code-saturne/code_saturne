@@ -384,7 +384,7 @@ do ifac = 1, nfabor
 !           Les flux en grad epsilon sup et énergie cinétique doivent
 !             être nuls puisque tout est pris par le terme de
 !             diffusion d'energie.
-      ia(iifbet+ifac-1) = 1
+      ifbet(ifac) = 1
 
 !           Flux nul pour la reconstruction éventuelle de température
       icodcl(ifac,itk) = 3
@@ -400,7 +400,7 @@ do ifac = 1, nfabor
 !           Les flux en grad epsilon sup et énergie cinétique doivent
 !             être nuls puisque tout est pris par le terme de
 !             diffusion d'energie.
-      ia(iifbet+ifac-1) = 1
+      ifbet(ifac) = 1
 
 !           Flux nul pour la reconstruction éventuelle de température
       icodcl(ifac,itk) = 3

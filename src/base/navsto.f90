@@ -142,7 +142,7 @@ integer          iflmas, iflmab, ipcrom, ipbrom
 integer          iflms1, iflmb1, iflmb0
 integer          nswrgp, imligp, iwarnp, imaspe
 integer          nbrval, iappel, iescop, idtsca
-integer          iflint, iflbrd, icocgv, ifinra
+integer          ifinra
 integer          ndircp, icpt  , iecrw
 integer          numcpl
 double precision rnorm , rnorma, rnormi, vitnor
@@ -167,6 +167,7 @@ double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: dfrcxt
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, allocatable, dimension(:) :: esflum, esflub
+double precision, allocatable, dimension(:) :: flint, flbrd
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 
@@ -361,11 +362,7 @@ if( iprco.le.0 ) then
 
 !     One temporary array needed for internal faces, in case some internal vertices
 !       are moved directly by the user
-    iflint = idebra
-    ifinra = iflint + nfac
-
-    call rasize('navsto',ifinra)
-    !==========
+    allocate(flint(nfac))
 
     iflmas = ipprof(ifluma(iu))
     iflmab = ipprob(ifluma(iu))
@@ -386,7 +383,7 @@ if( iprco.le.0 ) then
     imaspe = 1
 
     do ifac = 1, nfac
-      ra(iflint+ifac-1) = 0.d0
+      flint(ifac) = 0.d0
     enddo
 
     call inimas &
@@ -402,7 +399,7 @@ if( iprco.le.0 ) then
    rtp(1,iuma )    , rtp(1,ivma )    , rtp(1,iwma)     ,          &
    coefa(1,icluma), coefa(1,iclvma), coefa(1,iclwma),             &
    coefb(1,icluma), coefb(1,iclvma), coefb(1,iclwma),             &
-   ra(iflint)     , propfb(1,iflmab) ,                            &
+   flint  , propfb(1,iflmab) ,                                    &
    ra     )
 
     do iel = 1, ncelet
@@ -424,14 +421,11 @@ if( iprco.le.0 ) then
       icpt  = 0
       do ii = ipnfac(ifac),ipnfac(ifac+1)-1
         inod = nodfac(ii)
-        if (ia(iimpal+inod-1).eq.0) iecrw = iecrw + 1
+        if (impale(inod).eq.0) iecrw = iecrw + 1
         icpt = icpt + 1
-        ddepx = ddepx + ra(idepal       +inod-1)                  &
-             +ra(ixyzn0+(inod-1)*ndim  )-xyznod(1,inod)
-        ddepy = ddepy + ra(idepal+nnod  +inod-1)                  &
-             +ra(ixyzn0+(inod-1)*ndim+1)-xyznod(2,inod)
-        ddepz = ddepz + ra(idepal+2*nnod+inod-1)                  &
-             +ra(ixyzn0+(inod-1)*ndim+2)-xyznod(3,inod)
+        ddepx = ddepx + depale(inod,1) + xyzno0(1,inod)-xyznod(1,inod)
+        ddepy = ddepy + depale(inod,2) + xyzno0(2,inod)-xyznod(2,inod)
+        ddepz = ddepz + depale(inod,3) + xyzno0(3,inod)-xyznod(3,inod)
       enddo
       !     If all the face vertices have imposed displacement, w is evaluated from
       !       this displacement
@@ -446,10 +440,13 @@ if( iprco.le.0 ) then
              +ddepz*surfac(3,ifac) )/dtfac/icpt
         !     Else w is calculated from the cell-centre mesh velocity
       else
-        propfa(ifac,iflmas) = propfa(ifac,iflmas)                 &
-             + ra(iflint+ifac-1)
+        propfa(ifac,iflmas) = propfa(ifac,iflmas) + flint(ifac)
       endif
     enddo
+
+    ! Free memory
+    deallocate(flint)
+
   endif
 
   ! Ajout de la vitesse du solide dans le flux convectif,
@@ -564,14 +561,8 @@ ipbrom = ipprob(irom  )
 
 if( irevmc.eq.1 ) then
 
-  !     On a besoin de trois tableaux de travail
-  iflint = idebra
-  iflbrd = iflint + nfac
-  icocgv = iflbrd + nfabor
-  ifinra = icocgv + ncelet*9
-
-  call rasize('navsto',ifinra)
-  !==========
+  ! Allocate temporary arrays
+  allocate(flint(nfac), flbrd(nfabor))
 
   !     on ote la partie en u-predit dans le flux de masse final,
   !     on projete des faces vers le centre, puis on rajoute u-predit.
@@ -602,14 +593,14 @@ if( irevmc.eq.1 ) then
    rtp(1,iu)    , rtp(1,iv)    , rtp(1,iw)    ,                   &
    coefa(1,icliup), coefa(1,iclivp), coefa(1,icliwp),             &
    coefb(1,icliup), coefb(1,iclivp), coefb(1,icliwp),             &
-   ra(iflint), ra(iflbrd),                                        &
+   flint  , flbrd ,                                               &
    ra     )
 
   do ifac = 1, nfac
-    ra(iflint+ifac-1) = propfa(ifac,iflmas) - ra(iflint+ifac-1)
+    flint(ifac) = propfa(ifac,iflmas) - flint(ifac)
   enddo
   do ifac = 1, nfabor
-    ra(iflbrd+ifac-1) = propfb(ifac,iflmab) - ra(iflbrd+ifac-1)
+    flbrd(ifac) = propfb(ifac,iflmab) - flbrd(ifac)
   enddo
 
   call recvmc                                                     &
@@ -617,9 +608,9 @@ if( irevmc.eq.1 ) then
  ( idebia , ifinra ,                                              &
    nvar   , nscal  ,                                              &
    ia     ,                                                       &
-   propce(1,ipcrom), ra(iflint)      , ra(iflbrd)      ,          &
+   propce(1,ipcrom), flint  , flbrd  ,                            &
    w1     , w2     , w3     ,                                     &
-   w4     , w5     , w6     , ra(icocgv)      ,                   &
+   w4     , w5     , w6     ,                                     &
    ra     )
 
   do iel = 1, ncel
@@ -628,16 +619,10 @@ if( irevmc.eq.1 ) then
     rtp(iel,iw) = rtp(iel,iw) + w3(iel)
   enddo
 
+  ! Free memory
+  deallocate(flint, flbrd)
+
 elseif( irevmc.eq.2 ) then
-
-  !     On calcule la vitesse corrigee directement a partir du flux de masse
-  !       corrige    .
-  !     On a besoin de trois tableaux de travail
-  icocgv = idebra
-  ifinra = icocgv + ncelet*9
-
-  call rasize('navsto',ifinra)
-  !==========
 
   call recvmc &
   !==========
@@ -646,7 +631,7 @@ elseif( irevmc.eq.2 ) then
        ia     ,                                                       &
        propce(1,ipcrom), propfa(1,iflmas), propfb(1,iflmab),          &
        rtp(1,iu), rtp(1,iv), rtp(1,iw),                               &
-       w4     , w5     , w6     , ra(icocgv)   ,                      &
+       w4     , w5     , w6     ,                                     &
        ra     )
 
 
@@ -784,11 +769,7 @@ if (iale.eq.1) then
 
   ! One temporary array needed for interior faces, in case some
   ! interior vertices are moved directly by the user
-  iflint = idebra
-  ifinra = iflint + nfac
-
-  call rasize('navsto',ifinra)
-  !==========
+  allocate(flint(nfac))
 
   iflmas = ipprof(ifluma(iu))
   iflmab = ipprob(ifluma(iu))
@@ -809,7 +790,7 @@ if (iale.eq.1) then
   imaspe = 1
 
   do ifac = 1, nfac
-    ra(iflint+ifac-1) = 0.d0
+    flint(ifac) = 0.d0
   enddo
 
   call inimas &
@@ -825,7 +806,7 @@ if (iale.eq.1) then
    rtp(1,iuma )    , rtp(1,ivma )    , rtp(1,iwma)     ,          &
    coefa(1,icluma), coefa(1,iclvma), coefa(1,iclwma),             &
    coefb(1,icluma), coefb(1,iclvma), coefb(1,iclwma),             &
-   ra(iflint)     , propfb(1,iflmab) ,                            &
+   flint  , propfb(1,iflmab) ,                                    &
    ra     )
 
   do iel = 1, ncelet
@@ -847,14 +828,11 @@ if (iale.eq.1) then
     icpt  = 0
     do ii = ipnfac(ifac),ipnfac(ifac+1)-1
       inod = nodfac(ii)
-      if (ia(iimpal+inod-1).eq.0) iecrw = iecrw + 1
+      if (impale(inod).eq.0) iecrw = iecrw + 1
       icpt = icpt + 1
-      ddepx = ddepx + ra(idepal       +inod-1)                    &
-           +ra(ixyzn0+(inod-1)*ndim  )-xyznod(1,inod)
-      ddepy = ddepy + ra(idepal+nnod  +inod-1)                    &
-           +ra(ixyzn0+(inod-1)*ndim+1)-xyznod(2,inod)
-      ddepz = ddepz + ra(idepal+2*nnod+inod-1)                    &
-           +ra(ixyzn0+(inod-1)*ndim+2)-xyznod(3,inod)
+      ddepx = ddepx + depale(inod,1) + xyzno0(1,inod)-xyznod(1,inod)
+      ddepy = ddepy + depale(inod,2) + xyzno0(2,inod)-xyznod(2,inod)
+      ddepz = ddepz + depale(inod,3) + xyzno0(3,inod)-xyznod(3,inod)
     enddo
     !     If all the face vertices have imposed displacement, w is evaluated from
     !       this displacement
@@ -869,10 +847,12 @@ if (iale.eq.1) then
            +ddepz*surfac(3,ifac) )/dtfac/icpt
       !     Else w is calculated from the cell-centre mesh velocity
     else
-      propfa(ifac,iflmas) = propfa(ifac,iflmas)                   &
-           + ra(iflint+ifac-1)
+      propfa(ifac,iflmas) = propfa(ifac,iflmas) + flint(ifac)
     endif
   enddo
+
+  ! Free memory
+  deallocate(flint)
 
 endif
 
