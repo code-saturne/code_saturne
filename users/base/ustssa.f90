@@ -135,7 +135,6 @@ subroutine ustssa &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use entsor
 use optcal

@@ -32,7 +32,7 @@ subroutine uspt1d &
 !================
 
  ( nvar   , nscal  , nfpt1d , iappel ,                            &
-   ifpt1d , nppt1d , iclt1d ,                                     &
+   ifpt1d , izft1d , nppt1d , iclt1d ,                            &
    ia     ,                                                       &
    tppt1d , rgpt1d , eppt1d ,                                     &
    tept1d , hept1d , fept1d ,                                     &
@@ -92,6 +92,7 @@ subroutine uspt1d &
 ! nfpt1d           ! i  ! <-- ! number of faces with the 1-D thermal module    !
 ! iappel           ! i  ! <-- ! data type to send                              !
 ! ifpt1d           ! ia ! <-- ! number of the face treated                     !
+! izft1d           ! ia ! <-- ! boundary faces zone for 1d-module definition   !
 ! nppt1d           ! ia ! <-- ! number of discretized points                   !
 ! iclt1d           ! ia ! <-- ! boundary condition type                        !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
@@ -144,6 +145,7 @@ integer          nvar   , nscal  , nfpt1d
 integer          iappel
 
 integer          ifpt1d(nfpt1d), nppt1d(nfpt1d), iclt1d(nfpt1d)
+integer          izft1d(nfabor)
 integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
@@ -156,9 +158,10 @@ double precision xlmt1d(nfpt1d) , rcpt1d(nfpt1d) , dtpt1d(nfpt1d)
 double precision ra(*)
 
 ! Local variables
-!-------------------------------------------------------------------
+
 integer          ifbt1d , ii , ifac
 integer          ilelt, nlelt
+integer          izone
 
 integer, allocatable, dimension(:) :: lstelt
 
@@ -166,8 +169,6 @@ integer, allocatable, dimension(:) :: lstelt
 
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
-
-
 
 !===============================================================================
 ! Rereading of the restart file:
@@ -185,6 +186,7 @@ allocate(lstelt(nfabor))
 
 isuit1 = isuite
 
+izone = 0
 ifbt1d = 0
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -218,10 +220,12 @@ if (iappel.eq.1.or.iappel.eq.2) then
   call getfbr('3', nlelt, lstelt)
   !==========
 
+  izone = izone + 1
+
   do ilelt = 1, nlelt
 
     ifac = lstelt(ilelt)
-
+    izft1d(ifac) = izone
     ifbt1d =ifbt1d + 1
     if (iappel.eq.2) ifpt1d(ifbt1d) = ifac
 

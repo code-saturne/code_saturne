@@ -101,7 +101,7 @@ subroutine vissst &
 use paramx
 use dimens, only: ndimfb
 use cstnum
-use pointe
+use pointe, only: s2kw, divukw, ifapat, dispar
 use numvar
 use optcal
 use cstphy

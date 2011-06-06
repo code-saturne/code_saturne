@@ -257,16 +257,16 @@ if (ippmod(iphpar).ge.1) then
 
       if(ispecf.eq.2) then
 
-        call cfener                                               &
+        call cfener &
         !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc   , ncetsm   ,                                          &
+   ncepdc , ncetsm ,                                              &
    iscal  ,                                                       &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
    ra     )
@@ -324,10 +324,10 @@ if (ippmod(iphpar).ge.1) then
    nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
-   coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
    ra     )
@@ -499,10 +499,10 @@ if(nscaus.gt.0) then
    nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
-   coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
    ra     )

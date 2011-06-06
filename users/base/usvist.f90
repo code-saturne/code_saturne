@@ -98,7 +98,6 @@ subroutine usvist &
 
 use paramx
 use dimens, only: ndimfb
-use pointe
 use numvar
 use optcal
 use cstphy

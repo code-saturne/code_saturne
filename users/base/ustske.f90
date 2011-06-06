@@ -145,7 +145,6 @@ subroutine ustske &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use entsor
 use optcal

@@ -93,7 +93,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe
 use parall
 use period
 use ppppar

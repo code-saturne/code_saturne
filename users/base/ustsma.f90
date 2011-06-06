@@ -33,7 +33,7 @@ subroutine ustsma &
 
  ( nvar   , nscal  , ncepdp ,                                     &
    ncesmp , iappel ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
+   icepdc , icetsm , itypsm , izctsm ,                            &
    ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
@@ -159,6 +159,7 @@ subroutine ustsma &
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see uttsma.f90)                              !
+! izctsm(ncelet)   ! ia ! <-- ! cells zone for mass source terms definition    !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
@@ -184,7 +185,6 @@ subroutine ustsma &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use entsor
 use optcal
@@ -206,6 +206,7 @@ integer          iappel
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+integer          izctsm(ncel)
 integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
@@ -221,6 +222,7 @@ double precision ra(*)
 integer          ieltsm
 integer          ifac, iutile, ii
 integer          ilelt, nlelt
+integer          izone
 
 double precision vent, vent2
 double precision dh, ustar2
@@ -234,7 +236,6 @@ integer, allocatable, dimension(:) :: lstelt
 
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
-
 
 if(iappel.eq.1.or.iappel.eq.2) then
 
@@ -289,12 +290,18 @@ if(iappel.eq.1.or.iappel.eq.2) then
   iutile = 0
   if(iutile.eq.1) then
 
+    izone = 0
     ieltsm = 0
 
     !     Cells with coordinate X between 2.5 and 5.
-    CALL GETCEL('X > 2.5 and X < 5.0',NLELT,LSTELT)
+
+    call getcel('X > 2.5 and X < 5.0',nlelt,lstelt)
+
+    izone = izone + 1
+
     do ilelt = 1, nlelt
       ii = lstelt(ilelt)
+      izctsm(ii) = izone
       ieltsm = ieltsm + 1
       if (iappel.eq.2) icetsm(ieltsm) = ii
     enddo
@@ -302,7 +309,10 @@ if(iappel.eq.1.or.iappel.eq.2) then
 
     !     Cells with a boundary face of color 3
 
-    CALL GETFBR('3',NLELT,LSTELT)
+    call getfbr('3',nlelt,lstelt)
+
+    izone = izone + 1
+
     do ilelt = 1, nlelt
       ifac = lstelt(ilelt)
       ii   = ifabor(ifac)
@@ -311,6 +321,7 @@ if(iappel.eq.1.or.iappel.eq.2) then
       if (.not.(xyzcen(1,ii).lt.500.d0.and.                     &
            xyzcen(1,ii).gt.250.d0)    )then
         ieltsm = ieltsm + 1
+        izctsm(ii) = izone
         if (iappel.eq.2) icetsm(ieltsm) = ii
       endif
     enddo

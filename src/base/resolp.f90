@@ -120,7 +120,7 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe
+use pointe, only: itypfb
 use albase
 use parall
 use period

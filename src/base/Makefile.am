@@ -292,10 +292,7 @@ matrdt.f90 \
 matrix.f90 \
 memfin.f90 \
 memini.f90 \
-mempdc.f90 \
-memt1d.f90 \
 memtri.f90 \
-memtsm.f90 \
 memvor.f90 \
 modini.f90 \
 modpar.f90 \

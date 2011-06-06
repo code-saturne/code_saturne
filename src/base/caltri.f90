@@ -191,7 +191,155 @@ if (iilagr.gt.0) then
 endif
 
 !===============================================================================
-! 4. Memory management
+! 5. Zone definition for head-loss, mass source term and 1D-wall module
+!===============================================================================
+
+! First pass for every subroutine
+iappel = 1
+
+! Allocate temporary arrays for zones definition
+allocate(izcpdc(ncel))
+allocate(izctsm(ncel))
+allocate(izft1d(nfabor))
+
+! ---------
+! Head-loss
+! ---------
+
+if (iihmpr.eq.1) then
+  call uikpdc &
+  !==========
+( iappel ,          &
+  ncelet , ncepdc , &
+  ivoid  ,          &
+  rvoid  ,          &
+  rvoid  )
+endif
+
+call  uskpdc &
+!===========
+( nvar   , nscal  ,                                              &
+  ncepdc , iappel ,                                              &
+  ivoid  , izcpdc ,                                              &
+  ia     ,                                                       &
+  rvoid  , rvoid  , rvoid  ,                                     &
+  rvoid  , propfa , propfb ,                                     &
+  coefa  , coefb  ,                                              &
+  rvoid  ,                                                       &
+  ra     )
+
+! Total number of cells with head-loss
+ncpdct = ncepdc
+if (irangp.ge.0) then
+  call parcpt(ncpdct)
+  !==========
+endif
+
+if (ncpdct.gt.0) then
+  write(nfecra,2001) ncpdct
+  write(nfecra,3000)
+endif
+
+! -----------------
+! Mass source terms
+! -----------------
+
+call ustsma &
+!==========
+( nvar   , nscal  , ncepdc ,                                     &
+  ncetsm , iappel ,                                              &
+  icepdc ,                                                       &
+  ivoid  , ivoid  , izctsm ,                                     &
+  ia     ,                                                       &
+  rvoid  , rvoid  ,                                              &
+  rvoid  , propfa , propfb ,                                     &
+  coefa  , coefb  ,                                              &
+  ckupdc , rvoid  ,                                              &
+  ra     )
+
+! Total number of cells with mass source term
+nctsmt = ncetsm
+if (irangp.ge.0) then
+  call parcpt(nctsmt)
+  !==========
+endif
+
+if (nctsmt.gt.0) then
+  write(nfecra,2002) nctsmt
+  write(nfecra,3000)
+endif
+
+! --------------
+! 1D-wall module
+! --------------
+
+call uspt1d &
+!==========
+ ( nvar   , nscal  , nfpt1d , iappel ,                            &
+   ivoid  , izft1d , ivoid  , ivoid  ,                            &
+   ia     ,                                                       &
+   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  , rvoid  , rvoid  ,                                     &
+   rvoid  , rvoid  ,                                              &
+   rvoid  , propfa , propfb ,                                     &
+   coefa  , coefb  ,                                              &
+   ra     )
+
+nfpt1t = nfpt1d
+if (irangp.ge.0) then
+  call parcpt(nfpt1t)
+  !==========
+endif
+
+if (nfpt1t.gt.0) then
+  write(nfecra,2003) nfpt1t, nfpt1d
+  write(nfecra,3000)
+endif
+
+call vert1d &
+!==========
+ (idbia1 , idbra1 ,                                               &
+  nfabor , nfpt1d , iappel ,                                      &
+  ivoid  , ivoid  , ivoid  ,                                      &
+  ia     ,                                                        &
+  rvoid  , rvoid  ,                                               &
+  rvoid  , rvoid  , rvoid  ,                                      &
+  ra     )
+
+! Free memory if relevant
+if (ncpdct.eq.0) deallocate(izcpdc)
+if (nctsmt.eq.0) deallocate(izctsm)
+if (nfpt1t.eq.0) deallocate(izft1d)
+
+! Formats
+#if defined(_CS_LANG_FR)
+ 2001 format(                                                   &
+ /,/,'TRAITEMENT DES PERTES DE CHARGES ACTIVE ',/,              &
+ '                 SUR  UN TOTAL DE NCEPDC = ',I10,' CELLULES',/)
+ 2002 format(                                          &
+ /,/,'TRAITEMENT DES SOURCES DE MASSE ACTIVE ',/,      &
+   '                 SUR  UN TOTAL DE ',I10,' CELLULES')
+ 2003 format(                                                     &
+    /,'TTES PHASES  : MODULE THERMIQUE 1D EN PAROI ACTIVE     ',/,&
+      '   SUR UN TOTAL DE ',I10,' FACES DE BORD',/,               &
+      '   (',I10,' FACES DE BORD EN LOCAL)',/)
+#else
+ 2001 format(                                               &
+ /,/,'HEAD LOSS TERMS TREATMENT ACTIVATED ',/,              &
+ '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/)
+ 2002 format(                                    &
+ /,/,'MASS SOURCE TERMS TREATMENT ACTIVATED ',/, &
+   '                 ON A TOTAL OF ',I10,' CELLS')
+ 2003 format(                                               &
+ /,'ALL PHASES  : 1D-WALL THERMAL MODULE ACTIVATED ',/,     &
+   '   ON A TOTAL OF ',I10,' BOUNDARY FACES',/,             &
+   '   (',I10,' LOCAL BOUNDARY FACES)',/)
+#endif
+
+
+!===============================================================================
+! 6. Memory management
 !===============================================================================
 
 ! Allocate main real arrays
@@ -230,6 +378,21 @@ if (iale.eq.1.or.imobil.eq.1) then
   !============
 endif
 
+if (ncpdct.gt.0) then
+  call init_kpdc
+  !=============
+endif
+
+if (nctsmt.gt.0) then
+  call init_tsma ( nvar )
+  !=============
+endif
+
+if (nfpt1t.gt.0) then
+  call init_pt1d
+  !=============
+endif
+
 ! Memory reservation for Lagrangian module
 if (iilagr.gt.0) then
 
@@ -251,7 +414,7 @@ if (iilagr.gt.0) then
 endif
 
 !===============================================================================
-! 4.1 TESTS ELEMENTAIRES : appel a testel.f90
+! 7. TESTS ELEMENTAIRES : appel a testel.f90
 !===============================================================================
 
 if (iverif.eq.1) then
@@ -271,7 +434,7 @@ if (iverif.eq.1) then
 endif
 
 !===============================================================================
-! 5. INITIALISATIONS PAR DEFAUT
+! 8. INITIALISATIONS PAR DEFAUT
 !===============================================================================
 
 call iniva0 &
@@ -286,7 +449,7 @@ call iniva0 &
    ra     )
 
 !===============================================================================
-! 6. CALCUL SUITE EVENTUEL
+! 9. CALCUL SUITE EVENTUEL
 !===============================================================================
 
 if (isuite.eq.1) then
@@ -323,9 +486,9 @@ if (isuite.eq.1) then
 endif
 
 !===============================================================================
-! 7. INITIALISATIONS (Utilisateur et complementaires)
-!    RTP DT ROM ROMB VISCL VISCT VISCLS
-!    (TPUCOU en PERIODICITE)
+! 10. INITIALISATIONS (Utilisateur et complementaires)
+!     RTP DT ROM ROMB VISCL VISCT VISCLS
+!     (TPUCOU en PERIODICITE)
 !===============================================================================
 
 call inivar &
@@ -340,7 +503,7 @@ call inivar &
    ra     )
 
 !===============================================================================
-! 8.1 MODULE DE RAYONNEMENT : CALCUL SUITE EVENTUEL
+! 10.1 MODULE DE RAYONNEMENT : CALCUL SUITE EVENTUEL
 !===============================================================================
 
 if (iirayo.gt.0 .and. isuird.eq.1) then
@@ -356,7 +519,7 @@ if (iirayo.gt.0 .and. isuird.eq.1) then
 endif
 
 !===============================================================================
-! 8.2 INITIALISATIONS DES PARTICULES POUR LE LAGRANGIEN
+! 10.2 INITIALISATIONS DES PARTICULES POUR LE LAGRANGIEN
 !===============================================================================
 
 if (iilagr.gt.0) then
@@ -376,7 +539,7 @@ if (iilagr.gt.0) then
 endif
 
 !===============================================================================
-! 8.3 INITIALISATIONS POUR LE MODULE THERMIQUE 1D EN PAROI
+! 10.3 INITIALISATIONS POUR LE MODULE THERMIQUE 1D EN PAROI
 !===============================================================================
 ! On suppose que toutes les phases voient la meme temperature de paroi
 ! USPT1D a un fonctionnement similaire a USKPDC et USTSMA, mais comme
@@ -387,37 +550,6 @@ endif
 idbia1 = ifinia
 idbra1 = ifinra
 
-!     Premier appel : definition de NFPT1D et ISUIT1
-iappel = 1
-call uspt1d                                                       &
-!==========
- ( nvar   , nscal  , nfpt1d , iappel ,                            &
-   ivoid  , ivoid  , ivoid  ,                                     &
-   ia     ,                                                       &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   rvoid  , rvoid  , rvoid  ,                                     &
-   ra(idt)    , ra(irtpa) ,                                       &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
-   ra     )
-
-iappel = 1
-call vert1d &
-!==========
- (idbia1 , idbra1 ,                                               &
-  nfabor , nfpt1d , iappel ,                                      &
-  ivoid  , ivoid  , ivoid  ,                                      &
-  ia     ,                                                        &
-  rvoid  , rvoid  ,                                               &
-  rvoid  , rvoid  , rvoid  ,                                      &
-  ra     )
-
-call memt1d                                                       &
-!==========
- ( idbia1 , idbra1 , nfabor , ifnia1 , ifnra1 ,ifnia2 , ifnra2 ,  &
-   ifinia , ifinra , ia     , ra     )
-
 ! On appelle uspt1d lorqu'il y a sur un processeur au moins des faces de
 !     bord avec module thermique 1D.
 
@@ -425,32 +557,32 @@ if (nfpt1t.gt.0) then
 ! Deuxieme appel : remplissage des tableaux de definition de la geometrie
 !            et de l'initialisation (IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
   iappel = 2
-  call  uspt1d                                                    &
+  call  uspt1d &
   !===========
  ( nvar   , nscal  , nfpt1d , iappel ,                            &
-   ia(iifpt1) , ia(inppt1) , ia(iiclt1) ,                         &
+   ifpt1d , izft1d , nppt1d , iclt1d ,                            &
    ia     ,                                                       &
-   ra(itppt1) , ra(irgpt1) , ra(ieppt1) ,                         &
-   ra(itept1) , ra(ihept1) , ra(ifept1) ,                         &
-   ra(ixlmt1) , ra(ircpt1) , ra(idtpt1) ,                         &
+   tppt1d , rgpt1d , eppt1d ,                                     &
+   tept1d , hept1d , fept1d ,                                     &
+   xlmbt1 , rcpt1d , dtpt1d ,                                     &
    ra(idt)    , ra(irtpa) ,                                       &
    ra(ipropc) , propfa , propfb ,                                 &
    coefa  , coefb  ,                                              &
    ra     )
 
   iappel = 2
-  call vert1d                                                     &
+  call vert1d &
   !==========
- (ifinia     , ifinra     ,                                       &
-  nfabor     , nfpt1d     , iappel     ,                          &
-  ia(iifpt1) , ia(inppt1) , ia(iiclt1) , ia     ,                 &
-  ra(irgpt1) , ra(ieppt1) ,                                       &
-  ra(ixlmt1) , ra(ircpt1) , ra(idtpt1) , ra     )
+ (ifinia , ifinra ,                                               &
+  nfabor , nfpt1d , iappel ,                                      &
+  ifpt1d , nppt1d , iclt1d , ia     ,                             &
+  rgpt1d , eppt1d ,                                               &
+  xlmbt1 , rcpt1d , dtpt1d , ra     )
 
 !     Calcul du max des NPPT1D (pour les fichiers suite)
   nmxt1d = 0
   do iiii = 1, nfpt1d
-    nmxt1d = max(ia(inppt1+iiii-1),nmxt1d)
+    nmxt1d = max(nppt1d(iiii),nmxt1d)
   enddo
   if (irangp.ge.0) call parcmx(nmxt1d)
                    !==========
@@ -458,18 +590,18 @@ if (nfpt1t.gt.0) then
   if (isuit1.eq.1) then
 
     ficsui = '1dwall_module'
-    call lect1d                                                   &
+    call lect1d &
     !==========
- ( ficsui     , len(ficsui), nfpt1d     , nfpt1t    ,             &
-   nmxt1d     , nfabor     , ia(inppt1) , ia(iifpt1) , ra(ieppt1),&
-   ra(irgpt1) , ra(itppt1))
+ ( ficsui , len(ficsui), nfpt1d , nfpt1t ,           &
+   nmxt1d , nfabor     , nppt1d , ifpt1d , eppt1d , &
+   rgpt1d , tppt1d )
 
   else
 !     Creation du maillage, initialisation de la temperature.
 
-    call mait1d                                                   &
+    call mait1d &
     !==========
- ( nfpt1d, ia(inppt1), ra(ieppt1), ra(irgpt1),ra(itppt1))
+ ( nfpt1d, nppt1d, eppt1d, rgpt1d, tppt1d )
 
   endif
 
@@ -493,35 +625,6 @@ idbia1 = ifinia
 idbra1 = ifinra
 
 
-iappel = 1
-
-if (iihmpr.eq.1) then
-  call uikpdc &
-  !==========
-( iappel ,          &
-  ncelet , ncepdc , &
-  ivoid  ,          &
-  rvoid  ,          &
-  ra(irtpa) )
-endif
-
-call  uskpdc &
-!===========
-( nvar   , nscal  ,                                              &
-  ncepdc , iappel ,                                              &
-  ivoid  ,                                                       &
-  ia     ,                                                       &
-  ra(idt)    , ra(irtpa) , ra(irtp)   ,                          &
-  ra(ipropc) , propfa , propfb ,                                 &
-  coefa  , coefb  ,                                              &
-  rvoid  ,                                                       &
-  ra     )
-
-call mempdc                                                       &
-!==========
- ( idbia1, idbra1, ncelet, ncel,  ndim, ifinia, ifinra)
-
-
 ! On appelle uskpdc lorqu'il y a sur un processeur au moins des cellules
 !     avec terme source de masse.
 !     On ne fait que remplir le tableau d'indirection des cellules
@@ -535,46 +638,26 @@ if(ncpdct.gt.0) then
   if (iihmpr.eq.1) then
     call uikpdc &
     !==========
-  ( iappel, ncelet, ncepdc,           &
-    ia(iicepd), ra(ickupd), ra(irtpa) )
+  ( iappel, ncelet, ncepdc,   &
+    icepdc, ckupdc, ra(irtpa) )
   endif
 
-  call  uskpdc                                                   &
+  call  uskpdc &
   !===========
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
-  ia(iicepd),                                                    &
+  icepdc , izcpdc ,                                              &
   ia     ,                                                       &
   ra(idt)    , ra(irtpa) , ra(irtp)   ,                          &
   ra(ipropc) , propfa , propfb ,                                 &
   coefa  , coefb  ,                                              &
-  ra(ickupd) ,                                                   &
+  ckupdc ,                                                       &
   ra     )
 
 endif
 
 idbia1 = ifinia
 idbra1 = ifinra
-
-iappel = 1
-call ustsma                                                      &
-!==========
-( nvar   , nscal  , ncepdc   ,                                   &
-  ncetsm ,   iappel ,                                            &
-  ia(iicepd) ,                                                   &
-  ivoid  , ivoid  ,                                              &
-  ia     ,                                                       &
-  ra(idt)    , ra(irtpa) ,                                       &
-  ra(ipropc) , propfa , propfb ,                                 &
-  coefa  , coefb  ,                                              &
-  ra(ickupd), rvoid  ,                                           &
-  ra     )
-
-call memtsm                                                      &
-!==========
-     ( idbia1 , idbra1 ,                                         &
-       ncelet , ncel   , nvar   ,                                &
-       ifinia , ifinra )
 
 ! On appelle ustsma lorqu'il y a sur un processeur au moins des cellules
 !     avec terme source de masse.
@@ -585,17 +668,17 @@ call memtsm                                                      &
 if(nctsmt.gt.0) then
 
   iappel = 2
-  call ustsma                                                    &
-  !===========
-( nvar   , nscal  , ncepdc   ,                                   &
-  ncetsm ,   iappel ,                                            &
-  ia(iicepd) ,                                                   &
-  ia(iicesm) , ia(iitpsm),                                       &
+  call ustsma &
+  !==========
+( nvar   , nscal  , ncepdc ,                                     &
+  ncetsm , iappel ,                                              &
+  icepdc ,                                                       &
+  icetsm , itypsm , izctsm ,                                     &
   ia     ,                                                       &
   ra(idt)    , ra(irtpa) ,                                       &
   ra(ipropc) , propfa , propfb ,                                 &
   coefa  , coefb  ,                                              &
-  ra(ickupd), ra(ismace),                                        &
+  ckupdc , smacel ,                                              &
   ra     )
 
 endif
@@ -944,7 +1027,7 @@ if (iisuit.eq.1) then
     call ecrt1d                                                   &
     !==========
  ( ficsui   , len(ficsui), nfpt1d   ,  nmxt1d  ,                  &
-   nfabor   , ra(itppt1) , ia(iifpt1))
+   nfabor   , tppt1d     , ifpt1d )
   endif
 
   if (ippmod(iaeros).ge.0) then

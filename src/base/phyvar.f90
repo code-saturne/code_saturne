@@ -297,15 +297,15 @@ elseif (iturb.eq.10) then
 ! 3.2 LONGUEUR DE MELANGE
 ! ========================
 
-  call vislmg                                                   &
+  call vislmg &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+   ncepdc , ncetsm ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd), ra(ismace),        &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    ra     )
 
 elseif (itytur.eq.2) then
@@ -342,16 +342,15 @@ elseif (iturb.eq.40) then
 ! ===================
 
 
-  call vissma                                                   &
+  call vissma &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                &
-   ia(iicepd) ,                                            &
-   ia(iicesm) , ia(iitpsm),                         &
+   ncepdc , ncetsm ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd), ra(ismace),        &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    ra     )
 
 elseif(iturb.eq.41) then
@@ -360,17 +359,16 @@ elseif(iturb.eq.41) then
 ! =================
 
 
-  call visdyn                                                   &
+  call visdyn &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                &
-   ia(iicepd) ,                                            &
-   ia(iicesm) , ia(iitpsm),                         &
+   ncepdc , ncetsm ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd), ra(ismace),        &
-   propce(1,ipproc(ismago)) ,                              &
+   coefa  , coefb  , ckupdc , smacel ,                            &
+   propce(1,ipproc(ismago)) ,                                     &
    ra     )
 
 elseif (iturb.eq.42) then
@@ -379,16 +377,15 @@ elseif (iturb.eq.42) then
 ! ============
 
 
-  call viswal                                                   &
+  call viswal &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                &
-   ia(iicepd) ,                                            &
-   ia(iicesm) , ia(iitpsm),                         &
+   ncepdc , ncetsm ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd), ra(ismace),        &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    ra     )
 
 elseif (iturb.eq.50) then
@@ -415,15 +412,15 @@ elseif (iturb.eq.60) then
 ! 3.9 K-OMEGA SST
 ! ===============
 
-  call vissst                                                   &
+  call vissst &
   !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                &
-   ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+   ncepdc , ncetsm ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd), ra(ismace),        &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    ra     )
 
 elseif (iturb.eq.70) then
@@ -451,14 +448,14 @@ endif
 ! 4.  MODIFICATION UTILISATEUR DE LA VISCOSITE TURBULENTE
 !===============================================================================
 
-call usvist                                                     &
+call usvist &
 !==========
 ( nvar   , nscal  ,                                              &
-  ncepdc   , ncetsm   ,                            &
-  ia(iicepd) , ia(iicesm) , ia(iitpsm) ,    &
+  ncepdc , ncetsm ,                                              &
+  icepdc , icetsm , itypsm ,                                     &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa  , coefb  , ra(ickupd), ra(ismace),        &
+  coefa  , coefb  , ckupdc , smacel ,                            &
   ra     )
 
 !===============================================================================

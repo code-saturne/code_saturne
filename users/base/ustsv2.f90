@@ -145,7 +145,6 @@ subroutine ustsv2 &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use entsor
 use optcal

@@ -210,7 +210,7 @@ integer          iscal
 integer          ii     , nbr    , irangv , irang1 , npoint
 integer          imom   , ipcmom , idtcm
 integer          itab(3), iun
-integer          ncesmp , icesmp , ismacp , itpsmp
+integer          ncesmp
 integer          ilelt  , nlelt
 
 double precision xrtpa  , xrtp
@@ -622,15 +622,12 @@ if (inpdt0.eq.0) then
 
   ! In case of a mass source term, add contribution from Gamma*Tn+1
 
-  ncesmp=ncetsm
+  ncesmp = ncetsm
   if (ncesmp.gt.0) then
-    icesmp = iicesm
-    ismacp = ismace
-    itpsmp = iitpsm
     do ieltsm = 1, ncesmp
-      iel = ia(icesmp+ieltsm-1)
+      iel = icetsm(ieltsm)
       xrtp  = rtp (iel,ivar)
-      xgamma = ra( ismacp+ieltsm+ncesmp*(ipr-1)-1)
+      xgamma = smacel(ieltsm,ipr)
       if (ipccp.gt.0) then
         xbildv =   xbildv                                     &
                  - volume(iel) * propce(iel,ipccp) * dt(iel)  &
@@ -889,19 +886,15 @@ if (inpdt0.eq.0) then
 
   ncesmp = ncetsm
   if (ncesmp.gt.0) then
-    icesmp = iicesm
-    ismacp = ismace
-    itpsmp = iitpsm
     do ieltsm = 1, ncesmp
       ! depending on the type of injection we use the 'smacell' value
       ! or the ambient temperature
-      iel = ia(icesmp+ieltsm-1)
-      xgamma = ra( ismacp+ieltsm+ncesmp*(ipr-1)-1)
-      if (     ia(itpsmp+ieltsm+ncesmp*(ivar-1)-1).eq.0  &
-          .or. xgamma.lt.0.d0) then
+      iel = icetsm(ieltsm)
+      xgamma = smacel(ieltsm,ipr)
+      if (itypsm(ieltsm,ivar).eq.0 .or. xgamma.lt.0.d0) then
         xrtp = rtp (iel,ivar)
       else
-        xrtp = ra(ismacp+ieltsm+ncesmp*(ivar-1)-1)
+        xrtp = smacel(ieltsm,ivar)
       endif
       if (ipccp.gt.0) then
         if (xgamma.lt.0.d0) then

@@ -545,40 +545,7 @@ enddo
 ! --- Ici tout numvar est initialise.
 
 !===============================================================================
-! 6. POSITION DES VARIABLES DE pointe.f90
-!===============================================================================
-
-! --- Auxiliaires independants du nb phases
-
-nfpt1d = 0
-nmxt1d = 0
-inppt1 = 0
-iifpt1 = 0
-iiclt1 = 0
-ieppt1 = 0
-irgpt1 = 0
-itppt1 = 0
-itept1 = 0
-ihept1 = 0
-ifept1 = 0
-ixlmt1 = 0
-ircpt1 = 0
-idtpt1 = 0
-
-! --- Autres auxiliaires dependant du nb de phases
-
-ncepdc = 0
-iicepd = 0
-ickupd = 0
-ncetsm = 0
-iicesm = 0
-iitpsm = 0
-ismace = 0
-
-! --- Ici tout pointe.f90 est initialise
-
-!===============================================================================
-! 7. OPTIONS DU CALCUL : TABLEAUX DE optcal.f90
+! 6. OPTIONS DU CALCUL : TABLEAUX DE optcal.f90
 !===============================================================================
 
 ! --- Definition des equations
@@ -1104,7 +1071,7 @@ ineedf = 0
 ! --- Ici tout optcal.f90 est initialise
 
 !===============================================================================
-! 8. TABLEAUX DE cstphy.f90
+! 7. TABLEAUX DE cstphy.f90
 !===============================================================================
 
 ! --- Gravite
@@ -1272,7 +1239,7 @@ enddo
 ! --- Ici tout cstphy a ete initialise
 
 !===============================================================================
-! 9. INDICATEURS DE VECTORISATION
+! 8. INDICATEURS DE VECTORISATION
 !===============================================================================
 
 !  On les prend ici egaux a -1 ; si l'utilisateur ne les positionne pas
@@ -1288,14 +1255,14 @@ ivecti = -1
 ivectb = -1
 
 !===============================================================================
-! 10. INITIALISATION DES PARAMETRES DE PERIODICITE de period.f90
+! 9. INITIALISATION DES PARAMETRES DE PERIODICITE de period.f90
 !===============================================================================
 
 iguper = 0
 igrper = 0
 
 !===============================================================================
-! 11. INITIALISATION DES PARAMETRES DE IHM de ihmpre.f90
+! 10. INITIALISATION DES PARAMETRES DE IHM de ihmpre.f90
 !===============================================================================
 
 !     Par defaut, pas de fichier IHM consulte (on regarde ensuite si on
@@ -1304,7 +1271,7 @@ igrper = 0
 iihmpr = 0
 
 !===============================================================================
-! 12. INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
+! 11. INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
 !===============================================================================
 
 ! --- Methode ALE
@@ -1368,7 +1335,7 @@ betnmk = -grand
 gamnmk = -grand
 
 !===============================================================================
-! 14. INITIALISATION DES PARAMETRES DE COUPLAGE CS/CS
+! 12. INITIALISATION DES PARAMETRES DE COUPLAGE CS/CS
 !===============================================================================
 
 ! --- Nombre de couplage
@@ -1378,7 +1345,7 @@ nbrcpl = 0
 ifaccp = 0
 
 !===============================================================================
-! 15. SORTIE
+! 13. SORTIE
 !===============================================================================
 
 return

@@ -128,7 +128,6 @@ subroutine ustsns &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use entsor
 use optcal

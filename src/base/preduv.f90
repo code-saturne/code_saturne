@@ -137,7 +137,7 @@ subroutine preduv &
 use paramx
 use dimens, only: ndimfb
 use numvar
-use pointe
+use pointe, only: forbr
 use entsor
 use cstphy
 use cstnum

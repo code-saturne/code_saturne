@@ -96,7 +96,7 @@ use cstphy
 use optcal
 use lagpar
 use lagran
-use pointe
+use pointe, only: s2kw, divukw, ifapat, dispar
 use parall
 use mesh
 

@@ -1,4 +1,52 @@
 * 06/06/2011 - David Monfort <david.monfort@edf.fr>
+  Translate memory management of specific modules (head loss, mass source
+  terms, 1d thermal wall) into dynamic allocation.
+  Also add "zone" arrays for future use (especially in conjunction with GUI).
+  removed routines:
+    src/base/mempdc.f90
+    src/base/memt1d.f90
+    src/base/memtsm.f90
+  modified script:
+    src/base/Makefile.am
+  modified routines:
+    src/base/caltri.f90
+    src/base/cou1di.f90
+    src/base/cou1do.f90
+    src/base/iniini.f90
+    src/base/memfin.f90
+    src/base/navsto.f90
+    src/base/phyvar.f90
+    src/base/pointe.f90
+    src/base/preduv.f90
+    src/base/reseps.f90
+    src/base/resolp.f90
+    src/base/resrij.f90
+    src/base/resssg.f90
+    src/base/resv2f.f90
+    src/base/scalai.f90
+    src/base/tridim.f90
+    src/base/turbkw.f90
+    src/base/vissec.f90
+    src/base/vissst.f90
+    src/cfbl/cfener.f90
+    src/cfbl/cfmsfl.f90
+    src/cfbl/cfmsgs.f90
+    src/cfbl/cfmsvl.f90
+    src/cfbl/cfqdmv.f90
+    src/pprt/pptssc.f90
+    users/base/uskpdc.f90
+    users/base/usproj.f90
+    users/base/uspt1d.f90
+    users/base/ustske.f90
+    users/base/ustsma.f90
+    users/base/ustsns.f90
+    users/base/ustsri.f90
+    users/base/ustssa.f90
+    users/base/ustssc.f90
+    users/base/ustsv2.f90
+    users/base/usvist.f90
+
+* 06/06/2011 - David Monfort <david.monfort@edf.fr>
   Yet another dynamic memory allocation changeset...
   This focuses on remaining specific physics memory management, local
   arrays allocated in ia/ra, and pointers defined in memtri.

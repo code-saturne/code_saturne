@@ -33,7 +33,7 @@ subroutine uskpdc &
 
  ( nvar   , nscal  ,                                              &
    ncepdp , iappel ,                                              &
-   icepdc ,                                                       &
+   icepdc , izcpdc ,                                              &
    ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc ,                                     &
@@ -101,6 +101,7 @@ subroutine uskpdc &
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
 ! icepdc(ncepdp    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
+! izcpdc(ncelet)   ! ia ! <-- ! cells zone for head loss definition            !
 ! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -125,7 +126,6 @@ subroutine uskpdc &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use optcal
 use cstnum
@@ -144,6 +144,7 @@ integer          ncepdp
 integer          iappel
 
 integer          icepdc(ncepdp)
+integer          izcpdc(ncel)
 integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -157,6 +158,7 @@ double precision ra(*)
 
 integer          iel, ielpdc, ikpdc
 integer          ilelt, nlelt
+integer          izone
 integer          iutile
 
 double precision alpha, cosalp, sinalp, vit, ck1, ck2
@@ -227,13 +229,17 @@ if(iappel.eq.1.or.iappel.eq.2) then
 !       Ce test permet de desactiver l'exemple
   if(1.eq.0) then
 
+    izone = 0
     ielpdc = 0
 
-    CALL GETCEL('X <= 6.0 and X >= 4.0 and Y >= 2.0 and'//      &
-         'Y <= 8.0',NLELT,LSTELT)
+    call getcel('X <= 6.0 and X >= 4.0 and Y >= 2.0 and'//      &
+         'Y <= 8.0',nlelt,lstelt)
+
+    izone = izone + 1
 
     do ilelt = 1, nlelt
       iel = lstelt(ilelt)
+      izcpdc(iel) = izone
       ielpdc = ielpdc + 1
       if (iappel.eq.2) icepdc(ielpdc) = iel
     enddo

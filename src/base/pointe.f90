@@ -92,40 +92,49 @@ module pointe
   double precision, allocatable, dimension(:) :: s2kw , divukw
 
   !... Parametres du module thermique 1D
+
   ! nfpt1d !                         ! nb faces de bord avec module thermique 1D
-  ! inppt1 ! nfpt1d                  ! nombre de mailles dans la paroi
-  ! ieppt1 ! nfpt1d                  ! epaisseur de la paroi
-  ! irgpt1 ! nfpt1d                  ! raison du maillage
-  ! iifpt1 ! nfpt1d                  ! numero de la face
-  ! itppt1 ! nfpt1d                  ! temperature de paroi
-  ! iiclt1 ! nfpt1d                  ! type de condition limite
-  ! itept1 ! nfpt1d                  ! temperature exterieure
-  ! ihept1 ! nfpt1d                  ! coefficient d'echange exterieur
-  ! ifept1 ! nfpt1d                  ! flux thermique exterieur
-  ! ixlmt1 ! nfpt1d                  ! diffusivite thermique
-  ! ircpt1 ! nfpt1d                  ! rho*Cp
-  ! idtpt1 ! nfpt1d                  ! pas de temps
+  ! izft1d ! nfabor                  ! zone de t1d
+  ! nppt1d ! nfpt1d                  ! nombre de mailles dans la paroi
+  ! eppt1d ! nfpt1d                  ! epaisseur de la paroi
+  ! rgpt1d ! nfpt1d                  ! raison du maillage
+  ! ifpt1d ! nfpt1d                  ! numero de la face
+  ! tppt1d ! nfpt1d                  ! temperature de paroi
+  ! iclt1d ! nfpt1d                  ! type de condition limite
+  ! tept1d ! nfpt1d                  ! temperature exterieure
+  ! hept1d ! nfpt1d                  ! coefficient d'echange exterieur
+  ! fept1d ! nfpt1d                  ! flux thermique exterieur
+  ! xlmbt1 ! nfpt1d                  ! diffusivite thermique
+  ! rcpt1d ! nfpt1d                  ! rho*Cp
+  ! dtpt1d ! nfpt1d                  ! pas de temps
 
-  integer, save :: nfpt1d , nmxt1d , inppt1 , iifpt1 , iiclt1 ,    &
-                   ieppt1 , irgpt1 , itppt1 ,                      &
-                   itept1 , ihept1 , ifept1 ,                      &
-                   ixlmt1 , ircpt1 , idtpt1
+  integer, save :: nfpt1d, nmxt1d
+  integer, allocatable, dimension(:) :: izft1d, nppt1d , ifpt1d , iclt1d
+  double precision, allocatable, dimension(:) :: eppt1d , rgpt1d , tppt1d
+  double precision, allocatable, dimension(:) :: tept1d , hept1d , fept1d
+  double precision, allocatable, dimension(:) :: xlmbt1 , rcpt1d , dtpt1d
 
-  !... Auxiliaires accessibles directement dans ia, ra
-  !     tous ces tableaux sont (dimension)
+  !... Auxiliaires
 
-  ! Pointeur Dimension       Description
   ! ncepdc !                         ! nombre de cellules avec pdc
-  ! iicepd ! ncepdc                  ! numero des cellules avec pertedecharge
-  ! ickupd ! (ncepdc,6)              ! valeur des coeff de pdc
-  ! ncetsm !                         ! nombre de cellules avec tsm
-  ! iicesm ! ncetsm                  ! numero des cellules avec tsmasse
-  ! iitpsm ! ncetsm                  ! type de tsm
-  ! ismace ! ncetsm                  ! valeur de tsm
+  ! icepdc ! ncepdc                  ! numero des cellules avec pertedecharge
+  ! izcpdc ! ncelet                  ! zone de pdc
+  ! ckupdc ! (ncepdc,6)              ! valeur des coeff de pdc
 
-  integer, save :: ncepdc,                 &
-                   iicepd, ickupd, ncetsm, &
-                   iicesm, iitpsm, ismace
+  integer, save :: ncepdc
+  integer, allocatable, dimension(:) :: icepdc, izcpdc
+  double precision, allocatable, dimension(:,:) :: ckupdc
+
+  ! ncetsm !                         ! nombre de cellules avec tsm
+  ! icetsm ! ncetsm*nvar             ! numero des cellules avec tsmasse
+  ! itypsm ! ncetsm                  ! type de tsm
+  ! izctsm ! ncelet                  ! zone de tsm
+  ! smacel ! ncetsm*nvar             ! valeur de tsm
+
+  integer, save :: ncetsm
+  integer, allocatable, dimension(:) :: icetsm, izctsm
+  integer, allocatable, dimension(:,:) :: itypsm
+  double precision, allocatable, dimension(:,:) :: smacel
 
 contains
 
@@ -245,6 +254,9 @@ contains
     if (allocated(izfppp)) deallocate(izfppp)
     if (allocated(izfrad)) deallocate(izfrad)
     if (allocated(idfstr)) deallocate(idfstr)
+    if (allocated(izcpdc)) deallocate(izcpdc)
+    if (allocated(izctsm)) deallocate(izctsm)
+    if (allocated(izft1d)) deallocate(izft1d)
     deallocate(cocg, cocgb)
     if (allocated(coci)) deallocate(coci, cocib)
     if (allocated(dispar)) deallocate(dispar)
@@ -262,5 +274,88 @@ contains
   end subroutine finalize_aux_arrays
 
   !=============================================================================
+
+  subroutine init_kpdc
+
+    allocate(icepdc(ncepdc))
+    allocate(ckupdc(ncepdc,6))
+
+  end subroutine init_kpdc
+
+  !=============================================================================
+
+  subroutine finalize_kpdc
+
+    deallocate(icepdc)
+    deallocate(ckupdc)
+
+  end subroutine finalize_kpdc
+
+  !=============================================================================
+
+  subroutine init_tsma ( nvar )
+
+    implicit none
+
+    integer :: nvar
+
+    allocate(icetsm(ncetsm))
+    allocate(itypsm(ncetsm,nvar))
+    allocate(smacel(ncetsm,nvar))
+
+  end subroutine init_tsma
+
+  !=============================================================================
+
+  subroutine finalize_tsma
+
+    deallocate(icetsm)
+    deallocate(itypsm)
+    deallocate(smacel)
+
+  end subroutine finalize_tsma
+
+  !=============================================================================
+
+  subroutine init_pt1d
+
+    use cstnum
+
+    allocate(nppt1d(nfpt1d), ifpt1d(nfpt1d), iclt1d(nfpt1d))
+    allocate(eppt1d(nfpt1d), rgpt1d(nfpt1d), tppt1d(nfpt1d))
+    allocate(tept1d(nfpt1d), hept1d(nfpt1d), fept1d(nfpt1d))
+    allocate(xlmbt1(nfpt1d), rcpt1d(nfpt1d), dtpt1d(nfpt1d))
+
+    !---> INITIALISATION DES TABLEAUX
+    !     a des valeurs sortant en erreur dans vert1d
+    !     sauf pour les variables de conditions aux limites
+    !     qui sont initialisees a des valeurs standard
+    !     (flux nul, Timpose=0, coef d'echange infini)
+
+    ifpt1d(:) = -999
+    nppt1d(:) = -999
+    iclt1d(:) = 3
+    eppt1d(:) = -999.d0
+    rgpt1d(:) = -999.d0
+    tppt1d(:) = 0.d0
+    tept1d(:) = 0.d0
+    hept1d(:) = rinfin
+    fept1d(:) = 0.d0
+    xlmbt1(:) = -999.d0
+    rcpt1d(:) = -999.d0
+    dtpt1d(:) = -999.d0
+
+  end subroutine init_pt1d
+
+  !=============================================================================
+
+  subroutine finalize_pt1d
+
+    deallocate(nppt1d, ifpt1d, iclt1d)
+    deallocate(eppt1d, rgpt1d, tppt1d)
+    deallocate(tept1d, hept1d, fept1d)
+    deallocate(xlmbt1, rcpt1d, dtpt1d)
+
+  end subroutine finalize_pt1d
 
 end module pointe

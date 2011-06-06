@@ -110,7 +110,7 @@ subroutine cfqdmv &
 !===============================================================================
 
 use paramx
-use pointe
+use pointe, only: forbr
 use numvar
 use entsor
 use cstphy

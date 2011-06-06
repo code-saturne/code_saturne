@@ -133,13 +133,13 @@ ivar = isca(isvtb)
 
 do ii = 1, nfpt1d
 
-   ifac = ia(iifpt1+ii-1)
+   ifac = ifpt1d(ii)
 
    if ((icodcl(ifac,ivar) .ne. 1) .and.                           &
        (icodcl(ifac,ivar) .ne. 5) .and.                           &
        (icodcl(ifac,ivar) .ne. 6)) icodcl(ifac,ivar) = icldef
 
-   rcodcl(ifac,ivar,1) = ra(itppt1+ii-1)
+   rcodcl(ifac,ivar,1) = tppt1d(ii)
    rcodcl(ifac,ivar,2) = rinfin
    rcodcl(ifac,ivar,3) = 0.d0
 
@@ -151,7 +151,7 @@ if (iscsth(isvtb).eq.2) then
 
   do ii = 1, nfpt1d
 
-    ifac = ia(iifpt1+ii-1)
+    ifac = ifpt1d(ii)
 
     temper = rcodcl(ifac,ivar,1)
     mode   = -1

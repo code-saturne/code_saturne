@@ -124,7 +124,7 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe
+use pointe, only: itypfb, izfppp
 use ppppar
 use ppthch
 use coincl

@@ -152,7 +152,6 @@ subroutine ustsri &
 !===============================================================================
 
 use paramx
-use pointe
 use numvar
 use entsor
 use optcal

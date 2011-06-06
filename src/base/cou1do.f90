@@ -98,6 +98,7 @@ use cstphy
 use cstnum
 use parall
 use period
+use pointe, only: izft1d
 use mesh
 
 !===============================================================================
@@ -130,7 +131,12 @@ integer          idebia, idebra, mode
 integer          iappel
 integer          ifac, iel , ii
 integer          idbia1
+
+integer          ivoid(1)
+
 double precision enthal, temper
+
+double precision rvoid(1)
 
 !===============================================================================
 
@@ -179,12 +185,12 @@ endif
 !     Mise a jour des conditions aux limites externes du module 1D
 iappel = 3
 
-call  uspt1d                                                      &
+call  uspt1d &
 !===========
  ( nvar   , nscal  , nfpt1d , iappel ,                            &
-   ifpt1d , ia(idebia), iclt1d ,                                  &
+   ifpt1d , izft1d , ivoid  , iclt1d ,                            &
    ia     ,                                                       &
-   tppt1d , ra(idebra), ra(idebra),                               &
+   tppt1d , rvoid  , rvoid  ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
    dt     , rtpa   ,                                              &
@@ -193,13 +199,15 @@ call  uspt1d                                                      &
    ra     )
 
 iappel = 3
-call vert1d                                                       &
+call vert1d &
 !==========
- (idebia     , idebra     ,                                       &
-  nfabor     , nfpt1d     , iappel    ,                           &
-  ifpt1d     , ia(idebia) , iclt1d    , ia     ,                  &
-  ra(idebra) , ra(idebra) ,                                       &
-  xlmbt1     , rcpt1d     , dtpt1d    , ra      )
+ (idebia , idebra ,                                               &
+  nfabor , nfpt1d , iappel ,                                      &
+  ifpt1d , ivoid  , iclt1d ,                                      &
+  ia     ,                                                        &
+  rvoid  , rvoid  ,                                               &
+  xlmbt1 , rcpt1d , dtpt1d ,                                      &
+  ra     )
 
 do ii = 1, nfpt1d
 

@@ -54,6 +54,7 @@ use paramx
 use parall
 use ppincl
 use pointe
+use optcal
 use atincl
 use cfpoin
 use albase
@@ -80,6 +81,18 @@ endif
 
 if (iale.eq.1.or.imobil.eq.1) then
   call finalize_ale
+endif
+
+if (ncpdct.gt.0) then
+  call finalize_kpdc
+endif
+
+if (nctsmt.gt.0) then
+  call finalize_tsma
+endif
+
+if (nfpt1d.gt.0) then
+  call finalize_pt1d
 endif
 
 return

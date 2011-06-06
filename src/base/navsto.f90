@@ -134,7 +134,7 @@ double precision ra(*)
 integer          idebia, idebra
 integer          iccocg, inc, iel, iel1, iel2, ifac, imax
 integer          ii    , inod
-integer          isou, ivar, iitsm, igamm1
+integer          isou, ivar, iitsm
 integer          iclipr, iclipf
 integer          icliup, iclivp, icliwp, init
 integer          icluma, iclvma, iclwma
@@ -278,18 +278,17 @@ iappel = 1
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
 
-call preduv                                                      &
+call preduv &
 !==========
 ( idebia , idebra , iappel ,                                     &
   nvar   , nscal  , iterns ,                                     &
-  ncepdc   , ncetsm   ,                                          &
-  ia(iicepd)        , ia(iicesm)       ,                         &
-  ia(iitpsm)        ,                                            &
+  ncepdc , ncetsm ,                                              &
+  icepdc , icetsm , itypsm ,                                     &
   ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   propfa(1,iflmas), propfb(1,iflmab),                            &
   tslagr , coefa  , coefb  ,                                     &
-  ra(ickupd)        , ra(ismace)        ,  frcxt ,               &
+  ckupdc , smacel , frcxt ,                                      &
   trava  , ximpa  , uvwk   , dfrcxt , tpucou ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi ,                            &
   drtp   , smbr   , rovsdt ,                                     &
@@ -499,17 +498,17 @@ endif
 idtsca = 0
 if ((ipucou.eq.1).or.(ncpdct.gt.0)) idtsca = 1
 
-call resolp                                                       &
+call resolp &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc   , ncetsm   ,                                          &
-   ia(iicepd)        , ia(iicesm)       ,                         &
-   ia(iitpsm)        , isostd , idtsca ,                          &
+   ncepdc , ncetsm ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
+   isostd , idtsca ,                                              &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ra(ickupd)        , ra(ismace)        ,                        &
+   ckupdc , smacel ,                                              &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt , tslagr ,                            &
@@ -980,10 +979,9 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
          ifacel,ifabor,esflum,esflub,w1)
 
     if (ncetsm.gt.0) then
-      igamm1 = ismace+(ipr-1)*ncetsm-1
       do iitsm = 1, ncetsm
-        iel = ia(iicesm+iitsm-1)
-        w1(iel) = w1(iel)-volume(iel)*ra(igamm1+iitsm)
+        iel = icetsm(iitsm)
+        w1(iel) = w1(iel)-volume(iel)*smacel(iitsm,ipr)
       enddo
     endif
 
@@ -1019,18 +1017,17 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     !   APPEL A PREDUV AVEC RTP ET RTP AU LIEU DE RTP ET RTPA
     !                  AVEC LE FLUX DE MASSE RECALCULE
     iappel = 2
-    call preduv                                                   &
+    call preduv &
     !==========
  ( idebia , idebra , iappel ,                                     &
    nvar   , nscal  , iterns ,                                     &
-   ncepdc   , ncetsm   ,                                          &
-   ia(iicepd)        , ia(iicesm)       ,                         &
-   ia(iitpsm)        ,                                            &
+   ncepdc , ncetsm ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtp    , propce , propfa , propfb ,          &
    esflum , esflub ,                                              &
    tslagr , coefa  , coefb  ,                                     &
-   ra(ickupd)        , ra(ismace)        , frcxt  ,               &
+   ckupdc , smacel , frcxt  ,                                     &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi ,                            &
    drtp   , smbr   , rovsdt ,                                     &

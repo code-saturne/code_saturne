@@ -577,17 +577,17 @@ if (ncpdct.gt.0) then
     call uikpdc &
     !==========
   ( iappel, ncelet, ncepdc,             &
-    ia(iicepd), ra(ickupd), rtpa )
+    icepdc, ckupdc, rtpa )
   endif
 
   call uskpdc &
   !==========
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
-  ia(iicepd) ,                                            &
+  icepdc , izcpdc ,                                              &
   ia     ,                                                       &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-  coefa  , coefb  , ra(ickupd) ,                          &
+  coefa  , coefb  , ckupdc ,                                     &
   ra     )
 
 endif
@@ -601,21 +601,23 @@ endif
 if(nctsmt.gt.0) then
 
   !     Mise a zero du tableau de type de TS masse et source
-  do ii = 1, ncetsm*nvar
-    ia(iitpsm+ii-1) = 0
-    ra(ismace+ii-1) = 0.d0
+  do ii = 1, ncetsm
+    do ivar = 1, nvar
+      itypsm(ii,ivar) = 0
+      smacel(ii,ivar) = 0.d0
+    enddo
   enddo
 
   iappel = 3
-  call  ustsma                                                  &
-  !============
-( nvar   , nscal  , ncepdc   ,                                   &
-  ncetsm   , iappel ,                                           &
-  ia(iicepd) ,                                            &
-  ia(iicesm) , ia(iitpsm) ,                        &
+  call  ustsma &
+  !===========
+( nvar   , nscal  , ncepdc ,                                     &
+  ncetsm , iappel ,                                              &
+  icepdc ,                                                       &
+  icetsm , itypsm , izctsm ,                                     &
   ia     ,                                                       &
   dt     , rtpa   , propce , propfa , propfb ,                   &
-  coefa  , coefb  , ra(ickupd), ra(ismace),        &
+  coefa  , coefb  , ckupdc , smacel ,                            &
   ra     )
 
 endif
@@ -629,16 +631,16 @@ if(iwarni(iu).ge.1) then
   write(nfecra,1020)
 endif
 
-call dttvar                                                       &
+call dttvar &
 !==========
  ( idebia , idebra ,                                              &
    nvar   , nscal  ,                                              &
-   ncepdc   , ncetsm   ,                            &
+   ncepdc , ncetsm ,                                              &
    iwarni(iu)   ,                                                 &
-   ia(iicepd), ia(iicesm), ia(iitpsm) ,      &
+   icepdc , icetsm , itypsm ,                                     &
    ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ra(ickupd) , ra(ismace),       &
+   coefa  , coefb  , ckupdc , smacel ,                            &
    ra     )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
@@ -1100,10 +1102,10 @@ do while (iterns.le.nterup)
       !==========
     ( ifinia , ifinra ,                                              &
       nvar   , nscal  , ncp    , nfpt1d ,                            &
-      ientha , ia(iifpt1), ia(iiclt1),                               &
+      ientha , ifpt1d , iclt1d ,                                     &
       ia     ,                                                       &
-      ra(itppt1), ra(itept1), ra(ihept1),                            &
-      ra(ifept1), ra(ixlmt1), ra(ircpt1), ra(idtpt1),                &
+      tppt1d , tept1d , hept1d ,                                     &
+      fept1d , xlmbt1 , rcpt1d , dtpt1d ,                            &
       dt     , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
       cpcst  , propce(1,ippcp) , hbord  , tbord  ,                   &
@@ -1306,14 +1308,14 @@ do while (iterns.le.nterup)
       !==========
     ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  ,                                              &
-      ncepdc   , ncetsm   ,                            &
+      ncepdc , ncetsm ,                                              &
       iscal  ,                                                       &
-      ia(iicepd)        , ia(iicesm)       ,           &
-      ia(iitpsm)        ,                                     &
+      icepdc , icetsm ,                                              &
+      itypsm ,                                                       &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  ,                                              &
-      ra(ickupd)        , ra(ismace)        ,          &
+      ckupdc , smacel ,                                              &
       ra     )
 
     endif
@@ -1336,14 +1338,14 @@ do while (iterns.le.nterup)
       !==========
     ( idbia1 , idbra1 ,                                              &
       nvar   , nscal  ,                                              &
-      ncepdc   , ncetsm   ,                                          &
-      ia(iicepd)        , ia(iicesm)       ,                         &
-      ia(iitpsm)        ,                                            &
+      ncepdc , ncetsm ,                                              &
+      icepdc , icetsm ,                                              &
+      itypsm ,                                                       &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       propfa(1,iflmas), propfb(1,iflmab),                            &
       coefa  , coefb  ,                                              &
-      ra(ickupd)        , ra(ismace)        ,                        &
+      ckupdc , smacel ,                                              &
       frcxt  , tpucou ,                                              &
       ra     )
 
@@ -1505,11 +1507,11 @@ if (iccvfg.eq.0) then
   ( idebia , idebra ,                                              &
     nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
-    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
+    icepdc , icetsm , itypsm ,                                     &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr ,                                                       &
-    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+    coefa  , coefb  , ckupdc , smacel ,                            &
     prdv2f ,                                                       &
     ra     )
 
@@ -1520,10 +1522,10 @@ if (iccvfg.eq.0) then
     ( idebia , idebra ,                                              &
       nvar   , nscal  ,                                              &
       ncepdc , ncetsm ,                                              &
-      ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
+      icepdc , icetsm , itypsm ,                                     &
       ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+      coefa  , coefb  , ckupdc , smacel ,                            &
       prdv2f ,                                                       &
       ra     )
 
@@ -1549,11 +1551,11 @@ if (iccvfg.eq.0) then
   ( idebia , idebra ,                                              &
     nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
-    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
+    icepdc , icetsm , itypsm ,                                     &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    tslagr   ,                                                     &
-    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+    tslagr ,                                                       &
+    coefa  , coefb  , ckupdc , smacel ,                            &
     ra     )
 
   else if( iturb.eq.60 ) then
@@ -1563,11 +1565,11 @@ if (iccvfg.eq.0) then
   ( idebia , idebra ,                                              &
     nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
-    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
+    icepdc , icetsm , itypsm ,                                     &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    tslagr   ,                                                     &
-    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+    tslagr ,                                                       &
+    coefa  , coefb  , ckupdc , smacel ,                            &
     ra     )
 
     !  RELAXATION DE K ET OMEGA SI IKECOU=0
@@ -1587,11 +1589,11 @@ if (iccvfg.eq.0) then
   ( idebia , idebra ,                                              &
     nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
-    ia(iicepd) , ia(iicesm) , ia(iitpsm) ,                         &
+    icepdc , icetsm , itypsm ,                                     &
     ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
-    coefa  , coefb  , ra(ickupd) , ra(ismace) ,                    &
+    coefa  , coefb  , ckupdc , smacel ,                            &
     itypfb ,                                                       &
     ra     )
 
