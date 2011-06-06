@@ -67,6 +67,8 @@ FVM_LIBS="-lfvm"
 FVM_COUPL_LDFLAGS="$FVM_LDFLAGS"
 FVM_COUPL_LIBS="-lfvm_coupl"
 
+FVM_RUNPATH=""
+
 type "$fvm_config" > /dev/null 2>&1
 if test "$?" = "0" ; then
   FVM_CPPFLAGS="$FVM_CPPFLAGS `$fvm_config --cppflags`"
@@ -84,6 +86,9 @@ if test "$?" = "0" ; then
 
   FVM_MPI_LDFLAGS="`$fvm_config --ldflags mpi`"
   FVM_MPI_LIBS="`$fvm_config --libs mpi`"
+
+  # Add the libdir to the runpath as CGNS is not libtoolized
+  FVM_RUNPATH="`$fvm_config --ldflags cgns | sed -e 's/\-L\//-R\//'`"
 fi
 
 fvm_version_min=$1
@@ -208,5 +213,6 @@ AC_SUBST(FVM_LDFLAGS)
 AC_SUBST(FVM_LIBS)
 AC_SUBST(FVM_COUPL_LDFLAGS)
 AC_SUBST(FVM_COUPL_LIBS)
+AC_SUBST(FVM_RUNPATH)
 
 ])dnl
