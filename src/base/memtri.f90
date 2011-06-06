@@ -167,8 +167,7 @@ endif
 
 ! --> Reservation de memoire entiere
 
-
-iisstd = ifinia
+iisstd = idebia
 ifinia = iisstd + (nfabor+1)*iphydr
 
 if(ippmod(icompf).ge.0) then

@@ -33,7 +33,7 @@ subroutine lagune &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   icocel , itycel , ifrlag , itepa  , indep  , ibord  ,          &
+   icocel , itycel , ifrlag , itepa  ,                            &
    ia     ,                                                       &
    dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &

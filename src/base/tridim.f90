@@ -1247,8 +1247,9 @@ do while (iterns.le.nterup)
 
   ! Free memory
   deallocate(icodcl, rcodcl)
-  deallocate(hbord, tbord)
-  deallocate(visvdr)
+  if (allocated(hbord)) deallocate(hbord)
+  if (allocated(tbord)) deallocate(tbord)
+  if (allocated(visvdr)) deallocate(visvdr)
 
 !===============================================================================
 ! 10. DANS LE CAS  "zero pas de temps" EN "NON SUITE" DE CALCUL
