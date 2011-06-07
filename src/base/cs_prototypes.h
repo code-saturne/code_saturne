@@ -87,9 +87,7 @@ extern void CS_PROCF (autmgr, AUTMGR)
 
 extern void CS_PROCF (caltri, CALTRI)
 (
- const cs_int_t   *iverif,   /* <-- activate elementary tests */
- cs_int_t         *ia,       /* --> IA integer array */
- cs_real_t        *ra        /* --> RA floating-point array */
+ const cs_int_t   *iverif   /* <-- activate elementary tests */
 );
 
 /*----------------------------------------------------------------------------
@@ -434,16 +432,6 @@ extern void CS_PROCF (majgeo, MAJGEO)
  const cs_real_t   dijpf[],   /* <-- vector I'J' */
  const cs_real_t   diipb[],   /* <-- likewise for border faces */
  const cs_real_t   dofij[]    /* <-- vector OF at interior faces */
-);
-
-/*----------------------------------------------------------------------------
- * Initialize Fortran working array sizes
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (memini, MEMINI)
-(
- cs_int_t  *iasize,         /* --- size of IA integer array */
- cs_int_t  *rasize          /* --- size of RA integer array */
 );
 
 /*----------------------------------------------------------------------------

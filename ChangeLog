@@ -1,4 +1,31 @@
-* 06/07/2011 - David Monfort <david.monfort@edf.fr>
+* 07/06/2011 - David Monfort <david.monfort@edf.fr>
+  At last, remove the allocation of main arrays in the C part and the
+  corresponding user interface (both graphical and Fortran).
+  The only remaining bits of the macro arrays are the ones related to
+  the post-processing management (aka ipp2ra): rtp, rtpa, propce, dt and
+  tpucou.
+  removed files:
+    gui/Pages/MemoryAllocationForm.ui
+    gui/Pages/MemoryAllocationModel.py
+    gui/Pages/MemoryAllocationView.py
+    src/base/memini.f90
+    gui/Base/BrowserView.py
+    gui/Base/Toolbox.py
+  modified files:
+    gui/Pages/Makefile.am
+    po/fr.po
+    src/apps/cs_solver.c
+    src/base/caltri.f90
+    src/base/cs_base.c
+    src/base/cs_base.h
+    src/base/cs_prototypes.h
+    src/base/Makefile.am
+    src/base/memtri.f90
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+    users/base/usini1.f90
+
+* 07/06/2011 - David Monfort <david.monfort@edf.fr>
   Remove IA and RA main arrays from most of the subroutines as all the
   memory is now dynamically allocated.
   modified routines:

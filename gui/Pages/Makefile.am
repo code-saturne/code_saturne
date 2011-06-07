@@ -78,8 +78,6 @@ LagrangianStatisticsView.py \
 LagrangianView.py \
 LocalizationModel.py \
 LocalizationView.py \
-MemoryAllocationModel.py \
-MemoryAllocationView.py \
 MobileMeshModel.py \
 MobileMeshView.py \
 NumericalParamEquationModel.py \
@@ -158,7 +156,6 @@ LagrangianForm.ui \
 LagrangianOutputForm.ui \
 LagrangianStatisticsForm.ui \
 LocalizationForm.ui \
-MemoryAllocationForm.ui \
 MeshQualityCriteriaLogDialogForm.ui \
 MobileMeshForm.ui \
 NumericalParamEquationForm.ui \

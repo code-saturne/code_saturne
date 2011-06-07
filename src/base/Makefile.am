@@ -291,7 +291,6 @@ majgeo.f90 \
 matrdt.f90 \
 matrix.f90 \
 memfin.f90 \
-memini.f90 \
 memtri.f90 \
 modini.f90 \
 modpar.f90 \

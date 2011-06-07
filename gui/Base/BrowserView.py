@@ -462,7 +462,6 @@ Calculation control
     Surface solution control
     Profiles
 Calculation management
-    Memory management
     Start/Restart
     Prepare batch calculation
 """

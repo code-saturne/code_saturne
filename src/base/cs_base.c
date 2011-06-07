@@ -173,15 +173,6 @@ static _cs_base_sighandler_t cs_glob_base_sigsegv_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
 
-/* Global variables for handling of Fortran work arrays */
-
-static char      _cs_glob_srt_ia_peak[7] = "------";
-static char      _cs_glob_srt_ra_peak[7] = "------";
-static cs_int_t  _cs_glob_mem_ia_peak = 0;
-static cs_int_t  _cs_glob_mem_ra_peak = 0;
-static cs_int_t  _cs_glob_mem_ia_size = 0;
-static cs_int_t  _cs_glob_mem_ra_size = 0;
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -710,37 +701,6 @@ _cs_base_mpi_setup(const char *app_name)
 
 #endif /* HAVE_MPI */
 
-/*----------------------------------------------------------------------------
- * Maximum value of a counter and associated 6 character string
- * (used for Fortan maximum memory count in IA/RA).
- *
- * parameters:
- *   mem_peak  <-> maximum value reached
- *   srt_peak  <-> associated subroutine name
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_base_work_mem_max(cs_int_t  *mem_peak,
-                      char       srt_peak[6])
-{
-#if defined(HAVE_MPI)
-
-  _cs_base_mpi_long_int_t  val_in, val_max;
-
-  assert(sizeof(double) == sizeof(cs_real_t));
-
-  val_in.val  = *mem_peak;
-  val_in.rank = cs_glob_rank_id;
-
-  MPI_Allreduce(&val_in, &val_max, 1, MPI_LONG_INT, MPI_MAXLOC,
-                cs_glob_mpi_comm);
-
-  *mem_peak = val_max.val;
-
-  MPI_Bcast(srt_peak, 6, MPI_CHAR, val_max.rank, cs_glob_mpi_comm);
-#endif
-}
-
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -781,94 +741,6 @@ void CS_PROCF (dmtmps, DMTMPS)
 )
 {
   *tcpu = bft_timer_cpu_time();
-}
-
-/*----------------------------------------------------------------------------
- * Check that main integer working array memory reservation fits within
- * the allocated size of IA.
- *
- * Fortran interface:
- *
- * SUBROUTINE IASIZE (CALLER, MEMINT)
- * *****************
- *
- * CHARACTER*6      CALLER      : --> : Name of calling subroutine
- * INTEGER          MEMINT      : --> : Last required element in IA
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (iasize, IASIZE)
-(
- const char   caller[6],
- cs_int_t    *memint
-)
-{
-  /* Test if enough memory is available */
-
-  if (*memint > _cs_glob_mem_ia_size) {
-    char _caller[7];
-    strncpy(_caller, caller, 6);
-    _caller[6] = '\0';
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _(" Sub-routine calling iasize:                %s\n"
-         " Memory needed in ia (number of integers):  %d\n"
-         "         available:                         %d\n\n"
-         " ----> Define iasize to a value at least equal to %d integers)."),
-       _caller, *memint, _cs_glob_mem_ia_size, *memint);
-  }
-
-  /* Update _cs_glob_mem_ia_peak and _cs_glob_srt_ia_peak */
-
-  else if (*memint > _cs_glob_mem_ia_peak) {
-
-    _cs_glob_mem_ia_peak = *memint;
-    strncpy(_cs_glob_srt_ia_peak, caller, 6);
-    _cs_glob_srt_ia_peak[6] = '\0';
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Check that main floating-point working array memory reservation fits
- * within the allocated size of RA.
- *
- * Fortran interface:
- *
- * SUBROUTINE RASIZE (CALLER, MEMINT)
- * *****************
- *
- * CHARACTER*6      CALLER      : --> : Name of calling subroutine
- * INTEGER          MEMRDP      : --> : Last required element in RA
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (rasize, RASIZE)
-(
- const char   caller[6],
- cs_int_t    *memrdp
-)
-{
-  /* Test if enough memory is available */
-
-  if (*memrdp > _cs_glob_mem_ra_size) {
-    char _caller[7];
-    strncpy(_caller, caller, 6);
-    _caller[6] = '\0';
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _(" Sub-routine calling rasize:             %s\n"
-         " Memory needed in ra (number of reals):  %d\n"
-         "         available:                      %d\n\n"
-         " ----> Define rasize to a value at least equal to %d reals)."),
-       _caller, *memrdp, _cs_glob_mem_ra_size, *memrdp);
-  }
-
-  /* Update _cs_glob_mem_ra_peak and _cs_glob_srt_ra_peak */
-
-  else if (*memrdp > _cs_glob_mem_ra_peak) {
-
-    _cs_glob_mem_ra_peak = *memrdp;
-    strncpy(_cs_glob_srt_ra_peak, caller, 6);
-    _cs_glob_srt_ra_peak[6] = '\0';
-  }
 }
 
 /*============================================================================
@@ -1318,31 +1190,6 @@ cs_base_mem_init(void)
 }
 
 /*----------------------------------------------------------------------------
- * Allocate Fortran work arrays and prepare for their use.
- *
- * parameters:
- *   iasize <-- integer working array size (maximum number of values)
- *   rasize <-- floating-point working array size (maximum number of values)
- *   ia     --> pointer to integer working array
- *   ra     --> pointer to floating-point working array
- *----------------------------------------------------------------------------*/
-
-void
-cs_base_mem_init_work(size_t       iasize,
-                      size_t       rasize,
-                      cs_int_t   **ia,
-                      cs_real_t  **ra)
-{
-  /* Allocate work arrays */
-
-  BFT_MALLOC(*ia, iasize, cs_int_t);
-  BFT_MALLOC(*ra, rasize, cs_real_t);
-
-  _cs_glob_mem_ia_size = iasize;
-  _cs_glob_mem_ra_size = rasize;
-}
-
-/*----------------------------------------------------------------------------
  * Finalize management of memory allocated through BFT.
  *
  * A summary of the consumed memory is given.
@@ -1446,50 +1293,6 @@ cs_base_mem_finalize(void)
       }
 #endif
     }
-
-  }
-
-  /* Information on Fortran working arrays */
-
-  if (cs_glob_n_ranks > 1) {
-    _cs_base_work_mem_max(&_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak);
-    _cs_base_work_mem_max(&_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak);
-  }
-
-  if (_cs_glob_mem_ia_size > 0 || _cs_glob_mem_ra_size > 0) {
-
-    size_t wk_unit[2] = {0, 0};
-    double wk_size[2] = {0., 0.};
-
-    wk_size[0] = (  sizeof(cs_int_t)*_cs_glob_mem_ia_size
-                  + sizeof(cs_real_t)*_cs_glob_mem_ra_size) / 1000;
-    wk_size[1] = (  sizeof(cs_int_t)*_cs_glob_mem_ia_peak
-                  + sizeof(cs_real_t)*_cs_glob_mem_ra_peak) / 1000;
-
-#if defined(HAVE_MPI)
-    if (cs_glob_n_ranks > 1) {
-      double _wk_size_loc = wk_size[0];
-      MPI_Allreduce(&_wk_size_loc, &(wk_size[0]), 1, MPI_DOUBLE, MPI_MAX,
-                    cs_glob_mpi_comm);
-    }
-#endif
-
-    for (ind_bil = 0; ind_bil < 2; ind_bil++) {
-      for (itot = 0; wk_size[ind_bil] > 1024. && itot < 8; itot++)
-        wk_size[ind_bil] /= 1024.;
-      wk_unit[ind_bil] = itot;
-    }
-
-    bft_printf(_("\n"
-                 "  Fortran work arrays memory use:\n"
-                 "   %-12llu integers needed (maximum reached in %s)\n"
-                 "   %-12llu reals    needed (maximum reached in %s)\n\n"
-                 "   Local maximum work memory requested %12.3f %ciB\n"
-                 "                                  used %12.3f %ciB\n"),
-               (unsigned long long)_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak,
-               (unsigned long long)_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak,
-               wk_size[0], unit[wk_unit[0]],
-               wk_size[1], unit[wk_unit[1]]);
 
   }
 

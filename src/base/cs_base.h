@@ -287,44 +287,6 @@ void CS_PROCF (dmtmps, DMTMPS)
   cs_real_t  *tcpu
 );
 
-/*----------------------------------------------------------------------------
- * Check that main integer working array memory reservation fits within
- * the allocated size of IA.
- *
- * Fortran interface:
- *
- * SUBROUTINE IASIZE (CALLER, MEMINT)
- * *****************
- *
- * CHARACTER*6      CALLER      : --> : Name of calling subroutine
- * INTEGER          MEMINT      : --> : Last required element in IA
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (iasize, IASIZE)
-(
- const char   caller[6],
- cs_int_t    *memint
-);
-
-/*----------------------------------------------------------------------------
- * Check that main floating-point working array memory reservation fits
- * within the allocated size of RA.
- *
- * Fortran interface:
- *
- * SUBROUTINE RASIZE (CALLER, MEMINT)
- * *****************
- *
- * CHARACTER*6      CALLER      : --> : Name of calling subroutine
- * INTEGER          MEMRDP      : --> : Last required element in RA
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (rasize, RASIZE)
-(
- const char   caller[6],
- cs_int_t    *memrdp
-);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -408,22 +370,6 @@ cs_base_error_init(void);
 
 void
 cs_base_mem_init(void);
-
-/*----------------------------------------------------------------------------
- * Allocate Fortran work arrays and prepare for their use.
- *
- * parameters:
- *   iasize <-- integer working array size (maximum number of values)
- *   rasize <-- floating-point working array size (maximum number of values)
- *   ia     --> pointer to integer working array
- *   ra     --> pointer to floating-point working array
- *----------------------------------------------------------------------------*/
-
-void
-cs_base_mem_init_work(size_t       iasize,
-                      size_t       rasize,
-                      cs_int_t   **ia,
-                      cs_real_t  **ra);
 
 /*----------------------------------------------------------------------------
  * Finalize management of memory allocated through BFT.

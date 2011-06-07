@@ -2391,24 +2391,6 @@ static void cs_gui_scalar_initial_value(const char   *const parent,
 }
 
 /*----------------------------------------------------------------------------
- * Return integer value for calculation of size of user arrays
- *----------------------------------------------------------------------------*/
-
-static int _user_array(const char *const keyword1,
-                       const char *const keyword2)
-{
-  char *path = NULL;
-  int value = 0;
-
-  path = cs_xpath_short_path();
-  cs_xpath_add_elements(&path, 2, keyword1, keyword2);
-  cs_xpath_add_function_text(&path);
-  cs_gui_get_int(path, &value);
-  BFT_FREE(path);
-  return value;
-}
-
-/*----------------------------------------------------------------------------
  * Get label of 1D profile file name
  *
  * parameters:
@@ -4167,39 +4149,6 @@ void CS_PROCF (csenso, CSENSO)
   }
 #endif
 }
-
-/*----------------------------------------------------------------------------
- * Users arrays
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIUSAR (ICOFTU)
- * *****************
- *
- * INTEGER          ICOFTU   -->  Dimension coef for user arrays
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiusar, UIUSAR) (int *const icoftu)
-{
-  icoftu[0]  = _user_array("integer_work_array", "ncelet");
-  icoftu[1]  = _user_array("integer_work_array", "nfac");
-  icoftu[2] = _user_array("integer_work_array", "nfabor");
-  icoftu[3] = _user_array("integer_work_array", "dimless");
-
-  icoftu[4] = _user_array("real_work_array", "ncelet");
-  icoftu[5] = _user_array("real_work_array", "nfac");
-  icoftu[6] = _user_array("real_work_array", "nfabor");
-  icoftu[7] = _user_array("real_work_array", "dimless");
-
-#if _XML_DEBUG_
-  bft_printf("==>UIUSAR\n");
-  bft_printf("--icoftu = %i %i %i %i\n",
-                icoftu[0],icoftu[1],icoftu[2],icoftu[3]);
-  bft_printf("           %i %i %i %i\n",
-                icoftu[4],icoftu[5],icoftu[6],icoftu[7]);
-#endif
-}
-
 
 /*----------------------------------------------------------------------------
  * Copy variable name from Fortran to C

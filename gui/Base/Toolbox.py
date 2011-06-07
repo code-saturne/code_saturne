@@ -244,10 +244,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import Pages.NumericalParamGlobalView as Page
         thisPage = Page.NumericalParamGlobalView(root, case)
 
-    elif page_name == tr("Memory management"):
-        import Pages.MemoryAllocationView as Page
-        thisPage = Page.MemoryAllocationView(root, case)
-
     elif page_name == tr("Start/Restart"):
         import Pages.StartRestartView as Page
         thisPage = Page.StartRestartView(root, case)

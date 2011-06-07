@@ -444,19 +444,6 @@ void CS_PROCF(cfnmva, CFNMVA)
 void CS_PROCF(nvamem, NVAMEM) (void);
 
 /*----------------------------------------------------------------------------
- * Users arrays
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIUSAR (ICOFTU)
- * *****************
- *
- * INTEGER          ICOFTU   -->  Dimension coef for user arrays
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiusar, UIUSAR) (int *const icoftu);
-
-/*----------------------------------------------------------------------------
  * Variables and user scalars initialization.
  *
  * Fortran Interface:

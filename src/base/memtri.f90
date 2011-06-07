@@ -130,9 +130,6 @@ idt    = ipropc + ncelet *nproce
 itpuco = idt    + ncelet
 ifinra = itpuco + ncelet *ndim*iipuco
 
-call rasize('memtri',ifinra)
-!==========
-
 !===============================================================================
 ! 3. CORRESPONDANCE POUR POST-TRAITEMENT
 !===============================================================================

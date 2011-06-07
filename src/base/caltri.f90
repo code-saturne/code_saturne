@@ -25,12 +25,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine caltri &
+subroutine caltri ( iverif )
 !================
-
- ( iverif ,                                                       &
-   ia     ,                                                       &
-   ra     )
 
 !===============================================================================
 ! Purpose:
@@ -44,8 +40,6 @@ subroutine caltri &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iverif           ! i  ! <-- ! elementary tests flag                          !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________.____._____.________________________________________________.
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -90,9 +84,6 @@ implicit none
 
 
 integer          iverif
-integer          ia(*)
-
-double precision ra(*)
 
 ! Local variables
 
@@ -121,6 +112,8 @@ double precision, save :: ttchis
 character        ficsui*32
 
 integer, allocatable, dimension(:) :: isostd
+
+double precision, allocatable, dimension(:) :: ra
 
 double precision, allocatable, dimension(:,:) :: coefa, coefb
 double precision, allocatable, dimension(:,:) :: propfa, propfb
@@ -335,6 +328,8 @@ call memtri &
    nproce ,                                                       &
    idt    , itpuco , irtp   , irtpa  , ipropc ,                   &
    ifinra )
+
+allocate(ra(ifinra))
 
 ! Allocate other main arrays
 allocate(coefa(nfabor,ncofab), coefb(nfabor,ncofab))
@@ -1154,6 +1149,9 @@ if (iale.gt.0) then
   call lbrale
   !==========
 endif
+
+! Free main array
+deallocate(ra)
 
 ! Free other main arrays
 deallocate(coefa, coefb)

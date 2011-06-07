@@ -176,8 +176,6 @@ cs_run(void)
 {
   double  t1, t2;
 
-  cs_int_t  iasize, rasize;
-
   int  _verif = -1;
   int  check_mask = 0;
   int  cwf_post = 0;
@@ -446,26 +444,11 @@ cs_run(void)
 
     if (cs_user_solver_set() == 0) {
 
-      /* Allocate Fortran working arrays */
-
-      CS_PROCF(memini, MEMINI)(&iasize, &rasize);
-
-      bft_printf(_("\n"
-                   " --- Main Fortran work arrays:\n"
-                   "       longia =   %10d (Number of integers)\n"
-                   "       longra =   %10d (Number of reals)\n"
-                   "       (%d bytes/integer, %d bytes/real)\n"),
-                 iasize, rasize,
-                 sizeof(cs_int_t)/sizeof(char),
-                 sizeof(cs_real_t)/sizeof(char));
-
-      cs_base_mem_init_work(iasize, rasize, &ia, &ra);
-
       /*----------------------------------------------
        * Call main calculation function (code Kernel)
        *----------------------------------------------*/
 
-      CS_PROCF(caltri, CALTRI)(&_verif, ia, ra);
+      CS_PROCF(caltri, CALTRI)(&_verif);
 
     }
     else {
