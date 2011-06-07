@@ -28,16 +28,13 @@
 subroutine laglis &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , statis , stativ , tslagr , parbor ,          &
-   ra     )
+   ettp   , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
 ! FONCTION :
@@ -53,8 +50,6 @@ subroutine laglis &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -67,7 +62,6 @@ subroutine laglis &
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -89,7 +83,6 @@ subroutine laglis &
 !(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
 ! parbor           ! tr ! <-- ! infos sur interaction des particules           !
 !(nfabor,nvisbr    !    !     !   aux faces de bord                            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -117,13 +110,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -134,12 +125,9 @@ double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
-integer          ifinia, ifinra
 integer          ifac , iel , ivf , itabvr , nbrcel
 integer          ivff , iflu , icla , ii , nb
 double precision aa , bb , gmax , gmin , gmoy
@@ -152,8 +140,6 @@ double precision, allocatable, dimension(:) :: tabvr
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -268,10 +254,8 @@ if (istala.eq.1) then
         !==========
  ( nvar   , nscal  , nvlsta ,                                     &
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis , stativ , tabvr  ,                   &
-   ra     )
+   coefa  , coefb  , statis , stativ , tabvr  )
 
         nbrcel = 0
 

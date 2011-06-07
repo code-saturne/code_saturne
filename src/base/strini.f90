@@ -28,10 +28,7 @@
 subroutine strini &
 !================
 
- ( idbia0 , idbra0 , ifinia , ifinra ,                            &
-   ia     ,                                                       &
-   dt     ,                                                       &
-   ra     )
+ ( dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -44,15 +41,9 @@ subroutine strini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
-! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -84,19 +75,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0 , ifinia , ifinra
-
-integer          ia(*)
-
 double precision dt(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac  , istr, icompt, ii
 integer          mbstru, mbaste
-integer          ifnia2
 
 integer          jj, inod
 integer          ilstfa, indast, iidflo, iidnlo
@@ -114,8 +98,6 @@ integer, allocatable, dimension(:) :: lstfac, idfloc, idnloc
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 do istr = 1, nstrmx
   dtstr(istr) = dt(1)
@@ -168,19 +150,15 @@ endif
 call usstr1                                                       &
 !==========
  ( idfstr ,                                                       &
-   ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
-   xstp   , xpstr  , xstreq ,                                     &
-   ra     )
+   xstp   , xpstr  , xstreq )
 
 ! 2.2 STRUCTURES EXTERNES : COUPLAGE CODE_SATURNE / CODE_ASTER
 ! -----------------------
 
 call usaste                                                       &
 !==========
- ( idfstr ,                                                       &
-   ia     ,                                                       &
-   ra     )
+ ( idfstr )
 
 
 !===============================================================================
@@ -352,8 +330,6 @@ else
   write(nfecra,2002) nbaste
 endif
 if (nbstru.eq.0.and.nbaste.eq.0) then
-  ifinia = idebia
-  ifinra = idebra
   if (nalimx.gt.1) then
     write(nfecra,2001)
     nalimx = 1

@@ -28,11 +28,8 @@
 subroutine d3pini &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra     )
+ ( nvar   , nscal  ,                                              &
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -79,11 +76,8 @@ subroutine d3pini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
@@ -92,7 +86,6 @@ subroutine d3pini &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -124,20 +117,16 @@ use mesh
 
 implicit none
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra
 integer          iel, igg, mode
 integer          iscal, ivar, ii
 double precision coefg(ngazgm), hair, tinitk
@@ -156,8 +145,6 @@ save             ipass
 
 ipass = ipass + 1
 
-idebia = idbia0
-idebra = idbra0
 
 do igg = 1, ngazgm
   coefg(igg) = zero
@@ -236,9 +223,7 @@ if ( isuite.eq.0 ) then
     call usd3pi                                                   &
     !==========
  ( nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra     )
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 ! ----- En periodique et en parallele,
 !       il faut echanger ces initialisations

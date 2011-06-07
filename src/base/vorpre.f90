@@ -28,11 +28,8 @@
 subroutine vorpre &
 !================
 
- ( idbia0 , idbra0 , ifinia , ifinra ,                            &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   propce , propfa , propfb ,                                     &
-   ra     )
+ ( nvar   , nscal  ,        &
+   propce , propfa , propfb )
 
 !===============================================================================
 ! FONCTION :
@@ -45,20 +42,14 @@ subroutine vorpre &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
-! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfa(nfac, *)  ! ra ! <-- ! physical properties at interior face centers   !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -89,18 +80,14 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0 , ifinia , ifinra
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, iel, ii
 integer          ient, ipcvis, ipcrom
 integer          iappel
@@ -119,8 +106,6 @@ double precision, allocatable, dimension(:,:) :: w1x, w1y, w1z, w1v
 allocate(w1x(icvmax,nnent), w1y(icvmax,nnent), w1z(icvmax,nnent))
 allocate(w1v(icvmax,nnent))
 
-idebia = idbia0
-idebra = idbra0
 
 nvomax = 0
 do ient = 1, nnent
@@ -157,9 +142,6 @@ else
     icvmax = max(icvmax,icvor(ient))
   enddo
 endif
-
-idebia = ifinia
-idebra = ifinra
 
 !===============================================================================
 ! 2. CONSTRUCTION DE LA " GEOMETRIE GOBALE "

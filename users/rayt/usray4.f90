@@ -34,11 +34,9 @@ subroutine usray4 &
  ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   tparop , hparop , tempk  ,                                     &
-   ra     )
+   tparop , hparop , tempk  )
 
 !===============================================================================
 ! Purpose:
@@ -64,7 +62,6 @@ subroutine usray4 &
 !                  !    !     ! mode = 1 enthaly -> temperature                !
 !                  !    !     ! mode =-1 temperature -> enthaly                !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
@@ -76,7 +73,6 @@ subroutine usray4 &
 ! tparop(nfabor)   ! i  ! <-- ! temperature in kelvin for wall boundary faces  !
 ! hparop(nfabor)   ! i  ! --> ! enthalpy for wall boundary faces               !
 ! tempk(ncelet)    ! i  ! --> ! temperature in kelvin                          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -114,7 +110,6 @@ integer          nvar   , nscal
 integer          mode
 
 integer          itypfb(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -123,9 +118,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)
-
-double precision ra(*)
-
 
 ! Local variables
 

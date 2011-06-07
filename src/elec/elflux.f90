@@ -28,12 +28,10 @@
 subroutine elflux &
 !================
 
- ( idbia0 , idbra0 , iappel ,                                     &
+ ( iappel ,                                                       &
    nvar   , nscal  ,                                              &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , viscf  , viscb  ,                            &
-   ra     )
+   coefa  , coefb  , viscf  , viscb  )
 
 !===============================================================================
 ! FONCTION :
@@ -49,8 +47,6 @@ subroutine elflux &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! iappel           ! e  ! <-- ! numero d'appel                                 !
 !                  !    !     ! 1 : j, e, j.e                                  !
 !                  !    !     ! 2 : b,    jxb                                  !
@@ -58,7 +54,6 @@ subroutine elflux &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -72,7 +67,6 @@ subroutine elflux &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! viscf(nfac)      ! tr ! --- ! tableau de travail    faces internes           !
 ! viscb(nfabor     ! tr ! --- ! tableau de travail    faces de bord            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -106,21 +100,18 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0 , iappel
+integer          iappel
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscf(nfac), viscb(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel
 integer          ipcefj, ipcsig, ipcsii
 integer          ipcla1, ipcla2, ipcla3
@@ -157,8 +148,6 @@ ipcla3 = 0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero des grandeurs physiques
 ipcsig = ipproc(ivisls(ipotr))
@@ -234,11 +223,9 @@ if(iappel.eq.1) then
   !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 !   2.2 Calcul du champ electrique E = - grad (potR)
@@ -401,10 +388,8 @@ if(iappel.eq.1) then
     !==========
   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    ia     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
 !   3.2 Calcul du champ electrique Ei = - grad (potI) :
@@ -600,10 +585,8 @@ if (iappel.eq.2) then
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 !       B = rot A
 
@@ -643,10 +626,8 @@ if (iappel.eq.2) then
     !==========
   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    ia     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 !       B = rot A
 
@@ -686,10 +667,8 @@ if (iappel.eq.2) then
     !==========
   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    ia     ,                                    &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 !       B = rot A
 

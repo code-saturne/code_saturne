@@ -28,13 +28,10 @@
 subroutine turbkw &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
-   ra     )
+   tslagr , coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
 ! FONCTION :
@@ -48,8 +45,6 @@ subroutine turbkw &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -58,7 +53,6 @@ subroutine turbkw &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -74,7 +68,6 @@ subroutine turbkw &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -106,13 +99,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -120,12 +111,10 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra, ifinia
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          ii, iivar , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt
@@ -179,8 +168,6 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 epz2 = epzero**2
 
@@ -245,10 +232,8 @@ call grdcel &
 !==========
  ( ik  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,ik)   , coefa(1,iclikp) , coefb(1,iclikp) ,             &
-   gradk  ,                                                       &
-   ra     )
+   gradk  )
 
 nswrgp = nswrgr(iomg)
 imligp = imligr(iomg)
@@ -261,10 +246,8 @@ call grdcel &
 !==========
  ( iomg , imrgra , inc    , iccocg , nswrgp , imligp ,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iomg)  , coefa(1,iclomg) , coefb(1,iclomg) ,            &
-   grado  ,                                                       &
-   ra     )
+   grado  )
 
 do iel = 1, ncel
   w1(iel) = gradk(iel,1)*grado(iel,1) &
@@ -369,10 +352,8 @@ if(igrake.eq.1) then
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    propce(1,ipcroo), propfb(1,ipbroo), viscb  ,                   &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 !      Production et terme de gravite
@@ -415,13 +396,11 @@ call ustskw                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , s2kw   , divukw ,          &
    w1     , w2     , xf1    ,                                     &
-   smbrk  , smbrw  , dam    , w3     ,                            &
+   smbrk  , smbrw  , dam    , w3     )
 !        ------   ------   ------   ------
-   ra     )
 
 !===============================================================================
 ! 6. TERME D'ACCUMULATION DE MASSE -(dRO/dt)*Volume
@@ -572,12 +551,9 @@ if (ikecou.eq.1) then
     enddo
     call viscfa                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w7     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
   else
 
@@ -609,20 +585,17 @@ if (ikecou.eq.1) then
 
   call bilsc2                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
-   w5  ,                                                          &
-!        --
-   ra     )
+   w5     )
+
 
   if (iwarni(ivar).ge.2) then
     isqrt = 1
@@ -650,12 +623,9 @@ if (ikecou.eq.1) then
     enddo
     call viscfa                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w7     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
   else
 
@@ -687,20 +657,17 @@ if (ikecou.eq.1) then
 
   call bilsc2                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
    coefa(1,iclvaf) , coefb(1,iclvaf) ,                            &
    propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  ,          &
-   w6  ,                                                          &
+   w6  )
 !        --
-   ra     )
 
   if (iwarni(ivar).ge.2) then
     isqrt = 1
@@ -940,12 +907,9 @@ if( idiff(ivar).ge. 1 ) then
   enddo
   call viscfa                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 else
 
@@ -988,23 +952,20 @@ thetap = thetav(ivar)
 
 call codits                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinstk , smbrk  , rtp(1,ivar)     ,                            &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 
 ! ---> Traitement de omega
@@ -1027,12 +988,9 @@ if( idiff(ivar).ge. 1 ) then
   enddo
   call viscfa                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 else
 
@@ -1075,23 +1033,20 @@ thetap = thetav(ivar)
 
 call codits                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    tinstw , smbrw  , rtp(1,ivar)     ,                            &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 
 !===============================================================================

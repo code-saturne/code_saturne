@@ -1778,25 +1778,21 @@ void CS_PROCF (pstema, PSTEMA)
  *
  * Fortran interface:
  *
- * subroutine pstvar (idbia0, idbra0,
+ * subroutine pstvar
  * *****************
- *                    ntcabs,
+ *                  ( ntcabs,
  *                    nvar,   nscal,  nvlsta, nvisbr,
- *                    ia,
  *                    ttcabs,
  *                    dt,     rtpa,   rtp,    propce, propfa, propfb,
  *                    coefa,  coefb,
  *                    statce, stativ, statfb,
  *                    ra)
  *
- * integer          idbia0      : <-- : number of first free position in ia
- * integer          idbra0      : <-- : number of first free position in ra
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
  * integer          nvlsta      : <-- : number of statistical variables (lagr)
  * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
- * integer          ia          : <-- : ia integer array
  * double precision ttcabs      : <-- : current physical time
  * double precision dt          : <-- : local time step
  * double precision rtpa        : <-- : cell variables at previous time step
@@ -1814,14 +1810,11 @@ void CS_PROCF (pstema, PSTEMA)
 
 void CS_PROCF (pstvar, PSTVAR)
 (
- const cs_int_t   *idbia0,
- const cs_int_t   *idbra0,
  const cs_int_t   *ntcabs,
  const cs_int_t   *nvar,
  const cs_int_t   *nscal,
  const cs_int_t   *nvlsta,
  const cs_int_t   *nvisbr,
-       cs_int_t    ia[],
  const cs_real_t  *ttcabs,
  const cs_real_t   dt[],
  const cs_real_t   rtpa[],
@@ -1982,11 +1975,9 @@ void CS_PROCF (pstvar, PSTVAR)
                                 &imodif,
                                 itypps,
                                 cell_list, i_face_list, b_face_list,
-                                ia,
                                 dt, rtpa, rtp, propce, propfa, propfb,
                                 coefa, coefb, statce,
-                                cel_vals, i_face_vals, b_face_vals,
-                                ra);
+                                cel_vals, i_face_vals, b_face_vals);
 
       if (imodif > 0)
         cs_post_modify_mesh(post_mesh->id,
@@ -2181,12 +2172,11 @@ void CS_PROCF (pstvar, PSTVAR)
       /* Standard post-processing */
 
       if (numtyp < 0)
-        CS_PROCF(dvvpst, DVVPST) (idbia0, idbra0, &nummai, &numtyp,
+        CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
                                   nvar, nscal, nvlsta, nvisbr,
                                   &n_cells, &n_i_faces, &n_b_faces,
                                   itypps,
                                   cell_list, i_face_list, b_face_list,
-                                  ia,
                                   dt, rtpa, rtp, propce, propfa, propfb,
                                   coefa, coefb, statce, stativ , statfb ,
                                   cel_vals, i_face_vals, b_face_vals,
@@ -2199,11 +2189,9 @@ void CS_PROCF (pstvar, PSTVAR)
                                 &n_cells, &n_i_faces, &n_b_faces,
                                 itypps,
                                 cell_list, i_face_list, b_face_list,
-                                ia,
                                 dt, rtpa, rtp, propce, propfa, propfb,
                                 coefa, coefb, statce,
-                                cel_vals, i_face_vals, b_face_vals,
-                                ra);
+                                cel_vals, i_face_vals, b_face_vals);
 
       /* In case of mixed interior and boundary faces, free
          additional arrays */

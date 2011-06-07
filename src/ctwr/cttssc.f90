@@ -28,17 +28,14 @@
 subroutine cttssc &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
 !===============================================================================
 ! FONCTION :
@@ -50,8 +47,6 @@ subroutine cttssc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -64,7 +59,6 @@ subroutine cttssc &
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -79,7 +73,6 @@ subroutine cttssc &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -111,7 +104,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
@@ -120,7 +112,6 @@ integer          itypfb(nfabor)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izfppp(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -128,12 +119,10 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra
 integer          ivar , iel
 integer          ipcdc1, ipcdc2, ipcdc3
 integer          ipcefj
@@ -144,8 +133,6 @@ double precision valmin,valmax
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero du scalaire a traiter : ISCAL
 

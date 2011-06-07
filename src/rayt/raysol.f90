@@ -28,10 +28,8 @@
 subroutine raysol &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
@@ -41,8 +39,7 @@ subroutine raysol &
    ru     , rua    ,                                              &
    sa     ,                                                       &
    qx     , qy     , qz     ,                                     &
-   qincid , snplus ,                                              &
-   ra     )
+   qincid , snplus )
 
 !===============================================================================
 ! FONCTION :
@@ -88,12 +85,9 @@ subroutine raysol &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -117,7 +111,6 @@ subroutine raysol &
 !                  !    !     ! radiatif explicite                             !
 ! qincid(nfabor    ! tr ! --> ! densite de flux radiatif aux bords             !
 ! snplus(nfabor    ! tr ! --- ! integration du demi-espace egale a pi          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -149,11 +142,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -172,14 +163,10 @@ double precision sa(ncelet)
 double precision qx(ncelet), qy(ncelet), qz(ncelet)
 double precision qincid(nfabor), snplus(nfabor)
 
-double precision ra(*)
-
-
 ! Local variables
 
 character*80     cnom
 
-integer          idebia, idebra
 integer          ifac  , iel
 integer          iconv1, idiff1, ndirc1, ireso1
 integer          nitmap, nswrsp, nswrgp, iwarnp
@@ -206,9 +193,6 @@ double precision, allocatable, dimension(:) :: w10
 
 ! Allocate a work array
 allocate(w10(ncelet))
-
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -419,21 +403,18 @@ do ii = -1,1,2
 
         call codits                                               &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 ,  nitmap ,&
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   ia     ,                                                       &
    rua    , ru     ,                                              &
    cofrua , cofrub , cofrua , cofrub , flurds , flurdb ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , ru    ,                                      &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 !===============================================================================
 ! 5.2 INTEGRATION DES FLUX ET TERME SOURCE

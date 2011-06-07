@@ -28,15 +28,12 @@
 subroutine pptssc &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt , tslagr ,                                     &
-   ra     )
+   smbrs  , rovsdt , tslagr )
 
 !===============================================================================
 ! FONCTION :
@@ -76,8 +73,6 @@ subroutine pptssc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -87,7 +82,6 @@ subroutine pptssc &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -105,7 +99,6 @@ subroutine pptssc &
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -140,14 +133,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -156,11 +147,9 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 
 !===============================================================================
 
@@ -168,8 +157,6 @@ integer          idebia, idebra
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 
 !===============================================================================
@@ -181,16 +168,13 @@ idebra = idbra0
 if ( ippmod(icoebu).ge.0 ) then
   call ebutss                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 endif
 
 
@@ -204,16 +188,13 @@ endif
 if ( ippmod(icolwc).ge.0 ) then
   call lwctss                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 endif
 
 ! ---> Flamme charbon pulverise
@@ -221,17 +202,14 @@ endif
 if ( ippmod(icp3pl).ge.0 ) then
   call cptssc                                                     &
    !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 endif
 
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien
@@ -240,17 +218,14 @@ endif
 if ( ippmod(icpl3c).ge.0 .and. iilagr.eq.2 ) then
   call cpltss                                                     &
    !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt , tslagr ,                                     &
-   ra     )
+   smbrs  , rovsdt , tslagr )
 endif
 
 ! ---> Flamme fuel
@@ -258,17 +233,14 @@ endif
 if ( ippmod(icfuel).ge.0 ) then
   call futssc                                                     &
    !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 endif
 
 ! ---> Versions electriques :
@@ -281,17 +253,14 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielion).ge.1       ) then
    call eltssc                                                    &
    !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 endif
 
 ! ---> Version aerorefrigerant :
@@ -299,17 +268,14 @@ endif
 if ( ippmod(iaeros).ge.0 ) then
    call cttssc                                                    &
    !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    izfppp ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 endif
 
 !----

@@ -28,11 +28,8 @@
 subroutine cplini &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra     )
+ ( nvar   , nscal  ,                                              &
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -86,11 +83,8 @@ subroutine cplini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
@@ -99,7 +93,6 @@ subroutine cplini &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -130,19 +123,15 @@ use mesh
 
 implicit none
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel, ige, mode, icha
 
 double precision t1init, h1init, coefe(ngazem)
@@ -163,8 +152,6 @@ save             ipass
 
 ipass = ipass + 1
 
-idebia = idbia0
-idebra = idbra0
 
 d2s3 = 2.d0/3.d0
 

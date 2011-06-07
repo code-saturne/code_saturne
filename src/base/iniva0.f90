@@ -28,12 +28,9 @@
 subroutine iniva0 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncofab ,                                     &
-   ia     ,                                                       &
+ ( nvar   , nscal  , ncofab ,                                     &
    dt     , tpucou , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , frcxt  ,                                     &
-   ra     )
+   coefa  , coefb  , frcxt  )
 
 !===============================================================================
 ! FONCTION :
@@ -49,12 +46,9 @@ subroutine iniva0 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncofab           ! e  ! <-- ! nombre de couples coefa/b pour les cl          !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
@@ -65,7 +59,6 @@ subroutine iniva0 &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -100,20 +93,16 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , ncofab
 
-integer          ia(*)
 
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 double precision frcxt(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iis   , ivar  , iscal , imom
 integer          iel   , ifac
 integer          iclip , ii    , jj    , idim
@@ -124,7 +113,10 @@ integer          iicp  , iicpa
 integer          iiviss, iiptot
 integer          iptsna, iptsta, iptsca
 integer          nn
+
 double precision xxk, xcmu, trii
+
+double precision rvoid(1)
 
 !===============================================================================
 
@@ -138,8 +130,6 @@ jj = 0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ! En compressible, ISYMPA initialise (= 1) car utile dans le calcul
 !     du pas de temps variable avant passage dans les C.L.
@@ -422,7 +412,7 @@ if (nscal.gt.0) then
       call clpsca                                                 &
       !==========
      ( ncelet , ncel   , nvar   , nscal  , iscal  ,               &
-       propce , ra     , rtp    )
+       propce , rvoid  , rtp    )
     endif
   enddo
 
@@ -434,7 +424,7 @@ if (nscal.gt.0) then
       call clpsca                                                 &
       !==========
      ( ncelet , ncel   , nvar   , nscal  , iscal  ,               &
-       propce , ra     , rtp    )
+       propce , rvoid  , rtp    )
     endif
   enddo
 

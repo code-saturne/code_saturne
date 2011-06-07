@@ -34,10 +34,8 @@ subroutine usray3 &
  ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                       &
    izfrdp ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   ck     ,                                                       &
-   ra     )
+   ck     )
 
 !===============================================================================
 ! Purpose:
@@ -72,7 +70,6 @@ subroutine usray3 &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrdp(nfabor    ! ia ! <-- ! zone number for boundary faces                 !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -81,7 +78,6 @@ subroutine usray3 &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! ck(ncelet)       ! ra ! --> ! medium's absorption coefficient                !
 !                  !    !     ! (zero if transparent)                          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -119,7 +115,6 @@ integer          nvar   , nscal  , iappel
 
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -127,9 +122,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 
 
 double precision ck(ncelet)
-
-double precision ra(*)
-
 
 ! Local variables
 

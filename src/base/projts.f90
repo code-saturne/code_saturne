@@ -28,17 +28,14 @@
 subroutine projts &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu ,                                              &
-   ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    coefbp ,                                                       &
    flumas , flumab , viscf  , viscb  ,                            &
-   viselx , visely , viselz ,                                     &
-   ra     )
+   viselx , visely , viselz )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +55,6 @@ subroutine projts &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
@@ -80,11 +75,9 @@ subroutine projts &
 ! epsrgu           ! r  ! <-- ! precision relative pour la                     !
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! coefbp(nfabor    ! tr ! <-- ! tableaux des cond lim de pression              !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -107,14 +100,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          init   , inc    , imrgra , iccocg
 integer          nswrgu , imligu
 integer          iwarnu , nfecra
 double precision epsrgu , climgu
 
-integer          ia(*)
 
 double precision pnd
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
@@ -122,11 +113,9 @@ double precision viscf(nfac), viscb(nfabor)
 double precision viselx(ncelet), visely(ncelet), viselz(ncelet)
 double precision coefbp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, ii, jj, iii
 double precision dijpfx,dijpfy,dijpfz
 double precision diipx,diipy,diipz
@@ -139,8 +128,6 @@ double precision distbf,surfn
 ! 1.  INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 
 

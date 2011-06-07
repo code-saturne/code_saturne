@@ -28,17 +28,14 @@
 subroutine csc2ts &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncecpl,                                                        &
    ivar   ,                                                       &
    lcecpl ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    crvexp , crvimp ,                                              &
-   rvcpce ,                                                       &
-   ra     )
+   rvcpce )
 
 !===============================================================================
 ! FONCTION :
@@ -49,12 +46,9 @@ subroutine csc2ts &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant            prec)          !
@@ -65,7 +59,6 @@ subroutine csc2ts &
 !  (nfabor, *)     !    !     !                                                !
 ! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
 ! crvimp(ncelet    ! tr ! --> ! tableau de travail pour part implicit          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,33 +88,27 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ivar
 integer          ncecpl
 
 integer          lcecpl(ncecpl)
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision crvexp(ncelet), crvimp(ncelet)
-double precision ra(*)
 double precision rvcpce(ncecpl)
 
 ! Local variables
 
-integer          idebia , idebra , ifinia , ifinra
 integer          iel    , ipcrom
 integer          ipt    , ielloc
 double precision xdis   , xloc   , xtau
 
 !----------------------------------------------------------------------------------
 
-idebia = idbia0
-idebra = idbra0
 
 ipcrom = ipproc(irom)
 

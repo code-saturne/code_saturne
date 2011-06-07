@@ -34,10 +34,8 @@ subroutine uskpdc &
  ( nvar   , nscal  ,                                              &
    ncepdp , iappel ,                                              &
    icepdc , izcpdc ,                                              &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc ,                                     &
-   ra     )
+   coefa  , coefb  , ckupdc )
 
 !===============================================================================
 ! FONCTION :
@@ -102,7 +100,6 @@ subroutine uskpdc &
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
 ! icepdc(ncepdp    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! izcpdc(ncelet)   ! ia ! <-- ! cells zone for head loss definition            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -113,7 +110,6 @@ subroutine uskpdc &
 !  (nfabor, *)     !    !     !                                                !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -145,14 +141,12 @@ integer          iappel
 
 integer          icepdc(ncepdp)
 integer          izcpdc(ncel)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6)
-double precision ra(*)
 
 ! Local variables
 

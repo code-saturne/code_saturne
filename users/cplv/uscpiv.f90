@@ -32,9 +32,7 @@ subroutine uscpiv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra     )
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 !===============================================================================
 ! Purpose:
@@ -144,7 +142,6 @@ subroutine uscpiv &
 !                  !    !     !         inflowing possibly blocked             !
 ! itrifb(nfabor    ! ia ! <-- ! indirection for boundary faces ordering)       !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
@@ -163,7 +160,6 @@ subroutine uscpiv &
 !                  !    !     ! for velocities           ( vistl+visct)*gradu  !
 !                  !    !     ! for pressure                         dt*gradp  !
 !                  !    !     ! for scalars    cp*(viscls+visct/sigmas)*gradt  !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -198,13 +194,9 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ia(*)
-
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ra(*)
-
 
 ! VARIABLES LOCALES
 

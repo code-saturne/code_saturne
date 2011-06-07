@@ -28,20 +28,17 @@
 subroutine lagesp &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , lndnod ,                                     &
+ ( nvar   , nscal  , lndnod ,                                     &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel, ifrlag,                                       &
    itepa  , ibord  ,                                              &
-   ia     ,                                                       &
    dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
-   vagaus , gradpr , gradvf , brgaus , terbru , romp   , auxl2  , &
-   ra     )
+   vagaus , gradpr , gradvf , brgaus , terbru , romp   , auxl2  )
 
 !===============================================================================
 ! Purpose:
@@ -62,8 +59,6 @@ subroutine lagesp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -85,7 +80,6 @@ subroutine lagesp &
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 ! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -121,7 +115,6 @@ subroutine lagesp &
 ! romp             ! tr ! --- ! masse volumique des particules                 !
 ! auxl2            ! tr ! --- ! tableau de travail                             !
 !    (nbpmax,7)    !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -152,14 +145,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr , lndnod
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
 integer          icocel(lndnod),  ifrlag(nfabor), itycel(ncelet+1)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -176,11 +167,9 @@ double precision vagaus(nbpmax,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision romp(nbpmax) , auxl2(nbpmax,7)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , ifinia , ifinra
 integer          iel , ifac , ip
 integer          iauxp , nbfac
 integer          icrit , itirag , inb , iifacl
@@ -196,8 +185,6 @@ double precision, allocatable, dimension(:,:) :: fextla
 ! 0.  Memory management
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1.  Initialization
@@ -236,14 +223,12 @@ call uslafe                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
-   romp   , fextla ,                                              &
-   ra     )
+   romp   , fextla )
 
 !===============================================================================
 ! 3.  Management of physici-chemical forces (DLVO theory)
@@ -255,19 +240,16 @@ if ( ladlvo .eq. 1 ) then
 
   call lagfch                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
-   romp   , fextla ,                                              &
-   ra     )
+   romp   , fextla )
 
  endif
 
@@ -286,18 +268,15 @@ if (nordre.eq.1) then
 
   call lages1                                                     &
   !==========
-   ( idebia , idebra ,                                            &
-     nvar   , nscal  ,                                            &
+   ( nvar   , nscal  ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  ,                                                     &
-     ia     ,                                                     &
      dt     , rtpa   , propce , propfa , propfb ,                 &
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      bx     , vagaus , gradpr , gradvf , romp   ,                 &
-     brgaus , terbru , fextla ,                                   &
-     ra     )
+     brgaus , terbru , fextla )
 
 
 !=============================================================================
@@ -308,18 +287,16 @@ if (nordre.eq.1) then
 
      call lagdep                                                  &
     !==========
-   ( idebia , idebra ,                                            &
-     nvar   , nscal  , lndnod , icocel , itycel, ifrlag ,         &
+   ( nvar   , nscal  , lndnod , icocel , itycel, ifrlag ,         &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  ,                                                     &
-     ia     , dlgeo  ,                                            &
+     dlgeo  ,                                                     &
      dt     , rtpa   , propce , propfa , propfb ,                 &
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      bx     , vagaus , gradpr , gradvf , romp   ,                 &
-     brgaus , terbru , fextla ,                                   &
-     ra     )
+     brgaus , terbru , fextla )
 
   endif
 
@@ -331,19 +308,16 @@ else
 
   call lages2                                                     &
   !==========
-   ( idebia , idebra ,                                            &
-     nvar   , nscal  ,                                            &
+   ( nvar   , nscal  ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  , ibord  ,                                            &
-     ia     ,                                                     &
      dt     , rtpa   , rtp    , propce , propfa , propfb ,        &
      ettp   , ettpa  , tepa   ,                                   &
      statis , taup   , tlag   , piil   ,                          &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &
      auxl2  , gradpr , gradvf ,                                   &
-     romp   , brgaus , terbru , fextla ,                          &
-     ra     )
+     romp   , brgaus , terbru , fextla )
 
 endif
 

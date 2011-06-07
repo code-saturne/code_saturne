@@ -28,12 +28,9 @@
 subroutine inivar &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncofab ,                                     &
-   ia     ,                                                       &
+ ( nvar   , nscal  , ncofab ,                                     &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , frcxt  ,                                     &
-   ra     )
+   coefa  , coefb  , frcxt  )
 
 !===============================================================================
 ! FONCTION :
@@ -47,12 +44,9 @@ subroutine inivar &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncofab           ! e  ! <-- ! nombre de couples coefa/b pour les cl          !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
@@ -63,7 +57,6 @@ subroutine inivar &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -97,26 +90,23 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , ncofab
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,ncofab), coefb(nfabor,ncofab)
 double precision frcxt(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra, ifinia
 integer          ivar  , iscal , imom
 integer          iel
 integer          iclip , ipp  , iok   , ii
 integer          idtcm , ipcmom, iiptot
 integer          ibormo(nbmomx)
+
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
 double precision xekmin, xepmin, xomgmn, xphmin, xphmax
@@ -125,14 +115,14 @@ double precision x11min, x22min, x33min, valmom
 double precision vmomax(nbmomx), vmomin(nbmomx)
 double precision xxp0, xyp0, xzp0
 
+double precision rvoid(1)
+
 !===============================================================================
 
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 iok = 0
 
@@ -162,9 +152,7 @@ endif
 call usiniv                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra     )
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 !     Avec l'interface, il peut y avoir eu initialisation,
 !       meme si usiniv n'est pas utilise.
@@ -184,11 +172,8 @@ if (ippmod(iphpar).ge.1) then
 
   call ppiniv                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra     )
+ ( nvar   , nscal  ,                                              &
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 endif
 
 ! Si l'utilisateur a change Ptot, on change P* en consequence,
@@ -457,7 +442,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
           call clpsca                                             &
           !==========
                 ( ncelet , ncel   , nvar   , nscal  , iscal  ,    &
-                  propce , ra     , rtp    )
+                  propce , rvoid  , rtp    )
         else
           chaine = nomvar(ipprtp(isca(ii)))
           write(nfecra,3040) ii,chaine(1:8),                      &

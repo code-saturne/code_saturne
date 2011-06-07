@@ -28,12 +28,9 @@
 subroutine matrdt &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   iconvp , idiffp , isym   ,                                     &
-   ia     ,                                                       &
+ ( iconvp , idiffp , isym   ,                                     &
    coefbp , flumas , flumab , viscf  , viscb  ,                   &
-   da     ,                                                       &
-   ra     )
+   da     )
 
 !===============================================================================
 ! FONCTION :
@@ -49,20 +46,16 @@ subroutine matrdt &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! iconvp           ! e  ! <-- ! indicateur = 1 convection, 0 sinon             !
 ! idiffp           ! e  ! <-- ! indicateur = 1 diffusion , 0 sinon             !
 ! isym             ! e  ! <-- ! indicateur = 1 matrice symetrique              !
 !                  !    !     !              2 matrice non symetrique          !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! coefbp(nfabor    ! tr ! <-- ! tab b des cl pour le pdt considere             !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
 ! viscf(nfac)      ! tr ! <-- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! <-- ! visc*surface/dist aux faces de bord            !
 ! da (ncelet       ! tr ! --> ! partie diagonale de la matrice                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -86,16 +79,13 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          iconvp , idiffp , isym
 
-integer          ia(*)
 
 double precision coefbp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision da(ncelet )
-double precision ra(*)
 
 ! Local variables
 

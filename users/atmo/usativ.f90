@@ -33,12 +33,10 @@ subroutine usativ &
 
  ( nvar   , nscal  ,                                              &
    nbmetd , nbmett , nbmetm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
    tmprom , ztprom , zdprom , xmet   , ymet   , pmer   ,          &
    ttprom , qvprom , uprom  , vprom  , ekprom , epprom ,          &
-   rprom  , tpprom , phprom ,                                     &
-   ra     )
+   rprom  , tpprom , phprom )
 
 !===============================================================================
 ! FONCTION :
@@ -99,7 +97,6 @@ subroutine usativ &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
@@ -108,7 +105,6 @@ subroutine usativ &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -137,8 +133,6 @@ implicit none
 integer          nvar   , nscal
 integer          nbmetd , nbmett , nbmetm
 
-integer          ia(*)
-
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
@@ -150,7 +144,6 @@ double precision uprom(nbmetd,nbmetm)  , vprom(nbmetd,nbmetm)
 double precision ekprom(nbmetd,nbmetm) , epprom(nbmetd,nbmetm)
 double precision rprom(nbmett,nbmetm)  , tpprom(nbmett,nbmetm)
 double precision phprom(nbmett,nbmetm)
-double precision ra(*)
 
 ! Local variables
 

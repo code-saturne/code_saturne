@@ -30,12 +30,10 @@ subroutine grdpot &
 
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    ppond  ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 !===============================================================================
 ! FONCTION :
@@ -80,7 +78,6 @@ subroutine grdpot &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! pvar  (ncelet    ! tr ! <-- ! variable (pression)                            !
 ! coefap,coefbp    ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
@@ -88,7 +85,6 @@ subroutine grdpot &
 ! fextx,y,z        ! tr ! <-- ! force exterieure generant la pression          !
 !   (ncelet)       !    !     !  hydrostatique                                 !
 ! grad(ncelet,3)   ! tr ! --> ! gradient de pvar                               !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -117,13 +113,11 @@ integer          ivar   , imrgra , inc    , iccocg , nswrgp
 integer          imligp ,iwarnp  , iphydp , nfecra
 double precision epsrgp , climgp , extrap
 
-integer          ia(*)
 
 double precision ppond(ncelet)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision grad(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 

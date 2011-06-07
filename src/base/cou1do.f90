@@ -28,16 +28,13 @@
 subroutine cou1do &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncp    , nfpt1d ,                            &
+ ( nvar   , nscal  , ncp    , nfpt1d ,                            &
    ientha , ifpt1d , iclt1d ,                                     &
-   ia     ,                                                       &
    tppt1d , tept1d , hept1d , fept1d ,                            &
    xlmbt1 , rcpt1d , dtpt1d , dt     , rtpa   ,                   &
    propce , propfa , propfb ,                                     &
    coefa  , coefb  ,                                              &
-   cpcst  , cp     , hbord  , tbord  ,                            &
-   ra     )
+   cpcst  , cp     , hbord  , tbord  )
 
 !===============================================================================
 ! FONCTION :
@@ -50,8 +47,6 @@ subroutine cou1do &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncp              ! e  ! <-- ! dimension de cp (ncelet ou 1)                  !
@@ -63,7 +58,6 @@ subroutine cou1do &
 ! ifpt1d           ! te ! <-- ! numero de la face en traitement                !
 !                  !    !     ! thermique en paroi                             !
 ! iclt1d           ! te ! <-- ! type de condition limite                       !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! cpcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! cp(ncp)          ! tr ! <-- ! chaleur specifique si variable                 !
 ! hbord            ! tr ! <-- ! coefficients d'echange aux bords               !
@@ -77,7 +71,6 @@ subroutine cou1do &
 ! xlmbt1           ! tr ! <-- ! diffusivite thermique                          !
 ! rcpt1d           ! tr ! <-- ! rocp                                           !
 ! dtpt1d           ! tr ! <-- ! pas de temps                                   !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -106,13 +99,11 @@ use mesh
 implicit none
 
 ! Arguments
-integer          idbia0 , idbra0
 integer          nfpt1d
 integer          nvar   , nscal  , ncp
 
 integer          ifpt1d(nfpt1d), iclt1d(nfpt1d)
 integer          ientha
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -123,14 +114,12 @@ double precision cpcst, cp(ncp)
 double precision tppt1d(nfpt1d)
 double precision tept1d(nfpt1d), hept1d(nfpt1d), fept1d(nfpt1d)
 double precision xlmbt1(nfpt1d), rcpt1d(nfpt1d), dtpt1d(nfpt1d)
-double precision ra(*)
 
 !     VARIABLES LOCALES
 
-integer          idebia, idebra, mode
+integer          mode
 integer          iappel
 integer          ifac, iel , ii
-integer          idbia1
 
 integer          ivoid(1)
 
@@ -140,8 +129,6 @@ double precision rvoid(1)
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !     SI ENTHALPIE, ON TRANSFORME EN TEMPERATURE
 !     Il est necessaire de transmettre a SYRTHES des Temperatures
@@ -189,25 +176,20 @@ call  uspt1d &
 !===========
  ( nvar   , nscal  , nfpt1d , iappel ,                            &
    ifpt1d , izft1d , ivoid  , iclt1d ,                            &
-   ia     ,                                                       &
    tppt1d , rvoid  , rvoid  ,                                     &
    tept1d , hept1d , fept1d ,                                     &
    xlmbt1 , rcpt1d , dtpt1d ,                                     &
    dt     , rtpa   ,                                              &
    propce , propfa , propfb ,                                     &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 iappel = 3
 call vert1d &
 !==========
- (idebia , idebra ,                                               &
-  nfabor , nfpt1d , iappel ,                                      &
+( nfabor , nfpt1d , iappel ,                                      &
   ifpt1d , ivoid  , iclt1d ,                                      &
-  ia     ,                                                        &
   rvoid  , rvoid  ,                                               &
-  xlmbt1 , rcpt1d , dtpt1d ,                                      &
-  ra     )
+  xlmbt1 , rcpt1d , dtpt1d )
 
 do ii = 1, nfpt1d
 

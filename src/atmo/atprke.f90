@@ -28,15 +28,11 @@
 subroutine atprke &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nscal  ,                                                       &
+ ( nscal  ,                                                       &
    ipcvto,                                                        &
-   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   tinstk , tinste ,                                              &
-   ra     )
-
+   tinstk , tinste )
 
 !===============================================================================
 ! FONCTION :
@@ -49,14 +45,11 @@ subroutine atprke &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! irespr(ncelet    ! te ! --- ! tab entier multigrille                         !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -67,7 +60,6 @@ subroutine atprke &
 !  (nfabor,*)      !    !               !    faces de bord
 !tinstk(ncelet)    ! tr ! <-- ! prod et terme de gravite pour eq k             !
 !tinste(ncelet)    ! tr ! <-- ! prod et terme de gravite pour eq eps           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -101,22 +93,18 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nscal
 integer          ipcvto
 
 
-integer          ia(*)
 
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rtp (ncelet,*), rtpa (ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tinstk(ncelet), tinste(ncelet)
-double precision ra(*)
 
 ! Local variables
-integer         idebra, idebia
 integer         iel
 integer         itpp , icltpp
 integer         iccocg, inc
@@ -138,8 +126,6 @@ double precision, allocatable, dimension(:,:) :: grad
 ! Allocate work arrays
 allocate(grad(ncelet,3))
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2. Calcul des derivees de la temperature potentielle
@@ -169,10 +155,8 @@ if (ippmod(iatmos).eq.1) then
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,itpp), coefa(1,icltpp) , coefb(1,icltpp) ,              &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 !      Production et terme de gravite

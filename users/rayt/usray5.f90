@@ -34,12 +34,10 @@ subroutine usray5 &
  ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                       &
    izfrdp ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
-   tparoi , qincid , flunet , xlam   , epa    , eps     ,  ck   , &
-   ra     )
+   tparoi , qincid , flunet , xlam   , epa    , eps     ,  ck   )
 
 !===============================================================================
 !  Purpose:
@@ -110,7 +108,6 @@ subroutine usray5 &
 ! iappel           ! i  ! <-- ! current subroutine call number                 !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
@@ -128,7 +125,6 @@ subroutine usray5 &
 ! epap(nfabor)     ! ra ! --> ! thickness (m)                                  !
 ! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
 ! ck(ncelet)       ! ra ! <-- ! absoprtion coefficient                         !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -166,7 +162,6 @@ integer          nvar   , nscal  , iappel
 
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -175,14 +170,10 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 double precision cofrua(nfabor), cofrub(nfabor)
 
-
 double precision tparoi(nfabor), qincid(nfabor)
 double precision xlam(nfabor), epa(nfabor)
 double precision eps(nfabor), flunet(nfabor)
 double precision ck(ncelet)
-
-double precision ra(*)
-
 
 ! Local variables
 

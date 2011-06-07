@@ -28,9 +28,8 @@
 subroutine laggeo &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   lndnod ,                                                       &
-   ia     , dlgeo  , ra     )
+ ( lndnod ,                                                       &
+   dlgeo  )
 
 !===============================================================================
 ! Purpose:
@@ -50,8 +49,6 @@ subroutine laggeo &
 !__________________.____._____.________________________________________________.
 !    nom           !type!mode !                   role                         !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! numero de la 1ere case libre dans ia           !
-! idbra0           ! e  ! <-- ! numero de la 1ere case libre dans ra           !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
@@ -75,7 +72,6 @@ subroutine laggeo &
 !   (nbpmax)       !    !     !   numero de la cellule de depart               !
 ! ibord            ! te ! --> ! contient le numero de la                       !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
 ! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
@@ -91,7 +87,6 @@ subroutine laggeo &
 ! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 !(nfabor,ngeol)    !    !     !                                                !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -129,18 +124,13 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          lndnod
-integer          ia(*)
 
 
 double precision dlgeo(nfabor,ngeol)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
-integer          ifinia, ifinra
 integer          ifac , inoeud , iel
 double precision xs1,ys1,zs1,xs2,ys2,zs2,xs3,ys3,zs3
 double precision alp1,bet1,gam1,alp2,bet2,gam2
@@ -153,8 +143,6 @@ double precision distp
 ! 0.  Memory management and crossing counter
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1.  Boundary faces planes computation

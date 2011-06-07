@@ -28,18 +28,15 @@
 subroutine inimas &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar1  , ivar2  , ivar3  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgu , imligu , &
    iwarnu , nfecra ,                                              &
    epsrgu , climgu , extrau ,                                     &
-   ia     ,                                                       &
    rom    , romb   ,                                              &
    ux     , uy     , uz     ,                                     &
    coefax , coefay , coefaz , coefbx , coefby , coefbz ,          &
-   flumas , flumab ,                                              &
-   ra     )
+   flumas , flumab )
 
 !===============================================================================
 ! FONCTION :
@@ -66,8 +63,6 @@ subroutine inimas &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar1            ! e  ! <-- ! variable de la direction 1                     !
@@ -96,7 +91,6 @@ subroutine inimas &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgu           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrau           ! r  ! <-- ! coef extrap gradient                           !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rom(ncelet       ! tr ! <-- ! masse volumique aux cellules                   !
 ! romb(nfabor)     ! tr ! <-- ! masse volumique aux bords                      !
 ! ux,y,z(ncelet    ! tr ! <-- ! vitesse                                        !
@@ -104,7 +98,6 @@ subroutine inimas &
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -130,7 +123,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ivar1  , ivar2  , ivar3  , imaspe
 integer          iflmb0 , init   , inc    , imrgra , iccocg
@@ -138,18 +130,15 @@ integer          nswrgu , imligu
 integer          iwarnu , nfecra
 double precision epsrgu , climgu , extrau
 
-integer          ia(*)
 
 double precision rom(ncelet), romb(nfabor)
 double precision ux(ncelet), uy(ncelet), uz(ncelet)
 double precision coefax(nfabor), coefay(nfabor), coefaz(nfabor)
 double precision coefbx(nfabor), coefby(nfabor), coefbz(nfabor)
 double precision flumas(nfac), flumab(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, ii, jj, iel, iii
 integer          iappel
 
@@ -171,8 +160,6 @@ double precision, allocatable, dimension(:,:) :: coefqa
 allocate(qdmx(ncelet), qdmy(ncelet), qdmz(ncelet))
 allocate(coefqa(ndimfb,3))
 
-idebia = idbia0
-idebra = idbra0
 
 ! ---> CALCUL DE LA QTE DE MOUVEMENT
 
@@ -285,10 +272,8 @@ if( nswrgu.gt.1 ) then
   !==========
  ( ivar1  , imrgra , inc    , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   ia     ,                                                       &
    qdmx   , coefqa(1,1) , coefbx ,                                &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 ! ---> FLUX DE MASSE SUR LES FACETTES FLUIDES
@@ -341,10 +326,8 @@ if( nswrgu.gt.1 ) then
   !==========
  ( ivar2  , imrgra , inc    , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   ia     ,                                                       &
    qdmy   , coefqa(1,2) , coefby ,                                &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 ! ---> FLUX DE MASSE SUR LES FACETTES FLUIDES
@@ -396,10 +379,8 @@ if( nswrgu.gt.1 ) then
   !==========
  ( ivar3  , imrgra , inc    , iccocg , nswrgu , imligu ,          &
    iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   ia     ,                                                       &
-   qdmz     , coefqa(1,3) , coefbz ,                              &
-   grad   ,                                                       &
-   ra     )
+   qdmz   , coefqa(1,3) , coefbz ,                                &
+   grad   )
 
 !     FLUX DE MASSE SUR LES FACETTES FLUIDES
 

@@ -34,10 +34,8 @@ subroutine usalcl &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    icodcl , itypfb , ialtyb , impale ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl , xyzno0 , depale ,                   &
-   ra     )
+   coefa  , coefb  , rcodcl , xyzno0 , depale )
 
 !===============================================================================
 ! Purpose:
@@ -300,7 +298,6 @@ subroutine usalcl &
 ! itypfb           ! ia ! --> ! boundary face types                            !
 ! ialtyb (nfabor)  ! ia ! --> ! boundary face types for mesh velocity          !
 ! impale(nnod)     ! ia ! <-- ! indicator for fixed node displacement          !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -322,7 +319,6 @@ subroutine usalcl &
 ! depale(nnod,3)   ! ra ! <-- ! nodes displacement                             !
 ! xyzno0           ! ra ! <-- ! vertex coordinates of initial mesh             !
 !  (3, nnod)       !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -357,7 +353,6 @@ integer          nvar   , nscal
 integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor), ialtyb(nfabor)
 integer          impale(nnod)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -365,7 +360,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision depale(nnod,3), xyzno0(3,nnod)
-double precision ra(*)
 
 ! Local variables
 

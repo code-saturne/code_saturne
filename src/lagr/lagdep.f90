@@ -28,18 +28,16 @@
 subroutine lagdep &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , lndnod , icocel , itycel ,ifrlag ,           &
+ ( nvar   , nscal  , lndnod , icocel , itycel ,ifrlag ,           &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ia     , dlgeo  ,                                              &
+   dlgeo  ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , statis ,                            &
    taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , gradvf , romp   ,                   &
-   brgaus , terbru , fextla ,                                     &
-   ra     )
+   brgaus , terbru , fextla )
 
 !===============================================================================
 ! Purpose:
@@ -63,8 +61,6 @@ subroutine lagdep &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -86,7 +82,6 @@ subroutine lagdep &
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 !(nfabor,ngeol)    !    !     !                                                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
@@ -112,7 +107,6 @@ subroutine lagdep &
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -145,14 +139,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr , lndnod
 
 integer          itepa(nbpmax,nivep)
 integer          icocel(lndnod),  ifrlag(nfabor), itycel(ncelet+1)
-integer          ia(*)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -166,15 +158,14 @@ double precision brgaus(nbpmax,*) , terbru(nbpmax)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision romp(nbpmax)
 double precision fextla(nbpmax,3)
-double precision ra(*)
 double precision dlgeo(nfabor,ngeol)
 
 
 ! Local variables
 
-integer          idebia , idebra, ifac, il
+integer          ifac, il
 integer          iel , ip , id , i0 , iromf , mode
-integer          izone, nbfac, ifinia
+integer          izone, nbfac
 
 double precision aa , bb , cc , dd , ee
 double precision aux1 , aux2 ,aux3 , aux4 , aux5 , aux6
@@ -200,8 +191,6 @@ integer, allocatable, dimension(:) :: ifacl
 ! 0.  Memory management
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 ! Allocae a work array
 allocate(ifacl(nbpart))
@@ -519,19 +508,17 @@ endif
 
             call lagesd                                                   &
             !==========
-            ( idebia , idebra ,                                            &
-              ifacl(ip) , ip     ,                                         &
+            ( ifacl(ip) , ip     ,                                         &
               nvar   , nscal  ,                                            &
               nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
               ntersl , nvlsta , nvisbr ,                                   &
-              itepa  , ia     ,                                            &
+              itepa  ,                                                     &
               dlgeo  ,                                                     &
               dt     , rtpa   , propce , propfa , propfb ,                 &
               ettp   , ettpa  , tepa   ,                                   &
               statis , taup   , tlag   , piil   ,                          &
               bx     , vagaus , gradpr , gradvf , romp   ,                 &
-              tempf  , romf   , ustar  , lvisq  ,tvisq   , depint,         &
-              ra )
+              tempf  , romf   , ustar  , lvisq  ,tvisq   , depint )
 
          endif
 

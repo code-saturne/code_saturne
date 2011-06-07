@@ -28,21 +28,18 @@
 subroutine codits &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   ia     ,                                                       &
    pvara  , pvark  ,                                              &
    coefap , coefbp , cofafp , cofbfp , flumas , flumab ,          &
    viscfm , viscbm , viscfs , viscbs ,                            &
    rovsdt , smbrp  , pvar   ,                                     &
-   eswork ,                                                       &
-   ra     )
+   eswork )
 
 !===============================================================================
 ! FONCTION :
@@ -99,8 +96,6 @@ subroutine codits &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! idtvar           ! e  ! <-- ! indicateur du schema temporel                  !
@@ -146,7 +141,6 @@ subroutine codits &
 !                  !    !     !   totalement centre en temps (mixage           !
 !                  !    !     !   entre crank-nicolson et adams-               !
 !                  !    !     !   bashforth)                                   !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! pvara(ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
 ! pvark(ncelet     ! tr ! <-- ! variable de la sous-iteration                  !
 !                  !    !     !  precedente. pour un point fixe sur            !
@@ -169,7 +163,6 @@ subroutine codits &
 ! smbrp(ncelet     ! tr ! <-- ! bilan au second membre                         !
 ! pvar (ncelet     ! tr ! <-- ! variable resolue                               !
 ! eswork(ncelet)   ! ra ! <-- ! prediction-stage error estimator (iescap > 0)  !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -198,7 +191,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          idtvar , ivar   , iconvp , idiffp , ndircp
 integer          nitmap
@@ -209,7 +201,6 @@ integer          ipp    , iwarnp
 double precision blencp , epsilp , epsrgp , climgp , extrap
 double precision relaxp , thetap , epsrsp
 
-integer          ia(*)
 
 double precision pvara(ncelet), pvark(ncelet)
 double precision coefap(nfabor), coefbp(nfabor)
@@ -220,14 +211,12 @@ double precision viscfs(nfac), viscbs(nfabor)
 double precision rovsdt(ncelet), smbrp(ncelet)
 double precision pvar(ncelet)
 double precision eswork(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
 character*16     cnom
 integer          lchain
-integer          idebia, idebra
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          idimte,itenso,iinvpe, iinvpp
@@ -251,8 +240,6 @@ double precision, allocatable, dimension(:) :: dpvar, smbini, w1
 allocate(dam(ncelet), xam(nfac,2))
 allocate(dpvar(ncelet), smbini(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ! NOMS
 chaine = nomvar(ipp)
@@ -382,18 +369,14 @@ if(abs(thetex).gt.epzero) then
   iccocg = 1
   call bilsc2                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
-   ia     ,                                                       &
    pvara  , pvara  ,  coefap , coefbp , cofafp , cofbfp ,         &
    flumas , flumab , viscfs , viscbs ,                            &
-   smbrp  ,                                                       &
-   !----
-   ra     )
+   smbrp  )
 endif
 
 !     AVANT DE BOUCLER SUR LES SWEEP, ON STOCKE LE SECOND MEMBRE SANS
@@ -449,18 +432,14 @@ do 100 isweep = 1, nswmod
 
   call bilsc2                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   ia     ,                                                       &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs ,                            &
-   smbrp  ,                                                       &
-   !----
-   ra     )
+   smbrp  )
 
   call prodsc(ncelet,ncel,isqrt,smbrp,smbrp,residu)
 
@@ -589,18 +568,14 @@ if (iescap.gt.0) then
 
   call bilsc2                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   ia     ,                                                       &
    pvar   , pvara  , coefap , coefbp , cofafp , cofbfp ,          &
    flumas , flumab , viscfs , viscbs ,                            &
-   smbrp  ,                                                       &
-   !----
-   ra     )
+   smbrp  )
 
 !     CONTRIBUTION DES NORMES L2 DES DIFFERENTES COMPOSANTES
 !       DANS LE TABLEAU ESWORK

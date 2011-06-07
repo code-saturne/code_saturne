@@ -33,10 +33,8 @@ subroutine uscplc &
 
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -399,7 +397,6 @@ subroutine uscplc &
 ! itypfb(nfabor)   ! te ! --> ! type des faces de bord                         !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -423,7 +420,6 @@ subroutine uscplc &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -462,14 +458,12 @@ integer          nvar   , nscal
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision ra(*)
 
 ! VARIABLES LOCALES
 

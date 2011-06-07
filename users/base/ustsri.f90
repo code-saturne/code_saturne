@@ -34,11 +34,9 @@ subroutine ustsri &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smcelp , gamma  , grdvit , produc , &
-   crvexp , crvimp ,                                              &
-   ra     )
+   crvexp , crvimp )
 
 !===============================================================================
 ! Purpose:
@@ -122,7 +120,6 @@ subroutine ustsri &
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
@@ -139,7 +136,6 @@ subroutine ustsri &
 ! produc(6,ncelet) ! ra ! <-- ! turbulent production term (only for iturb=30)  !
 ! crvexp           ! ra ! --> ! explicit part of the source term               !
 ! crvimp           ! ra ! --> ! implicit part of the source term               !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -172,7 +168,6 @@ integer          ivar
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itpsmp(ncesmp)
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -182,7 +177,6 @@ double precision ckupdc(ncepdp,6)
 double precision smcelp(ncesmp), gamma(ncesmp)
 double precision grdvit(ncelet,3,3), produc(6,ncelet)
 double precision crvexp(ncelet), crvimp(ncelet)
-double precision ra(*)
 
 ! Local variables
 

@@ -28,11 +28,10 @@
 subroutine vert1d &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nfabor , nfpt1d , iappel ,                                     &
-   ifpt1d , nppt1d , iclt1d , ia     ,                            &
+ ( nfabor , nfpt1d , iappel ,                                     &
+   ifpt1d , nppt1d , iclt1d ,                                     &
    rgpt1d , eppt1d ,                                              &
-   xlmbt1 , rcpt1d , dtpt1d , ra     )
+   xlmbt1 , rcpt1d , dtpt1d )
 
 !===============================================================================
 ! FONCTION :
@@ -57,8 +56,6 @@ subroutine vert1d &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
@@ -75,8 +72,6 @@ subroutine vert1d &
 ! rcpt1d           ! r  ! <-- ! rocp                                           !
 ! dtpt1d           ! tr ! <-- ! pas de temps                                   !
 ! iappel           ! e  ! <-- ! indique les donnes a renvoyer                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -101,26 +96,20 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nfabor , nfpt1d
 integer          iappel
 
 integer          ifpt1d(nfpt1d) , nppt1d(nfpt1d) , iclt1d(nfpt1d)
-integer          ia(*)
 
 double precision eppt1d(nfpt1d) , rgpt1d(nfpt1d)
 double precision xlmbt1(nfpt1d) , rcpt1d(nfpt1d) , dtpt1d(nfpt1d)
-double precision ra(*)
 
 ! Variables locales
-integer          idebia , idebra
 integer          ii, ifac
 
 !===============================================================================
 
 
-idebia = idbia0
-idebra = idbra0
 
 
 if(iappel.eq.1) then

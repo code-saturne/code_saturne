@@ -32,11 +32,9 @@ subroutine usvima &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   viscmx , viscmy , viscmz ,                                     &
-   ra     )
+   viscmx , viscmy , viscmz )
 
 !===============================================================================
 ! Purpose:
@@ -72,7 +70,6 @@ subroutine usvima &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
@@ -84,7 +81,6 @@ subroutine usvima &
 ! viscmx(ncelet)    ! ra ! <-- ! mesh viscosity in X direction                 !
 ! viscmy(ncelet)    ! ra ! <-- ! mesh viscosity in Y direction                 !
 ! viscmz(ncelet)    ! ra ! <-- ! mesh viscosity in Z direction                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -116,14 +112,11 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ia(*)
-
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscmx(ncelet), viscmy(ncelet), viscmz(ncelet)
-double precision ra(*)
 
 ! Local variables
 

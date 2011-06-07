@@ -28,13 +28,10 @@
 subroutine cou1di &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nfabor ,                                                       &
+ ( nfabor ,                                                       &
    nvar   , nscal  ,                                              &
    isvtb  , icodcl ,                                              &
-   ia     ,                                                       &
-   rcodcl ,                                                       &
-   ra     )
+   rcodcl )
 
 !===============================================================================
 
@@ -48,8 +45,6 @@ subroutine cou1di &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -63,7 +58,6 @@ subroutine cou1di &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
@@ -76,7 +70,6 @@ subroutine cou1di &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -103,28 +96,22 @@ implicit none
 
 ! Arguments
 
-integer          idbia0, idbra0
 integer          nfabor
 integer          nvar , nscal
 integer          isvtb  , icodcl(nfabor,nvar)
-integer          ia(*)
 double precision rcodcl(nfabor,nvar,3)
-double precision ra(*)
 
 ! Local variables
 
 
 integer          ii , ivar
 integer          ifac
-integer          idebia, idebra
 integer          icldef
 integer          mode
 double precision temper, enthal
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !     Sans specification, une face couplee est une face de type paroi
 icldef = 5

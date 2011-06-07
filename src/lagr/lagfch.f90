@@ -28,19 +28,16 @@
 subroutine lagfch &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
-   romp   , fextla ,                                              &
-   ra     )
+   romp   , fextla )
 
 !===============================================================================
 ! FONCTION :
@@ -63,8 +60,6 @@ subroutine lagfch &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -79,7 +74,6 @@ subroutine lagfch &
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ibord            ! te ! --> ! si nordre=2, contient le numero de la          !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -113,7 +107,6 @@ subroutine lagfch &
 ! romp             ! tr ! --- ! masse volumique des particules                 !
 ! fextla           ! tr ! --> ! champ de forces exterieur                      !
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -145,13 +138,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -167,11 +158,9 @@ double precision vagaus(nbpmax,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision romp(nbpmax)
 double precision fextla(nbpmax,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra,ifinia , ifinra
 integer          ip , iel , mode
 
 double precision val , tempf , dnorm
@@ -186,8 +175,6 @@ double precision, allocatable, dimension(:) :: dnxpar, dnypar, dnzpar
 ! 0.  GESTION MEMOIRE ET INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. CALCUL DE LA DISTANCE A LA PAROI + NORMAL A LA PAROI
@@ -210,14 +197,12 @@ call usladp                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , statis ,                            &
    taup   , tlag   , piil   ,                                     &
    vagaus , gradpr , gradvf ,                                     &
    romp   ,                                                       &
-   dppar  , dnxpar  , dnypar  , dnzpar  ,                            &
-   ra     )
+   dppar  , dnxpar  , dnypar  , dnzpar  )
 
 !===============================================================================
 ! 2. FORCES DE VAN DER WAALS

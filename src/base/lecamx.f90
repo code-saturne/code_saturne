@@ -28,13 +28,10 @@
 subroutine lecamx &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
+ ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , frcxt  ,                                     &
-   ra     )
+   coefa  , coefb  , frcxt  )
 
 !===============================================================================
 
@@ -62,8 +59,6 @@ subroutine lecamx &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ndim             ! e  ! <-- ! dimension du calcul                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -73,7 +68,6 @@ subroutine lecamx &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! jturb            ! te ! <-- ! modeles de turb calcul precedent               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
@@ -90,7 +84,6 @@ subroutine lecamx &
 ! racell(ncelet    ! tr ! --- ! tableau de travail                             !
 ! rafacl(nfac      ! tr ! --- ! tableau de travail                             !
 ! rafabl(nfabor    ! tr ! --- ! tableau de travail                             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -129,17 +122,14 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
 integer          nvar   , nscal
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 

@@ -33,7 +33,7 @@ subroutine lagcli &
    tempf  , romf , ustar , lvisq  , tvisq  , ifac    ,            &
    vpart  , vvue , dx    ,                                        &
    diamp  , romp , taup  , yplus  , dintrf , enertur , gnorm ,    &
-   vnorm  , grpn , piiln , depint , ra)
+   vnorm  , grpn , piiln , depint )
 
 !===============================================================================
 ! Purpose:
@@ -72,7 +72,6 @@ subroutine lagcli &
 ! grpn             ! r  ! <-- ! wall-normal pressure gradient                  !
 ! piiln            ! r  ! <-- ! SDE integration auxiliary term                 !
 ! depint           ! r  ! <-- ! interface location near-wall/core-flow         !
-! ra               ! ra ! <-- ! main real work array                           !
 !-------------------------------------------------------------------------------
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
 !           and composite types (ex: ra real array)
@@ -100,7 +99,6 @@ integer          marko , nrtuse, ifac
 double precision tempf
 double precision vpart , vvue , vnorm, grpn, piiln
 double precision diamp , romp , taup ,yplus , dx   , dintrf, gnorm, depint
-double precision ra(*)
 
 ! Local variables
 

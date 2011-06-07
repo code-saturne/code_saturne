@@ -25,11 +25,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine initi2 &
+subroutine initi2
 !================
-
- ( idbia0 , idbra0 ,                                              &
-   ia     , ra     )
 
 !===============================================================================
 ! FONCTION :
@@ -42,10 +39,6 @@ subroutine initi2 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ia(*)            ! tr ! --- ! tableau de travail pour les entiers            !
-! ra(*)            ! tr ! --- ! tableau de travail pour les reels              !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -71,14 +64,10 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          jcelbr
-integer          ia(*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 
 !===============================================================================
 
@@ -86,8 +75,6 @@ integer          idebia, idebra
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 3. TABLEAUX DE cstphy.f90

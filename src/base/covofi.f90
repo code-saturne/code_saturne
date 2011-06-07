@@ -28,16 +28,13 @@
 subroutine covofi &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
 !===============================================================================
 ! FONCTION :
@@ -51,8 +48,6 @@ subroutine covofi &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -64,7 +59,6 @@ subroutine covofi &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -84,7 +78,6 @@ subroutine covofi &
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -121,14 +114,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal  , itspdv
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -139,12 +130,10 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt, iii, iiun, ibcl
@@ -157,7 +146,6 @@ integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp, ireslp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
-integer          idbia1
 
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
@@ -186,8 +174,6 @@ xk = 0.d0
 
 ! --- Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
@@ -256,12 +242,9 @@ call ustssc &
 ( nvar   , nscal  , ncepdp , ncesmp ,                            &
   iscala ,                                                       &
   icepdc , icetsm , itypsm ,                                     &
-  ia     ,                                                       &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
   coefa  , coefb  , ckupdc , smacel ,                            &
-  smbrs  , rovsdt ,                                              &
-!        ------   ------
-  ra     )
+  smbrs  , rovsdt )
 
 !     Si on extrapole les TS :
 !       SMBRS recoit -theta PROPCE du pas de temps precedent
@@ -301,16 +284,12 @@ endif
 if (ippmod(iphpar).ge.1) then
   call pptssc                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscala ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt , tslagr ,                                     &
-!        ------   ------
-   ra     )
+   smbrs  , rovsdt , tslagr )
 endif
 
 ! --> Rayonnement
@@ -495,11 +474,9 @@ if (itspdv.eq.1) then
  ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtpa(1,iii) , coefa(1,iclrtp(iii,icoef)) ,                     &
                  coefb(1,iclrtp(iii,icoef)) ,                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 !     Traitement de la production
 !     On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
@@ -591,12 +568,9 @@ if( idiff(ivar).ge. 1 ) then
   endif
   call viscfa                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 else
 
@@ -641,23 +615,20 @@ relaxp = relaxv(ivar)
 
 call codits                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , rtp(1,ivar)     ,                            &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 !===============================================================================
 ! 4. IMPRESSIONS ET CLIPPINGS

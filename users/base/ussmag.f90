@@ -33,11 +33,9 @@ subroutine ussmag &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smagor , mijlij , mijmij ,                                     &
-   ra     )
+   smagor , mijlij , mijmij )
 
 !===============================================================================
 ! FONCTION :
@@ -71,7 +69,6 @@ subroutine ussmag &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -89,7 +86,6 @@ subroutine ussmag &
 !                  !    !     ! d'un modlele dynamique                         !
 ! mijlij(ncelet    ! tr ! <-- ! mij.lij avant moyenne locale                   !
 ! mijmij(ncelet    ! tr ! <-- ! mij.mij avant moyenne locale                   !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -121,7 +117,6 @@ integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -129,7 +124,6 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet), mijlij(ncelet), mijmij(ncelet)
-double precision ra(*)
 
 ! Local variables
 

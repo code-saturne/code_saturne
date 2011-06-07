@@ -28,16 +28,14 @@
 subroutine lagich &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ibord  , ia     ,                                     &
+   itepa  , ibord  ,                                              &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
    cpgd1  , cpgd2  , cpght  ,                                     &
-   skp1   , skp2   , skglob ,                                     &
-   ra     )
+   skp1   , skp2   , skglob )
 
 !===============================================================================
 ! FONCTION :
@@ -59,8 +57,6 @@ subroutine lagich &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -75,7 +71,6 @@ subroutine lagich &
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ibord            ! te ! <-- ! contient le numero de la                       !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -100,7 +95,6 @@ subroutine lagich &
 !                  !    !     !   avec couplage retour thermique)              !
 ! sk1,sk2,         ! tr ! --- ! tableaux de travail                            !
 ! skglob(nbpmax    !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -134,13 +128,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp , nvp1 , nvep , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
@@ -151,7 +143,6 @@ double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision skp1(nbpmax) , skp2(nbpmax) , skglob(nbpmax)
 double precision cpgd1(nbpmax), cpgd2(nbpmax), cpght(nbpmax)
-double precision ra(*)
 
 ! Local variables
 

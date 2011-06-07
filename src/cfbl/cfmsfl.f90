@@ -28,16 +28,13 @@
 subroutine cfmsfl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    flumas , flumab ,                                              &
-   trflms , trflmb , coefu  ,                                     &
-   ra     )
+   trflms , trflmb , coefu  )
 
 !===============================================================================
 ! FONCTION :
@@ -51,14 +48,11 @@ subroutine cfmsfl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -74,7 +68,6 @@ subroutine cfmsfl &
 ! trflms(nfac)     ! tr ! --- ! tableau de travail                             !
 ! trflmb(nfabor    ! tr ! --- ! tableau de travail                             !
 ! coefu(nfabo,3    ! tr ! --- ! tableau de travail cl de la qdm                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -106,14 +99,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -123,11 +114,9 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision flumas(nfac), flumab(nfabor)
 double precision trflms(nfac), trflmb(nfabor)
 double precision coefu(nfabor,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra, ifinia
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, ii, jj
@@ -162,8 +151,6 @@ allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet), w11(ncelet), w12(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero des variables de calcul
 !     Masse volumique
@@ -241,12 +228,9 @@ if(itsqdm.ne.0) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   w10    , w9     ,                                              &
-!        ------   ------
-   ra     )
+   w10    , w9     )
 
 !     Suivant Y
   call ustsns                                                     &
@@ -254,12 +238,9 @@ if(itsqdm.ne.0) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iv  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   w11    , w9     ,                                              &
-!        ------   ------
-   ra     )
+   w11    , w9     )
 
 !     Suivant Z
   call ustsns                                                     &
@@ -267,12 +248,9 @@ if(itsqdm.ne.0) then
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iw  ,                                                          &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   w12    , w9     ,                                              &
-!        ------   ------
-   ra     )
+   w12    , w9     )
 
 
 ! --- Terme de convection de quantite de mouvement
@@ -298,20 +276,16 @@ if(itsqdm.ne.0) then
 !     Calcul du flux de masse
     call inimas                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    iu  , iv  , iw  , imaspe ,                                     &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    propce(1,iirom) , propfb(1,iiromb),                            &
    rtpa (1,iu)  , rtpa (1,iv)  , rtpa (1,iw)  ,                   &
    coefa(1,icliup) , coefa(1,iclivp) , coefa(1,icliwp) ,          &
    coefb(1,icliup) , coefb(1,iclivp) , coefb(1,icliwp) ,          &
-   flumas , flumab ,                                              &
-!        ------   ------
-   ra     )
+   flumas , flumab )
 
 !     Calcul du terme convecte suivant les 3 directions
 !       sans reconstruction
@@ -368,39 +342,30 @@ if(itsqdm.ne.0) then
 
     call cfdivs                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   w10    , w8     , w9     , w9     ,                            &
+   w10    , w8     , w9     , w9     )
 !        ------
-   ra     )
 
     call cfdivs                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   w11    , w9     , w8     , w9     ,                            &
+   w11    , w9     , w8     , w9     )
 !        ------
-   ra     )
 
     call cfdivs                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   w12    , w9     , w9     , w8     ,                            &
+   w12    , w9     , w9     , w8     )
 !        ------
-   ra     )
 
   endif
 
@@ -418,8 +383,8 @@ if(itsqdm.ne.0) then
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
    icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr),                         &
-   w10   , w1     , w2 )
+   smacel(1,ivar0), smacel(1,ipr)   ,                             &
+   w10   , w1     , w2    )
       do iel = 1, ncel
         w10(iel) = w10(iel) + w2(iel)
       enddo
@@ -430,7 +395,7 @@ if(itsqdm.ne.0) then
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
    icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr),                         &
+   smacel(1,ivar0), smacel(1,ipr)   ,                             &
    w11   , w1     , w2 )
       do iel = 1, ncel
         w11(iel) = w11(iel) + w2(iel)
@@ -442,8 +407,8 @@ if(itsqdm.ne.0) then
       !==========
  ( ncelet, ncel   , ncesmp , iiun   , iextts , thetv  ,           &
    icetsm, itypsm(1,ivar0) , volume , rtpa(1,ivar0)   ,           &
-   smacel(1,ivar0), smacel(1,ipr),                         &
-   w12   , w1     , w2 )
+   smacel(1,ivar0), smacel(1,ipr)   ,                             &
+   w12   , w1     , w2     )
       do iel = 1, ncel
         w12(iel) = w12(iel) + w2(iel)
       enddo
@@ -508,13 +473,9 @@ imvis1 = 1
 
 call viscfa                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   imvis1 ,                                                       &
-   ia     ,                                                       &
+ ( imvis1 ,                                                       &
    w2     ,                                                       &
-   trflms , trflmb ,                                              &
-!        ------   ------
-   ra     )
+   trflms , trflmb )
 
 ! --- Calcul du flux de diffusion
 
@@ -544,19 +505,15 @@ extrap = extrag(ivar)
 
 call cfbsc3                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   ia     ,                                                       &
    w1     , coefu(1,1)      , coefu(1,2)      ,                   &
             coefu(1,1)      , coefu(1,2)      ,                   &
    trflms , trflmb , trflms , trflmb ,                            &
-   flumas , flumab ,                                              &
-!        ------   ------
-   ra     )
+   flumas , flumab )
 
 
 ! 2.3 CALCUL DU FLUX DE MASSE AUX FACES
@@ -613,20 +570,16 @@ imaspe = 1
 
 call inimas                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar0  , ivar0  , ivar0  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    w1     , trflmb ,                                              &
    w10    , w11    , w12    ,                                     &
    coefa(1,icliup) , coefa(1,iclivp) , coefa(1,icliwp) ,          &
    trflmb          , trflmb          , trflmb          ,          &
-   flumas , flumab ,                                              &
-!        ------   ------
-   ra     )
+   flumas , flumab )
 
 ! Free memory
 deallocate(w1, w2, w3)

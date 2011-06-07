@@ -28,14 +28,11 @@
 subroutine diverv &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     ,                                                       &
    div    , ux     , vy     , wz     ,                            &
    coefax , coefay , coefaz ,                                     &
-   coefbx , coefby , coefbz ,                                     &
-   ra     )
+   coefbx , coefby , coefbz )
 
 !===============================================================================
 ! FONCTION :
@@ -53,11 +50,8 @@ subroutine diverv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! div(ncelet)      ! tr ! --> ! divergence du vecteur                          !
 ! ux,uy,uz         ! tr ! --> ! composante du vecteur                          !
@@ -65,7 +59,6 @@ subroutine diverv &
 ! coefax,...       ! tr ! ->  ! conditions aux limites pour les                !
 ! coefbz           !    !     ! faces de bord                                  !
 ! (nfabor)         !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,21 +89,17 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet)
 double precision div(ncelet)
 double precision ux(ncelet) , vy(ncelet) , wz(ncelet)
 double precision coefax(nfabor) , coefay(nfabor) , coefaz(nfabor)
 double precision coefbx(nfabor) , coefby(nfabor) , coefbz(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ivar0
 integer          iel
 integer          inc, iccocg
@@ -129,8 +118,6 @@ double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
 ! Allocate work arrays
 allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
 
-idebia = idbia0
-idebra = idbra0
 
 ! En periodique et parallele, echange avant calcul du gradient
 if (irangp.ge.0.or.iperio.eq.1) then
@@ -159,10 +146,8 @@ call grdcel                                                       &
 !==========
 ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  ia     ,                                                        &
   ux     , coefax , coefbx ,                                      &
-  gradu  ,                                                        &
-  ra     )
+  gradu  )
 
 !===============================================================================
 ! 2. Calcul du gradient de VY DANS W2
@@ -172,10 +157,8 @@ call grdcel                                                       &
 !==========
 ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  ia     ,                                                        &
   vy     , coefay , coefby ,                                      &
-  gradv  ,                                                        &
-  ra     )
+  gradv  )
 
 !===============================================================================
 ! 3. Calcul du gradient de VZ DANS W3
@@ -185,10 +168,8 @@ call grdcel                                                       &
 !==========
 ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
   iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  ia     ,                                                        &
   wz     , coefaz , coefbz ,                                      &
-  gradw  ,                                                        &
-  ra     )
+  gradw  )
 
 !===============================================================================
 ! 4. Calcul de la divergence du vecteur (UX,VY,WZ)

@@ -28,12 +28,9 @@
 subroutine scalai &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   tslagr , coefa  , coefb  ,                                     &
-   ra     )
+   tslagr , coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -47,11 +44,8 @@ subroutine scalai &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -62,7 +56,6 @@ subroutine scalai &
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -97,21 +90,17 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra, ifinia
 integer          iscal, ivar, iel
 integer          ii, iisc, itspdv, icalc, iappel
 integer          ispecf
@@ -137,8 +126,6 @@ allocate(dtr(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ipass = ipass + 1
 
@@ -158,11 +145,8 @@ if (ippmod(iphpar).ge.1) then
 
   call ppinv2                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra     )
+ ( nvar   , nscal  ,                                              &
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 !     On pourra eviter les bugs en initialisant aussi RTPA (sur NCELET)
 !     (d'ailleurs, on s'en sert ensuite dans le cpflux etc)
@@ -185,9 +169,8 @@ if (ippmod(iphpar).ge.1) then
 
     call cpflux                                                   &
     !==========
-   ( idebia , idebra , ncelet , ncel   ,                          &
-     rtpa   , propce , volume ,                                   &
-     ra     )
+   ( ncelet , ncel   ,                                            &
+     rtpa   , propce , volume )
 
   endif
 
@@ -198,9 +181,8 @@ if (ippmod(iphpar).ge.1) then
 
     call fuflux                                                   &
     !==========
-   ( idebia , idebra , ncelet , ncel   ,                          &
-     rtpa   , propce , volume ,                                   &
-     ra     )
+   ( ncelet , ncel   ,                                            &
+     rtpa   , propce , volume )
 
   endif
 
@@ -259,17 +241,14 @@ if (ippmod(iphpar).ge.1) then
 
         call cfener &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
       endif
 
@@ -320,17 +299,14 @@ if (ippmod(iphpar).ge.1) then
 
       call covofi                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
 
 ! ---> Versions Electriques
@@ -373,12 +349,10 @@ if (ippmod(iphpar).ge.1) then
 
           call elflux                                             &
           !==========
- ( idebia , idebra , iappel ,                                     &
+ ( iappel ,                                                       &
    nvar   , nscal  ,                                              &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , viscf  , viscb  ,                            &
-   ra     )
+   coefa  , coefb  , viscf  , viscb  )
 
 
 !     Recalage des variables electriques j, j.E (et Pot, E)
@@ -388,10 +362,8 @@ if (ippmod(iphpar).ge.1) then
             call uselrc                                           &
             !==========
   ( nvar   , nscal  ,                                             &
-    ia     ,                                                      &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,         &
-    coefa  , coefb  ,                                             &
-    ra     )
+    coefa  , coefb  )
 
           endif
 
@@ -418,12 +390,10 @@ if ( ippmod(ielarc).ge.1       ) then
 
   call elflux                                                     &
   !==========
- ( idebia , idebra , iappel ,                                     &
+ ( iappel ,                                                       &
    nvar   , nscal  ,                                              &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , viscf  , viscb  ,                            &
-   ra     )
+   coefa  , coefb  , viscf  , viscb  )
 
 endif
 
@@ -495,21 +465,14 @@ if(nscaus.gt.0) then
 
     call covofi                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    iisc   , itspdv ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dtr    , rtp    , rtpa   , propce , propfa , propfb , tslagr , &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   ra     )
-
-
-
-
+   smbrs  , rovsdt )
 
 
 ! ---> Fin de la Boucle sur les scalaires utilisateurs.

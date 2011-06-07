@@ -28,13 +28,10 @@
 subroutine altycl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb , ialtyb , icodcl , impale ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   rcodcl , xyzno0 , depale ,                                     &
-   ra     )
+   rcodcl , xyzno0 , depale )
 
 !===============================================================================
 ! FONCTION :
@@ -47,8 +44,6 @@ subroutine altycl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
@@ -58,7 +53,6 @@ subroutine altycl &
 !                  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> densite de flux                       !
 ! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -78,7 +72,6 @@ subroutine altycl &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
 ! xyzno0(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -107,24 +100,20 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          ialtyb(nfabor), icodcl(nfabor,nvar)
 integer          impale(nnod)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision depale(nnod,3), xyzno0(3,nnod)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, iel
 integer          ii, inod, iecrw, icpt, ierror
 double precision ddepx, ddepy, ddepz
@@ -138,8 +127,6 @@ double precision rcodcx, rcodcy, rcodcz, rcodsn
 ! 1.  INITIALISATIONS
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 ! Mise a zero des RCODCL non specifies
 do ifac = 1, nfabor

@@ -37,11 +37,9 @@ subroutine usmpst &
    imodif ,                                                       &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statis ,                                     &
-   tracel , trafac , trafbr ,                                     &
-   ra     )
+   tracel , trafac , trafbr )
 
 !===============================================================================
 ! Purpose:
@@ -75,7 +73,6 @@ subroutine usmpst &
 ! lstcel(ncelps)   ! ia ! --> ! list of cells in post-processing mesh          !
 ! lstfac(nfacps)   ! ia ! --> ! list of interior faces in post-processing mesh !
 ! lstfbr(nfbrps)   ! ia ! --> ! list of boundary faces in post-processing mesh !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -89,7 +86,6 @@ subroutine usmpst &
 ! tracel(*)        ! ra ! --- ! work array for post-processed cell values      !
 ! trafac(*)        ! ra ! --- ! work array for post-processed face values      !
 ! trafbr(*)        ! ra ! --- ! work array for post-processed boundary face v. !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -123,7 +119,6 @@ integer          imodif
 
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
@@ -132,7 +127,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision statis(ncelet,nvlsta)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
-double precision ra(*)
 
 ! Local variables
 

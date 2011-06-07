@@ -28,19 +28,15 @@
 subroutine raypar &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    icodcl , isothp , izfrap ,                                     &
-   ia     ,                                                       &
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
    tparop , qincip , textp  , tintp  ,                            &
    xlamp  , epap   , epsp   ,                                     &
-   hfconp , flconp , tempkp ,                                     &
-
-   ra     )
+   hfconp , flconp , tempkp )
 
 !===============================================================================
 ! FONCTION :
@@ -56,8 +52,6 @@ subroutine raypar &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
@@ -72,7 +66,6 @@ subroutine raypar &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! isothp(nfabor    ! te ! <-- ! liste des frontieres isothermes                !
 ! izfrap(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -107,7 +100,6 @@ subroutine raypar &
 !                  !    !     ! faces de bord                                  !
 ! flconp(nfabor    ! tr ! <-- ! densite de flux convectif aux faces            !
 ! tempkp(ncelet    ! tr ! <-- ! temperature en kelvin                          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -137,11 +129,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          ia(*)
 
 integer          isothp(nfabor), izfrap(nfabor)
 integer          icodcl(nfabor,nvar)
@@ -159,12 +149,8 @@ double precision xlamp(nfabor), epap(nfabor), epsp(nfabor)
 double precision hfconp(nfabor) , flconp(nfabor)
 double precision tempkp(ncelet)
 
-double precision ra(*)
-
-
 ! Local variables
 
-integer          idebia , idebra
 
 integer          ivart, ifac, iel, izone
 integer          ifacmx, ifacmn
@@ -193,9 +179,6 @@ double precision rdptmp(nbrrdp)
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
-
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. INITIALISATION

@@ -28,12 +28,9 @@
 subroutine alelap &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -47,11 +44,8 @@ subroutine alelap &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -60,7 +54,6 @@ subroutine alelap &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -92,20 +85,16 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel
 integer          iclvar, iclvaf, ivar
 integer          ipcvmx, ipcvmy, ipcvmz, ii, ipp
@@ -134,8 +123,6 @@ double precision, allocatable, dimension(:) :: smbr, rovsdt
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ipcvmx = ipproc(ivisma(1))
 ipcvmy = ipproc(ivisma(2))
@@ -175,21 +162,15 @@ do ii = 1, 3
   if (ipcvmx.eq.ipcvmy) then
     call viscfa                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    propce(1,ipcvmx),                                              &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
   else
     call visort                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    propce(1,ipcvmx), propce(1,ipcvmy), propce(1,ipcvmz),          &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
   endif
 
   iconvp = iconv (ivar)
@@ -219,23 +200,20 @@ do ii = 1, 3
 
   call codits                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     ,                            &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 enddo
 

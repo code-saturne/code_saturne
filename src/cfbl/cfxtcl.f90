@@ -28,13 +28,10 @@
 subroutine cfxtcl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -50,8 +47,6 @@ subroutine cfxtcl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
@@ -66,7 +61,6 @@ subroutine cfxtcl &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -87,7 +81,6 @@ subroutine cfxtcl &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -121,24 +114,20 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ivar  , ifac  , iel
 integer          ii    , iii   , imodif, iccfth
 integer          icalep, icalgm
@@ -170,8 +159,6 @@ allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 ! Allocate a work array on boundary faces (to be verified...)
 allocate(w7(nfabor))
 
-idebia = idbia0
-idebra = idbra0
 
 
 irh = isca(irho  )
@@ -217,7 +204,7 @@ if(icalep.ne.0) then
   iccfth , imodif ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
-  w5     , w7     , w3 , w4     )
+  w5     , w7     , w3     , w4     )
 endif
 
 
@@ -798,15 +785,12 @@ do ifac = 1, nfabor
 
       call cfrusb                                               &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ifac   ,                                                       &
-   ia     ,                                                       &
    gammag ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     , w4     ,                            &
-   ra     )
+   w1     , w2     , w3     , w4     )
 
     endif
 

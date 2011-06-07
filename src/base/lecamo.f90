@@ -28,13 +28,10 @@
 subroutine lecamo &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
+ ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , frcxt  ,                                     &
-   ra     )
+   coefa  , coefb  , frcxt  )
 
 !===============================================================================
 
@@ -47,8 +44,6 @@ subroutine lecamo &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ndim             ! e  ! <-- ! dimension du calcul                            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -57,7 +52,6 @@ subroutine lecamo &
 ! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! tr ! --> ! pas de temps                                   !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
@@ -71,7 +65,6 @@ subroutine lecamo &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! frcxt(ncelet,3)  ! tr ! --> ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -99,22 +92,18 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision frcxt(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 
 
 !===============================================================================
@@ -127,20 +116,16 @@ integer          idebia, idebra
 
 write(nfecra,1000)
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2. LECTURE DU FICHIER SUITE PRINCIPAL
 !===============================================================================
 
-call lecamp (idebia , idebra ,                                    &
-!     ==========
-             ncelet , ncel   ,                                    &
-             nvar   , nscal  ,                                    &
-             ia     ,                                             &
-             rtp    ,                                             &
-             ra     )
+call lecamp &
+!==========
+( ncelet , ncel   ,                                    &
+  nvar   , nscal  ,                                    &
+  rtp    )
 
 
 !===============================================================================
@@ -149,14 +134,12 @@ call lecamp (idebia , idebra ,                                    &
 
 if (ileaux.eq.1) then
 
-  call lecamx (idebia , idebra ,                                  &
-!       ==========
-               ndim   , ncelet , ncel   , nfac   , nfabor ,       &
-               nnod   , nvar   , nscal  ,                         &
-               ia     ,                                           &
-               dt     , rtp    , propce , propfa , propfb ,       &
-               coefa  , coefb  , frcxt  ,                         &
-               ra     )
+  call lecamx &
+  !==========
+( ndim   , ncelet , ncel   , nfac   , nfabor ,       &
+  nnod   , nvar   , nscal  ,                         &
+  dt     , rtp    , propce , propfa , propfb ,       &
+  coefa  , coefb  , frcxt  )
 
 endif
 

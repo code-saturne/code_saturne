@@ -28,13 +28,11 @@
 subroutine strpre &
 !================
 
- ( idbia0 , idbra0 , itrale , italim , ineefl ,                   &
+ ( itrale , italim , ineefl ,                                     &
    impale ,                                                       &
-   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   flmalf , flmalb , xprale , cofale , depale ,                   &
-   ra     )
+   flmalf , flmalb , xprale , cofale , depale )
 
 !===============================================================================
 ! FONCTION :
@@ -47,14 +45,11 @@ subroutine strpre &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
 ! italim           ! e  ! <-- ! numero d'iteration couplage implicite          !
 ! ineedf           ! e  ! <-- ! indicateur de sauvegarde des flux              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -69,7 +64,6 @@ subroutine strpre &
 ! xprale(ncelet    ! tr ! --> ! sauvegarde de la pression, si nterup           !
 !                  !    !     !    est >1                                      !
 ! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -101,10 +95,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0 , itrale , italim , ineefl
+integer          itrale , italim , ineefl
 
 integer          impale(nnod)
-integer          ia(*)
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -113,11 +106,9 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,8)
 double precision depale(nnod,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra, ifinia
 integer          istr, ii, ifac, inod, iel, indast
 integer          iflmas, iflmab,iclp,iclu,iclv,iclw
 
@@ -130,8 +121,6 @@ integer, allocatable, dimension(:) :: lstfac
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))

@@ -28,14 +28,11 @@
 subroutine condli &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    isvhb  , isvtb  ,                                              &
    icodcl , isostd ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  , visvdr , hbord  , thbord , frcxt  ,          &
-   ra     )
+   coefa  , coefb  , visvdr , hbord  , thbord , frcxt  )
 
 !===============================================================================
 ! FONCTION :
@@ -69,8 +66,6 @@ subroutine condli &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
@@ -88,7 +83,6 @@ subroutine condli &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! isostd           ! te ! --> ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -117,7 +111,6 @@ subroutine condli &
 ! (nfabor)         !    !     !    (plus exactmt : var. energetique)           !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -153,13 +146,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)
 integer          isostd(nfabor+1)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -169,11 +160,9 @@ double precision frcxt(ncelet,3)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision visvdr(ncelet)
 double precision hbord(nfabor),thbord(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac  , iel   , ivar
 integer          isou  , ii    , iii
 integer          ihcp  , iscal , iscat
@@ -243,8 +232,6 @@ ipccv = 0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 !  Initialisation du tableau pour stockage de yplus
 !     On le remplit dans clptur
@@ -264,50 +251,38 @@ endif
 if(ippmod(iphpar).ge.1) then
   call pptycl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 endif
 
 if (iale.eq.1) then
   call altycl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb , ialtyb , icodcl , impale ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   rcodcl , xyzno0 , depale ,                                     &
-   ra     )
+   rcodcl , xyzno0 , depale )
 endif
 
 if (imobil.eq.1) then
 
   call mmtycl &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb , icodcl ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   rcodcl ,                                                       &
-   ra     )
+   rcodcl )
 
 endif
 
 call typecl                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl , frcxt  ,                            &
-   ra     )
+   coefa  , coefb  , rcodcl , frcxt  )
 
 !===============================================================================
 ! 2.  VERIFICATION DE LA CONSISTANCE DES CL
@@ -315,13 +290,10 @@ call typecl                                                       &
 
 call vericl                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 !===============================================================================
 ! 4. DISTANCE A LA PAROI ANCIEN MODELE
@@ -545,10 +517,8 @@ if (iscat .gt. 0) then
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
     do ifac = 1 , nfabor
       iel = ifabor(ifac)
@@ -627,10 +597,8 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
       do ifac = 1, nfabor
         iel = ifabor(ifac)
@@ -691,10 +659,8 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0)                 &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
       ! CALCUL DE LA VALEUR EN I' DE Rij
@@ -753,15 +719,12 @@ if (ipatur.ne.0) then
   ! Smooth wall laws
   call clptur                                                   &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    isvhb  ,                                                       &
    icodcl ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  , visvdr ,                   &
-   hbord  , thbord ,                                              &
-   ra     )
+   hbord  , thbord )
 
 endif
 
@@ -770,15 +733,12 @@ if (ipatrg.ne.0) then
   ! Rough wall laws
   call clptrg                                                   &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    isvhb  ,                                                       &
    icodcl ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  , visvdr ,                   &
-   hbord  , thbord ,                                              &
-   ra     )
+   hbord  , thbord )
 
 endif
 
@@ -796,13 +756,10 @@ if (iclsym.ne.0) then
 
   call clsyvt                                                   &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefu  , rijipb , coefa  , coefb  ,                            &
-   ra     )
+   coefu  , rijipb , coefa  , coefb  )
 
 endif
 

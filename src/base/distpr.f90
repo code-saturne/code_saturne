@@ -28,12 +28,9 @@
 subroutine distpr &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
-   ia     ,                                                       &
-   distpa ,                                                       &
-   ra     )
+   distpa )
 
 !===============================================================================
 ! FONCTION :
@@ -58,14 +55,10 @@ subroutine distpr &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! --> ! tab des distances a la paroi                   !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -97,19 +90,15 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          ia(*)
 
 double precision distpa(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 
-integer          idebia, idebra
 integer          ndircp, iconvp, idiffp, isym
 integer          ipol  , ireslp, ipp
 integer          niterf, icycle, ncymxp, nitmfp
@@ -153,8 +142,6 @@ allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 rnoini = 0.d0
 
 !     Memoire
-idebia = idbia0
-idebra = idbra0
 
 !     Nombre d'iteration totale pour l'inversion
 nittot = 0
@@ -207,12 +194,9 @@ enddo
 
 call viscfa                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 iconvp = 0
 idiffp = 1
@@ -296,17 +280,14 @@ do isweep = 0, nswrsy
 
     call bilsc2                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
    ipp    , iwarny ,                                              &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &
-   ia     ,                                                       &
    rtpdp  , rtpdp  , coefad , coefbd , coefad , coefbd ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
-   smbdp  ,                                                       &
-   ra     )
+   smbdp  )
 
   endif
 enddo
@@ -343,10 +324,8 @@ call grdcel                                                       &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy ,          &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
-   ia     ,                                                       &
    rtpdp  , coefad , coefbd ,                                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 do iel = 1, ncel
   w1(iel) = grad(iel,1)**2.d0+grad(iel,2)**2.d0+grad(iel,3)**2.d0

@@ -33,14 +33,11 @@ subroutine ustskw &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , s2kw   , divukw ,          &
    gkgw   , ggrho  , xf1    ,                                     &
-   crkexp , crwexp , crkimp , crwimp ,                            &
-   ra     )
+   crkexp , crwexp , crkimp , crwimp )
 
-!===============================================================================
 !===============================================================================
 ! Purpose:
 ! -------
@@ -119,7 +116,6 @@ subroutine ustskw &
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
@@ -140,7 +136,6 @@ subroutine ustskw &
 ! crwexp           ! ra ! --> ! explicit part of the source term for omega     !
 ! crkimp           ! ra ! --> ! implicit part of the source term for k         !
 ! crwimp           ! ra ! --> ! implicit part of the source term for omega     !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -172,7 +167,6 @@ integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -183,7 +177,6 @@ double precision s2kw(ncelet)  , divukw(ncelet)
 double precision gkgw(ncelet)  , ggrho(ncelet), xf1(ncelet)
 double precision crkexp(ncelet), crkimp(ncelet)
 double precision crwexp(ncelet), crwimp(ncelet)
-double precision ra(*)
 
 ! Local variables
 

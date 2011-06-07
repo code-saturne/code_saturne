@@ -28,13 +28,12 @@
 subroutine laglec &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
+ ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ia     ,                                              &
+   itepa  ,                                                       &
    rtpa   , propce ,                                              &
-   ettp   , tepa   , statis , stativ , parbor , tslagr , ra     )
+   ettp   , tepa   , statis , stativ , parbor , tslagr )
 
 !===============================================================================
 ! FONCTION :
@@ -60,8 +59,6 @@ subroutine laglec &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
@@ -77,7 +74,6 @@ subroutine laglec &
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules instant precedent                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -94,7 +90,6 @@ subroutine laglec &
 !(nfabor,nvisbr    !    !     !   aux faces de bord                            !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -129,11 +124,10 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          itepa(nbpmax,nivep)  , ia(*)
+integer          itepa(nbpmax,nivep)
 
 double precision rtpa(ncelet,*) , propce(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
@@ -141,7 +135,6 @@ double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
-double precision ra(*)
 
 ! Local variables
 
@@ -149,7 +142,6 @@ character        rubriq*64 , car4*4, car8*8, kar8*8
 character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
-integer          idebia , idebra
 integer          ncelok , nfaiok , nfabok , nsomok
 integer          ierror , irtyp  , itysup , nbval
 integer          ilecec , nberro , ivers
@@ -166,8 +158,6 @@ integer          impaml , impmls
 ! 0. Gestion memoire
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. Initialisations par defaut

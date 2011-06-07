@@ -28,18 +28,15 @@
 subroutine lagent &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itycel , icocel ,                                              &
    itypfb , itrifb , ifrlag , itepa  ,                            &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     , &
-   ra     )
+   ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
 
 !===============================================================================
 ! FONCTION :
@@ -65,8 +62,6 @@ subroutine lagent &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  !  ->           ! longueur du tableau icocel
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -88,7 +83,6 @@ subroutine lagent &
 ! (nfabor)         !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec ou                   !
@@ -106,7 +100,6 @@ subroutine lagent &
 !(nbpmax,nvgaus    !    !     !                                                !
 ! auxl(nbpmax,3    ! tr ! --- ! tableau de travail                             !
 ! w1..w3(ncelet    ! tr ! --- ! tableaux de travail                            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -143,7 +136,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          lndnod
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
@@ -152,7 +144,6 @@ integer          ntersl , nvlsta , nvisbr
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -162,11 +153,9 @@ double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision auxl(nbpmax,3)
 double precision w1(ncelet) ,  w2(ncelet) ,  w3(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 
 integer          iel , ifac , ip , nb , nc, ii, ifvu
 integer          iok , n1 , nd , icha
@@ -188,8 +177,6 @@ integer, allocatable, dimension(:) :: iwork
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -296,11 +283,9 @@ call uslag2                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   ,                                              &
-   ra     )
+   ettp   , tepa   )
 
 !===============================================================================
 ! 3. Controles
@@ -715,29 +700,23 @@ do ii = 1,nfrlag
 
       call lagnew                                                 &
       !==========
-  ( idebia , idebra ,                                             &
-    lndnod ,                                                      &
+  ( lndnod ,                                                      &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     nb     ,                                                      &
     ifrlag , itepa(1,jisor)  , iwork  ,                           &
-    ia     ,                                                      &
-    ettp   ,                                                      &
-    ra     )
+    ettp   )
 
       elseif ( iuslag(nc,nb,ijprpd) .eq. 2 ) then
 
         call lagnpr                                               &
         !==========
-  ( idebia , idebra ,                                             &
-    lndnod ,                                                      &
+  ( lndnod ,                                                      &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     nb     ,                                                      &
     ifrlag , itepa(1,jisor)  , iwork  ,                           &
-    ia     ,                                                      &
-    ettp   ,                                                      &
-    ra     )
+    ettp   )
       endif
 
     endif
@@ -774,15 +753,12 @@ if ( injcon.eq.1 ) then
 
         call lagnwc                                               &
         !==========
-  ( idebia , idebra ,                                             &
-    lndnod ,                                                      &
+  ( lndnod ,                                                      &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npt    , nbpnew , iuslag(nc,nb,ijnbp)      ,                  &
     itycel , icocel ,                                             &
     ifrlag , itepa(1,jisor)  , iwork  ,                           &
-    ia     ,                                                      &
-    ettp   ,                                                      &
-    ra     )
+    ettp   )
 
       endif
 
@@ -857,13 +833,11 @@ do ii = 1,nfrlag
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   ia     ,                                                       &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   ,                                              &
-   ra     )
+   ettp   , tepa   )
 
           ettp(ip,jup) = uupart
           ettp(ip,jvp) = vvpart
@@ -917,13 +891,11 @@ do ii = 1,nfrlag
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   ia     ,                                                       &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   ,                                              &
-   ra     )
+   ettp   , tepa   )
 
           ettp(ip,jdp) = ddpart
 
@@ -961,13 +933,11 @@ do ii = 1,nfrlag
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   ia     ,                                                       &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   ,                                              &
-   ra     )
+   ettp   , tepa   )
 
               ettp(ip,jtp) = ttpart
 
@@ -1047,13 +1017,11 @@ do ii = 1,nfrlag
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   ia     ,                                                       &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   ,                                              &
-   ra     )
+   ettp   , tepa   )
 
           volp = pis6*d3
           surf = sqrt( surfbo(1,ifac)*surfbo(1,ifac)              &
@@ -1210,10 +1178,8 @@ call lagipn                                                       &
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npar1  , npar2  ,                                             &
     itepa  ,                                                      &
-    ia     ,                                    &
     rtpa   ,                                                      &
-    ettp   , tepa   , vagaus ,                                    &
-    ra     )
+    ettp   , tepa   , vagaus )
 
 !===============================================================================
 ! 8. MODIFICATION DES TABLEAUX DE DONNEES PARTICULAIRES
@@ -1226,11 +1192,9 @@ call uslain                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    nbpnew ,                                                       &
    itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , vagaus ,                                     &
-   ra     )
+   ettp   , tepa   , vagaus )
 
 !   reinitialisation du compteur de nouvelles particules
 npt = nbpart
@@ -1293,7 +1257,7 @@ if ( iensi1.eq.1 ) then
            ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,         &
              nfin   , ip     ,                                    &
              itepa  ,                                             &
-             ettp   , tepa   , ra)
+             ettp   , tepa   )
         enddo
         npt = npt + iuslag(nc,nb,ijnbp)
 

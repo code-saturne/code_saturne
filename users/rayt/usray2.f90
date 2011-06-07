@@ -35,12 +35,10 @@ subroutine usray2 &
    itypfb ,                                                       &
    icodcl , izfrdp , isothp ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
    tparop , qincid , hfcnvp , flcnvp ,                            &
-   xlamp  , epap   , epsp   , textp  , tintp  ,                   &
-   ra     )
+   xlamp  , epap   , epsp   , textp  , tintp  )
 
 !===============================================================================
 ! Purpose:
@@ -158,7 +156,6 @@ subroutine usray2 &
 !                  !    !     !                               conduction flux  !
 ! tmin             ! r  !     ! min value of the wall temperature              !
 ! tmax             ! r  !     ! max value of the wall temperature              !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and preceding time steps)         !
@@ -179,7 +176,6 @@ subroutine usray2 &
 ! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
 ! textp(nfabor)    ! ra ! --> ! outside temperature (K)                        !
 ! tintp(nfabor)    ! ra ! --> ! initial inside temperature (K)                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -213,7 +209,6 @@ implicit none
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          ia(*)
 
 integer          icodcl(nfabor,nvar)
 integer          izfrdp(nfabor), isothp(nfabor)
@@ -232,8 +227,6 @@ double precision hfcnvp(nfabor),flcnvp(nfabor)
 double precision xlamp(nfabor), epap(nfabor)
 double precision epsp(nfabor)
 double precision textp(nfabor), tintp(nfabor)
-
-double precision ra(*)
 
 ! Local variables
 

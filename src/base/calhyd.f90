@@ -28,18 +28,15 @@
 subroutine calhyd &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    indhyd ,                                                       &
-   ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    dfextx , dfexty , dfextz ,                                     &
    phydr  , flumas , flumab ,                                     &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
-   drtp   , smbr   ,                                              &
-   ra     )
+   drtp   , smbr   )
 
 !===============================================================================
 ! FONCTION :
@@ -53,12 +50,9 @@ subroutine calhyd &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! indhyd           ! e  ! --> ! indicateur de mise a jour de phydr             !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! phydr(ncelet)    ! tr ! <-- ! increment de pression hydrostatique            !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -76,7 +70,6 @@ subroutine calhyd &
 ! xam(nfac,*)      ! tr ! --- ! tableau de travail pour matrice                !
 ! drtp(ncelet      ! tr ! --- ! tableau de travail pour increment              !
 ! smbr  (ncelet    ! tr ! --- ! tableau de travail pour sec mem                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -106,11 +99,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          indhyd
-integer          ia(*)
 
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
 double precision dfextx(ncelet),dfexty(ncelet),dfextz(ncelet)
@@ -121,13 +112,11 @@ double precision viscf(nfac), viscb(nfabor)
 double precision dam(ncelet), xam(nfac,2)
 double precision drtp(ncelet)
 double precision smbr(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
 integer          lchain
-integer          idebia, idebra
 integer          iccocg, inc   , init  , isym  , ipol  , isqrt
 integer          iel   , ical
 integer          ireslp, nswmpr
@@ -155,8 +144,6 @@ double precision, allocatable, dimension(:) :: w1, w7, w10
 allocate(w1(ncelet), w7(ncelet), w10(ncelet))
 
 ! --- Memoire
-idebia = idbia0
-idebra = idbra0
 
 ! --- Options de resolution
 !     Symetrique
@@ -237,12 +224,9 @@ enddo
 
 call viscfa                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w10    ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 
 iconvp = 0
@@ -280,18 +264,15 @@ climgp = climgr(ipr)
 
 call projts                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp ,                                              &
-   ia     ,                                                       &
    dfextx , dfexty , dfextz ,                                     &
    coefb     ,                                                    &
    flumas, flumab ,                                               &
    viscf  , viscb  ,                                              &
-   w10    , w10    , w10    ,                                     &
-   ra     )
+   w10    , w10    , w10    )
 
 init = 1
 call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
@@ -423,19 +404,16 @@ do isweep = 1, nswmpr
 
     call itrgrp                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    dfextx , dfexty , dfextz ,                                     &
    phydr  ,                                                       &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
    w10         , w10         , w10         ,                      &
-   smbr   ,                                                       &
-   ra     )
+   smbr   )
 
   endif
 

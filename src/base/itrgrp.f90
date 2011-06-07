@@ -28,17 +28,14 @@
 subroutine itrgrp &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    init   , inc    , imrgra , iccocg , nswrgp , imligp ,          &
    iphydp , iwarnp , nfecra ,                                     &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp , viscf  , viscb  ,                   &
    viselx , visely , viselz ,                                     &
-   diverg ,                                                       &
-   ra     )
+   diverg )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +55,6 @@ subroutine itrgrp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! init             ! e  ! <-- ! > 0 : initialisation du flux de masse          !
@@ -119,25 +114,21 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          init   , inc    , imrgra , iccocg
 integer          nswrgp , imligp
 integer          iwarnp , iphydp , nfecra
 double precision epsrgp , climgp , extrap
 
-integer          ia(*)
 
 double precision pvar(ncelet), coefap(nfabor), coefbp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision viselx(ncelet), visely(ncelet), viselz(ncelet)
 double precision diverg(ncelet)
 double precision fextx(ncelet),fexty(ncelet),fextz(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, ii, jj, iij, iii, ivar
 double precision pfac,pip
 double precision dpxf  , dpyf  , dpzf  , flumas, flumab
@@ -155,8 +146,6 @@ double precision, allocatable, dimension(:,:) :: grad
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 if( init.ge.1 ) then
   do ii = 1, ncelet
@@ -235,12 +224,10 @@ if( nswrgp.gt.1 ) then
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp , iphydp , &
 
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rvoid  ,                                                       &
    fextx  , fexty  , fextz  ,                                     &
    pvar   , coefap , coefbp ,                                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! ---> TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 

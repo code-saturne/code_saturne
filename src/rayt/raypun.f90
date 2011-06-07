@@ -28,10 +28,8 @@
 subroutine raypun &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
@@ -41,8 +39,7 @@ subroutine raypun &
    theta4 , thetaa , sa     ,                                     &
    qx     , qy     , qz     ,                                     &
    qincid , eps    , tparoi ,                                     &
-   ckmel  ,                                                       &
-   ra     )
+   ckmel  )
 
 !===============================================================================
 ! FONCTION :
@@ -59,12 +56,9 @@ subroutine raypun &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -91,7 +85,6 @@ subroutine raypun &
 ! tparoi(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
 ! ckmel(ncelet)    ! tr ! <-- ! coeff d'absorption du melange                  !
 !                  !    !     !   gaz-particules de charbon                    !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -125,11 +118,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -149,14 +140,11 @@ double precision qx(ncelet), qy(ncelet), qz(ncelet)
 double precision qincid(nfabor), tparoi(nfabor), eps(nfabor)
 
 double precision ckmel(ncelet)
-double precision ra(*)
-
 
 ! Local variables
 
 character*80     cnom
 
-integer          idebia, idebra
 integer          ifac  , iel
 integer          iconv1, idiff1, ndirc1, ireso1
 integer          nitmap, nswrsp, nswrgp, iwarnp
@@ -177,9 +165,6 @@ double precision, allocatable, dimension(:,:) :: grad
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
-
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. PARAMETRAGE DU SOLVEUR ET INITIALISATION
@@ -251,11 +236,8 @@ enddo
 
 call viscfa                                                       &
 !==========
-   ( idebia , idebra ,                                            &
-     imvisf ,                                                     &
-     ia     ,                                                     &
-     ckmel  , viscf  , viscb  ,                                   &
-     ra     )
+   ( imvisf ,                                                     &
+     ckmel  , viscf  , viscb  )
 
 !===============================================================================
 ! 3.  RESOLUTION
@@ -272,21 +254,18 @@ nomvar(inum) = cnom
 
 call codits                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgr1  , ncymap , nitmgp , inum   , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   ia     ,                                                       &
    thetaa , thetaa , cofrua , cofrub , cofrua , cofrub ,          &
    flurds , flurdb ,                                              &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , theta4 ,                                     &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 !===============================================================================
 ! 4. Vecteur densite de flux radiatif
@@ -317,10 +296,8 @@ call grdcel                                                       &
 !==========
    ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp,         &
      iwarnp , nfecra , epsrgp , climgp , extrap ,                 &
-     ia     ,                                                     &
      theta4 , cofrua , cofrub ,                                   &
-     grad   ,                                                     &
-     ra     )
+     grad   )
 
 aa = - stephn * 4.d0 / 3.d0
 

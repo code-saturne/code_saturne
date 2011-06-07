@@ -28,16 +28,14 @@
 subroutine cptssc &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   izfppp , ia     ,                            &
+   izfppp ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
 !===============================================================================
 ! FONCTION :
@@ -77,8 +75,6 @@ subroutine cptssc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -91,7 +87,6 @@ subroutine cptssc &
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -107,7 +102,6 @@ subroutine cptssc &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -143,7 +137,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
@@ -152,7 +145,6 @@ integer          itypfb(nfabor)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izfppp(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -160,12 +152,10 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra
 integer          ivar , ipcrom, iel
 integer          numcla , numcha , icla , numtra
 integer          ipcgch , ipcgd1 , ipcgd2 , ipcght , ipcsec
@@ -173,7 +163,7 @@ integer          ixchcl , ixckcl , iscala
 integer          ipcro2 , ipcte1 , ipcte2 , ipcvsl , ipccp
 integer          ipcdia , ipcvst
 integer          mode, ige
-integer          ifac   , ifinra , icoefa , icoefb
+integer          ifac   , icoefa , icoefb
 integer          ipcx2c , icha , imode , ii
 integer          iterch
 integer          itermx,nbpauv,nbrich,nbepau,nberic,ipghc2
@@ -219,8 +209,6 @@ ipghc2 = 0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero du scalaire a traiter : ISCAL
 
@@ -946,16 +934,13 @@ if ( ivar.eq.isca(if4p2m) ) then
 
  call cptsvc                                                      &
 !!==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  , iscala ,          &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
 endif
 

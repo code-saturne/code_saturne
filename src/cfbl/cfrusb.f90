@@ -28,15 +28,12 @@
 subroutine cfrusb &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    imodif ,                                                       &
-   ia     ,                                                       &
    gammag ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   sorti1 , sorti2 , gamagr , masmor ,                            &
-   ra     )
+   sorti1 , sorti2 , gamagr , masmor )
 
 !===============================================================================
 ! FONCTION :
@@ -55,12 +52,9 @@ subroutine cfrusb &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! imodif           ! e  ! <-- ! modification directe de rtp (imodif=1          !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! gammag           ! r  ! <-- ! gamma du gaz                                   !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp,rtpa         ! tr ! <-- ! variables de calcul au centre des              !
@@ -73,7 +67,6 @@ subroutine cfrusb &
 ! sorti1,2(*)      ! tr ! --> ! variables de sortie                            !
 ! gamagr(*)        ! tr ! --- ! constante gamma equivalent du gaz              !
 ! masmor(*)        ! tr ! --- ! masse molaire des constituants du gaz          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -106,11 +99,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          imodif
 
-integer          ia(*)
 
 double precision gammag
 
@@ -118,12 +109,10 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*),propfa(nfac,*),propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision sorti1(*), sorti2(*), gamagr(*), masmor(*)
-double precision ra(*)
 
 
 ! Local variables
 
-integer          idebia , idebra
 integer          ifac0
 integer          iel    , ifac
 integer          irh    , ien
@@ -140,8 +129,6 @@ double precision rrus   , runb
 ! 0. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 irh = isca(irho  )
 ien = isca(ienerg)

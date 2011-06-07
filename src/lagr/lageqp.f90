@@ -28,12 +28,9 @@
 subroutine lageqp &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , propce , propfa , propfb ,                            &
-   ul     , vl     , wl     , alphal , phi    ,                   &
-   ra     )
+   ul     , vl     , wl     , alphal , phi    )
 
 !===============================================================================
 ! FONCTION :
@@ -51,11 +48,8 @@ subroutine lageqp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -64,7 +58,6 @@ subroutine lageqp &
 ! ul,vl,wl(ncelet) ! tr ! <-- ! vitesse lagrangien                             !
 ! alphal(ncelet)   ! tr ! <-- ! taux de presence                               !
 ! phi(ncelet)      ! tr ! --> ! terme de correction                            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -94,22 +87,18 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision ul(ncelet), vl(ncelet), wl(ncelet)
 double precision phi(ncelet), alphal(ncelet)
 double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra , ifinia , ifinra
 integer          idtva0, ivar
 integer          ifac, iel
 integer          ipp
@@ -147,8 +136,6 @@ allocate(phia(ncelet))
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 CHAINE = 'Correction pression'
 write(nfecra,1000) chaine(1:19)
@@ -174,12 +161,9 @@ enddo
 
   call viscfa                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    alphal ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 ! CALCUL  de div(Alpha Up) avant correction
 
@@ -212,14 +196,11 @@ enddo
 
 call diverv                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     ,                                                       &
    smbrs  , w1     , w2     , w3     ,                            &
    coefax , coefay , coefaz ,                                     &
-   coefbx , coefby , coefbz ,                                     &
-   ra     )
+   coefbx , coefby , coefbz )
 
 ! Free memory
 deallocate(coefax, coefay, coefaz)
@@ -335,22 +316,19 @@ thetap = 1.0d0
 
 call codits                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   ia     ,                                                       &
    phia   , phia   , coefap , coefbp ,                            &
             coefap , coefbp ,                                     &
             fmala  , fmalb  ,                                     &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , phi    ,                                     &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 
 ! Free memory

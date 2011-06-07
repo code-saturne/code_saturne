@@ -34,11 +34,9 @@ subroutine usproj &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
-   ra     )
+   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
 ! Purpose:
@@ -123,7 +121,6 @@ subroutine usproj &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! itepa            ! ia ! <-- ! integer particle attributes                    !
 !  (nbpmax, nivep) !    !     !   (containing cell, ...)                       !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -144,7 +141,6 @@ subroutine usproj &
 !  (ncelet, ntersl)!    !     !  on carrier phase                              !
 ! parbor           ! ra ! <-- ! particle interaction properties                !
 !  (nfabor, nvisbr)!    !     !  on boundary faces                             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -184,7 +180,6 @@ integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -195,7 +190,7 @@ double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
-double precision ra(*)
+
 
 ! Local variables
 
@@ -513,10 +508,8 @@ if (inpdt0.eq.0) then
       ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
         iwarnp , nfecra ,                                              &
         epsrgp , climgp , extrap ,                                     &
-        ia     ,                                                       &
         rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-        grad   ,                                                       &
-        ra     )
+        grad   )
 
     ! - Compute reconstructed value in boundary cells
 

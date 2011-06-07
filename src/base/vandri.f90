@@ -30,9 +30,7 @@ subroutine vandri &
 
  (  ndim   , ncelet , ncel   , nfac   , nfabor ,                  &
     itypfb , ifabor , ifapat ,                                    &
-    ia    ,                                                       &
-    xyzcen , cdgfbo , visvdr , yplusc , propce ,                  &
-    ra     )
+    xyzcen , cdgfbo , visvdr , yplusc , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -55,7 +53,6 @@ subroutine vandri &
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
 ! ifapat           ! te ! <-- ! no de face de brd code 5 la + proche           !
 ! (ncelet)         !    !     !    (rij et echo de paroi      )                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! xyzcen           ! ra ! <-- ! cell centers                                   !
 !  (ndim, ncelet)  !    !     !                                                !
 ! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
@@ -65,7 +62,6 @@ subroutine vandri &
 ! yplusc           ! tr ! <-- ! valeur de yplus aux cellules                   !
 ! (ncelet  )       !    !     !    dans le cas abs(icdpar).eq.1                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,13 +92,11 @@ implicit none
 integer          ndim, ncelet , ncel   , nfac   , nfabor
 integer          itypfb(nfabor),ifabor(nfabor)
 integer          ifapat(ncelet)
-integer          ia(*)
 
 double precision xyzcen(ndim,ncelet),cdgfbo(ndim,nfabor)
 double precision visvdr(ncelet)
 double precision yplusc(ncelet)
 double precision propce(ncelet,*)
-double precision ra(*)
 
 ! Local variables
 

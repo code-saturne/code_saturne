@@ -28,13 +28,10 @@
 subroutine schtmp &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    isostd ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -49,15 +46,12 @@ subroutine schtmp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iappel           ! e  ! <-- ! numero de l'appel (avant ou apres              !
 !                  !    !     ! phyvar                                         !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -66,7 +60,6 @@ subroutine schtmp &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,21 +88,17 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal  , iappel
 
 integer          isostd(nfabor+1)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel    , ifac   , iscal
 integer          ipcrom , ipcroa
 integer          ipbrom , ipbroa
@@ -126,8 +115,6 @@ double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
 ! 0. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1.  AU TOUT DEBUT DE LA BOUCLE EN TEMPS

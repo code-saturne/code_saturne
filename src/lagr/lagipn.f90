@@ -32,10 +32,8 @@ subroutine lagipn &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npar1  , npar2  ,                                              &
    itepa  ,                                                       &
-   ia     ,                                                       &
    rtp    ,                                                       &
-   ettp   , tepa   , vagaus ,                                     &
-   ra     )
+   ettp   , tepa   , vagaus )
 
 !===============================================================================
 ! FONCTION :
@@ -63,7 +61,6 @@ subroutine lagipn &
 !                  !    !     !    a initialiser                               !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
@@ -72,7 +69,6 @@ subroutine lagipn &
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -107,12 +103,10 @@ integer          ncelet , ncel
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npar1 , npar2
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision rtp(ncelet,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
-double precision ra(*)
 
 ! Local variables
 

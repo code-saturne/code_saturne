@@ -34,11 +34,9 @@ subroutine ustsv2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , produc , gphigk ,          &
-   crvexp , crvimp ,                                              &
-   ra     )
+   crvexp , crvimp )
 
 !===============================================================================
 ! Purpose:
@@ -116,7 +114,6 @@ subroutine ustsv2 &
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
@@ -132,7 +129,6 @@ subroutine ustsv2 &
 ! gphigk(ncelet)   ! ra ! <-- ! grad(phi).grad(k)                              !
 ! crvexp           ! ra ! --> ! explicit part of the source term               !
 ! crvimp           ! ra ! --> ! implicit part of the source term               !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -165,7 +161,6 @@ integer          ivar
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -174,8 +169,6 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 double precision produc(ncelet), gphigk(ncelet)
-double precision xam(nfac,2)
-double precision ra(*)
 
 ! Local variables
 

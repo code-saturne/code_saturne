@@ -31,9 +31,7 @@
 subroutine usdpst &
 !=================
 
- ( lstcel , lstfac , lstfbr ,                                     &
-   ia     ,                                                       &
-   ra     )
+ ( lstcel , lstfac , lstfbr )
 
 !===============================================================================
 ! Purpose:
@@ -57,8 +55,6 @@ subroutine usdpst &
 ! lstcel(ncelet)   ! ia ! --- ! work array (list of cells)                     !
 ! lstfac(nfac)     ! ia ! --- ! work array (list of interior faces)            !
 ! lstfbr(nfabor)   ! ia ! --- ! work array (list of boundary faces)            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -85,9 +81,6 @@ implicit none
 
 
 integer          lstcel(ncelet), lstfac(nfac), lstfbr(nfabor)
-integer          ia(*)
-
-double precision ra(*)
 
 ! Local variables
 

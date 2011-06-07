@@ -28,14 +28,11 @@
 subroutine divrij &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idim   , ivar   ,                                              &
-   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  ,                                              &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 !===============================================================================
 ! FONCTION :
@@ -56,13 +53,10 @@ subroutine divrij &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! idim             ! e  ! <-- ! composante traitee                             !
 ! ivar             ! e  ! <-- ! numero de variable courante                    !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -72,7 +66,6 @@ subroutine divrij &
 !  (nfabor, *)     !    !     !                                                !
 ! viscf(nfac)      ! tr ! --> ! resultat du calcul                             !
 ! viscb(nfabor)    ! tr ! --> ! resultat du calcul                             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -100,22 +93,18 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          idim   , ivar
 
-integer          ia(*)
 
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision viscf(nfac), viscb(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, ivar1, ivar2, ivar3, init, inc
 integer          iccocg,iflmb0
 integer          ipcrom, ipbrom
@@ -131,8 +120,6 @@ double precision epsrgp, climgp, extrap
 !===============================================================================
 
 ! --- Memoire
-idebia = idbia0
-idebra = idbra0
 
 ! --- Masse volumique
 ipcrom = ipproc(irom  )
@@ -178,19 +165,16 @@ imaspe = 2
 
 call inimas                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar1  , ivar2  , ivar3  , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgp , imligp , &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom),                            &
    rtpa(1,ivar1)   , rtpa(1,ivar2)   , rtpa(1,ivar3)   ,          &
    coefa(1,iclva1) , coefa(1,iclva2) , coefa(1,iclva3) ,          &
    coefb(1,iclva1) , coefb(1,iclva2) , coefb(1,iclva3) ,          &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 
 !     Calcul des efforts aux bords (partie 5/5), si necessaire

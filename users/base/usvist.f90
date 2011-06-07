@@ -33,10 +33,8 @@ subroutine usvist &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
 ! Purpose:
@@ -71,7 +69,6 @@ subroutine usvist &
 ! icetsm(ncesmp    ! te ! <-- ! numbering of cells with mass source term       !
 ! itypsm           ! te ! <-- ! kind of mass source for each variable          !
 ! (ncesmp,nvar)    !    !     !  (cf. ustsma)                                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -84,7 +81,6 @@ subroutine usvist &
 !  (ncepdp,6)      !    !     !                                                !
 ! smacel           ! ra ! <-- ! values of variables related to mass source     !
 ! (ncesmp,*   )    !    !     ! term. If ivar=ipr, smacel=mass flux            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -117,14 +113,12 @@ integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision ra(*)
 
 ! Local variables
 
@@ -192,10 +186,8 @@ call grdcel &
    nswrgr(iu) , imligr(iu) ,                             &
    iwarni(iu) , nfecra ,                                 &
    epsrgr(iu) , climgr(iu) , extrag(iu) ,                &
-   ia     ,                                              &
    rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   grad   ,                                              &
-   ra     )
+   grad   )
 
 !===============================================================================
 ! 1.4 Computation of the dynamic viscosity

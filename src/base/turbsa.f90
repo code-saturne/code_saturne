@@ -28,14 +28,11 @@
 subroutine turbsa &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr , coefa  , coefb  , ckupdc , smacel ,                   &
-   itypfb ,                                                       &
-   ra     )
+   itypfb )
 
 !===============================================================================
 ! Purpose:
@@ -49,8 +46,6 @@ subroutine turbsa &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -59,7 +54,6 @@ subroutine turbsa &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -75,7 +69,6 @@ subroutine turbsa &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -110,13 +103,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 integer          itypfb(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -125,12 +116,10 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision tslagr(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra, ifinia
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          iivar , iiun
 integer          iclip , isqrt
@@ -184,8 +173,6 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet))
 allocate(w7(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 icliup = iclrtp(iu,icoef)
 iclivp = iclrtp(iv,icoef)
@@ -260,10 +247,8 @@ call grdcel &
 !==========
  ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   gradu  ,                                                       &
-   ra     )
+   gradu  )
 
 
 nswrgp = nswrgr(iv)
@@ -277,10 +262,8 @@ call grdcel &
 !==========
  ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   gradv  ,                                                       &
-   ra     )
+   gradv  )
 
 
 nswrgp = nswrgr(iw)
@@ -294,10 +277,8 @@ call grdcel &
 !==========
  ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   gradw  ,                                                       &
-   ra     )
+   gradw  )
 
 ! TINSSA = 2 OMEGA**2 = DUDY**2 + DVDX**2 + DUDZ**2 + DWDX**2 + DVDZ**2 + DWDY**2
 !                     - 2*DUDY*DVDX - 2*DUDZ*DWDX - 2*DVDZ*DWDY
@@ -336,10 +317,8 @@ call grdcel &
 !==========
  ( inusa , imrgra , inc    , iccocg , nswrgp , imligp ,           &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,inusa)  , coefa(1,iclvar) , coefb(1,iclvar) ,           &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! SMBRSA = GRADnu**2
 
@@ -371,12 +350,9 @@ call ustssa                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , tinssa , divu   ,          &
-   w7     , dam    ,                                              &
-!  ------   ------
-   ra     )
+   w7     , dam    )
 
 ! On libere W1, W2, W3, W4, W5, W6, W8, W9,
 !           VISCF, VISCB, SMBRSA,
@@ -663,12 +639,9 @@ if( idiff(ivar).ge. 1 ) then
 
   call viscfa                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
   ! Be carefull with the walls:
   !  If we have a smooth wall then nusa is zero at the wall
@@ -741,15 +714,13 @@ thetap = thetav(ivar)
 
 call codits                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
@@ -757,8 +728,7 @@ call codits                                                       &
    viscf  , viscb  , viscf  , viscb  ,                            &
 !  ------   ------
    tinssa , smbrsa , rtp(1,ivar)     ,                            &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 
 !===============================================================================

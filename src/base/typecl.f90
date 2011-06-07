@@ -28,13 +28,10 @@
 subroutine typecl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl , frcxt  ,                            &
-   ra     )
+   coefa  , coefb  , rcodcl , frcxt  )
 
 !===============================================================================
 ! Function :
@@ -47,8 +44,6 @@ subroutine typecl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb(nfabor)   ! ia ! <-- ! boundary face types                            !
@@ -64,7 +59,6 @@ subroutine typecl &
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! isostd           ! te ! --> ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -87,7 +81,6 @@ subroutine typecl &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -120,13 +113,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          isostd(nfabor+1)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -134,12 +125,10 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision frcxt(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 
 character        chaine*80
-integer          idebia, idebra
 integer          ifac, ivar, iel
 integer          iok, inc, iccocg, ideb, ifin, inb, isum, iwrnp
 integer          ifrslb, itbslb
@@ -179,8 +168,6 @@ pref = 0.d0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2.  Check consistency of types given in usclim
@@ -572,12 +559,10 @@ if (itbslb.gt.0) then
   !==========
      ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
        iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-       ia     ,                                                       &
        rvoid  ,                                                       &
        frcxt(1,1), frcxt(1,2), frcxt(1,3),                            &
        rtpa(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,             &
-       grad   ,                                                       &
-       ra     )
+       grad   )
 
 
   !  Put in coefu the value at I' or F (depending on iphydr) of the

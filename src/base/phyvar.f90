@@ -28,12 +28,9 @@
 subroutine phyvar &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -48,11 +45,8 @@ subroutine phyvar &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -61,7 +55,6 @@ subroutine phyvar &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,21 +89,17 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra
 integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct
 integer          nn
@@ -131,8 +120,6 @@ save             ipass
 ! 1.  INITIALISATIONS
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 ipass = ipass + 1
 
@@ -146,25 +133,19 @@ if(iperot.gt.0) then
 
   call perinu                                                   &
   !==========
-( idebia , idebra ,                                              &
-  nvar   , nscal  ,                                              &
-  ia     ,                                                       &
+( nvar   , nscal  ,                                              &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
-  dudxy  ,                                                       &
-  ra     )
+  dudxy  )
 
   if(itytur.eq.3) then
 
     call perinr                                                 &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   drdxy  ,                                                       &
-   ra     )
+   drdxy  )
 
   endif
 
@@ -180,13 +161,10 @@ ibrom = 0
 if (ippmod(iphpar).ge.1) then
   call ppphyv                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ibrom  ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 endif
 
@@ -208,11 +186,9 @@ call usphyv &
 !==========
 ( nvar   , nscal  ,                                              &
   ibrom  ,                                                       &
-  ia     ,                                                       &
   dt     , rtp    , rtpa   ,                                     &
   propce , propfa , propfb ,                                     &
-  coefa  , coefb  ,                                              &
-  ra     )
+  coefa  , coefb  )
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 
@@ -299,14 +275,11 @@ elseif (iturb.eq.10) then
 
   call vislmg &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 elseif (itytur.eq.2) then
 
@@ -344,14 +317,11 @@ elseif (iturb.eq.40) then
 
   call vissma &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 elseif(iturb.eq.41) then
 
@@ -361,15 +331,12 @@ elseif(iturb.eq.41) then
 
   call visdyn &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   propce(1,ipproc(ismago)) ,                                     &
-   ra     )
+   propce(1,ipproc(ismago)) )
 
 elseif (iturb.eq.42) then
 
@@ -379,14 +346,11 @@ elseif (iturb.eq.42) then
 
   call viswal &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 elseif (iturb.eq.50) then
 
@@ -414,14 +378,11 @@ elseif (iturb.eq.60) then
 
   call vissst &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 elseif (iturb.eq.70) then
 
@@ -453,10 +414,8 @@ call usvist &
 ( nvar   , nscal  ,                                              &
   ncepdc , ncetsm ,                                              &
   icepdc , icetsm , itypsm ,                                     &
-  ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa  , coefb  , ckupdc , smacel ,                            &
-  ra     )
+  coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
 ! 5.  CLIPPING DE LA VISCOSITE TURBULENTE EN LES DYNAMIQUE
@@ -511,11 +470,9 @@ if (iale.eq.1.and.ntcabs.eq.0) then
   call usvima                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , propce(1,ipproc(ivisma(1))) ,                &
-   propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) ,    &
-   ra     )
+   propce(1,ipproc(ivisma(2))) , propce(1,ipproc(ivisma(3))) )
 
 endif
 

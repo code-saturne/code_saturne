@@ -28,10 +28,7 @@
 subroutine cscini &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   ra     )
+ ( nvar   , nscal  )
 
 !===============================================================================
 ! FONCTION :
@@ -74,23 +71,17 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , ifinia , ifinra
 integer          numcpl
 integer          imobmx , ialemx , nvcpmx, ifcpmx
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 do numcpl = 1, nbrcpl
 

@@ -28,18 +28,15 @@
 subroutine lagune &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , ifrlag , itepa  ,                            &
-   ia     ,                                                       &
    dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
-   ra     )
+   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
 ! FONCTION :
@@ -56,8 +53,6 @@ subroutine lagune &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -77,7 +72,6 @@ subroutine lagune &
 !   (nfabor)       !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 ! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -103,7 +97,6 @@ subroutine lagune &
 !(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
 ! parbor           ! tr ! --> ! infos sur interaction des particules           !
 !(nfabor,nvisbr    !    !     !   aux faces de bord                            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -138,7 +131,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          lndnod
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
@@ -146,7 +138,6 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -159,12 +150,8 @@ double precision stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
 double precision dlgeo(nfabor,ngeol)
-double precision ra(*)
 
 ! Local variables
-
-integer          idebia, idebra
-integer          ifinia, ifinra
 
 integer          ip     , npt    , iok
 integer          nfin   , npars  , iel    , ivf
@@ -255,8 +242,6 @@ endif
 
 ipass = ipass + 1
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -303,11 +288,8 @@ if (iplar.eq.1) then
 
   call lagdeb                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   lndnod ,                                                       &
-   icocel , itycel ,                                              &
-   ia     ,                                                       &
-   ra     )
+ ( lndnod ,                                                       &
+   icocel , itycel )
 
 !
 ! --> if the deposition model is activated
@@ -322,9 +304,8 @@ if (iplar.eq.1) then
 
      call laggeo                                                  &
      !==========
- ( idebia , idebra ,                                              &
-   lndnod ,                                                       &
-   ia     , dlgeo  , ra     )
+ ( lndnod ,                                                       &
+   dlgeo  )
 
     ! the mesh elements yplus checking
 
@@ -456,35 +437,29 @@ if ( ntcabs.eq.1 ) then
 
   call lagent                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itycel , icocel ,                                              &
    itypfb , itrifb , ifrlag , itepa  ,                            &
-   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     , &
-   ra     )
+   ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
 
 else
 
   call lagent                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itycel , icocel ,                                              &
    itypfb , itrifb , ifrlag , itepa  ,                            &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     , &
-   ra     )
+   ettp   , tepa   , vagaus , auxl   , w1     , w2     , w3     )
 endif
 
 !===============================================================================
@@ -499,12 +474,10 @@ if (iroule.ge.1) then
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa ,                                      &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl ,                     &
-   dispar , yplpar ,                                              &
-   ra     )
+   dispar , yplpar )
 
   iok = 0
   do iel = 1,ncel
@@ -551,23 +524,17 @@ if ( ntcabs.eq.1 ) then
 
   call laggra                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    rtp    , propce , coefa  , coefb  ,                            &
-   gradpr , gradvf ,                                              &
-   ra     )
+   gradpr , gradvf )
 
 else
 
   call laggra                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    rtpa   , propce , coefa  , coefb  ,                            &
-   gradpr , gradvf ,                                              &
-   ra     )
+   gradpr , gradvf )
 
 endif
 
@@ -629,12 +596,9 @@ if (nor.eq.2 .and. iilagr.ne.3) then
 
   call laggra                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    rtp    , propce , coefa  , coefb  ,                            &
-   gradpr , gradvf ,                                              &
-   ra     )
+   gradpr , gradvf )
 
 endif
 
@@ -646,17 +610,14 @@ if (nor.eq.1) then
 
   call lagcar                                                     &
   !==========
-   ( idebia , idebra ,                                            &
-     nvar   , nscal  ,                                            &
+   ( nvar   , nscal  ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  ,                                                     &
-     ia     ,                                                     &
      dt     , rtpa   , propce , propfa , propfb ,                 &
      ettp   , ettpa  , tepa   , taup   , tlag   ,                 &
      piil   , bx     , tempct , statis ,                          &
-     gradpr , gradvf , w1     , w2     , auxl(1,1)  ,             &
-     ra     )
+     gradpr , gradvf , w1     , w2     , auxl(1,1) )
 
 else
 
@@ -664,17 +625,14 @@ else
 
   call lagcar                                                     &
   !==========
-   ( idebia , idebra ,                                            &
-     nvar   , nscal  ,                                            &
+   ( nvar   , nscal  ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  ,                                                     &
-     ia     ,                                                     &
      dt     , rtp    , propce , propfa , propfb ,                 &
      ettp   , ettpa  , tepa   , taup   , tlag   ,                 &
      piil   , bx     , tempct , statis ,                          &
-     gradpr , gradvf , w1     , w2     , auxl(1,1) ,              &
-     ra     )
+     gradpr , gradvf , w1     , w2     , auxl(1,1) )
 
 endif
 
@@ -685,21 +643,18 @@ endif
 
 call lagesp                                                       &
 !==========
-   ( idebia , idebra ,                                            &
-     nvar   , nscal  , lndnod ,                                   &
+   ( nvar   , nscal  , lndnod ,                                   &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      icocel , itycel , ifrlag,                                    &
      itepa  , ibord  ,                                            &
-     ia     ,                                                     &
      dlgeo  ,                                                     &
      dt     , rtpa   , rtp    , propce , propfa , propfb ,        &
      ettp   , ettpa  , tepa   ,                                   &
      statis , stativ , taup   , tlag   , piil   ,                 &
      tsuf   , tsup   , bx     , tsfext ,                          &
      vagaus , gradpr , gradvf , brgaus , terbru ,                 &
-     auxl(1,1) , auxl2 ,                                          &
-     ra     )
+     auxl(1,1) , auxl2 )
 
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     LIEES AUX PHYSIQUES PARTICULIERES PARTICULAIRES
@@ -709,27 +664,21 @@ if ( iphyla.eq.1 .or. iphyla.eq.2 ) then
   if ( nor.eq.1 ) then
     call lagphy                                                   &
     !==========
-    ( idebia , idebra ,                                           &
-      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
+    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
       itepa  , ibord  ,                                           &
-      ia     ,                                                    &
       dt     , rtpa   , propce , propfa , propfb ,                &
       ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
-      tsvar  , auxl   , cpgd1  , cpgd2  , cpght  ,                &
-      ra     )
+      tsvar  , auxl   , cpgd1  , cpgd2  , cpght  )
   else
     call lagphy                                                   &
     !==========
-    ( idebia , idebra ,                                           &
-      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
+    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       ntersl , nvlsta , nvisbr ,                                  &
       itepa  , ibord  ,                                           &
-      ia     ,                                                    &
       dt     , rtp    , propce , propfa , propfb ,                &
       ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
-      tsvar  , auxl   , cpgd1  , cpgd2  , cpght  ,                &
-      ra     )
+      tsvar  , auxl   , cpgd1  , cpgd2  , cpght  )
   endif
 
 endif
@@ -745,19 +694,16 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
 
   call lagcou                                                     &
   !==========
-   ( ifinia , ifinra ,                                            &
-     nvar   , nscal  ,                                            &
+   ( nvar   , nscal  ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      ntersl , nvlsta , nvisbr ,                                   &
      itepa  , indep  , ibord  ,                                   &
-     ia     ,                                                     &
      rtp    , propce ,                                            &
      ettp   , ettpa  , tepa   , taup   ,                          &
      tempct , tsfext , tslagr ,                                   &
      cpgd1  , cpgd2  , cpght  ,                                   &
-     tslag  , w1     , w2   ,                            &
-     auxl(1,1) , auxl(1,2)   , auxl(1,3) ,                        &
-     ra     )
+     tslag  , w1     , w2   ,                                     &
+     auxl(1,1) , auxl(1,2)   , auxl(1,3) )
 
      ! Free memory
      deallocate(tslag)
@@ -773,19 +719,16 @@ if (nor.eq.1) then
 
   call lagcel                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb ,                                              &
    icocel , itycel , ifrlag , itepa  , ibord  , indep  ,          &
-   ia     ,                                                       &
    dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , parbor , auxl   ,                   &
-   ra     )
+   ettp   , ettpa  , tepa   , parbor , auxl   )
 
   if (ierr.eq.1) then
     call lagerr
@@ -809,10 +752,8 @@ if (nor.eq.nordre) then
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npars  ,                                                       &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dnpars ,                                                       &
-   ettp   , ettpa  , tepa   ,                                     &
-   ra     )
+   ettp   , ettpa  , tepa   )
 
   nbpout = npars
   dnbpou = dnpars
@@ -841,16 +782,13 @@ if (nor.eq.nordre .and. istala.eq.1 .and. iplas.ge.idstnt) then
 
   call lagsta                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , tepa   , statis , stativ ,                            &
-   w1     ,                                                       &
-   ra     )
+   w1     )
 
 endif
 
@@ -862,17 +800,14 @@ if (nor.eq.nordre .and. ilapoi.eq.1) then
 
   call lagpoi                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , ifrlag , itepa  ,                            &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , statis ,                                     &
-   ra     )
+   ettp   , tepa   , statis )
 
 endif
 
@@ -884,13 +819,10 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
 
   call lagrus                                                     &
   !==========
-   ( idebia , idebra ,                                            &
-     ncelet , ncel   ,                                            &
+   ( ncelet , ncel   ,                                            &
      nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      itepa  , indep  ,                                            &
-     ia     ,                                                     &
-     ettp   , ettpa  , tepa   , croule ,                          &
-     ra     )
+     ettp   , ettpa  , tepa   , croule )
 
   if (npclon.gt.0) then
 
@@ -903,10 +835,8 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
       nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
       npar1  , npar2  ,                                           &
       itepa  ,                                                    &
-      ia     ,                                                    &
       rtp    ,                                                    &
-      ettp   , tepa   , vagaus ,                                  &
-      ra     )
+      ettp   , tepa   , vagaus )
 
   endif
 
@@ -929,12 +859,10 @@ call uslast                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
-   statis , stativ ,                                              &
-   ra     )
+   statis , stativ )
 
 !===============================================================================
 ! 16. Visualisations
@@ -955,7 +883,7 @@ if (iensi1.eq.1) then
    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      nfin   , iforce ,                                            &
      itepa  ,                                                     &
-     ettp   , tepa   , ra )
+     ettp   , tepa   )
 endif
 
 if (iensi2.eq.1) then
@@ -995,16 +923,13 @@ endif
 if (modntl.eq.0) then
    call lagaff                                                    &
    !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , taup   , tlag   , tempct , statis , &
-   ra     )
+   ettp   , ettpa  , tepa   , taup   , tlag   , tempct , statis )
 
 endif
 

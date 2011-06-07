@@ -28,16 +28,13 @@
 subroutine cscpce &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nptdis , ityloc ,                                              &
    ivar   ,                                                       &
    locpts ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   coopts , rvdis  ,                                              &
-   ra     )
+   coopts , rvdis  )
 
 !===============================================================================
 ! FONCTION :
@@ -84,13 +81,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ivar
 integer          nptdis , ityloc
 
 integer          locpts(nptdis)
-integer          ia(*)
 
 
 double precision dt(ncelet), rtpa(ncelet,*)
@@ -98,11 +93,9 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), rvdis(nptdis)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , ifinia , ifinra
 integer          ipt    , iel
 integer          inc    , iccocg , iclvar, nswrgp
 integer          iwarnp , imligp
@@ -117,8 +110,6 @@ double precision, allocatable, dimension(:,:) :: grad
 ! Allocate a temporary array
 allocate(grad(ncelet,3))
 
-idebia = idbia0
-idebra = idbra0
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(rtpa(1,ivar))
@@ -140,10 +131,8 @@ call grdcel                                                       &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 ! --- Interpolation

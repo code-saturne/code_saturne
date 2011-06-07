@@ -33,11 +33,9 @@ subroutine ustske &
 
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smacel , tinstk , divu   ,          &
-   crkexp , creexp , crkimp , creimp ,                            &
-   ra     )
+   crkexp , creexp , crkimp , creimp )
 
 !===============================================================================
 ! Purpose:
@@ -114,7 +112,6 @@ subroutine ustske &
 ! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
 ! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
 !  (ncesmp,nvar)   !    !     !  (see ustsma)                                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (preceding time steps)                        !
@@ -132,7 +129,6 @@ subroutine ustske &
 ! creexp           ! ra ! --> ! explicit part of the source term for epsilon   !
 ! crkimp           ! ra ! --> ! implicit part of the source term for k         !
 ! creimp           ! ra ! --> ! implicit part of the source term for epsilon   !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -164,7 +160,6 @@ integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -174,7 +169,6 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision tinstk(ncelet), divu(ncelet)
 double precision crkexp(ncelet), crkimp(ncelet)
 double precision creexp(ncelet), creimp(ncelet)
-double precision ra(*)
 
 ! Local variables
 

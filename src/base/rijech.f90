@@ -28,14 +28,11 @@
 subroutine rijech &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar   , isou   , ipp    ,                                     &
-   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , produc , smbr   ,                            &
-   coefax , coefbx ,                                              &
-   ra     )
+   coefax , coefbx )
 
 !===============================================================================
 ! FONCTION :
@@ -51,14 +48,11 @@ subroutine rijech &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! isou             ! e  ! <-- ! numero de passage                              !
 ! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -71,7 +65,6 @@ subroutine rijech &
 ! smbr(ncelet      ! tr ! <-- ! tableau de travail pour sec mem                !
 ! coefax,coefbx    ! tr ! --- ! tableau de travail pour les cond.              !
 !  (nfabor)        !    !     !    aux limites de la dist. paroi               !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -101,11 +94,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ivar   , isou   , ipp
 
-integer          ia(*)
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -114,11 +105,9 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision produc(6,ncelet)
 double precision smbr(ncelet)
 double precision coefax(nfabor), coefbx(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifacpt, iel   , ii    , jj    , kk    , mm
 integer          irkm  , irki  , irkj  , iskm  , iski  , iskj
 integer          ipcrom, ipcroo
@@ -162,8 +151,6 @@ vnm = 0.d0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ipcrom = ipproc(irom  )
 ipcroo = ipcrom
@@ -234,10 +221,8 @@ elseif(abs(icdpar).eq.1) then
  ( ivar0  , imrgra , inc    , iccocg , nswrgy , imligy ,          &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
-   ia     ,                                                       &
    dispar , coefax , coefbx ,                                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 !     Normalisation (attention, le gradient peut etre nul, parfois)

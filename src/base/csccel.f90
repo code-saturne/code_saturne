@@ -28,14 +28,11 @@
 subroutine csccel &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar   ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   crvexp , crvimp ,                                              &
-   ra     )
+   crvexp , crvimp )
 
 !===============================================================================
 ! FONCTION :
@@ -49,12 +46,9 @@ subroutine csccel &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant            prec)          !
@@ -65,7 +59,6 @@ subroutine csccel &
 !  (nfabor, *)     !    !     !                                                !
 ! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
 ! crvimp(ncelet    ! tr ! --> ! tableau de travail pour part implicit          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,22 +89,18 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ivar
 
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision crvexp(ncelet), crvimp(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          numcpl
 integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
@@ -128,8 +117,6 @@ double precision, allocatable, dimension(:) :: rvdis , rvcel
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 do numcpl = 1, nbrcpl
 
@@ -205,16 +192,13 @@ do numcpl = 1, nbrcpl
 
     call cscpce                                                   &
     !==========
-  ( idebia , idebra ,                                             &
-    nvar   , nscal  ,                                             &
+  ( nvar   , nscal  ,                                             &
     ncedis , ityloc ,                                             &
     ivar   ,                                                      &
     locpts ,                                                      &
-    ia     ,                                                      &
     dt     , rtpa   , propce , propfa , propfb ,                  &
     coefa  , coefb  ,                                             &
-    coopts , rvdis  ,                                             &
-    ra     )
+    coopts , rvdis  )
 
   endif
 
@@ -246,18 +230,15 @@ do numcpl = 1, nbrcpl
 
     call csc2ts                                                   &
     !==========
-  ( idebia , idebra ,                                             &
-    nvar   , nscal  ,                                             &
+  ( nvar   , nscal  ,                                             &
     ncecpl ,                                                      &
     ivar   ,                                                      &
     lcecpl ,                                                      &
-    ia     ,                                                      &
     dt     , rtpa   , propce , propfa , propfb ,                  &
     coefa  , coefb  ,                                             &
     crvexp , crvimp ,                                             &
 !         ------   ------
-    rvcel  ,                                                      &
-    ra     )
+    rvcel  )
 
   endif
 

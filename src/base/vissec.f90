@@ -28,15 +28,12 @@
 subroutine vissec &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
    trav   ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 !===============================================================================
 ! FONCTION :
@@ -70,8 +67,6 @@ subroutine vissec &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -80,7 +75,6 @@ subroutine vissec &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -96,7 +90,6 @@ subroutine vissec &
 ! trav(ncelet,3    ! tr ! <-- ! tableau de travail pour sec mem                !
 ! viscf(nfac)      ! tr ! --- ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -129,13 +122,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -144,11 +135,9 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision trav(ncelet,3)
 double precision viscf(nfac), viscb(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iccocg, inc, iel, ifac, ivar, isou, ii, jj, init
 integer          idim
 integer          iclvar
@@ -173,8 +162,6 @@ double precision, allocatable, dimension(:) :: w4, w6
 ! Allocate temporary arrays
 allocate(vistot(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ipcrom = ipproc(irom  )
 ipcvis = ipproc(iviscl)
@@ -267,10 +254,8 @@ do isou = 1, 3
   !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
   do iel = 1, ncelet

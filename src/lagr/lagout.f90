@@ -28,17 +28,14 @@
 subroutine lagout &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , itepa  ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , parbor , statis , stativ , tslagr ,          &
-   ra     )
+   ettp   , tepa   , parbor , statis , stativ , tslagr )
 
 !===============================================================================
 ! FONCTION :
@@ -64,8 +61,6 @@ subroutine lagout &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -83,7 +78,6 @@ subroutine lagout &
 ! (ncelet+1)       !    !     !    pointeur du tableau icocel                  !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -105,7 +99,6 @@ subroutine lagout &
 !(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
 ! parbor           ! tr ! <-- ! infos sur interaction des particules           !
 !(nfabor,nvisbr    !    !     !   aux faces de bord                            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -141,7 +134,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          lndnod
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
@@ -149,7 +141,6 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -160,7 +151,6 @@ double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
-double precision ra(*)
 
 ! Local variables
 
@@ -169,8 +159,6 @@ character        rubriq*64 , car4*4
 character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
-integer          idebia , idebra
-integer          ifinia , ifinra
 integer          ierror , irtyp  , itysup , nbval
 integer          ivers  , ilecec
 integer          nfin   , iforce , icha   , ii
@@ -183,8 +171,6 @@ integer          impavl , impvls
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. ECRITURE DU FICHIER SUITE : VARIABLES LIEES AUX PARTICULES
@@ -890,7 +876,7 @@ if (iensi1.eq.1) then
    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
      nfin   , iforce ,                                            &
      itepa  ,                                                     &
-     ettp   , tepa   , ra )
+     ettp   , tepa   )
 
 endif
 

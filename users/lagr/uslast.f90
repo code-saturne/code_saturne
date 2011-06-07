@@ -35,12 +35,10 @@ subroutine uslast &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,          &
-   statis , stativ ,                                              &
-   ra     )
+   statis , stativ )
 
 !===============================================================================
 ! Purpose:
@@ -95,7 +93,6 @@ subroutine uslast &
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers at       !
 ! (ncelet,*)       !    !     ! the current and previous time step             !
@@ -122,7 +119,6 @@ subroutine uslast &
 ! stativ           ! ra ! <-- ! cumul. for the variance of the volume stats.   !
 !(ncelet,          !    !     !                                                !
 !   nvlsta-1)      !    !     !                                                !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -159,7 +155,6 @@ integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -170,7 +165,6 @@ double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
-double precision ra(*)
 
 ! Local variables
 
@@ -404,10 +398,8 @@ if (1.eq.0) then
         !==========
  ( nvar   , nscal  , nvlsta ,                                     &
    ivff   , ivff   , ivff   , iflu   , ilpd   , icla   ,          &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis , stativ , tabvr  ,                   &
-   ra     )
+   coefa  , coefb  , statis , stativ , tabvr  )
 
         ind = 0
         do ii = 1, npts

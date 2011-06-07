@@ -28,13 +28,10 @@
 subroutine pptycl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -50,8 +47,6 @@ subroutine pptycl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
@@ -67,7 +62,6 @@ subroutine pptycl &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -89,7 +83,6 @@ subroutine pptycl &
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -125,24 +118,20 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, iok, ifvu, ii, izone, izonem
 
 !===============================================================================
@@ -150,8 +139,6 @@ integer          ifac, iok, ifvu, ii, izone, izonem
 ! 1.  INITIALISATIONS
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 
 !===============================================================================
@@ -271,13 +258,10 @@ if ( ippmod(icod3p).ge.0 ) then
 
   call d3ptcl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion gaz USEBUC
 !      Flamme de premelange modele EBU
@@ -286,13 +270,10 @@ elseif ( ippmod(icoebu).ge.0 ) then
 
   call ebutcl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion gaz USLWCC
 !      Flamme de premelange modele LWC
@@ -301,13 +282,10 @@ elseif ( ippmod(icolwc).ge.0 ) then
 
   call lwctcl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion charbon pulverise USCPCL
 
@@ -315,13 +293,10 @@ elseif ( ippmod(icp3pl).ge.0 ) then
 
   call cpptcl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion charbon pulverise couple Lagrangien USCPLC
 
@@ -329,13 +304,10 @@ elseif ( ippmod(icpl3c).ge.0 ) then
 
   call cpltcl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 ! ---> Combustion fuel USFUCL
 
@@ -343,13 +315,10 @@ elseif ( ippmod(icfuel).ge.0 ) then
 
   call fuptcl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 ! ---> Compressible USCFCL
 
@@ -357,13 +326,10 @@ elseif ( ippmod(icompf).ge.0 ) then
 
   call cfxtcl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 ! ---> Ecoulements atmospheriques
 
@@ -371,19 +337,16 @@ elseif ( ippmod(iatmos).ge.0 ) then
 
   call attycl                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbmetd , nbmett , nbmetm ,                                     &
    icodcl , itrifb , itypfb , izfppp , iprofm ,                   &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
    tmmet  , ztmet  , zdmet  ,                                     &
    xmet   , ymet   , pmer   ,                                     &
    ttmet  , qvmet  , umet   ,                                     &
    vmet   , ekmet  , epmet  ,                                     &
-   rmet   , tpmet  , phmet  ,                                     &
-   ra     )
+   rmet   , tpmet  , phmet  )
 
 endif
 !----

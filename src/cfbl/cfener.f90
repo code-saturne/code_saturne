@@ -28,16 +28,13 @@
 subroutine cfener &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    viscf  , viscb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
 !===============================================================================
 ! FONCTION :
@@ -51,8 +48,6 @@ subroutine cfener &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -62,7 +57,6 @@ subroutine cfener &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -80,7 +74,6 @@ subroutine cfener &
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -113,14 +106,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -130,13 +121,10 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra
-integer          ifinia, ifinra
 integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii
@@ -155,7 +143,6 @@ integer          ivar0  , iij , ii , jj
 integer          iccfth , imodif
 integer          iel1  , iel2
 integer          iterns
-integer          idbia1
 
 double precision flux
 double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
@@ -184,8 +171,6 @@ allocate(w1(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
@@ -239,12 +224,9 @@ call ustssc                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt ,                                              &
-!        ------   ------
-   ra     )
+   smbrs  , rovsdt )
 
 do iel = 1, ncel
   smbrs(iel) = smbrs(iel) + rovsdt(iel)*rtp(iel,ivar)
@@ -264,10 +246,10 @@ enddo
 if (ncesmp.gt.0) then
   iterns = 1
   call catsma ( ncelet , ncel , ncesmp , iterns ,                 &
-                isno2t, thetav(ivar),                      &
+                isno2t, thetav(ivar),                             &
                 icetsm , itypsm(1,ivar) ,                         &
                 volume , rtpa(1,ivar) , smacel(1,ivar) ,          &
-                smacel(1,ipr) , smbrs , rovsdt , w1)
+                smacel(1,ipr) , smbrs , rovsdt , w1    )
 endif
 
 !                                     __    n+1
@@ -303,15 +285,12 @@ if( idiff(iu).ge. 1 ) then
 !                             ^^^
   call cfdivs                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rtp(1,iu), rtp(1,iv), rtp(1,iw), &
+   smbrs  , rtp(1,iu), rtp(1,iv), rtp(1,iw) )
 !        ------
-   ra     )
 
 endif
 
@@ -376,10 +355,8 @@ endif
 !      !==========
 !     & ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,
 !     &   iwarnp , nfecra , epsrgp , climgp , extrap ,
-!     &   ia     ,
 !     &   w7     , coefap , coefbp ,
-!     &   grad   ,
-!     &   ra     )
+!     &   grad   )
 
 !     Faces internes
 !      do ifac = 1, nfac
@@ -511,12 +488,9 @@ if( idiff(ivar).ge. 1 ) then
 
   call viscfa                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 
 !     TERME DIFFUSIF COMPLEMENTAIRE : - div( K grad ( epsilon - Cv.T ) )
@@ -581,10 +555,8 @@ call grdcel                                                       &
 !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    w7     , coefap , coefbp ,                                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! Free memory
 deallocate(coefap, coefbp)
@@ -693,21 +665,18 @@ iescap = 0
 
 call cfcdts                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    iscal  , iconvp , idiffp , ireslp , ndircp , nitmap ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap , thetap , &
-   ia     ,                                                       &
    rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , rtp(1,ivar)     ,                            &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 !===============================================================================
 ! 5. IMPRESSIONS ET CLIPPINGS

@@ -28,16 +28,12 @@
 subroutine lagnew &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npt    , nptnew , new    ,                                     &
    izone  ,                                                       &
    ifrlag , isorti , iworkp ,                                     &
-   ia     ,                                                       &
-   ettp   ,                                                       &
-   ra     )
-
+   ettp   )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +54,6 @@ subroutine lagnew &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !                  !    !     !                                                !
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  !  ->           ! longueur du tableau icocel
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvp              ! e  ! <-- ! nombre de variables particulaires              !
@@ -81,10 +75,8 @@ subroutine lagnew &
 !   (nbpmax)       !    !     !    * numero de sa cellule                      !
 !                  !    !     !    * 0 si sortie du domaine                    !
 ! iworkp(nbpmax    ! te ! --> ! numero de la face d'injection                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -111,17 +103,14 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          lndnod
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npt    , nptnew , new
 integer          izone
 
 integer          ifrlag(nfabor) , isorti(nbpmax) , iworkp(nbpmax)
-integer          ia(*)
 
 double precision ettp(nbpmax,nvp)
-double precision ra(*)
 
 ! Local variables
 

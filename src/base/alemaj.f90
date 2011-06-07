@@ -28,13 +28,11 @@
 subroutine alemaj &
 !================
 
- ( idbia0 , idbra0 , itrale ,                                     &
+ ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    impale ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , depale , xyzno0 ,                            &
-   ra     )
+   coefa  , coefb  , depale , xyzno0 )
 
 !===============================================================================
 ! FONCTION :
@@ -47,13 +45,10 @@ subroutine alemaj &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! impale(nnod)     ! te ! <-- ! indicateur de delacement impose                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -64,7 +59,6 @@ subroutine alemaj &
 !  (nfabor, *)     !    !     !                                                !
 ! depale(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
 ! xyzno0(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,23 +89,19 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0 , itrale
+integer          itrale
 integer          nvar   , nscal
 
 integer          impale(nnod)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision depale(nnod,3), xyzno0(3,nnod)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
-integer          ifinra
 integer          inod
 integer          iel
 integer          icluma, iclvma, iclwma, idim
@@ -129,8 +119,6 @@ if(iwarni(iuma).ge.1) then
   write(nfecra,1000)
 endif
 
-idebia = idbia0
-idebra = idbra0
 
 icluma = iclrtp(iuma,icoef )
 iclvma = iclrtp(ivma,icoef )

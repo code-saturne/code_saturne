@@ -28,12 +28,9 @@
 subroutine laggra &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    rtp    , propce , coefa  , coefb  ,                            &
-   gradpr , gradvf ,                                              &
-   ra     )
+   gradpr , gradvf )
 
 !===============================================================================
 ! FONCTION :
@@ -51,11 +48,8 @@ subroutine laggra &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -63,7 +57,6 @@ subroutine laggra &
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
 ! gradpr(ncel,3    ! tr ! --> ! gradient de pression                           !
 ! gradvf(ncel,9    ! tr ! --> ! gradient de vitesse fluide                     !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -98,20 +91,16 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision coefa(ndimfb,*) , coefb(ndimfb,*)
 double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 
 integer          inc , iccocg , iclipr
 integer          ipcliu , ipcliv , ipcliw
@@ -121,8 +110,6 @@ double precision unsrho
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 0. PARAMETRES
@@ -167,10 +154,8 @@ call grdcel &
    nswrgr(ipr)  , imligr(ipr)  ,                               &
    iwarni(ipr)  , nfecra ,                                     &
    epsrgr(ipr)  , climgr(ipr)  , extrag(ipr)  ,                &
-   ia     ,                                                    &
    rtp(1,ipr)  , coefa(1,iclipr) , coefb(1,iclipr) ,           &
-   gradpr ,                                                    &
-   ra     )
+   gradpr )
 
 ! Pointeur sur la masse volumique en fonction de l'ecoulement
 
@@ -215,10 +200,8 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    nswrgr(iu)   , imligr(iu)  ,                            &
    iwarni(iu)   , nfecra ,                                 &
    epsrgr(iu)   , climgr(iu)  , extrag(iu)  ,              &
-   ia     ,                                                &
    rtp(1,iu)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,       &
-   gradvf(1,1) ,                                           &
-   ra     )
+   gradvf(1,1) )
 
 !     COMPOSANTE Y
 !     ============
@@ -229,10 +212,8 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    nswrgr(iv)   , imligr(iv)  ,                             &
    iwarni(iv)   , nfecra ,                                  &
    epsrgr(iv)   , climgr(iv)  , extrag(iv)  ,               &
-   ia     ,                                                 &
    rtp(1,iv)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,        &
-   gradvf(1,4) ,                                            &
-   ra     )
+   gradvf(1,4) )
 
 !     COMPOSANTE Z
 !     ============
@@ -243,10 +224,8 @@ if (modcpl.gt.0 .and. iplas.ge.modcpl) then
    nswrgr(iw)   , imligr(iw)  ,                             &
    iwarni(iw)   , nfecra ,                                  &
    epsrgr(iw)   , climgr(iw)  , extrag(iw)  ,               &
-   ia     ,                                                 &
    rtp(1,iw)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,        &
-   gradvf(1,7) ,                                            &
-   ra     )
+   gradvf(1,7) )
 
 endif
 

@@ -28,16 +28,13 @@
 subroutine cscpfb &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nptdis , ityloc , nvcp   , numcpl , nvcpto,                    &
    locpts ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    coopts , djppts , pndpts ,                                     &
-   rvdis  , dofpts ,                                              &
-   ra     )
+   rvdis  , dofpts )
 
 !===============================================================================
 ! FONCTION :
@@ -84,12 +81,10 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nptdis , nvcp   , numcpl , nvcpto , ityloc
 
 integer          locpts(nptdis)
-integer          ia(*)
 
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -99,11 +94,9 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision coopts(3,nptdis), djppts(3,nptdis)
 double precision pndpts(nptdis), dofpts(3,nptdis)
 double precision rvdis(nptdis,nvcpto)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra , ifinia , ifinra
 
 integer          ipt    , ifac   , iel    , isou
 integer          ivar   , iscal  , ipcrom
@@ -139,8 +132,6 @@ vitent = 0.d0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ! Allocate temporary arrays
 
@@ -232,10 +223,8 @@ call grdcel &
   ( ipr , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,ipr) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 ! For a specific face to face coupling, geometric assumptions are made
 
@@ -340,10 +329,8 @@ do isou = 1, 3
   ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -469,10 +456,8 @@ if (itytur.eq.2) then
   ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -533,10 +518,8 @@ if (itytur.eq.2) then
   ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -643,10 +626,8 @@ if (itytur.eq.2) then
   ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
       do ipt = 1, nptdis
@@ -778,10 +759,8 @@ elseif (itytur.eq.3) then
   ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
     ! For a specific face to face coupling, geometric assumptions are made
 
@@ -877,10 +856,8 @@ elseif (itytur.eq.3) then
   ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -1053,10 +1030,8 @@ elseif (iturb.eq.50) then
   ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -1117,10 +1092,8 @@ elseif (iturb.eq.50) then
   ( iep , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,iep) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -1181,10 +1154,8 @@ elseif (iturb.eq.50) then
   ( iphi , imrgra , inc    , iccocg , nswrgp , imligp ,           &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,iphi) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   do ipt = 1, nptdis
@@ -1222,10 +1193,8 @@ elseif (iturb.eq.50) then
   ( ifb , imrgra , inc    , iccocg , nswrgp , imligp ,            &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,ifb) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -1343,10 +1312,8 @@ elseif (iturb.eq.60) then
   ( ik , imrgra , inc    , iccocg , nswrgp , imligp ,             &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,ik) , coefa(1,iclvar) , coefb(1,iclvar) ,               &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made
@@ -1407,10 +1374,8 @@ elseif (iturb.eq.60) then
   ( iomg , imrgra , inc    , iccocg , nswrgp , imligp ,           &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,iomg) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
   ! For a specific face to face coupling, geometric assumptions are made
 
@@ -1534,10 +1499,8 @@ elseif (iturb.eq.60) then
   ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                    &
     rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,             &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 
       do ipt = 1, nptdis
@@ -1639,10 +1602,8 @@ if (nscal.gt.0) then
   ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra ,                                             &
     epsrgp , climgp , extrap ,                                    &
-    ia     ,                                                      &
     rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,         &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
     ! For a specific face to face coupling, geometric assumptions are made
 

@@ -28,16 +28,14 @@
 subroutine cpltss &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   izfppp , ia     ,                                              &
+   izfppp ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smbrs  , rovsdt , tslagr ,                                     &
-   ra     )
+   smbrs  , rovsdt , tslagr )
 
 !===============================================================================
 ! FONCTION :
@@ -84,8 +82,6 @@ subroutine cpltss &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -98,7 +94,6 @@ subroutine cpltss &
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -116,7 +111,6 @@ subroutine cpltss &
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
 !(ncelet,*)        !    !     !     lagrangien                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -152,7 +146,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
@@ -161,7 +154,6 @@ integer          itypfb(nfabor)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izfppp(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -174,12 +166,10 @@ double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision w10(ncelet), w11(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia , idebra
 integer          ivar   , iel
 integer          iscala , icha
 
@@ -189,8 +179,6 @@ integer          iscala , icha
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero du scalaire a traiter : ISCAL
 
@@ -290,16 +278,13 @@ if ( ivar.eq.isca(if4p2m) ) then
 
   call cpltsv                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  , iscala ,                                              &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
 endif
 

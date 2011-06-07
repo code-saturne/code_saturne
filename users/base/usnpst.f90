@@ -32,10 +32,8 @@ subroutine usnpst &
 !================
 
  ( nvar   , nscal  , nvlsta ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis ,                                     &
-   ra     )
+   coefa  , coefb  , statis )
 
 !===============================================================================
 ! Purpose:
@@ -106,14 +104,11 @@ implicit none
 
 integer          nvar   , nscal  , nvlsta
 
-integer          ia(*)
-
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision statis(ncelet,nvlsta)
-double precision ra(*)
 
 ! Local variables
 

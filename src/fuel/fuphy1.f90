@@ -28,8 +28,7 @@
 subroutine fuphy1 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   ,                                              &
+ ( ncelet , ncel   ,                                              &
    nitbfu , nrtbfu , nitbwo , nrtbwo ,                            &
    fvap   , fhtf   , f4p2m  ,                                     &
    enth   ,                                                       &
@@ -89,8 +88,6 @@ subroutine fuphy1 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nitbfu           ! e  ! <-- ! taille du macro tableau fuel entiers           !
@@ -138,7 +135,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nitbfu , nrtbfu
 integer          nitbwo , nrtbwo
@@ -150,7 +146,6 @@ double precision rom1(ncelet)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel    , ice
 integer          ipcte1
 integer          ipcyf1 , ipcyf3 , ipcyox
@@ -179,8 +174,6 @@ allocate(rtbwo(ncelet,nrtbwo))
 
 ! --- Initialisation memoire
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2. DETERMINATION DU TYPE DE PDF

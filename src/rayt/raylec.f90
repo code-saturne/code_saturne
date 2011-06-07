@@ -28,11 +28,8 @@
 subroutine raylec &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
-   ia     ,                                                       &
-   propce , propfb ,                                              &
-   ra     )
+ ( ndim   , ncelet , ncel   , nfac   , nfabor ,                   &
+   propce , propfb )
 
 !===============================================================================
 ! Purpose:
@@ -49,17 +46,13 @@ subroutine raylec &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -89,13 +82,7 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor
-
-integer          ia(*)
-
-
-double precision ra(*)
 
 double precision propce(ncelet,*)
 double precision propfb(nfabor,*)
@@ -105,7 +92,6 @@ double precision propfb(nfabor,*)
 character        rubriq*64
 character        cphase*2
 character        ficsui*32
-integer          idebia, idebra
 integer          iok
 
 integer          jphast
@@ -115,12 +101,8 @@ integer          ilecec , nberro , ivers
 integer          impamr
 
 !===============================================================================
-!===============================================================================
 ! 0 - GESTION MEMOIRE
 !===============================================================================
-
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. LECTURE DU FICHIER SUITE

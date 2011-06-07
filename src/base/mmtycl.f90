@@ -28,13 +28,10 @@
 subroutine mmtycl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb , icodcl ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   rcodcl ,                                                       &
-   ra     )
+   rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -48,8 +45,6 @@ subroutine mmtycl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
@@ -57,7 +52,6 @@ subroutine mmtycl &
 !  (nfabor,nvar    !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> densite de flux                       !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -77,7 +71,6 @@ subroutine mmtycl &
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
 ! depmob(nnod,3    ! tr ! <-- ! deplacement aux noeuds                         !
 ! xyzno1(3,nnod    ! tr ! <-- ! coordonnees noeuds maillage initial            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -106,23 +99,19 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          icodcl(nfabor,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision depmob(nnod,3), xyzno1(3,nnod)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, iel
 integer          ii, inod, icpt
 double precision ddepx, ddepy, ddepz
@@ -137,8 +126,6 @@ double precision vitbox, vitboy, vitboz
 ! 1.  INITIALISATIONS
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 2.  VITESSE DE DEFILEMENT POUR LES PAROIS FLUIDES ET SYMETRIES

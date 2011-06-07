@@ -28,10 +28,8 @@
 subroutine calmom &
 !================
 
- ( idbia0 , idbra0 , ncel   , ncelet ,                            &
-   ia     ,                                                       &
-   rtp    , dt     , propce ,                                     &
-   ra     )
+ ( ncel   , ncelet ,        &
+   rtp    , dt     , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -44,16 +42,12 @@ subroutine calmom &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
 ! (ncelet,*   )    !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -76,14 +70,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0 , ncel   , ncelet
-integer          ia(*)
+integer          ncel   , ncelet
 double precision rtp(ncelet,*) , dt(ncelet), propce(ncelet,*)
-double precision ra(*)
 
 ! Local variables
 
-integer          ii, iel, imom, icmom, idtcm, ifinra
+integer          ii, iel, imom, icmom, idtcm
 integer          jmom, icumut
 
 double precision, allocatable, dimension(:) :: travm

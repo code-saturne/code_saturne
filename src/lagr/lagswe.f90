@@ -33,7 +33,7 @@ subroutine lagswe &
    dtp   , tstruc , tdiffu , ttotal , vstruc ,                        &
    romp  , taup   , kdif   , tlag2  , lvisq  , yplus ,                &
    unif1 , unif2  , dintrf , rpart  , kdifcl , gnorm ,                &
-   vnorm , grpn   , piiln)
+   vnorm , grpn   , piiln  )
 
 !===============================================================================
 !

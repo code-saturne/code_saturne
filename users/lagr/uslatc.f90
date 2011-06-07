@@ -34,12 +34,10 @@ subroutine uslatc &
  ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    numpt  , itepa  ,                                              &
-   ia     ,                                                       &
    rep    , uvwr   , romf   , romp   , xnul   ,                   &
    xcp    , xrkl   , tauc   ,                                     &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   ettp   , ettpa  , tepa   ,                                     &
-   ra     )
+   ettp   , ettpa  , tepa   )
 
 !===============================================================================
 ! Purpose:
@@ -115,7 +113,6 @@ subroutine uslatc &
 ! numpt            ! i  ! <-- !                                                !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! rep              ! r  ! <-- ! particle Reynolds number                       !
 !                  !    !     ! rep = uvwr * ettp(numpt,jdp) / xnul            !
 ! uvwr             ! r  ! <-- ! relative velocity of the particle              !
@@ -145,7 +142,6 @@ subroutine uslatc &
 !  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
 ! (nbpmax,nvep)    !    !     !                                                !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -183,7 +179,6 @@ integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          numpt
 
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision rep    , uvwr   , romf   , romp   , xnul
 double precision xcp    , xrkl   , tauc
@@ -193,7 +188,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision ra(*)
 
 ! Local variables
 

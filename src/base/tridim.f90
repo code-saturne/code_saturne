@@ -28,13 +28,11 @@
 subroutine tridim &
 !================
 
- ( idbia0 , idbra0 , itrale ,                                     &
+ ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
-   ia     ,                                                       &
    dt     , tpucou , rtpa   , rtp    , propce , propfa , propfb , &
-   tslagr , coefa  , coefb  , frcxt  ,                            &
-   ra     )
+   tslagr , coefa  , coefb  , frcxt  )
 
 !===============================================================================
 ! FONCTION :
@@ -48,14 +46,11 @@ subroutine tridim &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! isostd           ! te ! <-- ! indicateur de sortie standard                  !
 !    (nfabor+1)    !    !     !  +numero de la face de reference               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! tpucou(ncelet,3) ! ra ! <-- ! velocity-pressure coupling                     !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
@@ -69,7 +64,6 @@ subroutine tridim &
 !(ncelet,*)        !    !     !     lagrangien                                 !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -117,11 +111,10 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0 , itrale
+integer          itrale
 integer          nvar   , nscal
 
 integer          isostd(nfabor+1)
-integer          ia(*)
 
 double precision dt(ncelet), tpucou(ncelet,3), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -129,13 +122,9 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision tslagr(ncelet,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision frcxt(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
-integer          idbia1, idbra1
-integer          ifinia, ifinra, ifnia1, ifnra1
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncp   , ncv   , iok
 integer          iicodc, ircodc
@@ -148,7 +137,6 @@ integer          isvhb , isvtb
 integer          ii    , jj    , ippcp , ientha, ippcv
 integer          ipcrom, ipcroa
 integer          idimte, itenso
-integer          ifinib, ifinrb
 integer          iflua , iflub
 integer          iterns, inslst, icvrge, ivsvdr
 integer          iflmas, iflmab
@@ -189,12 +177,6 @@ double precision, allocatable, dimension(:) :: prdv2f
 if(iwarni(iu).ge.1) then
   write(nfecra,1000)
 endif
-
-idebia = idbia0
-idebra = idbra0
-
-ifinia = idebia
-ifinra = idebra
 
 
 ipass = ipass + 1
@@ -465,13 +447,10 @@ if (itrale.gt.0) then
   iappel = 1
   call schtmp                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    isostd ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 endif
 
 
@@ -542,24 +521,18 @@ endif
 
 call phyvar                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 if (itrale.gt.0) then
   iappel = 2
   call schtmp                                                     &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    isostd ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 endif
 
 
@@ -585,10 +558,8 @@ if (ncpdct.gt.0) then
 ( nvar   , nscal  ,                                              &
   ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
-  ia     ,                                                       &
   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-  coefa  , coefb  , ckupdc ,                                     &
-  ra     )
+  coefa  , coefb  , ckupdc )
 
 endif
 
@@ -615,10 +586,8 @@ if(nctsmt.gt.0) then
   ncetsm , iappel ,                                              &
   icepdc ,                                                       &
   icetsm , itypsm , izctsm ,                                     &
-  ia     ,                                                       &
   dt     , rtpa   , propce , propfa , propfb ,                   &
-  coefa  , coefb  , ckupdc , smacel ,                            &
-  ra     )
+  coefa  , coefb  , ckupdc , smacel )
 
 endif
 
@@ -633,15 +602,12 @@ endif
 
 call dttvar &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ncepdc , ncetsm ,                                              &
    iwarni(iu)   ,                                                 &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
@@ -667,11 +633,9 @@ if (ivrtex.eq.1) then
   !==========
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   ,                                              &
    propce , propfa , propfb ,                                     &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 !     Verification des donnees entrees par l'utilisateur
 !       (au premier passage seulement)
@@ -695,8 +659,6 @@ endif
 !       pour Syrthes, T1D ou rayonnement.
 italim = 1
 itrfin = 1
-idbia1 = idebia
-idbra1 = idebra
 ineefl = 0
 if (iale.eq.1 .and. nalimx.gt.1 .and. itrale.gt.nalinf) then
 !     On reserve certains tableaux pour permettre le retour a l'etat
@@ -760,14 +722,11 @@ do while (iterns.le.nterup)
 
   call precli &
   !==========
-( idbia1 , idbra1 ,                                              &
-  nvar   , nscal  ,                                              &
+( nvar   , nscal  ,                                              &
   icodcl ,                                                       &
-  ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   coefa  , coefb  ,                                              &
-  rcodcl ,                                                       &
-  ra     )
+  rcodcl )
 
 
   !     - Interface Code_Saturne
@@ -801,16 +760,13 @@ do while (iterns.le.nterup)
 
       call stdtcl &
       !==========
-    ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , nbzfmx , nozfmx ,                            &
+    ( nvar   , nscal  , nbzfmx , nozfmx ,                            &
       iqimp  , icalke , qimp   , dh , xintur,                        &
       icodcl , itrifb , itypfb , izfppp ,                            &
       ilzfbr ,                                                       &
-      ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , rcodcl ,                                     &
-      qcalc  ,                                                       &
-      ra     )
+      qcalc  )
 
       ! Free memory
       deallocate(ilzfbr)
@@ -829,10 +785,8 @@ do while (iterns.le.nterup)
     !==========
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb ,                                     &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , rcodcl ,                                     &
-    ra     )
+    coefa  , coefb  , rcodcl )
 
   else
 
@@ -840,13 +794,10 @@ do while (iterns.le.nterup)
 
     call ppclim &
     !==========
-  ( ifinia , ifinra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , rcodcl ,                                     &
-    ra     )
+    coefa  , coefb  , rcodcl )
 
   endif
 
@@ -870,13 +821,10 @@ do while (iterns.le.nterup)
 
     call vor2cl &
     !==========
-  ( ifinia , ifinra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb ,                                     &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , rcodcl ,                                     &
-    ra     )
+    coefa  , coefb  , rcodcl )
 
   endif
 
@@ -888,13 +836,10 @@ do while (iterns.le.nterup)
 
     call cscfbr &
     !==========
-  ( ifinia , ifinra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb ,                                     &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-    coefa  , coefb  , rcodcl ,                                     &
-    ra     )
+    coefa  , coefb  , rcodcl )
 
   endif
 
@@ -930,11 +875,9 @@ do while (iterns.le.nterup)
     nvar   , nscal  ,                                              &
     icodcl , itypfb , ialtyb ,                                     &
     impale ,                                                       &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  , rcodcl ,                                     &
-    xyzno0 , depale ,                                              &
-    ra     )
+    xyzno0 , depale )
 
     !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
     !       remet le deplacement initial
@@ -951,13 +894,11 @@ do while (iterns.le.nterup)
 
       call strpre &
       !==========
-    ( ifinia , ifinra , itrale , italim , ineefl ,                   &
+    ( itrale , italim , ineefl ,                                     &
       impale ,                                                       &
-      ia     ,                                                       &
       rtp    , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
-      flmalf , flmalb , xprale , cofale , depale ,                   &
-      ra     )
+      flmalf , flmalb , xprale , cofale , depale )
 
     endif
 
@@ -975,13 +916,10 @@ do while (iterns.le.nterup)
     if (nfpt1t.gt.0) then
       call cou1di &
       !==========
-    ( ifinia , ifinra ,                                              &
-      nfabor ,                                                       &
+    ( nfabor ,                                                       &
       nvar   , nscal  ,                                              &
       isvtb  , icodcl ,                                              &
-      ia     ,                                                       &
-      rcodcl ,                                                       &
-      ra     )
+      rcodcl )
     endif
 
   endif
@@ -991,16 +929,13 @@ do while (iterns.le.nterup)
 
     call raycli &
     !==========
-  ( ifinia , ifinra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     isvhb  , isvtb  ,                                              &
     icodcl , itrifb , itypfb ,                                     &
     izfrad ,                                                       &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     rcodcl ,                                                       &
-    coefa  , coefb  , hbord  , tbord  ,                            &
-    ra     )
+    coefa  , coefb  , hbord  , tbord  )
 
   endif
 
@@ -1008,17 +943,14 @@ do while (iterns.le.nterup)
 
   call condli &
   !==========
-( ifinia , ifinra ,                                              &
-  nvar   , nscal  ,                                              &
+( nvar   , nscal  ,                                              &
   isvhb  , isvtb  ,                                              &
   icodcl , isostd ,                                              &
-  ia     ,                                                       &
   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
   rcodcl ,                                                       &
   coefa  , coefb  , visvdr ,                                     &
   hbord  , tbord  ,                                              &
-  frcxt  ,                                                       &
-  ra     )
+  frcxt  )
 
 
   !     UNE FOIS LES COEFFICIENTS CALCULES, ON PEUT EN DEDUIRE PLUS
@@ -1050,7 +982,7 @@ do while (iterns.le.nterup)
     ncp   = ncelet
     cpcst = 0.d0
   else
-    ippcp = ifinra
+    ippcp = 1
     ncp   = 1
     cpcst = cp0
   endif
@@ -1065,12 +997,12 @@ do while (iterns.le.nterup)
       ncv   = ncelet
       cvcst = 0.d0
     else
-      ippcv = ifinra
+      ippcv = 1
       ncv   = 1
       cvcst = cv0
     endif
   else
-    ippcv = ifinra
+    ippcv = 1
     ncv   = 1
     cvcst = 0.d0
   endif
@@ -1092,16 +1024,13 @@ do while (iterns.le.nterup)
     if (nfpt1t.gt.0) then
       call cou1do &
       !==========
-    ( ifinia , ifinra ,                                              &
-      nvar   , nscal  , ncp    , nfpt1d ,                            &
+    ( nvar   , nscal  , ncp    , nfpt1d ,                            &
       ientha , ifpt1d , iclt1d ,                                     &
-      ia     ,                                                       &
       tppt1d , tept1d , hept1d ,                                     &
       fept1d , xlmbt1 , rcpt1d , dtpt1d ,                            &
       dt     , rtpa   , propce , propfa , propfb ,                   &
       coefa  , coefb  ,                                              &
-      cpcst  , propce(1,ippcp) , hbord  , tbord  ,                   &
-      ra     )
+      cpcst  , propce(1,ippcp) , hbord  , tbord  )
     endif
   endif
 
@@ -1166,12 +1095,9 @@ do while (iterns.le.nterup)
 
         call distpr &
         !==========
-    ( ifinia , ifinra ,                                              &
-      nvar   , nscal  ,                                              &
+    ( nvar   , nscal  ,                                              &
       itypfb ,                                                       &
-      ia     ,                                                       &
-      dispar ,                                                       &
-      ra     )
+      dispar )
 
         !     La distance n'a plus a etre mise a jour sauf en ALE
         if (iale.eq.0) imajdy = 1
@@ -1200,12 +1126,9 @@ do while (iterns.le.nterup)
 
       call distyp                                                 &
       !==========
-    ( ifinia , ifinra ,                                              &
-      nvar   , nscal  ,                                              &
+    ( nvar   , nscal  ,                                              &
       itypfb ,                                                       &
-      ia     ,                                                       &
-      dispar , propce    , yplpar ,                                  &
-      ra     )
+      dispar , propce    , yplpar )
 
     endif
 
@@ -1219,10 +1142,8 @@ do while (iterns.le.nterup)
       !==========
     ( ndim   , ncelet , ncel   , nfac   , nfabor ,                 &
       itypfb , ifabor , ifapat,                                    &
-      ia     ,                                                     &
       xyzcen , cdgfbo , visvdr , yplpar ,                          &
-      propce ,                                                     &
-      ra     )
+      propce )
     endif
 
   endif
@@ -1260,12 +1181,9 @@ do while (iterns.le.nterup)
 
       call alelap &
       !==========
-    ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  ,                                              &
-      ia     ,                                                       &
+    ( nvar   , nscal  ,                                              &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-      coefa  , coefb  ,                                              &
-      ra     )
+      coefa  , coefb  )
 
     endif
 
@@ -1298,17 +1216,14 @@ do while (iterns.le.nterup)
 
       call cfmsvl &
       !==========
-    ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  ,                                              &
+    ( nvar   , nscal  ,                                              &
       ncepdc , ncetsm ,                                              &
       iscal  ,                                                       &
       icepdc , icetsm ,                                              &
       itypsm ,                                                       &
-      ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  ,                                              &
-      ckupdc , smacel ,                                              &
-      ra     )
+      ckupdc , smacel )
 
     endif
 
@@ -1328,31 +1243,25 @@ do while (iterns.le.nterup)
 
       call cfqdmv &
       !==========
-    ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  ,                                              &
+    ( nvar   , nscal  ,                                              &
       ncepdc , ncetsm ,                                              &
       icepdc , icetsm ,                                              &
       itypsm ,                                                       &
-      ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       propfa(1,iflmas), propfb(1,iflmab),                            &
       coefa  , coefb  ,                                              &
       ckupdc , smacel ,                                              &
-      frcxt  , tpucou ,                                              &
-      ra     )
+      frcxt  , tpucou )
 
     else
 
       call navsto &
       !==========
-    ( idbia1 , idbra1 ,                                              &
-      nvar   , nscal  , iterns , icvrge ,                            &
+    ( nvar   , nscal  , iterns , icvrge ,                            &
       isostd ,                                                       &
-      ia     ,                                                       &
       dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
       tslagr , coefa  , coefb  , frcxt  ,                            &
-      trava  , ximpa  , uvwk   ,                                     &
-      ra     )
+      trava  , ximpa  , uvwk   )
 
       !     Mise a jour de la pression si on utilise un couplage vitesse/pression
       !       par point fixe
@@ -1393,13 +1302,10 @@ do while (iterns.le.nterup)
         iappel = 3
         call schtmp &
         !==========
-      ( idbia1 , idbra1 ,                                              &
-        nvar   , nscal  , iappel ,                                     &
+      ( nvar   , nscal  , iappel ,                                     &
         isostd ,                                                       &
-        ia     ,                                                       &
         dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-        coefa  , coefb  ,                                              &
-        ra     )
+        coefa  , coefb  )
       endif
 
       if (inslst.eq.1) goto 100
@@ -1433,13 +1339,11 @@ if (iccvfg.eq.0) then
 
     call strdep &
     !==========
-  ( idbia1 , idbra1 , itrale , italim , itrfin ,                   &
+  ( itrale , italim , itrfin ,                                     &
     nvar   ,                                                       &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     coefa  , coefb  ,                                              &
-    flmalf , flmalb , cofale , xprale ,                            &
-    ra     )
+    flmalf , flmalb , cofale , xprale )
 
     !     On boucle eventuellement sur de deplacement des structures
     if (itrfin.ne.-1) then
@@ -1462,13 +1366,10 @@ if (iccvfg.eq.0) then
     iappel = 4
     call schtmp &
     !==========
-  ( idebia , idebra ,                                              &
-    nvar   , nscal  , iappel ,                                     &
+  ( nvar   , nscal  , iappel ,                                     &
     isostd ,                                                       &
-    ia     ,                                                       &
     dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-    coefa  , coefb  ,                                              &
-    ra     )
+    coefa  , coefb  )
   endif
 
 !===============================================================================
@@ -1496,30 +1397,24 @@ if (iccvfg.eq.0) then
 
     call turbke &
     !==========
-  ( idebia , idebra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr ,                                                       &
     coefa  , coefb  , ckupdc , smacel ,                            &
-    prdv2f ,                                                       &
-    ra     )
+    prdv2f )
 
     if( iturb.eq.50 )  then
 
       call resv2f &
       !==========
-    ( idebia , idebra ,                                              &
-      nvar   , nscal  ,                                              &
+    ( nvar   , nscal  ,                                              &
       ncepdc , ncetsm ,                                              &
       icepdc , icetsm , itypsm ,                                     &
-      ia     ,                                                       &
       dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
       coefa  , coefb  , ckupdc , smacel ,                            &
-      prdv2f ,                                                       &
-      ra     )
+      prdv2f )
 
       ! Free memory
       deallocate(prdv2f)
@@ -1540,29 +1435,23 @@ if (iccvfg.eq.0) then
 
     call turrij &
     !==========
-  ( idebia , idebra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr ,                                                       &
-    coefa  , coefb  , ckupdc , smacel ,                            &
-    ra     )
+    coefa  , coefb  , ckupdc , smacel )
 
   else if( iturb.eq.60 ) then
 
     call turbkw &
     !==========
-  ( idebia , idebra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr ,                                                       &
-    coefa  , coefb  , ckupdc , smacel ,                            &
-    ra     )
+    coefa  , coefb  , ckupdc , smacel )
 
     !  RELAXATION DE K ET OMEGA SI IKECOU=0
     if (ikecou.eq.0 .and. idtvar.ge.0) then
@@ -1578,16 +1467,13 @@ if (iccvfg.eq.0) then
 
     call turbsa &
     !==========
-  ( idebia , idebra ,                                              &
-    nvar   , nscal  ,                                              &
+  ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    ia     ,                                                       &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
     tslagr   ,                                                     &
     coefa  , coefb  , ckupdc , smacel ,                            &
-    itypfb ,                                                       &
-    ra     )
+    itypfb )
 
     !  RELAXATION DE NUSA
     if (idtvar.ge.0) then
@@ -1617,14 +1503,11 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
 
   call raydom                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 endif
 
@@ -1637,12 +1520,9 @@ if (nscal.ge.1) then
 
   call scalai                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   tslagr , coefa  , coefb  ,                                     &
-   ra     )
+   tslagr , coefa  , coefb  )
 
 endif
 
@@ -1656,13 +1536,10 @@ endif
 iappel = 5
 call schtmp                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , iappel ,                                     &
+ ( nvar   , nscal  , iappel ,                                     &
    isostd ,                                                       &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 !===============================================================================
 ! 18.  SORTIE DANS LE CAS DE "zero pas de temps" ET INIT ALE

@@ -28,11 +28,8 @@
 subroutine lagdeb &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   lndnod ,                                                       &
-   icocel , itycel ,                                              &
-   ia     ,                                                       &
-   ra     )
+ ( lndnod ,                                                       &
+   icocel , itycel )
 
 !===============================================================================
 ! FONCTION :
@@ -88,15 +85,11 @@ subroutine lagdeb &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! icocel           ! te ! --> ! connectivite cellules -> faces                 !
 ! (lndnod)         !    !     !    face de bord si numero negatif              !
 ! itycel           ! te ! --> ! connectivite cellules -> faces                 !
 ! (ncelet+1)       !    !     !    pointeur du tableau icocel                  !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -126,17 +119,13 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          lndnod
 
 integer          icocel(lndnod) , itycel(ncelet+1)
-integer          ia(*)
 
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 
 integer          iel , ifac , ip , n1
 integer          nbfac1 , nbfac2
@@ -147,8 +136,6 @@ integer          nbfac1 , nbfac2
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. Connectivite cellules -> faces

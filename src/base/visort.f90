@@ -28,12 +28,9 @@
 subroutine visort &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     , w2     , w3     ,                                     &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 !===============================================================================
 ! FONCTION :
@@ -56,16 +53,12 @@ subroutine visort &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! imvisf           ! e  ! <-- ! methode de calcul de la visc face              !
 !                  !    !     !  = 0 arithmetique                              !
 !                  !    !     !  = 1 harmonique                                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! w1,2,3(ncelet    ! tr ! <-- ! valeurs de la viscosite                        !
 ! viscf(nfac)      ! tr ! --> ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --> ! visc*surface/dist aux faces de bord            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -90,14 +83,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          imvisf
 
-integer          ia(*)
 
 double precision w1(ncelet), w2(ncelet), w3(ncelet)
 double precision viscf(nfac), viscb(nfabor)
-double precision ra(*)
 
 ! Local variables
 

@@ -193,8 +193,6 @@ extern void CS_PROCF (csprnt, CSPRNT)
 
 extern void CS_PROCF (dvvpst, DVVPST)
 (
- const cs_int_t  *idbia0,    /* <-> number of first free position in IA */
- const cs_int_t  *idbra0,    /* <-> number of first free position in RA */
  const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
  const cs_int_t  *numtyp,    /* <-- number or post-processing type
                               *     (-1 as volume, -2 as boundary, or nummai) */
@@ -209,7 +207,6 @@ extern void CS_PROCF (dvvpst, DVVPST)
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
- cs_int_t         ia[],      /* <-- IA integer array */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */
@@ -515,7 +512,6 @@ void CS_PROCF (usmpst, USMPST)
  cs_int_t         lstcel[],  /* <-> list of post-processed cells */
  cs_int_t         lstfac[],  /* <-> list of post-processed interior faces */
  cs_int_t         lstfbr[],  /* <-> list of post-processed boundary faces */
- cs_int_t         ia[],      /* <-- IA integer array */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */
@@ -527,8 +523,7 @@ void CS_PROCF (usmpst, USMPST)
  const cs_real_t  statce[],  /* <-- cell statistics (Lagrangian) */
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafac[],  /* --- work array for output interior faces */
- cs_real_t        trafbr[],  /* --- work array for output boundary faces */
- cs_real_t        ra[]       /* <-- RA floating-point array */
+ cs_real_t        trafbr[]   /* --- work array for output boundary faces */
 );
 
 /*----------------------------------------------------------------------------
@@ -549,7 +544,6 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
  const cs_int_t   lstfac[],  /* <-- list of post-processed interior faces */
  const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
- cs_int_t         ia[],      /* <-- IA integer array */
  const cs_real_t  dt[],      /* <-- local time step */
  const cs_real_t  rtpa[],    /* <-- cell variables at previous time step */
  const cs_real_t  rtp[],     /* <-- cell variables */
@@ -561,8 +555,7 @@ void CS_PROCF (usvpst, USVPST)
  const cs_real_t  statce[],  /* <-- cell statistics (Lagrangian) */
  cs_real_t        tracel[],  /* --- work array for output cells */
  cs_real_t        trafac[],  /* --- work array for output interior faces */
- cs_real_t        trafbr[],  /* --- work array for output boundary faces */
- cs_real_t        ra[]       /* <-- RA floating-point array */
+ cs_real_t        trafbr[]   /* --- work array for output boundary faces */
 );
 
 /*----------------------------------------------------------------------------

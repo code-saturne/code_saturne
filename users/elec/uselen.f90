@@ -35,11 +35,9 @@ subroutine uselen &
    nvar   , nscal  ,                                              &
    ncelps , nfacps , nfbrps ,                                     &
    lstcel , lstfac , lstfbr ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   tracel , trafac , trafbr ,                                     &
-   ra     )
+   tracel , trafac , trafbr )
 
 !===============================================================================
 ! Purpose :
@@ -61,7 +59,6 @@ subroutine uselen &
 ! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
 ! lstfac(nfacps    ! te ! <-- ! liste des faces interieures post               !
 ! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -76,7 +73,6 @@ subroutine uselen &
 ! tracel(*)        ! tr ! <-- ! tab reel valeurs cellules post                 !
 ! trafac(*)        ! tr ! <-- ! tab reel valeurs faces int. post               !
 ! trafbr(*)        ! tr ! <-- ! tab reel valeurs faces bord post               !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
 !__________________!____!_____!________________________________________________!
@@ -119,7 +115,6 @@ integer          ncelps , nfacps , nfbrps
 integer          idimt
 
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -127,7 +122,6 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision tracel(ncelps*3)
 double precision trafac(nfacps*3), trafbr(nfbrps*3)
-double precision ra(*)
 
 ! Local variables
 
@@ -183,11 +177,9 @@ if(nummai.eq.-1) then
   !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTR
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 !
   ientla = 0
@@ -225,11 +217,9 @@ if(nummai.eq.-1) then
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 !
     ientla = 0
@@ -272,11 +262,9 @@ if(nummai.eq.-1) then
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
 !       POTI
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
@@ -323,10 +311,8 @@ if(nummai.eq.-1) then
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv)  ,              &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 !       B = rot A ( B = curl A)
 
@@ -357,10 +343,8 @@ if(nummai.eq.-1) then
     !==========
   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    ia     ,                                                      &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 !       B = rot A (B = curl A)
 
@@ -391,10 +375,8 @@ if(nummai.eq.-1) then
     !==========
   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
     iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-    ia     ,                                                      &
     rtp(1,ivar), coefa(1,iclimv) , coefb(1,iclimv) ,              &
-    grad   ,                                                      &
-    ra     )
+    grad   )
 
 !       B = rot A (B = curl A)
 

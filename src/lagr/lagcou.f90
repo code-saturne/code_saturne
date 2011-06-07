@@ -28,18 +28,15 @@
 subroutine lagcou &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , indep  , ibord  ,                                     &
-   ia     ,                                                       &
    rtp    , propce ,                                              &
    ettp   , ettpa  , tepa   , taup   , tempct , tsfext , tslagr , &
    cpgd1  , cpgd2  , cpght  ,                                     &
    tslag  , volp   , volm   ,                                     &
-   auxl1  , auxl2  , auxl3  ,                                     &
-   ra     )
+   auxl1  , auxl2  , auxl3  )
 
 !===============================================================================
 ! FONCTION :
@@ -69,8 +66,6 @@ subroutine lagcou &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -87,7 +82,6 @@ subroutine lagcou &
 !  (nbpmax)        !    !     !    numero de la cellule de depart              !
 ! ibord            ! te ! <-- ! contient le numero de la                       !
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -113,7 +107,6 @@ subroutine lagcou &
 ! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
 ! auxl2(nbpmax)    ! tr ! --- ! tableau de travail                             !
 ! auxl3(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -149,12 +142,10 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          itepa(nbpmax,nivep), indep(nbpmax), ibord(nbpmax)
-integer          ia(*)
 
 double precision propce(ncelet,*) , rtp(ncelet,*)
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
@@ -166,7 +157,6 @@ double precision tslag(ncelet,ntersl)
 double precision volp(ncelet) , volm(ncelet)
 double precision tslagr(ncelet,ntersl)
 double precision auxl1(nbpmax) , auxl2(nbpmax) , auxl3(nbpmax)
-double precision ra(*)
 
 ! Local variables
 

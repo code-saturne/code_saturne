@@ -28,10 +28,8 @@
 subroutine fuflux &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   ,                                              &
-   rtpa   , propce , volume ,                                     &
-   ra     )
+ ( ncelet , ncel   ,        &
+   rtpa   , propce , volume )
 
 !===============================================================================
 ! FONCTION :
@@ -45,15 +43,12 @@ subroutine fuflux &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant precedent)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -86,16 +81,13 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ncelet , ncel
 
 double precision rtpa(ncelet,*), propce(ncelet,*)
 double precision volume(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel    , icla
 integer          ipcrom , ipcte1 , ipcte2 , ipcro2 , ipcdia
 integer          ipcgev , ipcght , ipcyox
@@ -117,8 +109,6 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ! --- Initialisation memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Initialisation des termes de transfert de masse
 

@@ -28,11 +28,8 @@
 subroutine prmoy0 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   , nfac   , nfabor ,                            &
-   ia     ,                                                       &
-   volume , pvar   ,                                              &
-   ra     )
+ ( ncelet , ncel   , nfac   , nfabor ,                            &
+   volume , pvar   )
 
 !===============================================================================
 ! FONCTION :
@@ -46,16 +43,12 @@ subroutine prmoy0 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! volume(ncelet    ! tr ! <-- ! volume des elements                            !
 ! pvar             ! tr ! <-- ! tableau de valeurs au cellules                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -78,12 +71,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ncelet , ncel   , nfac , nfabor
 
-integer          ia(*)
 double precision volume(ncelet), pvar(ncelet)
-double precision ra(*)
 
 ! Local variables
 

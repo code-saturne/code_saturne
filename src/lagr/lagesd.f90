@@ -28,19 +28,17 @@
 subroutine lagesd &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ifac   , ip     ,                                              &
+ ( ifac   , ip     ,                                              &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  , ia     ,                                              &
+   itepa  ,                                                       &
    dlgeo  ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   ,                                     &
    statis , taup   , tlag   , piil   ,                            &
    bx     , vagaus , gradpr , gradvf , romp,                      &
-   tempf  , romf   , ustar  , lvisq  ,tvisq   ,  depint ,         &
-   ra )
+   tempf  , romf   , ustar  , lvisq  ,tvisq   ,  depint )
 
 
 !===============================================================================
@@ -68,8 +66,6 @@ subroutine lagesd &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! e  ! <-- ! number of first free position in ia            !
-! idbra0           ! e  ! <-- ! number of first free position in ra            !
 ! ifac             ! e  ! <-- !                                                !
 ! ip               ! e  ! <-- !                                                !
 ! ndim             ! e  ! <-- ! dimension de l'espace                          !
@@ -97,7 +93,6 @@ subroutine lagesd &
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! ifabor           ! e  ! <-- !                                                !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! xyzcen           ! tr ! <-- ! point associes aux volumes de control          !
 ! (ndim,ncelet     !    !     !                                                !
 ! surfac           ! tr ! <-- ! vecteur surface des faces internes             !
@@ -139,7 +134,6 @@ subroutine lagesd &
 ! gradpr(ncel,3    ! tr ! <-- ! gradient de pression                           !
 ! gradvf(ncel,3    ! tr ! <-- ! gradient de la vitesse du fluide               !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
 ! tempf            !  r ! <-- ! temperature of the fluid (K)                   !
 ! romf             !  r ! <-- ! density of the fluid                           !
 ! ustar            !  r ! <-- ! friction velocity                              !
@@ -180,12 +174,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ifac   , ip
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          itepa(nbpmax,nivep)  , ia(*)
+integer          itepa(nbpmax,nivep)
 
 double precision dlgeo(nfabor,ngeol)
 double precision dt(ncelet) , rtpa(ncelet,*)
@@ -198,11 +191,9 @@ double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision vagaus(nbpmax,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision romp(nbpmax)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          isens  , iel , mode, id, i0
 double precision depg(3),depl(3),vpart(3),vvue(3),tempf, romf
 double precision vflui(3),vdirn,vdirt,vdirtt,vpartl,vvuel,dxl, enertur
@@ -227,8 +218,6 @@ double precision ustar, lvisq, tvisq, depint
 ! 0.  Memory management and Initialization
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 iel = itepa(ip,jisor)
 
@@ -371,7 +360,7 @@ call lagcli                                                       &
      vpart(1)     , vvue(1)   , depl(1) ,                         &
      ettp(ip,jdp) , romp(ip)  , taup(ip),                         &
      tepa(ip,jryplu),tepa(ip,jrinpf), enertur, ggp(1), vflui(1),  &
-     gdpr(1), piilp(1), depint, ra)
+     gdpr(1), piilp(1), depint )
 
 !  Integration in the 2 others directions
 

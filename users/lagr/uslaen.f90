@@ -33,10 +33,8 @@ subroutine uslaen &
 
  ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statis , stativ , tracel ,                   &
-   ra     )
+   coefa  , coefb  , statis , stativ , tracel )
 
 !===============================================================================
 ! Purpose:
@@ -69,7 +67,6 @@ subroutine uslaen &
 !                  !    !     !                                                !
 ! icla             !  i ! <-- ! 0: global statistic                            !
                    !    ! <-- ! !=0: stat for the icla group                   !
-! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers          !
 ! (ncelet,*)       !    !     ! at the current and previous time step          !
@@ -88,7 +85,6 @@ subroutine uslaen &
 !   nvlsta-1)      !    !     !                                                !
 ! tracel(ncelet    ! ra ! <-- ! real array, values cells post                  !
 !                  !    !     !                                                !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 
@@ -123,8 +119,6 @@ implicit none
 integer          nvar   , nscal  , nvlsta
 integer          ivarl , ivarl1 , ivarlm , iflu , ilpd1 , icla
 
-integer          ia(*)
-
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
@@ -132,7 +126,6 @@ double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision tracel(ncelet)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
-double precision ra(*)
 
 ! Local variables
 

@@ -35,11 +35,9 @@ subroutine uslag2 &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  , ifrlag ,                            &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   ,                                              &
-   ra     )
+   ettp   , tepa   )
 
 !===============================================================================
 ! Purpose:
@@ -82,7 +80,6 @@ subroutine uslag2 &
 ! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! ia(*)            ! ia ! <-- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at the previous          !
 ! (ncelet,*)       !    !     ! time step                                      !
@@ -98,7 +95,6 @@ subroutine uslag2 &
 !  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
 ! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
 ! (nbpmax,nvep)    !    !     !                                                !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -136,14 +132,12 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
-double precision ra(*)
 
 ! Local variables
 

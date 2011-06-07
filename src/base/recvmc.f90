@@ -28,13 +28,10 @@
 subroutine recvmc &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    rom    , flumas , flumab ,                                     &
    ux     , uy     , uz     ,                                     &
-   bx     , by     , bz     ,                                     &
-   ra     )
+   bx     , by     , bz     )
 
 !===============================================================================
 ! FONCTION :
@@ -48,18 +45,14 @@ subroutine recvmc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rom(ncelet       ! tr ! <-- ! masse volumique aux cellules                   !
 ! flumas(nfac)     ! tr ! <-- ! flux de masse aux faces internes               !
 ! flumab(nfabor    ! tr ! <-- ! flux de masse aux faces de bord                !
 ! ux   uy          ! tr ! --> ! vitesse reconstruite                           !
 ! uz   (ncelet     ! tr !     !                                                !
 ! bx,y,z(ncelet    ! tr ! --- ! tableau de travail                             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -81,23 +74,20 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision rom(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision ux  (ncelet), uy  (ncelet), uz  (ncelet)
 double precision bx(ncelet),   by(ncelet),   bz(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 integer          lbloc
 parameter       (lbloc = 1024)
 
-integer          idebia, idebra, ii, jj, iel, ifac
+integer          ii, jj, iel, ifac
 integer          ibloc, nbloc, irel, idim1, idim2
 double precision aa(lbloc,3,3)
 double precision a11, a22, a33, a12, a13, a23, unsdet
@@ -110,8 +100,6 @@ double precision, allocatable, dimension(:,:,:) :: cocg
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. CALCUL DE LA MATRICE

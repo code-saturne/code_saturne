@@ -32,9 +32,7 @@ subroutine useliv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  , &
-   ra     )
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 
 !===============================================================================
 ! Purpose :
@@ -88,7 +86,6 @@ subroutine useliv &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! e  ! <-- ! nombre total de variables                      !
 ! nscal            ! e  ! <-- ! nombre total de scalaires                      !
-! ia(*)            ! tr ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules                                    !
@@ -100,7 +97,6 @@ subroutine useliv &
 !  (nfabor,*)      !    !     !    faces de bord                               !
 ! coefa coefb      ! tr ! <-- ! conditions aux limites aux                     !
 !  (nfabor,*)      !    !     !    faces de bord                               !
-! ra(*)            ! tr ! --- ! macro tableau reel                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -134,13 +130,9 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          ia(*)
-
 double precision dt(ncelet), rtp(ncelet,*), propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision ra(*)
-
 
 ! Local variables
 

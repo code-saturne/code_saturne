@@ -35,12 +35,10 @@ subroutine uslaru &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , itepa  ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
    ettp   , tepa   , vagaus , croule , auxl  ,                    &
-   distpa , distyp ,                                              &
-   ra     )
+   distpa , distyp )
 
 !===============================================================================
 ! Purpose:
@@ -73,7 +71,6 @@ subroutine uslaru &
 ! itrifb(nfabor)   ! ia ! --> ! indirection for the sorting of the             !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep)   !    !     !                                                !
-! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at cell centers for      !
 ! (ncelet,*)       !    !     ! the previous timestep                          !
@@ -94,7 +91,6 @@ subroutine uslaru &
 ! croule(ncelet    ! ra ! --> ! function of significance for                   !
 !                  !    !     ! the Russian roulette                           !
 ! auxl(nbpmax,3    ! ra ! --- !                                                !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 ! distpa(ncelet    ! ra ! <-- ! wall-normal distance arrays                    !
 ! disty(ncelet)    ! ra ! <-- ! y+ distance                                    !
 !__________________!____!_____!________________________________________________!
@@ -132,7 +128,6 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -142,7 +137,6 @@ double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*) , croule(ncelet)
 double precision auxl(nbpmax,3)
 double precision distpa(ncelet) , distyp(ncelet)
-double precision ra(*)
 
 ! Local variables
 

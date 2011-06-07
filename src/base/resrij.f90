@@ -28,18 +28,15 @@
 subroutine resrij &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gamma  ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
-   smbr   , rovsdt ,                                              &
-   ra     )
+   smbr   , rovsdt )
 
 !===============================================================================
 ! FONCTION :
@@ -55,8 +52,6 @@ subroutine resrij &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -68,7 +63,6 @@ subroutine resrij &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itpsmp           ! te ! <-- ! type de source de masse pour la                !
 ! (ncesmp)         !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -94,7 +88,6 @@ subroutine resrij &
 ! tslagi(ncelet    ! tr ! <-- ! ts implicite couplage retour lagr.             !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -126,14 +119,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          ivar   , isou   , ipp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itpsmp(ncesmp)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -146,11 +137,9 @@ double precision smcelp(ncesmp), gamma(ncesmp)
 double precision viscf(nfac), viscb(nfabor), coefax(nfabor)
 double precision tslage(ncelet),tslagi(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra, ifinia
 integer          init  , ifac  , iel   , inc   , iccocg
 integer          ii    , jj    , iiun
 integer          ipcrom, ipcvis, iflmas, iflmab, ipcroo
@@ -188,8 +177,6 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 if(iwarni(ivar).ge.1) then
   write(nfecra,1000) nomvar(ipp)
@@ -241,12 +228,9 @@ call ustsri                                                       &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   ,                                                       &
    icepdc , icetsm , itpsmp ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , ckupdc , smcelp , gamma  , produc , produc , &
-   smbr   , rovsdt ,                                              &
-!        ------   ------
-   ra     )
+   smbr   , rovsdt )
 
 !     Si on extrapole les T.S.
 if(isto2t.gt.0) then
@@ -472,14 +456,11 @@ if(irijec.eq.1) then
 
   call rijech                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar   , isou   , ipp    ,                                     &
-   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , produc , w7   ,                              &
-   coefax , viscb  ,                                              &
-   ra     )
+   coefax , viscb  )
 
 !     Si on extrapole les T.S. : PROPCE
 if(isto2t.gt.0) then
@@ -509,13 +490,10 @@ if(igrari.eq.1) then
 
   call rijthe                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar   , isou   , ipp    ,                                     &
-   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , gradro , w7     ,                            &
-   ra     )
+   coefa  , coefb  , gradro , w7     )
 
 !     Si on extrapole les T.S. : PROPCE
 if(isto2t.gt.0) then
@@ -557,10 +535,8 @@ call grdcel                                                       &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,ivar )   , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! ---> Calcul des termes extradiagonaux de A.grad(Rij)
 
@@ -579,10 +555,9 @@ call grdcel                                                       &
 ! ---> Assemblage de { A.grad(Rij) } .S aux faces
 
  call vectds                                                      &
-!!==========
- (ia     ,                                                        &
-  w4     , w5     , w6     ,                                      &
-  viscf  , viscb  , ra     )
+ !==========
+( w4     , w5     , w6     ,                                      &
+  viscf  , viscb  )
 
 init = 1
 call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
@@ -701,12 +676,9 @@ if( idiff(ivar).ge. 1 ) then
 
   call visort                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     , w2     , w3     ,                                     &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 else
 
@@ -759,23 +731,20 @@ relaxp = relaxv(ivar)
 
 call codits                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
                      coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      propfa(1,iflmas), propfb(1,iflmab),          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbr   , rtp(1,ivar)     ,                            &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 
 !===============================================================================

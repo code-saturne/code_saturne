@@ -28,12 +28,11 @@
 subroutine dvvpst &
 !================
 
- ( idbia0 , idbra0 , nummai , numtyp ,                            &
+ ( nummai , numtyp ,                                              &
    nvar   , nscal  , nvlsta , nvisbr ,                            &
    ncelps , nfacps , nfbrps ,                                     &
    itypps ,                                                       &
    lstcel , lstfac , lstfbr ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  , statce , stativ , statfb ,                   &
    tracel , trafac , trafbr ,                                     &
@@ -51,8 +50,6 @@ subroutine dvvpst &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nummai           ! ec ! <-- ! numero du maillage post                        !
 ! numtyp           ! ec ! <-- ! numero de type de post-traitement              !
 !                  !    !     ! (-1: volume, -2: bord, nummai par defaut)      !
@@ -69,7 +66,6 @@ subroutine dvvpst &
 ! lstcel(ncelps    ! te ! <-- ! liste des cellules du maillage post            !
 ! lstfac(nfacps    ! te ! <-- ! liste des faces interieures post               !
 ! lstfbr(nfbrps    ! te ! <-- ! liste des faces de bord post                   !
-! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -124,14 +120,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nummai , numtyp
 integer          nvar   , nscal  , nvlsta , nvisbr
 integer          ncelps , nfacps , nfbrps
 
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
-integer          ia(*)
 
 double precision dt(ncelet), rtpa(ncelet,*), rtp(ncelet,*)
 double precision propce(ncelet,*)
@@ -148,7 +142,6 @@ double precision ra(*)
 character*32     namevr, namev1, namev2
 character*80     name80
 
-integer          idebia, idebra, ifinia, ifinra
 integer          inc   , iccocg, nswrgp, imligp, iwarnp
 integer          isorva, isaut
 integer          ifac  , iloc  , ivar , iclvar
@@ -178,8 +171,6 @@ ipp = 0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 !     1.1. TRAITEMENT POUR LE MAILLAGE FLUIDE
@@ -652,10 +643,8 @@ else if  (numtyp .eq. -2) then
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
       !          Calcul de la valeur reconstruite dans les cellules de bord
@@ -835,10 +824,8 @@ if (nummai .eq. -1) then
         !==========
  ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statce , stativ , tracel ,                   &
-   ra     )
+   coefa  , coefb  , statce , stativ , tracel )
 
 !           La variable est deja definie sur le maillage volumique
 !           global ; on utilise donc l'indirection  (donc IVARPR = 1)
@@ -876,10 +863,8 @@ if (nummai .eq. -1) then
         !==========
  ( nvar   , nscal  , nvlsta ,                                     &
    ivarl  , ivarl1 , ivarlm , iflu   , ilpd1  , icla   ,          &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
-   coefa  , coefb  , statce , stativ , tracel ,                   &
-   ra     )
+   coefa  , coefb  , statce , stativ , tracel )
 
 !           La variable est deja definie sur le maillage volumique
 !           global ; on utilise donc l'indirection  (donc IVARPR = 1)
@@ -954,20 +939,20 @@ if (nummai.eq.-2) then
 
     enddo
 
-    NAME80 = 'lagrangian_boundary_zones'
-    namevr = name80(1:32)
+    !NAME80 = 'lagrangian_boundary_zones'
+    !namevr = name80(1:32)
 
-    do iloc = 1, nfbrps
-      ifac = lstfbr(iloc)
-      trafbr(iloc) = ia(iifrla+ifac-1)
-    enddo
+    !do iloc = 1, nfbrps
+    !  ifac = lstfbr(iloc)
+    !  trafbr(iloc) = ia(iifrla+ifac-1) !! TODO: ifrlag (cf caltri)
+    !enddo
 
-    idimt  = 1
-    ientla = 0
-    ivarpr = 0
+    !idimt  = 1
+    !ientla = 0
+    !ivarpr = 0
 
-    call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
-         ntcabs, ttcabs, rbid, rbid, trafbr)
+    !call psteva(nummai, namevr, idimt, ientla, ivarpr,            &
+    !     ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
 endif
@@ -1054,11 +1039,9 @@ if (     ippmod(ieljou).ge.1                                      &
    nvar   , nscal  ,                                              &
    ncelps , nfacps , nfbrps ,                                     &
    lstcel , lstfac , lstfbr ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   tracel , trafac , trafbr ,                                     &
-   ra     )
+   tracel , trafac , trafbr )
 
 endif
 

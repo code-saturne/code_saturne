@@ -127,7 +127,6 @@ subroutine gradrc &
 ! dofij(3,nfac)    ! tr ! --> ! vecteur of pour les faces internes             !
 !                  !    !     ! o : intersection de ij et la face              !
 !                  !    !     ! f : centre de la face                          !
-! ra(*)            ! tr ! --- ! tableau de travail pour les reels              !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

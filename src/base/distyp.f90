@@ -28,12 +28,9 @@
 subroutine distyp &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
-   ia     ,                                                       &
-   distpa , propce , disty  ,                                     &
-   ra     )
+   distpa , propce , disty  )
 
 !===============================================================================
 ! FONCTION :
@@ -58,16 +55,12 @@ subroutine distyp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! distpa(ncelet    ! tr ! <-- ! tab des distances a la paroi                   !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! disty(ncelet)    ! tr ! --> ! distance y+                                    !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -99,19 +92,15 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
-integer          ia(*)
 
 double precision distpa(ncelet),propce(ncelet,*)
 double precision disty(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          idtva0, ivar  , iconvp, idiffp
 integer          ndircp, ireslp
 integer          iescap, iflmb0, imaspe
@@ -155,8 +144,6 @@ allocate(coefbx(nfabor), coefby(nfabor), coefbz(nfabor))
 ! Allocate work arrays
 allocate(w2(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ipass  = ipass + 1
 
@@ -223,10 +210,8 @@ call grdcel                                                       &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy ,          &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
-   ia     ,                                                       &
    distpa , coefax , coefbx ,                                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 !     Normalisation (attention, le gradient peut etre nul, parfois)
@@ -302,18 +287,15 @@ ivar = 0
 
 call inimas                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar   , ivar   , ivar   , imaspe ,                            &
    iflmb0 , init   , inc    , imrgra , iccocg , nswrgy , imligy , &
    iwarny , nfecra ,                                              &
    epsrgy , climgy , extray ,                                     &
-   ia     ,                                                       &
    rom    , romb   ,                                              &
    qx     , qy     , qz     ,                                     &
    coefax , coefay , coefaz , coefbx , coefby , coefbz ,          &
-   flumas , flumab ,                                              &
-   ra     )
+   flumas , flumab )
 
 
 
@@ -362,11 +344,8 @@ isym   = 2
 
 call matrdt                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   iconvp , idiffp , isym   ,                                     &
-   ia     ,                                                       &
-   coefbx , flumas , flumab , flumas , flumab , w2     ,          &
-   ra     )
+ ( iconvp , idiffp , isym   ,                                     &
+   coefbx , flumas , flumab , flumas , flumab , w2     )
 
 !     Le Courant est COUMXY = DT W2 / VOLUME
 !         d'ou DTMINY = MIN(COUMXY * VOLUME/W2)
@@ -552,21 +531,18 @@ do ntcont = 1, ntcmxy
 
   call codits                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap ,                                     &
    imgrpy , ncymxp , nitmfp , ipp    , iwarny ,                   &
    blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
    relaxp , thetap ,                                              &
-   ia     ,                                                       &
    rtpdp  , rtpdp  ,                                              &
    coefax , coefbx , coefax , coefbx , flumas , flumab ,          &
    flumas , flumab , flumas , flumab ,                            &
    rovsdp , smbdp  , rtpdp  ,                                     &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 
 !     Clipping (indispensable si on initialise par u*/nu du pas de

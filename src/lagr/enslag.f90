@@ -31,7 +31,7 @@ subroutine enslag &
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    nfin   , iforce ,                                              &
    itepa  ,                                                       &
-   ettp   , tepa   , ra)
+   ettp   , tepa   )
 
 !===============================================================================
 ! FONCTION :
@@ -102,7 +102,6 @@ integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          nfin   , iforce
 integer          itepa(nbpmax, nivep)
 double precision ettp(nbpmax, nvp) , tepa(nbpmax, nvep)
-double precision ra(*)
 
 ! Local variables
 

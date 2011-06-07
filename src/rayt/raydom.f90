@@ -28,14 +28,11 @@
 subroutine raydom &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   ra     )
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -57,12 +54,9 @@ subroutine raydom &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -71,7 +65,6 @@ subroutine raydom &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -109,23 +102,18 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          itypfb(nfabor)
 integer          izfrad(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 
-double precision ra(*)
-
 ! Local variables
 
-integer          idebia , idebra
 integer          iappel
 integer          ifac   , iel    , iok    , izone
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
@@ -153,7 +141,6 @@ integer    ipadom
 data       ipadom /0/
 save       ipadom
 
-!==============================================================================
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
@@ -172,9 +159,6 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet))
-
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. INITIALISATIONS GENERALES
@@ -218,16 +202,13 @@ unspi = 1.d0/pi
 
   if (ippmod(iphpar).ge.2) then
 
-    call ppcabs                                                   &
+    call ppcabs &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    itypfb ,                                                      &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   w1     , w2     , w3     ,                                     &
-   ra    )
+   w1     , w2     , w3     )
 
 !-----> W10 SERT A STOCKER TEMPORAIREMENT
 !       LE COEFFICIENT D'ABSORPTION DU MELANGE GAZ-PARTICULE
@@ -328,10 +309,8 @@ unspi = 1.d0/pi
  ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   propce(1,ipproc(icak(1))),                                &
-   ra     )
+   propce(1,ipproc(icak(1))))
 
   endif
 
@@ -404,15 +383,13 @@ unspi = 1.d0/pi
  ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
    propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
-   propce(1,ipproc(icak(1)))    ,                            &
-   ra     )
+   propce(1,ipproc(icak(1)))    )
 
 
 !---> BLINDAGE POUR UN DIRICHLET SUR LA LUMINANCE
@@ -501,25 +478,20 @@ unspi = 1.d0/pi
  ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  ,              &
-   ra     )
+   propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  )
 
       else
 
         call ppray4                                               &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  ,              &
-   ra     )
+   propfb(1,ipprob(itparo)) , flurdb , tempk(1,1)  )
 
       endif
 
@@ -723,27 +695,22 @@ unspi = 1.d0/pi
 
     endif
 
-    call raypun                                                   &
+    call raypun &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    itypfb ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
-
-   propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))), &
-   propce(1,ipproc(itsre(1))) , propce(1,ipproc(iqx))  ,     &
+   propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))),           &
+   propce(1,ipproc(itsre(1))) , propce(1,ipproc(iqx))  ,          &
    propce(1,ipproc(iqy))   , propce(1,ipproc(iqz))  ,             &
    propfb(1,ipprob(iqinci)), propfb(1,ipprob(ieps)) ,             &
    propfb(1,ipprob(itparo)),                                      &
-
-   w10    ,                                                       &
-   ra     )
+   w10    )
 
 !===============================================================================
 ! 5.2 RESOLUTION DE L'EQUATION DES TRANSFERTS RADIATIFS
@@ -824,22 +791,18 @@ unspi = 1.d0/pi
 
     call raysol                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    itypfb ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))) ,&
-   propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,&
+   propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))) ,          &
+   propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,     &
    propce(1,ipproc(iqy))    , propce(1,ipproc(iqz))   ,           &
-   propfb(1,ipprob(iqinci) ), propfb(1,ipprob(ifnet)) ,           &
-   ra     )
-
+   propfb(1,ipprob(iqinci) ), propfb(1,ipprob(ifnet)) )
 
   endif
 
@@ -879,15 +842,13 @@ unspi = 1.d0/pi
  ( nvar   , nscal  , iappel ,                                     &
    itypfb ,                                                      &
    izfrad ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    cofrua , cofrub ,                                              &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
    propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ixlam))  ,          &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps))   ,          &
-   propce(1,ipproc(icak(1)))  ,                              &
-   ra     )
+   propce(1,ipproc(icak(1)))  )
 
 !---> VERIFICATION DE FLUNET
 
@@ -1174,10 +1135,8 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    propce(1,ipproc(iqx))    , cofrua , cofrub ,                   &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
     do iel = 1,ncel
       propce(iel,ipproc(itsre(1))) = - grad(iel,1)
@@ -1197,10 +1156,8 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    propce(1,ipproc(iqy))    , cofrua , cofrub ,                   &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
     do iel = 1,ncel
       propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(itsre(1))) - grad(iel,2)
@@ -1220,10 +1177,8 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    propce(1,ipproc(iqz))    , cofrua , cofrub ,                   &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
     do iel = 1,ncel
       propce(iel,ipproc(itsre(1))) =                         &

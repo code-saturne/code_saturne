@@ -28,19 +28,16 @@
 subroutine lagcel &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , icocel , itycel , ifrlag , itepa  , ibord  , &
    indep  ,                                                       &
-   ia     ,                                                       &
    dlgeo  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , parbor , auxl   ,                   &
-   ra     )
+   ettp   , ettpa  , tepa   , parbor , auxl   )
 
 !===============================================================================
 ! FONCTION :
@@ -59,8 +56,6 @@ subroutine lagcel &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -86,7 +81,6 @@ subroutine lagcel &
 !   (nbpmax)       !    !     !   face d'interaction part/frontiere            !
 ! indep            ! te ! --> ! pour chaque particule :                        !
 !   (nbpmax)       !    !     !   numero de la cellule de depart               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dlgeo            ! tr ! --> ! tableau contenant les donnees geometriques     !
 ! (nfabor,ngeol)   !    !     ! pour le sous-modele de depot                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
@@ -106,7 +100,6 @@ subroutine lagcel &
 ! parbor(nfabor    ! tr ! <-- ! cumul des statistiques aux frontieres          !
 !    nvisbr)       !    !     !                                                !
 ! auxl(nbpmax,3    ! tr ! --- ! tableau de travail                             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -136,7 +129,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          lndnod
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
@@ -147,7 +139,6 @@ integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          ibord(nbpmax)
 integer          indep(nbpmax)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -157,11 +148,9 @@ double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision parbor(nfabor,nvisbr) , auxl(nbpmax,3)
 double precision dlgeo(nfabor,ngeol)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra, ifinia
 integer          iel, ifac, kfac, nbp, icecpt
 integer          ii, jj, in, ip
 integer          indian, ifaold, ifanew
@@ -215,8 +204,6 @@ integer          nquad4 , ntria3 , nsided
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1.  INITIALISATION
@@ -1060,12 +1047,10 @@ do ip = 1,nbpart
    ntersl , nvlsta , nvisbr ,                                     &
    ifac   , ip     , isuivi ,                                     &
    itypfb , itrifb , ifrlag , itepa  , indep  ,                   &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    ettp   , ettpa  , tepa   , parbor , ettp(1,jup) ,              &
-                                       ettp(1,juf) , auxl   ,     &
-   ra     )
+                                       ettp(1,juf) , auxl   )
 
 !--> Si la particule continue sa route (ex : rebond) apres l'interaction
 !    avec la frontiere, il faut continuer a la suivre donc GOTO 100

@@ -28,15 +28,12 @@
 subroutine lageli &
 !================
 
-!      -------------------------------------------------
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npars  ,                                                       &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dnpars ,                                                       &
-   ettp   , ettpa  , tepa   ,                                     &
-   ra     )
-!      -------------------------------------------------
+   ettp   , ettpa  , tepa   )
+
 !===============================================================================
 ! FONCTION :
 ! ----------
@@ -61,7 +58,6 @@ subroutine lageli &
 !                  !    !     !   eliminees                                    !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dnpars           ! e  ! --> ! nombre max de particules sorties               !
 !                  !    !     !   eliminees  (poids stat inclus)               !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
@@ -70,7 +66,6 @@ subroutine lageli &
 !  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -100,12 +95,10 @@ implicit none
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          npars
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dnpars
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
-double precision ra(*)
 
 !  VARIABLES LOCALES
 

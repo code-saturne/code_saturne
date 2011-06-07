@@ -28,13 +28,10 @@
 subroutine perinu &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   dudxyz  ,                                                      &
-   ra     )
+   dudxyz )
 
 !===============================================================================
 ! FONCTION :
@@ -57,11 +54,8 @@ subroutine perinu &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -72,7 +66,6 @@ subroutine perinu &
 !  (nfabor, *)     !    !     !                                                !
 ! dudxyz           ! tr ! <-- ! gradient de u aux cellules halo pour           !
 !                  !    !     ! l'approche explicite en periodicite            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -102,21 +95,17 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision dudxyz(ncelet-ncel,3,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          inc, iccocg, ipiph, nswrgp, imligp, iwarnp
 integer          isou, isou1
 
@@ -133,8 +122,6 @@ double precision, allocatable, dimension(:,:) :: grad
 ! Allocate a work array
 allocate(grad(ncelet,3))
 
-idebia = idbia0
-idebra = idbra0
 
 inc = 0
 iccocg = 1
@@ -172,10 +159,8 @@ do isou = 1,3
   !==========
  ( ipiph  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtp(1,ipiph)  , coefa(1,ipiph) , coefb(1,ipiph) ,              &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
   isou1 = isou
   call peinu1                                                     &

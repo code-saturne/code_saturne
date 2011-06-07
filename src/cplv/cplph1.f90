@@ -28,8 +28,7 @@
 subroutine cplph1 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   ,                                              &
+ ( ncelet , ncel   ,                                              &
    nitbcp , nrtbcp , nitbmc , nrtbmc , nitbwo , nrtbwo ,          &
    f1m    , f2m    , f3m    , f4m    , f3p2m  , f4p2m  ,          &
    enth   ,                                                       &
@@ -96,8 +95,6 @@ subroutine cplph1 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nitbcp           ! e  ! <-- ! taille du macro tableau cp entiers             !
@@ -148,7 +145,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nitbcp , nrtbcp
 integer          nitbmc , nrtbmc
@@ -163,7 +159,6 @@ double precision rtp(ncelet,*), propce(ncelet,*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel    , ice
 integer          iitbcp , iitbmc , iitbwo
 integer          ipcte1
@@ -193,8 +188,6 @@ allocate(rtbwo(ncelet,nrtbwo))
 
 ! --- Initialisation memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Initialisation des tableaux d'entiers de travail
 

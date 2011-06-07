@@ -28,14 +28,11 @@
 subroutine visdyn &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smagor ,                                                       &
-   ra     )
+   smagor )
 
 !===============================================================================
 ! FONCTION :
@@ -57,8 +54,6 @@ subroutine visdyn &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -67,7 +62,6 @@ subroutine visdyn &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -83,7 +77,6 @@ subroutine visdyn &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! smagor(ncelet)   ! tr ! <-- ! constante de smagorinsky dans le cas           !
 !                  !    !     ! d'un modlele dynamique                         !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -113,13 +106,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -127,11 +118,9 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision smagor(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ii, iel, iccocg, inc
 integer          ipcliu, ipcliv, ipcliw
 integer          ipcrom, ipcvst
@@ -168,8 +157,6 @@ allocate(w10(ncelet))
 allocate(xmij(ncelet,6))
 
 ! --- Memoire
-idebia = idbia0
-idebra = idbra0
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvst = ipproc(ivisct)
@@ -211,10 +198,8 @@ call grdcel &
  ( iu  , imrgra , inc    , iccocg ,                      &
    nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
    nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
-   ia     ,                                              &
    rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   gradu  ,                                              &
-   ra     )
+   gradu  )
 
 ! Filtrage de W1, LE RESULTAT EST DANS W6
 
@@ -239,10 +224,8 @@ call grdcel &
  ( iv  , imrgra , inc    , iccocg ,                      &
    nswrgr(iv) , imligr(iv) , iwarni(iv) ,                &
    nfecra , epsrgr(iv) , climgr(iv) , extrag(iv) ,       &
-   ia     ,                                              &
    rtpa(1,iv) , coefa(1,ipcliv) , coefb(1,ipcliv) ,      &
-   gradv  ,                                              &
-   ra     )
+   gradv  )
 
 call cfiltr &
 !==========
@@ -283,10 +266,8 @@ call grdcel &
  ( iw  , imrgra , inc    , iccocg ,                      &
    nswrgr(iw) , imligr(iw) , iwarni(iw) ,                &
    nfecra , epsrgr(iw) , climgr(iw) , extrag(iw) ,       &
-   ia     ,                                              &
    rtpa(1,iw) , coefa(1,ipcliw) , coefb(1,ipcliw) ,      &
-   gradw  ,                                              &
-   ra     )
+   gradw  )
 
 call cfiltr &
 !==========
@@ -514,11 +495,9 @@ call ussmag                                                       &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   smagor , w1     , w2     ,                                     &
-   ra     )
+   smagor , w1     , w2     )
 
 iclipc = 0
 do iel = 1, ncel

@@ -28,13 +28,10 @@
 subroutine rijthe &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar   , isou   , ipp    ,                                     &
-   ia     ,                                                       &
    rtp    , rtpa   , propce , propfa , propfb ,                   &
-   coefa  , coefb  , gradro , smbr   ,                            &
-   ra     )
+   coefa  , coefb  , gradro , smbr   )
 
 !===============================================================================
 ! FONCTION :
@@ -49,14 +46,11 @@ subroutine rijthe &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
 ! isou             ! e  ! <-- ! numero de passage                              !
 ! ipp              ! e  ! <-- ! numero de variable pour sorties post           !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -66,7 +60,6 @@ subroutine rijthe &
 !  (nfabor, *)     !    !     !                                                !
 ! gradro(ncelet,3) ! tr ! <-- ! tableau de travail pour grad rom               !
 ! smbr(ncelet      ! tr ! --- ! tableau de travail pour sec mem                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -92,11 +85,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ivar   , isou   , ipp
 
-integer          ia(*)
 
 double precision rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -104,11 +95,9 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision gradro(ncelet,3)
 double precision smbr(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel
 
 double precision uns3, const, kseps
@@ -125,8 +114,6 @@ double precision aa, bb
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 if(iscalt.gt.0.and.nscal.ge.iscalt) then
   prdtur = sigmas(iscalt)

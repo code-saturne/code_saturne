@@ -28,17 +28,14 @@
 subroutine atmcls &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ifac   , iel    ,                                              &
    uk     , utau   , yplus  ,                                     &
    uet    ,                                                       &
    gredu  , q0     , e0     , rib    , lmo    ,                   &
    cfnnu ,  cfnns  , cfnnk  , cfnne  ,                            &
    icodcl ,                                                       &
-   ia     ,                                                       &
-   dt     , rtp    ,          propce , propfa , propfb , rcodcl , &
-   ra     )
+   dt     , rtp    , propce , propfa , propfb , rcodcl )
 
 !===============================================================================
 ! FUNCTION :
@@ -52,8 +49,6 @@ subroutine atmcls &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ifac             ! e  ! <-- ! face de bord traitee                           !
@@ -78,7 +73,6 @@ subroutine atmcls &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -97,7 +91,6 @@ subroutine atmcls &
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -131,12 +124,10 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ifac   , iel
 
 integer          icodcl(nfabor,nvar)
-integer          ia(*)
 
 double precision uk, utau, yplus, uet
 double precision gredu, rib, lmo, q0, e0
@@ -146,11 +137,9 @@ double precision dt(ncelet), rtp(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 
 double precision tpot1,tpot2,tpotv1,tpotv2
 double precision rscp1,rscp2
@@ -166,8 +155,6 @@ double precision rugd,rugt,distbf
 ! 1.  INITIALISATIONS
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 b = 5.d0
 c = 5.d0

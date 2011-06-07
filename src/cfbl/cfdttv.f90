@@ -28,16 +28,13 @@
 subroutine cfdttv &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
-   wflmas , wflmab , viscb  ,                                     &
-   ra     )
+   wflmas , wflmab , viscb  )
 
 !===============================================================================
 ! FONCTION :
@@ -50,8 +47,6 @@ subroutine cfdttv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -61,7 +56,6 @@ subroutine cfdttv &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -79,7 +73,6 @@ subroutine cfdttv &
 ! wflmas(nfac)     ! tr ! --- ! tab de trav aux faces internes                 !
 ! wflmab(nfabor    ! tr ! --- ! tab de trav aux faces de bord                  !
 ! viscb(nfabor     ! tr ! --- ! tab de trav aux faces de bord                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -110,14 +103,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iwarnp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -126,11 +117,9 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
 double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra, ifinia, ifinra
 integer          ifac  , iel   , ivar  , iscal
 integer          init
 
@@ -150,8 +139,6 @@ allocate(coefu(nfabor,3))
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 iscal  = irho
 ivar   = isca(iscal)
@@ -171,16 +158,13 @@ enddo
 
 call cfmsfl                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab ,                                              &
-   viscf  , viscb  , coefu  ,                                     &
-   ra     )
+   viscf  , viscb  , coefu  )
 
 ! ---> Sommation sur les faces (depend de si l'on explicite ou non
 !                               le terme de convection)

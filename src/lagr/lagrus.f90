@@ -28,13 +28,10 @@
 subroutine lagrus &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   ,                                              &
+ ( ncelet , ncel   ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    itepa  , indep  ,                                              &
-   ia     ,                                                       &
-   ettp   , ettpa  , tepa  , croule ,                             &
-   ra     )
+   ettp   , ettpa  , tepa  , croule )
 
 !===============================================================================
 ! FONCTION :
@@ -51,8 +48,6 @@ subroutine lagrus &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -65,7 +60,6 @@ subroutine lagrus &
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! indep(nbpmax)    ! te ! <-- ! numero de sa cellule de depart                 !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! ettp             ! tr ! <-- ! tableaux des variables liees                   !
 !  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 ! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
@@ -73,7 +67,6 @@ subroutine lagrus &
 ! tepa             ! tr ! <-- ! info particulaires (reels)                     !
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! croule(ncelet    ! tr ! <-- ! critere d'importance                           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -100,16 +93,13 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          itepa(nbpmax,nivep) , indep(nbpmax)
-integer          ia(*)
 
 double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision croule(ncelet)
-double precision ra(*)
 
 ! Local variables
 
@@ -263,10 +253,8 @@ call lageli                                                       &
  ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    npars  ,                                                       &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dnpars ,                                                       &
-   ettp   , ettpa  , tepa   ,                                     &
-   ra     )
+   ettp   , ettpa  , tepa   )
 
 if ( npars.ne.(npkill+npcsup) ) then
   write(nfecra,9000)

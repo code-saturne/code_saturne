@@ -28,14 +28,11 @@
 subroutine turrij &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    tslagr ,                                                       &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
 ! FONCTION :
@@ -49,8 +46,6 @@ subroutine turrij &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -59,7 +54,6 @@ subroutine turrij &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -75,7 +69,6 @@ subroutine turrij &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -104,13 +97,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp)
-integer          ia(*)
 
 integer, dimension(ncesmp,nvar), target :: itypsm
 
@@ -119,14 +110,12 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6)
-double precision ra(*)
 
 double precision, dimension(ncesmp,nvar), target ::  smacel
 double precision, dimension(ncelet,*), target :: tslagr
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac  , iel   , ivar  , isou  , ii
 integer          inc   , iccocg
 integer          ipp   , iwarnp, iclip
@@ -166,8 +155,6 @@ else
   allocate(grdvit(ncelet,3,3))
 endif
 
-idebia = idbia0
-idebra = idbra0
 
 icliup = iclrtp(iu,icoef)
 iclivp = iclrtp(iv,icoef)
@@ -222,10 +209,8 @@ if (iturb.eq.30) then
   !==========
  ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   gradu  ,                                                       &
-   ra     )
+   gradu  )
 
 
   do iel = 1 , ncel
@@ -260,10 +245,8 @@ if (iturb.eq.30) then
   !==========
  ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   gradv  ,                                                       &
-   ra     )
+   gradv  )
 
   do iel = 1 , ncel
 
@@ -297,10 +280,8 @@ if (iturb.eq.30) then
   !==========
  ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   gradw  ,                                                       &
-   ra     )
+   gradw  )
 
   do iel = 1 , ncel
 
@@ -349,10 +330,8 @@ else
   !==========
  ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   grdvit(1,1,1)   ,                                              &
-   ra     )
+   grdvit(1,1,1)   )
 
 
 ! Gradient suivant Y
@@ -368,10 +347,8 @@ else
   !==========
  ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   grdvit(1,2,1)   ,                                              &
-   ra     )
+   grdvit(1,2,1)   )
 
 
 ! Gradient suivant Z
@@ -387,10 +364,8 @@ else
   !==========
  ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   grdvit(1,3,1)   ,                                              &
-   ra     )
+   grdvit(1,3,1)   )
 
 endif
 
@@ -435,10 +410,8 @@ if(igrari.eq.1) then
   !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    propce(1,ipcroo), propfb(1,ipbroo), viscb           ,          &
-   gradro ,                                                       &
-   ra     )
+   gradro )
 
 endif
 
@@ -484,35 +457,29 @@ do isou = 1, 6
   if (iturb.eq.30) then
     call resrij                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , produc , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
-   smbr   , rovsdt ,                                              &
-   ra     )
+   smbr   , rovsdt )
 
   else
     !     Rij-epsilon SSG
     call resssg                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , grdvit , gradro ,                            &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  , coefax ,                                     &
    tslage , tslagi ,                                              &
-   smbr   , rovsdt ,                                              &
-   ra     )
+   smbr   , rovsdt )
   endif
 
 enddo
@@ -533,18 +500,15 @@ endif
 
 call reseps                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   , ipp    ,                                     &
    icepdc , icetsm , itpsmp ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , grdvit , produc , gradro ,                   &
    ckupdc , smcelp , gammap ,                                     &
    viscf  , viscb  ,                                              &
    tslagr ,                                                       &
-   smbr   , rovsdt ,                                              &
-   ra     )
+   smbr   , rovsdt )
 
 !===============================================================================
 ! 6. CLIPPING

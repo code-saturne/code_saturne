@@ -28,17 +28,14 @@
 subroutine cfbsc2 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   ia     ,                                                       &
    pvar   , coefap , coefbp , cofafp , cofbfp ,                   &
    flumas , flumab , viscf  , viscb  ,                            &
-   smbrp  ,                                                       &
-   ra     )
+   smbrp  )
 
 !===============================================================================
 ! FONCTION :
@@ -64,8 +61,6 @@ subroutine cfbsc2 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! e  ! <-- ! numero de la variable                          !
@@ -94,7 +89,6 @@ subroutine cfbsc2 &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! pvar (ncelet     ! tr ! <-- ! variable resolue (instant precedent)           !
 ! coefap, b        ! tr ! <-- ! tableaux des cond lim pour p                   !
 !   (nfabor)       !    !     !  sur la normale a la face de bord              !
@@ -107,7 +101,6 @@ subroutine cfbsc2 &
 ! viscb (nfabor    ! tr ! <-- ! visc*surface/dist aux faces de bord            !
 !                  !    !     !  pour second membre                            !
 ! smbrp(ncelet     ! tr ! <-- ! bilan au second membre                         !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -134,7 +127,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ivar   , iconvp , idiffp , nswrgp , imligp
 integer          ircflp , ischcp , isstpp
@@ -142,20 +134,17 @@ integer          inc    , imrgra , iccocg
 integer          iwarnp , ipp
 double precision blencp , epsrgp , climgp, extrap
 
-integer          ia(*)
 
 double precision pvar (ncelet), coefap(nfabor), coefbp(nfabor)
 double precision                cofafp(nfabor), cofbfp(nfabor)
 double precision flumas(nfac), flumab(nfabor)
 double precision viscf (nfac), viscb (nfabor)
 double precision smbrp(ncelet)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
 character*8      cnom
-integer          idebia, idebra
 integer          ifac,ii,jj,infac,iel,iupwin, iij, iii, iok
 integer          itenso, idimte
 integer          iiu,iiv,iiw
@@ -195,8 +184,6 @@ pjf = 0.d0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 chaine = nomvar(ipp)
 cnom   = chaine(1:8)
@@ -238,10 +225,8 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or.                          &
   !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    pvar   , coefap , coefbp ,                                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 else
   do iel = 1, ncelet

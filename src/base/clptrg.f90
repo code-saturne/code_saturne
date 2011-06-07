@@ -28,15 +28,12 @@
 subroutine clptrg &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    isvhb  ,                                                       &
    icodcl ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefu  , rijipb , coefa  , coefb  , visvdr ,                   &
-   hbord  , thbord ,                                              &
-   ra     )
+   hbord  , thbord )
 
 !===============================================================================
 ! FONCTION :
@@ -53,8 +50,6 @@ subroutine clptrg &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
@@ -68,7 +63,6 @@ subroutine clptrg &
 !                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -99,7 +93,6 @@ subroutine clptrg &
 ! (nfabor)         !    !     !                                                !
 ! thbord           ! tr ! <-- ! temperature aux bords en i'                    !
 ! (nfabor)         !    !     !    (plus exactmt : var. energetique)           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -135,12 +128,10 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          isvhb
 
 integer          icodcl(nfabor,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -150,11 +141,9 @@ double precision coefu(nfabor,ndim), rijipb(nfabor,6)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision visvdr(ncelet)
 double precision hbord(nfabor),thbord(nfabor)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, iel, ivar, isou, ii, jj, kk, ll, isvhbl
 integer          ihcp, iscal
 integer          modntl
@@ -211,8 +200,6 @@ ipccv = 0
 ek = 0.d0
 
 ! --- Memoire
-idebia = idbia0
-idebra = idbra0
 
 ! --- Constantes
 uet = 1.d0
@@ -518,17 +505,14 @@ do ifac = 1, nfabor
 
     call atmcls                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ifac   , iel    ,                                              &
    uk     , utau   , yplus  ,                                     &
    uet    ,                                                       &
    gredu  , q0     , e0     , rib    ,lmo     ,                   &
    cfnnu  , cfnns  , cfnnk  , cfnne  ,                            &
    icodcl ,                                                       &
-   ia     ,                                                       &
-   dt     , rtp    ,          propce , propfa , propfb , rcodcl , &
-   ra     )
+   dt     , rtp    ,          propce , propfa , propfb , rcodcl )
 
   endif
 

@@ -28,10 +28,8 @@
 subroutine ecrlis &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , ndim   , ncelet , ncel   ,                            &
+ ( nvar   , ndim   , ncelet , ncel   ,                            &
    irtp   ,                                                       &
-   ia     ,                                                       &
    rtp    , rtpa   , dt     , volume , xyzcen ,                   &
    ra     )
 
@@ -46,14 +44,11 @@ subroutine ecrlis &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
 ! ndim             ! i  ! <-- ! spatial dimension                              !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! irtp             ! e  ! <-- ! indice de rtp dans ra                          !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
 ! (ncelet,nvar)    !    !     !                                                !
 ! rtpa             ! tr ! <-- ! tableaux des variables au pdt prec             !
@@ -92,9 +87,8 @@ use ppincl
 
 implicit none
 
-integer          idbia0, idbra0, nvar, ndim, ncelet, ncel
+integer          nvar, ndim, ncelet, ncel
 integer          irtp
-integer          ia(*)
 double precision rtpa(ncelet,nvar), rtp(ncelet,nvar)
 double precision dt(ncelet), volume(ncelet)
 double precision xyzcen(ndim,ncelet)
@@ -106,7 +100,7 @@ integer          ii, jj, ic, icel, ipp, ira, ivrtp, iok
 integer          ipuvw
 integer          icmin, icmax
 integer          nbrval
-integer          idivdt, ixmsdt, idebia, idebra, ifinra, iel
+integer          idivdt, ixmsdt, iel
 double precision petit,xyzmin(3),xyzmax(3)
 character*200    chain, chainc
 
@@ -117,8 +111,6 @@ double precision, dimension(:), pointer :: varptr => null()
 ! 0. INITIALISATIONS LOCALES
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 petit  =-grand
 

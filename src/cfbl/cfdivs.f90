@@ -28,14 +28,11 @@
 subroutine cfdivs &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    rtp    , propce , propfa , propfb ,                            &
    coefa  , coefb  , ckupdc , smacel ,                            &
-   diverg , ux     , uy     , uz     ,                            &
-   ra     )
+   diverg , ux     , uy     , uz     )
 
 !===============================================================================
 ! FONCTION :
@@ -66,8 +63,6 @@ subroutine cfdivs &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -76,7 +71,6 @@ subroutine cfdivs &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -91,7 +85,6 @@ subroutine cfdivs &
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
 ! diverg(ncelet    ! tr ! --> ! div(sigma.u)                                   !
 ! ux,y,z(ncelet    ! tr ! <-- ! composantes du vecteur u                       !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -123,13 +116,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision rtp(ncelet,*)
 double precision propce(ncelet,*)
@@ -138,11 +129,9 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision diverg(ncelet)
 double precision ux(ncelet), uy(ncelet), uz(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iccocg, inc, iel, ifac, ivar, isou, ii, jj
 integer          iclvar
 integer          nswrgp, imligp, iwarnp
@@ -168,8 +157,6 @@ allocate(grad(ncelet,3))
 ! Allocate work arrays
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ipcvis = ipproc(iviscl)
 ipcvst = ipproc(ivisct)
@@ -240,10 +227,8 @@ do isou = 1, 3
   !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
 

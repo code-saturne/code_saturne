@@ -28,12 +28,9 @@
 subroutine lecamp &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   ,                                              &
+ ( ncelet , ncel   ,                                              &
    nvar   , nscal  ,                                              &
-   ia     ,                                                       &
-   rtp    ,                                                       &
-   ra     )
+   rtp    )
 
 !===============================================================================
 
@@ -51,8 +48,6 @@ subroutine lecamp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nvar             ! i  ! <-- ! total number of variables                      !
@@ -60,10 +55,8 @@ subroutine lecamp &
 ! jphas            ! e  ! <-- ! nombre de phases du calcul precedent           !
 ! ljtu             ! e  ! <-- ! longueur de jturb                              !
 ! jturb            ! te ! <-- ! modeles de turb calcul precedent               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp              ! tr ! --> ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant        )          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -92,14 +85,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision rtp(ncelet,*)
-double precision ra(*)
 
 ! Local variables
 
@@ -108,7 +98,6 @@ character        cindfp*2
 character        cphase*2
 character        ficsui*32
 
-integer          idebia, idebra
 integer          iel
 integer          ivar  , iscal , ii    ,  ivers
 integer          jphas , jvar  , jscal , jscaus, jscapp
@@ -133,8 +122,6 @@ ivar = 0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 !  ---> Banniere
 write(nfecra,1000)

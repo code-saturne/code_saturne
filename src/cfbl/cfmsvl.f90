@@ -28,14 +28,11 @@
 subroutine cfmsvl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
 ! FONCTION :
@@ -50,8 +47,6 @@ subroutine cfmsvl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -63,7 +58,6 @@ subroutine cfmsvl &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -79,7 +73,6 @@ subroutine cfmsvl &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
 !                  !    !     !  pour ivar=ipr, smacel=flux de masse           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -111,26 +104,22 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision ra(*)
 
 ! Local variables
 
 character*80     chaine
-integer          idebia, idebra
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg, isqrt , ii, jj, iii
@@ -179,8 +168,6 @@ allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
 ivar   = isca(iscal)
@@ -241,17 +228,14 @@ enddo
 
 call cfmsgs                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wflmas , wflmab , wfabg  , wfbbg  ,                            &
 !        ------   ------   ------   ------
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 
 !     Calcul du gradient de rho pour la reconstruction de rho
@@ -277,11 +261,9 @@ if(ircflp.gt.0) then
   !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    rtpa(1,ivar)    ,                                              &
    coefa(1,iclrtp(ivar,icoef)) , coefb(1,iclrtp(ivar,icoef)) ,    &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
   else
     do ii = 1, ncelet
@@ -400,16 +382,13 @@ deallocate(grad)
 
 call cfmsvs                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    iscal  ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
 !        ------   ------
-   w1     , w9     , w10    ,                                     &
-   ra     )
+   w1     , w9     , w10    )
 
 
 !     On annule la viscosité au bord afin que la contribution
@@ -459,23 +438,20 @@ thetv  = thetav(ivar)
 
 call codits                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap ,                                     &
    imgrp  , ncymxp , nitmfp , ipp    , iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   ia     ,                                                       &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
    coefa(1,iclvar) , coefb(1,iclvar) ,                            &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      wflmas          , wflmab          ,          &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rovsdt , smbrs  , rtp(1,ivar)     ,                            &
-   rvoid  ,                                                       &
-   ra     )
+   rvoid  )
 
 !===============================================================================
 ! 5. IMPRESSIONS ET CLIPPINGS
@@ -543,20 +519,16 @@ iccocg = 1
 
 call cfbsc3                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    ivar   , iconvp , idiffp , nswrgp , imligp , ircflp ,          &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    ipp    , iwarnp ,                                              &
    blencp , epsrgp , climgp , extrap ,                            &
-   ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,iclvar) , coefb(1,iclvar) ,          &
                      coefa(1,iclvaf) , coefb(1,iclvaf) ,          &
                      wflmas          , wflmab          ,          &
    viscf  , viscb  ,                                              &
-   propfa(1,iflmas), propfb(1,iflmab),                            &
-!        ----------------  ----------------
-   ra     )
+   propfa(1,iflmas), propfb(1,iflmab))
 
 
 !     Si ICONV = 0, le terme convectif n'est pas traite par CFBSC3

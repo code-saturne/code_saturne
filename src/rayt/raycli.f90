@@ -28,15 +28,12 @@
 subroutine raycli &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    isvhb  , isvtb  ,                                              &
    icodcl , itrifb , itypfb ,                                     &
    izfrad ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-   coefa  , coefb  , hbord  , tbord  ,                            &
-   ra     )
+   coefa  , coefb  , hbord  , tbord  )
 
 !===============================================================================
 ! FONCTION :
@@ -54,8 +51,6 @@ subroutine raycli &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! isvhb            ! e  ! <-- ! indicateur de sauvegarde des                   !
@@ -74,7 +69,6 @@ subroutine raycli &
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! --> ! boundary face types                            !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -99,7 +93,6 @@ subroutine raycli &
 ! (nfabor)         !    !     !                                                !
 ! tbord            ! tr ! --> ! temperature aux bords           i              !
 ! (nfabor)         !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -131,13 +124,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          isvhb  , isvtb
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
-integer          ia(*)
 integer          izfrad(nfabor)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
@@ -147,11 +138,8 @@ double precision rcodcl(nfabor,nvar,3)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision hbord(nfabor),tbord(nfabor)
 
-double precision ra(*)
-
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, iel, ideb, ivart, iscat
 integer          mode, iok, ifvu, ii, izonem, izone
 
@@ -168,7 +156,6 @@ data       ipacli /0/
 save       ipacli
 
 !===============================================================================
-!===============================================================================
 ! 0 - GESTION MEMOIRE
 !===============================================================================
 
@@ -177,10 +164,6 @@ allocate(isothm(nfabor))
 
 allocate(tempk(ncelet))
 allocate(text(nfabor), tint(nfabor))
-
-idebia = idbia0
-idebra = idbra0
-
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -287,15 +270,13 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
    itypfb ,                                                       &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
    tbord  , propfb(1,ipprob(ifnet))  , propfb(1,ipprob(ihconv))  ,&
    propfb(1,ipprob(ifconv)),                                      &
    propfb(1,ipprob(ixlam)) , propfb(1,ipprob(iepa)) ,             &
    propfb(1,ipprob(ieps))  ,                                      &
-   text   , tint           ,                                      &
-   ra     )
+   text   , tint   )
 
       write(nfecra,1000)
 
@@ -361,14 +342,12 @@ endif
    itypfb ,                                                       &
    icodcl , izfrad , isothm ,                                     &
    tmin   , tmax   , tx     ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
    tbord  , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv))  ,&
    propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
    propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
-   text   , tint   ,                                              &
-   ra     )
+   text   , tint   )
 
 !===============================================================================
 ! 3.2 CONTROLE DES DONNEES UTILISATEUR
@@ -620,29 +599,22 @@ endif
  ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   propfb(1,ipprob(itparo)) , tbord  , tempk  ,                   &
+   propfb(1,ipprob(itparo)) , tbord  , tempk  )
 !                                   Resultat : T en K
-   ra     )
 
     else
 
       call ppray4                                                 &
       !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
-
+ ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
-
    itypfb ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   propfb(1,ipprob(itparo)) , tbord  , tempk  ,                   &
+   propfb(1,ipprob(itparo)) , tbord  , tempk  )
 !                                   Resultat : T en K
-   ra     )
 
     endif
 
@@ -697,25 +669,17 @@ endif
 
     call raypar                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
+ ( nvar   , nscal  ,                                             &
    itypfb ,                                                      &
-
    icodcl , isothm , izfrad ,                                     &
-
-   ia     ,                                                       &
-
    tmin   , tmax   , tx     ,                                     &
    dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
    coefa  , coefb  ,                                              &
-
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(iqinci)) ,          &
    text   , tint   ,                                              &
    propfb(1,ipprob(ixlam))  , propfb(1,ipprob(iepa))   ,          &
    propfb(1,ipprob(ieps))   , propfb(1,ipprob(ihconv)) ,          &
-   propfb(1,ipprob(ifconv)) , tempk  ,                            &
-
-   ra     )
+   propfb(1,ipprob(ifconv)) , tempk  )
 
   endif
 
@@ -788,31 +752,24 @@ endif
  ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
-   tempk  ,                                                       &
+   tempk  )
 !                          HPAROI
-   ra     )
 
       else
 
         call ppray4                                               &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
-
+ ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
-
    itypfb ,                                                      &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    propfb(1,ipprob(itparo)) , propfb(1,ipprob(ifnet))  ,          &
-   tempk  ,                                                       &
+   tempk  )
 !                          HPAROI
-   ra     )
 
       endif
 
@@ -835,29 +792,22 @@ endif
  ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
    itypfb ,                                                      &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   text   , tbord  , tempk  ,                                     &
+   text   , tbord  , tempk  )
 !                       HEXT
-   ra     )
 
       else
 
         call ppray4                                               &
         !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  ,                                             &
-
+ ( nvar   , nscal  ,                                             &
    mode   ,                                                       &
-
    itypfb ,                                                      &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   text   , tbord  , tempk  ,                                     &
+   text   , tbord  , tempk  )
 !                       HEXT
-   ra     )
 
       endif
 

@@ -28,11 +28,11 @@
 subroutine memtri &
 !================
 
- ( idbia0 , idbra0 ,                                              &
+ ( idebra ,                                                       &
    nvar   , nscal  ,                                              &
    nproce ,                                                       &
    idt    , itpuco , irtp   , irtpa  , ipropc ,                   &
-   ifinia , ifinra )
+   ifinra )
 
 !===============================================================================
 !  FONCTION
@@ -45,8 +45,6 @@ subroutine memtri &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nproce           ! e  ! <-- ! nombre de prop phy aux centres                 !
@@ -54,8 +52,6 @@ subroutine memtri &
 ! itpuco           ! e  ! --> ! "pointeur" sur tpucou                          !
 ! irtp, irtpa      ! e  ! --> ! "pointeur" sur rtp, rtpa                       !
 ! ipropc           ! e  ! --> ! "pointeur" sur propce                          !
-! ifinia           ! i  ! --> ! number of first free position in ia (at exit)  !
-! ifinra           ! i  ! --> ! number of first free position in ra (at exit)  !
 !__________________.____._____.________________________________________________.
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -94,17 +90,16 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
+integer          idebra
 integer          nvar   , nscal
 integer          nproce
 integer          idt    , itpuco
 integer          irtp   , irtpa
 integer          ipropc
-integer          ifinia , ifinra
+integer          ifinra
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iis, ippu, ippv, ippw, ivar, iprop
 integer          imom, idtnm
 integer          iipuco
@@ -116,11 +111,9 @@ integer          iipuco
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
-! 2. PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINIA IFINRA
+! 2. PLACE MEMOIRE RESERVEE AVEC DEFINITION DE IFINRA
 !===============================================================================
 
 ! Work arrays "tpucou"
@@ -129,9 +122,6 @@ if (ipucou.eq.1 .or. ncpdct.gt.0) then
   iipuco = 1
 endif
 
-! No integer array
-ifinia = idebia
-
 ! Allocate main real arrays
 irtp   = idebra
 irtpa  = irtp   + ncelet *nvar
@@ -139,9 +129,6 @@ ipropc = irtpa  + ncelet *nvar
 idt    = ipropc + ncelet *nproce
 itpuco = idt    + ncelet
 ifinra = itpuco + ncelet *ndim*iipuco
-
-call iasize('memtri',ifinia)
-!==========
 
 call rasize('memtri',ifinra)
 !==========

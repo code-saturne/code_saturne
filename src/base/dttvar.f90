@@ -28,14 +28,11 @@
 subroutine dttvar &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , ckupdc , smacel ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , smacel )
 
 !===============================================================================
 ! FONCTION :
@@ -54,8 +51,6 @@ subroutine dttvar &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -65,7 +60,6 @@ subroutine dttvar &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -79,7 +73,6 @@ subroutine dttvar &
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,nvar)    !    !     !  source de masse                               !
 !                  !    !     ! pour ivar=ipr, smacel=flux de masse            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -111,14 +104,12 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iwarnp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -126,13 +117,11 @@ double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
-double precision ra(*)
 
 ! Local variables
 
 character*8      cnom
 
-integer          idebia, idebra
 integer          ifac, iel, icfmax, icfmin, idiff0, iconv0, isym
 integer          modntl
 integer          ipcvis, ipcvst
@@ -176,8 +165,6 @@ endif
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 iflmas  = ipprof(ifluma(iu))
 iflmab  = ipprob(ifluma(iu))
@@ -237,17 +224,14 @@ enddo
 
     call cfdttv                                                   &
     !==========
- ( idebia , idebra ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iwarnp ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel ,                            &
    wcf    ,                                                       &
 !        ---
-   viscf  , viscb  , cofbdt ,                                     &
-   ra     )
+   viscf  , viscb  , cofbdt )
 
   endif
 
@@ -268,12 +252,9 @@ if( idiff(iu).ge. 1 ) then
   enddo
   call viscfa                                                     &
   !==========
- ( idebia , idebra ,                                              &
-   imvisf ,                                                       &
-   ia     ,                                                       &
+ ( imvisf ,                                                       &
    w1     ,                                                       &
-   viscf  , viscb  ,                                              &
-   ra     )
+   viscf  , viscb  )
 
 else
   do ifac = 1, nfac
@@ -322,10 +303,8 @@ if (idtvar.ge.0) then
     !==========
  ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    propce(1,ipcrom), propfb(1,ipbrom), coefbr ,                   &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
     do iel = 1, ncel
       w3(iel) = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)&
@@ -366,12 +345,9 @@ if (idtvar.ge.0) then
 
       call matrdt &
       !==========
- ( idebia , idebra ,                                              &
-   iconv(iu)    , idiff0          , isym   ,                      &
-   ia     ,                                                       &
+ ( iconv(iu)    , idiff0          , isym   ,                      &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam    ,                                                       &
-   ra     )
+   dam    )
 
       do iel = 1, ncel
         rom = propce(iel,ipcrom)
@@ -420,12 +396,9 @@ if (idtvar.ge.0) then
 
       call matrdt &
       !==========
- ( idebia , idebra ,                                              &
-   iconv0          , idiff(iu)    , isym   ,                      &
-   ia     ,                                                       &
+ ( iconv0          , idiff(iu)    , isym   ,                      &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam    ,                                                       &
-   ra     )
+   dam    )
 
       do iel = 1, ncel
         rom = propce(iel,ipcrom)
@@ -657,12 +630,9 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( idebia , idebra ,                                              &
-   iconv(iu)    , idiff0          , isym   ,                      &
-   ia     ,                                                       &
+ ( iconv(iu)    , idiff0          , isym   ,                      &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam    ,                                                       &
-   ra     )
+   dam    )
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -743,12 +713,9 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( idebia , idebra ,                                              &
-   iconv0          , idiff(iu)    , isym   ,                      &
-   ia     ,                                                       &
+ ( iconv0          , idiff(iu)    , isym   ,                      &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam    ,                                                       &
-   ra     )
+   dam    )
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -833,12 +800,9 @@ if (idtvar.ge.0) then
 
     call matrdt &
     !==========
- ( idebia , idebra ,                                              &
-   iconv(iu)    , idiff(iu)    , isym   ,                         &
-   ia     ,                                                       &
+ ( iconv(iu)    , idiff(iu)    , isym   ,                         &
    cofbdt , propfa(1,iflmas), propfb(1,iflmab), viscf  , viscb  , &
-   dam    ,                                                       &
-   ra     )
+   dam    )
 
     do iel = 1, ncel
       rom = propce(iel,ipcrom)
@@ -977,13 +941,10 @@ else
 
   call matrdt &
   !==========
- ( idebia , idebra ,                                              &
-   iconv(iu)    , idiff(iu)    , isym,                            &
-   ia     ,                                                       &
+ ( iconv(iu)    , idiff(iu)    , isym,                            &
    coefb(1,iu)  , propfa(1,iflmas), propfb(1,iflmab),             &
                                                 viscf  , viscb  , &
-   dt     ,                                                       &
-   ra     )
+   dt     )
 
   do iel = 1, ncel
     dt(iel) = relaxv(iu)*propce(iel,ipcrom)                    &

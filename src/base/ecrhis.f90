@@ -72,7 +72,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0, idbra0
 integer          ndim, ncelet, ncel
 integer          modhis
 double precision xyzcen(ndim, ncelet)
@@ -83,7 +82,7 @@ double precision, dimension(*), target :: ra
 character        nompre*300, nomhis*300
 integer          tplnum, ii, ii1, ii2, lpre, lnom, lng
 integer          icap, ncap, ipp, ira, ipp2, jtcabs
-integer          idivdt, ixmsdt, idebia, idebra, ifinra, iel
+integer          idivdt, ixmsdt, iel
 integer          nbcap(nvppmx)
 double precision xtcabs
 double precision varcap(ncaptm)

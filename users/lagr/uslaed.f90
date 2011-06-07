@@ -35,11 +35,9 @@ subroutine uslaed &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
-   auxl1  , auxl2  , auxl3  ,                                     &
-   ra     )
+   auxl1  , auxl2  , auxl3  )
 
 !===============================================================================
 ! Purpose :
@@ -98,7 +96,6 @@ subroutine uslaed &
 ! (nbpmax,nivep    !    !     !                                                !
 ! ibord            ! ia ! <-- ! number of the boundary face of part./wall      !
 !   (nbpmax)       !    !     ! interaction                                    !
-! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! ra ! <-- ! transported variables at the current           !
 ! (ncelet,*)       !    !     ! and previous time step                         !
@@ -124,7 +121,6 @@ subroutine uslaed &
 ! auxl1(nbpmax)    ! ra ! ---   work array                                     !
 ! auxl2(nbpmax)    ! ra ! --- ! work array                                     !
 ! auxl3(nbpmax)    ! ra ! --- ! work array                                     !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -158,7 +154,6 @@ integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep)  , ibord(nbpmax)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
@@ -168,7 +163,6 @@ double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax), auxl2(nbpmax), auxl3(nbpmax)
-double precision ra(*)
 
 ! Local variables
 

@@ -57,12 +57,8 @@ subroutine usstr1 &
 !================
 
  ( idfstr ,                                                       &
-   ia     ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
-   xstr0  , vstr0  , xstreq ,                                     &
-   ra     )
-
-
+   xstr0  , vstr0  , xstreq )
 
 !===============================================================================
 ! Purpose :
@@ -77,7 +73,6 @@ subroutine usstr1 &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! idfstr(nfabor)   ! ia ! <-- ! boundary faces -> structure definition         !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! aexxst,bexxst    ! r  ! <-- ! prediction coefficients of structural data     !
 ! cfopre           ! r  ! <-- ! prediction coefficients of fluid forces        !
 ! xstr0(ndim,      ! ra ! <-- ! initial displacement of internal structures    !
@@ -86,7 +81,6 @@ subroutine usstr1 &
 !       nbstru)    !    !     !                                                !
 ! xstreq(ndim,     ! ra ! <-- ! displacement of initial mesh compared to       !
 !       nbstru)    !    !     ! the structures position at equilibrium         !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -116,12 +110,10 @@ implicit none
 integer          nbstru
 
 integer          idfstr(nfabor)
-integer          ia(*)
 
 double precision aexxst, bexxst, cfopre
 double precision xstr0(3,nstrmx), xstreq(3,nstrmx)
 double precision vstr0(3,nstrmx)
-double precision ra(*)
 
 ! Local variables
 
@@ -268,13 +260,9 @@ subroutine usstr2 &
 
  ( nbstru ,                                                       &
    idfstr ,                                                       &
-   ia     ,                                                       &
    dtcel  ,                                                       &
    xmstru , xcstru , xkstru , xstreq , xstr   , vstr   , forstr , &
-   dtstr  ,                                                       &
-   ra     )
-
-
+   dtstr  )
 
 !===============================================================================
 ! Purpose :
@@ -292,7 +280,6 @@ subroutine usstr2 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! idfstr(nfabor    ! te ! <-- ! definition des structures                      !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dtcel(ncelet)    ! ra ! <-- ! time step (per cell)                           !
 ! xmstru(ndim,     ! ra ! --> ! matrix of structural mass                      !
 !  ndim,nbstru)    !    !     !                                                !
@@ -309,7 +296,6 @@ subroutine usstr2 &
 ! forstr(ndim      ! ra ! <-- ! forces acting on structures (take forces       !
 !       nbstru)    !    !     !         due to fluid effects into account   )  !
 ! dtstr(nbstru)    ! ra ! --> ! structural time step                           !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -338,7 +324,6 @@ implicit none
 integer          nbstru
 
 integer          idfstr(nfabor)
-integer          ia(*)
 
 double precision dtcel(ncelet)
 double precision xmstru(3,3,nstrmx)
@@ -349,7 +334,6 @@ double precision xstr(3,nstrmx)
 double precision vstr(3,nstrmx)
 double precision forstr(3,nstrmx)
 double precision dtstr(nstrmx)
-double precision ra(*)
 
 ! VARIABLES LOCALES
 

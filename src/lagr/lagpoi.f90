@@ -28,17 +28,14 @@
 subroutine lagpoi &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   lndnod ,                                                       &
+ ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    icocel , itycel , ifrlag , itepa  ,                            &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , statis ,                                     &
-   ra     )
+   ettp   , tepa   , statis )
 
 !===============================================================================
 ! FONCTION :
@@ -57,8 +54,6 @@ subroutine lagpoi &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
@@ -78,7 +73,6 @@ subroutine lagpoi &
 ! (nfabor)         !    !     !  pour le module lagrangien                     !
 ! itepa            ! te ! --> ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -93,7 +87,6 @@ subroutine lagpoi &
 ! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! statis           ! tr ! <-- ! moyennes statistiques                          !
 !(ncelet,nvlsta    !    !     !                                                !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -125,7 +118,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          lndnod
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
@@ -133,7 +125,6 @@ integer          ntersl , nvlsta , nvisbr
 
 integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor) ,  itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -141,12 +132,9 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
-integer          ifinia, ifinra
 integer          npt , iel , ifac
 integer          ivar0
 integer          inc, iccocg
@@ -162,8 +150,6 @@ double precision, allocatable, dimension(:) :: coefap, coefbp
 ! 0.  GESTION MEMOIRE
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -188,14 +174,11 @@ enddo
 
 call lageqp                                                       &
 !==========
- ( ifinia , ifinra ,                                              &
-   nvar   , nscal  ,                                              &
-   ia     ,                                                       &
+ ( nvar   , nscal  ,                                              &
    dt     , propce , propfa , propfb ,                            &
    statis(1,ilvx)  , statis(1,ilvy)  , statis(1,ilvz)  ,          &
    statis(1,ilfv)  ,                                              &
-   phil   ,                                                       &
-   ra     )
+   phil   )
 
 ! Calcul du gradient du Correcteur PHI
 ! ====================================
@@ -236,10 +219,8 @@ call grdcel                                                       &
 !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    phil   , coefap , coefbp ,                                     &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! Free memory
 deallocate(phil)

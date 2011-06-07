@@ -28,15 +28,12 @@
 subroutine cfmsvs &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    iscal  ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
    viscf  , viscb  ,                                              &
-   w1     , w2     , w3     ,                                     &
-   ra     )
+   w1     , w2     , w3     )
 
 !===============================================================================
 ! FONCTION :
@@ -50,14 +47,11 @@ subroutine cfmsvs &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itspdv           ! e  ! <-- ! calcul termes sources prod et dissip           !
 !                  !    !     !  (0 : non , 1 : oui)                           !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -71,7 +65,6 @@ subroutine cfmsvs &
 ! viscf(nfac)      ! tr ! --> ! visc*surface/dist aux faces internes           !
 ! viscb(nfabor     ! tr ! --> ! visc*surface/dist aux faces de bord            !
 ! w1..3(ncelet)    ! tr ! --- ! tableau de travail                             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -104,11 +97,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          iscal
 
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -116,11 +107,9 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision viscf(nfac), viscb(nfabor)
 double precision w1(ncelet) , w2(ncelet) , w3(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac  , iel
 
 integer          imvis1, iccfth, imodif
@@ -133,8 +122,6 @@ double precision rvoid(1)
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 do ifac = 1, nfac
   viscf(ifac) = 0.d0
@@ -170,14 +157,9 @@ imvis1 = 1
 
 call viscfa                                                       &
 !==========
- ( idebia , idebra ,                                              &
-   imvis1 ,                                                       &
-   ia     ,                                                       &
+ ( imvis1 ,                                                       &
    w1     ,                                                       &
-   viscf  , viscb  ,                                              &
-!        ------   ------
-   ra     )
-
+   viscf  , viscb  )
 
 !     Au bord, voir le sous-programme appelant.
 

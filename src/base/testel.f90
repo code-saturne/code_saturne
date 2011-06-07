@@ -28,11 +28,8 @@
 subroutine testel &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   ,                                                       &
-   ia     ,                                                       &
-   rtp    , coefa  , coefb  ,                                     &
-   ra     )
+ ( nvar   ,                 &
+   rtp    , coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -43,18 +40,14 @@ subroutine testel &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
 ! w1,2,3,4,5,6     ! ra ! --- ! work arrays                                    !
 !  (ncelet)        !    !     !  (computation of pressure gradient)            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -83,18 +76,14 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar
 
-integer          ia(*)
 
 double precision rtp(ncelet,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra, ifinia, ifinra
 integer          ifac  , iel   , ivar
 integer          inc   , iccocg
 integer          nswrgp, imligp, iwarnp
@@ -117,8 +106,6 @@ double precision, allocatable, dimension(:,:) :: grad
 
 ! Allocate temporary arrays
 allocate(grad(ncelet,3))
-
-ifinia = idbia0
 
 ! On positionne l'indicateur ALE a 1 de maniere a forcer le recalcul
 ! de la contribution des cellules de bord a chaque appel de GRDCEL
@@ -200,10 +187,8 @@ call grdcel &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! On sort le gradient
 
@@ -246,10 +231,8 @@ call grdcel &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! On sort le gradient
 
@@ -292,10 +275,8 @@ call grdcel &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! On sort le gradient
 
@@ -338,10 +319,8 @@ call grdcel &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! On sort le gradient
 
@@ -389,10 +368,8 @@ call grdcel &
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtp(1,ivar)     , coefa(1,ipclip) , coefb(1,ipclip) ,          &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 ! On sort le gradient
 

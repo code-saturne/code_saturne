@@ -25,12 +25,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cregeo &
+subroutine cregeo
 !================
-
- ( idbia0 , idbra0 ,                                              &
-   ia     ,                                                       &
-   ra     )
 
 !===============================================================================
 !  FONCTION
@@ -43,10 +39,6 @@ subroutine cregeo &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -75,11 +67,8 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 
-integer          ia(*)
 
-double precision ra(*)
 
 ! Local variables
 
@@ -97,9 +86,7 @@ allocate(lcel(ncel), lfac(nfac), lfabor(nfabor))
 
 call usdpst &
 !==========
- ( lcel , lfac , lfabor ,   &
-   ia     ,                 &
-   ra     )
+ ( lcel , lfac , lfabor )
 
 ! Free memory
 deallocate(lcel, lfac, lfabor)
@@ -127,10 +114,8 @@ endif
 if (ippmod(iaeros).ge.0) then
 
 
-  call usctdz                                                     &
+  call usctdz
   !==========
- ( ia     ,                                                       &
-   ra     )
 
   call nbzect(nbzech)
   !==========

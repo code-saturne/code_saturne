@@ -28,11 +28,9 @@
 subroutine lagini &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ncelet , ncel   , nfac   , nfabor ,                            &
+ ( ncelet , ncel   , nfac   , nfabor ,                            &
    lndnod ,                                                       &
-   ifacel , ifabor ,                                              &
-   ia     , ra     )
+   ifacel , ifabor )
 
 !===============================================================================
 ! FONCTION :
@@ -48,8 +46,6 @@ subroutine lagini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre d'elements                              !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
@@ -57,8 +53,6 @@ subroutine lagini &
 ! lndnod           ! e  ! --> ! dim. connect. cellules->faces                  !
 ! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
 ! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -83,18 +77,14 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ncelet , ncel
 integer          nfac   , nfabor
 integer          lndnod
 integer          ifacel(2,nfac)  , ifabor(nfabor)
-integer          ia(*)
 
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel , ifac , ip
 
 integer, allocatable, dimension(:) :: nbrfac
@@ -107,8 +97,6 @@ integer, allocatable, dimension(:) :: nbrfac
 ! Allocate a temporary array
 allocate(nbrfac(ncelet))
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. Calcul de la dimension du tableau de connectivites cellules->faces

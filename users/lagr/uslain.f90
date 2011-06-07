@@ -36,11 +36,9 @@ subroutine uslain &
    ntersl , nvlsta , nvisbr ,                                     &
    nptnew ,                                                       &
    itypfb , itrifb , itepa  , ifrlag , injfac ,                   &
-   ia     ,                                                       &
    dt     , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  ,                                              &
-   ettp   , tepa   , vagaus ,                                     &
-   ra     )
+   ettp   , tepa   , vagaus )
 
 !===============================================================================
 ! Purpose:
@@ -82,7 +80,6 @@ subroutine uslain &
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
 ! injfac(nptnew    ! ia ! <-- ! number of the injection boundary face          !
-! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at the previous timestep !
 ! (ncelet,*)       !    !     !                                                !
@@ -100,7 +97,6 @@ subroutine uslain &
 ! (nbpmax,nvep)    !    !     !                                                !
 ! vagaus           ! ra ! --> ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -140,7 +136,6 @@ integer          nptnew
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
 integer          injfac(nbpnew)
-integer          ia(*)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -148,7 +143,6 @@ double precision propfa(nfac,*) , propfb(nfabor,*)
 double precision coefa(nfabor,*) , coefb(nfabor,*)
 double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
-double precision ra(*)
 
 ! Local variables
 
@@ -277,10 +271,8 @@ if ( 1.eq.0 ) then
     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
     npar1  , npar2  ,                                             &
     itepa  ,                                                      &
-    ia     ,                                                      &
     rtpa   ,                                                      &
-    ettp   , tepa   , vagaus ,                                    &
-    ra     )
+    ettp   , tepa   , vagaus )
 
 endif
 

@@ -28,16 +28,13 @@
 subroutine csc2cl &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nvcp   , nvcpto , nfbcpl , nfbncp ,                            &
    icodcl , itrifb , itypfb ,                                     &
    lfbcpl , lfbncp ,                                              &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl ,                                     &
-   rvcpfb , pndcpl , dofcpl ,                                     &
-   ra     )
+   rvcpfb , pndcpl , dofcpl )
 
 !===============================================================================
 ! Purpose:
@@ -50,8 +47,6 @@ subroutine csc2cl &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! boundary condition code at boundary faces      !
@@ -67,7 +62,6 @@ subroutine csc2cl &
 !                  !    !     !  the usual Neumann                             !
 ! itrifb           ! ia ! <-- ! indirection for boundary faces ordering        !
 ! itypfb           ! ia ! --> ! boundary face types                            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -86,7 +80,6 @@ subroutine csc2cl &
 !                  !    !     ! for pressure:                dt*gradp          !
 !                  !    !     ! for scalars:                                   !
 !                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -115,7 +108,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nvcp   , nvcpto
 integer          nfbcpl , nfbncp
@@ -123,7 +115,6 @@ integer          nfbcpl , nfbncp
 integer          icodcl(nfabor,nvar)
 integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
 integer          itrifb(nfabor), itypfb(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -132,11 +123,9 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
 double precision dofcpl(3,nfbcpl)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          ifac, iel,isou
 integer          inc, iccocg, iclvar, nswrgp, imligp
 integer          iwarnp, ivar
@@ -157,8 +146,6 @@ double precision, allocatable, dimension(:,:) :: grad
 !===============================================================================
 
 
-idebia = idbia0
-idebra = idbra0
 
 
 !===============================================================================
@@ -193,10 +180,8 @@ do ivar = 1, nvcp
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   ia     ,                                                       &
    rtp(1,ivar) , coefa(1,iclvar) , coefb(1,iclvar) ,              &
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
 
   ! For a specific face to face coupling, geometric assumptions are made

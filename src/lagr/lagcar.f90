@@ -28,17 +28,14 @@
 subroutine lagcar &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , propce , propfa , propfb ,                   &
    ettp   , ettpa  , tepa   , taup   , tlag   ,                   &
    piil   , bx     , tempct , statis ,                            &
-   gradpr , gradvf , energi , dissip , romp   ,                   &
-   ra     )
+   gradpr , gradvf , energi , dissip , romp   )
 
 !===============================================================================
 ! FONCTION :
@@ -54,8 +51,6 @@ subroutine lagcar &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
@@ -68,7 +63,6 @@ subroutine lagcar &
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! itepa            ! te ! <-- ! info particulaires (entiers)                   !
 ! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ia(*)            ! te ! --- ! macro tableau entier                           !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
@@ -96,7 +90,6 @@ subroutine lagcar &
 ! energi(ncelet    ! tr ! --- ! tableau de travail                             !
 ! dissip(ncelet    ! tr ! --- ! tableau de travail                             !
 ! romp(nbpmax)     ! tr ! --- ! tableau de travail                             !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -128,12 +121,10 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 integer          itepa(nbpmax,nivep)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*)
 double precision propce(ncelet,*)
@@ -146,11 +137,9 @@ double precision tempct(nbpmax,2)
 double precision statis(ncelet,nvlsta)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision energi(ncelet) , dissip(ncelet), romp(nbpmax)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel , ip , id , igvx , igvy , igvz , ivt
 integer          iromf
 
@@ -179,8 +168,6 @@ ktil = 0.d0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. INITIALISATIONS
@@ -260,11 +247,9 @@ do ip = 1,nbpart
      ( nvar   , nscal  ,                                          &
        nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
        ip     , itepa  ,                                          &
-       ia     ,                                                   &
        rep    , uvwr   , rom    , romp(ip) , xnul , taup(ip) ,    &
        dt     , rtp    , propce , propfa , propfb ,               &
-       ettp   , ettpa  , tepa   ,                                 &
-       ra     )
+       ettp   , ettpa  , tepa   )
 
 !--->  CALCUL DE Tc
 
@@ -319,12 +304,10 @@ do ip = 1,nbpart
      ( nvar   , nscal  ,                                          &
        nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
        ip     , itepa  ,                                          &
-       ia     ,                                                   &
        rep    , uvwr   , rom    , romp(ip) , xnul ,               &
        xcp    , xrkl   , tempct(ip,1) ,                           &
        dt     , rtp    , propce , propfa , propfb ,               &
-       ettp   , ettpa  , tepa   ,                                 &
-       ra     )
+       ettp   , ettpa  , tepa   )
 
 ! Terme source implicite pour le couplage retour thermique
 

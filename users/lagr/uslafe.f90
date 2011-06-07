@@ -35,14 +35,12 @@ subroutine uslafe &
    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
    ntersl , nvlsta , nvisbr ,                                     &
    itepa  , ibord  ,                                              &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    ettp   , ettpa  , tepa   , statis , stativ ,                   &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
-   romp   , fextla ,                                              &
-   ra     )
+   romp   , fextla )
 
 !===============================================================================
 ! Purpose:
@@ -79,7 +77,6 @@ subroutine uslafe &
 ! (nbpmax,nivep)   !    !     !                                                !
 ! ibord(nbpmax)    ! ia ! --> ! if nordre=2, contains the number of the        !
 !                  !    !     ! boundary face of particle/wall interaction     !
-! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers for      !
 ! (ncelet,*)       !    !     ! the current and the previous time step         !
@@ -115,7 +112,6 @@ subroutine uslafe &
 ! gradvf(ncel,3)   ! ra ! <-- ! gradient of the flow velocity                  !
 ! romp             ! ra ! --- ! particle density                               !
 ! fextla(ncelet,3) ! ra ! --> ! user external force field (m/s^2)              !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -152,7 +148,6 @@ integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 integer          itepa(nbpmax,nivep) , ibord(nbpmax)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -168,7 +163,6 @@ double precision vagaus(nbpmax,*)
 double precision gradpr(ncelet,3) , gradvf(ncelet,9)
 double precision romp(nbpmax)
 double precision fextla(nbpmax,3)
-double precision ra(*)
 
 ! Local variables
 

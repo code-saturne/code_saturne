@@ -28,17 +28,12 @@
 subroutine ppray4 &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
-
+ ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
-
    itypfb ,                                                       &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   tparop , hparop , tempk  ,                                     &
-   ra     )
+   tparop , hparop , tempk  )
 
 !===============================================================================
 ! FONCTION :
@@ -68,13 +63,10 @@ subroutine ppray4 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! mode             ! e  ! <-- ! type de conversion enthal<->tempk              !
 ! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -89,7 +81,6 @@ subroutine ppray4 &
 ! hparop(nfabor    ! tr ! --> ! enthalpie massique de paroi en j/kg            !
 !                  !    !     ! (en degres celsius ou kelvin)                  !
 ! tparop(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -123,13 +114,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          mode
 
 integer          itypfb(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -139,12 +128,10 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision tempk(ncelet)
 double precision tparop(nfabor), hparop(nfabor)
 
-double precision ra(*)
 
 
 ! Local variables
 
-integer          idebia , idebra
 integer          iel , ifac , icla , icha , isol , ige
 integer          ipcx2c , ixchcl, ixckcl, ixnpcl, igg, iii
 integer          iesp
@@ -160,8 +147,6 @@ double precision diamgt,masgut,mkgout,mfgout,mkfini,rhofol
 ! 0 - GESTION MEMOIRE
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1 - INITIALISATIONS GENERALES

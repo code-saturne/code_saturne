@@ -28,14 +28,11 @@
 subroutine ecrava &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
+ ( ndim   , ncelet , ncel   , nfac   , nfabor , nnod   ,          &
    nvar   , nscal  ,                                              &
-   ia     ,                                                       &
    xyzcen , surfac , surfbo , cdgfac , cdgfbo ,                   &
    dt     , rtp    , propce , propfa , propfb ,                   &
-   coefa  , coefb  , frcxt  ,                                     &
-   ra     )
+   coefa  , coefb  , frcxt  )
 
 !===============================================================================
 
@@ -50,8 +47,6 @@ subroutine ecrava &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfac             ! i  ! <-- ! number of interior faces                       !
@@ -59,7 +54,6 @@ subroutine ecrava &
 ! nnod             ! e  ! <-- ! nombre de noeuds                               !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant)                  !
@@ -70,7 +64,6 @@ subroutine ecrava &
 !  (nfabor, *)     !    !     !                                                !
 ! frcxt(ncelet,3)  ! tr ! <-- ! force exterieure generant la pression          !
 !                  !    !     !  hydrostatique                                 !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -107,11 +100,9 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          ndim   , ncelet , ncel   , nfac   , nfabor, nnod
 integer          nvar   , nscal
 
-integer          ia(*)
 
 double precision xyzcen(ndim,ncelet)
 double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
@@ -121,7 +112,6 @@ double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
 double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision frcxt(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 
@@ -138,7 +128,6 @@ character        nomflu(nvarmx)*18, nomrtp(nvarmx)*20
 character        nomcli(nvarmx)*18
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
-integer          idebia, idebra
 integer          nphas
 integer          ivar  , iscal , imom
 integer          idecal, iclapc, icha  , icla
@@ -152,7 +141,7 @@ integer          nbflu , ilecec, iecr
 integer          ifait (nvarmx)
 integer          icdtvu(nbmom2)
 integer          ngbstr(2)
-integer          iw1, ifinra, ifac, iel, istr
+integer          ifac, iel, istr
 integer          impava, impavx
 double precision tmpstr(27)
 
@@ -181,8 +170,6 @@ double precision, allocatable, dimension(:) :: w1
 ! 1. INITIALISATION
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 !===============================================================================
 ! 1. VERIFICATIONS DE BASE ET CODAGE DES CHAINES DE CARACTERES

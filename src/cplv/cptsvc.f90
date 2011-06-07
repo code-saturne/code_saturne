@@ -28,16 +28,13 @@
 subroutine cptsvc &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  , iscala ,                                              &
    itypfb ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   ra     )
+   smbrs  , rovsdt )
 
 !===============================================================================
 ! FONCTION :
@@ -52,8 +49,6 @@ subroutine cptsvc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
@@ -65,7 +60,6 @@ subroutine cptsvc &
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
 ! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -76,7 +70,6 @@ subroutine cptsvc &
 !  (nfabor, *)     !    !     !                                                !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -110,7 +103,6 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
 integer          iscal  , iscala
@@ -118,24 +110,20 @@ integer          iscal  , iscala
 integer          itypfb(nfabor)
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          ivar   , ivarsc , ivarut , ivar0
 integer          iel    , ifac
 integer          ipcrom , ipcvst
 integer          ixchcl , ixckcl , ixnpcl , icla   , icha
 integer          inc    , iccocg , nswrgp , imligp , iwarnp
-integer          ifinra
 
 double precision x2     , xk     , xe     , rhovst
 double precision epsrgp , climgp , extrap
@@ -158,8 +146,6 @@ xk = 0.d0
 
 ! Memoire
 
-idebia = idbia0
-idebra = idbra0
 
 ! --- Numero du scalaire a traiter : ISCAL
 
@@ -282,11 +268,9 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   ia     ,                                                       &
    w7     , coefap , coefbp ,                                     &
 !          FIM      COEFA        COEFB
-   grad   ,                                                       &
-   ra     )
+   grad   )
 
   ! Free memory
   deallocate(coefap, coefbp)

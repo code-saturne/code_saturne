@@ -28,9 +28,8 @@
 subroutine vectds &
 !================
 
- ( ia     ,                                                       &
-   vectx  , vecty  , vectz  ,                                     &
-   valf   , valb   , ra     )
+ ( vectx  , vecty  , vectz  ,                                     &
+   valf   , valb   )
 
 !===============================================================================
 ! FONCTION :
@@ -46,13 +45,11 @@ subroutine vectds &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! vectx (ncelet    ! tr ! <-- ! composante x du vecteur   entre                !
 ! vecty (ncelet    ! tr ! <-- ! composante y du vecteur   entre                !
 ! vectz (ncelet    ! tr ! <-- ! composante z du vecteur   entre                !
 ! valf (nfac)      ! tr ! --> ! vect*surface      aux faces internes           !
 ! valb (nfabor     ! tr ! --> ! vect*surface      aux faces de bord            !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -77,10 +74,8 @@ implicit none
 
 ! Arguments
 
-integer          ia(*)
 double precision vectx(ncelet), vecty(ncelet), vectz(ncelet)
 double precision valf(nfac), valb(nfabor)
-double precision ra(*)
 
 ! Local variables
 

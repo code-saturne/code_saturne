@@ -37,11 +37,9 @@ subroutine uslabo &
    ntersl , nvlsta , nvisbr ,                                     &
    kface  , nbpt   , isuivi ,                                     &
    itypfb , itrifb , ifrlag , itepa  , indep  ,                   &
-   ia     ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , parbor , vitpar , vitflu , auxl   , &
-   ra     )
+   ettp   , ettpa  , tepa   , parbor , vitpar , vitflu , auxl   )
 
 !===============================================================================
 ! Purpose:
@@ -132,7 +130,6 @@ subroutine uslabo &
 ! (nbpmax,nivep    !    !     !                                                !
 ! indep            ! ia ! --> ! for each cell, number of the departure cell    !
 !   (nbpmax)       !    !     !                                                !
-! ia(*)            ! ia ! --- ! macro array of integers                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! transported variables at cell centers          !
 ! (ncelet,*)       !    !     ! (current and previous time step)               !
@@ -157,7 +154,6 @@ subroutine uslabo &
 ! vitflu           ! ra ! <-- ! flow velocity for the treatment of the         !
 !   (nbpmax,3)     !    !     ! particle/wall interactions                     !
 ! auxl(nbpmax,3    ! ra ! --- ! work array                                     !
-! ra(*)            ! ra ! --- ! macro array of reals                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -200,7 +196,6 @@ integer          kface  , nbpt   , isuivi
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          ifrlag(nfabor) , itepa(nbpmax,nivep)
 integer          indep(nbpmax)
-integer          ia(*)
 
 double precision dt(ncelet) , rtp(ncelet,*) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -210,7 +205,6 @@ double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
 double precision tepa(nbpmax,nvep)
 double precision parbor(nfabor,nvisbr) , auxl(nbpmax,3)
 double precision vitpar(nbpmax,3) , vitflu(nbpmax,3)
-double precision ra(*)
 
 ! Local variables
 
@@ -467,7 +461,7 @@ else if (iusclb(kzone).eq.idepfa) then
         ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
           nfin   , ip     ,                                        &
           itepa  ,                                                 &
-          ettpa  , tepa   , ra)
+          ettpa  , tepa   )
   endif
 
   !-->Modification of the arrival point
@@ -528,7 +522,7 @@ else if (iusclb(kzone).eq.irebol) then
        ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
          nfin   , ip     ,                                        &
          itepa  ,                                                 &
-         ettpa  , tepa   , ra)
+         ettpa  , tepa   )
     endif
 
 !-->Modification of the arrival point
@@ -630,7 +624,7 @@ else if (iusclb(kzone).eq.iencrl) then
        ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,             &
          nfin   , ip     ,                                        &
          itepa  ,                                                 &
-         ettpa  , tepa   , ra)
+         ettpa  , tepa   )
       endif
 
 !--> Modification of the arrival point

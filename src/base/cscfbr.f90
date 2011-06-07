@@ -28,13 +28,10 @@
 subroutine cscfbr &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  ,                                              &
+ ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb ,                                     &
-   ia     ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  , rcodcl ,                                     &
-   ra     )
+   coefa  , coefb  , rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -48,12 +45,9 @@ subroutine cscfbr &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ivar             ! i  ! <-- ! variable number                                !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant            prec)          !
@@ -64,7 +58,6 @@ subroutine cscfbr &
 !  (nfabor, *)     !    !     !                                                !
 ! crvexp(ncelet    ! tr ! --> ! tableau de travail pour part explicit          !
 ! crvimp(ncelet    ! tr ! --> ! tableau de travail pour part implicit          !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -94,23 +87,19 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 
 integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
-integer          ia(*)
 
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision rcodcl(nfabor,nvar,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia , idebra
 integer          numcpl , ivarcp
 integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
@@ -129,8 +118,6 @@ double precision, allocatable, dimension(:,:) :: rvdis , rvfbr
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 do numcpl = 1, nbrcpl
 
@@ -215,17 +202,14 @@ do numcpl = 1, nbrcpl
 
     call cscpfb                                                   &
     !==========
-  ( idebia , idebra ,                                             &
-    nvar   , nscal  ,                                             &
+  ( nvar   , nscal  ,                                             &
     nfbdis , ityloc , nvarcp(numcpl) , numcpl ,                   &
     nvarto(numcpl) ,                                              &
     locpts ,                                                      &
-    ia     ,                                                      &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
     coefa  , coefb  ,                                             &
     coopts , djppts , pndpts ,                                    &
-    rvdis  , dofpts ,                                             &
-    ra     )
+    rvdis  , dofpts )
 
   endif
 
@@ -269,16 +253,13 @@ do numcpl = 1, nbrcpl
 
     call csc2cl &
     !==========
-  ( idebia , idebra ,                                             &
-    nvar   , nscal  ,                                             &
+  ( nvar   , nscal  ,                                             &
     nvarcp(numcpl), nvarto(numcpl) , nfbcpl , nfbncp ,            &
     icodcl , itrifb , itypfb ,                                    &
     lfbcpl , lfbncp ,                                             &
-    ia     ,                                                      &
     dt     , rtp    , rtpa   , propce , propfa , propfb ,         &
     coefa  , coefb  , rcodcl ,                                    &
-    rvfbr  , pndcpl , dofcpl ,                                    &
-    ra     )
+    rvfbr  , pndcpl , dofcpl )
 
     ! Free memory
     deallocate(dofcpl, pndcpl)

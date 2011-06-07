@@ -28,14 +28,11 @@
 subroutine tsepdc &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   nvar   , nscal  , ncepdp ,                                     &
+ ( nvar   , nscal  , ncepdp ,                                     &
    idiaex ,                                                       &
    icepdc ,                                                       &
-   ia     ,                                                       &
    rtpa   , propce , propfa , propfb ,                            &
-   coefa  , coefb  , ckupdc , trav   ,                            &
-   ra     )
+   coefa  , coefb  , ckupdc , trav   )
 
 !===============================================================================
 ! FONCTION :
@@ -48,15 +45,12 @@ subroutine tsepdc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! idiaex           ! e  ! <-- ! indicateur de traitement de la                 !
 !                  !    !     ! diagonale (=1) ou extradiagonale (=2)          !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! ia(*)            ! ia ! --- ! main integer work array                        !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant prec)                     !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -67,7 +61,6 @@ subroutine tsepdc &
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !
 ! trav(ncelet,3    ! tr ! <-- ! tableau des second membres                     !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -91,13 +84,11 @@ implicit none
 
 ! Arguments
 
-integer          idbia0 , idbra0
 integer          nvar   , nscal
 integer          ncepdp
 integer          idiaex
 
 integer          icepdc(ncepdp)
-integer          ia(*)
 
 double precision rtpa(ncelet,*)
 double precision propce(ncelet,*)
@@ -105,11 +96,9 @@ double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
 double precision ckupdc(ncepdp,6)
 double precision trav(ncelet,3)
-double precision ra(*)
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel   , ielpdc
 integer          ipcrom, ipcroo
 double precision romvom, vit1  , vit2  , vit3
@@ -117,8 +106,6 @@ double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 
 !===============================================================================
 
-idebia = idbia0
-idebra = idbra0
 
 ipcrom = ipproc(irom  )
 
