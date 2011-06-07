@@ -87,7 +87,6 @@ use entsor
 use cstnum
 use cstphy
 use optcal
-use lagpar
 use lagran
 use pointe, only: s2kw, divukw, ifapat, dispar
 use parall

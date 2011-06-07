@@ -109,7 +109,6 @@ use cstphy
 use cstnum
 use parall
 use period
-use lagpar
 use lagran
 use mesh
 

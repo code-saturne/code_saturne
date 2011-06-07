@@ -84,9 +84,6 @@ use cstphy
 use cstnum
 use parall
 use period
-use lagpar
-use lagdim
-use lagran
 use ppppar
 use ppthch
 use fuincl

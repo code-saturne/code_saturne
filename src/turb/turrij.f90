@@ -87,7 +87,6 @@ use numvar
 use entsor
 use cstphy
 use optcal
-use lagpar
 use lagran
 use mesh
 

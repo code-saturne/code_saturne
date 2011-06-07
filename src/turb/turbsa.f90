@@ -87,11 +87,6 @@ use entsor
 use cstnum
 use cstphy
 use optcal
-use lagpar
-use lagran
-use ppppar
-use ppthch
-use ppincl
 use mesh
 !We have to know if there is any rough wall
 use parall

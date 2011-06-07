@@ -1,4 +1,16 @@
 * 07/06/2011 - David Monfort <david.monfort@edf.fr>
+  Remove useless module calls.
+  modified routines:
+    src/rayt/raydom.f90
+    src/turb/reseps.f90
+    src/turb/resrij.f90
+    src/turb/resssg.f90
+    src/turb/turbke.f90
+    src/turb/turbkw.f90
+    src/turb/turbsa.f90
+    src/turb/turrij.f90
+
+* 07/06/2011 - David Monfort <david.monfort@edf.fr>
   Split the base directory into 4 directories with 3 new ones dedicated
   to the mesh handling, the turbulence modelling, and the Finite Volume
   schemes and resolution.
