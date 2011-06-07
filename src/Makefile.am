@@ -20,8 +20,11 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-SUBDIRS = . bft fvm mei gui base pprt atmo cfbl cogz cplv ctwr elec fuel lagr \
-          rayt apps
+SUBDIRS = \
+. bft fvm mei gui \
+base pprt alge mesh turb \
+atmo cfbl cogz cplv ctwr elec fuel lagr rayt \
+apps
 
 # General flags
 
@@ -53,7 +56,6 @@ $(top_srcdir)/src/base/optcal.f90 \
 $(top_srcdir)/src/base/parall.f90 \
 $(top_srcdir)/src/base/period.f90 \
 $(top_srcdir)/src/base/pointe.f90 \
-$(top_srcdir)/src/base/vorinc.f90 \
 $(top_srcdir)/src/atmo/atincl.f90 \
 $(top_srcdir)/src/cfbl/cfpoin.f90 \
 $(top_srcdir)/src/cogz/coincl.f90 \
@@ -68,7 +70,8 @@ $(top_srcdir)/src/pprt/ppcpfu.f90 \
 $(top_srcdir)/src/pprt/ppincl.f90 \
 $(top_srcdir)/src/pprt/ppppar.f90 \
 $(top_srcdir)/src/pprt/ppthch.f90 \
-$(top_srcdir)/src/rayt/radiat.f90
+$(top_srcdir)/src/rayt/radiat.f90 \
+$(top_srcdir)/src/turb/vorinc.f90
 
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)

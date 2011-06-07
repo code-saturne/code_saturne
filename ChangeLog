@@ -1,4 +1,17 @@
 * 07/06/2011 - David Monfort <david.monfort@edf.fr>
+  Split the base directory into 4 directories with 3 new ones dedicated
+  to the mesh handling, the turbulence modelling, and the Finite Volume
+  schemes and resolution.
+  modified scripts:
+    configure.ac
+    src/apps/Makefile.am
+    src/base/Makefile.am
+    src/ctwr/Makefile.am
+    src/gui/Makefile.am
+    src/lagr/Makefile.am
+    src/Makefile.am
+
+* 07/06/2011 - David Monfort <david.monfort@edf.fr>
   At last, remove the allocation of main arrays in the C part and the
   corresponding user interface (both graphical and Fortran).
   The only remaining bits of the macro arrays are the ones related to

@@ -20,66 +20,62 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-# PLE dependency
-
-if HAVE_INTERNAL_PLE
-  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
-else
-  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
-endif
-
 # Main part
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/mesh \
-$(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_ctwr_air_props.h \
-cs_ctwr.h \
-cs_ctwr_halo.h \
-cs_ctwr_mesh.h
+cs_join.h \
+cs_join_intersect.h \
+cs_join_merge.h \
+cs_join_mesh.h \
+cs_join_perio.h \
+cs_join_post.h \
+cs_join_set.h \
+cs_join_split.h \
+cs_join_update.h \
+cs_join_util.h \
+cs_mesh_coherency.h \
+cs_mesh_connect.h \
+cs_mesh.h \
+cs_mesh_halo.h \
+cs_mesh_quality.h \
+cs_mesh_quantities.h \
+cs_mesh_save.h \
+cs_mesh_warping.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsctwr.la
-libcsctwr_la_SOURCES = \
-cs_ctwr.c \
-cs_ctwr_air_props.c \
-cs_ctwr_f2c.f90 \
-cs_ctwr_halo.c \
-cs_ctwr_mesh.c \
-ctini1.f90 \
-ctiniv.f90 \
-ctphyv.f90 \
-cttssc.f90 \
-ctvarp.f90
-libcsctwr_la_LDFLAGS = -no-undefined
+noinst_LTLIBRARIES = libcsmesh.la
 
-ctwrusers = \
-$(top_srcdir)/users/ctwr/usctcl.f90 \
-$(top_srcdir)/users/ctwr/usctdz.f90 \
-$(top_srcdir)/users/ctwr/uscti1.f90 \
-$(top_srcdir)/users/ctwr/usctiv.f90
+libcsmesh_la_SOURCES = \
+cs_join.c \
+cs_join_intersect.c \
+cs_join_merge.c \
+cs_join_mesh.c \
+cs_join_perio.c \
+cs_join_post.c \
+cs_join_set.c \
+cs_join_split.c \
+cs_join_update.c \
+cs_join_util.c \
+cs_mesh.c \
+cs_mesh_coherency.c \
+cs_mesh_connect.c \
+cs_mesh_halo.c \
+cs_mesh_quality.c \
+cs_mesh_quantities.c \
+cs_mesh_save.c \
+cs_mesh_warping.c
 
-libcsctwr_la_SOURCES += $(ctwrusers)
-
-ctwrdir = $(pkgdatadir)/users/ctwr
-ctwr_DATA = $(ctwrusers)
-
-clean-local:
-	-rm -f *__genmod.f90 *.mod
+libcsmesh_la_LDFLAGS = -no-undefined

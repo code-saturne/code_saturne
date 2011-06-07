@@ -20,24 +20,9 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-# PLE dependency
-
-if HAVE_INTERNAL_PLE
-  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
-else
-  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
-endif
-
 # Main part
 
-AM_CPPFLAGS = \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/mesh \
-$(CPPFLAGS_PLE) \
-$(MPI_CPPFLAGS)
-
+AM_CPPFLAGS =
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_FCFLAGS = \
@@ -48,38 +33,45 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS = \
-cs_ctwr_air_props.h \
-cs_ctwr.h \
-cs_ctwr_halo.h \
-cs_ctwr_mesh.h
+pkginclude_HEADERS =
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsctwr.la
-libcsctwr_la_SOURCES = \
-cs_ctwr.c \
-cs_ctwr_air_props.c \
-cs_ctwr_f2c.f90 \
-cs_ctwr_halo.c \
-cs_ctwr_mesh.c \
-ctini1.f90 \
-ctiniv.f90 \
-ctphyv.f90 \
-cttssc.f90 \
-ctvarp.f90
-libcsctwr_la_LDFLAGS = -no-undefined
+noinst_LTLIBRARIES = libcsturb.la
 
-ctwrusers = \
-$(top_srcdir)/users/ctwr/usctcl.f90 \
-$(top_srcdir)/users/ctwr/usctdz.f90 \
-$(top_srcdir)/users/ctwr/uscti1.f90 \
-$(top_srcdir)/users/ctwr/usctiv.f90
-
-libcsctwr_la_SOURCES += $(ctwrusers)
-
-ctwrdir = $(pkgdatadir)/users/ctwr
-ctwr_DATA = $(ctwrusers)
+libcsturb_la_SOURCES = \
+clipke.f90 \
+clipsa.f90 \
+clprij.f90 \
+clpv2f.f90 \
+reseps.f90 \
+resrij.f90 \
+resssg.f90 \
+resv2f.f90 \
+rijech.f90 \
+rijthe.f90 \
+turbke.f90 \
+turbkw.f90 \
+turbsa.f90 \
+turent.f90 \
+turrij.f90 \
+vandri.f90 \
+visdyn.f90 \
+vislmg.f90 \
+vissma.f90 \
+vissst.f90 \
+viswal.f90 \
+vor2cl.f90 \
+vordep.f90 \
+vorimp.f90 \
+vorin0.f90 \
+vorini.f90 \
+vorlgv.f90 \
+vorpre.f90 \
+vortex.f90 \
+vorver.f90 \
+vorvit.f90
+libcsturb_la_LDFLAGS = -no-undefined
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
+	-rm -f *__genmod.f90 *__genmod.mod

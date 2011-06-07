@@ -35,7 +35,9 @@ endif
 # Main part
 
 AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
+-I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/bft \
@@ -53,10 +55,12 @@ AM_LDFLAGS =
 lib_LTLIBRARIES = libsaturne.la
 libsaturne_la_SOURCES = cs_solver.c
 libsaturne_la_LIBADD = \
-$(top_builddir)/src/base/libcshot.la \
 $(top_builddir)/src/base/libcsbase.la \
 $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/pprt/libcspprt.la \
+$(top_builddir)/src/alge/libcsalge.la \
+$(top_builddir)/src/mesh/libcsmesh.la \
+$(top_builddir)/src/turb/libcsturb.la \
 $(top_builddir)/src/atmo/libcsatmo.la \
 $(top_builddir)/src/cfbl/libcscfbl.la \
 $(top_builddir)/src/cogz/libcscogz.la \

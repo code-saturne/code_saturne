@@ -20,14 +20,6 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-# PLE dependency
-
-if HAVE_INTERNAL_PLE
-  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
-else
-  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
-endif
-
 # Main part
 
 AM_CPPFLAGS = \
@@ -35,8 +27,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
-$(CPPFLAGS_PLE) \
-$(MPI_CPPFLAGS)
+$(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
@@ -49,37 +40,53 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_ctwr_air_props.h \
-cs_ctwr.h \
-cs_ctwr_halo.h \
-cs_ctwr_mesh.h
+cs_benchmark.h \
+cs_blas.h \
+cs_gradient.h \
+cs_grid.h \
+cs_matrix.h \
+cs_multigrid.h \
+cs_sles.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsctwr.la
-libcsctwr_la_SOURCES = \
-cs_ctwr.c \
-cs_ctwr_air_props.c \
-cs_ctwr_f2c.f90 \
-cs_ctwr_halo.c \
-cs_ctwr_mesh.c \
-ctini1.f90 \
-ctiniv.f90 \
-ctphyv.f90 \
-cttssc.f90 \
-ctvarp.f90
-libcsctwr_la_LDFLAGS = -no-undefined
+noinst_LTLIBRARIES = libcsalge.la
 
-ctwrusers = \
-$(top_srcdir)/users/ctwr/usctcl.f90 \
-$(top_srcdir)/users/ctwr/usctdz.f90 \
-$(top_srcdir)/users/ctwr/uscti1.f90 \
-$(top_srcdir)/users/ctwr/usctiv.f90
-
-libcsctwr_la_SOURCES += $(ctwrusers)
-
-ctwrdir = $(pkgdatadir)/users/ctwr
-ctwr_DATA = $(ctwrusers)
+libcsalge_la_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_HOT)
+libcsalge_la_FCFLAGS = \
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_HOT)
+libcsalge_la_SOURCES = \
+cs_benchmark.c \
+cs_blas.c \
+cs_gradient.c \
+cs_grid.c \
+cs_matrix.c \
+cs_multigrid.c \
+cs_sles.c \
+bilsc2.f90 \
+divmas.f90 \
+divrij.f90 \
+gradmc.f90 \
+gradrc.f90 \
+grdcel.f90 \
+grdpot.f90 \
+inimas.f90 \
+invers.f90 \
+itrgrp.f90 \
+itrmas.f90 \
+matrdt.f90 \
+matrix.f90 \
+prods2.f90 \
+prods3.f90 \
+prodsc.f90 \
+projts.f90 \
+promav.f90 \
+proxav.f90 \
+vectds.f90 \
+viscfa.f90 \
+visort.f90
+libcsalge_la_LDFLAGS = -no-undefined
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
+	-rm -f *__genmod.f90 *__genmod.mod
