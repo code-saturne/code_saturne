@@ -32,6 +32,12 @@ else
   LIBS_PLE = $(PLE_LIBS)
 endif
 
+# Relocatable installation
+
+if HAVE_RELOCATABLE
+ORIGINRUNPATH = -R '\$$ORIGIN/../../lib'
+endif
+
 # Main part
 
 AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
@@ -48,7 +54,9 @@ $(MPI_CPPFLAGS) $(LIBXML2_CPPFLAGS) $(BLAS_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
-AM_LDFLAGS =
+# Global LDFLAGS must be used so as to handle the possibility of a CXX link.
+# Per-executable flags will override this global definition.
+AM_LDFLAGS = $(ORIGINRUNPATH)
 
 # Library source files
 
@@ -105,11 +113,12 @@ pkglibexec_PROGRAMS += cs_partition
 endif
 
 cs_solver_SOURCES =
-cs_solver_LDADD = libsaturne.la $(LTLIBINTL) \
+cs_solver_LDADD = libsaturne.la \
 $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/fvm/libfvm_filters.la \
 $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la \
+$(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
 $(MED_LDFLAGS) $(MED_LIBS) \
@@ -135,7 +144,9 @@ cs_check_syntax_CPPFLAGS = \
 cs_check_syntax_SOURCES = cs_check_syntax.c
 cs_check_syntax_LDADD = \
 $(top_builddir)/src/mei/libmei.la \
-$(top_builddir)/src/bft/libbft.la \
+$(top_builddir)/src/bft/libbft.la
+cs_check_syntax_LDFLAGS = \
+$(ORIGINRUNPATH) \
 -lm
 
 endif
@@ -150,7 +161,9 @@ $(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
 cs_partition_SOURCES = cs_partition.c
 cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/fvm/libfvm.la \
-$(top_builddir)/src/bft/libbft.la \
+$(top_builddir)/src/bft/libbft.la
+cs_partition_LDFLAGS = \
+$(ORIGINRUNPATH) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
 $(METIS_LDFLAGS) $(METIS_LIBS) \
 $(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) \

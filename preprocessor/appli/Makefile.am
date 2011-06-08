@@ -19,12 +19,21 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
+# Relocatable installation
+
+if HAVE_RELOCATABLE
+ORIGINRUNPATH = -R '\$$ORIGIN/../../lib'
+endif
+
 # Main part
 
 AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
 -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/pre-post -I$(top_srcdir)/preprocessor/util
+
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_LDFLAGS =
+
+# Global LDFLAGS must be used so as to handle the possibility of a CXX link.
+AM_LDFLAGS = $(ORIGINRUNPATH)
 
 # Main program
 

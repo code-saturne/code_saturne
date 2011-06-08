@@ -155,6 +155,21 @@ AC_ARG_ENABLE(french,
   [ french=no ]
 )
 
+# Optionnaly install the code with relocatable features
+
+AC_ARG_ENABLE(relocatable,
+  [AS_HELP_STRING([--enable-relocatable], [enable relocatable installation])],
+  [
+    case "${enableval}" in
+      yes) relocatable=yes ;;
+      no)  relocatable=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-relocatable]) ;;
+    esac
+  ],
+  [ relocatable=no ]
+)
+AM_CONDITIONAL(HAVE_RELOCATABLE, [test "${relocatable}" = yes])
+
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
 #------------------------------------------

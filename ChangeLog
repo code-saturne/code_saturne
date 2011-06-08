@@ -1,3 +1,12 @@
+* 08/06/2011 - David Monfort <david.monfort@edf.fr>
+  Add a relocatable option to the configure script to handle relocatable
+  installation (of executables). It is based on the $ORIGIN variable for
+  RPATHs that should be understood by at least GNU and SOLARIS linkers.
+  modified scripts:
+    configure.ac
+    preprocessor/appli/Makefile.am
+    src/apps/Makefile.am
+
 * 07/06/2011 - David Monfort <david.monfort@edf.fr>
   Remove useless module calls.
   modified routines:
