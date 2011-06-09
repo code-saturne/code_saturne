@@ -457,7 +457,7 @@ if(iok50.gt.0) then
 endif
 if(iok60.gt.0) then
   write(nfecra,2536) ckwsk1,ckwsk2,ckwsw1,ckwsw2,ckwbt1,ckwbt2,   &
-       ckwgm1,ckwgm2,ckwa1,ckwc1
+       ckwgm1,ckwgm2,ckwa1,ckwc1,cmu
 endif
 
 write(nfecra,9900)

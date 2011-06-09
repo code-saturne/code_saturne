@@ -1,3 +1,8 @@
+* 09/06/2011 - Frederic Dehoux <frederic.dehoux@edf.fr>
+  Missing Cmu constant logging in the listing for k-omega SST model.
+  modified routine:
+    src/base/impini.f90
+
 * 06/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a libtool rpath option to handle non-libtoolized libraries.
   modified files:
