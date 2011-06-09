@@ -2617,10 +2617,13 @@ cs_sles_solve(const char         *var_name,
 
 #if defined(HAVE_MPI)
     if (_cs_sles_mpi_reduce_comm != cs_glob_mpi_comm) {
-      MPI_Bcast(&convergence.n_iterations, 1, MPI_UNSIGNED, 0,
-                cs_glob_mpi_comm);
+      /* cvg is signed, so shift (with some margin) before copy to unsigned. */
+      unsigned buf[2] = {cvg+10, convergence.n_iterations};
+      MPI_Bcast(buf, 2, MPI_UNSIGNED, 0, cs_glob_mpi_comm);
       MPI_Bcast(&convergence.residue, 1, MPI_DOUBLE, 0,
                 cs_glob_mpi_comm);
+      cvg = buf[0] - 10;
+      convergence.n_iterations = buf[1];
     }
 #endif
 

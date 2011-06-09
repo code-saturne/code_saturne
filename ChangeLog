@@ -1,3 +1,8 @@
+* 09/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix parallel synchronization bug when using multigrid merging.
+  modified file:
+    src/alge/cs_slec.c
+
 * 09/06/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Only free memory when the temporary was actually allocated.
   modified routine:
