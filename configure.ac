@@ -168,6 +168,7 @@ AC_ARG_ENABLE(relocatable,
   ],
   [ relocatable=no ]
 )
+AC_SUBST(relocatable)
 AM_CONDITIONAL(HAVE_RELOCATABLE, [test "${relocatable}" = yes])
 
 # Default compiler options (may be modified

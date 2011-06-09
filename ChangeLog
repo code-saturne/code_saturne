@@ -1,3 +1,9 @@
+* 09/06/2011 - David Monfort <david.monfort@edf.fr>
+  Add information on the relocatable feature in the Python script.
+  modified scripts:
+    bin/cs_config.py.in
+    configure.ac
+
 * 09/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix parallel synchronization bug when using multigrid merging.
   modified file:
