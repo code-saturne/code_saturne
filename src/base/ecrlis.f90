@@ -146,17 +146,20 @@ do ipp = 2, nvppmx
       if(varptr(icel).lt.varmin(ipp)) varmin(ipp) = varptr(icel)
       if(varptr(icel).gt.varmax(ipp)) varmax(ipp) = varptr(icel)
     enddo
+
+    if (idivdt.ne.0) then
+      deallocate(momtmp)
+    endif
+
     if (irangp.ge.0) then
       call parmin (varmin(ipp))
       !==========
       call parmax (varmax(ipp))
       !==========
     endif
+
   endif
 enddo
-
-! Free memory
-deallocate(momtmp)
 
 !==================================================================
 ! 2. DERIVE POUR LES VARIABLES TRANSPORTEES (sauf pression)

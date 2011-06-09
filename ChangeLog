@@ -1,3 +1,8 @@
+* 09/06/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Only free memory when the temporary was actually allocated.
+  modified routine:
+    src/base/ecrlis.f90
+
 * 08/06/2011 - David Monfort <david.monfort@edf.fr>
   Add a relocatable option to the configure script to handle relocatable
   installation (of executables). It is based on the $ORIGIN variable for
