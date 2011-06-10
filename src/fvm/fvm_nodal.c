@@ -2241,6 +2241,8 @@ fvm_nodal_copy_edges(const char         *name,
     BFT_FREE(edge_vertices_g);
   };
 
+  new_nodal->gc_set = NULL;
+
   return (new_nodal);
 }
 
