@@ -3973,15 +3973,6 @@ void CS_PROCF (csenso, CSENSO)
           int *const nthist,
        double *const frhist,
           int *const ntlist,
-          int *const ichrvl,
-          int *const ichrbo,
-          int *const ichrmd,
-         char *const fmtchr,
-          int *const size_fmt,
-         char *const optchr,
-          int *const size_opt,
-          int *const ntchr,
-       double *const frchr,
           int *const iecaux,
           int *const ipstdv,
           int *const ipstyp,
@@ -3997,26 +3988,19 @@ void CS_PROCF (csenso, CSENSO)
  const    int *const ipprtp,
        double *const xyzcap)
 {
-  int i, j;
-  int ipp;
+  int i, j, ipp;
+  size_t k;
 
   cs_var_t  *vars = cs_glob_var;
   char fmtprb[16];
   int size_fmtprb = sizeof(fmtprb) - 1;
-  for (i = 0; i < sizeof(fmtprb); i++)
-    fmtprb[i] = '\0';
+  for (k = 0; k < sizeof(fmtprb); k++)
+    fmtprb[k] = '\0';
 
-  cs_gui_output_value("fluid_domain", ichrvl);
-  cs_gui_output_value("domain_boundary", ichrbo);
   cs_gui_output_value("auxiliary_restart_file_writing", iecaux);
   cs_gui_output_value("listing_printing_frequency", ntlist);
-  cs_gui_output_value("postprocessing_frequency", ntchr);
-  cs_gui_output_time_value("postprocessing_frequency_time", frchr);
   cs_gui_output_value("probe_recording_frequency", nthist);
   cs_gui_output_time_value("probe_recording_frequency_time", frhist);
-  cs_gui_output_value("postprocessing_mesh_options", ichrmd);
-  cs_gui_output_choice("postprocessing_format", fmtchr, size_fmt);
-  cs_gui_output_choice("postprocessing_options", optchr, size_opt);
   cs_gui_output_choice("probe_format", fmtprb, &size_fmtprb);
 
   /* Time plot (probe) format */

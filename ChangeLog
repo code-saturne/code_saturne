@@ -1,3 +1,62 @@
+* 10/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Upgrade post-processing management API for better mapping with the
+  GUI, and for better clarity of user options. All related settings
+  are now local to cs_post.c, and are removed from entsor.f90.
+  added file:
+    users/base/cs_user_postprocess.c
+  removed files:
+    src/base/inipst.f90
+    users/base/usdpst.f90
+    users/base/usnpst.f90
+  modified files:
+    po/fr.po
+    src/apps/cs_solver.c
+    src/base/Makefile.am
+    src/base/caltri.f90
+    src/base/cregeo.f90
+    src/base/cs_boundary_conditions.c
+    src/base/cs_post.c
+    src/base/cs_post_f2c.f90
+    src/base/cs_post.h
+    src/base/cs_prototypes.h
+    src/base/cs_syr3_coupling.c
+    src/base/cs_syr4_coupling.c
+    src/base/entsor.f90
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/iniusi.f90
+    src/base/modini.f90
+    src/base/testel.f90
+    src/base/verini.f90
+    src/ctwr/cs_ctwr.c
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+    src/mesh/cs_join_post.c
+    src/rayt/rayopt.f90
+    users/base/cs_user_solver.c
+    users/base/usini1.f90
+
+* 10/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove synchronization of postprocessing with Code_Aster.
+  modified files:
+    src/gui/cs_gui_mobile_mesh.c
+    src/gui/cs_gui_mobile_mesh.h
+    src/base/alaste.f90
+    src/base/cs_ast_coupling.c
+    src/base/cs_ast_coupling.h
+    src/base/strini.f90
+
+* 10/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve introspection of writers and formats.
+  modified files:
+    src/fvm/fvm_to_cgns.c
+    src/fvm/fvm_to_cgns.h
+    src/fvm/fvm_to_med.c
+    src/fvm/fvm_to_med.h
+    src/fvm/fvm_writer.c
+    src/fvm/fvm_writer.h
+    src/fvm/fvm_writer_priv.h
+
 * 09/06/2011 - David Monfort <david.monfort@edf.fr>
   Add information on the relocatable feature in the Python script.
   modified scripts:

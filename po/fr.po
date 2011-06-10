@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-06-08 20:10+0200\n"
+"POT-Creation-Date: 2011-06-10 17:08+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5165,6 +5165,55 @@ msgstr ""
 "alors que les dernières variables dont le halo de rotation\n"
 "a été sauvegardé sont définies à partir de [%p, %p, %p]."
 
+msgid ""
+"\n"
+"Postprocessing output writers:\n"
+"------------------------------\n"
+"\n"
+msgstr ""
+"\n"
+"Gestionnaires de sorties pour post traitement : %s\n"
+"-----------------------------------------------\n"
+"\n"
+
+#, c-format
+msgid "every %12.5e s and at calculation end"
+msgstr ""
+
+#, c-format
+msgid "every %d time steps and at calculation end"
+msgstr ""
+
+#, c-format
+msgid "at calculation end"
+msgstr "à la fin du calcul"
+
+#, c-format
+msgid "every %12.5e s"
+msgstr "toutes les %12.5e s"
+
+#, c-format
+msgid "every %d time steps"
+msgstr "tous les %d pas de temps"
+
+#, c-format
+msgid ""
+"  %2d: name: %s\n"
+"      directory: %s\n"
+"      format: %s\n"
+"      options: %s\n"
+"      time dependency: %s\n"
+"      output: %s\n"
+"\n"
+msgstr ""
+"  %2d: nom: %s\n"
+"      répertoire: %s\n"
+"      format: %s\n"
+"      options: %s\n"
+"      dépendence en temps: %s\n"
+"      sorties: %s\n"
+"\n"
+
 #, c-format
 msgid ""
 "The requested post-processing writer number\n"
@@ -5187,14 +5236,6 @@ msgid ""
 msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
-
-#, c-format
-msgid ""
-"The requested post-processing mesh number\n"
-"(%d) has already been assigned.\n"
-msgstr ""
-"Le numéro de maillage de post traitement demandé\n"
-"(%d) a déjà été affecté.\n"
 
 msgid "parallel domain"
 msgstr ""
@@ -5227,11 +5268,11 @@ msgstr ""
 
 #, c-format
 msgid ""
-"The requested post-processing writer number\n"
-"(%d) has already been assigned.\n"
+"The mesh %d cannot be an alias of mesh %d,\n"
+"which is itself an alias of mesh %d.\n"
 msgstr ""
-"Le numéro de gestionnaire de post traitement demandé\n"
-"(%d) a déjà été affecté.\n"
+"Le maillage %d ne peut être un alias du maillage %d,\n"
+"qui est lui-même déjà un alias du maillage %d.\n"
 
 msgid " edges"
 msgstr ""
@@ -5255,13 +5296,11 @@ msgstr ""
 "des maillages dépendant du temps, donc il ne peut\n"
 "pas être libéré.\n"
 
-#, c-format
-msgid ""
-"The mesh %d cannot be an alias of mesh %d,\n"
-"which is itself an alias of mesh %d.\n"
-msgstr ""
-"Le maillage %d ne peut être un alias du maillage %d,\n"
-"qui est lui-même déjà un alias du maillage %d.\n"
+msgid "Fluid volume"
+msgstr "Volume fluide"
+
+msgid "Boundary"
+msgstr "Bord"
 
 #, c-format
 msgid ""
@@ -5282,12 +5321,6 @@ msgstr ""
 "\n"
 "  Temps écoulé pour les maillages : %12.3f\n"
 "  Temps écoulé pour les champs :    %12.3f\n"
-
-msgid "Fluid volume"
-msgstr "Volume fluide"
-
-msgid "Boundary"
-msgstr "Bord"
 
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
@@ -6280,9 +6313,9 @@ msgstr ""
 "Au moins 1 couplage SYRTHES a été défini pour lequel\n"
 "aucune communication avec une instance de SYRTHES n'est possible."
 
-#, fuzzy, c-format
+#, c-format
 msgid "Error opening file: \"%s\""
-msgstr "MED : échec à l'ouverture du fichier \"%s\"."
+msgstr "Erreur à l'ouverture du fichier \"%s\"."
 
 #, c-format
 msgid ""
@@ -6290,12 +6323,9 @@ msgid ""
 "#\n"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "# Monitoring point coordinates:\n"
-msgstr ""
-"\n"
-"  Coordonnées minimales et maximales du domaine :\n"
-"\n"
+msgstr "# Cordonnées des sondes :\n"
 
 #, c-format
 msgid "# Columns:\n"
@@ -6313,15 +6343,17 @@ msgstr ""
 msgid "#   %d - :  Values at monitoring points\n"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "Error closing file: \"%s\""
-msgstr "MED : échec à la fermeture du fichier \"%s\"."
+msgstr "Erreur à la fermeture du fichier \"%s\"."
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "# Number of structures: %d\n"
 "#\n"
-msgstr "  Nombre de zones    : %d\n"
+msgstr ""
+"# Nombre de structures: %d\n"
+"#\n"
 
 #, c-format
 msgid ""
@@ -6364,21 +6396,21 @@ msgstr ""
 msgid "#   %d - :  Values for each structure\n"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "Error re-opening file: \"%s\""
-msgstr "Erreur à la lecture du fichier \"%s\""
+msgstr "Erreur à la ré-ouverture du fichier \"%s\""
 
-#, fuzzy, c-format
+#, c-format
 msgid "Error writing file: \"%s\""
-msgstr "Erreur à la lecture du fichier \"%s\""
+msgstr "Erreur à l'écriture du fichier \"%s\""
 
 #, c-format
 msgid "Plot number for \"%s\" must be > 0 and not %d."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "Plot number %d is already defined."
-msgstr "  Le recollement numéro %d n'est pas défini.\n"
+msgstr ""
 
 #, c-format
 msgid "Plot number must be in the interval [1, %d] and not %d."
@@ -7667,13 +7699,23 @@ msgstr ""
 msgid "  %s : %12.3f %cb\n"
 msgstr "  %s : %12.3f %co\n"
 
+msgid "fixed mesh"
+msgstr "maillage fixe"
+
+msgid "transient coordinates"
+msgstr "coordonées variables"
+
+msgid "transient connectivity"
+msgstr "connectivité variable"
+
 #, c-format
 msgid "Format type \"%s\" required for case \"%s\" is unknown"
-msgstr ""
+msgstr "Le type de format \"%s\" demandé pour le cas \"%s\" est inconnu"
 
 #, c-format
 msgid "Format type \"%s\" required for case \"%s\" is not available"
 msgstr ""
+"Le type de format \"%s\" demandé pour le cas \"%s\" n'est pas disponible"
 
 #, c-format
 msgid ""
@@ -9370,3 +9412,17 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
+
+#~ msgid ""
+#~ "The requested post-processing mesh number\n"
+#~ "(%d) has already been assigned.\n"
+#~ msgstr ""
+#~ "Le numéro de maillage de post traitement demandé\n"
+#~ "(%d) a déjà été affecté.\n"
+
+#~ msgid ""
+#~ "The requested post-processing writer number\n"
+#~ "(%d) has already been assigned.\n"
+#~ msgstr ""
+#~ "Le numéro de gestionnaire de post traitement demandé\n"
+#~ "(%d) a déjà été affecté.\n"

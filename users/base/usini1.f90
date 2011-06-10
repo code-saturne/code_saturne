@@ -1671,59 +1671,6 @@ endif
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
 
-! --- post-processing output
-
-!     ichrvl: post-processing of the fluid domain (yes 1/no 0)
-!     ichrbo: post-processing of the domain boundary (yes 1/no 0)
-!     ichrsy: post-processing of zones coupled with SYRTHES (yes 1/ no 0)
-!     ichrmd: indicates if the meshes output are:
-!               0: fixed,
-!               1: deformable with constant connectivity,
-!               2: modifyable (may be completely redefined during the
-!                  calculation using the usmpst subroutine).
-!              10: as indmod = 0, with a displacement field
-!              11: as indmod = 1, with a displacement field
-!              11: as indmod = 2, with a displacement field
-
-!     fmtchr: output format, amid
-!               'EnSight Gold', 'MED', or 'CGNS'
-!     optchr: options associated with the output format, separated by
-!             commas, from the following list:
-!               'text'              (text format, for EnSight)
-!               'binary'            (binary format, default choice)
-!               'big_endian'        (forces binary EnSight output to
-!                                   'big-endian' mode)
-!               'discard_polygons'  (ignore polygon-type faces)
-!               'discard_polyhedra' (ignore polyhedron-type cells)
-!               'divide_polygons'   (subdivides polygon-type faces)
-!               'divide_polyhedra'  (subdivides polyhedron-type cells)
-!               'split_tensors'     (writes tensors as separate scalars)
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-ichrvl = 1
-ichrbo = 0
-
-ichrmd = 0
-
-fmtchr = 'EnSight Gold'
-optchr = 'binary'
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-
-! --- chronological output step
-!       (-1: only one value at calculation end)
-!       (strictly positive value: output periodicity)
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START
-
-ntchr = -1
-frchr = -1.d0
-
-! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_END
-
-
 ! --- history output step
 
 ! EXAMPLE_CODE_TO_BE_ADAPTED_BY_THE_USER_START

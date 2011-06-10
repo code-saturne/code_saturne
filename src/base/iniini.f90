@@ -163,44 +163,12 @@ ficlal = 'listla'
 ntlal  = 1
 
 !    Post traitement
-
-!       ICHRVL : Post traitement du domaine fluide
-!         (1 oui, 0 non)
-!       ICHRBO : Post traitement du bord du domaine
-!         (1 oui, 0 non)
-
-!       ICHRMD : indique si les maillages ecrits seront :
-!         0 : fixes,
-!         1 : deformables a topologie constante,
-!         2 : modifiables (pourront etre completement redefinis en
-!             cours de calcul via le sous-programme USMPST).
-!        10 : comme INDMOD = 0, avec champ de deplacement
-!        11 : comme INDMOD = 1, avec champ de deplacement
-!        12 : comme INDMOD = 2, avec champ de deplacement
-
-!       NTCHR  : Periode   de sortie Post
-!         -1 : une seule sortie a la fin
-!         >0 : periode
-!       FRCHR  : frequence de sortie (en secondes)
 !       ICHRVR  : Variables a sortir
 !         (1 oui, 0 non, sinon : non initialise)
-
-ichrvl = 1
-ichrbo = 0
-
-ichrmd = 0
-ntchr  = -1
-frchr  = -1.d0
 
 do ii = 1, nvppmx
   ichrvr(ii )   = -999
 enddo
-
-!       FMTCHR : format ('EnSight Gold', 'MED_fichier', ou 'CGNS')
-!       OPTCHR : options associees au format de sortie
-
-fmtchr = 'EnSight Gold'
-optchr = 'binary'
 
 ! ---> Fichier thermochinie
 !        FPP : utilisateur

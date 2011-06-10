@@ -383,6 +383,7 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
   int coupling_id = -1;
 
   const int writer_id = -1;
+  const int writer_ids[] = {writer_id};
 
   /* Determine coupling id */
 
@@ -419,12 +420,13 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
   if (syr_coupling->dim == 2)
     dim_shift = 1;
 
-  cs_post_add_existing_mesh(coupling_ent->post_mesh_id,
-                            coupling_ent->elts,
-                            dim_shift,
-                            false);
-
-  cs_post_associate(coupling_ent->post_mesh_id, writer_id);
+  cs_post_define_existing_mesh(coupling_ent->post_mesh_id,
+                               coupling_ent->elts,
+                               dim_shift,
+                               false,
+                               false,
+                               1,
+                               writer_ids);
 
   /* Register post processing function */
 
@@ -710,6 +712,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     if (syr_coupling->visualization != 0) {
 
       fvm_lnum_t i;
+      int writer_ids[] = {-1};
       int mesh_id = coupling_ent->post_mesh_id - 1;
       fvm_lnum_t *p_vtx_num = NULL;
       fvm_io_num_t *vtx_io_num = NULL;
@@ -736,8 +739,13 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
       }
 
-      cs_post_add_existing_mesh(mesh_id, syr_points, 0, true);
-      cs_post_associate(mesh_id, -1);
+      cs_post_define_existing_mesh(mesh_id,
+                                   syr_points,
+                                   0,
+                                   true,
+                                   false,
+                                   1,
+                                   writer_ids);
 
       cs_post_activate_writer(0, 1);
       cs_post_write_meshes(-1, 0.0);

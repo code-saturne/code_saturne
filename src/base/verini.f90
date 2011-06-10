@@ -113,11 +113,6 @@ endif
 
 ! --- Suite, Chrono, Historiques, Listing
 
-if(ntchr.ne.-1.and.ntchr.le.0) then
-  WRITE(NFECRA,1210) 'NTCHR  (Periode   Sortie Chrono.)',NTCHR
-  iok = iok + 1
-endif
-
 do ipp = 2, nvppmx
   if(ichrvr(ipp).ne.1.and.ichrvr(ipp).ne.0) then
     chaine=nomvar(ipp)

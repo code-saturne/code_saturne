@@ -64,29 +64,11 @@ module entsor
 
   integer, save :: impstp
 
-  ! --- Sorties post traitement (via FVM)
+  ! --- Sorties post traitement
 
-  !     ichrvl : Post traitement du domaine fluide
-  !     ichrbo : Post traitement du bord du domaine
-  !     ichrmd : Indique si les maillages ecrits seront :
-  !               0 : fixes,
-  !               1 : deformables a topologie constante,
-  !               2 : modifiables (pourront etre completement redefinis
-  !                   en cours de calcul via le sous-programme usmpst),
-  !              10 : comme indmod = 0, avec champ de deplacement,
-  !              11 : comme indmod = 1, avec champ de deplacement,
-  !              12 : comme indmod = 2, avec champ de deplacement.
-  !     ntchr  : frequence de sortie par defaut ( > 0 ou -1 (a la fin) )
-  !     frchr  : frequence de sortie en secondes ( > 0 ou -1.0 )
   !     ichrvr : on sort la variable (1) ou non (0) ou non initialise
-  !     fmtchr : format de sortie ('EnSight Gold', 'MED', 'CGNS')
-  !     optchr : options associees au format de sortie
 
-  integer, save :: ichrvl, ichrbo, ichrmd, ntchr, ichrvr(nvppmx)
-  double precision, save :: frchr
-
-  character*32, save :: fmtchr
-  character*96, save :: optchr
+  integer, save :: ichrvr(nvppmx)
 
   ! --- Fichier thermophysique specifique physique particuliere
 

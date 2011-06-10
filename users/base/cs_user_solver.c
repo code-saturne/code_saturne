@@ -238,8 +238,8 @@ cs_user_solver(const cs_mesh_t             *mesh,
   /* Post-processing */
   /* --------------- */
 
-  cs_post_activate_writer(-1,  /* default writer */
-                          1);  /* activate if 1 */
+  cs_post_activate_writer(-1,     /* default writer */
+                          true);  /* activate if 1 */
 
   cs_post_write_var(-1,                      /* default mesh */
                     var_name,                /* variable name */

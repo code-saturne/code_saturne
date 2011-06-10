@@ -84,12 +84,14 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 
 ! Local variables
 
+integer          ntpost
 integer          ifac  , iel   , ivar
 integer          inc   , iccocg
 integer          nswrgp, imligp, iwarnp
-integer          ipclip
+integer          ipclip, ialold
 integer          indwri, indact, ipart, idimt, ientla, ivarpr
 
+double precision ttpost
 double precision epsrgp, climgp, extrap
 double precision xx, yy, zz
 double precision rbid(1)
@@ -109,7 +111,12 @@ allocate(grad(ncelet,3))
 
 ! On positionne l'indicateur ALE a 1 de maniere a forcer le recalcul
 ! de la contribution des cellules de bord a chaque appel de GRDCEL
+ialold = iale
 iale = 1
+
+! Postprocessing should be time-independent
+ntpost = -1
+ttpost = 0.d0
 
 ! Symmetry type:
 ! value 0 avoids extrapolating the gradient on boundary faces.
@@ -193,11 +200,9 @@ call grdcel &
 ! On sort le gradient
 
 namevr = 'Grad_RC'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
 
 ! Calcul de l'erreur absolue
 
@@ -213,11 +218,9 @@ enddo
 ! On sort l'erreur
 
 namevr = 'Err_Grad_RC'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
 
 
 !  2.2 APPEL A GRDCEL AVEC IMRGRA = 1
@@ -237,11 +240,9 @@ call grdcel &
 ! On sort le gradient
 
 namevr = 'Grad_LSQ'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
 
 ! Calcul de l'erreur absolue
 
@@ -257,11 +258,9 @@ enddo
 ! On sort l'erreur
 
 namevr = 'Err_Grad_LSQ'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
 
 
 !  2.3 APPEL A GRDCEL AVEC IMRGRA = 2
@@ -281,11 +280,9 @@ call grdcel &
 ! On sort le gradient
 
 namevr = 'Grad_LSQ_Ext'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
 
 ! Calcul de l'erreur absolue
 
@@ -301,11 +298,9 @@ enddo
 ! On sort l'erreur
 
 namevr = 'Err_Grad_LSQ_Ext'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+              ntpost, ttpost, grad, rbid, rbid)
 
 
 !  2.4 APPEL A GRDCEL AVEC IMRGRA = 4
@@ -325,11 +320,9 @@ call grdcel &
 ! On sort le gradient
 
 namevr = 'Grad_LSQ_RC'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
 
 ! Calcul de l'erreur absolue
 
@@ -345,11 +338,9 @@ enddo
 ! On sort l'erreur
 
 namevr = 'Err_Grad_LSQ_RC'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
 
 
 !  2.5 APPEL A GRDCEL AVEC IMRGRA = 3
@@ -374,11 +365,9 @@ call grdcel &
 ! On sort le gradient
 
 namevr = 'Grad_LSQ_ExtRed'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
 
 ! Calcul de l'erreur absolue
 
@@ -394,11 +383,13 @@ enddo
 ! On sort l'erreur
 
 namevr = 'Err_Grad_LSQ_ExtRed'
-if (ichrvl.eq.1) then
-  call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
-  !==========
-              ntcabs, ttcabs, grad, rbid, rbid)
-endif
+call psteva(ipart , namevr, idimt, ientla, ivarpr,    &
+!==========
+            ntpost, ttpost, grad, rbid, rbid)
+
+! Reset ALE flag to old value
+! de la contribution des cellules de bord a chaque appel de GRDCEL
+iale = ialold
 
 ! Free memory
 deallocate(grad)

@@ -2576,7 +2576,8 @@ void
 cs_ctwr_post_init(cs_int_t  ct_id,
                   cs_int_t  writer_id)
 {
-  cs_int_t  mesh_id = cs_post_get_free_mesh_id();
+  int  mesh_id = cs_post_get_free_mesh_id();
+  int  writer_ids[] = {writer_id};
 
   cs_ctwr_zone_t * ct = cs_ctwr_by_id(ct_id);
 
@@ -2594,12 +2595,13 @@ cs_ctwr_post_init(cs_int_t  ct_id,
 
   /* Associate external mesh description with post processing subsystem */
 
-  cs_post_add_existing_mesh(mesh_id,
-                            ct->water_mesh,
-                            0,
-                            false);
-
-  cs_post_associate(mesh_id, writer_id);
+  cs_post_define_existing_mesh(mesh_id,
+                               ct->water_mesh,
+                               0,
+                               false,
+                               false,
+                               1,
+                               writer_ids);
 
   /* Register post processing function */
 

@@ -163,19 +163,6 @@ icompt = 0
 do ii = 2, nvppmx
   if(ichrvr(ii).eq.1) icompt = icompt+1
 enddo
-if(icompt.eq.0) then
-  ntchr = -1
-  frchr = -1.d0
-endif
-
-! Adapt the output frequency parameters according to the time scheme.
-if (idtvar.lt.0.or.idtvar.eq.2) then
-  frchr = -1.d0
-else
-  if (frchr > 0.d0) then
-    ntchr = -1
-  endif
-endif
 
 !---> sorties historiques ?
 !      Si une valeur non modifiee par l'utilisateur (=-999)
@@ -1349,7 +1336,8 @@ if (nbrcpl.ge.1) then
     ! Maillage mobile
     if (icorio.eq.0) then
       imobil = 1
-      ichrmd = 1
+      call pstdfm
+      !==========
     endif
   endif
 endif

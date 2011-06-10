@@ -975,13 +975,11 @@ endif ! iisuit = 1
 ! 20. TEST POUR SAVOIR SI ON SORT UN FICHIER POST OU NON
 !===============================================================================
 
-call usnpst                                                       &
+call pstntc(ntmabs, ntcabs, ttcabs)
 !==========
- ( nvar   , nscal  , nvlsta ,                                     &
-   ra(idt)    , ra(irtpa) , ra(irtp) ,                            &
-   ra(ipropc) , propfa , propfb ,                                 &
-   coefa  , coefb  ,                                              &
-   statis )
+
+call pstusn(ntmabs, ntcabs, ttcabs)
+!==========
 
 !===============================================================================
 ! 21. SORTIE DES FICHIERS POST STANDARDS

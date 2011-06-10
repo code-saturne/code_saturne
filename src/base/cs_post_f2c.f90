@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2010 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -25,168 +25,6 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine pstcwr &
-!=================
-
- ( numgep , nomcas , nomrep , nomfmt , optfmt , indmod , ntchr , frchr )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! CREATION D'UN "WRITER" A PARTIR DES DONNEES FOURNIES PAR LA
-! COUCHE FORTRAN : ENCAPSULATION COUCHE C POUR LA TRANSMISSION
-! DES LONGUEURS DES CHAINES DE CARACTERES
-
-! UN WRITER CORRESPOND AU CHOIX D'UN NOM DE CAS, DE REPERTOIRE,
-! ET DE FORMAT, AINSI QU'UN INDICATEUR PRECISANT SI LES MAILLAGES
-! ASSOCIES DOIVENT DEPENDRE OU NON DU TEMPS, ET LA FREQUENCE
-! DE SORTIE PAR DEFAUT POUR LES VARIABLES ASSOCIEES
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! numgep           ! e  ! <-- ! identificateur du gestionnaire                 !
-!                  !    !     ! (< 0 pour gestionnaire reserve,                !
-!                  !    !     !  > 0 pour gestionnaire utilisateur)            !
-! nomcas           ! a  ! <-- ! nom du cas associe                             !
-! nomrep           ! a  ! <-- ! nom du repertoire associe                      !
-! nomfmt           ! a  ! <-- ! nom de format associe                          !
-! optfmt           ! e  ! <-- ! options associees au format                    !
-! indmod           ! e  ! <-- ! 0 : maillages figes                            !
-!                  !    !     ! 1 : maillages deformables                      !
-!                  !    !     ! 2 : maillages modifiables                      !
-! ntchr            ! e  ! <-- ! frequence de sortie par defaut                 !
-! frchr            ! r  ! <-- ! frequence de sortie par defaut (en secondes)   !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-character*32     nomcas , nomfmt
-character*96     nomrep , optfmt
-integer          numgep , indmod , ntchr
-double precision frchr
-
-! Local variables
-
-integer          lnmcas , lnmrep , lnmfmt , lopfmt
-
-!===============================================================================
-
-lnmcas = len(nomcas)
-lnmrep = len(nomrep)
-lnmfmt = len(nomfmt)
-lopfmt = len(optfmt)
-
-call pstcw1 (numgep, nomcas, nomrep, nomfmt, optfmt,              &
-!==========
-             lnmcas, lnmrep, lnmfmt, lopfmt,                      &
-             indmod, ntchr , frchr )
-
-return
-
-end subroutine
-subroutine pstcma &
-!=================
-
- ( nummai , nommai , indgrp ,                                     &
-   nbrcel , nbrfac , nbrfbr , lstcel , lstfac , lstfbr )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! CREATION D'UN MAILLAGE DE POST TRAITEMENT A PARTIR DES DONNEES
-! FOURNIES PAR LA COUCHE FORTRAN : ENCAPSULATION COUCHE C
-! POUR LA TRANSMISSION DES LONGUEURS DES CHAINES DE CARACTERES
-
-! LES LISTES DE CELLULES OU FACES A EXTRAIRE SONT TRIEES EN SORTIE,
-! QU'ELLES LE SOIENT DEJA EN ENTREE OU NON.
-
-! LA LISTE DES CELLULES ASSOCIEES N'EST NECESSAIRE QUE SI LE NOMBRE
-! DE CELLULES A EXTRAIRE EST STRICTEMENT SUPERIEUR A 0 ET INFERIEUR
-! AU NOMBRE DE CELLULES DU MAILLAGE.
-
-! LES LISTES DE FACES NE SONT PRISES EN COMPTE QUE SI LE NOMBRE DE
-! CELLULES A EXTRAIRE EST NUL ; SI LE NOMBRE DE FACES DE BORD A
-! EXTRAIRE EST EGAL AU NOMBRE DE FACES DE BORD DU MAILLAGE GLOBAL,
-! ET LE NOMBRE DE FACES INTERNES A EXTRAIRE EST NUL, ALORS ON
-! EXTRAIT PAR DEFAUT LE MAILLAGE DE BORD, ET LA LISTE DES FACES DE
-! BORD ASSOCIEES N'EST DONC PAS NECESSAIRE.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nummai           ! e  ! <-- ! identificateur du maillage                     !
-!                  !    !     ! (< 0 pour maillage reserve,   ,                !
-!                  !    !     !  > 0 pour maillage utilisateur)                !
-! nommai           ! a  ! <-- ! nom du maillage associe                        !
-! indgrp           ! e  ! <-- ! 1 to add group information, or O               !
-! nbrcel           ! e  ! <-- ! nombre de cellules associees                   !
-! nbrfac           ! e  ! <-- ! nombre de faces internes associees             !
-! nbrfbr           ! e  ! <-- ! nombre de faces de bord associees              !
-! lstcel           ! e  ! <-- ! liste des cellules associees                   !
-!                  ! e  !     ! (inutile si nbrcel >= ncel)                    !
-! lstfac           ! e  ! <-- ! liste des faces internes associees             !
-! lstfbr           ! e  ! <-- ! liste des faces de bord associees              !
-!                  ! e  !     ! (inutile si    nbrfbr = nfabor                 !
-!                  ! e  !     !             et nbrfac = 0     )                !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-character*32     nommai
-integer          nummai, indgrp, nbrcel, nbrfac, nbrfbr
-
-integer          lstcel(nbrcel), lstfac(nbrfac), lstfbr(nbrfbr)
-
-! Local variables
-
-integer          lnmmai
-
-!===============================================================================
-
-lnmmai = len(nommai)
-
-call pstcm1 (nummai, nommai, lnmmai, indgrp,                      &
-!==========
-             nbrcel, nbrfac, nbrfbr, lstcel, lstfac, lstfbr)
-
-return
-
-end subroutine
 subroutine psteva &
 !================
 
@@ -194,14 +32,11 @@ subroutine psteva &
    varcel , varfac , varfbo )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! --------
 
-! ECRITURE D'UN CHAMP DE POST TRAITEMENT ASSOCIE AUX CELLULES
-! OU FACES D'UN MAILLAGE A PARTIR DES DONNEES FOURNIES PAR LA
-! COUCHE FORTRAN :
-! ENCAPSULATION COUCHE C POUR LA TRANSMISSION DES LONGUEURS DES
-! CHAINES DE CARACTERES
+! Write a cell of face located field based on data provided by the
+! Fortran layer: encapsulation so as to provide character string lengths.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -225,10 +60,9 @@ subroutine psteva &
 ! varfbo(*)        ! r  ! <-- ! valeurs aux faces de bord associees            !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -267,27 +101,26 @@ subroutine pstsnv &
  ( nomvar , nomva2 , nomva3 )
 
 !===============================================================================
-! FONCTION :
+! Purpose:
 ! --------
 
-! SUPPRESSION DU CARACTERE X, x, OU 1 D'UNE CHAINE DE CARACTERES
-! FORTRAN SI LES CHAINES COMPAREES SONT IDENTIQUES AU DERNIER
-! CARACTERE PRES, RESPECTIVEMENT Y, y, OU 2 ET Z, z, OU 3
+! Remove character X, x, or 1 from a Fortran character string if the
+! compared strings are identical except for the last character, respectively
+! Y, y, or 2 and Z, z, or 3.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nomvar           ! e  ! <-- ! nom de la variable associee                    !
-! nomva2           ! e  ! <-- ! nom de la variable 2 associee                  !
-! nomva3           ! e  ! <-- ! nom de la variable 3 associee                  !
+! nomvar           ! s  ! <-- ! name of the first associated variable          !
+! nomva2           ! s  ! <-- ! name of the second associated variable         !
+! nomva3           ! s  ! <-- ! name of the third associated variable          !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================

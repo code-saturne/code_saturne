@@ -246,7 +246,8 @@ cs_run(void)
 
   /* Initialize main post-processing */
 
-  cs_post_init_main_writer();
+  cs_user_postprocess_writers();
+  cs_post_init_writers();
 
   /* Join meshes / build periodicity links if necessary */
 
@@ -307,12 +308,6 @@ cs_run(void)
 
   cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
 
-  /* Initialize meshes for the main post-processing */
-
-  check_mask = ((opts.preprocess | opts.verif) == true) ? 2 + 1 : 0;
-
-  cs_post_init_main_meshes(check_mask);
-
   /* Compute geometric quantities related to the mesh */
 
   bft_printf_flush();
@@ -325,6 +320,13 @@ cs_run(void)
 
   /* Initialize selectors for the mesh */
   cs_mesh_init_selectors();
+
+  /* Initialize meshes for the main post-processing */
+
+  check_mask = ((opts.preprocess | opts.verif) == true) ? 2 + 1 : 0;
+
+  cs_user_postprocess_meshes();
+  cs_post_init_meshes(check_mask);
 
 #if 0
   /* For debugging purposes */

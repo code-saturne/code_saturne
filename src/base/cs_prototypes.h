@@ -362,25 +362,6 @@ extern void CS_PROCF (initi1, INITI1)
 );
 
 /*----------------------------------------------------------------------------
- * Get parameters necessary for post-processing initialization from
- * the Fortran API.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (inipst, INIPST)
-(
- const cs_int_t  *ichrvl,    /* <-- fluid volume post processing indicator */
- const cs_int_t  *ichrbo,    /* <-- boundary faces post processing indicator */
- const cs_int_t  *ipstmd,    /* <-- deformable mesh flag
-                              *     0: no time dependency
-                              *     1: deformable post processing meshes
-                              *     2: output of a displacement field */
- const cs_int_t  *ntchr,     /* <-- frequency of post processing output */
- const cs_real_t *frchr,     /* <-- frequency of post processing output */
- const char      *fmtchr,    /* <-- name of main output format */
- const char      *optchr     /* <-- options for main output format */
-);
-
-/*----------------------------------------------------------------------------
  * Update mesh dimensions in Fortran commons
  *----------------------------------------------------------------------------*/
 
@@ -479,6 +460,26 @@ extern void CS_PROCF (tstvec, TSTVEC)
  cs_real_t        rworkf[], /* --- work array, size: max(nfac, nfabor) */
  cs_real_t        rsmbs[],  /* --- work array, size: ncelet */
  cs_real_t        rsmbv[]   /* --- work array, size: ncelet */
+);
+
+/*----------------------------------------------------------------------------
+ * User override of default frequency or calculation end based output.
+ *
+ * Fortran interface:
+ *
+ * subroutine pstusn (ntmabs, ntcabs, ttcabs)
+ * *****************
+ *
+ * integer          ntmabs      : <-- : maximum time step number
+ * integer          ntcabs      : <-- : current time step number
+ * double precision ttcabs      : <-- : absolute time at the current time step
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (pstusn, PSTUSN)
+(
+ const cs_int_t  *ntmabs,
+ const cs_int_t  *ntcabs,
+ const cs_real_t *ttcabs
 );
 
 /*----------------------------------------------------------------------------
@@ -606,6 +607,45 @@ cs_user_mesh_modify(cs_mesh_t  *mesh);
 
 void
 cs_user_periodicity(void);
+
+/*----------------------------------------------------------------------------
+ * Define post-processing writers.
+ *
+ * The default output format and frequency may be configured, and additional
+ * post-processing writers allowing outputs in different formats or with
+ * different format options and output frequency than the main writer may
+ * be defined.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_writers(void);
+
+/*----------------------------------------------------------------------------
+ * Define post-processing meshes.
+ *
+ * The main post-processing meshes may be configured, and additional
+ * post-processing meshes may be defined as a subset of the main mesh's
+ * cells or faces (both interior and boundary).
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_meshes(void);
+
+/*----------------------------------------------------------------------------
+ * Override default frequency or calculation end based output.
+ *
+ * This allows fine-grained control of activation or deactivation,
+ *
+ * parameters:
+ *   nt_max_abs <-- maximum time step number
+ *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- absolute time at the current time step
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_activate(int     nt_max_abs,
+                             int     nt_cur_abs,
+                             double  t_cur_abs);
 
 /*----------------------------------------------------------------------------
  * Define couplings with other instances of Code_Saturne.

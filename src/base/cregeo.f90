@@ -29,10 +29,10 @@ subroutine cregeo
 !================
 
 !===============================================================================
-!  FONCTION
-!  ---------
+! Purpose:
+! --------
 
-!   CREATION DES ENTITES GEOMETRIQUES, PAR  CALCUL
+! Complete creation of geometrical entities.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -41,10 +41,9 @@ subroutine cregeo
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -68,32 +67,14 @@ implicit none
 ! Arguments
 
 
-
-
 ! Local variables
 
 integer          nbrsyr , nbzech
 character        ficsui*32
 
-integer, allocatable, dimension(:) :: lcel, lfac, lfabor
-
 !===============================================================================
-! 1. DEFINITION DE MAILLAGES ET FORMATS DE POST TRAITEMENT UTILISATEUR
-!===============================================================================
-
-! Allocate temporary arrays
-allocate(lcel(ncel), lfac(nfac), lfabor(nfabor))
-
-call usdpst &
-!==========
- ( lcel , lfac , lfabor )
-
-! Free memory
-deallocate(lcel, lfac, lfabor)
-
-!===============================================================================
-! 2. CREATION DU MAILLAGE EXTRAIT COUPLE AVEC SYRTHES
-!    ENVOI DES DONNEES GEOMETRIQUES A SYRTHES SI NECESSAIRE
+! 1. Creation of extracted mesh coupled with SYRTHES
+!    Send geometrical entities to SYRTHES if necessary
 !===============================================================================
 
 !     NOMBRE DE COUPLAGES SYRTHES DEFINIS
@@ -106,13 +87,11 @@ if (nbrsyr .gt. 0) then
   !==========
 endif
 
-
 !===============================================================================
-! 3. CREATION DU MAILLAGE EXTRUDE POUR LES ZONES D'ECHANGE AERO
+! 2. Create extruded mesh for cooling tower exchange zones
 !===============================================================================
 
 if (ippmod(iaeros).ge.0) then
-
 
   call usctdz
   !==========
@@ -131,23 +110,21 @@ if (ippmod(iaeros).ge.0) then
 
   if (ippmod(iaeros).ge.0.and.isuict.eq.1) then
      ficsui = 'cooling_towers'
-     call lecctw ( ficsui , len(ficsui) )
+     call lecctw (ficsui , len(ficsui))
      !==========
   endif
 
 endif
 
-
 !===============================================================================
-! 4. ECRITURE DES MAILLAGES DE POST TRAITEMENT INDEPENDANTS DU TEMPS
+! 3. Write time-independent post-processing meshes
 !===============================================================================
 
 call pstema (ntcabs, ttcabs)
 !==========
 
-
 !===============================================================================
-! 5. FILTRAGE DU VOISINAGE ETENDU POUR LE GRADIENT PAR MOINDRES CARRES
+! 4. Filter extended neighborhood for least-squares gradients
 !===============================================================================
 
 if (imrgra.eq.3) then

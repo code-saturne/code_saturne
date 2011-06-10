@@ -863,6 +863,7 @@ _post_init(cs_syr3_coupling_t  *syr_coupling)
   int coupling_id = -1;
 
   const int writer_id = -1;
+  const int writer_ids[] = {writer_id};
 
   cs_int_t  n_vertices = 0;
   cs_int_t  mesh_id = cs_post_get_free_mesh_id();
@@ -909,12 +910,13 @@ _post_init(cs_syr3_coupling_t  *syr_coupling)
   if (syr_coupling->dim == 2)
     dim_shift = 1;
 
-  cs_post_add_existing_mesh(mesh_id,
-                            syr_coupling->coupled_mesh,
-                            dim_shift,
-                            false);
-
-  cs_post_associate(mesh_id, writer_id);
+  cs_post_define_existing_mesh(mesh_id,
+                               syr_coupling->coupled_mesh,
+                               dim_shift,
+                               false,
+                               false,
+                               1,
+                               writer_ids);
 
   /* Register post processing function */
 

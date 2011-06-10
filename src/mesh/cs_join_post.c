@@ -108,44 +108,17 @@ static  cs_bool_t       _cs_join_post_initialized = false;
 static int
 _init_join_writer(void)
 {
-  /* Default values */
+  cs_int_t  writer_id = cs_post_get_free_writer_id();
 
-  cs_int_t  writer_id = -3;
-  cs_int_t  indic_vol = -1, indic_brd = -1;
-  cs_int_t  indic_mod = -1;
-  char  fmtchr[32 + 1] = "";
-  char  optchr[96 + 1] = "";
-  cs_int_t  ntchr = -1;
-  cs_real_t  frchr = -1.0;
-
-  const char  casename[] = "joining";
-  const char  dirname[] = "postprocessing";
-
-  /* Get parameters from Fortran module */
-
-  CS_PROCF(inipst, INIPST)(&indic_vol,
-                           &indic_brd,
-                           &indic_mod,
-                           &ntchr,
-                           &frchr,
-                           fmtchr,
-                           optchr);
-
-  fmtchr[32] = '\0';
-  optchr[96] = '\0';
-
-  /* Create default writer */
-
-  writer_id = cs_post_get_free_writer_id();
-
-  cs_post_add_writer(writer_id,
-                     casename,
-                     dirname,
-                     fmtchr,
-                     optchr,
-                     -1, /* No time dependency here */
-                     ntchr,
-                     frchr);
+  cs_post_define_writer(writer_id,
+                        "joining",
+                        "postprocessing",
+                        cs_post_get_default_format(),
+                        cs_post_get_default_format_options(),
+                        -1, /* No time dependency here */
+                        false,
+                        -1,
+                        -1.0);
 
   return  writer_id;
 }
@@ -436,8 +409,9 @@ void
 cs_join_post_after_merge(cs_join_param_t          join_param,
                          const cs_join_select_t  *join_select)
 {
-  cs_int_t  adj_mesh_id, sel_mesh_id;
+  int  adj_mesh_id, sel_mesh_id;
 
+  int  writer_ids[] = {_cs_join_post_param.writer_num};
   char  *mesh_name = NULL;
 
   if (_cs_join_post_initialized == false)
@@ -448,39 +422,37 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
   BFT_MALLOC(mesh_name, strlen("AdjacentJoinFaces_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "AdjacentJoinFaces_j", join_param.num);
 
-  cs_post_add_mesh(adj_mesh_id,
-                   mesh_name,
-                   false,
-                   0,
-                   join_select->n_i_adj_faces,
-                   join_select->n_b_adj_faces,
-                   NULL,
-                   join_select->i_adj_faces,
-                   join_select->b_adj_faces);
-
-  cs_post_associate(adj_mesh_id, _cs_join_post_param.writer_num);
+  cs_post_define_surface_mesh_by_list(adj_mesh_id,
+                                      mesh_name,
+                                      join_select->n_i_adj_faces,
+                                      join_select->n_b_adj_faces,
+                                      join_select->i_adj_faces,
+                                      join_select->b_adj_faces,
+                                      false,
+                                      false,
+                                      1,
+                                      writer_ids);
 
   sel_mesh_id = cs_post_get_free_mesh_id();
 
   BFT_REALLOC(mesh_name, strlen("JoinFacesAfterMerge_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "JoinFacesAfterMerge_j", join_param.num);
 
-  cs_post_add_mesh(sel_mesh_id,
-                   mesh_name,
-                   false,
-                   0,
-                   0,
-                   join_select->n_faces,
-                   NULL,
-                   NULL,
-                   join_select->faces);
-
-  cs_post_associate(sel_mesh_id, _cs_join_post_param.writer_num);
+  cs_post_define_surface_mesh_by_list(sel_mesh_id,
+                                      mesh_name,
+                                      0,
+                                      join_select->n_faces,
+                                      NULL,
+                                      join_select->faces,
+                                      false,
+                                      false,
+                                      1,
+                                      writer_ids);
 
   /* Post */
 
   cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
-  cs_post_write_meshes(1,0);
+  cs_post_write_meshes(1, 0);
 
   BFT_FREE(mesh_name);
 }
@@ -507,6 +479,7 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
 {
   cs_int_t  i, j;
 
+  int  writer_ids[] = {_cs_join_post_param.writer_num};
   char  *mesh_name = NULL;
   cs_int_t  *post_i_faces = NULL, *post_b_faces = NULL;
   cs_int_t  post_i_mesh_id = cs_post_get_free_mesh_id();
@@ -534,17 +507,16 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
   BFT_MALLOC(mesh_name, strlen("InteriorJoinedFaces_j") + 2 + 1, char);
   sprintf(mesh_name,"%s%02d", "InteriorJoinedFaces_j", join_param.num);
 
-  cs_post_add_mesh(post_i_mesh_id,
-                   mesh_name,
-                   false,
-                   0,
-                   n_new_i_faces,
-                   0,
-                   NULL,
-                   post_i_faces,
-                   NULL);
-
-  cs_post_associate(post_i_mesh_id, _cs_join_post_param.writer_num);
+  cs_post_define_surface_mesh_by_list(post_i_mesh_id,
+                                      mesh_name,
+                                      n_new_i_faces,
+                                      0,
+                                      post_i_faces,
+                                      NULL,
+                                      false,
+                                      false,
+                                      1,
+                                      writer_ids);
 
   if (join_param.visualization > 1 && n_g_new_b_faces > 0) {
 
@@ -553,17 +525,16 @@ cs_join_post_after_split(cs_int_t          n_old_i_faces,
     BFT_REALLOC(mesh_name, strlen("BoundaryJoinedFaces_j") + 2 + 1, char);
     sprintf(mesh_name,"%s%02d", "BoundaryJoinedFaces_j", join_param.num);
 
-    cs_post_add_mesh(post_b_mesh_id,
-                     mesh_name,
-                     false,
-                     0,
-                     0,
-                     n_new_b_faces,
-                     NULL,
-                     NULL,
-                     post_b_faces);
-
-    cs_post_associate(post_b_mesh_id, _cs_join_post_param.writer_num);
+    cs_post_define_surface_mesh_by_list(post_b_mesh_id,
+                                        mesh_name,
+                                        0,
+                                        n_new_b_faces,
+                                        NULL,
+                                        post_b_faces,
+                                        false,
+                                        false,
+                                        1,
+                                        writer_ids);
 
   }
 
@@ -595,6 +566,7 @@ cs_join_post_cleaned_faces(cs_int_t         n_i_clean_faces,
                            cs_int_t         b_clean_faces[],
                            cs_join_param_t  param)
 {
+  int  writer_ids[] = {_cs_join_post_param.writer_num};
   int  post_mesh_id = cs_post_get_free_mesh_id();
   char  *name = NULL;
 
@@ -604,19 +576,18 @@ cs_join_post_cleaned_faces(cs_int_t         n_i_clean_faces,
   BFT_MALLOC(name, strlen("CleanFaces_j") + 2 + 1, char);
   sprintf(name,"%s%02d", "CleanFaces_j", param.num);
 
-  cs_post_add_mesh(post_mesh_id,
-                   name,
-                   false,
-                   0,
-                   n_i_clean_faces,
-                   n_b_clean_faces,
-                   NULL,
-                   i_clean_faces,
-                   b_clean_faces);
+  cs_post_define_surface_mesh_by_list(post_mesh_id,
+                                      name,
+                                      n_i_clean_faces,
+                                      n_b_clean_faces,
+                                      i_clean_faces,
+                                      b_clean_faces,
+                                      false,
+                                      false,
+                                      1,
+                                      writer_ids);
 
   /* Otput post-processing data */
-
-  cs_post_associate(post_mesh_id, _cs_join_post_param.writer_num);
 
   cs_post_activate_writer(_cs_join_post_param.writer_num, 1);
   cs_post_write_meshes(1,0);

@@ -200,7 +200,6 @@ hturbp.f90 \
 idrbla.f90 \
 impini.f90 \
 iniini.f90 \
-inipst.f90 \
 initi1.f90 \
 initi2.f90 \
 iniusi.f90 \
@@ -257,13 +256,11 @@ $(top_srcdir)/users/base/usalcl.f90 \
 $(top_srcdir)/users/base/usalin.f90 \
 $(top_srcdir)/users/base/usaste.f90 \
 $(top_srcdir)/users/base/usclim.f90 \
-$(top_srcdir)/users/base/usdpst.f90 \
 $(top_srcdir)/users/base/ushist.f90 \
 $(top_srcdir)/users/base/usini1.f90 \
 $(top_srcdir)/users/base/usiniv.f90 \
 $(top_srcdir)/users/base/uskpdc.f90 \
 $(top_srcdir)/users/base/usmpst.f90 \
-$(top_srcdir)/users/base/usnpst.f90 \
 $(top_srcdir)/users/base/usphyv.f90 \
 $(top_srcdir)/users/base/usproj.f90 \
 $(top_srcdir)/users/base/uspt1d.f90 \
@@ -287,6 +284,7 @@ $(top_srcdir)/users/base/cs_user_join.c \
 $(top_srcdir)/users/base/cs_user_mesh_input.c \
 $(top_srcdir)/users/base/cs_user_mesh_modify.c \
 $(top_srcdir)/users/base/cs_user_periodicity.c \
+$(top_srcdir)/users/base/cs_user_postprocess.c \
 $(top_srcdir)/users/base/cs_user_saturne_coupling.c \
 $(top_srcdir)/users/base/cs_user_solver.c \
 $(top_srcdir)/users/base/cs_user_syrthes_coupling.c

@@ -318,6 +318,7 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
     int mesh_id[2] = {0, 0};
 
     const int writer_id = -2;
+    const int writer_ids[] = {writer_id};
 
     n_errors = 0;
 
@@ -337,17 +338,16 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
     mesh_id[0] = cs_post_get_free_mesh_id();
 
-    cs_post_add_mesh(mesh_id[0],
-                     _("Faces with B.C. error"),
-                     true,
-                     0,
-                     0,
-                     face_list_size,
-                     NULL,
-                     NULL,
-                     face_list);
-
-    cs_post_associate(mesh_id[0], writer_id);
+    cs_post_define_surface_mesh_by_list(mesh_id[0],
+                                        _("Faces with B.C. error"),
+                                        0,
+                                        face_list_size,
+                                        NULL,
+                                        face_list,
+                                        true,  /* add groups if present */
+                                        false, /* auto variables */
+                                        1,
+                                        writer_ids);
 
     /* Mesh for valid faces */
 
@@ -364,17 +364,17 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
       mesh_id[1] = cs_post_get_free_mesh_id();
 
-      cs_post_add_mesh(mesh_id[1],
-                       _("Faces with valid B.C.'s"),
-                       true,
-                       0,
-                       0,
-                       face_list_size,
-                       NULL,
-                       NULL,
-                       face_list);
+      cs_post_define_surface_mesh_by_list(mesh_id[1],
+                                          _("Faces with valid B.C.'s"),
+                                          0,
+                                          face_list_size,
+                                          NULL,
+                                          face_list,
+                                          true,  /* add groups if present */
+                                          false, /* auto variables */
+                                          1,
+                                          writer_ids);
 
-      cs_post_associate(mesh_id[1], writer_id);
     }
 
     BFT_FREE(face_marker);

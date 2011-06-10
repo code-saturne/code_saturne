@@ -2287,7 +2287,7 @@ write(nfecra,7510) ntsuit
 
 !   - Fichiers Ensight
 
-write(nfecra,7520) ntchr,frchr
+write(nfecra,7520)
 do ii = 2, nvppmx
   if(ichrvr(ii).eq.1) then
     name = nomvar(ii)
@@ -2337,24 +2337,22 @@ write(nfecra,9900)
 
 #if defined(_CS_LANG_FR)
 
- 7500 format(                                                           &
+ 7500 format(                                                     &
                                                                 /,&
 ' ** ENTREES SORTIES'                                          ,/,&
 '    ---------------'                                          ,/)
- 7510 format(                                                           &
+ 7510 format(                                                     &
 ' --- Fichier suite'                                           ,/,&
 '       NTSUIT = ',4X,I10,    ' (Periode de sauvegarde)'       ,/)
- 7520 format(                                                           &
-' --- Fichiers EnSight, MED, ou CGNS'                          ,/,&
-'       NTCHR  = ',4X,I10,    ' (Periode de sortie    )'       ,/,&
-'       FRCHR  = ',4X,E11.5,  ' (Periode de sortie (s))'       ,/,&
+ 7520 format(                                                     &
+' --- Variables post-traitees'                                 ,/,&
                                                                 /,&
 '       Numero Nom'                                              )
- 7521 format(                                                           &
+ 7521 format(                                                     &
 '   ',     I10,1X,          A16                                  )
- 7522 format(                                                           &
+ 7522 format(                                                     &
 '         --           --'                                     ,/)
- 7530 format(                                                           &
+ 7530 format(                                                     &
 ' --- Fichiers historiques'                                    ,/,&
 '       NTHIST = ',4X,I10,    ' (Periode de sortie    )'       ,/,&
 '       FRHIST = ',4X,E11.5,  ' (Periode de sortie (s))'       ,/,&
@@ -2384,24 +2382,22 @@ write(nfecra,9900)
 
 #else
 
- 7500 format(                                                           &
+ 7500 format(                                                     &
                                                                 /,&
 ' ** INPUT-OUTPUT'                                             ,/,&
 '    ------------'                                             ,/)
- 7510 format(                                                           &
+ 7510 format(                                                     &
 ' --- Restart file'                                            ,/,&
 '       NTSUIT = ',4X,I10,    ' (Checkpoint frequency )'       ,/)
- 7520 format(                                                           &
-' --- EnSight, MED, or CGNS output'                            ,/,&
-'       NTCHR  = ',4X,I10,    ' (Output frequency     )'       ,/,&
-'       FRCHR  = ',4X,E11.5,  ' (Output frequency (s) )'       ,/,&
+ 7520 format(                                                     &
+' --- Post-processed variables'                                ,/,&
                                                                 /,&
 '       Number Name'                                             )
- 7521 format(                                                           &
+ 7521 format(                                                     &
 '   ',     I10,1X,          A16                                  )
- 7522 format(                                                           &
+ 7522 format(                                                     &
 '         --           --'                                     ,/)
- 7530 format(                                                           &
+ 7530 format(                                                     &
 ' --- Probe history files'                                     ,/,&
 '       NTHIST = ',4X,I10,    ' (Output frequency     )'       ,/,&
 '       FRHIST = ',4X,E11.5,  ' (Output frequency (s) )'       ,/,&

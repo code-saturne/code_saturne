@@ -93,187 +93,18 @@ typedef void
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Create a writer based on Fortran data; this object is based on a choice
- * of a case, directory, and format, as well as indicator for associated
- * mesh's time dependency, and the default output frequency for associated
- * variables.
- *
- * Fortran Interface: use pstcwr (see cs_post_f2c.f90)
- *
- * subroutine pstcw1 (numgep, nomcas, nomrep, nomfmt, optfmt,
- * *****************
- *                    lnmcas, lnmfmt, lnmrep, lopfmt, indmod, ntchr)
- *
- * integer          numwri      : <-- : number of writer to create (< 0 for
- *                              :     : standard writer, > 0 for user writer)
- * character        nomcas      : <-- : name of associated case
- * character        nomrep      : <-- : name of associated directory
- * integer          nomfmt      : <-- : name of associated format
- * integer          optfmt      : <-- : additional format options
- * integer          lnmcas      : <-- : case name length
- * integer          lnmrep      : <-- : directory name length
- * integer          lnmfmt      : <-- : format name length
- * integer          lopfmt      : <-- : format options string length
- * integer          indmod      : <-- : 0 if fixed, 1 if deformable,
- *                              :     : 2 if topology changes
- * integer          ntchr       : <-- : default output frequency in time-steps
- * double precision frchr       : <-- : default output frequency in seconds
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstcw1, PSTCW1)
-(
- const cs_int_t  *numwri,
- const char      *nomcas,
- const char      *nomrep,
- const char      *nomfmt,
- const char      *optfmt,
- const cs_int_t  *lnmcas,
- const cs_int_t  *lnmrep,
- const cs_int_t  *lnmfmt,
- const cs_int_t  *lopfmt,
- const cs_int_t  *indmod,
- const cs_int_t  *ntchr,
- const cs_real_t *frchr
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * Create a post-processing mesh; lists of cells or faces to extract are
- * sorted upon exit, whether they were sorted upon calling or not.
- *
- * The list of associated cells is only necessary if the number of cells
- * to extract is strictly greater than 0 and less than the number of cells
- * of the computational mesh.
- *
- * Lists of faces are ignored if the number of extracted cells is nonzero;
- * otherwise, if the number of boundary faces to extract is equal to the
- * number of boundary faces in the computational mesh, and the number of
- * interior faces to extract is zero, than we extrac by default the boundary
- * mesh, and the list of associated boundary faces is thus not necessary.
- *
- * Fortran interface: use pstcma (see cs_post_f2c.f90)
- *
- * subroutine pstcm1 (nummai, nommai, lnmmai,
- * *****************
- *                    nbrcel, nbrfac, nbrfbr, lstcel, lstfac, lstfbr)
- *
- * integer          nummai      : <-- : number of output mesh to create
- *                              :     : (< 0 for standard mesh,
- *                              :     : > 0 for user mesh)
- * character        nommai      : <-- : name of associated output mesh
- * integer          lnmmai      : <-- : mesh name length
- * integer          indgrp      : <-- : 1 to add group information, or O
- * integer          nbrcel      : <-- : number of associated cells
- * integer          nbrfac      : <-- : number of associated interior faces
- * integer          nbrfbr      : <-- : nulber of associated boundary faces
- * integer          lstcel      : <-- : list of associated cells
- * integer          lstfac      : <-- : list of associated interior faces
- * integer          lstfbr      : <-- : list of associated boundary faces
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstcm1, PSTCM1)
-(
- const cs_int_t  *nummai,
- const char      *nommai,
- const cs_int_t  *indgrp,
- const cs_int_t  *lnmmai,
- const cs_int_t  *nbrcel,
- const cs_int_t  *nbrfac,
- const cs_int_t  *nbrfbr,
-       cs_int_t   lstcel[],
-       cs_int_t   lstfac[],
-       cs_int_t   lstfbr[]
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-);
-
-/*----------------------------------------------------------------------------
- * Create a mesh based upon the extraction of edges from an existing mesh.
- *
- * The newly created edges have no link to their parent elements, so
- * no variable referencing parent elements may be output to this mesh,
- * whose main use is to visualize "true" face edges when polygonal faces
- * are subdivided by the writer. In this way, even highly non-convex
- * faces may be visualized correctly if their edges are overlaid on
- * the surface mesh with subdivided polygons.
+ * Configure the post-processing output so that a mesh displacement field
+ * may be output automatically for meshes based on the global volume mesh/
  *
  * Fortran interface:
  *
- * subroutine pstedg (nummai, numref)
+ * subroutine pstdfm
  * *****************
- *
- * integer          nummai      : <-- : number of the edges mesh to create
- * integer          numref      : <-- : number of the existing mesh
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (pstedg, PSTEDG)
+void CS_PROCF (pstdfm, PSTDFM)
 (
- const cs_int_t  *nummai,
- const cs_int_t  *numref
-);
-
-/*----------------------------------------------------------------------------
- * Assign a category to a post-processing mesh.
- *
- * By default, each mesh is assigned a category id identical to its id.
- * The automatic variables output associated with the main volume and
- * boundary meshes will also be applied to meshes of the same categories
- * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
- * defined or not), so setting a user mesh's category to one of these
- * values will automatically provide the same automatic variable output to
- * the user mesh.
- *
- * Fortran interface:
- *
- * subroutine pstcat (nummai, numwri)
- * *****************
- *
- * integer          nummai      : <-- : number of the alias to create
- * integer          numcat      : <-- : number of the assigned category
- *                                      (-1: as volume, -2: as boundary)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstcat, PSTCAT)
-(
- const cs_int_t  *nummai,
- const cs_int_t  *numcat
-);
-
-/*----------------------------------------------------------------------------
- * Create an alias to a post-processing mesh.
- *
- * Fortran interface:
- *
- * subroutine pstalm (nummai, numref)
- * *****************
- *
- * integer          nummai      : <-- : number of the alias to create
- * integer          numref      : <-- : number of the associated output mesh
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstalm, PSTALM)
-(
- const cs_int_t  *nummai,
- const cs_int_t  *numref
-);
-
-/*----------------------------------------------------------------------------
- * Associate a writer to a post-processing mesh.
- *
- * Fortran interface:
- *
- * subroutine pstass (nummai, numwri)
- * *****************
- *
- * integer          nummai      : <-- : number of the associated output mesh
- * integer          numwri      : <-- : number of the writer to associate
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstass, PSTASS)
-(
- const cs_int_t  *nummai,
- const cs_int_t  *numwri
+ void
 );
 
 /*----------------------------------------------------------------------------
@@ -282,15 +113,17 @@ void CS_PROCF (pstass, PSTASS)
  *
  * Fortran interface:
  *
- * subroutine pstntc (ntcabs, ttcabs)
+ * subroutine pstntc (ntmabs, ntcabs, ttcabs)
  * *****************
  *
+ * integer          ntmabs      : <-- : maximum time step number
  * integer          ntcabs      : <-- : current time step number
  * double precision ttcabs      : <-- : absolute time at the current time step
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstntc, PSTNTC)
 (
+ const cs_int_t  *ntmabs,
  const cs_int_t  *ntcabs,
  const cs_real_t *ttcabs
 );
@@ -437,68 +270,185 @@ void CS_PROCF (pstev1, PSTEV1)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Create a writer; this objects manages a case's name, directory, and format,
+ * Configure the post-processing output so that a mesh displacement field
+ * may be output automatically for meshes based on the global volume mesh/
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_set_deformable(void);
+
+/*----------------------------------------------------------------------------
+ * Define a writer; this objects manages a case's name, directory, and format,
  * as well as associated mesh's time dependency, and the default output
  * frequency for associated variables.
  *
+ * This function must be called before the time loop. If a writer with a
+ * given id is defined multiple times, the last definition supercedes the
+ * previous ones.
+ *
  * parameters:
- *   writer_id   <-- number of writer to create (< 0 reserved, > 0 for user)
- *   case_name   <-- associated case name
- *   dir_name    <-- associated directory name
- *   fmt_name    <-- associated format name
- *   fmt_opts    <-- associated format options
- *   mod_flag    <-- 0 if fixed, 1 if deformable, 2 if topolygy changes,
- *                   +10 add a displacement field
- *   frequency_n <-- default output frequency in time-steps
- *   frequency_t <-- default output frequency in seconds
+ *   writer_id     <-- number of writer to create (< 0 reserved, > 0 for user)
+ *   case_name     <-- associated case name
+ *   dir_name      <-- associated directory name
+ *   fmt_name      <-- associated format name
+ *   fmt_opts      <-- associated format options string
+ *   time_dep      <-- FVM_WRITER_FIXED_MESH if mesh definitions are fixed,
+ *                     FVM_WRITER_TRANSIENT_COORDS if coordinates change,
+ *                     FVM_WRITER_TRANSIENT_CONNECT if connectivity changes
+ *   output_at_end <-- force output at calculation end if not 0
+ *   frequency_n   <-- default output frequency in time-steps, or < 0
+ *   frequency_t   <-- default output frequency in seconds, or < 0
+ *                     (has priority over frequency_n)
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_add_writer(int          writer_id,
-                   const char  *case_name,
-                   const char  *dir_name,
-                   const char  *fmt_name,
-                   const char  *fmt_opts,
-                   cs_int_t     mod_flag,
-                   cs_int_t     frequency_n,
-                   cs_real_t    frequency_s);
+cs_post_define_writer(int                     writer_id,
+                      const char             *case_name,
+                      const char             *dir_name,
+                      const char             *fmt_name,
+                      const char             *fmt_opts,
+                      fvm_writer_time_dep_t   time_dep,
+                      cs_bool_t               output_at_end,
+                      cs_int_t                frequency_n,
+                      cs_real_t               frequency_t);
 
 /*----------------------------------------------------------------------------
- * Create a post-processing mesh; lists of cells or faces to extract are
- * sorted upon exit, whether they were sorted upon calling or not.
- *
- * The list of associated cells is only necessary if the number of cells
- * to extract is strictly greater than 0 and less than the number of cells
- * of the computational mesh.
- *
- * Lists of faces are ignored if the number of extracted cells is nonzero;
- * otherwise, if the number of boundary faces to extract is equal to the
- * number of boundary faces in the computational mesh, and the number of
- * interior faces to extract is zero, than we extrac by default the boundary
- * mesh, and the list of associated boundary faces is thus not necessary.
+ * Define a volume post-processing mesh.
  *
  * parameters:
- *   mesh_id      <-- number of mesh to create (< 0 reserved, > 0 for user)
- *   mesh_name    <-- associated mesh name
- *   add_families <-- add family information if possible
- *   n_cells      <-- number of associated cells
- *   n_i_faces    <-- number of associated interior faces
- *   n_b_faces    <-- number of associated boundary faces
- *   cell_list    <-- list of associated cells
- *   i_face_list  <-- list of associated interior faces
- *   b_face_list  <-- list of associated boundary faces
+ *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   mesh_name      <-- associated mesh name
+ *   cell_criteria  <-- selection criteria for cells
+ *   add_groups     <-- if true, add group information if present
+ *   auto_variables <-- if true, automatic output of main variables
+ *   n_writers      <-- number of associated writers
+ *   writer_ids     <-- ids of associated writers
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_add_mesh(int          mesh_id,
-                 const char  *mesh_name,
-                 cs_bool_t    add_families,
-                 cs_int_t     n_cells,
-                 cs_int_t     n_i_faces,
-                 cs_int_t     n_b_faces,
-                 cs_int_t     cell_list[],
-                 cs_int_t     i_face_list[],
-                 cs_int_t     b_face_list[]);
+cs_post_define_volume_mesh(int          mesh_id,
+                           const char  *mesh_name,
+                           const char  *cell_criteria,
+                           cs_bool_t    add_groups,
+                           cs_bool_t    auto_variables,
+                           int          n_writers,
+                           const int    writer_ids[]);
+
+/*----------------------------------------------------------------------------
+ * Define a volume post-processing mesh using a cell list.
+
+ * The list of cells to extract is sorted upon exit, whether it was sorted
+ * upon calling or not.
+ *
+ * parameters:
+ *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   mesh_name      <-- associated mesh name
+ *   n_cells        <-- number of selected cells
+ *   cell_list      <-> list of selected cells (1 to n numbering)
+ *   add_groups     <-- if true, add group information if present
+ *   auto_variables <-- if true, automatic output of main variables
+ *   n_writers      <-- number of associated writers
+ *   writer_ids     <-- ids of associated writers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_define_volume_mesh_by_list(int          mesh_id,
+                                   const char  *mesh_name,
+                                   fvm_lnum_t   n_cells,
+                                   fvm_lnum_t   cell_list[],
+                                   cs_bool_t    add_groups,
+                                   cs_bool_t    auto_variables,
+                                   int          n_writers,
+                                   const int    writer_ids[]);
+
+/*----------------------------------------------------------------------------
+ * Define a surface post-processing mesh.
+ *
+ * parameters:
+ *   mesh_id         <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   mesh_name       <-- associated mesh name
+ *   i_face_criteria <-- selection criteria for interior faces
+ *   b_face_criteria <-- selection criteria for boundary faces
+ *   add_groups      <-- if true, add group information if present
+ *   auto_variables  <-- if true, automatic output of main variables
+ *   n_writers       <-- number of associated writers
+ *   writer_ids      <-- ids of associated writers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_define_surface_mesh(int          mesh_id,
+                            const char  *mesh_name,
+                            const char  *i_face_criteria,
+                            const char  *b_face_criteria,
+                            cs_bool_t    add_groups,
+                            cs_bool_t    auto_variables,
+                            int          n_writers,
+                            const int    writer_ids[]);
+
+/*----------------------------------------------------------------------------
+ * Define a surface post-processing mesh using a face list.
+ *
+ * Lists of cells or faces to extract are sorted upon exit, whether they
+ * were sorted upon calling or not.
+ *
+ * parameters:
+ *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   mesh_name      <-- associated mesh name
+ *   n_i_faces      <-- number of associated interior faces
+ *   n_b_faces      <-- number of associated boundary faces
+ *   i_face_list    <-> list of associated interior faces (1 to n numbering)
+ *   b_face_list    <-> list of associated boundary faces (1 to n numbering)
+ *   add_groups     <-- if true, add group information if present
+ *   auto_variables <-- if true, automatic output of main variables
+ *   n_writers      <-- number of associated writers
+ *   writer_ids     <-- ids of associated writers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_define_surface_mesh_by_list(int          mesh_id,
+                                    const char  *mesh_name,
+                                    fvm_lnum_t   n_i_faces,
+                                    fvm_lnum_t   n_b_faces,
+                                    fvm_lnum_t   i_face_list[],
+                                    fvm_lnum_t   b_face_list[],
+                                    cs_bool_t    add_groups,
+                                    cs_bool_t    auto_variables,
+                                    int          n_writers,
+                                    const int    writer_ids[]);
+
+/*----------------------------------------------------------------------------
+ * Create an alias to a post-processing mesh.
+ *
+ * An alias allows association of an extra identifier (id) to an
+ * existing post-processing mesh, and thus to associate different writers
+ * than those associated with the existing mesh. For example, this allows
+ * outputting a set of main variables every n1 time steps with one writer,
+ * and outputting a specific set of variables every n2 time time steps to
+ * another post-processing set using another writer, without the overhead
+ * that would be incurred by duplication of the post-processing mesh.
+ *
+ * An alias is thus treated in all points like its associated mesh;
+ * if the definition of either one is modified, that of the other is
+ * modified also.
+ *
+ * It is forbidden to associate an alias to another alias (as there is no
+ * identified use for this, and it would make consistency checking more
+ * difficult), but multiple aliases may be associated with a given mesh.
+ *
+ * parameters:
+ *   mesh_id         <-- id of mesh to define (< 0 reserved, > 0 for user)
+ *   aliased_mesh_id <-- id of aliased mesh
+ *   auto_variables  <-- if true, automatic output of main variables
+ *   n_writers       <-- number of associated writers
+ *   writer_ids      <-- ids of associated writers
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_define_alias_mesh(int        mesh_id,
+                          int        aliased_mesh_id,
+                          cs_bool_t  auto_variables,
+                          int        n_writers,
+                          const int  writer_ids[]);
 
 /*----------------------------------------------------------------------------
  * Create a post-processing mesh associated with an existing exportable mesh
@@ -519,18 +469,24 @@ cs_post_add_mesh(int          mesh_id,
  * This is important when variables values are exported.
  *
  * parameters:
- *   mesh_id   <-- number of mesh to create (< 0 reserved, > 0 for user)
- *   exp_mesh  <-- mesh in exportable representation (i.e. fvm_nodal_t)
- *   dim_shift <-- nonzero if exp_mesh has been projected
- *   transfer  <-- if true, ownership of exp_mesh is transferred to the
- *                 post-processing mesh
+ *   mesh_id        <-- number of mesh to create (< 0 reserved, > 0 for user)
+ *   exp_mesh       <-- mesh in exportable representation (i.e. fvm_nodal_t)
+ *   dim_shift      <-- nonzero if exp_mesh has been projected
+ *   transfer       <-- if true, ownership of exp_mesh is transferred to
+ *                      the post-processing mesh
+ *   auto_variables <-- if true, automatic output of main variables
+ *   n_writers      <-- number of associated writers
+ *   writer_ids     <-- ids of associated writers
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_add_existing_mesh(int           mesh_id,
-                          fvm_nodal_t  *exp_mesh,
-                          int           dim_shift,
-                          cs_bool_t     transfer);
+cs_post_define_existing_mesh(int           mesh_id,
+                             fvm_nodal_t  *exp_mesh,
+                             int           dim_shift,
+                             cs_bool_t     transfer,
+                             cs_bool_t     auto_variables,
+                             int           n_writers,
+                             const int     writer_ids[]);
 
 /*----------------------------------------------------------------------------
  * Create a mesh based upon the extraction of edges from an existing mesh.
@@ -543,13 +499,17 @@ cs_post_add_existing_mesh(int           mesh_id,
  * the surface mesh with subdivided polygons.
  *
  * parameters:
- *   edges_id <-- id of edges mesh to create (< 0 reserved, > 0 for user)
- *   base_id  <-- id of existing mesh (< 0 reserved, > 0 for user)
+ *   mesh_id <-- id of edges mesh to create (< 0 reserved, > 0 for user)
+ *   base_mesh_id   <-- id of existing mesh (< 0 reserved, > 0 for user)
+ *   n_writers  <-- number of associated writers
+ *   writer_ids <-- ids of associated writers
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_add_mesh_edges(int  edges_id,
-                       int  base_id);
+cs_post_define_edges_mesh(int        mesh_id,
+                          int        base_mesh_id,
+                          int        n_writers,
+                          const int  writer_ids[]);
 
 /*----------------------------------------------------------------------------
  * Remove a post-processing mesh.
@@ -566,54 +526,6 @@ cs_post_add_mesh_edges(int  edges_id,
 
 void
 cs_post_free_mesh(int  mesh_id);
-
-/*----------------------------------------------------------------------------
- * Assign a category to a post-processing mesh.
- *
- * By default, each mesh is assigned a category id identical to its id.
- * The automatic variables output associated with the main volume and
- * boundary meshes will also be applied to meshes of the same categories
- * (i.e. -1 and -2 respectively, whether meshes -1 and -2 are actually
- * defined or not), so setting a user mesh's category to one of these
- * values will automatically provide the same automatic variable output to
- * the user mesh.
- *
- * parameters:
- *   mesh_id     <-- id of associated mesh
- *   category_id <-- id of mesh category (-1: as volume, -2: as boundary)
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_set_mesh_category(int  mesh_id,
-                          int  category_id);
-
-/*----------------------------------------------------------------------------
- * Create an alias to a post-processing mesh.
- *
- * An alias allows association of an extra identifier (number) to an
- * existing post-processing mesh, and thus to associate different writers
- * than those associated with the existing mesh. For example, this allows
- * outputting a set of main variables every n1 time steps with one writer,
- * and outputting a specific set of variables every n2 time time steps to
- * another post-processing set using another writer, without the overhead
- * that would be incurred by duplication of the post-processing mesh.
- *
- * An alias is thus treated in all points like its associated mesh;
- * if the definition of either one is modified, that of the other is
- * modified also.
- *
- * It is forbidden to associate an alias to another alias (as there is no
- * identified use for this, and it would make consistency checking more
- * difficult), but multiple aliases may be associated with a given mesh.
- *
- * parameters:
- *   alias_id <-- id of alias to create (< 0 reserved, > 0 for user)
- *   mesh_id  <-- id of associated mesh
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_alias_mesh(int  alias_id,
-                   int  mesh_id);
 
 /*----------------------------------------------------------------------------
  * Check for the existence of a writer of the given id.
@@ -683,6 +595,26 @@ cs_post_modify_mesh(int       mesh_id,
                     cs_int_t  b_face_list[]);
 
 /*----------------------------------------------------------------------------
+ * Return the default writer format name
+ *
+ * Returns:
+ *   name of the default writer format
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_post_get_default_format(void);
+
+/*----------------------------------------------------------------------------
+ * Return the default writer format options
+ *
+ * Returns:
+ *   default writer format options string
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_post_get_default_format_options(void);
+
+/*----------------------------------------------------------------------------
  * Return the next "reservable" (i.e. non-user) writer id available.
  *
  * Returns:
@@ -703,28 +635,18 @@ int
 cs_post_get_free_mesh_id(void);
 
 /*----------------------------------------------------------------------------
- * Associate a writer with a post-processing mesh.
- *
- * parameters:
- *   mesh_id   <-- id of associated mesh
- *   writer_id <-- id of associated writer
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_associate(int  mesh_id,
-                  int  writer_id);
-
-/*----------------------------------------------------------------------------
  * Update "active" or "inactive" flag of writers whose output frequency
  * is a divisor of the current time step number.
  *
  * parameters:
+ *   nt_max_abs <-- maximum time step number
  *   nt_cur_abs <-- current time step number
  *   t_cur_abs  <-- absolute time at the current time step
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_activate_if_default(int     nt_cur_abs,
+cs_post_activate_if_default(int     nt_max_abs,
+                            int     nt_cur_abs,
                             double  t_cur_abs);
 
 /*----------------------------------------------------------------------------
@@ -733,12 +655,12 @@ cs_post_activate_if_default(int     nt_cur_abs,
  *
  * parameters:
  *   writer_id <-- writer id, or 0 for all writers
- *   activate  <-- 0 to deactivate, 1 to activate
+ *   activate  <-- false to deactivate, true to activate
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_activate_writer(int  writer_id,
-                        int  activate);
+cs_post_activate_writer(int        writer_id,
+                        cs_bool_t  activate);
 
 /*----------------------------------------------------------------------------
  * Output post-processing meshes using associated writers.
@@ -847,18 +769,11 @@ cs_post_renum_faces(const cs_int_t  init_i_face_num[],
                     const cs_int_t  init_b_face_num[]);
 
 /*----------------------------------------------------------------------------
- * Destroy all structures associated with post-processing
+ * Initialize post-processing writers
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_finalize(void);
-
-/*----------------------------------------------------------------------------
- * Initialize main post-processing writer
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_init_main_writer(void);
+cs_post_init_writers(void);
 
 /*----------------------------------------------------------------------------
  * Initialize main post-processing meshes
@@ -871,12 +786,26 @@ cs_post_init_main_writer(void);
  *  - If (check_flag & 2), boundary submeshes are output by groups if more
  *    than one group is present and the default writer uses the EnSight format.
  *
+ * Note that all alias-type post-processing meshes and the meshes they
+ * relate to should have been defined before calling this function, so it is
+ * recommended that user-defined post-processing meshes be defined before
+ * calling this function, though specific "automatic" meshes (for example
+ * those related to couplings) may be defined between this call and a
+ * time loop.
+ *
  * parameters:
  *   check_flag <-- mask used for additional output
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_init_main_meshes(int check_mask);
+cs_post_init_meshes(int check_mask);
+
+/*----------------------------------------------------------------------------
+ * Destroy all structures associated with post-processing
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_finalize(void);
 
 /*----------------------------------------------------------------------------
  * Postprocess free (isolated) faces of the current global mesh
