@@ -54,8 +54,9 @@ subroutine usvpst &
 ! - SYRTHES coupling surface (ipart < -2) if 'ichrsy' = 1
 ! - Cooling tower exchange zone meshes (ipart < -2) if 'ichrze' = 1
 !
-! Additional meshes (cells or faces) may also be defined using the
-! 'usdpst' user subroutine, (and possibly modified using 'usmpst').
+! Additional meshes (cells or faces) may also be defined through the GUI or
+! using the cs_user_postprocess_meshes() function from the
+! cs_user_postprocess.c file, (and possibly modified using 'usmpst').
 
 ! This subroutine is called once for each post-processing mesh
 ! (with a different value of 'ipart') for each time step at which output
@@ -165,10 +166,11 @@ if(1.eq.1) return
 !    MUST BE FILLED IN by the user at indicated places
 !===============================================================================
 
-! A post-processing id a "part" (using the EnSight vocabulary; the MED and
-! CGNS equivalents are "mesh" and "base" respectively).
-! The user will have defined post-processing meshes in 'usdpst' ('nbpart'
-! post-processing meshes).
+! The ipart argument matches a post-processing maehs id (using the EnSight
+! vocabulary; the MED and CGNS equivalents are "mesh" and "base" respectively).
+! The user will have defined post-processing meshes using the GUI or the
+! cs_user_postprocess_meshes() function from the cs_user_postprocess.c
+! file.
 
 ! This subroutine is called once for each post-processing mesh
 ! (with a different value of 'ipart') for each time step at which output
@@ -229,8 +231,8 @@ if(1.eq.1) return
 ! For post-processing mesh 1, we output all the variables usually
 ! post-processed, using a more compact coding.
 
-! Examples given here correspond to the meshes defined in usdpst.f90 and
-! modified in usmpst.f90.
+! Examples given here correspond to the meshes defined in
+! cs_user_postprocess_meshesc and modified in usmpst.f90.
 
 
 !===============================================================================
