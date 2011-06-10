@@ -9,7 +9,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2008  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -84,9 +84,26 @@ typedef struct _fvm_writer_t fvm_writer_t;
  * Static global variables
  *============================================================================*/
 
+/* Names of time dependency enumeration values */
+
+extern const char  *fvm_writer_time_dep_name[];
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Find the format matching a name,
+ *
+ * parameters:
+ *   format_name <-- name of desired format
+ *
+ * returns:
+ *   index of the format matching the given name, or -1 if none matches.
+ *----------------------------------------------------------------------------*/
+
+int
+fvm_writer_get_format_id(const char  *format_name);
 
 /*----------------------------------------------------------------------------
  * Returns number of known formats.
@@ -244,6 +261,32 @@ fvm_writer_get_name(const fvm_writer_t  *this_writer);
 
 const char *
 fvm_writer_get_format(const fvm_writer_t  *this_writer);
+
+/*----------------------------------------------------------------------------
+ * Return a writer's associated format options.
+ *
+ * parameters:
+ *   this_writer <-- pointer to mesh and field output writer
+ *
+ * returns:
+ *   pointer to output format options associated with the writer
+ *----------------------------------------------------------------------------*/
+
+const char *
+fvm_writer_get_options(const fvm_writer_t  *this_writer);
+
+/*----------------------------------------------------------------------------
+ * Return a writer's associated output directory.
+ *
+ * parameters:
+ *   this_writer <-- pointer to mesh and field output writer
+ *
+ * returns:
+ *   pointer to output format options associated with the writer
+ *----------------------------------------------------------------------------*/
+
+const char *
+fvm_writer_get_path(const fvm_writer_t  *this_writer);
 
 /*----------------------------------------------------------------------------
  * Return geometry time dependency status of a writer.

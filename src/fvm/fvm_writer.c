@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2010  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -132,17 +132,17 @@ static fvm_writer_format_t _fvm_writer_format_list[4] = {
     NULL                                  /* flush_func */
   },
 
-  /* MED_fichier 2.3 writer */
+  /* MED 2.3 or 3.0 writer */
   {
-    "MED_fichier",
+    "MED",
     "2.3 +",
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
     FVM_WRITER_FIXED_MESH,
 #if defined(HAVE_MED)
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
+    fvm_to_med_n_version_strings,      /* n_version_strings_func */
+    fvm_to_med_version_string,         /* version_string_func */
     fvm_to_med_init_writer,            /* init_func */
     fvm_to_med_finalize_writer,        /* finalize_func */
     fvm_to_med_set_mesh_time,          /* set_mesh_time_func */
@@ -171,8 +171,8 @@ static fvm_writer_format_t _fvm_writer_format_list[4] = {
      | FVM_WRITER_FORMAT_HAS_POLYGON),
     FVM_WRITER_FIXED_MESH,
 #if defined(HAVE_CGNS)
-    NULL,                              /* n_version_strings_func */
-    NULL,                              /* version_string_func */
+    fvm_to_cgns_n_version_strings,     /* n_version_strings_func */
+    fvm_to_cgns_version_string,        /* version_string_func */
     fvm_to_cgns_init_writer,           /* init_func */
     fvm_to_cgns_finalize_writer,       /* finalize_func */
     fvm_to_cgns_set_mesh_time,         /* set_mesh_time_func */
@@ -196,60 +196,20 @@ static fvm_writer_format_t _fvm_writer_format_list[4] = {
 };
 
 /*============================================================================
- * Private function definitions
+ * Static global variables
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Find the format with the closest name to the argument,
- *
- * parameters:
- *   format_name <-- name of desired format
- *
- * returns:
- *   index of the format with the closest name to the argument,
- *   or _fvm_writer_n_formats if no name is similar enough.
- *----------------------------------------------------------------------------*/
+/* Names of time dependency enumeration values */
 
-static int
-_fvm_writer_format_closest_name(const char  *const format_name)
-{
-  char  tmp_name[32], closest_name[32];
-  int i, l;
+const char  *fvm_writer_time_dep_name[] = {N_("fixed mesh"),
+                                           N_("transient coordinates"),
+                                           N_("transient connectivity")};
 
-  if (format_name == NULL)
-    return _fvm_writer_n_formats;
+const char _empty_string[] = "";
 
-  l = strlen(format_name);
-
-  /* Transform format name to lowercase, whitespace as underscore */
-
-  strncpy(tmp_name, format_name, 32);
-  tmp_name[31] = '\0';
-  for (i = 0 ; i < l ; i++) {
-    tmp_name[i] = tolower(tmp_name[i]);
-    if (tmp_name[i] == ' ' || tmp_name[i] == '\t')
-      tmp_name[i] = '_';
-  }
-
-  /* Try "known" names */
-
-  if (strncmp(tmp_name, "ensight", 7) == 0)
-    strcpy(closest_name, "EnSight Gold");
-  else if (strncmp(tmp_name, "med_mem", 7) == 0)
-    strcpy(closest_name, "MED_memory");
-  else if (strncmp(tmp_name, "med", 3) == 0)
-    strcpy(closest_name, "MED_fichier");
-  else if (strncmp(tmp_name, "cgns", 4) == 0)
-    strcpy(closest_name, "CGNS");
-
-  /* Find name in list */
-
-  for (i = 0 ; i < _fvm_writer_n_formats ; i++)
-    if (strcmp(closest_name, _fvm_writer_format_list[i].name) == 0)
-      break;
-
-  return i;
-}
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Transform a string containing a list of options to lowercase with
@@ -482,6 +442,55 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Find the format matching a name,
+ *
+ * parameters:
+ *   format_name <-- name of desired format
+ *
+ * returns:
+ *   index of the format matching the given name, or -1 if none matches.
+ *----------------------------------------------------------------------------*/
+
+int
+fvm_writer_get_format_id(const char  *format_name)
+{
+  char  tmp_name[32], closest_name[32];
+  int i, l;
+
+  if (format_name == NULL)
+    return _fvm_writer_n_formats;
+
+  l = strlen(format_name);
+
+  /* Transform format name to lowercase, whitespace as underscore */
+
+  strncpy(tmp_name, format_name, 32);
+  tmp_name[31] = '\0';
+  for (i = 0 ; i < l ; i++) {
+    tmp_name[i] = tolower(tmp_name[i]);
+    if (tmp_name[i] == ' ' || tmp_name[i] == '\t')
+      tmp_name[i] = '_';
+  }
+
+  /* Try "known" names */
+
+  if (strncmp(tmp_name, "ensight", 7) == 0)
+    strcpy(closest_name, "EnSight Gold");
+  else if (strncmp(tmp_name, "med", 3) == 0)
+    strcpy(closest_name, "MED");
+  else if (strncmp(tmp_name, "cgns", 4) == 0)
+    strcpy(closest_name, "CGNS");
+
+  /* Find name in list */
+
+  for (i = 0 ; i < _fvm_writer_n_formats ; i++)
+    if (strcmp(closest_name, _fvm_writer_format_list[i].name) == 0)
+      break;
+
+  return i;
+}
+
+/*----------------------------------------------------------------------------
  * Returns number of known formats.
  *----------------------------------------------------------------------------*/
 
@@ -560,7 +569,7 @@ fvm_writer_n_version_strings(int format_index)
     n_version_strings_func
       = _fvm_writer_format_list[format_index].n_version_strings_func;
     if (n_version_strings_func != NULL)
-      retval = n_version_strings_func(format_index);
+      retval = n_version_strings_func();
   }
   return retval;
 }
@@ -602,8 +611,7 @@ fvm_writer_version_string(int format_index,
     version_string_func
       = _fvm_writer_format_list[format_index].version_string_func;
     if (version_string_func != NULL)
-      retval = version_string_func(format_index,
-                                   string_index,
+      retval = version_string_func(string_index,
                                    compile_time_version);
   }
   return retval;
@@ -658,9 +666,9 @@ fvm_writer_init(const char             *name,
       break;
 
   if (i >= _fvm_writer_n_formats)
-    i = _fvm_writer_format_closest_name(format_name);
+    i = fvm_writer_get_format_id(format_name);
 
-  if (i >= _fvm_writer_n_formats)
+  if (i < 0)
     bft_error(__FILE__, __LINE__, 0,
               _("Format type \"%s\" required for case \"%s\" is unknown"),
               format_name, name);
@@ -729,6 +737,16 @@ fvm_writer_init(const char             *name,
 
   this_writer->format = &(_fvm_writer_format_list[i]);
 
+  if (path) {
+    BFT_MALLOC(this_writer->path, strlen(path) + 1, char);
+    strcpy(this_writer->path, path);
+  }
+  else
+    this_writer->path = NULL;
+
+  this_writer->options = tmp_options;
+  tmp_options = NULL;
+
   this_writer->time_dep = FVM_MIN(time_dependency,
                                   this_writer->format->max_time_dep);
 
@@ -745,21 +763,18 @@ fvm_writer_init(const char             *name,
 #if defined(HAVE_MPI)
     this_writer->format_writer = init_func(name,
                                            tmp_path,
-                                           tmp_options,
+                                           this_writer->options,
                                            this_writer->time_dep,
                                            fvm_parall_get_mpi_comm());
 #else
     this_writer->format_writer = init_func(name,
                                            tmp_path,
-                                           tmp_options,
+                                           this_writer->options,
                                            this_writer->time_dep);
 #endif
   }
   else
     this_writer->format_writer = NULL;
-
-  if (tmp_options != NULL)
-    BFT_FREE(tmp_options);
 
   if (tmp_path != local_dir)
     BFT_FREE(tmp_path);
@@ -788,6 +803,8 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
   assert(this_writer->format != NULL);
 
   BFT_FREE(this_writer->name);
+  BFT_FREE(this_writer->path);
+  BFT_FREE(this_writer->options);
 
   finalize_func = this_writer->format->finalize_func;
 
@@ -831,6 +848,44 @@ const char *
 fvm_writer_get_format(const fvm_writer_t  *this_writer)
 {
   return this_writer->format->name;
+}
+
+/*----------------------------------------------------------------------------
+ * Return a writer's associated format options.
+ *
+ * parameters:
+ *   this_writer <-- pointer to mesh and field output writer
+ *
+ * returns:
+ *   pointer to output format options associated with the writer
+ *----------------------------------------------------------------------------*/
+
+const char *
+fvm_writer_get_options(const fvm_writer_t  *this_writer)
+{
+  const char *retval = _empty_string;
+  if (this_writer->options != NULL)
+    retval = this_writer->options;
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Return a writer's associated output directory.
+ *
+ * parameters:
+ *   this_writer <-- pointer to mesh and field output writer
+ *
+ * returns:
+ *   pointer to output format options associated with the writer
+ *----------------------------------------------------------------------------*/
+
+const char *
+fvm_writer_get_path(const fvm_writer_t  *this_writer)
+{
+  const char *retval = _empty_string;
+  if (this_writer->path != NULL)
+    retval = this_writer->path;
+  return retval;
 }
 
 /*----------------------------------------------------------------------------

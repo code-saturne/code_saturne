@@ -12,7 +12,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2005-2007  EDF
+  Copyright (C) 2005-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -57,6 +57,42 @@ extern "C" {
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Returns number of library version strings associated with the CGNS format.
+ *
+ * returns:
+ *   number of library version strings associated with the CGNS format.
+ *----------------------------------------------------------------------------*/
+
+int
+fvm_to_cgns_n_version_strings(void);
+
+/*----------------------------------------------------------------------------
+ * Returns a library version string associated with the CGNS format.
+ *
+ * In certain cases, when using dynamic libraries, fvm may be compiled
+ * with one library version, and linked with another. If both run-time
+ * and compile-time version information is available, this function
+ * will return the run-time version string by default.
+ *
+ * Setting the compile_time flag to 1, the compile-time version string
+ * will be returned if this is different from the run-time version.
+ * If the version is the same, or only one of the 2 version strings are
+ * available, a NULL character string will be returned with this flag set.
+ *
+ * parameters:
+ *   string_index <-- index in format's version string list (0 to n-1)
+ *   compile_time <-- 0 by default, 1 if we want the compile-time version
+ *                    string, if different from the run-time version.
+ *
+ * returns:
+ *   pointer to constant string containing the library's version.
+ *----------------------------------------------------------------------------*/
+
+const char *
+fvm_to_cgns_version_string(int string_index,
+                           int compile_time_version);
 
 /*----------------------------------------------------------------------------
  * Initialize FVM to CGNS file writer.

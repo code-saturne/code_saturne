@@ -104,11 +104,13 @@ extern "C" {
 #if !defined(MED_NUM_MAJEUR)
 #define MED_NUM_MAJEUR 2
 #define MED_NUM_MINEUR 3
+#define MED_NUM_RELEASE -1
 #endif
 
 #if !defined(MED_MAJOR_NUM)
 #define MED_MAJOR_NUM MED_NUM_MAJEUR
 #define MED_MINOR_NUM MED_NUM_MINEUR
+#define MED_RELEASE_NUM MED_NUM_RELEASE
 #endif
 
 #if MED_MAJOR_NUM == 2 && MED_MINOR_NUM < 9
@@ -217,6 +219,9 @@ typedef struct {
  *============================================================================*/
 
 #define FVM_MED_MAX_N_NODES  8
+
+static char _med_version_string_[2][32] = {"", ""};
+static char _hdf5_version_string_[2][32] = {"", ""};
 
 /*=============================================================================
  * Private function definitions
@@ -4129,6 +4134,105 @@ _export_field_values_n(const fvm_nodal_t               *mesh,
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Returns number of library version strings associated with the MED format.
+ *
+ * The first associated version string should corresponds to the MED library,
+ * The second to the HDF5 library.
+ *
+ * returns:
+ *   number of library version strings associated with the MED format.
+ *----------------------------------------------------------------------------*/
+
+int
+fvm_to_med_n_version_strings(void)
+{
+  return 2;
+}
+
+/*----------------------------------------------------------------------------
+ * Returns a library version string associated with the MED format.
+ *
+ * The first associated version string should corresponds to the MED library,
+ * The second to the HDF5 library.
+ *
+ * In certain cases, when using dynamic libraries, fvm may be compiled
+ * with one library version, and linked with another. If both run-time
+ * and compile-time version information is available, this function
+ * will return the run-time version string by default.
+ *
+ * Setting the compile_time flag to 1, the compile-time version string
+ * will be returned if this is different from the run-time version.
+ * If the version is the same, or only one of the 2 version strings are
+ * available, a NULL character string will be returned with this flag set.
+ *
+ * parameters:
+ *   string_index <-- index in format's version string list (0 to n-1)
+ *   compile_time <-- 0 by default, 1 if we want the compile-time version
+ *                    string, if different from the run-time version.
+ *
+ * returns:
+ *   pointer to constant string containing the library's version.
+ *----------------------------------------------------------------------------*/
+
+const char *
+fvm_to_med_version_string(int string_index,
+                          int compile_time_version)
+{
+  const char * retval = NULL;
+
+  if (compile_time_version) {
+
+    if (string_index == 0) {
+      if (MED_NUM_RELEASE > -1)
+        snprintf(_med_version_string_[1], 31, "MED %d.%d.%d",
+                 MED_MAJOR_NUM, MED_MINOR_NUM, MED_RELEASE_NUM);
+      else
+        snprintf(_med_version_string_[1], 31, "MED %d.%d",
+                 MED_MAJOR_NUM, MED_MINOR_NUM);
+      _med_version_string_[1][31] = '\0';
+      retval = _med_version_string_[1];
+    }
+    else if (string_index == 1) {
+      snprintf(_hdf5_version_string_[1], 15, "HDF5 %d.%d.%d",
+               H5_VERS_MAJOR, H5_VERS_MINOR, H5_VERS_RELEASE);
+      _hdf5_version_string_[1][31] = '\0';
+      retval = _hdf5_version_string_[1];
+    }
+
+  }
+
+  else {
+    if (string_index == 0) {
+      med_int   med_major, med_minor, med_release;
+#if FVM_MED_VERSION == 2
+      MEDversionDonner(&med_major, &med_minor, &med_release);
+#else
+      MEDlibraryNumVersion(&med_major, &med_minor, &med_release);
+#endif
+      snprintf(_med_version_string_[0], 31, "MED %d.%d.%d",
+               (int)med_major, (int)med_minor, (int)med_release);
+      _med_version_string_[0][31] = '\0';
+      retval = _med_version_string_[0];
+    }
+    else if (string_index == 1) {
+#if FVM_MED_VERSION == 2
+      unsigned  h5_major, h5_minor, h5_release;
+      H5get_libversion(&h5_major, &h5_minor, &h5_release);
+#else
+      med_int  h5_major, h5_minor, h5_release;
+      MEDlibraryHdfNumVersion(&h5_major, &h5_minor, &h5_release);
+#endif
+      snprintf(_hdf5_version_string_[0], 15, "HDF5 %d.%d.%d",
+               (int)h5_major, (int)h5_minor, (int)h5_release);
+      _hdf5_version_string_[0][31] = '\0';
+      retval = _hdf5_version_string_[0];
+    }
+  }
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
  * Initialize FVM to MED file writer.

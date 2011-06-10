@@ -194,6 +194,8 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
+static char _cgns_version_string[32] = "";
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2429,6 +2431,59 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Returns number of library version strings associated with the CGNS format.
+ *
+ * returns:
+ *   number of library version strings associated with the CGNS format.
+ *----------------------------------------------------------------------------*/
+
+int
+fvm_to_cgns_n_version_strings(void)
+{
+  return 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Returns a library version string associated with the CGNS format.
+ *
+ * In certain cases, when using dynamic libraries, fvm may be compiled
+ * with one library version, and linked with another. If both run-time
+ * and compile-time version information is available, this function
+ * will return the run-time version string by default.
+ *
+ * Setting the compile_time flag to 1, the compile-time version string
+ * will be returned if this is different from the run-time version.
+ * If the version is the same, or only one of the 2 version strings are
+ * available, a NULL character string will be returned with this flag set.
+ *
+ * parameters:
+ *   string_index <-- index in format's version string list (0 to n-1)
+ *   compile_time <-- 0 by default, 1 if we want the compile-time version
+ *                    string, if different from the run-time version.
+ *
+ * returns:
+ *   pointer to constant string containing the library's version.
+ *----------------------------------------------------------------------------*/
+
+const char *
+fvm_to_cgns_version_string(int string_index,
+                           int compile_time_version)
+{
+  const char * retval = NULL;
+
+  if (string_index == 0) {
+    snprintf(_cgns_version_string, 31, "CGNS %d.%d.%d\n",
+             CGNS_VERSION/1000,
+             (CGNS_VERSION % 1000) / 100,
+             (CGNS_VERSION % 100) / 10);
+    _cgns_version_string[31] = '\0';
+    retval = _cgns_version_string;
+  }
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
  * Initialize FVM to CGNS file writer.

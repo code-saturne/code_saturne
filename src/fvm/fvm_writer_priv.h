@@ -71,11 +71,10 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 typedef int
-(fvm_writer_n_version_strings_t) (int format_index);
+(fvm_writer_n_version_strings_t) (void);
 
 typedef const char *
-(fvm_writer_version_string_t)(int format_index,
-                              int string_index,
+(fvm_writer_version_string_t)(int string_index,
                               int compile_time_version);
 
 #if defined(HAVE_MPI)
@@ -163,6 +162,8 @@ struct _fvm_writer_t {
 
   char                   *name;           /* Writer name */
   fvm_writer_format_t    *format;         /* Output format */
+  char                   *options;        /* Output options */
+  char                   *path;           /* Output path */
   fvm_writer_time_dep_t   time_dep;       /* Geometry time dependency */
   void                   *format_writer;  /* Format-specific writer */
 
