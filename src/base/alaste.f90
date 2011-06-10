@@ -42,15 +42,12 @@ module alaste
   ! nbaste : nombre de structures mobiles
   ! nbfast : nombre de faces couplees
   ! nbnast : nombre de noeuds couples
-  ! isyncp : indicateur d'impression des resultats des deux codes
-  !          aux memes instants (sortie EnSight pour Code_Aster)
   ! asddlf : blocage des ddl de force
   ! asddlc : blocage des ddl cinematiques
 
   integer, save ::  ntcast
   integer, save ::  nbaste, nbfast, nbnast
   integer, save ::  iforas
-  integer, save ::  isyncp
   integer, save ::  asddlf(3,nastmx), asddlc(3,nastmx)
 
   !=============================================================================

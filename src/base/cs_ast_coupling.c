@@ -447,8 +447,6 @@ void CS_PROCF(astpar, ASTPAR)
  cs_int_t  *nbpdt,
  cs_int_t  *nbsspdt,
  cs_real_t *delta,
- cs_int_t  *ihi,
- cs_int_t  *chro,
  cs_real_t *tt,
  cs_real_t *dt
 )
@@ -489,14 +487,6 @@ void CS_PROCF(astpar, ASTPAR)
     cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
                            &iteration,
                            "EPSILO",1,&n_val_read, delta);
-    /* commande reception de la variable isyncp */
-    cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time,
-                        &iteration,
-                        "ISYNCP",1,&n_val_read, ihi);
-    /* commande reception de la variable ntchr  */
-    cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time,
-                        &iteration,
-                        "NTCHRO",1,&n_val_read, chro);
     /* commande reception de la variable ttinit */
     cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
                            &iteration,
@@ -518,8 +508,6 @@ void CS_PROCF(astpar, ASTPAR)
 
     MPI_Bcast(nbpdt,   1, CS_MPI_INT,  0, cs_glob_mpi_comm);
     MPI_Bcast(nbsspdt, 1, CS_MPI_INT,  0, cs_glob_mpi_comm);
-    MPI_Bcast(ihi,     1, CS_MPI_INT,  0, cs_glob_mpi_comm);
-    MPI_Bcast(chro,    1, CS_MPI_INT,  0, cs_glob_mpi_comm);
     MPI_Bcast(delta,   1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
     MPI_Bcast(dt,      1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
 
@@ -543,13 +531,11 @@ void CS_PROCF(astpar, ASTPAR)
                "@      NTMABS = %i                                         \n"
                "@      NALIMX = %i                                         \n"
                "@      EPALIM = %f                                         \n"
-               "@      ISYNCP = %i                                         \n"
-               "@      NTCHR  = %i                                         \n"
                "@      DTREF  = %f                                         \n"
                "@                                                          \n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@                                                          \n",
-             *nbpdt, *nbsspdt, *delta, *ihi, *chro, *dt);
+             *nbpdt, *nbsspdt, *delta, *dt);
 }
 
 /*----------------------------------------------------------------------------

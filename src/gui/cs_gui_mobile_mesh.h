@@ -216,13 +216,11 @@ void CS_PROCF (uistr2, UISTR2) ( double *const  xmstru,
  * nfabor    <-- Number of boundary faces
  * idfstr    <-- Structure definition
  * asddlf    <-- Block of the DDL forces
- * isyncp    <---
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiaste, UIASTE) (const int *const nfabor,
                                 int    *const    idfstr,
-                                double *const    asddlf,
-                                int    *const    isyncp );
+                                double *const    asddlf);
 
 /*=============================================================================
  * Public function prototypes

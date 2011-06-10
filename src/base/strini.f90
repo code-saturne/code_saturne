@@ -84,7 +84,7 @@ integer          mbstru, mbaste
 
 integer          jj, inod
 integer          ilstfa, indast, iidflo, iidnlo
-integer          nbpdt, nbssit, ihi, chro
+integer          nbpdt, nbssit
 
 double precision delta, pdt, tt
 
@@ -115,10 +115,9 @@ enddo
 mbstru = nbstru
 mbaste = nbaste
 
-!     En ALE on met IHISTR et ISYNCP a 1 par defaut
+!     En ALE on met IHISTR a 1 par defaut
 !       (remis a zero sans structure)
 ihistr = 1
-isyncp = 1
 
 !===============================================================================
 ! 2.  RESERVATION DU TABLEAU IDFSTR
@@ -277,7 +276,7 @@ if (nbaste.gt.0) then
 !       Recuperation des parametres commun du couplage
   call astpar                                                     &
   !==========
- ( ntmabs, nalimx, epalim, isyncp, ntchr, ttpabs, dtref )
+ ( ntmabs, nalimx, epalim, ttpabs, dtref )
 
 !       Envoi des donnees geometriques a Code_Aster
   call astgeo                                                     &
@@ -297,7 +296,6 @@ endif
 
 !     Valeur par defaut et verifiction de IHISTR
 if (nbstru.eq.0) ihistr = 0
-if (nbaste.eq.0) isyncp = 0
 
 icompt = 0
 do ii = 2, nvppmx
@@ -312,10 +310,6 @@ if (ihistr.ne.0 .and. ihistr.ne.1) then
   write(nfecra,1000)ihistr
   call csexit(1)
 endif
-if (isyncp.ne.0 .and. isyncp.ne.1) then
-  write(nfecra,1002)isyncp
-  call csexit(1)
-endif
 
 !     Si NBSTRU=0 et NBASTE=0, on desalloue IDFSTR et on passe NALIMX a 1
 !       si necessaire
@@ -325,7 +319,7 @@ else
   write(nfecra,2000) nbstru
 endif
 if (nbaste.gt.0) then
-  write(nfecra,2012) nbaste,isyncp
+  write(nfecra,2012) nbaste
 else
   write(nfecra,2002) nbaste
 endif
@@ -366,25 +360,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1002 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    L''INDICATEUR D''ECRITURE AU MEME INSTANT DES SORTIES   ',/,&
-'@      CODE_SATURNE ET CODE_ASTER NE PEUT VALOIR QUE 0 OU 1. ',/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
-'@                                                            ',/,&
-'@    LA PERIODE D''IMPRESSION EST DEFINIE PAR LA VARIABLE :  ',/,&
-'@      NTCHR                                                 ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres donnes dans usstru.               ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  2000 format(                                                           &
     /,'TTES PHASES  : MODE COUPLAGE DE STRUCTURES NON ACTIVE  ',/,&
       '                 NBSTRU = ',I10                         ,/)
@@ -406,11 +381,7 @@ write(nfecra,3000)
       '                 IHISTR = ',I4,' ( 1 : active)         ',/)
  2012 format(                                                           &
     /,'TTES PHASES  : MODE COUPLAGE CODE_ASTER ACTIVE         ',/,&
-      '                 AVEC NBASTE = ',I10   ,' STRUCTURE(S) ',/,&
-      '                                                       ',/,&
-      '               IMPRESSIONS  DES SORTIES AUX MEMES      ',/,&
-      '               INSTANTS DES DEUX CODES :               ',/,&
-      '                 ISYNCP = ',I4,' ( 1 : active)         ',/)
+      '                 AVEC NBASTE = ',I10   ,' STRUCTURE(S) ',/) 
  2020 format(                                                           &
     /,'TTES PHASES  : SCHEMA DE COUPLAGE EXPLICITE ACTIVE     ',/,&
       '                                                       ',/,&
@@ -519,22 +490,6 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1002 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION                ',/,&
-'@    ========                                                ',/,&
-'@    THE INDICATOR OF SYNCHRONIZED OUTPUTS FOR CODE_SATURNE  ',/,&
-'@      AND CODE_ASTER CAN ONLY TAKE THE VALUES 0 OR 1.       ',/,&
-'@    ITS VALUE IS ',I10                                       ,/,&
-'@                                                            ',/,&
-'@  The calculation will not run.                             ',/,&
-'@                                                            ',/,&
-'@  Verify the parameters given in usstru.                    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  2000 format(                                                           &
     /,'ALL PHASES: COUPLING MODE FOR STRUCTURES NOT ACTIVATED ',/,&
       '              NBSTRU = ',I10                            ,/)
@@ -556,10 +511,7 @@ write(nfecra,3000)
       '                 IHISTR = ',I4,' ( 1 : activated)      ',/)
  2012 format(                                                           &
     /,'ALL PHASES: CPDE_ASTER COUPLING MODE ACTIVATED         ',/,&
-      '              WITH NBASTE = ',I10   ,' STRUCTURE(S)    ',/,&
-      '                                                       ',/,&
-      '            SYNCHRONIZED OUTPUTS FOR BOTH CODES:       ',/,&
-      '                 ISYNCP = ',I4,' ( 1 : activated)      ',/)
+      '              WITH NBASTE = ',I10   ,' STRUCTURE(S)    ',/)
  2020 format(                                                           &
     /,'ALL PHASES: EXPLICIT SCHEME FOR COUPLING ACTIVATED     ',/,&
       '                                                       ',/,&

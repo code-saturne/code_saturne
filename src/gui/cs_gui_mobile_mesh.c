@@ -857,38 +857,6 @@ get_uistr2_data(const char    *label,
 }
 
 /*-----------------------------------------------------------------------------
- * Return the post synchronization status
- *
- *  <thermophysical_models>
- *      <ale_method status="on">
- *          <external_coupling_post_synchronization ***status="off"*** />
- *
- *----------------------------------------------------------------------------*/
-
-static int
-get_coupling_post_synchronization_status(void)
-{
-    char *statusStr;
-    int  status;
-
-    char *path = cs_xpath_init_path();
-
-    cs_xpath_add_elements(&path, 3, "thermophysical_models",
-                          "ale_method",
-                          "external_coupling_post_synchronization");
-    cs_xpath_add_attribute(&path, "status");
-
-    statusStr = cs_gui_get_attribute_value(path);
-    status    = cs_gui_strcmp(statusStr, "on");
-
-    BFT_FREE(statusStr);
-    BFT_FREE(path);
-
-    return status;
-}
-
-
-/*-----------------------------------------------------------------------------
  * Return the external coupling DDL value
  *
  *  <boundary_conditions>
@@ -1294,14 +1262,12 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
  *   nfabor    <-- Number of boundary faces
  *   idfstr    <-- Structure definition
  *   asddlf    <-- Block of the DDL forces
- *   isyncp    <---
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (uiaste, UIASTE) (const int *const nfabor,
                            int       *const idfstr,
-                           double    *const asddlf,
-                           int       *const isyncp)
+                           double    *const asddlf)
 {
     int faces   = 0;
     int izone   = 0;
@@ -1310,9 +1276,6 @@ CS_PROCF (uiaste, UIASTE) (const int *const nfabor,
     int ifac    = 0;
 
     int zones = cs_gui_boundary_zones_number();
-
-    /* Get the coupling post synchronization status */
-    *isyncp = get_coupling_post_synchronization_status() ? 1 : 0;
 
     /* At each time-step, loop on boundary faces */
     for (izone=0 ; izone < zones ; izone++)

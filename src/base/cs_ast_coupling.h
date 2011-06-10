@@ -142,8 +142,6 @@ void CS_PROCF(astpar, ASTPAR)
  cs_int_t  *nbpdt,
  cs_int_t  *nbsspdt,
  cs_real_t *delta,
- cs_int_t  *ihi,
- cs_int_t  *chro,
  cs_real_t *tt,
  cs_real_t *dt
 );
