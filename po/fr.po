@@ -5172,7 +5172,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-"Gestionnaires de sorties pour post traitement : %s\n"
+"Gestionnaires de sorties pour post traitement :\n"
 "-----------------------------------------------\n"
 "\n"
 
