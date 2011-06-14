@@ -343,10 +343,16 @@ if (interp.eq.1) then
 
   ! Possible P1 matrix / P0 matrix relaxation defined by the user in usini1.f90
 
-  do ifacg = 1, nfacg
-    xag(ifacg, 1) = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
-    xag(ifacg, isym) = rlxp1*xag(ifacg, isym) +(1.d0-rlxp1)*xag0(ifacg)
-  enddo
+  if (isym.eq.1) then
+    do ifacg = 1, nfacg
+      xag(ifacg, 1) = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
+    enddo
+  else
+    do ifacg = 1, nfacg
+      xag(ifacg, 1) = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
+      xag(ifacg, 2) = rlxp1*xag(ifacg, 2) +(1.d0-rlxp1)*xag0(ifacg)
+    enddo
+  endif
 
 endif
 

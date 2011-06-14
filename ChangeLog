@@ -1,3 +1,8 @@
+* 14/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix double relaxation bug in multigrid for symmetric matrixes.
+  modified routine:
+    src/base/crstgr.f90
+
 * 09/06/2011 - Frederic Dehoux <frederic.dehoux@edf.fr>
   Missing Cmu constant logging in the listing for k-omega SST model.
   modified routine:
