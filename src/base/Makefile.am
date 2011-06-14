@@ -122,7 +122,6 @@ libcsbase_la_SOURCES = \
 alelap.f90 \
 alemaj.f90 \
 altycl.f90 \
-autmgr.f90 \
 calhyd.f90 \
 calmom.f90 \
 caltri.f90 \
@@ -141,7 +140,6 @@ coupbo.f90 \
 codits.f90 \
 covofi.f90 \
 cregeo.f90 \
-crstgr.f90 \
 cs_ale.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \

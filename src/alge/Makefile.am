@@ -64,7 +64,9 @@ cs_grid.c \
 cs_matrix.c \
 cs_multigrid.c \
 cs_sles.c \
+autmgr.f90 \
 bilsc2.f90 \
+crstgr.f90 \
 divmas.f90 \
 divrij.f90 \
 gradmc.f90 \

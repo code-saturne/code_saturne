@@ -98,7 +98,7 @@ integer          irscel(ncelfe)
 integer          indic(ncelfe), inombr(ncelfe)
 integer          indicf(nfacf), irsfac(nfacf)
 
-double precision daf(ncelfe), xaf(nfacf,isym)
+double precision daf(ncelfe), xaf(*) ! xaf of size nfacf or nfacf*2
 double precision surfaf(3,nfacf), volumf(ncelfe)
 double precision xyzfin(3,ncelfe)
 double precision w1(ncelfe), w2(ncelfe)
@@ -200,8 +200,8 @@ do while (npass .lt. npasmx)
     if (i.le.ncelf .and. j.le.ncelf) then
 
       inditt = 0
-      xaf1 = xaf(ifac,1)
-      xaf2 = xaf(ifac,isym)
+      xaf1 = xaf((ifac-1)*isym + 1)
+      xaf2 = xaf(ifac*isym)
       xaf1 = max(-xaf1,1.d-15)
       xaf2 = max(-xaf2,1.d-15)
       critr  = (daf(i)/indic(i))*(daf(j)/indic(j))/(xaf1*xaf2)
