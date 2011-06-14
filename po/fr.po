@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-06-10 17:08+0200\n"
+"POT-Creation-Date: 2011-06-14 12:38+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4026,18 +4026,18 @@ msgstr ""
 " --no-perio        ignore l'information sur la périodicité si présente.\n"
 " --no-write        ne pas écrire de données de sortie.\n"
 
-msgid " --metis           use ParMETIS for partitioning (default).\n"
+msgid " --metis           use ParMETIS for partitioning.\n"
+msgstr " --metis           utiliser ParMETIS pour le partitionnement.\n"
+
+msgid " --metis           use METIS for partitioning.\n"
+msgstr " --metis           utiliser METIS pour le partitionnement.\n"
+
+msgid " --scotch          use PT-SCOTCH for partitioning (default).\n"
 msgstr ""
-" --metis           utiliser ParMETIS pour le partitionnement (défaut).\n"
+" --scotch          utiliser PT-SCOTCH pour le partitionnement (défaut).\n"
 
-msgid " --metis           use METIS for partitioning (default).\n"
-msgstr " --metis           utiliser METIS pour le partitionnement (défaut).\n"
-
-msgid " --scotch          use PT-SCOTCH for partitioning.\n"
-msgstr " --scotch          utiliser PT-SCOTCH pour le partitionnement.\n"
-
-msgid " --scotch          use SCOTCH for partitioning.\n"
-msgstr " --scotch          utiliser SCOTCH pour le partitionnement.\n"
+msgid " --scotch          use SCOTCH for partitioning (default).\n"
+msgstr " --scotch          utiliser SCOTCH pour le partitionnement (défaut).\n"
 
 msgid " --mpi             use MPI for parallelism\n"
 msgstr " --mpi             partitionnement parallèle via MPI\n"

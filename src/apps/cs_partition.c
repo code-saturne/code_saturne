@@ -219,18 +219,19 @@ _arg_env_help(const char  *name)
 
 #if defined(HAVE_PARMETIS)
   bft_printf
-    (_(" --metis           use ParMETIS for partitioning (default).\n"));
+    (_(" --metis           use ParMETIS for partitioning.\n"));
 #elif defined(HAVE_METIS)
   bft_printf
-    (_(" --metis           use METIS for partitioning (default).\n"));
+    (_(" --metis           use METIS for partitioning.\n"));
 #endif
 #if defined(HAVE_PTSCOTCH)
   bft_printf
-    (_(" --scotch          use PT-SCOTCH for partitioning.\n"));
+    (_(" --scotch          use PT-SCOTCH for partitioning (default).\n"));
 #elif defined(HAVE_SCOTCH)
   bft_printf
-    (_(" --scotch          use SCOTCH for partitioning.\n"));
+    (_(" --scotch          use SCOTCH for partitioning (default).\n"));
 #endif
+#if defined(HAVE_MPI)
   bft_printf
     (_(" --mpi             use MPI for parallelism\n"));
   bft_printf
@@ -239,6 +240,7 @@ _arg_env_help(const char  *name)
        "                     eo:  MPI-IO with explicit offsets\n"
        "                          (default if available)\n"
        "                     ip:  MPI-IO with individual file pointers\n"));
+#endif
   bft_printf
     (_(" --log             output redirection for rank -1 or 0:\n"
        "                     0: standard output\n"
@@ -364,21 +366,17 @@ _define_options(int     argc,
   *alg_opt = 0;
 
   if (cs_glob_n_ranks == 1) {
-#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
-  *alg_opt = 1;
-#endif
 #if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
-  if (*alg_opt == 0)
     *alg_opt = 2;
+#elif defined(HAVE_METIS) || defined(HAVE_PARMETIS)
+    *alg_opt = 1;
 #endif
   }
   else { /* if cs_glob_n_ranks > 1) */
-#if defined(HAVE_PARMETIS)
-    *alg_opt = 1;
-#endif
 #if defined(HAVE_PTSCOTCH)
-    if (*alg_opt == 0)
-      *alg_opt = 2;
+    *alg_opt = 2;
+#elif defined(HAVE_PARMETIS)
+    *alg_opt = 1;
 #endif
   }
 

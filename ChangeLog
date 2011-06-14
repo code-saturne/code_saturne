@@ -1,3 +1,9 @@
+* 14/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Use SCOTCH instead of METIS by default when partitioning.
+  modified files:
+    po/fr.po
+    src/apps/cs_partition.c
+
 * 14/06/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Non-symmetric matrix coefficients are now interleaved.
   (the Fortran API still allows non-interleaved matrixes as an option).
