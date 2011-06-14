@@ -244,7 +244,6 @@ bin/cs_xml_reader.py
 autovnvdir = $(pkgpythondir)/autovnv
 autovnv_PYTHON = \
 bin/autovnv/Command.py \
-bin/autovnv/DiscInfo.py \
 bin/autovnv/Drawing.py \
 bin/autovnv/__init__.py \
 bin/autovnv/Parser.py \
