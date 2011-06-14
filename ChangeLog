@@ -1,3 +1,10 @@
+* 14/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Free memory allocated under caltri in caltri, to avoid issues in
+  benchmark or preprocessing mode.
+  modified files:
+    src/base/caltri.f90
+    src/base/memfin.f90
+
 * 14/06/2011 - David Monfort <david.monfort@edf.fr>
   Minor memory allocation improvements.
   modified routines:

@@ -1184,6 +1184,36 @@ if (iilagr.gt.0) then
 
 endif
 
+call finalize_aux_arrays
+
+if (ippmod(iatmos).ge.0) then
+  call finalize_meteo
+endif
+
+if (ippmod(icompf).ge.0) then
+  call finalize_compf
+endif
+
+if (iale.eq.1.or.imobil.eq.1) then
+  call finalize_ale
+endif
+
+if (ncpdct.gt.0) then
+  call finalize_kpdc
+endif
+
+if (nctsmt.gt.0) then
+  call finalize_tsma
+endif
+
+if (nfpt1d.gt.0) then
+  call finalize_pt1d
+endif
+
+if (ivrtex.eq.1) then
+  call finalize_vortex
+endif
+
 call dmtmps(tecrf2)
 !==========
 
