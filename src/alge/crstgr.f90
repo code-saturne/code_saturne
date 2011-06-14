@@ -326,8 +326,10 @@ if (interp.eq.1) then
       xag(ifacg, 1) = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
     enddo
   else
+    do ifacg = 1, nfacg
       xag(ifacg, 1) = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
       xag(ifacg, 2) = rlxp1*xag(ifacg, 2) +(1.d0-rlxp1)*xag0(ifacg)
+    enddo
   endif
 
 endif

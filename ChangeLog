@@ -1,3 +1,8 @@
+* 14/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix for double interpolation in symmetric case for multigrid.
+  modified files:
+    src/alge/crstgr.f90
+
 * 10/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Upgrade post-processing management API for better mapping with the
   GUI, and for better clarity of user options. All related settings
