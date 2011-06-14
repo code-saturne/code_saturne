@@ -1,9 +1,9 @@
 #-------------------------------------------------------------------------------
 #
-#     This file is part of the Code_Saturne User Interface, element of the
+#     This file is part of the Code_Saturne Scripts, element of the
 #     Code_Saturne CFD tool.
 #
-#     Copyright (C) 2010 EDF S.A., France
+#     Copyright (C) 1998-2011 EDF S.A., France
 #
 #     contact: saturne-support@edf.fr
 #
@@ -23,14 +23,4 @@
 #     51 Franklin St, Fifth Floor,
 #     Boston, MA  02110-1301  USA
 #
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-# Library modules import
-#-------------------------------------------------------------------------------
-
-__all__ = ["autovnv","Base", "Pages"]
-
-#-------------------------------------------------------------------------------
-# End
 #-------------------------------------------------------------------------------

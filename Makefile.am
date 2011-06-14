@@ -227,6 +227,7 @@ bin/cs_package.py
 
 dist_pkgpython_PYTHON = \
 bin/__init__.py \
+bin/cs_autovnv.py \
 bin/cs_case.py \
 bin/cs_case_domain.py \
 bin/cs_case_coupling.py \
@@ -239,6 +240,16 @@ bin/cs_run.py \
 bin/cs_salome.py \
 bin/cs_script.py \
 bin/cs_xml_reader.py
+
+autovnvdir = $(pkgpythondir)/autovnv
+autovnv_PYTHON = \
+bin/autovnv/Command.py \
+bin/autovnv/DiscInfo.py \
+bin/autovnv/Drawing.py \
+bin/autovnv/__init__.py \
+bin/autovnv/Parser.py \
+bin/autovnv/Study.py \
+bin/autovnv/TexMaker.py
 
 # Install user scripts
 

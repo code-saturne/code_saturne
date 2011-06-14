@@ -31,7 +31,8 @@ class master_script:
         self.command = argv
         self.package = package
 
-        self.commands = {'compile':self.compile,
+        self.commands = {'autovnv':self.autovnv,
+                         'compile':self.compile,
                          'config':self.config,
                          'create':self.create,
                          'gui':self.gui,
@@ -68,6 +69,7 @@ class master_script:
 
 Topics:
   help
+  autovnv
   compile
   config
   create
@@ -80,6 +82,10 @@ Options:
   -h, --help  show this help message and exit"""
 
         print(usage % {'prog':sys.argv[0]})
+
+    def autovnv(self, options = None):
+        import cs_autovnv
+        return cs_autovnv.main(options, self.package)
 
     def compile(self, options = None):
         import cs_compile

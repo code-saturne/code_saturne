@@ -50,6 +50,7 @@ class package:
         self.partitioner = "cs_partition"
         self.solver = "cs_solver"
         self.check_syntax = "cs_check_syntax"
+        self.io_dump = "cs_io_dump"
         self.guiname = "SaturneGUI"
         self.configfile = "code_saturne.cfg"
         self.scratchdir = 'tmp_Saturne'
@@ -119,6 +120,11 @@ class package:
 
         checksyntaxdir = "@pkglibexecdir@"
         return os.path.join(checksyntaxdir, self.check_syntax)
+
+    def get_io_dump(self):
+
+        iodumpdir = "@pkglibexecdir@"
+        return os.path.join(iodumpdir, self.io_dump)
 
     def get_configfile(self):
 

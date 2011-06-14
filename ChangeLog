@@ -1,3 +1,21 @@
+* 14/06/2011 - Alexandre Douce <alexandre.douce@edf.fr>
+  First implementation of a V&V automatization tool.
+  added scripts:
+    bin/autovnv
+    bin/autovnv/Command.py
+    bin/autovnv/Drawing.py
+    bin/autovnv/__init__.py
+    bin/autovnv/Parser.py
+    bin/autovnv/Study.py
+    bin/autovnv/TexMaker.py
+    bin/cs_autovnv.py
+  modified scripts:
+    bin/cs_package.py.in
+    bin/cs_script.py
+    bin/__init__.py
+    extras/bash_completion/code_saturne
+    Makefile.am
+
 * 14/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Use SCOTCH instead of METIS by default when partitioning.
   modified files:

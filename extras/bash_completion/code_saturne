@@ -34,7 +34,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="compile config create gui info run salome"
+    cmds="autovnv compile config create gui info run salome"
 
     # Help and Case options
     local helpOpts="-h --help"
@@ -75,6 +75,13 @@ _code_saturne() {
                     return 0
                     ;;
                 *) return 0;;
+            esac
+            ;;
+        autovnv)
+            case ${prev} in
+                -f|--file) _filedir -d; return 0;;
+                -m|--mail) COMPREPLY=( ); return 0;;
+                *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
             esac
             ;;
         compile)
