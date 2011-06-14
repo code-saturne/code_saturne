@@ -1156,7 +1156,7 @@ class Case(Dico, XMLDocument):
 
     def xmlSaveDocument(self):
         """
-        This method write the associated xml file.
+        This method writes the associated xml file.
         See saveCase and saveCaseAs methods in the Main module.
         """
         try:
@@ -1173,21 +1173,6 @@ class Case(Dico, XMLDocument):
             "(XMLengine module, Case class, xmlSaveDocument method)"
             print(msg)
 
-##  def xmlSaveDocument(self):
-##      """
-##      This method write the associated xml file.
-##      See saveCase and saveCaseAs methods in the Main module.
-##      """
-##      try:
-##          file = open(self['xmlfile'], 'w')
-##          file.write(self.toPrettyString())
-##          file.close()
-##          self['new'] = "no"
-##          self['saved'] = "yes"
-##      except IOError:
-##          msg = "Error: unable to save the XML document file." ,
-##          "(XMLengine module, Case class, xmlSaveDocument method)"
-##          print(msg)
 
 #-------------------------------------------------------------------------------
 # XMLengine test case
