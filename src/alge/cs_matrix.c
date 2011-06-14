@@ -2683,15 +2683,17 @@ _set_xa_coeffs_csr_sym_increment(cs_matrix_t      *matrix,
  * Set symmetric CSR matrix coefficients.
  *
  * parameters:
- *   matrix    <-> Pointer to matrix structure
- *   symmetric <-- Indicates if extradiagonal values are symmetric (true)
- *   da        <-- Diagonal values (NULL if all zero)
- *   xa        <-- Extradiagonal values (NULL if all zero)
+ *   matrix      <-> Pointer to matrix structure
+ *   symmetric   <-- Indicates if extradiagonal values are symmetric (true)
+ *   interleaved --> Indicates if matrix coefficients are interleaved
+ *   da          <-- Diagonal values (NULL if all zero)
+ *   xa          <-- Extradiagonal values (NULL if all zero)
  *----------------------------------------------------------------------------*/
 
 static void
 _set_coeffs_csr_sym(cs_matrix_t      *matrix,
                     cs_bool_t         symmetric,
+                    cs_bool_t         interleaved,
                     const cs_real_t  *restrict da,
                     const cs_real_t  *restrict xa)
 {
