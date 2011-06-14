@@ -485,7 +485,7 @@ if (iwarnp .gt. 3) then
     ig = ifaclg(1, ifacg)
     jg = ifaclg(2, ifacg)
     w3(ig) = w3(ig) - abs(xag((ifacg-1)*isym + 1))
-    w3(jg) = w3(jg) - abs(ifacg*isym)
+    w3(jg) = w3(jg) - abs(xag(ifacg*isym))
   enddo
 
   do ii = 1, ncelf
