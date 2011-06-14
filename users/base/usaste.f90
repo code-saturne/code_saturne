@@ -178,11 +178,6 @@ asddlf(3,1) = 0
 
 asddlf(3,2) = 0
 
-! --- Activation of Code_Saturne/Code_Aster synchronized chronological output.
-!     (ISYNCP = 1 : Synchronized output, ISYNCP = 0: Non synchronized output)
-
-isyncp = 1
-
 !----
 ! Formats
 !----
