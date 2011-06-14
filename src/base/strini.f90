@@ -381,7 +381,7 @@ write(nfecra,3000)
       '                 IHISTR = ',I4,' ( 1 : active)         ',/)
  2012 format(                                                           &
     /,'TTES PHASES  : MODE COUPLAGE CODE_ASTER ACTIVE         ',/,&
-      '                 AVEC NBASTE = ',I10   ,' STRUCTURE(S) ',/) 
+      '                 AVEC NBASTE = ',I10   ,' STRUCTURE(S) ',/)
  2020 format(                                                           &
     /,'TTES PHASES  : SCHEMA DE COUPLAGE EXPLICITE ACTIVE     ',/,&
       '                                                       ',/,&
