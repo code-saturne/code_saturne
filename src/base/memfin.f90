@@ -52,14 +52,6 @@ subroutine memfin
 
 use paramx
 use parall
-use ppincl
-use pointe
-use optcal
-use atincl
-use cfpoin
-use albase
-use cplsat
-use vorinc
 
 !===============================================================================
 
