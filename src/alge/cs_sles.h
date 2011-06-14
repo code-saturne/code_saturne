@@ -92,6 +92,8 @@ void CS_PROCF(reslin, RESLIN)
  const cs_int_t   *nfac,      /* <-- Number of faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
+ const cs_int_t   *ilved,     /* <-- Interleaved indicator  */
+                              /*     1: interleaved; 2: not interleaved */
  const cs_int_t   *ireslp,    /* <-- Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree

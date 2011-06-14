@@ -110,7 +110,7 @@ double precision vx(ncelet)
 ! Local variables
 
 integer          lnom
-integer          iresds, iresas, nitmds, nitmas
+integer          iresds, iresas, nitmds, nitmas, ilved
 
 !===============================================================================
 
@@ -120,6 +120,7 @@ lnom = len(cnom)
 
 icycle = 0
 niterf = 0
+ilved = 2
 
 ! Resolution
 
@@ -146,7 +147,7 @@ elseif(imgrp.eq.0) then
     call reslin                                                   &
     !==========
  ( cnom   , lnom   , ncelet , ncel   , nfac   ,                   &
-   isym   , ireslp , ipol   , nitmap , iinvpe ,                   &
+   isym   , ilved  , ireslp , ipol   , nitmap , iinvpe ,          &
    iwarnp , niterf , epsilp , rnorm  , residu ,                   &
    !        ------                     ------
    ifacel , dam    , xam    , smbrp  , vx     )

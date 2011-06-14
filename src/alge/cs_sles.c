@@ -2052,6 +2052,7 @@ _value_type(size_t      n_vals,
  *
  * parameters:
  *   symmetric     <-- indicates if matrix values are symmetric
+ *   interleaved   --> Indicates if matrix coefficients are interleaved
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   ad            <-- Diagonal part of linear equation matrix
  *   ax            <-- Non-diagonal part of linear equation matrix
@@ -2062,6 +2063,7 @@ _value_type(size_t      n_vals,
 
 static void
 _cell_residual(cs_bool_t        symmetric,
+               cs_bool_t        interleaved,
                cs_perio_rota_t  rotation_mode,
                const cs_real_t  ad[],
                const cs_real_t  ax[],
@@ -2075,7 +2077,10 @@ _cell_residual(cs_bool_t        symmetric,
 
   cs_matrix_t *a = cs_glob_sles_base_matrix;
 
-  cs_matrix_set_coefficients(a, symmetric, ad, ax);
+  if (interleaved || symmetric)
+    cs_matrix_set_coefficients(a, symmetric, ad, ax);
+  else
+    cs_matrix_set_coefficients_ni(a, symmetric, ad, ax);
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, res);
 
@@ -2139,6 +2144,308 @@ _diag_dominance(cs_bool_t        symmetric,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Sparse linear system resolution for non-interleaved non-symmetric matrixes.
+ *
+ * This function does not have the full functionnality of cs_sles_solve.c,
+ * as it should only be used for "legacy" non-interleaved non-symmetric
+ * matrixes: it may not be used inside a multigrid solver, and always updates
+ * statistics.
+ *
+ * Note that in most cases (if the right-hand side is not already zero
+ * within convergence criteria), coefficients are assigned to matrixes
+ * then released by this function, so coefficients need not be assigned
+ * prior to this call, and will have been released upon returning.
+ *
+ * parameters:
+ *   var_name      <-- Variable name
+ *   solver_type   <-- Type of solver (PCG, Jacobi, ...)
+ *   ad_coeffs     <-- Diagonal coefficients of linear equation matrix
+ *   ax_coeffs     <-- Non-diagonal coefficients of linear equation matrix
+ *   a             <-> Matrix
+ *   ax            <-> Non-diagonal part of linear equation matrix
+ *                     (only necessary if poly_degree > 0)
+ *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   verbosity     <-- Verbosity level
+ *   n_max_iter    <-- Maximum number of iterations
+ *   precision     <-- Precision limit
+ *   r_norm        <-- Residue normalization
+ *   n_iter        --> Number of iterations
+ *   residue       <-> Residue
+ *   rhs           <-- Right hand side
+ *   vx            --> System solution
+ *   aux_size      <-- Number of elements in aux_vectors
+ *   aux_vectors   --- Optional working area (allocation otherwise)
+ *
+ * returns:
+ *   1 if converged, 0 if not converged, -1 if not converged and maximum
+ *   iteration number reached, -2 if divergence is detected.
+ *----------------------------------------------------------------------------*/
+
+static int
+_solve_ni(const char         *var_name,
+          cs_sles_type_t      solver_type,
+          const cs_real_t    *ad_coeffs,
+          const cs_real_t    *ax_coeffs,
+          cs_matrix_t        *a,
+          cs_matrix_t        *ax,
+          int                 poly_degree,
+          cs_perio_rota_t     rotation_mode,
+          int                 verbosity,
+          int                 n_max_iter,
+          double              precision,
+          double              r_norm,
+          int                *n_iter,
+          double             *residue,
+          const cs_real_t    *rhs,
+          cs_real_t          *vx,
+          size_t              aux_size,
+          void               *aux_vectors)
+{
+  cs_int_t  n_rows;
+  unsigned _n_iter = 0;
+  int cvg = 0;
+  cs_sles_convergence_t  convergence;
+
+  cs_sles_info_t *sles_info = NULL;
+  double  wt_start = 0.0, wt_stop = 0.0;
+  double  cpu_start = 0.0, cpu_stop = 0.0;
+
+  cs_matrix_t *_a = a;
+  cs_matrix_t *_ax = ax;
+
+  n_rows = cs_matrix_get_n_rows(a);
+
+  wt_start =bft_timer_wtime();
+  cpu_start =bft_timer_cpu_time();
+  sles_info = _find_or_add_system(var_name, solver_type);
+
+  /* Initialize number of iterations and residue,
+     check for immediate return,
+     and solve sparse linear system */
+
+  *n_iter = 0;
+
+  if (cs_sles_needs_solving(var_name,
+                            _(cs_sles_type_name[solver_type]),
+                            n_rows,
+                            verbosity,
+                            r_norm,
+                            residue,
+                            rhs) != 0) {
+
+    /* Set matrix coefficients */
+
+    if (solver_type == CS_SLES_JACOBI) {
+
+      if (ax == NULL) {
+        _a = NULL;
+        _ax = a;
+      }
+
+      cs_matrix_set_coefficients_ni(_ax, false, NULL, ax_coeffs);
+    }
+
+    else { /* if (solver_type != CS_SLES_JACOBI) */
+
+      cs_matrix_set_coefficients_ni(_a, false, ad_coeffs, ax_coeffs);
+
+      if (poly_degree > 0)
+        cs_matrix_set_coefficients_ni(_ax, false, NULL, ax_coeffs);
+    }
+
+    /* Solve sparse linear system */
+
+    _convergence_init(&convergence,
+                      _(cs_sles_type_name[solver_type]),
+                      var_name,
+                      verbosity,
+                      n_max_iter,
+                      precision,
+                      r_norm,
+                      *residue);
+
+    switch (solver_type) {
+    case CS_SLES_PCG:
+    case CS_SLES_PCG_SR:
+      cvg = _conjugate_gradient(var_name,
+                                _a,
+                                _ax,
+                                poly_degree,
+                                rotation_mode,
+                                &convergence,
+                                rhs,
+                                vx,
+                                aux_size,
+                                aux_vectors);
+      break;
+    case CS_SLES_JACOBI:
+      cvg = _jacobi(var_name,
+                    ad_coeffs,
+                    _ax,
+                    rotation_mode,
+                    &convergence,
+                    rhs,
+                    vx,
+                    aux_size,
+                    aux_vectors);
+      break;
+    case CS_SLES_BICGSTAB:
+      cvg = _bi_cgstab(var_name,
+                       _a,
+                       _ax,
+                       poly_degree,
+                       rotation_mode,
+                       &convergence,
+                       rhs,
+                       vx,
+                       aux_size,
+                       aux_vectors);
+      break;
+    case CS_SLES_GMRES:
+      cvg = _gmres(var_name,
+                   _a,
+                   _ax,
+                   poly_degree,
+                   rotation_mode,
+                   &convergence,
+                   rhs,
+                   vx,
+                   aux_size,
+                   aux_vectors);
+      break;
+    default:
+      break;
+    }
+
+    /* Release matrix coefficients */
+
+    if (_a != NULL)
+      cs_matrix_release_coefficients(_a);
+    if (_ax != NULL)
+      cs_matrix_release_coefficients(_ax);
+
+    /* Update return values */
+
+    _n_iter = convergence.n_iterations;
+
+    *n_iter = convergence.n_iterations;
+    *residue = convergence.residue;
+  }
+
+  wt_stop =bft_timer_wtime();
+  cpu_stop =bft_timer_cpu_time();
+
+  if (sles_info->n_calls == 0)
+    sles_info->n_iterations_min = _n_iter;
+
+  sles_info->n_calls += 1;
+
+  if (sles_info->n_iterations_min > _n_iter)
+    sles_info->n_iterations_min = _n_iter;
+  if (sles_info->n_iterations_max < _n_iter)
+    sles_info->n_iterations_max = _n_iter;
+
+  sles_info->n_iterations_last = _n_iter;
+  sles_info->n_iterations_tot += _n_iter;
+
+  sles_info->wt_tot += (wt_stop - wt_start);
+  sles_info->cpu_tot += (cpu_stop - cpu_start);
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Output default post-processing data for failed system convergence.
+ *
+ * parameters:
+ *   var_name      <-- Variable name
+ *   mesh_id       <-- id of error output mesh, or 0 if none
+ *   symmetric     <-- indicates if matrix values are symmetric
+ *   interleaved   --> Indicates if matrix coefficients are interleaved
+ *   rotation_mode <-- Halo update option for rotational periodicity
+ *   ad            <-- Diagonal part of linear equation matrix
+ *   ax            <-- Non-diagonal part of linear equation matrix
+ *   rhs           <-- Right hand side
+ *   vx            <-> Current system solution
+ *----------------------------------------------------------------------------*/
+
+static void
+_post_error_output_def(const char       *var_name,
+                       int               mesh_id,
+                       cs_bool_t         symmetric,
+                       cs_bool_t         interleaved,
+                       cs_perio_rota_t   rotation_mode,
+                       const cs_real_t  *ad,
+                       const cs_real_t  *ax,
+                       const cs_real_t  *rhs,
+                       cs_real_t        *vx)
+{
+  if (mesh_id != 0) {
+
+    const cs_mesh_t *mesh = cs_glob_mesh;
+
+    char base_name[32], val_name[32];
+
+    int val_id;
+    const cs_int_t n_cells = mesh->n_cells;
+
+    cs_real_t *val;
+
+    BFT_MALLOC(val, mesh->n_cells_with_ghosts, cs_real_t);
+
+    for (val_id = 0; val_id < 5; val_id++) {
+
+      switch(val_id) {
+
+      case 0:
+        strcpy(base_name, "Diag");
+        memcpy(val, ad, n_cells*sizeof(cs_real_t));
+        break;
+
+      case 1:
+        strcpy(base_name, "RHS");
+        memcpy(val, rhs, n_cells*sizeof(cs_real_t));
+        break;
+
+      case 2:
+        strcpy(base_name, "X");
+        memcpy(val, vx, n_cells*sizeof(cs_real_t));
+        break;
+
+      case 3:
+        strcpy(base_name, "Residual");
+        _cell_residual(symmetric, interleaved, rotation_mode, ad, ax, rhs, vx, val);
+        break;
+
+      case 4:
+        strcpy(base_name, "Diag_Dom");
+        _diag_dominance(symmetric, ad, ax, val);
+        break;
+
+      }
+
+      if (strlen(var_name) + strlen(base_name) < 31) {
+        strcpy(val_name, base_name);
+        strcat(val_name, "_");
+        strcat(val_name, var_name);
+      }
+      else {
+        strncpy(val_name, base_name, 31);
+        val_name[31] = '\0';
+      }
+
+      cs_sles_post_error_output_var(val_name,
+                                    mesh_id,
+                                    val);
+    }
+
+    BFT_FREE(val);
+  }
+
+}
+
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -2156,6 +2463,8 @@ void CS_PROCF(reslin, RESLIN)
  const cs_int_t   *nfac,      /* <-- Number of faces */
  const cs_int_t   *isym,      /* <-- Symmetry indicator:
                                      1: symmetric; 2: not symmetric */
+ const cs_int_t   *ilved,     /* <-- Interleaved indicator  */
+                              /*     1: interleaved; 2: not interleaved */
  const cs_int_t   *ireslp,    /* <-- Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
@@ -2182,6 +2491,7 @@ void CS_PROCF(reslin, RESLIN)
   int cvg = 0;
   int n_iter = *niterf;
   cs_bool_t symmetric = (*isym == 1) ? true : false;
+  cs_bool_t interleaved = (*ilved == 1) ? true : false;
   cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
 
   assert(*ncelet >= *ncel);
@@ -2213,26 +2523,46 @@ void CS_PROCF(reslin, RESLIN)
     assert(0);
   }
 
-  cvg = cs_sles_solve(var_name,
-                      type,
-                      true,
-                      symmetric,
-                      dam,
-                      xam,
-                      cs_glob_sles_base_matrix,
-                      cs_glob_sles_native_matrix,
-                      *ipol,
-                      rotation_mode,
-                      *iwarnp,
-                      *nitmap,
-                      *epsilp,
-                      *rnorm,
-                      &n_iter,
-                      residu,
-                      rhs,
-                      vx,
-                      0,
-                      NULL);
+  if (interleaved || symmetric)
+    cvg = cs_sles_solve(var_name,
+                        type,
+                        true,
+                        symmetric,
+                        dam,
+                        xam,
+                        cs_glob_sles_base_matrix,
+                        cs_glob_sles_native_matrix,
+                        *ipol,
+                        rotation_mode,
+                        *iwarnp,
+                        *nitmap,
+                        *epsilp,
+                        *rnorm,
+                        &n_iter,
+                        residu,
+                        rhs,
+                        vx,
+                        0,
+                        NULL);
+  else
+    cvg = _solve_ni(var_name,
+                    type,
+                    dam,
+                    xam,
+                    cs_glob_sles_base_matrix,
+                    cs_glob_sles_native_matrix,
+                    *ipol,
+                    rotation_mode,
+                    *iwarnp,
+                    *nitmap,
+                    *epsilp,
+                    *rnorm,
+                    &n_iter,
+                    residu,
+                    rhs,
+                    vx,
+                    0,
+                    NULL);
 
   *niterf = n_iter;
 
@@ -2242,14 +2572,25 @@ void CS_PROCF(reslin, RESLIN)
 
     int mesh_id = cs_post_init_error_writer_cells();
 
-    cs_sles_post_error_output_def(var_name,
-                                  mesh_id,
-                                  symmetric,
-                                  rotation_mode,
-                                  dam,
-                                  xam,
-                                  rhs,
-                                  vx);
+    if (interleaved || symmetric)
+      cs_sles_post_error_output_def(var_name,
+                                    mesh_id,
+                                    symmetric,
+                                    rotation_mode,
+                                    dam,
+                                    xam,
+                                    rhs,
+                                    vx);
+    else
+      _post_error_output_def(var_name,
+                             mesh_id,
+                             false, /* symmetric */
+                             false, /* interleaved */
+                             rotation_mode,
+                             dam,
+                             xam,
+                             rhs,
+                             vx);
 
     cs_post_finalize();
 
@@ -2428,6 +2769,7 @@ cs_sles_needs_solving(const char        *var_name,
  *   solver_type   <-- Type of solver (PCG, Jacobi, ...)
  *   update_stats  <-- Automatic solver statistics indicator
  *   symmetric     <-- Symmetric coefficients indicator
+ *   interleaved   --> Indicates if matrix coefficients are interleaved
  *   ad_coeffs     <-- Diagonal coefficients of linear equation matrix
  *   ax_coeffs     <-- Non-diagonal coefficients of linear equation matrix
  *   a             <-> Matrix
@@ -2523,9 +2865,8 @@ cs_sles_solve(const char         *var_name,
 
       cs_matrix_set_coefficients(_a, symmetric, ad_coeffs, ax_coeffs);
 
-      if (poly_degree > 0) {
+      if (poly_degree > 0)
         cs_matrix_set_coefficients(_ax, symmetric, NULL, ax_coeffs);
-      }
     }
 
     /* Solve sparse linear system */
@@ -2674,6 +3015,7 @@ cs_sles_solve(const char         *var_name,
  *   var_name      <-- Variable name
  *   mesh_id       <-- id of error output mesh, or 0 if none
  *   symmetric     <-- indicates if matrix values are symmetric
+ *   interleaved   --> Indicates if matrix coefficients are interleaved
  *   rotation_mode <-- Halo update option for rotational periodicity
  *   ad            <-- Diagonal part of linear equation matrix
  *   ax            <-- Non-diagonal part of linear equation matrix
@@ -2691,68 +3033,15 @@ cs_sles_post_error_output_def(const char       *var_name,
                               const cs_real_t  *rhs,
                               cs_real_t        *vx)
 {
-  if (mesh_id != 0) {
-
-    const cs_mesh_t *mesh = cs_glob_mesh;
-
-    char base_name[32], val_name[32];
-
-    int val_id;
-    const cs_int_t n_cells = mesh->n_cells;
-
-    cs_real_t *val;
-
-    BFT_MALLOC(val, mesh->n_cells_with_ghosts, cs_real_t);
-
-    for (val_id = 0; val_id < 5; val_id++) {
-
-      switch(val_id) {
-
-      case 0:
-        strcpy(base_name, "Diag");
-        memcpy(val, ad, n_cells*sizeof(cs_real_t));
-        break;
-
-      case 1:
-        strcpy(base_name, "RHS");
-        memcpy(val, rhs, n_cells*sizeof(cs_real_t));
-        break;
-
-      case 2:
-        strcpy(base_name, "X");
-        memcpy(val, vx, n_cells*sizeof(cs_real_t));
-        break;
-
-      case 3:
-        strcpy(base_name, "Residual");
-        _cell_residual(symmetric, rotation_mode, ad, ax, rhs, vx, val);
-        break;
-
-      case 4:
-        strcpy(base_name, "Diag_Dom");
-        _diag_dominance(symmetric, ad, ax, val);
-        break;
-
-      }
-
-      if (strlen(var_name) + strlen(base_name) < 31) {
-        strcpy(val_name, base_name);
-        strcat(val_name, "_");
-        strcat(val_name, var_name);
-      }
-      else {
-        strncpy(val_name, base_name, 31);
-        val_name[31] = '\0';
-      }
-
-      cs_sles_post_error_output_var(val_name,
-                                    mesh_id,
-                                    val);
-    }
-
-    BFT_FREE(val);
-  }
-
+  _post_error_output_def(var_name,
+                         mesh_id,
+                         symmetric,
+                         true, /* interleaved */
+                         rotation_mode,
+                         ad,
+                         ax,
+                         rhs,
+                         vx);
 }
 
 /*----------------------------------------------------------------------------

@@ -1464,8 +1464,8 @@ cs_benchmark(int  mpi_trace_mode)
   }
 
   for (ii = 0; ii < n_faces; ii++) {
-    xa[ii] = 0.5*(1.0 + ii/n_faces);
-    xa[ii + n_faces] = -0.5*(1.0 + ii/n_faces);
+    xa[ii*2] = 0.5*(1.0 + ii/n_faces);
+    xa[ii*2 + 1] = -0.5*(1.0 + ii/n_faces);
   }
 
   /* Run tests */

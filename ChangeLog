@@ -1,3 +1,15 @@
+* 14/06/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Non-symmetric matrix coefficients are now interleaved.
+  (the Fortran API still allows non-interleaved matrixes as an option).
+  modified files:
+    src/alge/crstgr.f90
+    src/alge/cs_benchmark.c
+    src/alge/cs_matrix.c
+    src/alge/cs_matrix.h
+    src/alge/cs_sles.c
+    src/alge/cs_sles.h
+    src/alge/invers.f90
+
 * 14/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix for double interpolation in symmetric case for multigrid.
   modified files:

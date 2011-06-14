@@ -151,6 +151,7 @@ BEGIN_C_DECLS
 typedef void
 (cs_matrix_set_coeffs_t) (cs_matrix_t      *matrix,
                           cs_bool_t         symmetric,
+                          cs_bool_t         interleaved,
                           const cs_real_t  *restrict da,
                           const cs_real_t  *restrict xa);
 
@@ -709,20 +710,23 @@ _destroy_coeff_native(cs_matrix_coeff_native_t **coeff)
  * or simply mapped.
  *
  * parameters:
- *   matrix    <-- Pointer to matrix structure
- *   symmetric <-- Indicates if extradiagonal values are symmetric
- *   da        <-- Diagonal values
- *   xa        <-- Extradiagonal values
+ *   matrix      <-- Pointer to matrix structure
+ *   symmetric   <-- Indicates if extradiagonal values are symmetric
+ *   interleaved --> Indicates if matrix coefficients are interleaved
+ *   da          <-- Diagonal values
+ *   xa          <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
 _set_coeffs_native(cs_matrix_t      *matrix,
                    cs_bool_t         symmetric,
+                   cs_bool_t         interleaved,
                    const cs_real_t  *da,
                    const cs_real_t  *xa)
 {
   cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
+  cs_int_t ii;
 
   mc->symmetric = symmetric;
 
@@ -744,18 +748,32 @@ _set_coeffs_native(cs_matrix_t      *matrix,
 
   if (xa != NULL) {
 
-    if (mc->_xa == NULL)
-      mc->xa = xa;
-    else {
-      size_t xa_n_bytes = sizeof(cs_real_t) * ms->n_faces;
-      if (! symmetric)
-        xa_n_bytes *= 2;
-      memcpy(mc->_xa, xa, xa_n_bytes);
-      mc->xa = mc->_xa;
+    if (interleaved || symmetric == true) {
+      if (mc->_xa == NULL)
+        mc->xa = xa;
+      else {
+        size_t xa_n_bytes = sizeof(cs_real_t) * ms->n_faces;
+        if (! symmetric)
+          xa_n_bytes *= 2;
+        memcpy(mc->_xa, xa, xa_n_bytes);
+        mc->xa = mc->_xa;
+      }
     }
 
-  }
+    else { /* !interleaved && symmetric == false */
 
+      if (mc->_xa == NULL)
+        BFT_MALLOC(mc->_xa, 2*ms->n_faces, cs_real_t);
+
+
+      for (ii = 0; ii < ms->n_faces; ++ii) {
+        mc->_xa[2*ii] = xa[ii];
+        mc->_xa[2*ii + 1] = xa[ms->n_faces + ii];
+      }
+      mc->xa = mc->_xa;
+
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -836,12 +854,11 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
   cs_int_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa1 = mc->xa;
-  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+  const cs_real_t  *restrict xa = mc->xa;
 
   /* Tell IBM compiler not to alias */
   #if defined(__xlc__)
-  #pragma disjoint(*x, *y, *xa1, *xa2)
+  #pragma disjoint(*x, *y, *xa)
   #endif
 
   /* Diagonal part of matrix.vector product */
@@ -863,8 +880,8 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += xa1[face_id] * x[jj];
-        y[jj] += xa1[face_id] * x[ii];
+        y[ii] += xa[face_id] * x[jj];
+        y[jj] += xa[face_id] * x[ii];
       }
 
     }
@@ -875,8 +892,8 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += xa1[face_id] * x[jj];
-        y[jj] += xa2[face_id] * x[ii];
+        y[ii] += xa[2*face_id] * x[jj];
+        y[jj] += xa[2*face_id + 1] * x[ii];
       }
 
     }
@@ -910,14 +927,13 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa1 = mc->xa;
-  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+  const cs_real_t  *restrict xa = mc->xa;
 
   assert(matrix->numbering->type == CS_NUMBERING_THREADS);
 
   /* Tell IBM compiler not to alias */
   #if defined(__xlc__)
-  #pragma disjoint(*x, *y, *xa1, *xa2)
+  #pragma disjoint(*x, *y, *xa)
   #endif
 
   /* Diagonal part of matrix.vector product */
@@ -947,8 +963,8 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
-            y[ii] += xa1[face_id] * x[jj];
-            y[jj] += xa1[face_id] * x[ii];
+            y[ii] += xa[face_id] * x[jj];
+            y[jj] += xa[face_id] * x[ii];
           }
         }
       }
@@ -967,8 +983,8 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
-            y[ii] += xa1[face_id] * x[jj];
-            y[jj] += xa2[face_id] * x[ii];
+            y[ii] += xa[2*face_id] * x[jj];
+            y[jj] += xa[2*face_id + 1] * x[ii];
           }
         }
       }
@@ -992,8 +1008,7 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   const cs_real_t  *restrict da = mc->da;
-  const cs_real_t  *restrict xa1 = mc->xa;
-  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+  const cs_real_t  *restrict xa = mc->xa;
 
   /* Diagonal part of matrix.vector product */
 
@@ -1019,7 +1034,7 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
      * 1/ Split y[ii] and y[jj] computation into 2 loops to remove compiler
      *    data dependency assertion between y[ii] and y[jj].
      * 2/ keep index (*face_cel_p) in L1 cache from y[ii] loop to y[jj] loop
-     *    and xa1 in L2 cache.
+     *    and xa in L2 cache.
      * 3/ break high frequency occurence of data dependency from one iteration
      *    to another in y[ii] loop (nonzero matrix value on the same line ii).
      */
@@ -1035,15 +1050,15 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
         kk_max = CS_MIN((ms->n_faces - face_id),
                         IA64_OPTIM_L1_CACHE_SIZE);
 
-        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+        /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
         ii = face_cel_p[0] - 1;
         ii_prev = ii;
-        y_it_prev = y[ii_prev] + xa1[face_id] * x[face_cel_p[1] - 1];
+        y_it_prev = y[ii_prev] + xa[face_id] * x[face_cel_p[1] - 1];
 
         for (kk = 1; kk < kk_max; ++kk) {
           ii = face_cel_p[2*kk] - 1;
-          /* y[ii] += xa1[face_id+kk] * x[jj]; */
+          /* y[ii] += xa[face_id+kk] * x[jj]; */
           if (ii == ii_prev) {
             y_it = y_it_prev;
           }
@@ -1052,15 +1067,15 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
             y[ii_prev] = y_it_prev;
           }
           ii_prev = ii;
-          y_it_prev = y_it + xa1[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+          y_it_prev = y_it + xa[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
         }
         y[ii] = y_it_prev;
 
-        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+        /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
         for (kk = 0; kk < kk_max; ++kk) {
           y[face_cel_p[2*kk+1] - 1]
-            += xa1[face_id+kk] * x[face_cel_p[2*kk] - 1];
+            += xa[face_id+kk] * x[face_cel_p[2*kk] - 1];
         }
         face_cel_p += 2 * IA64_OPTIM_L1_CACHE_SIZE;
       }
@@ -1077,15 +1092,15 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
         kk_max = CS_MIN((ms->n_faces - face_id),
                         IA64_OPTIM_L1_CACHE_SIZE);
 
-        /* sub-loop to compute y[ii] += xa1[face_id] * x[jj] */
+        /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
 
         ii = face_cel_p[0] - 1;
         ii_prev = ii;
-        y_it_prev = y[ii_prev] + xa1[face_id] * x[face_cel_p[1] - 1];
+        y_it_prev = y[ii_prev] + xa[2*face_id] * x[face_cel_p[1] - 1];
 
         for (kk = 1; kk < kk_max; ++kk) {
           ii = face_cel_p[2*kk] - 1;
-          /* y[ii] += xa1[face_id+i] * x[jj]; */
+          /* y[ii] += xa[2*)face_id+i) + 1] * x[jj]; */
           if (ii == ii_prev) {
             y_it = y_it_prev;
           }
@@ -1094,15 +1109,15 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
             y[ii_prev] = y_it_prev;
           }
           ii_prev = ii;
-          y_it_prev = y_it + xa1[face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+          y_it_prev = y_it + xa[2*face_id+kk] * x[face_cel_p[2*kk+1] - 1];
         }
         y[ii] = y_it_prev;
 
-        /* sub-loop to compute y[ii] += xa2[face_id] * x[jj] */
+        /* sub-loop to compute y[ii] += xa[2*face_id + 1] * x[jj] */
 
         for (kk = 0; kk < kk_max; ++kk) {
           y[face_cel_p[2*kk+1] - 1]
-            += xa2[face_id+kk] * x[face_cel_p[2*kk] - 1];
+            += xa[2*(face_id+kk) + 1] * x[face_cel_p[2*kk] - 1];
         }
         face_cel_p += 2 * IA64_OPTIM_L1_CACHE_SIZE;
       }
@@ -1134,8 +1149,7 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
   cs_int_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa1 = mc->xa;
-  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+  const cs_real_t  *restrict xa = mc->xa;
 
   assert(matrix->numbering->type == CS_NUMBERING_VECTORIZE);
 
@@ -1159,8 +1173,8 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += xa1[face_id] * x[jj];
-        y[jj] += xa1[face_id] * x[ii];
+        y[ii] += xa[face_id] * x[jj];
+        y[jj] += xa[face_id] * x[ii];
       }
 
     }
@@ -1172,8 +1186,8 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += xa1[face_id] * x[jj];
-        y[jj] += xa2[face_id] * x[ii];
+        y[ii] += xa[2*face_id] * x[jj];
+        y[jj] += xa[2*face_id + 1] * x[ii];
       }
 
     }
@@ -1205,12 +1219,11 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
   cs_int_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa1 = mc->xa;
-  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+  const cs_real_t  *restrict xa = mc->xa;
 
   /* Tell IBM compiler not to alias */
   #if defined(__xlc__)
-  #pragma disjoint(*x, *y, *xa1, *xa2)
+  #pragma disjoint(*x, *y, *xa)
   #endif
 
   /* Diagonal part of matrix.vector product */
@@ -1232,8 +1245,8 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += alpha * xa1[face_id] * x[jj];
-        y[jj] += alpha * xa1[face_id] * x[ii];
+        y[ii] += alpha * xa[face_id] * x[jj];
+        y[jj] += alpha * xa[face_id] * x[ii];
       }
 
     }
@@ -1244,8 +1257,8 @@ _alpha_a_x_p_beta_y_native(cs_real_t           alpha,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += alpha * xa1[face_id] * x[jj];
-        y[jj] += alpha * xa2[face_id] * x[ii];
+        y[ii] += alpha * xa[2*face_id] * x[jj];
+        y[jj] += alpha * xa[2*face_id + 1] * x[ii];
       }
 
     }
@@ -1283,14 +1296,13 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa1 = mc->xa;
-  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+  const cs_real_t  *restrict xa = mc->xa;
 
   assert(matrix->numbering->type == CS_NUMBERING_THREADS);
 
   /* Tell IBM compiler not to alias */
   #if defined(__xlc__)
-  #pragma disjoint(*x, *y, *xa1, *xa2)
+  #pragma disjoint(*x, *y, *xa)
   #endif
 
   /* Diagonal part of matrix.vector product */
@@ -1319,8 +1331,8 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
-            y[ii] += alpha * xa1[face_id] * x[jj];
-            y[jj] += alpha * xa1[face_id] * x[ii];
+            y[ii] += alpha * xa[face_id] * x[jj];
+            y[jj] += alpha * xa[face_id] * x[ii];
           }
         }
 
@@ -1341,8 +1353,8 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
-            y[ii] += alpha * xa1[face_id] * x[jj];
-            y[jj] += alpha * xa2[face_id] * x[ii];
+            y[ii] += alpha * xa[face_id] * x[jj];
+            y[jj] += alpha * xa[2*face_id + 1] * x[ii];
           }
         }
       }
@@ -1378,8 +1390,7 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
   cs_int_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa1 = mc->xa;
-  const cs_real_t  *restrict xa2 = mc->xa + ms->n_faces;
+  const cs_real_t  *restrict xa = mc->xa;
 
   assert(matrix->numbering->type == CS_NUMBERING_VECTORIZE);
 
@@ -1403,8 +1414,8 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += alpha * xa1[face_id] * x[jj];
-        y[jj] += alpha * xa1[face_id] * x[ii];
+        y[ii] += alpha * xa[face_id] * x[jj];
+        y[jj] += alpha * xa[face_id] * x[ii];
       }
 
     }
@@ -1416,8 +1427,8 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
       for (face_id = 0; face_id < ms->n_faces; face_id++) {
         ii = face_cel_p[2*face_id] -1;
         jj = face_cel_p[2*face_id + 1] -1;
-        y[ii] += alpha * xa1[face_id] * x[jj];
-        y[jj] += alpha * xa2[face_id] * x[ii];
+        y[ii] += alpha * xa[2*face_id] * x[jj];
+        y[jj] += alpha * xa[2*face_id + 1] * x[ii];
       }
 
     }
@@ -1721,14 +1732,16 @@ _destroy_coeff_csr(cs_matrix_coeff_csr_t **coeff)
  * to a given coefficient).
  *
  * parameters:
- *   matrix    <-- Pointer to matrix structure
- *   symmetric <-- Indicates if extradiagonal values are symmetric
- *   xa        <-- Extradiagonal values
+ *   matrix      <-- Pointer to matrix structure
+ *   symmetric   <-- Indicates if extradiagonal values are symmetric
+ *   interleaved --> Indicates if matrix coefficients are interleaved
+ *   xa          <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
 _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
                           cs_bool_t         symmetric,
+                          cs_bool_t         interleaved,
                           const cs_real_t  *restrict xa)
 {
   cs_int_t  ii, jj, face_id;
@@ -1748,17 +1761,34 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
     const cs_real_t  *restrict xa1 = xa;
     const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
 
-    for (face_id = 0; face_id < n_faces; face_id++) {
-      cs_int_t kk, ll;
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
-      if (ii < ms->n_rows) {
-        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->val[kk] = xa1[face_id];
+    if (interleaved == false) {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        cs_int_t kk, ll;
+        ii = *face_cel_p++ - 1;
+        jj = *face_cel_p++ - 1;
+        if (ii < ms->n_rows) {
+          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
+          mc->val[kk] = xa1[face_id];
+        }
+        if (jj < ms->n_rows) {
+          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
+          mc->val[ll] = xa2[face_id];
+        }
       }
-      if (jj < ms->n_rows) {
-        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->val[ll] = xa2[face_id];
+    }
+    else { /* interleaved == true */
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        cs_int_t kk, ll;
+        ii = *face_cel_p++ - 1;
+        jj = *face_cel_p++ - 1;
+        if (ii < ms->n_rows) {
+          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
+          mc->val[kk] = xa[2*face_id];
+        }
+        if (jj < ms->n_rows) {
+          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
+          mc->val[ll] = xa[2*face_id + 1];
+        }
       }
     }
 
@@ -1795,14 +1825,16 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
  * some before using this function.
  *
  * parameters:
- *   matrix    <-- Pointer to matrix structure
- *   symmetric <-- Indicates if extradiagonal values are symmetric
- *   xa        <-- Extradiagonal values
+ *   matrix      <-- Pointer to matrix structure
+ *   symmetric   <-- Indicates if extradiagonal values are symmetric
+ *   interleaved --> Indicates if matrix coefficients are interleaved
+ *   xa          <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
 _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
                              cs_bool_t         symmetric,
+                             cs_bool_t         interleaved,
                              const cs_real_t  *restrict xa)
 {
   cs_int_t  ii, jj, face_id;
@@ -1822,20 +1854,36 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
     const cs_real_t  *restrict xa1 = xa;
     const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
 
-    for (face_id = 0; face_id < n_faces; face_id++) {
-      cs_int_t kk, ll;
-      ii = *face_cel_p++ - 1;
-      jj = *face_cel_p++ - 1;
-      if (ii < ms->n_rows) {
-        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->val[kk] += xa1[face_id];
-      }
-      if (jj < ms->n_rows) {
-        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->val[ll] += xa2[face_id];
+    if (interleaved == false) {
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        cs_int_t kk, ll;
+        ii = *face_cel_p++ - 1;
+        jj = *face_cel_p++ - 1;
+        if (ii < ms->n_rows) {
+          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
+          mc->val[kk] += xa1[face_id];
+        }
+        if (jj < ms->n_rows) {
+          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
+          mc->val[ll] += xa2[face_id];
+        }
       }
     }
-
+    else { /* interleaved == true */
+      for (face_id = 0; face_id < n_faces; face_id++) {
+        cs_int_t kk, ll;
+        ii = *face_cel_p++ - 1;
+        jj = *face_cel_p++ - 1;
+        if (ii < ms->n_rows) {
+          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
+          mc->val[kk] += xa[2*face_id];
+        }
+        if (jj < ms->n_rows) {
+          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
+          mc->val[ll] += xa[2*face_id + 1];
+        }
+      }
+    }
   }
   else { /* if symmetric == true */
 
@@ -1865,15 +1913,17 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
  * Set CSR matrix coefficients.
  *
  * parameters:
- *   matrix    <-> Pointer to matrix structure
- *   symmetric <-- Indicates if extradiagonal values are symmetric
- *   da        <-- Diagonal values (NULL if all zero)
- *   xa        <-- Extradiagonal values (NULL if all zero)
+ *   matrix      <-> Pointer to matrix structure
+ *   symmetric   <-- Indicates if extradiagonal values are symmetric
+ *   interleaved --> Indicates if matrix coefficients are interleaved
+ *   da          <-- Diagonal values (NULL if all zero)
+ *   xa          <-- Extradiagonal values (NULL if all zero)
  *----------------------------------------------------------------------------*/
 
 static void
 _set_coeffs_csr(cs_matrix_t      *matrix,
                 cs_bool_t         symmetric,
+                cs_bool_t         interleaved,
                 const cs_real_t  *restrict da,
                 const cs_real_t  *restrict xa)
 {
@@ -1949,9 +1999,9 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
     if (xa != NULL) {
 
       if (ms->direct_assembly == true)
-        _set_xa_coeffs_csr_direct(matrix, symmetric, xa);
+        _set_xa_coeffs_csr_direct(matrix, symmetric, interleaved, xa);
       else
-        _set_xa_coeffs_csr_increment(matrix, symmetric, xa);
+        _set_xa_coeffs_csr_increment(matrix, symmetric, interleaved, xa);
 
     }
     else { /* if (xa == NULL) */
@@ -3292,7 +3342,36 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
               _("The matrix is not defined."));
 
   if (matrix->set_coefficients != NULL)
-    matrix->set_coefficients(matrix, symmetric, da, xa);
+    matrix->set_coefficients(matrix, symmetric, true, da, xa);
+}
+
+/*----------------------------------------------------------------------------
+ * Set matrix coefficients in the non-interleaved case.
+ *
+ * In the symmetric case, there is no difference with the interleaved case.
+ *
+ * Depending on current options and initialization, values will be copied
+ * or simply mapped.
+ *
+ * parameters:
+ *   matrix    <-> Pointer to matrix structure
+ *   symmetric <-- Indicates if matrix coefficients are symmetric
+ *   da        <-- Diagonal values (NULL if zero)
+ *   xa        <-- Extradiagonal values (NULL if zero)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
+                              cs_bool_t         symmetric,
+                              const cs_real_t  *da,
+                              const cs_real_t  *xa)
+{
+  if (matrix == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The matrix is not defined."));
+
+  if (matrix->set_coefficients != NULL)
+    matrix->set_coefficients(matrix, symmetric, false, da, xa);
 }
 
 /*----------------------------------------------------------------------------

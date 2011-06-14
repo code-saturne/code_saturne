@@ -201,9 +201,9 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix);
  *
  * parameters:
  *   matrix    <-> Pointer to matrix structure
- *   symmetric --> Indicates if matrix coefficients are symmetric
- *   da        --> Diagonal values (NULL if zero)
- *   xa        --> Extradiagonal values (NULL if zero)
+ *   symmetric <-- Indicates if matrix coefficients are symmetric
+ *   da        <-- Diagonal values (NULL if zero)
+ *   xa        <-- Extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
@@ -211,6 +211,27 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
                            cs_bool_t         symmetric,
                            const cs_real_t  *da,
                            const cs_real_t  *xa);
+
+/*----------------------------------------------------------------------------
+ * Set matrix coefficients in the non-interleaved case.
+ *
+ * In the symmetric case, there is no difference with the interleaved case.
+ *
+ * Depending on current options and initialization, values will be copied
+ * or simply mapped.
+ *
+ * parameters:
+ *   matrix    <-> Pointer to matrix structure
+ *   symmetric <-- Indicates if matrix coefficients are symmetric
+ *   da        <-- Diagonal values (NULL if zero)
+ *   xa        <-- Extradiagonal values (NULL if zero)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
+                              cs_bool_t         symmetric,
+                              const cs_real_t  *da,
+                              const cs_real_t  *xa);
 
 /*----------------------------------------------------------------------------
  * Release matrix coefficients.

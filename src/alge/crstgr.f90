@@ -122,8 +122,8 @@ integer          irscel(ncelf), irsfac(nfacf)
 
 double precision rlxp1
 
-double precision daf(ncelf), xaf(nfacf,2)
-double precision dag(ncelge), xag(nfacg,2)
+double precision daf(ncelf), xaf(*) ! xaf of size nfacf or nfacf*2
+double precision dag(ncelge), xag(*) ! xag of size nfacg or nfacg*2
 
 double precision xaf0(nfacf),volumf(ncelfe), xyzfin(3, ncelfe)
 double precision xag0(nfacg),volumg(ncelge), xyzgro(3, ncelge)
@@ -250,8 +250,8 @@ enddo
 do ifac = 1, nfacf
   ii = ifaclf(1, ifac)
   jj = ifaclf(2, ifac)
-  w1(ii) = w1(ii) + xaf(ifac, 1)
-  w1(jj) = w1(jj) + xaf(ifac, isym)
+  w1(ii) = w1(ii) + xaf((ifac-1)*isym + 1)
+  w1(jj) = w1(jj) + xaf(ifac*isym)
 enddo
 
 ! Initialize coarse matrix storage on (dag, xag)
@@ -259,20 +259,33 @@ enddo
 do iel = 1, ncelge
   dag(iel) = 0.d0
 enddo
-do ifac = 1, nfacg
-  xag(ifac, 1)= 0.d0
-  xag(ifac, isym)= 0.d0
-enddo
+
+if (isym .eq. 1) then
+  do ifac = 1, nfacg
+    xag(ifac)= 0.d0
+  enddo
+else
+  do ifac = 1, nfacg
+    xag(ifac*2 - 1)= 0.d0
+    xag(ifac*2) = 0.d0
+  enddo
+endif
 
 ! Extradiagonal terms
 ! (symmetric matrixes for now, even with non symmetric storage isym=2)
 
 ! Matrix initialized to xag0 (interp=0)
 
-do ifacg = 1, nfacg
-  xag(ifacg, 1) = xag0(ifacg)
-  xag(ifacg, isym) = xag0(ifacg)
-enddo
+if (isym .eq. 1) then
+  do ifacg = 1, nfacg
+    xag(ifacg) = xag0(ifacg)
+  enddo
+else
+  do ifacg = 1, nfacg
+    xag(ifacg*2-1) = xag0(ifacg)
+    xag(ifacg*2) = xag0(ifacg)
+  enddo
+endif
 
 if (interp.eq.1) then
 
@@ -295,23 +308,23 @@ if (interp.eq.1) then
     if (abs(dsigjg) .gt. epzero) then
 
       ! Standard
-      xag(ifacg, 1)    = dsxaij/dsigjg
-      xag(ifacg, isym) = dsxaij/dsigjg
+      xag((ifacg-1)*isym + 1) = dsxaij/dsigjg
+      xag(ifacg*isym)         = dsxaij/dsigjg
 
       ! Clipped matrix
       cclip = dsxaij/dsigjg
       if (cclip .lt. xag0(ifacg)) imin = imin+1
       if (cclip .gt. 0.d0)  imax = imax +1
       if (cclip .lt. xag0(ifacg) .or. cclip .gt. 0.d0) then
-        xag(ifacg, 1) =  xag0(ifacg)
-        xag(ifacg, isym) = xag0(ifacg)
+        xag((ifacg-1)*isym + 1) =  xag0(ifacg)
+        xag(ifacg*isym)   = xag0(ifacg)
       endif
 
     endif
 
   enddo
 
-  if(iwarnp.gt.3) then
+  if (iwarnp.gt.3) then
     if (irangp .ge. 0) then
       call parcpt(imin)
       call parcpt(imax)
@@ -321,14 +334,14 @@ if (interp.eq.1) then
 
   ! Possible P1 matrix / P0 matrix relaxation defined by the user in usini1.f90
 
-  if (isym.eq.1) then
+  if (isym .eq. 1) then
     do ifacg = 1, nfacg
-      xag(ifacg, 1) = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
+      xag(ifacg) = rlxp1*xag(ifacg) +(1.d0-rlxp1)*xag0(ifacg)
     enddo
   else
     do ifacg = 1, nfacg
-      xag(ifacg, 1) = rlxp1*xag(ifacg, 1) +(1.d0-rlxp1)*xag0(ifacg)
-      xag(ifacg, 2) = rlxp1*xag(ifacg, 2) +(1.d0-rlxp1)*xag0(ifacg)
+      xag(ifacg*2-1) = rlxp1*xag(ifacg*2-1) +(1.d0-rlxp1)*xag0(ifacg)
+      xag(ifacg*2)   = rlxp1*xag(ifacg*2)   +(1.d0-rlxp1)*xag0(ifacg)
     enddo
   endif
 
@@ -355,8 +368,8 @@ do ifacg = 1, nfacg
   ig = ifaclg(1, ifacg)
   jg = ifaclg(2, ifacg)
 
-  dag(ig) = dag(ig) - xag(ifacg, 1)
-  dag(jg) = dag(jg) - xag(ifacg, isym)
+  dag(ig) = dag(ig) - xag((ifacg-1)*isym + 1)
+  dag(jg) = dag(jg) - xag(ifacg*isym)
 
 enddo
 
@@ -377,19 +390,19 @@ if (iwarnp .gt. 3) then
   do ifac = 1, nfacf
     ii = ifaclf(1, ifac)
     jj = ifaclf(2, ifac)
-    w1(ii) = max(abs(xaf(ifac, 1)), w1(ii))
-    w2(ii) = min(abs(xaf(ifac, 1)), w2(ii))
-    w1(jj) = max(abs(xaf(ifac, isym)), w1(jj))
-    w2(jj) = min(abs(xaf(ifac, isym)), w2(jj))
+    w1(ii) = max(abs(xaf((ifac-1)*isym + 1)), w1(ii))
+    w2(ii) = min(abs(xaf((ifac-1)*isym + 1)), w2(ii))
+    w1(jj) = max(abs(xaf(ifac*isym)), w1(jj))
+    w2(jj) = min(abs(xaf(ifac*isym)), w2(jj))
   enddo
 
   do ifacg = 1, nfacg
     ig = ifaclg(1, ifacg)
     jg = ifaclg(2, ifacg)
-    w3(ig) = max(abs(xag(ifacg,1)), w3(ig))
-    w4(ig) = min(abs(xag(ifacg,1)), w4(ig))
-    w3(jg) = max(abs(xag(ifacg, isym)), w3(jg))
-    w4(jg) = min(abs(xag(ifacg, isym)), w4(jg))
+    w3(ig) = max(abs(xag((ifacg-1)*isym + 1)), w3(ig))
+    w4(ig) = min(abs(xag((ifacg-1)*isym + 1)), w4(ig))
+    w3(jg) = max(abs(xag(ifacg*isym)), w3(jg))
+    w4(jg) = min(abs(xag(ifacg*isym)), w4(jg))
   enddo
 
   do ii = 1, ncelf
@@ -433,8 +446,8 @@ if (iwarnp .gt. 3) then
     rmin = +1.d300
     rmax = -1.d300
     do ifacg = 1, nfacg
-      rmin = min(rmin, xag(ifacg,1)/xag0(ifacg))
-      rmax = max(rmax, xag(ifacg,1)/xag0(ifacg))
+      rmin = min(rmin, xag((ifacg-1)*isym + 1)/xag0(ifacg))
+      rmax = max(rmax, xag((ifacg-1)*isym + 1)/xag0(ifacg))
     enddo
 
     if (irangp .ge. 0) then
@@ -464,15 +477,15 @@ if (iwarnp .gt. 3) then
   do ifac = 1, nfacf
     ii = ifaclf(1, ifac)
     jj = ifaclf(2, ifac)
-    w1(ii) = w1(ii) - abs(xaf(ifac, 1))
-    w1(jj) = w1(jj) - abs(xaf(ifac, isym))
+    w1(ii) = w1(ii) - abs(xaf((ifac-1)*isym + 1))
+    w1(jj) = w1(jj) - abs(xaf((ifac-1)*isym + 1))
   enddo
 
   do ifacg = 1, nfacg
     ig = ifaclg(1, ifacg)
     jg = ifaclg(2, ifacg)
-    w3(ig) = w3(ig) - abs(xag(ifacg, 1))
-    w3(jg) = w3(jg) - abs(xag(ifacg, isym))
+    w3(ig) = w3(ig) - abs(xag((ifacg-1)*isym + 1))
+    w3(jg) = w3(jg) - abs(xag((ifacg-1)*isym + 1))
   enddo
 
   do ii = 1, ncelf
