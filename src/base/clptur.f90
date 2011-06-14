@@ -1032,7 +1032,11 @@ do ifac = 1, nfabor
           if(iturb.ne.0.and.icodcl(ifac,ivar).eq.5)then
             call hturbp (prdtl,sigmas(ll),xkappa,yplus,hflui)
             !==========
-            hflui = cpp*rkl/distbf *hflui
+            if (ideuch.eq.2) then
+              hflui = cpp*uk*romc/(yplus*prdtl) *hflui
+            else
+              hflui = cpp*rkl/distbf *hflui
+            endif
           else
             hflui = hint
           endif
