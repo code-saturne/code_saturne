@@ -181,9 +181,6 @@ cs_run(void)
   int  cwf_post = 0;
   double  cwf_threshold = -1.0;
 
-  cs_int_t   *ia = NULL;
-  cs_real_t  *ra = NULL;
-
   /* System information */
 
   cs_base_system_info();
@@ -472,11 +469,6 @@ cs_run(void)
     /* Finalize gradient computation */
 
     cs_gradient_finalize();
-
-    /* Free working arrays */
-
-    BFT_FREE(ia);
-    BFT_FREE(ra);
 
   }
 
