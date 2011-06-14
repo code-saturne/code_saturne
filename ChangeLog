@@ -1,3 +1,12 @@
+* 14/06/2011 - David Monfort <david.monfort@edf.fr>
+  Minor memory allocation improvements.
+  modified routines:
+    src/pprt/ppcabs.f90
+    src/rayt/raydom.f90
+    src/turb/reseps.f90
+    src/turb/resssg.f90
+    src/turb/resv2f.f90
+
 * 14/06/2011 - Karim Osman <karim.osman@postgrad.manchester.ac.uk>
   Implement the correct behaviour to handle thermal wall-function in
   the framework of the scalable wall-functions.

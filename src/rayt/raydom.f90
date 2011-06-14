@@ -124,9 +124,7 @@ double precision vv, sf, xlc, xkmin, pp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w9
 double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: tempk
@@ -152,9 +150,7 @@ allocate(cofrua(nfabor), cofrub(nfabor))
 allocate(flurds(nfac), flurdb(nfabor))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w9(ncelet))
 allocate(w10(ncelet))
 
 !===============================================================================
@@ -204,8 +200,7 @@ unspi = 1.d0/pi
  ( nvar   , nscal  ,                                             &
    itypfb ,                                                      &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   w1     , w2     , w3     )
+   coefa  , coefb  )
 
 !-----> W10 SERT A STOCKER TEMPORAIREMENT
 !       LE COEFFICIENT D'ABSORPTION DU MELANGE GAZ-PARTICULE
@@ -1261,9 +1256,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(smbrs, rovsdt)
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
+deallocate(w9)
 deallocate(w10)
 deallocate(tempk)
 deallocate(cofrua, cofrub)

@@ -172,7 +172,7 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w8(ncelet), w9(ncelet))
 
 
 if(iwarni(ivar).ge.1) then
@@ -416,6 +416,9 @@ enddo
 
 if(igrari.eq.1) then
 
+  ! Allocate a work array
+  allocate(w7(ncelet)) 
+ 
   do iel = 1, ncel
     w7(iel) = 0.d0
   enddo
@@ -427,18 +430,20 @@ if(igrari.eq.1) then
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , gradro , w7     )
 
-!     Si on extrapole les T.S. : PROPCE
-if(isto2t.gt.0) then
-  do iel = 1, ncel
-     propce(iel,iptsta+isou-1) =                                  &
-     propce(iel,iptsta+isou-1) + w7(iel)
-   enddo
-!     Sinon SMBR
- else
-   do iel = 1, ncel
-     smbr(iel) = smbr(iel) + w7(iel)
-   enddo
- endif
+  !     Si on extrapole les T.S. : PROPCE
+  if(isto2t.gt.0) then
+    do iel = 1, ncel
+      propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
+    enddo
+  !     Sinon SMBR
+  else
+    do iel = 1, ncel
+      smbr(iel) = smbr(iel) + w7(iel)
+    enddo
+  endif
+
+  ! Free memory
+  deallocate(w7)
 
 endif
 
@@ -709,7 +714,7 @@ call codits                                                       &
 ! Free memory
 deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
+deallocate(w8, w9)
 
 !--------
 ! FORMATS

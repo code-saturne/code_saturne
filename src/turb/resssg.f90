@@ -169,7 +169,6 @@ double precision, allocatable, dimension(:) :: w7
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))
-allocate(w7(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -491,6 +490,9 @@ endif
 
 if(igrari.eq.1) then
 
+  ! Allocate a work array
+  allocate(w7(ncelet))
+
   do iel = 1, ncel
     w7(iel) = 0.d0
   enddo
@@ -502,17 +504,20 @@ if(igrari.eq.1) then
    rtp    , rtpa   , propce , propfa , propfb ,                   &
    coefa  , coefb  , gradro , w7     )
 
-!     Si on extrapole les T.S. : PROPCE
-if(isto2t.gt.0) then
-  do iel = 1, ncel
-     propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
-   enddo
-!     Sinon SMBR
- else
-   do iel = 1, ncel
-     smbr(iel) = smbr(iel) + w7(iel)
-   enddo
- endif
+  !     Si on extrapole les T.S. : PROPCE
+  if(isto2t.gt.0) then
+    do iel = 1, ncel
+      propce(iel,iptsta+isou-1) = propce(iel,iptsta+isou-1) + w7(iel)
+    enddo
+  !     Sinon SMBR
+  else
+    do iel = 1, ncel
+      smbr(iel) = smbr(iel) + w7(iel)
+    enddo
+  endif
+
+  ! Free memory
+  deallocate(w7)
 
 endif
 
@@ -608,7 +613,6 @@ call codits                                                       &
 
 ! Free memory
 deallocate(w1, w2)
-deallocate(w7)
 
 !--------
 ! FORMATS

@@ -142,7 +142,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:) :: gradp, gradk
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w4, w5
 
 !===============================================================================
 
@@ -156,7 +156,7 @@ allocate(smbr(ncelet), rovsdt(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w4(ncelet), w5(ncelet))
 
 
 ipcrom = ipproc(irom  )
@@ -752,7 +752,7 @@ call codits                                                       &
 deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
 deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(w4, w5)
 
 !--------
 ! FORMATS

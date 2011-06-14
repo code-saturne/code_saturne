@@ -31,8 +31,7 @@ subroutine ppcabs &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-   coefa  , coefb  ,                                              &
-   w1     , w2     , w3     )
+   coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -64,7 +63,6 @@ subroutine ppcabs &
 ! propfb(nfabor, *)! ra ! <-- ! physical properties at boundary face centers   !
 ! coefa, coefb     ! ra ! <-- ! boundary conditions                            !
 !  (nfabor, *)     !    !     !                                                !
-! w1...3(ncelet    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -107,21 +105,19 @@ double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(nfabor,*)
 double precision coefa(nfabor,*), coefb(nfabor,*)
-double precision w1(ncelet), w2(ncelet), w3(ncelet)
-
-
 
 ! Local variables
 
 integer          iel, ifac, icla, ipck, icha, iok
 double precision xm, d2, vv, sf, xlc, xkmin, pp
 
-!===============================================================================
+double precision, allocatable, dimension(:) :: w1, w2, w3
 
 !===============================================================================
 ! 0 - GESTION MEMOIRE
 !===============================================================================
 
+if (imodak.eq.1) allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 !===============================================================================
 !  1 - COEFFICIENT D'ABSORPTION DU MELANGE GAZEUX (m-1)
@@ -216,6 +212,7 @@ else if ( ippmod(icfuel).ge.0 ) then
 
 endif
 
+if (imodak.eq.1) deallocate(w1, w2, w3)
 
 !===============================================================================
 !  2 - COEFFICIENT D'ABSORPTION DES PARTICULES PAR CLASSE K2/X2 (m-1)
@@ -304,6 +301,8 @@ endif
 
   if (iirayo.eq.2) then
 
+     allocate(w3(ncelet))
+
 !         Coefficient d'absorption du melange gaz-particules de charbon
 
      do iel = 1, ncel
@@ -373,6 +372,9 @@ endif
        write(nfecra,1000) xkmin, dble(iok)/dble(ncelgb)*100.d0, xnp1mx
        istpp1 = 1
     endif
+
+    ! Free memory
+    deallocate(w3)
 
   endif
 
