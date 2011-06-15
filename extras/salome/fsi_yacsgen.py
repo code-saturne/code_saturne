@@ -27,9 +27,7 @@ from module_generator import ASTERComponent, CPPComponent
 # Context definition
 # ------------------
 
-asterdir = "### TO BE MODIFIED - asterdir ###"
-asterpyt = "### TO BE MODIFIED - asterpyt ###"
-asterarg = ["### TO BE MODIFIED - asterarg ###"]
+asterdir = os.path.expanduser("~/Code_Aster/NEW11.0")
 
 milieuinc = "-I$(top_srcdir)/salome/libmilieu"
 milieulib = "$(top_builddir)/salome/libmilieu/libmilieu.la"
@@ -43,7 +41,7 @@ if KERNEL_ROOT_DIR is None:
 
 context = {'update':1,
            "prerequisites":os.path.join(os.path.dirname(KERNEL_ROOT_DIR),
-                                        'prerequis-V5.1.5.sh'),
+                                        'prerequis-V6.3.0.sh'),
            "kernel":KERNEL_ROOT_DIR}
 
 # Definition of all the in/out streams
@@ -148,8 +146,6 @@ aster_service = Service("op0117",
 c1 = ASTERComponent("FSI_ASTER",
                     services = [aster_service],
                     aster_dir = asterdir,
-                    python_path = [asterpyt],
-                    argv = asterarg,
                     kind = "exe",
                     exe_path = "./aster_by_yacs.sh")
 

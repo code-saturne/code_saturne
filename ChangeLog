@@ -1,4 +1,12 @@
 * 15/06/2011 - David Monfort <david.monfort@edf.fr>
+  Upgrade Code_Aster/Code_Saturne coupling module to SALOME 6.3.0.
+  modified routines:
+    extras/salome/fsi_yacsgen.py
+    salome/fsi_coupling/idl/Makefile.am
+    salome/fsi_coupling/src/FSI_MILIEU/FSI_MILIEU.cxx
+    salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.cxx
+
+* 15/06/2011 - David Monfort <david.monfort@edf.fr>
   Fix buggy static compilation with PLE introduced with the relocatable
   feature.
   modified script:

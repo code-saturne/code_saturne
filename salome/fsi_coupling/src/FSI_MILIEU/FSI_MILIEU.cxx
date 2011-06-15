@@ -4,7 +4,8 @@
 #include <unistd.h>
 
 #include <Calcium.hxx>
-#include <calcium.h>
+#include <CalciumException.hxx>
+
 #include <signal.h>
 #include <SALOME_NamingService.hxx>
 #include <Utils_SALOME_Exception.hxx>
@@ -101,6 +102,8 @@ static void unexpectedHandler(void)
 #include <runmilieu.h>
 #include <donnees.h>
 //ENDDEF
+
+#include <calcium.h>
 
 extern "C" void cp_exit(int err);
 
@@ -225,8 +228,8 @@ void FSI_MILIEU_i::inter_run(CORBA::Long NBPDTM,CORBA::Long NBSSIT,CORBA::Long I
 {
   beginService("FSI_MILIEU_i::inter_run");
   Superv_Component_i * component = dynamic_cast<Superv_Component_i*>(this);
-  char       nom_instance[INSTANCE_LEN];
-  int info = cp_cd(component,nom_instance);
+  //char       nom_instance[INSTANCE_LEN];
+  //int info = cp_cd(component,nom_instance);
   try
     {
 //BODY
@@ -239,12 +242,12 @@ inter_cs_ast_set_ttinit(TTINIT);
 inter_cs_ast_set_epsilo(EPSILO);
 runmilieu(component);
 //ENDBODY
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
     }
   catch ( const CalciumException & ex)
     {
       std::cerr << ex.what() << std::endl;
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
       SALOME::ExceptionStruct es;
       es.text=CORBA::string_dup(ex.what());
       es.type=SALOME::INTERNAL_ERROR;
@@ -252,7 +255,7 @@ runmilieu(component);
     }
   catch ( const SALOME_Exception & ex)
     {
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
       SALOME::ExceptionStruct es;
       es.text=CORBA::string_dup(ex.what());
       es.type=SALOME::INTERNAL_ERROR;
@@ -260,8 +263,16 @@ runmilieu(component);
     }
   catch ( const SALOME::SALOME_Exception & ex)
     {
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
       throw;
+    }
+  catch ( const std::exception& ex)
+    {
+      //std::cerr << typeid(ex).name() << std::endl;
+      SALOME::ExceptionStruct es;
+      es.text=CORBA::string_dup(ex.what());
+      es.type=SALOME::INTERNAL_ERROR;
+      throw SALOME::SALOME_Exception(es);
     }
   catch (...)
     {
@@ -269,7 +280,7 @@ runmilieu(component);
 #if 0
       _exit(-1);
 #endif
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
       SALOME::ExceptionStruct es;
       es.text=CORBA::string_dup(" unknown exception");
       es.type=SALOME::INTERNAL_ERROR;
@@ -312,7 +323,7 @@ extern "C"
         FSI_MILIEU_i * myEngine = new FSI_MILIEU_i(orb, poa, container, instanceName.c_str(), "FSI_MILIEU");
         pman->activate();
         obj=myEngine->POA_FSI_ORB::FSI_MILIEU::_this();
-        Engines::Component_var component = Engines::Component::_narrow(obj);
+        Engines::EngineComponent_var component = Engines::EngineComponent::_narrow(obj);
         string component_registerName = containerName + "/" + instanceName;
         salomens->Register(component,component_registerName.c_str());
         orb->run();

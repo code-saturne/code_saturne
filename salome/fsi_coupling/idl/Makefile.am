@@ -33,7 +33,7 @@ BUILT_SOURCES = FSISK.cc
 IDL_FILES = FSI.idl 
 
 salomelib_LTLIBRARIES = libSalomeIDLFSI.la
-dist_salomeidl_DATA = $(IDL_FILES) 
+salomeidl_DATA = $(IDL_FILES) 
 libSalomeIDLFSI_la_SOURCES =
 nodist_libSalomeIDLFSI_la_SOURCES = FSISK.cc 
 nodist_salomeinclude_HEADERS = FSI.hh 

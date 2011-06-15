@@ -4,7 +4,8 @@
 #include <unistd.h>
 
 #include <Calcium.hxx>
-#include <calcium.h>
+#include <CalciumException.hxx>
+
 #include <signal.h>
 #include <SALOME_NamingService.hxx>
 #include <Utils_SALOME_Exception.hxx>
@@ -104,6 +105,8 @@ extern "C" {
   void cs_run(void);
 }
 //ENDDEF
+
+#include <calcium.h>
 
 extern "C" void cp_exit(int err);
 
@@ -225,8 +228,8 @@ void FSI_SATURNE_i::run(const char* app_name,CORBA::Long verbosity,CORBA::Long& 
 {
   beginService("FSI_SATURNE_i::run");
   Superv_Component_i * component = dynamic_cast<Superv_Component_i*>(this);
-  char       nom_instance[INSTANCE_LEN];
-  int info = cp_cd(component,nom_instance);
+  //char       nom_instance[INSTANCE_LEN];
+  //int info = cp_cd(component,nom_instance);
   try
     {
 //BODY
@@ -234,12 +237,12 @@ cs_calcium_set_component(0, component);
 cs_calcium_set_verbosity(verbosity);
 cs_run();
 //ENDBODY
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
     }
   catch ( const CalciumException & ex)
     {
       std::cerr << ex.what() << std::endl;
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
       SALOME::ExceptionStruct es;
       es.text=CORBA::string_dup(ex.what());
       es.type=SALOME::INTERNAL_ERROR;
@@ -247,7 +250,7 @@ cs_run();
     }
   catch ( const SALOME_Exception & ex)
     {
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
       SALOME::ExceptionStruct es;
       es.text=CORBA::string_dup(ex.what());
       es.type=SALOME::INTERNAL_ERROR;
@@ -255,8 +258,16 @@ cs_run();
     }
   catch ( const SALOME::SALOME_Exception & ex)
     {
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
       throw;
+    }
+  catch ( const std::exception& ex)
+    {
+      //std::cerr << typeid(ex).name() << std::endl;
+      SALOME::ExceptionStruct es;
+      es.text=CORBA::string_dup(ex.what());
+      es.type=SALOME::INTERNAL_ERROR;
+      throw SALOME::SALOME_Exception(es);
     }
   catch (...)
     {
@@ -264,7 +275,7 @@ cs_run();
 #if 1
       _exit(-1);
 #endif
-      cp_fin(component,CP_ARRET);
+      //cp_fin(component,CP_ARRET);
       SALOME::ExceptionStruct es;
       es.text=CORBA::string_dup(" unknown exception");
       es.type=SALOME::INTERNAL_ERROR;
@@ -307,7 +318,7 @@ extern "C"
         FSI_SATURNE_i * myEngine = new FSI_SATURNE_i(orb, poa, container, instanceName.c_str(), "FSI_SATURNE");
         pman->activate();
         obj=myEngine->POA_FSI_ORB::FSI_SATURNE::_this();
-        Engines::Component_var component = Engines::Component::_narrow(obj);
+        Engines::EngineComponent_var component = Engines::EngineComponent::_narrow(obj);
         string component_registerName = containerName + "/" + instanceName;
         salomens->Register(component,component_registerName.c_str());
         orb->run();
