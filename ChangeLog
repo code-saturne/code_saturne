@@ -1,3 +1,8 @@
+* 15/06/2011 - David Monfort <david.monfort@edf.fr>
+  Fix a couple of mispelling intoduced when adding the interleaved matrices.
+  modified routine:
+    src/alge/cs_matrix.c
+
 * 14/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Free memory allocated under caltri in caltri, to avoid issues in
   benchmark or preprocessing mode.

@@ -749,6 +749,7 @@ _set_coeffs_native(cs_matrix_t      *matrix,
   if (xa != NULL) {
 
     if (interleaved || symmetric == true) {
+
       if (mc->_xa == NULL)
         mc->xa = xa;
       else {
@@ -1092,7 +1093,7 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
         kk_max = CS_MIN((ms->n_faces - face_id),
                         IA64_OPTIM_L1_CACHE_SIZE);
 
-        /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
+        /* sub-loop to compute y[ii] += xa[2*face_id] * x[jj] */
 
         ii = face_cel_p[0] - 1;
         ii_prev = ii;
@@ -1100,7 +1101,7 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
 
         for (kk = 1; kk < kk_max; ++kk) {
           ii = face_cel_p[2*kk] - 1;
-          /* y[ii] += xa[2*)face_id+i) + 1] * x[jj]; */
+          /* y[ii] += xa[2*(face_id+i)] * x[jj]; */
           if (ii == ii_prev) {
             y_it = y_it_prev;
           }
@@ -1109,7 +1110,7 @@ _mat_vec_p_l_native_ia64(const cs_matrix_t  *matrix,
             y[ii_prev] = y_it_prev;
           }
           ii_prev = ii;
-          y_it_prev = y_it + xa[2*face_id+kk] * x[face_cel_p[2*kk+1] - 1];
+          y_it_prev = y_it + xa[2*(face_id+kk)] * x[face_cel_p[2*kk+1] - 1];
         }
         y[ii] = y_it_prev;
 
@@ -1353,7 +1354,7 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
                face_id++) {
             ii = face_cel_p[2*face_id] -1;
             jj = face_cel_p[2*face_id + 1] -1;
-            y[ii] += alpha * xa[face_id] * x[jj];
+            y[ii] += alpha * xa[2*face_id] * x[jj];
             y[jj] += alpha * xa[2*face_id + 1] * x[ii];
           }
         }
