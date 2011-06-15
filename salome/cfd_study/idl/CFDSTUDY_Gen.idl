@@ -31,7 +31,7 @@
 
 module CFDSTUDY_ORB
 {
-  interface CFDSTUDY_Gen : Engines::Component, SALOMEDS::Driver
+  interface CFDSTUDY_Gen : Engines::EngineComponent, SALOMEDS::Driver
   {
   };
 };

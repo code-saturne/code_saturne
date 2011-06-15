@@ -26,7 +26,7 @@
 salomeincludedir   = ${includedir}/salome
 salomelibdir       = ${libdir}/salome
 salomebindir       = ${bindir}/salome
-salomescriptdir    = ${salomebindir}
+salomescriptdir    = ${bindir}
 salomepythondir    = ${pythondir}/salome
 
 # Directory for installing idl files
@@ -36,7 +36,7 @@ salomeidldir       = ${datarootdir}/idl/salome
 salomeresdir       = ${datarootdir}/salome/resources/${MODULE_NAME}
 
 # Shared modules installation directory
-sharedpkgpythondir = ${salomepythondir}/shared_modules
+sharedpkgpythondir = ${pythondir}/${MODULE_NAME}/shared_modules
 
 # Documentation directory
 salomedocdir       = ${datarootdir}/doc/salome/gui/${MODULE_NAME}

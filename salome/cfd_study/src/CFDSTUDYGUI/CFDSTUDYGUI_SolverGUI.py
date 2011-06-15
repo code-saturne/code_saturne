@@ -345,7 +345,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
                         dock.raise_()
             if studyId in _d_DockWindowsBrowser.keys():
                 for dock in _d_DockWindowsBrowser[studyId]:
-                        if str(OldDockTitleName) in str(dock.windowTitle()) :
+                    if str(OldDockTitleName) in str(dock.windowTitle()) :
                         dock.setWindowTitle(string.join([str(NewDockTitleName),"Browser"]))
                         dock.show()
                         dock.raise_()

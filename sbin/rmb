@@ -15,6 +15,7 @@ for file in src/*/*.[ch] src/*/*.f90 users/*/*.f90 \
             salome/cfd_proxy/*.[ch] salome/libmilieu/*.[ch] \
             salome/fsi_coupling/src/*/*.[ch]xx \
             salome/fsi_coupling/src/*/*.py.in \
+            salome/fsi_coupling/src/*/*.py \
             salome/cfd_study/src/*/*.py
 do
   tmpfile=`basename $file`

@@ -143,10 +143,9 @@ def CheckCFD_CodeEnv(code):
     else:
         raise ApplicationError, "Invalid name of solver!"
 
-    prefix = pkg.prefix
-    bindir = pkg.bindir
-
     if iok:
+        prefix = pkg.prefix
+        bindir = pkg.bindir
         if not os.path.exists(prefix):
             iok = False
         if not os.path.exists(bindir):
