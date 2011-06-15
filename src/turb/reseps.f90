@@ -417,8 +417,8 @@ enddo
 if(igrari.eq.1) then
 
   ! Allocate a work array
-  allocate(w7(ncelet)) 
- 
+  allocate(w7(ncelet))
+
   do iel = 1, ncel
     w7(iel) = 0.d0
   enddo
