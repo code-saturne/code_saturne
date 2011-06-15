@@ -24,8 +24,7 @@
 
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
-  LDFLAGS_PLE =
-  LIBS_PLE = $(top_builddir)/libple/src/libple.la
+  LIBPLE_LA = $(top_builddir)/libple/src/libple.la
 else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
   LDFLAGS_PLE = $(PLE_LDFLAGS)
@@ -114,6 +113,7 @@ endif
 
 cs_solver_SOURCES =
 cs_solver_LDADD = libsaturne.la \
+$(LIBPLE_LA) \
 $(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/fvm/libfvm_filters.la \
 $(top_builddir)/src/fvm/libfvm.la \
@@ -160,6 +160,7 @@ cs_partition_CPPFLAGS = $(AM_CPPFLAGS) \
 $(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
 cs_partition_SOURCES = cs_partition.c
 cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
+$(LIBPLE_LA) \
 $(top_builddir)/src/fvm/libfvm.la \
 $(top_builddir)/src/bft/libbft.la
 cs_partition_LDFLAGS = \

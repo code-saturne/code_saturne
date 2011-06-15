@@ -1,4 +1,10 @@
 * 15/06/2011 - David Monfort <david.monfort@edf.fr>
+  Fix buggy static compilation with PLE introduced with the relocatable
+  feature.
+  modified script:
+    src/apps/Makefile.am
+
+* 15/06/2011 - David Monfort <david.monfort@edf.fr>
   Fix a couple of mispelling intoduced when adding the interleaved matrices.
   modified routine:
     src/alge/cs_matrix.c
