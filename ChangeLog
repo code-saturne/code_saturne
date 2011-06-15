@@ -1,4 +1,9 @@
 * 15/06/2011 - David Monfort <david.monfort@edf.fr>
+  Add the ParaVis module when launching SALOME from code_saturne script.
+  modified script:
+    bin/cs_salome.py
+
+* 15/06/2011 - David Monfort <david.monfort@edf.fr>
   Fixes and improvements related to the port to SALOME 6.3.0.
   modified files:
     config/salome_module.mk

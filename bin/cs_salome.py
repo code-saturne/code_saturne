@@ -70,7 +70,7 @@ def main(argv, pkg):
     template = """\
 CFDSTUDY_ROOT_DIR=%(prefix)s; PYTHONPATH=%(pythondir)s:$PYTHONPATH;
 export CFDSTUDY_ROOT_DIR PYTHONPATH;
-%(runsalome)s --modules=GEOM,SMESH,VISU,MED,CFDSTUDY
+%(runsalome)s --modules=%(modules)s
 """
 
     cfg = config()
@@ -79,10 +79,14 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
         sys.stderr.write("SALOME is not available in this installation.\n")
         sys.exit(1)
 
+    # Skipped modules (version 6.3.0): YACS,JOBMANAGER,HOMARD,OPENTURNS
+    default_modules = "GEOM,SMESH,MED,CFDSTUDY,PARAVIS,VISU"
+
     cmd = template % {'prefix': pkg.prefix,
                       'pythondir': pkg.pythondir,
                       'runsalome': os.path.join(cfg.salome_kernel,
-                                                'bin', 'salome', 'runSalome')}
+                                                'bin', 'salome', 'runSalome'),
+                      'modules': default_modules}
 
     process_cmd_line(argv, pkg)
 
