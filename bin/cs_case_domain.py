@@ -1107,6 +1107,11 @@ class domain(base_domain):
         if self.error != '':
             purge = False
 
+        if purge:
+            f = os.path.join(self.exec_dir, 'partition.sh')
+            if os.path.isfile(f):
+                self.purge_result(f)
+
         d = os.path.join(self.exec_dir, 'partition')
 
         if self.partition_list or not self.exec_solver:
