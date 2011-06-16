@@ -1,4 +1,9 @@
 * 16/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix restart path update bug.
+  modified file:
+    gui/Pages/StartRestartView.py
+
+* 16/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove partition.sh from execution directory when purging.
   modified script:
     bin/cs_case_domain.py

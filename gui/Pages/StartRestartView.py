@@ -305,6 +305,8 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             dir_path = os.path.abspath(dir_path)
 
             self.restart_path = RelOrAbsPath(dir_path, self.case['case_path'])
+            self.model.setRestartPath(self.restart_path)
+            self.lineEdit.setText(self.restart_path)
 
             log.debug("slotSearchRestartDirectory-> %s" % self.restart_path)
 
