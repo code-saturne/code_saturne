@@ -197,7 +197,7 @@ if test "x$with_med" != "xno" ; then
 
   elif test "x$cs_have_med2_headers" = "xyes"; then
 
-    AC_CHECK_LIB(med, MEDfamCr, 
+    AC_CHECK_LIB(medC, MEDfamCr, 
                  [ AC_DEFINE([HAVE_MED], 1, [MED file support])
                    cs_have_med=yes
                  ], 
@@ -210,7 +210,7 @@ if test "x$with_med" != "xno" ; then
       # try linking with C++ in case of static MED library
 
       AC_LANG_PUSH(C++)
-      AC_CHECK_LIB(med, MEDfamCr, 
+      AC_CHECK_LIB(medC, MEDfamCr, 
                    [ AC_DEFINE([HAVE_MED], 1, [MED file support])
                      cs_have_med=yes; cs_have_med_link_cxx=yes
                    ], 
