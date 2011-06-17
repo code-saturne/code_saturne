@@ -96,6 +96,10 @@ if ( ippmod(icp3pl).ge.0 ) then
   !==========
 endif
 
+if ( ippmod(iccoal).ge.0 ) then
+  call cs_coal_readata
+  !==================
+endif
 ! ---> Combustion charbon pulverise couple transport Lagrangien
 !      des particules de charbon
 
@@ -107,8 +111,8 @@ endif
 ! ---> Flamme fuel
 
 if ( ippmod(icfuel).ge.0 ) then
-  call fulecd
-  !==========
+  call cs_fuel_readata
+  !==================
 endif
 
 ! ---> Version Electrique : Effet Joule, Arc Electrique,

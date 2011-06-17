@@ -71,10 +71,10 @@ $(top_builddir)/src/turb/libcsturb.la \
 $(top_builddir)/src/atmo/libcsatmo.la \
 $(top_builddir)/src/cfbl/libcscfbl.la \
 $(top_builddir)/src/cogz/libcscogz.la \
+$(top_builddir)/src/comb/libcscomb.la \
 $(top_builddir)/src/cplv/libcscplv.la \
 $(top_builddir)/src/ctwr/libcsctwr.la \
 $(top_builddir)/src/elec/libcselec.la \
-$(top_builddir)/src/fuel/libcsfuel.la \
 $(top_builddir)/src/gui/libcsgui.la \
 $(top_builddir)/src/lagr/libcslagr.la \
 $(top_builddir)/src/rayt/libcsrayt.la \

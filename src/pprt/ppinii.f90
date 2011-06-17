@@ -59,7 +59,8 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use fuincl
+use cs_coal_incl
+use cs_fuel_incl
 use ppincl
 use elincl
 use ppcpfu
@@ -126,11 +127,14 @@ do icha = 1, ncharb
   if1m(icha) = 0
   if2m(icha) = 0
 enddo
-if3m   = 0
-if4p2m = 0
+if4m   = 0
 if5m   = 0
 if6m   = 0
 if7m   = 0
+if8m   = 0
+if9m   = 0
+if4p2m = 0
+ifvp2m = 0
 iyco2  = 0
 do icla = 1, nclcpm
   ixck(icla)    = 0
@@ -139,6 +143,7 @@ do icla = 1, nclcpm
   ih2(icla)    = 0
   ixwt(icla)   = 0
 enddo
+!
 !       Variables algebriques ou d'etat
 itemp1 = 0
 do ige = 1, ngazem
@@ -155,20 +160,29 @@ do icla = 1, nclcpm
   igmdv2(icla) = 0
   igmhet(icla) = 0
   ighco2(icla) = 0
+  ighh2o(icla) = 0
   igmsec(icla) = 0
+enddo
+do ige = 1, ngazem
+  af3(ige) = 0.d0
+  af4(ige) = 0.d0
+  af5(ige) = 0.d0
+  af6(ige) = 0.d0
+  af7(ige) = 0.d0
+  af8(ige) = 0.d0
+  af9(ige) = 0.d0
 enddo
 
 ! ---> Initialisation pour la combustion fuel
 !       Variables transportees
 
 ihm     = 0
-do icla = 1, nclafu
+do icla = 1, nclcpm
   ing(icla)   = 0
   iyfol(icla) = 0
   ihlf (icla) = 0
 enddo
 ifvap   = 0
-ifhtf   = 0
 if4p2m  = 0
 iyco2   = 0
 iyhcn   = 0
@@ -182,11 +196,7 @@ do ige = 1, ngazem
   iym1(ige) = 0
 enddo
 
-do icla=1,nclafu
-  ix3(icla)    = 0
-  itemp3(icla) = 0
-  irom3(icla)  = 0
-  idiam3(icla) = 0
+do icla=1,nclcpm
   igmeva(icla) = 0
   igmhtf(icla) = 0
 enddo
@@ -348,17 +358,28 @@ do icha = 1, ncharm
   cch(icha)    = zero
   hch(icha)    = zero
   och(icha)    = zero
+  sch(icha)    = zero
+  nch(icha)    = zero
+
   alpha(icha)  = zero
   beta(icha)   = zero
+  teta (icha)  = zero
+  omega(icha)  = zero
+
   pcich(icha)  = zero
   rho0ch(icha) = zero
 
   cck(icha)    = zero
   hck(icha)    = zero
   ock(icha)    = zero
+  sck(icha)    = zero
+  nck(icha)    = zero
+
   rhock(icha)  = zero
   gamma(icha)  = zero
   delta(icha)  = zero
+  kappa(icha)  = zero
+  zeta (icha)  = zero
   pcick(icha)  = zero
 
   xashch(icha) = zero
@@ -371,20 +392,27 @@ do icha = 1, ncharm
   y1ch(icha)   = zero
   a1ch(icha)   = zero
   e1ch(icha)   = zero
+  crepn1(1,icha) = zero
+  crepn1(2,icha) = zero
+
   iy2ch(icha)  = 0
   y2ch(icha)   = zero
   a2ch(icha)   = zero
   e2ch(icha)   = zero
+  crepn2(1,icha) = zero
+  crepn2(2,icha) = zero
 
   ahetch(icha) = zero
   ehetch(icha) = zero
-
   iochet(icha) = 0
 
   ahetc2(icha) = zero
   ehetc2(icha) = zero
-
   ioetc2(icha) = 0
+
+  ahetwt(icha) = zero
+  ehetwt(icha) = zero
+  ioetwt(icha) = 0
 
   ich(icha)    = 0
   ick(icha)    = 0
@@ -395,6 +423,8 @@ enddo
 
 alpham = zero
 betam  = zero
+tetam  = zero
+omegam = zero
 
 do isol = 1, nsolim
   do it = 1, npot
@@ -431,6 +461,10 @@ enddo
   icof2   = 0
   ih2of1  = 0
   ih2of2  = 0
+  ih2sf1  = 0
+  ih2sf2  = 0
+  ihcnf1  = 0
+  ihcnf2  = 0
 
 ! ---> Donnees relatives a la combustion des especes gazeuses
 
@@ -441,9 +475,14 @@ enddo
 ichx1 = 0
 ichx2 = 0
 ico   = 0
+ih2s  = 0
+ih2   = 0
+ihcn  = 0
 io2   = 0
 ico2  = 0
 ih2o  = 0
+iso2  = 0
+inh3  = 0
 in2   = 0
 
 xsi   = 3.76d0
@@ -455,6 +494,14 @@ do icha = 1, ncharm
   a2(icha)   = zero
   b1(icha)   = zero
   b2(icha)   = zero
+  c1(icha)   = zero
+  c2(icha)   = zero
+  d1(icha)   = zero
+  d2(icha)   = zero
+  e1(icha)   = zero
+  e2(icha)   = zero
+  f1(icha)   = zero
+  f2(icha)   = zero
 enddo
 
 
@@ -471,7 +518,7 @@ do izone = 1, nozppm
 enddo
 
 !===============================================================================
-! 5. REMPLISSAGE INCLUDE fuincl.h
+! 5. REMPLISSAGE INCLUDE fuelincl.h
 !                INCLUDE POUR LA PHYSIQUE PARTICULIERE RELATIF A
 !                LA COMBUSTION FUEL
 !===============================================================================

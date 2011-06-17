@@ -90,6 +90,10 @@ if ( ippmod(icp3pl).ge.0 ) then
   call cpvarp
   !==========
 endif
+if ( ippmod(iccoal).ge.0 ) then
+  call cs_coal_varpos
+  !==================
+endif
 
 ! ---> Physique particuliere :  Combustion Charbon Pulverise
 !      Couplee Transport Lagrangien des particules de charbon
@@ -102,8 +106,8 @@ endif
 ! ---> Physique particuliere :  Combustion Fuel
 
 if ( ippmod(icfuel).ge.0 ) then
-  call fuvarp
-  !==========
+  call cs_fuel_varpos
+  !==================
 endif
 
 ! ---> Physique particuliere : Compressible

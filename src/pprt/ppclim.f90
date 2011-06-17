@@ -181,7 +181,7 @@ endif
 
 ! ---> Combustion charbon pulverise
 
-if ( ippmod(icp3pl).ge.0 ) then
+if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
 
   call uscpcl                                                     &
   !==========
@@ -206,8 +206,8 @@ endif
 ! ---> Combustion fuel
 
 if ( ippmod(icfuel).ge.0 ) then
-  call usfucl                                                     &
-  !==========
+  call user_fuel_bcond                                            &
+  !===================
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

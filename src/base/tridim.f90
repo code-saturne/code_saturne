@@ -101,6 +101,7 @@ use vorinc
 use ihmpre
 use radiat
 use cplsat
+use ppcpfu
 use mesh
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP

@@ -101,7 +101,7 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use fuincl
+use cs_fuel_incl
 use ppincl
 use lagpar
 use lagran
@@ -306,8 +306,8 @@ if ( iirayo.ge.1 ) then
 
   !-> Charbon pulverise
   !   Ordre 2 non pris en compte
-
-  if ( ippmod(icp3pl) .gt. 0 ) then
+  ! old model
+  if ( ippmod(icp3pl) .ge. 0 ) then
     if ( isca(iscal).ge.isca(ih2(1)) .and.       &
          isca(iscal).le.isca(ih2(nclacp)) ) then
 
@@ -318,17 +318,29 @@ if ( iirayo.ge.1 ) then
 
     endif
   endif
+  ! new model
+  if ( ippmod(iccoal) .ge. 0 ) then
+    if ( isca(iscal).ge.isca(ih2(1)) .and.       &
+         isca(iscal).le.isca(ih2(nclacp)) ) then
+!
+      call cs_coal_radst           &
+     !===============================
+          ( ivar  ,ncelet, ncel  ,                &
+            volume,propce,smbrs,rovsdt)
+!
+    endif
+  endif
 
   ! -> Fuel
   !    Ordre 2 non pris en compte
   !    Pour l'instant rayonnement non compatible avec Fuel
 
   if ( ippmod(icfuel) .ge. 0 ) then
-    if ( isca(iscal).ge.isca(ihlf(1)) .and.       &
-         isca(iscal).le.isca(ihlf(nclafu)) ) then
+    if ( isca(iscal).ge.isca(ih2(1)) .and.       &
+         isca(iscal).le.isca(ih2(nclafu)) ) then
 
-      call furays                  &
-      !==========
+      call cs_fuel_radst             &
+     !===============================
     ( ivar  ,ncelet, ncel  ,       &
       volume,rtpa  , propce,smbrs,rovsdt)
 

@@ -86,7 +86,7 @@ use parall
 use period
 use ppppar
 use ppthch
-use fuincl
+use cs_fuel_incl
 use ppincl
 use cpincl
 use radiat
@@ -205,13 +205,14 @@ unspi = 1.d0/pi
 !-----> W10 SERT A STOCKER TEMPORAIREMENT
 !       LE COEFFICIENT D'ABSORPTION DU MELANGE GAZ-PARTICULE
 
-    if (ippmod(icp3pl).ge.0 .or. ippmod(icfuel).ge.0) then
+    if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0              &
+                            .or. ippmod(icfuel).ge.0  ) then
 
       do iel = 1,ncel
         w10(iel) = propce(iel,ipproc(icak(1)))
       enddo
 
-      if (ippmod(icp3pl).ge.0 ) then
+      if (ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
         do icla = 1,nclacp
           ipcla = 1+icla
           do iel = 1,ncel
@@ -487,7 +488,7 @@ unspi = 1.d0/pi
 
       endif
 
-      if ( ippmod(icp3pl).ge.0 ) then
+      if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
 
 ! Temperature des particules
 
@@ -505,7 +506,7 @@ unspi = 1.d0/pi
         do icla = 1, nclafu
           ipcla = 1+icla
           do iel = 1,ncel
-            tempk(iel,ipcla) = propce(iel,ipproc(itemp3(icla)))
+            tempk(iel,ipcla) = propce(iel,ipproc(itemp2(icla)))
           enddo
         enddo
 
@@ -544,7 +545,7 @@ unspi = 1.d0/pi
 
 !     Charbon
 
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
@@ -589,7 +590,7 @@ unspi = 1.d0/pi
 
 !       Charbon
 
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
@@ -625,7 +626,7 @@ unspi = 1.d0/pi
 
 !        Charbon
 
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
@@ -663,7 +664,7 @@ unspi = 1.d0/pi
 
 !        Charbon
 
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
@@ -720,7 +721,7 @@ unspi = 1.d0/pi
 
 !       Charbon
 
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
@@ -755,7 +756,7 @@ unspi = 1.d0/pi
 
 !        Charbon
 
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
@@ -941,7 +942,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
     enddo
 
 ! Combustion CP : On rajoute la contribution des particules
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel
@@ -1035,7 +1036,7 @@ propce(iel,ipproc(icak(1)))*propce(iel,ipproc(itsre(1)))
 
 ! Combustion CP : On rajoute la contribution des particules
 
-    if ( ippmod(icp3pl).ge.0 ) then
+    if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
         do iel = 1,ncel

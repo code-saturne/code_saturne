@@ -211,6 +211,19 @@ if ( ippmod(icp3pl).ge.0 ) then
    coefa  , coefb  , ckupdc , smacel ,                            &
    smbrs  , rovsdt )
 endif
+!
+if ( ippmod(iccoal).ge.0 ) then
+  call cs_coal_scast                                              &
+   !================
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   iscal  ,                                                       &
+   itypfb ,                                                       &
+   icepdc , icetsm , itypsm ,                                     &
+   izfppp ,                                                       &
+   dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
+   coefa  , coefb  , ckupdc , smacel ,                            &
+   smbrs  , rovsdt )
+endif
 
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien
 !      des particules de charbon
@@ -231,8 +244,8 @@ endif
 ! ---> Flamme fuel
 
 if ( ippmod(icfuel).ge.0 ) then
-  call futssc                                                     &
-   !==========
+  call cs_fuel_scast                                              &
+   !================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    itypfb ,                                                       &

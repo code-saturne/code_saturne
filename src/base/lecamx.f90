@@ -113,8 +113,9 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
-use fuincl
+use cs_fuel_incl
 use elincl
+use ppcpfu
 
 !===============================================================================
 
@@ -2360,6 +2361,17 @@ if ( ippmod(icfuel).ge.0 ) then
                 ientfl, ierror)
     ierrch=ierrch+ierror
     nberro=nberro+ierror
+
+!
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'inmoxy_zone_bord_fuel'
+    call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
+                inmoxy, ierror)
+    ierrch=ierrch+ierror
+    nberro=nberro+ierror
+
 
 !       TIMPAT
     itysup = 0

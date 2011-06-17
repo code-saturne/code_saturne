@@ -176,6 +176,14 @@ if ( ippmod(icp3pl).ge.0 ) then
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 endif
 
+if ( ippmod(iccoal).ge.0 ) then
+  call cs_coal_varini                                             &
+  !==================
+ ( nvar   , nscal  ,                                              &
+   dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
+endif
+
+
 ! ---> Combustion charbon pulverise couples Lagrangien
 
 if ( ippmod(icpl3c).ge.0 ) then
@@ -188,8 +196,8 @@ endif
 ! ---> Combustion fuel
 
 if  (ippmod(icfuel).ge.0 ) then
-  call fuiniv                                                     &
-  !==========
+  call cs_fuel_varini                                             &
+  !==================
  ( nvar   , nscal  ,                                              &
    dt     , rtp    , propce , propfa , propfb , coefa  , coefb  )
 endif

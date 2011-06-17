@@ -117,12 +117,11 @@ double precision hrec(ncelet)
 
 ! Local variables
 
-integer          iel, n1, n2, n3, n4, n5 , nfp2 , nbspdf
+integer          iel, n1, n2, n3, n4, n5 , n6 ,nfp2 , nbspdf
 double precision t1, t2, t3, t1mod, t2mod , fp2max
+double precision fp2mmax1,fp2mmin1,fp2mmax2,fp2mmin2
 
-
-!===============================================================================
-
+!
 !===============================================================================
 ! 0.  INITIALISATION
 !===============================================================================
@@ -163,10 +162,21 @@ enddo
 
 ! Clipping de la variance
 
+fp2mmin1 =  1.D+20
+fp2mmax1 = -1.D+20
+do iel = 1, ncel
+  fp2mmin1 = min(fp2mmin1,fp2m(iel))
+  fp2mmax1 = max(fp2mmax1,fp2m(iel))
+enddo
+if ( irangp .ge.0 ) then
+  call parmin(fp2mmin1)
+  call parmax(fp2mmax1)
+endif
+
 nfp2 = 0
 do iel = 1, ncel
   fp2max = (fmaxi(iel)-fm(iel))*(fm(iel)-fmini(iel))
-  if ( fp2m(iel) .gt. fp2max ) then
+  if ( fp2m(iel) .gt. fp2max+1.d-20 ) then
     fp2m(iel) = fp2max
     nfp2 = nfp2 + 1
   endif
@@ -176,6 +186,24 @@ if ( irangp .ge. 0 ) then
 endif
 WRITE(NFECRA,*) ' PPPDFR : Points de clipping',                   &
                 ' de la variance : ',NFP2
+fp2mmin2 = 1.D+20
+fp2mmax2 =-1.D+20
+do iel = 1, ncel
+  fp2mmin2 = min(fp2mmin2,fp2m(iel))
+  fp2mmax2 = max(fp2mmax2,fp2m(iel))
+enddo
+if ( irangp .ge.0 ) then
+  call parmin(fp2mmin2)
+  call parmax(fp2mmax2)
+endif
+
+if ( nfp2 .gt. 0 ) then
+  write(nfecra,*) '     Valeur min max',                   &
+                  '   variance avant clipping : ',fp2mmin1,fp2mmax1
+  write(nfecra,*) '     Valeur min max',                   &
+                  '   variance apres clipping : ',fp2mmin2,fp2mmax2
+endif
+
 
 !===============================================================================
 ! 2.  CALCUL DES PARAMETRES DE LA FONCTION DENSITE DE PROBABILITE
@@ -255,7 +283,6 @@ do iel = 1, ncel
       t3 = sqrt(3.d0*t1*(fmaxi(iel)-fmini(iel))**2)
       fdeb(iel) = min(fmaxi(iel),max(fmini(iel),fm(iel) - t3))
       ffin(iel) = min(fmaxi(iel),max(fmini(iel),fm(iel) + t3))
-
       if ( abs(ffin(iel) - fdeb(iel)).gt.epzero ) then
         hrec(iel) = ( 1.d0-dirmin(iel)-dirmax(iel) )              &
                    /( ffin(iel) - fdeb(iel) )
@@ -301,6 +328,7 @@ n2 = 0
 n3 = 0
 n4 = 0
 n5 = 0
+n6 = ncel
 do iel = 1, ncel
   if ( indpdf(iel).eq.1 ) then
     n1 = n1+1
@@ -332,9 +360,11 @@ if ( irangp.ge.0 ) then
   !==========
   call parcpt (n5)
   !==========
+  call parcpt (n6)
+  !==========
 endif
 
-write(nfecra,1000) n1, ncel
+write(nfecra,1000) n1, n6
 write(nfecra,2000) n5, n2, n3, n4
 
 

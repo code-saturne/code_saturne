@@ -61,6 +61,8 @@ module ppincl
 
   ! ---- Modeles propres a la combustion charbon pulverise couplee Lagrangien
   integer ::  icpl3c
+  integer ::  iccoal
+
   ! ---- Modeles propres a la combustion fuel
   integer ::  icfuel
 
@@ -77,7 +79,8 @@ module ppincl
                    icoebu = 4 , icobml = 5 , icolwc = 6 ,           &
                    icp3pl = 7 , icpl3c = 8 , icfuel = 9 ,           &
                    ieljou = 10, ielarc = 11, ielion = 12,           &
-                   icompf = 13, iatmos = 14, iaeros = 15)
+                   icompf = 13, iatmos = 14, iaeros = 15,           &
+                   iccoal = 16)
 
 
   !--> NOMBRE DE VARIABLES ALGEBRIQUES OU D'ETAT
@@ -103,8 +106,8 @@ module ppincl
   ! ---- Variables transportees
   !        Phase continue (melange gazeux)
   integer, save :: if1m(ncharm), if2m(ncharm)
-  integer, save :: if3m, if4m, if4p2m, if5m, if6m, if7m
-  integer, save :: if3mc2
+  integer, save :: if3m, if4m, if5m, if6m, if7m , if8m, if9m
+  integer, save :: if4p2m , ifvp2m , if3mc2
   !        Phase dispersee (classe de particules)
   integer, save :: ixck(nclcpm), ixch(nclcpm), inp(nclcpm)
   integer, save :: ih2(nclcpm) , ixwt(nclcpm)
@@ -118,17 +121,17 @@ module ppincl
   integer, save :: igmdch(nclcpm), igmhet(nclcpm) , ighco2(nclcpm)
   integer, save :: igmdv1(nclcpm), igmdv2(nclcpm)
   integer, save :: igmsec(nclcpm)
+  !        Bilan
+  integer, save :: ibcarbone,iboxygen,ibhydrogen
 
   !--> POINTEURS VARIABLES COMBUSTION FUEL
 
   ! ---- Variables transportees
   !        Phase continue
-  integer, save :: ifvap, ifhtf
+  integer, save :: ifvap
   !        Phase dispersee
   integer, save :: ihlf(nclcpm)
   integer, save :: ixkf(nclcpm), ixfol(nclcpm), ing(nclcpm)
-  integer, save :: itemp3(nclcpm), irom3(nclcpm), idiam3(nclcpm)
-  integer, save :: ix3(nclcpm)
 
   ! ---- Variables d'etat
   !        Phase continue

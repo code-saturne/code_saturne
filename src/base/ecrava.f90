@@ -91,8 +91,9 @@ use ppthch
 use ppincl
 use coincl
 use cpincl
-use fuincl
+use cs_fuel_incl
 use elincl
+use ppcpfu
 
 !===============================================================================
 
@@ -2091,6 +2092,15 @@ if (iecaux.eq.1) then
     rubriq = 'ientfl_zone_bord_fuel'
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
                 ientfl, ierror)
+    nberro=nberro+ierror
+
+!
+    itysup = 0
+    nbval  = nozppm
+    irtyp  = 1
+    RUBRIQ = 'inmoxy_zone_bord_fuel'
+    call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,   &
+                inmoxy, ierror)
     nberro=nberro+ierror
 
 !       Timpat

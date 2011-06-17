@@ -177,7 +177,7 @@ double precision fdr
 
 ! User-defined local variables
 
-double precision cd1 , cd2 , d2
+double precision cd1 , cd2 , dd2
 double precision rec1, rec2, rec3, rec4
 
 !===============================================================================
@@ -214,8 +214,8 @@ if (1.eq.0) then
   cd2  = 0.687d0
 
   if (rep.le.1000) then
-      d2 = ettp(ip,jdp) * ettp(ip,jdp)
-      fdr = 18.d0 * xnul * (1.d0 + cd1 * rep**cd2) / d2
+      dd2 = ettp(ip,jdp) * ettp(ip,jdp)
+      fdr = 18.d0 * xnul * (1.d0 + cd1 * rep**cd2) / dd2
   else
       fdr = (0.44d0 * 3.d0 / 4.d0) * uvwr / ettp(ip,jdp)
   endif
@@ -234,21 +234,21 @@ rec2 =  1.0d0
 rec3 =  10.d0
 rec4 = 200.d0
 
-d2 = ettp(ip,jdp) * ettp(ip,jdp)
+dd2 = ettp(ip,jdp) * ettp(ip,jdp)
 
 if ( rep.le.rec1 ) then
-  fdr = 18.d0 * xnul / d2
+  fdr = 18.d0 * xnul / dd2
 
 else if ( rep.le.rec2 ) then
-  fdr = 3.d0/4.d0 * xnul / d2                                     &
+  fdr = 3.d0/4.d0 * xnul / dd2                                     &
       * (22.73d0 + 0.0903d0/rep + 3.69d0*rep )
 
 else if ( rep.le.rec3 ) then
-  fdr = 3.d0/4.d0 * xnul / d2                                     &
+  fdr = 3.d0/4.d0 * xnul / dd2                                     &
       * (29.1667d0 - 3.8889d0/rep + 1.222d0*rep)
 
 else if ( rep.le.rec4 ) then
-    fdr = 18.d0*xnul/d2 *(1.d0 + 0.15d0*rep**0.687d0)
+    fdr = 18.d0*xnul/dd2 *(1.d0 + 0.15d0*rep**0.687d0)
 
 else
    fdr = (0.44d0 * 3.d0 / 4.d0) * uvwr / ettp(ip,jdp)

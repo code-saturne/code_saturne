@@ -103,7 +103,7 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use fuincl
+use cs_fuel_incl
 use ppincl
 use radiat
 use mesh
@@ -176,7 +176,7 @@ if (mode.eq.1) then
 
 ! ---- Combustion charbon pulverise
 
-  else if ( ippmod(icp3pl).ge.0 ) then
+  else if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
 
     do iel = 1,ncel
       tempk(iel) = propce(iel, ipproc(itemp1))
@@ -304,6 +304,67 @@ if (mode.eq.-1) then
           f1mc   , f2mc   ,tparop(ifac) )
           hparop(ifac) = (1.d0-x2t)*hf+x2h2
 
+! ---- Combustion charbon pulverise : nouveau modele
+
+      else if ( ippmod(iccoal).ge.0 ) then
+
+        x2t  = zero
+        x2h2 = zero
+        do icla = 1, nclacp
+          icha   = ichcor(icla)
+          ixchcl = isca(ixch(icla))
+          ixckcl = isca(ixck(icla))
+          ixnpcl = isca(inp(icla ))
+          ipcx2c = ipproc(ix2(icla))
+          x2t = x2t + propce(iel,ipcx2c)
+          h2 = zero
+          do isol = 1, nsolim
+            xsolid(isol) = zero
+          enddo
+          if (propce(iel,ipcx2c).gt.epsicp) then
+            xsolid(ich(icha) ) = rtp(iel,ixchcl)                  &
+                               / propce(iel,ipcx2c)
+            xsolid(ick(icha) ) = rtp(iel,ixckcl)                  &
+                               / propce(iel,ipcx2c)
+            xsolid(iash(icha)) = rtp(iel,ixnpcl)*xmash(icla)      &
+                               / propce(iel,ipcx2c)
+            if ( ippmod(iccoal).eq.1 ) then
+              xsolid(iwat(icha)) = rtp(iel,isca(ixwt(icla)))      &
+                                  /propce(iel,ipcx2c)
+            endif
+            iii = icla
+            t1 = tparop(ifac)
+!
+            call cs_coal_htconvers2                            &
+           !============================
+           ( mode , iii , h2 , xsolid ,  tparop(ifac) , t1 )
+
+          endif
+          x2h2 = x2h2 + propce(iel,ipcx2c)*h2
+        enddo
+
+        do ige = 1, ngazem
+          coefe(ige) = zero
+        enddo
+        do icha = 1, ncharb
+          f1mc(icha) = rtp(iel,isca(if1m(icha)))                  &
+                     / (1.d0-x2t)
+          f2mc(icha) =  rtp(iel,isca(if2m(icha)))                 &
+                     / (1.d0-x2t)
+        enddo
+        do icha = (ncharb+1), ncharm
+          f1mc(icha) = zero
+          f2mc(icha) = zero
+        enddo
+        do ige = 1, ngazg
+          coefe(ige) = propce(iel,ipproc(iym1(ige)))
+        enddo
+!
+        call cs_coal_htconvers1(mode,hf,coefe,f1mc,f2mc,tparop(ifac))
+       !============================
+!
+        hparop(ifac) = (1.d0-x2t)*hf+x2h2
+
 ! ---- Combustion fuel
 
       else if ( ippmod(icfuel).ge.0 ) then
@@ -316,8 +377,8 @@ if (mode.eq.-1) then
           x2t = x2t+rtpa(iel,isca(iyfol(icla)))
 
           mkfini = rho0fl*pi/6.d0*dinikf(icla)**3
-          rhofol = propce(iel,ipproc(irom3(icla)))
-          diamgt = propce(iel,ipproc(idiam3(icla)))
+          rhofol = propce(iel,ipproc(irom2(icla)))
+          diamgt = propce(iel,ipproc(idiam2(icla)))
           masgut = rhofol*pi/6.d0*diamgt**3
           if (diamgt.le.dinikf(icla)) then
             mkgout = masgut
@@ -334,8 +395,8 @@ if (mode.eq.-1) then
           xsolid(1) = min(1.d0,max(0.d0,xsolid(1)))
           xsolid(2) = min(1.d0,max(0.d0,xsolid(2)))
 
-          call futhp2                                             &
-          !==========
+          call cs_fuel_htconvers2                                  &
+         !=======================
         ( mode   , h2     , xsolid , tparop(ifac) )
 
           x2h2 =  x2h2 + rtpa(iel,isca(iyfol(icla)))*h2
@@ -345,8 +406,8 @@ if (mode.eq.-1) then
         do ige = 1,ngaze
           coefe(ige) = propce(iel,ipproc(iym1(ige)))
         enddo
-        call futhp1                                               &
-        !==========
+        call cs_fuel_htconvers1                                   &
+       !=======================
         ( mode   , hf     , coefe  , tparop(ifac) )
           hparop(ifac) = (1.d0-x2t)*hf+x2h2
 

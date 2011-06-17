@@ -1,3 +1,132 @@
+* 17/06/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
+               Pierre Plion <pierre.plion@edf.fr>
+               Sandro Dal-Secco <sandro.dal-secco@edf.fr>
+               Marcus Charwath <marcus.charwath@edf.fr>
+               Dorothée Sénéchal <dorothee.senechal@edf.fr>
+  Add an experimental combustion model for coal and heavy fuel oil
+  with a unified gas-combustion modelling.
+  In addition, this new modelling replaces the previous fuel modelling.
+  added files:
+    src/comb
+    src/comb/cs_coal_bcond.f90
+    src/comb/cs_coal_fp2st.f90
+    src/comb/cs_coal_htconvers1.f90
+    src/comb/cs_coal_htconvers2.f90
+    src/comb/cs_coal_incl.f90
+    src/comb/cs_coal_masstransfer.f90
+    src/comb/cs_coal_noxst.f90
+    src/comb/cs_coal_param.f90
+    src/comb/cs_coal_physprop1.f90
+    src/comb/cs_coal_physprop2.f90
+    src/comb/cs_coal_physprop.f90
+    src/comb/cs_coal_prop.f90
+    src/comb/cs_coal_radst.f90
+    src/comb/cs_coal_readata.f90
+    src/comb/cs_coal_scast.f90
+    src/comb/cs_coal_thfieldconv1.f90
+    src/comb/cs_coal_thfieldconv2.f90
+    src/comb/cs_coal_varini.f90
+    src/comb/cs_coal_varpos.f90
+    src/comb/cs_coal_verify.f90
+    src/comb/cs_fuel_bcond.f90
+    src/comb/cs_fuel_fp2st.f90
+    src/comb/cs_fuel_htconvers1.f90
+    src/comb/cs_fuel_htconvers2.f90
+    src/comb/cs_fuel_incl.f90
+    src/comb/cs_fuel_masstransfer.f90
+    src/comb/cs_fuel_noxst.f90
+    src/comb/cs_fuel_param.f90
+    src/comb/cs_fuel_physprop1.f90
+    src/comb/cs_fuel_physprop2.f90
+    src/comb/cs_fuel_physprop.f90
+    src/comb/cs_fuel_prop.f90
+    src/comb/cs_fuel_radst.f90
+    src/comb/cs_fuel_readata.f90
+    src/comb/cs_fuel_scast.f90
+    src/comb/cs_fuel_thfieldconv1.f90
+    src/comb/cs_fuel_thfieldconv2.f90
+    src/comb/cs_fuel_varini.f90
+    src/comb/cs_fuel_varpos.f90
+    src/comb/cs_fuel_verify.f90
+    src/comb/cs_gascomb.f90
+    src/comb/Makefile.am
+    users/comb
+    users/comb/user_coal_ini1.f90
+    users/comb/user_coal_iniv.f90
+    users/comb/user_fuel_bcond.f90
+    users/comb/user_fuel_ini1.f90
+    users/comb/user_fuel_iniv.f90
+  removed files:
+    src/fuel
+    src/fuel/fucym1.f90
+    src/fuel/fucyno.f90
+    src/fuel/fuflux.f90
+    src/fuel/fuincl.f90
+    src/fuel/fuini1.f90
+    src/fuel/fuiniv.f90
+    src/fuel/fulecd.f90
+    src/fuel/fupdfr.f90
+    src/fuel/fuphy1.f90
+    src/fuel/fuphy2.f90
+    src/fuel/fuphyv.f90
+    src/fuel/fuprop.f90
+    src/fuel/fuptcl.f90
+    src/fuel/furays.f90
+    src/fuel/futeh1.f90
+    src/fuel/futeh2.f90
+    src/fuel/futhp1.f90
+    src/fuel/futhp2.f90
+    src/fuel/futssc.f90
+    src/fuel/futsvc.f90
+    src/fuel/futsvi.f90
+    src/fuel/fuvarp.f90
+    src/fuel/fuveri.f90
+    src/fuel/Makefile.am
+    users/fuel
+    users/fuel/usfucl.f90
+    users/fuel/usfui1.f90
+    users/fuel/usfuiv.f90
+  modified files:
+    configure.ac
+    src/apps/Makefile.am
+    src/base/covofi.f90
+    src/base/ecrava.f90
+    src/base/lecamx.f90
+    src/base/Makefile.am
+    src/base/scalai.f90
+    src/base/tridim.f90
+    src/cogz/d3phst.f90
+    src/cogz/d3pint.f90
+    src/cplv/cpincl.f90
+    src/lagr/lagesd.f90
+    src/lagr/lagich.f90
+    src/Makefile.am
+    src/pprt/Makefile.am
+    src/pprt/ppcabs.f90
+    src/pprt/ppclim.f90
+    src/pprt/ppcpfu.f90
+    src/pprt/ppcsca.f90
+    src/pprt/ppincl.f90
+    src/pprt/ppini1.f90
+    src/pprt/ppinii.f90
+    src/pprt/ppiniv.f90
+    src/pprt/pplecd.f90
+    src/pprt/pppdfr.f90
+    src/pprt/ppphyv.f90
+    src/pprt/ppprcl.f90
+    src/pprt/ppprop.f90
+    src/pprt/ppray4.f90
+    src/pprt/pptssc.f90
+    src/pprt/pptycl.f90
+    src/pprt/ppvarp.f90
+    src/rayt/Makefile.am
+    src/rayt/raydom.f90
+    src/rayt/rayopt.f90
+    users/cplv/uscpcl.f90
+    users/cplv/uscpiv.f90
+    users/lagr/uslatp.f90
+    users/pprt/usppmo.f90
+
 * 17/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update METIS support for METIS 5.0rc1.
   modified file:

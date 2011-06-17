@@ -93,6 +93,10 @@ if ( ippmod(icp3pl).ge.0 ) then
   call cpini1
   !==========
 endif
+if ( ippmod(iccoal).ge.0 ) then
+  call cs_coal_param
+  !=================
+endif
 
 ! ---> Physique particuliere : Combustion Eulerienne Charbon Pulverise
 !                              Couplee Transport Lagrangien
@@ -105,8 +109,8 @@ endif
 ! ---> Physique particuliere : Combustion fuel
 
 if ( ippmod(icfuel).ge.0 ) then
-  call fuini1
-  !==========
+  call cs_fuel_param
+  !=================
 endif
 
 ! ---> Physique particuliere : Compressible

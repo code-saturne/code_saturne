@@ -167,21 +167,31 @@ if (ippmod(iphpar).ge.1) then
 
   if ( ippmod(icp3pl).ne.-1 ) then
 
-    call cpflux                                                   &
+    call cpflux &
     !==========
-   ( ncelet , ncel   ,                                            &
+   ( ncelet , ncel   ,        &
      rtpa   , propce , volume )
 
   endif
+
+  if ( ippmod(iccoal).ne.-1 ) then
+
+    call cs_coal_masstransfer &
+    !=======================
+   ( ncelet , ncel   ,        &
+     rtpa   , propce , volume )
+
+  endif
+
 
 ! ---> Calculs TS relatifs a la physique du fuel
 !      GAMEVA, GAMHTF
 
   if ( ippmod(icfuel).ne.-1 ) then
 
-    call fuflux                                                   &
-    !==========
-   ( ncelet , ncel   ,                                            &
+    call cs_fuel_masstransfer &
+    !=======================
+   ( ncelet , ncel   ,        &
      rtpa   , propce , volume )
 
   endif

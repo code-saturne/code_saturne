@@ -32,6 +32,9 @@ module ppcpfu
 
   !===========================================================================
 
+  use ppppar
+  use ppthch
+
   ! XSI         --> XSI = 3,76 pour de l'air
 
   double precision, save ::  xsi
@@ -43,6 +46,14 @@ module ppcpfu
   double precision, save :: ah2of5
   double precision, save :: ao2f6,an2f6,ah2of6,aco2f6
   double precision, save :: ao2f7,an2f7,ah2of7,aco2f7
+
+  ! nb de moles de I dans J : nouvelle version
+
+  double precision, save :: af3(ngazgm),af4(ngazgm),af5(ngazgm),af6(ngazgm)
+  double precision, save :: af7(ngazgm),af8(ngazgm),af9(ngazgm)
+
+  ! prise en compte H2  , H2S , SO2 , HCN , NH3
+  integer, save ::         ihy , ih2s , iso2  , ihcn , inh3
 
   ! Equation sur YCO2
 
@@ -60,10 +71,10 @@ module ppcpfu
 
   integer, save ::         ieqnox
 
-  !   Scalaires supplementaires : fraction massique de HCN et NO
+  !   Scalaires supplementaires : fraction massique de H2, HCN et NO
   !                               temperature air
 
-  integer, save ::         iyhcn , iyno , itaire
+  integer, save ::         iyhcn , iyno , itaire, ihox
 
   !   Propce supplementaires :
 
@@ -77,6 +88,23 @@ module ppcpfu
   !   Taux de vapeur moyen
 
   double precision, save :: taire
+
+  !--> DONNEES RELATIVES AUX OXYDANTS
+
+  !       NOXYD        --> Nombre d'Oxydants (Maximum 3)
+
+  integer, save :: noxyd
+
+  !       OXYO2       --> composition des oxydants en O2
+  !       OXYN2       --> composition des oxydants en N2
+  !       OXYH2O      --> composition des oxydants en H2O
+  !       OXYCO2      --> composition des oxydants en CO2
+
+  double precision, save :: oxyo2(3),oxyn2(3),oxyh2o(3),oxyco2(3)
+
+  !--> Conditions aux limites
+
+  integer, save :: inmoxy(nozppm)
 
   !=============================================================================
 

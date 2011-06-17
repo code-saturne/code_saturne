@@ -68,7 +68,7 @@ use ihmpre
 use ppppar
 use ppthch
 use cpincl
-use fuincl
+use cs_fuel_incl
 use ppincl
 use radiat
 
@@ -93,6 +93,8 @@ character*2      num
 
 !--> For pulverized coal and fuel combustion:
 if ( ippmod(icp3pl) .ge. 0 ) then
+  nrphas = 1 + nclacp
+else if ( ippmod(iccoal) .ge. 0 ) then
   nrphas = 1 + nclacp
 else if ( ippmod(icfuel) .ge. 0 ) then
   nrphas = 1 + nclafu

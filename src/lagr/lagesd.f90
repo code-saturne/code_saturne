@@ -162,10 +162,6 @@ use optcal
 use entsor
 use lagpar
 use lagran
-use ppppar
-use ppthch
-use ppincl
-use cpincl
 use mesh
 
 !===============================================================================

@@ -403,6 +403,13 @@ if ( isuite.eq.0 ) then
       rtp(iel,isca(iyco2)) = oxyco2(ioxy)*wmco2/dmas
 
     endif
+
+    if ( ieqnox.eq.1 ) then
+      rtp(iel,isca(iyhcn )) = 0.d0
+      rtp(iel,isca(iyno  )) = 0.d0
+      rtp(iel,isca(itaire)) = 293.d0
+    endif
+
   enddo
 
 endif

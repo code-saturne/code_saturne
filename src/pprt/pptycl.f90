@@ -298,6 +298,15 @@ elseif ( ippmod(icp3pl).ge.0 ) then
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , rcodcl )
 
+elseif ( ippmod(iccoal).ge.0 ) then
+
+  call cs_coal_bcond                                              &
+  !=================
+ ( nvar   , nscal  ,                                              &
+   icodcl , itrifb , itypfb , izfppp ,                            &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  , rcodcl )
+
 ! ---> Combustion charbon pulverise couple Lagrangien USCPLC
 
 elseif ( ippmod(icpl3c).ge.0 ) then
@@ -313,8 +322,8 @@ elseif ( ippmod(icpl3c).ge.0 ) then
 
 elseif ( ippmod(icfuel).ge.0 ) then
 
-  call fuptcl                                                     &
-  !==========
+  call cs_fuel_bcond                                              &
+  !=================
  ( nvar   , nscal  ,                                              &
    icodcl , itrifb , itypfb , izfppp ,                            &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

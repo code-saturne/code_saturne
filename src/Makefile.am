@@ -23,7 +23,7 @@
 SUBDIRS = \
 . bft fvm mei gui \
 base pprt alge mesh turb \
-atmo cfbl cogz cplv ctwr elec fuel lagr rayt \
+atmo cfbl cogz comb cplv ctwr elec lagr rayt \
 apps
 
 # General flags
@@ -59,10 +59,11 @@ $(top_srcdir)/src/base/pointe.f90 \
 $(top_srcdir)/src/atmo/atincl.f90 \
 $(top_srcdir)/src/cfbl/cfpoin.f90 \
 $(top_srcdir)/src/cogz/coincl.f90 \
+$(top_srcdir)/src/comb/cs_coal_incl.f90 \
+$(top_srcdir)/src/comb/cs_fuel_incl.f90 \
 $(top_srcdir)/src/cplv/cpincl.f90 \
 $(top_srcdir)/src/ctwr/ctincl.f90 \
 $(top_srcdir)/src/elec/elincl.f90 \
-$(top_srcdir)/src/fuel/fuincl.f90 \
 $(top_srcdir)/src/lagr/lagdim.f90 \
 $(top_srcdir)/src/lagr/lagpar.f90 \
 $(top_srcdir)/src/lagr/lagran.f90 \
@@ -88,9 +89,11 @@ $(top_srcdir)/src/base/pointe.f90: paramx.lo parall.lo period.lo optcal.lo entso
 $(top_srcdir)/src/atmo/atincl.f90: ppppar.lo
 $(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo
 $(top_srcdir)/src/cplv/cpincl.f90: ppppar.lo ppthch.lo
+$(top_srcdir)/src/comb/cs_coal_incl.f90: ppppar.lo ppthch.lo
+$(top_srcdir)/src/comb/cs_fuel_incl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/elec/elincl.f90: paramx.lo ppthch.lo
-$(top_srcdir)/src/fuel/fuincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/lagr/lagran.f90: lagpar.lo
+$(top_srcdir)/src/pprt/ppcpfu.f90: ppthch.lo
 $(top_srcdir)/src/pprt/ppincl.f90: ppthch.lo
 $(top_srcdir)/src/pprt/ppthch.f90: cstphy.lo
 $(top_srcdir)/src/rayt/radiat.f90: ppppar.lo

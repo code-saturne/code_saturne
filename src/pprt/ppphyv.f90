@@ -38,11 +38,11 @@ subroutine ppphyv &
 ! --------
 
 ! ROUTINE PHYSIQUE PARTICULIERE : REMPLISSAGE DES VARIABLES PHYSIQUES
-
-
-
 ! ATTENTION :
 ! =========
+
+
+
 
 
 ! Il est INTERDIT de modifier la viscosite turbulente VISCT ici
@@ -225,6 +225,18 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
    endif
 
+   if ( ippmod(iccoal).ge.0 ) then
+
+     call cs_coal_physprop                                        &
+     !====================
+ ( nvar   , nscal  ,                                              &
+   ibrom  , izfppp ,                                              &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb   )
+
+   endif
+
+
 ! ---> Flamme charbon pulverise couplee Transport Lagrangien
 !      des particules de charbon
 
@@ -243,8 +255,8 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
   if ( ippmod(icfuel).ge.0 ) then
 
-     call fuphyv                                                  &
-     !==========
+     call cs_fuel_physprop                                        &
+     !====================
  ( nvar   , nscal  ,                                              &
    ibrom  , izfppp ,                                              &
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &

@@ -172,6 +172,24 @@ ippmod(icpl3c) = -1
 
 ippmod(icfuel) = -1
 
+! --- coal :
+! ==========
+!
+!     Pulverized coal combustion
+!        Description of granulometry
+!        Assumption of diffusion flame around particles
+!         (extension of 3-point fast chemistry "D3P")
+!        Between a mixture of gaseous fuels (volatiles matters, CO from char
+!                                            oxydation)
+!            and a mixture of oxidisers (air and water vapor)
+!        Enthalpy for both mix and solid phase are solved
+!
+!        if = -1   module not activated
+!        if = 0    module activated
+!        if = 1    with drying
+
+ippmod(iccoal) = -1
+
 ! --- compf: Compressible flows
 ! ==========
 

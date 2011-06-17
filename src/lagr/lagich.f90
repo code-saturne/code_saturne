@@ -149,7 +149,7 @@ double precision cpgd1(nbpmax), cpgd2(nbpmax), cpght(nbpmax)
 integer          npt , iel , icha , mode , ige
 integer          iromf
 double precision aux1 , aux2 , aux3 , aux4 , aux5 , aux6
-double precision ter1 , ter2 , ter3 , diamp2, d2
+double precision ter1 , ter2 , ter3 , diamp2, dd2
 double precision tpk , tfk , skc , skdd , se , po2
 double precision ho2tf , hctp , hcotp , den , sherw
 double precision coef , mp0 , d6spi , dpis6 , d1s3 , d2s3
@@ -538,11 +538,11 @@ if (nor.eq.1) then
       icha = itepa(npt,jinch)
       iel   = itepa(npt,jisor)
 
-      d2 = ettp(npt,jdp)*ettp(npt,jdp)
+      dd2 = ettp(npt,jdp)*ettp(npt,jdp)
       diamp2 = xashch(icha)*tepa(npt,jrd0p)*tepa(npt,jrd0p)       &
               +(1.d0-xashch(icha))*tepa(npt,jrdck)*tepa(npt,jrdck)
 
-      aux1 = tempct(npt,1)*diamp2/d2
+      aux1 = tempct(npt,1)*diamp2/dd2
 
 !    Combustion heterogene
       aux2 = ( -gamhet(npt) *(ettp(npt,jmck)**d2s3) *deltah(npt) )
@@ -576,11 +576,11 @@ else if (nor.eq.2) then
       icha  = itepa(npt,jinch)
       iel   = itepa(npt,jisor)
 
-      d2 = ettp(npt,jdp)*ettp(npt,jdp)
+      dd2 = ettp(npt,jdp)*ettp(npt,jdp)
       diamp2 = xashch(icha)*tepa(npt,jrd0p)*tepa(npt,jrd0p)       &
              + (1.d0-xashch(icha))*tepa(npt,jrdck)*tepa(npt,jrdck)
 
-      aux1 = tempct(npt,1)*diamp2/d2
+      aux1 = tempct(npt,1)*diamp2/dd2
 
 !    Combustion heterogene
       aux2 = -gamhet(npt) *(ettp(npt,jmck)**d2s3) *deltah(npt)

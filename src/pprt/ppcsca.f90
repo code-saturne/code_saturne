@@ -66,7 +66,8 @@ use coincl
 use cpincl
 use ppincl
 use elincl
-use fuincl
+use cs_coal_incl
+use cs_fuel_incl
 use ppcpfu
 use atincl
 
@@ -142,6 +143,7 @@ if ( ippmod(icp3pl).eq.0 ) then
 
   if ( ihtco2.eq. 1) nscapp = nscapp + 1
   if ( ieqco2.ge. 1) nscapp = nscapp + 1
+  if ( ieqnox.ge. 1) nscapp = nscapp + 3
 
 endif
 
@@ -153,7 +155,30 @@ if ( ippmod(icp3pl).eq.1 ) then
 
   if ( ihtco2.eq. 1) nscapp = nscapp + 1
   if ( ieqco2.eq. 1) nscapp = nscapp + 1
+  if ( ieqnox.ge. 1) nscapp = nscapp + 3
 
+endif
+!
+if ( ippmod(iccoal).ge.0 ) then
+! enthalpie du melange
+! phase disperse : (Np , Xch , Xck , h2  ) par classe
+! phase gaz      : ( F1 , F2 ) par charbon
+!                  F4 , F5 optionnel en fonction de Noxyd
+!                  F7 , Variance
+  nscapp = 1 + 4*nclacp + 2*ncharb + (noxyd-1) + 2
+
+  if ( ippmod(iccoal) .eq. 1 ) then
+!   humidite : f6
+    nscapp = nscapp + nclacp + 1
+  endif
+! F8
+  if ( ihtco2.eq. 1) nscapp = nscapp + 1
+! F9
+  if ( ihth2o.eq. 1) nscapp = nscapp + 1
+! Y_CO ou Y_CO2
+  if ( ieqco2.ge. 1) nscapp = nscapp + 1
+! Y_HCN, Y_NO, Taire
+  if ( ieqnox.ge. 1) nscapp = nscapp + 3
 endif
 
 ! --> Flamme charbon pulverise couple Lagrangien
@@ -198,9 +223,18 @@ if ( ippmod(icompf).ge.0 ) nscapp = 3
 !===============================================================================
 
 if ( ippmod(icfuel).ge.0 ) then
-  nscapp = 4 + 3*nclafu
+!
+! enthalpie du melange
+! phase gaz      : fvap , fhtf , Variance
+!                  F4 , F5 optionnel en fonction de Noxyd
+! phase disperse : ng , iyfol , ih2
+!
+  nscapp = 1 + 3  + (noxyd-1) + 3*nclafu
+! Y_CO
   if ( ieqco2.ge. 1) nscapp = nscapp + 1
-  if ( ieqnox.eq. 1) nscapp = nscapp + 3
+! Y_HCN, Y_NO, Hox
+  if ( ieqnox.ge. 1) nscapp = nscapp + 3
+!
 endif
 
 !===============================================================================

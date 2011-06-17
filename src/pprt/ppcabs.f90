@@ -86,7 +86,7 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use fuincl
+use cs_fuel_incl
 use ppincl
 use radiat
 use mesh
@@ -109,7 +109,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 ! Local variables
 
 integer          iel, ifac, icla, ipck, icha, iok
-double precision xm, d2, vv, sf, xlc, xkmin, pp
+double precision xm, dd2, vv, sf, xlc, xkmin, pp
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 
@@ -154,7 +154,7 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
     enddo
   endif
 
-else if ( ippmod(icp3pl).ge.0 ) then
+else if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal) .ge. 0 ) then
 
 ! ---->  Charbon
 
@@ -220,7 +220,7 @@ if (imodak.eq.1) deallocate(w1, w2, w3)
 
 ! ---->  Charbon
 
-if ( ippmod(icp3pl).ge.0 ) then
+if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal) .ge. 0 ) then
 
   do icla = 1, nclacp
 
@@ -231,16 +231,16 @@ if ( ippmod(icp3pl).ge.0 ) then
 
 ! ---> Calcul du diametre des particules
 
-      d2 = ( xashch(icha)*diam20(icla)**2 +                       &
+      dd2 = ( xashch(icha)*diam20(icla)**2 +                       &
            ( 1.d0-xashch(icha))                                   &
              *propce(iel,ipproc(idiam2(icla)))**2 )**0.5d0
 
 ! ---> Calcul du coeficient d'absorption des particules K2/X2
-!         3./2. ROM/(ROM2*D2)
+!         3./2. ROM/(ROM2*DD2)
 
       propce(iel,ipproc(icak(ipck))) =                            &
                          1.5d0*propce(iel,ipproc(irom))    &
-                       / ( propce(iel,ipproc(irom2(icla)))*d2)
+                       / ( propce(iel,ipproc(irom2(icla)))*dd2)
 
     enddo
 
@@ -259,12 +259,12 @@ if ( ippmod(icfuel).ge.0 ) then
     do iel = 1, ncel
 
 ! ---> Calcul du coeficient d'absorption des particules K2/X2
-!         3./2. ROM/(ROM2*D2)
+!         3./2. ROM/(ROM2*DD2)
 
       propce(iel,ipproc(icak(ipck))) =                            &
                          1.5d0*propce(iel,ipproc(irom))    &
-                 / ( propce(iel,ipproc(irom3(icla)))              &
-                    *propce(iel,ipproc(idiam3(icla))) )
+                 / ( propce(iel,ipproc(irom2(icla)))              &
+                    *propce(iel,ipproc(idiam2(icla))) )
 
     enddo
 
@@ -309,7 +309,7 @@ endif
        w3(iel) =  propce(iel,ipproc(icak(1)))
      enddo
 
-     if ( ippmod(icp3pl).ge.0 ) then
+     if ( ippmod(icp3pl).ge.0 .or. ippmod(iccoal).ge.0 ) then
        do icla = 1,nclacp
          ipck = 1+icla
          do iel = 1,ncel
