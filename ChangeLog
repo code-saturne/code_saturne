@@ -1,3 +1,9 @@
+* 17/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a libtool rpath option to handle BLAS libraries.
+  modified files:
+     m4/cs_blas.m4
+     src/apps/Makefile.am
+
 * 17/06/2010 - Mehdi Ouraou <mehdi.ouraou@edf.fr>
                Pierre Plion <pierre.plion@edf.fr>
                Sandro Dal-Secco <sandro.dal-secco@edf.fr>
