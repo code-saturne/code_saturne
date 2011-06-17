@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -92,6 +92,10 @@ void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, idxtype *,
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(METIS_API) /* METIS 5.0rc1 and above */
+#define idxtype idx_t
 #endif
 
 #endif /* defined(HAVE_METIS) || defined(HAVE_PARMETIS) */
@@ -1114,19 +1118,25 @@ _part_metis(size_t    n_cells,
   size_t i;
   double  start_time[2], end_time[2];
 
-  int     wgtflag    = 0; /* No weighting for faces or cells */
-  int     numflag    = 0; /* 0 to n-1 numbering (C type) */
-  int     options[5] = {0, 3, 1, 1, 0}; /* By default if options[0] = 0 */
-  int     edgecut    = 0; /* <-- Number of faces on partition */
+#if defined(METIS_API) /* METIS 5.0rc1 and above */
+  idxtype   _n_constraints = 1;
+#else
+  idxtype wgtflag    = 0; /* No weighting for faces or cells */
+  idxtype numflag    = 0; /* 1 to n numbering (Fortran type) */
+  idxtype options[5] = {0, 3, 1, 1, 0}; /* By default if options[0] = 0 */
+#endif
 
-  int       _n_cells = n_cells;
+  idxtype    edgecut    = 0; /* <-- Number of faces on partition */
+
+  idxtype   _n_cells = n_cells;
+  idxtype   _n_parts = n_parts;
   idxtype  *_cell_part = NULL;
 
   start_time[0] = bft_timer_wtime();
   start_time[1] = bft_timer_cpu_time();
 
   if (sizeof(idxtype) == sizeof(int))
-    _cell_part = cell_part;
+    _cell_part = (idxtype *)cell_part;
 
   else
     BFT_MALLOC(_cell_part, n_cells, idxtype);
@@ -1138,6 +1148,24 @@ _part_metis(size_t    n_cells,
                  " (METIS_PartGraphRecursive).\n"),
                (int)n_cells, n_parts);
 
+#if defined(METIS_API) /* METIS 5.0rc1 and above */
+
+    METIS_PartGraphRecursive(&_n_cells,
+                             &_n_constraints,
+                             cell_idx,
+                             cell_neighbors,
+                             NULL,       /* vwgt:   cell weights */
+                             NULL,       /* vsize:  size of the vertices */
+                             NULL,       /* adjwgt: face weights */
+                             &_n_parts,
+                             NULL,       /* tpwgts */
+                             NULL,       /* ubvec: load imbalance tolerance */
+                             NULL,       /* options */
+                             &edgecut,
+                             _cell_part);
+
+#else
+
     METIS_PartGraphRecursive(&_n_cells,
                              cell_idx,
                              cell_neighbors,
@@ -1145,10 +1173,12 @@ _part_metis(size_t    n_cells,
                              NULL,       /* adjwgt: face weights */
                              &wgtflag,
                              &numflag,
-                             &n_parts,
+                             &_n_parts,
                              options,
                              &edgecut,
                              _cell_part);
+
+#endif /* defined(METIS_API) */
 
   }
 
@@ -1159,6 +1189,24 @@ _part_metis(size_t    n_cells,
                  " (METIS_PartGraphKway).\n"),
                (int)n_cells, n_parts);
 
+#if defined(METIS_API) /* METIS 5.0rc1 and above */
+
+    METIS_PartGraphKway(&_n_cells,
+                        &_n_constraints,
+                        cell_idx,
+                        cell_neighbors,
+                        NULL,       /* vwgt:   cell weights */
+                        NULL,       /* vsize:  size of the vertices */
+                        NULL,       /* adjwgt: face weights */
+                        &_n_parts,
+                        NULL,       /* tpwgts */
+                        NULL,       /* ubvec: load imbalance tolerance */
+                        NULL,       /* options */
+                        &edgecut,
+                        _cell_part);
+
+#else
+
     METIS_PartGraphKway(&_n_cells,
                         cell_idx,
                         cell_neighbors,
@@ -1166,10 +1214,12 @@ _part_metis(size_t    n_cells,
                         NULL,       /* adjwgt: face weights */
                         &wgtflag,
                         &numflag,
-                        &n_parts,
+                        &_n_parts,
                         options,
                         &edgecut,
                         _cell_part);
+
+#endif /* defined(METIS_API) */
 
   }
 

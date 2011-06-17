@@ -1,3 +1,8 @@
+* 17/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update METIS support for METIS 5.0rc1.
+  modified file:
+    src/apps/cs_partition.c
+
 * 16/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Use sparse MKL when available for additional matrix operations.
   modified file:
