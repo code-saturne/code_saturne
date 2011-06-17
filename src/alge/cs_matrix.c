@@ -2161,14 +2161,14 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
 
   int n_rows = ms->n_rows;
-  const char transa[] = "n";
+  char transa[] = "n";
 
   mkl_cspblas_dcsrgemv(transa,
                        &n_rows,
                        mc->val,
                        ms->row_index,
                        ms->col_id,
-                       x,
+                       (double *)x,
                        y);
 }
 
@@ -2258,6 +2258,8 @@ _mat_vec_p_l_csr_pf(const cs_matrix_t  *matrix,
  *   y      <-> Resulting vector
  *----------------------------------------------------------------------------*/
 
+#if !defined (HAVE_MKL)
+
 static void
 _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
                         cs_real_t           beta,
@@ -2295,6 +2297,41 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
   }
 
 }
+
+#else /* if defined (HAVE_MKL) */
+
+static void
+_alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
+                        cs_real_t           beta,
+                        const cs_matrix_t  *matrix,
+                        const cs_real_t    *restrict x,
+                        cs_real_t          *restrict y)
+{
+  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+
+  int n_rows = ms->n_rows;
+  int n_cols = ms->n_cols;
+  double _alpha = alpha;
+  double _beta = beta;
+  char mathdescra[7] = "G  C  ";
+  char transa[] = "n";
+
+  mkl_dcsrmv(transa,
+             &n_rows,
+             &n_cols,
+             &_alpha,
+             mathdescra,
+             mc->val,
+             ms->col_id,
+             ms->row_index,
+             ms->row_index + 1,
+             (double *)x,
+             &_beta,
+             y);
+}
+
+#endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = alpha.A.x + beta.y
@@ -2899,14 +2936,14 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
 
   int n_rows = ms->n_rows;
-  const char uplo[] = "u";
+  char uplo[] = "u";
 
   mkl_cspblas_dcsrsymv(uplo,
                        &n_rows,
                        mc->val,
                        ms->row_index,
                        ms->col_id,
-                       x,
+                       (double *)x,
                        y);
 }
 
@@ -2923,6 +2960,8 @@ _mat_vec_p_l_csr_sym(const cs_matrix_t  *matrix,
  *   x      <-- Multipliying vector values
  *   y      <-> Resulting vector
  *----------------------------------------------------------------------------*/
+
+#if !defined (HAVE_MKL)
 
 static void
 _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
@@ -2971,6 +3010,41 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
   }
 
 }
+
+#else /* if defined (HAVE_MKL) */
+
+static void
+_alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
+                            cs_real_t           beta,
+                            const cs_matrix_t  *matrix,
+                            const cs_real_t    *restrict x,
+                            cs_real_t          *restrict y)
+{
+  const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
+  const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
+
+  int n_rows = ms->n_rows;
+  int n_cols = ms->n_cols;
+  double _alpha = alpha;
+  double _beta = beta;
+  char transa[] = "n";
+  char mathdescra[7] = "TUNC  ";
+
+  mkl_dcsrmv(transa,
+             &n_rows,
+             &n_cols,
+             &_alpha,
+             mathdescra,
+             mc->val,
+             ms->col_id,
+             ms->row_index,
+             ms->row_index + 1,
+             (double *)x,
+             &_beta,
+             y);
+}
+
+#endif /* defined (HAVE_MKL) */
 
 /*============================================================================
  *  Public function definitions for Fortran API
