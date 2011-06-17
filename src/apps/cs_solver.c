@@ -250,6 +250,10 @@ cs_run(void)
 
   cs_join_all();
 
+  /* Insert thin walls if necessary */
+
+  cs_user_mesh_thinwall(cs_glob_mesh);
+
   /* Initialize extended connectivity, ghost cells and other
      parallelism-related structures */
 

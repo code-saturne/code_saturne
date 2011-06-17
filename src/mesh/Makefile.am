@@ -52,6 +52,7 @@ cs_mesh_halo.h \
 cs_mesh_quality.h \
 cs_mesh_quantities.h \
 cs_mesh_save.h \
+cs_mesh_thinwall.h \
 cs_mesh_warping.h
 
 # Library source files
@@ -76,6 +77,7 @@ cs_mesh_halo.c \
 cs_mesh_quality.c \
 cs_mesh_quantities.c \
 cs_mesh_save.c \
+cs_mesh_thinwall.c \
 cs_mesh_warping.c
 
 libcsmesh_la_LDFLAGS = -no-undefined

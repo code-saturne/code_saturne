@@ -1565,6 +1565,41 @@ cs_mesh_quantities_face_normal(const cs_mesh_t   *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute interior face centers and normals.
+ *
+ * The corresponding arrays are allocated by this function, and it is the
+ * caller's responsibility to free them when they are no longer needed.
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   p_i_face_cog    <-> pointer to the interior face center array
+ *   p_i_face_normal <-> pointer to the interior face normal array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_i_faces(const cs_mesh_t   *mesh,
+                           cs_real_t         *p_i_face_cog[],
+                           cs_real_t         *p_i_face_normal[])
+{
+  cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
+
+  BFT_MALLOC(i_face_cog, mesh->n_i_faces * mesh->dim, cs_real_t);
+  BFT_MALLOC(i_face_normal, mesh->n_i_faces * mesh->dim, cs_real_t);
+
+  _compute_face_quantities(mesh->dim,
+                           mesh->n_i_faces,
+                           mesh->vtx_coord,
+                           mesh->i_face_vtx_idx,
+                           mesh->i_face_vtx_lst,
+                           i_face_cog,
+                           i_face_normal,
+                           NULL);
+
+  *p_i_face_cog = i_face_cog;
+  *p_i_face_normal = i_face_normal;
+}
+
+/*----------------------------------------------------------------------------
  * Compute border face centers and normals.
  *
  * The corresponding arrays are allocated by this function, and it is the
