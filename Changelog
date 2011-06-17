@@ -1,3 +1,8 @@
+* 17/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Switch lance script from sh to bash shell to load user environment.
+  modified files:
+    bin/lance
+
 * 06/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix machine-name detection for Clamart2 cluster.
   modified files:
