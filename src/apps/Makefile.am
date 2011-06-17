@@ -125,7 +125,7 @@ $(MED_LDFLAGS) $(MED_LIBS) \
 $(HDF5_LDFLAGS) $(HDF5_LIBS) \
 $(MPI_LDFLAGS) $(MPI_LIBS) \
 $(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
-$(BLAS_LDFLAGS) $(BLAS_LIBS) \
+$(BLAS_LDFLAGS) $(BLASRUNPATH) $(BLAS_LIBS) \
 $(FCLIBS)
 
 # Code_Saturne IO utility (minimal dependencies)
