@@ -6,7 +6,7 @@
 #MSUB -T 300
 #MSUB -o nameandcaseo.%J 
 #MSUB -e nameandcasee.%J 
-#MSUB -r nometcas
+#MSUB -r nameandcase
 #
 #  -n : number of processors
 #  -N : number of nodes

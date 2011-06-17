@@ -6,7 +6,7 @@
 #SBATCH --time=0:30
 #SBATCH --output nameandcaseo.%j 
 #SBATCH --error nameandcasee.%j 
-#SBATCH --job-name=nometcas
+#SBATCH --job-name=nameandcase
 #
 #  -t<time>, --time=<time>            : walltime in minutes, minutes:seconds,
 #                                       hours:minutes:seconds, or
