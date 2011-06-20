@@ -1,3 +1,10 @@
+* 20/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add installation documentation.
+  modified files:
+     doc/Makefile.am
+     doc/install/install.tex
+     doc/style/csmacros.sty
+
 * 17/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a libtool rpath option to handle BLAS libraries.
   modified files:

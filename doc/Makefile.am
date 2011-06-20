@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009 EDF S.A., France
+#   Copyright (C) 2009-2011 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ if HAVE_SPHINX
 SALOME = salome
 endif
 
-SUBDIRS = refcard theory tutorial user developper doxygen $(SALOME)
+SUBDIRS = refcard theory tutorial user install developper doxygen $(SALOME)
 
 DIST_SUBDIRS = $(SUBDIRS) howto install
 
