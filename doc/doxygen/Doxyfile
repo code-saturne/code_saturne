@@ -616,7 +616,6 @@ INPUT                  = $(srcdir)/bin \
                          $(srcdir)/gui \
                          $(srcdir)/src \
                          $(srcdir)/users \
-                         $(srcdir)/libple \
                          $(srcdir)/doc/doxygen
 
 # This tag can be used to specify the character encoding of the source files 
