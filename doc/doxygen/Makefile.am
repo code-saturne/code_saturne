@@ -23,7 +23,7 @@
 DOC_MODULE=saturne
 
 docdir = $(datadir)/doc/@PACKAGE@-@VERSION@/doxygen
-EXTRA_DIST = mainpage.h icon.png
+EXTRA_DIST = Doxyfile mainpage.h images/icon.png
 
 doxygen:
 	srcdir="$(top_srcdir)" builddir="$(top_builddir)" doxygen $(top_srcdir)/doc/doxygen/Doxyfile
