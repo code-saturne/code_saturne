@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -65,6 +65,7 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
+#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -4786,7 +4787,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
 
     char *path = NULL;
     int i, j, iel;
-    double tmp;
+    double tmp, time0;
 
     int user_law = 0;
     int ipcrom = ipproc[ *irom   -1 ] -1;
@@ -4819,6 +4820,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         BFT_FREE(path);
 
         /* return an empty interpreter */
+
+        time0 = bft_timer_wtime();
 
         ev_rho = mei_tree_new(law_rho);
 
@@ -4853,6 +4856,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         }
 
         mei_tree_destroy(ev_rho);
+
+        cs_gui_add_mei_time(bft_timer_wtime() - time0);
     }
 
     /* law for molecular viscosity */
@@ -4880,6 +4885,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         BFT_FREE(path);
 
         /* return an empty interpreter */
+
+        time0 = bft_timer_wtime();
 
         ev_mu = mei_tree_new(law_mu);
 
@@ -4921,6 +4928,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         }
 
         mei_tree_destroy(ev_mu);
+
+        cs_gui_add_mei_time(bft_timer_wtime() - time0);
     }
 
     /* law for specific heat */
@@ -4948,6 +4957,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         BFT_FREE(path);
 
         /* return an empty interpreter */
+
+        time0 = bft_timer_wtime();
 
         ev_cp = mei_tree_new(law_cp);
 
@@ -4982,6 +4993,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         }
 
         mei_tree_destroy(ev_cp);
+
+        cs_gui_add_mei_time(bft_timer_wtime() - time0);
     }
 
     /* law for thermal conductivity */
@@ -5009,6 +5022,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
         BFT_FREE(path);
 
         /* return an empty interpreter */
+
+        time0 = bft_timer_wtime();
 
         ev_la = mei_tree_new(law_la);
 
@@ -5060,6 +5075,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
             }
         }
         mei_tree_destroy(ev_la);
+
+        cs_gui_add_mei_time(bft_timer_wtime() - time0);
     }
 
     /* law for scalar diffusivity */
@@ -5094,6 +5111,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
             BFT_FREE(path);
 
             /* return an empty interpreter */
+
+            time0 = bft_timer_wtime();
 
             ev_Ds = mei_tree_new(law_Ds);
             BFT_FREE(law_Ds);
@@ -5142,6 +5161,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *const ncel,
                 }
             }
             mei_tree_destroy(ev_Ds);
+
+            cs_gui_add_mei_time(bft_timer_wtime() - time0);
+
         }
         BFT_FREE(name);
     }
@@ -5505,6 +5527,33 @@ cs_gui_get_sfc_partition_type(void)
   BFT_FREE(sfc);
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Logging output for MEI usage.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_usage_log(void)
+{
+  int i;
+
+  double mei_wtime = cs_gui_get_mei_times();
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+    double _wtime_loc = mei_wtime;
+    MPI_Allreduce(&_wtime_loc, &mei_wtime, 1, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_mpi_comm);
+
+  }
+
+#endif
+
+  if (mei_wtime > 0.0)
+    bft_printf(_("\nTime elapsed defining values using MEI: %12.5f\n"),
+               mei_wtime);
 }
 
 /*----------------------------------------------------------------------------*/

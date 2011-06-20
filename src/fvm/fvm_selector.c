@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2007-2010  EDF
+  Copyright (C) 2007-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -46,6 +46,7 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
+#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -148,6 +149,10 @@ struct _fvm_selector_t {
   fvm_lnum_t        *_n_group_class_elements;  /* Number of elements per
                                                   group class */
   fvm_lnum_t        **_group_class_elements;   /* Group class elements array */
+
+  int                 n_evals;                 /* Number of evaluations */
+  double              eval_wtime;              /* Wall-clock time
+                                                  evaluating selections */
 };
 
 /*============================================================================
@@ -846,6 +851,9 @@ fvm_selector_create(int                           dim,
     }
   }
 
+  selector->n_evals = 0;
+  selector->eval_wtime = 0.0;
+
   return selector;
 }
 
@@ -932,9 +940,10 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
 
 {
   int  c_id, gc_id;
+  fvm_lnum_t  i;
   const fvm_selector_postfix_t *pf = NULL;
   fvm_selector_t  *ts = this_selector;
-  fvm_lnum_t  i;
+  double t0 = bft_timer_wtime();
 
   assert(this_selector != NULL);
 
@@ -1029,6 +1038,9 @@ fvm_selector_get_list(fvm_selector_t  *this_selector,
     }
   }
 
+  ts->n_evals += 1;
+  ts->eval_wtime += (bft_timer_wtime() - t0);
+
   return c_id;
 }
 
@@ -1059,6 +1071,7 @@ fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
   int  c_id, gc_id;
   const fvm_selector_postfix_t *pf = NULL;
   fvm_selector_t  *ts = this_selector;
+  double t0 = bft_timer_wtime();
 
   assert(this_selector != NULL);
 
@@ -1094,6 +1107,9 @@ fvm_selector_get_gc_list(fvm_selector_t  *this_selector,
     *n_selected_gcs = n_criteria_group_classes;
 
   }
+
+  ts->n_evals += 1;
+  ts->eval_wtime += (bft_timer_wtime() - t0);
 
   return c_id;
 }
@@ -1163,6 +1179,28 @@ fvm_selector_get_missing(const fvm_selector_t  *this_selector,
 }
 
 /*----------------------------------------------------------------------------
+ * Get statistics on selector usage
+ *
+ * parameters:
+ *   this_selector <-- pointer to selector
+ *   n_evals       <-> number of evaluations, or NULL
+ *   eval_wtime    <-> evaluation wall-clock time, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_selector_get_stats(const fvm_selector_t  *this_selector,
+                       int                   *n_evals,
+                       double                *eval_wtime)
+{
+  if (this_selector != NULL) {
+    if (n_evals != NULL)
+      *n_evals = this_selector->n_evals;
+    if (eval_wtime != NULL)
+      *eval_wtime = this_selector->eval_wtime;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Dump the contents of a selector structure in human readable form
  *
  * parameters:
@@ -1190,11 +1228,14 @@ fvm_selector_dump(const fvm_selector_t  *this_selector)
              "  Group class id base:                %d\n"
              "  Number of associated group classes: %d\n"
              "  Number of associated groups:        %d\n"
-             "  Number of associated attributes:    %d\n",
+             "  Number of associated attributes:    %d\n"
+             "  Number of evaluations:              %d\n"
+             "  Wall-clock time in evaluations:     %f\n",
              ts->dim, (int)ts->n_elements,
              ts->group_class_id, ts->_group_class_id,
              ts->group_class_id_base,
-             ts->n_group_classes, ts->n_groups, ts->n_attributes);
+             ts->n_group_classes, ts->n_groups, ts->n_attributes,
+             ts->n_evals, ts->eval_wtime);
 
   if (ts->n_groups > 0) {
     bft_printf("  Group names:\n");

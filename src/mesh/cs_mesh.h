@@ -618,6 +618,16 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
                               fvm_gnum_t       *g_b_face_vertices_size);
 
 /*----------------------------------------------------------------------------
+ * Print statistics about mesh selectors usage to log.
+ *
+ * parameters:
+ *   mesh <-- pointer to a mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_selector_stats(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Dump of a mesh structure.
  *
  * parameters:

@@ -1,4 +1,19 @@
 * 20/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add timing information for MEI evaluations and FVM selectors.
+  modified files:
+    src/apps/cs_solver.c
+    src/fvm/fvm_selector.c
+    src/fvm/fvm_selector.h
+    src/gui/cs_gui_boundary_conditions.c
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+    src/gui/cs_gui_mobile_mesh.c
+    src/gui/cs_gui_util.c
+    src/gui/cs_gui_util.h
+    src/mesh/cs_mesh.c
+    src/mesh/cs_mesh.h
+
+* 20/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add installation documentation.
   modified files:
      doc/Makefile.am

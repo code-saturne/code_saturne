@@ -489,6 +489,11 @@ cs_run(void)
   cs_coupling_finalize();
 #endif
 
+  /* Print some mesh statistics */
+
+  cs_gui_usage_log();
+  cs_mesh_selector_stats(cs_glob_mesh);
+
   /* Free cooling towers related structures */
 
   cs_ctwr_all_destroy();
@@ -501,7 +506,7 @@ cs_run(void)
 
   cs_gui_particles_free();
 
-  /* Free main mesh */
+  /* Free main mesh after printing some statistics */
 
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
   cs_mesh_destroy(cs_glob_mesh);

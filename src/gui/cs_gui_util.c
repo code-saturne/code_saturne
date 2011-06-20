@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -100,6 +100,8 @@ xmlXPathContextPtr xpathCtx = NULL;   /* Pointer on the XPath Context */
 xmlNodePtr node             = NULL;   /* Pointer on the root node     */
 const char *xmlRootName     = NULL;   /* Name of the root node        */
 #endif
+
+double _cs_gui_mei_time = 0.;
 
 /*============================================================================
  * Public Fortran function definitions
@@ -1148,6 +1150,32 @@ cs_gui_strcpy_c2f(char        *chainef,
 
   for (i = strlen(chainec); i < lstrF ; i++)
     chainef[i] = ' ';
+}
+
+/*-----------------------------------------------------------------------------
+ * Add timing increment to global MEI time counter.
+ *
+ * parameters:
+ *   t <-- timing increment to add
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_add_mei_time(double t)
+{
+  _cs_gui_mei_time += t;
+}
+
+/*-----------------------------------------------------------------------------
+ * Get cumulative global MEI time counter.
+ *
+ * returns:
+ *   cumulative global MEI time counter
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gui_get_mei_times(void)
+{
+  return _cs_gui_mei_time;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -417,6 +417,26 @@ cs_gui_strcpy_c2f(char        *chainef,
                   const char  *chainec,
                   const int    lstrF);
 
+/*-----------------------------------------------------------------------------
+ * Add timing increment to global MEI time counter.
+ *
+ * parameters:
+ *   t <-- timing increment to add
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_add_mei_time(double t);
+
+/*-----------------------------------------------------------------------------
+ * Get cumulative global MEI time counter.
+ *
+ * returns:
+ *   cumulative global MEI time counter
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gui_get_mei_times(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

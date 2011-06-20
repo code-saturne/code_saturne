@@ -3809,6 +3809,49 @@ cs_mesh_print_info(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Print statistics about mesh selectors usage to log.
+ *
+ * parameters:
+ *   mesh <-- pointer to a mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_selector_stats(cs_mesh_t  *mesh)
+{
+  int n_calls[3] = {0, 0, 0};
+  double wtimes[3] = {0., 0., 0.};
+
+  if (mesh->select_cells != NULL)
+    fvm_selector_get_stats(mesh->select_cells, n_calls, wtimes);
+  if (mesh->select_i_faces != NULL)
+    fvm_selector_get_stats(mesh->select_i_faces, n_calls + 1, wtimes + 1);
+  if (mesh->select_b_faces != NULL)
+    fvm_selector_get_stats(mesh->select_b_faces, n_calls + 2, wtimes + 2);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    int i;
+    double wtimes_glob[3];
+    MPI_Allreduce(wtimes, wtimes_glob, 3, MPI_DOUBLE, MPI_MAX,
+                  cs_glob_mpi_comm);
+    for (i = 0; i < 3; i++)
+      wtimes[i] = wtimes_glob[i];
+  }
+#endif
+
+  bft_printf(_("\n"
+               "Mesh entity selections by criteria statistics:\n"
+               "  entity type     evaluations  elapsed time\n"
+               "  -----------------------------------------\n"
+               "  cells            %10d  %12.5f\n"
+               "  interior faces   %10d  %12.5f\n"
+               "  boundary faces   %10d  %12.5f\n"),
+             n_calls[0], wtimes[0],
+             n_calls[1], wtimes[1],
+             n_calls[2], wtimes[2]);
+}
+
+/*----------------------------------------------------------------------------
  * Dump of a mesh structure.
  *
  * parameters:

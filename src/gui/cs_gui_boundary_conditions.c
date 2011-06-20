@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -52,6 +52,7 @@
 #include <bft_mem.h>
 #include <bft_error.h>
 #include <bft_printf.h>
+#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -1175,6 +1176,7 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
     int izone, ith_zone, zone_nbr;
     int ifac, ifbr;
     int i, ivar, icharb, iclass, iwall;
+    double t0;
     double norm = 0.;
     double X[3];
     int *faces_list = NULL;
@@ -1324,6 +1326,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                 }
                 else if (cs_gui_strcmp(choice_v, "norm_formula"))
                 {
+                    t0 = bft_timer_wtime();
+
                     mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
                     mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
                     mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
@@ -1347,6 +1351,9 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         rcodcl[vars->rtp[2] * (*nfabor) + ifbr] = boundaries->diry[izone] * norm;
                         rcodcl[vars->rtp[3] * (*nfabor) + ifbr] = boundaries->dirz[izone] * norm;
                     }
+
+                    cs_gui_add_mei_time(bft_timer_wtime() - t0);
+
                 }
             }
             else if (cs_gui_strcmp(choice_d, "normal"))
@@ -1387,6 +1394,8 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                                  + boundaries->diry[izone] * boundaries->diry[izone]
                                  + boundaries->dirz[izone] * boundaries->dirz[izone]);
 
+                    t0 = bft_timer_wtime();
+
                     mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
                     mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
                     mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
@@ -1409,10 +1418,15 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                         for (i = 1; i < 4; i++)
                             rcodcl[vars->rtp[i] * (*nfabor) + ifbr] = -surfbo[3 * ifbr + vars->rtp[i]-1] * norm;
                     }
+
+                    cs_gui_add_mei_time(bft_timer_wtime() - t0);
+
                 }
             }
             else if (cs_gui_strcmp(choice_d, "formula"))
             {
+                t0 = bft_timer_wtime();
+
                 mei_tree_insert(boundaries->direction[izone], "t", *ttcabs);
                 mei_tree_insert(boundaries->direction[izone], "dt", *dtref);
                 mei_tree_insert(boundaries->direction[izone], "iter", *ntcabs);
@@ -1494,6 +1508,9 @@ void CS_PROCF (uiclim, UICLIM)(const    int *const ntcabs,
                             rcodcl[vars->rtp[i] * (*nfabor) + ifbr] = X[i-1] * norm;
                     }
                 }
+
+                cs_gui_add_mei_time(bft_timer_wtime() - t0);
+
             }
             BFT_FREE(choice_v);
             BFT_FREE(choice_d);

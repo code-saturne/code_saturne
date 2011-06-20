@@ -9,7 +9,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2007  EDF
+  Copyright (C) 2007-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -178,6 +178,20 @@ const char *
 fvm_selector_get_missing(const fvm_selector_t  *this_selector,
                          int                    criteria_id,
                          int                    missing_id);
+
+/*----------------------------------------------------------------------------
+ * Get statistics on selector usage
+ *
+ * parameters:
+ *   this_selector <-- pointer to selector
+ *   n_evals       <-> number of evaluations, or NULL
+ *   eval_wtime    <-> evaluation wall-clock time, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_selector_get_stats(const fvm_selector_t  *this_selector,
+                       int                   *n_evals,
+                       double                *eval_wtime);
 
 /*----------------------------------------------------------------------------
  * Dump the contents of a selector structure in human readable form
