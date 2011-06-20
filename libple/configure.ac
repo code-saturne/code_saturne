@@ -4,7 +4,7 @@
 #   This file is part of the "Parallel Location and Exchange" library,
 #   intended to provide mesh or particle-based code coupling services.
 #
-#   Copyright (C) 2005-2010  EDF
+#   Copyright (C) 2005-2011  EDF
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Lesser General Public
@@ -367,12 +367,10 @@ PLE_AC_CONFIG_INFO_FINALIZE
 
 #------------------------------------------------------------------------------
 
-# If we use GNU gettext, we need intl/Makefile, po/Makefile, and m4/Makefile.
+# If we use GNU gettext, we need to add po/Makefile.
 
-# AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile doc/Makefile
-#                  intl/Makefile po/Makefile.in m4/Makefile])
-
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile
+                 doc/Makefile doc/doxygen/Makefile])
 
 #------------------------------------------------------------------------------
 

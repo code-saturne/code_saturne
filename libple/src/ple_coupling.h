@@ -121,7 +121,7 @@ typedef struct {
 #if defined(PLE_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * This function builds a group id within a communicator based on its name.
+ * Build a group id within a communicator based on its name.
  *
  * If multiple groups are present, ids are number from 0 to n_groups - 1,
  * based on the odering of group names. If all processes have the same
@@ -135,7 +135,7 @@ typedef struct {
  *
  * parameters:
  *   comm       <-- MPI communicator.
- *   group_name <-- name associated with current group
+ *   group_name <-- name associated with current group.
  *
  * returns:
  *   id associated with local name.

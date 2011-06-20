@@ -33,9 +33,7 @@ AUX_DIST = $(ac_aux_dir)/config.guess \
 
 MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
-# SUBDIRS = src tests doc intl m4 po
-
-SUBDIRS = src tests
+SUBDIRS = src tests doc
 
 EXTRA_DIST = $(ac_aux_dir)/ple_auto_flags.sh \
              $(ac_aux_dir)/ple_config_info.m4 \

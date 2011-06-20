@@ -9,7 +9,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2010  EDF
+  Copyright (C) 2005-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -361,9 +361,6 @@ ple_locator_get_exterior_list(const ple_locator_t  *this_locator);
  *
  * parameters:
  *   this_locator <-- pointer to locator structure
- *
- * returns:
- *   list of points not located (1 to n numbering).
  *----------------------------------------------------------------------------*/
 
 void
@@ -491,7 +488,7 @@ ple_locator_set_async_threshold(int threshold);
  * Register communication logging functions for locator instrumentation.
  *
  * By default, locators are not instrumented.
-
+ *
  * Functions using MPE may be defined and used, but other similar systems
  * may be used.
  *

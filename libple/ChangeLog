@@ -1,3 +1,7 @@
+2011-06-20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Add Doxygen documentation.
+
 2011-05-23  David Monfort <david.monfort@edf.fr>
 
 	* Update backup and bootstrap scripts.

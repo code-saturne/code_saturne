@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2010  EDF
+  Copyright (C) 2005-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,11 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+/*!
+ * \file ple_coupling.c
+ *
+ * \brief Set up communication with coupled codes.
+ */
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -283,8 +288,9 @@ _coupling_mpi_set_synchronize_roots(ple_coupling_mpi_set_t  *s,
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * This function builds a group id within a communicator based on its name.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a group id within a communicator based on its name.
  *
  * If multiple groups are present, ids are number from 0 to n_groups - 1,
  * based on the odering of group names. If all processes have the same
@@ -296,13 +302,12 @@ _coupling_mpi_set_synchronize_roots(ple_coupling_mpi_set_t  *s,
  * As this function requires communication between applications, it
  * is a collective function in comm.
  *
- * parameters:
- *   comm       <-- MPI communicator.
- *   group_name <-- name associated with current group
+ * \param  [in]  comm       MPI communicator.
+ * \param  [in]  group_name name associated with current group.
  *
- * returns:
- *   id associated with local name.
- *----------------------------------------------------------------------------*/
+ * \return id associated with local name.
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 ple_coupling_mpi_name_to_id(MPI_Comm     comm,
@@ -454,8 +459,9 @@ ple_coupling_mpi_name_to_id(MPI_Comm     comm,
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Discover other applications in a set with a common communicator.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Discover other applications in a set with a common communicator.
  *
  * In most cases, the base communicator is MPI_COMM_WORLD, and the local
  * application communicator app_comm is usually obtained from it using
@@ -465,17 +471,16 @@ ple_coupling_mpi_name_to_id(MPI_Comm     comm,
  * As this function requires communication between applications, it
  * is a collective function in base_comm.
  *
- * parameters:
- *   sync_flag <-- 1 if application is to be synchronized at each
- *                 time step, 0 if independent from others.
- *   app_type  <-- name of current application type (software name).
- *   app_name  <-- name of current application (data/case name).
- *   base_comm <-- communicator associated with all applications.
- *   app_comm  <-- communicator associated with local application.
+ * \param[in] sync_flag 1 if application is to be synchronized at each
+ *                      time step, 0 if independent from others.
+ * \param[in] app_type  name of current application type (software name).
+ * \param[in] app_name  name of current application (data/case name).
+ * \param[in] base_comm communicator associated with all applications.
+ * \param[in] app_comm  communicator associated with local application.
  *
- * returns:
- *   PLE coupling MPI set info structure.
- *----------------------------------------------------------------------------*/
+ * \return PLE coupling MPI set info structure.
+ */
+/*----------------------------------------------------------------------------*/
 
 ple_coupling_mpi_set_t *
 ple_coupling_mpi_set_create(int          sync_flag,
@@ -662,12 +667,13 @@ ple_coupling_mpi_set_create(int          sync_flag,
   return s;
 }
 
-/*----------------------------------------------------------------------------
- * Free an PLE coupling MPI set info structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free an PLE coupling MPI set info structure.
  *
- * parameters:
- *   s <-> pointer to structure that should be freed.
- *----------------------------------------------------------------------------*/
+ * \param[in, out] s pointer to structure that should be freed.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 ple_coupling_mpi_set_destroy(ple_coupling_mpi_set_t **s)
@@ -683,15 +689,15 @@ ple_coupling_mpi_set_destroy(ple_coupling_mpi_set_t **s)
   }
 }
 
-/*----------------------------------------------------------------------------
- * Return the number of applications in a coupled set.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of applications in a coupled set.
  *
- * parameters:
- *   s <-- pointer to PLE coupling MPI set info structure.
+ * \param[in] s pointer to PLE coupling MPI set info structure.
  *
- * returns:
- *   number of application in set's common communicator.
- *----------------------------------------------------------------------------*/
+ * \return number of application in set's common communicator.
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 ple_coupling_mpi_set_n_apps(const ple_coupling_mpi_set_t  *s)
@@ -704,15 +710,15 @@ ple_coupling_mpi_set_n_apps(const ple_coupling_mpi_set_t  *s)
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Return the id of the local application in a coupled set.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the id of the local application in a coupled set.
  *
- * parameters:
- *   s <-- pointer to PLE coupling MPI set info structure.
+ * \param[in] s pointer to PLE coupling MPI set info structure.
  *
- * returns:
- *   id of the local application in set's common communicator.
- *----------------------------------------------------------------------------*/
+ * \return id of the local application in set's common communicator.
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 ple_coupling_mpi_set_get_app_id(const ple_coupling_mpi_set_t  *s)
@@ -725,16 +731,16 @@ ple_coupling_mpi_set_get_app_id(const ple_coupling_mpi_set_t  *s)
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Return application information in set's common communicator.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return application information in set's common communicator.
  *
- * parameters:
- *   s      <-- pointer to PLE coupling MPI set info structure.
- *   app_id <-- application id
+ * \param[in] s       pointer to PLE coupling MPI set info structure.
+ * \param[in] app_id  application id
  *
- * returns:
- *   application information structure.
- *----------------------------------------------------------------------------*/
+ * \return application information structure.
+ */
+/*----------------------------------------------------------------------------*/
 
 ple_coupling_mpi_set_info_t
 ple_coupling_mpi_set_get_info(const ple_coupling_mpi_set_t  *s,
@@ -761,14 +767,15 @@ ple_coupling_mpi_set_get_info(const ple_coupling_mpi_set_t  *s,
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Synchronize applications in a set.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize applications in a set.
  *
- * parameters:
- *   s         <-- pointer to PLE coupling MPI set info structure.
- *   sync_flag <-- synchronization info for current application.
- *   time_step <-- time step for current application.
- *----------------------------------------------------------------------------*/
+ * param[in] s         pointer to PLE coupling MPI set info structure.
+ * param[in] sync_flag synchronization info for current application.
+ * param[in] time_step time step for current application.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 ple_coupling_mpi_set_synchronize(ple_coupling_mpi_set_t  *s,
@@ -813,20 +820,20 @@ ple_coupling_mpi_set_synchronize(ple_coupling_mpi_set_t  *s,
   PLE_FREE(glob_vals);
 }
 
-/*----------------------------------------------------------------------------
- * Get status of applications in a set.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get status of applications in a set.
  *
  * This function allows access to the status flag of each synchronized
  * application in the set. It may be used immediately after
  * ple_coupling_mpi_set_create(), and flags are updated after each
  * call to ple_coupling_mpi_set_synchronize().
  *
- * parameters:
- *   s <-- pointer to PLE coupling MPI set info structure.
+ * param[in] s pointer to PLE coupling MPI set info structure.
  *
- * returns:
- *   a pointer to the set's array of status flags
- *----------------------------------------------------------------------------*/
+ * \return a pointer to the set's array of status flags
+ */
+/*----------------------------------------------------------------------------*/
 
 const int *
 ple_coupling_mpi_set_get_status(const ple_coupling_mpi_set_t  *s)
@@ -840,18 +847,18 @@ ple_coupling_mpi_set_get_status(const ple_coupling_mpi_set_t  *s)
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Get time steps in a set.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get time steps in a set.
  *
  * This function may be called after ple_coupling_mpi_set_synchronize()
  * to access the time step values of each synchronized application in the set.
  *
- * parameters:
- *   s <-- pointer to PLE coupling MPI set info structure.
+ * \param[in] s pointer to PLE coupling MPI set info structure.
  *
- * returns:
- *   a pointer to the set's array of time steps
- *----------------------------------------------------------------------------*/
+ * \return a pointer to the set's array of time steps
+ */
+/*----------------------------------------------------------------------------*/
 
 const double *
 ple_coupling_mpi_set_get_timestep(const ple_coupling_mpi_set_t  *s)
@@ -866,20 +873,21 @@ ple_coupling_mpi_set_get_timestep(const ple_coupling_mpi_set_t  *s)
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Create an intracommunicator from a local and distant communicator
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create an intracommunicator from a local and distant communicator
  * within a base communicator.
  *
- * parameters:
- *   base_comm     <-- communicator associated with both applications
- *   app_comm      <-- communicator associated with local application
- *   distant_root  <-- rank of distant group leader in base_comm
- *   new_comm      --> pointer to new communicator
- *   local_range   --> first and past-the last ranks of local application
- *                     in new communicator
- *   distant_range --> first and past-the last ranks of distant application
- *                     in new communicator
- *----------------------------------------------------------------------------*/
+ * \param[in] base_comm     communicator associated with both applications
+ * \param[in] app_comm      communicator associated with local application
+ * \param[in] distant_root  rank of distant group leader in base_comm
+ * \param[in] new_comm      pointer to new communicator
+ * \param[in] local_range   first and past-the last ranks of local application
+ *                          in new communicator
+ * \param[in] distant_range first and past-the last ranks of distant
+ *                          application in new communicator
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 ple_coupling_mpi_intracomm_create(MPI_Comm   base_comm,
@@ -950,12 +958,13 @@ ple_coupling_mpi_intracomm_create(MPI_Comm   base_comm,
   distant_range[1] = distant_range[0] + n_dist_ranks;
 }
 
-/*----------------------------------------------------------------------------
- * Dump printout of an PLE coupling MPI set info structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump printout of an PLE coupling MPI set info structure.
  *
- * parameters:
- *   w <-- pointer to PLE coupling MPI set info structure.
- *----------------------------------------------------------------------------*/
+ * \param[in] w pointer to PLE coupling MPI set info structure.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 ple_coupling_mpi_set_dump(const ple_coupling_mpi_set_t  *s)
