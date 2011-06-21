@@ -340,6 +340,9 @@ not provide these libraries, there are several alternatives:
 
 \subsubsection{\scotch and \ptscotch\label{sec:ext:scotch}}
 
+Note that both \scotch and \ptscotch may be built from the same source
+tree, and installed together with no name conflicts.
+
 For better performance, \ptscotch may be built to use threads with concurrent
 MPI calls. This requires initializing MPI with \texttt{MPI\_Init\_thread}
 with \texttt{MPI\_THREAD\_MULTIPLE} (instead of the more restrictive
@@ -360,6 +363,32 @@ In case of trouble, note especially the explanation relative to the
 sizes of structures. On BlueGene/P type machines, it may be necessary
 to start the build process, let it fail, run this executable
 manually using \texttt{mpirun}, then pursue the build process.
+
+\subsubsection{\med\label{sec:ext:med}}
+
+The Autotools installation of MED is simple on most machines,
+but a few remarks may be useful for specific cases.
+
+MED has a C API, is written in a mix of C and C++ code,
+and provides both a C (\texttt{libmedC}) and an Fortran API
+(\texttt{libmed}). Both libraries are always built, so a Fortran
+compiler is required, but \CS only links using the C API, so using
+a different Fortran compiler to build MED and \CS is possible.
+
+MED does require a C++ runtime library, which is usually transparent
+when shared libraries are used. When built with static libraries
+only, this is not sufficient, so when testing for a MED library,
+the \CS \texttt{configure} script also tries linking with a C++
+compiler if linking with a C compiler fails. This must be the
+same compiler that was used for MED, to ensure the runtime matches.
+The choice of this C++ compiler may be defined passing the
+standard \texttt{CXX} variable to \texttt{configure}.
+
+Also, when building MED in a cross-compiling situation,
+\texttt{--med-int=int} or \texttt{--med-int=int64\_t} (depending
+on whether 32 or 64 bit ids should be used) should be
+passed to its \texttt{configure} script to avoid a run-time
+test.
 
 \section{Preparing for build\label{sec:prepare}}
 
@@ -413,10 +442,11 @@ for every {\tt --with-}, {\tt --without-} is also possible.
 Select configuration options, then run {\tt configure}, for example:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ ../../saturne/configure \textbackslash \\
+\$ /home/user/Code\_Saturne/2.1/saturne/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.1/arch/prod
 \textbackslash \\
-\textcolor{Violet}{--with-mpi}=/home/user/opt/mpich2-1.4
+\textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
+\textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
 
 In the rest of this section, we will assume that we are in
@@ -426,13 +456,35 @@ that third-party libraries used by \CS are either available
 as part of the base system (i.e. as packages in a Linux distribution),
 as Environment Modules, or are installed under a separate path.
 
-For our examples, Let us define environment variables repectively reflecting the \CS
-source path, installation path, and a path where optional libraries are installed:
+For a single architecture and an account named projects, with
+a specific installation of the CGNS and MED IO librairies,
+based on a system-wide installation of HDF5 (which will be auto-detected),
+and using MPI compiler wrappers, a configure command may look like this:
+
+\subsection{Debug builds\label{sec:config:shared}}
+
+It may be useful to install debug builds alongside production
+builds of \CS, especially when user subroutines are used
+and the risk of crashes due to user programming error is high.
+Running the code using a debug build is significantly
+slower, but more information may be available in the case
+of a crash, helping understand and fix the problem faster.
+
+Here, having a consistent and practical naming scheme is useful.
+For a side-by-side debug build for the example above, we simply replace \texttt{prod} by
+\texttt{dbg} in the \texttt{--prefix} option, and add
+\texttt{--enable-debug} to the configure command:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{SRC\_PATH}=/gpfs/home/projects/Code\_Saturne/2.1 \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/gpfs/home/projects/Code\_Saturne/2.1 \\
-\$ \textcolor{OliveGreen}{CS\_OPT}=/gpfs/home/projects/opt
+\$ cd ..\\
+\$ mkdir dbg\\
+\$ cd dbg\\
+\$ ../../saturne/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.1/arch/\textcolor{Magenta}{dbg}
+\textbackslash \\
+\textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
+\textcolor{Magenta}{--enable-debug} \textbackslash \\
+\textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc \textcolor{red}{FC}=gfortran
 }\end{minipage}}
 
 \subsection{Shared or static builds\label{sec:config:shared}}
@@ -455,6 +507,107 @@ with static libraries only will not completely overwrite a build using
 shared libraries, so uninstalling the previous build first
 is recommended.
 
+\subsection{MPI compiler wrappers\label{sec:config:mpicc}}
+
+MPI environments generally provide compiler wrappers, usually
+with names similar to \texttt{mpicc} for C, \texttt{mpicxx} for C++,
+and \texttt{mpif90} for Fortran 90. Wrappers conforming to the
+MPI standard recommendations should provide a \texttt{-show}
+option, to show which flags are added to the compiler so as to
+enable MPI. Using wrappers is fine as long as several third-party tools
+do not provide their own wrappers, in which case either
+a priority must be established. For example, using HDF5's
+\texttt{h5pcc} compiler wrapper includes the options used by
+\texttt{mpicc} when building HDF5 with parallel IO, in addition to
+HDF5's own flags, so it could be used instead of \texttt{mpicc}.
+On the contrary, when using a serial build of HDF5 for a parallel
+build of \CS, the \texttt{h5cc} and \texttt{mpicc} wrappers
+contain different flags, so they are in conflict.
+
+Also, some MPI compiler wrappers may include optimization options
+used to build MPI, which may be different from those we wish to use
+that were passed. 
+
+To avoid issues with MPI wrappers, it is possible to select an
+MPI library using the \texttt{--with-mpi} option to \texttt{configure}.
+For finer control, \texttt{--with-mpi-include} and \texttt{--with-mpi-lib}
+may be defined separately.
+
+Still, this may not work in all cases, as a fixed list of libraries
+is tested for, so using MPI compiler the simplest and safest
+solution. Simply use a \texttt{CC=mpicc} or similar option instead
+of \texttt{--with-mpi}.
+
+\emph{Never} use an \texttt{FC=mpif90} or equivalent option:
+in \CS, MPI is never called directly from Fortran code,
+so compiler wrappers are not necessary, but they can lead to
+build failures, especially in cross-compilation
+configurations.\footnote{\texttt{configure} determines which libraries are
+necessary to link the Fortran runtime using a C or C++ compiler as a linker.
+This avoids conflicts between linking with a C++ compiler and linking with a
+Fortran compiler when both runtimes are necessary,
+for example when using the MED library.
+When using an MPI fortran wrapper, extra libraries that are not normally
+necessary will be added to those we link with, and the Libtool script
+that is part of the build system will often try to add further dependencies,
+mixing-up front-end and compute node compiler options and
+libraries (Libtool may be very practical when it works, but in complex
+situations where is guesses incorrectly at the commands it should run, it always
+acts as if it knows best, and is very difficult to work around).}
+
+\subsection{Environment Modules\label{sec:config:envmode}}
+
+As noted in \S\ref{sec:obtain_ext_lib}, on systems providing
+Environment Modules with the {\tt module} command, \CS's {\tt configure}
+script detects which modules are loaded and saves
+this list so that future runs of the code use that same environment,
+rather than the user's environment, so as to allows using versions of
+\CS built with different modules safely and easily.
+
+Given this, it is recommended that when configuring and installing
+\CS, only the modules necessary for that build be loaded.
+
+\subsection{Remarks for very large meshes\label{sec:config:largemesh}}
+
+If \CS is to be run on large meshes, several precautions regarding
+its configuration and that of third-party sofware must be taken.
+
+in addition to local connectivity arrays, \CS uses gobal element ids
+for some operations, such as reading and writing meshes and restart files,
+parallel interface element matching, and postprocessing output.
+For a hexahedral mesh with $N$ cells,
+the number of faces is about $3N$ (6 faces per cell, shared by 2 cells each).
+With 4 cells per face, the $face \rightarrow vertices$ array is of size
+of the order of $4\times3N$, so global ids used in that array's index
+will reach $2^{31}$ for a mesh in the range of $2^{31} / 12 \approxeq 178.10^6$.
+In practice, we have encountered a limit with slightly smaller meshes,
+around 150 milion cells.
+
+Above 150 million hexahedral cells or so, it is thus imperative to configure
+the build to use 64-bit global element ids, with the
+{\tt --enable-long-gnum} option. Local indexes will still use
+the default {int} size, so memory consumption will only be slightly
+increased.
+
+Recent versions of some third-party libraries may also optionally use 64-bit ids,
+independently of each other or of \CS.
+This is the case for the \scotch and \metis, MED and
+CGNS libraries. In the case of graph-based partitioning, only
+global cell ids are used, so 64-bit ids should not in theory be necessary
+for meshes under 2 billion cells. In a similar vein, for post-processing output
+using nodal connectivity, 64-bit global ids should only be an imperative
+when the number of cells or vertices approaches 2 billion.
+Practical limits may be lower, if some intermediate internal counts
+reach these limits earlier.
+
+Note also that \metis 4 is known to crash for meshes in the range of
+35 million cells and above, so \metis 5 or \scotch are a necessary.
+Partitoning a 158 million hexahedral mesh using \metis 5
+on a front-end node with 128 Gb memory is possible,
+but partitioning the same mesh on cluster nodes with 24 Gb each
+may not, so using parallel partitioning \ptscotch or \parmetis
+should be preferred.
+
 \subsection{Example configuration commands\label{sec:config:examples}}
 
 Most available prerequisites are auto-detected, so to install the
@@ -465,25 +618,17 @@ a command such as:
 
 should be sufficient.
 
-For a single architecture and an account named projects, with
-a specific installation of the CGNS and MED IO librairies,
-based on a system-wide installation of HDF5 (which will be auto-detected),
-and using MPI compiler wrappers, a configure command may look like this:
+For the following examples, Let us define environment variables repectively
+reflecting the \CS source path, installation path, and a path where optional
+libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ /home/user/Code\_Saturne/2.1/saturne/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.1/arch/prod
-\textbackslash \\
-\textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=/home/user/opt/cgns-3.1 \textbackslash \\
-\textcolor{red}{CC}=mpicc \textcolor{red}{FC}=gfortran
+\$ \textcolor{OliveGreen}{SRC\_PATH}=/gpfs/home/projects/Code\_Saturne/2.1 \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/gpfs/home/projects/Code\_Saturne/2.1 \\
+\$ \textcolor{OliveGreen}{CS\_OPT}=/gpfs/home/projects/opt
 }\end{minipage}}
 
-For a side-by-side debug build, we simply replace \texttt{prod} by
-\texttt{dbg} in the \texttt{--prefix} option, and add
-\texttt{--enable-debug} to the configure command.
-
-For an install using a reference account named projects on which multiple
+For an install on which multiple
 versions and architectures of the code should be available,
 configure commands with all bells and whistles (except SALOME support) for a
 build on a cluster named \texttt{ivanoe}, using the Intel compilers
@@ -523,19 +668,52 @@ associated to that compiler, so if versions using different compilers
 are to be installed, it is recommended to use a naming scheme
 which reflects this.
 
-For additional side-by-side debug builds, we simply add \texttt{\_dbg} to
-each \texttt{--prefix} option, and add \texttt{--enable-debug}
-to the configure command.
-
 \subsubsection{Cross-compiling}
 
-On machines with different front-end and compute node architecturs,
-such as IBM Blue Gene/P, cross-compiling is necessay.
-To install and run \CS, 2 builds are recommended:
+On machines with different front-end and compute node architectures,
+such as IBM Blue Gene/P, cross-compiling is necessary.
+To install and run \CS, 2 builds are required:
 
-On the front-end, we have the ``main'' install (the one directly
-used by the users). We will not need MPI, as this build is not intended for
-calculations, but for the scripts, GUI, preprocessor, documentation:
+\begin{itemize}
+\item a ``front-end'' build, based on front-end node's architecture. This is
+      the build whose \texttt{code\_saturne} command, GUI, and documentation
+      will be used, and with which meshes may be imported (i.e. whose
+      Preprocessor will be used). This build is not intended for calculations,
+      though it could be used for mesh quality criteria checks.
+      This build will thus usually not need  MPI.
+\item a ``compute'' build, cross-compiled to run on the compute nodes.
+      This build does not need to include the GUI, documentation, or
+      the pre-processor.
+\end{itemize}
+
+A debug variant of the compute build is also recommended, as always.
+Providing a debug variant of the front-end build is not generally useful.
+
+A post-install step (see \S\ref{sec:post_install}) will allow
+the scripts of the front-end build to access the compute build in a transparent
+manner, so it will appear to the users that they are simply working with that
+build.
+
+Depending on their role, optional third-party libraries should be installed
+either for the front-end, for the compute nodes, or both:
+
+\begin{itemize}
+\item BLAS will be useful only for the compute nodes, and are generally
+      always available on large compute facilities.
+\item Python and PyQt4 will run on the front-end node only.
+\item Libxml2 must be available for the compute nodes if the GUI is used.
+\item HDF5, MED and CGNSlib may be used by the Preprocessor on the front-end node
+      to import meshes, and by the main solver on the compute nodes
+      to output visualization meshes and fields.
+\item libCCMIO is used by the Preprocessor exclusively, so it may be needed on the
+      front-end node only.
+\item \scotch or \metis may be used by a front-end node build of the
+      partitioner, as serial partitioning of large meshes requires a lot of memory.
+\item \ptscotch or \parmetis may be used by a compute node build of the
+      partitioner.
+\end{itemize}
+
+For an example, let us start with the front-end build:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/saturne/configure \textbackslash \\
@@ -550,6 +728,11 @@ calculations, but for the scripts, GUI, preprocessor, documentation:
 \textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/frontend/bin/python \textbackslash \\
 \textcolor{red}{CFLAGS}="-m64" \textcolor{red}{FCFLAGS}="-m64" \textcolor{red}{CXXFLAGS}="-m64"
 }\end{minipage}}
+
+In this example, the front-end node is based on an IBM Power architecture,
+on which the GCC compiler is available, but produces 32-bit code by default.
+Adding the \texttt{"-m64"} flags force the compiler into 64-bit mode, allowing
+the Preprocessor to import meshes up into the 100-million cell range.
 
 For the compute node, we use the same version of Python (which
 is used only for the GUI and scripts, which only run on the front-end
@@ -581,21 +764,17 @@ compute nodes:
 
 Here, the \texttt{--build=ppc64 --host=bluegenep} options ensure the
 \texttt{configure} script into cross-compilation mode.
-In this example, the front-end node on which we are compiling is based
-on an IBM Power architecture. With an Intel or AMD, architecture,
-\texttt{--build=x86\_64} or \texttt{--build=amd64} should be used. For
-the host (target) architecture, \texttt{--host=bluegenep} is recognized by
-current GNU Autoconf versions, so it is preferred, but
-\texttt{--host=ppc} also works well. Actually, any choice of build and host
-architectures recognized by Autoconf would probably work,
-as long as build and host are different.
+With a front-end base on an Intel or AMD, architecture,
+\texttt{--build=x86\_64} or \texttt{--build=amd64} should be used
+instead of \texttt{--build=ppc64}. For the host (target) architecture,
+\texttt{--host=bluegenep} is recognized by current GNU Autoconf versions,
+so it is preferred, but \texttt{--host=ppc} also works well. Actually,
+any choice of build and host architectures recognized by Autoconf would
+probably work, as long as build and host are different.
 
 The C++ compiler is also specified, as it will be needed for
-the link stage due to C++ dependencies in the MED library: when building
-with shared libraries, this is not necessary, but if the configuration
-script is not able to link with MED using the C compiler, it tries
-switching to the C++ compiler in case we are only using statically-linked
-libraries (which is the case here).
+the link stage due to C++ dependencies in the MED library,
+which is a static library in this example (see \S\ref{sec:ext:med}).
 
 Note that in the above examples, we specified an install of the \scotch
 partitioning library both for the front-end and for the compute nodes.
@@ -609,15 +788,15 @@ on the compute nodes.
 If \texttt{configure} fails and reports an error, the message should
 be sufficiently clear in most case to understand the cause of the
 error and fix it. Do not forget that for libraries installed using
-packages, the developement versions of those pacakges are also
+packages, the development versions of those packages are also
 necessary, so if configure fails to detect a package which you
-beleive is installed, check the matching developement package.
+believe is installed, check the matching development package.
 
 Also, whether it succeeds or fails, \texttt{configure} generates
 a file named \texttt{config.log}, which contains details on tests
 run by the script, and is very useful to troubleshoot
-configuation problems. When \texttt{configure} fails du to a given
-third-part library, details on tests relative to that library
+configuration problems. When \texttt{configure} fails due to a given
+third-party library, details on tests relative to that library
 are found in the \texttt{config.log} file. The interesting information
 is usually in the middle of the file, so you will need to search
 for strings related to the library to find the test that failed
@@ -641,7 +820,7 @@ To uninstall an installed build, use \texttt{make uninstall}.
 To clear all configuration info, use \texttt{make distclean}
 (\texttt{make uninstall} will not work after this).
 
-\section{Post-install\label{sec:post}}
+\section{Post-install\label{sec:post_install}}
 
 Once the code is installed, a post-install step may
 be used for computing environments using a batch system,
