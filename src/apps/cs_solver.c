@@ -329,8 +329,7 @@ cs_run(void)
   cs_user_postprocess_meshes();
   cs_post_init_meshes(check_mask);
 
-#if 0
-  /* For debugging purposes */
+#if 0 && defined(DEBUG) && !defined(NDEBUG) /* For debugging purposes */
   cs_mesh_dump(cs_glob_mesh);
   cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
 #endif
