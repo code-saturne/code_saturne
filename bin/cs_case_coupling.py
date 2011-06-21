@@ -52,7 +52,9 @@ def get_param(path):
         if i > -1:
             line = line[0:i]
         line = line.strip()
-        i = string.find(line, '--param')
+        if len(line) == 0:
+            continue
+        i = line.find('--param')
         if i >= 0:
             i += len('--param')
             line = line[i:].strip()

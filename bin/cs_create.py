@@ -426,7 +426,7 @@ class Study:
         e_pkg = re.compile('PACKAGE')
         e_dom = re.compile('DOMAIN')
 
-        solver_name = self.package.name
+        solver_name = self.package.code_name
 
         for c in self.cases:
 
@@ -460,7 +460,7 @@ class Study:
 """
     {'solver': 'SYRTHES',
      'domain': 'DOMAIN',
-     'script': 'syrthes.data',
+     'script': 'syrthes_data.syd',
      'n_procs_weight': None,
      'n_procs_min': 1,
      'n_procs_max': None,

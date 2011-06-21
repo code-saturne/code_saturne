@@ -1268,6 +1268,8 @@ class syrthes3_domain(base_domain):
 
         self.coupled_apps = coupled_apps
 
+        self.exec_solver = True
+
     #---------------------------------------------------------------------------
 
     def set_case_dir(self, case_dir):
@@ -1467,7 +1469,7 @@ class syrthes3_domain(base_domain):
         Output summary data into file s
         """
 
-        base_domain.__init__(self)
+        base_domain.summary_info(self, s)
 
         if self.solver_path:
             s.write('    SYRTHES      : ' + self.solver_path + '\n')
@@ -1516,6 +1518,8 @@ class syrthes_domain(base_domain):
         self.echo_comm = None
 
         self.set_coupling_mode('MPI')
+
+        self.exec_solver = True
 
         # Generation of SYRTHES case deferred until we know how
         # many processors are really required
@@ -1647,6 +1651,12 @@ class syrthes_domain(base_domain):
         # Define syrthes case structure
 
         try:
+            config = ConfigParser.ConfigParser()
+            config.read([self.package.get_configfile(),
+                         os.path.expanduser('~/.' + self.package.configfile)])
+            syr_datapath = os.path.join(config.get('install', 'syrthes'),
+                                        os.path.join('share', 'syrthes'))
+            sys.path.insert(0, syr_datapath)
             import syrthes
         except Exception:
             raise RunCaseError("Cannot locate SYRTHES installation.\n")
@@ -1736,7 +1746,7 @@ class syrthes_domain(base_domain):
         Output summary data into file s
         """
 
-        base_domain.__init__(self)
+        base_domain.summary_info(self, s)
 
         if self.solver_path:
             s.write('    SYRTHES      : ' + self.solver_path + '\n')

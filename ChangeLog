@@ -1,6 +1,14 @@
+* 21/06/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Several fixes for SYRTHES coupling.
+  modified files:
+    bin/cs_case_coupling.py
+    bin/cs_case_domain.py
+    bin/cs_create.py
+    bin/runcase_coupling.in
+
 * 20/06/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix extraction of matrix diagonal in CSR mode.
-  modified routine:
+  modified file:
     src/alge/cs_matrix.c
 
 * 20/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
