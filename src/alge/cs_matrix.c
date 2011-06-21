@@ -2071,12 +2071,12 @@ _get_diagonal_csr(const cs_matrix_t  *matrix,
         const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
         cs_int_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
 
+        da[ii] = 0.0;
         for (jj = 0; jj < n_cols; jj++) {
           if (col_id[jj] == ii) {
             da[ii] = m_row[jj];
             break;
           }
-          da[ii] = 0.0;
         }
 
       }
