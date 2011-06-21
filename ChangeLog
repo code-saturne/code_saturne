@@ -1,4 +1,14 @@
 * 21/06/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  SYRTHES 4 coupling synchronization fixes.
+    src/base/caltri.f90
+    src/base/cs_coupling.c
+
+* 21/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix uninitialized value bug for EnSight output of meshes with no connectivity.
+  modified files:
+    src/fvm/fvm_to_ensight.c
+
+* 21/06/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Several fixes for SYRTHES coupling.
   modified files:
     bin/cs_case_coupling.py

@@ -97,6 +97,41 @@ static ple_coupling_mpi_set_t *_cs_glob_coupling_mpi_app_world = NULL;
  *============================================================================*/
 
 /*============================================================================
+ * Public function definitions for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Synchronize couplings.
+ *
+ * Fortran Interface:
+ *
+ * subroutine syncou (ntmabs, ntcabs, dt)
+ * *****************
+ *
+ * integer          ntmabs      : <-> : maximum iteration number
+ * integer          ntcabs      : --> : current iteration number
+ * double precision dt          : <-> : current time step
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syncou, SYNCOU)
+(
+ cs_int_t   *ntmabs,
+ cs_int_t   *ntcabs,
+ cs_real_t  *ttcabs
+)
+{
+  int retval = cs_coupling_synchronize(*ntcabs,
+                                       ntmabs,
+                                       ttcabs);
+
+  if (retval & PLE_COUPLING_REDO_ITERATION)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("A coupled application request the restart of the current time step,\n"
+         "but this is not currently handled."));
+}
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -131,7 +166,8 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
 
     const char app_type[] = CS_APP_NAME " " CS_APP_VERSION;
 
-    int sync_flag = PLE_COUPLING_NO_SYNC;
+    int sync_flag = 0; /* Synchronized */
+
     const char *sync_name[2] = {N_("(point-to-point or not synchronized)"),
                                 N_("(group synchronized)")};
     const char local_add[] = N_(" (this instance)");
@@ -187,6 +223,86 @@ cs_coupling_finalize(void)
 {
   if (_cs_glob_coupling_mpi_app_world != NULL)
     ple_coupling_mpi_set_destroy(&_cs_glob_coupling_mpi_app_world);
+}
+
+/*----------------------------------------------------------------------------
+ * Synchronize couplings.
+ *
+ * parameters:
+ *   n_cur_ts  <-- current time step
+ *   n_max_ts  <-> maximum number of time steps
+ *   dt        <-> current time step value
+ *
+ * returns:
+ *   status mask indicating if we are to run a new iteration or not
+ *----------------------------------------------------------------------------*/
+
+int
+cs_coupling_synchronize(int      n_cur_ts,
+                        int     *n_max_ts,
+                        double  *dt)
+{
+  int retval = PLE_COUPLING_NEW_ITERATION;
+
+#if defined(PLE_HAVE_MPI)
+
+  if (_cs_glob_coupling_mpi_app_world != NULL) {
+
+    int app_id;
+
+    int sync_flag = PLE_COUPLING_NEW_ITERATION;
+
+    const int *status_flag = NULL;
+    const int n_apps = ple_coupling_mpi_set_n_apps(_cs_glob_coupling_mpi_app_world);
+    const double *ts = NULL;
+
+    if (n_cur_ts >= *n_max_ts)
+      sync_flag = PLE_COUPLING_STOP;
+
+    else if (n_cur_ts == *n_max_ts - 1)
+      sync_flag = sync_flag | PLE_COUPLING_LAST;
+
+    /* Synchronize applications */
+
+    ple_coupling_mpi_set_synchronize(_cs_glob_coupling_mpi_app_world,
+                                     sync_flag,
+                                     *dt);
+
+    status_flag
+      = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
+    ts
+      = ple_coupling_mpi_set_get_timestep(_cs_glob_coupling_mpi_app_world);
+
+    retval = 0;
+
+    for (app_id = 0; app_id < n_apps; app_id++) {
+
+      if (status_flag[app_id] & PLE_COUPLING_NO_SYNC)
+        continue;
+
+      else if (status_flag[app_id] & PLE_COUPLING_STOP)
+        *n_max_ts = n_cur_ts;
+
+      else if (status_flag[app_id] & PLE_COUPLING_LAST)
+        if (*n_max_ts > n_cur_ts + 1)
+          *n_max_ts = n_cur_ts + 1;
+
+      if (status_flag[app_id] & PLE_COUPLING_NEW_ITERATION)
+        retval = retval | PLE_COUPLING_NEW_ITERATION;
+      else if (status_flag[app_id] & PLE_COUPLING_REDO_ITERATION)
+        retval = retval | PLE_COUPLING_REDO_ITERATION;
+
+      if (status_flag[app_id] & PLE_COUPLING_UNSTEADY)
+        if (ts[app_id] < *dt)
+          *dt = ts[app_id];
+
+    }
+
+  }
+
+#endif /* defined(PLE_HAVE_MPI) */
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------

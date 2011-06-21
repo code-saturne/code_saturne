@@ -725,6 +725,14 @@ if (itrale.gt.0) then
   call tstsyr (ntmabs, ntcam1)
   !==========
 
+  if (idtvar.eq.0.or.idtvar.eq.1) then
+    call syncou (ntmabs, ntcabs, ra(idt))
+    !==========
+  else
+    call syncou (ntmabs, ntcabs, dtref)
+    !==========
+  endif
+
   if (ntmabs .eq. ntcam1) then
     call csexit (0)
     !==========
@@ -884,6 +892,14 @@ endif
 
 call tstsyr (ntmabs, ntcabs)
 !==========
+
+if (idtvar.eq.0.or.idtvar.eq.1) then
+  call syncou (ntmabs, ntcabs, ra(idt))
+  !==========
+else
+  call syncou (ntmabs, ntcabs, dtref)
+  !==========
+endif
 
 !===============================================================================
 ! 19. SORTIE EVENTUELLE DU FICHIER SUITE
