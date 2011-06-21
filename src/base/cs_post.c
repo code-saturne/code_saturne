@@ -3482,7 +3482,7 @@ cs_post_write_var(int              mesh_id,
 
   _mesh_id = _cs_post_mesh_id_try(mesh_id);
 
-  if (mesh_id < 0)
+  if (_mesh_id < 0)
     return;
 
   post_mesh = _cs_post_meshes + _mesh_id;
@@ -3712,7 +3712,7 @@ cs_post_write_vertex_var(int              mesh_id,
 
   _mesh_id = _cs_post_mesh_id_try(mesh_id);
 
-  if (mesh_id < 0)
+  if (_mesh_id < 0)
     return;
 
   post_mesh = _cs_post_meshes + _mesh_id;
