@@ -71,7 +71,6 @@
 #include "fvm_to_cgns.h"
 #include "fvm_to_med.h"
 #include "fvm_to_ensight.h"
-#include "fvm_to_ensight_v1.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -92,9 +91,9 @@ extern "C" {
 
 /* Number and status of defined formats */
 
-static const int _fvm_writer_n_formats = 4;
+static const int _fvm_writer_n_formats = 3;
 
-static fvm_writer_format_t _fvm_writer_format_list[4] = {
+static fvm_writer_format_t _fvm_writer_format_list[3] = {
 
   /* Built-in EnSight Gold writer */
   {
@@ -112,24 +111,6 @@ static fvm_writer_format_t _fvm_writer_format_list[4] = {
     fvm_to_ensight_export_nodal,       /* export_nodal_func */
     fvm_to_ensight_export_field,       /* export_field_func */
     NULL                               /* flush_func */
-  },
-
-  /* Built-in EnSight Gold writer, older version */
-  {
-    "EnSight Gold (v1 driver)",
-    "7.4 +",
-    (  FVM_WRITER_FORMAT_HAS_POLYGON
-     | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
-    FVM_WRITER_TRANSIENT_CONNECT,
-    NULL,                                 /* n_version_strings_func */
-    NULL,                                 /* version_string_func */
-    fvm_to_ensight_v1_init_writer,        /* init_func */
-    fvm_to_ensight_v1_finalize_writer,    /* finalize_func */
-    fvm_to_ensight_v1_set_mesh_time,      /* set_mesh_time_func */
-    fvm_to_ensight_v1_needs_tesselation,  /* needs_tesselation_func */
-    fvm_to_ensight_v1_export_nodal,       /* export_nodal_func */
-    fvm_to_ensight_v1_export_field,       /* export_field_func */
-    NULL                                  /* flush_func */
   },
 
   /* MED 2.3 or 3.0 writer */
@@ -704,29 +685,6 @@ fvm_writer_init(const char             *name,
     tmp_path = local_dir;
 
   tmp_options = _fvm_writer_option_list(format_options);
-
-  /* Also, temporary option to use legacy EnSight driver
-     (we assume this driver comes just after the new EnSight
-     driver in the formats list) */
-
-  if (   tmp_options != NULL
-      && !strcmp(_fvm_writer_format_list[i].name, "EnSight Gold")) {
-
-    int i1, i2, l_opt;
-    int l_tot = strlen(tmp_options);
-
-    i1 = 0; i2 = 0;
-    while (i1 < l_tot) {
-      for (i2 = i1; i2 < l_tot && tmp_options[i2] != ' '; i2++);
-      l_opt = i2 - i1;
-      if ((l_opt == 2) && (strncmp(tmp_options + i1, "v1", l_opt) == 0)) {
-        i = i+1;
-        break;
-      }
-      for (i1 = i2 + 1; i1 < l_tot && tmp_options[i1] == ' '; i1++);
-    }
-
-  }
 
   /* Initialize writer */
 
