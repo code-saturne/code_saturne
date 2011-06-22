@@ -936,6 +936,7 @@ _abort_on_divergence(cs_multigrid_t    *mg,
     cs_sles_post_error_output_def(mg->info.name,
                                   mesh_id,
                                   symmetric,
+                                  1,
                                   rotation_mode,
                                   _da,
                                   _xa,
@@ -987,7 +988,7 @@ _abort_on_divergence(cs_multigrid_t    *mg,
       BFT_MALLOC(c_res, n_cells_ext, cs_real_t);
 
       cs_grid_get_matrix(g, &_da, &_xa, &_matrix);
-      cs_matrix_set_coefficients(_matrix, symmetric, _da, _xa);
+      cs_matrix_set_coefficients(_matrix, symmetric, NULL, _da, _xa);
 
       cs_matrix_vector_multiply(rotation_mode, _matrix, c_vx[level], c_res);
 
@@ -1214,6 +1215,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                           descent_smoother_type,
                           false, /* Stats not updated here */
                           symmetric,
+                          NULL,  /* block size */
                           _da,
                           _xa,
                           _matrix,
@@ -1247,7 +1249,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
        require adding an argument and exercising caution to ensure the
        correct sign and meaning of the residue. */
 
-    cs_matrix_set_coefficients(_matrix, symmetric, _da, _xa);
+    cs_matrix_set_coefficients(_matrix, symmetric, NULL, _da, _xa);
 
     cs_matrix_vector_multiply(rotation_mode,
                               _matrix,
@@ -1331,6 +1333,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                           coarse_solver_type,
                           false, /* Stats not updated here */
                           symmetric,
+                          NULL,
                           _da,
                           _xa,
                           _matrix,
@@ -1413,6 +1416,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                               ascent_smoother_type,
                               false, /* Stats not updated here */
                               symmetric,
+                              NULL,
                               _da,
                               _xa,
                               _matrix,

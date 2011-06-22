@@ -194,21 +194,44 @@ cs_int_t
 cs_matrix_get_n_rows(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
+ * Return matrix diagonal block sizes.
+ *
+ * Block sizes are defined by a array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to block sizes
+ *----------------------------------------------------------------------------*/
+
+const int *
+cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
  * Set matrix coefficients.
  *
  * Depending on current options and initialization, values will be copied
  * or simply mapped.
  *
+ * Block sizes are defined by an optional array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
  * parameters:
- *   matrix    <-> Pointer to matrix structure
- *   symmetric <-- Indicates if matrix coefficients are symmetric
- *   da        <-- Diagonal values (NULL if zero)
- *   xa        <-- Extradiagonal values (NULL if zero)
+ *   matrix           <-> Pointer to matrix structure
+ *   symmetric        <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size  <-- Block sizes for diagonal, or NULL
+ *   da               <-- Diagonal values (NULL if zero)
+ *   xa               <-- Extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_set_coefficients(cs_matrix_t      *matrix,
                            cs_bool_t         symmetric,
+                           const int        *diag_block_size,
                            const cs_real_t  *da,
                            const cs_real_t  *xa);
 

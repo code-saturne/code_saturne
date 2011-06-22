@@ -1,3 +1,21 @@
+* 22/06/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Prepare matrices and linear solvers for interleaved velocity vectors.
+  Matrix diagonals are dense blocks in this case, extradiagonals are scalars.
+  This also requires adapting cs_perio_sync_var_vect() to interleaved
+  vectors, renaming the non-interleaved version cs_perio_sync_var_vect_ni().
+  modified files:
+    src/alge/cs_benchmark.c
+    src/alge/cs_gradient.c
+    src/alge/cs_matrix.c
+    src/alge/cs_matrix.h
+    src/alge/cs_multigrid.c
+    src/alge/cs_sles.c
+    src/alge/cs_sles.h
+    src/base/cs_perio.c
+    src/base/cs_perio.h
+    src/mesh/cs_mesh.c
+    src/mesh/cs_mesh_coherency.c
+
 * 21/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix incorrect test which prevented variable output on default meshes.
   modified files:

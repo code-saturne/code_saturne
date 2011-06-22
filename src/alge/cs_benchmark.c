@@ -868,6 +868,7 @@ _matrix_assignment_test(int                    n_runs,
   for (run_id = 0; run_id < n_runs; run_id++) {
     cs_matrix_set_coefficients(m,
                                sym_coeffs,
+                               1,
                                da,
                                xa);
   }
@@ -959,6 +960,7 @@ _matrix_vector_test(int                    n_runs,
 
   cs_matrix_set_coefficients(m,
                              sym_coeffs,
+                             1,
                              da,
                              xa);
 
@@ -1049,6 +1051,7 @@ _matrix_vector_test(int                    n_runs,
 
   cs_matrix_set_coefficients(m,
                              sym_coeffs,
+                             1,
                              NULL,
                              xa);
 
@@ -1102,6 +1105,7 @@ _matrix_vector_test(int                    n_runs,
 
   cs_matrix_set_coefficients(m,
                              sym_coeffs,
+                             1,
                              NULL,
                              xa);
 

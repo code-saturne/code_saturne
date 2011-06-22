@@ -465,6 +465,20 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
                        cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------
+ * Synchronize values for a real vector (interleaved) between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> type of halo treatment (standard or extended)
+ *   var       <-> vector to update
+ *----------------------------------------------------------------------------*/
+
+void
+cs_perio_sync_var_vect(const cs_halo_t  *halo,
+                       cs_halo_type_t    sync_mode,
+                       cs_real_t         var[]);
+
+/*----------------------------------------------------------------------------
  * Synchronize values for a real vector between periodic cells.
  *
  * parameters:
@@ -478,12 +492,12 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_vect(const cs_halo_t *halo,
-                       cs_halo_type_t   sync_mode,
-                       cs_perio_rota_t  rota_mode,
-                       cs_real_t        var_x[],
-                       cs_real_t        var_y[],
-                       cs_real_t        var_z[]);
+cs_perio_sync_var_vect_ni(const cs_halo_t *halo,
+                          cs_halo_type_t   sync_mode,
+                          cs_perio_rota_t  rota_mode,
+                          cs_real_t        var_x[],
+                          cs_real_t        var_y[],
+                          cs_real_t        var_z[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor between periodic cells.

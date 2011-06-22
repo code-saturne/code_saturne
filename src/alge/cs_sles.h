@@ -94,6 +94,9 @@ void CS_PROCF(reslin, RESLIN)
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ilved,     /* <-- Interleaved indicator  */
                               /*     1: interleaved; 2: not interleaved */
+#if 0
+ const cs_int_t   *ibsize,    /* <-- Block size of element ii,ii */
+#endif
  const cs_int_t   *ireslp,    /* <-- Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
@@ -180,28 +183,33 @@ cs_sles_needs_solving(const char        *var_name,
  * then released by this function, so coefficients need not be assigned
  * prior to this call, and will have been released upon returning.
  *
+ * Diagonal block sizes are defined by an optional array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
  * parameters:
- *   var_name      <-- Variable name
- *   solver_type   <-- Type of solver (PCG, Jacobi, ...)
- *   update_stats  <-- Automatic solver statistics indicator
- *   symmetric     <-- Symmetric coefficients indicator
- *   ad_coeffs     <-- Diagonal coefficients of linear equation matrix
- *   ax_coeffs     <-- Non-diagonal coefficients of linear equation matrix
- *   a             <-> Matrix
- *   ax            <-> Non-diagonal part of linear equation matrix
- *                     (only necessary if poly_degree > 0)
- *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   verbosity     <-- Verbosity level
- *   n_max_iter    <-- Maximum number of iterations
- *   precision     <-- Precision limit
- *   r_norm        <-- Residue normalization
- *   n_iter        --> Number of iterations
- *   residue       <-> Residue
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
+ *   var_name          <-- Variable name
+ *   solver_type       <-- Type of solver (PCG, Jacobi, ...)
+ *   update_stats      <-- Automatic solver statistics indicator
+ *   symmetric         <-- Symmetric coefficients indicator
+ *   diag_block_size   <-- Block size of element ii,ii
+ *   ad_coeffs         <-- Diagonal coefficients of linear equation matrix
+ *   ax_coeffs         <-- Non-diagonal coefficients of linear equation matrix
+ *   a                 <-> Matrix
+ *   ax                <-> Non-diagonal part of linear equation matrix
+ *                         (only necessary if poly_degree > 0)
+ *   poly_degree       <-- Preconditioning polynomial degree (0: diagonal)
+ *   rotation_mode     <-- Halo update option for rotational periodicity
+ *   verbosity         <-- Verbosity level
+ *   n_max_iter        <-- Maximum number of iterations
+ *   precision         <-- Precision limit
+ *   r_norm            <-- Residue normalization
+ *   n_iter            --> Number of iterations
+ *   residue           <-> Residue
+ *   rhs               <-- Right hand side
+ *   vx                --> System solution
+ *   aux_size          <-- Number of elements in aux_vectors
+ *   aux_vectors       --- Optional working area (allocation otherwise)
  *
  * returns:
  *   1 if converged, 0 if not converged, -1 if not converged and maximum
@@ -213,6 +221,7 @@ cs_sles_solve(const char         *var_name,
               cs_sles_type_t      solver_type,
               cs_bool_t           update_stats,
               cs_bool_t           symmetric,
+              const int          *diag_block_size,
               const cs_real_t    *ad_coeffs,
               const cs_real_t    *ax_coeffs,
               cs_matrix_t        *a,
@@ -234,20 +243,22 @@ cs_sles_solve(const char         *var_name,
  * Output default post-processing data for failed system convergence.
  *
  * parameters:
- *   var_name      <-- Variable name
- *   mesh_id       <-- id of error output mesh, or 0 if none
- *   symmetric     <-- indicates if matrix values are symmetric
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   ad            <-- Diagonal part of linear equation matrix
- *   ax            <-- Non-diagonal part of linear equation matrix
- *   rhs           <-- Right hand side
- *   vx            <-> Current system solution
+ *   var_name          <-- Variable name
+ *   mesh_id           <-- id of error output mesh, or 0 if none
+ *   symmetric         <-- indicates if matrix values are symmetric
+ *   diag_block_size   <-- block size of element ii,ii
+ *   rotation_mode     <-- Halo update option for rotational periodicity
+ *   ad                <-- Diagonal part of linear equation matrix
+ *   ax                <-- Non-diagonal part of linear equation matrix
+ *   rhs               <-- Right hand side
+ *   vx                <-> Current system solution
  *----------------------------------------------------------------------------*/
 
 void
 cs_sles_post_error_output_def(const char       *var_name,
                               int               mesh_id,
                               cs_bool_t         symmetric,
+                              int               diag_block_size,
                               cs_perio_rota_t   rotation_mode,
                               const cs_real_t  *ad,
                               const cs_real_t  *ax,

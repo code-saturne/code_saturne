@@ -353,8 +353,8 @@ _gradient_clipping(const cs_int_t   *imrgra,
         cs_halo_sync_var(halo, halo_type, dpdx);
         cs_halo_sync_var(halo, halo_type, dpdy);
         cs_halo_sync_var(halo, halo_type, dpdz);
-        cs_perio_sync_var_vect(halo, halo_type, CS_PERIO_ROTA_COPY,
-                               dpdx, dpdy, dpdz);
+        cs_perio_sync_var_vect_ni(halo, halo_type, CS_PERIO_ROTA_COPY,
+                                  dpdx, dpdy, dpdz);
       }
 
     } /* End if imligp == 1 */
@@ -650,10 +650,10 @@ _gradient_clipping(const cs_int_t   *imrgra,
       cs_halo_sync_var(halo, halo_type, dpdy);
       cs_halo_sync_var(halo, halo_type, dpdz);
 
-      cs_perio_sync_var_vect(halo,
-                             halo_type,
-                             CS_PERIO_ROTA_COPY,
-                             dpdx, dpdy, dpdz);
+      cs_perio_sync_var_vect_ni(halo,
+                                halo_type,
+                                CS_PERIO_ROTA_COPY,
+                                dpdx, dpdy, dpdz);
 
     }
 
@@ -811,8 +811,8 @@ void CS_PROCF (cgdcel, CGDCEL)
         cs_halo_sync_var(halo, halo_type, fextx);
         cs_halo_sync_var(halo, halo_type, fexty);
         cs_halo_sync_var(halo, halo_type, fextz);
-        cs_perio_sync_var_vect(halo, halo_type, CS_PERIO_ROTA_COPY,
-                               fextx, fexty, fextz);
+        cs_perio_sync_var_vect_ni(halo, halo_type, CS_PERIO_ROTA_COPY,
+                                  fextx, fexty, fextz);
       }
     }
 

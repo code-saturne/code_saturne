@@ -3466,10 +3466,10 @@ cs_mesh_sync_var_vect(cs_real_t  *var1,
   cs_halo_sync_var(halo, CS_HALO_STANDARD, var3);
 
   if (cs_glob_mesh->n_init_perio > 0)
-    cs_perio_sync_var_vect(halo,
-                           CS_HALO_STANDARD,
-                           CS_PERIO_ROTA_COPY,
-                           var1, var2, var3);
+    cs_perio_sync_var_vect_ni(halo,
+                              CS_HALO_STANDARD,
+                              CS_PERIO_ROTA_COPY,
+                              var1, var2, var3);
 }
 
 /*----------------------------------------------------------------------------

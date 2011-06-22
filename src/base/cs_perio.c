@@ -275,6 +275,33 @@ _apply_vector_rotation(cs_real_t   matrix[3][4],
 }
 
 /*----------------------------------------------------------------------------
+ * Compute a matrix/vector product to apply a transformation to a given
+ * vector.
+ *
+ * parameters:
+ *   matrix[3][4] --> matrix of the transformation in homogeneous coord.
+ *                    last line = [0; 0; 0; 1] (Not used here)
+ *   xyz          <-> array of coordinates
+ *----------------------------------------------------------------------------*/
+
+static void
+_apply_vector_rotation_i(cs_real_t    matrix[3][4],
+                         cs_real_t   *xyz)
+{
+  cs_int_t  i;
+
+  cs_real_t  t[3];
+  for (i = 0; i < 3; i++)
+    t[i] = xyz[i];
+
+  /* Initialize output */
+
+  for (i = 0; i < 3; i++)
+    xyz[i] = matrix[i][0]*t[0] + matrix[i][1]*t[1] + matrix[i][2]*t[2];
+
+}
+
+/*----------------------------------------------------------------------------
  * Compute a matrix * tensor * Tmatrix product to apply a rotation to a
  * given tensor
  *
@@ -708,10 +735,10 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
        rotations, something has been done before; see PERINR for example). */
 
     else if (*itenso == 2)
-      cs_perio_sync_var_vect(halo,
-                             CS_HALO_STANDARD,
-                             CS_PERIO_ROTA_IGNORE,
-                             var11, var22, var33);
+      cs_perio_sync_var_vect_ni(halo,
+                                CS_HALO_STANDARD,
+                                CS_PERIO_ROTA_IGNORE,
+                                var11, var22, var33);
 
   } /* End of idimte == 0 case */
 
@@ -719,10 +746,10 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
      it is (at least) a vector. Translation and rotation are exchanged. */
 
   else if (*idimte == 1)
-    cs_perio_sync_var_vect(halo,
-                           CS_HALO_STANDARD,
-                           CS_PERIO_ROTA_COPY,
-                           var11, var22, var33);
+    cs_perio_sync_var_vect_ni(halo,
+                              CS_HALO_STANDARD,
+                              CS_PERIO_ROTA_COPY,
+                              var11, var22, var33);
 
   /* --> If we want to handle the variable as a tensor, we suppose that
      it is a tensor. Translation and rotation are exchanged. */
@@ -850,10 +877,10 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
        rotations, something has been done before; see PERINR for example). */
 
     else if (*itenso == 2)
-      cs_perio_sync_var_vect(halo,
-                             CS_HALO_EXTENDED,
-                             CS_PERIO_ROTA_IGNORE,
-                             var11, var22, var33);
+      cs_perio_sync_var_vect_ni(halo,
+                                CS_HALO_EXTENDED,
+                                CS_PERIO_ROTA_IGNORE,
+                                var11, var22, var33);
 
   } /* End of idimte == 0 case */
 
@@ -861,10 +888,10 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
      it is (at least) a vector. Translation and rotation are exchanged. */
 
   else if (*idimte == 1)
-    cs_perio_sync_var_vect(halo,
-                           CS_HALO_EXTENDED,
-                           CS_PERIO_ROTA_COPY,
-                           var11, var22, var33);
+    cs_perio_sync_var_vect_ni(halo,
+                              CS_HALO_EXTENDED,
+                              CS_PERIO_ROTA_COPY,
+                              var11, var22, var33);
 
   /* --> If we want to handle the variable as a tensor, we suppose that
      it is a tensor. Translation and rotation are exchanged. */
@@ -1932,6 +1959,81 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
 }
 
 /*----------------------------------------------------------------------------
+ * Synchronize values for a real vector (interleaved) between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> vector to update
+ *----------------------------------------------------------------------------*/
+
+void
+cs_perio_sync_var_vect(const cs_halo_t  *halo,
+                       cs_halo_type_t    sync_mode,
+                       cs_real_t         var[])
+{
+  cs_int_t  i, rank_id, shift, t_id;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
+  cs_real_t  x_in, y_in, z_in;
+
+  cs_real_t matrix[3][4];
+
+  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
+
+  const cs_int_t  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts   = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+  const cs_int_t  have_rotation = cs_glob_mesh->have_rotation_perio;
+
+  if (sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    perio_type = fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
+      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std = n_elts + halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          start_ext = n_elts + halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
+
+        }
+
+        for (i = start_std; i < end_std; i++)
+          _apply_vector_rotation_i(matrix, var + i*3);
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          for (i = start_ext; i < end_ext; i++)
+            _apply_vector_rotation_i(matrix, var + i*3);
+
+        }
+
+      } /* End of loop on ranks */
+
+    } /* End of the treatment of rotation */
+
+  } /* End of loop on transformations */
+}
+
+/*----------------------------------------------------------------------------
  * Synchronize values for a real vector between periodic cells.
  *
  * parameters:
@@ -1945,12 +2047,12 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_vect(const cs_halo_t *halo,
-                       cs_halo_type_t   sync_mode,
-                       cs_perio_rota_t  rota_mode,
-                       cs_real_t        var_x[],
-                       cs_real_t        var_y[],
-                       cs_real_t        var_z[])
+cs_perio_sync_var_vect_ni(const cs_halo_t *halo,
+                          cs_halo_type_t   sync_mode,
+                          cs_perio_rota_t  rota_mode,
+                          cs_real_t        var_x[],
+                          cs_real_t        var_y[],
+                          cs_real_t        var_z[])
 {
   cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
