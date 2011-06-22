@@ -248,7 +248,7 @@ The list of third-party software usable with \CS is provided here:
       \ptscotch, but these libraries are faster.
 
       Though broadly available, the licence is quite restrictive,
-      so \scotch and \ptscotch may be preferred (\CS may be built with both
+      so \scotch or \ptscotch may be preferred (\CS may be built with both
       \metis and \scotch libraries).
 
 \end{itemize}
@@ -353,7 +353,7 @@ MPI functions simultaneously, and the use of \texttt{MPI\_THREAD\_MULTIPLE}
 may carry a performance penalty, we prefer to sacrifice some of
 \ptscotch's performance by requiring that it be compiled without the
 \texttt{-DSCOTCH\_PTHREAD} flag. This is not detected at compilation time,
-but with recent MPI libraries, \ptscotch will complain at run tile
+but with recent MPI libraries, \ptscotch will complain at run time
 if it notices that the MPI thread safety level in insufficient.
 
 Detailed build instructions, including troubleshooting instructions,
@@ -852,7 +852,7 @@ the associated compute build.
 \section{Installing for \syrthes coupling\label{sec:syrthes}}
 
 When coupling with \syrthes using MPI, both \CS and \syrthes must
-use the same MPI library, and must use the same version on the
+use the same MPI library, and must use the same version of the
 PLE (Parallel Location and Exchange) library from \CS. By default, PLE
 is built as a sub-library of \CS, but a standalone version may be
 configured and built, using the \texttt{libple/configure} script
