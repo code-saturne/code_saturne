@@ -130,7 +130,6 @@ src/fvm/fvm_tesselation.c
 src/fvm/fvm_to_cgns.c
 src/fvm/fvm_to_ensight.c
 src/fvm/fvm_to_ensight_case.c
-src/fvm/fvm_to_ensight_v1.c
 src/fvm/fvm_to_med.c
 src/fvm/fvm_trace.c
 src/fvm/fvm_triangulate.c
@@ -169,4 +168,5 @@ src/mesh/cs_mesh_halo.c
 src/mesh/cs_mesh_quality.c
 src/mesh/cs_mesh_quantities.c
 src/mesh/cs_mesh_save.c
+src/mesh/cs_mesh_thinwall.c
 src/mesh/cs_mesh_warping.c

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-06-14 12:38+0200\n"
+"POT-Creation-Date: 2011-06-22 14:08+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2915,6 +2915,9 @@ msgid ""
 "\n"
 "%s"
 msgstr ""
+"Éche à la création du répertoire \"%s\":\n"
+"\n"
+"%s"
 
 msgid ""
 "  A similarly named file or directory exists and its status is\n"
@@ -2922,7 +2925,7 @@ msgid ""
 msgstr ""
 
 msgid "  A similarly named file exists and is not a directory."
-msgstr ""
+msgstr "  Un fichier de même nom existe et n'est pas un répertoire."
 
 #, c-format
 msgid ""
@@ -2937,7 +2940,7 @@ msgid ""
 msgstr ""
 
 msgid "unknown"
-msgstr ""
+msgstr "inconnu"
 
 #, c-format
 msgid ""
@@ -3274,19 +3277,19 @@ msgid "CSR, sym coeffs"
 msgstr "CSR, sym coeffs"
 
 msgid "Iterative reconstruction"
-msgstr ""
+msgstr "Reconstruction itérative"
 
 msgid "Least-squares (standard)"
-msgstr ""
+msgstr "Moindres carrés (standard)"
 
 msgid "Least-squares (extended)"
-msgstr ""
+msgstr "Moindres carrés (support étendu)"
 
 msgid "Least-squares (partially extended)"
-msgstr ""
+msgstr "Moindres carrés (support partiellement étendu)"
 
 msgid "Least-squares then iterative"
-msgstr ""
+msgstr "Moindres carrés puis itérative"
 
 #, c-format
 msgid ""
@@ -3383,6 +3386,9 @@ msgstr ""
 
 msgid "The matrix is not defined."
 msgstr "La matrice n'est pas définie."
+
+msgid "Not supported with CSR"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4680,6 +4686,11 @@ msgstr ""
 "Support de librairies partagées non disponible.\n"
 "Impossible de charger : %s\n"
 
+msgid ""
+"A coupled application request the restart of the current time step,\n"
+"but this is not currently handled."
+msgstr ""
+
 msgid "(point-to-point or not synchronized)"
 msgstr "(point à point ou non synchronisé)"
 
@@ -5106,7 +5117,7 @@ msgstr " -p, --param       <nom_du_fichier> fichier de paramètres\n"
 
 #, c-format
 msgid " --preprocess      mesh preprocessing mode\n"
-msgstr ""
+msgstr " --preprocess      pré-traitement du maillage\n"
 
 #, c-format
 msgid " -q, --quality     mesh quality verification mode\n"
@@ -5178,11 +5189,11 @@ msgstr ""
 
 #, c-format
 msgid "every %12.5e s and at calculation end"
-msgstr ""
+msgstr "toutes les %12.5e s et à la fin du calcul"
 
 #, c-format
 msgid "every %d time steps and at calculation end"
-msgstr ""
+msgstr "tous les %d pas de temps et à la fin du calcul"
 
 #, c-format
 msgid "at calculation end"
@@ -5275,7 +5286,7 @@ msgstr ""
 "qui est lui-même déjà un alias du maillage %d.\n"
 
 msgid " edges"
-msgstr ""
+msgstr " arêtes"
 
 #, c-format
 msgid ""
@@ -5327,7 +5338,7 @@ msgstr "Domaine de calcul"
 
 #, c-format
 msgid "No \"%s\" file or directory found."
-msgstr ""
+msgstr "Aucun fichier ou répertoire \"%s\" trouvé."
 
 #, c-format
 msgid ""
@@ -6322,6 +6333,8 @@ msgid ""
 "# Time varying values for: %s\n"
 "#\n"
 msgstr ""
+"# Valeurs dépendantes du temps pour : %s\n"
+"#\n"
 
 #, c-format
 msgid "# Monitoring point coordinates:\n"
@@ -6329,19 +6342,19 @@ msgstr "# Cordonnées des sondes :\n"
 
 #, c-format
 msgid "# Columns:\n"
-msgstr ""
+msgstr "# Colonnes :\n"
 
 #, c-format
 msgid "#   %d:     Time step number\n"
-msgstr ""
+msgstr "#   %d:     Numéro de pas de temps\n"
 
 #, c-format
 msgid "#   %d:     Physical time\n"
-msgstr ""
+msgstr "#   %d:     Temps physique\n"
 
 #, c-format
 msgid "#   %d - :  Values at monitoring points\n"
-msgstr ""
+msgstr "#   %d - :  Valeurs aux sondes\n"
 
 #, c-format
 msgid "Error closing file: \"%s\""
@@ -6784,10 +6797,10 @@ msgid "    Distant halo definition\n"
 msgstr "    Création du halo distant\n"
 
 msgid " Creating halos\n"
-msgstr ""
+msgstr " Création des halos\n"
 
 msgid " Defining halos\n"
-msgstr ""
+msgstr " Définition des halos\n"
 
 #, c-format
 msgid ""
@@ -6838,58 +6851,58 @@ msgid ""
 msgstr ""
 
 msgid "edges"
-msgstr ""
+msgstr "arêtes"
 
 msgid "triangles"
-msgstr ""
+msgstr "triangles"
 
 msgid "quadrangles"
-msgstr ""
+msgstr "quadrangles"
 
 msgid "simple polygons"
-msgstr ""
+msgstr "polygones simples"
 
 msgid "tetrahedra"
-msgstr ""
+msgstr "tétraèdres"
 
 msgid "pyramids"
-msgstr ""
+msgstr "pyramides"
 
 msgid "prisms"
-msgstr ""
+msgstr "prismes"
 
 msgid "hexahedra"
-msgstr ""
+msgstr "hexaèdres"
 
 msgid "simple polyhedra"
-msgstr ""
+msgstr "polyèdres simples"
 
 msgid "edge"
-msgstr ""
+msgstr "arête"
 
 msgid "triangle"
-msgstr ""
+msgstr "triangle"
 
 msgid "quadrangle"
-msgstr ""
+msgstr "quadrangle"
 
 msgid "simple polygon"
-msgstr ""
+msgstr "polygone simple"
 
 msgid "tetrahedron"
-msgstr ""
+msgstr "tétraèdre"
 
 msgid "pyramid"
-msgstr ""
+msgstr "pyramide"
 
 msgid "prism"
-msgstr ""
+msgstr "prisme"
 
 msgid "hexahedron"
-msgstr ""
+msgstr "hexaèdre"
 
 msgid "simple polyhedron"
-msgstr ""
+msgstr "polyèdre simple"
 
 #, c-format
 msgid ""
@@ -6976,7 +6989,7 @@ msgid ""
 msgstr ""
 
 msgid "null"
-msgstr ""
+msgstr "nulle"
 
 msgid "translation"
 msgstr ""
@@ -6985,7 +6998,7 @@ msgid "rotation"
 msgstr ""
 
 msgid "mixed"
-msgstr ""
+msgstr "mixte"
 
 #, c-format
 msgid ""
@@ -7099,13 +7112,13 @@ msgid ""
 msgstr ""
 
 msgid "Operator needs a right operand."
-msgstr ""
+msgstr "L'opérateur nécessite une opérande à droite"
 
 msgid "Operator needs a left operand."
-msgstr ""
+msgstr "L'opérateur nécessite une opérande à gauche"
 
 msgid "Operator should not have a left operand."
-msgstr ""
+msgstr "L'opérateur ne devrait pas avoir une opérande à gauche"
 
 msgid ""
 "  normal[<x>, <y>, <z>, <epsilon>]\n"
@@ -7146,39 +7159,41 @@ msgid "  sphere[<xc>, <yc>, <zc>, <radius>]"
 msgstr ""
 
 msgid "Missing or wrong argument separator."
-msgstr ""
+msgstr "Séparateur d'arguments manquant ou incorrect"
 
 msgid "Missing argument after separator."
-msgstr ""
+msgstr "Argument manquant après un séparateur"
 
 msgid "This geometric function is not implemented."
 msgstr "Cette fonction géométrique n'est pas implantée."
 
 msgid "Wrong number of floating-point arguments."
-msgstr ""
+msgstr "Nombre incorrect d'arguments de type virgule flotante"
 
 msgid ""
 "Expected syntax:\n"
 "  epsilon = <value>\n"
 msgstr ""
+"Syntax attendue :\n"
+"  epsilon = <valeur>\n"
 
 msgid "Unexpected argument(s)."
-msgstr ""
+msgstr "Argument(s) inattendu(s)"
 
 msgid "Missing closing ]."
-msgstr ""
+msgstr "] fermant manquant."
 
 msgid "Function arguments used with an unknown operator."
-msgstr ""
+msgstr "Arguments de fonction utilisés avec un opérateur inconnu."
 
 msgid "Operator does not accept function arguments."
-msgstr ""
+msgstr "L'opérateur n'accepte pas les arguments de fonction"
 
 msgid "Function requires 0 arguments."
-msgstr ""
+msgstr "La fonction prend 0 arguments"
 
 msgid "range[] argument error"
-msgstr ""
+msgstr "Erreur d'arguments de range[]"
 
 msgid ""
 "  range[<first>, <last>]\n"
@@ -7192,29 +7207,29 @@ msgid ""
 msgstr ""
 
 msgid "Inconsistant interval specification."
-msgstr ""
+msgstr "Spécification d'intervalle incohérente"
 
 msgid "Operator needs a floating point operand"
-msgstr ""
+msgstr "L'opérateur nécessite une opérande de type virgule-flottante"
 
 msgid "Expected operator instead of operand."
-msgstr ""
+msgstr "Opérateur attendu au lieu d'une opérande."
 
 msgid "Parenthesis mismatch"
-msgstr ""
+msgstr "Les Parenthèses ne correspondent pas"
 
 msgid "Syntax error, probably due to misplaced operands."
-msgstr ""
+msgstr "Erreur de syntaxe, probablement due à des opérandes mal placés"
 
 msgid "Postfix evaluation error."
-msgstr ""
+msgstr "Erreur d'évaluation du postfix."
 
 msgid "Postfix error: range arguments of different or incorrect type."
-msgstr ""
+msgstr "Erreur postfix: arguments de range[] de types différent ou incorrects."
 
 #, c-format
 msgid "Operator %s not currently implemented."
-msgstr ""
+msgstr "Opérateur %s non encore implémenté."
 
 #, c-format
 msgid ""
@@ -7280,7 +7295,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"cg_coord_partial_write() failed to writeextra vertices coords:\n"
+"cg_coord_partial_write() failed to write extra vertices coords:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
 msgstr ""
@@ -7898,6 +7913,12 @@ msgstr ""
 
 #, c-format
 msgid "Unable to open the file: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Time elapsed defining values using MEI: %12.5f\n"
 msgstr ""
 
 msgid "Number of periodicities (%d) and modes (%) do not match."
@@ -9076,6 +9097,17 @@ msgstr ""
 "\n"
 "     Nombre de faces isolées : %llu\n"
 
+#, c-format
+msgid ""
+"\n"
+"Mesh entity selections by criteria statistics:\n"
+"  entity type     evaluations  elapsed time\n"
+"  -----------------------------------------\n"
+"  cells            %10d  %12.5f\n"
+"  interior faces   %10d  %12.5f\n"
+"  boundary faces   %10d  %12.5f\n"
+msgstr ""
+
 msgid "    Checking the face -> cells connectivity coherency\n"
 msgstr "    Test de cohérence de la connectivité faces -> cellules\n"
 
@@ -9412,17 +9444,3 @@ msgstr ""
 "   %12llu faces avant découpage\n"
 "   %12llu faces après découpage\n"
 "\n"
-
-#~ msgid ""
-#~ "The requested post-processing mesh number\n"
-#~ "(%d) has already been assigned.\n"
-#~ msgstr ""
-#~ "Le numéro de maillage de post traitement demandé\n"
-#~ "(%d) a déjà été affecté.\n"
-
-#~ msgid ""
-#~ "The requested post-processing writer number\n"
-#~ "(%d) has already been assigned.\n"
-#~ msgstr ""
-#~ "Le numéro de gestionnaire de post traitement demandé\n"
-#~ "(%d) a déjà été affecté.\n"

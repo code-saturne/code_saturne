@@ -1000,7 +1000,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
 
               if (retval != CG_OK)
                 bft_error(__FILE__, __LINE__, 0,
-                          _("cg_coord_partial_write() failed to write"
+                          _("cg_coord_partial_write() failed to write "
                             "extra vertices coords:\n"
                             "Associated writer: \"%s\"\n"
                             "Associated base: \"%s\"\n"),
