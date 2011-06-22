@@ -1,3 +1,9 @@
+* 22/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add a libtool rpath option to handle BLAS libraries.
+  modified files:
+    config/cs_blas.m4
+    src/apps/Makefile.am
+
 * 14/06/2011 - Karim Osman <karim.osman@postgrad.manchester.ac.uk>
   Implement the correct behaviour to handle thermal wall-function in
   the framework of the scalable wall-functions.

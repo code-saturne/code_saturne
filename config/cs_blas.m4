@@ -55,10 +55,14 @@ AC_ARG_WITH(blas-lib,
             [if test "x$with_blas" = "xcheck"; then
                with_blas=yes
              fi
-             BLAS_LDFLAGS="-L$with_blas_lib"],
+             BLAS_LDFLAGS="-L$with_blas_lib"
+             # Add the libdir to the runpath as BLAS may not be libtoolized
+             BLAS_RUNPATH="-R$with_blas_lib"],
             [if test "x$with_blas" != "xno" -a "x$with_blas" != "xyes" \
 	          -a "x$with_blas" != "xcheck"; then
                BLAS_LDFLAGS="-L$with_blas/lib"
+               # Add the libdir to the runpath as BLAS may not be libtoolized
+               BLAS_RUNPATH="-R$with_blas/lib"
              fi])
 
 AC_ARG_WITH(blas-type,
@@ -231,6 +235,7 @@ if test "x$with_blas" != "xno" ; then
 
     if test "x$with_blas_type" = "xMKL" ; then
       BLAS_LDFLAGS="${BLAS_LDFLAGS}${mkl_sub_lib}"
+      BLAS_RUNPATH="${BLAS_RUNPATH}${mkl_sub_lib}"
     fi
     unset mkl_sub_lib
 
@@ -349,6 +354,7 @@ fi
 AC_SUBST(BLAS_CPPFLAGS)
 AC_SUBST(BLAS_LDFLAGS)
 AC_SUBST(BLAS_LIBS)
+AC_SUBST(BLAS_RUNPATH)
 
 ])dnl
 
