@@ -55,6 +55,7 @@ use paramx
 use dimens
 use pointe
 use optcal
+use numvar
 use cstphy
 use entsor
 use albase
@@ -679,7 +680,6 @@ call cscini                                                       &
 !==========
  ( nvar   , nscal  )
 
-
 !===============================================================================
 ! 10. DEBUT DE LA BOUCLE EN TEMPS
 !===============================================================================
@@ -720,18 +720,18 @@ endif
 
 if (itrale.gt.0) then
 
-  ntcam1 = ntcabs - 1
-
-  call tstsyr (ntmabs, ntcam1)
-  !==========
-
   if (idtvar.eq.0.or.idtvar.eq.1) then
-    call syncou (ntmabs, ntcabs, ra(idt))
+    call cplsyn (ntmabs, ntcabs, ra(idt))
     !==========
   else
-    call syncou (ntmabs, ntcabs, dtref)
+    call cplsyn (ntmabs, ntcabs, dtref)
     !==========
   endif
+
+  ntcam1 = ntcabs - 1
+
+  call tstsy3 (ntmabs, ntcam1)
+  !==========
 
   if (ntmabs .eq. ntcam1) then
     call csexit (0)
@@ -769,7 +769,7 @@ call dmtmps(titer1)
 
 !     Synchronisation Syrthes 3, si ITRALE>0
 if (itrale.gt.0) then
-  call itdsyr(ntcabs,ntmabs)
+  call itdsy3(ntcabs,ntmabs)
   !==========
 endif
 
@@ -882,7 +882,7 @@ if (istpp1.eq.1) then
 endif
 
 !===============================================================================
-! 18. TEST D'ARRET PAR DEMANDE DE SYRTHES
+! 18. TEST D'ARRET PAR DEMANDE D'UN COUPLAGE
 !===============================================================================
 
 !     En cas de couplage, on lit des maintenant l'entete du premier
@@ -890,16 +890,16 @@ endif
 !     message de terminaison (pas de test sur ITRALE ici, car
 !     il serait sur ITRALE + 1, toujours > 0).
 
-call tstsyr (ntmabs, ntcabs)
-!==========
-
 if (idtvar.eq.0.or.idtvar.eq.1) then
-  call syncou (ntmabs, ntcabs, ra(idt))
+  call cplsyn (ntmabs, ntcabs, ra(idt))
   !==========
 else
-  call syncou (ntmabs, ntcabs, dtref)
+  call cplsyn (ntmabs, ntcabs, dtref)
   !==========
 endif
+
+call tstsy3(ntmabs, ntcabs)
+!==========
 
 !===============================================================================
 ! 19. SORTIE EVENTUELLE DU FICHIER SUITE

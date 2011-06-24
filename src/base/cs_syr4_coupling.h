@@ -147,35 +147,6 @@ cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
                            int                 n_syr_ranks);
 
 /*----------------------------------------------------------------------------
- * Exchange new iteration or stop message with SYRTHES.
- *
- * If nt_cur_abs < nt_max_abs, a new iteration message is sent;
- * otherwise, a stop message is sent. A corresponding message
- * is received, and if it is a stop message, nt_max_abs is
- * set to nt_cur_abs.
- *
- * parameters:
- *   nt_cur_abs <-- current iteration number
- *   nt_max_abs <-> maximum iteration number
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr4_coupling_sync_iter(int   nt_cur_abs,
-                           int  *nt_max_abs);
-
-/*----------------------------------------------------------------------------
- * Synchronize new time step
- *
- * parameters:
- *   nt_cur_abs <-- current iteration number
- *   nt_max_abs --> maximum iteration number
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr4_coupling_new_time_step(int  nt_cur_abs,
-                               int  nt_max_abs);
-
-/*----------------------------------------------------------------------------
  * Define coupled mesh and send it to SYRTHES
  *
  * Optional post-processing output is also built at this stage.
@@ -237,18 +208,6 @@ void
 cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t *syr_coupling,
                                cs_real_t           tf[],
                                cs_real_t           hwall[]);
-
-/*----------------------------------------------------------------------------
- * Initialize post-processing of a SYRTHES coupling
- *
- * parameters:
- *   coupling_id --> Id of SYRTHES coupling
- *   writer_id   --> Id of associated writer
- *----------------------------------------------------------------------------*/
-
-void
-cs_syr4_coupling_post_init(int       coupling_id,
-                           cs_int_t  writer_id);
 
 /*----------------------------------------------------------------------------*/
 

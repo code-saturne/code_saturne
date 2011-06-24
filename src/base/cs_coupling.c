@@ -101,34 +101,40 @@ static ple_coupling_mpi_set_t *_cs_glob_coupling_mpi_app_world = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Synchronize couplings.
+ * Synchronize with applications in the same PLE coupling group.
+ *
+ * This function should be called before starting a new time step. The
+ * current time step id is that of the last finished time step, or 0 at
+ * initialization.
  *
  * Fortran Interface:
  *
- * subroutine syncou (ntmabs, ntcabs, dt)
+ * subroutine cplsyn (ntcmabs, ntcabs, dtref)
  * *****************
  *
  * integer          ntmabs      : <-> : maximum iteration number
- * integer          ntcabs      : --> : current iteration number
- * double precision dt          : <-> : current time step
+ * integer          ntcabs      : <-- : current iteration number
+ * double precision dtref       : <-> : reference time step value
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(syncou, SYNCOU)
+void CS_PROCF(cplsyn, CPLSYN)
 (
- cs_int_t   *ntmabs,
- cs_int_t   *ntcabs,
- cs_real_t  *ttcabs
+ cs_int_t         *ntmabs,
+ const cs_int_t   *ntcabs,
+ cs_real_t        *dtref
 )
 {
-  int retval = cs_coupling_synchronize(*ntcabs,
-                                       ntmabs,
-                                       ttcabs);
+  int  current_ts_id = *ntcabs;
+  int  max_ts_id = *ntmabs;
+  double  ts = *dtref;
 
-  if (retval & PLE_COUPLING_REDO_ITERATION)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("A coupled application request the restart of the current time step,\n"
-         "but this is not currently handled."));
+  cs_coupling_sync_apps(0,
+                        current_ts_id,
+                        &max_ts_id,
+                        &ts);
+
+  *ntmabs = max_ts_id;
+  *dtref = ts;
 }
 
 /*============================================================================
@@ -192,7 +198,7 @@ cs_coupling_discover_mpi_apps(const char  *app_name)
 
     if (cs_glob_rank_id < 1) {
 
-      for (i = 0; i< n_apps; i++) {
+      for (i = 0; i < n_apps; i++) {
         const char *is_local = nolocal_add;
         ple_coupling_mpi_set_info_t
           ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world,
@@ -226,86 +232,6 @@ cs_coupling_finalize(void)
 }
 
 /*----------------------------------------------------------------------------
- * Synchronize couplings.
- *
- * parameters:
- *   n_cur_ts  <-- current time step
- *   n_max_ts  <-> maximum number of time steps
- *   dt        <-> current time step value
- *
- * returns:
- *   status mask indicating if we are to run a new iteration or not
- *----------------------------------------------------------------------------*/
-
-int
-cs_coupling_synchronize(int      n_cur_ts,
-                        int     *n_max_ts,
-                        double  *dt)
-{
-  int retval = PLE_COUPLING_NEW_ITERATION;
-
-#if defined(PLE_HAVE_MPI)
-
-  if (_cs_glob_coupling_mpi_app_world != NULL) {
-
-    int app_id;
-
-    int sync_flag = PLE_COUPLING_NEW_ITERATION;
-
-    const int *status_flag = NULL;
-    const int n_apps = ple_coupling_mpi_set_n_apps(_cs_glob_coupling_mpi_app_world);
-    const double *ts = NULL;
-
-    if (n_cur_ts >= *n_max_ts)
-      sync_flag = PLE_COUPLING_STOP;
-
-    else if (n_cur_ts == *n_max_ts - 1)
-      sync_flag = sync_flag | PLE_COUPLING_LAST;
-
-    /* Synchronize applications */
-
-    ple_coupling_mpi_set_synchronize(_cs_glob_coupling_mpi_app_world,
-                                     sync_flag,
-                                     *dt);
-
-    status_flag
-      = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
-    ts
-      = ple_coupling_mpi_set_get_timestep(_cs_glob_coupling_mpi_app_world);
-
-    retval = 0;
-
-    for (app_id = 0; app_id < n_apps; app_id++) {
-
-      if (status_flag[app_id] & PLE_COUPLING_NO_SYNC)
-        continue;
-
-      else if (status_flag[app_id] & PLE_COUPLING_STOP)
-        *n_max_ts = n_cur_ts;
-
-      else if (status_flag[app_id] & PLE_COUPLING_LAST)
-        if (*n_max_ts > n_cur_ts + 1)
-          *n_max_ts = n_cur_ts + 1;
-
-      if (status_flag[app_id] & PLE_COUPLING_NEW_ITERATION)
-        retval = retval | PLE_COUPLING_NEW_ITERATION;
-      else if (status_flag[app_id] & PLE_COUPLING_REDO_ITERATION)
-        retval = retval | PLE_COUPLING_REDO_ITERATION;
-
-      if (status_flag[app_id] & PLE_COUPLING_UNSTEADY)
-        if (ts[app_id] < *dt)
-          *dt = ts[app_id];
-
-    }
-
-  }
-
-#endif /* defined(PLE_HAVE_MPI) */
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
  * Return info on other applications in the same MPI root communicator.
  *
  * returns:
@@ -319,6 +245,169 @@ cs_coupling_get_mpi_apps(void)
 }
 
 #endif /* HAVE_MPI */
+
+/*----------------------------------------------------------------------------
+ * Synchronize with applications in the same PLE coupling group.
+ *
+ * This function should be called before starting a new time step. The
+ * current time step id is that of the last finished time step, or 0 at
+ * initialization.
+ *
+ * Default synchronization flags indicating a new iteration or end of
+ * calculation are set automatically, but the user may set additional flags
+ * to this function if necessary.
+ *
+ * parameters:
+ *   flags         <-- optional additional synchronization flags
+ *   current_ts_id <-- current time step id
+ *   max_ts_id     <-> maximum time step id
+ *   ts            <-> suggested time step value
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_sync_apps(int      flags,
+                      int      current_ts_id,
+                      int     *max_ts_id,
+                      double  *ts)
+{
+#if defined(PLE_HAVE_MPI)
+
+  if (_cs_glob_coupling_mpi_app_world != NULL) {
+
+    int i;
+
+    int sync_flags = 0;
+    int leader_id = -1;
+    double ts_min = -1.;
+
+    int n_apps
+      = ple_coupling_mpi_set_n_apps(_cs_glob_coupling_mpi_app_world);
+    int app_id
+      = ple_coupling_mpi_set_get_app_id(_cs_glob_coupling_mpi_app_world);
+
+    const int *app_status = NULL;
+    const double *app_ts = NULL;
+
+    ple_coupling_mpi_set_info_t ai;
+
+    /* Set synchronization flag */
+
+    app_status
+      = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
+
+    sync_flags = app_status[app_id] | flags;
+
+    if (current_ts_id >= *max_ts_id)
+      sync_flags = sync_flags | PLE_COUPLING_STOP;
+    else if (current_ts_id == *max_ts_id - 1)
+      sync_flags = sync_flags | PLE_COUPLING_LAST;
+    else
+      sync_flags = sync_flags | PLE_COUPLING_NEW_ITERATION;
+
+    if (flags & PLE_COUPLING_REDO_ITERATION) {
+      if (sync_flags & PLE_COUPLING_NEW_ITERATION)
+        sync_flags -= PLE_COUPLING_NEW_ITERATION;
+      if (sync_flags & PLE_COUPLING_STOP)
+        sync_flags -= PLE_COUPLING_STOP;
+    }
+
+    /* Synchronize applications */
+
+    ple_coupling_mpi_set_synchronize(_cs_glob_coupling_mpi_app_world,
+                                     sync_flags,
+                                     *ts);
+
+    app_status
+      = ple_coupling_mpi_set_get_status(_cs_glob_coupling_mpi_app_world);
+    app_ts
+      = ple_coupling_mpi_set_get_timestep(_cs_glob_coupling_mpi_app_world);
+
+    /* Check if we should use the smallest time step */
+
+    if (app_status[app_id] & PLE_COUPLING_TS_MIN)
+      ts_min = *ts;
+
+    /* Loop on applications */
+
+    for (i = 0; i < n_apps; i++) {
+
+      if (app_status[i] & PLE_COUPLING_NO_SYNC)
+        continue;
+
+      /* Handle leader or minimum time step update */
+
+      if (app_status[i] & PLE_COUPLING_TS_LEADER) {
+        if (leader_id > -1) {
+          ple_coupling_mpi_set_info_t ai_prev
+            = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world,
+                                            ts_min);
+          ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world, i);
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("\nApplication \"%s\" (%s) tried to set the group time step, but\n"
+               "application \"%s\" (%s) has already done so."),
+             ai.app_name, ai.app_type, ai_prev.app_name, ai_prev.app_type);
+        }
+        else {
+          leader_id = i;
+          *ts = app_ts[i];
+        }
+      }
+      else if (app_status[i] & PLE_COUPLING_TS_MIN) {
+        if (ts_min > 0)
+          ts_min = CS_MIN(ts_min, app_ts[i]);
+      }
+
+      /* Handle time stepping behavior */
+
+      if (app_status[i] & PLE_COUPLING_STOP) {
+        if (*max_ts_id > current_ts_id) {
+          ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world, i);
+          bft_printf
+            (_("\nApplication \"%s\" (%s) requested calculation stop.\n"),
+             ai.app_name, ai.app_type);
+          *max_ts_id = current_ts_id;
+        }
+      }
+      else if (app_status[i] & PLE_COUPLING_REDO_ITERATION) {
+        ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world, i);
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("\nApplication \"%s\" (%s) requested restarting iteration,\n"
+             "but this is not currently handled."),
+           ai.app_name, ai.app_type);
+      }
+      else if (! (app_status[i] & PLE_COUPLING_NEW_ITERATION)) {
+        ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world, i);
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("\nApplication \"%s\" (%s) synchronized with status flag %d,\n"
+             "which does not specify a known behavior."),
+           ai.app_name, ai.app_type, app_status[i]);
+      }
+
+      if (app_status[i] & PLE_COUPLING_LAST) {
+        if (*max_ts_id > current_ts_id + 1) {
+          ai = ple_coupling_mpi_set_get_info(_cs_glob_coupling_mpi_app_world, i);
+          bft_printf
+            (_("\nApplication \"%s\" (%s) requested last iteration.\n"),
+             ai.app_name, ai.app_type);
+          *max_ts_id = current_ts_id + 1;
+        }
+      }
+
+    } /* end of loop on applications */
+
+    if (ts_min > 0)
+      *ts = ts_min;
+  }
+
+#else
+
+  return;
+
+#endif /* PLE_HAVE_MPI */
+}
 
 /*----------------------------------------------------------------------------
  * Compute extents of a mesh representation

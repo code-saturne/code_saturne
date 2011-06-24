@@ -65,6 +65,34 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Public function prototypes for Fortran API
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Synchronize with applications in the same PLE coupling group.
+ *
+ * This function should be called before starting a new time step. The
+ * current time step id is that of the last finished time step, or 0 at
+ * initialization.
+ *
+ * Fortran Interface:
+ *
+ * subroutine cplsyn (ntcmabs, ntcabs, dtref)
+ * *****************
+ *
+ * integer          ntmabs      : <-> : maximum iteration number
+ * integer          ntcabs      : <-- : current iteration number
+ * double precision dtref       : <-> : reference time step value
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(cplsyn, CPLSYN)
+(
+ cs_int_t         *ntmabs,
+ const cs_int_t   *ntcabs,
+ cs_real_t        *dtref
+ );
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -98,6 +126,30 @@ const ple_coupling_mpi_set_t *
 cs_coupling_get_mpi_apps(void);
 
 #endif /* HAVE_MPI */
+
+/*----------------------------------------------------------------------------
+ * Synchronize with applications in the same PLE coupling group.
+ *
+ * This function should be called before starting a new time step. The
+ * current time step id is that of the last finished time step, or 0 at
+ * initialization.
+ *
+ * Default synchronization flags indicating a new iteration or end of
+ * calculation are set automatically, but the user may set additional flags
+ * to this function if necessary.
+ *
+ * parameters:
+ *   flags         <-- optional additional synchronization flags
+ *   current_ts_id <-- current time step id
+ *   max_ts_id     <-> maximum time step id
+ *   ts            <-> suggested time step value
+ *----------------------------------------------------------------------------*/
+
+void
+cs_coupling_sync_apps(int      flags,
+                      int      current_ts_id,
+                      int     *max_ts_id,
+                      double  *ts);
 
 /*----------------------------------------------------------------------------
  * Compute extents of a mesh representation

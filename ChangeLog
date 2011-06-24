@@ -1,3 +1,15 @@
+* 24/06/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Synchronize time steps with SYRTHES 4 using PLE mechanism.
+  modified files:
+    src/base/caltri.f90
+    src/base/cs_coupling.c
+    src/base/cs_coupling.h
+    src/base/cs_syr4_coupling.c
+    src/base/cs_syr4_coupling.h
+    src/base/cs_syr_coupling.c
+    src/base/cs_syr_coupling.h
+
 * 24/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update MPI detection macros to include MPICH2,
   discarding autodetection of LAM-MPI and MPICH1.

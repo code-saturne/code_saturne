@@ -104,27 +104,22 @@ void CS_PROCF(geosyr, GEOSYR)
 );
 
 /*----------------------------------------------------------------------------
- * Check if SYRTHES coupling continues or if we must stop.
+ * Check if SYRTHES 3 couplings continue or if we must stop.
  *
- * For SYRTHES 4 couplings, if nt_cur_abs < nt_max_abs, a new iteration
- * message is sent; otherwise, a stop message is sent. A corresponding
- * message is received, and if it is a stop message, nt_max_abs is
- * set to nt_cur_abs.
- *
- * For SYRTHES 3 couplings, A message (stop or new iteration) is
+ * For each SYRTHES 3 coupling, A message (stop or new iteration) is
  * received. No iteration start message is sent, as this is done
  * by ITDSYR.
  *
  * Fortran Interface:
  *
- * SUBROUTINE TSTSYR (IMSFIN)
+ * SUBROUTINE TSTSY3 (IMSFIN)
  * *****************
  *
  * INTEGER          NTMABS      : <-> : Maximum iteration number
  * INTEGER          NTCABS      : --> : Current iteration numbern
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(tstsyr, TSTSYR)
+void CS_PROCF(tstsy3, TSTSY3)
 (
  cs_int_t *ntmabs,
  cs_int_t *ntcabs
@@ -133,23 +128,22 @@ void CS_PROCF(tstsyr, TSTSYR)
 /*----------------------------------------------------------------------------
  * Synchronize new time step message for SYRTHES 3 couplings.
  *
- * This function is not necessary for SYRTHES 4, as all synchronization
- * is done by TSTSYR. For SYRTHES 3, it is necessary to distinguish
- * the last iteration from other iterations (to allow for SYRTHES 3 to
- * determine in advance that it will need to output postprocessing/restart
- * data), so using this separate function allows it to be placed after
- * MODPAR in the main time loop, in case NTMABS is changed by that function.
+ * For SYRTHES 3, it is necessary to distinguish the last iteration from
+ * other iterations (to allow for SYRTHES 3 to determine in advance that it
+ * will need to output postprocessing/restart data), so using this separate
+ * function allows it to be placed after MODPAR in the main time loop,
+ * in case NTMABS is changed by that function.
  *
  * Fortran Interface:
  *
- * SUBROUTINE ITDSYR (NTCABS, NTMABS)
+ * SUBROUTINE ITDSY3 (NTCABS, NTMABS)
  * *****************
  *
  * INTEGER          NTMABS      : --> : Maximum iteration number
  * INTEGER          NTCABS      : --> : Current iteration number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(itdsyr, ITDSYR)
+void CS_PROCF(itdsy3, ITDSY3)
 (
  cs_int_t   *ntcabs,
  cs_int_t   *ntmabs
