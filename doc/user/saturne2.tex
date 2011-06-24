@@ -121,14 +121,6 @@ corresponds to $10^{12}$.
 
 \minititre{General}
 
-\motcle{impgeo}{i}{strictly positive integer}{10}{O}{L3}
-{unit of the geometric file (if the Preprocessor is not used)\\
-useful if and only if {\tt SOLCOM = 1}}
-
-\motcle{ficgeo}{c}{string of 6 characters}{\tt geomet}{O}{L3}
-{name of the geometric file (if the Preprocessor is not used)\\
-useful if and only if {\tt SOLCOM = 1}}
-
 \motcle{impstp}{i}{strictly positive integer}{12}{O}{L3}
 {unit of the calculation interactive stop file\\
 always useful (because of the interactive character)}
@@ -136,25 +128,6 @@ always useful (because of the interactive character)}
 \motcle{ficstp}{c}{string of 6 characters}{\tt ficstp}{O}{L3}
 {name of the calculation interactive stop file (see p.\pageref{prg_ficstp})\\
 always useful (because of the interactive characteristic)}
-
-\motcle{ficamo}{c}{string of 13 characters}{\tt suiamo}{O}{L3}
-{name of the main upstream restart file.  As with all restart
-files, its ``format'' (current or version 1.3) is automatically
-determined by the code.\\
-useful if and only if {\tt isuite = 1}}
-
-\motcle{ficamx}{c}{string of 13 characters}{\tt suiamx}{O}{L3}
-{name of the auxiliary upstream restart file.\\
-useful if and only if {\tt isuite = 1}}
-
-\motcle{ficava}{c}{string of 13 characters}{\tt suiava}{O}{L3}
-{name of the main downstream restart file\\
-always useful}
-
-\motcle{ficavx}{c}{string of 13 characters}{\tt suiavx}{O}{L3}
-{name of the auxiliary downstream restart file\\
-always useful}
-
 
 \minititre{1D wall thermal module}
 
@@ -362,7 +335,7 @@ turbulent viscosity and the time step if is not uniform\\
 \hspace*{1.3cm}= 1: post-processed\\
 useful if and only if the variable is defined at the cell centers:
 calculation variable, physical property (time step, density,
-viscosity, specific heat) or turbulent viscosity if {\tt iturb(iphas)}
+viscosity, specific heat) or turbulent viscosity if {\tt iturb}
 $\geqslant$ 10}
 
 \motcleb{ipstdv}{i}{integer $\geqslant 1$: see below}
@@ -560,12 +533,12 @@ $<f_1*f_2...*f_n>$. For every time average {\tt imom} to calculate:\\
 \hspace*{1.3cm} - if {\tt idfmom(ii,imom)} is positive, it refers to the
                   index-number of a solved variable (stored in the array
                   {\tt rtp}), like for instance a velocity component
-                  ({\tt iu(iphas)}, {\tt iv(iphas)}, {\tt iw(iphas)})
-                  or the pressure ({\tt ipr(iphas)})\\
+                  ({\tt iu}, {\tt iv}, {\tt iw})
+                  or the pressure ({\tt ipr})\\
 \hspace*{1.3cm} - if {\tt idfmom(ii,imom)} is negative, it refers to the
                   index-number of an auxiliary variable (stored in
                   {\tt propce}), like for instance the density\\
-                  ({\tt idfmom(ii,imom)=-irom(iphas)})\\
+                  ({\tt idfmom(ii,imom)=-irom})\\
 useful if and only if the user wants to calculate time averages}
 
 \motcleb{ntdmom}{ia}{integer}{-1}{O}{L1}
@@ -679,7 +652,7 @@ always useful}
 \motcle{ileaux}{i}{0 or 1}{1}{O}{L2}
 {indicates the reading (=1) or not (=0) of the auxiliary
 calculation restart file\\
-useful if and only if {\tt isuite}=1}
+useful only in the case of a calculation restart}
 
 \motcleb{inpdt0}{i}{0 or 1}{0}{O}{L1}
 {indicates the calculation mode: 1 for a zero time step control
@@ -700,7 +673,9 @@ always useful}
 
 \motcleb{isuite}{i}{0 or 1}{0}{C}{L1}
 {indicator of a calculation restart (=1) or not (=0)\\
-always useful}
+always useful. This value is set automatically be the code, depending on
+whether a restart directory is present, and should ne be modified by
+the user}
 
 \motcle{ntcabs}{i}{integer}{\tt ntpabs}{O}{L3}
 {current time step number\\
@@ -792,8 +767,8 @@ can only use index-numbers refering to user scalars ($\leqslant$ {\tt nscaus}). 
 always useful}
 
 \motcleb{iscalt}{ia}{-1 or integer $>$ 0}{-1}{O}{L1}
-{for every phase {\tt iphas}, {\tt iscalt(iphas)} is the index-number of the scalar
-representing the temperature or the enthalpy. If {\tt iscalt(iphas)}=-1, no
+{{\tt iscalt} is the index-number of the scalar
+representing the temperature or the enthalpy. If {\tt iscalt}=-1, no
 scalar represents the temperature nor the enthalpy. When a specific
 physics module is activated (gas combustion, pulverised coal,
 electricity or compressible),
@@ -805,7 +780,7 @@ useful if and only if {\tt nscal} $\geqslant$ 1}
 \motcleb{iscsth}{ia}{-1, 0, 1, 2 or 3}{-10}{O}{L1}
 {type of scalar\\
 \hspace*{1.3cm}= -10: not specified. By default, the code chooses
-{\tt iscsth(iscal)}=0 for the scalars apart from {\tt iscalt(iphas)}\\
+{\tt iscsth(iscal)}=0 for the scalars apart from {\tt iscalt}\\
 \hspace*{1.3cm}= -1: temperature in degrees Celsius (use only in case of
 radiation modeling)\\
 \hspace*{1.3cm}= 0: passive scalar\\
@@ -824,7 +799,7 @@ electricity or compressible), the user must not modify {\tt iscsth} (the choice
 is made automatically: the solved variable is the enthalpy or the total energy).\\
 It is also reminded that, in the case of a coupling with
 \syrthes, the solved thermal variable should be the temperature
-({\tt iscsth(iscalt(iphas))}=1 or -1).
+({\tt iscsth(iscalt)}=1 or -1).
 More precisely, everything is designed in the code to allow for the
 running of a calculation coupled with \syrthes with the enthalpy as thermal
 variable (the correspondence and conversion is then specified by the user in
@@ -861,7 +836,7 @@ coupled with \syrthes (=1) or not (=0).
 There can be only one coupled scalar per calculation.\\
 \hspace*{1.3cm}=-999: by default\\
 \hspace*{2.cm} $\bullet$ {\tt icpsyr(iscal)}=1 for the thermal scalar
-{\tt iscal=(iscalt(iphas))} when a coupling with \syrthes has been specified in the
+{\tt iscal=(iscalt)} when a coupling with \syrthes has been specified in the
 Interface or the launch script\\
 \hspace*{2.cm} $\bullet$ {\tt icpsyr(iscal)}=0 otherwise\\
 \hspace*{1.3cm}= 0: the scalar {\tt iscal} is not coupled with \syrthes\\
@@ -876,16 +851,16 @@ useful in case of coupling with \syrthes}
 \motcle{istat}{ia}{0 or 1}{1 or 0}{O}{L2}
 {for each unknown {\tt ivar} to calculate, indicates if
 non-stationary terms are present ({\tt istat(ivar)}=1) or not (0) in the matrices.\\
-By default, {\tt istat} is set to 0 for the pressure (variable {\tt ivar=ipr(iphas)})
-or $\overline{f}$ in v2f modeling (variable {\tt ivar=ifb(iphas)}) and set to
+By default, {\tt istat} is set to 0 for the pressure (variable {\tt ivar=ipr})
+or $\overline{f}$ in v2f modeling (variable {\tt ivar=ifb}) and set to
 1 for the other unknowns.\\
 useful for all the unknowns}
 
 \motcle{iconv}{ia}{0 or 1}{1 or 0}{O}{L2}
 {for each unknown {\tt ivar} to calculate, indicates if the
 convection is taken into account ({\tt iconv(ivar)}=1) or not (0).\\
-By default, {\tt iconv} is set to 0 for the pressure (variable {\tt ivar=ipr(iphas)})
-or $\overline{f}$ in v2f modeling (variable {\tt ivar=ifb(iphas)}) and set to
+By default, {\tt iconv} is set to 0 for the pressure (variable {\tt ivar=ipr})
+or $\overline{f}$ in v2f modeling (variable {\tt ivar=ifb}) and set to
 1 for the other unknowns.\\
 useful for all the unknowns}
 
@@ -912,7 +887,7 @@ the regularity of the matrix.\\
 useful for all the unknowns}
 
 \motcle{ivisse}{ia}{0 or 1}{1}{O}{L3}
-{for each phase {\tt iphas}, indicates whether the source terms in transposed gradient
+{indicates whether the source terms in transposed gradient
 and velocity divergence should be taken into account in the momentum
 equation. In the compressible module, these terms also account for the volume
 viscosity (cf. {\tt viscv0} and {\tt iviscv}):\\
@@ -981,9 +956,9 @@ always useful.\\
 It is the time step value used in the case of a calculation run with a
 uniform and constant time step, {\em i.e.} {\tt idtvar}=0 (restart calculation
 or not). It is the value used to initialise the time step in the case of
-an initial calculation ({\tt isuite}=0) run with a non-constant time step
+an initial calculation run with a non-constant time step
 ({\tt idtvar}=1 or 2). It is also the value used to initialise the time step
-in the case of a restart calculation ({\tt isuite}=1) in which the type of
+in the case of a restart calculation in which the type of
 time step has been changed (for instance, {\tt idtvar}=1 in the new
 calculation and {\tt idtvar}=0 or 2 in the previous calculation): see
 \texttt{usiniv}}
@@ -1022,7 +997,7 @@ the maximum, then to the minimum limit.\\
 %==================================
 
 \motcleb{iturb}{ia}{0, 10, 20, 21, 30, 31, 40, 41, 50 or 60}{-999}{O}{L1}
-{for each phase {\tt iphas}, indicator of the turbulence model {\tt iturb(iphas)}\\
+{indicator of the turbulence model {\tt iturb}\\
 \hspace*{1.3cm}= -999: not initalised. This value is not allowed and
 must be modified by the user\\
 \hspace*{1.3cm}= 0: laminar\\
@@ -1074,19 +1049,19 @@ does not implement his own way of averaging the dynamic constant in
 on the extended neighborhood).\\
 
 \motcle{ideuch}{ia}{0, 1 or 2}{0 or 1}{O}{L2}
-{for each phase {\tt iphas}, indicates the type of wall function is used for
+{indicates the type of wall function is used for
  the velocity boundary conditions on a frictional wall.\\
 \hspace*{1.3cm}= 0: one-scale model\\
 \hspace*{1.3cm}= 1: two-scale model\\
 \hspace*{1.3cm}= 2: scalable wall function\\
-{\tt ideuch} is initialised to 0 for {\tt iturb(iphas)}=0, 10, 40 or 41
+{\tt ideuch} is initialised to 0 for {\tt iturb}=0, 10, 40 or 41
 (laminar, mixing length, LES).\\
-{\tt ideuch} is initialised to 1 for {\tt iturb(iphas)}=20, 21, 30, 31 or 60
+{\tt ideuch} is initialised to 1 for {\tt iturb}=20, 21, 30, 31 or 60
 ($k-\varepsilon$, $R_{ij}-\varepsilon$ LRR, $R_{ij}-\varepsilon$ SSG and
 $k-\omega$ SST models).\\
-The v2f model ({\tt iturb(iphas)}=50) is not designed to use wall functions
+The v2f model ({\tt iturb}=50) is not designed to use wall functions
 (the mesh must be ``low Reynolds'').\\
-The value {\tt ideuch(iphas)}=1 is not compatible with {\tt iturb(iphas)}=0, 10, 40
+The value {\tt ideuch}=1 is not compatible with {\tt iturb}=0, 10, 40
 or 41 (laminar, mixing length and LES).\\
 Concerning the $k-\varepsilon$ and $R_{ij}-\varepsilon$ models, the
 two-scales model is usually at least as satisfactory as the one-scale
@@ -1096,17 +1071,17 @@ necessary in order to be always in a logarithmic layer.
 It is used to make up for
 the problems related to the use of High-Reynolds models on very refined
 meshes.\\
-useful if {\tt iturb(iphas)} is different from 50}
+useful if {\tt iturb} is different from 50}
 
 \motcle{ilogpo}{ia}{0 or 1}{1}{O}{L3}
-{for each phase {\tt iphas}, type of wall function used for the velocity: power law
-({\tt ilogpo(iphas)}=0) or logarithmic law ({\tt ilogpo(iphas)}=1)\\
+{type of wall function used for the velocity: power law
+({\tt ilogpo}=0) or logarithmic law ({\tt ilogpo}=1)\\
 always useful}
 
 \motcle{ypluli}{ra}{real number $>$ 0}{\tt 1/xkappa, 10.88}{O}{L3}
-{for each phase {\tt iphas}, limit value of $y^+$ for the viscous sublayer\\
+{limit value of $y^+$ for the viscous sublayer\\
 {\tt ypluli} depends on the chosen wall function: it is
-initialised to 10.88 for the scalable wall function ({\tt ideuch(iphas)}=2),
+initialised to 10.88 for the scalable wall function ({\tt ideuch}=2),
 otherwise it is initialised to $1/\kappa\approx 2,38$\\
 In LES, {\tt ypluli} is taken by default to be 10.88\\
 always useful}
@@ -1115,84 +1090,84 @@ always useful}
 v2-f and $k-\omega$ SST}
 
 \motcle{igrake}{ia}{0 or 1}{1}{O}{L1}
-{for each phase {\tt iphas}, indicates if the terms related to gravity in the
+{indicates if the terms related to gravity in the
 equations of $k$ and $\varepsilon$ or $\omega$ are taken into account
-({\tt igrake(iphas)}=1) or not (0)\\
-useful if and only if {\tt iturb(iphas)} = 20, 21, 50 or 60, ({\tt gx, gy, gz})
+({\tt igrake}=1) or not (0)\\
+useful if and only if {\tt iturb} = 20, 21, 50 or 60, ({\tt gx, gy, gz})
 $\ne$ (0,0,0) and the density is not uniform}
 
 \motcle{igrhok}{ia}{0 or 1}{0}{O}{L2}
-{for each phase {\tt iphas}, indicates if the term $\frac{2}{3}\grad \rho k$
-is taken into account\\ ({\tt igrhok(iphas)}=1) or not (0) in the velocity
+{indicates if the term $\frac{2}{3}\grad \rho k$
+is taken into account\\ ({\tt igrhok}=1) or not (0) in the velocity
 equation\\
-useful if and only if {\tt iturb(iphas)} = 20, 21, 50 or 60.\\
+useful if and only if {\tt iturb} = 20, 21, 50 or 60.\\
 This term may generate
 non-physical velocities at the wall. When it is not explicitely taken into
 account, it is implicitely included into the pressure.}
 
 \motcle{ikecou}{ia}{0 or 1}{0 or 1}{O}{L3}
-{for each phase {\tt iphas}, indicates if the coupling of the source terms of
+{indicates if the coupling of the source terms of
 $k$ and $\varepsilon$ or $k$ and $\omega$ is taken into account
-({\tt ikecou(iphas)}=1) or not (0)\\
+({\tt ikecou}=1) or not (0)\\
 if {\tt ikecou}=0 in $k-\varepsilon$ model, the term in $\varepsilon$ in the
 equation of $k$ in made implicit\\
-{\tt ikecou(iphas)} is initialised to 0 if {\tt iturb(iphas)} = 21 or 60,
+{\tt ikecou} is initialised to 0 if {\tt iturb} = 21 or 60,
 and to 1 if\\
-{\tt iturb(iphas)}= 20\\
-{\tt ikecou(iphas)}=1 is forbidden when using the v2f model
-({\tt iturb(iphas)}=50)\\
-useful if and only if {\tt iturb(iphas)} = 20, 21 or 60 ($k-\varepsilon$ and
+{\tt iturb}= 20\\
+{\tt ikecou}=1 is forbidden when using the v2f model
+({\tt iturb}=50)\\
+useful if and only if {\tt iturb} = 20, 21 or 60 ($k-\varepsilon$ and
 $k-\omega$ models)}
 
 \motcle{relaxk}{ra}{0 $\leqslant$ real $\leqslant$ 1}{0.7}{O}{L3}
-{for each phase {\tt iphas}, relaxation coefficient of the turbulent
-variables ($k$ and $\varepsilon$ or $\omega$) when {\tt ikecou(iphas)} = 0. If
-{\tt ikecou(iphas)}=1, {\tt relaxk} is not used, whatever its value may be.\\
-useful if and only if {\tt iturb(iphas)} = 20, 21, 50 or 60 and {\tt ikecou(iphas)}=0
+{relaxation coefficient of the turbulent
+variables ($k$ and $\varepsilon$ or $\omega$) when {\tt ikecou} = 0. If
+{\tt ikecou}=1, {\tt relaxk} is not used, whatever its value may be.\\
+useful if and only if {\tt iturb} = 20, 21, 50 or 60 and {\tt ikecou}=0
 ($k-\varepsilon$, v2f or $k-\omega$ models without coupling)}
 
 \motcle{iclkep}{ia}{0 or 1}{0}{O}{L3}
-{for each phase {\tt iphas}, indicates the clipping method used for $k$ and
+{indicates the clipping method used for $k$ and
 $\varepsilon$, for the $k-\varepsilon$ and v2f models\\
 \hspace*{1.3cm}= 0: clipping in absolute value\\
 \hspace*{1.3cm}= 1: clipping from physical relations\\
-useful if and only if {\tt iturb(iphas)} = 20, 21 or 50 ($k-\varepsilon$ and
+useful if and only if {\tt iturb} = 20, 21 or 50 ($k-\varepsilon$ and
 v2f models). The results obtained with the method corresponding to
-{\tt iclkep(iphas)}=1 showed in some cases a substantial sensitivity to the
-values of the length scale {\tt almax(iphas)}.\\
-The option {\tt iclkep(iphas)}=1 is therefore not recommended, and,
+{\tt iclkep}=1 showed in some cases a substantial sensitivity to the
+values of the length scale {\tt almax}.\\
+The option {\tt iclkep}=1 is therefore not recommended, and,
 if chosen, must be used cautiously.}
 
 \minititre{ $R_{ij}-\varepsilon$ (LRR and SSG)}
 
 \motcle{iclptr}{ia}{0 or 1}{0}{O}{L3}
-{for each phase {\tt iphas}, indicates if $R_{ij}$ is made partially implicit
-({\tt iclptr(iphas)}=1) or not (0) in the wall boundary conditions.\\
-useful if and only if {\tt iturb(iphas)} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
+{indicates if $R_{ij}$ is made partially implicit
+({\tt iclptr}=1) or not (0) in the wall boundary conditions.\\
+useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
 
 \motcle{iclsyr}{ia}{0 or 1}{0}{O}{L3}
-{for each phase {\tt iphas}, indicates if $R_{ij}$ is made partially implicit
-({\tt iclsyr(iphas)}=1) or not (0) in the symmetry boundary conditions.\\
-useful if and only if {\tt iturb(iphas)} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
+{indicates if $R_{ij}$ is made partially implicit
+({\tt iclsyr}=1) or not (0) in the symmetry boundary conditions.\\
+useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
 
 \motcle{idifre}{ia}{0 or 1}{1}{O}{L3}
-{for each phase {\tt iphas}, complete ({\tt idifre(iphas)=1}) or simplified (0)
+{complete ({\tt idifre=1}) or simplified (0)
 taking into account of the diagonals of the diffusion tensors of $R_{ij}$
 and $\varepsilon$, for the LLR model.\\
-useful if and only if {\tt iturb(iphas)} = 30 (LLR $R_{ij}-\varepsilon$ model)}
+useful if and only if {\tt iturb} = 30 (LLR $R_{ij}-\varepsilon$ model)}
 
 \motcle{igrari}{ia}{0 or 1}{1}{O}{L1}
-{for each phase {\tt iphas}, indicates if the terms related to gravity are
-taken into account ({\tt igrari(iphas)}=1) or not (0) in the equations of
+{indicates if the terms related to gravity are
+taken into account ({\tt igrari}=1) or not (0) in the equations of
 $R_{ij}-\varepsilon$. \\
-useful if and only if {\tt iturb(iphas)} = 30 or 31 and ({\tt gx, gy, gz}) $\ne$
+useful if and only if {\tt iturb} = 30 or 31 and ({\tt gx, gy, gz}) $\ne$
 (0,0,0) ($R_{ij}-\varepsilon$ model with gravity) and the density is not uniform}
 
 \motcle{irijec}{ia}{0 or 1}{0}{O}{L2}
-{for each phase {\tt iphas}, indicates if the wall echo terms in
+{indicates if the wall echo terms in
 $R_{ij}-\varepsilon$ LRR model are
-taken into account ({\tt irijec(iphas)}=1) or not (0).\\
-useful if and only if {\tt iturb(iphas)} = 30 ($R_{ij}-\varepsilon$ LRR).\\
+taken into account ({\tt irijec}=1) or not (0).\\
+useful if and only if {\tt iturb} = 30 ($R_{ij}-\varepsilon$ LRR).\\
 It is not recommended to take these terms into account:
 they have an influence only near the walls, their expression is hardly
 justifiable according to some authors and, in the configurations
@@ -1204,20 +1179,20 @@ for every cell in the domain. See {\tt icdpar} for potential restrictions
 due to this.}
 
 \motcle{irijnu}{ia}{0 or 1}{0}{O}{L3}
-{for each phase {\tt iphas}, addition ({\tt irijnu(iphas)}=1) or not (0) of a
+{addition ({\tt irijnu}=1) or not (0) of a
 turbulent viscosity in the matrix of the incermental system solved
 for the velocity in $R_{ij}-\varepsilon$ models. The goal is to improve
-the stability of the calculation. The usefulness of {\tt irijnu(iphas)}=1 has
+the stability of the calculation. The usefulness of {\tt irijnu}=1 has
 however not been clearly demonstrated.\\
 Since the system is solved in incremental form, this extra turbulent
 viscosity does not change the final solution for steady flows. However,
 for unsteady flows, the parameter {\tt nswrsm} should be increased.\\
-useful if and only if {\tt iturb(iphas)} = 30 or 31 ($R_{ij}-\varepsilon$ model).}
+useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model).}
 
 \motcle{irijrb}{ia}{0 or 1}{0}{O}{L3}
-{for each phase {\tt iphas}, reconstruction ({\tt irijrb(iphas)}=1)
+{reconstruction ({\tt irijrb}=1)
 or not (0) of the boundary conditions at the walls for $R_{ij}$ and  $\varepsilon$.\\
-useful if and only if {\tt iturb(iphas)} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
+useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
 
 
 \minititre{$LES$}
@@ -1226,76 +1201,76 @@ useful if and only if {\tt iturb(iphas)} = 30 or 31 ($R_{ij}-\varepsilon$ model)
 {activates (=1) or not (=0) the generation of synthetic turbulence at the
 different inlet boundaries with the LES model (generation of unsteady synthetic
 eddies)\\
-useful if {\tt iturb(iphas)}=40 or 41\\
+useful if {\tt iturb}=40 or 41\\
 this key word requires the completion of the routine
 \texttt{usvort}}
 
 \motcle{isuivo}{i}{0 or 1}{isuite}{O}{L1}
 {for the vortex method, indicates whether the synthetic vortices at the inlet
 should be initialised (=0) or read form the restart file {\tt ficmvo}.\\
-useful if {\tt iturb(iphas)}=40 or 41 and {\tt ivrtex}=1}
+useful if {\tt iturb}=40 or 41 and {\tt ivrtex}=1}
 
 
 \motcle{idries}{ia}{0 or 1}{0,1}{O}{L2}
-{for each phase {\tt iphas}, {\tt idries(iphas)} activates (1) or not (0) the van
+{{\tt idries} activates (1) or not (0) the van
 Driest wall-damping for the Smagorinsky constant (the Smagorinsky
 constant is multiplied by the damping function
-$1-e^{-y^+/{\tt cdries(iphas)}}$, where $y^+$ designates the adimensional
+$1-e^{-y^+/{\tt cdries}}$, where $y^+$ designates the adimensional
 distance to the nearest wall). The default value is 1 for the
 Smagorinsky model and 0 for the dynamic model.\\
 the van Driest wall-damping requires the knowledge of the distance to the
 nearest wall for each cell in the domain. Refer to key word {\tt icdpar}
 for potential limitations\\
-useful if and only if {\tt iturb(iphas)} = 40 or 41}
+useful if and only if {\tt iturb} = 40 or 41}
 
 \motcle{cdries}{ra}{real number $>$ 0}{26}{O}{L3}
-{for each phase {\tt iphas}, {\tt cdries(iphas)} is the constant appearing in the
+{{\tt cdries} is the constant appearing in the
 van Driest damping function applied to the Smagorinsky constant:
- $1-e^{-y^+/{\tt cdries(iphas)}}$\\
-useful if and only if {\tt iturb(iphas)} = 40 or 41}
+ $1-e^{-y^+/{\tt cdries}}$\\
+useful if and only if {\tt iturb} = 40 or 41}
 
 \motcle{csmago}{ra}{real number $>$ 0}{0.065}{O}{L2}
-{for each phase {\tt iphas}, {\tt csmago(iphas)} is the Smagorinsky constant used in
+{{\tt csmago} is the Smagorinsky constant used in
 the Smagorinsky model for LES\\
 the sub-grid scale viscosity is calculated by
  $\displaystyle\mu_{sg}=\rho C_{smago}^2\bar{\Delta}^2\sqrt{2\bar{S}_{ij}\bar{S}_{ij}}$
 where $\bar{\Delta}$ is the width of the filter and $\bar{S}_{ij}$ the filtered
 strain rate\\
-useful if and only if {\tt iturb(iphas)} = 40}
+useful if and only if {\tt iturb} = 40}
 
 \motcle{smagmx}{ra}{real number $>$ 0}{10*csmago}{O}{L3}
-{for each phase {\tt iphas}, ${\tt smagmx(iphas)}^2$ is
+{${\tt smagmx}^2$ is
 the maximum allowed value for the variable $C$ appearing in the LES dynamic
 model (the ``square'' comes from the fact that the
 variable of the dynamic model corresponds to the square of the
 constant of the Smagorinsky model). Any larger value yielded by the calculation
-procedure of the dynamic model will be clipped to ${\tt smagmx(iphas)}^2$\\
-useful if and only if {\tt iturb(iphas)} = 41}
+procedure of the dynamic model will be clipped to ${\tt smagmx}^2$\\
+useful if and only if {\tt iturb} = 41}
 
 \motcle{xlesfl}{ra}{real number $>$ 0}{2}{O}{L3}
-{for each phase {\tt iphas}, {\tt xlesfl(iphas)} is a constant used to define, for
+{{\tt xlesfl} is a constant used to define, for
 each cell $\Omega_i$, the width of the (implicit) filter:\\
-$\overline{\Delta}=xlesfl(iphas)(ales(iphas)*|\Omega_i|)^{bles(iphas)}$\\
-useful if and only if {\tt iturb(iphas)} = 40 or 41}
+$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
+useful if and only if {\tt iturb} = 40 or 41}
 
 \motcle{ales}{ra}{real number $>$ 0}{1}{O}{L3}
-{for each phase {\tt iphas}, {\tt ales(iphas)} is a constant used to define, for
+{{\tt ales} is a constant used to define, for
 each cell $\Omega_i$, the width of the (implicit) filter:\\
-$\overline{\Delta}=xlesfl(iphas)(ales(iphas)*|\Omega_i|)^{bles(iphas)}$\\
-useful if and only if {\tt iturb(iphas)} = 40 or 41}
+$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
+useful if and only if {\tt iturb} = 40 or 41}
 
 \motcle{bles}{ra}{real number $>$ 0}{1/3}{O}{L3}
-{for each phase {\tt iphas}, {\tt bles(iphas)} is a constant used to define, for
+{{\tt bles} is a constant used to define, for
 each cell $\Omega_i$, the width of the (implicit) filter:\\
-$\overline{\Delta}=xlesfl(iphas)(ales(iphas)*|\Omega_i|)^{bles(iphas)}$\\
-useful if and only if {\tt iturb(iphas)} = 40 or 41}
+$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
+useful if and only if {\tt iturb} = 40 or 41}
 
 \motcle{xlesfd}{ra}{real number $>$ 0}{1.5}{O}{L3}
-{for each phase {\tt iphas}, {\tt xlesfd(iphas)} is the constant used to define, for
+{{\tt xlesfd} is the constant used to define, for
 each cell $\Omega_i$, the width of the explicit filter used in the framework of
 the LES dynamic model:\\
-$\widetilde{\overline{\Delta}}=xlesfd(iphas)\overline{\Delta}$\\
-useful if and only if {\tt iturb(iphas)} = 41}
+$\widetilde{\overline{\Delta}}=xlesfd\overline{\Delta}$\\
+useful if and only if {\tt iturb} = 41}
 
 
 
@@ -1322,25 +1297,25 @@ options.
 
 
 \motcle{ischtp}{ia}{1 or 2}{1 or 2}{O}{L2}
-{for each phase {\tt iphas}, {\tt ischtp(iphas)} indicates the order of the
+{{\tt ischtp} indicates the order of the
 activated time scheme (this indicator allows the code to automatically complete
 the other indicators related to the time scheme)\\
 \hspace*{1.3cm}= 1: first-order \\
 \hspace*{1.3cm}= 2: second-order \\
-when {\tt ischtp(iphas)}=2, the physical properties are by default not
+when {\tt ischtp}=2, the physical properties are by default not
 second-order. It it possible to modify this by means of the
 following indicators.\\
 due to specific coupling between certain variables, the source terms in the
 turbulence equations (except convection and diffusion) cannot be second order,
 except with the $R_{ij}$ models (cf. key word {\tt isto2t})\\
-by default, {\tt ischtp(iphas)} is initialised to 2 with the LES model and 1
+by default, {\tt ischtp} is initialised to 2 with the LES model and 1
 otherwise\\
 always useful}
 
 \motcle{istmpf}{ia}{0, 1 or 2}{0 or 1}{O}{L3}
-{for each phase {\tt iphas}, {\tt istmpf(iphas)} specifies the time scheme activated
-for the mass flow. The chosen value for {\tt istmpf(iphas)} will automatically
-determine the value given to the variable {\tt thetfl(iphas)}\\
+{{\tt istmpf} specifies the time scheme activated
+for the mass flow. The chosen value for {\tt istmpf} will automatically
+determine the value given to the variable {\tt thetfl}\\
 \hspace*{1.3cm}= 0: ''explicit'' first-order: the mass flow calculated
 at the previous time step (``n'') is used in the convective terms of all
 the equations (momentum, turbulence and scalars\\
@@ -1353,12 +1328,12 @@ is extrapolated at ``n+{\tt thetfl}'' (=n+1/2) from the values at the two former
 steps (Adams Bashforth); the mass flow used in the equations for turbulence and
 scalars is interpolated at time ``n+{\tt thetfl}'' (=n+1/2) from the values at the
 former time step and at the newly calculated ``n+1'' time step.\\
-by default, {\tt istmpf(iphas)}=2 is used in the case of a second-order time
-scheme (if {\tt ischtp(iphas)}=2) and {\tt istmpf(iphas)}=1 otherwise\\
+by default, {\tt istmpf}=2 is used in the case of a second-order time
+scheme (if {\tt ischtp}=2) and {\tt istmpf}=1 otherwise\\
 always useful}
 
 \motcle{isno2t}{ia}{0, 1 or 2}{0 or 1}{O}{L3}
-{for each phase {\tt iphas}, {\tt isno2t(iphas)} specifies the time scheme activated
+{{\tt isno2t} specifies the time scheme activated
 for the source terms of the momentum equation, apart from convection and
 diffusion (for instance: head loss, transposed gradient, ...).\\
 \hspace*{1.3cm}= 0: ''standard'' first-order: the terms which are linear
@@ -1372,17 +1347,17 @@ being given by the value of {\tt thetav} associated with the variable $\phi$)
 ; the other terms $S_e$ are expressed as second-order terms by
 extrapolation (according to the formula
 $(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]$, $\theta$ being
-given by the value of {\tt thetsn(iphas)}=0.5)\\
+given by the value of {\tt thetsn}=0.5)\\
 \hspace*{1.3cm}= 2: the linear terms $S_i\phi$ are treated in the same
 way as when {\tt isno2t}=1;
 the other terms $S_e$ are extrapolated according to the same formula
-as when {\tt isno2t}=1, but with $\theta$={\tt thetsn(iphas)}=1\\
-by default, {\tt isno2t(iphas)} is initialised to 1 (second-order) when
+as when {\tt isno2t}=1, but with $\theta$={\tt thetsn}=1\\
+by default, {\tt isno2t} is initialised to 1 (second-order) when
 the selected time scheme is second-order ({\tt ischtp}=2), otherwise to 0.\\
 always useful}
 
 \motcle{isto2t}{ia}{0, 1 or 2}{0}{O}{L3}
-{for each phase {\tt iphas}, {\tt isto2t(iphas)} specifies the time scheme
+{{\tt isto2t} specifies the time scheme
 activated for the source terms of the turbulence equations (related to $k$,
 $R_{ij}$, $\varepsilon$, $\omega$, $\varphi$, $\overline{f}$), apart
 from convection and diffusion.\\
@@ -1397,14 +1372,14 @@ being given by the value of {\tt thetav} associated with the variable $\phi$);
 the other terms $S_e$ are expressed as second-order terms by
 extrapolation (according to the formula
 $(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]$, $\theta$ being
-given by the value of {\tt thetst(iphas)}=0.5)\\
+given by the value of {\tt thetst}=0.5)\\
 \hspace*{1.3cm}= 2: the linear terms $S_i\phi$ are treated in the same
 way as when {\tt isto2t}=1;
 the other terms $S_e$ are extrapolated according to the same formula
-as when {\tt isto2t}=1, but with $\theta$={\tt thetst(iphas)}=1\\
+as when {\tt isto2t}=1, but with $\theta$={\tt thetst}=1\\
 due to certain specific couplings between the turbulence equations,
-{\tt isto2t(iphas)} is allowed the value 1 or 2 only for the $R_{ij}$ models
-({\tt iturb(iphas)}=30 or 31); hence, it is always initialised to 0.\\
+{\tt isto2t} is allowed the value 1 or 2 only for the $R_{ij}$ models
+({\tt iturb}=30 or 31); hence, it is always initialised to 0.\\
 always useful}
 
 
@@ -1434,7 +1409,7 @@ always useful}
 
 
 \motcle{iroext}{ia}{0, 1 or 2}{0}{O}{L3}
-{for each phase {\tt iphas}, {\tt iroext(iphas)} specifies the time scheme activated
+{{\tt iroext} specifies the time scheme activated
 for the physical property $\phi$ ``density''.\\
 \hspace*{1.3cm}= 0: ``standard'' first-order: the value calculated at
 the beginning of the current time step (from the
@@ -1442,14 +1417,14 @@ variables known at the end of the previous time step) is used \\
 \hspace*{1.3cm}= 1: second-order: the physical property $\phi$ is
 extrapolated according to the formula
 $\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]$, $\theta$ being
-given by the value of {\tt thetro(iphas)}=0.5 \\
+given by the value of {\tt thetro}=0.5 \\
 \hspace*{1.3cm}= 2: first-order: the physical property $\phi$ is
 extrapolated at $n+1$ according to the
-same formula as when {\tt iroext}=1 but with $\theta$={\tt thetro(iphas)}=1\\
+same formula as when {\tt iroext}=1 but with $\theta$={\tt thetro}=1\\
 always useful}
 
 \motcle{iviext}{ia}{0, 1 or 2}{0}{O}{L3}
-{for each phase {\tt iphas}, {\tt iviext(iphas)} specifies the time scheme activated
+{{\tt iviext} specifies the time scheme activated
 for the physical property $\phi$ ``total viscosity''
 (molecular+turbulent or sub-grid viscosities).\\
 \hspace*{1.3cm}= 0: ''standard'' first-order: the value calculated at
@@ -1458,14 +1433,14 @@ variables known at the end of the previous time step) is used \\
 \hspace*{1.3cm}= 1: second-order: the physical property $\phi$ is
 extrapolated according to the formula
 $\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]$, $\theta$ being
-given by the value of {\tt thetvi(iphas)}=0.5 \\
+given by the value of {\tt thetvi}=0.5 \\
 \hspace*{1.3cm}= 2: first-order: the physical property $\phi$ is
 extrapolated at $n+1$ according to the
-same formula as when {\tt iviext}=1, but with $\theta$={\tt thetvi(iphas)}=1\\
+same formula as when {\tt iviext}=1, but with $\theta$={\tt thetvi}=1\\
 always useful}
 
 \motcle{icpext}{ia}{0, 1 or 2}{0}{O}{L3}
-{for each phase {\tt iphas}, {\tt icpext(iphas)} specifies the time scheme activated
+{{\tt icpext} specifies the time scheme activated
 for the physical property $\phi$ ``specific heat''.\\
 \hspace*{1.3cm}= 0: ''standard'' first-order: the value calculated at
 the beginning of the current time step (from the
@@ -1473,10 +1448,10 @@ variables known at the end of the previous time step) is used \\
 \hspace*{1.3cm}= 1: second-order: the physical property $\phi$ is
 extrapolated according to the formula
 $\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]$, $\theta$ being
-given by the value of {\tt thetcp(iphas)}=0.5 \\
+given by the value of {\tt thetcp}=0.5 \\
 \hspace*{1.3cm}= 2: first-order: the physical property $\phi$ is
 extrapolated at $n+1$ according to the
-same formula as when {\tt icpext}=1, but with $\theta$={\tt thetcp(iphas)}=1\\
+same formula as when {\tt icpext}=1, but with $\theta$={\tt thetcp}=1\\
 always useful}
 
 \motcle{ivsext}{ia}{0, 1 or 2}{0}{O}{L3}
@@ -1511,46 +1486,46 @@ LES calculations), otherwise {\tt thetav} is set to 1.\\
 always useful}
 
 \motcle{thetfl}{ra}{0 $\leqslant$ real $\leqslant$1}{0 or 0.5}{O}{L3}
-{for each phase {\tt iphas}, {\tt thetfl(iphas)} is the value of $\theta$ used to
+{{\tt thetfl} is the value of $\theta$ used to
 interpolate the convective fluxes of the variables when a second-order time
 scheme has been activated for the mass flow (see {\tt istmpf})\\
 generally, only the value 0.5 is used. The user is not allowed to
 modify this variable.\\
 \hspace*{1.3cm}= 0.0: ``explicit'' first-order (corresponds to
-{\tt istmpf(iphas)}=0 or 1)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt istmpf(iphas)}=2). The mass
+{\tt istmpf}=0 or 1)\\
+\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt istmpf}=2). The mass
 flux will be interpolated according to the formula
 $Q^{n+\theta}=\frac{1}{2-\theta}Q^{n+1}+\frac{1-\theta}{2-\theta}Q^{n+1-\theta}$).\\
 always useful}
 
 \motcle{thetsn}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{for each phase {\tt iphas}, {\tt thetsn(iphas)} is the value of $\theta$ used to
+{{\tt thetsn} is the value of $\theta$ used to
 extrapolate the non linear explicit source terms $S_e$ of the momentum equation,
 when the source term extrapolation has been activated (see {\tt isno2t}),
 following the formula\\
 $(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}$\\
 the value
-of $\theta$={\tt thetsn(iphas)} is deduced from the value chosen for
-{\tt isno2t(iphas)}. Generally, only the value 0.5 is used. The user is not
+of $\theta$={\tt thetsn} is deduced from the value chosen for
+{\tt isno2t}. Generally, only the value 0.5 is used. The user is not
 allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to {\tt isno2t(iphas)}=0) \\
-\hspace*{1.3cm}= 0.5: second-order (used when {\tt isno2t(iphas)}=1) \\
-\hspace*{1.3cm}= 1: first-order (used when {\tt isno2t(iphas)}=2) \\
+\hspace*{1.3cm}= 0: first-order (unused, corresponds to {\tt isno2t}=0) \\
+\hspace*{1.3cm}= 0.5: second-order (used when {\tt isno2t}=1) \\
+\hspace*{1.3cm}= 1: first-order (used when {\tt isno2t}=2) \\
 always useful}
 
 \motcle{thetst}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{for each phase {\tt iphas}, {\tt thetst(iphas)} is the value of $\theta$ used to
+{{\tt thetst} is the value of $\theta$ used to
 extrapolate the non linear explicit source terms $S_e$ of the turbulence equations,
 when the source term extrapolation has been activated (see {\tt isto2t}),
 following the formula\\
 $(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}$\\
 the value
-of $\theta$={\tt thetsn(iphas)} is deduced from the value chosen for
-{\tt isto2t(iphas)}. Generally, only the value 0.5 is used. The user is not
+of $\theta$={\tt thetsn} is deduced from the value chosen for
+{\tt isto2t}. Generally, only the value 0.5 is used. The user is not
 allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to {\tt isto2t(iphas)}=0) \\
-\hspace*{1.3cm}= 0.5: second-order (used when {\tt isto2t(iphas)}=1) \\
-\hspace*{1.3cm}= 1: first-order (used when {\tt isto2t(iphas)}=2) \\
+\hspace*{1.3cm}= 0: first-order (unused, corresponds to {\tt isto2t}=0) \\
+\hspace*{1.3cm}= 0.5: second-order (used when {\tt isto2t}=1) \\
+\hspace*{1.3cm}= 1: first-order (used when {\tt isto2t}=2) \\
 always useful}
 
 \motcle{thetss}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
@@ -1570,45 +1545,45 @@ useful if {\tt nscal}$>$1}
 
 
 \motcle{thetro}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{for each phase {\tt iphas}, {\tt thetro(iphas)} is the value of $\theta$ used to
+{{\tt thetro} is the value of $\theta$ used to
 extrapolate the physical property $\phi$ ``density'' when the extrapolation has
 been activated (see {\tt iroext}),according to the
 formula $\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}$\\
-the value of $\theta$={\tt thetro(iphas)} is deduced from the value chosen for
-{\tt iroext(iphas)}. Generally, only the value 0.5 is used. The user is not
+the value of $\theta$={\tt thetro} is deduced from the value chosen for
+{\tt iroext}. Generally, only the value 0.5 is used. The user is not
 allowed to modify this variable.\\
 \hspace*{1.3cm}= 0: first-order (unused, corresponds to
-{\tt iroext(iphas)}=0)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt iroext(iphas)}=1) \\
-\hspace*{1.3cm}= 1: first-order (corresponds to {\tt iroext(iphas)}=2) \\
+{\tt iroext}=0)\\
+\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt iroext}=1) \\
+\hspace*{1.3cm}= 1: first-order (corresponds to {\tt iroext}=2) \\
 always useful}
 
 \motcle{thetvi}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{for each phase {\tt iphas}, {\tt thetvi(iphas)} is the value of $\theta$ used to
+{{\tt thetvi} is the value of $\theta$ used to
 extrapolate the physical property $\phi$ ``total viscosity'' when the extrapolation has
 been activated (see {\tt iviext}),according to the
 formula $\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}$\\
-the value of $\theta$={\tt thetvi(iphas)} is deduced from the value chosen for
-{\tt iviext(iphas)}. Generally, only the value 0.5 is used. The user is not
+the value of $\theta$={\tt thetvi} is deduced from the value chosen for
+{\tt iviext}. Generally, only the value 0.5 is used. The user is not
 allowed to modify this variable.\\
 \hspace*{1.3cm}= 0: first-order (unused, corresponds to
-{\tt iviext(iphas)}=0)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt iviext(iphas)}=1) \\
-\hspace*{1.3cm}= 1: first-order (corresponds to {\tt iviext(iphas)}=2) \\
+{\tt iviext}=0)\\
+\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt iviext}=1) \\
+\hspace*{1.3cm}= 1: first-order (corresponds to {\tt iviext}=2) \\
 always useful}
 
 \motcle{thetcp}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{for each phase {\tt iphas}, {\tt thetcp(iphas)} is the value of $\theta$ used to
+{{\tt thetcp} is the value of $\theta$ used to
 extrapolate the physical property $\phi$ ``specific heat'' when the extrapolation has
 been activated (see {\tt icpext}),according to the
 formula $\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}$\\
-the value of $\theta$={\tt thetcp(iphas)} is deduced from the value chosen for
-{\tt icpext(iphas)}. Generally, only the value 0.5 is used. The user is not
+the value of $\theta$={\tt thetcp} is deduced from the value chosen for
+{\tt icpext}. Generally, only the value 0.5 is used. The user is not
 allowed to modify this variable.\\
 \hspace*{1.3cm}= 0: first-order (unused, corresponds to
-{\tt icpext(iphas)}=0)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt icpext(iphas)}=1) \\
-\hspace*{1.3cm}= 1: first-order (corresponds to {\tt icpext(iphas)}=2) \\
+{\tt icpext}=0)\\
+\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt icpext}=1) \\
+\hspace*{1.3cm}= 1: first-order (corresponds to {\tt icpext}=2) \\
 always useful}
 
 \motcle{thetvs}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
@@ -1682,9 +1657,9 @@ useful for all the unknowns}
 useful for all the unknowns {\tt ivar} for which {\tt imligr(ivar)} $\ne$ -1}
 
 \motcle{extrag}{ra}{0, 0.5 or 1}{0}{O}{L3}
-{for the variable ``pressure'' {\tt ivar=ipr(iphas)}, extrapolation coefficient
+{for the variable ``pressure'' {\tt ivar=ipr}, extrapolation coefficient
 of the gradients at the boundaries. It affects only the Neumann conditions.
-The only possible values of {\tt extrag(ipr(iphas))} are:\\
+The only possible values of {\tt extrag(ipr)} are:\\
 \hspace*{1.3cm}= 0: homogeneous Neumann calculated at first-order\\
 \hspace*{1.3cm}= 0.5: improved homogeneous Neumann, calculated at
 second-order in the case of an orthogonal mesh and at first-order otherwise\\
@@ -1718,7 +1693,7 @@ useful if and only if {\tt imrgra}=3}
 {for each unknown {\tt ivar}, {\tt iresol(ivar)} determines the method used
 for the solution of the linear system\\
 \hspace*{1.3cm}= -1: automatically managed by the code (conjugate
-gradient for the pressure {\tt ivar=ipr(iphas)} or any variable which is not
+gradient for the pressure {\tt ivar=ipr} or any variable which is not
 convected, Jacobi for the others. Diagonal preconditioning with
 conjugate gradient).\\
 \hspace*{1.3cm}= {\tt ipol*1000+j} with {\tt j}= 0: conjugate gradient\\
@@ -1790,7 +1765,7 @@ useful if and only if {\tt imgr(ivar)} = 1}
 
 \minititre{Warning}
 The algebraic multigrid method has only been tested for
-the ``pressure'' variable ({\tt imgr(ipr(iphas))}=1).
+the ``pressure'' variable ({\tt imgr(ipr)}=1).
 
 %==================================
 \subsubsection{Convective scheme}
@@ -1836,27 +1811,27 @@ not (0)\\
 always useful}
 
 \motcle{arak}{ra}{0 $<$ real $\leqslant$ 1}{1}{O}{L3}
-{for each phase {\tt iphas}, {\tt arak(iphas)} is the Arakawa coefficient before the
+{{\tt arak} is the Arakawa coefficient before the
 Rhie\& Chow filter\\
 always useful}
 
 \motcle{relaxp}{ra}{0 $<$ real $\leqslant$ 1}{1}{O}{L2}
-{for each phase {\tt iphas}, relaxation of the pressure increment during the
-solution of the system ({\tt relaxp(iphas)}=1: no relaxation)\\
+{relaxation of the pressure increment during the
+solution of the system ({\tt relaxp}=1: no relaxation)\\
 can improve the convergence in case of
 meshes of insufficient quality\\
 always useful}
 
 \motcle{irevmc}{ia}{0, 1 or 2}{0}{O}{L3}
-{for each phase {\tt iphas}, method used to update the velocity after the pressure
+{method used to update the velocity after the pressure
 correction:\\
 \hspace*{0,5cm}- standard gradient of pressure increment
-({\tt irevmc(iphas)}=0)\\
+({\tt irevmc}=0)\\
 \hspace*{0,5cm}- least squares on the pressure increment
-({\tt irevmc(iphas)}=1)\\
+({\tt irevmc}=1)\\
 \hspace*{0,5cm}-``{\tt rt0}'' {\em i.e.} least squares on the updated mass flux
-({\tt irevmc(iphas)}=2)\\
-the method {\tt irevmc(iphas)}=2 is generally not recommended\\
+({\tt irevmc}=2)\\
+the method {\tt irevmc}=2 is generally not recommended\\
 always useful}
 
 \motcle{iphydr}{i}{0 or 1}{0}{O}{L2}
@@ -1881,7 +1856,7 @@ conditions: see {\tt icalhy}.\\
 On meshes of insufficient quality, in order to
 improve the convergence, it may be useful to increase the number of
 iterations for the reconstruction of the pressure right-hand member,
-{\em i.e.} \mbox{\tt nswrsm(ipr(iphas))}.\\
+{\em i.e.} \mbox{\tt nswrsm(ipr)}.\\
 If head losses are present just along an outlet boundary, it is necessary to
 specify {\tt icalhy}=0 in order to deactivate the recalculation of the hydrostatic
 pressure at the boundary, which may otherwise cause instabilities.}
@@ -2026,7 +2001,7 @@ The estimators are evaluated depending on the values of {\tt iescal}.
 
 
 \motcleb{iescal}{ia}{0, 1 or 2}{0}{O}{L1}
-{for each phase {\tt iphas}, {\tt iescal(iest,iphas)} indicates the calculation mode
+{{\tt iescal(iest)} indicates the calculation mode
 for the error estimator {\tt iest} ({\tt iespre}, {\tt iesder}, {\tt iescor} or
 {\tt iestot}), for
 the Navier-Stokes equation:\\
@@ -2040,10 +2015,9 @@ the Navier-Stokes equation:\\
                    is calculated.
 
 The name of the estimators appearing in the listing and the post-processing is
-made up of the default name (given before), followed first by the value of
-{\tt iescal}, then by the phase number. For
-instance, EsPre201 is the estimator {\tt iespre} calculated with {\tt iescal}=2 for
-the phase 01.\\
+made up of the default name (given before), followed by the value of
+{\tt iescal}. For
+instance, EsPre2 is the estimator {\tt iespre} calculated with {\tt iescal}=2.\\
 always useful}
 
 
@@ -2074,9 +2048,9 @@ wall in case of calculation restart\\
 In case of restart calculation, if the position of the walls haven't changed,
 reading the distance to the wall from the restart file can save a fair amount of
 CPU time.\\
-Useful in $R_{ij}-\varepsilon$ model with wall echo ({\tt iturb(iphas)}=30 and
-{\tt irijec}=1), in LES with van Driest damping ({\tt iturb(iphas)}=40 and
-{\tt idries(iphas)}=1) and in $k-\omega$ SST ({\tt iturb(iphas)}=60). \\
+Useful in $R_{ij}-\varepsilon$ model with wall echo ({\tt iturb}=30 and
+{\tt irijec}=1), in LES with van Driest damping ({\tt iturb}=40 and
+{\tt idries}=1) and in $k-\omega$ SST ({\tt iturb}=60). \\
 By default, {\tt icdpar} is initialised to -1, in case there has been a change in the
 definition of the boundary conditions between two computations (change in the
 number or the positions of the walls). Yet, with the $k-\omega$ SST model, the
@@ -2203,7 +2177,7 @@ constant over time and only the equations for the scalars are solved\\
 also, if {\tt iccvfg}=1, the physical properties modified in \texttt{usphyv} will keep
 being updated. Beware of non-consistencies if these properties would normally
 affect the dynamic field (modification of density for instance)\\
-useful if and only if {\tt nscal} $>$ 0 and {\tt isuite}=1}
+useful if and only if {\tt nscal} $>$ 0 and the calculation is a restart}
 
 \motcleb{ipucou}{i}{0 or 1}{0}{O}{L1}
 {indicates the algorithm for velocity/pressure coupling\\
@@ -2233,8 +2207,8 @@ and diffusive fluxes at the faces should be reconstructed: \\
 deactivating the reconstruction of the fluxes can have a stabilising effect on
 the calculation. It is sometimes useful with the $k-\varepsilon$ model, if the
 mesh is strongly non-orthogonal in the near-wall region, where the gradients of
-$k$ and $\varepsilon$ are strong. In such a case, setting {\tt ircflu(ik(iphas))}=0
-and {\tt ircflu(iep(iphas))}=0 will probably help (switching to a first order
+$k$ and $\varepsilon$ are strong. In such a case, setting {\tt ircflu(ik)}=0
+and {\tt ircflu(iep)}=0 will probably help (switching to a first order
 convective scheme, {\tt blencv=0}, for $k$ and $\varepsilon$ might also help in
 that case)\\
 always useful}
@@ -2328,25 +2302,25 @@ They can be used but shall not be modified (they are defined as {\tt parameter})
 always useful }
 
 \motcleb{irovar}{ia}{0 or 1}{\tt -1}{C}{L1}
-{for each phase {\tt iphas}, {\tt irovar(iphas)}=0 indicates that the density is
-constant. Its value is the reference density {\tt ro0(iphas)}.\\
-{\tt irovar(iphas)}=1 indicates that the density is variable: its variation
+{{\tt irovar}=0 indicates that the density is
+constant. Its value is the reference density {\tt ro0}.\\
+{\tt irovar}=1 indicates that the density is variable: its variation
 law must be given in the user subroutine \texttt{usphyv}\\
 negative value: not initialised\\
 always useful}
 
 \motcleb{ivivar}{ia}{0 or 1}{\tt -1}{C}{L1}
-{for each phase {\tt iphas}, {\tt ivivar(iphas)}=0 indicates that the molecular
+{{\tt ivivar}=0 indicates that the molecular
 dynamic viscosity is constant. Its value is the reference molecular
-dynamic viscosity {\tt viscl0(iphas)}.\\
-{\tt ivivar(iphas)}=1 indicates that the molecular dynamic viscosity is
+dynamic viscosity {\tt viscl0}.\\
+{\tt ivivar}=1 indicates that the molecular dynamic viscosity is
 variable: its variation law must be given in the user subroutine
 \texttt{usphyv}\\
 negative value: not initialised\\
 always useful}
 
 \motcleb{ro0}{ra}{real number $\geqslant$ 0}{\tt -grand*10}{C}{L1}
-{for each phase {\tt iphas}, {\tt ro0(iphas)} is the reference density\\
+{{\tt ro0} is the reference density\\
 negative value: not initialised\\
 its value is not used in gas or coal combustion modeling (it
 will be calculated following the perfect gas law, with $P0$ and $T0$). With the
@@ -2372,7 +2346,7 @@ with the compressible module, the calculation is made directly on the total
 pressure}
 
 \motcleb{viscl0}{ra}{real number $>$ 0}{\tt -grand*10}{C}{L1}
-{for each phase {\tt iphas},  {\tt viscl0(iphas)} is the reference molecular dynamic
+{ {\tt viscl0} is the reference molecular dynamic
 viscosity\\
 negative value: not initialised\\
 always useful, it is the used value unless the user specifies the
@@ -2396,7 +2370,7 @@ from the coding law giving the density.}\\
 always useful with gas combustion, pulversized coal or the electric module.
 
 \motcleb{p0}{ra}{real number}{$1.013e-5$}{O}{L1}
-{for each phase {\tt iphas}, {\tt p0(iphas)} is the reference pressure for the total
+{{\tt p0} is the reference pressure for the total
 pressure\\
 except with the compressible module, the total pressure $P$ is evaluated
 from the reduced pressure $P^*$ so that $P$
@@ -2405,7 +2379,7 @@ with the compressible module, the total pressure is solved directly\\
 always useful}
 
 \motcle{pred0}{ra}{real number}{0}{O}{L3}
-{for each phase {\tt iphas}, {\tt pred0(iphas)} is the reference value for the reduced
+{{\tt pred0} is the reference value for the reduced
 pressure $P^*$ (see {\tt ro0})\\
 it is especially used to initialise the reduced pressure and as a reference
 value for the outlet boundary conditions\\
@@ -2417,7 +2391,7 @@ to {\tt p0} and not {\tt pred0} (see {\tt ro0})\\
 always useful, except with the compressible module}
 
 \motcleb{xyzp0}{ra}{3 real numbers}{0,0,0}{O}{L1}
-{for each phase {\tt iphas}, {\tt xyzp0(ii,iphas)} is the {\tt ii} coordinate
+{{\tt xyzp0(ii)} is the {\tt ii} coordinate
 (1$\leqslant$II$\leqslant$3) of the reference point $\vect{x}_0$ for the
 total pressure\\
 when there are no Dirichlet conditions for the pressure (closed domain), {\tt xyzp0}
@@ -2442,36 +2416,36 @@ equations directly represents the total pressure. {\tt xyzp0} is therefore not u
 always useful, except with the compressible module}
 
 \motcleb{t0}{ra}{real number}{0}{O}{L1}
-{for each phase {\tt iphas}, {\tt t0(iphas)} is the reference temperature \\
+{{\tt t0} is the reference temperature \\
 useful for the specific physics gas or coal combustion (initialisation
 of the density), for the electricity modules to initialise the domain
 temperature and for the comperssible module (initialisations). It must be given
 in Kelvin.}
 
 \motcleb{cp0}{ra}{real number $>$ 0}{\tt -grand*10}{O}{L1}
-{for each phase {\tt iphas}, {\tt cp0(iphas)} is the reference specific heat\\
+{{\tt cp0} is the reference specific heat\\
 useful if there is 1$\leqslant$n$\leqslant$nscaus\footnote{none of the scalars
 from the specific physics is a temperature} so that {\tt iscsth(n)}=1
 (there is a scalar ``temperature''), unless the user specifies the
 specific heat in the user subroutine \texttt{usphyv}\footnote{when using the
 Graphical Interface, {\tt cp0} is also used to calculate the diffusivity of the
 thermal scalars, based on their conductivity; it is therefore needed, unless the
-diffusivity is also specified in \texttt{usphyv}} ({\tt icp(iphas)} $>$ 0)\\
+diffusivity is also specified in \texttt{usphyv}} ({\tt icp} $>$ 0)\\
 with the compressible module or coal combustion, {\tt cp0} is also needed even when
 there is no user scalar}
 
 \motcleb{icp}{ia}{0 or 1}{0}{O}{L1}
-{for each phase {\tt iphas}, indicates if the specific heat $C_p$ is variable
-({\tt icp(iphas)}=1) or not (0)\\
+{indicates if the specific heat $C_p$ is variable
+({\tt icp}=1) or not (0)\\
 When gas or coal combustion is activated, {\tt icp} is automatically set to 0
 (constant $C_p$). With the electric module, it is automatically set to 1.
 The user is not allowed to modify these default choices.\\
-When {\tt icp(iphas)}=1 is specified, the code automatically modifies this value to
-make {\tt icp(iphas)} designate the effective index-number of the property
-``specific heat of the phase {\tt iphas}''. For each cell {\tt iel}, the value of
+When {\tt icp}=1 is specified, the code automatically modifies this value to
+make {\tt icp} designate the effective index-number of the property
+``specific heat''. For each cell {\tt iel}, the value of
 $C_p$ is then specified by the user in the appropriate subroutine
 (\texttt{usphyv} for the standard physics) and stored in the array\\
-{\tt propce(iel,ipproc(icp(iphas)))}
+{\tt propce(iel,ipproc(icp))}
 ({\em see p.\pageref{prg_propvar} for specific conditions of use})\\
 useful if there is 1$\leqslant$N$\leqslant${\tt nscal} so that {\tt iscsth(n)}=1
 (there is a scalar ``temperature'') or with the compressible module for non
@@ -2506,7 +2480,7 @@ make {\tt ivisls(iscal)} designate the effective index-number of the property
 ``diffusivity of the scalar {\tt iscal}''. For each cell {\tt iel}, the value
 is then specified by the user in the appropriate subroutine
 (\texttt{usphyv} for the standard physics) and stored in the array\\
-{\tt propce(iel,ipproc(ivisls(iphas)))}
+{\tt propce(iel,ipproc(ivisls))}
 ({\em see p.\pageref{prg_propvar} for specific conditions of use})\\
 useful if 1$\leqslant${\tt n}$\leqslant${\tt nscal}}
 
@@ -2557,25 +2531,22 @@ useful if and only if there is 1$\leqslant${\tt iscal}$\leqslant$ {\tt nscal} su
 %==================================
 
 \motcleb{xlomlg}{ra}{real number $>$ 0}{\tt -grand*10}{O}{L1}
-{for each phase {\tt iphas}, {\tt xlomlg(iphas)} is the mixing length\\
-useful if and only if there is a phase {\tt iphas} so that {\tt iturb(iphas)}= 10
-(mixing length)}
+{{\tt xlomlg} is the mixing length\\
+useful if and only if {\tt iturb}= 10 (mixing length)}
 
 \motcle{almax}{ra}{\texttt{-grand}, real number $>$ 0}{\tt -grand*10}{O}{L2}
-{for each phase {\tt iphas}, {\tt almax(iphas)} is a characteristic macroscopic
+{{\tt almax} is a characteristic macroscopic
 length of the domain, used for the initialisation of the turbulence and
-the potential clipping (with {\tt iclkep(iphas)}=1)\\
+the potential clipping (with {\tt iclkep}=1)\\
 negative value: not initialised (the code then uses the cubic root of
 the domain volume)\\
-useful if and only if there is a phase {\tt iphas} such as
-{\tt turb(iphas)}= 20, 21, 30, 31, 50 or 60 (RANS models)}
+useful if and only if {\tt turb}= 20, 21, 30, 31, 50 or 60 (RANS models)}
 
 \motcleb{uref}{ra}{real number $>$ 0}{\tt -grand*10}{C}{L1}
-{for each phase {\tt iphas}, {\tt uref(iphas)} is the characteristic flow velocity,
+{{\tt uref} is the characteristic flow velocity,
 used for the initialisation of the turbulence\\
 negative value: not initialised\\
-useful if and only if there is a phase {\tt iphas} such that
-{\tt iturb(iphas)}= 20, 21, 30, 31, 50 or 60 (RANS model)
+useful if and only if {\tt iturb}= 20, 21, 30, 31, 50 or 60 (RANS model)
 and the turbulence is not initialised somewhere
 else (restart file or subroutine \texttt{usiniv})}
 
@@ -2584,30 +2555,30 @@ else (restart file or subroutine \texttt{usiniv})}
 
 \motcle{xkappa}{r}{real number $>$ 0}{0.42}{O}{L3}
 {K\'arm\'an constant\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}$\geqslant$10
+useful if and only if {\tt iturb}$\geqslant$10
 (mixing length, $k-\varepsilon$, $R_{ij}-\varepsilon$, LES, v2f or $k-\omega$)}
 
 \motcle{cstlog}{r}{real number $>$ 0}{5.2}{O}{L3}
 {constant of the logarithmic wall function\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}$\geqslant$10
+useful if and only if {\tt iturb}$\geqslant$10
 (mixing length, $k-\varepsilon$, $R_{ij}-\varepsilon$, LES, v2f or $k-\omega$)}
 
 \motcle{cmu}{r}{real number $>$ 0}{0.09}{O}{L3}
 {constant $C_\mu$ for all the RANS turbulence models except for the v2f model
 (see {\tt cv2fmu\index{cv2fmu}} for the value of $C_\mu$ in case of v2f modeling)\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}= 20,
+useful if and only if {\tt iturb}= 20,
 21, 30, 31 or 60 ($k-\varepsilon$, $R_{ij}-\varepsilon$ or $k-\omega$)}
 
 \motcle{ce1}{r}{real number $>$ 0}{1.44}{O}{L3}
 {constant $C_{\varepsilon 1}$ for all the RANS turbulence models except
 for the v2f and the $k-\omega$ models\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}= 20,
+useful if and only if {\tt iturb}= 20,
 21, 30 or 31 ($k-\varepsilon$ or $R_{ij}-\varepsilon$)}
 
 \motcle{ce2}{r}{real number $>$ 0}{1.92}{O}{L3}
 {constant $C_{\varepsilon 2}$ for the $k-\varepsilon$ and
 $R_{ij}-\varepsilon$ LRR models\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}= 20, 21 or 30
+useful if and only if {\tt iturb}= 20, 21 or 30
 ($k-\varepsilon$ or $R_{ij}-\varepsilon$ LRR)}
 
 %\motcle{ce3}{r}{real number $>$ 0}{1}{O}{L3}
@@ -2624,174 +2595,174 @@ with two-way coupling}
 
 \motcle{sigmak}{r}{real number $>$ 0}{1.0}{O}{L3}
 {Prandtl number for $k$ with $k-\varepsilon$ and v2f models\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=20, 21 or 50
+useful if and only if {\tt iturb}=20, 21 or 50
 ($k-\varepsilon$ or v2f)}
 
 \motcle{sigmae}{r}{real number $>$ 0}{1.3}{O}{L3}
 {Prandtl number for $\varepsilon$\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}= 20,
+useful if and only if {\tt iturb}= 20,
 21, 30, 31 or 50 ($k-\varepsilon$, $R_{ij}-\varepsilon$ or v2f)}
 
 \minititre{Constants specific to the $R_{ij}-\varepsilon$ LRR model ({\tt iturb}=30)}
 
 \motcle{crij1}{r}{real number $>$ 0}{1.8}{O}{L3}
 {constant $C_1$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=30
+useful if and only if {\tt iturb}=30
 ($R_{ij}-\varepsilon$ LRR)}
 
 \motcle{crij2}{r}{real number $>$ 0}{0.6}{O}{L3}
 {constant $C_2$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=30
+useful if and only if {\tt iturb}=30
 ($R_{ij}-\varepsilon$ LRR)}
 
 \motcle{crij3}{r}{real number $>$ 0}{0.55}{O}{L3}
 {constant $C_3$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=30
+useful if and only if {\tt iturb}=30
 ($R_{ij}-\varepsilon$ LRR)}
 
 \motcle{crijep}{r}{real number $>$ 0}{0.18}{O}{L3}
 {constant $C_\varepsilon$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=30
+useful if and only if {\tt iturb}=30
 ($R_{ij}-\varepsilon$ LRR)}
 
 \motcle{csrij}{r}{real number $>$ 0}{0.22}{O}{L3}
 {constant $C_s$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=30
+useful if and only if {\tt iturb}=30
 ($R_{ij}-\varepsilon$ LRR)}
 
 \motcle{crijp1}{r}{real number $>$ 0}{0.5}{O}{L3}
 {constant $C_1^\prime$ for the $R_{ij}-\varepsilon$ LRR model, corresponding to
 the wall echo terms\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=30
-and {\tt irijec(iphas)}=1
+useful if and only if {\tt iturb}=30
+and {\tt irijec}=1
 ($R_{ij}-\varepsilon$ LRR)}
 
 \motcle{crijp2}{r}{real number $>$ 0}{0.3}{O}{L3}
 {constant $C_2^\prime$ for the $R_{ij}-\varepsilon$ LRR model, corresponding to
 the wall echo terms\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=30 and {\tt irijec(iphas)}=1
+useful if and only if {\tt iturb}=30 and {\tt irijec}=1
 ($R_{ij}-\varepsilon$ LRR)}
 
 \minititre{Constants specific to the $R_{ij}-\varepsilon$ SSG model}
 
 \motcle{cssgs1}{r}{real number $>$ 0}{1.7}{O}{L3}
 {constant $C_{s1}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=31
+useful if and only if {\tt iturb}=31
 ($R_{ij}-\varepsilon$ SSG)}
 
 \motcle{cssgs2}{r}{real number $>$ 0}{-1.05}{O}{L3}
 {constant $C_{s2}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=31
+useful if and only if {\tt iturb}=31
 ($R_{ij}-\varepsilon$ SSG)}
 
 \motcle{cssgr1}{r}{real number $>$ 0}{0.9}{O}{L3}
 {constant $C_{r1}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=31
+useful if and only if {\tt iturb}=31
 ($R_{ij}-\varepsilon$ SSG)}
 
 \motcle{cssgr2}{r}{real number $>$ 0}{0.8}{O}{L3}
 {constant $C_{r2}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=31
+useful if and only if {\tt iturb}=31
 ($R_{ij}-\varepsilon$ SSG)}
 
 \motcle{cssgr3}{r}{real number $>$ 0}{0.65}{O}{L3}
 {constant $C_{r3}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=31
+useful if and only if {\tt iturb}=31
 ($R_{ij}-\varepsilon$ SSG)}
 
 \motcle{cssgr4}{r}{real number $>$ 0}{0.625}{O}{L3}
 {constant $C_{r4}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=31
+useful if and only if {\tt iturb}=31
 ($R_{ij}-\varepsilon$ SSG)}
 
 \motcle{cssgr5}{r}{real number $>$ 0}{0.2}{O}{L3}
 {constant $C_{r1}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=31
+useful if and only if {\tt iturb}=31
 ($R_{ij}-\varepsilon$ SSG)}
 
 \motcle{cssge2}{r}{real number $>$ 0}{1.83}{O}{L3}
 {constant $C_{\varepsilon 2}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=31
+useful if and only if {\tt iturb}=31
 ($R_{ij}-\varepsilon$ SSG)}
 
 \minititre{Constants specific to the v2f $\varphi$-model}
 
 \motcle{cv2fa1}{r}{real number $>$ 0}{0.05}{O}{L3}
 {constant $a_1$ for the v2f $\varphi$-model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=50
+useful if and only if {\tt iturb}=50
 (v2f $\varphi$-model)}
 
 \motcle{cv2fe2}{r}{real number $>$ 0}{1.85}{O}{L3}
 {constant $C_{\varepsilon 2}$ for the v2f $\varphi$-model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=50
+useful if and only if {\tt iturb}=50
 (v2f $\varphi$-model)}
 
 \motcle{cv2fmu}{r}{real number $>$ 0}{0.22}{O}{L3}
 {constant $C_\mu$ for the v2f $\varphi$-model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=50
+useful if and only if {\tt iturb}=50
 (v2f $\varphi$-model)}
 
 \motcle{cv2fc1}{r}{real number $>$ 0}{1.4}{O}{L3}
 {constant $C_1$ for the v2f $\varphi$-model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=50
+useful if and only if {\tt iturb}=50
 (v2f $\varphi$-model)}
 
 \motcle{cv2fc2}{r}{real number $>$ 0}{0.3}{O}{L3}
 {constant $C_2$ for the v2f $\varphi$-model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=50
+useful if and only if {\tt iturb}=50
 (v2f $\varphi$-model)}
 
 \motcle{cv2fct}{r}{real number $>$ 0}{6}{O}{L3}
 {constant $C_T$ for the v2f $\varphi$-model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=50
+useful if and only if {\tt iturb}=50
 (v2f $\varphi$-model)}
 
 \motcle{cv2fcl}{r}{real number $>$ 0}{0.25}{O}{L3}
 {constant $C_L$ for the v2f $\varphi$-model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=50
+useful if and only if {\tt iturb}=50
 (v2f $\varphi$-model)}
 
 \motcle{cv2fet}{r}{real number $>$ 0}{110}{O}{L3}
 {constant $C_\eta$ for the v2f $\varphi$-model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=50
+useful if and only if {\tt iturb}=50
 (v2f $\varphi$-model)}
 
 \minititre{Constants specific to the $k-\omega$ SST model}
 
 \motcle{ckwsk1}{r}{real number $>$ 0}{1/0.85}{O}{L3}
 {constant $\sigma_{k1}$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)}
 
 \motcle{ckwsk2}{r}{real number $>$ 0}{2}{O}{L3}
 {constant $\sigma_{k2}$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)}
 
 \motcle{ckwsw1}{r}{real number $>$ 0}{2}{O}{L3}
 {constant $\sigma_{\omega 1}$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)}
 
 \motcle{ckwsw2}{r}{real number $>$ 0}{1/0.856}{O}{L3}
 {constant $\sigma_{\omega 2}$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)}
 
 \motcle{ckwbt1}{r}{real number $>$ 0}{0.075}{O}{L3}
 {constant $\beta_1$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)}
 
 \motcle{ckwbt2}{r}{real number $>$ 0}{0.0828}{O}{L3}
 {constant $\beta_2$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)}
 
 \motcle{ckwgm1}{r}{real number $>$ 0}
 {$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}$}{O}{L3}
 {constant $\gamma_1$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)\\
 {\em Warning: $\gamma_1$ is calculated before the call to
 \texttt{usini1}. Hence, if $\beta_1$, $C_\mu$, $\kappa$ or $\sigma_{\omega 1}$
@@ -2800,7 +2771,7 @@ is modified in \texttt{usini1}, CKWGM1 must also be modified in accordance}}
 \motcle{ckwgm2}{r}{real number $>$ 0}
 {$\frac{\beta_2}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 2}}$}{O}{L3}
 {constant $\gamma_2$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)\\
 {\em Warning: $\gamma_2$ is calculated before the call to
 \texttt{usini1}. Hence, if $\beta_2$, $C_\mu$, $\kappa$ or $\sigma_{\omega 2}$
@@ -2809,12 +2780,12 @@ accordance}}
 
 \motcle{ckwa1}{r}{real number $>$ 0}{0.31}{O}{L3}
 {constant $a_1$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)}
 
 \motcle{ckwc1}{r}{real number $>$ 0}{10}{O}{L3}
 {constant $c_1$ for the $k-\omega$ SST model\\
-useful if and only if there is a phase {\tt iphas} such as {\tt iturb(iphas)}=60
+useful if and only if {\tt iturb}=60
 ($k-\omega$ SST)}
 
 
@@ -2856,10 +2827,10 @@ It is however not recommended to modify those which do not belong to
 level L1.
 
 \motcleb{irayon}{ia}{0, 1, 2}{0}{O}{L1}
-{for each phase {\tt iphas}, {\tt irayon(iphas)} activates ($>0$) or deactivates
+{{\tt irayon} activates ($>0$) or deactivates
 (=0) the radiation module\\
 if a specific physics is activated (in that case, {\tt nscapp}$>$0),
-{\tt irayon(iphas)} must be kept to 0 (see {\tt iraypp})\\
+{\tt irayon} must be kept to 0 (see {\tt iraypp})\\
 The different values correspond to the following modelings:\\
 \hspace*{1.3cm} = 1 discrete ordinates
 (standard option for radiation in semi-transparent media)\\
@@ -2871,7 +2842,7 @@ some cases of pulverised coal combustion}}
 \motcleb{iraypp}{i}{0, 1, 2, 3 or 4}{0}{O}{L1}
 {when a specific physics is activated\footnote{except with the compressible
 module, which is not compatible with radiation}
-({\tt nphas}=1, compulsory) {\tt iraypp}
+{\tt iraypp}
 indicates if thermal radiative transfers are calculated ($>0$) or not
 (=0).\\
 The value of {\tt iraypp} is given {\em via} a data file (gas combustion:
@@ -2963,54 +2934,54 @@ the radiative transfer equation:\\
 \hspace*{1.3cm}= 2: complete\\
 useful if and only if the radiation module is activated}
 
-\motcleb{nbrvap}{ca}{string of less than 80 characters}{name\_iphas}{O}{L1}
+\motcleb{nbrvap}{ca}{string of less than 80 characters}{name}{O}{L1}
 {name associated for the post-processing to each of the following variables,
 defined at the cell centers ({\it see}
 \cite{Douce02} for more details concerning their definitions):\\
-\hspace*{1.3cm} {\tt nbrvap(itsray,iphas)}: radiative source term ($W/m^3$)\\
-\hspace*{1.3cm} {\tt nbrvap(iqrayp,iphas)}: radiative flux density vector ($W/m^2$)\\
-\hspace*{1.3cm} {\tt nbrvap(iabsp,iphas)}: absorption part in the source term
+\hspace*{1.3cm} {\tt nbrvap(itsray)}: radiative source term ($W/m^3$)\\
+\hspace*{1.3cm} {\tt nbrvap(iqrayp)}: radiative flux density vector ($W/m^2$)\\
+\hspace*{1.3cm} {\tt nbrvap(iabsp)}: absorption part in the source term
 ($W/m^3$)\\
-\hspace*{1.3cm} {\tt nbrvap(iemip,iphas)}: emission part in the source term
+\hspace*{1.3cm} {\tt nbrvap(iemip)}: emission part in the source term
 ($W/m^3$)\\
-\hspace*{1.3cm} {\tt nbrvap(icakp,iphas)}: absorption coefficient of the
+\hspace*{1.3cm} {\tt nbrvap(icakp)}: absorption coefficient of the
 medium ($m^{-1}$)\\
 the default values are: \\
-\hspace*{1.3cm} {\tt nbrvap(itsray,iphas)} = Srad\_iphas \\
-\hspace*{1.3cm} {\tt nbrvap(iqrayp,iphas)} = Qrad\_iphas \\
-\hspace*{1.3cm} {\tt nbrvap(iabsp,iphas)} = Absorp\_iphas \\
-\hspace*{1.3cm} {\tt nbrvap(iemip,iphas)} = Emiss\_iphas \\
-\hspace*{1.3cm} {\tt nbrvap(icakp,iphas)} = CoefAb\_iphas \\
+\hspace*{1.3cm} {\tt nbrvap(itsray)} = Srad \\
+\hspace*{1.3cm} {\tt nbrvap(iqrayp)} = Qrad \\
+\hspace*{1.3cm} {\tt nbrvap(iabsp)} = Absorp \\
+\hspace*{1.3cm} {\tt nbrvap(iemip)} = Emiss \\
+\hspace*{1.3cm} {\tt nbrvap(icakp)} = CoefAb \\
 useful if and only if the radiation module is activated}
 
 \motcleb{irayvp}{ia}{-1 or 1}{-1}{O}{L1}
 {activates (=1) or deactivates (=-1) the post-processing for the each of the
 followiing variables defined at the cell centers:\\
-\hspace*{1.3cm} {\tt irayvp(itsray,iphas)}: radiative source term ($W/m^3$)\\
-\hspace*{1.3cm} {\tt irayvp(iqrayp,iphas)}: radiative flux density vector ($W/m^2$)\\
-\hspace*{1.3cm} {\tt irayvp(iabsp,iphas)}: absorption part in the source term
+\hspace*{1.3cm} {\tt irayvp(itsray)}: radiative source term ($W/m^3$)\\
+\hspace*{1.3cm} {\tt irayvp(iqrayp)}: radiative flux density vector ($W/m^2$)\\
+\hspace*{1.3cm} {\tt irayvp(iabsp)}: absorption part in the source term
 ($W/m^3$)\\
-\hspace*{1.3cm} {\tt irayvp(iemip,iphas)}: emission part in the source term
+\hspace*{1.3cm} {\tt irayvp(iemip)}: emission part in the source term
 ($W/m^3$)\\
-\hspace*{1.3cm} {\tt irayvp(icakp,iphas)}: absorption coefficient of the
+\hspace*{1.3cm} {\tt irayvp(icakp)}: absorption coefficient of the
 medium ($m^{-1}$)\\
 useful if and only if the radiation module is activated}
 
-\motcleb{nbrvaf}{ca}{string of less than 80 characters}{name\_iphas}{O}{L1}
+\motcleb{nbrvaf}{ca}{string of less than 80 characters}{name}{O}{L1}
 {name associated for the post-processing to each of the following variables,
 defined at the boundary faces ({\it see}
 \cite{Douce02} for more details concerning their definitions):\\
-\hspace*{1.3cm} {\tt nbrvaf(itparp,iphas)}: wall temperature at the boundary
+\hspace*{1.3cm} {\tt nbrvaf(itparp)}: wall temperature at the boundary
 faces ($K$)\\
-\hspace*{1.3cm} {\tt nbrvaf(iqincp,iphas)}: radiative incident flux density
+\hspace*{1.3cm} {\tt nbrvaf(iqincp)}: radiative incident flux density
 ($W/m^2$)\\
-\hspace*{1.3cm} {\tt nbrvaf(ixlamp,iphas)}: thermal conductivity of the
+\hspace*{1.3cm} {\tt nbrvaf(ixlamp)}: thermal conductivity of the
 boundary faces ($W/m/K$)\\
-\hspace*{1.3cm} {\tt nbrvaf(iepap,iphas)}: wall thickness ($m$)\\
-\hspace*{1.3cm} {\tt nbrvaf(iepsp,iphas)}: wall emissivity \\
-\hspace*{1.3cm} {\tt nbrvaf(ifnetp,iphas)}: net radiative flux density ($W/m^2$)\\
-\hspace*{1.3cm} {\tt nbrvaf(ifconp,iphas)}: convective flux density ($W/m^2$)\\
-\hspace*{1.3cm} {\tt nbrvaf(ihconp,iphas)}: convective exchange coefficient
+\hspace*{1.3cm} {\tt nbrvaf(iepap)}: wall thickness ($m$)\\
+\hspace*{1.3cm} {\tt nbrvaf(iepsp)}: wall emissivity \\
+\hspace*{1.3cm} {\tt nbrvaf(ifnetp)}: net radiative flux density ($W/m^2$)\\
+\hspace*{1.3cm} {\tt nbrvaf(ifconp)}: convective flux density ($W/m^2$)\\
+\hspace*{1.3cm} {\tt nbrvaf(ihconp)}: convective exchange coefficient
 ($W/m^2/K$)\\
 The default values are: \\
 \hspace*{1.3cm} {\tt nbrvaf(itparp)} = Wall\_temp \\
@@ -3124,7 +3095,7 @@ found in the subroutines \texttt{uscfx1} and \texttt{uscfx2} (see the
 description of these user subroutines, \S\ref{prg_uscfx12}).
 
 \motcleb{icfgrp}{ia}{0 or 1}{1}{C}{L1}
-{for each phase \texttt{iphas}, \texttt{icfgrp(iphas)} indicates if the boundary
+{\texttt{icfgrp} indicates if the boundary
 conditions should take into account (=1) or not (=0) the hydrostatic balance.\\
 always useful.\\
 In the cases where gravity is predominant, taking into account the hydrostatic
@@ -3164,10 +3135,10 @@ with $M = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}$, internal
 }
 
 \motcleb{iviscv}{ia}{0 or 1}{\texttt{0}}{C}{L1}
-{for each phase \texttt{iphas}, \texttt{iviscv(iphas)=0} indicates that
+{\texttt{iviscv=0} indicates that
 the volume viscosity is constant and equal to the reference volume viscosity
-\texttt{viscv0(iphas)}.\\
-\texttt{iviscv(iphas)}=1 indicates that the volume viscosity is variable: its
+\texttt{viscv0}.\\
+\texttt{iviscv}=1 indicates that the volume viscosity is variable: its
 variation law must be specified in the user subroutine \texttt{uscfpv}.\\
 always useful\\
 The volume viscosity $\kappa$ is defined by the formula expressing the stress:
@@ -3178,7 +3149,7 @@ The volume viscosity $\kappa$ is defined by the formula expressing the stress:
 }
 
 \motcleb{viscv0}{ra}{real number $\ge$ 0}{0}{O}{L1}
-{for each phase \texttt{iphas}, \texttt{viscv0(iphas)} is the reference volume
+{\texttt{viscv0} is the reference volume
 viscosity (noted $\kappa$ in the equation expressing $\tens{\sigma}$ in the
 paragraph dedicated to \texttt{iviscv})\\
 always useful, it is the used value, unless the user specifies the volume
@@ -3220,7 +3191,7 @@ It must be noted that the two-way coupling is taken
 into account only for the first eulerian phase. Dynamics,
 temperature and mass may be coupled independently\\
 \hspace*{1.3cm} = 3 Lagrangian two-phase flow on frozen continuous phase. This option can
-only be used in case of a calculation restart (\texttt{isuite} = 1). All the
+only be used in case of a calculation restart. All the
 eulerian fields are frozen (including the scalar fields). This option
 automatically implies \texttt{iccvfg} = 1\\
 always useful}
@@ -3229,7 +3200,7 @@ always useful}
 {activation (=1) or not (=0) of a Lagrangian calculation restart.
 The calculation restart file read when this option is activated (\texttt{ficaml})
 only contains the data related to the particles (see also \texttt{isuist})\\
-the global calculation must also be a restart calculation (\texttt{isuite}=1)\\
+the global calculation must also be a restart calculation\\
 always useful}
 
 \motcleb{isuist}{i}{0, 1}{0}{C}{L1}
@@ -3430,7 +3401,7 @@ the default value}
 {activation (=1) or not (=0) of the particle turbulent dispersion\\
 the turbulent dispersion is compatible only with the RANS turbulent models
 ($k-\varepsilon$, $R_{ij}-\varepsilon$, v2f or $k-\omega$)\\
-(\texttt{iturb(iphas)}=20, 21, 30, 31, 50 or 60 with IPHAS = 1)\\
+(\texttt{iturb}=20, 21, 30, 31, 50 or 60)\\
 always useful}
 
 \motcle{idiffl}{i}{0, 1}{0}{O}{L3}

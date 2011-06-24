@@ -1,4 +1,16 @@
 * 24/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update 2nd part of the user documenatation (remove references to iphas).
+  modified files:
+    doc/user/saturne2.tex
+
+* 22/06/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Extradiagonal values assignment bug fix and Various cleanups in matrix operations.
+  modified files:
+    src/alge/cs_matrix.c
+    src/base/cs_perio.c
+    src/base/cs_perio.h
+
+* 24/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix output of variables on projected mesh (for 2D SYRTHES coupling).
   modified files:
     src/base/cs_post.c
