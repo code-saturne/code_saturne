@@ -1,5 +1,10 @@
 2011-06-24  Yvan Fournier <yvan.fournier@edf.fr>
 
+	* Update MPI detection macros to include MPICH2, discarding
+	autodetection of LAM-MPI and MPICH1.
+
+2011-06-24  Yvan Fournier <yvan.fournier@edf.fr>
+
 	* Improve behavior of ple_coupling_synchronize() so as to only
 	add PLE_COUPLING_NO_SYNC at the synchronization following
 	PLE_COUPLING_STOP or PLE_COUPLING_LAST, and not imediately.

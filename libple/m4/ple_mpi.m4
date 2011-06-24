@@ -83,7 +83,42 @@ if test "x$with_mpi" != "xno" ; then
                  [ple_have_mpi=no])
   AC_MSG_RESULT($ple_have_mpi)
 
-  # If failed, basic test
+  # If failed, test for MPICH2 first
+  if test "x$ple_have_mpi" = "xno"; then
+    AC_MSG_CHECKING([for MPI (MPICH2 test)])
+    # First try (without MPI-IO)
+    case $host_os in
+      freebsd*)
+        MPI_LIBS="-lmpich -lopa -lmpl -lrt $PTHREAD_LIBS";;
+      *)
+        MPI_LIBS="-lmpich -lopa -lmpl -lrt -lpthread";;
+    esac
+    LIBS="$saved_LIBS $MPI_LIBS"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                   [[ MPI_Init(0, (void *)0); ]])],
+                   [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                    ple_have_mpi=yes],
+                   [ple_have_mpi=no])
+    if test "x$ple_have_mpi" = "xno"; then
+      # Second try (without ROMIO)
+      case $host_os in
+        freebsd*)
+          MPI_LIBS="-lmpich -lopa -lmpl $PTHREAD_LIBS";;
+        *)
+          MPI_LIBS="-lmpich -lopa -lmpl -lpthread";;
+      esac
+      LIBS="$saved_LIBS $MPI_LIBS"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                     [[ MPI_Init(0, (void *)0); ]])],
+                     [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                      ple_have_mpi=yes],
+                     [ple_have_mpi=no])
+    fi
+    AC_MSG_RESULT($ple_have_mpi)
+  fi
+
+
+  # If failed, basic test (works with OpenMPI)
   if test "x$ple_have_mpi" = "xno"; then
 
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
@@ -115,60 +150,6 @@ if test "x$with_mpi" != "xno" ; then
                    [[ MPI_Init(0, (void *)0); ]])],
                    [ple_have_mpi=yes],
                    [ple_have_mpi=no])
-    AC_MSG_RESULT($ple_have_mpi)
-  fi
-
-  # If failed, test for mpich
-  if test "x$ple_have_mpi" = "xno"; then
-    AC_MSG_CHECKING([for MPI (mpich test)])
-    # First try (simplest)
-    MPI_LIBS="-lmpich $PTHREAD_LIBS"
-    LIBS="$saved_LIBS $MPI_LIBS"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                   [[ MPI_Init(0, (void *)0); ]])],
-                   [ple_have_mpi=yes],
-                   [ple_have_mpi=no])
-    if test "x$ple_have_mpi" = "xno"; then
-      # Second try (with lpmpich)
-      MPI_LIBS="-Wl,-lpmpich -Wl,-lmpich -Wl,-lpmpich -Wl,-lmpich"
-      LIBS="$saved_LIBS $MPI_LIBS"
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                     [[ MPI_Init(0, (void *)0); ]])],
-                     [ple_have_mpi=yes],
-                     [ple_have_mpi=no])
-    fi
-    AC_MSG_RESULT($ple_have_mpi)
-  fi
-
-  # If failed, test for lam-mpi
-  if test "x$ple_have_mpi" = "xno"; then
-    AC_MSG_CHECKING([for MPI (lam-mpi test)])
-    # First try (without MPI-IO)
-    case $host_os in
-      freebsd*)
-        MPI_LIBS="-lmpi -llam $PTHREAD_LIBS";;
-      *)
-        MPI_LIBS="-lmpi -llam -lpthread";;
-    esac
-    LIBS="$saved_LIBS $MPI_LIBS"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                   [[ MPI_Init(0, (void *)0); ]])],
-                   [ple_have_mpi=yes],
-                   [ple_have_mpi=no])
-    if test "x$ple_have_mpi" = "xno"; then
-      # Second try (with MPI-IO)
-      case $host_os in
-        freebsd*)
-          MPI_LIBS="-lmpi -llam -lutil -ldl $PTHREAD_LIBS";;
-        *)
-          MPI_LIBS="-lmpi -llam -lutil -ldl -lpthread";;
-      esac
-      LIBS="$saved_LIBS $MPI_LIBS"
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                     [[ MPI_Init(0, (void *)0); ]])],
-                     [ple_have_mpi=yes],
-                     [ple_have_mpi=no])
-    fi
     AC_MSG_RESULT($ple_have_mpi)
   fi
 
