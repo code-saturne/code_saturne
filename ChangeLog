@@ -1,3 +1,8 @@
+* 24/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix output of variables on projected mesh (for 2D SYRTHES coupling).
+  modified files:
+    src/base/cs_post.c
+
 * 22/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove legacy (fvm_gather_* based) EnSight writer.
   modified files:

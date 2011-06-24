@@ -2924,6 +2924,7 @@ cs_post_define_existing_mesh(int           mesh_id,
                                       MPI_Allreduce(..., MPI_MIN, ...) */
 
   int         dim_ent = 0;
+  int         dim_ext_ent = 0;
   cs_bool_t   maj_ent_flag = false;
   fvm_lnum_t  n_elts = 0;
 
@@ -2943,8 +2944,9 @@ cs_post_define_existing_mesh(int           mesh_id,
 
   /* Compute number of cells and/or faces */
 
-  dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh) + dim_shift;
-  n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ent);
+  dim_ext_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
+  dim_ent = dim_ext_ent + dim_shift;
+  n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ext_ent);
 
   if (dim_ent == 3 && n_elts > 0)
     loc_flag[0] = 0;
@@ -2953,7 +2955,7 @@ cs_post_define_existing_mesh(int           mesh_id,
 
     BFT_MALLOC(num_ent_parent, n_elts, cs_int_t);
 
-    fvm_nodal_get_parent_num(exp_mesh, dim_ent, num_ent_parent);
+    fvm_nodal_get_parent_num(exp_mesh, dim_ext_ent, num_ent_parent);
 
     dec_num_fbr = cs_glob_mesh->n_b_faces;
     for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
