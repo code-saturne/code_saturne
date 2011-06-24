@@ -229,6 +229,11 @@ ple_coupling_mpi_set_get_info(const ple_coupling_mpi_set_t  *s,
 /*----------------------------------------------------------------------------
  * Synchronize applications in a set.
  *
+ * Note that if a member of the set has used a PLE_COUPLING_STOP or
+ * PLE_COUPLING_LAST flag when calling ple_coupling_mpi_set_create() or
+ * or at the previous call to this function, it will not be synchronized
+ * anymore (i.e. the PLE_COUPLING_NO_SYNC flag will be added).
+ *
  * parameters:
  *   s         <-- pointer to PLE coupling MPI set info structure.
  *   sync_flag <-- synchronization info for current application.

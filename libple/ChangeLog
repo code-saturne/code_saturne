@@ -1,3 +1,9 @@
+2011-06-24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Improve behavior of ple_coupling_synchronize() so as to only
+	add PLE_COUPLING_NO_SYNC at the synchronization following
+	PLE_COUPLING_STOP or PLE_COUPLING_LAST, and not imediately.
+
 2011-06-20  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Add Doxygen documentation.

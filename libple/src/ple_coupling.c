@@ -771,6 +771,11 @@ ple_coupling_mpi_set_get_info(const ple_coupling_mpi_set_t  *s,
 /*!
  * \brief Synchronize applications in a set.
  *
+ * Note that if a member of the set has used a PLE_COUPLING_STOP or
+ * PLE_COUPLING_LAST flag when calling ple_coupling_mpi_set_create() or
+ * or at the previous call to this function, it will not be synchronized
+ * anymore (i.e. the PLE_COUPLING_NO_SYNC flag will be added).
+ *
  * param[in] s         pointer to PLE coupling MPI set info structure.
  * param[in] sync_flag synchronization info for current application.
  * param[in] time_step time step for current application.
@@ -790,31 +795,33 @@ ple_coupling_mpi_set_synchronize(ple_coupling_mpi_set_t  *s,
 
   _mpi_double_int_t *glob_vals = NULL;
 
+  /* Update synchronization flag first. */
+
+  for (i = 0; i < s->n_apps; i++) {
+    if (s->app_status[i] & last_sync_mask)
+      s->app_status[i] = (s->app_status[i] | PLE_COUPLING_NO_SYNC);
+    if (s->app_status[i] & PLE_COUPLING_INIT)
+      s->app_status[i] -= PLE_COUPLING_INIT;
+  }
+
   /* Return immediately if not synchronized */
 
   if (s->app_status[s->app_id] & PLE_COUPLING_NO_SYNC)
     return;
 
-  PLE_MALLOC(glob_vals, s->n_apps, _mpi_double_int_t);
-
   /* Synchronize roots, then broad cast locally */
+
+  PLE_MALLOC(glob_vals, s->n_apps, _mpi_double_int_t);
 
   _coupling_mpi_set_synchronize_roots(s, sync_flag, time_step, glob_vals);
 
   MPI_Bcast(glob_vals, s->n_apps, MPI_DOUBLE_INT, 0, s->app_comm);
 
-  /* Save values, and update synchronization flag */
+  /* Save values */
 
   for (i = 0; i < s->n_apps; i++) {
-
-    s->app_timestep[i] = glob_vals[i].d;
     s->app_status[i] = glob_vals[i].i;
-
-    if (s->app_status[i] & last_sync_mask)
-      s->app_status[i] = (s->app_status[i] | PLE_COUPLING_NO_SYNC);
-
-    if (s->app_status[i] & PLE_COUPLING_INIT)
-      s->app_status[i] -= PLE_COUPLING_INIT;
+    s->app_timestep[i] = glob_vals[i].d;
   }
 
   PLE_FREE(glob_vals);
