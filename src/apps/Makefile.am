@@ -162,12 +162,13 @@ cs_partition_SOURCES = cs_partition.c
 cs_partition_LDADD = $(top_builddir)/src/base/libcscore.la \
 $(LIBPLE_LA) \
 $(top_builddir)/src/fvm/libfvm.la \
-$(top_builddir)/src/bft/libbft.la
-cs_partition_LDFLAGS = \
-$(ORIGINRUNPATH) \
+$(top_builddir)/src/bft/libbft.la \
+$(LTLIBINTL) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
 $(METIS_LDFLAGS) $(METIS_LIBS) \
 $(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) \
 $(MPI_LDFLAGS) $(MPI_LIBS)
+cs_partition_LDFLAGS = \
+$(ORIGINRUNPATH)
 
 endif

@@ -1,4 +1,11 @@
 * 24/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix link order of libraries for cs_partition, to avoid
+  link error when MPI uses static libraries only.
+  This also requires a fix in the
+  modified files:
+    src/apps/Makefile.am
+
+* 24/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update 2nd part of the user documenatation (remove references to iphas).
   modified files:
     doc/user/saturne2.tex
