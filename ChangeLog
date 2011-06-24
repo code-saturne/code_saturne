@@ -1,4 +1,10 @@
 * 24/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update MPI detection macros to include MPICH2,
+  discarding autodetection of LAM-MPI and MPICH1.
+  modified files:
+    m4/cs_mpi.m4
+
+* 24/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix link order of libraries for cs_partition, to avoid
   link error when MPI uses static libraries only.
   This also requires a fix in the

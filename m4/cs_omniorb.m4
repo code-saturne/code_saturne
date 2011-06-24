@@ -114,7 +114,6 @@ then
   CPPFLAGS_old=$CPPFLAGS
   CPPFLAGS="$CPPFLAGS $OMNIORB_CXXFLAGS $OMNIORB_INCLUDES"
 
-  AC_LANG_CPLUSPLUS
   AC_CHECK_HEADER(CORBA.h,omniORB_ok="yes",omniORB_ok="no")
 
   CPPFLAGS=$CPPFLAGS_old
@@ -271,19 +270,23 @@ AC_MSG_RESULT(for omniORB: $omniORB_ok)
 # Save cache
 AC_CACHE_SAVE
 
-dnl AC_LANG_CPLUSPLUS
+if test "x$omniORB_ok" = "xyes" 
+then
 
-CXXFLAGS_old=$CXXFLAGS
-CXXFLAGS="$CXXFLAGS $OMNIORB_CXXFLAGS $OMNIORB_INCLUDES"
-LIBS_old=$LIBS
-LIBS="$LIBS $OMNIORB_LDFLAGS $OMNIORB_LIBS"
-AC_MSG_CHECKING(whether we have double and CORBA::Double compatibility)
-AC_TRY_RUN(
-#include <stdlib.h>
-#include <CORBA.h>
-int main ()
-{
-  CORBA::Double *a=new CORBA::Double(2.5);
+  CXXFLAGS_old=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS $OMNIORB_CXXFLAGS $OMNIORB_INCLUDES"
+  LIBS_old=$LIBS
+  LIBS="$LIBS $OMNIORB_LDFLAGS $OMNIORB_LIBS"
+  AC_MSG_CHECKING(whether we have double and CORBA::Double compatibility)
+
+  # Note: in cross-compilation mode, run-time checks are replaced
+  # by compile-time checks; the latter are based on the fact that
+  # the case statement does not allow twice the same label
+  # (autoconf uses a similar test for some of its macros)
+
+  AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+#include <CORBA.h>]],
+                [[CORBA::Double *a=new CORBA::Double(2.5);
   double c=2.5;
   double *b;
   b=(double *)a;
@@ -295,22 +298,25 @@ int main ()
   else{
     delete a;
     exit(1);
-  }
-}
-,DOUBLECOMP="yes",DOUBLECOMP="no")
-if test "$DOUBLECOMP" = yes; then
-  OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -DCOMP_CORBA_DOUBLE"
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-fi
-AC_MSG_CHECKING(whether we have int and CORBA::Long compatibility)
-AC_TRY_RUN(
-#include <stdlib.h>
-#include <CORBA.h>
-int main ()
-{
-  CORBA::Long *a=new CORBA::Long(2);
+    exit(1);]]) ],
+  DOUBLECOMP="yes",
+  DOUBLECOMP="no",
+  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+#include <CORBA.h>]],
+                     [[switch (0) case 0: case (sizeof(double)==sizeof(CORBA::Double)):;]])],
+                     [ DOUBLECOMP="yes" ],
+                     [ DOUBLECOMP="no"])]
+  )
+  if test "$DOUBLECOMP" = yes; then
+    OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -DCOMP_CORBA_DOUBLE"
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+  AC_MSG_CHECKING(whether we have int and CORBA::Long compatibility)
+  AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+#include <CORBA.h>]],
+                [[CORBA::Long *a=new CORBA::Long(2);
   int c=2;
   int *b;
   b=(int *)a;
@@ -318,17 +324,25 @@ int main ()
   if( (c==*b) && (sizeof(int)==sizeof(CORBA::Long)) )
     exit(0);
   else
-    exit(1);
-}
-,LONGCOMP="yes",LONGCOMP="no")
-if test "$LONGCOMP" = yes; then
-  OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -DCOMP_CORBA_LONG"
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
+    exit(1);]]) ],
+  LONGCOMP="yes",
+  LONGCOMP="no",
+  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+#include <CORBA.h>]],
+  [[switch (0) case 0: case (sizeof(int)==sizeof(CORBA::Long)):;]])],
+                     [ LONGCOMP="yes" ],
+                     [ LONGCOMP="no"])]
+  )
+  if test "$LONGCOMP" = yes; then
+    OMNIORB_CXXFLAGS="$OMNIORB_CXXFLAGS -DCOMP_CORBA_LONG"
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+
+  CXXFLAGS=$CXXFLAGS_old
+  LIBS=$LIBS_old
 fi
-CXXFLAGS=$CXXFLAGS_old
-LIBS=$LIBS_old
 
 AC_LANG_RESTORE
 
