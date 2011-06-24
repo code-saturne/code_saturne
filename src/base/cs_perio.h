@@ -471,12 +471,14 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
  *   halo      <-> halo associated with variable to synchronize
  *   sync_mode --> type of halo treatment (standard or extended)
  *   var       <-> vector to update
+ *   incvar    <-- specifies the increment for the elements of var
  *----------------------------------------------------------------------------*/
 
 void
 cs_perio_sync_var_vect(const cs_halo_t  *halo,
                        cs_halo_type_t    sync_mode,
-                       cs_real_t         var[]);
+                       cs_real_t         var[],
+                       int               incvar);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real vector between periodic cells.

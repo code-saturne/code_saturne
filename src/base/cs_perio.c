@@ -1965,12 +1965,14 @@ cs_perio_sync_var_scal(const cs_halo_t *halo,
  *   halo      <-> halo associated with variable to synchronize
  *   sync_mode --> kind of halo treatment (standard or extended)
  *   var       <-> vector to update
+ *   incvar    <-- specifies the increment for the elements of var
  *----------------------------------------------------------------------------*/
 
 void
 cs_perio_sync_var_vect(const cs_halo_t  *halo,
                        cs_halo_type_t    sync_mode,
-                       cs_real_t         var[])
+                       cs_real_t         var[],
+                       int               incvar)
 {
   cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
@@ -2017,12 +2019,12 @@ cs_perio_sync_var_vect(const cs_halo_t  *halo,
         }
 
         for (i = start_std; i < end_std; i++)
-          _apply_vector_rotation_i(matrix, var + i*3);
+          _apply_vector_rotation_i(matrix, var + i*incvar);
 
         if (sync_mode == CS_HALO_EXTENDED) {
 
           for (i = start_ext; i < end_ext; i++)
-            _apply_vector_rotation_i(matrix, var + i*3);
+            _apply_vector_rotation_i(matrix, var + i*incvar);
 
         }
 

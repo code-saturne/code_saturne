@@ -1013,7 +1013,6 @@ _destroy_coeff_native(cs_matrix_coeff_native_t **coeff)
  *   matrix           <-- Pointer to matrix structure
  *   symmetric        <-- Indicates if extradiagonal values are symmetric
  *   interleaved      <-- Indicates if matrix coefficients are interleaved
- *   diag_block_size  <-- block size of element ii, ii
  *   da               <-- Diagonal values
  *   xa               <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
@@ -1053,7 +1052,7 @@ _set_coeffs_native(cs_matrix_t      *matrix,
       if (mc->_xa == NULL)
         mc->xa = xa;
       else {
-        size_t xa_n_bytes = sizeof(cs_real_t) * ms->n_faces * matrix->b_size[1];
+        size_t xa_n_bytes = sizeof(cs_real_t) * ms->n_faces;
         if (! symmetric)
           xa_n_bytes *= 2;
         memcpy(mc->_xa, xa, xa_n_bytes);
@@ -1862,7 +1861,6 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const int diag_block_size = mc->diag_block_size;
 
   const cs_real_t  *restrict xa = mc->xa;
 
@@ -1873,27 +1871,26 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
   #pragma disjoint(*x, *y, *xa)
   #endif
 
-  if (diag_block_size < 2) {
-    /* Diagonal part of matrix.vector product */
+  /* Diagonal part of matrix.vector product */
 
-    _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells, 1);
+  _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells);
 
-    _zero_range(y, ms->n_cells, ms->n_cells_ext, 1);
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
 
-    /* Note: parallel and periodic synchronization could be delayed to here */
+  /* Note: parallel and periodic synchronization could be delayed to here */
 
-    /* non-diagonal terms */
+  /* non-diagonal terms */
 
-    if (mc->xa != NULL) {
+  if (mc->xa != NULL) {
 
-      if (mc->symmetric) {
+    if (mc->symmetric) {
 
-        const cs_int_t *restrict face_cel_p = ms->face_cell;
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
 
-        for (g_id=0; g_id < n_groups; g_id++) {
+      for (g_id=0; g_id < n_groups; g_id++) {
 
-          #pragma omp parallel for private(face_id, ii, jj)
-          for (t_id=0; t_id < n_threads; t_id++) {
+        #pragma omp parallel for private(face_id, ii, jj)
+        for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
                face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
@@ -1931,77 +1928,6 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
 
     } /* if mc-> xa != NULL */
   }
-  else {
-    /* Diagonal part of matrix.vector product */
-
-    _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells, diag_block_size);
-
-    _zero_range(y, ms->n_cells, ms->n_cells_ext, diag_block_size);
-
-    /* Note: parallel and periodic synchronization could be delayed to here */
-
-    /* non-diagonal terms */
-
-    if (mc->xa != NULL) {
-
-      if (mc->symmetric) {
-
-        const cs_int_t *restrict face_cel_p = ms->face_cell;
-
-        for (g_id = 0; g_id < n_groups; g_id++) {
-
-          #pragma omp parallel for private(face_id, ii, jj)
-          for (t_id = 0; t_id < n_threads; t_id++) {
-
-            for (face_id = group_index[(t_id*n_groups + g_id)*2];
-                 face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-                 face_id++) {
-              ii = face_cel_p[2*face_id] -1;
-              jj = face_cel_p[2*face_id + 1] -1;
-              for (kk = 0; kk < diag_block_size; ++kk) {
-                y[ii*diag_block_size + kk] +=  alpha*xa[face_id]
-                                             * x[jj*diag_block_size + kk];
-                y[jj*diag_block_size + kk] +=  alpha*xa[face_id]
-                                             * x[ii*diag_block_size + kk];
-              }
-            }
-
-          }
-
-        }
-
-      }
-      else {
-
-        const cs_int_t *restrict face_cel_p = ms->face_cell;
-
-        for (g_id = 0; g_id < n_groups; g_id++) {
-
-          #pragma omp parallel for private(face_id, ii, jj)
-          for (t_id = 0; t_id < n_threads; t_id++) {
-
-            for (face_id = group_index[(t_id*n_groups + g_id)*2];
-                 face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-                 face_id++) {
-              ii = face_cel_p[2*face_id] -1;
-              jj = face_cel_p[2*face_id + 1] -1;
-              for (kk = 0; kk < diag_block_size; ++kk) {
-                y[ii*diag_block_size + kk] +=  alpha*xa[2*face_id]
-                                             * x[jj*diag_block_size + kk];
-                y[jj*diag_block_size + kk] +=  alpha*xa[2*face_id + 1]
-                                             * x[ii*diag_block_size + kk];
-              }
-            }
-
-          }
-
-        }
-
-      }
-
-    } /* if mc-> xa != NULL */
-
-  }
 }
 
 #endif
@@ -2029,102 +1955,49 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
   cs_int_t  ii, jj, kk, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const int diag_block_size = mc->diag_block_size;
   const cs_real_t  *restrict xa = mc->xa;
   assert(matrix->numbering->type == CS_NUMBERING_VECTORIZE);
 
-  if (diag_block_size < 2) {
-    /* Diagonal part of matrix.vector product */
+  /* Diagonal part of matrix.vector product */
 
-    _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells, 1);
+  _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells);
 
-    _zero_range(y, ms->n_cells, ms->n_cells_ext, 1);
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
 
-    /* Note: parallel and periodic synchronization could be delayed to here */
+  /* Note: parallel and periodic synchronization could be delayed to here */
 
-    /* non-diagonal terms */
+  /* non-diagonal terms */
 
-    if (mc->xa != NULL) {
+  if (mc->xa != NULL) {
 
-      if (mc->symmetric) {
+    if (mc->symmetric) {
 
-        const cs_int_t *restrict face_cel_p = ms->face_cell;
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
 
-        #pragma cdir nodep
-        for (face_id = 0; face_id < ms->n_faces; face_id++) {
-          ii = face_cel_p[2*face_id] -1;
-          jj = face_cel_p[2*face_id + 1] -1;
-          y[ii] += alpha * xa[face_id] * x[jj];
-          y[jj] += alpha * xa[face_id] * x[ii];
-        }
-
-      }
-      else {
-
-        const cs_int_t *restrict face_cel_p = ms->face_cell;
-
-        #pragma cdir nodep
-        for (face_id = 0; face_id < ms->n_faces; face_id++) {
-          ii = face_cel_p[2*face_id] -1;
-          jj = face_cel_p[2*face_id + 1] -1;
-          y[ii] += alpha * xa[2*face_id] * x[jj];
-          y[jj] += alpha * xa[2*face_id + 1] * x[ii];
-        }
-
+      #pragma cdir nodep
+      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
+        y[ii] += alpha * xa[face_id] * x[jj];
+        y[jj] += alpha * xa[face_id] * x[ii];
       }
 
     }
-  }
-  else {
-    _diag_x_p_beta_y(alpha, beta, mc->da, x, y, ms->n_cells, diag_block_size);
+    else {
 
-    _zero_range(y, ms->n_cells, ms->n_cells_ext, diag_block_size);
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
 
-    /* Note: parallel and periodic synchronization could be delayed to here */
-
-    /* non-diagonal terms */
-
-    if (mc->xa != NULL) {
-
-      if (mc->symmetric) {
-
-        const cs_int_t *restrict face_cel_p = ms->face_cell;
-
-        #pragma cdir nodep
-        for (face_id = 0; face_id < ms->n_faces; face_id++) {
-          ii = face_cel_p[2*face_id] -1;
-          jj = face_cel_p[2*face_id + 1] -1;
-          for (kk = 0; kk < diag_block_size; ++kk) {
-            y[ii*diag_block_size + kk] +=  alpha*xa[face_id]
-                                         * x[jj*diag_block_size + kk];
-            y[jj*diag_block_size + kk] +=  alpha*xa[face_id]
-                                         * x[ii*diag_block_size + kk];
-          }
-        }
-
-      }
-      else {
-
-        const cs_int_t *restrict face_cel_p = ms->face_cell;
-
-        #pragma cdir nodep
-        for (face_id = 0; face_id < ms->n_faces; face_id++) {
-          ii = face_cel_p[2*face_id] -1;
-          jj = face_cel_p[2*face_id + 1] -1;
-          for (kk = 0; kk < diag_block_size; ++kk) {
-            y[ii*diag_block_size + kk] +=  alpha*xa[2*face_id]
-                                         * x[jj*diag_block_size + kk];
-            y[jj*diag_block_size + kk] +=  alpha*xa[2*face_id + 1]
-                                         * x[ii*diag_block_size + kk];
-          }
-        }
-
+      #pragma cdir nodep
+      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+        ii = face_cel_p[2*face_id] -1;
+        jj = face_cel_p[2*face_id + 1] -1;
+        y[ii] += alpha * xa[2*face_id] * x[jj];
+        y[jj] += alpha * xa[2*face_id + 1] * x[ii];
       }
 
     }
 
   }
-
 }
 
 #endif /* Vector machine variant */
@@ -2175,7 +2048,6 @@ _create_struct_csr(cs_bool_t         have_diag,
   ms->have_diag = have_diag;
 
   BFT_MALLOC(ms->row_index, ms->n_rows + 1, cs_int_t);
-  /* ms->row_index = ms->row_index; */
 
   ms->diag_index = NULL; /* Diagonal index only built if required */
 
@@ -2606,7 +2478,6 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
  *   matrix           <-> Pointer to matrix structure
  *   symmetric        <-- Indicates if extradiagonal values are symmetric
  *   interleaved      <-- Indicates if matrix coefficients are interleaved
- *   diag_block_size  --- Not taken into account for the moment
  *   da               <-- Diagonal values (NULL if all zero)
  *   xa               <-- Extradiagonal values (NULL if all zero)
  *----------------------------------------------------------------------------*/
@@ -3415,7 +3286,6 @@ _set_xa_coeffs_csr_sym_increment(cs_matrix_t      *matrix,
  *   matrix           <-> Pointer to matrix structure
  *   symmetric        <-- Indicates if extradiagonal values are symmetric (true)
  *   interleaved      <-- Indicates if matrix coefficients are interleaved
- *   diag_block_size  --- Not taken into account for the moment
  *   da               <-- Diagonal values (NULL if all zero)
  *   xa               <-- Extradiagonal values (NULL if all zero)
  *----------------------------------------------------------------------------*/
@@ -4320,8 +4190,7 @@ cs_matrix_vector_multiply(cs_perio_rota_t     rotation_mode,
       /* Synchronize periodic values */
 
       if (matrix->halo->n_transforms > 0 && b_size[0] == 3) {
-        assert(b_size[1] == 3); /* TODO: remove this restriction */
-        cs_perio_sync_var_vect(matrix->halo, CS_HALO_STANDARD, x);
+        cs_perio_sync_var_vect(matrix->halo, CS_HALO_STANDARD, x, b_size[1]);
       }
 
     }
@@ -4449,8 +4318,7 @@ cs_matrix_alpha_a_x_p_beta_y(cs_perio_rota_t     rotation_mode,
       /* Synchronize periodic values */
 
       if (matrix->halo->n_transforms > 0 && b_size[0] == 3) {
-        assert(b_size[1] == 3); /* TODO: remove this restriction */
-        cs_perio_sync_var_vect(matrix->halo, CS_HALO_STANDARD, x);
+        cs_perio_sync_var_vect(matrix->halo, CS_HALO_STANDARD, x, b_size[1]);
       }
 
     }
