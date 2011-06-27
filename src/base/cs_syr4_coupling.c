@@ -1295,7 +1295,7 @@ cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t  *syr_coupling,
 
   if (coupling_ent->n_elts > 0) {
     _post_var_update(coupling_ent, 1, tf);
-    _post_var_update(coupling_ent, 1, hwall);
+    _post_var_update(coupling_ent, 2, hwall);
   }
 }
 
