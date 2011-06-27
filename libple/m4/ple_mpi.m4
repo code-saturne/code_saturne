@@ -52,7 +52,6 @@ AC_ARG_WITH(mpi-lib,
                MPI_LDFLAGS="-L$with_mpi/lib"
              fi])
 
-
 # Just in case, remove excess whitespace from existing flag and libs variables.
 
 if test "$MPI_CPPFLAGS" != "" ; then
@@ -66,70 +65,39 @@ if test "$MPI_LIBS" != "" ; then
 fi
 
 # If we do not use an MPI compiler wrapper, we must add compilation
-# and link flags; we try to detect the correct flags to add.
+# and link flags; we will try to detect the correct flags to add.
+# In any case, we will try to determine the type of MPI library
+# using mpi.h before running link tests.
 
 if test "x$with_mpi" != "xno" ; then
 
-  # try several tests for MPI
-
   # MPI Compiler wrapper test
+
   AC_MSG_CHECKING([for MPI (MPI compiler wrapper test)])
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
   LIBS="$saved_LIBS $MPI_LIBS"
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                  [[ MPI_Init(0, (void *)0); ]])],
-                 [ple_have_mpi=yes],
+                 [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                  ple_have_mpi=yes
+                  ple_have_mpi_header=yes],
                  [ple_have_mpi=no])
   AC_MSG_RESULT($ple_have_mpi)
 
-  # If failed, test for MPICH2 first
+  # If no wrapper was used, check for mpi.h header
   if test "x$ple_have_mpi" = "xno"; then
-    AC_MSG_CHECKING([for MPI (MPICH2 test)])
-    # First try (without MPI-IO)
-    case $host_os in
-      freebsd*)
-        MPI_LIBS="-lmpich -lopa -lmpl -lrt $PTHREAD_LIBS";;
-      *)
-        MPI_LIBS="-lmpich -lopa -lmpl -lrt -lpthread";;
-    esac
-    LIBS="$saved_LIBS $MPI_LIBS"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                   [[ MPI_Init(0, (void *)0); ]])],
-                   [AC_DEFINE([HAVE_MPI], 1, [MPI support])
-                    ple_have_mpi=yes],
-                   [ple_have_mpi=no])
-    if test "x$ple_have_mpi" = "xno"; then
-      # Second try (without ROMIO)
-      case $host_os in
-        freebsd*)
-          MPI_LIBS="-lmpich -lopa -lmpl $PTHREAD_LIBS";;
-        *)
-          MPI_LIBS="-lmpich -lopa -lmpl -lpthread";;
-      esac
-      LIBS="$saved_LIBS $MPI_LIBS"
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                     [[ MPI_Init(0, (void *)0); ]])],
-                     [AC_DEFINE([HAVE_MPI], 1, [MPI support])
-                      ple_have_mpi=yes],
-                     [ple_have_mpi=no])
-    fi
-    AC_MSG_RESULT($ple_have_mpi)
-  fi
-
-
-  # If failed, basic test (works with OpenMPI)
-  if test "x$ple_have_mpi" = "xno"; then
-
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
-
-    # First, check for mpi.h header
     AC_CHECK_HEADERS([mpi.h],
                      [ple_have_mpi_header=yes],
                      [], 
                      [])
+  fi
 
-    if test $ple_have_mpi_header = no ; then
+  # If no MPI options were given, guess.
+
+  if test "x$ple_have_mpi_header" = "xno" ; then
+    if test "x$with_mpi" = "xcheck" ; then
       unset ac_cv_header_mpi_h
       MPI_CPPFLAGS="-I/usr/include/mpi"
       CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
@@ -138,39 +106,218 @@ if test "x$with_mpi" != "xno" ; then
                        [], 
                        [])
     fi
-
-    # Basic test
-    AC_MSG_CHECKING([for MPI (basic test)])
-    if test "$MPI_LIBS" = "" ; then
-      MPI_LIBS="-lmpi $PTHREAD_LIBS"
-    fi
-    LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
-    LIBS="$saved_LIBS $MPI_LIBS"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                   [[ MPI_Init(0, (void *)0); ]])],
-                   [ple_have_mpi=yes],
-                   [ple_have_mpi=no])
-    AC_MSG_RESULT($ple_have_mpi)
   fi
 
-  if test "x$ple_have_mpi" = "xyes"; then
-    AC_MSG_CHECKING([for MPI2 one-sided communication])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                   [[ MPI_Win_free((void *)0); ]])],
-                   [ple_have_mpi_one_sided=yes],
-                   [ple_have_mpi_one_sided=no])
-    AC_MSG_RESULT($ple_have_mpi_one_sided)
-  else
+  CPPFLAGS="$saved_CPPFLAGS"
+  LDFLAGS="$saved_LDFLAGS"
+  LIBS="$saved_LIBS"
+
+fi
+
+# If no MPI headers are available, no use in pursuing MPI tests.
+
+if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
+
+  # Now try to determine MPI variants, to test for the correct libraries
+  # (especially when multiple librairies are installed on the same machine).
+
+  CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
+  mpi_h_type=""
+  if test "x$mpi_h_type" = "x"; then
+    AC_EGREP_CPP([mpich2],
+                 [
+                  #include <mpi.h>
+                  #ifdef MPICH2
+                  mpich2
+                  #endif
+                  ],
+                 [mpi_h_type=MPICH2])
+  fi
+  if test "x$mpi_h_type" = "x"; then
+    AC_EGREP_CPP([ompi],
+                 [
+                  #include <mpi.h>
+                  #ifdef OMPI_MAJOR_VERSION
+                  ompi
+                  #endif
+                  ],
+                  [mpi_h_type=OpenMPI])
+  fi
+  if test "x$mpi_h_type" = "x"; then
+    AC_EGREP_CPP([lam_mpi],
+                 [
+                  #include <mpi.h>
+                  #ifdef LAM_MPI
+                  lam_mpi
+                  #endif
+                  ],
+                  [mpi_h_type=LAM_MPI])
+  fi
+  if test "x$mpi_h_type" = "x"; then
+    AC_EGREP_CPP([mpich1],
+                 [
+                  #include <mpi.h>
+                  #ifdef MPICH
+                  mpich1
+                  #endif
+                  ],
+                 [mpi_h_type=MPICH1])
+  fi
+
+  # Add a specific preprocessor directive to skip the MPI C++ bindings
+  case $mpi_h_type in
+    OpenMPI) MPI_CPPFLAGS="$MPI_CPPFLAGS -DOMPI_SKIP_MPICXX" ;;
+    MPICH2)  MPI_CPPFLAGS="$MPI_CPPFLAGS -DMPICH_SKIP_MPICXX" ;;
+  esac
+
+  # If only MPI headers have been detected so far (i.e. we are
+  # not using an MPI compiler wrapper), try to detect MPI libraries.
+
+  if test "x$ple_have_mpi" = "xno" ; then
+
+    LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
+
+    case $mpi_h_type in
+
+      MPICH2)
+        AC_MSG_CHECKING([for MPICH2])
+        # First try (with ROMIO)
+        case $host_os in
+          freebsd*)
+            MPI_LIBS="-lmpich -lopa -lmpl -lrt $PTHREAD_LIBS";;
+          *)
+            MPI_LIBS="-lmpich -lopa -lmpl -lrt -lpthread";;
+        esac
+        LIBS="$saved_LIBS $MPI_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                     [[ MPI_Init(0, (void *)0); ]])],
+                     [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                      ple_have_mpi=yes],
+                     [ple_have_mpi=no])
+        if test "x$ple_have_mpi" = "xno"; then
+          # Second try (without ROMIO)
+          case $host_os in
+            freebsd*)
+              MPI_LIBS="-lmpich -lopa -lmpl $PTHREAD_LIBS";;
+            *)
+              MPI_LIBS="-lmpich -lopa -lmpl -lpthread";;
+          esac
+          LIBS="$saved_LIBS $MPI_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                       [[ MPI_Init(0, (void *)0); ]])],
+                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                        ple_have_mpi=yes],
+                       [ple_have_mpi=no])
+        fi
+        AC_MSG_RESULT($ple_have_mpi)
+        ;;
+
+      MPICH1)
+        AC_MSG_CHECKING([for MPICH1)])
+        # First try (simplest)
+        MPI_LIBS="-lmpich $PTHREAD_LIBS"
+        LIBS="$saved_LIBS $MPI_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                       [[ MPI_Init(0, (void *)0); ]])],
+                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                        ple_have_mpi=yes],
+                       [ple_have_mpi=no])
+        if test "x$ple_have_mpi" = "xno"; then
+          # Second try (with lpmpich)
+          MPI_LIBS="-Wl,-lpmpich -Wl,-lmpich -Wl,-lpmpich -Wl,-lmpich"
+          LIBS="$saved_LIBS $MPI_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                         [[ MPI_Init(0, (void *)0); ]])],
+                         [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                          ple_have_mpi=yes],
+                         [ple_have_mpi=no])
+        fi
+        AC_MSG_RESULT($ple_have_mpi)
+        ;;
+
+      LAM_MPI)
+        AC_MSG_CHECKING([for LAM/MPI)])
+        # First try (without MPI-IO)
+        case $host_os in
+          freebsd*)
+            MPI_LIBS="-lmpi -llam $PTHREAD_LIBS";;
+          *)
+            MPI_LIBS="-lmpi -llam -lpthread";;
+        esac
+        LIBS="$saved_LIBS $MPI_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                       [[ MPI_Init(0, (void *)0); ]])],
+                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                        ple_have_mpi=yes],
+                       [ple_have_mpi=no])
+        if test "x$ple_have_mpi" = "xno"; then
+          # Second try (with MPI-IO)
+          case $host_os in
+            freebsd*)
+              MPI_LIBS="-lmpi -llam -lutil -ldl $PTHREAD_LIBS";;
+            *)
+              MPI_LIBS="-lmpi -llam -lutil -ldl -lpthread";;
+          esac
+          LIBS="$saved_LIBS $MPI_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                         [[ MPI_Init(0, (void *)0); ]])],
+                         [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                          ple_have_mpi=yes],
+                         [ple_have_mpi=no])
+        fi
+        AC_MSG_RESULT($ple_have_mpi)
+        ;;
+
+      
+      *) # General case include OpenMPI, whose dynamic libraries
+         # make it easy to detect.
+        AC_MSG_CHECKING([for MPI (basic test)])
+
+        if test "$MPI_LIBS" = "" ; then
+          MPI_LIBS="-lmpi $PTHREAD_LIBS"
+        fi
+        LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
+        LIBS="$saved_LIBS $MPI_LIBS"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                       [[ MPI_Init(0, (void *)0); ]])],
+                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
+                        ple_have_mpi=yes],
+                       [ple_have_mpi=no])
+        AC_MSG_RESULT($ple_have_mpi)
+        ;;
+
+    esac
+
+  fi
+
+  # MPI libraries should now have been detected
+
+  if test "x$ple_have_mpi" = "xno"; then
     if test "x$with_mpi" != "xcheck" ; then
       AC_MSG_FAILURE([MPI support is requested, but test for MPI failed!])
     else
       AC_MSG_WARN([no MPI support])
     fi
     MPI_LIBS=""
+  else
+    # Try to detect some MPI 2 features
+    AC_MSG_CHECKING([for MPI2 one-sided communication])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
+                   [[ MPI_Win_free((void *)0); ]])],
+                   [AC_DEFINE([HAVE_MPI_ONE_SIDED], 1, [MPI one-sided communication])
+                    ple_have_mpi_one_sided=yes],
+                   [ple_have_mpi_one_sided=no])
+    AC_MSG_RESULT($ple_have_mpi_one_sided)
+
   fi
 
+  CPPFLAGS="$saved_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS"
   LIBS="$saved_LIBS"
+
+  unset saved_CPPFLAGS
+  unset saved_LDFLAGS
+  unset saved_LIBS
 
 fi
 

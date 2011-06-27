@@ -1,3 +1,9 @@
+* 27/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Improve robustness of MPI detection tests.
+  modified files:
+    libple/m4/ple_mpi.m4
+    m4/ple_mpi.m4
+
 * 24/06/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Synchronize time steps with SYRTHES 4 using PLE mechanism.

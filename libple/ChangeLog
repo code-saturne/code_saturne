@@ -1,7 +1,6 @@
-2011-06-24  Yvan Fournier <yvan.fournier@edf.fr>
+2011-06-27  Yvan Fournier <yvan.fournier@edf.fr>
 
-	* Update MPI detection macros to include MPICH2, discarding
-	autodetection of LAM-MPI and MPICH1.
+	* Improve robustness of MPI detection tests.
 
 2011-06-24  Yvan Fournier <yvan.fournier@edf.fr>
 
