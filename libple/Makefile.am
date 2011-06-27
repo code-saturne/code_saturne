@@ -35,11 +35,11 @@ MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
 SUBDIRS = src tests doc
 
-EXTRA_DIST = $(ac_aux_dir)/ple_auto_flags.sh \
-             $(ac_aux_dir)/ple_config_info.m4 \
-             $(ac_aux_dir)/ple_config_publ.m4 \
-             $(ac_aux_dir)/ple_mpi.m4 \
-             $(ac_aux_dir)/ple_types.m4 \
+EXTRA_DIST = m4/ple_config_info.m4 \
+             m4/ple_config_publ.m4 \
+             m4/ple_mpi.m4 \
+             m4/ple_types.m4 \
+             config/ple_auto_flags.sh \
              sbin/backup \
              sbin/bootstrap \
              sbin/clean \
