@@ -71,7 +71,7 @@
              </font>
             </property>
             <property name="text" >
-             <string>g<sub>X</sub></string>
+             <string>g&lt;sub>x&lt;/sub</string>
             </property>
            </widget>
           </item>
@@ -106,7 +106,7 @@
              </font>
             </property>
             <property name="text" >
-             <string>g<sub>Y</sub></string>
+             <string>g&lt;sub>y&lt;/sub</string>
             </property>
            </widget>
           </item>
@@ -141,7 +141,7 @@
              </font>
             </property>
             <property name="text" >
-             <string>g<sub>Z</sub></string>
+             <string>g&lt;sub>z&lt;/sub</string>
             </property>
            </widget>
           </item>
