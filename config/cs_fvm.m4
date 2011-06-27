@@ -72,8 +72,6 @@ FVM_RUNPATH=""
 type "$fvm_config" > /dev/null 2>&1
 if test "$?" = "0" ; then
   FVM_CPPFLAGS="$FVM_CPPFLAGS `$fvm_config --cppflags`"
-  FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags`"
-  FVM_LIBS="$FVM_LIBS `$fvm_config --libs`"
 
   FVM_COUPL_LDFLAGS="$FVM_LDFLAGS"
 
@@ -83,6 +81,9 @@ if test "$?" = "0" ; then
   FVM_LIBS="$FVM_LIBS `$fvm_config --libs cgns`"
   FVM_LIBS="$FVM_LIBS `$fvm_config --libs med`"
   FVM_LIBS="$FVM_LIBS `$fvm_config --libs hdf5`"
+
+  FVM_LDFLAGS="$FVM_LDFLAGS `$fvm_config --ldflags`"
+  FVM_LIBS="$FVM_LIBS `$fvm_config --libs`"
 
   FVM_MPI_LDFLAGS="`$fvm_config --ldflags mpi`"
   FVM_MPI_LIBS="`$fvm_config --libs mpi`"

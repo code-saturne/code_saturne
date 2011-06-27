@@ -1,3 +1,10 @@
+* 27/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add extra libraries required by FVM (as determined by "fvm-config --libs").
+  after HDF5, MED, or CGNS, as the latter may depend on the former.
+  This fixes a compilation issue on Blue Gene/P using MED and its C++ dependencies.
+  modified files:
+    config/cs_fvm.m4
+
 * 22/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add a libtool rpath option to handle BLAS libraries.
   modified files:
