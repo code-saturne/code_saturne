@@ -519,17 +519,31 @@ cs_perio_sync_var_vect_ni(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
+cs_perio_sync_var_tens_ni(const cs_halo_t *halo,
+                          cs_halo_type_t   sync_mode,
+                          cs_real_t        var11[],
+                          cs_real_t        var12[],
+                          cs_real_t        var13[],
+                          cs_real_t        var21[],
+                          cs_real_t        var22[],
+                          cs_real_t        var23[],
+                          cs_real_t        var31[],
+                          cs_real_t        var32[],
+                          cs_real_t        var33[]);
+
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real tensor (interleaved) between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> tensor to update
+ *----------------------------------------------------------------------------*/
+
+void
 cs_perio_sync_var_tens(const cs_halo_t *halo,
                        cs_halo_type_t   sync_mode,
-                       cs_real_t        var11[],
-                       cs_real_t        var12[],
-                       cs_real_t        var13[],
-                       cs_real_t        var21[],
-                       cs_real_t        var22[],
-                       cs_real_t        var23[],
-                       cs_real_t        var31[],
-                       cs_real_t        var32[],
-                       cs_real_t        var33[]);
+                       cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real diagonal tensor between periodic cells.
@@ -545,11 +559,28 @@ cs_perio_sync_var_tens(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
+cs_perio_sync_var_diag_ni(const cs_halo_t *halo,
+                          cs_halo_type_t   sync_mode,
+                          cs_real_t        var11[],
+                          cs_real_t        var22[],
+                          cs_real_t        var33[]);
+
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real diagonal tensor (interleaved)
+ * between periodic cells.
+ *
+ * We only know the diagonal of the tensor.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> diagonal tensor to update
+ *----------------------------------------------------------------------------*/
+
+void
 cs_perio_sync_var_diag(const cs_halo_t *halo,
                        cs_halo_type_t   sync_mode,
-                       cs_real_t        var11[],
-                       cs_real_t        var22[],
-                       cs_real_t        var33[]);
+                       cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------
  * Update global halo backup buffer size so as to be usable with a given halo.

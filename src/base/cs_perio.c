@@ -755,20 +755,20 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
      it is a tensor. Translation and rotation are exchanged. */
 
   else if (*idimte == 2)
-    cs_perio_sync_var_tens(halo,
-                           CS_HALO_STANDARD,
-                           var11, var12, var13,
-                           var21, var22, var23,
-                           var31, var32, var33);
+    cs_perio_sync_var_tens_ni(halo,
+                              CS_HALO_STANDARD,
+                              var11, var12, var13,
+                              var21, var22, var23,
+                              var31, var32, var33);
 
   /* --> If we want to handle the variable as a tensor, but that
      it is a tensor's diagonal, we suppose that it is a tensor.
      Translation and rotation are exchanged. */
 
   else if (*idimte == 21)
-    cs_perio_sync_var_diag(halo,
-                           CS_HALO_STANDARD,
-                           var11, var22, var33);
+    cs_perio_sync_var_diag_ni(halo,
+                              CS_HALO_STANDARD,
+                              var11, var22, var33);
 }
 
 /*----------------------------------------------------------------------------
@@ -897,20 +897,20 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
      it is a tensor. Translation and rotation are exchanged. */
 
   else if (*idimte == 2)
-    cs_perio_sync_var_tens(halo,
-                           CS_HALO_EXTENDED,
-                           var11, var12, var13,
-                           var21, var22, var23,
-                           var31, var32, var33);
+    cs_perio_sync_var_tens_ni(halo,
+                              CS_HALO_EXTENDED,
+                              var11, var12, var13,
+                              var21, var22, var23,
+                              var31, var32, var33);
 
   /* --> If we want to handle the variable as a tensor, but that
      it is a tensor's diagonal, we suppose that it is a tensor.
      Translation and rotation are exchanged. */
 
   else if (*idimte == 21)
-    cs_perio_sync_var_diag(halo,
-                           CS_HALO_EXTENDED,
-                           var11, var22, var33);
+    cs_perio_sync_var_diag_ni(halo,
+                              CS_HALO_EXTENDED,
+                              var11, var22, var33);
 
 }
 
@@ -1976,7 +1976,6 @@ cs_perio_sync_var_vect(const cs_halo_t  *halo,
 {
   cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
-  cs_real_t  x_in, y_in, z_in;
 
   cs_real_t matrix[3][4];
 
@@ -1984,8 +1983,6 @@ cs_perio_sync_var_vect(const cs_halo_t  *halo,
 
   const cs_int_t  n_transforms = halo->n_transforms;
   const cs_int_t  n_elts   = halo->n_local_elts;
-  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
-  const cs_int_t  have_rotation = cs_glob_mesh->have_rotation_perio;
 
   if (sync_mode == CS_HALO_N_TYPES)
     return;
@@ -2198,17 +2195,17 @@ cs_perio_sync_var_vect_ni(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_tens(const cs_halo_t *halo,
-                       cs_halo_type_t   sync_mode,
-                       cs_real_t        var11[],
-                       cs_real_t        var12[],
-                       cs_real_t        var13[],
-                       cs_real_t        var21[],
-                       cs_real_t        var22[],
-                       cs_real_t        var23[],
-                       cs_real_t        var31[],
-                       cs_real_t        var32[],
-                       cs_real_t        var33[])
+cs_perio_sync_var_tens_ni(const cs_halo_t *halo,
+                          cs_halo_type_t   sync_mode,
+                          cs_real_t        var11[],
+                          cs_real_t        var12[],
+                          cs_real_t        var13[],
+                          cs_real_t        var21[],
+                          cs_real_t        var22[],
+                          cs_real_t        var23[],
+                          cs_real_t        var31[],
+                          cs_real_t        var32[],
+                          cs_real_t        var33[])
 {
   cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
@@ -2321,6 +2318,128 @@ cs_perio_sync_var_tens(const cs_halo_t *halo,
 }
 
 /*----------------------------------------------------------------------------
+ * Synchronize values for a real tensor (interleaved) between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> tensor to update
+ *----------------------------------------------------------------------------*/
+
+void
+cs_perio_sync_var_tens(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
+                       cs_real_t        var[])
+{
+  cs_int_t  i, rank_id, shift, t_id;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
+  cs_real_t  v11, v12, v13, v21, v22, v23, v31, v32, v33;
+
+  cs_real_t  matrix[3][4];
+
+  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
+
+  const cs_int_t  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts   = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+
+  if (sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    perio_type = fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
+      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
+
+        }
+
+        for (i = start_std; i < end_std; i++) {
+
+          v11 = var[0 + 3*0 + 9*(n_elts + i)];
+          v12 = var[0 + 3*1 + 9*(n_elts + i)];
+          v13 = var[0 + 3*2 + 9*(n_elts + i)];
+          v21 = var[1 + 3*0 + 9*(n_elts + i)];
+          v22 = var[1 + 3*1 + 9*(n_elts + i)];
+          v23 = var[1 + 3*2 + 9*(n_elts + i)];
+          v31 = var[2 + 3*0 + 9*(n_elts + i)];
+          v32 = var[2 + 3*1 + 9*(n_elts + i)];
+          v33 = var[2 + 3*2 + 9*(n_elts + i)];
+
+          _apply_tensor_rotation(matrix,
+                                 v11, v12, v13, v21, v22, v23,
+                                 v31, v32, v33,
+                                 &var[0 + 3*0 + 9*(n_elts + i)],
+                                 &var[0 + 3*1 + 9*(n_elts + i)],
+                                 &var[0 + 3*2 + 9*(n_elts + i)],
+                                 &var[1 + 3*0 + 9*(n_elts + i)],
+                                 &var[1 + 3*1 + 9*(n_elts + i)],
+                                 &var[1 + 3*2 + 9*(n_elts + i)],
+                                 &var[2 + 3*0 + 9*(n_elts + i)],
+                                 &var[2 + 3*1 + 9*(n_elts + i)],
+                                 &var[2 + 3*2 + 9*(n_elts + i)]);
+
+        }
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          for (i = start_ext; i < end_ext; i++) {
+
+            v11 = var[0 + 3*0 + 9*(n_elts + i)];
+            v12 = var[0 + 3*1 + 9*(n_elts + i)];
+            v13 = var[0 + 3*2 + 9*(n_elts + i)];
+            v21 = var[1 + 3*0 + 9*(n_elts + i)];
+            v22 = var[1 + 3*1 + 9*(n_elts + i)];
+            v23 = var[1 + 3*2 + 9*(n_elts + i)];
+            v31 = var[2 + 3*0 + 9*(n_elts + i)];
+            v32 = var[2 + 3*1 + 9*(n_elts + i)];
+            v33 = var[2 + 3*2 + 9*(n_elts + i)];
+
+            _apply_tensor_rotation(matrix,
+                                   v11, v12, v13, v21, v22, v23,
+                                   v31, v32, v33,
+                                   &var[0 + 3*0 + 9*(n_elts + i)],
+                                   &var[0 + 3*1 + 9*(n_elts + i)],
+                                   &var[0 + 3*2 + 9*(n_elts + i)],
+                                   &var[1 + 3*0 + 9*(n_elts + i)],
+                                   &var[1 + 3*1 + 9*(n_elts + i)],
+                                   &var[1 + 3*2 + 9*(n_elts + i)],
+                                   &var[2 + 3*0 + 9*(n_elts + i)],
+                                   &var[2 + 3*1 + 9*(n_elts + i)],
+                                   &var[2 + 3*2 + 9*(n_elts + i)]);
+
+          }
+
+        } /* End of the treatment of rotation */
+
+      } /* End if halo is extended */
+
+    } /* End of loop on ranks */
+
+  } /* End of loop on transformations for the local rank */
+}
+
+/*----------------------------------------------------------------------------
  * Synchronize values for a real diagonal tensor between periodic cells.
  *
  * We only know the diagonal of the tensor.
@@ -2334,11 +2453,11 @@ cs_perio_sync_var_tens(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_perio_sync_var_diag(const cs_halo_t *halo,
-                       cs_halo_type_t   sync_mode,
-                       cs_real_t        var11[],
-                       cs_real_t        var22[],
-                       cs_real_t        var33[])
+cs_perio_sync_var_diag_ni(const cs_halo_t *halo,
+                          cs_halo_type_t   sync_mode,
+                          cs_real_t        var11[],
+                          cs_real_t        var22[],
+                          cs_real_t        var33[])
 {
   cs_int_t  i, rank_id, shift, t_id;
   cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
@@ -2425,6 +2544,117 @@ cs_perio_sync_var_diag(const cs_halo_t *halo,
   } /* End of loop on transformations */
 }
 
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real diagonal tensor (interleaved)
+ * between periodic cells.
+ *
+ * We only know the interleaved diagonal of the tensor.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode --> kind of halo treatment (standard or extended)
+ *   var       <-> diagonal tensor to update
+ *----------------------------------------------------------------------------*/
+
+void
+cs_perio_sync_var_diag(const cs_halo_t *halo,
+                       cs_halo_type_t   sync_mode,
+                       cs_real_t        var[])
+{
+  cs_int_t  i, rank_id, shift, t_id;
+  cs_int_t  start_std = 0, end_std = 0, length = 0, start_ext = 0, end_ext = 0;
+  cs_real_t  v11, v22, v33;
+  cs_real_t  matrix[3][4];
+
+  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
+
+  const cs_int_t  n_transforms = halo->n_transforms;
+  const cs_int_t  n_elts = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+
+  if (sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    perio_type = fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
+      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std = halo->perio_lst[shift + 4*rank_id];
+        length = halo->perio_lst[shift + 4*rank_id + 1];
+        end_std = start_std + length;
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
+          length = halo->perio_lst[shift + 4*rank_id + 3];
+          end_ext = start_ext + length;
+
+        }
+
+        for (i = start_std; i < end_std; i++) {
+
+          v11 = var[0 + 3*(n_elts + i)];
+          v22 = var[1 + 3*(n_elts + i)];
+          v33 = var[2 + 3*(n_elts + i)];
+
+          _apply_tensor_rotation(matrix,
+                                 v11,   0,   0,   0, v22,   0,
+                                 0,   0, v33,
+                                 &var[0 + 3*(n_elts + i)],
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 &var[1 + 3*(n_elts + i)],
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 &var[2 + 3*(n_elts + i)]);
+
+        }
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          for (i = start_ext; i < end_ext; i++) {
+
+            v11 = var[0 + 3*(n_elts + i)];
+            v22 = var[1 + 3*(n_elts + i)];
+            v33 = var[2 + 3*(n_elts + i)];
+
+            _apply_tensor_rotation(matrix,
+                                   v11,   0,   0,   0, v22,   0,
+                                   0,   0, v33,
+                                   &var[0 + 3*(n_elts + i)],
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   &var[1 + 3*(n_elts + i)],
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   &var[2 + 3*(n_elts + i)]);
+
+          }
+
+        } /* End if halo is extended */
+
+      } /* End of loop on ranks */
+
+    } /* End of the treatment of rotation */
+
+  } /* End of loop on transformations */
+}
 /*----------------------------------------------------------------------------
  * Update global halo backup buffer size so as to be usable with a given halo.
  *

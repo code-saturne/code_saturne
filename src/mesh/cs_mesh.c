@@ -2140,7 +2140,26 @@ void CS_PROCF(synvec, SYNVEC)
  cs_real_t  var3[]
 )
 {
-  cs_mesh_sync_var_vect(var1, var2, var3);
+  cs_mesh_sync_var_vect_ni(var1, var2, var3);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine synvin(var)
+ * *****************
+ *
+ * var   : <-> : interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synvin, SYNVIN)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_vect(var);
 }
 
 /*----------------------------------------------------------------------------
@@ -2163,7 +2182,26 @@ void CS_PROCF(syndia, SYNDIA)
  cs_real_t  var33[]
 )
 {
-  cs_mesh_sync_var_diag(var11, var22, var33);
+  cs_mesh_sync_var_diag_ni(var11, var22, var33);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a diagonal tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine syndin(var)
+ * *****************
+ *
+ * var   : <-> : interleaved diagonal tensor (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syndin, SYNDIN)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_diag(var);
 }
 
 /*----------------------------------------------------------------------------
@@ -2198,9 +2236,28 @@ void CS_PROCF(synten, SYNTEN)
  cs_real_t  var33[]
 )
 {
-  cs_mesh_sync_var_tens(var11, var12, var13,
-                        var21, var22, var23,
-                        var31, var32, var33);
+  cs_mesh_sync_var_tens_ni(var11, var12, var13,
+                           var21, var22, var23,
+                           var31, var32, var33);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine syntin(var)
+ * *****************
+ *
+ * var   : <-> : interleaved tensor (of dimension 3x3)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syntin, SYNTIN)
+(
+ cs_real_t  var[]
+)
+{
+  cs_mesh_sync_var_tens(var);
 }
 
 /*=============================================================================
@@ -3453,9 +3510,9 @@ cs_mesh_sync_var_scal(cs_real_t  *var)
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_sync_var_vect(cs_real_t  *var1,
-                      cs_real_t  *var2,
-                      cs_real_t  *var3)
+cs_mesh_sync_var_vect_ni(cs_real_t  *var1,
+                         cs_real_t  *var2,
+                         cs_real_t  *var3)
 {
   const cs_halo_t  *halo = cs_glob_mesh->halo;
 
@@ -3473,6 +3530,29 @@ cs_mesh_sync_var_vect(cs_real_t  *var1,
 }
 
 /*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_vect(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 3);
+
+  if (cs_glob_mesh->n_init_perio > 0)
+    cs_perio_sync_var_vect(halo,
+                           CS_HALO_STANDARD,
+                           var,
+                           3);
+}
+
+/*----------------------------------------------------------------------------
  * Update a diagonal tensor array in case of parallelism and/or periodicity.
  *
  * parameters:
@@ -3482,9 +3562,9 @@ cs_mesh_sync_var_vect(cs_real_t  *var1,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_sync_var_diag(cs_real_t  *var11,
-                      cs_real_t  *var22,
-                      cs_real_t  *var33)
+cs_mesh_sync_var_diag_ni(cs_real_t  *var11,
+                         cs_real_t  *var22,
+                         cs_real_t  *var33)
 {
   const cs_halo_t  *halo = cs_glob_mesh->halo;
 
@@ -3495,9 +3575,31 @@ cs_mesh_sync_var_diag(cs_real_t  *var11,
   cs_halo_sync_var(halo, CS_HALO_STANDARD, var33);
 
   if (cs_glob_mesh->n_init_perio > 0)
+    cs_perio_sync_var_diag_ni(halo,
+                              CS_HALO_STANDARD,
+                              var11, var22, var33);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a diagonal tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  interleaved diagonal array (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_diag(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 3);
+
+  if (cs_glob_mesh->n_init_perio > 0)
     cs_perio_sync_var_diag(halo,
                            CS_HALO_STANDARD,
-                           var11, var22, var33);
+                           var);
 }
 
 /*----------------------------------------------------------------------------
@@ -3516,15 +3618,15 @@ cs_mesh_sync_var_diag(cs_real_t  *var11,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_sync_var_tens(cs_real_t  *var11,
-                      cs_real_t  *var12,
-                      cs_real_t  *var13,
-                      cs_real_t  *var21,
-                      cs_real_t  *var22,
-                      cs_real_t  *var23,
-                      cs_real_t  *var31,
-                      cs_real_t  *var32,
-                      cs_real_t  *var33)
+cs_mesh_sync_var_tens_ni(cs_real_t  *var11,
+                         cs_real_t  *var12,
+                         cs_real_t  *var13,
+                         cs_real_t  *var21,
+                         cs_real_t  *var22,
+                         cs_real_t  *var23,
+                         cs_real_t  *var31,
+                         cs_real_t  *var32,
+                         cs_real_t  *var33)
 {
   const cs_halo_t  *halo = cs_glob_mesh->halo;
 
@@ -3541,11 +3643,33 @@ cs_mesh_sync_var_tens(cs_real_t  *var11,
   cs_halo_sync_var(halo, CS_HALO_STANDARD, var33);
 
   if (cs_glob_mesh->n_init_perio > 0)
+    cs_perio_sync_var_tens_ni(halo,
+                              CS_HALO_STANDARD,
+                              var11, var12, var13,
+                              var21, var22, var33,
+                              var31, var32, var33);
+}
+
+/*----------------------------------------------------------------------------
+ * Update a tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  interleaved tensor (of dimension 3x3)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_tens(cs_real_t  *var)
+{
+  const cs_halo_t  *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL) return;
+
+  cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 9);
+
+  if (cs_glob_mesh->n_init_perio > 0)
     cs_perio_sync_var_tens(halo,
                            CS_HALO_STANDARD,
-                           var11, var12, var13,
-                           var21, var22, var33,
-                           var31, var32, var33);
+                           var);
 }
 
 /*----------------------------------------------------------------------------

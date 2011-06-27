@@ -1,3 +1,11 @@
+* 27/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Prepare periodicity sync for interleaved vectors and tensors.
+  modified routines:
+    src/base/cs_perio.c
+    src/base/cs_perio.h
+    src/mesh/cs_mesh.c
+    src/mesh/cs_mesh.h
+
 * 27/06/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Prepare linear equations solving with block-matrices.
   modified routines:

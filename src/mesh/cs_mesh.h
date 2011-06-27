@@ -268,6 +268,22 @@ void CS_PROCF(synvec, SYNVEC)
 );
 
 /*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine synvin(var)
+ * *****************
+ *
+ * var   : <-> : interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(synvin, SYNVIN)
+(
+ cs_real_t  var[]
+);
+
+/*----------------------------------------------------------------------------
  * Update a diagonal tensor array in case of parallelism and/or periodicity.
  *
  * Fortran interface:
@@ -285,6 +301,22 @@ void CS_PROCF(syndia, SYNDIA)
  cs_real_t  var11[],
  cs_real_t  var22[],
  cs_real_t  var33[]
+);
+
+/*----------------------------------------------------------------------------
+ * Update a diagonal tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine syndin(var)
+ * *****************
+ *
+ * var   : <-> : interleaved diagonal tensor (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syndin, SYNDIN)
+(
+ cs_real_t  var[]
 );
 
 /*----------------------------------------------------------------------------
@@ -317,6 +349,22 @@ void CS_PROCF(synten, SYNTEN)
  cs_real_t  var31[],
  cs_real_t  var32[],
  cs_real_t  var33[]
+);
+
+/*----------------------------------------------------------------------------
+ * Update a tensor array in case of parallelism and/or periodicity.
+ *
+ * Fortran interface:
+ *
+ * subroutine syntin(var)
+ * *****************
+ *
+ * var   : <-> : interleaved tensor (of dimension 3x3)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF(syntin, SYNTIN)
+(
+ cs_real_t  var[]
 );
 
 /*=============================================================================
@@ -450,9 +498,19 @@ cs_mesh_sync_var_scal(cs_real_t  *var);
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_sync_var_vect(cs_real_t  *var1,
-                      cs_real_t  *var2,
-                      cs_real_t  *var3);
+cs_mesh_sync_var_vect_ni(cs_real_t  *var1,
+                         cs_real_t  *var2,
+                         cs_real_t  *var3);
+
+/*----------------------------------------------------------------------------
+ * Update a vector array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  interleaved vector (of dimension 3)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_vect(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
  * Update a diagonal tensor array in case of parallelism and/or periodicity.
@@ -464,9 +522,19 @@ cs_mesh_sync_var_vect(cs_real_t  *var1,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_sync_var_diag(cs_real_t  *var11,
-                      cs_real_t  *var22,
-                      cs_real_t  *var33);
+cs_mesh_sync_var_diag_ni(cs_real_t  *var11,
+                         cs_real_t  *var22,
+                         cs_real_t  *var33);
+
+/*----------------------------------------------------------------------------
+ * Update a diagonal tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  diagonal tensor interleaved array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_diag(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
  * Update a tensor array in case of parallelism and/or periodicity.
@@ -484,15 +552,25 @@ cs_mesh_sync_var_diag(cs_real_t  *var11,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_sync_var_tens(cs_real_t  *var11,
-                      cs_real_t  *var12,
-                      cs_real_t  *var13,
-                      cs_real_t  *var21,
-                      cs_real_t  *var22,
-                      cs_real_t  *var23,
-                      cs_real_t  *var31,
-                      cs_real_t  *var32,
-                      cs_real_t  *var33);
+cs_mesh_sync_var_tens_ni(cs_real_t  *var11,
+                         cs_real_t  *var12,
+                         cs_real_t  *var13,
+                         cs_real_t  *var21,
+                         cs_real_t  *var22,
+                         cs_real_t  *var23,
+                         cs_real_t  *var31,
+                         cs_real_t  *var32,
+                         cs_real_t  *var33);
+
+/*----------------------------------------------------------------------------
+ * Update a tensor array in case of parallelism and/or periodicity.
+ *
+ * parameters:
+ *   var  <->  interleaved tensor (of dimension 3x3)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_sync_var_tens(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
  * Order family numbers and remove duplicates
