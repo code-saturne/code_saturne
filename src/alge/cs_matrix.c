@@ -1319,7 +1319,7 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
                         cs_real_t          *restrict y)
 {
   int g_id, t_id;
-  cs_int_t  ii, jj, kk, face_id;
+  cs_int_t  ii, jj, face_id;
 
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
@@ -1639,7 +1639,7 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
                            const cs_real_t    *restrict x,
                            cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj, kk, face_id;
+  cs_int_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   const cs_real_t  *restrict xa = mc->xa;
@@ -1854,7 +1854,7 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
                                cs_real_t          *restrict y)
 {
   int g_id, t_id;
-  cs_int_t  ii, jj, kk, face_id;
+  cs_int_t  ii, jj, face_id;
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
   const fvm_lnum_t *group_index = matrix->numbering->group_index;
@@ -1900,34 +1900,34 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
             y[ii] += alpha * xa[face_id] * x[jj];
             y[jj] += alpha * xa[face_id] * x[ii];
           }
-
         }
 
       }
-      else {
 
-        const cs_int_t *restrict face_cel_p = ms->face_cell;
+    }
+    else {
 
-        for (g_id=0; g_id < n_groups; g_id++) {
+      const cs_int_t *restrict face_cel_p = ms->face_cell;
 
-          #pragma omp parallel for private(face_id, ii, jj)
-          for (t_id=0; t_id < n_threads; t_id++) {
+      for (g_id=0; g_id < n_groups; g_id++) {
 
-            for (face_id = group_index[(t_id*n_groups + g_id)*2];
-                 face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-                 face_id++) {
-              ii = face_cel_p[2*face_id] -1;
-              jj = face_cel_p[2*face_id + 1] -1;
-              y[ii] += alpha * xa[face_id] * x[jj];
-              y[jj] += alpha * xa[2*face_id + 1] * x[ii];
-            }
+        #pragma omp parallel for private(face_id, ii, jj)
+        for (t_id=0; t_id < n_threads; t_id++) {
+
+          for (face_id = group_index[(t_id*n_groups + g_id)*2];
+               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
+               face_id++) {
+            ii = face_cel_p[2*face_id] -1;
+            jj = face_cel_p[2*face_id + 1] -1;
+            y[ii] += alpha * xa[2*face_id] * x[jj];
+            y[jj] += alpha * xa[2*face_id + 1] * x[ii];
           }
         }
-
       }
 
-    } /* if mc-> xa != NULL */
-  }
+    }
+
+  } /* if mc-> xa != NULL */
 }
 
 #endif
@@ -1952,7 +1952,7 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
                                   const cs_real_t    *restrict x,
                                   cs_real_t          *restrict y)
 {
-  cs_int_t  ii, jj, kk, face_id;
+  cs_int_t  ii, jj, face_id;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   const cs_real_t  *restrict xa = mc->xa;
@@ -2089,7 +2089,6 @@ _create_struct_csr(cs_bool_t         have_diag,
   /* Build structure */
 
   BFT_MALLOC(ms->col_id, (ms->row_index[ms->n_rows]), cs_int_t);
-  /* ms->col_id = ms->col_id; */
 
   if (have_diag == true) {
     for (ii = 0; ii < ms->n_rows; ii++) {    /* diagonal terms */
