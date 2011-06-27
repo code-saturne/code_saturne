@@ -266,7 +266,7 @@ The base scripts should work both with Python 2 or Python 3 versions,
 but have not been tested recently with the latter. The GUI is Python 2
 only, so using Python 3 is not currently recommended.
 
-While \CS make heavy use of Python, this is for scripts and for the GUI only;
+While \CS makes heavy use of Python, this is for scripts and for the GUI only;
 The solver only uses compiled code, so we may for example use
 a 32-bit version of Python with 64-bit \CS libraries and executables.
 
@@ -456,11 +456,6 @@ that third-party libraries used by \CS are either available
 as part of the base system (i.e. as packages in a Linux distribution),
 as Environment Modules, or are installed under a separate path.
 
-For a single architecture and an account named projects, with
-a specific installation of the CGNS and MED IO librairies,
-based on a system-wide installation of HDF5 (which will be auto-detected),
-and using MPI compiler wrappers, a configure command may look like this:
-
 \subsection{Debug builds\label{sec:config:shared}}
 
 It may be useful to install debug builds alongside production
@@ -534,7 +529,7 @@ For finer control, \texttt{--with-mpi-include} and \texttt{--with-mpi-lib}
 may be defined separately.
 
 Still, this may not work in all cases, as a fixed list of libraries
-is tested for, so using MPI compiler the simplest and safest
+is tested for, so using MPI compiler wrappers is the simplest and safest
 solution. Simply use a \texttt{CC=mpicc} or similar option instead
 of \texttt{--with-mpi}.
 
@@ -565,7 +560,12 @@ rather than the user's environment, so as to allows using versions of
 \CS built with different modules safely and easily.
 
 Given this, it is recommended that when configuring and installing
-\CS, only the modules necessary for that build be loaded.
+\CS, only the modules necessary for that build of for
+profiling or debugging be loaded. Note that as \CS uses the module
+environment detected and runtime instead of the user's current
+module settings, debuggers requiring a specific module may
+not work under a standard run script if they were not loaded when
+installing the code.
 
 \subsection{Remarks for very large meshes\label{sec:config:largemesh}}
 
@@ -601,7 +601,7 @@ Practical limits may be lower, if some intermediate internal counts
 reach these limits earlier.
 
 Note also that \metis 4 is known to crash for meshes in the range of
-35 million cells and above, so \metis 5 or \scotch are a necessary.
+35 million cells and above, so \metis 5 or \scotch are necessary.
 Partitoning a 158 million hexahedral mesh using \metis 5
 on a front-end node with 128 Gb memory is possible,
 but partitioning the same mesh on cluster nodes with 24 Gb each
@@ -623,9 +623,9 @@ reflecting the \CS source path, installation path, and a path where optional
 libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{SRC\_PATH}=/gpfs/home/projects/Code\_Saturne/2.1 \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/gpfs/home/projects/Code\_Saturne/2.1 \\
-\$ \textcolor{OliveGreen}{CS\_OPT}=/gpfs/home/projects/opt
+\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/2.1 \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/2.1 \\
+\$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
 }\end{minipage}}
 
 For an install on which multiple
@@ -642,13 +642,13 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
 \textbackslash \\
 \textcolor{Violet}{--with-blas}=/opt/intel/composerxe-2011.3.174/mkl \textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/ivanoe\_ompi \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/ivanoe\_ompi
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/ivanoe
 \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/ivanoe\_ompi
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/ivanoe
 \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe\_ompi \textbackslash \\
-\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.19/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.19/arch/ivanoe \textbackslash \\
 \textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-3.2/arch/ivanoe\_ompi \textbackslash \\
 \textcolor{Violet}{--with-syrthes}=/home/projects/syrthes3.4.3 \textbackslash \\
@@ -657,8 +657,8 @@ build on a cluster named \texttt{ivanoe}, using the Intel compilers
 }\end{minipage}}
 
 In the example above, we have appended the \texttt{\_ompi} postfix
-to the architecture name, in case we intend to install 2 builds,
-with different MPI libraries (such as Open MPI and MPICH2).
+to the architecture name for libraries using MPI, in case we intend
+to install 2 builds, with different MPI libraries (such as Open MPI and MPICH2).
 Note that optional libraries using MPI must also use the same MPI
 library. This is the case for \ptscotch or \parmetis, but also HDF5,
 CGNS, and MED if they are built with MPI-IO support.
@@ -667,6 +667,8 @@ with recent optimizing C compilers, may require runtime libraries
 associated to that compiler, so if versions using different compilers
 are to be installed, it is recommended to use a naming scheme
 which reflects this.
+In this example, HDF5, CGNS and MED were built without MPI-IO support,
+as \CS does not yet exloit MPI-IO for these libraries.
 
 \subsubsection{Cross-compiling}
 
