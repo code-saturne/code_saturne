@@ -1983,6 +1983,7 @@ cs_perio_sync_var_vect(const cs_halo_t  *halo,
 
   const cs_int_t  n_transforms = halo->n_transforms;
   const cs_int_t  n_elts   = halo->n_local_elts;
+  const fvm_periodicity_t  *periodicity = cs_glob_mesh->periodicity;
 
   if (sync_mode == CS_HALO_N_TYPES)
     return;
