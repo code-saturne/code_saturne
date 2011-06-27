@@ -28,7 +28,7 @@ endif
 
 SUBDIRS = refcard theory tutorial user install developper doxygen $(SALOME)
 
-DIST_SUBDIRS = $(SUBDIRS) howto install
+DIST_SUBDIRS = $(SUBDIRS) howto
 
 EXTRA_DIST = \
 style/csdoc.sty \
