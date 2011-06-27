@@ -1,4 +1,21 @@
 * 27/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Add a wrapper so as to compute the gradient of a vector.
+  It calls Three times the standard gradient API, and used in some
+  but not all relevant places at the moment.
+  added routine:
+    src/alge/grdvni.f90
+  modified script:
+    src/alge/Makefile.am
+  modified routines:
+    src/base/condli.f90
+    src/turb/turbke.f90
+    src/turb/visdyn.f90
+    src/turb/vislmg.f90
+    src/turb/vissma.f90
+    src/turb/vissst.f90
+    src/turb/viswal.f90
+
+* 27/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Prepare periodicity sync for interleaved vectors and tensors.
   modified routines:
     src/base/cs_perio.c

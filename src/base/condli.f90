@@ -178,7 +178,6 @@ integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
 integer          iclvar, iclvaf, icluma, iclvma, iclwma
 integer          nswrgp, imligp, iwarnp, icliva
-integer          iph
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , xdis
@@ -189,8 +188,9 @@ double precision srfbnf, rnx   , rny   , rnz
 double precision upx   , upy   , upz   , vistot
 
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: coefu, rijipb
+double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:,:,:), allocatable :: gradv
 
 !===============================================================================
 
@@ -574,50 +574,60 @@ endif
 if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
 
 
-  do isou = 1, 3
+  if(ntcabs.gt.1) then
 
-    if(isou.eq.1) ivar = iu
-    if(isou.eq.2) ivar = iv
-    if(isou.eq.3) ivar = iw
+    ! Allocate a temporary array
+    allocate(gradv(ncelet,3,3))
 
-    if(ntcabs.gt.1) then
+    iccocg = 1
+    inc    = 1
+    nswrgp = nswrgr(iu)
+    imligp = imligr(iu)
+    iwarnp = iwarni(iu)
+    epsrgp = epsrgr(iu)
+    climgp = climgr(iu)
+    extrap = extrag(iu)
+    icliva = iclrtp(iu,icoef)
 
-      iccocg = 1
-      inc    = 1
-      nswrgp = nswrgr(ivar)
-      imligp = imligr(ivar)
-      iwarnp = iwarni(ivar)
-      epsrgp = epsrgr(ivar)
-      climgp = climgr(ivar)
-      extrap = extrag(ivar)
-      icliva = iclrtp(ivar,icoef)
-
-      call grdcel                                               &
-      !==========
+    call grdvni &
+    !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
-   grad   )
+   gradv  )
+
+    do isou = 1, 3
+      if(isou.eq.1) ivar = iu
+      if(isou.eq.2) ivar = iv
+      if(isou.eq.3) ivar = iw
 
       do ifac = 1, nfabor
         iel = ifabor(ifac)
-        coefu(ifac,isou) = rtpa(iel,ivar) &
-                         + grad(iel,1)*diipb(1,ifac) &
-                         + grad(iel,2)*diipb(2,ifac) &
-                         + grad(iel,3)*diipb(3,ifac)
+        coefu(ifac,isou) = gradv(iel,isou,1)*diipb(1,ifac)    &
+                         + gradv(iel,isou,2)*diipb(2,ifac)    &
+                         + gradv(iel,isou,3)*diipb(3,ifac)    &
+                         + rtpa(iel,ivar)
       enddo
+    enddo
 
-    else
+    deallocate(gradv)
+
+  else
+
+    do isou = 1, 3
+      if(isou.eq.1) ivar = iu
+      if(isou.eq.2) ivar = iv
+      if(isou.eq.3) ivar = iw
 
       do ifac = 1, nfabor
         iel = ifabor(ifac)
         coefu(ifac,isou) = rtpa(iel,ivar)
       enddo
 
-    endif
+    enddo
 
-  enddo
+  endif
 
 endif
 

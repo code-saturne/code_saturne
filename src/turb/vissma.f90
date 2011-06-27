@@ -121,7 +121,7 @@ double precision s11, s22, s33
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision xfil, xa  , xb  , radeux
 
-double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
+double precision, dimension(:,:,:), allocatable :: gradv
 
 !===============================================================================
 
@@ -130,7 +130,7 @@ double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+allocate(gradv(ncelet,3,3))
 
 ! --- Memoire
 
@@ -166,34 +166,28 @@ call grdcel &
    nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
    nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
    rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   gradu  )
-
-call grdcel &
-!==========
- ( iv  , imrgra , inc    , iccocg ,                      &
-   nswrgr(iv) , imligr(iv) , iwarni(iv) ,                &
-   nfecra , epsrgr(iv) , climgr(iv) , extrag(iv) ,       &
-   rtpa(1,iv) , coefa(1,ipcliv) , coefb(1,ipcliv) ,      &
    gradv  )
 
-call grdcel &
-!==========
- ( iw  , imrgra , inc    , iccocg ,                      &
-   nswrgr(iw) , imligr(iw) , iwarni(iw) ,                &
-   nfecra , epsrgr(iw) , climgr(iw) , extrag(iw) ,       &
-   rtpa(1,iw) , coefa(1,ipcliw) , coefb(1,ipcliw) ,      &
-   gradw  )
-
 do iel = 1, ncel
-  propce(iel,ipcvst) = &
-      gradu(iel,1)**2 + gradv(iel,2)**2 + gradw(iel,3)**2  &
-    + 0.5d0*( (gradu(iel,2) + gradv(iel,1))**2             &
-            + (gradu(iel,3) + gradw(iel,1))**2             &
-            + (gradv(iel,3) + gradw(iel,2))**2 )
+
+  s11  = gradv(iel,1,1)
+  s22  = gradv(iel,2,2)
+  s33  = gradv(iel,3,3)
+  dudy = gradv(iel,1,2)
+  dvdx = gradv(iel,2,1)
+  dudz = gradv(iel,1,3)
+  dwdx = gradv(iel,3,1)
+  dvdz = gradv(iel,2,3)
+  dwdy = gradv(iel,3,2)
+
+  propce(iel,ipcvst) = s11**2 + s22**2 + s33**2       &
+                     + 0.5d0*((dudy+dvdx)**2          &
+                     +        (dudz+dwdx)**2          &
+                     +        (dvdz+dwdy)**2)
 enddo
 
 ! Free memory
-deallocate(gradu, gradv, gradw)
+deallocate(gradv)
 
 !===============================================================================
 ! 3.  CALCUL DE LA VISCOSITE (DYNAMIQUE)

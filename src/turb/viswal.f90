@@ -128,7 +128,7 @@ double precision sij, sijd, s, sd, sinv
 double precision xfil, xa  , xb  , radeux, con
 double precision dudx(ndim,ndim), kdelta(ndim,ndim)
 
-double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
+double precision, dimension(:,:,:), allocatable :: gradv
 
 !===============================================================================
 
@@ -165,34 +165,18 @@ tiers  = 1.d0/3.d0
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+allocate(gradv(ncelet,3,3))
 
 iccocg = 1
 inc = 1
 
-call grdcel &
+call grdvni &
 !==========
  ( iu  , imrgra , inc    , iccocg ,                      &
    nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
    nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
    rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   gradu  )
-
-call grdcel &
-!==========
- ( iv  , imrgra , inc    , iccocg ,                      &
-   nswrgr(iv) , imligr(iv) , iwarni(iv) ,                &
-   nfecra , epsrgr(iv) , climgr(iv) , extrag(iv) ,       &
-   rtpa(1,iv) , coefa(1,ipcliv) , coefb(1,ipcliv) ,      &
    gradv  )
-
-call grdcel &
-!==========
- ( iw  , imrgra , inc    , iccocg ,                      &
-   nswrgr(iw) , imligr(iw) , iwarni(iw) ,                &
-   nfecra , epsrgr(iw) , climgr(iw) , extrag(iw) ,       &
-   rtpa(1,iw) , coefa(1,ipcliw) , coefb(1,ipcliw) ,      &
-   gradw  )
 
 ! Kronecker delta Dij
 
@@ -210,15 +194,15 @@ coef = cwale**2 * radeux
 
 do iel = 1, ncel
 
-  dudx(1,1) = gradu(iel,1)
-  dudx(1,2) = gradu(iel,2)
-  dudx(1,3) = gradu(iel,3)
-  dudx(2,1) = gradv(iel,1)
-  dudx(2,2) = gradv(iel,2)
-  dudx(2,3) = gradv(iel,3)
-  dudx(3,1) = gradw(iel,1)
-  dudx(3,2) = gradw(iel,2)
-  dudx(3,3) = gradw(iel,3)
+  dudx(1,1) = gradv(iel,1,1)
+  dudx(1,2) = gradv(iel,1,2)
+  dudx(1,3) = gradv(iel,1,3)
+  dudx(2,1) = gradv(iel,2,1)
+  dudx(2,2) = gradv(iel,2,2)
+  dudx(2,3) = gradv(iel,2,3)
+  dudx(3,1) = gradv(iel,3,1)
+  dudx(3,2) = gradv(iel,3,2)
+  dudx(3,3) = gradv(iel,3,3)
 
   s  = 0.d0
   sd = 0.d0
@@ -268,7 +252,7 @@ do iel = 1, ncel
 enddo
 
 ! Free memory
-deallocate(gradu, gradv, gradw)
+deallocate(gradv)
 
 !----
 ! FORMAT

@@ -148,10 +148,11 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:) :: smbrk, smbre, rovsdt
 double precision, allocatable, dimension(:) :: tinstk, tinste, divu
-double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw, grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:,:,:), allocatable :: gradv
 
 !===============================================================================
 
@@ -228,7 +229,7 @@ sqrcmu = sqrt(cmu)
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+allocate(gradv(ncelet,3,3))
 
 iccocg = 1
 inc = 1
@@ -240,40 +241,12 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-call grdcel &
+call grdvni &
 !==========
  ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   gradu  )
-
-nswrgp = nswrgr(iv)
-imligp = imligr(iv)
-iwarnp = iwarni(ik)
-epsrgp = epsrgr(iv)
-climgp = climgr(iv)
-extrap = extrag(iv)
-
-call grdcel &
-!==========
- ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
    gradv  )
-
-nswrgp = nswrgr(iw)
-imligp = imligr(iw)
-iwarnp = iwarni(ik)
-epsrgp = epsrgr(iw)
-climgp = climgr(iw)
-extrap = extrag(iw)
-
-call grdcel &
-!==========
- ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   gradw  )
 
 ! TINSTK = PRODUCTION = ( 2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
 !                       + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )
@@ -281,15 +254,19 @@ call grdcel &
 ! DIVU = DUDX + DVDY + DWDZ
 
 do iel = 1, ncel
-  tinstk(iel) = 2.d0*(gradu(iel,1)**2 + gradv(iel,2)**2 + gradw(iel,3)**2) &
-              + (gradu(iel,2) + gradv(iel,1))**2                           &
-              + (gradu(iel,3) + gradw(iel,1))**2                           &
-              + (gradv(iel,3) + gradw(iel,2))**2
-  divu(iel) = gradu(iel,1) + gradv(iel,2) + gradw(iel,3)
+
+  tinstk(iel) = 2.d0*( gradv(iel,1,1)**2 + gradv(iel,2,2) **2 &
+                     + gradv(iel,3,3)**2 )                      &
+              + (gradv(iel,1,2) + gradv(iel,2,1))**2 &
+              + (gradv(iel,1,3) + gradv(iel,3,1))**2 &
+              + (gradv(iel,2,3) + gradv(iel,3,2))**2
+
+  divu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
+
 enddo
 
 ! Free memory
-deallocate(gradu, gradv, gradw)
+deallocate(gradv)
 
 !===============================================================================
 ! 3. PRISE EN COMPTE DES TERMES SOURCES UTILISATEURS

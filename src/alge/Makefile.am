@@ -72,6 +72,7 @@ divrij.f90 \
 gradmc.f90 \
 gradrc.f90 \
 grdcel.f90 \
+grdvni.f90 \
 grdpot.f90 \
 inimas.f90 \
 invers.f90 \

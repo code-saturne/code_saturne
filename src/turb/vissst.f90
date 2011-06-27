@@ -127,11 +127,13 @@ integer          ipcrom, ipcvis, ipcvst
 integer          nswrgp, imligp, iwarnp
 integer          ifacpt
 
+double precision s11, s22, s33
+double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision epsrgp, climgp, extrap
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
 
-double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
 double precision, allocatable, dimension(:) :: w1
+double precision, dimension(:,:,:), allocatable :: gradv
 
 !===============================================================================
 
@@ -158,7 +160,7 @@ ipcliw = iclrtp(iw,icoef)
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+allocate(gradv(ncelet,3,3))
 
 iccocg = 1
 inc = 1
@@ -170,51 +172,34 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-call grdcel &
+call grdvni &
 !==========
  ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
    rtpa(1,iu)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,             &
-   gradu  )
-
-nswrgp = nswrgr(iv)
-imligp = imligr(iv)
-iwarnp = iwarni(iv)
-epsrgp = epsrgr(iv)
-climgp = climgr(iv)
-extrap = extrag(iv)
-
-call grdcel &
-!==========
- ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                &
-   rtpa(1,iv)   , coefa(1,ipcliv) , coefb(1,ipcliv) ,          &
    gradv  )
 
-nswrgp = nswrgr(iw)
-imligp = imligr(iw)
-iwarnp = iwarni(iw)
-epsrgp = epsrgr(iw)
-climgp = climgr(iw)
-extrap = extrag(iw)
-
-call grdcel &
-!==========
- ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                &
-   rtpa(1,iw)   , coefa(1,ipcliw) , coefb(1,ipcliw) ,          &
-   gradw  )
-
 do iel = 1, ncel
-  s2kw(iel) = 2.d0*(gradu(iel,1)**2 + gradv(iel,2)**2 + gradw(iel,3)**2)  &
-            + (gradu(iel,2) + gradv(iel,1))**2                            &
-            + (gradu(iel,3) + gradw(iel,1))**2                            &
-            + (gradv(iel,3) + gradw(iel,2))**2
-  divukw(iel) = gradu(iel,1) + gradv(iel,2) + gradw(iel,3)
+
+  s11  = gradv(iel,1,1)
+  s22  = gradv(iel,2,2)
+  s33  = gradv(iel,3,3)
+  dudy = gradv(iel,1,2)
+  dvdx = gradv(iel,2,1)
+  dudz = gradv(iel,1,3)
+  dwdx = gradv(iel,3,1)
+  dvdz = gradv(iel,2,3)
+  dwdy = gradv(iel,3,2)
+
+  s2kw (iel)  = 2.d0*(s11**2 + s22**2 + s33**2)                   &
+              + (dudy+dvdx)**2 + (dudz+dwdx)**2 + (dvdz+dwdy)**2
+
+  divukw(iel) = s11 + s22 + s33
+
 enddo
 
 ! Free memory
-deallocate(gradu, gradv, gradw)
+deallocate(gradv)
 
 !===============================================================================
 ! 3.  CALCUL DE LA DISTANCE A LA PAROI
