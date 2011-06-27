@@ -172,7 +172,6 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if len(h_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.pkgincludedir
-        cmd = cmd + " " + pkg.ple_cppflags
         cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " " + pkg.cflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
@@ -186,7 +185,6 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
         if len(hxx_files) > 0:
             cmd = cmd + " -I" + srcdir
         cmd = cmd + " -I" + pkg.pkgincludedir
-        cmd = cmd + " " + pkg.ple_cppflags
         cmd = cmd + " " + pkg.cppflags
         cmd = cmd + " " + pkg.cxxflags
         cmd = cmd + " -c " + os.path.join(srcdir, f)
@@ -223,7 +221,6 @@ def compile_and_link(pkg, srcdir, destdir, optlibs,
             if len(optlibs) > 0:
                 cmd = cmd + " " + optlibs
         cmd = cmd + " " + pkg.ldflags + " " + pkg.libs
-        cmd = cmd + " " + pkg.ple_ldflags + " " + pkg.ple_libs
         cmd = cmd + " " + pkg.deplibs
         if pkg.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd, pkg.rpath)
@@ -302,7 +299,6 @@ def compile_and_link_syrthes(pkg, srcdir, destdir,
         cmd = cmd + " -L" + pkg.libdir + " " + pkg.ldflags
         cmd = cmd + " -lsyrcs"
         cmd = cmd + " " + build_syrthes.ldflags + " " + build_syrthes.libs
-        cmd = cmd + " " + pkg.ple_cppflags + " " + pkg.ple_libs
         if pkg.rpath != "":
             cmd = cmd + " " + so_dirs_path(cmd, pkg.rpath)
         if run_command(cmd, echo=True, stdout=stdout, stderr=stderr) != 0:

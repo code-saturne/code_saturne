@@ -1,4 +1,11 @@
 * 27/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix linking with user subroutines and static MPI libraries.
+  modified files:
+    Makefile.am
+    bin/cs_compile.py
+    bin/cs_package.py.in
+
+* 27/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Improve robustness of MPI detection tests.
   modified files:
     libple/m4/ple_mpi.m4

@@ -71,12 +71,6 @@ class package:
         self.deplibs = "@LDFLAGS@ @LIBS@ @FCLIBS@"
         self.rpath="@LDRPATH@"
 
-        # PLE library can be an internal or external library
-        # It deserves a specific treatment
-        self.ple_cppflags = "@PLE_CPPFLAGS@"
-        self.ple_ldflags = "@PLE_LDFLAGS@"
-        self.ple_libs = "@PLE_LIBS@"
-
         self.prefix = "@prefix@"
         self.exec_prefix = "@exec_prefix@"
         self.bindir = "@bindir@"
