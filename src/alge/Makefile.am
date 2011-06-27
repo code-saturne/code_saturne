@@ -66,29 +66,38 @@ cs_multigrid.c \
 cs_sles.c \
 autmgr.f90 \
 bilsc2.f90 \
+bilsc4.f90 \
 crstgr.f90 \
 divmas.f90 \
 divrij.f90 \
 gradmc.f90 \
 gradrc.f90 \
+gradrv.f90 \
 grdcel.f90 \
+grdvec.f90 \
 grdvni.f90 \
 grdpot.f90 \
 inimas.f90 \
+inimav.f90 \
 invers.f90 \
 itrgrp.f90 \
+itrgrv.f90 \
 itrmas.f90 \
+itrmav.f90 \
 matrdt.f90 \
 matrix.f90 \
+matrxv.f90 \
 prods2.f90 \
 prods3.f90 \
 prodsc.f90 \
 projts.f90 \
+projtv.f90 \
 promav.f90 \
 proxav.f90 \
 vectds.f90 \
 viscfa.f90 \
-visort.f90
+visort.f90 \
+viortv.f90
 libcsalge_la_LDFLAGS = -no-undefined
 
 clean-local:

@@ -5,6 +5,30 @@
     bin/cs_package.py.in
 
 * 27/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Add a framework to solve vectorial equations (e.g. the velocity
+  components). This framework is provided as is and not used at the
+  moment.
+  added routine:
+    src/alge/bilsc4.f90
+    src/alge/gradrv.f90
+    src/alge/grdvec.f90
+    src/alge/inimav.f90
+    src/alge/itrgrv.f90
+    src/alge/itrmav.f90
+    src/alge/matrxv.f90
+    src/alge/projtv.f90
+    src/alge/viortv.f90
+    src/base/coditv.f90
+  modified script:
+    src/alge/Makefile.am
+  modified routines:
+    src/alge/cs_gradient.c
+    src/alge/cs_gradient.h
+    src/base/cs_prototypes.h
+    src/base/Makefile.am
+    src/base/pointe.f90
+
+* 27/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Add a wrapper so as to compute the gradient of a vector.
   It calls Three times the standard gradient API, and used in some
   but not all relevant places at the moment.

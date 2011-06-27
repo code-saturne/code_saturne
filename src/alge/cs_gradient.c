@@ -910,6 +910,136 @@ void CS_PROCF (cgdcel, CGDCEL)
   BFT_FREE(_aux_vectors);
 }
 
+/*----------------------------------------------------------------------------
+ *
+ * Fortran Interface :
+ *
+ * SUBROUTINE CGDVEC
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cgdvec, CGDVEC)
+(
+ const cs_int_t   *const ncelet,      /* --> number of extended cells         */
+ const cs_int_t   *const ncel,        /* --> number of cells                  */
+ const cs_int_t   *const nfac,        /* --> number of internal faces         */
+ const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
+ const cs_int_t   *const ivar,
+ const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
+ const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
+ const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
+ const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
+ const cs_int_t   *const nfecra,      /* --> standard output unit             */
+ const cs_int_t   *const imligp,      /* --> type of clipping                 */
+ const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
+                                             calculation                      */
+ const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
+ const cs_real_t  *const climgp,      /* --> clipping coefficient             */
+ const cs_int_t          ifacel[],
+ const cs_int_t          ifabor[],
+ const cs_int_t          isympa[],    /* --> indicator for symmetry faces     */
+ const cs_real_t         volume[],
+ const cs_real_t         surfac[],
+ const cs_real_t         surfbo[],
+ const cs_real_t         surfbn[],
+ const cs_real_t         pond[],      /* --> interior faces geometric weight  */
+ const cs_real_t         dist[],      /* --> interior faces I' to J' distance */
+ const cs_real_t         distbr[],    /* --> boundary faces I' to J' distance */
+ const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
+ const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
+ const cs_real_t         dofij[],
+ const cs_real_t         xyzcen[],
+ const cs_real_t         cdgfac[],
+ const cs_real_t         cdgfbo[],
+ const cs_real_t         coefau[],    /* --> boundary condition term          */
+ const cs_real_t         coefbu[],    /* --> boundary condition term          */
+       cs_real_t         pvar[],      /* --> gradient's base variable         */
+       cs_real_t         cocg[],      /* <-> Matrix COCG for the variable     */
+       cs_real_t         gradv[]      /* <-- gradient of the variable         */
+)
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_halo_t  *halo = mesh->halo;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+
+  cs_gradient_info_t *gradient_info = NULL;
+  double  wt_start = 0.0, wt_stop = 0.0;
+  double  cpu_start = 0.0, cpu_stop = 0.0;
+
+  char *var_name = NULL;
+
+  cs_int_t  *ipcvse = NULL;
+  cs_int_t  *ielvse = NULL;
+
+  cs_bool_t update_stats = true;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
+
+
+  switch (*imrgra) {
+  case 0: gradient_type = CS_GRADIENT_ITER; break;
+  case 1: gradient_type = CS_GRADIENT_LSQ_STD; break;
+  case 2: gradient_type = CS_GRADIENT_LSQ_EXT; break;
+  case 3: gradient_type = CS_GRADIENT_LSQ_EXT_RED; break;
+  case 4: gradient_type = CS_GRADIENT_LSQ_ITER; break;
+  default: break;
+  }
+
+  BFT_MALLOC(var_name, 7, char);
+  sprintf(var_name, "Var. %1d", *ivar);
+
+  if (update_stats == true) {
+    wt_start =bft_timer_wtime();
+    cpu_start =bft_timer_cpu_time();
+    gradient_info = _find_or_add_system(var_name, gradient_type);
+  }
+
+  if (*imrgra == 2 || *imrgra ==  3)
+    halo_type = CS_HALO_EXTENDED;
+
+  /* Synchronize variable */
+
+  // TODO imrgra != 0
+
+  /* "cell -> cells" connectivity for the extended neighborhood */
+
+  ipcvse = mesh->cell_cells_idx;
+  ielvse = mesh->cell_cells_lst;
+
+  /* Compute gradient */
+
+  if (*imrgra == 0) {
+
+    CS_PROCF (gradrv, GRADRV)
+      (ncelet, ncel  , nfac  , nfabor,
+       imrgra, inc   , nswrgp,
+       iwarnp, nfecra, epsrgp, extrap,
+       ifacel, ifabor, ivar  ,
+       volume, surfac, surfbo, pond  , xyzcen, cdgfac, cdgfbo,
+       dijpf , diipb , dofij ,
+       coefau, coefbu, pvar  ,
+       cocg  ,
+       gradv );
+
+  }
+  // TODO *imrgra == 1 || *imrgra == 2 || *imrgra == 3 || *imrgra == 4
+
+  // TODO _gradient_clipping
+  if (update_stats == true) {
+
+    wt_stop =bft_timer_wtime();
+    cpu_stop =bft_timer_cpu_time();
+
+    gradient_info->n_calls += 1;
+
+    gradient_info->wt_tot += (wt_stop - wt_start);
+    gradient_info->cpu_tot += (cpu_stop - cpu_start);
+
+  }
+
+  BFT_FREE(var_name);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

@@ -138,6 +138,7 @@ cou1do.f90 \
 coupbi.f90 \
 coupbo.f90 \
 codits.f90 \
+coditv.f90 \
 covofi.f90 \
 cregeo.f90 \
 cs_ale.c \

@@ -353,6 +353,45 @@ extern void CS_PROCF (gradrc, GRADRC)
 );
 
 /*----------------------------------------------------------------------------
+ * Compute gradients using reconstruction method for a vector variable
+ *----------------------------------------------------------------------------*/
+
+extern void CS_PROCF (gradrv, GRADRV)
+(
+ const cs_int_t   *const ncelet,      /* --> number of extended cells         */
+ const cs_int_t   *const ncel,        /* --> number of cells                  */
+ const cs_int_t   *const nfac,        /* --> number of internal faces         */
+ const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
+ const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
+ const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
+ const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
+ const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
+ const cs_int_t   *const nfecra,      /* --> standard output unit             */
+ const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
+                                             calculation                      */
+ const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
+ const cs_int_t          ifacel[],    /* --> interior face->cell connectivity */
+ const cs_int_t          ifabor[],    /* --> boundary face->cell connectivity */
+ const cs_int_t   *const ivar,        /* --> variable number                  */
+ const cs_real_t         volume[],    /* --> cell volumes                     */
+ const cs_real_t         surfac[],    /* --> surfaces of internal faces       */
+ const cs_real_t         surfbo[],    /* --> surfaces of boundary faces       */
+ const cs_real_t         pond[],      /* --> interior faces geometric weight  */
+ const cs_real_t         xyzcen[],    /* --> cell centers                     */
+ const cs_real_t         cdgfac[],    /* --> interior face centers of gravity */
+ const cs_real_t         cdgfbo[],    /* --> boundary face centers of gravity */
+ const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
+ const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
+ const cs_real_t         dofij[],     /* --> interior faces OF vector         */
+ const cs_real_t         coefap[],    /* --> boundary condition term          */
+ const cs_real_t         coefbp[],    /* --> boundary condition term          */
+ const cs_real_t         pvar[],      /* --> gradient's base variable         */
+       cs_real_t         cocg[],      /* <-> contribution to COCG of cells
+                                             on boundary's boundary faces     */
+       cs_real_t         grad[]       /* <-- gradient                         */
+);
+
+/*----------------------------------------------------------------------------
  * Main Fortran options initialization
  *----------------------------------------------------------------------------*/
 

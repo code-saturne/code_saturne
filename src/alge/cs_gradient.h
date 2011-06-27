@@ -133,6 +133,47 @@ void CS_PROCF (cgdcel, CGDCEL)
        cs_real_t         grad[]       /* <-- gradient                         */
 );
 
+void CS_PROCF (cgdvec, CGDVEC)
+(
+ const cs_int_t   *const ncelet,      /* --> number of extended cells         */
+ const cs_int_t   *const ncel,        /* --> number of cells                  */
+ const cs_int_t   *const nfac,        /* --> number of internal faces         */
+ const cs_int_t   *const nfabor,      /* --> number of boundary faces         */
+ const cs_int_t   *const ivar,
+ const cs_int_t   *const imrgra,      /* --> gradient computation mode        */
+ const cs_int_t   *const inc,         /* --> 0 or 1: increment or not         */
+ const cs_int_t   *const nswrgp,      /* --> >1: with reconstruction          */
+ const cs_int_t   *const iwarnp,      /* --> verbosity level                  */
+ const cs_int_t   *const nfecra,      /* --> standard output unit             */
+ const cs_int_t   *const imligp,      /* --> type of clipping                 */
+ const cs_real_t  *const epsrgp,      /* --> precision for iterative gradient
+                                             calculation                      */
+ const cs_real_t  *const extrap,      /* --> extrapolate gradient at boundary */
+ const cs_real_t  *const climgp,      /* --> clipping coefficient             */
+ const cs_int_t          ifacel[],
+ const cs_int_t          ifabor[],
+ const cs_int_t          isympa[],    /* --> indicator for symmetry faces     */
+ const cs_real_t         volume[],
+ const cs_real_t         surfac[],
+ const cs_real_t         surfbo[],
+ const cs_real_t         surfbn[],
+ const cs_real_t         pond[],      /* --> interior faces geometric weight  */
+ const cs_real_t         dist[],      /* --> interior faces I' to J' distance */
+ const cs_real_t         distbr[],    /* --> boundary faces I' to J' distance */
+ const cs_real_t         dijpf[],     /* --> interior faces I'J' vector       */
+ const cs_real_t         diipb[],     /* --> boundary faces II' vector        */
+ const cs_real_t         dofij[],
+ const cs_real_t         xyzcen[],
+ const cs_real_t         cdgfac[],
+ const cs_real_t         cdgfbo[],
+ const cs_real_t         coefau[],    /* --> boundary condition term          */
+ const cs_real_t         coefbu[],    /* --> boundary condition term          */
+       cs_real_t         pvar[],      /* --> gradient's base variable         */
+       cs_real_t         cocg[],      /* <-> Matrix COCG for the variable     */
+       cs_real_t         gradv[]      /* <-- gradient of the variable         */
+);
+
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
