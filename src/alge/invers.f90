@@ -103,9 +103,9 @@ integer          iwarnp , nfecra
 integer          niterf , icycle , iinvpe
 double precision epsilp , rnorm  , residu
 
-double precision dam(ncelet), xam(nfac ,2)
-double precision smbrp(ncelet)
-double precision vx(ncelet)
+double precision dam(*), xam(*)
+double precision smbrp(*)
+double precision vx(*)
 
 ! Local variables
 

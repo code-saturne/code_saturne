@@ -24,6 +24,7 @@
   modified routines:
     src/alge/cs_gradient.c
     src/alge/cs_gradient.h
+    src/alge/invers.f90
     src/base/cs_prototypes.h
     src/base/Makefile.am
     src/base/pointe.f90
