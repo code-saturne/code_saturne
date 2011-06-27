@@ -674,7 +674,7 @@ always useful}
 \motcleb{isuite}{i}{0 or 1}{0}{C}{L1}
 {indicator of a calculation restart (=1) or not (=0)\\
 always useful. This value is set automatically be the code, depending on
-whether a restart directory is present, and should ne be modified by
+whether a restart directory is present, and should not be modified by
 the user}
 
 \motcle{ntcabs}{i}{integer}{\tt ntpabs}{O}{L3}
@@ -2826,11 +2826,11 @@ All the following key words may be modified in the user subroutines
 It is however not recommended to modify those which do not belong to
 level L1.
 
-\motcleb{irayon}{ia}{0, 1, 2}{0}{O}{L1}
-{{\tt irayon} activates ($>0$) or deactivates
+\motcleb{iirayo}{ia}{0, 1, 2}{0}{O}{L1}
+{{\tt iirayo} activates ($>0$) or deactivates
 (=0) the radiation module\\
 if a specific physics is activated (in that case, {\tt nscapp}$>$0),
-{\tt irayon} must be kept to 0 (see {\tt iraypp})\\
+{\tt iirayo} must be kept to 0 (see {\tt iraypp})\\
 The different values correspond to the following modelings:\\
 \hspace*{1.3cm} = 1 discrete ordinates
 (standard option for radiation in semi-transparent media)\\
@@ -2932,39 +2932,6 @@ the radiative transfer equation:\\
 \hspace*{1.3cm}= 0: no display\\
 \hspace*{1.3cm}= 1: standard\\
 \hspace*{1.3cm}= 2: complete\\
-useful if and only if the radiation module is activated}
-
-\motcleb{nbrvap}{ca}{string of less than 80 characters}{name}{O}{L1}
-{name associated for the post-processing to each of the following variables,
-defined at the cell centers ({\it see}
-\cite{Douce02} for more details concerning their definitions):\\
-\hspace*{1.3cm} {\tt nbrvap(itsray)}: radiative source term ($W/m^3$)\\
-\hspace*{1.3cm} {\tt nbrvap(iqrayp)}: radiative flux density vector ($W/m^2$)\\
-\hspace*{1.3cm} {\tt nbrvap(iabsp)}: absorption part in the source term
-($W/m^3$)\\
-\hspace*{1.3cm} {\tt nbrvap(iemip)}: emission part in the source term
-($W/m^3$)\\
-\hspace*{1.3cm} {\tt nbrvap(icakp)}: absorption coefficient of the
-medium ($m^{-1}$)\\
-the default values are: \\
-\hspace*{1.3cm} {\tt nbrvap(itsray)} = Srad \\
-\hspace*{1.3cm} {\tt nbrvap(iqrayp)} = Qrad \\
-\hspace*{1.3cm} {\tt nbrvap(iabsp)} = Absorp \\
-\hspace*{1.3cm} {\tt nbrvap(iemip)} = Emiss \\
-\hspace*{1.3cm} {\tt nbrvap(icakp)} = CoefAb \\
-useful if and only if the radiation module is activated}
-
-\motcleb{irayvp}{ia}{-1 or 1}{-1}{O}{L1}
-{activates (=1) or deactivates (=-1) the post-processing for the each of the
-followiing variables defined at the cell centers:\\
-\hspace*{1.3cm} {\tt irayvp(itsray)}: radiative source term ($W/m^3$)\\
-\hspace*{1.3cm} {\tt irayvp(iqrayp)}: radiative flux density vector ($W/m^2$)\\
-\hspace*{1.3cm} {\tt irayvp(iabsp)}: absorption part in the source term
-($W/m^3$)\\
-\hspace*{1.3cm} {\tt irayvp(iemip)}: emission part in the source term
-($W/m^3$)\\
-\hspace*{1.3cm} {\tt irayvp(icakp)}: absorption coefficient of the
-medium ($m^{-1}$)\\
 useful if and only if the radiation module is activated}
 
 \motcleb{nbrvaf}{ca}{string of less than 80 characters}{name}{O}{L1}
