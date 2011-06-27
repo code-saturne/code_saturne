@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-06-22 14:08+0200\n"
+"POT-Creation-Date: 2011-06-27 13:42+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4686,11 +4686,6 @@ msgstr ""
 "Support de librairies partagées non disponible.\n"
 "Impossible de charger : %s\n"
 
-msgid ""
-"A coupled application request the restart of the current time step,\n"
-"but this is not currently handled."
-msgstr ""
-
 msgid "(point-to-point or not synchronized)"
 msgstr "(point à point ou non synchronisé)"
 
@@ -4723,6 +4718,39 @@ msgstr ""
 "     rang racine : %d ; nb_rangs : %d\n"
 "     %s\n"
 "\n"
+
+#, c-format
+msgid ""
+"\n"
+"Application \"%s\" (%s) tried to set the group time step, but\n"
+"application \"%s\" (%s) has already done so."
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Application \"%s\" (%s) requested calculation stop.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Application \"%s\" (%s) requested restarting iteration,\n"
+"but this is not currently handled."
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Application \"%s\" (%s) synchronized with status flag %d,\n"
+"which does not specify a known behavior."
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Application \"%s\" (%s) requested last iteration.\n"
+msgstr ""
 
 msgid ""
 "\n"
@@ -6247,22 +6275,6 @@ msgstr ""
 "      ------------------------------------------------ \n"
 "      Options Code_Saturne : \"%s\"\n"
 "      Options SYRTHES      : \"%s\"\n"
-"========================================================\n"
-
-#, c-format
-msgid ""
-"========================================================\n"
-"   ** Unexpected message in cs_syr4_messages_test_iter\n"
-"      ------------------------------------------------\n"
-"      received message: \"%s\"\n"
-"      expected message: cmd:iter:start \n"
-"========================================================\n"
-msgstr ""
-"========================================================\n"
-"   ** Message inattendu dans cs_syr4_messages_test_iter\n"
-"      -------------------------------------------------\n"
-"      message reçu :    \"%s\"\n"
-"      message attendu : cmd:iter:start\n"
 "========================================================\n"
 
 #, c-format
