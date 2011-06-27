@@ -1,3 +1,9 @@
+* 27/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Ensure "code_saturne config" produces correct output for PLE.
+  modified files:
+    Makefile.am
+    bin/cs_package.py.in
+
 * 27/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Add a wrapper so as to compute the gradient of a vector.
   It calls Three times the standard gradient API, and used in some

@@ -29,7 +29,7 @@ endif
 
 if HAVE_INTERNAL_PLE
 PLE = libple
-PLE_CPPFLAGS_TMP =
+PLE_CPPFLAGS_TMP = -I$(includedir)
 else
 PLE_CPPFLAGS_TMP = $(PLE_CPPFLAGS)
 endif
@@ -167,6 +167,9 @@ edit_config = sed \
 	-e 's|@CS_FCFLAGS[@]|$(CSFCFLAGS)|g' \
 	-e 's|@CS_LDFLAGS[@]|$(CSLDFLAGS)|g' \
 	-e 's|@CS_LIBS[@]|$(CSLIBS)|g' \
+	-e 's|@PLE_CPPFLAGS[@]|$(PLE_CPPFLAGS_TMP)|g' \
+	-e 's|@PLE_LDFLAGS[@]|$(PLE_LDFLAGS)|g' \
+	-e 's|@PLE_LIBS[@]|$(PLE_LIBS)|g' \
 	-e 's|@LDFLAGS[@]|$(LDFLAGS)|g' \
 	-e 's|@LIBS[@]|$(LIBS)|g' \
 	-e 's|@FCLIBS[@]|$(FCLIBS)|g' \
