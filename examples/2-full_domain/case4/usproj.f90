@@ -1,12 +1,12 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 2.0.0-rc1
+!                      Code_Saturne version 2.1.0-alpha1
 !                      --------------------------
 
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2010 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -31,20 +31,12 @@
 subroutine usproj &
 !================
 
- ( idbia0 , idbra0 ,                                              &
-   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
-   nnod   , lndfac , lndfbr , ncelbr ,                            &
-   nvar   , nscal  , nphas  ,                                     &
+ ( nvar   , nscal  ,                                              &
    nbpmax , nvp    , nvep   , nivep  , ntersl , nvlsta , nvisbr , &
-   nideve , nrdeve , nituse , nrtuse ,                            &
-   ifacel , ifabor , ifmfbr , ifmcel , iprfml , maxelt , lstelt , &
-   ipnfac , nodfac , ipnfbr , nodfbr , itepa  ,                   &
-   idevel , ituser , ia     ,                                     &
-   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   itepa  ,                                                       &
    dt     , rtpa   , rtp    , propce , propfa , propfb ,          &
    coefa  , coefb  ,                                              &
-   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor , &
-   rdevel , rtuser , ra     )
+   ettp   , ettpa  , tepa   , statis , stativ , tslagr , parbor )
 
 !===============================================================================
 ! Purpose:
@@ -118,22 +110,8 @@ subroutine usproj &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! idbia0           ! i  ! <-- ! number of first free position in ia            !
-! idbra0           ! i  ! <-- ! number of first free position in ra            !
-! ndim             ! i  ! <-- ! spatial dimension                              !
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! nfac             ! i  ! <-- ! number of interior faces                       !
-! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nfml             ! i  ! <-- ! number of families (group classes)             !
-! nprfml           ! i  ! <-- ! number of properties per family (group class)  !
-! nnod             ! i  ! <-- ! number of vertices                             !
-! lndfac           ! i  ! <-- ! size of nodfac indexed array                   !
-! lndfbr           ! i  ! <-- ! size of nodfbr indexed array                   !
-! ncelbr           ! i  ! <-- ! number of cells with faces on boundary         !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nphas            ! i  ! <-- ! number of phases                               !
 ! nbpmax           ! i  ! <-- ! max. number of particles allowed               !
 ! nvp              ! i  ! <-- ! number of particle-defined variables           !
 ! nvep             ! i  ! <-- ! number of real particle properties             !
@@ -141,38 +119,8 @@ subroutine usproj &
 ! ntersl           ! i  ! <-- ! number of return coupling source terms         !
 ! nvlsta           ! i  ! <-- ! number of Lagrangian statistical variables     !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! nideve, nrdeve   ! i  ! <-- ! sizes of idevel and rdevel arrays              !
-! nituse, nrtuse   ! i  ! <-- ! sizes of ituser and rtuser arrays              !
-! ifacel(2, nfac)  ! ia ! <-- ! interior faces -> cells connectivity           !
-! ifabor(nfabor)   ! ia ! <-- ! boundary faces -> cells connectivity           !
-! ifmfbr(nfabor)   ! ia ! <-- ! boundary face family numbers                   !
-! ifmcel(ncelet)   ! ia ! <-- ! cell family numbers                            !
-! iprfml           ! ia ! <-- ! property numbers per family                    !
-!  (nfml, nprfml)  !    !     !                                                !
-! maxelt           ! i  ! <-- ! max number of cells and faces (int/boundary)   !
-! lstelt(maxelt)   ! ia ! --- ! work array                                     !
-! ipnfac(nfac+1)   ! ia ! <-- ! interior faces -> vertices index (optional)    !
-! nodfac(lndfac)   ! ia ! <-- ! interior faces -> vertices list (optional)     !
-! ipnfbr(nfabor+1) ! ia ! <-- ! boundary faces -> vertices index (optional)    !
-! nodfbr(lndfbr)   ! ia ! <-- ! boundary faces -> vertices list (optional)     !
 ! itepa            ! ia ! <-- ! integer particle attributes                    !
 !  (nbpmax, nivep) !    !     !   (containing cell, ...)                       !
-! idevel(nideve)   ! ia ! <-- ! integer work array for temporary development   !
-! ituser(nituse)   ! ia ! <-- ! user-reserved integer work array               !
-! ia(*)            ! ia ! --- ! main integer work array                        !
-! xyzcen           ! ra ! <-- ! cell centers                                   !
-!  (ndim, ncelet)  !    !     !                                                !
-! surfac           ! ra ! <-- ! interior faces surface vectors                 !
-!  (ndim, nfac)    !    !     !                                                !
-! surfbo           ! ra ! <-- ! boundary faces surface vectors                 !
-!  (ndim, nfabor)  !    !     !                                                !
-! cdgfac           ! ra ! <-- ! interior faces centers of gravity              !
-!  (ndim, nfac)    !    !     !                                                !
-! cdgfbo           ! ra ! <-- ! boundary faces centers of gravity              !
-!  (ndim, nfabor)  !    !     !                                                !
-! xyznod           ! ra ! <-- ! vertex coordinates (optional)                  !
-!  (ndim, nnod)    !    !     !                                                !
-! volume(ncelet)   ! ra ! <-- ! cell volumes                                   !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at current and previous time steps)          !
@@ -193,9 +141,6 @@ subroutine usproj &
 !  (ncelet, ntersl)!    !     !  on carrier phase                              !
 ! parbor           ! ra ! <-- ! particle interaction properties                !
 !  (nfabor, nvisbr)!    !     !  on boundary faces                             !
-! rdevel(nrdeve)   ! ra ! <-> ! real work array for temporary development      !
-! rtuser(nrtuse)   ! ra ! <-- ! user-reserved real work array                  !
-! ra(*)            ! ra ! --- ! main real work array                           !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -203,55 +148,39 @@ subroutine usproj &
 !     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens, only: ndimfb
+use pointe
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use lagpar
+use lagran
+use parall
+use period
+use ppppar
+use ppthch
+use ppincl
+use mesh
+
+!===============================================================================
+
 implicit none
-
-!===============================================================================
-! Common blocks
-!===============================================================================
-
-include "dimfbr.h"
-include "paramx.h"
-include "pointe.h"
-include "numvar.h"
-include "optcal.h"
-include "cstphy.h"
-include "cstnum.h"
-include "entsor.h"
-include "lagpar.h"
-include "lagran.h"
-include "parall.h"
-include "period.h"
-include "ppppar.h"
-include "ppthch.h"
-include "ppincl.h"
-
-!===============================================================================
 
 ! Arguments
 
-integer          idbia0 , idbra0
-integer          ndim   , ncelet , ncel   , nfac   , nfabor
-integer          nfml   , nprfml
-integer          nnod   , lndfac , lndfbr , ncelbr
-integer          nvar   , nscal  , nphas
+integer          nvar   , nscal
 integer          nbpmax , nvp    , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
-integer          nideve , nrdeve , nituse , nrtuse
 
-integer          ifacel(2,nfac) , ifabor(nfabor)
-integer          ifmfbr(nfabor) , ifmcel(ncelet)
-integer          iprfml(nfml,nprfml)
-integer          maxelt, lstelt(maxelt)
-integer          ipnfac(nfac+1), nodfac(lndfac)
-integer          ipnfbr(nfabor+1), nodfbr(lndfbr)
 integer          itepa(nbpmax,nivep)
-integer          idevel(nideve), ituser(nituse)
-integer          ia(*)
 
-double precision xyzcen(ndim,ncelet)
-double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
-double precision cdgfac(ndim,nfac), cdgfbo(ndim,nfabor)
-double precision xyznod(ndim,nnod), volume(ncelet)
 double precision dt(ncelet), rtp(ncelet,*), rtpa(ncelet,*)
 double precision propce(ncelet,*)
 double precision propfa(nfac,*), propfb(ndimfb,*)
@@ -261,11 +190,10 @@ double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta), stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
 double precision parbor(nfabor,nvisbr)
-double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
+
 
 ! Local variables
 
-integer          idebia, idebra
 integer          iel
 
 double precision sum, sumvol
@@ -273,15 +201,11 @@ double precision sum, sumvol
 !===============================================================================
 
 
-
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
 
 ! ---> Extra memory handling
-
-idebia = idbia0
-idebra = idbra0
 
 
 ! Opening of file moy.dat at the first time step of the calculation
