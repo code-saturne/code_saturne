@@ -171,6 +171,8 @@ integer          iinvpe, imaspe, indhyd
 integer          iesdep
 integer          idtsca
 integer          iagmax, nagmax, npstmg
+integer          ibsize
+
 double precision residu, phydr0
 double precision ardtsr, arsr  , arakph, unsara, thetap
 double precision dtsrom, unsvom, romro0
@@ -959,6 +961,7 @@ do 100 isweep = 1, nswmpr
   nitmgp = nitmgf(ipr)
   iwarnp = iwarni(ipr)
   epsilp = epsilo(ipr)
+  ibsize = 1
 
 ! ---> TRAITEMENT PERIODICITE
 !     (La pression est un scalaire,
@@ -967,7 +970,8 @@ do 100 isweep = 1, nswmpr
 
   call invers                                                     &
   !==========
- ( chaine(1:16)    , isym   , ipol   , ireslp , nitmap , imgrp  , &
+ ( chaine(1:16)    , isym   , ibsize ,                            &
+   ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnormp   , residu ,                                   &

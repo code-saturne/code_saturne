@@ -2688,9 +2688,7 @@ void CS_PROCF(reslin, RESLIN)
                                      1: symmetric; 2: not symmetric */
  const cs_int_t   *ilved,     /* <-- Interleaved indicator  */
                               /*     1: interleaved; 2: not interleaved */
-#if 0
- const cs_int_t   *ibsize,     <-- Block size of element ii, jj */
-#endif
+ const cs_int_t   *ibsize,    /* <-- Block size of element ii, ii */
  const cs_int_t   *ireslp,    /* <-- Resolution type:
                                      0: pcg; 1: Jacobi; 2: cg-stab */
  const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
@@ -2716,8 +2714,6 @@ void CS_PROCF(reslin, RESLIN)
 
   int cvg = 0;
   int n_iter = *niterf;
-  int _ibsize = 1;
-  const int *ibsize = &_ibsize;   /* to be passed as argument later */
   int diag_block_size[4] = {1, 1, 1, 1};
   cs_bool_t symmetric = (*isym == 1) ? true : false;
   cs_bool_t interleaved = (*ilved == 1) ? true : false;
@@ -2736,7 +2732,7 @@ void CS_PROCF(reslin, RESLIN)
     diag_block_size[0] = *ibsize;
     diag_block_size[1] = *ibsize;
     diag_block_size[2] = *ibsize;
-    diag_block_size[3] = *ibsize*_ibsize;
+    diag_block_size[3] = (*ibsize)*(*ibsize);
   }
 
   var_name = cs_base_string_f_to_c_create(cname, *lname);

@@ -127,6 +127,7 @@ integer          iinvpe
 integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          iagmax, nagmax, npstmg
+integer          ibsize
 
 double precision residu, rnorm , rnrmf , rnrmdf
 double precision epsrgp, climgp, extrap, epsilp
@@ -363,10 +364,12 @@ do isweep = 1, nswmpr
   iwarnp = iwarni(ipr)
   epsilp = epsilo(ipr)
   iinvpe = 1
+  ibsize = 1
 
   call invers                                                     &
   !==========
- ( chaine(1:16)    , isym   , ipol   , ireslp , nitmap , imgrp  , &
+ ( chaine(1:16)    , isym   , ibsize ,                            &
+   ipol   , ireslp , nitmap , imgrp  ,                            &
    ncymap , nitmgp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &

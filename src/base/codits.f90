@@ -222,6 +222,7 @@ integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
 integer          idimte,itenso,iinvpe, iinvpp
 integer          idtva0
 integer          iagmax, nagmax, npstmg
+integer          ibsize
 
 double precision residu,rnorm
 double precision thetex
@@ -479,10 +480,12 @@ do 100 isweep = 1, nswmod
   do iel = 1, ncel
     dpvar(iel) = 0.d0
   enddo
+  ibsize = 1
 
   call invers                                                     &
   !==========
- ( cnom   , isym   , ipol   , ireslq , nitmap , imgrp  ,          &
+ ( cnom   , isym   , ibsize ,                                     &
+   ipol   , ireslq , nitmap , imgrp  ,                            &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &

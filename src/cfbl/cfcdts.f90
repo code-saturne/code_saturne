@@ -182,7 +182,7 @@ character*80     chaine
 character*16     cnom
 integer          isym,ireslp,ireslq,ipol,isqrt
 integer          inc,isweep,niterf,iccocg,iel,icycle,nswmod
-integer          idimte,itenso,iinvpe, iinvpp
+integer          idimte,itenso,iinvpe, iinvpp,ibsize
 
 double precision residu,rnorm
 
@@ -372,9 +372,11 @@ do 100 isweep = 1, nswmod
     dpvar(iel) = 0.d0
   enddo
 
+  ibsize = 1
+
   call invers                                                     &
   !==========
- ( cnom   , isym   , ipol   , ireslq , nitmap , imgrp  ,          &
+ ( cnom   , isym   , ibsize , ipol   , ireslq , nitmap , imgrp  , &
    ncymxp , nitmfp ,                                              &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &

@@ -28,8 +28,8 @@
 subroutine invers &
 !================
 
- ( cnom   , isym   , ipol   , ireslp , nitmap , imgrp  ,          &
-   ncymxp , nitmfp ,                                              &
+ ( cnom   , isym   , ibsize , ipol   , ireslp , nitmap ,          &
+   imgrp  , ncymxp , nitmfp ,                                     &
    iwarnp , nfecra , niterf , icycle , iinvpe ,                   &
    epsilp , rnorm  , residu ,                                     &
    dam    , xam    , smbrp  , vx     )
@@ -97,7 +97,7 @@ implicit none
 ! Arguments
 
 character*16     cnom
-integer          isym   , ipol   , ireslp , nitmap
+integer          isym   , ipol   , ireslp , nitmap , ibsize
 integer          imgrp  , ncymxp , nitmfp
 integer          iwarnp , nfecra
 integer          niterf , icycle , iinvpe
@@ -121,6 +121,9 @@ lnom = len(cnom)
 icycle = 0
 niterf = 0
 ilved = 2
+
+! xam and dam are interleaved if ibsize is greater than 1
+if (ibsize.gt.1) ilved = 1
 
 ! Resolution
 
@@ -147,7 +150,7 @@ elseif(imgrp.eq.0) then
     call reslin                                                   &
     !==========
  ( cnom   , lnom   , ncelet , ncel   , nfac   ,                   &
-   isym   , ilved  , ireslp , ipol   , nitmap , iinvpe ,          &
+   isym   , ilved  , ibsize , ireslp , ipol   , nitmap , iinvpe , &
    iwarnp , niterf , epsilp , rnorm  , residu ,                   &
    !        ------                     ------
    ifacel , dam    , xam    , smbrp  , vx     )

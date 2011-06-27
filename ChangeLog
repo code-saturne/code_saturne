@@ -1,3 +1,15 @@
+* 27/06/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Prepare linear equations solving with block-matrices.
+  modified routines:
+    src/alge/cs_sles.c
+    src/alge/cs_sles.h
+    src/alge/invers.f90
+    src/base/calhyd.f90
+    src/base/codits.f90
+    src/base/distpr.f90
+    src/base/resolp.f90
+    src/cfbl/cfcdts.f90
+
 * 27/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix linking with user subroutines and static MPI libraries.
   modified files:

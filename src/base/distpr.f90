@@ -106,6 +106,7 @@ integer          iinvpe
 integer          isqrt , iel   , ifac
 integer          inc   , iccocg, ivar
 integer          isweep, nittot, idtva0
+integer          ibsize
 
 double precision relaxp, thetap, rnorm, residu, rnoini
 double precision dismax, dismin
@@ -233,6 +234,7 @@ nitmfp = 10
 iinvpe = 0
 if(iperio.eq.1) iinvpe = 1
 isqrt = 1
+ibsize = 1
 
 ! -- Boucle de reconstruction
 
@@ -253,7 +255,8 @@ do isweep = 0, nswrsy
 
   call invers                                                     &
   !==========
- ( nomvar(ipp)     , isym   , ipol   , ireslp , nitmay , imgrpy , &
+ ( nomvar(ipp)     , isym   , ibsize ,                            &
+   ipol   , ireslp , nitmay , imgrpy ,                            &
    ncymxp , nitmfp ,                                              &
    iwarny , nfecra , niterf , icycle , iinvpe ,                   &
    epsily , rnorm  , residu ,                                     &
