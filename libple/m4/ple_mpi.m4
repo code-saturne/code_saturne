@@ -97,15 +97,13 @@ if test "x$with_mpi" != "xno" ; then
   # If no MPI options were given, guess.
 
   if test "x$ple_have_mpi_header" = "xno" ; then
-    if test "x$with_mpi" = "xcheck" ; then
-      unset ac_cv_header_mpi_h
-      MPI_CPPFLAGS="-I/usr/include/mpi"
-      CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
-      AC_CHECK_HEADERS([mpi.h],
-                       [ple_have_mpi_header=yes],
-                       [], 
-                       [])
-    fi
+    unset ac_cv_header_mpi_h
+    MPI_CPPFLAGS="-I/usr/include/mpi"
+    CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
+    AC_CHECK_HEADERS([mpi.h],
+                     [ple_have_mpi_header=yes],
+                     [], 
+                     [])
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
