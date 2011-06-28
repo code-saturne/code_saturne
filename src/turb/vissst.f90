@@ -132,6 +132,8 @@ double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision epsrgp, climgp, extrap
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
 
+logical          ilved
+
 double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:,:,:), allocatable :: gradv
 
@@ -172,12 +174,30 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-call grdvni &
-!==========
- ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iu)   , coefa(1,ipcliu) , coefb(1,ipcliu) ,             &
-   gradv  )
+if (ivelco.eq.1) then
+
+  ilved = .false.
+
+  call grdvec &
+  !==========
+( iu  , imrgra , inc    , iccocg ,                      &
+  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
+  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+  ilved ,                                               &
+  rtpa(1,iu) ,  coefau , coefbu,                        &
+  gradv  )
+
+else
+
+  call grdvni &
+  !==========
+( iu  , imrgra , inc    , iccocg ,                      &
+  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
+  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+  rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
+  gradv  )
+
+endif
 
 do iel = 1, ncel
 

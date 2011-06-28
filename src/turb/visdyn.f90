@@ -136,6 +136,8 @@ double precision xl11, xl22, xl33, xl12, xl13, xl23
 double precision xm11, xm22, xm33, xm12, xm13, xm23
 double precision smagma, smagmn, smagmy
 
+logical          ilved
+
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -193,13 +195,30 @@ inc = 1
 
 ! Compute the velocity gradient
 
-call grdvni &
-!==========
- ( iu  , imrgra , inc    , iccocg ,                      &
-   nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-   nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
-   rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   gradv  )
+if (ivelco.eq.1) then
+
+  ilved = .false.
+
+  call grdvec &
+  !==========
+( iu  , imrgra , inc    , iccocg ,                      &
+  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
+  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+  ilved ,                                               &
+  rtpa(1,iu) ,  coefau , coefbu,                        &
+  gradv  )
+
+else
+
+  call grdvni &
+  !==========
+( iu  , imrgra , inc    , iccocg ,                      &
+  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
+  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+  rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
+  gradv  )
+
+endif
 
 ! Filter the velocity gradient on the extended neighborhood
 

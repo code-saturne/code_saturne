@@ -1,3 +1,16 @@
+* 28/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Add missing call to the new gradient API (a.k.a. grdvec) to compute
+  the gradient of a vector.
+  modified routines:
+    src/alge/grdvec.f90
+    src/base/condli.f90
+    src/turb/turbke.f90
+    src/turb/visdyn.f90
+    src/turb/vislmg.f90
+    src/turb/vissma.f90
+    src/turb/vissst.f90
+    src/turb/viswal.f90
+
 * 28/06/2011 - David Monfort <david.monfort@edf.fr>
   Improved tests for the definition of flux-based boundary conditions.
   modified routines:

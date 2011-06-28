@@ -30,7 +30,8 @@ subroutine grdvec &
 
  ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   vel    , ilved  , coefav , coefbv ,                            &
+   ilved  ,                                                       &
+   pvar   , coefav , coefbv ,                                     &
    gradv )
 
 !===============================================================================
@@ -74,10 +75,10 @@ subroutine grdvec &
 !                  !    !     !  reconstruction des gradients 97               !
 ! climgp           ! r  ! <-- ! coef gradient*distance/ecart                   !
 ! extrap           ! r  ! <-- ! coef extrap gradient                           !
-! vel(3,ncelet)    ! tr ! <-- ! variable (vitesse)                             !
+! pvar(3,ncelet)   ! tr ! <-- ! variable (vectorielle)                         !
 ! coefav,coefbv    ! tr ! <-- ! tableaux des cond lim pour pvar                !
 !   (3,nfabor)     !    !     !  sur la normale a la face de bord              !
-! gradv          ! tr ! --> ! gradient de vitesse                            !
+! gradv            ! tr ! --> ! gradient de la variable vectorielle            !
 !   (3,3,ncelet)   !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
@@ -112,9 +113,9 @@ integer          ivar   , imrgra , inc    , iccocg , nswrgp
 integer          imligp ,iwarnp  , nfecra
 double precision epsrgp , climgp , extrap
 
-double precision vel(3*ncelet)
+double precision pvar(*)
 double precision coefav(*), coefbv(*)
-double precision gradv(3*3*ncelet)
+double precision gradv(*)
 
 logical ilved
 
@@ -122,7 +123,7 @@ logical ilved
 
 integer          iel, isou, jsou
 
-double precision, dimension(:,:), allocatable :: veli
+double precision, dimension(:,:), allocatable :: pvari
 double precision, dimension(:,:,:), allocatable :: gradvi
 
 !===============================================================================
@@ -142,7 +143,7 @@ if (ilved) then
    ifacel , ifabor , isympa ,                                     &
    volume , surfac , surfbo , surfbn , pond   ,                   &
    dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   xyzcen , cdgfac , cdgfbo , coefav , coefbv , vel    ,          &
+   xyzcen , cdgfac , cdgfbo , coefav , coefbv , pvar   ,          &
    cocgu  ,                                                       &
    gradv  )
 
@@ -150,12 +151,12 @@ if (ilved) then
 else
 
   !Allocation
-  allocate(veli(3,ncelet))
+  allocate(pvari(3,ncelet))
   allocate(gradvi(3,3,ncelet))
 
   do isou = 1, 3
     do iel = 1, ncelet
-      veli(isou,iel) = vel(iel + (isou-1)*ncelet)
+      pvari(isou,iel) = pvar(iel + (isou-1)*ncelet)
     enddo
   enddo
 
@@ -167,7 +168,7 @@ else
    ifacel , ifabor , isympa ,                                     &
    volume , surfac , surfbo , surfbn , pond   ,                   &
    dist   , distb  , dijpf  , diipb  , dofij  ,                   &
-   xyzcen , cdgfac , cdgfbo , coefav , coefbv , veli   ,          &
+   xyzcen , cdgfac , cdgfbo , coefav , coefbv , pvari  ,          &
    cocgu  ,                                                       &
    gradvi )
 
@@ -181,7 +182,7 @@ else
   enddo
 
   ! Free memory
-  deallocate(veli, gradvi)
+  deallocate(pvari, gradvi)
 
 endif
 

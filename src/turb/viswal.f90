@@ -128,6 +128,8 @@ double precision sij, sijd, s, sd, sinv
 double precision xfil, xa  , xb  , radeux, con
 double precision dudx(ndim,ndim), kdelta(ndim,ndim)
 
+logical          ilved
+
 double precision, dimension(:,:,:), allocatable :: gradv
 
 !===============================================================================
@@ -170,13 +172,30 @@ allocate(gradv(ncelet,3,3))
 iccocg = 1
 inc = 1
 
-call grdvni &
-!==========
- ( iu  , imrgra , inc    , iccocg ,                      &
-   nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
-   nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
-   rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
-   gradv  )
+if (ivelco.eq.1) then
+
+  ilved = .false.
+
+  call grdvec &
+  !==========
+( iu  , imrgra , inc    , iccocg ,                      &
+  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
+  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+  ilved ,                                               &
+  rtpa(1,iu) ,  coefau , coefbu,                        &
+  gradv  )
+
+else
+
+  call grdvni &
+  !==========
+( iu  , imrgra , inc    , iccocg ,                      &
+  nswrgr(iu) , imligr(iu) , iwarni(iu) ,                &
+  nfecra , epsrgr(iu) , climgr(iu) , extrag(iu) ,       &
+  rtpa(1,iu) , coefa(1,ipcliu) , coefb(1,ipcliu) ,      &
+  gradv  )
+
+endif
 
 ! Kronecker delta Dij
 

@@ -142,6 +142,8 @@ double precision thetp1, thetak, thetae, thets, thetap
 double precision tuexpk, tuexpe
 double precision cmueta, sqrcmu, xs
 
+logical          ilved
+
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
@@ -241,12 +243,29 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-call grdvni &
-!==========
- ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   gradv  )
+if (ivelco.eq.1) then
+
+  ilved = .false.
+
+  call grdvec &
+  !==========
+( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  ilved ,                                                        &
+  rtpa(1,iu) ,  coefau , coefbu,                                 &
+  gradv  )
+
+else
+
+  call grdvni &
+  !==========
+( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
+  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
+  gradv  )
+
+endif
 
 ! TINSTK = PRODUCTION = ( 2 (S11)**2 + 2 (S22)**2 + 2 (S33)**2
 !                       + (2 S12)**2 + (2 S13)**2 + (2 S23)**2 )

@@ -187,6 +187,8 @@ double precision xxp0, xyp0, xzp0
 double precision srfbnf, rnx   , rny   , rnz
 double precision upx   , upy   , upz   , vistot
 
+logical          ilved
+
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: coefu, rijipb
 double precision, allocatable, dimension(:,:) :: grad
@@ -589,13 +591,30 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
     extrap = extrag(iu)
     icliva = iclrtp(iu,icoef)
 
-    call grdvni &
-    !==========
- ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   rtpa(1,iu)      , coefa(1,icliva) , coefb(1,icliva) ,          &
-   gradv  )
+    if (ivelco.eq.1) then
+
+      ilved = .false.
+
+      call grdvec &
+      !==========
+    ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+      iwarnp , nfecra ,                                              &
+      epsrgp , climgp , extrap ,                                     &
+      ilved ,                                                        &
+      rtpa(1,iu) ,  coefau , coefbu,                                 &
+      gradv  )
+
+    else
+
+      call grdvni &
+      !==========
+    ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+      iwarnp , nfecra ,                                              &
+      epsrgp , climgp , extrap ,                                     &
+      rtpa(1,iu)      , coefa(1,icliva) , coefb(1,icliva) ,          &
+      gradv  )
+
+    endif
 
     do isou = 1, 3
       if(isou.eq.1) ivar = iu
