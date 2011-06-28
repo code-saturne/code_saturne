@@ -83,6 +83,7 @@ subroutine turrij &
 
 use paramx
 use dimens, only: ndimfb
+use lagdim, only: ntersl
 use numvar
 use entsor
 use cstphy
@@ -111,7 +112,7 @@ double precision coefa(ndimfb,*), coefb(ndimfb,*)
 double precision ckupdc(ncepdp,6)
 
 double precision, dimension(ncesmp,nvar), target ::  smacel
-double precision, dimension(ncelet,*), target :: tslagr
+double precision, dimension(ncelet,ntersl), target :: tslagr
 
 ! Local variables
 
@@ -442,8 +443,8 @@ do isou = 1, 6
 
   if (iilagr.eq.2) then
     iitsla = itsr11 + (isou-1)
-    tslage => tslagr(1:ncelet, iitsla)
-    tslagi => tslagr(1:ncelet, itsli)
+    tslage => tslagr(1:ncelet,iitsla)
+    tslagi => tslagr(1:ncelet,itsli)
   endif
 
   if (ncesmp.gt.0) then
