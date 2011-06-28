@@ -410,7 +410,7 @@ enddo
 ! 4. COEFAF et COEFBF BIDONS POUR LES VITESSES
 !===============================================================================
 
-if (iclu.ne.icluf .or. ivelco.eq.1) then
+if (iclu.ne.icluf) then
   do ifac = 1, nfabor
     if( icodcl(ifac,iu).eq.4) then
       coefa(ifac,icluf) = coefa(ifac,iclu)
@@ -419,15 +419,20 @@ if (iclu.ne.icluf .or. ivelco.eq.1) then
       coefb(ifac,iclvf) = coefb(ifac,iclv)
       coefa(ifac,iclwf) = coefa(ifac,iclw)
       coefb(ifac,iclwf) = coefb(ifac,iclw)
-      ! Coupled solving of the velocity components
-      if(ivelco.eq.1) then
-        do isou = 1, 3
-          cofafu(isou,ifac) = coefau(isou,ifac)
-          do jsou = 1, 3
-            cofbfu(isou,jsou,ifac) = coefbu(isou,jsou,ifac)
-          enddo
+    endif
+  enddo
+endif
+
+! Coupled solving of the velocity components
+if (ivelco.eq.1) then
+  do ifac = 1, nfabor
+    if( icodcl(ifac,iu).eq.4) then
+      do isou = 1, 3
+        cofafu(isou,ifac) = coefau(isou,ifac)
+        do jsou = 1, 3
+          cofbfu(isou,jsou,ifac) = coefbu(isou,jsou,ifac)
         enddo
-      endif
+      enddo
     endif
   enddo
 endif

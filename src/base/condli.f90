@@ -944,19 +944,25 @@ do isou = 1, 3
     iclvaf = iclwf
   endif
 
-  if (iclvaf.ne.iclvar .or. ivelco.eq.1) then
+  if (iclvaf.ne.iclvar) then
     do ifac = 1, nfabor
       if( icodcl(ifac,ivar).eq.1.or.icodcl(ifac,ivar).eq.3.or.  &
           icodcl(ifac,ivar).eq.9                          ) then
         coefa(ifac,iclvaf) = coefa(ifac,iclvar)
         coefb(ifac,iclvaf) = coefb(ifac,iclvar)
-        ! Coupled solving of the velocity components
-        if(ivelco.eq.1) then
-          cofafu(isou,ifac) = coefau(isou,ifac)
-          do jsou = 1, 3
-            cofbfu(isou,jsou,ifac) = coefbu(isou,jsou,ifac)
-          enddo
-        endif
+      endif
+    enddo
+  endif
+
+  ! Coupled solving of the velocity components
+  if (ivelco.eq.1) then
+    do ifac = 1, nfabor
+      if( icodcl(ifac,ivar).eq.1.or.icodcl(ifac,ivar).eq.3.or.  &
+          icodcl(ifac,ivar).eq.9                          ) then
+        cofafu(isou,ifac) = coefau(isou,ifac)
+        do jsou = 1, 3
+          cofbfu(isou,jsou,ifac) = coefbu(isou,jsou,ifac)
+        enddo
       endif
     enddo
   endif

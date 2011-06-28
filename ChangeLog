@@ -1,3 +1,9 @@
+* 28/06/2011 - David Monfort <david.monfort@edf.fr>
+  Improved tests for the definition of flux-based boundary conditions.
+  modified routines:
+    src/base/clsyvt.f90
+    src/base/condli.f90
+
 * 28/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Add a prototype of solving the velocity components in a coupled way.
   It can be tested by setting the ivelco variable to 1 but is not yet
