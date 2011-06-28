@@ -162,9 +162,9 @@ call grdvni &
 do iel = 1, ncel
   propce(iel,ipcvst) = &
       gradv(iel,1,1)**2 + gradv(iel,2,2)**2 + gradv(iel,3,3)**2  &
-    + 0.5d0*( (gradv(iel,1,2) + gradv(iel,2,1))**2               &
-            + (gradv(iel,1,3) + gradv(iel,3,1))**2               &
-            + (gradv(iel,2,3) + gradv(iel,3,2))**2 )
+    + 0.5d0*( (gradv(iel,2,1) + gradv(iel,1,2))**2               &
+            + (gradv(iel,3,1) + gradv(iel,1,3))**2               &
+            + (gradv(iel,3,2) + gradv(iel,2,3))**2 )
 enddo
 
 ! Free memory

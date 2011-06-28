@@ -1,4 +1,14 @@
 * 28/06/2011 - David Monfort <david.monfort@edf.fr>
+  Correct gradient interleaving for the new grdvni API.
+  modified routines:
+    src/base/condli.f90
+    src/turb/turbke.f90
+    src/turb/visdyn.f90
+    src/turb/vislmg.f90
+    src/turb/vissst.f90
+    src/turb/viswal.f90
+
+* 28/06/2011 - David Monfort <david.monfort@edf.fr>
   Fix call to the new cs_matrix_set_coefficient API.
   modified routine:
     src/alge/cs_benchmark.c

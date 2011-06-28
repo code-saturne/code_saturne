@@ -257,9 +257,9 @@ do iel = 1, ncel
 
   tinstk(iel) = 2.d0*( gradv(iel,1,1)**2 + gradv(iel,2,2) **2 &
                      + gradv(iel,3,3)**2 )                      &
-              + (gradv(iel,1,2) + gradv(iel,2,1))**2 &
-              + (gradv(iel,1,3) + gradv(iel,3,1))**2 &
-              + (gradv(iel,2,3) + gradv(iel,3,2))**2
+              + (gradv(iel,2,1) + gradv(iel,1,2))**2 &
+              + (gradv(iel,3,1) + gradv(iel,1,3))**2 &
+              + (gradv(iel,3,2) + gradv(iel,2,3))**2
 
   divu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
 

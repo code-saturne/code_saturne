@@ -604,9 +604,9 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
 
       do ifac = 1, nfabor
         iel = ifabor(ifac)
-        coefu(ifac,isou) = gradv(iel,isou,1)*diipb(1,ifac)    &
-                         + gradv(iel,isou,2)*diipb(2,ifac)    &
-                         + gradv(iel,isou,3)*diipb(3,ifac)    &
+        coefu(ifac,isou) = gradv(iel,1,isou)*diipb(1,ifac)    &
+                         + gradv(iel,2,isou)*diipb(2,ifac)    &
+                         + gradv(iel,3,isou)*diipb(3,ifac)    &
                          + rtpa(iel,ivar)
       enddo
     enddo

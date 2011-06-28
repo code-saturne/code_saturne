@@ -184,12 +184,12 @@ do iel = 1, ncel
   s11  = gradv(iel,1,1)
   s22  = gradv(iel,2,2)
   s33  = gradv(iel,3,3)
-  dudy = gradv(iel,1,2)
-  dvdx = gradv(iel,2,1)
-  dudz = gradv(iel,1,3)
-  dwdx = gradv(iel,3,1)
-  dvdz = gradv(iel,2,3)
-  dwdy = gradv(iel,3,2)
+  dudy = gradv(iel,2,1)
+  dudz = gradv(iel,3,1)
+  dvdx = gradv(iel,1,2)
+  dvdz = gradv(iel,3,2)
+  dwdx = gradv(iel,1,3)
+  dwdy = gradv(iel,2,3)
 
   s2kw (iel)  = 2.d0*(s11**2 + s22**2 + s33**2)                   &
               + (dudy+dvdx)**2 + (dudz+dwdx)**2 + (dvdz+dwdy)**2

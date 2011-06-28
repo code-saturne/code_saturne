@@ -194,14 +194,15 @@ coef = cwale**2 * radeux
 
 do iel = 1, ncel
 
+  ! Dudx is interleaved, but not gradv...
   dudx(1,1) = gradv(iel,1,1)
-  dudx(1,2) = gradv(iel,1,2)
-  dudx(1,3) = gradv(iel,1,3)
-  dudx(2,1) = gradv(iel,2,1)
+  dudx(1,2) = gradv(iel,2,1)
+  dudx(1,3) = gradv(iel,3,1)
+  dudx(2,1) = gradv(iel,1,2)
   dudx(2,2) = gradv(iel,2,2)
-  dudx(2,3) = gradv(iel,2,3)
-  dudx(3,1) = gradv(iel,3,1)
-  dudx(3,2) = gradv(iel,3,2)
+  dudx(2,3) = gradv(iel,3,2)
+  dudx(3,1) = gradv(iel,1,3)
+  dudx(3,2) = gradv(iel,2,3)
   dudx(3,3) = gradv(iel,3,3)
 
   s  = 0.d0
