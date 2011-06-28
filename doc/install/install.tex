@@ -205,7 +205,7 @@ The list of third-party software usable with \CS is provided here:
       operations such as vector sums, dot products, etc.
       If no third-party BLAS is provided, \CS reverts to its own
       implementation of BLAS routines, similar to the legacy Netlib BLAS,
-      so no functionnality is lost here. With optimized BLAS such as
+      so no functionality is lost here. With optimized BLAS such as
       Atlas, MKL, ESSL, and others, simple operations such as vector
       dot product, $Ax+y$, and such are often an order of magnitude
       faster than with the usual compiler optimizations, leading to an
@@ -247,13 +247,13 @@ The list of third-party software usable with \CS is provided here:
       quality is usually slightly lower than that obtained with \scotch or
       \ptscotch, but these libraries are faster.
 
-      Though broadly available, the licence is quite restrictive,
+      Though broadly available, the license is quite restrictive,
       so \scotch or \ptscotch may be preferred (\CS may be built with both
       \metis and \scotch libraries).
 
 \end{itemize}
 
-For developers, the GNU autotools (Autoconf, Automake, Libtool) as
+For developers, the GNU Autotools (Autoconf, Automake, Libtool) as
 well as gettext will be necessary. To build the documentation,
 pdf\LaTeX{} and \texttt{fig2dev} (part of TransFig) will be necessary.
 
@@ -429,7 +429,7 @@ tool instead of the native {\tt make} is recommended.
 
 \section{Configuration\label{sec:config}}
 
-\CS uses a build system based on the GNU autotools, which includes
+\CS uses a build system based on the GNU Autotools, which includes
 its own documentation.
 
 To obtain the full list of available configuration options,
@@ -502,6 +502,32 @@ with static libraries only will not completely overwrite a build using
 shared libraries, so uninstalling the previous build first
 is recommended.
 
+\subsection{Compiler flags and environment variables\label{sec:config:flags}}
+
+As usual when using an Autoconf-based \texttt{configure} script,
+some environment variables may be used. \texttt{configure --help}
+will provide the list of recognized variables.
+\texttt{CC} and \texttt{FC} allow selecting the C and Fortran compiler
+respectively (possibly using an MPI compiler wrapper for the C parts
+of FVM and the Kernel).
+
+Compiler options are usually defined automatically, based on
+detection of the compiler (and depending on whether \texttt{--enable-debug}
+was used). This is handled in a \texttt{config/cs\_auto\_flags.sh}
+and \texttt{libple/config/ple\_auto\_flags.sh} scripts.
+These files are sourced when running \texttt{configure}, so
+any modification to it will be effective as soon as \texttt{configure} is run.
+When installing on an exotic machine, or with a new compiler, adapting this
+file is useful (and providing feedback to the \CS development team
+will enable support of a broader range of compilers and systems in the
+future.
+
+The usual \texttt{CPPFLAGS}, \texttt{CFLAGS},
+\texttt{FCCFLAGS}, \texttt{LDFLAGS}, and \texttt{LIBS} environment variables
+may also be used, an flags provided by the user are appended to the automatic
+flags. To completely disable automatic setting of flags,
+the \texttt{--disable-auto-flags} option may be used.
+
 \subsection{MPI compiler wrappers\label{sec:config:mpicc}}
 
 MPI environments generally provide compiler wrappers, usually
@@ -535,14 +561,14 @@ of \texttt{--with-mpi}.
 
 \emph{Never} use an \texttt{FC=mpif90} or equivalent option:
 in \CS, MPI is never called directly from Fortran code,
-so compiler wrappers are not necessary, but they can lead to
+so Fortran MPI bindings are not necessary, but they can lead to
 build failures, especially in cross-compilation
 configurations.\footnote{\texttt{configure} determines which libraries are
 necessary to link the Fortran runtime using a C or C++ compiler as a linker.
 This avoids conflicts between linking with a C++ compiler and linking with a
 Fortran compiler when both runtimes are necessary,
 for example when using the MED library.
-When using an MPI fortran wrapper, extra libraries that are not normally
+When using an MPI Fortran wrapper, extra libraries that are not normally
 necessary will be added to those we link with, and the Libtool script
 that is part of the build system will often try to add further dependencies,
 mixing-up front-end and compute node compiler options and
@@ -570,18 +596,18 @@ installing the code.
 \subsection{Remarks for very large meshes\label{sec:config:largemesh}}
 
 If \CS is to be run on large meshes, several precautions regarding
-its configuration and that of third-party sofware must be taken.
+its configuration and that of third-party software must be taken.
 
-in addition to local connectivity arrays, \CS uses gobal element ids
+in addition to local connectivity arrays, \CS uses global element ids
 for some operations, such as reading and writing meshes and restart files,
-parallel interface element matching, and postprocessing output.
+parallel interface element matching, and post-processing output.
 For a hexahedral mesh with $N$ cells,
 the number of faces is about $3N$ (6 faces per cell, shared by 2 cells each).
 With 4 cells per face, the $face \rightarrow vertices$ array is of size
 of the order of $4\times3N$, so global ids used in that array's index
 will reach $2^{31}$ for a mesh in the range of $2^{31} / 12 \approxeq 178.10^6$.
 In practice, we have encountered a limit with slightly smaller meshes,
-around 150 milion cells.
+around 150 million cells.
 
 Above 150 million hexahedral cells or so, it is thus imperative to configure
 the build to use 64-bit global element ids, with the
@@ -668,7 +694,7 @@ associated to that compiler, so if versions using different compilers
 are to be installed, it is recommended to use a naming scheme
 which reflects this.
 In this example, HDF5, CGNS and MED were built without MPI-IO support,
-as \CS does not yet exloit MPI-IO for these libraries.
+as \CS does not yet exploit MPI-IO for these libraries.
 
 \subsubsection{Cross-compiling}
 
@@ -685,7 +711,7 @@ To install and run \CS, 2 builds are required:
       This build will thus usually not need  MPI.
 \item a ``compute'' build, cross-compiled to run on the compute nodes.
       This build does not need to include the GUI, documentation, or
-      the pre-processor.
+      the \pcs.
 \end{itemize}
 
 A debug variant of the compute build is also recommended, as always.
@@ -777,6 +803,11 @@ probably work, as long as build and host are different.
 The C++ compiler is also specified, as it will be needed for
 the link stage due to C++ dependencies in the MED library,
 which is a static library in this example (see \S\ref{sec:ext:med}).
+
+The thread-safe compiler wrappers used here should not be necessary for \CS, but in our
+experience, the ESSL BLAS are correctly detected only with those wrappers,
+not with the single-threaded versions.\footnote{This might be due to a bug in the ESSL
+BLAS detection of \CS, although the code has been checked.}
 
 Note that in the above examples, we specified an install of the \scotch
 partitioning library both for the front-end and for the compute nodes.
