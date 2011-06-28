@@ -169,6 +169,7 @@ double precision und0, deuxd0
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 double precision visclc, visctc, romc  , distbf, srfbnf, cpscv
+double precision cofimp, cofimpf, ypup
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -638,6 +639,23 @@ do ifac = 1, nfabor
          uiptnf = 0.d0
       endif
 
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+        if (yplus.ge.ypluli) then
+          ! On implicite le terme de bord pour le gradient de vitesse
+          ypup =  yplus/(log(yplus)/xkappa +cstlog)
+          cofimp  = 1.d0 - ypup/xkappa*                        &
+                           (und0/(deuxd0*yplus-dplus) - deuxd0*rcprod )
+          ! On implicite le terme (rho*uet*uk)
+          !NB mu/(mu+muT) est la car la viscosite turbulente au bord est non nulle
+          cofimpf = visclc /(visclc+visctc)*ypup
+        else
+          ! Dans la sous couche visceuse : U_F=0
+          cofimp  = 0.d0
+          cofimpf = visclc/(visclc+visctc)
+        endif
+      endif
+
       uiptmx = max(uiptn*unturb,uiptmx)
       uiptmn = min(uiptn*unturb,uiptmn)
       if(uiptn*unturb.lt.-epzero) iuiptn = iuiptn + 1
@@ -663,6 +681,44 @@ do ifac = 1, nfabor
       coefb(ifac,iclvf)  = 0.d0
       coefb(ifac,iclwf)  = 0.d0
 
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+
+        coefau(1,ifac)     = rcodcx
+        coefau(2,ifac)     = rcodcy
+        coefau(3,ifac)     = rcodcz
+        cofafu(1,ifac)     = rcodcx
+        cofafu(2,ifac)     = rcodcy
+        cofafu(3,ifac)     = rcodcz
+
+        ! Projection in order to have the velocity parallel to the wall
+        ! B = cofimp * ( IDENTITY - n x n )
+
+        coefbu(1,1,ifac)   = cofimp*(1.d0-rnx**2)
+        coefbu(2,2,ifac)   = cofimp*(1.d0-rny**2)
+        coefbu(3,3,ifac)   = cofimp*(1.d0-rnz**2)
+        coefbu(1,2,ifac)   = -cofimp*rnx*rny
+        coefbu(1,3,ifac)   = -cofimp*rnx*rnz
+        coefbu(2,1,ifac)   = -cofimp*rny*rnx
+        coefbu(2,3,ifac)   = -cofimp*rny*rnz
+        coefbu(3,1,ifac)   = -cofimp*rnz*rnx
+        coefbu(3,2,ifac)   = -cofimp*rnz*rny
+
+        ! Projection in order to have the shear stress parallel to the wall
+        !  B = IDENTITY - cofimpf*( IDENTITY - n x n )
+
+        cofbfu(1,1,ifac)   = 1.d0 - cofimpf*(1.d0-rnx**2)
+        cofbfu(2,2,ifac)   = 1.d0 - cofimpf*(1.d0-rny**2)
+        cofbfu(3,3,ifac)   = 1.d0 - cofimpf*(1.d0-rnz**2)
+
+        cofbfu(1,2,ifac)   = cofimpf*rnx*rny
+        cofbfu(1,3,ifac)   = cofimpf*rnx*rnz
+        cofbfu(2,1,ifac)   = cofimpf*rny*rnx
+        cofbfu(2,3,ifac)   = cofimpf*rny*rnz
+        cofbfu(3,1,ifac)   = cofimpf*rnz*rnx
+        cofbfu(3,2,ifac)   = cofimpf*rnz*rny
+      endif
+
     elseif(iturb.eq.0 .or.iturb.eq.10.or.           &
            itytur.eq.3) then
 
@@ -670,6 +726,24 @@ do ifac = 1, nfabor
       if(ilogpo.eq.0) then
         uiptn  = utau                                             &
              + uet*apow*bpow*yplus**bpow*(2.d0**(bpow-1.d0)-2.d0)
+
+        ! Coupled solving of the velocity components
+        if (ivelco.eq.1) then
+          if(yplus.ge.ypluli) then
+            ! On implicite le terme de bord pour le gradient de vitesse
+            ! Faute de calcul mis a part, a*yplus^b/U+ = uet^(b+1-1/d)
+            ypup = utau**(2.d0*dpow-1.d0)/apow**(2.d0*dpow)
+            cofimp  = 1.d0+bpow*uet**(bpow+1.d0-1.d0/dpow)*( 2.d0**(bpow-1.d0)-2.d0 )
+            ! On implicite le terme (rho*uet*uk)
+            !NB mu/(mu+muT) est la car la viscosite turbulente au bord est non nulle
+            cofimpf = visclc /(visclc+visctc)*ypup
+          else
+            !Dans la sous couche visceuse : U_F=0
+            cofimp  = 0.d0
+            cofimpf = visclc/(visclc+visctc)
+          endif
+        endif
+
       else
 !     Si YPLUS=0, on met UIPTN a 0 directement pour eviter une division
 !     par 0. De toute facon, dans ce cas UNTURB=0
@@ -679,6 +753,21 @@ do ifac = 1, nfabor
          else
             uiptn = 0.d0
          endif
+
+        ! Coupled solving of the velocity components
+        if (yplus.ge.ypluli) then
+          ! On implicite le terme de bord pour le gradient de vitesse
+          ypup   =  yplus/(log(yplus)/xkappa +cstlog)
+          cofimp  = 1.d0-ypup/xkappa*(deuxd0/yplus - und0/(deuxd0*yplus-dplus) )
+          ! On implicite le terme (rho*uet*uk)
+          !NB mu/(mu+muT) est la car la viscosite turbulente au bord est non nulle
+          cofimpf = visclc /(visclc+visctc)*ypup
+        else
+          !Dans la sous couche visceuse : U_F=0
+          cofimp  = 0.d0
+          cofimpf = visclc/(visclc+visctc)
+        endif
+
       endif
 
       uiptmx = max(uiptn*unturb,uiptmx)
@@ -697,14 +786,75 @@ do ifac = 1, nfabor
       coefb(ifac,iclv)   = 0.d0
       coefb(ifac,iclw)   = 0.d0
 
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+
+        coefau(1,ifac)     = rcodcx
+        coefau(2,ifac)     = rcodcy
+        coefau(3,ifac)     = rcodcz
+        cofafu(1,ifac)     = rcodcx
+        cofafu(2,ifac)     = rcodcy
+        cofafu(3,ifac)     = rcodcz
+
+        ! Projection in order to have the velocity parallel to the wall
+        ! B = cofimp * ( IDENTITY - n x n )
+
+        coefbu(1,1,ifac)   = cofimp*(1.d0-rnx**2)
+        coefbu(2,2,ifac)   = cofimp*(1.d0-rny**2)
+        coefbu(3,3,ifac)   = cofimp*(1.d0-rnz**2)
+        coefbu(1,2,ifac)   = -cofimp*rnx*rny
+        coefbu(1,3,ifac)   = -cofimp*rnx*rnz
+        coefbu(2,1,ifac)   = -cofimp*rny*rnx
+        coefbu(2,3,ifac)   = -cofimp*rny*rnz
+        coefbu(3,1,ifac)   = -cofimp*rnz*rnx
+        coefbu(3,2,ifac)   = -cofimp*rnz*rny
+
+        ! Projection in order to have the shear stress parallel to the wall
+        !  B = IDENTITY - cofimpf*( IDENTITY - n x n )
+
+        cofbfu(1,1,ifac)   = 1.d0 - cofimpf*(1.d0-rnx**2)
+        cofbfu(2,2,ifac)   = 1.d0 - cofimpf*(1.d0-rny**2)
+        cofbfu(3,3,ifac)   = 1.d0 - cofimpf*(1.d0-rnz**2)
+
+        cofbfu(1,2,ifac)   = cofimpf*rnx*rny
+        cofbfu(1,3,ifac)   = cofimpf*rnx*rnz
+        cofbfu(2,1,ifac)   = cofimpf*rny*rnx
+        cofbfu(2,3,ifac)   = cofimpf*rny*rnz
+        cofbfu(3,1,ifac)   = cofimpf*rnz*rnx
+        cofbfu(3,2,ifac)   = cofimpf*rnz*rny
+
+      endif
+
     ! En LES on est forcement en IDEUCH=0, pas la peine d'exprimer les flux en
     ! version "scalable wall function". Idem pour le modele de Spalart Allmaras.
     elseif(itytur.eq.4.or.iturb.eq.70) then
       if(ilogpo.eq.0) then
         uiptn  = utau                                             &
              + uet*apow*bpow*yplus**bpow*(2.d0**(bpow-1.d0)-2.d0)
+
+        ! Coupled solving of the velocity components
+        if (ivelco.eq.1) then
+          ! On implicite le terme de bord pour le gradient de vitesse
+          ! Faute de calcul mis a part, a*yplus^b/U+ = uet^(b+1-1/d)
+          ypup = utau**(2.d0*dpow-1.d0)/apow**(2.d0*dpow)
+          cofimp  = 1.d0+bpow*uet**(bpow+1.d0-1.d0/dpow)*( 2.d0**(bpow-1.d0)-2.d0 )
+          ! On implicite le terme (rho*uet*uk)
+          !NB mu/(mu+muT) est la car la viscosite turbulente au bord est non nulle
+          cofimpf = visclc /(visclc+visctc)*ypup
+        endif
+
       else
         uiptn  = utau - uet/xkappa*1.5d0
+
+        ! Coupled solving of the velocity components
+        if (ivelco.eq.1) then
+          if (uet.gt.epzero) then
+            cofimp = 1.d0 - visclc/romc/uet/(xkappa*distbf)*1.5d0
+          else
+            cofimp = 1.d0
+          endif
+
+        endif
       endif
 
 ! Si (mu+mut) devient nul (modèles dynamiques), on impose une valeur bidon
@@ -713,7 +863,23 @@ do ifac = 1, nfabor
 
       if(visctc+visclc.le.0) then
         uiptnf = utau
+        if (ivelco.eq.1) cofimpf= 1.d0
       else
+
+        ! Coupled solving of the velocity components
+        if (ivelco.eq.1) then
+          if(yplus.ge.ypluli) then
+            ! On implicite le terme de bord pour le gradient de vitesse
+            ypup   =  yplus/(log(yplus)/xkappa +cstlog)
+            ! On implicite le terme (rho*uet*uk)
+            !NB mu/(mu+muT) est la car la viscosite turbulente au bord est non nulle
+            cofimpf = visclc /(visclc+visctc)*ypup
+          else
+            !Dans la sous couche visceuse : U_F=0
+            cofimpf = visclc/(visclc+visctc)
+          endif
+        endif
+
         uiptnf = utau -romc*distbf*(uet**2)/(visctc+visclc)
       endif
 
@@ -742,6 +908,45 @@ do ifac = 1, nfabor
       coefb(ifac,iclvf)  = 0.d0
       coefb(ifac,iclwf)  = 0.d0
 
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+
+        coefau(1,ifac)     = rcodcx
+        coefau(2,ifac)     = rcodcy
+        coefau(3,ifac)     = rcodcz
+        cofafu(1,ifac)     = rcodcx
+        cofafu(2,ifac)     = rcodcy
+        cofafu(3,ifac)     = rcodcz
+
+        ! Projection in order to have the velocity parallel to the wall
+        ! B = cofimp * ( IDENTITY - n x n )
+
+        coefbu(1,1,ifac)   = cofimp*(1.d0-rnx**2)
+        coefbu(2,2,ifac)   = cofimp*(1.d0-rny**2)
+        coefbu(3,3,ifac)   = cofimp*(1.d0-rnz**2)
+        coefbu(1,2,ifac)   = -cofimp*rnx*rny
+        coefbu(1,3,ifac)   = -cofimp*rnx*rnz
+        coefbu(2,1,ifac)   = -cofimp*rny*rnx
+        coefbu(2,3,ifac)   = -cofimp*rny*rnz
+        coefbu(3,1,ifac)   = -cofimp*rnz*rnx
+        coefbu(3,2,ifac)   = -cofimp*rnz*rny
+
+        ! Projection in order to have the shear stress parallel to the wall
+        !  B = IDENTITY - cofimpf*( IDENTITY - n x n )
+
+        cofbfu(1,1,ifac)   = 1.d0 - cofimpf*(1.d0-rnx**2)
+        cofbfu(2,2,ifac)   = 1.d0 - cofimpf*(1.d0-rny**2)
+        cofbfu(3,3,ifac)   = 1.d0 - cofimpf*(1.d0-rnz**2)
+
+        cofbfu(1,2,ifac)   = cofimpf*rnx*rny
+        cofbfu(1,3,ifac)   = cofimpf*rnx*rnz
+        cofbfu(2,1,ifac)   = cofimpf*rny*rnx
+        cofbfu(2,3,ifac)   = cofimpf*rny*rnz
+        cofbfu(3,1,ifac)   = cofimpf*rnz*rnx
+        cofbfu(3,2,ifac)   = cofimpf*rnz*rny
+
+      endif
+
     elseif(iturb.eq.50) then
 
 !     Avec ces conditions, pas besoin de calculer UIPTMX, UIPTMN
@@ -754,6 +959,43 @@ do ifac = 1, nfabor
       coefb(ifac,iclu)   = 0.d0
       coefb(ifac,iclv)   = 0.d0
       coefb(ifac,iclw)   = 0.d0
+
+      ! Coupled solving of the velocity components
+      if(ivelco.eq.1) then
+
+        coefau(1,ifac)     = coefa(ifac,iclu)
+        coefau(2,ifac)     = coefa(ifac,iclv)
+        coefau(3,ifac)     = coefa(ifac,iclw)
+        cofafu(1,ifac)     = coefa(ifac,iclu)
+        cofafu(2,ifac)     = coefa(ifac,iclv)
+        cofafu(3,ifac)     = coefa(ifac,iclw)
+
+        coefbu(1,1,ifac)   = 0.d0
+        coefbu(2,2,ifac)   = 0.d0
+        coefbu(3,3,ifac)   = 0.d0
+
+        coefbu(1,2,ifac)   = 0.d0
+        coefbu(1,3,ifac)   = 0.d0
+        coefbu(2,1,ifac)   = 0.d0
+        coefbu(2,3,ifac)   = 0.d0
+        coefbu(3,1,ifac)   = 0.d0
+        coefbu(3,2,ifac)   = 0.d0
+
+        ! Projection in order to have the shear stress parallel to the wall
+        !  B = IDENTITY - cofimpf*( IDENTITY - n x n )
+
+        cofbfu(1,1,ifac)   = rnx**2
+        cofbfu(2,2,ifac)   = rny**2
+        cofbfu(3,3,ifac)   = rnz**2
+
+        cofbfu(1,2,ifac)   = rnx*rny
+        cofbfu(1,3,ifac)   = rnx*rnz
+        cofbfu(2,1,ifac)   = rny*rnx
+        cofbfu(2,3,ifac)   = rny*rnz
+        cofbfu(3,1,ifac)   = rnz*rnx
+        cofbfu(3,2,ifac)   = rnz*rny
+
+      endif
 
     endif
 

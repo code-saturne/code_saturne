@@ -632,6 +632,37 @@ do ifac = 1, nfabor
       coefb(ifac,iclvf)  = 0.d0
       coefb(ifac,iclwf)  = 0.d0
 
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+
+        coefau(1,ifac) = coefa(ifac,iclu)
+        coefau(2,ifac) = coefa(ifac,iclv)
+        coefau(3,ifac) = coefa(ifac,iclw)
+        cofafu(1,ifac) = coefa(ifac,icluf)
+        cofafu(2,ifac) = coefa(ifac,iclvf)
+        cofafu(3,ifac) = coefa(ifac,iclwf)
+
+        coefbu(1,1,ifac) = 0.d0
+        coefbu(2,2,ifac) = 0.d0
+        coefbu(3,3,ifac) = 0.d0
+        cofbfu(1,1,ifac) = 0.d0
+        cofbfu(2,2,ifac) = 0.d0
+        cofbfu(3,3,ifac) = 0.d0
+
+        coefbu(1,2,ifac) = 0.d0
+        coefbu(1,3,ifac) = 0.d0
+        coefbu(2,1,ifac) = 0.d0
+        coefbu(2,3,ifac) = 0.d0
+        coefbu(3,1,ifac) = 0.d0
+        coefbu(3,2,ifac) = 0.d0
+        cofbfu(1,2,ifac) = 0.d0
+        cofbfu(1,3,ifac) = 0.d0
+        cofbfu(2,1,ifac) = 0.d0
+        cofbfu(2,3,ifac) = 0.d0
+        cofbfu(3,1,ifac) = 0.d0
+        cofbfu(3,2,ifac) = 0.d0
+
+      endif
 
     elseif(iturb.eq.50) then
 
@@ -646,6 +677,37 @@ do ifac = 1, nfabor
       coefb(ifac,iclv)   = 0.d0
       coefb(ifac,iclw)   = 0.d0
 
+      ! Coupled solving of the velocity components
+      if(ivelco.eq.1) then
+
+        coefau(1,ifac) = coefa(ifac,iclu)
+        coefau(2,ifac) = coefa(ifac,iclv)
+        coefau(3,ifac) = coefa(ifac,iclw)
+        cofafu(1,ifac) = coefa(ifac,iclu)
+        cofafu(2,ifac) = coefa(ifac,iclv)
+        cofafu(3,ifac) = coefa(ifac,iclw)
+
+        coefbu(1,1,ifac) = 0.d0
+        coefbu(2,2,ifac) = 0.d0
+        coefbu(3,3,ifac) = 0.d0
+        cofbfu(1,1,ifac) = 0.d0
+        cofbfu(2,2,ifac) = 0.d0
+        cofbfu(3,3,ifac) = 0.d0
+
+        coefbu(1,2,ifac) = 0.d0
+        coefbu(1,3,ifac) = 0.d0
+        coefbu(2,1,ifac) = 0.d0
+        coefbu(2,3,ifac) = 0.d0
+        coefbu(3,1,ifac) = 0.d0
+        coefbu(3,2,ifac) = 0.d0
+        cofbfu(1,2,ifac) = 0.d0
+        cofbfu(1,3,ifac) = 0.d0
+        cofbfu(2,1,ifac) = 0.d0
+        cofbfu(2,3,ifac) = 0.d0
+        cofbfu(3,1,ifac) = 0.d0
+        cofbfu(3,2,ifac) = 0.d0
+
+      endif
     endif
 
 !===============================================================================

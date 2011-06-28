@@ -1,4 +1,30 @@
 * 28/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Add a prototype of solving the velocity components in a coupled way.
+  It can be tested by setting the ivelco variable to 1 but is not yet
+  compatible with every feature (use with caution...).
+  added routines:
+    src/base/catsmv.f90
+    src/base/navstv.f90
+    src/base/predvv.f90
+    src/base/resopv.f90
+    src/base/tspdcv.f90
+    src/base/visecv.f90
+    users/base/ustsnv.f90
+  modified routine:
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/clsyvt.f90
+    src/base/condli.f90
+    src/base/iniini.f90
+    src/base/iniva0.f90
+    src/base/phyvar.f90
+    src/base/optcal.f90
+    src/base/pointe.f90
+    src/base/tridim.f90
+  modified script:
+    src/base/Makefile.am
+
+* 28/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Correct gradient interleaving for the new grdvec API in the case
   where the data must to translated from non-interleaved to interleaved.
   modified routines:

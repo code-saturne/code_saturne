@@ -388,6 +388,12 @@ module optcal
   integer, save ::          irevmc, iprco , irnpnw
   double precision, save :: rnormp, arak
 
+  !   ivelco
+  !     = 1 resolution couplee des composantes de vitesse
+  !     = 0 resolution decouplee des composantes de vitesse (Standard)
+
+  integer, save :: ivelco
+
   ! ipucou algorithme couplage instationnaire vitesse/pression
 
   integer, save :: ipucou

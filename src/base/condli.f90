@@ -164,7 +164,7 @@ double precision hbord(nfabor),thbord(nfabor)
 ! Local variables
 
 integer          ifac  , iel   , ivar
-integer          isou  , ii    , iii
+integer          isou  , jsou  , ii    , iii
 integer          ihcp  , iscal , iscat
 integer          inc   , iccocg
 integer          iok   , iok1
@@ -805,6 +805,25 @@ do ifac = 1, nfabor
       coefb(ifac,iclw) = 1.d0
     endif
 
+    ! Coupled solving of the velocity components
+    if (ivelco.eq.1) then
+      coefau(1,ifac) = coefa(ifac,iclu)
+      coefau(2,ifac) = coefa(ifac,iclv)
+      coefau(3,ifac) = coefa(ifac,iclw)
+
+      coefbu(1,1,ifac) = coefb(ifac,iclu)
+      coefbu(2,2,ifac) = coefb(ifac,iclu)
+      coefbu(3,3,ifac) = coefb(ifac,iclu)
+
+      coefbu(1,2,ifac) = 0.d0
+      coefbu(1,3,ifac) = 0.d0
+      coefbu(2,1,ifac) = 0.d0
+      coefbu(2,3,ifac) = 0.d0
+      coefbu(3,1,ifac) = 0.d0
+      coefbu(3,2,ifac) = 0.d0
+    endif
+
+
   endif
 
 enddo
@@ -823,15 +842,15 @@ endif
 
 ! ---> DIRICHLET ET FLUX
 
-do ii = 1, 3
+do isou = 1, 3
 
-  if(ii.eq.1) then
+  if(isou.eq.1) then
     ivar   = iu
     iclvar = iclu
-  elseif(ii.eq.2) then
+  elseif(isou.eq.2) then
     ivar   = iv
     iclvar = iclv
-  elseif(ii.eq.3) then
+  elseif(isou.eq.3) then
     ivar   = iw
     iclvar = iclw
   endif
@@ -860,16 +879,46 @@ do ii = 1, 3
         pimp = rcodcl(ifac,ivar,1)
         coefa(ifac,iclvar) = pimp
         coefb(ifac,iclvar) = 0.d0
+        ! Coupled solving of the velocity components
+        if (ivelco.eq.1) then
+          coefau(isou,ifac) = pimp
+          coefbu(isou,1,ifac) = 0.d0
+          coefbu(isou,2,ifac) = 0.d0
+          coefbu(isou,3,ifac) = 0.d0
+        endif
       else
         pimp = rcodcl(ifac,ivar,1)
         coefa(ifac,iclvar) = hext*pimp/(hint +hext)
         coefb(ifac,iclvar) = hint     /(hint +hext)
+        ! Coupled solving of the velocity components
+        if (ivelco.eq.1) then
+          coefau(isou,ifac) = hext*pimp/(hint +hext)
+          do jsou = 1, 3
+            if (jsou.eq.isou) then
+              coefbu(isou,jsou,ifac) = hint/(hint +hext)
+            else
+              coefbu(isou,jsou,ifac) = 0.d0
+            endif
+          enddo
+        endif
       endif
 
-      !      C.L DE TYPE FLUX
+    !      C.L DE TYPE FLUX
     elseif( icodcl(ifac,ivar).eq.3 ) then
       coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
       coefb(ifac,iclvar) = 1.d0
+      ! Coupled solving of the velocity components
+      if (ivelco.eq.1) then
+        coefau(isou,ifac) = -rcodcl(ifac,ivar,3)/hint
+        do jsou = 1, 3
+          if(jsou.eq.isou) then
+            coefbu(isou,jsou,ifac) = 1.d0
+          else
+            coefbu(isou,jsou,ifac) = 0.d0
+          endif
+        enddo
+      endif
+
     endif
 
   enddo
@@ -879,28 +928,35 @@ enddo
 ! ---> COEFAF ET COEFBF
 !       POUR TOUS LES CODES SAUF 4, 5 ET 6 TRAITES SEPAREMENT
 
-do ii = 1, 3
+do isou = 1, 3
 
-  if(ii.eq.1) then
+  if(isou.eq.1) then
     ivar   = iu
     iclvar = iclu
     iclvaf = icluf
-  elseif(ii.eq.2) then
+  elseif(isou.eq.2) then
     ivar   = iv
     iclvar = iclv
     iclvaf = iclvf
-  elseif(ii.eq.3) then
+  elseif(isou.eq.3) then
     ivar   = iw
     iclvar = iclw
     iclvaf = iclwf
   endif
 
-  if(iclvaf.ne.iclvar) then
+  if (iclvaf.ne.iclvar .or. ivelco.eq.1) then
     do ifac = 1, nfabor
       if( icodcl(ifac,ivar).eq.1.or.icodcl(ifac,ivar).eq.3.or.  &
-           icodcl(ifac,ivar).eq.9                          ) then
+          icodcl(ifac,ivar).eq.9                          ) then
         coefa(ifac,iclvaf) = coefa(ifac,iclvar)
         coefb(ifac,iclvaf) = coefb(ifac,iclvar)
+        ! Coupled solving of the velocity components
+        if(ivelco.eq.1) then
+          cofafu(isou,ifac) = coefau(isou,ifac)
+          do jsou = 1, 3
+            cofbfu(isou,jsou,ifac) = coefbu(isou,jsou,ifac)
+          enddo
+        endif
       endif
     enddo
   endif

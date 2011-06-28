@@ -56,9 +56,18 @@ module pointe
 
   double precision, allocatable, dimension(:,:,:) :: cocg, cocgb, coci, cocib
   double precision, allocatable, dimension(:,:,:) :: cocgu
+
   double precision, allocatable, dimension(:,:) :: forbr
   double precision, allocatable, dimension(:) :: dispar, yplpar
   double precision, allocatable, dimension(:) :: yplbr, uetbor
+
+  ! Specific arrays for the coupled case
+
+  ! coefau ! (3,nfabor)     ! explicit Boundary conditions for the velocity
+  ! coefbu ! (3,3,nfabor)   ! implicit Boundary conditions for the velocity
+
+  double precision, dimension(:,:), allocatable :: coefau, cofafu
+  double precision, dimension(:,:,:), allocatable :: coefbu, cofbfu
 
   ! dudxy  ! (ncelet-ncel,3,3)   ! sauvegarde du gradient de la
   !        !                     ! vitesse en cas de rotation
@@ -190,9 +199,16 @@ contains
     ! Gradient calculation
 
     allocate(cocg(ncelet,3,3), cocgb(ncelbr,3,3))
-    allocate(cocgu(3,3,ncelet))
+    if (ivelco.eq.1) allocate(cocgu(3,3,ncelet))
     if (imrgra.eq.1 .or. iverif.eq.1) then
       allocate(coci(ncelet,3,3), cocib(ncelbr,3,3))
+    endif
+
+    ! Boundary condition for the velocity when components are coupled
+
+    if (ivelco.eq.1) then
+      allocate(coefau(3,nfabor),cofafu(3,nfabor))
+      allocate(coefbu(3,3,nfabor),cofbfu(3,3,nfabor))
     endif
 
     ! Wall-distance calculation
@@ -262,6 +278,7 @@ contains
     if (allocated(izft1d)) deallocate(izft1d)
     deallocate(cocg, cocgb)
     if (allocated(cocgu)) deallocate(cocgu)
+    if (allocated(coefau)) deallocate(coefau, cofafu, coefbu, cofbfu)
     if (allocated(coci)) deallocate(coci, cocib)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)

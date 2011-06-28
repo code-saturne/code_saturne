@@ -126,6 +126,7 @@ calhyd.f90 \
 calmom.f90 \
 caltri.f90 \
 catsma.f90 \
+catsmv.f90 \
 causta.f90 \
 clca66.f90 \
 clpsca.f90 \
@@ -215,6 +216,7 @@ modini.f90 \
 modpar.f90 \
 mmtycl.f90 \
 navsto.f90 \
+navstv.f90 \
 newmrk.f90 \
 numvec.f90 \
 ordita.f90 \
@@ -224,9 +226,11 @@ perinu.f90 \
 phyvar.f90 \
 precli.f90 \
 preduv.f90 \
+predvv.f90 \
 prmoy0.f90 \
 recvmc.f90 \
 resolp.f90 \
+resopv.f90 \
 scalai.f90 \
 schtmp.f90 \
 stdtcl.f90 \
@@ -237,6 +241,7 @@ strpre.f90 \
 tdesi1.f90 \
 testel.f90 \
 tridim.f90 \
+tspdcv.f90 \
 tsepdc.f90 \
 tstvec.f90 \
 typecl.f90 \
@@ -247,6 +252,7 @@ verini.f90 \
 verlon.f90 \
 vert1d.f90 \
 vissec.f90 \
+visecv.f90 \
 zufall.f90
 
 
@@ -271,6 +277,7 @@ $(top_srcdir)/users/base/ustske.f90 \
 $(top_srcdir)/users/base/ustskw.f90 \
 $(top_srcdir)/users/base/ustsma.f90 \
 $(top_srcdir)/users/base/ustsns.f90 \
+$(top_srcdir)/users/base/ustsnv.f90 \
 $(top_srcdir)/users/base/ustsri.f90 \
 $(top_srcdir)/users/base/ustssa.f90 \
 $(top_srcdir)/users/base/ustssc.f90 \

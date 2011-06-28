@@ -858,6 +858,10 @@ arak   = 1.d0
 !     indicateur developpeur temporaire sur le test de conv resolp
 irnpnw = 1
 
+! --- Resolution couplee des composantes de vitesse
+
+ivelco = 0
+
 ! --- Couplage U-P
 !       Non active par defaut
 

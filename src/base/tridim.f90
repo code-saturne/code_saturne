@@ -160,6 +160,7 @@ integer, allocatable, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: ilzfbr
 
 double precision, allocatable, dimension(:,:) :: uvwk, ximpa, trava
+double precision, allocatable, dimension(:,:,:) :: ximpav
 double precision, allocatable, dimension(:) :: flmalf, flmalb, xprale
 double precision, allocatable, dimension(:,:) :: cofale
 double precision, allocatable, dimension(:) :: qcalc
@@ -694,9 +695,15 @@ itrfup = 1
 
 if (nterup.gt.1) then
 
-  allocate(ximpa(ncelet,ndim))
-  allocate(uvwk(ncelet,ndim))
-  allocate(trava(ncelet,ndim))
+  if (ivelco.eq.1) then
+    allocate(ximpav(ndim,ndim,ncelet))
+    allocate(uvwk(ndim,ncelet))
+    allocate(trava(ndim,ncelet))
+  else
+    allocate(ximpa(ncelet,ndim))
+    allocate(uvwk(ncelet,ndim))
+    allocate(trava(ncelet,ndim))
+  endif
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 
@@ -1256,13 +1263,31 @@ do while (iterns.le.nterup)
 
     else
 
-      call navsto &
-      !==========
-    ( nvar   , nscal  , iterns , icvrge ,                            &
-      isostd ,                                                       &
-      dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
-      tslagr , coefa  , coefb  , frcxt  ,                            &
-      trava  , ximpa  , uvwk   )
+      if (ivelco.eq.0) then
+
+        call navsto &
+        !==========
+      ( nvar   , nscal  , iterns , icvrge ,                            &
+        isostd ,                                                       &
+        dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
+        tslagr , coefa  , coefb  , frcxt  ,                            &
+        trava  , ximpa  , uvwk   )
+
+      else
+
+        ! Coupled solving of the velocity components
+
+         call navstv &
+        !==========
+      ( nvar   , nscal  , iterns , icvrge ,                            &
+        isostd ,                                                       &
+        dt     , tpucou , rtp    , rtpa   , propce , propfa , propfb , &
+        tslagr , coefa  , coefb  , frcxt  ,                            &
+        trava  , ximpav , uvwk   )
+
+      endif
+
+
 
       !     Mise a jour de la pression si on utilise un couplage vitesse/pression
       !       par point fixe

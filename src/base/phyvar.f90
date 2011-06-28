@@ -131,12 +131,14 @@ ipass = ipass + 1
 
 if(iperot.gt.0) then
 
-  call perinu                                                   &
-  !==========
-( nvar   , nscal  ,                                              &
-  dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
-  coefa  , coefb  ,                                              &
-  dudxy  )
+  if (ivelco.eq.0) then
+    call perinu                                                    &
+    !==========
+  ( nvar   , nscal  ,                                              &
+    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+    coefa  , coefb  ,                                              &
+    dudxy  )
+  endif
 
   if(itytur.eq.3) then
 
@@ -457,7 +459,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
   if (iihmpr.eq.1) then
 
-    call uivima                         &
+    call uivima                       &
     !==========
   ( ncel,                             &
     propce(1,ipproc(ivisma(1))),      &

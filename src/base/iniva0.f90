@@ -104,7 +104,7 @@ double precision frcxt(ncelet,3)
 ! Local variables
 
 integer          iis   , ivar  , iscal , imom
-integer          iel   , ifac
+integer          iel   , ifac  , isou  , jsou
 integer          iclip , ii    , jj    , idim
 integer          iiflum, iiflua
 integer          iirom , iiromb, iiroma
@@ -456,6 +456,27 @@ do ii = 1, ncofab
     coefb(ifac,ii) = 1.d0
   enddo
 enddo
+
+! Boundary conditions for the velocity if coupling of the components
+if (ivelco.eq.1) then
+  do ifac = 1, nfabor
+    do isou = 1, 3
+      coefau(isou,ifac) = 0.d0
+      cofafu(isou,ifac) = 0.d0
+      do jsou = 1, 3
+        if (jsou.eq.isou) then
+          coefbu(isou,jsou,ifac) = 1.d0
+          cofbfu(isou,jsou,ifac) = 1.d0
+        else
+          coefbu(isou,jsou,ifac) = 0.d0
+          cofbfu(isou,jsou,ifac) = 0.d0
+        endif
+      enddo
+    enddo
+  enddo
+endif
+
+
 
 do ifac = 1, nfabor
   itypfb(ifac) = 0

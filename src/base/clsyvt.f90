@@ -123,7 +123,7 @@ double precision coefa(nfabor,*), coefb(nfabor,*)
 
 ! Local variables
 
-integer          ifac, ii, isou
+integer          ifac, ii, isou, jsou
 integer          iclu  , iclv  , iclw
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
 integer          icluf , iclvf , iclwf
@@ -324,6 +324,25 @@ do ifac = 1, nfabor
     coefa(ifac,iclw) = rcodcn*rnz - rnz*(rnx*upx+rny*upy)
     coefb(ifac,iclw) = 1.d0-rnz**2
 
+    ! Coupled solving of the velocity components
+    if (ivelco.eq.1) then
+      coefau(1,ifac) = rcodcn*rnx
+      coefau(2,ifac) = rcodcn*rny
+      coefau(3,ifac) = rcodcn*rnz
+
+      coefbu(1,1,ifac) = coefb(ifac,iclu)
+      coefbu(2,2,ifac) = coefb(ifac,iclv)
+      coefbu(3,3,ifac) = coefb(ifac,iclw)
+
+      coefbu(1,2,ifac) = -rnx*rny
+      coefbu(1,3,ifac) = -rnx*rnz
+      coefbu(2,1,ifac) = -rny*rnx
+      coefbu(2,3,ifac) = -rny*rnz
+      coefbu(3,1,ifac) = -rnz*rnx
+      coefbu(3,2,ifac) = -rnz*rny
+    endif
+
+
 !===============================================================================
 ! 3. CONDITIONS SUR RIJ (PARTIELLEMENT IMPLICITES)
 !===============================================================================
@@ -391,18 +410,27 @@ enddo
 ! 4. COEFAF et COEFBF BIDONS POUR LES VITESSES
 !===============================================================================
 
-  if(iclu.ne.icluf) then
-    do ifac = 1, nfabor
-      if( icodcl(ifac,iu).eq.4) then
-        coefa(ifac,icluf) = coefa(ifac,iclu)
-        coefb(ifac,icluf) = coefb(ifac,iclu)
-        coefa(ifac,iclvf) = coefa(ifac,iclv)
-        coefb(ifac,iclvf) = coefb(ifac,iclv)
-        coefa(ifac,iclwf) = coefa(ifac,iclw)
-        coefb(ifac,iclwf) = coefb(ifac,iclw)
+if (iclu.ne.icluf .or. ivelco.eq.1) then
+  do ifac = 1, nfabor
+    if( icodcl(ifac,iu).eq.4) then
+      coefa(ifac,icluf) = coefa(ifac,iclu)
+      coefb(ifac,icluf) = coefb(ifac,iclu)
+      coefa(ifac,iclvf) = coefa(ifac,iclv)
+      coefb(ifac,iclvf) = coefb(ifac,iclv)
+      coefa(ifac,iclwf) = coefa(ifac,iclw)
+      coefb(ifac,iclwf) = coefb(ifac,iclw)
+      ! Coupled solving of the velocity components
+      if(ivelco.eq.1) then
+        do isou = 1, 3
+          cofafu(isou,ifac) = coefau(isou,ifac)
+          do jsou = 1, 3
+            cofbfu(isou,jsou,ifac) = coefbu(isou,jsou,ifac)
+          enddo
+        enddo
       endif
-    enddo
-  endif
+    endif
+  enddo
+endif
 
 !===============================================================================
 ! 7.  FORMATS
