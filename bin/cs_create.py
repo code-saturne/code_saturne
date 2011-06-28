@@ -437,7 +437,7 @@ class Study:
      'script': 'runcase',
      'n_procs_weight': None,
      'n_procs_min': 1,
-     'n_procs_max': None},
+     'n_procs_max': None}
 """
             template = re.sub(e_pkg, solver_name, template)
             template = re.sub(e_dom, c, template)
@@ -449,15 +449,17 @@ class Study:
             if self.get_syrthes_version() == 3:
                 template = \
 """
+    ,
     {'solver': 'SYRTHES 3',
      'domain': 'DOMAIN',
      'script': 'syrthes.data',
      'echo_comm': None,        # verbosity if integer (> -1)
-     'coupled_apps': None},    # list of domain names more than 1
+     'coupled_apps': None}     # list of domain names more than 1
 """
             else:
                 template = \
 """
+    ,
     {'solver': 'SYRTHES',
      'domain': 'DOMAIN',
      'script': 'syrthes_data.syd',
