@@ -98,6 +98,7 @@ use cstphy
 use entsor
 use parall
 use period
+use pointe, only: coefau, coefbu
 use mesh
 
 !===============================================================================

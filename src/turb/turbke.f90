@@ -92,6 +92,7 @@ use cstphy
 use optcal
 use lagran
 use ppincl
+use pointe, only: coefau, coefbu
 use mesh
 
 !===============================================================================

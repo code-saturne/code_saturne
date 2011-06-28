@@ -90,6 +90,7 @@ use numvar
 use optcal
 use cstphy
 use entsor
+use pointe, only: coefau, coefbu
 use mesh
 
 !===============================================================================

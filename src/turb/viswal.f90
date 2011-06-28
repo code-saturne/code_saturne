@@ -96,6 +96,7 @@ use optcal
 use cstphy
 use entsor
 use parall
+use pointe, only: coefau, coefbu
 use mesh
 
 !===============================================================================
