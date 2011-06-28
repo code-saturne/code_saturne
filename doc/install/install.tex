@@ -3,7 +3,7 @@
 %     This file is part of the Code_Saturne Kernel, element of the
 %     Code_Saturne CFD tool.
 %
-%     Copyright (C) 1998-2010 EDF S.A., France
+%     Copyright (C) 1998-2011 EDF S.A., France
 %
 %     contact: saturne-support@edf.fr
 %
@@ -32,6 +32,7 @@
 \usepackage{csdoc}
 % MACROS SUPPLEMENTAIRES
 \usepackage{csmacros}
+\usepackage[usenames, dvipsnames]{color}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,11 +52,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% INFO POUR PAGES DE GARDES
+% Info for title pages
 \titreCS{\CS version~\verscs installation guide}
 
 \docassociesCS{}
-\resumeCS{This document presents a guide for \CS installation.
+\resumeCS{This document presents all the necessary elements to install
+with \CS version \verscs.
 
 \begin{center}
 \large{WORK IN PROGRESS}
@@ -63,7 +65,7 @@
 }
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% DEBUT DU DOCUMENT
+% Document start
 \begin{document}
 
 \def\contentsname{\textbf{\normalsize TABLE OF CONTENTS}\pdfbookmark[1]{Table of
@@ -79,8 +81,1116 @@ contents}{contents}}
 \begin{center}\begin{singlespace}
 \tableofcontents
 \end{singlespace}\end{center}
-%
-%
+
+\section{\CS subsystems\label{sec:subsystems}}
+
+The \CS CFD tool is built of several libraries, some of which are optional,
+and which may themselves use third-party tools.
+Base libraries on which others are built must be installed first,
+The libraries comprising \CS are the following (in recommended
+order of installation).
+
+\begin{itemize}
+\item BFT (Base Functions and Types) is mainly a portability layer
+      for the rest of the code. It is written in ANSI C, and is used by
+      all the other parts of the code, so it should be installed first.
+\item the \pcs (originally named ``Enveloppe \CS'', or ECS) also comprises
+      the optional partitioner, and a preprocessed file dump tool.
+      Building \CS without this package is possible, if it is available
+      on another machine, but it is a part of any standard build.
+      In addition to the required BFT library, this package may use
+      third-party libraries such as MED, CGNS, libCCMIO to allow import of
+      the corresponding mesh formats, and \metis, and \scotch for
+      domain partitioning.
+\item FVM (Finite Volume Mesh) is used to provide finite volume mesh
+      I/O and some other services such as interpolation, possibly in
+      parallel using MPI. This package requires the BFT library,
+      and may use third-party libraries such as MED and CGNS
+      to allow export to the corresponding mesh formats. To build a
+      \CS with parallel execution support, FVM must be built with MPI.
+\item MEI (Mathematical Expression Interpreter) is used to allow
+      definition of complex properties and boundary conditions using
+      mathematical expressions defined through the GUI, avoiding
+      the need for user subroutines in many cases. This package
+      is optional, as it is only useful when the GUI is used.
+      It requires the BFT library.
+\item The \CS solver, or kernel (NCS stands for ``Noyau \CS'', or
+      \CS Kernel in French) is the major and (final) part of the
+      installation. It requires BFT, FVM, and optionally MEI.
+      For parallel execution, it must be built with the same MPI library
+      as FVM.
+      This module also contains the optional GUI and most of the code's
+      documentation.
+\end{itemize}
+
+\section{Installation basics\label{sec:install_basics}}
+
+The installation scripts of \CS are based on the GNU Autotools,
+(Autoconf, Automake, and Libtool), so it should be familiar for many
+administrators. A few remarks are given here:
+
+\begin{itemize}
+\item As with most software with modern build systems, it is recommended
+      to build the code in a separate directory from the sources. This
+      allows multiple builds (for example production and debug), and is
+      considered good practice. Building directly in the source tree is
+      not regularly tested, and is not guaranteed to work, in addition
+      to ``polluting'' the source directory with build files.
+\item By default, optional libraries which may be used by \CS are
+      enabled automatically if detected in default search paths
+      (i.e. \texttt{/usr/} and \texttt{/usr/local}. To find libraries
+      associated with a package installed in an alternate path,
+      a \texttt{--with-<package>=...} option to the \texttt{configure} script
+      must given. To disable the use of a library which would be
+      detected automatically, a matching \texttt{--without-<package>} option
+      must be passed to \texttt{configure} instead.
+\item Most third-party libraries usable by \CS are considered optional,
+      and are simply not used if not detected, but the libraries needed by
+      the GUI are considered mandatory, unless the \texttt{--disable-gui}
+      or \texttt{--disable-frontend} option is explicitly used.
+\end{itemize}
+
+The following chapters give more details on \CS's recommended
+third-party libraries, configuration recommendations, troubleshooting,
+and post-installation options.
+
+\section{Third-Party libraries\label{sec:ext_lib}}
+
+For a minimal build of \CS, a Posix system with a C and a Fortran compiler,
+a Python interpreter and a {\tt make} tool should be sufficient.
+For parallel runs, an MPI library is also necessary.
+To build an use the GUI, Libxml2 and PyQt4 (which in turn requires
+Qt4 and SIP) are required.
+Other libraries may be used for additional mesh format options,
+as well as to improve performance. A list of those libraries
+and their role is given in \S\ref{sec:list_ext_lib}.
+
+\subsection{Installing third-party libraries for \CS\label%
+{sec:obtain_ext_lib}}
+
+Third-Party libraries usable with \CS may be installed in several
+ways:
+
+\begin{itemize}
+\item On many Linux systems, most of libraries listed in
+      \S\ref{sec:list_ext_lib} are available through the distribution's
+      package manager.\footnote{On Mac OS X systems, package managers such as
+      Fink or MacPorts also provide package management, even though the
+      base system does not.} This requires administrator privileges,
+      but is by far the easiest way to install third-party libraries
+      for \CS.
+
+      Note that distributions usually split libraries or tools into runtime
+      and development packages, and that although some packages are
+      installed by default on many systems, this is generally not the
+      case for the associated development headers. Development
+      packages usually have the same name as the matching runtime package,
+      with a \texttt{-dev} postfix added. For example, on a Debian or
+      Ubuntu system ,\texttt{libxml2} is usually installed by default,
+      but \texttt{libxml2-dev} must also be installed for the \CS
+      build to be able to use the former.
+
+\item On many large compute clusters, Environment Modules allow
+      the administrators to provide multiple versions of many
+      scientific libraries, as well us compilers or MPI libraries,
+      using the \texttt{module} command. More details on
+      Environment Modules may be found at \url{http://modules.sourceforge.net}.
+      When being configured and installed \CS checks for modules loaded
+      with the \texttt{module} command, and records the list of loaded
+      modules. Whenever running that build of \CS, the modules detected
+      at installation time will be used, rather than those defined by
+      default in the user's environment. This allows using versions of
+      \CS built with different modules safely and easily, even if the
+      user may be experimenting with other modules for various purposes.
+
+\item If not otherwise available, third-party software may be compiled
+      an installed by an administrator or a user. An administrator
+      will choose where software may be installed, but for a user
+      without administrator privileges or write access to
+      \texttt{usr/local}, installation to a user account is often
+      the only option. None of the third-party libraries usable
+      by \CS require administrator privileges, so they may all be
+      installed normally in a user account, provided the user
+      has sufficient expertise to install them. This is usually not
+      complicated (provided one reads the installation instructions,
+      and is prepared to read error messages if something goes wrong),
+      but even for an experienced user or administrator, compiling
+      and installing 5 or 6 libraries as a prerequisite significantly
+      increases the effort required to install \CS.
+
+      Even though it is more time-consuming, compiling and installing
+      third-party software may be necessary when no matching packages
+      or Environment Modules are available, or when a more recent version
+      or a build with different options is desired.
+\end{itemize}
+
+\subsection{List of third-party libraries usable by \CS\label%
+{sec:list_ext_lib}}
+
+The list of third-party software usable with \CS is provided here:
+
+\begin{itemize}
+
+\item BLAS (Basic Linear Algebra Subroutines) may be used by the
+      Kernel (NCS) for certain operations such as vector sums, dot
+      products, etc. If no third-party BLAS is provided, \CS reverts to
+      its own implementation of BLAS routines, similar to the legacy
+      Netlib BLAS, so no functionality is lost here. With optimized BLAS
+      such as Atlas, MKL, ESSL, and others, simple operations such as vector
+      dot product, $Ax+y$, and such are often an order of magnitude
+      faster than with the usual compiler optimizations, leading to an
+      overall performance increase of about 10\%.
+
+\item PyQt4 is required by the \CS GUI (part of NCS). PyQt4 in turn
+      requires Qt4, Python,and SIP. Without this library, the GUI may not
+      be built, although XML files generated with another install of \CS
+      may be used if Libxml2 is available.
+
+\item SWIG is required to build MEI Python bindings for the GUI
+      (Python development headers are also necessary). Without this
+      tool, the GUI will not allow the user to define MEI expressions,
+      although the Solver will still be able to interpret such expressions
+      when built with MEI and using an XML file produced by an install
+      using MEI and its Python bindings. A minimum of SWIG version
+      1.3.30 is required, due to bugs in older versions.
+
+\item Libxml2 is required by the Kernel (NCS) to read XML files edited
+      with the GUI. If this library is not available, only user subroutines
+      may be used to setup data.
+
+\item HDF5 is necessary for MED, and may also be used by CGNS. It may be
+      used by the \pcs for mesh import, FVM for post-processing output.
+
+\item CGNSlib is necessary to read or write mesh and visualization files
+      using the CGNS format, available as an export format with many
+      third-party meshing tools. It may be used by the \pcs for
+      mesh import, FVM for post-processing output (the former is usually
+      more useful than the latter, as the built-in EnSight output is
+      readable by most post-processing tools).
+
+\item MED is necessary to read or write mesh and visualization files
+      using the MED format, mainly used by the SALOME platform.
+      It may be used by the \pcs for mesh import, FVM for
+      post-processing output (the former is usually more useful than
+      the latter, as the built-in EnSight output is readable by most
+      post-processing tools).
+
+\item libCCMIO may be used by the \pcs to import mesh files generated by
+      \starccmp using its native format.
+
+\item \metis  may be used by the partitioner, part of the ECS (\pcs)
+      package, to optimize mesh partitioning.
+      Depending on the mesh, parallel computations with meshes partitioned
+      with this library may be from 10\% to 50\% faster than using the
+      built-in space-filling curve based partitioning.
+
+      Though broadly available, the license is quite restrictive,
+      so \scotch may be preferred.
+
+\item \scotch is an alternative mesh partitioning library, and may also
+      be used by the ECS (\pcs) package.
+      quality is usually slightly higher than that obtained with \metis,
+      though this library is not as fast.
+
+\end{itemize}
+
+For developers, the GNU Autotools (Autoconf, Automake, Libtool) as
+well as gettext will be necessary. To build the documentation,
+pdf\LaTeX{} and \texttt{fig2dev} (part of TransFig) will be necessary.
+
+\subsection{Notes on some third-party tools and libraries}
+
+\subsubsection{Python and PyQt4\label{sec:ext:python}}
+
+\CS requires a Python interpreter, with Python version 2.4 or above.
+The base scripts should work both with Python 2 or Python 3 versions,
+but have not been tested recently with the latter. The GUI is Python 2
+only, so using Python 3 is not currently recommended.
+
+While \CS makes heavy use of Python, this is for scripts and for the GUI only;
+The solver only uses compiled code, so we may for example use
+a 32-bit version of Python with 64-bit \CS libraries and executables.
+
+The GUI is written in PyQt4 (Python bindings for Qt4), so but Qt4 and
+the matching Python bindings must be available. On most modern
+Linux distributions, this is available through the package manager,
+which is by far the preferred solution. When running on a system which does
+not provide these libraries, there are several alternatives:
+
+\begin{itemize}
+
+\item build \CS without the GUI. If built with Libxml2, XML files
+      produced with the GUI are still usable, so if an install of \CS
+      with the GUI is available on an other machine, the XML files
+      may be copied on the current machine. This is certainly not an optimal
+      solution, but in the case where users have a mix of desktop or virtual
+      machines with modern Linux distributions and PyQt4 installed, and
+      a compute cluster with an older system, this may avoid requiring
+      a build of Qt4 and PyQt4 on the cluster if users find this too daunting.
+
+\item Install a local Python interpreter, and add Qt4 bindings to this
+      interpreter.
+
+      Python (\url{http://www.python.org}) and Qt4
+      (\url{http://qt.nokia.com/products}) must be downloaded  and
+      installed first, in any order. The installation instructions of
+      both of these tools are quite clear, and though the installation of these
+      large packages (especially Qt4) may be a lengthy process in terms of
+      compilation time, but is well automated and usually devoid of nasty
+      surprises.\footnote{The only case in which the \CS developers
+      have has issues with Qt4 was when trying to force an install into
+      64-bit mode with the GNU compilers (version 4.1.2) on a PowerPC 64
+      architecture running SLES 10 Linux, on which compilers default
+      to building 32 bit code, although 64 bit is available. Using default
+      options on the same machine led to a perfectly functional 32-bit Qt
+      installation}.
+
+      Once Python is installed, the SIP bindings generator
+      (\url{http://riverbankcomputing.co.uk/software/sip/intro})
+      must also be installed. This is a small package, and configuring it
+      simply requires running \texttt{python configure.py} in its source
+      tree, using the Python interpreter just installed.
+
+      Finally, the PyQt4 bindings
+      (\url{http://riverbankcomputing.co.uk/software/pyqt/intro}) may be
+      installed, in a manner similar to SIP.
+
+      When this is finished, the local Python interpreter contains
+      the PyQt4 bindings, and may be used by \CS's \texttt{configure}
+      script by passing \texttt{PYTHON=<path\_to\_python\_executable}.
+     
+\item add Python Qt4 bindings as a Python extension module for an existing
+      Python installation. This is a more elegant solution than the previous
+      one, and avoids requiring rebuilding Python, but if the user does not
+      have administrator privileges, the extensions will be placed in a
+      directory that is not on the default Python extension search path, and
+      that must be added to the \texttt{PYTHONPATH} environment variable.
+      This works fine, but for all users using this build of \CS, the
+      \texttt{PYTHONPATH} environment variable will need to be
+      set.\footnote{In the future, the \CS installation scripts could check
+      the \texttt{PYTHONPATH} variable and save its state in the build so as
+      to ensure all the requisite directories are searched for.}
+
+      The process is similar to the previous one, but SIP and PyQt4
+      installation requires a few additional configuration options
+      in this case. See the SIP and PyQt4 reference guides for
+      detailed instructions, especially the \emph{Building a Private
+      Copy of the SIP Module} section of the SIP guide.
+
+\end{itemize}
+
+\subsubsection{\med\label{sec:ext:med}}
+
+The Autotools installation of MED is simple on most machines,
+but a few remarks may be useful for specific cases.
+
+MED has a C API, is written in a mix of C and C++ code,
+and provides both a C (\texttt{libmedC}) and an Fortran API
+(\texttt{libmed}). Both libraries are always built, so a Fortran
+compiler is required, but \CS only links using the C API, so using
+a different Fortran compiler to build MED and \CS is possible.
+
+MED does require a C++ runtime library, which is usually transparent
+when shared libraries are used. When built with static libraries
+only, this is not sufficient, so when testing for a MED library,
+the \CS \texttt{configure} script also tries linking with a C++
+compiler if linking with a C compiler fails. This must be the
+same compiler that was used for MED, to ensure the runtime matches.
+
+Also, when building MED in a cross-compiling situation,
+\texttt{--med-int=int} or \texttt{--med-int=int64\_t} (depending
+on whether 32 or 64 bit ids should be used) should be
+passed to its \texttt{configure} script to avoid a run-time
+test.
+
+\section{Preparing for build\label{sec:prepare}}
+
+If the code was obtained as an archive, its components must be unpacked:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ tar xvzf bft-1.1.5.tar.gz\\
+\$ tar xvzf ecs-2.0.2.tar.gz\\
+\$ tar xvzf fvm-0.15.3.tar.gz\\
+\$ tar xvzf mei-1.0.1.tar.gz\\
+\$ tar xvzf ncs-2.0.2.tar.gz
+}\end{minipage}}
+
+If the packages are provided as zip files, \texttt{unzip} may be substituted
+for \texttt{tar xvzf}.
+If for example you unpacked the directory in a directory
+named \texttt{/home/user/Code\_Saturne/2.0/src}, you will now
+have sub-directories named \texttt{bft-1.1.5}, \texttt{ecs-2.0.2},
+\texttt{fvm-0.15.3}, \texttt{mei-1.0.1}, and \texttt{ncs-2.0.2}.
+
+For developers obtaining the code was obtained through a version control
+system such as Subversion, running a \texttt{./sbin/bootstrap}
+script is also required for each package; for example, for BFT:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ cd bft-1.0.5\\
+\$ ./sbin/bootstrap\\
+\$ cd ..
+}\end{minipage}}
+
+This script requires the GNU Autotools (Autoconf, Automake, and Libtool)
+to be installed.
+
+It is recommended to build the code in a separate directory from the source.
+This also allows multiple builds, for example, building both an
+optimized and a debugging version. In this case, choose a consistent
+naming scheme, using an additional level of sub-directories,
+for example, for BFT:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ mkdir bft-1.0.5\_build\\
+\$ cd bft-1.0.5\_build\\
+\$ mkdir prod\\
+\$ cd prod
+}\end{minipage}}
+
+Some older system's {\tt make} command may not support compilation
+in a directory different from the source directory ({\tt VPATH}
+support). In this case, installing and using the GNU {\tt gmake}
+tool instead of the native {\tt make} is recommended. 
+
+\section{Configuration\label{sec:config}}
+
+\CS uses a build system based on the GNU Autotools, which includes
+its own documentation.
+
+To obtain the full list of available configuration options for a given
+package, run: {\tt configure~--help}.
+
+Note that for all options starting with {\tt --enable-}, 
+there is a matching options with {\tt --disable-}. Similarly,
+for every {\tt --with-}, {\tt --without-} is also possible.
+
+Select configuration options, then run {\tt configure}, for example,
+for the FVM package, on an account named users, with
+a specific installation of the  MED IO library,
+based on a system-wide installation of HDF5 (which will be auto-detected),
+and using MPI compiler wrappers, a configure command may look like this:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ /home/user/Code\_Saturne/2.0/fvm-0.15.3/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.0/arch/prod \textbackslash \\
+\textcolor{Magenta}{--with-bft}=/home/user/Code\_Saturne/2.0/arch/prod \textbackslash \\
+\textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
+\textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc
+}\end{minipage}}
+
+We may note that as FVM requires BFT, the installation path
+prefix of BFT must be provided using \texttt{--with-bft=}
+if BFT is installed in a non-default system path. If BFT is installed
+under \texttt{/usr} or \texttt{/usr/local} (which is the default
+id no \texttt{--prefix=} option was provided to the BFT configuration,
+it will be detected automatically, and the \texttt{--with-bft=}
+does not need to be provided. The same holds true for the FVM
+and MEI libraries when configuring the \CS kernel (NCS).
+
+In the rest of this section, we will assume that we are in
+a build directory separate from sources, as described in
+\S\ref{sec:prepare}. In different examples, we assume
+that third-party libraries used by \CS are either available
+as part of the base system (i.e. as packages in a Linux distribution),
+as Environment Modules, or are installed under a separate path.
+
+\subsection{Debug builds\label{sec:config:debug}}
+
+It may be useful to install debug builds alongside production
+builds of \CS, especially when user subroutines are used
+and the risk of crashes due to user programming error is high.
+Running the code using a debug build is significantly
+slower, but more information may be available in the case
+of a crash, helping understand and fix the problem faster.
+
+Here, having a consistent and practical naming scheme is useful.
+For a side-by-side debug build for the example above, we simply replace \texttt{prod} by
+\texttt{dbg} in the \texttt{--prefix} option, and add
+\texttt{--enable-debug} to the configure command:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ /home/user/Code\_Saturne/2.0/fvm-0.15.3/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/2.0/arch/prod \textbackslash \\
+\textcolor{Magenta}{--with-bft}=/home/user/Code\_Saturne/2.0/arch/\textcolor{Magenta}{dbg} \textbackslash \\
+\textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
+\textcolor{Magenta}{--enable-debug} \textbackslash \\
+\textcolor{red}{CC}=/home/user/opt/mpich2-1.4/bin/mpicc
+}\end{minipage}}
+
+Debug and non debug packages may be mixed, so in this example,
+we could use a non-debug build of BFT, bit for consistency
+and better debugging capabilities, it is recommended to have
+a full debug version alongside a production version.
+
+\subsection{Shared or static builds\label{sec:config:shared}}
+
+By default, on most architectures, both shared and static libraries
+for \CS will be built, and the executables will be linked with shared
+libraries by default. To disable either shared or static libraries,
+add either {\tt --disable-shared} or {\tt --disable-static}
+to the options passed to {\tt configure}. This will speed-up the build,
+process as each file will only be built once, and not twice.
+
+In some cases, a shared build may fail due to some dependencies
+on static-only MPI libraries. In this case, {\tt --disable-shared}
+will be necessary. Disabling shared libraries has also been seen
+to avoid issues with linking on Mac OSX systems.
+
+In any case, be careful if you switch from one option to the other: as
+linking will be done with shared libraries by default, a build
+with static libraries only will not completely overwrite a build using
+shared libraries, so uninstalling the previous build first
+is recommended.
+
+\subsection{MPI compiler wrappers\label{sec:config:mpicc}}
+
+MPI environments generally provide compiler wrappers, usually
+with names similar to \texttt{mpicc} for C and \texttt{mpif90} for
+Fortran 90. Wrappers conforming to the MPI standard recommendations should
+provide a \texttt{-show} option, to show which flags are added to the compiler
+so as to enable MPI. Using wrappers is fine as long as several third-party tools
+do not provide their own wrappers, in which case either
+a priority must be established. For example, using HDF5's
+\texttt{h5pcc} compiler wrapper includes the options used by
+\texttt{mpicc} when building HDF5 with parallel IO, in addition to
+HDF5's own flags, so it could be used instead of \texttt{mpicc}.
+On the contrary, when using a serial build of HDF5 for a parallel
+build of \CS, the \texttt{h5cc} and \texttt{mpicc} wrappers
+contain different flags, so they are in conflict.
+
+Also, some MPI compiler wrappers may include optimization options
+used to build MPI, which may be different from those we wish to use
+that were passed. 
+
+To avoid issues with MPI wrappers, it is possible to select an
+MPI library using the \texttt{--with-mpi} option to \texttt{configure}.
+For finer control, \texttt{--with-mpi-include} and \texttt{--with-mpi-lib}
+may be defined separately.
+
+Still, this only works in some cases, as a fixed list of libraries
+is tested for, so using MPI compiler wrapper is the simplest and safest
+solution. Simply use a \texttt{CC=mpicc} or similar option instead
+of \texttt{--with-mpi}.\footnote{On Linux distributions such
+as Debian or Ubuntu, \texttt{--with-mpi} works with Open MPI, but
+\texttt{CC=mpicc} is necessary to build with MPICH2}.
+
+MPI compiler wrappers only need to be used for the C compiler,
+and only for FVM and for the kernel.
+\emph{Never} use an \texttt{FC=mpif90}
+or equivalent option: in \CS, MPI is never called directly from Fortran code,
+so Fortran MPI bindings are not necessary, but they can lead to
+build failures, especially in cross-compilation
+configurations.\footnote{\texttt{configure} determines which libraries are
+necessary to link the Fortran runtime using a C compiler as a linker.
+When using an MPI fortran wrapper, extra libraries that are not normally
+necessary will be added to those we link with, and the Libtool script
+that is part of the build system will often try to add further dependencies,
+mixing-up front-end and compute node compiler options and
+libraries (Libtool may be very practical when it works, but in complex
+situations where is guesses incorrectly at the commands it should run, it always
+acts as if it knows best, and is very difficult to work around).}
+
+\subsection{Environment Modules\label{sec:config:envmode}}
+
+As noted in \S\ref{sec:obtain_ext_lib}, on systems providing
+Environment Modules with the {\tt module} command, \CS's {\tt configure}
+script detects which modules are loaded and saves
+this list so that future runs of the code use that same environment,
+rather than the user's environment, so as to allows using versions of
+\CS built with different modules safely and easily.
+
+Given this, it is recommended that when configuring and installing
+\CS, only the modules necessary for that build be loaded.
+Note that as \CS uses the module
+environment detected and runtime instead of the user's current
+module settings, debuggers requiring a specific module may
+not work under a standard run script if they were not loaded when
+installing the code.
+
+\subsection{Compiler flags and environment variables\label{sec:config:flags}}
+
+As usual when using an Autoconf-based \texttt{configure} script,
+some environment variables may be used. \texttt{configure --help}
+will provide the list of recognized variables.
+\texttt{CC} and \texttt{FC} allow selecting the C and Fortran compiler
+respectively (possibly using an MPI compiler wrapper for the C parts
+of FVM and the Kernel).
+
+Compiler options are usually defined automatically, based on
+detection of the compiler (and depending on whether \texttt{--enable-debug}
+was used). This is handled in a \texttt{config/<package\_name>\_auto\_flags.sh}
+script in all of CS's packages (for example,
+\texttt{config/cs\_\_auto\_flags.sh}
+for the Kernel. This file is sourced when running \texttt{configure}, so
+any modification to it will be effective as soon as \texttt{configure} is run.
+When installing on an exotic machine, or with a new compiler, adapting this
+file is useful (and providing feedback to the \CS development team
+will enable support of a broader range of compilers and systems in the
+future.
+
+To disable automatic setting of flags, the \texttt{--disable-auto-flags}
+option may be used, and the classical \texttt{CPPFLAGS}, \texttt{CFLAGS},
+\texttt{FCCFLAGS}, \texttt{LDFLAGS}, and \texttt{LIBS} environment variables
+may be used. A mix of automatic and prescribed flags may also be experimented.
+for packages other than the Kernel, \texttt{CPP\_ADD}, \texttt{CC\_ADD},
+\texttt{LD\_ADD}, and \texttt{LIBS\_ADD} may be used to add options without
+overriding automatic flags. For the kernel, the standard flags provided by
+the user are appended to the automatic flags (which may be disabled
+if only user flags are desired).
+
+\section{Compile and install\label{sec:compile}}
+
+Once a package is configured, it may be compiled and installed;
+for example, to compile a configured package (using 4 parallel threads),
+then install it, run:
+
+\texttt{\$ make -j 4 \&\& make install}
+
+The solver (NCS) also includes the documentation, which may be built
+with:
+
+\texttt{\$ make pdf \&\& make install-pdf}
+
+To clean the build directory, keeping the configuration,
+use \texttt{make clean};
+To uninstall an installed build, use \texttt{make uninstall}.
+To clear all configuration info, use \texttt{make distclean}
+(\texttt{make uninstall} will not work after this).
+
+\section{Remarks for very large meshes\label{sec:config:largemesh}}
+
+If \CS is to be run on large meshes, several precautions regarding
+its configuration and that of third-party software must be taken.
+
+in addition to local connectivity arrays, \CS uses global element ids
+for some operations, such as reading and writing meshes and restart files,
+parallel interface element matching, and post-processing output.
+For a hexahedral mesh with $N$ cells,
+the number of faces is about $3N$ (6 faces per cell, shared by 2 cells each).
+With 4 cells per face, the $face \rightarrow vertices$ array is of size
+of the order of $4\times3N$, so global ids used in that array's index
+will reach $2^{31}$ for a mesh in the range of $2^{31} / 12 \approxeq 178.10^6$.
+In practice, we have encountered a limit with slightly smaller meshes,
+around 150 million cells.
+
+Above 150 million hexahedral cells or so, it is thus imperative to configure
+the build to use 64-bit global element ids, with the
+{\tt --enable-long-gnum} option. Local indexes will still use
+the default {int} size, so memory consumption will only be slightly
+increased.
+
+Recent versions of some third-party libraries may also optionally use 64-bit ids,
+independently of each other or of \CS.
+This is the case for the \scotch and \metis, MED and
+CGNS libraries. In the case of graph-based partitioning, only
+global cell ids are used, so 64-bit ids should not in theory be necessary
+for meshes under 2 billion cells. In a similar vein, for post-processing output
+using nodal connectivity, 64-bit global ids should only be an imperative
+when the number of cells or vertices approaches 2 billion.
+Practical limits may be lower, if some intermediate internal counts
+reach these limits earlier.
+
+Note also that \metis 4 is known to crash for meshes in the range of
+35 million cells and above, so \metis 5 or \scotch are necessary.
+Partitioning a 158 million hexahedral mesh using \metis 5
+on a front-end node with 128 Gb memory is possible,
+but partitioning the same mesh on cluster nodes with 24 Gb each
+may not, so using front-end nodes with a large amount of memory may be
+necessary to optimize partitioning of large meshes.
+The backup solution is to simply use the built-in parallel Morton Z curve
+partitioning, which may produce partitions of lower quality, but
+runs transparently at \CS calculation initialization, and is highly
+scalable.
+
+
+\section{Troubleshooting\label{sec:config:troubleshoot}}
+
+If \texttt{configure} fails and reports an error, the message should
+be sufficiently clear in most case to understand the cause of the
+error and fix it. Do not forget that for libraries installed using
+packages, the development versions of those packages are also
+necessary, so if configure fails to detect a package which you
+believe is installed, check the matching development package.
+
+Also, whether it succeeds or fails, \texttt{configure} generates
+a file named \texttt{config.log}, which contains details on tests
+run by the script, and is very useful to troubleshoot
+configuration problems. When \texttt{configure} fails due to a given
+third-party library, details on tests relative to that library
+are found in the \texttt{config.log} file. The interesting information
+is usually in the middle of the file, so you will need to search
+for strings related to the library to find the test that failed
+and detailed reasons for its failure.
+
+\section{Installing for \syrthes coupling\label{sec:syrthes}}
+
+When coupling with \syrthes using MPI, both \CS and \syrthes must
+use the same MPI library. Coupling with \syrthes is also possible
+using TCP/IP sockets, but this is rarely used, and is recommended only
+when running on a single node. On compute clusters, the MPI environment
+will distribute \syrthes and \CS instances to different processors when
+they are coupled using MPI, while using sockets, the \syrthes process will
+usually run on a node on which \CS is also running, which may degrade
+performance. On a single node, this is not an issue, and allows coupling
+\CS and \syrthes even with serial builds.
+In any case, the \texttt{--with-syrthes=} option of the
+Kernel's \texttt{configure} script must be used so that
+\CS may find \syrthes.
+
+\section{Example configuration and build commands\label{sec:config:examples}}
+
+Most available prerequisites are auto-detected, so to install the
+code to the default \texttt{/usr/local} sub-directory,
+a command such as:
+
+\texttt{\$ ../../saturne/configure}
+
+should be sufficient.
+
+For the following examples, Let us define environment variables respectively
+reflecting the \CS source path, installation path, and a path where optional
+libraries are installed:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/2.0/src \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/2.0 \\
+\$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
+}\end{minipage}}
+
+For an install on which multiple
+versions and architectures of the code should be available,
+configure commands with all bells and whistles (except SALOME support) for a
+build on a cluster named \texttt{ivanoe}, using the Intel compilers
+(made available through environment modules) is described in the following
+examples.
+
+First, environment modules are loaded if necessary:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{Magenta}{module purge} \\
+\$ \textcolor{Magenta}{module load} intel\_compilers/12.0.3.174 \\
+\$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.4.3
+}\end{minipage}}
+
+\subsection{BFT build\label{sec:bft:config:examples}}
+
+To configure and install BFT, we use the following commands:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ mkdir -p bft-1.0.5\_build/ivanoe \&\& cd bft-1.0.5\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/bft-1.0.5/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe \textbackslash \\
+\textcolor{red}{CC}=icc \\
+\$ make -j 4 \&\& make install \&\& make clean\\
+\$ cd ..
+}\end{minipage}}
+
+\subsection{Preprocessor build\label{sec:ecs:config:examples}}
+
+Once BFT is installed, to configure and install the Preprocessor, we may
+use the following commands:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ mkdir -p ecs-2.0.2\_build/ivanoe \&\& cd ecs-2.0.2\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ecs-2.0.2/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
+\textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.7/arch/ivanoe
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/ivanoe
+\textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.19/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/parmetis-3.2/arch/ivanoe \textbackslash \\
+\textcolor{red}{CC}=icc \\
+\$ make -j 4 \&\& make install \&\& make clean\\
+\$ cd ..
+}\end{minipage}}
+
+\subsection{FVM build\label{sec:fvm:config:examples}}
+
+Once BFT is installed, to configure and install FVM, we may use the
+following commands:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ mkdir -p fvm-0.15.3\_build/ivanoe \&\& cd fvm-0.15.3\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
+\textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
+\textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/ivanoe\_ompi
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/ivanoe\_ompi
+\textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/ivanoe\_ompi \textbackslash \\
+\textcolor{red}{CC}=mpicc \\
+\$ make -j 4 \&\& make install \&\& make clean\\
+\$ cd ..
+}\end{minipage}}
+
+In the example above, we have appended the \texttt{\_ompi} postfix
+to the architecture name, in case we intend to install 2 builds,
+with different MPI libraries (such as Open MPI and MPICH2).
+Note that optional libraries using MPI must also use the same MPI
+library. This is the case for HDF5, CGNS, and MED if they are built
+with MPI-IO support (which is not currently used by \CS for these libraries).
+Similarly, C++ and Fortran libraries, and even C libraries built with recent
+optimizing C compilers, may require runtime libraries associated to that
+compiler, so if versions using different compilers are to be installed, it is
+recommended to use a naming scheme which reflects this.
+In this example, HDF5, CGNS and MED were built without MPI-IO support,
+as FVM (and thus \CS) does not yet exloit MPI-IO for these libraries.
+
+\subsection{MEI build\label{sec:mei:config:examples}}
+
+Once BFT is installed, to configure and install MEI, we may
+use the following commands:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ mkdir -p mei-1.0.2\_build/ivanoe \&\& cd mei-1.0.2\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.2/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
+\textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
+\textbackslash \\
+\textcolor{Violet}{--with-python-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/python-2.7.1/arch/ompi/bin \textbackslash \\
+\textcolor{Violet}{--with-swig-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/swig-1.3.39/arch/ompi/bin \textbackslash \\
+\textcolor{red}{CC}=icc
+\$ make -j 4 \&\& make install \&\& make clean\\
+\$ cd ..
+}\end{minipage}}
+
+\subsubsection{Using a specific Python interpreter%
+\label{sec:mei:config:examples:python}}
+
+Note that the MEI's \texttt{--with-python-exec=} option allows specifying
+the path where the \texttt{python} executable will be found, but
+not the name of the executable. On Linux distributions where several
+Python interpreters are installed under \texttt{/usr/bin} using
+different names, such as \texttt{python}, \texttt{python2.6},
+and \texttt{python2.7}, only the default may be used.
+If necessary, a workaround is to create a wrapper script named
+\texttt{python} in a directory named \texttt{bin}, which
+calls the desired Python interpreter and passes arguments.
+Using the installation's target directory seems a natural
+solution, for example:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ cd \textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe/bin\\
+\$ echo "\#/bin/sh" > python \\
+\$ echo "/usr/bin/python2.7 \$@" >> python \\
+\$ chmod +x python \\
+\$ cd -
+}\end{minipage}}
+
+The \texttt{bin} directory containing the \texttt{python} wrapper
+may now be passed to the \texttt{--with-python-exec=}
+\texttt{configure} option.
+
+\subsection{Solver build\label{sec:bft:config:examples}}
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$  mkdir -p ncs-2.0.2\_build/ivanoe \&\& cd ncs-2.0.2\_build/ivanoe\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.2/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
+\textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe \textbackslash\\
+\textcolor{Magenta}{--with-fvm}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe\_ompi
+\textbackslash \\
+\textcolor{Magenta}{--with-mei}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe
+\textbackslash \\
+\textcolor{Magenta}{--with-prepro}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-blas}=/opt/intel/composerxe-2011.3.174/mkl \textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/ivanoe \textbackslash \\
+\textcolor{Violet}{--with-syrthes}=/home/projects/syrthes3.4.3 \textbackslash \\
+\textcolor{Violet}{--with-python-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/python-2.7.1/arch/ompi/bin \textbackslash \\
+\textcolor{red}{CC}=mpicc \textcolor{red}{FC}=ifort
+\$  make -j 4 \&\& make install \&\& make clean\\
+\$ cd ..
+}\end{minipage}}
+
+The remarks regarding the selection of a Python interpreter
+as in \S\ref{sec:mei:config:examples:python} hold here also.
+
+\subsection{Cross-compiling}
+
+On machines with different front-end and compute node architectures,
+such as IBM Blue Gene/P, cross-compiling is necessary;
+some parts of the code need to be built for the front-end, other parts need
+to be built for the compute nodes, and some parts need to be built for both:
+
+\begin{itemize}
+\item BFT will be needed both by the \pcs and the Kernel, so it must
+      be built for both architectures.
+\item The \pcs only needs to be built for the front-end.
+\item If used, MEI needs to be built for the compute nodes,
+      but a build on the front-end with Python bindings will be necessary
+      for the GUI to allow defining MEI expressions.
+\item FVM and NCS (the Kernel) only need to be built for the compute nodes,
+      though a build for the front-end may be useful for mesh verification.
+      In any case, the Python interpreter used by the GUI and scripts
+      will only need to run on the front-end or service nodes:
+      execution on the compute nodes is limited to the \texttt{cs\_solver}
+      executable when launched using \texttt{mpirun}.
+      using 
+\end{itemize}
+
+A debug variant of the compute node packages is also recommended, as always.
+Providing a debug variant of the front-end packages is not generally useful.
+
+Depending on their role, optional third-party libraries should be installed
+either for the front-end, for the compute nodes, or both:
+
+\begin{itemize}
+\item BLAS will be useful only for the compute nodes, and are generally
+      always available on large compute facilities.
+\item Python and PyQt4 will run on the front-end node only.
+\item Libxml2 must be available for the compute nodes if the GUI is used.
+\item HDF5, MED and CGNSlib may be used by the Preprocessor on the front-end node
+      to import meshes, and by the main solver on the compute nodes
+      to output visualization meshes and fields.
+\item libCCMIO is used by the Preprocessor exclusively, so it may be needed on the
+      front-end node only.
+\item \scotch or \metis may be used by a front-end node build of the
+      partitioner, as serial partitioning of large meshes requires a lot of memory.
+\end{itemize}
+
+In the following subsections, only the \texttt{configure} commands are
+detailed, as the creation of build directories and the running of
+\texttt{make} and \texttt{make install} commands has already
+been described for other cases, and bring nothing new here.
+
+In our example, the front-end node is based on an IBM Power architecture,
+on which the GCC compiler is available, but produces 32-bit code by default.
+Adding the \texttt{"-m64"} flags force the compiler into 64-bit mode, allowing
+the \pcs to import meshes up into the 100-million cell range.
+
+An additional complexity stems from this 32-bit default, as we have
+had difficulty forcing the build of Qt4 in 64-bit mode on such
+a front-end node running SUSE Linux Enterprise Server 10, on which
+it is not pre-installed. Forcing 64-bit mode leads to link errors,
+so we use a 32-bit version. This implies that we must also use a
+32-bit build of Python for PyQt4, which in turn means that the Python
+bindings for MEI used by the GUI must be 32-bit code,
+also requiring an additional build of BFT.
+
+\subsubsection{BFT configurations}
+
+For the compute nodes:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/bft-1.0.5/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+--without-zlib \textbackslash \\
+\textcolor{Magenta}{--build}=ppc64 \textbackslash \\
+\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
+\textcolor{red}{CC}=bgxlc
+}\end{minipage}}
+
+Here, the \texttt{--build=ppc64 --host=bluegenep} options ensure the
+\texttt{configure} script is forced into cross-compilation mode.
+With a front-end base on an Intel or AMD, architecture,
+\texttt{--build=x86\_64} or \texttt{--build=amd64} should be used
+instead of \texttt{--build=ppc64}. For the host (target) architecture,
+\texttt{--host=bluegenep} is recognized by current GNU Autoconf versions,
+so it is preferred, but \texttt{--host=ppc} also works well. Actually,
+any choice of build and host architectures recognized by Autoconf would
+probably work, as long as build and host are different.
+
+For the front-end nodes:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/bft-1.0.5/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
+\textcolor{red}{CC\_ADD}="-m64" \textbackslash \\
+\textcolor{red}{LD\_ADD}="-m64"
+}\end{minipage}}
+
+For the Python bindings on the front-end nodes:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/bft-1.0.5/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend\_python
+}\end{minipage}}
+
+\subsubsection{\pcs configuration}
+
+The \pcs only needs to be built for the front-end nodes, so apart
+from forcing the compiler in 64-bit mode, its configuration is classical:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ecs-2.0.2/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.7/arch/frontend
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
+\textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-ccm}=\textcolor{OliveGreen}{\$CS\_OPT}/libccmio-2.6.1/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-5.1.11/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-metis}=\textcolor{OliveGreen}{\$CS\_OPT}/metis-5.0rc1/arch/frontend \textbackslash \\
+\textcolor{red}{CC\_ADD}="-m64" \textbackslash \\
+\textcolor{red}{LD\_ADD}="-m64"
+}\end{minipage}}
+
+\subsubsection{FVM configuration}
+
+For the compute nodes, the following FVM configuration may be
+used if no MED of CGNS output is necessary:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--build}=ppc64 \textbackslash \\
+\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
+\textcolor{red}{CC}=mpixlc
+}\end{minipage}}
+
+CGNS support may be configured normally, but FVM output is a bit more
+involved: MED uses C++ runtime libraries, which need to be defined explicitly
+for the code to link correctly. The \texttt{--with-med-dep-dirs}
+and \texttt{--with-med-dep-libs} options, which may define comma-separated
+values (no whitespace) allow defining this and passing this info to
+the Kernel build, but an additional complication is that \texttt{libstdc++}
+should not be defined through a \texttt{-lstdc++} option, but through
+a absolute path: otherwise, Libtool tends to confuse front-end and compute
+node libraries, and add front-end library options to the compute-node
+link stage, leading to an error. There is no clean way around this,
+so we pass the absolute path to that library using the \texttt{LIBS}
+variable:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/bgp
+\textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgp
+\textbackslash \\
+\textcolor{Violet}{--with-med-dep-dirs}=/opt/ibmcmp/vacpp/bg/9.0/bglib \textbackslash \\
+\textcolor{Violet}{--with-med-dep-libs}=ibmc++ \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.1/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--build}=ppc64 \textbackslash \\
+\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
+\textcolor{red}{LIBS}=/bgsys/drivers/ppcfloor/ppc/gnu-linux/powerpc-bgp-linux/lib/libstdc++.a \textbackslash \\
+\textcolor{red}{CC}=mpixlc
+}\end{minipage}}
+
+Note that MED is generally more useful for the \pcs than for post-processing:
+meshes built using the SALOME tool will be produced in MED format, so
+importing it may be useful. For post-processing, other formats such
+as the \ensight format are also handled by ParaView and VisIt, so
+MED is only useful if required by a downstream calculation.
+In addition, MED 2.3 requires arrays to be output in one piece, and
+the parallel IO enabled by the recent MED 3 releases are not yet
+handled by FVM. This means that when writing mesh vertices, a global
+array containing coordinates of all vertices from all processors
+must be gathered to the first processor, which may require more memory
+than available on the compute nodes even for mid-sized meshes
+(as CGNS has allowed partial writes and \ensight output is handled
+internally, we only have this limitation with MED output).
+MED output may be useful for example to output a boundary mesh
+with pressure data usable by a solid mechanics code such as
+\emph{Code\_Aster}, but it will not be usable for the main volume
+for the large meshes we may expect to use on Blue Gene type machines.
+In addition, linking with MED and HDF5 significantly increase
+the size of the \CS executable, bringing it above 50 Mb,
+so building FVM with support for MED output may be worthwhile
+only if the use of this format is truly required.
+
+A front-end configuration is more standard:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.6/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
+\textbackslash \\
+\textcolor{red}{CC\_ADD}="-m64" \textbackslash \\
+\textcolor{red}{LD\_ADD}="-m64"
+}\end{minipage}}
+
+\subsubsection{MEI configuration}
+
+For the compute nodes, Python bindings are not useful:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.2/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Violet}{--disable-python-bindings} \textbackslash\\
+\textcolor{Magenta}{--build}=ppc64 \textbackslash \\
+\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
+\textcolor{red}{CC}=bgxlc
+}\end{minipage}}
+
+For the front-end nodes, only the Python bindings are generally useful. The
+kernel build should only be used for mesh verification (if built at
+all), so it will not need evaluation of mathematical expressions:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/mei-1.0.2/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Violet}{--with-python-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/python-2.7.1/arch/frontend/bin \textbackslash \\
+\textcolor{Violet}{--with-swig-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/swig-1.3.39/arch/frontend/bin \textbackslash
+}\end{minipage}}
+
+\subsubsection{Kernel configuration}
+
+Finally, when all other packages are installed, the Kernel may
+be configured. For the compute nodes, the following command may be used:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.2/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp\_ompi
+\textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--with-fvm}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--with-mei}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--with-prepro}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/4.4 \textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-syrthes}=/home/projects/syrthes3.4.3 \textbackslash \\
+\textcolor{Violet}{--disable-sockets} \textbackslash \\
+\textcolor{Violet}{--disable-dlloader} \textbackslash \\
+\textcolor{Violet}{--disable-nls} \textbackslash \\
+\textcolor{Magenta}{--build}=ppc64 \textbackslash \\
+\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
+\textcolor{Violet}{--with-python-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/python-2.7.1/arch/frontend/bin \textbackslash \\
+\textcolor{red}{CC}=mpixlc\_r \textcolor{red}{FC}=bgxlf90\_r
+}\end{minipage}}
+
+The thread-safe compiler wrappers used here should not be necessary for \CS, but in our
+experience, the ESSL BLAS are correctly detected only with those wrappers,
+not with the single-threaded versions.\footnote{This might be due to a bug in the ESSL
+BLAS detection of \CS, although the code has been checked.}
+
+Note that the front-end version of the \pcs is used even for
+the compute node build, as only the Kernel itself will run on the
+latter.
+For the front-end nodes, the following command may be used:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/ncs-2.0.2/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp\_ompi
+\textbackslash \\
+\textcolor{Magenta}{--with-bft}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--with-fvm}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
+\textcolor{Magenta}{--without-mei} \textbackslash \\
+\textcolor{Magenta}{--with-prepro}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend \textbackslash \\
+\textcolor{Violet}{--with-python-exec}=\textcolor{OliveGreen}{\$CS\_OPT}/python-2.7.1/arch/frontend/bin \textbackslash \\
+\textcolor{red}{CFLAGS}="-m64" \textbackslash \\
+\textcolor{red}{FCFLAGS}="-m64" \textbackslash \\
+\textcolor{red}{LDFLAGS}="-m64"
+}\end{minipage}}
+
 \end{document}
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

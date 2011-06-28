@@ -1,3 +1,10 @@
+* 28/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add an installation documentation.
+  added file:
+    doc/install/install.tex
+  modified file:
+    doc/Makefile.am
+
 * 27/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add extra libraries required by FVM (as determined by "fvm-config --libs").
   after HDF5, MED, or CGNS, as the latter may depend on the former.
