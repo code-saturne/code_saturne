@@ -155,7 +155,7 @@ else
 
   do isou = 1, 3
     do iel = 1, ncelet
-      veli(isou,iel) = vel(iel+(isou-1)*ncelet )
+      veli(isou,iel) = vel(iel + (isou-1)*ncelet)
     enddo
   enddo
 
@@ -175,7 +175,7 @@ else
   do isou = 1, 3
     do jsou = 1, 3
       do iel = 1, ncelet
-        gradv(iel+((isou-1)+3*(jsou-1))*ncelet ) = gradvi(isou,jsou,iel)
+        gradv(iel + (jsou-1)*ncelet + (isou-1)*3*ncelet) = gradvi(isou,jsou,iel)
       enddo
     enddo
   enddo

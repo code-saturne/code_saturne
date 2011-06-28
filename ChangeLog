@@ -1,3 +1,9 @@
+* 28/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Correct gradient interleaving for the new grdvec API in the case
+  where the data must to translated from non-interleaved to interleaved.
+  modified routines:
+    src/base/grdvec.f90
+
 * 28/06/2011 - David Monfort <david.monfort@edf.fr>
   Fix a compilation failure with GCC 4.1.2.
   modified routine:
