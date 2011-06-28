@@ -4,4 +4,4 @@ export SALOME_CONTAINER=$1
 export SALOME_CONTAINERNAME=$2
 export SALOME_INSTANCE=$3
 
-./aster_by_yacs.sh
+../aster_by_yacs.sh

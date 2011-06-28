@@ -35,8 +35,6 @@ echo
 #
 NBPDTM=10
 NBSSIT=1
-ISYNCP=0
-NTCHR=10
 DTREF=0.0001
 TTINIT=0.0
 EPSILO=0.00001
@@ -113,6 +111,7 @@ SAT_RESULTS_PATH=${RESULTS_PATH}/${SAT_RESULTS_DIR}
 prefix=@prefix@
 bindir=@bindir@
 pkgdatadir=@pkgdatadir@
+pkglibexecdir=@pkglibexecdir@
 #
 # SALOME
 #
@@ -202,8 +201,7 @@ fi
 #
 cp ${STUDY_PATH}/MESH/${SAT_MESH} .
 #
-${bindir}/cs_preprocess --out mesh_input --mesh ${SAT_MESH} --case ${SAT_NAME} \
-    ${COMMAND_REORIENT} > listpre 2>&1
+${pkglibexecdir}/cs_preprocess --out mesh_input --case ${SAT_NAME} ${COMMAND_REORIENT} ${SAT_MESH} > preprocessor.log 2>&1
 #
 if [ $? != 0 ]
     then
@@ -321,8 +319,6 @@ awk '{
        gsub(/@AST_MAIL@/,"'"$AST_MESH_GLOB_NAME"'",$0);
        gsub(/@NBPDTM@/,"'"$NBPDTM"'",$0);
        gsub(/@NBSSIT@/,"'"$NBSSIT"'",$0);
-       gsub(/@ISYNCP@/,"'"$ISYNCP"'",$0);
-       gsub(/@NTCHR@/,"'"$NTCHR"'",$0);
        gsub(/@DTREF@/,"'"$DTREF"'",$0);
        gsub(/@TTINIT@/,"'"$TTINIT"'",$0);
        gsub(/@EPSILO@/,"'"$EPSILO"'",$0);
@@ -344,6 +340,7 @@ localexec=$RUN_PATH/localexec
 echo '#!/bin/sh' > $localexec
 echo '. '${asterhome}'/'${astervers}'/profile.sh' >> $localexec
 echo 'export ROOT_SALOME='$salomeroot >> $localexec
+echo 'export PATH='$bindir':$PATH' >> $localexec
 echo 'appli='$appli >> $localexec
 echo '$appli/runSession killSalome.py' >> $localexec
 echo 'unset PYTHONHOME' >> $localexec

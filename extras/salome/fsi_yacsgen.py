@@ -104,8 +104,7 @@ saturne_instream = [satDisplacement,
                     newTimeStep,
                     prevTime,
                     timeStep,
-                    nbIter, nbSubIter, indSync,
-                    frequency,
+                    nbIter, nbSubIter,
                     extConvergence]
 
 saturne_outstream = [satTimeStep,

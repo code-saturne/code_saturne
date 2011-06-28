@@ -1,4 +1,17 @@
 * 28/06/2011 - David Monfort <david.monfort@edf.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+               Julien Berland <julien-j.berland@edf.fr>
+  Several improvements and fixes related to FSI coupling.
+  modified files:
+    bin/runcase_aster.in
+    extras/salome/fsi_yacsgen.py
+    extras/salome/fsi_yacs_scheme.xml
+    m4/cs_omniorb.m4
+    salome/fsi_coupling/src/FSI_ASTER/FSI_ASTER.exe
+    salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.cxx
+    salome/fsi_coupling/src/FSI_SATURNE/FSI_SATURNE.exe
+
+* 28/06/2011 - David Monfort <david.monfort@edf.fr>
   Correct gradient interleaving for the new grdvni API.
   modified routines:
     src/base/condli.f90

@@ -100,8 +100,6 @@
     <instream name="PDTREF" type="CALCIUM_double"/>  <!-- reference time-step -->
     <instream name="NBPDTM" type="CALCIUM_integer"/> <!-- maximum iteration number -->
     <instream name="NBSSIT" type="CALCIUM_integer"/> <!-- number of sub-iterations -->
-    <instream name="ISYNCP" type="CALCIUM_integer"/> <!-- fluid-structure post-treatment synchronisation -->
-    <instream name="NTCHRO" type="CALCIUM_integer"/> <!-- output frequency -->
     <instream name="ICVEXT" type="CALCIUM_integer"/> <!-- convergence indicator send to supervisor -->
   </service>
 
@@ -259,20 +257,8 @@
   </stream>
 
   <stream>
-    <fromnode>inter_service</fromnode><fromport>ISYNCP</fromport>
-    <tonode>fluid_service</tonode><toport>ISYNCP</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
     <fromnode>inter_service</fromnode><fromport>NTCHRO</fromport>
     <tonode>solid_service</tonode><toport>NTCHRO</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>NTCHRO</fromport>
-    <tonode>fluid_service</tonode><toport>NTCHRO</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
@@ -411,11 +397,11 @@
   </parameter>
   <parameter>
     <tonode>inter_service</tonode> <toport>ISYNCP</toport>
-    <value><int>@ISYNCP@</int></value>
+    <value><int>0</int></value>
   </parameter>
   <parameter>
     <tonode>inter_service</tonode> <toport>NTCHR</toport>
-    <value><int>@NTCHR@</int></value>
+    <value><int>-1</int></value>
   </parameter>
   <parameter>
     <tonode>inter_service</tonode> <toport>DTREF</toport>
