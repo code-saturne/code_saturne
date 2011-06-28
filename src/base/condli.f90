@@ -591,10 +591,10 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
 
     call grdvni &
     !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
-   rtpa(1,ivar)    , coefa(1,icliva) , coefb(1,icliva) ,          &
+   rtpa(1,iu)      , coefa(1,icliva) , coefb(1,icliva) ,          &
    gradv  )
 
     do isou = 1, 3

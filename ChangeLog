@@ -1,3 +1,8 @@
+* 28/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fix variable pointer introduced in previous commit.
+  modified routine:
+    src/alge/condli.f90
+
 * 27/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Ensure "code_saturne config" produces correct output for PLE.
   modified files:
