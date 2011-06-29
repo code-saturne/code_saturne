@@ -242,7 +242,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             label = self.mdl.dicoLabelName[name]
             printing = self.mdl.getPrintingStatus(label)
 
-            if OutputControlModel(self.case).getFluidDomainPostProStatus() == 'off':
+            if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                 post = "off"
                 self.mdl.setPostStatus(label, post)
                 self.disabledItem.append((row, 2))
@@ -387,7 +387,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             else:
                 self.dataPost[row] = "off"
 
-            if OutputControlModel(self.case).getFluidDomainPostProStatus() == 'off':
+            if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                 self.dataPost[row] = "off"
 
             self.mdl.setPostStatus(self.dataLabel[row], self.dataPost[row])

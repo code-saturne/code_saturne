@@ -88,6 +88,7 @@
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
+#include "cs_gui_output.h"
 #include "cs_gui_particles.h"
 #include "cs_io.h"
 #include "cs_join.h"
@@ -243,6 +244,7 @@ cs_run(void)
 
   /* Initialize main post-processing */
 
+  cs_gui_postprocess_writers();
   cs_user_postprocess_writers();
   cs_post_init_writers();
 
@@ -326,6 +328,7 @@ cs_run(void)
 
   check_mask = ((opts.preprocess | opts.verif) == true) ? 2 + 1 : 0;
 
+  cs_gui_postprocess_meshes();
   cs_user_postprocess_meshes();
   cs_post_init_meshes(check_mask);
 

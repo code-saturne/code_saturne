@@ -54,6 +54,7 @@ from Base.XMLvariables import Variables
 from Base import Toolbox
 
 from Pages.LocalizationModel import Zone, LocalizationModel
+from Pages.OutputControlModel import OutputControlModel
 from Pages.MobileMeshModel import MobileMeshModel
 from Pages.TurbulenceModel import TurbulenceModel
 from Pages.InitializationModel import InitializationModel
@@ -112,7 +113,8 @@ class XMLinit(Variables):
         n['label'] = 'Efforts'
         n = self.setNewProperty(node, 'all_variables')
         n['support'] = 'boundary'
-
+        OutputControlModel(self.case).addDefaultWriter()
+        OutputControlModel(self.case).addDefaultMesh()
         MobileMeshModel(self.case).getMethod()
         TurbulenceModel(self.case).getTurbulenceModel()
 

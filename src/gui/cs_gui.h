@@ -396,26 +396,6 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
 void CS_PROCF (cstini, CSTINI) (double *const uref,
                                 double *const almax);
 
-void CS_PROCF (csenso, CSENSO) (const    int *const nvppmx,
-                                         int *const ncapt,
-                                         int *const nthist,
-                                      double *const frhist,
-                                         int *const ntlist,
-                                         int *const iecaux,
-                                         int *const ipstdv,
-                                         int *const ipstyp,
-                                         int *const ipstcl,
-                                         int *const ipstft,
-                                         int *const ipstfo,
-                                         int *const ichrvr,
-                                         int *const ilisvr,
-                                         int *const ihisvr,
-                                         int *const tplfmt,
-                                const    int *const isca,
-                                const    int *const iscapp,
-                                const    int *const ipprtp,
-                                      double *const xyzcap);
-
 void CS_PROCF(fcnmva, FCNMVA)
 (
  const char      *const fstr,    /* --> Fortran string */

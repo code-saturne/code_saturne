@@ -52,6 +52,7 @@ from PyQt4.QtGui  import *
 from Base.Toolbox import GuiParam
 from Pages.OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
 import Base.QtPage as QtPage
+from Pages.OutputControlModel import OutputControlModel
 from Pages.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
 from Pages.OutputVolumicVariablesView import LabelDelegate
 
@@ -93,11 +94,9 @@ class StandardItemModelOutput(QStandardItemModel):
 
             label = self.mdl.dicoLabelName[name]
             post  = self.mdl.getPostProcessing(label)
-
-#            if name in ('yplus', 'effort', 'all_variables'):
-#                post = "on"
-#                if (row,1) not in self.disableItem:
-#                    self.disableItem.append((row,1))
+            if OutputControlModel(self.case).getAssociatedWriterIdList("-2") == []:
+                self.disableItem.append((row, 1))
+                post = "off"
 
             self.dataLabel.append(label)
             self.dataPost.append(post)
@@ -178,6 +177,8 @@ class StandardItemModelOutput(QStandardItemModel):
             if v == Qt.Checked:
                 self.dataPost[row] = "on"
             else:
+                self.dataPost[row] = "off"
+            if OutputControlModel(self.case).getAssociatedWriterIdList("-2") == []:
                 self.dataPost[row] = "off"
 
             self.mdl.setPostProcessing(self.dataLabel[row], self.dataPost[row])

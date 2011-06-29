@@ -42,6 +42,7 @@ cs_gui_boundary_conditions.h \
 cs_gui_conjugate_heat_transfer.h \
 cs_gui_mesh.h \
 cs_gui_mobile_mesh.h \
+cs_gui_output.h \
 cs_gui_particles.h \
 cs_gui_radiative_transfer.h \
 cs_gui_specific_physics.h \
@@ -60,6 +61,7 @@ cs_gui_boundary_conditions.c \
 cs_gui_conjugate_heat_transfer.c \
 cs_gui_mesh.c \
 cs_gui_mobile_mesh.c \
+cs_gui_output.c \
 cs_gui_particles.c \
 cs_gui_radiative_transfer.c \
 cs_gui_specific_physics.c \

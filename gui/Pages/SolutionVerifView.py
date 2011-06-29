@@ -107,7 +107,7 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
         os.mkdir(self.exec_dir)
         os.chdir(self.exec_dir)
 
-        self.fmt = self.out2.getPostProFormat().lower()
+        self.fmt = self.out2.getWriterFormat("-1").lower()
 
         # Prepare preprocessing
 
@@ -371,9 +371,9 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         self.modelPolygon        = ComboModel(self.comboBoxPolygon, 3, 1)
         self.modelPolyhedra      = ComboModel(self.comboBoxPolyhedra, 3, 1)
 
-        self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'EnSight')
-        self.modelFMTCHR.addItem(self.tr("MED"), 'MED')
-        self.modelFMTCHR.addItem(self.tr("CGNS"), 'CGNS')
+        self.modelFMTCHR.addItem(self.tr("EnSight Gold"), 'ensight')
+        self.modelFMTCHR.addItem(self.tr("MED"), 'med')
+        self.modelFMTCHR.addItem(self.tr("CGNS"), 'cgns')
 
         self.modelFormat.addItem(self.tr("binary"), 'binary')
         self.modelFormat.addItem(self.tr("text"), 'text')
@@ -399,9 +399,9 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
         # 1 - Values of post processing's format
 
-        fmt = self.out.getPostProFormat()
+        fmt = self.out.getWriterFormat("-1")
         self.modelFMTCHR.setItem(str_model=fmt)
-        line = self.out.getPostProOptionsFormat()
+        line = self.out.getWriterOptions("-1")
         self.__updateOptionsFormat(line)
 
         if not self.mdl.getMeshList():
@@ -415,15 +415,15 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         """
         format = self.modelFMTCHR.dicoV2M[str(text)]
 
-        if self.out.getPostProFormat() != format:
-            self.out.setPostProFormat(format)
-            l = self.out.defaultInitialValues()['postprocessing_options']
-            self.out.setPostProOptionsFormat(l)
+        if self.out.getWriterFormat("-1") != format:
+            self.out.setWriterFormat("-1",format)
+            l = self.out.defaultWriterValues()['options']
+            self.out.setWriterOptions("-1",l)
 
-        if self.out2.getPostProFormat() != format:
-            self.out2.setPostProFormat(format)
-            l = self.out2.defaultInitialValues()['postprocessing_options']
-            self.out2.setPostProOptionsFormat(l)
+        if self.out2.getWriterFormat("-1") != format:
+            self.out2.setWriterFormat("-1",format)
+            l = self.out2.defaultWriterValues()['options']
+            self.out2.setWriterOptions("-1",l)
             self.__updateOptionsFormat(l)
 
 
@@ -446,8 +446,8 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
         l = string.join(line, ',')
         log.debug("slotOutputOptions-> OPTCHR = %s" % l)
-        self.out.setPostProOptionsFormat(l)
-        self.out2.setPostProOptionsFormat(l)
+        self.out.setWriterOptions("-1",l)
+        self.out2.setWriterOptions("-1",l)
 
 
     def __updateOptionsFormat(self, line):
@@ -473,7 +473,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
             if opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
                 self.modelPolyhedra.setItem(str_model=opt)
 
-            if format == 'EnSight':
+            if format == 'ensight':
                 if opt == 'big_endian':
                     self.checkBoxBigEndian.setChecked(True)
 
@@ -486,9 +486,9 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
 
         # enable and disable options related to the format
 
-        if format != "EnSight":
+        if format != "ensight":
 
-            if format == "CGNS":
+            if format == "cgns":
                 self.modelPolyhedra.setItem(str_model='divide_polyhedra')
                 self.modelPolyhedra.disableItem(str_model='display')
 

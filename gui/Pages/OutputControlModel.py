@@ -32,6 +32,8 @@ This module manages the differents possible outputs :
 - listing printing
 - post-processing and relationship with the FVM library
 - monitoring points
+- writer
+- mesh
 
 This module defines the following classes:
 - OutputControlModel
@@ -75,18 +77,11 @@ class OutputControlModel(Model):
         """
         default = {}
         default['listing_printing_frequency'] = 1
-        default['postprocessing_frequency'] = -1
-        default['postprocessing_frequency_time'] = 0.1
         default['probe_recording_frequency'] = 1
         default['probe_recording_frequency_time'] = 0.1
-        default['postprocessing_options'] = "binary"
-        default['postprocessing_format'] = "EnSight"
         if self.case['salome']:
             default['postprocessing_format'] = "MED"
         default['probe_format'] = "DAT"
-        default['fluid_domain'] = "on"
-        default['domain_boundary'] = "off"
-        default['postprocessing_mesh'] = '0'
         default['coordinate'] = 0.0
 
         return default
@@ -129,187 +124,704 @@ class OutputControlModel(Model):
         self.node_out.xmlSetData('listing_printing_frequency', freq)
 
 
-    def getPostprocessingType(self):
-        """
-        Return the type of output for printing listing
-        """
-        node = self.node_out.xmlGetNode('postprocessing_frequency_time')
-        if node != None :
-            return 'Frequency_c_x'
-        val = self.getPostprocessingFrequency()
-        if val == -1 :
-            return 'At the end'
-        elif val == 1 :
-            return 'At each step'
-        else :
-            return 'Frequency_c'
+    def defaultWriterValues(self):
+        """Return the default values - Method also used by ThermalScalarModel"""
+        default = {}
+        default['frequency_choice']          = "end"
+        default['frequency']                 = -1
+        default['frequency_time']            = 1.
+        default['format']                    = "ensight"
+        default['time_dependency']           = 'fixed_mesh'
+        default['options']                   = 'binary'
+        default['repertory']                 = 'postprocessing'
+
+        return default
 
 
-    def setPostprocessingType(self, type):
+    def __defaultWriterLabelAndId(self):
         """
-        Set the type of output for printing listing
+        Private method.
+        Return a default id and label for a new writer.
         """
-        self.isInList(type, ['At the end', 'At each step', 'Frequency_c', 'Frequency_c_x'])
-
-        if type == 'Frequency_c_x' :
-            childNode = self.node_out.xmlGetNode('postprocessing_frequency')
-            if childNode != None :
-                childNode.xmlRemoveNode()
-        else :
-            childNode = self.node_out.xmlGetNode('postprocessing_frequency_time')
-            if childNode != None :
-                childNode.xmlRemoveNode()
-
-
-    def getPostprocessingFrequency(self):
-        """
-        Return the frequency for post processing output
-        """
-        f = self.node_out.xmlGetInt('postprocessing_frequency')
-        if f == None:
-            f = self.defaultInitialValues()['postprocessing_frequency']
-            self.setPostprocessingFrequency(f)
-        return f
+        id_table = []
+        for l in self.getWriterIdList():
+            id_table.append(int(l))
+        user_table = []
+        for l in id_table:
+            if l > 0:
+                user_table.append(l)
+        if user_table != []:
+            next_id = max(user_table) +1
+        else:
+            next_id = 1
+        next_label = 'writer('+ str(next_id)+')'
+        n=next_id
+        while next_label in self.getWriterLabelList():
+            n=n+1
+            next_label = 'writer('+ str(n)+')'
+        return str(next_id), next_label
 
 
-    def setPostprocessingFrequency(self, freq):
+    def __updateWriterId(self):
+        #"""
+        #Private method.
+        #Update suffixe number for writer label.
+        #"""
+        list = []
+        n = 0
+        for node in self.node_out.xmlGetNodeList('writer', 'label'):
+            if int(node['id']) > 0 :
+                n = n + 1
+                if node['label'] == 'writer('+node['id']+')':
+                    node['label'] ='writer('+str(n)+')'
+                node['id'] = str(n)
+
+
+
+    def addWriter(self):
+        """Public method.
+        Input a new user writer
         """
-        Set the frequency for post processing output
+
+        i, l = self.__defaultWriterLabelAndId()
+        if l not in self.getWriterIdList():
+            self.node_out.xmlInitNode('writer', id = i,label = l)
+        self.getWriterFrequencyChoice(i)
+        self.getWriterFormat(i)
+        self.getWriterRepertory(i)
+        self.getWriterOptions(i)
+        self.getWriterTimeDependency(i)
+
+        return i
+
+
+
+    def addDefaultWriter(self):
+        """Public method.
+        Input a new user writer
+        """
+        list_writer = self.getWriterIdList()
+        if list_writer == []:
+            node = self.node_out.xmlInitNode('writer', id = "-1", label = 'writer(-1)')
+            node.xmlInitNode('frequency', choice = 'end')
+            node.xmlInitNode('format', choice = 'ensight')
+            node.xmlInitNode('repertory', choice = 'postprocessing')
+            node.xmlInitNode('options', choice = 'binary')
+            node.xmlInitNode('time_dependency', choice = 'fixed_mesh')
+
+
+
+    def __deleteWriter(self, writer_id):
+        """
+        Private method.
+        Delete writer.
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        node.xmlRemoveNode()
+        self.__updateWriterId()
+
+
+    def deleteWriter(self, writer_id):
+        """
+        Public method.
+        Delete writer.
+        """
+        for w in writer_id:
+            self.isInList(w, self.getWriterIdList())
+
+        # First add the main scalar to delete
+        list = writer_id
+        # Delete all scalars
+        for writer in list:
+            self.__deleteWriter(writer)
+
+        return list
+
+
+    def getWriterIdList(self):
+        """
+        Return a list of writer id already defined
+        """
+        writer = []
+        for node in self.node_out.xmlGetNodeList('writer', 'label'):
+            writer.append(node['id'])
+        return writer
+
+
+    def getWriterLabelList(self):
+        """
+        Return a list of writer id already defined
+        """
+        writer = []
+        for node in self.node_out.xmlGetNodeList('writer', 'label'):
+            writer.append(node['label'])
+        return writer
+
+
+    def getWriterIdFromLabel(self, label):
+        """
+        Return the label of a writer
+        """
+        node = self.node_out.xmlGetNodeList('writer', 'label')
+        for n in node:
+            if n['label'] == label:
+                writer_id = n['id']
+        return writer_id
+
+
+    def getWriterLabel(self, writer_id):
+        """
+        Return the label of a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        n = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        label = n['label']
+        if label == None:
+            label = __defaultWriterLabelAndId(id=writer_id)
+            self.setWriterLabel(writer_id, label)
+        return label
+
+
+    def setWriterLabel(self, writer_id, label):
+        """
+        Set the label of a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        n = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n['label'] = label
+
+    def getWriterFrequencyChoice(self, writer_id):
+        """
+        Return the choice of frequency output for a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n= node.xmlGetNode('frequency_time')
+        if n == None:
+            n= node.xmlGetNode('frequency_formula')
+            if n == None:
+                n= node.xmlInitNode('frequency')
+        frequency_choice = n['choice']
+        if frequency_choice == None:
+            frequency_choice = self.defaultWriterValues()['frequency_choice']
+            self.setWriterFrequencyChoice(writer_id, frequency_choice)
+        return frequency_choice
+
+
+    def setWriterFrequencyChoice(self, writer_id, choice):
+        """
+        Set the choice of frequency output for a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        self.isInList(choice, ('end', 'time', 'time_steps', 'second', 'formula'))
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        if choice == 'end' or choice == 'time' or choice == 'time_steps':
+            n= node.xmlInitNode('frequency')
+            n_bis = node.xmlGetNode('frequency_time')
+            if n_bis != None:
+                n_bis.xmlRemoveNode()
+            n_ter = node.xmlGetNode('frequency_formula')
+            if n_ter != None:
+                n_ter.xmlRemoveNode()
+        elif choice == 'second':
+            n= node.xmlInitNode('frequency_time')
+            n_bis = node.xmlGetNode('frequency')
+            if n_bis != None:
+                n_bis.xmlRemoveNode()
+            n_ter = node.xmlGetNode('frequency_formula')
+            if n_ter != None:
+                n_ter.xmlRemoveNode()
+        elif choice == 'formula':
+            n= node.xmlInitNode('frequency_formula')
+            n_bis = node.xmlGetNode('frequency_time')
+            if n_bis != None:
+                n_bis.xmlRemoveNode()
+            n_ter = node.xmlGetNode('frequency')
+            if n_ter != None:
+                n_ter.xmlRemoveNode()
+        n['choice'] = choice
+
+
+    def getWriterFrequency(self, writer_id):
+        """
+        Return the frequency of a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        freq = node.xmlGetInt('frequency')
+        if freq == None:
+            freq = self.defaultWriterValues()['frequency']
+            self.setWriterFrequency(writer_id, freq)
+        return freq
+
+
+    def setWriterFrequency(self, writer_id, freq):
+        """
+        Set the frequency of a writer
         """
         self.isInt(freq)
-        self.node_out.xmlSetData('postprocessing_frequency', freq)
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        node.xmlSetData('frequency', freq)
 
 
-    def getPostprocessingFrequencyTime(self):
+    def getWriterFrequencyTime(self, writer_id):
         """
-        Return the frequency for post processing output
+        Return the frequency of a writer
         """
-        f = self.node_out.xmlGetDouble('postprocessing_frequency_time')
-        if f == None:
-            f = self.defaultInitialValues()['postprocessing_frequency_time']
-            self.setPostprocessingFrequencyTime(f)
-        return f
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        freq = node.xmlGetDouble('frequency_time')
+        if freq == None:
+            freq = self.defaultWriterValues()['frequency_time']
+            self.setWriterFrequencyTime(writer_id, freq)
+        return freq
 
 
-    def setPostprocessingFrequencyTime(self, freq):
+    def setWriterFrequencyTime(self, writer_id, freq):
         """
-        Set the frequency for post processing output
+        Set the frequency of a writer
         """
-        self.isFloat(freq)
-        self.node_out.xmlSetData('postprocessing_frequency_time', freq)
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        node.xmlSetData('frequency_time', freq)
 
 
-    def getFluidDomainPostProStatus(self):
+    def setWriterFrequencyFormula(self,writer_id, formula):
         """
-        Return status for traitment of fluid domain
+        Public method.
+        Set the formula for a turbulent variable.
         """
-        nod = self.node_out.xmlInitNode('fluid_domain', 'status')
-        status = nod['status']
-        if not status:
-            status = self.defaultInitialValues()['fluid_domain']
-            self.setFluidDomainPostProStatus(status)
-        return status
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        node.xmlSetData('frequency_formula', formula)
 
 
-    def setFluidDomainPostProStatus(self, status):
+    def getWriterFrequencyFormula(self, writer_id):
         """
-        Set status for traitment of fluid domain
+        Public method.
+        Return the formula for a turbulent variable.
         """
-        self.isOnOff(status)
-        node = self.node_out.xmlInitNode('fluid_domain', 'status')
-        node['status'] = status
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        formula = node.xmlGetDouble('frequency')
+        return formula
 
 
-    def getDomainBoundaryPostProStatus(self):
+    def getWriterFormat(self, writer_id):
         """
-        Return status for traitment of domain boundary
+        Return the format for a writer
         """
-        nod = self.node_out.xmlInitNode('domain_boundary', 'status')
-        status = nod['status']
-        if not status:
-            status = self.defaultInitialValues()['domain_boundary']
-            self.setDomainBoundaryPostProStatus(status)
-        return status
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n= node.xmlInitNode('format')
+        format = n['choice']
+        if format == None:
+            format = self.defaultWriterValues()['format']
+            self.setWriterFormat(writer_id, format)
+        return format
 
 
-    def setDomainBoundaryPostProStatus(self, status):
+    def setWriterFormat(self, writer_id, format):
         """
-        Set status for traitment of domain boundary
+        Set the format for a writer
         """
-        self.isOnOff(status)
-        node = self.node_out.xmlInitNode('domain_boundary', 'status')
-        node['status'] = status
+        self.isInList(writer_id, self.getWriterIdList())
+        self.isInList(format, ('ensight', 'med', 'cgns'))
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n= node.xmlInitNode('format')
+        n['choice'] = format
 
 
-    def getTypePostMeshes(self):
+    def getWriterRepertory(self, writer_id):
         """
-        Return choice of type of post processing for mesh
+        Return the repertory for a writer
         """
-        node = self.node_out.xmlInitNode('postprocessing_mesh_options', 'choice')
-        choice = node['choice']
-        if not choice:
-            choice = self.defaultInitialValues()['postprocessing_mesh']
-            self.setTypePostMeshes(choice)
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n= node.xmlInitNode('repertory')
+        repertory = n['choice']
+        if repertory == None:
+            repertory = self.defaultWriterValues()['repertory']
+            self.setWriterRepertory(writer_id, repertory)
+        return repertory
+
+
+    def setWriterRepertory(self, writer_id, repertory):
+        """
+        Set the repertory for a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n= node.xmlInitNode('repertory')
+        n['choice'] = repertory
+
+
+    def getWriterOptions(self, writer_id):
+        """
+        Return the options for a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n= node.xmlInitNode('options')
+        options = n['choice']
+        if options == None:
+            options = self.defaultWriterValues()['options']
+            self.setWriterOptions(writer_id, options)
+        return options
+
+
+    def setWriterOptions(self, writer_id, options):
+        """
+        Set the options for a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n= node.xmlInitNode('options')
+        n['choice'] = options
+
+
+    def getWriterTimeDependency(self, writer_id):#-------> a réutiliser
+        """
+        Return the type of time dependency for a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+
+        n= node.xmlInitNode('time_dependency')
+        choice = n['choice']
+        if choice == None:
+            choice = self.defaultWriterValues()['time_dependency']
+            self.setWriterTimeDependency(writer_id, choice)
         return choice
 
 
-    def setTypePostMeshes(self, choice):
+    def setWriterTimeDependency(self, writer_id, choice):#-------> a réutiliser
         """
-        Set choice of type of post processing for mesh
+        Set the type of time dependency for a writer
         """
-        self.isInList(choice, ['0', '1', '2', '10', '11', '12'])
-        node = self.node_out.xmlInitNode('postprocessing_mesh_options', 'choice')
-        node['choice'] = choice
+        self.isInList(writer_id, self.getWriterIdList())
+        self.isInList(choice, ('fixed_mesh', 'transient_coordinates', 'transient_connectivity'))
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n= node.xmlInitNode('time_dependency')
+        n['choice'] = choice
 
 
-    def getPostProFormat(self):
-        """
-        Return choice of format for post processing output file
-        """
-        node = self.node_out.xmlInitNode('postprocessing_format', 'choice')
-        choice = node['choice']
-        if not choice:
-            choice = self.defaultInitialValues()['postprocessing_format']
-            self.setPostProFormat(choice)
-        return choice
+    def defaultMeshValues(self):
+        """Return the default values"""
+        default = {}
+        default['type']          = "cells"
+        default['all_variables']          = "on"
+        default['location']     = "all[]"
+        default['time_dependendy']      = 'fixed_mesh'
+        default['postprocessing_options'] = "binary"
+
+        return default
 
 
-    def setPostProFormat(self, choice):
+    def getMeshIdList(self):
         """
-        Set choice of format for post processing output file
+        Return a list of mesh id already defined
         """
-        self.isInList(choice, ('EnSight', 'MED', 'CGNS'))
-        node = self.node_out.xmlInitNode('postprocessing_format', 'choice')
-        node['choice'] = choice
+        mesh = []
+        for node in self.node_out.xmlGetNodeList('mesh'):
+            mesh.append(node["id"])
+        return mesh
 
 
-    def getPostProOptionsFormat(self):
+    def __defaultMeshLabelAndId(self):
         """
-        Return options for post processing output file
+        Private method.
+        Return a default id and label for a new mesh.
         """
-        node = self.node_out.xmlInitNode('postprocessing_options', 'choice')
-        line = node['choice']
-        if not line:
-            line = self.defaultInitialValues()['postprocessing_options']
-            self.setPostProOptionsFormat(line)
-        return line
+        id_table = []
+        for l in self.getMeshIdList():
+            id_table.append(int(l))
+        user_table = []
+        for l in id_table:
+            if l > 0:
+                user_table.append(l)
+        if user_table != []:
+            next_id = max(user_table) +1
+        else:
+            next_id = 1
+        next_label = 'mesh('+ str(next_id)+')'
+        n=next_id
+        while next_label in self.getMeshLabelList():
+            n=n+1
+            next_label = 'mesh('+ str(n)+')'
+        return str(next_id), next_label
 
 
-    def setPostProOptionsFormat(self, line):
+    def __updateMeshId(self):
+        #"""
+        #Private method.
+        #Update suffixe number for mesh label.
+        #"""
+        list = []
+        n = 0
+        for node in self.node_out.xmlGetNodeList('mesh'):
+            if int(node['id']) > 0 :
+                n = n + 1
+                if node['label'] == 'mesh('+node['id']+')':
+                    node['label'] ='mesh('+str(n)+')'
+                node['id'] = str(n)
+
+
+
+    def addMesh(self):
+        """Public method.
+        Input a new user mesh
         """
-        Set options for post processing output file
+
+        i, l = self.__defaultMeshLabelAndId()
+        if l not in self.getMeshIdList():
+            self.node_out.xmlInitNode('mesh', id = i,label = l)
+        self.getMeshAllVariablesStatus(i)
+        self.getMeshType(i)
+        self.getMeshLocation(i)
+
+        return i
+
+
+
+    def addDefaultMesh(self):
+        """Public method.
+        Input default mesh
         """
-        list = string.split(line)
-        self.isList(list)
-        n = self.node_out.xmlInitNode('postprocessing_options', 'choice')
-        n['choice'] = line
+        list_mesh = self.getMeshIdList()
+        if list_mesh == []:
+            node1 = self.node_out.xmlInitNode('mesh', id = "-1", label = 'fluid_domain', type = 'cells')
+            node1.xmlInitNode('all_variables', status = 'on')
+            node1.xmlInitNode('location')
+            node1.xmlSetData('location','all[]')
+            node1.xmlInitNode('writer', id = '-1')
+
+            node2 = self.node_out.xmlInitNode('mesh', id = "-2", label = 'boundary_domain', type = 'boundary_faces')
+            node2.xmlInitNode('all_variables', status = 'on')
+            node2.xmlInitNode('location')
+            node2.xmlSetData('location','all[]')
+            node2.xmlInitNode('writer', id = '-1')
+
+
+    def __deleteMesh(self, mesh_id):
+        """
+        Private method.
+        Delete mesh.
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        node.xmlRemoveNode()
+        self.__updateMeshId()
+
+
+    def deleteMesh(self, mesh_id):
+        """
+        Public method.
+        Delete mesh.
+        """
+        for mesh in mesh_id:
+            self.isInList(mesh, self.getMeshIdList())
+
+        # First add the main scalar to delete
+        list = mesh_id
+
+        # Delete all scalars
+        for mesh in list:
+            self.__deleteMesh(mesh)
+
+        return list
+
+
+    def getMeshIdList(self):
+        """
+        Return a list of writer id already defined
+        """
+        mesh = []
+        for node in self.node_out.xmlGetNodeList('mesh'):
+            mesh.append(node['id'])
+        return mesh
+
+
+
+    def getMeshLabelList(self):
+        """
+        Return a list of mesh id already defined
+        """
+        mesh = []
+        for node in self.node_out.xmlGetNodeList('mesh'):
+            mesh.append(node['label'])
+        return mesh
+
+
+    def getMeshLabel(self, mesh_id):
+        """
+        Return the label of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        n = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        label = n['label']
+        if label == None:
+            label = __defaultMeshLabelAndId(id=mesh_id)
+            self.setMeshLabel(mesh_id, label)
+        return label
+
+
+    def setMeshLabel(self, mesh_id, label):
+        """
+        Set the label of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        n = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        n['label'] = label
+
+
+    def getMeshType(self, mesh_id):
+        """
+        Return the type of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        n = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        mesh_type = n['type']
+        if mesh_type == None:
+            mesh_type = self.defaultMeshValues()['type']
+            self.setMeshType(mesh_id, mesh_type)
+        return mesh_type
+
+
+    def setMeshType(self, mesh_id, mesh_type):
+        """
+        Set the type of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        self.isInList(mesh_type, ('cells', 'interior_faces', 'boundary_faces'))
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        node['type'] = mesh_type
+
+
+    def getMeshAllVariablesStatus(self, mesh_id):
+        """
+        Return the all_variables status of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        n= node.xmlInitNode('all_variables')
+        status = n['status']
+        if status == None:
+            status = self.defaultMeshValues()['all_variables']
+            self.setMeshAllVariablesStatus(mesh_id, status)
+        return status
+
+
+    def setMeshAllVariablesStatus(self, mesh_id, status):
+        """
+        Set the all_variables status of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        self.isOnOff(status)
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        n= node.xmlInitNode('all_variables')
+        n['status'] = status
+
+    def getMeshLocation(self, mesh_id):
+        """
+        Return the location of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        loc = node.xmlGetString('location')
+        if loc == '':
+            loc = self.defaultMeshValues()['location']
+            self.setMeshLocation(mesh_id, loc)
+        return loc
+
+
+    def setMeshLocation(self, mesh_id, location):
+        """
+        Set the location of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        node.xmlSetData('location', location)
+
+
+    def getAssociatedWriterIdList(self, mesh_id):
+        """
+        Return a list of associated writer to a mesh already defined
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        associated_writer = []
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        for n in node.xmlGetNodeList('writer'):
+            associated_writer.append(n["id"])
+        return associated_writer
+
+
+
+    def addAssociatedWriter(self, mesh_id):
+        """Public method.
+        Input a new user associated writer to a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        n = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        writer_list = self.getWriterIdList()
+        associated_writer_list = []
+        for writer in writer_list:
+            if writer not in self.getAssociatedWriterIdList(mesh_id):
+                associated_writer_list.append(writer)
+        writer_id = None
+        if associated_writer_list:
+            n.xmlInitNode('writer', id = associated_writer_list[0])
+            writer_id = associated_writer_list[0]
+        return writer_id
+
+
+    def __deleteAssociatedWriter(self, mesh_id, writer_id):
+        """
+        Private method.
+        Delete mesh.
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        self.isInList(writer_id, self.getAssociatedWriterIdList(mesh_id))
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        n = node.xmlGetNode('writer', id = writer_id)
+        n.xmlRemoveNode()
+
+
+    def deleteAssociatedWriter(self, mesh_id, writer_id):
+        """
+        Public method.
+        Delete mesh.
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        self.isInList(writer_id, self.getAssociatedWriterIdList(mesh_id))
+
+        self.__deleteAssociatedWriter(mesh_id, writer_id)
+
+        return list
+
+
+    def setAssociatedWriterChoice(self, mesh_id, writer_list):
+        """
+        Set the type of a mesh
+        """
+        self.isInList(mesh_id, self.getMeshIdList())
+        for w in writer_list :
+            self.isInList(w, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('mesh', id = mesh_id)
+        for w in node.xmlGetNodeList('writer'):
+            w.xmlRemoveNode()
+        for w in writer_list:
+            #print w, 'dans se associatedWriterchoice'
+            node.xmlInitNode('writer', id = w)
 
 
     def getMonitoringPointType(self):
         """
         Return the type of output for printing listing
         """
-        node = self.node_out.xmlGetNode('probe_recording_frequency_time')
+        node = self.node_out.xmlGetNode('probe_recording_frequency')
         if node != None :
             return 'Frequency_h_x'
         val = self.getMonitoringPointFrequency()
@@ -360,7 +872,7 @@ class OutputControlModel(Model):
         """
         Return the frequency for recording probes
         """
-        f = self.node_out.xmlGetInt('probe_recording_frequency_time')
+        f = self.node_out.xmlGetDouble('probe_recording_frequency_time')
         if f == None:
             f = self.defaultInitialValues()['probe_recording_frequency_time']
             self.setMonitoringPointFrequencyTime(f)

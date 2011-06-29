@@ -185,7 +185,7 @@ class MobileMeshModel(Model):
         """
         self.isOnOff(status)
         typ = ''
-        typ = self.out.getTypePostMeshes()
+        typ = self.out.getWriterTimeDependency("-1")
         self.node_ale['status'] = status
         if status == 'on':
             if typ not in ('10', '11', '12'):
@@ -195,7 +195,7 @@ class MobileMeshModel(Model):
             if typ not in ('0', '1', '2'):
                 typ = '0'
             self.__removeVariablesandProperties()
-        self.out.setTypePostMeshes(typ)
+        self.out.setWriterTimeDependency("-1", 'fixed_mesh')
 
 
     def setSubIterations(self, value):

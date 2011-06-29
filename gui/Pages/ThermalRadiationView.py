@@ -272,11 +272,9 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         if model == 'off':
             self.frameOptions.hide()
             self.line.hide()
-            OutputControlModel(self.case).setDomainBoundaryPostProStatus('off')
         else:
             self.frameOptions.show()
             self.line.show()
-            OutputControlModel(self.case).setDomainBoundaryPostProStatus('on')
 
             if model == 'p-1':
                 self.frameDirection.hide()

@@ -1,3 +1,25 @@
+* 29/06/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
+  Add the possibility for the user to define advanced post-processing,
+  writers and meshes, from the graphical user interface.
+  added routines:
+    src/gui/cs_gui_output.c
+    src/gui/cs_gui_output.h
+  modified routines:
+    src/gui/Makefile.am
+  modified script:
+    gui/Base/XMLinitialize.py
+    gui/Pages/MobileMeshModel.py
+    gui/Pages/OutputControlForm.ui
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+    gui/Pages/OutputSurfacicVariablesView.py
+    gui/Pages/OutputVolumicVariablesView.py
+    gui/Pages/SolutionVerifView.py
+    gui/Pages/ThermalRadiationView.py
+    src/apps/cs_solver.c
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+
 * 29/06/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
   Fix an issue in case of multi-processors coupling with SYRTHES.
   modified routine:
