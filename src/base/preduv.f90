@@ -226,7 +226,7 @@ icliup = iclrtp(iu ,icoef)
 iclivp = iclrtp(iv ,icoef)
 icliwp = iclrtp(iw ,icoef)
 
-if(itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
+if(itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
   iclik  = iclrtp(ik ,icoef)
 else
   iclik = 0
@@ -582,7 +582,7 @@ if(iterns.eq.1) then
 !       doit l'extrapoler en temps ; il va dans TRAVA si on n'extrapole
 !       pas mais qu'on itere sur navsto. Il va dans TRAV si on
 !       n'extrapole pas et qu'on n'itere pas sur navsto.
-if(     (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) &
+if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
    .and. igrhok.eq.1 .and. iterns.eq.1) then
 
   ! Allocate a work array for the gradient calculation

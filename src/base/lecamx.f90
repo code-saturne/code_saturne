@@ -646,7 +646,7 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
   NOMFLU(IV)='fm_v_phase'//CPHASE
   NOMFLU(IW)='fm_w_phase'//CPHASE
   if (itytur.eq.2.and.                                   &
-       (jtytur.eq.2.or.jturb.eq.50) ) then
+       (jtytur.eq.2.or.jtytur.eq.5) ) then
     NOMFLU(IK)='fm_k_phase'//CPHASE
     NOMFLU(IEP)='fm_eps_phase'//CPHASE
   elseif(itytur.eq.2.and.jtytur.eq.3) then
@@ -656,7 +656,7 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IK)='fm_k_phase'//CPHASE
     NOMFLU(IEP)='fm_omega_phase'//CPHASE
   elseif (itytur.eq.3.and.                               &
-       (jtytur.eq.2.or.jturb.eq.50) ) then
+       (jtytur.eq.2.or.jtytur.eq.50) ) then
     NOMFLU(IR11)='fm_k_phase'//CPHASE
     NOMFLU(IR22)='fm_k_phase'//CPHASE
     NOMFLU(IR33)='fm_k_phase'//CPHASE
@@ -680,27 +680,50 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IR13)='fm_k_phase'//CPHASE
     NOMFLU(IR23)='fm_k_phase'//CPHASE
     NOMFLU(IEP)='fm_omega_phase'//CPHASE
-  elseif (iturb.eq.50.and.jtytur.eq.2) then
+  elseif (itytur.eq.5.and.jtytur.eq.2) then
     NOMFLU(IK)='fm_k_phase'//CPHASE
     NOMFLU(IEP)='fm_eps_phase'//CPHASE
     NOMFLU(IPHI)='fm_k_phase'//CPHASE
-    NOMFLU(IFB)='fm_k_phase'//CPHASE
-  elseif (iturb.eq.50.and.jtytur.eq.3) then
+    if(iturb.eq.50) then
+      NOMFLU(IFB)='fm_k_phase'//CPHASE
+    elseif(iturb.eq.51) then
+      NOMFLU(IAL)='fm_k_phase'//CPHASE
+    endif
+  elseif (itytur.eq.5.and.jtytur.eq.3) then
     NOMFLU(IK)='fm_R11_phase'//CPHASE
     NOMFLU(IEP)='fm_eps_phase'//CPHASE
     NOMFLU(IPHI)='fm_R11_phase'//CPHASE
     NOMFLU(IFB)='fm_R11_phase'//CPHASE
+    if(iturb.eq.50) then
+      NOMFLU(IFB)='fm_R11_phase'//CPHASE
+    elseif(iturb.eq.51) then
+      NOMFLU(IAL)='fm_R11_phase'//CPHASE
+    endif
   elseif (iturb.eq.50.and.jturb.eq.50) then
     NOMFLU(IK)='fm_k_phase'//CPHASE
     NOMFLU(IEP)='fm_eps_phase'//CPHASE
     NOMFLU(IPHI)='fm_phi_phase'//CPHASE
     NOMFLU(IFB)='fm_fb_phase'//CPHASE
+  elseif (iturb.eq.51.and.jturb.eq.51) then
+    NOMFLU(IK)='fm_k_phase'//CPHASE
+    NOMFLU(IEP)='fm_eps_phase'//CPHASE
+    NOMFLU(IPHI)='fm_phi_phase'//CPHASE
+    NOMFLU(IAL)='fm_al_phase'//CPHASE
+  elseif (iturb.eq.50.and.jturb.eq.51) then
+    NOMFLU(IK)='fm_k_phase'//CPHASE
+    NOMFLU(IEP)='fm_eps_phase'//CPHASE
+    NOMFLU(IPHI)='fm_phi_phase'//CPHASE
+    NOMFLU(IFB)='fm_al_phase'//CPHASE
+  elseif (iturb.eq.51.and.jturb.eq.50) then
+    NOMFLU(IK)='fm_k_phase'//CPHASE
+    NOMFLU(IEP)='fm_eps_phase'//CPHASE
+    NOMFLU(IPHI)='fm_phi_phase'//CPHASE
+    NOMFLU(IAL)='fm_fb_phase'//CPHASE
   elseif (iturb.eq.50.and.jturb.eq.60) then
     NOMFLU(IK)='fm_k_phase'//CPHASE
     NOMFLU(IEP)='fm_omega_phase'//CPHASE
     NOMFLU(IPHI)='fm_k_phase'//CPHASE
     NOMFLU(IFB)='fm_k_phase'//CPHASE
-
   elseif (iturb.eq.60.and.                               &
        (jtytur.eq.2.or.jturb.eq.50) ) then
     NOMFLU(IK  )='fm_k_phase'//CPHASE
@@ -799,7 +822,7 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
   NOMFLU(IV)='fm_a_v_phase'//CPHASE
   NOMFLU(IW)='fm_a_w_phase'//CPHASE
   if (itytur.eq.2.and.                                   &
-       (jtytur.eq.2.or.jturb.eq.50) ) then
+       (jtytur.eq.2.or.jtytur.eq.5) ) then
     NOMFLU(IK)='fm_a_k_a_phase'//CPHASE
     NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
   elseif(itytur.eq.2.and.jtytur.eq.3) then
@@ -809,7 +832,7 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IK)='fm_a_k_phase'//CPHASE
     NOMFLU(IEP)='fm_a_omega_phase'//CPHASE
   elseif (itytur.eq.3.and.                               &
-       (jtytur.eq.2.or.jturb.eq.50) ) then
+       (jtytur.eq.2.or.jtytur.eq.5) ) then
     NOMFLU(IR11)='fm_a_k_phase'//CPHASE
     NOMFLU(IR22)='fm_a_k_phase'//CPHASE
     NOMFLU(IR33)='fm_a_k_phase'//CPHASE
@@ -833,28 +856,55 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
     NOMFLU(IR13)='fm_a_k_phase'//CPHASE
     NOMFLU(IR23)='fm_a_k_phase'//CPHASE
     NOMFLU(IEP)='fm_a_omega_phase'//CPHASE
-  elseif (iturb.eq.50.and.jtytur.eq.2) then
+  elseif (itytur.eq.5.and.jtytur.eq.2) then
     NOMFLU(IK)='fm_a_k_phase'//CPHASE
     NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
     NOMFLU(IPHI)='fm_a_k_phase'//CPHASE
-    NOMFLU(IFB)='fm_a_k_phase'//CPHASE
-  elseif (iturb.eq.50.and.jtytur.eq.3) then
+    if(iturb.eq.50) then
+      NOMFLU(IFB)='fm_a_k_phase'//CPHASE
+    elseif(iturb.eq.51) then
+      NOMFLU(IAL)='fm_a_k_phase'//CPHASE
+    endif
+  elseif (itytur.eq.5.and.jtytur.eq.3) then
     NOMFLU(IK)='fm_a_R11_phase'//CPHASE
     NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
     NOMFLU(IPHI)='fm_a_R11_phase'//CPHASE
-    NOMFLU(IFB)='fm_a_R11_phase'//CPHASE
+    if(iturb.eq.50) then
+      NOMFLU(IFB)='fm_a_R11_phase'//CPHASE
+    elseif(iturb.eq.51) then
+      NOMFLU(IAL)='fm_a_R11_phase'//CPHASE
+    endif
   elseif (iturb.eq.50.and.jturb.eq.50) then
     NOMFLU(IK)='fm_a_k_phase'//CPHASE
     NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
     NOMFLU(IPHI)='fm_a_phi_phase'//CPHASE
     NOMFLU(IFB)='fm_a_fb_phase'//CPHASE
-  elseif (iturb.eq.50.and.jturb.eq.60) then
+  elseif (iturb.eq.51.and.jturb.eq.51) then
+    NOMFLU(IK)='fm_a_k_phase'//CPHASE
+    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
+    NOMFLU(IPHI)='fm_a_phi_phase'//CPHASE
+    NOMFLU(IAL)='fm_a_al_phase'//CPHASE
+  elseif (iturb.eq.50.and.jturb.eq.51) then
+    NOMFLU(IK)='fm_a_k_phase'//CPHASE
+    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
+    NOMFLU(IPHI)='fm_a_phi_phase'//CPHASE
+    NOMFLU(IFB)='fm_a_al_phase'//CPHASE
+  elseif (iturb.eq.51.and.jturb.eq.50) then
+    NOMFLU(IK)='fm_a_k_phase'//CPHASE
+    NOMFLU(IEP)='fm_a_eps_phase'//CPHASE
+    NOMFLU(IPHI)='fm_a_phi_phase'//CPHASE
+    NOMFLU(IAL)='fm_a_fb_phase'//CPHASE
+  elseif (itytur.eq.5.and.jturb.eq.60) then
     NOMFLU(IK)='fm_a_k_phase'//CPHASE
     NOMFLU(IEP)='fm_a_omega_phase'//CPHASE
     NOMFLU(IPHI)='fm_a_k_phase'//CPHASE
-    NOMFLU(IFB)='fm_a_k_phase'//CPHASE
+    if(iturb.eq.50) then
+      NOMFLU(IFB)='fm_a_k_phase'//CPHASE
+    elseif(iturb.eq.51) then
+      NOMFLU(IAL)='fm_a_k_phase'//CPHASE
+    endif
   elseif (iturb.eq.60.and.                               &
-       (jtytur.eq.2.or.jturb.eq.50) ) then
+       (jtytur.eq.2.or.jtytur.eq.5) ) then
     NOMFLU(IK  )='fm_a_k_a_phase'//CPHASE
     NOMFLU(IOMG)='fm_a_eps_phase'//CPHASE
   elseif(iturb.eq.60.and.jtytur.eq.3) then
@@ -973,7 +1023,7 @@ if (nfabok.eq.1) then
   !     Pour un calcul k-eps, on peut recuperer les CL d'un calcul k-eps
   !     ou d'un calcul v2f
   if (itytur.eq.2.and.                                   &
-       (jtytur.eq.2.or.jturb.eq.50)) then
+       (jtytur.eq.2.or.jtytur.eq.5)) then
     NOMCLI(IK)='_k_phase'//CPHASE
     NOMCLI(IEP)='_eps_phase'//CPHASE
   elseif (itytur.eq.3.and.jtytur.eq.3) then
@@ -984,24 +1034,28 @@ if (nfabok.eq.1) then
     NOMCLI(IR13)='_R13_phase'//CPHASE
     NOMCLI(IR23)='_R23_phase'//CPHASE
     NOMCLI(IEP)='_eps_phase'//CPHASE
-  elseif (iturb.eq.50.and.jturb.eq.50) then
+  elseif (itytur.eq.5.and.jtytur.eq.5) then
     NOMCLI(IK)='_k_phase'//CPHASE
     NOMCLI(IEP)='_eps_phase'//CPHASE
     NOMCLI(IPHI)='_phi_phase'//CPHASE
-    NOMCLI(IFB)='_fb_phase'//CPHASE
+    if(iturb.eq.50 .and. jturb.eq.50) then
+      NOMCLI(IFB)='_fb_phase'//CPHASE
+    elseif(iturb.eq.51 .and. jturb.eq.51) then
+      NOMCLI(IAL)='_al_phase'//CPHASE
+    endif
   elseif (iturb.eq.60.and.jturb.eq.60) then
     NOMCLI(IK)='_k_phase'//CPHASE
     NOMCLI(IOMG)='_omega_phase'//CPHASE
     !     On peut aussi recuperer les CL de k et eps pour un calcul v2f suite
     !     d'un calcul k-eps
-  elseif (iturb.eq.50.and.jtytur.eq.2) then
+  elseif (itytur.eq.5.and.jtytur.eq.2) then
     NOMCLI(IK)='_k_phase'//CPHASE
     NOMCLI(IEP)='_eps_phase'//CPHASE
     !     On peut aussi recuperer les CL de k pour un calcul k-eps, v2f ou k-omega suite
     !     d'un calcul k-eps, v2f ou k-omega et qui n'est pas deja un des cas ci-dessus.
-  elseif ( (itytur.eq.2 .or. iturb.eq.50          &
+  elseif ( (itytur.eq.2 .or. itytur.eq.50          &
        .or. iturb.eq.60)  .and. (jtytur.eq.2    &
-       .or. jturb.eq.50 .or. jturb.eq.60) ) then
+       .or. jtytur.eq.5 .or. jturb.eq.60) ) then
     NOMCLI(IK)='_k_phase'//CPHASE
   endif
   if(nscal.gt.0) then
@@ -1137,7 +1191,7 @@ if(isto2t.gt.0) then
 
   !     Keps suite de keps ou v2f
   if(itytur.eq.2.and.                                    &
-       (jtytur.eq.2.or.jturb.eq.50)) then
+       (jtytur.eq.2.or.jtytur.eq.5)) then
     iptsta = ipproc(itstua)
 
     RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE
@@ -1213,7 +1267,7 @@ if(isto2t.gt.0) then
 
     !     Rij suite de keps ou de v2f, on utilise 2/3 de tsk
   elseif(itytur.eq.3.and.                                &
-       (jtytur.eq.2.or.jturb.eq.50)) then
+       (jtytur.eq.2.or.jtytur.eq.50)) then
     iptsta = ipproc(itstua)
 
     RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE
@@ -1277,7 +1331,7 @@ if(isto2t.gt.0) then
 
     !     v2f suite de keps : On ne relit que les TS de k et eps
     !     on laisse 0 pour phi et f_barre (valeur mise dans iniva0)
-  elseif(iturb.eq.50.and.jtytur.eq.2) then
+  elseif(itytur.eq.5.and.jtytur.eq.2) then
     iptsta = ipproc(itstua)
 
     RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE
@@ -1353,8 +1407,7 @@ if(isto2t.gt.0) then
 
     ilu = ilu + 1
 
-    !     v2f suite de v2f
-  elseif(iturb.eq.50.and.jturb.eq.50) then
+  elseif(itytur.eq.5.and.jtytur.eq.5) then
     iptsta = ipproc(itstua)
 
     RUBRIQ = 'tsource_tu_ce_k_phase'//CPHASE

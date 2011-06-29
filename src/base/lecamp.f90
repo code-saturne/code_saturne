@@ -491,9 +491,9 @@ nberro=nberro+ierror
 
 if (itytph.eq.2) then
 
-  !     * k-e ou v2f -> k-e
+  !     * k-e ou v2f (phi-fbar ou BL-v2/k) -> k-e
 
-  if(jtytph.eq.2 .or. jturph.eq.50) then
+  if(jtytph.eq.2 .or. jtytph.eq.5) then
 
     itysup = 1
     nbval  = 1
@@ -576,7 +576,7 @@ if (itytph.eq.2) then
 
 elseif(itytph.eq.3) then
 
-  !     * k-e ou v2f -> rij
+  !     * k-e ou v2f (phi-fbar ou BL-v2/k) -> rij
 
   if (jtytph.eq.2 .or. jturph.eq.50) then
 
@@ -678,10 +678,11 @@ elseif(itytph.eq.3) then
 
   !   -- Le nouveau calcul est en v2f
 
-elseif(iturph.eq.50) then
+  !   -- Le nouveau calcul est en v2f (phi-fbar ou BL-v2/k)
 
-  !     * k-e -> v2f
+elseif(itytph.eq.5) then
 
+  !     * k-e -> v2f (phi-fbar ou BL-v2/k)
   if(jtytph.eq.2) then
 
     itysup = 1
@@ -699,7 +700,7 @@ elseif(iturph.eq.50) then
     nberro=nberro+ierror
     !     On laisse pour phi et fb les initialisations de iniva0
 
-    !     * rij -> v2f
+    !     * rij -> v2f (phi-fbar ou BL-v2/k)
 
   elseif(jtytph.eq.3) then
 
@@ -739,9 +740,9 @@ elseif(iturph.eq.50) then
     !     (le v2 qui intervient dans phi n'est pas vraiment une composante de Rij
     !      et qui plus est, on ne saurait pas quelle composante prendre ...)
 
-    !     * v2f -> v2f
+    !     * v2f (phi-fbar ou BL-v2/k) -> v2f (phi-fbar ou BL-v2/k)
 
-  elseif(jturph.eq.50) then
+  elseif(jtytph.eq.5) then
 
     itysup = 1
     nbval  = 1

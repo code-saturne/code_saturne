@@ -466,12 +466,16 @@ do ifac = 1, nfabor
           rcodcl(ifac,ir23,1) = 0.d0
           rcodcl(ifac,iep,1)  = xeent
 
-        elseif (iturb.eq.50) then
+        elseif (itytur.eq.5) then
 
           rcodcl(ifac,ik,1)   = xkent
           rcodcl(ifac,iep,1)  = xeent
           rcodcl(ifac,iphi,1) = d2s3
-          rcodcl(ifac,ifb,1)  = 0.d0
+          if(iturb.eq.50) then
+            rcodcl(ifac,ifb,1)  = 0.d0
+          elseif(iturb.eq.51) then
+            rcodcl(ifac,ial,1)  = 0.d0
+          endif
 
         elseif (iturb.eq.60) then
 

@@ -463,6 +463,7 @@ ir13   = 0
 ir23   = 0
 iphi   = 0
 ifb    = 0
+ial    = 0
 inusa  = 0
 
 do iscal = 1, nscamx
@@ -1151,6 +1152,19 @@ cv2fc2 = 0.3d0
 cv2fct = 6.d0
 cv2fcl = 0.25d0
 cv2fet = 110.d0
+
+!   pour le v2f BL-v2/k (previously known as v2-f phi-alpha, hence the cpal**)
+cpale1 = 1.44d0
+cpale2 = 1.83d0
+cpale3 = 2.3d0
+cpale4 = 0.4d0
+cpalse = 1.5d0
+cpalmu = 0.22d0
+cpalct = 4.d0
+cpalcl = 0.164d0
+cpalet = 75.d0
+cpalc1 = 1.7d0
+cpalc2 = 0.9d0
 
 !   pour le modele k-omega sst
 ckwsk1 = 1.d0/0.85d0

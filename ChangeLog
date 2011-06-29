@@ -1,3 +1,47 @@
+* 29/06/2011 - Flavien Billard <flavien.billard@manchester.ac.uk>
+  New turbulence model in the framework of the v2-f models.
+  This is a "blended" v2f (iturb = 51).
+  added routines:
+    src/turb/tsepls.f90
+    src/turb/visv2f.f90
+  modified script:
+    src/turb/Makefile.am
+  modified routines:
+    src/base/clptrg.f90
+    src/base/clptur.f90
+    src/base/condli.f90
+    src/base/covofi.f90
+    src/base/cscini.f90
+    src/base/cstphy.f90
+    src/base/ecrava.f90
+    src/base/ecrlis.f90
+    src/base/impini.f90
+    src/base/iniini.f90
+    src/base/initi2.f90
+    src/base/iniusi.f90
+    src/base/iniva0.f90
+    src/base/inivar.f90
+    src/base/lecamp.f90
+    src/base/lecamx.f90
+    src/base/memtri.f90
+    src/base/modini.f90
+    src/base/numvar.f90
+    src/base/phyvar.f90
+    src/base/preduv.f90
+    src/base/predvv.f90
+    src/base/stdtcl.f90
+    src/base/tridim.f90
+    src/base/typecl.f90
+    src/base/varpos.f90
+    src/base/vericl.f90
+    src/base/verini.f90
+    src/gui/cs_gui.c
+    src/gui/cs_gui.h
+    src/turb/clpv2f.f90
+    src/turb/resv2f.f90
+    src/turb/turbke.f90
+    users/base/usini1.f90
+
 * 29/06/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
   Add the possibility for the user to define advanced post-processing,
   writers and meshes, from the graphical user interface.

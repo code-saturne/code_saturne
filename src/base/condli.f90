@@ -175,7 +175,7 @@ integer          ipcvis, ipcvst, ipccp , ipcvsl, ipccv
 integer          iclpr , iclu  , iclv  , iclw  , iclk  , iclep
 integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
-integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
+integer          icluf , iclvf , iclwf , iclphi, iclfb , iclal , iclomg
 integer          iclvar, iclvaf, icluma, iclvma, iclwma
 integer          nswrgp, imligp, iwarnp, icliva
 
@@ -392,7 +392,11 @@ elseif(iturb.eq.50) then
   iclk   = iclrtp(ik ,icoef)
   iclep  = iclrtp(iep,icoef)
   iclphi = iclrtp(iphi,icoef)
-  iclfb  = iclrtp(ifb,icoef)
+  if(iturb.eq.50) then
+    iclfb  = iclrtp(ifb,icoef)
+  elseif(iturb.eq.51) then
+    iclal  = iclrtp(ial,icoef)
+  endif
 elseif(iturb.eq.60) then
   iclk   = iclrtp(ik ,icoef)
   iclomg = iclrtp(iomg,icoef)
@@ -1196,44 +1200,9 @@ elseif(itytur.eq.3) then
 
   enddo
 
-  ! ---> SPALART ALLMARAS
+  ! ---> MODELES TYPE V2F (PHI_BAR et BL-V2/K)
 
-elseif(iturb.eq.70) then
-
-  ivar   = inusa
-  iclvar = iclnu
-
-  do ifac = 1, nfabor
-
-    iel = ifabor(ifac)
-
-    ! --- Proprietes physiques
-    visclc = propce(iel,ipcvis)
-    flumbf = propfb(ifac,ipprob(ifluma(inusa)))
-
-    ! --- Grandeurs geometriques
-    distbf = distb(ifac)
-    hint = visclc/distbf
-
-    !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
-    if( icodcl(ifac,ivar).eq.1) then
-      hext = rcodcl(ifac,ivar,2)
-      pimp = rcodcl(ifac,ivar,1)
-      coefa(ifac,iclvar) = hext*pimp/(hint +hext)
-      coefb(ifac,iclvar) = hint     /(hint +hext)
-      !      C.L DE TYPE FLUX
-    elseif(                                                     &
-         icodcl(ifac,ivar).eq.3)then
-      coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
-      coefb(ifac,iclvar) = 1.d0
-    endif
-
-  enddo
-
-
-  ! ---> V2F
-
-elseif(iturb.eq.50) then
+elseif(itytur.eq.5) then
 
   !   --> K, EPSILON ET PHI
   do ii = 1, 3
@@ -1273,29 +1242,98 @@ elseif(iturb.eq.50) then
         coefa(ifac,iclvar) = hext*pimp/(hint +hext)
         coefb(ifac,iclvar) = hint     /(hint +hext)
         !      C.L DE TYPE FLUX
-
       elseif(icodcl(ifac,ivar).eq.3)then
         coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
         coefb(ifac,iclvar) = 1.d0
       endif
+
     enddo
 
   enddo
 
-  !   --> FB
+  if(iturb.eq.50) then
 
-  ivar   = ifb
-  iclvar = iclfb
+    !   --> FB
+
+    ivar   = ifb
+    iclvar = iclfb
+
+    do ifac = 1, nfabor
+
+      ! --- Proprietes physiques
+      visclc = 1.d0
+      flumbf = propfb(ifac,ipprob(ifluma(ifb)))
+
+      ! --- Grandeurs geometriques
+      distbf = distb(ifac)
+
+      hint = visclc/distbf
+
+      !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+      if( icodcl(ifac,ivar).eq.1) then
+        hext = rcodcl(ifac,ivar,2)
+        pimp = rcodcl(ifac,ivar,1)
+        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+        coefb(ifac,iclvar) = hint     /(hint +hext)
+        !      C.L DE TYPE FLUX
+      elseif(icodcl(ifac,ivar).eq.3)then
+        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+        coefb(ifac,iclvar) = 1.d0
+      endif
+
+    enddo
+
+  elseif(iturb.eq.51) then
+
+    !   --> ALPHA
+
+    ivar   = ial
+    iclvar = iclal
+
+    do ifac = 1, nfabor
+
+! --- Proprietes physiques
+      visclc = 1.d0
+      flumbf = propfb(ifac,ipprob(ifluma(ial)))
+
+! --- Grandeurs geometriques
+      distbf = distb(ifac)
+
+      hint = visclc/distbf
+
+!      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
+      if( icodcl(ifac,ivar).eq.1) then
+        hext = rcodcl(ifac,ivar,2)
+        pimp = rcodcl(ifac,ivar,1)
+        coefa(ifac,iclvar) = hext*pimp/(hint +hext)
+        coefb(ifac,iclvar) = hint     /(hint +hext)
+!      C.L DE TYPE FLUX
+      elseif(icodcl(ifac,ivar).eq.3)then
+        coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
+        coefb(ifac,iclvar) = 1.d0
+      endif
+
+    enddo
+
+  endif
+
+  ! ---> SPALART ALLMARAS
+
+elseif(iturb.eq.70) then
+
+  ivar   = inusa
+  iclvar = iclnu
 
   do ifac = 1, nfabor
 
+    iel = ifabor(ifac)
+
     ! --- Proprietes physiques
-    visclc = 1.d0
-    flumbf = propfb(ifac,ipprob(ifluma(ifb)))
+    visclc = propce(iel,ipcvis)
+    flumbf = propfb(ifac,ipprob(ifluma(inusa)))
 
     ! --- Grandeurs geometriques
     distbf = distb(ifac)
-
     hint = visclc/distbf
 
     !      C.L DE TYPE DIRICHLET AVEC OU SANS COEFFICIENT D'ECHANGE
@@ -1305,7 +1343,8 @@ elseif(iturb.eq.50) then
       coefa(ifac,iclvar) = hext*pimp/(hint +hext)
       coefb(ifac,iclvar) = hint     /(hint +hext)
       !      C.L DE TYPE FLUX
-    elseif(icodcl(ifac,ivar).eq.3)then
+    elseif(                                                     &
+         icodcl(ifac,ivar).eq.3)then
       coefa(ifac,iclvar) = -rcodcl(ifac,ivar,3)/hint
       coefb(ifac,iclvar) = 1.d0
     endif

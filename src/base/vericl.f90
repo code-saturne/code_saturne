@@ -127,12 +127,12 @@ integer          nstunu, nstonu
 integer          nstusc
 integer          iis, icodcu, icodcv, icodcw, icodck, icodce
 integer          icodcn
-integer          icodcp, icodcf, icodom
+integer          icodcp, icodcf, icodca, icodom
 integer          icor11, icor22, icor33, icor12, icor13, icor23
 integer          ipp, iokcod, iok
 integer          ippprp, ippuip, ippvip, ippwip, ippepp, ippkip
 integer          ipp11p, ipp22p, ipp33p, ipp12p, ipp13p, ipp23p
-integer          ippphp, ippfbp, ippomg
+integer          ippphp, ippfbp, ippalp, ippomg
 integer          ippnup
 
 !===============================================================================
@@ -246,11 +246,15 @@ elseif(itytur.eq.3) then
   ipp13p = ipprtp(ir13)
   ipp23p = ipprtp(ir23)
   ippepp = ipprtp(iep)
-elseif(iturb.eq.50) then
+elseif(itytur.eq.5) then
   ippkip = ipprtp(ik )
   ippepp = ipprtp(iep)
   ippphp = ipprtp(iphi)
-  ippfbp = ipprtp(ifb)
+  if(iturb.eq.50) then
+    ippfbp = ipprtp(ifb)
+  elseif(iturb.eq.51) then
+    ippalp = ipprtp(ial)
+  endif
 elseif(iturb.eq.60) then
   ippkip = ipprtp(ik )
   ippomg = ipprtp(iomg)
@@ -470,7 +474,46 @@ elseif (iturb.eq.50) then
 
   enddo
 
-  ! --- Conditions admissibles pour k et omega
+! --- Conditions admissibles pour k, epsilon, phi et alpha
+elseif (iturb.eq.51) then
+
+  do ifac = 1, nfabor
+
+    if((icodcl(ifac,ik ).ne. 1.and.                          &
+        icodcl(ifac,ik ).ne. 3.and.                          &
+        icodcl(ifac,ik ).ne. 5.and.                          &
+        icodcl(ifac,ik ).ne. 6     ).or.                     &
+       (icodcl(ifac,iep).ne. 1.and.                          &
+        icodcl(ifac,iep).ne. 3.and.                          &
+        icodcl(ifac,iep).ne. 5.and.                          &
+        icodcl(ifac,iep).ne. 6     ).or.                     &
+       (icodcl(ifac,iphi).ne. 1.and.                          &
+        icodcl(ifac,iphi).ne. 3.and.                          &
+        icodcl(ifac,iphi).ne. 5.and.                          &
+        icodcl(ifac,iphi).ne. 6     ).or.                     &
+        (icodcl(ifac,ial).ne. 1.and.                          &
+        icodcl(ifac,ial).ne. 3.and.                          &
+        icodcl(ifac,ial).ne. 5.and.                          &
+        icodcl(ifac,ial).ne. 6     ) )then
+      chaine=nomvar(ippkip)
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+                        icodcl(ifac,ik )
+      chaine=nomvar(ippepp)
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+                        icodcl(ifac,iep)
+      chaine=nomvar(ippphp)
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+                        icodcl(ifac,iphi )
+      chaine=nomvar(ippalp)
+      write(nfecra,1010)ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),&
+                        icodcl(ifac,ial)
+      nstov2 = nstov2 + 1
+
+    endif
+
+  enddo
+
+! --- Conditions admissibles pour k et omega
 elseif (iturb.eq.60) then
 
   do ifac = 1, nfabor
@@ -574,11 +617,15 @@ elseif(itytur.eq.3) then
   ipp13p = ipprtp(ir13)
   ipp23p = ipprtp(ir23)
   ippepp = ipprtp(iep)
-elseif(iturb.eq.50) then
+elseif(itytur.eq.5) then
   ippkip = ipprtp(ik )
   ippepp = ipprtp(iep)
   ippphp = ipprtp(iphi)
-  ippfbp = ipprtp(ifb)
+  if(iturb.eq.50) then
+    ippfbp = ipprtp(ifb)
+  elseif(iturb.eq.51) then
+    ippalp = ipprtp(ial)
+  endif
 elseif(iturb.eq.60) then
   ippkip = ipprtp(ik )
   ippomg = ipprtp(iomg)
@@ -801,6 +848,72 @@ elseif(iturb.eq.50 ) then
         write(nfecra,1030)                                        &
              ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),                &
              icodcl(ifac,ifb),icodcu,icodcv,icodcw
+        nstuv2 = nstuv2 + 1
+
+      endif
+
+    endif
+
+  enddo
+
+elseif(iturb.eq.51 ) then
+
+  do ifac = 1, nfabor
+
+    icodcu = icodcl(ifac,iu)
+    icodcv = icodcl(ifac,iv)
+    icodcw = icodcl(ifac,iw)
+    icodck = icodcl(ifac,ik)
+    icodce = icodcl(ifac,iep)
+    icodcp = icodcl(ifac,iphi)
+    icodca = icodcl(ifac,ial)
+
+    if( (icodcu.eq.5 .or. icodcv.eq.5 .or. icodcw.eq.5 .or.     &
+         icodck.eq.5 .or. icodce.eq.5 .or. icodcp.eq.5 .or.     &
+         icodca.eq.5 ) .and.                                    &
+         (icodcu.ne.5 .or. icodcv.ne.5 .or. icodcw.ne.5 .or.     &
+         icodck.ne.5 .or. icodce.ne.5 .or. icodcp.ne.5 .or.     &
+         icodca.ne.5 )                    ) then
+      chaine=nomvar(ippkip)
+      write(nfecra,1030)                                        &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+           icodcl(ifac,ik),icodcu,icodcv,icodcw
+      chaine=nomvar(ippepp)
+      write(nfecra,1030)                                        &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+           icodcl(ifac,iep),icodcu,icodcv,icodcw
+      chaine=nomvar(ippphp)
+      write(nfecra,1030)                                        &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+           icodcl(ifac,iphi),icodcu,icodcv,icodcw
+      chaine=nomvar(ippalp)
+      write(nfecra,1030)                                        &
+           ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+           icodcl(ifac,ial),icodcu,icodcv,icodcw
+      nstuv2 = nstuv2 + 1
+
+      if( (icodcu.eq.6 .or. icodcv.eq.6 .or. icodcw.eq.6 .or.     &
+           icodck.eq.6 .or. icodce.eq.6 .or. icodcp.eq.6 .or.     &
+           icodca.eq.6 ) .and.                                    &
+           (icodcu.ne.6 .or. icodcv.ne.6 .or. icodcw.ne.6 .or.     &
+           icodck.ne.6 .or. icodce.ne.6 .or. icodcp.ne.6 .or.     &
+           icodca.ne.6 )                    ) then
+        chaine=nomvar(ippkip)
+        write(nfecra,1030)                                        &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+             icodcl(ifac,ik),icodcu,icodcv,icodcw
+        chaine=nomvar(ippepp)
+        write(nfecra,1030)                                        &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+             icodcl(ifac,iep),icodcu,icodcv,icodcw
+        chaine=nomvar(ippphp)
+        write(nfecra,1030)                                        &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+             icodcl(ifac,iphi),icodcu,icodcv,icodcw
+        chaine=nomvar(ippalp)
+        write(nfecra,1030)                                        &
+             ifac,iprfml(ifmfbr(ifac),1),chaine(1:8),          &
+             icodcl(ifac,ial),icodcu,icodcv,icodcw
         nstuv2 = nstuv2 + 1
 
       endif

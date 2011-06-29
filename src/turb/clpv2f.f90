@@ -69,6 +69,7 @@ use entsor
 use numvar
 use cstnum
 use parall
+use optcal
 
 !===============================================================================
 
@@ -85,12 +86,18 @@ double precision rtp(ncelet,nvar)
 
 integer          iel, ipp
 integer          nclpmx, nclpmn
-double precision xphi, vmin, vmax, var
+double precision xphi, xal, vmin, vmax, var
 
 !===============================================================================
 
 !===============================================================================
-!  ---> Stockage Min et Max pour listing
+!  1. Pour le phi-fbar et BL-v2/k model, reperage des valeurs de phi
+!     superieures a 2 et clipping de phi en valeur absolue
+!     pour les valeurs negatives
+!===============================================================================
+
+!===============================================================================
+!     1.a Stockage Min et Max pour listing
 !===============================================================================
 
 ipp = ipprtp(iphi)
@@ -112,7 +119,7 @@ varmna(ipp) = vmin
 varmxa(ipp) = vmax
 
 !==============================================================================
-!  ---> Reperage des valeurs superieures a 2, pour affichage seulement
+!     1.b Reperage des valeurs superieures a 2, pour affichage seulement
 !==============================================================================
 
 if (iwaphi.ge.2) then
@@ -126,7 +133,7 @@ if (iwaphi.ge.2) then
 endif
 
 !==============================================================================
-!  ---> Clipping en valeur absolue pour les valeurs negatives
+!     1.c Clipping en valeur absolue pour les valeurs negatives
 !==============================================================================
 
 nclpmn = 0
@@ -140,6 +147,64 @@ enddo
 if(irangp.ge.0) call parcpt(nclpmn)
                 !==========
 iclpmn(ipp) = nclpmn
+
+!===============================================================================
+!  2. Pour le BL-v2/k model, clipping de alpha a 0 pour les valeurs negatives
+!     et a 1 pour les valeurs superieurs a 1
+!===============================================================================
+
+if(iturb.eq.51) then
+
+!===============================================================================
+!     2.a Stockage Min et Max pour listing
+!===============================================================================
+
+  ipp = ipprtp(ial)
+
+  vmin =  grand
+  vmax = -grand
+  do iel = 1, ncel
+    var = rtp(iel,ial)
+    vmin = min(vmin,var)
+    vmax = max(vmax,var)
+  enddo
+  if (irangp.ge.0) then
+    call parmin(vmin)
+    !==========
+    call parmax(vmax)
+    !==========
+  endif
+  varmna(ipp) = vmin
+  varmxa(ipp) = vmax
+
+!==============================================================================
+!     2.b Clipping a 0 pour les valeurs negatives et a 1 pour les valeurs
+!         superieures a 1
+!==============================================================================
+
+  nclpmn = 0
+  nclpmx = 0
+  do iel = 1, ncel
+    xal = rtp(iel,ial)
+    if (xal.lt.0.d0) then
+      rtp(iel,ial) = 0.d0
+      nclpmn = nclpmn + 1
+    endif
+    if (xal.gt.1.d0) then
+      rtp(iel,ial) = 1.d0
+      nclpmx = nclpmx + 1
+    endif
+  enddo
+  if(irangp.ge.0) then
+    call parcpt(nclpmn)
+    !==========
+    call parcpt(nclpmx)
+    !==========
+  endif
+  iclpmn(ipp) = nclpmn
+  iclpmx(ipp) = nclpmx
+
+endif
 
 !===============================================================================
 ! ---> Formats

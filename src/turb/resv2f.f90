@@ -121,7 +121,7 @@ integer          init  , ifac  , iel   , inc   , iccocg
 integer          ivar, ipp
 integer          iiun
 integer          iclvar, iclvaf
-integer          iclikp, iclphi, iclfbp
+integer          iclikp, iclphi, iclfbp, iclalp
 integer          ipcrom, ipcroo, ipcvis, ipcvlo, ipcvst, ipcvso
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, iphydp
@@ -134,7 +134,8 @@ double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision tuexpe, thets , thetv , thetap, thetp1
 double precision d2s3, d1s4, d3s2
-double precision xk, xe, xnu, xrom, ttke, ttmin, llke, llmin
+double precision xk, xe, xnu, xrom, ttke, ttmin, llke, llmin, tt
+double precision fhomog
 
 double precision rvoid(1)
 
@@ -167,7 +168,11 @@ iflmab = ipprob(ifluma(iu))
 
 iclikp = iclrtp(ik,icoef)
 iclphi = iclrtp(iphi,icoef)
-iclfbp = iclrtp(ifb,icoef)
+if(iturb.eq.50) then
+  iclfbp = iclrtp(ifb,icoef)
+elseif(iturb.eq.51) then
+  iclalp = iclrtp(ial,icoef)
+endif
 
 if(isto2t.gt.0) then
   iptsta = ipproc(itstua)
@@ -236,12 +241,18 @@ enddo
 deallocate(gradp, gradk)
 
 !===============================================================================
-! 3. RESOLUTION DE L'EQUATION DE F_BARRE
+! 3. RESOLUTION DE L'EQUATION DE F_BARRE / ALPHA
 !===============================================================================
 
-ivar = ifb
-iclvar = iclfbp
-iclvaf = iclfbp
+if(iturb.eq.50) then
+  ivar = ifb
+  iclvar = iclfbp
+  iclvaf = iclfbp
+elseif(iturb.eq.51) then
+  ivar = ial
+  iclvar = iclalp
+  iclvaf = iclalp
+endif
 ipp    = ipprtp(ivar)
 
 if(iwarni(ivar).ge.1) then
@@ -289,7 +300,7 @@ if(isto2t.gt.0) then
 !       Sauvegarde pour echange
     tuexpe = propce(iel,iptsta+2)
 !       Pour la suite et le pas de temps suivant
-!       On met un signe "-" car on résout en fait "-div(grad fb) = ..."
+!       On met un signe "-" car on résout en fait "-div(grad fb/alpha) = ..."
     propce(iel,iptsta+2) = - smbr(iel)
 !       Second membre du pas de temps precedent
 !       on implicite le terme source utilisateur (le reste)
@@ -299,7 +310,7 @@ if(isto2t.gt.0) then
   enddo
 else
   do iel = 1, ncel
-!       On met un signe "-" car on résout en fait "-div(grad fb) = ..."
+!       On met un signe "-" car on résout en fait "-div(grad fb/alpha) = ..."
 !       On resout par gradient conjugue, donc on n'impose pas le signe
 !          de ROVSDT
     smbr(iel)   = -rovsdt(iel)*rtpa(iel,ivar) - smbr(iel)
@@ -309,11 +320,14 @@ endif
 
 
 !===============================================================================
-! 3.2 TERME SOURCE DE F_BARRE
+! 3.2 TERME SOURCE DE F_BARRE/ALPHA
+!   Pour F_BARRE (PHI_FBAR)
 !     SMBR=1/L^2*(f_b + 1/T(C1-1)(phi-2/3) - C2*Pk/k/rho
 !     -2*nu/k*grad_phi*grad_k -nu*div(grad(phi)) )
+!   Pour ALPHA (BL-V2/K)
+!     SMBR=1/L^2*(alpha^3 - 1)
 !  En fait on met un signe "-" car l'eq resolue est
-!    -div(grad f_b) = SMBR
+!    -div(grad f_b/alpha) = SMBR
 !===============================================================================
 
 !     On calcule le terme en -VOLUME*div(grad(phi)) par itrgrp,
@@ -364,13 +378,23 @@ do iel=1,ncel
   xe = rtpa(iel,iep)
   xnu  = propce(iel,ipcvlo)/propce(iel,ipcroo)
   ttke = xk / xe
-  ttmin = cv2fct*sqrt(xnu/xe)
-  w3(iel) = max(ttke,ttmin)
+  if(iturb.eq.50) then
+    ttmin = cv2fct*sqrt(xnu/xe)
+    w3(iel) = max(ttke,ttmin)
+  elseif(iturb.eq.51) then
+    ttmin = cpalct*sqrt(xnu/xe)
+    w3(iel) = sqrt(ttke**2 + ttmin**2)
+  endif
 
   xnu  = propce(iel,ipcvis)/propce(iel,ipcrom)
   llke = xk**d3s2/xe
-  llmin = cv2fet*(xnu**3/xe)**d1s4
-  w4(iel) = ( cv2fcl*max(llke,llmin) )**2
+  if(iturb.eq.50) then
+    llmin = cv2fet*(xnu**3/xe)**d1s4
+    w4(iel) = ( cv2fcl*max(llke,llmin) )**2
+  elseif(iturb.eq.51) then
+    llmin = cpalet*(xnu**3/xe)**d1s4
+    w4(iel) = cpalcl**2*(llke**2 + llmin**2)
+  endif
 enddo
 
 !     Terme explicite, stocke temporairement dans W5
@@ -381,10 +405,14 @@ do iel = 1, ncel
     xnu  = propce(iel,ipcvlo)/xrom
     xk = rtpa(iel,ik)
     xe = rtpa(iel,iep)
-    w5(iel) = - volume(iel)*                                      &
-         ( (cv2fc1-1.d0)*(rtpa(iel,iphi)-d2s3)/w3(iel)          &
-           -cv2fc2*prdv2f(iel)/xrom/xk                            &
-           -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
+    if(iturb.eq.50) then
+      w5(iel) = - volume(iel)*                                    &
+           ( (cv2fc1-1.d0)*(rtpa(iel,iphi)-d2s3)/w3(iel)          &
+             -cv2fc2*prdv2f(iel)/xrom/xk                          &
+             -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
+    elseif(iturb.eq.51) then
+      w5(iel) = volume(iel)
+    endif
 enddo
 !     Si on extrapole les T.S : PROPCE
 if(isto2t.gt.0) then
@@ -403,7 +431,11 @@ endif
 
 !     Terme implicite
 do iel = 1, ncel
-  smbr(iel) = ( - volume(iel)*rtpa(iel,ifb) + smbr(iel) ) / w4(iel)
+  if(iturb.eq.50) then
+    smbr(iel) = ( - volume(iel)*rtpa(iel,ifb) + smbr(iel) ) / w4(iel)
+  elseif(iturb.eq.51) then
+    smbr(iel) = ( - volume(iel)*rtpa(iel,ial) + smbr(iel) ) / w4(iel)
+  endif
 enddo
 
 ! ---> Matrice
@@ -420,7 +452,7 @@ enddo
 
 
 !===============================================================================
-! 3.3 RESOLUTION EFFECTIVE DE L'EQUATION DE F_BARRE
+! 3.3 RESOLUTION EFFECTIVE DE L'EQUATION DE F_BARRE/ALPHA
 !===============================================================================
 
 
@@ -598,18 +630,39 @@ enddo
 
 !===============================================================================
 ! 4.4 TERME SOURCE DE PHI
+!     PHI_FBAR:
 !     SMBR=rho*f_barre - phi/k*Pk +2/k*mu_t/sigmak*grad_phi*grad_k
+!     BL-V2/K:
+!     SMBR=rho*alpha*f_h + rho*(1-alpha^p)*f_w - phi/k*Pk
+!          +2/k*mu_t/sigmak*grad_phi*grad_k
+!        with f_w=-ep/2*phi/k and f_h=1/T*(C1-1+C2*Pk/ep/rho)*(2/3-phi)
 !===============================================================================
 
 !     Terme explicite, stocke temporairement dans W2
 
 do iel = 1, ncel
-!   Le terme en f_barre est pris en RTP et pas en RTPA ... a priori meilleur
-!  Rq : si on reste en RTP, il faut modifier le cas de l'ordre 2 (qui
-!       necessite RTPA pour l'extrapolation).
-  w2(iel)   =  volume(iel)*                                       &
-       ( propce(iel,ipcroo)*rtp(iel,ifb)                       &
-         +2.d0/rtpa(iel,ik)*propce(iel,ipcvso)/sigmak*w1(iel) )
+  xk = rtpa(iel,ik)
+  xe = rtpa(iel,iep)
+  xrom = propce(iel,ipcroo)
+  xnu  = propce(iel,ipcvlo)/xrom
+  if(iturb.eq.50) then
+!     Le terme en f_barre est pris en RTP et pas en RTPA ... a priori meilleur
+!    Rq : si on reste en RTP, il faut modifier le cas de l'ordre 2 (qui
+!         necessite RTPA pour l'extrapolation).
+    w2(iel)   =  volume(iel)*                                       &
+         ( xrom*rtp(iel,ifb)                                     &
+           +2.d0/xk*propce(iel,ipcvso)/sigmak*w1(iel) )
+  elseif(iturb.eq.51) then
+    ttke = xk / xe
+    ttmin = cpalct*sqrt(xnu/xe)
+    tt = sqrt(ttke**2 + ttmin**2)
+    fhomog = -1.d0/tt*(cpalc1-1.d0+cpalc2*prdv2f(iel)/xe/xrom)*     &
+             (rtpa(iel,iphi)-d2s3)
+    w2(iel)   = volume(iel)*                                        &
+         ( rtpa(iel,ial)**3*fhomog*xrom                           &
+           +2.d0/xk*propce(iel,ipcvso)/sigmak*w1(iel) )
+  endif
+
 enddo
 
 !     Si on extrapole les T.S : PROPCE
@@ -629,8 +682,16 @@ endif
 
 !     Terme implicite
 do iel = 1, ncel
-  smbr(iel) = smbr(iel)                                           &
-       - volume(iel)*prdv2f(iel)*rtpa(iel,iphi)/rtpa(iel,ik)
+  xrom = propce(iel,ipcroo)
+  if(iturb.eq.50) then
+    smbr(iel) = smbr(iel)                                         &
+         - volume(iel)*prdv2f(iel)*rtpa(iel,iphi)/rtpa(iel,ik)
+  elseif(iturb.eq.51) then
+    smbr(iel) = smbr(iel)                                         &
+         - volume(iel)*(prdv2f(iel)+xrom*rtpa(iel,iep)/2        &
+                                    *(1.d0-rtpa(iel,ial)**3))   &
+         *rtpa(iel,iphi)/rtpa(iel,ik)
+  endif
 enddo
 
 ! ---> Matrice
@@ -641,11 +702,17 @@ else
   thetap = 1.d0
 endif
 do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel)                                       &
-       + volume(iel)*prdv2f(iel)/rtpa(iel,ik)*thetap
+  xrom = propce(iel,ipcroo)
+  if(iturb.eq.50) then
+    rovsdt(iel) = rovsdt(iel)                                     &
+         + volume(iel)*prdv2f(iel)/rtpa(iel,ik)*thetap
+  elseif(iturb.eq.51) then
+    rovsdt(iel) = rovsdt(iel)                                     &
+         + volume(iel)*(prdv2f(iel)+xrom*rtpa(iel,iep)/2        &
+                                    *(1.d0-rtpa(iel,ial)**3))   &
+           /rtpa(iel,ik)*thetap
+  endif
 enddo
-
-
 
 !===============================================================================
 ! 4.5 TERMES DE DIFFUSION
@@ -663,7 +730,11 @@ enddo
 
   if( idiff(ivar).ge. 1 ) then
     do iel = 1, ncel
-      w2(iel) = propce(iel,ipcvis) + propce(iel,ipcvst)/sigmak
+      if(iturb.eq.50) then
+        w2(iel) = propce(iel,ipcvis)      + propce(iel,ipcvst)/sigmak
+      elseif(iturb.eq.51) then
+        w2(iel) = propce(iel,ipcvis)/2.d0 + propce(iel,ipcvst)/sigmak
+      endif
     enddo
 
     call viscfa                                                   &
@@ -760,16 +831,16 @@ deallocate(w4, w5)
 
 #if defined(_CS_LANG_FR)
 
- 1000    format(/,                                                &
-'   ** RESOLUTION DU V2F (PHI ET F_BARRE)        ',/,&
-'      ----------------------------------        ',/)
+ 1000    format(/,                                         &
+'   ** RESOLUTION DU V2F (PHI ET F_BARRE/ALPHA)        ',/,&
+'      ----------------------------------------        ',/)
  1100    format(/,'           RESOLUTION POUR LA VARIABLE ',A8,/)
 
 #else
 
- 1000    format(/,                                                &
-'   ** SOLVING V2F (PHI AND F_BAR)'               ,/,&
-'      ---------------------------'               ,/)
+ 1000    format(/,                                         &
+'   ** SOLVING V2F (PHI AND F_BAR/ALPHA)'               ,/,&
+'      ---------------------------------'               ,/)
  1100    format(/,'           SOLVING VARIABLE ',A8                  ,/)
 
 #endif

@@ -50,6 +50,7 @@ resssg.f90 \
 resv2f.f90 \
 rijech.f90 \
 rijthe.f90 \
+tsepls.f90 \
 turbke.f90 \
 turbkw.f90 \
 turbsa.f90 \
@@ -60,6 +61,7 @@ visdyn.f90 \
 vislmg.f90 \
 vissma.f90 \
 vissst.f90 \
+visv2f.f90 \
 viswal.f90 \
 vor2cl.f90 \
 vordep.f90 \

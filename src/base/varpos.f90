@@ -441,15 +441,20 @@ if(ipass.eq.2) then
     ir23   = ivar
     ivar          = ivar + 1
     iep    = ivar
-  elseif(iturb.eq.50) then
+  elseif(itytur.eq.5) then
     ivar          = ivar + 1
     ik     = ivar
     ivar          = ivar + 1
     iep    = ivar
     ivar          = ivar + 1
     iphi   = ivar
-    ivar          = ivar + 1
-    ifb    = ivar
+    if(iturb.eq.50) then
+      ivar          = ivar + 1
+      ifb    = ivar
+    elseif(iturb.eq.51) then
+      ivar          = ivar + 1
+      ial    = ivar
+    endif
   elseif(iturb.eq.60) then
     ivar          = ivar + 1
     ik     = ivar
@@ -507,6 +512,12 @@ if(ipass.eq.2) then
     !     Pour fb, on sait qu'on a un terme diagonal, meme si ISTAT=0,
     !       donc on ne decalera pas la diagonale
     idircl(ifb) = 0
+  elseif (iturb.eq.51) then
+    istat(ial)  = 0
+    iconv(ial)  = 0
+    !     Pour alpha, on sait qu'on a un terme diagonal, meme si ISTAT=0,
+    !       donc on ne decalera pas la diagonale
+    idircl(ial) = 0
   endif
   if (iale.eq.1) then
     istat(iuma) = 0
@@ -647,11 +658,15 @@ if(ipass.eq.2) then
     ifluma(ir13) = iprop
     ifluma(ir23) = iprop
     ifluma(iep ) = iprop
-  elseif(iturb.eq.50) then
+  elseif(itytur.eq.5) then
     ifluma(ik  ) = iprop
     ifluma(iep ) = iprop
     ifluma(iphi) = iprop
-    ifluma(ifb ) = iprop
+    if(iturb.eq.50) then
+      ifluma(ifb ) = iprop
+    elseif(iturb.eq.51) then
+      ifluma(ial ) = iprop
+    endif
   elseif(iturb.eq.60) then
     ifluma(ik  ) = iprop
     ifluma(iomg) = iprop
@@ -1068,6 +1083,10 @@ if(ipass.eq.3) then
     write(nfecra,8114) ischtp,iturb
     iok = iok + 1
   endif
+  if(ischtp.eq. 2.and.iturb.eq.51) then
+    write(nfecra,8117) ischtp,iturb
+    iok = iok + 1
+  endif
   if(ischtp.eq. 2.and.iturb.eq.60) then
     write(nfecra,8115) ischtp,iturb
     iok = iok + 1
@@ -1230,11 +1249,15 @@ if(ipass.eq.3) then
       ifluaa(ir13) = iprop
       ifluaa(ir23) = iprop
       ifluaa(iep ) = iprop
-    elseif(iturb.eq.50) then
+    elseif(itytur.eq.5) then
       ifluaa(ik  ) = iprop
       ifluaa(iep ) = iprop
       ifluaa(iphi) = iprop
-      ifluaa(ifb ) = iprop
+      if(iturb.eq.50) then
+        ifluaa(ifb ) = iprop
+      elseif(iturb.eq.51) then
+        ifluaa(ial ) = iprop
+      endif
     elseif(iturb.eq.60) then
       ifluaa(ik  ) = iprop
       ifluaa(iomg) = iprop
@@ -2567,7 +2590,25 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    =========                                               ',/,&
 '@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 2 (ISCHTP = ',I10   ,/,&
-'@    EN V2F       (ITURB = ',I10,' )'                         ,/,&
+'@    EN PHI_FBAR (ITURB = ',I10,' )'                          ,/,&
+'@                                                            ',/,&
+'@   La version courante ne supporte pas l''ordre 2 avec le   ',/,&
+'@   couplage des termes sources du k-epsilon.                ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Modifier usini1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8117 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES PHASE ',I10    ,/,&
+'@    =========                                               ',/,&
+'@    ON IMPOSE UN SCHEMA EN TEMPS D ORDRE 2 (ISCHTP = ',I10   ,/,&
+'@    EN BL-V2/K  (ITURB = ',I10,' )'                         ,/,&
 '@                                                            ',/,&
 '@   La version courante ne supporte pas l''ordre 2 avec le   ',/,&
 '@   couplage des termes sources du k-epsilon.                ',/,&
@@ -3546,7 +3587,25 @@ endif
 '@ @@ WARNING   : STOP AT THE INITIAL DATA'                    ,/,&
 '@    =========                                               ',/,&
 '@    A 2nd ORDER SCHEME HAS BEEN IMPOSED    (ISCHTP = ',I10   ,/,&
-'@    FOR V2F       (ITURB = ',I10,' )'                        ,/,&
+'@    FOR PHI_FBAR (ITURB = ',I10,' )'                         ,/,&
+'@                                                            ',/,&
+'@   The current version does not support the 2nd order with  ',/,&
+'@   coupling of the source terms of k-epsilon.               ',/,&
+'@                                                            ',/,&
+'@  The calculation cannot be executed                        ',/,&
+'@                                                            ',/,&
+'@  Modify   usini1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8117 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING   : STOP AT THE INITIAL DATA FOR  PHASE ',I10    ,/,&
+'@    =========                                               ',/,&
+'@    A 2nd ORDER SCHEME HAS BEEN IMPOSED    (ISCHTP = ',I10   ,/,&
+'@    FOR BL-V2/K  (ITURB = ',I10,' )'                        ,/,&
 '@                                                            ',/,&
 '@   The current version does not support the 2nd order with  ',/,&
 '@   coupling of the source terms of k-epsilon.               ',/,&

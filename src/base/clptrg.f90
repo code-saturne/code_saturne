@@ -151,7 +151,7 @@ integer          iuiptn
 integer          iclnu
 integer          iclu  , iclv  , iclw  , iclk  , iclep
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
-integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
+integer          icluf , iclvf , iclwf , iclphi, iclfb , iclal , iclomg
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
 integer          iclvar, ipcvsl, iclvaf
 double precision rnx, rny, rnz, rxnn
@@ -230,11 +230,15 @@ elseif(itytur.eq.3) then
   icl13  = iclrtp(ir13,icoef)
   icl23  = iclrtp(ir23,icoef)
   iclep  = iclrtp(iep,icoef)
-elseif(iturb.eq.50) then
+elseif(itytur.eq.5) then
   iclk   = iclrtp(ik ,icoef)
   iclep  = iclrtp(iep,icoef)
   iclphi = iclrtp(iphi,icoef)
-  iclfb  = iclrtp(ifb,icoef)
+  if(iturb.eq.50) then
+    iclfb  = iclrtp(ifb,icoef)
+  elseif(iturb.eq.51) then
+    iclal  = iclrtp(ial,icoef)
+  endif
 elseif(iturb.eq.60) then
   iclk   = iclrtp(ik ,icoef)
   iclomg = iclrtp(iomg,icoef)
@@ -285,9 +289,9 @@ yplumn =  grand
 iuiptn = 0
 
 
-!     En v2f on met directement u=0 donc UIPTMX et UIPTMN vaudront
-!     forcement 0
-if (iturb.eq.50) then
+!     En modele type v2f (phi-fbar et BL-v2/k) on met directement u=0 donc
+!     UIPTMX et UIPTMN vaudront forcement 0
+if (itytur.eq.5) then
   uiptmx = 0.d0
   uiptmn = 0.d0
 endif
@@ -488,7 +492,7 @@ do ifac = 1, nfabor
     else
 ! Si IDEUCH=1 ou 2 on calcule uk et uet
 
-      if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
+      if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
         ek = rtp(iel,ik)
       else if(itytur.eq.3) then
         ek = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
@@ -664,7 +668,7 @@ do ifac = 1, nfabor
 
       endif
 
-    elseif(iturb.eq.50) then
+    elseif (itytur.eq.5) then
 
 !     Avec ces conditions, pas besoin de calculer UIPTMX, UIPTMN
 !     et IUIPTN qui sont nuls (valeur d'initialisation)
@@ -715,6 +719,7 @@ do ifac = 1, nfabor
 !===============================================================================
 
     ydep = distbf*0.5d0+rugd
+
     if (itytur.eq.2) then
 
       coefa(ifac,iclk)   = uk**2/sqrcmu*cfnnk
@@ -803,7 +808,8 @@ do ifac = 1, nfabor
       coefb(ifac,iclep) = 1.d0
 
 !===============================================================================
-! 6. CONDITIONS AUX LIMITES SUR K, EPSILON, F_BARRE ET PHI
+! 6a.CONDITIONS AUX LIMITES SUR K, EPSILON, F_BARRE ET PHI
+!    DANS LE MODELE PHI_FBAR
 !===============================================================================
 
     elseif (iturb.eq.50) then
@@ -818,6 +824,25 @@ do ifac = 1, nfabor
       coefb(ifac,iclphi) = 0.0d0
       coefa(ifac,iclfb) = 0.0d0
       coefb(ifac,iclfb) = 0.0d0
+
+!===============================================================================
+! 6b.CONDITIONS AUX LIMITES SUR K, EPSILON, PHI ET ALPHA
+!    DANS LE MODELE BL-V2/K
+!===============================================================================
+
+    elseif (iturb.eq.51) then
+
+      coefa(ifac,iclk) = 0.d0
+      coefb(ifac,iclk) = 0.d0
+      coefa(ifac,iclep) =                                         &
+                 propce(iel,ipcvis)/propce(iel,ipcrom)            &
+           *rtp(iel,ik)/distbf**2
+      coefb(ifac,iclep) = 0.d0
+      coefa(ifac,iclphi) = 0.0d0
+      coefb(ifac,iclphi) = 0.0d0
+      coefa(ifac,iclal) = 0.0d0
+      coefb(ifac,iclal) = 0.0d0
+
 !===============================================================================
 ! 7. CONDITIONS AUX LIMITES SUR K ET OMEGA
 !===============================================================================

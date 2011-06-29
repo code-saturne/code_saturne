@@ -83,7 +83,7 @@ implicit none
 ! Local variables
 
 character        name*300, chaine*80
-integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok60
+integer          iok20 , iok21 , iok30 , iok31 , iok50 , iok51 , iok60
 integer          iok70
 integer          ii    , jj    , ivar  , iiesca, iest
 integer          ipp   , iwar  , imom
@@ -391,6 +391,15 @@ elseif(iturb.eq.50) then
   else
     write(nfecra,2540)
   endif
+elseif(iturb.eq.51) then
+  write(nfecra,2524)                                            &
+    almax ,uref  ,                                &
+    iclkep,ikecou,igrake
+  if (ikecou.eq.0 .and. idtvar.ge.0) then
+    write(nfecra,2527) relaxv(ik),relaxv(iep)
+  else
+    write(nfecra,2529)
+  endif
 elseif(iturb.eq.60) then
   write(nfecra,2523)                                            &
        almax ,uref  ,                                &
@@ -413,6 +422,7 @@ iok21 = 0
 iok30 = 0
 iok31 = 0
 iok50 = 0
+iok51 = 0
 iok60 = 0
 iok70 = 0
 if(iturb.eq.20) then
@@ -429,6 +439,9 @@ if(iturb.eq.31) then
 endif
 if(iturb.eq.50) then
   iok50 = 50
+endif
+if(iturb.eq.51) then
+  iok51 = 51
 endif
 if(iturb.eq.60) then
   iok60 = 60
@@ -453,6 +466,10 @@ endif
 if(iok50.gt.0) then
   write(nfecra,2535) cv2fa1,cv2fe2,sigmak,sigmae,cv2fmu,cv2fct,   &
        cv2fcl,cv2fet,cv2fc1,cv2fc2
+endif
+if(iok51.gt.0) then
+  write(nfecra,2538) cpale1,cpale2,cpale3,cpale4,sigmak,cpalse,cpalmu,cpalct, &
+       cpalcl,cpalet,cpalc1,cpalc2
 endif
 if(iok60.gt.0) then
   write(nfecra,2536) ckwsk1,ckwsk2,ckwsw1,ckwsw2,ckwbt1,ckwbt2,   &
@@ -549,6 +566,13 @@ write(nfecra,9900)
 '       ICLKEP = ',4X,I10,    ' (Mode de clipping k-epsilon  )',/,&
 '       IKECOU = ',4X,I10,    ' (Mode de couplage k-epsilon  )',/,&
 '       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
+ 2524 format(                                                           &
+'   - v2f BL-v2/k         (ITURB = 51)                        ',/,&
+'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
+'       UREF   = ', E14.5,    ' (Vitesse  caracteristique    )',/,&
+'       ICLKEP = ',4X,I10,    ' (Mode de clipping k-epsilon  )',/,&
+'       IKECOU = ',4X,I10,    ' (Mode de couplage k-epsilon  )',/,&
+'       IGRAKE = ',4X,I10,    ' (Prise en compte de gravite  )')
  2523 format(                                                           &
 '   - k-omega SST         (ITURB = 60)                        ',/,&
 '       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )',/,&
@@ -628,6 +652,20 @@ write(nfecra,9900)
 '       CV2FET = ', E14.5,    ' (Constante C_eta             )',/,&
 '       CV2FC1 = ', E14.5,    ' (Constante C1                )',/,&
 '       CV2FC2 = ', E14.5,    ' (Constante C2                )',/)
+ 2538 format(                                                           &
+'   - v2f BL-v2/k         (ITURB = 51)'                        ,/,&
+'       CPALE1 = ', E14.5,    ' (Cepsilon 1 : coef de Prod.  )',/,&
+'       CPALE2 = ', E14.5,    ' (Cepsilon 2 : coef de Diss.  )',/,&
+'       CPALE3 = ', E14.5,    ' (Cepsilon 3 : coef terme E   )',/,&
+'       CPALE4 = ', E14.5,    ' (Cepsilon 4 : coef Diss. mod.)',/,&
+'       SIGMAK = ', E14.5,    ' (Prandtl relatif a k         )',/,&
+'       CPALSE = ', E14.5,    ' (Prandtl relatif a epsilon   )',/,&
+'       CPALMU = ', E14.5,    ' (Constante Cmu               )',/,&
+'       CPALCT = ', E14.5,    ' (Constante CT                )',/,&
+'       CPALCL = ', E14.5,    ' (Constante CL                )',/,&
+'       CPALET = ', E14.5,    ' (Constante C_eta             )',/,&
+'       CPALC1 = ', E14.5,    ' (Constante C1                )',/,&
+'       CPALC2 = ', E14.5,    ' (Constante C2                )',/)
  2536 format(                                                           &
 '   - k-omega SST         (ITURB = 60)'                        ,/,&
 '       CKWSK1 = ', E14.5,    ' (Constante sigma_k1          )',/,&
@@ -736,6 +774,13 @@ write(nfecra,9900)
 '       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
 '       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
 '       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
+ 2524 format(                                                           &
+'   - v2f BL-v2/k         (ITURB = 51)                        ',/,&
+'       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
+'       UREF   = ', E14.5,    ' (Characteristic velocity     )',/,&
+'       ICLKEP = ',4X,I10,    ' (k-epsilon clipping model    )',/,&
+'       IKECOU = ',4X,I10,    ' (k-epsilon coupling mode     )',/,&
+'       IGRAKE = ',4X,I10,    ' (Account for gravity         )')
  2523 format(                                                           &
 '   - k-omega SST         (ITURB = 60)                        ',/,&
 '       ALMAX  = ', E14.5,    ' (Characteristic length       )',/,&
@@ -815,6 +860,20 @@ write(nfecra,9900)
 '       CV2FET = ', E14.5,    ' (C_eta constant              )',/,&
 '       CV2FC1 = ', E14.5,    ' (C1 constant                 )',/,&
 '       CV2FC2 = ', E14.5,    ' (C2 constant                 )',/)
+ 2538 format(                                                           &
+'   - v2f BL-v2/k         (ITURB = 51)'                        ,/,&
+'       CPALE1 = ', E14.5,    ' (Cepsilon 1 : Prod. coeff.   )',/,&
+'       CPALE2 = ', E14.5,    ' (Cepsilon 2 : Diss. coeff.   )',/,&
+'       CPALE3 = ', E14.5,    ' (Cepsilon 3 : E term coeff.  )',/,&
+'       CPALE4 = ', E14.5,    ' (Cepsilon 4 : Mod Diss. coef.)',/,&
+'       SIGMAK = ', E14.5,    ' (Prandtl relative to k       )',/,&
+'       CPALSE = ', E14.5,    ' (Prandtl relative to epsilon )',/,&
+'       CPALMU = ', E14.5,    ' (Cmu constant               )',/,&
+'       CPALCT = ', E14.5,    ' (CT constant                )',/,&
+'       CPALCL = ', E14.5,    ' (CL constant                )',/,&
+'       CPALET = ', E14.5,    ' (C_eta constant             )',/,&
+'       CPALC1 = ', E14.5,    ' (C1 constant                )',/,&
+'       CPALC2 = ', E14.5,    ' (C2 constant                )',/)
  2536 format(                                                           &
 '   - k-omega SST         (ITURB = 60)                        ',/,&
 '       CKWSK1 = ', E14.5,    ' (sigma_k1 constant           )',/,&

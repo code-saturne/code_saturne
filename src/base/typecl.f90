@@ -894,6 +894,9 @@ do ivar = 1, nvar
        ( iturb.eq.50.and.                                  &
        (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
        ivar.eq.ifb)                    ).or.               &
+       ( iturb.eq.51.and.                                  &
+       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
+       ivar.eq.ial)                    ).or.               &
        ( iturb.eq.60.and.                                  &
        (ivar.eq.ik.or.ivar.eq.iomg)   ).or.               &
        ( iturb.eq.70.and.                                  &
@@ -951,6 +954,9 @@ do ivar = 1, nvar
        ( iturb.eq.50.and.                                  &
        (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
        ivar.eq.ifb)                    ).or.               &
+       ( iturb.eq.51.and.                                  &
+       (ivar.eq.ik.or.ivar.eq.iep.or.ivar.eq.iphi.or.  &
+       ivar.eq.ial)                    ).or.               &
        ( iturb.eq.60.and.                                  &
        (ivar.eq.ik.or.ivar.eq.iomg)   ).or.               &
        ( iturb.eq.70.and.                                  &

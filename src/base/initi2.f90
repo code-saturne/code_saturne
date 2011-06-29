@@ -91,7 +91,7 @@ if (almax.le.0.d0) then
   write(nfecra,1100) almax
   write(nfecra,1102)
   if(itytur.eq.2.or.itytur.eq.3                   &
-       .or. iturb.eq.50 .or. iturb.eq.60          &
+       .or. itytur.eq.5 .or. iturb.eq.60          &
        .or. iturb.eq.70) then
     write(nfecra,1101)
   endif

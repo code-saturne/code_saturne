@@ -291,11 +291,11 @@ endif
 !    -10*GRAND. On testera ensuite si l'utilisateur les a modifiees dans
 !    usiniv ou en lisant un fichier suite.
 
-if(itytur.eq.2 .or. iturb.eq.50) then
+if(itytur.eq.2 .or. itytur.eq.5) then
 
   xcmu = cmu
   if (iturb.eq.50) xcmu = cv2fmu
-
+  if (iturb.eq.51) xcmu = cpalmu
 
   if (uref.ge.0.d0) then
     do iel = 1, ncel
@@ -319,6 +319,12 @@ if(itytur.eq.2 .or. iturb.eq.50) then
     do iel = 1, ncel
       rtp(iel,iphi) = 2.d0/3.d0
       rtp(iel,ifb) = 0.d0
+    enddo
+  endif
+  if (iturb.eq.51) then
+    do iel = 1, ncel
+      rtp(iel,iphi) = 2.d0/3.d0
+      rtp(iel,ial) = 1.d0
     enddo
   endif
 

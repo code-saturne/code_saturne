@@ -499,6 +499,20 @@ if (iturb.eq.50.and.ikecou.eq.1) then
     iok = iok + 1
   endif
 endif
+if (iturb.eq.51.and.ikecou.eq.1) then
+  if((    thetst       .gt.0.d0 ).or.                    &
+     (    isto2t       .gt.0    ).or.                    &
+     (abs(thetav(ik  )-1.0d0).gt.epzero).or.             &
+     (abs(thetav(iep )-1.0d0).gt.epzero).or.             &
+     (abs(thetav(iphi)-1.0d0).gt.epzero).or.             &
+     (abs(thetav(ial )-1.0d0).gt.epzero) ) then
+    write(nfecra,2143)iturb,ikecou,         &
+         thetst,isto2t,                           &
+         thetav(ik  ),thetav(iep ),               &
+         thetav(iphi),thetav(ial )
+    iok = iok + 1
+  endif
+endif
 if (iturb.eq.60.and.ikecou.eq.1) then
   if((    thetst       .gt.0.d0 ).or.                    &
        (    isto2t       .gt.0    ).or.                    &
@@ -862,7 +876,7 @@ itrbph = iturb
 if ( itrbph.ne. 0.and.itrbph.ne.10.and.itrbph.ne.20.and.        &
      itrbph.ne.21.and.itrbph.ne.30.and.itrbph.ne.31.and.        &
      itrbph.ne.40.and.itrbph.ne.41.and.itrbph.ne.42.and.        &
-     itrbph.ne.50.and.itrbph.ne.60.and.itrbph.ne.70  ) then
+     itrbph.ne.50.and.itrbph.ne.51.and.itrbph.ne.60.and.itrbph.ne.70  ) then
   WRITE(NFECRA,2600) 'ITURB  ',ITRBPH
   iok = iok + 1
 endif
@@ -897,7 +911,7 @@ if(nscal.ge.1) then
   if(  (nvar.lt. 4+nscal               ) .or.                   &
        (nvar.lt. 6+nscal.and.itytur.eq.2).or.            &
        (nvar.lt.11+nscal.and.itytur.eq.3).or.            &
-       (nvar.lt. 8+nscal.and.iturb.eq.50).or.            &
+       (nvar.lt. 8+nscal.and.itytur.eq.5).or.            &
        (nvar.lt. 6+nscal.and.iturb.eq.60).or.            &
        (nvar.lt. 5+nscal.and.iturb.eq.70)      ) then
     write(nfecra,2610)                                          &
@@ -927,7 +941,7 @@ endif
 if(itytur.eq.2 .or. iturb.eq.50                    &
      .or. iturb.eq.60 ) then
   if( (nvar.le.5.and.itytur.eq.2) .or.                   &
-       (nvar.le.7.and.iturb.eq.50) .or.                   &
+       (nvar.le.7.and.itytur.eq.5) .or.                   &
        (nvar.le.5.and.iturb.eq.60)     ) then
     write(nfecra,2610)                                          &
          'NOMBRE DE VARIABLES            ',NVAR,          &
@@ -947,7 +961,7 @@ if(itytur.eq.2 .or. iturb.eq.50                    &
   endif
   !     En k-eps a prod lin et en v2f on force IKECOU a 0
   if (ikecou.eq.1 .and.                                  &
-       (iturb.eq.21 .or. iturb.eq.50)) then
+       (iturb.eq.21 .or. itytur.eq.5)) then
     write(nfecra,2208)iturb,ikecou
     iok = iok + 1
   endif
@@ -1365,7 +1379,7 @@ endif
 !      initialiser la turbulence a la main. Un test complementaire sera fait
 !      dans inivar.
 if(itytur.eq.2.or.itytur.eq.3                     &
-     .or.iturb.eq.50.or.iturb.eq.60               &
+     .or.itytur.eq.5.or.iturb.eq.60               &
      .or.iturb.eq.70) then
   if(uref  .lt.0.d0) then
     write(nfecra,4100) uref
@@ -2671,7 +2685,7 @@ endif
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
-'@    EN K-EPS PROD LIN (ITURB=21) ET EN V2F (ITURB=50)       ',/,&
+'@    EN K-EPS PROD LIN (ITURB=21) ET EN V2F (ITURB=50/51)    ',/,&
 '@    IKECOU DOIT ETRE EGAL A 0                               ',/,&
 '@    ITURB  VAUT ICI ',I10                                    ,/,&
 '@    IKECOU VAUT ICI ',I10                                    ,/,&
@@ -3044,7 +3058,7 @@ endif
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
 '@    =========                                               ',/,&
 '@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0, 10, 20, 21, 30, 31,',/,&
-'@    40, 41, 42, 50, OU 60'                                   ,/,&
+'@    40, 41, 42, 50, 51 OU 60'                                ,/,&
 '@    IL VAUT ICI ',I10                                        ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
@@ -5091,7 +5105,7 @@ endif
 '@                                                            ',/,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
-'@    EN K-EPS PROD LIN (ITURB=21) ET EN V2F (ITURB=50)       ',/,&
+'@    EN K-EPS PROD LIN (ITURB=21) ET EN V2F (ITURB=50/51)    ',/,&
 '@    IKECOU DOIT ETRE EGAL A 0                               ',/,&
 '@    ITURB  IS EQUAL ',I10                                    ,/,&
 '@    IKECOU IS EQUAL ',I10                                    ,/,&
@@ -5464,7 +5478,7 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
 '@    =========                                               ',/,&
 '@    ',A6,' MUST BE AN INTEGER EGAL A 0, 10, 20, 21, 30, 31,',/, &
-'@    40, 41, 42, 50, or 60'                                   ,/,&
+'@    40, 41, 42, 50, 51 or 60'                                ,/,&
 '@   IT HAS VALUE ',I10                                        ,/,&
 '@                                                            ',/,&
 '@   The calculation could NOT run.                           ',/,&

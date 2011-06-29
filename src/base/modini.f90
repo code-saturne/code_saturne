@@ -118,7 +118,7 @@ ipp = ipppro(ipproc(irom))
 if(                       ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
 ipp = ipppro(ipproc(ivisct))
 if( (iturb.eq.10 .or. itytur.eq.2                 &
-     .or. iturb.eq.50 .or. iturb.eq.60            &
+     .or. itytur.eq.5 .or. iturb.eq.60            &
      .or. iturb.eq.70 )                                  &
      .and.ichrvr(ipp).eq.-999) ichrvr(ipp) = 1
 if (idtvar.lt.0) then
@@ -189,7 +189,7 @@ if(ipucou.ne.1) then
 endif
 ipp = ipppro(ipproc(ivisct))
 if( (iturb.eq.10 .or. itytur.eq.2                 &
-     .or. iturb.eq.50 .or. iturb.eq.60            &
+     .or. itytur.eq.5 .or. iturb.eq.60            &
      .or. iturb.eq.70 )                                  &
      .and.ihisvr(ipp,1).eq.-999) ihisvr(ipp,1) = -1
 if (idtvar.lt.0) then
@@ -274,7 +274,7 @@ elseif(itytur.eq.3) then
   IF(NOMVAR(IPPRTP(IEP   )) .EQ.' ') THEN
     NOMVAR(IPPRTP(IEP   )) = 'Dissip'
   endif
-elseif(iturb.eq.50) then
+elseif(itytur.eq.5) then
   IF(NOMVAR(IPPRTP(IK    )) .EQ.' ') THEN
     NOMVAR(IPPRTP(IK    )) = 'EnTurb'
   endif
@@ -284,8 +284,14 @@ elseif(iturb.eq.50) then
   IF(NOMVAR(IPPRTP(IPHI  )) .EQ.' ') THEN
     NOMVAR(IPPRTP(IPHI  )) = 'phi'
   endif
-  IF(NOMVAR(IPPRTP(IFB   )) .EQ.' ') THEN
-    NOMVAR(IPPRTP(IFB   )) = 'fbarre'
+  if(iturb.eq.50) then
+    IF(NOMVAR(IPPRTP(IFB   )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IFB   )) = 'fbarre'
+    endif
+  elseif(iturb.eq.51) then
+    IF(NOMVAR(IPPRTP(IAL   )) .EQ.' ') THEN
+      NOMVAR(IPPRTP(IAL   )) = 'Alpha'
+    endif
   endif
 elseif(iturb.eq.60) then
   IF(NOMVAR(IPPRTP(IK    )) .EQ.' ') THEN
@@ -413,7 +419,7 @@ ipp = ipppro(ipproc(irom  ))
 if(irovar.eq.1.and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
 ipp = ipppro(ipproc(ivisct))
 if( (iturb.eq.10 .or. itytur.eq.2                 &
-     .or. iturb.eq.50 .or. iturb.eq.60            &
+     .or. itytur.eq.5 .or. iturb.eq.60            &
      .or. iturb.eq.70 )                                  &
      .and.ilisvr(ipp).eq.-999) ilisvr(ipp) = 1
 if (inusa .gt. 0) then
@@ -662,6 +668,25 @@ elseif(iturb.eq.50) then
     thetav(iphi) = 0.5d0
     thetav(ifb ) = 0.5d0
   endif
+elseif(iturb.eq.51) then
+  if(abs(thetav(ik  )+999.d0).gt.epzero.or.              &
+       abs(thetav(iep )+999.d0).gt.epzero.or.              &
+       abs(thetav(iphi)+999.d0).gt.epzero.or.              &
+       abs(thetav(ial )+999.d0).gt.epzero) then
+    WRITE(NFECRA,1031) 'VARIABLES BL-V2/K','THETAV'
+    iok = iok + 1
+  elseif(ischtp.eq.1) then
+    thetav(ik  ) = 1.d0
+    thetav(iep ) = 1.d0
+    thetav(iphi) = 1.d0
+    thetav(ial ) = 1.d0
+  elseif(ischtp.eq.2) then
+    !     pour le moment, on ne peut pas passer par ici (cf varpos)
+    thetav(ik  ) = 0.5d0
+    thetav(iep ) = 0.5d0
+    thetav(iphi) = 0.5d0
+    thetav(ial ) = 0.5d0
+  endif
 elseif(iturb.eq.60) then
   if(abs(thetav(ik  )+999.d0).gt.epzero.or.              &
        abs(thetav(iomg)+999.d0).gt.epzero ) then
@@ -872,12 +897,16 @@ elseif(itytur.eq.3) then
   cdtvar(ir13) = cdtvar(ir11)
   cdtvar(ir23) = cdtvar(ir11)
   cdtvar(iep ) = cdtvar(ir11)
-elseif(iturb.eq.50) then
+elseif(itytur.eq.5) then
   cdtvar(iep ) = cdtvar(ik  )
-
   cdtvar(iphi) = cdtvar(ik  )
-  !     CDTVAR(IFB) est en fait inutile car pas de temps dans l'eq de f_barre
-  cdtvar(ifb ) = cdtvar(ik  )
+!     CDTVAR(IFB/IAL) est en fait inutile car pas de temps dans
+!     l'eq de f_barre/alpha
+  if(iturb.eq.50) then
+    cdtvar(ifb ) = cdtvar(ik  )
+  elseif(iturb.eq.51) then
+    cdtvar(ial ) = cdtvar(ik  )
+  endif
 elseif(iturb.eq.60) then
   cdtvar(iomg) = cdtvar(ik  )
 elseif(iturb.eq.70) then
@@ -1095,7 +1124,7 @@ endif
 if (ikecou.eq.-999) then
   if (idtvar.lt.0) then
     ikecou = 0
-  else if (iturb.eq.21 .or. iturb.eq.50           &
+  else if (iturb.eq.21 .or. itytur.eq.5           &
        .or. iturb.eq.60 ) then
     ikecou = 0
   else

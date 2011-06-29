@@ -109,7 +109,7 @@ integer          ibormo(nbmomx)
 
 double precision valmax, valmin, vfmin , vfmax
 double precision vdtmax, vdtmin
-double precision xekmin, xepmin, xomgmn, xphmin, xphmax
+double precision xekmin, xepmin, xomgmn, xphmin, xphmax, xalmin, xalmax
 double precision xnumin
 double precision x11min, x22min, x33min, valmom
 double precision vmomax(nbmomx), vmomin(nbmomx)
@@ -243,7 +243,7 @@ endif
 
 if(iusini.eq.1.or.isuite.eq.1) then
 
-  if(itytur.eq.2 .or. iturb.eq.50) then
+  if(itytur.eq.2 .or. itytur.eq.5) then
 
     xekmin = rtp(1,ik)
     xepmin = rtp(1,iep)
@@ -269,8 +269,9 @@ if(iusini.eq.1.or.isuite.eq.1) then
       iok = iok + 1
     endif
 
-    !     En v2-f, on verifie aussi que phi est compris entre 0 et 2
-    if (iturb.eq.50) then
+    !     En v2-f, phi-fbar ou BL-v2/k, on verifie aussi que phi est
+    !     compris entre 0 et 2
+    if (itytur.eq.5) then
 
       xphmin = rtp(1,iphi)
       xphmax = rtp(1,iphi)
@@ -290,6 +291,29 @@ if(iusini.eq.1.or.isuite.eq.1) then
       if(xphmin.lt.0.d0) then
         write(nfecra,3021) xphmin,xphmax
         iok = iok + 1
+      endif
+
+      !     En v2-f, BL-v2/k, on verifie aussi que alpha est
+      !     compris entre 0 et 1
+      if (iturb.eq.51) then
+        xalmin = rtp(1,ial)
+        xalmax = rtp(1,ial)
+        do iel = 1, ncel
+          xalmin = min(xalmin,rtp(iel,ial) )
+          xalmax = max(xalmax,rtp(iel,ial) )
+        enddo
+        if (irangp.ge.0) then
+          call parmin (xalmin)
+          !==========
+          call parmax (xalmax)
+          !==========
+        endif
+
+        if(xalmin.lt.0.d0 .or. xalmax.gt.1.d0) then
+          write(nfecra,3022) xalmin,xalmax
+          iok = iok + 1
+        endif
+
       endif
 
     endif
@@ -812,12 +836,35 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
 '@    =========                                               ',/,&
-'@     VARIABLE PHI DU V2F HORS DES BORNES [0;2]              ',/,&
+'@     VARIABLE PHI DU V2F (PHI_FBAR ou BL-V2/K)              ',/,&
+'@     HORS DES BORNES [0;2]                                  ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@   Valeur minimale de phi     = ',E14.5                      ,/,&
 '@   Valeur maximale de phi     = ',E14.5                      ,/,&
+'@                                                            ',/,&
+'@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
+'@    ou le fichier suite.                                    ',/,&
+'@  Dans le cas ou les valeurs lues dans le fichier suite     ',/,&
+'@    sont incorrectes, on peut les modifier par usiniv ou    ',/,&
+'@    par l''interface.                                       ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 3022 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''INITIALISATION DES VARIABLES     ',/,&
+'@    =========                                               ',/,&
+'@     VARIABLE ALPHA DU V2F (BL-V2/K)                        ',/,&
+'@     HORS DES BORNES [0;1]                                  ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@   Valeur minimale de alpha   = ',E14.5                      ,/,&
+'@   Valeur maximale de alpha   = ',E14.5                      ,/,&
 '@                                                            ',/,&
 '@  Verifier l''initialisation (usiniv et/ou interface),      ',/,&
 '@    ou le fichier suite.                                    ',/,&
@@ -1112,12 +1159,35 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
 '@    ========                                                ',/,&
-'@     PHI VARIABLE OF V2F OUT OF BOUNDS [0;2]                ',/,&
+'@     PHI VARIABLE OF V2F (PHI_FBAR or BL-V2/K)              ',/,&
+'@     OUT OF BOUNDS [0;2]                                    ',/,&
 '@                                                            ',/,&
 '@  The calculation will not be run.                          ',/,&
 '@                                                            ',/,&
 '@   Minimum value of phi = ',E14.5                            ,/,&
 '@   Maximum value of phi = ',E14.5                            ,/,&
+'@                                                            ',/,&
+'@  Verify the initialization (usiniv and/or interface),      ',/,&
+'@    the restart file.                                       ',/,&
+'@  In the case where the values read in the restart file     ',/,&
+'@    are incorrect, they may be modified with usiniv or      ',/,&
+'@    with the interface.                                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 3022 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ABORT IN THE VARIABLES INITIALIZATION          ',/,&
+'@    ========                                                ',/,&
+'@     ALPHA VARIABLE OF V2F (BL-V2/K)                        ',/,&
+'@     OUT OF BOUNDS [0;1]                                    ',/,&
+'@                                                            ',/,&
+'@  The calculation will not be run.                          ',/,&
+'@                                                            ',/,&
+'@   Minimum value of alpha = ',E14.5                          ,/,&
+'@   Maximum value of alpha = ',E14.5                          ,/,&
 '@                                                            ',/,&
 '@  Verify the initialization (usiniv and/or interface),      ',/,&
 '@    the restart file.                                       ',/,&

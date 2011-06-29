@@ -424,11 +424,15 @@ elseif (itytur == 3) then
   nomrtp(ir13)='R13_ce_phase'//cphase
   nomrtp(ir23)='R23_ce_phase'//cphase
   nomrtp(iep)='eps_ce_phase'//cphase
-elseif (iturb == 50) then
+elseif (itytur == 5) then
   nomrtp(ik)='k_ce_phase'//cphase
   nomrtp(iep)='eps_ce_phase'//cphase
   nomrtp(iphi)='phi_ce_phase'//cphase
-  nomrtp(ifb)='fb_ce_phase'//cphase
+  if(iturb.eq.50) then
+    nomrtp(ifb)='fb_ce_phase'//cphase
+  elseif(iturb.eq.51) then
+    nomrtp(ial)='al_ce_phase'//cphase
+  endif
 elseif (iturb == 60) then
   nomrtp(ik)='k_ce_phase'//cphase
   nomrtp(iomg)='omega_ce_phase'//cphase
@@ -821,13 +825,17 @@ if (iecaux.eq.1) then
     nomflu(IR13)='fm_R13_phase'//cphase
     nomflu(IR23)='fm_R23_phase'//cphase
     nomflu(IEP)='fm_eps_phase'//cphase
-  elseif (iturb.eq.50) then
+  elseif (itytur.eq.5) then
     nomflu(IK)='fm_k_phase'//cphase
     nomflu(IEP)='fm_eps_phase'//cphase
     nomflu(IPHI)='fm_phi_phase'//cphase
-    !     On n'utilise pas le flux de masse pour fb en fait mais on le laisse ici, car ca
-    !     ne change rien (le flux n'est ecrit qu'une seule fois)
-    nomflu(IFB)='fm_fb_phase'//cphase
+    ! On n'utilise pas le flux de masse pour fb/al en fait mais on le laisse
+    ! ici, car ca ne change rien (le flux n'est ecrit qu'une seule fois)
+    if(iturb.eq.50) then
+      nomflu(ifb)='fm_fb_phase'//cphase
+    elseif(iturb.eq.51) then
+      nomflu(ial)='fm_al_phase'//cphase
+    endif
   elseif (iturb.eq.60) then
     nomflu(IK)='fm_k_phase'//cphase
     nomflu(IOMG)='fm_omega_phase'//cphase
@@ -912,11 +920,15 @@ if (iecaux.eq.1) then
     nomflu(IR13)='fm_a_R13_phase'//cphase
     nomflu(IR23)='fm_a_R23_phase'//cphase
     nomflu(IEP)='fm_a_eps_phase'//cphase
-  elseif (iturb.eq.50) then
+  elseif (itytur.eq.5) then
     nomflu(IK)='fm_a_k_phase'//cphase
     nomflu(IEP)='fm_a_eps_phase'//cphase
     nomflu(IPHI)='fm_a_phi_phase'//cphase
-    nomflu(IFB)='fm_a_fb_phase'//cphase
+    if(iturb.eq.50) then
+      nomflu(ifb)='fm_a_fb_phase'//cphase
+    elseif(iturb.eq.51) then
+      nomflu(ial)='fm_a_al_phase'//cphase
+    endif
   elseif (iturb.eq.60) then
     nomflu(IK)='fm_a_k_phase'//cphase
     nomflu(IOMG)='fm_a_omega_phase'//cphase
@@ -1012,11 +1024,15 @@ if (iecaux.eq.1) then
     nomcli(IR13)='_R13_phase'//cphase
     nomcli(IR23)='_R23_phase'//cphase
     nomcli(IEP)='_eps_phase'//cphase
-  elseif (iturb.eq.50) then
+  elseif (itytur.eq.5) then
     nomcli(IK)='_k_phase'//cphase
     nomcli(IEP)='_eps_phase'//cphase
     nomcli(IPHI)='_phi_phase'//cphase
-    nomcli(IFB)='_fb_phase'//cphase
+    if(iturb.eq.50) then
+      NOMCLI(IFB)='_fb_phase'//CPHASE
+    elseif(iturb.eq.51) then
+      NOMCLI(IAL)='_al_phase'//CPHASE
+    endif
   elseif (iturb.eq.60) then
     nomcli(IK)='_k_phase'//cphase
     nomcli(IOMG)='_omega_phase'//cphase
@@ -1197,7 +1213,7 @@ if (iecaux.eq.1) then
       nberro=nberro+ierror
 
       !          En v2f
-    elseif(iturb.eq.50) then
+    elseif(itytur.eq.5) then
 
       rubriq = 'tsource_tu_ce_k_phase'//cphase
       call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
@@ -1214,10 +1230,17 @@ if (iecaux.eq.1) then
            propce(1,iptsta+2),ierror)
       nberro=nberro+ierror
 
-      rubriq = 'tsource_tu_ce_fb_phase'//cphase
-      call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
-           propce(1,iptsta+3),ierror)
-      nberro=nberro+ierror
+      if(iturb.eq.50) then
+        RUBRIQ = 'tsource_tu_ce_fb_phase'//CPHASE
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+3),ierror)
+        nberro=nberro+ierror
+      elseif(iturb.eq.51) then
+        RUBRIQ = 'tsource_tu_ce_al_phase'//CPHASE
+        call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp, &
+                    propce(1,iptsta+3),ierror)
+        nberro=nberro+ierror
+      endif
 
       !          En k-omega
     elseif(iturb.eq.60) then

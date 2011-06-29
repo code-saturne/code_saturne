@@ -178,6 +178,7 @@ endif
 !      41...LES (Dynamic)
 !      42...LES (WALE)
 !      50...v2f (phi-model)
+!      51...v2f (BL-v2/k)
 !      60...k-omega SST
 !      70...Spalart Allmaras
 !  For 10, contact the development team before use
@@ -1862,6 +1863,36 @@ elseif (iturb.eq.50) then
   ! f_bar
   ipp = ipprtp(ifb   )
   nomvar(ipp)   = 'f_bar'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+elseif (iturb.eq.51) then
+
+  ! turbulent kinetic energy
+  ipp = ipprtp(ik    )
+  nomvar(ipp)   = 'Turb Kinetic Energy'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+  ! turbulent dissipation
+  ipp = ipprtp(iep   )
+  nomvar(ipp)   = 'Turb Dissipation'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+  ! phi
+  ipp = ipprtp(iphi  )
+  nomvar(ipp)   = 'Phi'
+  ichrvr(ipp)   = 1
+  ilisvr(ipp)   = 1
+  ihisvr(ipp,1) = -1
+
+  ! alpha
+  ipp = ipprtp(ial   )
+  nomvar(ipp)   = 'Alpha'
   ichrvr(ipp)   = 1
   ilisvr(ipp)   = 1
   ihisvr(ipp,1) = -1

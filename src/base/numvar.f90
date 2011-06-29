@@ -44,7 +44,7 @@ module numvar
   ! ir11, ir22, ir33, ...
   ! ... ir12, ir13, ir23       tensions de Reynolds en Rij
   ! iep                        Dissipation turbulente
-  ! iphi, ifb                  variables phi et f_barre du v2f phi-model
+  ! iphi, ifb, ial             variables phi et f_barre du v2f phi-model
   ! iomg                       variable omega du k-omega SST
   ! inusa                      variable nu du Spalart-Allmaras
   ! isca(i)                    scalaire numero i
@@ -58,7 +58,7 @@ module numvar
                    ik  , iep   ,                                &
                    ir11, ir22  , ir33,                          &
                    ir12, ir13  , ir23,                          &
-                   iphi, ifb   , iomg,                          &
+                   iphi, ifb   , ial , iomg,                    &
                    inusa,                                       &
                    isca(nscamx), iscapp(nscamx),                &
                    nscaus      , nscapp        ,                &

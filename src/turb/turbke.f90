@@ -131,11 +131,12 @@ integer          ipcrom, ipbrom, ipcvst, ipcvis, iflmas, iflmab
 integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
+integer          iphydp
 
 double precision rnorm , d2s3, divp23
 double precision deltk , delte, a11, a12, a22, a21
 double precision gravke, epssuk, unsdet, romvsd
-double precision prdtur, xk, xeps, xphi, xnu, ttke, ttmin, tt
+double precision prdtur, xk, xeps, xphi, xnu, xnut, ttke, ttmin, tt
 double precision visct , rom   , ceps1 , ctsqnu
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
@@ -154,6 +155,7 @@ double precision, allocatable, dimension(:) :: tinstk, tinste, divu
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w10, w11, w12
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
 
@@ -174,6 +176,9 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 
+if (iturb.eq.51) then
+  allocate(w10(ncelet),w11(ncelet))
+endif
 
 icliup = iclrtp(iu,icoef)
 iclivp = iclrtp(iv,icoef)
@@ -451,7 +456,7 @@ endif
 
 !     En V2F, on stocke TINSTK dans PRDV2F qui sera complete plus loin pour
 !     contenir le terme de production complet
-if (iturb.eq.50) then
+if (itytur.eq.5) then
   do iel = 1, ncel
     prdv2f(iel) = tinstk(iel)
   enddo
@@ -470,6 +475,99 @@ endif
 init = 1
 call divmas(ncelet,ncel,nfac,nfabor,init,nfecra,                  &
                ifacel,ifabor,propfa(1,iflmas),propfb(1,iflmab),w1)
+
+!===============================================================================
+! 7.pre SEULEMENT POUR LE MODELE BL-V2/K, CALCUL DE E ET CEPS2*
+
+!      Les termes sont stockes dans     W10, W11
+!      Tableaux de travail              W2, W3, W4, W5, W6, DRTP,SMBRK,SMBRE
+!                                       VISCF, VISCB
+!      En sortie de l'etape on conserve W10, W11
+!===============================================================================
+
+if (iturb.eq.51) then
+
+!  Calcul du terme CEPS2*: Il est stocke dans W10
+
+  do iel=1,ncel
+    visct = propce(iel,ipcvto)
+    rom   = propce(iel,ipcroo)
+    w3(iel) = visct/rom/sigmak
+  enddo
+
+  call viscfa &
+  !==========
+( imvisf ,        &
+  w3     ,        &
+  viscf  , viscb  )
+
+  ivar = ik
+  iclvar = iclrtp(ivar,icoef)
+
+  iccocg = 1
+  inc = 1
+  init = 1
+
+  nswrgp = nswrgr(ivar)
+  imligp = imligr(ivar)
+  iwarnp = iwarni(ivar)
+  epsrgp = epsrgr(ivar)
+  climgp = climgr(ivar)
+  extrap = extrag(ivar)
+  iphydp = 0
+
+  call itrgrp &
+  !==========
+( nvar   , nscal  ,                                              &
+  init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  w2     , w2     , w2     ,                                     &
+  rtpa(1,ivar)    , coefa(1,iclvar) , coefb(1,iclvar) ,          &
+  viscf  , viscb  ,                                              &
+  w3     , w3     , w3     ,                                     &
+  w10    )
+
+  do iel=1,ncel
+    w10(iel) = -w10(iel)/volume(iel)/rtpa(iel,iep)
+    w10(iel) = tanh(abs(w10(iel))**1.5d0)
+    w10(iel) = cpale2*(1.d0-(cpale2-cpale4)/cpale2*w10(iel)*rtpa(iel,ial)**3)
+  enddo
+
+!  Calcul du terme 2*Ceps3*(1-alpha)^3*nu*nut/eps*d2Ui/dxkdxj*d2Ui/dxkdxj:
+!   (i.e. E term / k)           : Il est stocke dans W11
+
+  ! Allocate a work array
+  allocate(w12(ncelet))
+
+  call tsepls &
+  !==========
+( dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+  coefa  , coefb  ,                                              &
+  w12    )
+
+  do iel=1,ncel
+
+    rom   = propce(iel,ipcroo)
+    xnu   = propce(iel,ipcvlo)/rom
+    xnut  = propce(iel,ipcvto)/rom
+    xeps = rtpa(iel,iep )
+    xk   = rtpa(iel,ik )
+    xphi = rtpa(iel,iphi)
+
+    ttke = xk/xeps
+    ttmin = cpalct*sqrt(xnu/xeps)
+    tt = sqrt(ttke**2 + ttmin**2)
+
+    w11(iel) = 2.d0*xnu*xnut*w12(iel)*cpale3/xeps                  &
+                *(1.d0-rtpa(iel,ial))**3
+
+  enddo
+
+  ! Free memory
+  deallocate(w12)
+
+endif
 
 !===============================================================================
 ! 7. ON FINALISE LE CALCUL DES TERMES SOURCES
@@ -548,6 +646,37 @@ else if (iturb.eq.50) then
          ceps1*( visct*tinste(iel)                                &
          -d2s3*rom*rtpa(iel,ik)*divu(iel) )                       &
          -cv2fe2*rom*rtpa(iel,iep) )
+
+!     On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
+    prdv2f(iel) = visct*prdv2f(iel)                               &
+         -d2s3*rom*rtpa(iel,ik)*divu(iel)
+
+  enddo
+
+else if (iturb.eq.51) then
+
+  do iel=1,ncel
+
+    visct = propce(iel,ipcvto)
+    rom   = propce(iel,ipcroo)
+    xeps = rtpa(iel,iep )
+    xk   = rtpa(iel,ik )
+    xphi = rtpa(iel,iphi)
+    xnu  = propce(iel,ipcvlo)/rom
+    ttke = xk / xeps
+    ttmin = cpalct*sqrt(xnu/xeps)
+    tt = sqrt(ttke**2.d0+ttmin**2.d0)
+
+    smbrk(iel) = volume(iel)*(                                    &
+         visct*tinstk(iel)                                        &
+         -d2s3*rom*rtpa(iel,ik)*divu(iel)                      &
+         -rom*rtpa(iel,iep)                                     &
+         -rom*w11(iel)*xk )
+
+    smbre(iel) = volume(iel)/tt*(                                 &
+         cpale1*( visct*tinste(iel)                               &
+         -d2s3*rom*rtpa(iel,ik)*divu(iel) )                    &
+         -w10(iel)*rom*rtpa(iel,iep) )
 
 !     On stocke la partie en Pk dans PRDV2F pour etre reutilise dans RESV2F
     prdv2f(iel) = visct*prdv2f(iel)                               &
@@ -666,8 +795,13 @@ if (ikecou.eq.1) then
   if( idiff(ivar).ge. 1 ) then
 
     do iel = 1, ncel
-      w4(iel) = propce(iel,ipcvis)                                &
-           + idifft(ivar)*propce(iel,ipcvst)/sigmak
+      if(iturb.eq.51) then
+        w4(iel) = propce(iel,ipcvis)/2.d0                         &
+             + idifft(ivar)*propce(iel,ipcvst)/sigmak
+      else
+        w4(iel) = propce(iel,ipcvis)                              &
+             + idifft(ivar)*propce(iel,ipcvst)/sigmak
+      endif
     enddo
     call viscfa                                                   &
     !==========
@@ -735,8 +869,13 @@ if (ikecou.eq.1) then
 
   if( idiff(ivar).ge. 1 ) then
     do iel = 1, ncel
-      w4(iel) = propce(iel,ipcvis)                                &
-           + idifft(ivar)*propce(iel,ipcvst)/sigmae
+      if(iturb.eq.51) then
+        w4(iel) = propce(iel,ipcvis)/2.0                          &
+             + idifft(ivar)*propce(iel,ipcvst)/cpalse
+      else
+        w4(iel) = propce(iel,ipcvis)                              &
+             + idifft(ivar)*propce(iel,ipcvst)/sigmae
+      endif
     enddo
     call viscfa                                                   &
     !==========
@@ -987,6 +1126,12 @@ if(ikecou.eq.1) then
 
     enddo
 
+!     Dans verini on bloque la combinaison ITURB=51/IKECOU=1
+  else if (iturb.eq.51) then
+
+    WRITE(NFECRA,*)'IKECOU=1 NON VALIDE EN BL-V2/K'
+    call csexit (1)
+
   endif
 
 endif
@@ -1100,6 +1245,24 @@ if(ikecou.eq.0)then
       tinste(iel) = tinste(iel) +                                 &
            cv2fe2*rom*volume(iel)/tt
     enddo
+  else if(iturb.eq.51)then
+    do iel=1,ncel
+      xeps = rtpa(iel,iep )
+      xk   = rtpa(iel,ik )
+      rom = propce(iel,ipcrom)
+      xnu  = propce(iel,ipcvis)/rom
+      ttke = xk / xeps
+      ttmin = cpalct*sqrt(xnu/xeps)
+      tt = sqrt(ttke**2.d0+ttmin**2.d0)
+      if(xk.gt.1.d-12) then
+        tinstk(iel) = tinstk(iel) +                               &
+             rom*volume(iel)/ttke
+      endif
+      tinstk(iel) = tinstk(iel) +                                 &
+             rom*w11(iel)*volume(iel)
+      tinste(iel) = tinste(iel) +                                 &
+           w10(iel)*rom*volume(iel)/tt
+    enddo
 
   endif
 endif
@@ -1126,8 +1289,13 @@ ipp    = ipprtp(ivar)
 if( idiff(ivar).ge. 1 ) then
 
   do iel = 1, ncel
-    w1(iel) = propce(iel,ipcvis)                                  &
-                        + idifft(ivar)*propce(iel,ipcvst)/sigmak
+    if(iturb.eq.51) then
+      w1(iel) = propce(iel,ipcvis)/2.d0                           &
+                          + idifft(ivar)*propce(iel,ipcvst)/sigmak
+    else
+      w1(iel) = propce(iel,ipcvis)                                &
+                          + idifft(ivar)*propce(iel,ipcvst)/sigmak
+    endif
   enddo
   call viscfa                                                     &
   !==========
@@ -1205,8 +1373,13 @@ ipp    = ipprtp(ivar)
 
 if( idiff(ivar).ge. 1 ) then
   do iel = 1, ncel
-    w1(iel) = propce(iel,ipcvis)                                  &
-                        + idifft(ivar)*propce(iel,ipcvst)/sigmae
+    if(iturb.eq.51) then
+      w1(iel) = propce(iel,ipcvis)/2.d0                           &
+                          + idifft(ivar)*propce(iel,ipcvst)/cpalse
+    else
+      w1(iel) = propce(iel,ipcvis)                                &
+                          + idifft(ivar)*propce(iel,ipcvst)/sigmae
+    endif
   enddo
   call viscfa                                                     &
   !==========
@@ -1292,6 +1465,8 @@ deallocate(tinstk, tinste, divu)
 deallocate(w1, w2, w3)
 deallocate(w4, w5)
 deallocate(w7, w8, w9)
+
+if (allocated(w10)) deallocate(w10, w11)
 
 !--------
 ! FORMATS

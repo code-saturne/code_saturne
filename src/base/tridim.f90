@@ -1405,7 +1405,7 @@ if (iccvfg.eq.0) then
   iok = 0
   if(iwarni(iu).ge.1) then
     if( itytur.eq.2 .or. itytur.eq.3              &
-         .or. iturb.eq.50 .or. iturb.eq.60 ) then
+         .or. itytur.eq.5 .or. iturb.eq.60 ) then
       iok = 1
     endif
     if(iok.eq.1) then
@@ -1413,13 +1413,14 @@ if (iccvfg.eq.0) then
     endif
   endif
 
-  ! Si on est en v2f, on reserve un tableau de taille NCELET pour eviter
-  ! de recalculer la production dans RESV2F (trois appels a GRDCEL)
-  if (iturb.eq.50) then
+  ! Si on est en v2f (phi-fbar ou BL-v2/k), on reserve un tableau
+  ! de taille NCELET pour eviter de recalculer la production dans RESV2F
+  ! (trois appels a GRDCEL)
+  if (itytur.eq.5) then
     allocate(prdv2f(ncelet))
   endif
 
-  if( (itytur.eq.2) .or. (iturb.eq.50) ) then
+  if( (itytur.eq.2) .or. (itytur.eq.5) ) then
 
     call turbke &
     !==========
@@ -1431,7 +1432,7 @@ if (iccvfg.eq.0) then
     coefa  , coefb  , ckupdc , smacel ,                            &
     prdv2f )
 
-    if( iturb.eq.50 )  then
+    if( itytur.eq.5 )  then
 
       call resv2f &
       !==========

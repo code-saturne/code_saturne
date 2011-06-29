@@ -354,24 +354,39 @@ elseif (iturb.eq.42) then
    dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
    coefa  , coefb  , ckupdc , smacel )
 
-elseif (iturb.eq.50) then
+elseif (itytur.eq.5) then
 
-! 3.8 v2f phi-model
-! =================
-  ipcvis = ipproc(iviscl)
-  ipcvst = ipproc(ivisct)
-  ipcrom = ipproc(irom  )
+! 3.8 v2f (phi-model and BL-v2/k)
+! ===============================
 
-  do iel = 1, ncel
-    xk = rtp(iel,ik)
-    xe = rtp(iel,iep)
-    xrom = propce(iel,ipcrom)
-    xnu = propce(iel,ipcvis)/xrom
-    ttke = xk / xe
-    ttmin = cv2fct*sqrt(xnu/xe)
-    tt = max(ttke,ttmin)
-    propce(iel,ipcvst) = cv2fmu*xrom*tt*rtp(iel,iphi)*rtp(iel,ik)
-  enddo
+  if (iturb.eq.50) then
+
+    ipcvis = ipproc(iviscl)
+    ipcvst = ipproc(ivisct)
+    ipcrom = ipproc(irom  )
+
+    do iel = 1, ncel
+      xk = rtp(iel,ik)
+      xe = rtp(iel,iep)
+      xrom = propce(iel,ipcrom)
+      xnu = propce(iel,ipcvis)/xrom
+      ttke = xk / xe
+      ttmin = cv2fct*sqrt(xnu/xe)
+      tt = max(ttke,ttmin)
+      propce(iel,ipcvst) = cv2fmu*xrom*tt*rtp(iel,iphi)*rtp(iel,ik)
+    enddo
+
+  else if (iturb.eq.51) then
+
+    call visv2f &
+    !==========
+   ( nvar   , nscal  ,                                              &
+     ncepdc , ncetsm ,                                              &
+     icepdc , icetsm , itypsm ,                                     &
+     dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+     coefa  , coefb  , ckupdc , smacel )
+
+  endif
 
 elseif (iturb.eq.60) then
 

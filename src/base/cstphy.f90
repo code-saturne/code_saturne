@@ -96,7 +96,8 @@ module cstphy
   !            constantes du k-epsilon
   !   c*rij* : constantes du Rij-epsilon standard (LRR)
   !   cssg*  : constantes specifiques du Rij-epsilon SSG
-  !   cv2f*  : constantes specifiques du v2f phi-model
+  !   cv2f*  : constantes specifiques du v2f "phi-model" (f-barre)
+  !   cpal*  : constantes specifiques du v2f "BL-v2k" (ou phi-alpha)
   !   ckw*   : constantes specifiques du k-omega SST
   !            (sk=sigma_k, sw=sigma_w, bt=beta, gm=gamma)
   !   csa*   : constantes specifiques de Spalart-Allmaras
@@ -134,6 +135,9 @@ module cstphy
                             cssgr1 , cssgr2 , cssgr3 , cssgr4 , cssgr5 ,    &
                             cv2fa1 , cv2fe2 , cv2fmu , cv2fc1 , cv2fc2 ,    &
                             cv2fct , cv2fcl , cv2fet ,                      &
+                            cpale1 , cpale2 , cpale3 , cpale4 , cpalse ,    &
+                            cpalmu , cpalc1 , cpalc2 ,                      &
+                            cpalct , cpalcl , cpalet ,                      &
                             ckwsk1 , ckwsk2 , ckwsw1 , ckwsw2 , ckwbt1 ,    &
                             ckwbt2 , ckwgm1 , ckwgm2 , ckwa1  , ckwc1  ,    &
                             csab1  , csab2  , csasig , csav1  , csaw1  ,    &

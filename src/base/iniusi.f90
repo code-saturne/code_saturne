@@ -370,7 +370,7 @@ if(iihmpr.eq.1) then
              iturb, ik, iep,                                      &
              ir11, ir22, ir33,                                    &
              ir12, ir13, ir23,                                    &
-             iomg, iphi, ifb,                                     &
+             iomg, iphi, ifb, ial,                                &
              inusa,                                               &
              iale, iuma, ivma, iwma,                              &
              isca, iscapp)

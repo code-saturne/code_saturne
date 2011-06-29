@@ -148,6 +148,10 @@ do numcpl = 1, nbrcpl
     write(nfecra,1000) numcpl
     call csexit(1)
     !==========
+  elseif (iturb.eq.51.and.iturcp(numcpl).ne.51) then
+    write(nfecra,1002) numcpl
+    call csexit(1)
+    !==========
   elseif (itytur.eq.4.and.                               &
        iturcp(numcpl)/10.ne.4) then
     write(nfecra,1001) numcpl
@@ -169,7 +173,24 @@ enddo
 '@    =========                                               ',/,&
 '@    LES MODELES DE TURBULENCE POUR LE COUPLAGE ' ,I10        ,/,&
 '@    SONT DIFFERENTS ALORS QUE L UN DES MODELES EST LE       ',/,&
-'@    V2F. CE CAS DE FIGURE N''EST PAS PRIS                   ',/,&
+'@    V2F PHI_FBAR. CE CAS DE FIGURE N''EST PAS PRIS          ',/,&
+'@    EN COMPTE POUR LE MOMENT.                               ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  Verifier usini1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 1002 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    LES MODELES DE TURBULENCE POUR LE COUPLAGE ' ,I10        ,/,&
+'@    SONT DIFFERENTS ALORS QUE L UN DES MODELES EST LE       ',/,&
+'@    V2F BL-V2/K. CE CAS DE FIGURE N''EST PAS PRIS           ',/,&
 '@    EN COMPTE POUR LE MOMENT.                               ',/,&
 '@                                                            ',/,&
 '@  Le calcul ne peut etre execute.                           ',/,&

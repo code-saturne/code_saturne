@@ -321,7 +321,7 @@ do ipp = 2, nvppmx
          ipp.eq.ipprtp(iw ) ) then
       ipuvw = 1
     endif
-    !   En v2f on ne clippe jamais f_barrre, on ne l'affiche donc pas
+    !   En v2f phi-fbar on ne clippe jamais f_barre, on ne l'affiche donc pas
     if (iturb.eq.50) then
       if (ipp.eq.ipprtp(ifb)) ipuvw = 1
     endif

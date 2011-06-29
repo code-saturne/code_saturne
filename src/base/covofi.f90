@@ -457,7 +457,7 @@ enddo
 if (itspdv.eq.1) then
 
   if(itytur.eq.2.or.itytur.eq.3                     &
-       .or.iturb.eq.50 .or. iturb.eq.60) then
+       .or.itytur.eq.5 .or. iturb.eq.60) then
 
     ! Allocate a temporary array for the gradient reconstruction
     allocate(grad(ncelet,3))
@@ -529,7 +529,7 @@ if (itspdv.eq.1) then
       thetap = 1.d0
     endif
     do iel = 1, ncel
-      if(itytur.eq.2 .or. iturb.eq.50) then
+      if(itytur.eq.2 .or. itytur.eq.5) then
         xk     = rtpa(iel,ik)
         xe     = rtpa(iel,iep)
       elseif(itytur.eq.3) then

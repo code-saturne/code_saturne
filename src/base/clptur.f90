@@ -151,7 +151,7 @@ integer          inturb, inlami, iuiptn
 integer          iclu  , iclv  , iclw  , iclk  , iclep
 integer          iclnu
 integer          icl11 , icl22 , icl33 , icl12 , icl13 , icl23
-integer          icluf , iclvf , iclwf , iclphi, iclfb , iclomg
+integer          icluf , iclvf , iclwf , iclphi, iclfb , iclal , iclomg
 integer          ipcrom, ipcvis, ipcvst, ipccp , ipccv
 integer          iclvar, ipcvsl, iclvaf
 double precision rnx, rny, rnz, rxnn
@@ -225,11 +225,15 @@ elseif(itytur.eq.3) then
   icl13  = iclrtp(ir13,icoef)
   icl23  = iclrtp(ir23,icoef)
   iclep  = iclrtp(iep,icoef)
-elseif(iturb.eq.50) then
+elseif(itytur.eq.5) then
   iclk   = iclrtp(ik ,icoef)
   iclep  = iclrtp(iep,icoef)
   iclphi = iclrtp(iphi,icoef)
-  iclfb  = iclrtp(ifb,icoef)
+  if(iturb.eq.50) then
+    iclfb  = iclrtp(ifb,icoef)
+  elseif(iturb.eq.51) then
+    iclal  = iclrtp(ial,icoef)
+  endif
 elseif(iturb.eq.60) then
   iclk   = iclrtp(ik ,icoef)
   iclomg = iclrtp(iomg,icoef)
@@ -282,9 +286,9 @@ inlami = 0
 iuiptn = 0
 
 
-!     En v2f on met directement u=0 donc UIPTMX et UIPTMN vaudront
-!     forcement 0
-if (iturb.eq.50) then
+!     En modele type v2f (phi-fbar et BL-v2/k) on met directement u=0 donc
+!     UIPTMX et UIPTMN vaudront forcement 0
+if (itytur.eq.5) then
   uiptmx = 0.d0
   uiptmn = 0.d0
 endif
@@ -501,7 +505,7 @@ do ifac = 1, nfabor
     else
 ! Si IDEUCH=1 ou 2 on calcule uk et uet
 
-      if (itytur.eq.2 .or. iturb.eq.50 .or. iturb.eq.60) then
+      if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
         ek = rtp(iel,ik)
       else if (itytur.eq.3) then
         ek = 0.5d0*(rtp(iel,ir11)+rtp(iel,ir22)+rtp(iel,ir33))
@@ -947,7 +951,7 @@ do ifac = 1, nfabor
 
       endif
 
-    elseif(iturb.eq.50) then
+    elseif (itytur.eq.5) then
 
 !     Avec ces conditions, pas besoin de calculer UIPTMX, UIPTMN
 !     et IUIPTN qui sont nuls (valeur d'initialisation)
@@ -1118,7 +1122,8 @@ do ifac = 1, nfabor
       endif
 
 !===============================================================================
-! 6. CONDITIONS AUX LIMITES SUR K, EPSILON, F_BARRE ET PHI
+! 6a.CONDITIONS AUX LIMITES SUR K, EPSILON, F_BARRE ET PHI
+!    DANS LE MODELE PHI_FBAR
 !===============================================================================
 
     elseif (iturb.eq.50) then
@@ -1133,6 +1138,25 @@ do ifac = 1, nfabor
       coefb(ifac,iclphi) = 0.0d0
       coefa(ifac,iclfb) = 0.0d0
       coefb(ifac,iclfb) = 0.0d0
+
+!===============================================================================
+! 6b.CONDITIONS AUX LIMITES SUR K, EPSILON, PHI ET ALPHA
+!    DANS LE MODELE BL-V2/K
+!===============================================================================
+
+    elseif (iturb.eq.51) then
+
+      coefa(ifac,iclk) = 0.d0
+      coefb(ifac,iclk) = 0.d0
+      coefa(ifac,iclep) =                                         &
+                 propce(iel,ipcvis)/propce(iel,ipcrom)            &
+           *rtp(iel,ik)/distbf**2
+      coefb(ifac,iclep) = 0.d0
+      coefa(ifac,iclphi) = 0.0d0
+      coefb(ifac,iclphi) = 0.0d0
+      coefa(ifac,iclal) = 0.0d0
+      coefb(ifac,iclal) = 0.0d0
+
 !===============================================================================
 ! 7. CONDITIONS AUX LIMITES SUR K ET OMEGA
 !===============================================================================
@@ -1451,7 +1475,7 @@ if(iwarni(iu).ge.0) then
   endif
 
   if ( (iturb.eq.0.and.inturb.ne.0)        .or.            &
-       (iturb.eq.50.and.inturb.ne.0)       .or.            &
+       (itytur.eq.5.and.inturb.ne.0)       .or.            &
        ((itytur.eq.2.or.itytur.eq.3)                &
         .and.inlami.gt.0)                             )           &
        ntlast = ntcabs
@@ -1465,7 +1489,7 @@ if(iwarni(iu).ge.0) then
          iuiptn,inlami,inlami+inturb
     if (iturb.eq. 0)                                       &
          write(nfecra,2020)  ntlast,ypluli
-    if (iturb.eq.50)                                       &
+    if (itytur.eq.5)                                       &
          write(nfecra,2030)  ntlast,ypluli
     if (itytur.eq.2.or.itytur.eq.3)                 &
          write(nfecra,2040)  ntlast,ypluli
@@ -1536,7 +1560,8 @@ endif
 '@ @@ ATTENTION : RAFFINEMENT INSUFFISANT DU MAILLAGE EN PAROI',/,&
 '@    =========                                               ',/,&
 '@    Le maillage semble insuffisamment raffine en paroi      ',/,&
-'@      pour pouvoir realiser un calcul v2f.                  ',/,&
+'@      pour pouvoir realiser un calcul type v2f              ',/,&
+'@            (phi-fbar ou BL-v2/k)                           ',/,&
 '@                                                            ',/,&
 '@    Le dernier pas de temps auquel ont ete observees de trop',/,&
 '@      grandes valeurs de la distance adimensionnelle a la   ',/,&
@@ -1631,7 +1656,8 @@ endif
 '@ @@ WARNING: MESH NOT ENOUGH REFINED AT THE WALL            ',/,&
 '@    ========                                                ',/,&
 '@    The mesh does not seem to be enough refined at the wall ',/,&
-'@      to be able to run a v2f simulation.                   ',/,&
+'@      to be able to run a v2f simulation                    ',/,&
+'@      (phi-fbar or BL-v2/k)                                 ',/,&
 '@                                                            ',/,&
 '@    The last time step at which too large values for the    ',/,&
 '@      dimensionless distance to the wall (yplus) have been  ',/,&
