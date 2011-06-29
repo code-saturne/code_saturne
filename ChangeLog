@@ -1,3 +1,8 @@
+* 29/06/2011 - Jérôme Bonelle <jerome.bonelle@edf.fr>
+  Fix an issue in case of multi-processors coupling with SYRTHES.
+  modified routine:
+    src/fvm/fvm_nodal.c
+
 * 29/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Fix calls to grdvec due to a recent arguments re-ordering.
   modified routine:

@@ -176,6 +176,8 @@ _fvm_nodal_section_copy(const fvm_nodal_section_t *this_section)
   new_section->_vertex_index = NULL;
   new_section->_vertex_num = NULL;
 
+  new_section->gc_id = NULL;
+
   new_section->tesselation = NULL;  /* TODO: copy tesselation */
 
   /* Numbering */
