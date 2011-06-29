@@ -235,13 +235,13 @@ if (imrgra.eq.0) then
 
   do ifac = 1,nfac
   ! BOUCLE SUR LES COMPOSANTES U, V, W
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
     do isou = 1 ,3
-      ii = ifacel(1,ifac)
-      jj = ifacel(2,ifac)
       pfac   = pond(ifac)*pvar(isou,ii) +(1.d0-pond(ifac))*pvar(isou,jj)
       do jsou = 1, 3
         gradva(isou,jsou,ii) = gradva(isou,jsou,ii) + pfac*surfac(jsou,ifac)
-        gradva(isou,jsou,ii) = gradva(isou,jsou,jj) - pfac*surfac(jsou,ifac)
+        gradva(isou,jsou,jj) = gradva(isou,jsou,jj) - pfac*surfac(jsou,ifac)
       enddo
     enddo
   enddo
@@ -250,13 +250,13 @@ if (imrgra.eq.0) then
 
   do ifac = 1,nfabor
   ! BOUCLE SUR LES COMPOSANTES U, V, W
+    ii = ifabor(ifac)
     do isou = 1 ,3
-      ii = ifabor(ifac)
       pfac = inc*coefav(isou,ifac) + coefbv(isou,1,ifac)*pvar(1,ii)    &
                                    + coefbv(isou,2,ifac)*pvar(2,ii)    &
                                    + coefbv(isou,3,ifac)*pvar(3,ii)
       do jsou = 1, 3
-        gradva(isou,jsou,ii) = gradva(isou,jsou,ii) +pfac*surfbo(jsou,ifac)
+        gradva(isou,jsou,ii) = gradva(isou,jsou,ii) + pfac*surfbo(jsou,ifac)
       enddo
     enddo
   enddo
@@ -265,9 +265,9 @@ if (imrgra.eq.0) then
   ! GRAVEL = GRADIENT
 
   do iel = 1, ncel
+    unsvol = 1.d0/volume(iel)
     do jsou = 1, 3
       do isou = 1, 3
-        unsvol = 1.d0/volume(iel)
         gradv(isou,jsou,iel) = gradva(isou,jsou,iel)*unsvol
       enddo
     enddo
@@ -467,7 +467,7 @@ endif
 call prodsc(9*ncelet,9*ncel,isqrt,gradva(1,1,1),gradva(1,1,1),       &
                               rnorm )
 
-
+! TODO non-dimensional criterium
 if (volmax.gt.1.d0) rnorm = rnorm / volmax
 if( rnorm.le.epzero ) then
   ! Free memory
@@ -570,6 +570,7 @@ endif
 call prodsc(9*ncelet,9*ncel,isqrt,gradva(1,1,1),gradva(1,1,1),       &
                               residu         )
 
+! TODO a non-diemensional criterium
 if (volmax.gt.1.d0) residu = residu / volmax
 
 if( residu.le.epsrgp*rnorm) then
