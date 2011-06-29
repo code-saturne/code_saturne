@@ -247,7 +247,7 @@ if( nswrgu.gt.1 ) then
   ! gradient vectoriel la periodicite est deja traitee
   ilved = .true.
 
-  call grdvec &                                                    
+  call grdvec &
   !==========
 ( ivar   , imrgra , inc    , iccocg , nswrgu , imligu ,          &
   iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
