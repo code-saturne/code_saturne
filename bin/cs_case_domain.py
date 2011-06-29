@@ -1651,12 +1651,6 @@ class syrthes_domain(base_domain):
         # Define syrthes case structure
 
         try:
-            config = ConfigParser.ConfigParser()
-            config.read([self.package.get_configfile(),
-                         os.path.expanduser('~/.' + self.package.configfile)])
-            syr_datapath = os.path.join(config.get('install', 'syrthes'),
-                                        os.path.join('share', 'syrthes'))
-            sys.path.insert(0, syr_datapath)
             import syrthes
         except Exception:
             raise RunCaseError("Cannot locate SYRTHES installation.\n")

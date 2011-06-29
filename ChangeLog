@@ -1,3 +1,10 @@
+* 29/06/2011 - David Monfort <david.monfort@edf.fr>
+  Fix the SYRTHES module import (broken due to the recent package
+  structure changes).
+  modified scripts:
+    bin/cs_case_domain.py
+    bin/cs_create.py
+
 * 29/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Fix vectorial gradient calculation and optimize some loops.
   modified routine:

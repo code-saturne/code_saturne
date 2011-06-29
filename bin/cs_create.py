@@ -142,20 +142,21 @@ def make_executable(filename):
 # Build lines necessary to import SYRTHES packages
 #-------------------------------------------------------------------------------
 
-def syrthes_path_line():
+def syrthes_path_line(pkg):
     """
     Build lines necessary to import SYRTHES packages
     """
+
     line = None
-    try:
-        config = ConfigParser.ConfigParser()
-        config.read([self.package.get_configfile(),
-                     os.path.expanduser('~/.' + self.package.configfile)])
+
+    config = ConfigParser.ConfigParser()
+    config.read([pkg.get_configfile(),
+                 os.path.expanduser('~/.' + pkg.configfile)])
+
+    if config.has_option('install', 'syrthes'):
         syr_datapath = os.path.join(config.get('install', 'syrthes'),
                                     os.path.join('share', 'syrthes'))
         line = 'sys.path.insert(1, \'' + syr_datapath + '\')\n'
-    except Exception:
-        pass
 
     return line
 
@@ -490,7 +491,7 @@ class Study:
         e_dir = re.compile('CASEDIRNAME')
         e_apps = re.compile('APP_DICTS')
 
-        syrthes_insert = syrthes_path_line()
+        syrthes_insert = syrthes_path_line(self.package)
 
         fd  = open(runcase, 'r')
         fdt = open(runcase_tmp,'w')
