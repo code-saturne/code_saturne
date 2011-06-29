@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-06-27 13:42+0200\n"
+"POT-Creation-Date: 2011-06-29 18:31+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7851,21 +7851,11 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Variable index %d out of bounds (1 to %d)"
-msgstr ""
-
-#, c-format
 msgid "Invalid xpath: %s\n"
 msgstr ""
 
 #, c-format
 msgid "Invalid thermal model: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Coordinate %s of the monitoring probe number %i not found.\n"
-"Xpath: %s\n"
 msgstr ""
 
 #, c-format
@@ -7969,6 +7959,10 @@ msgstr "type inconnu %s \n"
 
 #, c-format
 msgid "Xpath request failed %s \n"
+msgstr ""
+
+#, c-format
+msgid "Variable index %d out of bounds (1 to %d)"
 msgstr ""
 
 #, c-format
