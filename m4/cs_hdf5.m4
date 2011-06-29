@@ -27,6 +27,7 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_HDF5], [
 
 cs_have_hdf5=no
+cs_have_hdf5_header=no
 
 AC_ARG_WITH(hdf5,
             [AS_HELP_STRING([--with-hdf5=PATH],
@@ -67,9 +68,26 @@ if test "x$with_hdf5" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
+  CPPFLAGS="${CPPFLAGS} ${HDF5_CPPFLAGS}"
+
+  # First, check for hdf5.h header
+  AC_CHECK_HEADERS([hdf5.h],
+                   [cs_have_hdf5_header=yes],
+                   [],
+                   [])
+
+  if test $cs_have_hdf5_header = no ; then
+    unset ac_cv_header_hdf5_h
+    HDF5_CPPFLAGS="${HDF5_CPPFLAGS} ${MPI_CPPFLAGS}"
+    CPPFLAGS="${saved_CPPFLAGS} ${HDF5_CPPFLAGS}"
+    AC_CHECK_HEADERS([hdf5.h],
+                     [cs_have_hdf5_header=yes],
+                     [],
+                     [])
+  fi
+
   HDF5_LIBS="-lhdf5 $PTHREAD_LIBS"
   
-  CPPFLAGS="${CPPFLAGS} ${HDF5_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS}"
   LIBS="${LIBS} ${HDF5_LIBS}"
 

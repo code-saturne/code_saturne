@@ -1,4 +1,9 @@
 * 29/06/2011 - David Monfort <david.monfort@edf.fr>
+  Improve HDF5 auto-detection with MPI support.
+  modified script:
+    m4/cs_mpi.m4
+
+* 29/06/2011 - David Monfort <david.monfort@edf.fr>
   Improve MPI auto-detection on Fedora (and possibly RedHat and CentOS)
   where MPI environment is defined by the module command.
   modified script:
