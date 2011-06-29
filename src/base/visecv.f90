@@ -144,7 +144,7 @@ integer          iccocg, inc, iel, ifac, ivar, isou, jsou, ii, jj, init
 integer          nswrgp, imligp, iwarnp
 integer          ipcrom, ipbrom, ipcvis, ipcvst, iflmas, iflmab
 integer          ipcvsv
-logical          interleaved
+logical          ilved
 
 double precision epsrgp, climgp, extrap
 double precision romf, d2s3m, vecfac
@@ -152,7 +152,7 @@ double precision romf, d2s3m, vecfac
 double precision, allocatable, dimension(:) :: vistot
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w6
-double precision, dimension(:,:,:), allocatable :: gradvel, gradvela
+double precision, dimension(:,:,:), allocatable :: gradv, gradva
 
 !===============================================================================
 
@@ -227,8 +227,7 @@ endif
 
 ! Allocate a temporary array for the gradient calculation
 allocate(w4(ncelet), w6(ncelet))
-allocate(gradvel (3,3,ncelet))
-allocate(gradvela(3,3,ncelet))
+allocate(gradv(3,3,ncelet), gradva(3,3,ncelet))
 
 ! Les coefficients pris sont ceux sur le flux de vitesse, qui sont
 ! eventuellement egaux a ces sur les gradients
@@ -244,15 +243,16 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-interleaved = .true.
+ilved = .true.
 
 ! Vectorial gradient
 call grdvec                                                       &
 !==========
  ( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   vela   , interleaved     , cofafu , cofbfu ,                   &
-   gradvel )
+   ilved  ,                                                       &
+   vela   , cofafu , cofbfu ,                                     &
+   gradv  )
 
 
 ! Ceci parait VRAIMENT faux et ne plus conserver la quantite de mouvement
@@ -267,9 +267,9 @@ do iel = 1, ncelet
 ! --- Assemblage sur les faces internes
   do isou = 1, 3
 
-! On stoque vistot*gradvel dans gradvela
+! On stoque vistot*gradv dans gradva
     do jsou = 1, 3
-      gradvela(isou,jsou,iel) = vistot(iel)*gradvel(isou,jsou,iel)
+      gradva(isou,jsou,iel) = vistot(iel)*gradv(isou,jsou,iel)
     enddo
   enddo
 enddo
@@ -298,7 +298,7 @@ do ifac = 1, nfac
   do isou = 1, 3
     do jsou = 1, 3
       vecfac = 0.5d0*surfac(jsou,ifac)*                      &
-      (gradvela(jsou,isou,ii)+gradvela(jsou,isou,jj))
+      (gradva(jsou,isou,ii)+gradva(jsou,isou,jj))
 
       trav(isou,ii) = trav(isou,ii) + vecfac*w6(ii)
       trav(isou,jj) = trav(isou,jj) - vecfac*w6(jj)
@@ -414,7 +414,7 @@ endif
 
 ! Free memory
 deallocate(w4)
-deallocate(gradvel)
+deallocate(gradv,gradva)
 
 return
 end subroutine

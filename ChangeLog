@@ -1,3 +1,9 @@
+* 29/06/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fix calls to grdvec due to a recent arguments re-ordering.
+  modified routine:
+    src/alge/bilsc4.f90
+    src/alge/visecv.f90
+
 * 29/06/2011 - David Monfort <david.monfort@edf.fr>
   Fix the SYRTHES module import (broken due to the recent package
   structure changes).

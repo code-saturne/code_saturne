@@ -172,7 +172,7 @@ integer          iitytu
 integer          iir11,iir22,iir33
 integer          iir12,iir13,iir23
 integer          isou, jsou
-logical          interleaved
+logical          ilved
 double precision pfac,pfacd,flui,fluj,flux,fluxi,fluxj
 double precision vfac(3)
 double precision difv(3), djfv(3)
@@ -255,15 +255,16 @@ if( (idiffp.ne.0 .and. ircflp.eq.1) .or.                          &
     (ischcp.eq.0 .or.  ircflp.eq.1 .or. isstpp.eq.0)) ) then
 
 
-  interleaved = .true.
+  ilved = .true.
   iccocg = 0
 
-  call grdvec                                                     &
+  call grdvec &
   !==========
- ( iu     , imrgra , inc    , iccocg ,nswrgp , imligp ,           &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   vel    , interleaved     , coefav , coefbv ,                   &
-   gradv )
+( iu     , imrgra , inc    , iccocg ,nswrgp , imligp ,           &
+  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  ilved  ,                                                       &
+  vel    , coefav , coefbv ,                                     &
+  gradv )
 
 else
   do iel = 1, ncelet
