@@ -144,7 +144,7 @@ integer          iappel, isou, jsou
 double precision pfac, pip
 double precision dofx,dofy,dofz,pnd
 double precision diipbx, diipby, diipbz
-logical          interleaved
+logical          ilved
 
 double precision, dimension(:,:), allocatable :: qdm, coefaq
 double precision, dimension(:,:,:), allocatable :: grdqdm
@@ -245,14 +245,15 @@ if( nswrgu.gt.1 ) then
 !     CALCUL DU GRADIENT SUIVANT de QDM
 !     =================================
   ! gradient vectoriel la periodicite est deja traitee
-  interleaved = .true.
+  ilved = .true.
 
-  call grdvec                                                     &
+  call grdvec &                                                    
   !==========
- ( ivar   , imrgra , inc    , iccocg , nswrgu , imligu ,          &
-   iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
-   qdm    , interleaved     , coefaq , coefbv ,                   &
-   grdqdm )
+( ivar   , imrgra , inc    , iccocg , nswrgu , imligu ,          &
+  iwarnu , nfecra , epsrgu , climgu , extrau ,                   &
+  ilved  ,                                                       &
+  qdm    , coefaq , coefbv ,                                     &
+  grdqdm )
 
 
 ! ---> FLUX DE MASSE SUR LES FACETTES FLUIDES
