@@ -1,3 +1,6 @@
+* 30/06/2011 - David Monfort <david.monfort@edf.fr>
+  Update Code_Saturne version number to 2.2-alpha (i.e. development).
+
 * 30/06/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
   Correct XML generation with coal and gas modelling (density must be
   variable and not user-law).
