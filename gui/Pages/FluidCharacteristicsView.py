@@ -247,10 +247,10 @@ lambda = 4.431e-4 * Temp_K + 5.334e-2;
             # Gas or coal combustion
             if mdl_gas != 'off' or mdl_coal != 'off':
                 if tag == 'density':
-                    __model.setItem(str_model='user_law')
+                    __model.setItem(str_model='variable')
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
-                    self.mdl.setPropertyMode(tag, 'user_law')
+                    self.mdl.setPropertyMode(tag, 'variable')
                     __label.setText(QString(self.tr("Calculation by\n perfect gas law")))
                     __line.setText(QString(str("")))
                     __line.setEnabled(False)

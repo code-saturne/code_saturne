@@ -1,3 +1,9 @@
+* 30/06/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
+  Correct XML generation with coal and gas modelling (density must be
+  variable and not user-law).
+  modified routine:
+    gui/Pages/FluidCharacteristicView.py
+
 * 29/06/2011 - Flavien Billard <flavien.billard@manchester.ac.uk>
   New turbulence model in the framework of the v2-f models.
   This is a "blended" v2f (iturb = 51).
