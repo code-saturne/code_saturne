@@ -1,3 +1,6 @@
+* 30/06/2011 - David Monfort <david.monfort@edf.fr>
+  New version 2.1 release candidate.
+
 * 30/06/2011 - Mélanie Aebischer <melanie.aebischer@c-s.fr>
   Correct XML generation with coal and gas modelling (density must be
   variable and not user-law).
