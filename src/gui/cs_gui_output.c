@@ -1711,7 +1711,6 @@ void CS_PROCF (csenso, CSENSO)
 void
 cs_gui_postprocess_meshes(void)
 {
-
   int i, j, id, id_writer;
   char *label = NULL;
   char *all_variables = NULL;
@@ -1723,8 +1722,12 @@ cs_gui_postprocess_meshes(void)
   char *path = NULL;
   int *writer_ids = NULL;
 
+  if (!cs_gui_file_is_loaded())
+    return;
+
   nmesh = cs_gui_get_tag_number("/analysis_control/output/mesh", 1);
-  for (i=1; i <= nmesh; i++) {
+
+  for (i = 1; i <= nmesh; i++) {
     id = atoi(cs_gui_output_type_choice("mesh","id",i));
     label = cs_gui_output_type_choice("mesh","label",i);
     all_variables
@@ -1774,7 +1777,7 @@ cs_gui_postprocess_meshes(void)
 void
 cs_gui_postprocess_writers(void)
 {
-  int i, id;
+  int i;
   char *label = NULL;
   char *directory = NULL;
   char *format_name = NULL;
@@ -1782,19 +1785,22 @@ cs_gui_postprocess_writers(void)
   char *time_dependency = NULL;
   char *frequency_choice = NULL;
   char *output_end_st = NULL;
-  cs_int_t time_step;
-  cs_real_t time_value;
 
-  int n_writers = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
+  int n_writers = 0;
+
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  n_writers = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
 
   for (i = 1; i <= n_writers; i++) {
 
+    int id = 0;
     fvm_writer_time_dep_t  time_dep = FVM_WRITER_FIXED_MESH;
     cs_bool_t output_at_end = true;
+    cs_int_t time_step = -1;
+    cs_real_t time_value = -1.0;
 
-    id = 0;
-    time_step = -1;
-    time_value = -1.;
     id = atoi(cs_gui_output_type_choice("writer", "id", i));
     label = cs_gui_output_type_choice("writer", "label", i);
     directory = cs_gui_output_type_options("writer", "name", "directory", i);
