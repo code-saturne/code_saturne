@@ -1,73 +1,74 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>OutputControlForm</class>
- <widget class="QWidget" name="OutputControlForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="OutputControlForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>499</width>
-    <height>532</height>
+    <width>490</width>
+    <height>475</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" >
-   <property name="margin" >
+  <layout class="QGridLayout">
+   <property name="margin">
     <number>9</number>
    </property>
-   <property name="spacing" >
+   <property name="spacing">
     <number>6</number>
    </property>
-   <item row="0" column="0" >
-    <widget class="QTabWidget" name="tabWidget" >
-     <property name="font" >
+   <item row="0" column="0">
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="font">
       <font>
        <weight>50</weight>
        <italic>false</italic>
        <bold>false</bold>
       </font>
      </property>
-     <property name="currentIndex" >
+     <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tabOUTPUT" >
-      <attribute name="title" >
+     <widget class="QWidget" name="tabOUTPUT">
+      <attribute name="title">
        <string>Output Control</string>
       </attribute>
-      <layout class="QGridLayout" >
-       <property name="margin" >
+      <layout class="QGridLayout">
+       <property name="margin">
         <number>9</number>
        </property>
-       <property name="spacing" >
+       <property name="spacing">
         <number>6</number>
        </property>
-       <item row="0" column="0" >
-        <widget class="QGroupBox" name="groupBoxListings" >
-         <property name="title" >
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="groupBoxListings">
+         <property name="title">
           <string>Log frequency</string>
          </property>
-         <layout class="QGridLayout" >
-          <property name="margin" >
+         <layout class="QGridLayout">
+          <property name="margin">
            <number>9</number>
           </property>
-          <property name="spacing" >
+          <property name="spacing">
            <number>6</number>
           </property>
-          <item row="0" column="0" >
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+          <item row="0" column="0">
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
+            </property>
+            <property name="margin">
+             <number>0</number>
             </property>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>20</height>
@@ -76,43 +77,43 @@
              </spacer>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxOutput" >
-              <property name="minimumSize" >
+             <widget class="QComboBox" name="comboBoxOutput">
+              <property name="minimumSize">
                <size>
                 <width>275</width>
                 <height>0</height>
                </size>
               </property>
-              <property name="maximumSize" >
+              <property name="maximumSize">
                <size>
                 <width>275</width>
                 <height>16777215</height>
                </size>
               </property>
-              <property name="toolTip" >
+              <property name="toolTip">
                <string>Code_Saturne key word: NTLIST</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditNTLIST" >
-              <property name="maximumSize" >
+             <widget class="QLineEdit" name="lineEditNTLIST">
+              <property name="maximumSize">
                <size>
                 <width>60</width>
                 <height>16777215</height>
                </size>
               </property>
-              <property name="toolTip" >
+              <property name="toolTip">
                <string>Code_Saturne key word: NTLIST</string>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -122,48 +123,61 @@
             </item>
            </layout>
           </item>
+          <item row="1" column="0">
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
          </layout>
         </widget>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab" >
-      <attribute name="title" >
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
        <string>Writer</string>
       </attribute>
-      <layout class="QGridLayout" >
-       <property name="margin" >
+      <layout class="QGridLayout">
+       <property name="margin">
         <number>9</number>
        </property>
-       <property name="spacing" >
+       <property name="spacing">
         <number>6</number>
        </property>
-       <item row="3" column="0" >
-        <widget class="QGroupBox" name="groupBoxOptions" >
-         <property name="title" >
+       <item row="3" column="0">
+        <widget class="QGroupBox" name="groupBoxOptions">
+         <property name="title">
           <string>Options</string>
          </property>
-         <layout class="QGridLayout" >
-          <property name="margin" >
+         <layout class="QGridLayout">
+          <property name="margin">
            <number>9</number>
           </property>
-          <property name="spacing" >
+          <property name="spacing">
            <number>6</number>
           </property>
-          <item row="0" column="0" >
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+          <item row="0" column="0">
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
+            </property>
+            <property name="margin">
+             <number>0</number>
             </property>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -172,99 +186,61 @@
              </spacer>
             </item>
             <item>
-             <layout class="QGridLayout" >
-              <property name="margin" >
+             <layout class="QGridLayout">
+              <property name="margin">
                <number>0</number>
               </property>
-              <property name="spacing" >
+              <property name="spacing">
                <number>6</number>
               </property>
-              <item row="0" column="0" >
-               <widget class="QLabel" name="labelformat" >
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: OPTCHR</string>
-                </property>
-                <property name="text" >
+              <item row="0" column="0">
+               <widget class="QLabel" name="labelformat">
+                <property name="text">
                  <string>format</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="1" >
-               <widget class="QComboBox" name="comboBoxFormat" >
-                <property name="minimumSize" >
+              <item row="0" column="1">
+               <widget class="QComboBox" name="comboBoxFormat">
+                <property name="minimumSize">
                  <size>
                   <width>120</width>
                   <height>0</height>
                  </size>
                 </property>
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: OPTCHR</string>
-                </property>
                </widget>
               </item>
-              <item row="1" column="0" >
-               <widget class="QLabel" name="labelPolygon" >
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: OPTCHR</string>
-                </property>
-                <property name="text" >
+              <item row="1" column="0">
+               <widget class="QLabel" name="labelPolygon">
+                <property name="text">
                  <string>polygons</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="1" >
-               <widget class="QComboBox" name="comboBoxPolygon" >
-                <property name="minimumSize" >
+              <item row="1" column="1">
+               <widget class="QComboBox" name="comboBoxPolygon">
+                <property name="minimumSize">
                  <size>
                   <width>120</width>
                   <height>0</height>
                  </size>
                 </property>
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: OPTCHR</string>
-                </property>
                </widget>
               </item>
-              <item row="2" column="0" >
-               <widget class="QLabel" name="labelPolyhedra" >
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: OPTCHR</string>
-                </property>
-                <property name="text" >
+              <item row="2" column="0">
+               <widget class="QLabel" name="labelPolyhedra">
+                <property name="text">
                  <string>polyhedra</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="1" >
-               <widget class="QComboBox" name="comboBoxPolyhedra" >
-                <property name="minimumSize" >
+              <item row="2" column="1">
+               <widget class="QComboBox" name="comboBoxPolyhedra">
+                <property name="minimumSize">
                  <size>
                   <width>120</width>
                   <height>0</height>
                  </size>
-                </property>
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: OPTCHR</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0" >
-               <widget class="QLabel" name="labelBigEndian" >
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: OPTCHR</string>
-                </property>
-                <property name="text" >
-                 <string>big-endian</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1" >
-               <widget class="QCheckBox" name="checkBoxBigEndian" >
-                <property name="toolTip" >
-                 <string>Code_Saturne key word: OPTCHR</string>
-                </property>
-                <property name="text" >
-                 <string/>
                 </property>
                </widget>
               </item>
@@ -272,10 +248,10 @@
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>16</height>
@@ -288,31 +264,31 @@
          </layout>
         </widget>
        </item>
-       <item row="0" column="0" >
-        <layout class="QVBoxLayout" >
-         <property name="margin" >
-          <number>0</number>
-         </property>
-         <property name="spacing" >
+       <item row="0" column="0">
+        <layout class="QVBoxLayout">
+         <property name="spacing">
           <number>6</number>
          </property>
+         <property name="margin">
+          <number>0</number>
+         </property>
          <item>
-          <widget class="QTableView" name="tableViewWriter" />
+          <widget class="QTableView" name="tableViewWriter"/>
          </item>
          <item>
-          <layout class="QHBoxLayout" >
-           <property name="margin" >
-            <number>0</number>
-           </property>
-           <property name="spacing" >
+          <layout class="QHBoxLayout">
+           <property name="spacing">
             <number>6</number>
+           </property>
+           <property name="margin">
+            <number>0</number>
            </property>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>40</width>
                <height>20</height>
@@ -321,31 +297,33 @@
             </spacer>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButtonAddWriter" >
-             <property name="text" >
+            <widget class="QPushButton" name="pushButtonAddWriter">
+             <property name="text">
               <string/>
              </property>
-             <property name="icon" >
-              <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/add.png</iconset>
+             <property name="icon">
+              <iconset resource="resources_pages.qrc">
+               <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButtonDeleteWriter" >
-             <property name="text" >
+            <widget class="QPushButton" name="pushButtonDeleteWriter">
+             <property name="text">
               <string/>
              </property>
-             <property name="icon" >
-              <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/remove.png</iconset>
+             <property name="icon">
+              <iconset resource="resources_pages.qrc">
+               <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
              </property>
             </widget>
            </item>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>40</width>
                <height>20</height>
@@ -357,97 +335,112 @@
          </item>
         </layout>
        </item>
-       <item row="1" column="0" >
-        <widget class="QGroupBox" name="groupBoxFrequency" >
-         <property name="title" >
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBoxFrequency">
+         <property name="title">
           <string>Frequency</string>
          </property>
-         <layout class="QGridLayout" >
-          <property name="margin" >
+         <layout class="QGridLayout">
+          <property name="margin">
            <number>9</number>
           </property>
-          <property name="spacing" >
+          <property name="spacing">
            <number>6</number>
           </property>
-          <item row="0" column="2" >
-           <widget class="QLineEdit" name="lineEditFrequencyTime" >
-            <property name="maximumSize" >
-             <size>
-              <width>60</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="toolTip" >
-             <string>Code_Saturne key word: NTCHR</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0" >
-           <widget class="QComboBox" name="comboBoxFrequency" >
-            <property name="minimumSize" >
-             <size>
-              <width>275</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize" >
-             <size>
-              <width>275</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="toolTip" >
-             <string>Code_Saturne key word: NTCHR</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="4" >
-           <widget class="QPushButton" name="pushButtonFrequency" >
-            <property name="text" >
-             <string/>
-            </property>
-            <property name="icon" >
-             <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/preferences-system.png</iconset>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1" >
-           <widget class="QLineEdit" name="lineEditFrequency" />
-          </item>
-          <item row="0" column="3" >
+          <item row="0" column="0">
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>40</width>
               <height>20</height>
              </size>
             </property>
            </spacer>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="comboBoxFrequency">
+            <property name="minimumSize">
+             <size>
+              <width>325</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLineEdit" name="lineEditFrequency"/>
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLineEdit" name="lineEditFrequencyTime">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QPushButton" name="pushButtonFrequency">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="resources_pages.qrc">
+              <normaloff>:/new/prefix1/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/icons/22x22/preferences-system.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="5">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="checkBoxOutputEnd">
+            <property name="text">
+             <string>Output at end of calculation</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
        </item>
-       <item row="2" column="0" >
-        <widget class="QGroupBox" name="groupBoxTimeDependency" >
-         <property name="title" >
+       <item row="2" column="0">
+        <widget class="QGroupBox" name="groupBoxTimeDependency">
+         <property name="title">
           <string>Time-dependency</string>
          </property>
-         <layout class="QGridLayout" >
-          <property name="margin" >
+         <layout class="QGridLayout">
+          <property name="margin">
            <number>9</number>
           </property>
-          <property name="spacing" >
+          <property name="spacing">
            <number>6</number>
           </property>
-          <item row="0" column="2" >
+          <item row="0" column="2">
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>40</width>
               <height>20</height>
@@ -455,12 +448,12 @@
             </property>
            </spacer>
           </item>
-          <item row="0" column="0" >
+          <item row="0" column="0">
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>40</width>
               <height>20</height>
@@ -468,51 +461,51 @@
             </property>
            </spacer>
           </item>
-          <item row="0" column="1" >
-           <widget class="QComboBox" name="comboBoxTimeDependency" />
+          <item row="0" column="1">
+           <widget class="QComboBox" name="comboBoxTimeDependency"/>
           </item>
          </layout>
         </widget>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_2" >
-      <attribute name="title" >
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
        <string>Mesh</string>
       </attribute>
-      <layout class="QGridLayout" >
-       <property name="margin" >
+      <layout class="QGridLayout">
+       <property name="margin">
         <number>9</number>
        </property>
-       <property name="spacing" >
+       <property name="spacing">
         <number>6</number>
        </property>
-       <item row="2" column="0" >
-        <widget class="QGroupBox" name="groupBoxAssociatedWriter" >
-         <property name="title" >
-          <string>Associated Writer</string>
+       <item row="2" column="0">
+        <widget class="QGroupBox" name="groupBoxAssociatedWriter">
+         <property name="title">
+          <string>Associated Writers</string>
          </property>
-         <layout class="QGridLayout" >
-          <property name="margin" >
+         <layout class="QGridLayout">
+          <property name="margin">
            <number>9</number>
           </property>
-          <property name="spacing" >
+          <property name="spacing">
            <number>6</number>
           </property>
-          <item row="0" column="0" >
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+          <item row="0" column="0">
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
+            </property>
+            <property name="margin">
+             <number>0</number>
             </property>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>40</width>
                 <height>20</height>
@@ -521,14 +514,14 @@
              </spacer>
             </item>
             <item>
-             <widget class="QTableView" name="tableViewAssociatedWriter" />
+             <widget class="QTableView" name="tableViewAssociatedWriter"/>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>40</width>
                 <height>20</height>
@@ -538,20 +531,20 @@
             </item>
            </layout>
           </item>
-          <item row="1" column="0" >
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+          <item row="1" column="0">
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
+            </property>
+            <property name="margin">
+             <number>0</number>
             </property>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>40</width>
                 <height>20</height>
@@ -560,31 +553,33 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonAddAssociatedWriter" >
-              <property name="text" >
+             <widget class="QPushButton" name="pushButtonAddAssociatedWriter">
+              <property name="text">
                <string/>
               </property>
-              <property name="icon" >
-               <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/add.png</iconset>
+              <property name="icon">
+               <iconset resource="resources_pages.qrc">
+                <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonDeleteAssociatedWriter" >
-              <property name="text" >
+             <widget class="QPushButton" name="pushButtonDeleteAssociatedWriter">
+              <property name="text">
                <string/>
               </property>
-              <property name="icon" >
-               <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/remove.png</iconset>
+              <property name="icon">
+               <iconset resource="resources_pages.qrc">
+                <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>40</width>
                 <height>20</height>
@@ -597,24 +592,24 @@
          </layout>
         </widget>
        </item>
-       <item row="1" column="0" >
-        <widget class="QGroupBox" name="groupBoxVariable" >
-         <property name="title" >
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBoxVariable">
+         <property name="title">
           <string>Variables</string>
          </property>
-         <layout class="QGridLayout" >
-          <property name="margin" >
+         <layout class="QGridLayout">
+          <property name="margin">
            <number>9</number>
           </property>
-          <property name="spacing" >
+          <property name="spacing">
            <number>6</number>
           </property>
-          <item row="0" column="2" >
+          <item row="0" column="2">
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>40</width>
               <height>20</height>
@@ -622,12 +617,12 @@
             </property>
            </spacer>
           </item>
-          <item row="0" column="0" >
+          <item row="0" column="0">
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>40</width>
               <height>20</height>
@@ -635,9 +630,9 @@
             </property>
            </spacer>
           </item>
-          <item row="0" column="1" >
-           <widget class="QCheckBox" name="checkBoxAllVariables" >
-            <property name="text" >
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="checkBoxAllVariables">
+            <property name="text">
              <string>Auto</string>
             </property>
            </widget>
@@ -645,31 +640,31 @@
          </layout>
         </widget>
        </item>
-       <item row="0" column="0" >
-        <layout class="QVBoxLayout" >
-         <property name="margin" >
-          <number>0</number>
-         </property>
-         <property name="spacing" >
+       <item row="0" column="0">
+        <layout class="QVBoxLayout">
+         <property name="spacing">
           <number>6</number>
          </property>
+         <property name="margin">
+          <number>0</number>
+         </property>
          <item>
-          <widget class="QTableView" name="tableViewMesh" />
+          <widget class="QTableView" name="tableViewMesh"/>
          </item>
          <item>
-          <layout class="QHBoxLayout" >
-           <property name="margin" >
-            <number>0</number>
-           </property>
-           <property name="spacing" >
+          <layout class="QHBoxLayout">
+           <property name="spacing">
             <number>6</number>
+           </property>
+           <property name="margin">
+            <number>0</number>
            </property>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>40</width>
                <height>20</height>
@@ -678,31 +673,33 @@
             </spacer>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButtonAddMesh" >
-             <property name="text" >
+            <widget class="QPushButton" name="pushButtonAddMesh">
+             <property name="text">
               <string/>
              </property>
-             <property name="icon" >
-              <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/add.png</iconset>
+             <property name="icon">
+              <iconset resource="resources_pages.qrc">
+               <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButtonDeleteMesh" >
-             <property name="text" >
+            <widget class="QPushButton" name="pushButtonDeleteMesh">
+             <property name="text">
               <string/>
              </property>
-             <property name="icon" >
-              <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/remove.png</iconset>
+             <property name="icon">
+              <iconset resource="resources_pages.qrc">
+               <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
              </property>
             </widget>
            </item>
            <item>
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>40</width>
                <height>20</height>
@@ -716,43 +713,43 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tabMONITORING" >
-      <attribute name="title" >
+     <widget class="QWidget" name="tabMONITORING">
+      <attribute name="title">
        <string>Monitoring Points</string>
       </attribute>
-      <layout class="QGridLayout" >
-       <property name="margin" >
+      <layout class="QGridLayout">
+       <property name="margin">
         <number>9</number>
        </property>
-       <property name="spacing" >
+       <property name="spacing">
         <number>6</number>
        </property>
-       <item row="0" column="0" >
-        <widget class="QGroupBox" name="groupBoxMonitoring" >
-         <property name="title" >
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="groupBoxMonitoring">
+         <property name="title">
           <string>Monitoring points output</string>
          </property>
-         <layout class="QGridLayout" >
-          <property name="margin" >
+         <layout class="QGridLayout">
+          <property name="margin">
            <number>9</number>
           </property>
-          <property name="spacing" >
+          <property name="spacing">
            <number>6</number>
           </property>
-          <item row="0" column="0" >
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+          <item row="0" column="0">
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
+            </property>
+            <property name="margin">
+             <number>0</number>
             </property>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>37</width>
                 <height>22</height>
@@ -761,8 +758,8 @@
              </spacer>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxHisto" >
-              <property name="minimumSize" >
+             <widget class="QComboBox" name="comboBoxHisto">
+              <property name="minimumSize">
                <size>
                 <width>200</width>
                 <height>0</height>
@@ -771,63 +768,63 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditHisto" >
-              <property name="minimumSize" >
+             <widget class="QLineEdit" name="lineEditHisto">
+              <property name="minimumSize">
                <size>
                 <width>30</width>
                 <height>0</height>
                </size>
               </property>
-              <property name="maximumSize" >
+              <property name="maximumSize">
                <size>
                 <width>40</width>
                 <height>16777215</height>
                </size>
               </property>
-              <property name="toolTip" >
+              <property name="toolTip">
                <string>Code_Saturne key word: NTHIST</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditFRHisto" >
-              <property name="minimumSize" >
+             <widget class="QLineEdit" name="lineEditFRHisto">
+              <property name="minimumSize">
                <size>
                 <width>40</width>
                 <height>0</height>
                </size>
               </property>
-              <property name="maximumSize" >
+              <property name="maximumSize">
                <size>
                 <width>40</width>
                 <height>16777215</height>
                </size>
               </property>
-              <property name="toolTip" >
+              <property name="toolTip">
                <string>Code_Saturne key word: NTHIST</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label" >
-              <property name="text" >
+             <widget class="QLabel" name="label">
+              <property name="text">
                <string>Format</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxProbeFmt" >
-              <property name="sizeAdjustPolicy" >
+             <widget class="QComboBox" name="comboBoxProbeFmt">
+              <property name="sizeAdjustPolicy">
                <enum>QComboBox::AdjustToContents</enum>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>18</width>
                 <height>22</height>
@@ -840,27 +837,27 @@
          </layout>
         </widget>
        </item>
-       <item row="1" column="0" >
-        <widget class="QGroupBox" name="groupBoxMonitoringCoordinates" >
-         <property name="maximumSize" >
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBoxMonitoringCoordinates">
+         <property name="maximumSize">
           <size>
            <width>16777215</width>
            <height>1000</height>
           </size>
          </property>
-         <property name="title" >
+         <property name="title">
           <string>Monitoring points coordinates</string>
          </property>
-         <layout class="QGridLayout" >
-          <property name="margin" >
+         <layout class="QGridLayout">
+          <property name="margin">
            <number>9</number>
           </property>
-          <property name="spacing" >
+          <property name="spacing">
            <number>6</number>
           </property>
-          <item row="0" column="0" >
-           <widget class="QTableView" name="tableViewPoints" >
-            <property name="maximumSize" >
+          <item row="0" column="0">
+           <widget class="QTableView" name="tableViewPoints">
+            <property name="maximumSize">
              <size>
               <width>16777215</width>
               <height>300</height>
@@ -868,20 +865,20 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0" >
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+          <item row="1" column="0">
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
+            </property>
+            <property name="margin">
+             <number>0</number>
             </property>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>89</width>
                 <height>20</height>
@@ -890,58 +887,60 @@
              </spacer>
             </item>
             <item>
-             <widget class="QToolButton" name="toolButtonAdd" >
-              <property name="minimumSize" >
+             <widget class="QToolButton" name="toolButtonAdd">
+              <property name="minimumSize">
                <size>
                 <width>80</width>
                 <height>0</height>
                </size>
               </property>
-              <property name="maximumSize" >
+              <property name="maximumSize">
                <size>
                 <width>80</width>
                 <height>16777215</height>
                </size>
               </property>
-              <property name="text" >
+              <property name="text">
                <string/>
               </property>
-              <property name="icon" >
-               <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/add.png</iconset>
+              <property name="icon">
+               <iconset resource="resources_pages.qrc">
+                <normaloff>:/new/prefix1/icons/22x22/add.png</normaloff>:/new/prefix1/icons/22x22/add.png</iconset>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QToolButton" name="toolButtonDelete" >
-              <property name="minimumSize" >
+             <widget class="QToolButton" name="toolButtonDelete">
+              <property name="minimumSize">
                <size>
                 <width>80</width>
                 <height>0</height>
                </size>
               </property>
-              <property name="maximumSize" >
+              <property name="maximumSize">
                <size>
                 <width>80</width>
                 <height>16777215</height>
                </size>
               </property>
-              <property name="statusTip" >
+              <property name="statusTip">
                <string>Delet several lines if you want</string>
               </property>
-              <property name="text" >
+              <property name="text">
                <string/>
               </property>
-              <property name="icon" >
-               <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/remove.png</iconset>
+              <property name="icon">
+               <iconset resource="resources_pages.qrc">
+                <normaloff>:/new/prefix1/icons/22x22/remove.png</normaloff>:/new/prefix1/icons/22x22/remove.png</iconset>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>88</width>
                 <height>20</height>
@@ -961,7 +960,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources_pages.qrc" />
+  <include location="resources_pages.qrc"/>
  </resources>
  <connections/>
 </ui>

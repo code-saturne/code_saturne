@@ -1,3 +1,14 @@
+* 04/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Several minor fixes and improvements in handling of postprocessing output
+  by the GUI (adds minor changes to XML format).
+  modified files:
+    gui/Base/BrowserView.py
+    gui/Pages/OutputControlForm.ui
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+    src/base/cs_post.c
+    src/gui/cs_gui_output.c
+
 * 04/07/2011 - David Monfort <david.monfort@edf.fr>
   Make the thermochemistry file name coherent with the scripts.
   modified routines:

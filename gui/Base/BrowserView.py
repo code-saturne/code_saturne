@@ -665,7 +665,7 @@ Calculation management
         self.setRowClose(self.tr('Radiative boundary conditions'))
         self.setRowClose(self.tr('Particles boundary conditions'))
         self.setRowClose(self.tr('Steady flow management'))
-        self.setRowClose(self.tr('Surface solution control'))
+        # self.setRowClose(self.tr('Surface solution control'))
         self.setRowClose(self.tr('Time step'))
         self.setRowClose(self.tr('Storage system description'))
         self.setRowClose(self.tr('Thermohydraulic parameters'))
