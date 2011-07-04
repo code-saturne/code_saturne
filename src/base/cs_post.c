@@ -4020,7 +4020,7 @@ cs_post_init_meshes(int check_mask)
 
   if (!cs_post_mesh_exists(-1))
     cs_post_define_volume_mesh(-1,
-                               _("Fluid volume"),
+                               _("Fluid domain"),
                                "all[]",
                                true,
                                true,

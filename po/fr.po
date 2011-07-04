@@ -5335,8 +5335,8 @@ msgstr ""
 "des maillages dépendant du temps, donc il ne peut\n"
 "pas être libéré.\n"
 
-msgid "Fluid volume"
-msgstr "Volume fluide"
+msgid "Fluid domain"
+msgstr "Domaine fluide"
 
 msgid "Boundary"
 msgstr "Bord"
