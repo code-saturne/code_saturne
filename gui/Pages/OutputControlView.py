@@ -92,7 +92,7 @@ class LabelWriterDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         self.old_label = ""
-        rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
+        rx = "[_A-Za-z0-9\(\)]{1," + str(LABEL_LENGTH_MAX-1) + "}"
         self.regExp = QRegExp(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
@@ -130,6 +130,7 @@ class LabelWriterDelegate(QItemDelegate):
 
             model.setData(index, QVariant(QString(new_plabel)), Qt.DisplayRole)
 
+
 #-------------------------------------------------------------------------------
 # Line edit delegate for the label Mesh
 #-------------------------------------------------------------------------------
@@ -147,7 +148,7 @@ class LabelMeshDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         self.old_label = ""
-        rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
+        rx = "[_A-Za-z0-9 \(\)]{1," + str(LABEL_LENGTH_MAX-1) + "}"
         self.regExp = QRegExp(rx)
         v = RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
@@ -185,6 +186,7 @@ class LabelMeshDelegate(QItemDelegate):
 
             model.setData(index, QVariant(QString(new_plabel)), Qt.DisplayRole)
 
+
 #-------------------------------------------------------------------------------
 # Combo box delegate for the writer format
 #-------------------------------------------------------------------------------
@@ -196,7 +198,7 @@ class FormatWriterDelegate(QItemDelegate):
     def __init__(self, parent=None, xml_model=None):
         super(FormatWriterDelegate, self).__init__(parent)
         self.parent = parent
-        self.mdl = xml_model #à revoir
+        self.mdl = xml_model # TODO change this
 
 
     def createEditor(self, parent, option, index):
@@ -223,6 +225,7 @@ class FormatWriterDelegate(QItemDelegate):
             if idx.column() == index.column():
                 model.setData(idx, QVariant(value))
 
+
 #-------------------------------------------------------------------------------
 # Combo box delegate for the writer format
 #-------------------------------------------------------------------------------
@@ -234,7 +237,7 @@ class TypeMeshDelegate(QItemDelegate):
     def __init__(self, parent=None, xml_model=None):
         super(TypeMeshDelegate, self).__init__(parent)
         self.parent = parent
-        self.mdl = xml_model #à revoir
+        self.mdl = xml_model # TODO review this
 
 
     def createEditor(self, parent, option, index):
@@ -261,8 +264,35 @@ class TypeMeshDelegate(QItemDelegate):
             if idx.column() == index.column():
                 model.setData(idx, QVariant(value))
 
+
+    def paint(self, painter, option, index):
+        row = index.row()
+        meshtype = index.model().dataMesh[row]['type']
+        isValid = meshtype != None and meshtype != ''
+
+        if isValid:
+            QItemDelegate.paint(self, painter, option, index)
+
+        else:
+            painter.save()
+            # set background color
+            if option.state & QStyle.State_Selected:
+                painter.setBrush(QBrush(Qt.darkRed))
+            else:
+                painter.setBrush(QBrush(Qt.red))
+            # set text color
+            painter.setPen(QPen(Qt.NoPen))
+            painter.drawRect(option.rect)
+            painter.setPen(QPen(Qt.black))
+            value = index.data(Qt.DisplayRole)
+            if value.isValid():
+                text = value.toString()
+                painter.drawText(option.rect, Qt.AlignLeft, text)
+            painter.restore()
+
+
 #-------------------------------------------------------------------------------
-# QLineEdit delegate for localization
+# QLineEdit delegate for location
 #-------------------------------------------------------------------------------
 
 class LocationSelectorDelegate(QItemDelegate):
@@ -287,13 +317,12 @@ class LocationSelectorDelegate(QItemDelegate):
 
         if str(value) == "" :
            title = self.tr("Warning")
-           msg   = self.tr("Please give a localization")
+           msg   = self.tr("Please give a location")
            QMessageBox.information(self.parent, title, msg)
            return
 
         if str(value) != "" :
             model.setData(index, QVariant(value), Qt.DisplayRole)
-
 
 
 #-------------------------------------------------------------------------------
@@ -350,15 +379,20 @@ class StandardItemModelMesh(QStandardItemModel):
         self.defaultItem = []
         self.populateModel()
 
+
     def populateModel(self):
-        self.dicoV2M= {"cells": 'cells',"interior faces" : 'interior_faces', "boundary faces": 'boundary_faces'}
-        self.dicoM2V= {"cells" : 'cells',"interior_faces" : 'interior faces', "boundary_faces": 'boundary faces'}
+        self.dicoV2M= {"cells": 'cells',
+                       "interior faces" : 'interior_faces',
+                       "boundary faces": 'boundary_faces'}
+        self.dicoM2V= {"cells" : 'cells',
+                       "interior_faces" : 'interior faces',
+                       "boundary_faces": 'boundary faces'}
         for id in self.mdl.getMeshIdList():
             row = self.rowCount()
             self.setRowCount(row + 1)
 
-            dico           = {}
-            dico['name']  = self.mdl.getMeshLabel(id)
+            dico  = {}
+            dico['name'] = self.mdl.getMeshLabel(id)
             dico['id'] = id
             dico['type'] = self.mdl.getMeshType(id)
             dico['location'] = self.mdl.getMeshLocation(id)
@@ -391,7 +425,10 @@ class StandardItemModelMesh(QStandardItemModel):
                 return QVariant()
 
         elif role == Qt.TextAlignmentRole:
-            return QVariant(Qt.AlignCenter)
+            if index.column() != 3:
+                return QVariant(Qt.AlignCenter)
+            else:
+                return QVariant(Qt.AlignLeft | Qt.AlignVCenter)
 
         return QVariant()
 
@@ -400,12 +437,14 @@ class StandardItemModelMesh(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
         # default item
+        col_id = index.column()
         if index.row() in self.defaultItem:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        if index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            if col_id == 1 or col_id == 2:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            if col_id == 1:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -417,12 +456,11 @@ class StandardItemModelMesh(QStandardItemModel):
             elif section == 2:
                 return QVariant(self.tr("Type"))
             elif section == 3:
-                return QVariant(self.tr("Selection"))
+                return QVariant(self.tr("Selection Criteria"))
         return QVariant()
 
 
     def setData(self, index, value, role=None):
-
 
         # Update the row in the table
         row = index.row()
@@ -432,7 +470,7 @@ class StandardItemModelMesh(QStandardItemModel):
         if col == 0:
             old_plabel = self.dataMesh[row]['name']
             new_plabel = str(value.toString())
-            self.dataMesh[row][col] = new_plabel
+            self.dataMesh[row]['name'] = new_plabel
             self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
 
         if index.column() == 2:
@@ -443,7 +481,8 @@ class StandardItemModelMesh(QStandardItemModel):
             new_nature = str(value.toString())
             self.dataMesh[row]['location'] = new_nature
 
-        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
+        self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"),
+                  index, index)
         return True
 
 
@@ -477,6 +516,7 @@ class StandardItemModelMesh(QStandardItemModel):
         self.dataMesh = []
         self.setRowCount(0)
 
+
 #-------------------------------------------------------------------------------
 # QStandardItemModel for Mesh QTableView
 #-------------------------------------------------------------------------------
@@ -500,17 +540,16 @@ class StandardItemModelWriter(QStandardItemModel):
             row = self.rowCount()
             self.setRowCount(row + 1)
 
-            dico           = {}
-            dico['name']  = self.mdl.getWriterLabel(id)
+            dico = {}
+            dico['name'] = self.mdl.getWriterLabel(id)
             dico['id'] = id
             dico['format'] = self.mdl.getWriterFormat(id)
-            dico['repertory']  = self.mdl.getWriterRepertory(id)
+            dico['directory'] = self.mdl.getWriterDirectory(id)
 
             self.dataWriter.append(dico)
             if int(id)<0:
                 self.defaultItem.append(row)
             log.debug("populateModel-> dataSolver = %s" % dico)
-
 
     def data(self, index, role):
         if not index.isValid():
@@ -529,7 +568,7 @@ class StandardItemModelWriter(QStandardItemModel):
             elif index.column() == 2:
                 return QVariant(self.dicoM2V[dico['format']])
             elif index.column() == 3:
-                return QVariant(dico['repertory'])
+                return QVariant(dico['directory'])
             else:
                 return QVariant()
 
@@ -543,8 +582,6 @@ class StandardItemModelWriter(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
         # default item
-        if index.row() in self.defaultItem:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         if index.column() == 1:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else:
@@ -559,13 +596,12 @@ class StandardItemModelWriter(QStandardItemModel):
                 return QVariant(self.tr("Id"))
             elif section == 2:
                 return QVariant(self.tr("Format"))
-            elif section == 1:
-                return QVariant(self.tr("Repertory"))
+            elif section == 3:
+                return QVariant(self.tr("Directory"))
         return QVariant()
 
 
     def setData(self, index, value, role=None):
-
 
         # Update the row in the table
         row = index.row()
@@ -578,22 +614,23 @@ class StandardItemModelWriter(QStandardItemModel):
             self.dataWriter[row]['name'] = new_plabel
             self.mdl.setWriterLabel(self.dataWriter[row]['id'], new_plabel)
 
-        if index.column() == 2:
+        if col == 2:
             self.dataWriter[row]['format'] = self.dicoV2M[str(value.toString())]
-            self.mdl.setWriterFormat(self.dataWriter[row]['id'], self.dataWriter[row]['format'])
+            self.mdl.setWriterFormat(self.dataWriter[row]['id'],
+                                     self.dataWriter[row]['format'])
 
         if col == 3:
-            old_rep = self.dataWriter[row]['repertory']
+            old_rep = self.dataWriter[row]['directory']
             new_rep = str(value.toString())
-            self.dataWriter[row]['repertory'] = new_rep
-            self.mdl.setWriterRepertory(self.dataWriter[row]['id'], new_rep)
+            self.dataWriter[row]['directory'] = new_rep
+            self.mdl.setWriterDirectory(self.dataWriter[row]['id'], new_rep)
 
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
 
 
-    def newData(self, name, writer_id, writer_format, repertory):
+    def newData(self, name, writer_id, writer_format, directory):
         """
         Add a new 'item' into the table.
         """
@@ -601,7 +638,7 @@ class StandardItemModelWriter(QStandardItemModel):
         dico['name'] = name
         dico['id'] = writer_id
         dico['format'] = writer_format
-        dico['repertory'] = repertory
+        dico['directory'] = directory
         self.dataWriter.append(dico)
 
         row = self.rowCount()
@@ -901,6 +938,7 @@ class MonitoringPointDelegate(QItemDelegate):
                                                            float(dico['Y']),
                                                            float(dico['Z']))
 
+
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
@@ -924,7 +962,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # Combo models
 
         self.modelOutput         = QtPage.ComboModel(self.comboBoxOutput,3,1)
-        self.modelFrequency = QtPage.ComboModel(self.comboBoxFrequency,5,1)
+        self.modelFrequency = QtPage.ComboModel(self.comboBoxFrequency,4,1)
         self.modelTimeDependency         = QtPage.ComboModel(self.comboBoxTimeDependency,3,1)
         self.modelFormat         = QtPage.ComboModel(self.comboBoxFormat,2,1)
         self.modelPolygon        = QtPage.ComboModel(self.comboBoxPolygon,3,1)
@@ -936,19 +974,19 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelOutput.addItem(self.tr("Output listing at each time step"), 'At each step')
         self.modelOutput.addItem(self.tr("Output every 'n' time steps"), 'Frequency_l')
 
-        self.modelFrequency.addItem(self.tr("Only at the end of calculation"), 'end')
-        self.modelFrequency.addItem(self.tr("At each time step"), 'time')
-        self.modelFrequency.addItem(self.tr("Post-processing every 'n' time steps"), 'time_steps')
-        self.modelFrequency.addItem(self.tr("Post-processing every 'x' second(s)"), 'second')
-        self.modelFrequency.addItem(self.tr("Using a formula"), 'formula')
+        self.modelFrequency.addItem(self.tr("No periodic output"), 'none')
+        self.modelFrequency.addItem(self.tr("Output every 'n' time steps"), 'time_step')
+        self.modelFrequency.addItem(self.tr("Output every 'x' seconds"), 'time_value')
+        self.modelFrequency.addItem(self.tr("Output using a formula"), 'formula')
 
         self.modelTimeDependency.addItem(self.tr("Fixed mesh"), 'fixed_mesh')
         self.modelTimeDependency.addItem(self.tr("Transient coordinates"), 'transient_coordinates')
         self.modelTimeDependency.addItem(self.tr("Transient connectivity"), 'transient_connectivity')
 
-        #ale = self.ale()
+        # ale = self.ale()
 
-        self.modelFormat.addItem(self.tr("binary"), 'binary')
+        self.modelFormat.addItem(self.tr("binary (native)"), 'binary')
+        self.modelFormat.addItem(self.tr("binary (big-endian)"), 'big_endian')
         self.modelFormat.addItem(self.tr("text"), 'text')
 
         self.modelPolygon.addItem(self.tr("display"), 'display')
@@ -962,7 +1000,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelHisto.addItem(self.tr("No monitoring points file"), 'None')
         self.modelHisto.addItem(self.tr("Monitoring points files at each time step"), 'At each step')
         self.modelHisto.addItem(self.tr("Monitoring points file every 'n' time steps"), 'Frequency_h')
-        self.modelHisto.addItem(self.tr("Monitoring points file every 'x' second(s)"), 'Frequency_h_x')
+        self.modelHisto.addItem(self.tr("Monitoring points file every 'x' time_value(s)"), 'Frequency_h_x')
 
         self.modelProbeFmt.addItem(self.tr(".dat"), 'DAT')
         self.modelProbeFmt.addItem(self.tr(".csv"), 'CSV')
@@ -1009,7 +1047,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewMesh.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewMesh.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableViewMesh.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableViewMesh.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        self.tableViewMesh.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
+        self.tableViewMesh.horizontalHeader().setResizeMode(1, QHeaderView.ResizeToContents)
+        self.tableViewMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+        self.tableViewMesh.horizontalHeader().setResizeMode(2, QHeaderView.ResizeToContents)
+        self.tableViewMesh.horizontalHeader().setStretchLastSection(True)
 
         delegate_label_mesh = LabelMeshDelegate(self.tableViewMesh)
         self.tableViewMesh.setItemDelegateForColumn(0, delegate_label_mesh)
@@ -1025,6 +1067,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.tableViewWriter, SIGNAL("clicked(const QModelIndex &)"), self.slotSelectWriter)
         self.connect(self.comboBoxOutput, SIGNAL("activated(const QString&)"), self.slotOutputListing)
         self.connect(self.comboBoxTimeDependency, SIGNAL("activated(const QString&)"), self.slotWriterTimeDependency)
+        self.connect(self.checkBoxOutputEnd, SIGNAL("clicked()"), self.slotWriterOutputEnd)
         self.connect(self.checkBoxAllVariables, SIGNAL("clicked()"), self.slotAllVariables)
         self.connect(self.lineEditNTLIST, SIGNAL("textChanged(const QString &)"), self.slotListingFrequency)
         self.connect(self.comboBoxFrequency, SIGNAL("activated(const QString&)"), self.slotWriterFrequencyChoice)
@@ -1033,7 +1076,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.comboBoxFormat, SIGNAL("activated(const QString&)"), self.slotWriterOptions)
         self.connect(self.comboBoxPolygon, SIGNAL("activated(const QString&)"), self.slotWriterOptions)
         self.connect(self.comboBoxPolyhedra, SIGNAL("activated(const QString&)"), self.slotWriterOptions)
-        self.connect(self.checkBoxBigEndian, SIGNAL("clicked()"), self.slotWriterOptions)
         self.connect(self.pushButtonFrequency, SIGNAL("clicked()"), self.slotWriterFrequencyFormula)
 
         self.connect(self.pushButtonAddWriter, SIGNAL("clicked()"), self.slotAddWriter)
@@ -1052,9 +1094,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # Validators
 
         validatorNTLIST = QtPage.IntValidator(self.lineEditNTLIST, min=1)
-        validatorFrequency  = QtPage.IntValidator(self.lineEditFrequency, min=1)
+        validatorFrequency = QtPage.IntValidator(self.lineEditFrequency, min=1)
         validatorNTHIST = QtPage.IntValidator(self.lineEditHisto, min=1)
-        validatorFrequencyTime  = QtPage.DoubleValidator(self.lineEditFrequencyTime)
+        validatorFrequencyTime = QtPage.DoubleValidator(self.lineEditFrequencyTime)
         validatorFRHIST = QtPage.DoubleValidator(self.lineEditFRHisto)
         self.lineEditNTLIST.setValidator(validatorNTLIST)
         self.lineEditFrequency.setValidator(validatorFrequency)
@@ -1076,7 +1118,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.lineEditNTLIST.setText(QString(str(ntlist)))
         self.slotOutputListing(t)
 
-
         # Initialisation of the monitoring points files
 
         m = self.mdl.getMonitoringPointType()
@@ -1089,7 +1130,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelHisto.setItem(str_model=m)
         t = self.modelHisto.dicoM2V[m]
         self.slotMonitoringPoint(t)
-
 
         # Monitoring points initialisation
 
@@ -1153,24 +1193,24 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setListingFrequency(n)
 
 
-    def __insertWriter(self, name, writer_id, format, repertory):
+    def __insertWriter(self, name, writer_id, format, directory):
         """
         Add a new 'item' into the Hlist.
         """
-        self.modelWriter.newData(name, writer_id, format, repertory)
+        self.modelWriter.newData(name, writer_id, format, directory)
 
 
     @pyqtSignature("")
     def slotAddWriter(self):
         """
         Add one monitoring point with these coordinates in the list in the Hlist
-        The number of the monitoring point is added at the precedent one
+        The number of the monitoring points is added to the preceding one
         """
         writer_id = self.mdl.addWriter()
         self.__insertWriter(self.mdl.getWriterLabel(writer_id),
-                                     writer_id,
-                                     self.mdl.getWriterFormat(writer_id),
-                                     self.mdl.getWriterRepertory(writer_id))
+                            writer_id,
+                            self.mdl.getWriterFormat(writer_id),
+                            self.mdl.getWriterDirectory(writer_id))
 
 
     @pyqtSignature("")
@@ -1185,7 +1225,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             w = self.modelWriter.getItem(index.row())['id']
             if int(w) < 0:
                 title = self.tr("Warning")
-                msg   = self.tr("You can't delete a default writer")
+                msg   = self.tr("You can't delete a default writer.")
                 QMessageBox.information(self, title, msg)
                 return
             list.append(str(w))
@@ -1195,21 +1235,21 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelWriter.deleteAllData()
         list_writer = []
         for writer in self.mdl.getWriterIdList():
-            if int(writer)>0:
+            if int(writer) >0 :
                 list_writer.append(writer)
         for writer in self.mdl.getWriterIdList():
-            if int(writer)<0:
+            if int(writer) <0 :
                 label = self.mdl.getWriterLabel(writer)
                 format = self.mdl.getWriterFormat(writer)
-                repertory = self.mdl.getWriterRepertory(writer)
-                self.__insertWriter(label, writer, format, repertory)
+                directory = self.mdl.getWriterDirectory(writer)
+                self.__insertWriter(label, writer, format, directory)
         new_id = 0
         for writer in list_writer:
             new_id = new_id + 1
             label = self.mdl.getWriterLabel(writer)
             format = self.mdl.getWriterFormat(writer)
-            repertory = self.mdl.getWriterRepertory(writer)
-            self.__insertWriter(label, str(new_id), format, repertory)
+            directory = self.mdl.getWriterDirectory(writer)
+            self.__insertWriter(label, str(new_id), format, directory)
 
 
     @pyqtSignature("const QModelIndex &, const QModelIndex &")
@@ -1225,7 +1265,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             options = self.mdl.getWriterOptions(writer_id)
             self.__updateOptionsFormat(options, row_writer)
             self.showAssociatedWriterTable()
-        #print 'passage dans data changed'
 
 
     def showAssociatedWriterTable(self):
@@ -1253,7 +1292,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
     @pyqtSignature("const QModelIndex&")
     def slotSelectWriter(self, index):
-        #model = HeadLossesModel(self.case)
+        # model = HeadLossesModel(self.case)
         cindex = self.tableViewWriter.currentIndex()
         if cindex != (-1,-1):
             row = cindex.row()
@@ -1265,50 +1304,40 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             frequency_choice = self.mdl.getWriterFrequencyChoice(writer_id)
             self.modelFrequency.setItem(str_model=frequency_choice)
 
-
-
-            if frequency_choice == "end":
-                ntchr = -1
-                self.mdl.setWriterFrequency(writer_id, ntchr)
+            if frequency_choice == "none":
                 self.lineEditFrequency.hide()
                 self.lineEditFrequencyTime.hide()
-                self.pushButtonFrequency.setEnabled(False)
-                setGreenColor(self.pushButtonFrequency, False)
+                self.pushButtonFrequency.hide()
 
-            if frequency_choice == "time":
-                ntchr = 1
-                self.mdl.setWriterFrequency(writer_id, ntchr)
-                self.lineEditFrequency.hide()
-                self.lineEditFrequencyTime.hide()
-                self.pushButtonFrequency.setEnabled(False)
-                setGreenColor(self.pushButtonFrequency, False)
-
-            if frequency_choice == "time_steps":
+            if frequency_choice == "time_step":
                 self.lineEditFrequency.show()
                 self.lineEditFrequency.setEnabled(True)
-                ntchr = self.mdl.getWriterFrequency(writer_id)
+                ntchr = int(self.mdl.getWriterFrequency(writer_id))
                 if ntchr < 1:
                     ntchr = 1
                     self.mdl.setWriterFrequency(writer_id, ntchr)
                 self.lineEditFrequency.setText(QString(str(ntchr)))
                 self.lineEditFrequencyTime.hide()
-                self.pushButtonFrequency.setEnabled(False)
-                setGreenColor(self.pushButtonFrequency, False)
+                self.pushButtonFrequency.hide()
 
-            if frequency_choice == "second":
+            if frequency_choice == "time_value":
                 self.lineEditFrequency.hide()
                 self.lineEditFrequencyTime.show()
-                frchr = self.mdl.getWriterFrequencyTime(writer_id)
+                frchr = float(self.mdl.getWriterFrequency(writer_id))
                 self.lineEditFrequencyTime.setText(QString(str(frchr)))
-                self.pushButtonFrequency.setEnabled(False)
-                setGreenColor(self.pushButtonFrequency, False)
+                self.pushButtonFrequency.hide()
 
             if frequency_choice == "formula":
                 self.lineEditFrequency.hide()
                 self.lineEditFrequencyTime.hide()
+                self.pushButtonFrequency.show()
                 self.pushButtonFrequency.setEnabled(True)
                 setGreenColor(self.pushButtonFrequency, True)
 
+            if self.mdl.getWriterOutputEndStatus(writer_id) == 'on':
+                self.checkBoxOutputEnd.setChecked(True)
+            else:
+                self.checkBoxOutputEnd.setChecked(False)
 
             time_dependency = self.mdl.getWriterTimeDependency(writer_id)
             self.modelTimeDependency.setItem(str_model=time_dependency)
@@ -1322,29 +1351,19 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         INPUT choice of the output frequency for a writer
         """
         cindex = self.tableViewWriter.currentIndex()
-        if cindex != (-1,-1):
+        if cindex != (-1, -1):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
             chrono = self.modelFrequency.dicoV2M[str(text)]
             log.debug("slotOutputPostpro-> chrono = %s" % chrono)
             self.mdl.setWriterFrequencyChoice(writer_id, chrono)
-            if chrono == "end":
-                ntchr = -1
-                self.mdl.setWriterFrequency(writer_id, ntchr)
+
+            if chrono == "none":
                 self.lineEditFrequency.hide()
                 self.lineEditFrequencyTime.hide()
-                self.pushButtonFrequency.setEnabled(False)
-                setGreenColor(self.pushButtonFrequency, False)
+                self.pushButtonFrequency.hide()
 
-            elif chrono == "time":
-                ntchr = 1
-                self.mdl.setWriterFrequency(writer_id, ntchr)
-                self.lineEditFrequency.hide()
-                self.lineEditFrequencyTime.hide()
-                self.pushButtonFrequency.setEnabled(False)
-                setGreenColor(self.pushButtonFrequency, False)
-
-            elif chrono == "time_steps":
+            elif chrono == "time_step":
                 self.lineEditFrequency.show()
                 self.lineEditFrequency.setEnabled(True)
                 self.pushButtonFrequency.setEnabled(False)
@@ -1354,21 +1373,22 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                     self.mdl.setWriterFrequency(writer_id, ntchr)
                 self.lineEditFrequency.setText(QString(str(ntchr)))
                 self.lineEditFrequencyTime.hide()
-                setGreenColor(self.pushButtonFrequency, False)
+                self.pushButtonFrequency.hide()
 
-            elif chrono == "second":
+            elif chrono == "time_value":
                 self.lineEditFrequency.hide()
                 self.lineEditFrequencyTime.show()
                 self.pushButtonFrequency.setEnabled(False)
-                frchr = self.mdl.getWriterFrequencyTime(writer_id)
+                frchr = self.mdl.getWriterFrequency(writer_id)
                 self.lineEditFrequencyTime.setText(QString(str(frchr)))
-                setGreenColor(self.pushButtonFrequency, False)
+                self.pushButtonFrequency.hide()
 
             elif chrono == "formula":
                 self.lineEditFrequency.hide()
                 self.lineEditFrequencyTime.hide()
                 self.pushButtonFrequency.setEnabled(True)
                 setGreenColor(self.pushButtonFrequency, True)
+                self.pushButtonFrequency.show()
 
 
     @pyqtSignature("const QString &")
@@ -1384,7 +1404,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             n, ok = self.lineEditFrequency.text().toInt()
             if self.sender().validator().state == QValidator.Acceptable:
                 log.debug("slotPostproFrequency-> NTCHR = %s" % n)
-                self.mdl.setWriterFrequency(writer_id, n)
+                self.mdl.setWriterFrequency(writer_id, str(n))
 
 
     @pyqtSignature("const QString &")
@@ -1399,7 +1419,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             n, ok = text.toDouble()
             if self.sender().validator().state == QValidator.Acceptable:
                 log.debug("slotPostproFrequencyTime-> FRCHR = %s" % n)
-                self.mdl.setWriterFrequencyTime(writer_id, n)
+                self.mdl.setWriterFrequency(writer_id, str(n))
 
 
     @pyqtSignature("")
@@ -1410,21 +1430,21 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cindex != (-1,-1):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
-            exp = self.mdl.getWriterFrequencyFormula(writer_id)
+            exp = self.mdl.getWriterFrequency(writer_id)
             if not exp:
                 exp = """iactive = 1;\n"""
             exa = """#example:"""
             req = [('iactive', 'at a time step the writer is active or not')]
             sym = [('t', 'current time'),
-                ('niter', 'current time step')]
+                   ('niter', 'current time step')]
             dialog = QMeiEditorView(self,expression = exp,
                                         required   = req,
                                         symbols    = sym,
                                         examples   = exa)
             if dialog.exec_():
-                result = dialog.get_result()
-                log.debug("slotWriterFrequencyFormula -> %s" % str(result))
-                self.mdl.setWriterFrequencyFormula(writer_id, result)
+                result = str(dialog.get_result())
+                log.debug("slotWriterFrequencyFormula -> %s" % result)
+                self.mdl.setWriterFrequency(writer_id, result)
                 setGreenColor(self.pushButtonFrequency, False)
 
 
@@ -1437,13 +1457,29 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if cindex != (-1,-1):
             row = cindex.row()
             writer_id = self.modelWriter.getItem(row)['id']
-            self.mdl.setWriterTimeDependency(writer_id, self.modelTimeDependency.dicoV2M[str(text)])
+            self.mdl.setWriterTimeDependency(writer_id,
+                                             self.modelTimeDependency.dicoV2M[str(text)])
+
+
+    @pyqtSignature("")
+    def slotWriterOutputEnd(self):
+        """
+        Input output end flag
+        """
+        cindex = self.tableViewWriter.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            writer_id = self.modelWriter.getItem(row)['id']
+            st = 'on'
+            if not self.checkBoxOutputEnd.isChecked():
+              st = 'off'
+            self.mdl.setWriterOutputEndStatus(writer_id, st)
 
 
     @pyqtSignature("")
     def slotWriterOptions(self):
         """
-        Create characters ligne for command of format's options
+        Create line for command of format's options
         """
         cindex = self.tableViewWriter.currentIndex()
         if cindex != (-1,-1):
@@ -1451,24 +1487,22 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             writer_id = self.modelWriter.getItem(row)['id']
             line = []
             opt_format = self.modelFormat.dicoV2M[str(self.comboBoxFormat.currentText())]
-            line.append(opt_format)
-
-            if self.checkBoxBigEndian.isChecked():
-                line.append('big_endian')
+            if opt_format != 'binary':
+                line.append(opt_format)
 
             opt_polygon = self.modelPolygon.dicoV2M[str(self.comboBoxPolygon.currentText())]
             opt_polyhed = self.modelPolyhedra.dicoV2M[str(self.comboBoxPolyhedra.currentText())]
             if opt_polygon != 'display': line.append(opt_polygon)
             if opt_polyhed != 'display': line.append(opt_polyhed)
 
-            l = string.join(line, ',')
+            l = string.join(line, ', ')
             log.debug("slotOutputOptions-> OPTCHR = %s" % l)
             self.mdl.setWriterOptions(writer_id, l)
 
 
-    def __updateOptionsFormat(self, line, row):# appelé en initialisation
+    def __updateOptionsFormat(self, line, row): # called during initialization
         """
-        Update ligne for command of format's options at each modification of
+        Update line for command of format's options at each modification of
         post processing format
         """
         list = string.split(line, ',')
@@ -1476,9 +1510,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # update widgets from the options list
 
+        self.modelFormat.setItem(str_model='binary')
+
         for opt in list:
 
-            if opt == 'binary' or opt == 'text' :
+            if opt in ['binary', 'big_endian', 'text'] :
                 self.modelFormat.setItem(str_model=opt)
 
             if opt == 'discard polygons' or opt == 'divide_polygons':
@@ -1487,16 +1523,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             if opt == 'discard polyhedra' or opt == 'divide_polyhedra':
                 self.modelPolyhedra.setItem(str_model=opt)
 
-            if format == 'ensight':
-                if opt == 'big_endian':
-                    self.checkBoxBigEndian.setChecked(True)
-
         if 'discard_polygons' not in list and 'divide_polygons' not in list:
             self.modelPolygon.setItem(str_model="display")
         if 'discard_polyhedra' not in list and 'divide_polyhedra' not in list:
             self.modelPolyhedra.setItem(str_model="display")
-        if 'big_endian' not in list:
-            self.checkBoxBigEndian.setChecked(False)
 
         # enable and disable options related to the format
         if format != "ensight":
@@ -1506,14 +1536,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.modelPolyhedra.disableItem(str_model='display')
 
             self.modelFormat.setItem(str_model="binary")
-            self.modelFormat.disableItem(str_model='text')
-            self.labelBigEndian.setEnabled(False)
-            self.checkBoxBigEndian.setEnabled(False)
+            self.comboBoxFormat.setEnabled(False)
         else:
             self.modelFormat.enableItem(str_model='text')
+            self.modelFormat.enableItem(str_model='big_endian')
             self.comboBoxFormat.setEnabled(True)
-            self.labelBigEndian.setEnabled(True)
-            self.checkBoxBigEndian.setEnabled(True)
             self.modelPolyhedra.enableItem(str_model='display')
             self.comboBoxPolyhedra.setEnabled(True)
 
@@ -1533,9 +1560,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         mesh_id = self.mdl.addMesh()
         self.__insertMesh(self.mdl.getMeshLabel(mesh_id),
-                                     mesh_id,
-                                     self.mdl.getMeshType(mesh_id),
-                                     self.mdl.getMeshLocation(mesh_id))
+                          mesh_id,
+                          self.mdl.getMeshType(mesh_id),
+                          self.mdl.getMeshLocation(mesh_id))
 
 
     @pyqtSignature("")
@@ -1550,7 +1577,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             mesh_id = self.modelMesh.getItem(index.row())['id']
             if int(mesh_id) < 0:
                 title = self.tr("Warning")
-                msg   = self.tr("You can't delete a default mesh")
+                msg   = self.tr("You can't delete a default mesh\n"
+                                "(but you may disassociate it from all writers).")
                 QMessageBox.information(self, title, msg)
                 return
             list.append(str(mesh_id))
@@ -1560,11 +1588,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelMesh.deleteAllData()
         list_mesh = []
         for mesh in self.mdl.getMeshIdList():
-            if int(mesh)>0:
+            if int(mesh) > 0:
                 list_mesh.append(mesh)
         new_id = 0
         for mesh in self.mdl.getMeshIdList():
-            if int(mesh)<0:
+            if int(mesh) < 0:
                 label = self.mdl.getMeshLabel(mesh)
                 mesh_type = self.mdl.getMeshType(mesh)
                 location = self.mdl.getMeshLocation(mesh)

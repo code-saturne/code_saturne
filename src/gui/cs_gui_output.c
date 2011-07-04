@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -1388,53 +1388,27 @@ static char *cs_gui_output_type_options(const char *const type,
                                         int  const num)
 {
   char *path = NULL;
-  char *path_bis = NULL;
-  char *path_ter = NULL;
   char *description = NULL;
-  char *buff = NULL;
-  char *buff_bis = NULL;
-  char *buff_ter = NULL;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "analysis_control", "output");
   cs_xpath_add_element_num(&path, type, num);
+  cs_xpath_add_element(&path, option);
 
-  if (cs_gui_strcmp(option,"frequency")) {
-    BFT_MALLOC(path_bis, strlen(path) +1, char);
-    strcpy(path_bis,path);
-    BFT_MALLOC(path_ter, strlen(path) +1, char);
-    strcpy(path_ter,path);
-    cs_xpath_add_element(&path, option);
+  if (cs_gui_strcmp(option, "frequency") && choice == NULL) {
+    description = cs_gui_get_text_value(path);
+  } else {
     cs_xpath_add_attribute(&path, choice);
-    buff = cs_gui_get_attribute_value(path);
-    if (buff) {
-      description = cs_gui_get_attribute_value(path);
-    } else {
-      cs_xpath_add_element(&path_bis, "frequency_time");
-      cs_xpath_add_attribute(&path_bis, choice);
-      buff_bis = cs_gui_get_attribute_value(path_bis);
-      if (buff_bis) {
-        description = cs_gui_get_attribute_value(path_bis);
-      } else {
-        cs_xpath_add_element(&path_ter, "frequency_formula");
-        cs_xpath_add_attribute(&path_ter, choice);
-        buff_ter = cs_gui_get_attribute_value(path_ter);
-        if (buff_ter) {
-          description = cs_gui_get_attribute_value(path_ter);
-        }
-      }
-    }
-  }else {
-    cs_xpath_add_element(&path, option);
-    cs_xpath_add_attribute(&path, choice);
-
     description = cs_gui_get_attribute_value(path);
-
-    BFT_FREE(path);
-    BFT_FREE(buff);
-    BFT_FREE(buff_bis);
-    BFT_FREE(buff_ter);
   }
+
+  BFT_FREE(path);
+
+  if (description == NULL) {
+    BFT_MALLOC(description, 1, char);
+    description[0] = '\0';
+  }
+
   return description;
 }
 
@@ -1559,8 +1533,9 @@ void CS_PROCF (uinpst, UINPST) ( const cs_int_t  *ntcabs,
   for (i=1; i <= nwriter; i++) {
     id = 0;
     id = atoi(cs_gui_output_type_choice("writer","id",i));
-    frequency_choice = cs_gui_output_type_options("writer", "choice","frequency_formula",i);
-    if( cs_gui_strcmp(frequency_choice, "formula")) {
+    frequency_choice
+      = cs_gui_output_type_options("writer", "period", "frequency", i);
+    if (cs_gui_strcmp(frequency_choice, "formula")) {
       ev_formula = _init_mei_tree(i, ntcabs, ttcabs);
       mei_evaluate(ev_formula);
       iactive =  mei_tree_lookup(ev_formula, "iactive");
@@ -1740,10 +1715,10 @@ cs_gui_postprocess_meshes(void)
   int i, j, id, id_writer;
   char *label = NULL;
   char *all_variables = NULL;
-  cs_bool_t indgrp = true;
+  cs_bool_t auto_vars = true;
   cs_bool_t add_groups = true;
   char *location = NULL;
-  int n_writer, nmesh;
+  int n_writers, nmesh;
   char *type = NULL;
   char *path = NULL;
   int *writer_ids = NULL;
@@ -1752,29 +1727,35 @@ cs_gui_postprocess_meshes(void)
   for (i=1; i <= nmesh; i++) {
     id = atoi(cs_gui_output_type_choice("mesh","id",i));
     label = cs_gui_output_type_choice("mesh","label",i);
-    all_variables = cs_gui_output_type_options("mesh", "status", "all_variables",i);
+    all_variables
+      = cs_gui_output_type_options("mesh", "status", "all_variables",i);
     if (cs_gui_strcmp(all_variables,"on"))
-      indgrp = true;
+      auto_vars = true;
     else if (cs_gui_strcmp(all_variables, "off"))
-      indgrp = false;
+      auto_vars = false;
     location = cs_gui_output_mesh_location(i);
     type = cs_gui_output_type_choice("mesh","type",i);
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 2, "analysis_control", "output");
     cs_xpath_add_element_num(&path, "mesh", i);
     cs_xpath_add_element(&path, "writer");
-    n_writer = cs_gui_get_nb_element(path);
-    BFT_MALLOC(writer_ids, n_writer, int);
-    for (j=0; j <= n_writer-1; j++){
+    n_writers = cs_gui_get_nb_element(path);
+    BFT_MALLOC(writer_ids, n_writers, int);
+    for (j=0; j <= n_writers-1; j++){
       id_writer = cs_gui_output_associate_mesh_writer(i,j+1);
       writer_ids[j] = id_writer;
     }
     if (cs_gui_strcmp(type, "cells")) {
-      cs_post_define_volume_mesh(id, label, location, add_groups, indgrp, n_writer, writer_ids);
+      cs_post_define_volume_mesh(id, label, location, add_groups, auto_vars,
+                                 n_writers, writer_ids);
     } else if(cs_gui_strcmp(type, "interior_faces")) {
-      cs_post_define_surface_mesh(id, label, location, NULL, add_groups, indgrp, n_writer, writer_ids);
+      cs_post_define_surface_mesh(id, label, location, NULL,
+                                  add_groups, auto_vars,
+                                  n_writers, writer_ids);
     } else if(cs_gui_strcmp(type, "boundary_faces")){
-      cs_post_define_surface_mesh(id, label, NULL, location, add_groups, indgrp, n_writer, writer_ids);
+      cs_post_define_surface_mesh(id, label, NULL, location,
+                                  add_groups, auto_vars,
+                                  n_writers, writer_ids);
     }
 
     BFT_FREE(writer_ids);
@@ -1798,43 +1779,49 @@ cs_gui_postprocess_writers(void)
   char *directory = NULL;
   char *format_name = NULL;
   char *format_options = NULL;
-  fvm_writer_time_dep_t   time_dep = FVM_WRITER_FIXED_MESH;
   char *time_dependency = NULL;
-  int nwriter;
   char *frequency_choice = NULL;
+  char *output_end_st = NULL;
   cs_int_t time_step;
-  cs_real_t second;
-  cs_bool_t  output_at_end = true;
+  cs_real_t time_value;
 
-  nwriter = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
+  int n_writers = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
 
-  for (i=1; i <= nwriter; i++) {
+  for (i = 1; i <= n_writers; i++) {
+
+    fvm_writer_time_dep_t  time_dep = FVM_WRITER_FIXED_MESH;
+    cs_bool_t output_at_end = true;
+
     id = 0;
     time_step = -1;
-    second = -1.;
-    id = atoi(cs_gui_output_type_choice("writer","id",i));
-    label = cs_gui_output_type_choice("writer","label",i);
-    directory = cs_gui_output_type_options("writer", "choice", "repertory",i);
-    frequency_choice = cs_gui_output_type_options("writer", "choice","frequency",i);
-    if (cs_gui_strcmp(frequency_choice, "end")) {
+    time_value = -1.;
+    id = atoi(cs_gui_output_type_choice("writer", "id", i));
+    label = cs_gui_output_type_choice("writer", "label", i);
+    directory = cs_gui_output_type_options("writer", "name", "directory", i);
+    frequency_choice
+      = cs_gui_output_type_options("writer", "period", "frequency", i);
+    output_end_st
+      = cs_gui_output_type_options("writer", "status", "output_at_end", i);
+    if (cs_gui_strcmp(frequency_choice, "none")) {
       time_step = -1;
-      second = -1.;
-    } else if (cs_gui_strcmp(frequency_choice, "time")) {
-      time_step = -1;
-      second = -1.;
-    } else if( cs_gui_strcmp(frequency_choice, "time_steps")) {
+      time_value = -1.;
+    } else if (cs_gui_strcmp(frequency_choice, "time_step")) {
       time_step = (int)cs_gui_output_writer_frequency(i);
-      second = -1.;
-    } else if( cs_gui_strcmp(frequency_choice, "second")) {
+      time_value = -1.;
+    } else if (cs_gui_strcmp(frequency_choice, "time_value")) {
       time_step = -1;
-      second = cs_gui_output_writer_frequency(i);
-    } else if( cs_gui_strcmp(frequency_choice, "formula")) {
+      time_value = cs_gui_output_writer_frequency(i);
+    } else if (cs_gui_strcmp(frequency_choice, "formula")) {
       time_step = -1;
-      second = -1.;
+      time_value = -1.;
     }
-    format_name = cs_gui_output_type_options("writer", "choice","format",i);
-    format_options = cs_gui_output_type_options("writer", "choice", "options",i);
-    time_dependency = cs_gui_output_type_options("writer", "choice", "time_dependency",i);
+    if (cs_gui_strcmp(output_end_st, "off"))
+      output_at_end = false;
+    format_name = cs_gui_output_type_options("writer", "name", "format",i);
+    format_options
+      = cs_gui_output_type_options("writer", "options", "format", i);
+    time_dependency
+      = cs_gui_output_type_options("writer", "choice", "time_dependency", i);
     if (cs_gui_strcmp(time_dependency, "fixed_mesh"))
       time_dep = FVM_WRITER_FIXED_MESH;
     else if(cs_gui_strcmp(time_dependency, "transient_coordinates"))
@@ -1849,11 +1836,12 @@ cs_gui_postprocess_writers(void)
                           time_dep,
                           output_at_end,
                           time_step,
-                          second);
+                          time_value);
     BFT_FREE(label);
     BFT_FREE(format_name);
     BFT_FREE(format_options);
     BFT_FREE(time_dependency);
+    BFT_FREE(output_end_st);
     BFT_FREE(frequency_choice);
     BFT_FREE(directory);
   }

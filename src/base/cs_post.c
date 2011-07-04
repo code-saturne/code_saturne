@@ -335,7 +335,7 @@ _writer_info(void)
                    "      time dependency: %s\n"
                    "      output: %s\n\n"),
                  writer->id, case_name, dir_name, fmt_name, fmt_opts,
-                 fvm_writer_time_dep_name[time_dep], frequency_s);
+                 _(fvm_writer_time_dep_name[time_dep]), frequency_s);
     }
   }
 }

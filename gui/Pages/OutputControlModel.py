@@ -79,8 +79,6 @@ class OutputControlModel(Model):
         default['listing_printing_frequency'] = 1
         default['probe_recording_frequency'] = 1
         default['probe_recording_frequency_time'] = 0.1
-        if self.case['salome']:
-            default['postprocessing_format'] = "MED"
         default['probe_format'] = "DAT"
         default['coordinate'] = 0.0
 
@@ -127,13 +125,17 @@ class OutputControlModel(Model):
     def defaultWriterValues(self):
         """Return the default values - Method also used by ThermalScalarModel"""
         default = {}
-        default['frequency_choice']          = "end"
-        default['frequency']                 = -1
+        default['frequency_choice']          = 'none'
+        default['frequency']                 = 1
         default['frequency_time']            = 1.
-        default['format']                    = "ensight"
+        default['output_at_end']             = 'on'
+        default['format']                    = 'ensight'
         default['time_dependency']           = 'fixed_mesh'
-        default['options']                   = 'binary'
-        default['repertory']                 = 'postprocessing'
+        default['options']                   = ''
+        default['directory']                 = 'postprocessing'
+
+        if self.case['salome']:
+            default['format'] = "MED"
 
         return default
 
@@ -154,28 +156,27 @@ class OutputControlModel(Model):
             next_id = max(user_table) +1
         else:
             next_id = 1
-        next_label = 'writer('+ str(next_id)+')'
-        n=next_id
+        next_label = 'writer(' + str(next_id) + ')'
+        n = next_id
         while next_label in self.getWriterLabelList():
-            n=n+1
-            next_label = 'writer('+ str(n)+')'
+            n = n+1
+            next_label = 'writer(' + str(n) + ')'
         return str(next_id), next_label
 
 
     def __updateWriterId(self):
         #"""
         #Private method.
-        #Update suffixe number for writer label.
+        #Update suffix number for writer label.
         #"""
         list = []
         n = 0
         for node in self.node_out.xmlGetNodeList('writer', 'label'):
             if int(node['id']) > 0 :
                 n = n + 1
-                if node['label'] == 'writer('+node['id']+')':
-                    node['label'] ='writer('+str(n)+')'
+                if node['label'] == 'writer(' + node['id'] + ')':
+                    node['label'] = 'writer(' + str(n) + ')'
                 node['id'] = str(n)
-
 
 
     def addWriter(self):
@@ -188,12 +189,11 @@ class OutputControlModel(Model):
             self.node_out.xmlInitNode('writer', id = i,label = l)
         self.getWriterFrequencyChoice(i)
         self.getWriterFormat(i)
-        self.getWriterRepertory(i)
+        self.getWriterDirectory(i)
         self.getWriterOptions(i)
         self.getWriterTimeDependency(i)
 
         return i
-
 
 
     def addDefaultWriter(self):
@@ -202,13 +202,12 @@ class OutputControlModel(Model):
         """
         list_writer = self.getWriterIdList()
         if list_writer == []:
-            node = self.node_out.xmlInitNode('writer', id = "-1", label = 'writer(-1)')
-            node.xmlInitNode('frequency', choice = 'end')
-            node.xmlInitNode('format', choice = 'ensight')
-            node.xmlInitNode('repertory', choice = 'postprocessing')
-            node.xmlInitNode('options', choice = 'binary')
+            node = self.node_out.xmlInitNode('writer', id = "-1", label = 'results')
+            node.xmlInitNode('frequency', period = 'none')
+            node.xmlInitNode('output_at_end', status = 'on')
+            node.xmlInitNode('format', name = 'ensight', options = 'binary')
+            node.xmlInitNode('directory', name = 'postprocessing')
             node.xmlInitNode('time_dependency', choice = 'fixed_mesh')
-
 
 
     def __deleteWriter(self, writer_id):
@@ -291,18 +290,15 @@ class OutputControlModel(Model):
         n = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
         n['label'] = label
 
+
     def getWriterFrequencyChoice(self, writer_id):
         """
         Return the choice of frequency output for a writer
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n= node.xmlGetNode('frequency_time')
-        if n == None:
-            n= node.xmlGetNode('frequency_formula')
-            if n == None:
-                n= node.xmlInitNode('frequency')
-        frequency_choice = n['choice']
+        n = node.xmlInitNode('frequency')
+        frequency_choice = n['period']
         if frequency_choice == None:
             frequency_choice = self.defaultWriterValues()['frequency_choice']
             self.setWriterFrequencyChoice(writer_id, frequency_choice)
@@ -314,33 +310,19 @@ class OutputControlModel(Model):
         Set the choice of frequency output for a writer
         """
         self.isInList(writer_id, self.getWriterIdList())
-        self.isInList(choice, ('end', 'time', 'time_steps', 'second', 'formula'))
+        self.isInList(choice, ('none', 'time_step', 'time_value', 'formula'))
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        if choice == 'end' or choice == 'time' or choice == 'time_steps':
-            n= node.xmlInitNode('frequency')
-            n_bis = node.xmlGetNode('frequency_time')
-            if n_bis != None:
-                n_bis.xmlRemoveNode()
-            n_ter = node.xmlGetNode('frequency_formula')
-            if n_ter != None:
-                n_ter.xmlRemoveNode()
-        elif choice == 'second':
-            n= node.xmlInitNode('frequency_time')
-            n_bis = node.xmlGetNode('frequency')
-            if n_bis != None:
-                n_bis.xmlRemoveNode()
-            n_ter = node.xmlGetNode('frequency_formula')
-            if n_ter != None:
-                n_ter.xmlRemoveNode()
-        elif choice == 'formula':
-            n= node.xmlInitNode('frequency_formula')
-            n_bis = node.xmlGetNode('frequency_time')
-            if n_bis != None:
-                n_bis.xmlRemoveNode()
-            n_ter = node.xmlGetNode('frequency')
-            if n_ter != None:
-                n_ter.xmlRemoveNode()
-        n['choice'] = choice
+        n = node.xmlInitNode('frequency')
+        old_choice = n['period']
+        if old_choice != choice:
+            n.xmlRemoveNode()
+            n = node.xmlInitNode('frequency')
+            default = self.defaultWriterValues()
+            if choice == 'time_step':
+                node.xmlSetData('frequency', str(default['frequency']))
+            elif choice == 'time_value':
+                node.xmlSetData('frequency', str(default['frequency_time']))
+        n['period'] = choice
 
 
     def getWriterFrequency(self, writer_id):
@@ -349,10 +331,7 @@ class OutputControlModel(Model):
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        freq = node.xmlGetInt('frequency')
-        if freq == None:
-            freq = self.defaultWriterValues()['frequency']
-            self.setWriterFrequency(writer_id, freq)
+        freq = node.xmlGetString('frequency')
         return freq
 
 
@@ -360,53 +339,34 @@ class OutputControlModel(Model):
         """
         Set the frequency of a writer
         """
-        self.isInt(freq)
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        node.xmlSetData('frequency', freq)
+        node.xmlSetData('frequency', str(freq))
 
 
-    def getWriterFrequencyTime(self, writer_id):
+    def getWriterOutputEndStatus(self, writer_id):
         """
-        Return the frequency of a writer
-        """
-        self.isInList(writer_id, self.getWriterIdList())
-        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        freq = node.xmlGetDouble('frequency_time')
-        if freq == None:
-            freq = self.defaultWriterValues()['frequency_time']
-            self.setWriterFrequencyTime(writer_id, freq)
-        return freq
-
-
-    def setWriterFrequencyTime(self, writer_id, freq):
-        """
-        Set the frequency of a writer
+        Return the all_variables status of a mesh
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        node.xmlSetData('frequency_time', freq)
+        n = node.xmlInitNode('output_at_end')
+        status = n['status']
+        if status == None:
+            status = self.defaultWriterValues()['output_at_end']
+            self.setWriterOutputEndStatus(writer_id, status)
+        return status
 
 
-    def setWriterFrequencyFormula(self,writer_id, formula):
+    def setWriterOutputEndStatus(self, writer_id, status):
         """
-        Public method.
-        Set the formula for a turbulent variable.
-        """
-        self.isInList(writer_id, self.getWriterIdList())
-        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        node.xmlSetData('frequency_formula', formula)
-
-
-    def getWriterFrequencyFormula(self, writer_id):
-        """
-        Public method.
-        Return the formula for a turbulent variable.
+        Set the all_variables status of a mesh
         """
         self.isInList(writer_id, self.getWriterIdList())
+        self.isOnOff(status)
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        formula = node.xmlGetDouble('frequency')
-        return formula
+        n = node.xmlInitNode('output_at_end')
+        n['status'] = status
 
 
     def getWriterFormat(self, writer_id):
@@ -415,8 +375,8 @@ class OutputControlModel(Model):
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n= node.xmlInitNode('format')
-        format = n['choice']
+        n = node.xmlInitNode('format')
+        format = n['name']
         if format == None:
             format = self.defaultWriterValues()['format']
             self.setWriterFormat(writer_id, format)
@@ -429,33 +389,33 @@ class OutputControlModel(Model):
         """
         self.isInList(writer_id, self.getWriterIdList())
         self.isInList(format, ('ensight', 'med', 'cgns'))
-        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n= node.xmlInitNode('format')
-        n['choice'] = format
+        node = self.node_out.xmlInitNode('writer', 'label', id = writer_id)
+        n = node.xmlInitNode('format')
+        n['name'] = format
 
 
-    def getWriterRepertory(self, writer_id):
+    def getWriterDirectory(self, writer_id):
         """
-        Return the repertory for a writer
-        """
-        self.isInList(writer_id, self.getWriterIdList())
-        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n= node.xmlInitNode('repertory')
-        repertory = n['choice']
-        if repertory == None:
-            repertory = self.defaultWriterValues()['repertory']
-            self.setWriterRepertory(writer_id, repertory)
-        return repertory
-
-
-    def setWriterRepertory(self, writer_id, repertory):
-        """
-        Set the repertory for a writer
+        Return the directory for a writer
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n= node.xmlInitNode('repertory')
-        n['choice'] = repertory
+        n = node.xmlInitNode('directory')
+        directory = n['name']
+        if directory == None:
+            directory = self.defaultWriterValues()['directory']
+            self.setWriterDirectory(writer_id, directory)
+        return directory
+
+
+    def setWriterDirectory(self, writer_id, directory):
+        """
+        Set the directory for a writer
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlInitNode('writer', 'label', id = writer_id)
+        n = node.xmlInitNode('directory')
+        n['name'] = directory
 
 
     def getWriterOptions(self, writer_id):
@@ -464,8 +424,8 @@ class OutputControlModel(Model):
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n= node.xmlInitNode('options')
-        options = n['choice']
+        n = node.xmlInitNode('format')
+        options = n['options']
         if options == None:
             options = self.defaultWriterValues()['options']
             self.setWriterOptions(writer_id, options)
@@ -478,8 +438,8 @@ class OutputControlModel(Model):
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n= node.xmlInitNode('options')
-        n['choice'] = options
+        n = node.xmlInitNode('format')
+        n['options'] = options
 
 
     def getWriterTimeDependency(self, writer_id):#-------> a réutiliser
@@ -489,7 +449,7 @@ class OutputControlModel(Model):
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
 
-        n= node.xmlInitNode('time_dependency')
+        n = node.xmlInitNode('time_dependency')
         choice = n['choice']
         if choice == None:
             choice = self.defaultWriterValues()['time_dependency']
@@ -504,18 +464,16 @@ class OutputControlModel(Model):
         self.isInList(writer_id, self.getWriterIdList())
         self.isInList(choice, ('fixed_mesh', 'transient_coordinates', 'transient_connectivity'))
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n= node.xmlInitNode('time_dependency')
+        n = node.xmlInitNode('time_dependency')
         n['choice'] = choice
 
 
     def defaultMeshValues(self):
         """Return the default values"""
         default = {}
-        default['type']          = "cells"
-        default['all_variables']          = "on"
-        default['location']     = "all[]"
-        default['time_dependendy']      = 'fixed_mesh'
-        default['postprocessing_options'] = "binary"
+        default['type'] = "cells"
+        default['all_variables'] = "on"
+        default['location'] = "all[]"
 
         return default
 
@@ -546,11 +504,11 @@ class OutputControlModel(Model):
             next_id = max(user_table) +1
         else:
             next_id = 1
-        next_label = 'mesh('+ str(next_id)+')'
-        n=next_id
+        next_label = 'mesh(' + str(next_id) + ')'
+        n = next_id
         while next_label in self.getMeshLabelList():
-            n=n+1
-            next_label = 'mesh('+ str(n)+')'
+            n = n+1
+            next_label = 'mesh(' + str(n) + ')'
         return str(next_id), next_label
 
 
@@ -564,10 +522,9 @@ class OutputControlModel(Model):
         for node in self.node_out.xmlGetNodeList('mesh'):
             if int(node['id']) > 0 :
                 n = n + 1
-                if node['label'] == 'mesh('+node['id']+')':
-                    node['label'] ='mesh('+str(n)+')'
+                if node['label'] == 'mesh('+ node['id'] + ')':
+                    node['label'] ='mesh_'+ str(n) + ')'
                 node['id'] = str(n)
-
 
 
     def addMesh(self):
@@ -585,23 +542,27 @@ class OutputControlModel(Model):
         return i
 
 
-
     def addDefaultMesh(self):
         """Public method.
         Input default mesh
         """
         list_mesh = self.getMeshIdList()
         if list_mesh == []:
-            node1 = self.node_out.xmlInitNode('mesh', id = "-1", label = 'fluid_domain', type = 'cells')
+            node1 = self.node_out.xmlInitNode('mesh', id = "-1",
+                                              label = 'Fluid domain',
+                                              type = 'cells')
             node1.xmlInitNode('all_variables', status = 'on')
             node1.xmlInitNode('location')
             node1.xmlSetData('location','all[]')
             node1.xmlInitNode('writer', id = '-1')
 
-            node2 = self.node_out.xmlInitNode('mesh', id = "-2", label = 'boundary_domain', type = 'boundary_faces')
+            node2 = self.node_out.xmlInitNode('mesh',
+                                              id = "-2",
+                                              label = 'Boundary',
+                                              type = 'boundary_faces')
             node2.xmlInitNode('all_variables', status = 'on')
             node2.xmlInitNode('location')
-            node2.xmlSetData('location','all[]')
+            node2.xmlSetData('location', 'all[]')
             node2.xmlInitNode('writer', id = '-1')
 
 
@@ -706,7 +667,7 @@ class OutputControlModel(Model):
         """
         self.isInList(mesh_id, self.getMeshIdList())
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
-        n= node.xmlInitNode('all_variables')
+        n = node.xmlInitNode('all_variables')
         status = n['status']
         if status == None:
             status = self.defaultMeshValues()['all_variables']
@@ -721,8 +682,9 @@ class OutputControlModel(Model):
         self.isInList(mesh_id, self.getMeshIdList())
         self.isOnOff(status)
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
-        n= node.xmlInitNode('all_variables')
+        n = node.xmlInitNode('all_variables')
         n['status'] = status
+
 
     def getMeshLocation(self, mesh_id):
         """
@@ -756,7 +718,6 @@ class OutputControlModel(Model):
         for n in node.xmlGetNodeList('writer'):
             associated_writer.append(n["id"])
         return associated_writer
-
 
 
     def addAssociatedWriter(self, mesh_id):
@@ -1063,88 +1024,6 @@ class OutputControlModelTestCase(ModelTest):
         assert model.getListingFrequency() == 12, \
                     'Could not get frequency for listing output control model'
 
-    def checkSetandGetPostprocessingFrequency(self):
-        """Check whether the frequency of post processing could be set and get"""
-        model = OutputControlModel(self.case)
-        model.setPostprocessingFrequency(13)
-        doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
-                    <postprocessing_frequency>13</postprocessing_frequency>
-                 </output>'''
-        assert model.node_out== self.xmlNodeFromString(doc), \
-                    'Could not set frequency for post processing output control model'
-        assert model.getPostprocessingFrequency() == 13, \
-                    'Could not get frequency for post processing output control model'
-
-    def checkSetandGetFluidDomainPostProStatus(self):
-        """Check whether the status of post processing for fluid domain could be set and get"""
-        model = OutputControlModel(self.case)
-        model.setFluidDomainPostProStatus('off')
-        doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
-                    <fluid_domain status="off"/>
-                 </output>'''
-        assert model.node_out== self.xmlNodeFromString(doc), \
-            'Could not set status of post processing for fluid domain for output control model'
-        assert model.getFluidDomainPostProStatus() == 'off', \
-            'Could not get status of post processing for fluid domain for output control model'
-
-    def checkSetandGetDomainBoundaryPostProStatus(self):
-        """
-        Check whether the status of post processing for domain
-        boundary could be set and get
-        """
-        model = OutputControlModel(self.case)
-        model.setDomainBoundaryPostProStatus('on')
-        doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
-                    <domain_boundary status="on"/>
-                 </output>'''
-        assert model.node_out== self.xmlNodeFromString(doc), \
-        'Could not set status of post processing for domain boundary for output control model'
-        assert model.getDomainBoundaryPostProStatus() == 'on', \
-        'Could not get status of post processing for domain boundary for output control model'
-
-    def checkSetandGetTypePostMeshes(self):
-        """Check whether the type of mesh's post processing could be set and get"""
-        model = OutputControlModel(self.case)
-        model.setTypePostMeshes('2')
-        doc = '''<output>
-                    <postprocessing_mesh_options choice="2"/>
-                 </output>'''
-        assert model.node_out== self.xmlNodeFromString(doc), \
-        'Could not set type of post processing for mesh in output control model'
-        assert model.getTypePostMeshes() == '2', \
-        'Could not get type of post processing for mesh in output control model'
-
-    def checkSetandGetPostProFormat(self):
-        """Check whether the format for post processing could be set and get"""
-        model = OutputControlModel(self.case)
-        model.setPostProFormat('MED')
-        doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
-                    <postprocessing_format choice="MED"/>
-                 </output>'''
-        assert model.node_out== self.xmlNodeFromString(doc), \
-        'Could not set format of post processing in output control model'
-        assert model.getPostProFormat() == 'MED', \
-        'Could not get format of post processing in output control model'
-
-    def checkSetandGetPostProOptionsFormat(self):
-        """
-        Check whether the options of format for post processing could be set and get
-        """
-        model = OutputControlModel(self.case)
-        model.setPostProOptionsFormat('big_endian,divide_polyhedra')
-        doc = '''<output>
-                    <postprocessing_mesh_options choice="0"/>
-                    <postprocessing_options choice="big_endian,divide_polyhedra"/>
-                 </output>'''
-        assert model.node_out== self.xmlNodeFromString(doc), \
-        'Could not set the options of format for post processing in output control model'
-        assert model.getPostProOptionsFormat() == 'big_endian,divide_polyhedra', \
-        'Could not get the options of format for post processing in output control model'
-
     def checkSetandGetMonitoringPointFrequency(self):
         """
         Check whether the frequency of monitoring point could be set and get
@@ -1202,7 +1081,6 @@ class OutputControlModelTestCase(ModelTest):
                  </output>'''
         assert model.node_out== self.xmlNodeFromString(doc),\
         'Could not replace monitoring point in output control model'
-
 
     def checkDeleteMonitoringPoint(self):
         """
