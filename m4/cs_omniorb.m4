@@ -298,7 +298,7 @@ then
   else{
     delete a;
     exit(1);
-    exit(1);]]) ],
+  }]]) ],
   DOUBLECOMP="yes",
   DOUBLECOMP="no",
   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
