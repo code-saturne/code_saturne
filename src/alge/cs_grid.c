@@ -1812,10 +1812,11 @@ _append_face_data(cs_grid_t   *g,
       MPI_Recv(g->_face_normal + g->n_faces*3, n_recv*3,
                CS_MPI_REAL, dist_rank, tag, comm, &status);
 
-      MPI_Recv(g->_xa + g->n_faces, n_recv,
-               CS_MPI_REAL, dist_rank, tag, comm, &status);
-      if (g->symmetric == false)
-        MPI_Recv(g->_xa + n_faces_tot + g->n_faces, n_recv,
+      if (g->symmetric == true)
+        MPI_Recv(g->_xa + g->n_faces, n_recv,
+                 CS_MPI_REAL, dist_rank, tag, comm, &status);
+      else
+        MPI_Recv(g->_xa + g->n_faces*2, n_recv*2,
                  CS_MPI_REAL, dist_rank, tag, comm, &status);
 
       MPI_Recv(g->_xa0 + g->n_faces, n_recv,
@@ -1842,9 +1843,12 @@ _append_face_data(cs_grid_t   *g,
       g->_face_normal[face_id*3] = g->_face_normal[p_face_id*3];
       g->_face_normal[face_id*3 + 1] = g->_face_normal[p_face_id*3 + 1];
       g->_face_normal[face_id*3 + 2] = g->_face_normal[p_face_id*3 + 2];
-      g->_xa[face_id] = g->_xa[p_face_id];
-      if (g->symmetric == false)
-        g->_xa[face_id + n_faces] = g->_xa[p_face_id + g->n_faces];
+      if (g->symmetric == true)
+        g->_xa[face_id] = g->_xa[p_face_id];
+      else {
+        g->_xa[face_id*2] = g->_xa[p_face_id*2];
+        g->_xa[face_id*2+1] = g->_xa[p_face_id*2+1];
+      }
       g->_xa0[face_id] = g->_xa0[p_face_id];
       g->xa0ij[face_id*3] = g->xa0ij[p_face_id*3];
       g->xa0ij[face_id*3 + 1] = g->xa0ij[p_face_id*3 + 1];
@@ -1859,10 +1863,11 @@ _append_face_data(cs_grid_t   *g,
              g->merge_sub_root, tag, comm);
     BFT_FREE(g->_face_normal);
 
-    MPI_Send(g->_xa, n_faces, CS_MPI_REAL,
-             g->merge_sub_root, tag, comm);
-    if (g->symmetric == false)
-      MPI_Send(g->_xa + n_faces, n_faces, CS_MPI_REAL,
+    if (g->symmetric == true)
+      MPI_Send(g->_xa, n_faces, CS_MPI_REAL,
+               g->merge_sub_root, tag, comm);
+    else
+      MPI_Send(g->_xa, n_faces*2, CS_MPI_REAL,
                g->merge_sub_root, tag, comm);
     BFT_FREE(g->_xa);
 
@@ -2265,10 +2270,9 @@ cs_grid_create_from_shared(fvm_lnum_t             n_cells,
     g->_xa0 = NULL;
   }
   else {
-    const cs_real_t *xa_sym = xa + n_faces;
     BFT_MALLOC(g->_xa0, n_faces, cs_real_t);
     for (face_id = 0; face_id < n_faces; face_id++)
-      g->_xa0[face_id] = 0.5 * (xa[face_id] + xa_sym[face_id]);
+      g->_xa0[face_id] = 0.5 * (xa[face_id*2] + xa[face_id*2+1]);
     g->xa0 = g->_xa0;
   }
 
@@ -3247,8 +3251,8 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
       for (face_id = 0; face_id < n_faces; face_id++) {
         ii = face_cel[2*face_id] -1;
         jj = face_cel[2*face_id + 1] -1;
-        dd[ii] -= fabs(g->xa[face_id]);
-        dd[jj] -= fabs(g->xa[face_id + n_faces]);
+        dd[ii] -= fabs(g->xa[face_id*2]);
+        dd[jj] -= fabs(g->xa[face_id*2 + 1]);
       }
     }
 

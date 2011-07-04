@@ -1,3 +1,8 @@
+* 04/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix bugs in non-symmetric multigrid solver due to missing interleave updates.
+  modified files:
+    src/base/cs_grid.c
+
 * 30/06/2011 - David Monfort <david.monfort@edf.fr>
   New version 2.1 release candidate.
 
