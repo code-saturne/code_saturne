@@ -77,7 +77,7 @@ module entsor
   !     jnf    --> Janaf
   !     jon    --> Utilisation de Janaf ou non
 
-  character*6, save :: ficfpp
+  character*7, save :: ficfpp
   character*5, save :: ficjnf
 
   integer, save :: impfpp, impjnf, indjon
