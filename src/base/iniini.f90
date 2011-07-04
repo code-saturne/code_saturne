@@ -178,7 +178,7 @@ enddo
 !      En prime, INDJON (janaf=1 ou non=0)
 
 impfpp = 25
-ficfpp = 'dp_tch'
+ficfpp = 'dp_thch'
 
 impjnf = impfpp
 ficjnf = 'JANAF'
