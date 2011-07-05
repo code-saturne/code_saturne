@@ -3,7 +3,8 @@
 # =====================
 #
 #SBATCH --ntasks=2
-#SBATCH --time=0:30
+#SBATCH --time=0:30:00
+#SBATCH --partition=para
 #SBATCH --output nameandcaseo.%j 
 #SBATCH --error nameandcasee.%j 
 #SBATCH --job-name=nameandcase
