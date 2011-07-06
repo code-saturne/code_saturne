@@ -1,3 +1,0 @@
-# Create new empty target for documentation installation
-# This is a trick to fool the Makefile.in.in
-install-ps install-pdf install-html:
