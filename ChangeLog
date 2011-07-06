@@ -1,3 +1,65 @@
+* 06/07/2011 - Pascal Nicolas <pascal.nicolas@incka.fr>
+               Yvan Fournier <yvan.fournier@edf.fr>
+  Update user documentation, including addition of GUI screenshots.
+  added files:
+    doc/user/graphics/gui_ale_external.png
+    doc/user/graphics/gui_ale_internal.png
+    doc/user/graphics/gui_ale_mei.png
+    doc/user/graphics/gui_atmo_read.png
+    doc/user/graphics/gui_bc_parameters.png
+    doc/user/graphics/gui_bc_regions.png
+    doc/user/graphics/gui_case_dir.png
+    doc/user/graphics/gui_coal_bc.png
+    doc/user/graphics/gui_coal_classes.png
+    doc/user/graphics/gui_coal_coke.png
+    doc/user/graphics/gui_coal_composition.png
+    doc/user/graphics/gui_coal_oxydant.png
+    doc/user/graphics/gui_coal_reaction.png
+    doc/user/graphics/gui_coal_solution_control.png
+    doc/user/graphics/gui_coal_time_average.png
+    doc/user/graphics/gui_density_law.png
+    doc/user/graphics/gui_fluid_props.png
+    doc/user/graphics/gui_global_res_parameters.png
+    doc/user/graphics/gui_gravity_hyd_pressure.png
+    doc/user/graphics/gui_head_loss_coeffs.png
+    doc/user/graphics/gui_head_loss_regions.png
+    doc/user/graphics/gui_lagr_bc.png
+    doc/user/graphics/gui_lagr_global_advanced.png
+    doc/user/graphics/gui_lagr_global_settings_coal.png
+    doc/user/graphics/gui_lagr_global_settings.png
+    doc/user/graphics/gui_lagr_output.png
+    doc/user/graphics/gui_lagr_statistics.png
+    doc/user/graphics/gui_mesh_join.png
+    doc/user/graphics/gui_mesh_periodicity.png
+    doc/user/graphics/gui_mobile_mesh.png
+    doc/user/graphics/gui_numerical_parameters.png
+    doc/user/graphics/gui_output_1d_profiles.png
+    doc/user/graphics/gui_output_log.png
+    doc/user/graphics/gui_output_meshes.png
+    doc/user/graphics/gui_output_writers.png
+    doc/user/graphics/gui_phys_prop_ref_pressure.png
+    doc/user/graphics/gui_prepare_execution.png
+    doc/user/graphics/gui_rad_transf_do_advanced.png
+    doc/user/graphics/gui_rad_transf_do_params.png
+    doc/user/graphics/gui_rad_transf_models.png
+    doc/user/graphics/gui_rad_transf_p1_advanced.png
+    doc/user/graphics/gui_rad_transf_p1_params.png
+    doc/user/graphics/gui_rad_transf_post_output.png
+    doc/user/graphics/gui_rad_transf_wall_model.png
+    doc/user/graphics/gui_rad_transf_wall_params.png
+    doc/user/graphics/gui_syrthes_coupling.png
+    doc/user/graphics/gui_thermal_scalar.png
+    doc/user/graphics/gui_thermo_phys_models.png
+    doc/user/graphics/gui_time_averages.png
+    doc/user/graphics/gui_time_step.png
+    doc/user/graphics/gui_turbulence_models.png
+    doc/user/graphics/gui_user_scal_def_init.png
+    doc/user/graphics/gui_user_scal_phys_props.png
+    doc/user/graphics/gui_volume_regions.png
+  modified files:
+    doc/user/graphics/Makefile.am
+    doc/user/saturne1.tex
+
 * 06/07/2011 - David Monfort <david.monfort@edf.fr>
   Set the relaxation coefficient to the classical value of 0.7 instead of
   0.9 for the steady algorithm.
