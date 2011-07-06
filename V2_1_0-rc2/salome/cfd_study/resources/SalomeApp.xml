@@ -1,0 +1,19 @@
+<document>
+  <section name="CFDSTUDY">
+    <!-- Major module parameters -->
+    <parameter name="name"    value="CFDSTUDY"/>
+    <parameter name="icon"    value="CFDSTUDY.png"/>
+    <parameter name="library" value="SalomePyQtGUI"/>
+    <!-- Other module preferences -->
+    <parameter name="Kernel"         value="/usr/local/bin"/>
+    <parameter name="Editor"         value="xemacs"/>
+    <parameter name="Reader"         value="xemacs"/>
+    <parameter name="Tool_for_diff"  value="diff"/>
+    <parameter name="Display"        value=":0.0"/>
+    <parameter name="ShowInfoDialog" value="no"/>
+  </section>
+  <section name="resources">
+    <!-- Module resources -->
+    <parameter name="CFDSTUDY" value="${CFDSTUDY_ROOT_DIR}/share/salome/resources/cfdstudy"/>
+  </section>
+</document>

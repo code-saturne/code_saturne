@@ -1,0 +1,163 @@
+%-----------------------------------------------------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+%
+%     Copyright (C) 1998-2008 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+%
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+%
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+%
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+\documentclass[a4paper,10pt,twoside]{report}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES OBLIGATOIRES
+\usepackage{csdoc}
+% MACROS SUPPLEMENTAIRES
+\usepackage{csmacros}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
+\hypersetup{%
+  pdftitle = {CodeSaturne Theory and Programmer's Guide},
+  pdfauthor = {MFEE},
+  pdfpagemode = UseOutlines
+}
+\pdfinfo{/CreationDate (D:20030429000000-01 00 )}
+%
+% Pour avoir les Thumbnails a l'ouverture du document sous ACROREAD :
+% pdfpagemode = UseThumbs
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MACROS SUPPLEMENTAIRES
+% \newcommand{/...}{...}
+%
+\setcounter{tocdepth}{0}
+%Compteur de ``programme'' remis a jour dans les part.
+\newcounter{prog}[part]
+\renewcommand{\theprog}{\arabic{prog}}
+\renewcommand{\thesection}{\theprog.\arabic{section}}
+\renewcommand{\theequation}{\thepart.\theprog.\arabic{equation}}
+\renewcommand{\thefigure}{\thepart.\theprog.\arabic{figure}}
+\newcommand{\programme}[1]{%
+\passepage
+\refstepcounter{prog}
+\stepcounter{chapter}
+\setcounter{section}{0}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+\begin{center}
+\Huge \bf \theprog - \underline{Sous-programme \fort{#1}}
+\end{center}
+\addcontentsline{toc}{chapter}{\theprog- Sous-programme #1}}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INFO POUR PAGES DE GARDES
+\titreCS{\CS \verscs Theory and Programmer's Guide}
+\docassociesCS{}
+\resumeCS{Ce document constitue la documentation th\'eorique et
+informatique des parties centrales du noyau de \CS~\verscs.
+La documentation est attach\'ee \`a la version du code
+correspondante pour favoriser les mises \`a jour. En pratique, les
+utilisateurs de \CS
+peuvent acc\'eder \`a la documentation sous
+\texttt{\$CS\_HOME/doc/NOYAU/}, information qui leur est rappel\'ee par la
+commande d'information g\'en\'erale \texttt{info\_cs [theory]}.}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DEBUT DU DOCUMENT
+\begin{document}
+
+%\def\bibname{Références}
+\def\contentsname{\textbf{\normalsize SOMMAIRE}\pdfbookmark[1]{Sommaire}{contents}}
+\def\indexname{Index des variables principales et des mots cl\'es}
+
+\pdfbookmark[1]{Pages de garde}{pdg}
+\large
+\makepdgCS
+\normalsize
+
+\passepage
+\input summary
+
+\passepart
+\begin{center}\begin{singlespace}
+\tableofcontents
+\end{singlespace}\end{center}
+
+
+%\passepage
+%\printsymliste\
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CORPS DU DOCUMENT
+%
+\passepage
+\part{Introduction}
+\stepcounter{prog}
+\include{introd}
+\part{Module de base}
+\include{bilsc2}
+\include{clptur}
+\include{clptrg}
+\include{clsyvt}
+\include{codits}
+\include{condli}
+\include{covofi}
+\include{gradmc}
+\include{gradrc}
+\include{inimas}
+\include{itrmas}
+\include{matrix}
+\include{navsto}
+\include{preduv}
+\include{recvmc}
+\include{resolp}
+\include{turbke}
+\include{turrij}
+\include{viscfa}
+\include{visort}
+\include{vissec}
+\include{vortex}
+\part{Module compressible}
+\include{cfbase}
+\include{cfener}
+\include{cfmsvl}
+\include{cfqdmv}
+\include{cfxtcl}
+\part{Module électrique}
+\include{elbase}
+\part{Module combustion}
+\include{combbase}
+\include{combgaz}
+\include{combcharb}
+\include{combfuel}
+\include{thermo}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FIN DU DOCUMENT
+\end{document}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

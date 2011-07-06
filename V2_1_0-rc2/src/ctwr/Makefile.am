@@ -1,0 +1,85 @@
+#------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Kernel, element of the
+#   Code_Saturne CFD tool.
+#
+#   Copyright (C) 2009-2011 EDF S.A., France
+#
+#   The Code_Saturne Kernel is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Kernel is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Kernel; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
+
+# PLE dependency
+
+if HAVE_INTERNAL_PLE
+  CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
+else
+  CPPFLAGS_PLE = $(PLE_CPPFLAGS)
+endif
+
+# Main part
+
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+$(CPPFLAGS_PLE) \
+$(MPI_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+
+AM_FCFLAGS = \
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+
+AM_LDFLAGS =
+
+# Public header files (to be installed)
+
+pkginclude_HEADERS = \
+cs_ctwr_air_props.h \
+cs_ctwr.h \
+cs_ctwr_halo.h \
+cs_ctwr_mesh.h
+
+# Library source files
+
+noinst_LTLIBRARIES = libcsctwr.la
+libcsctwr_la_SOURCES = \
+cs_ctwr.c \
+cs_ctwr_air_props.c \
+cs_ctwr_f2c.f90 \
+cs_ctwr_halo.c \
+cs_ctwr_mesh.c \
+ctini1.f90 \
+ctiniv.f90 \
+ctphyv.f90 \
+cttssc.f90 \
+ctvarp.f90
+libcsctwr_la_LDFLAGS = -no-undefined
+
+ctwrusers = \
+$(top_srcdir)/users/ctwr/usctcl.f90 \
+$(top_srcdir)/users/ctwr/usctdz.f90 \
+$(top_srcdir)/users/ctwr/uscti1.f90 \
+$(top_srcdir)/users/ctwr/usctiv.f90
+
+libcsctwr_la_SOURCES += $(ctwrusers)
+
+ctwrdir = $(pkgdatadir)/users/ctwr
+ctwr_DATA = $(ctwrusers)
+
+clean-local:
+	-rm -f *__genmod.f90 *.mod

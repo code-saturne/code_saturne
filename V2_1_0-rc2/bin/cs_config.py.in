@@ -1,0 +1,439 @@
+#!/usr/bin/env python
+# @configure_input@
+#============================================================================
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 2009-2011 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+
+#-------------------------------------------------------------------------------
+
+import os
+from optparse import OptionParser
+
+#-------------------------------------------------------------------------------
+
+# Build tools, option, and libraries
+#-----------------------------------
+
+class build_syrthes:
+    cc="@SYRTHES_CC@"
+    fc="@SYRTHES_FC@"
+    cppflags="@SYRTHES_CPPFLAGS@"
+    cflags="@SYRTHES_CFLAGS@"
+    fcflags="@SYRTHES_FCFLAGS@"
+    ldflags="@SYRTHES_LDFLAGS@"
+    libs="@SYRTHES_LIBS@ @SYRTHES_FCLIBS@"
+
+
+# Prerequisites libraries
+#------------------------
+
+class prerequisite:
+
+    def __init__(self, name, have = "no", variant = None,
+                 prefix = None, execprefix = None,
+                 includedir = None, libdir = None,
+                 cppflags = None, ldflags = None, libs = None, deplibs = None):
+
+        # Library name
+        self.name = name
+
+        # Have
+        self.have = have
+
+        # Library variant
+        self.variant = variant
+
+        # Library installation directories
+        self.prefix = prefix
+        self.execprefix = execprefix
+        self.includedir = includedir
+        self.libdir = libdir
+
+        # Library build
+        self.cppflags = cppflags
+        self.ldflags = ldflags
+        self.libs = libs
+        self.deplibs = deplibs
+
+    def print_config(self):
+
+        print("Prequisite: " + self.name)
+
+
+# Configuration info
+#-------------------
+
+class config:
+
+    def __init__(self):
+
+        # List of optionnal features
+
+        self.optfeatures = ['debug', 'relocatable', 'shared',
+                            'gui', 'frontend',
+                            'openmp', 'socket',
+                            'long-gnum', 'nls']
+        self.features = {}
+
+        # List of optionnal libraries
+
+        self.optlibs = ['adf', 'blas', 'ccm', 'cgns', 'hdf5', 'libxml2',
+                        'med', 'metis', 'mpi', 'scotch']
+        self.libs = {}
+
+        # Python-related information
+
+        self.python = "@PYTHON@"
+        self.pyuic4 = "@PYUIC4@"
+        self.pyrcc4 = "@PYRCC4@"
+
+        # SALOME-related information
+
+        self.have_salome = "@cs_have_salome_kernel@"
+        self.salome_kernel = "@KERNEL_ROOT_DIR@"
+        self.salome_root = "@ROOT_SALOME@"
+        self.salome_version = "@SALOME_VERSION@"
+
+        # Setup the optionnal features
+
+        self.features['debug'] = "@debug@"
+        self.features['relocatable'] = "@relocatable@"
+        self.features['shared'] = "@enable_shared@"
+        self.features['gui'] = "@cs_have_gui@"
+        self.features['frontend'] = "@cs_have_frontend@"
+        self.features['openmp'] = "@cs_have_openmp@"
+        self.features['socket'] = "@cs_have_socket@"
+        self.features['long-gnum'] = "@cs_have_long_gnum@"
+        self.features['nls'] = '@USE_NLS@'
+
+        # Setup the optionnal libraries
+
+        self.libs['adf'] = \
+            prerequisite("ADF",
+                         have = "@cs_have_adf@",
+                         ldflags = "@ADF_LDFLAGS@",
+                         libs = "@ADF_LIBS@")
+
+        self.libs['blas'] = \
+            prerequisite("BLAS",
+                         have = "@cs_have_blas@",
+                         cppflags = "@BLAS_CPPFLAGS@",
+                         ldflags = "@BLAS_LDFLAGS@",
+                         libs = "@BLAS_LIBS@")
+
+        self.libs['ccm'] = \
+            prerequisite("CCM",
+                         have = "@cs_have_ccm@",
+                         cppflags = "@CCM_CPPFLAGS@",
+                         ldflags = "@CCM_LDFLAGS@",
+                         libs = "@CCM_LIBS@")
+
+        self.libs['cgns'] = \
+            prerequisite("CGNS",
+                         have = "@cs_have_cgns@",
+                         cppflags = "@CGNS_CPPFLAGS@",
+                         ldflags = "@CGNS_LDFLAGS@",
+                         libs = "@CGNS_LIBS@")
+
+        self.libs['hdf5'] = \
+            prerequisite("HDF5",
+                         have = "@cs_have_hdf5@",
+                         cppflags = "@HDF5_CPPFLAGS@",
+                         ldflags = "@HDF5_LDFLAGS@",
+                         libs = "@HDF5_LIBS@")
+
+        self.libs['libxml2'] = \
+            prerequisite("LibXml2",
+                         have = "@cs_have_libxml2@",
+                         cppflags = "@LIBXML2_CPPFLAGS@",
+                         ldflags = "@LIBXML2_LDFLAGS@",
+                         libs = "@LIBXML2_LIBS@")
+
+        self.libs['med'] = \
+            prerequisite("MED",
+                         have = "@cs_have_med@",
+                         cppflags = "@MED_CPPFLAGS@",
+                         ldflags = "@MED_LDFLAGS@",
+                         libs = "@MED_LIBS@")
+
+        self.libs['metis'] = \
+            prerequisite("METIS",
+                         have = "@cs_have_metis@",
+                         cppflags = "@METIS_CPPFLAGS@",
+                         ldflags = "@METIS_LDFLAGS@",
+                         libs = "@METIS_LIBS@")
+
+        self.libs['mpi'] = \
+            prerequisite("MPI",
+                         have = "@cs_have_mpi@",
+                         cppflags = "@MPI_CPPFLAGS@",
+                         ldflags = "@MPI_LDFLAGS@",
+                         libs = "@MPI_LIBS@")
+
+        self.libs['scotch'] = \
+            prerequisite("SCOTCH",
+                         have = "@cs_have_scotch@",
+                         cppflags = "@SCOTCH_CPPFLAGS@",
+                         ldflags = "@SCOTCH_LDFLAGS@",
+                         libs = "@SCOTCH_LIBS@")
+
+
+    def print_config(self):
+
+        for lib in self.optlibs:
+            self.libs[lib].print_config()
+
+#-------------------------------------------------------------------------------
+
+def process_cmd_line(argv):
+    """
+    Processes the passed command line arguments.
+
+    Input Argument:
+      arg -- This can be either a list of arguments as in
+             sys.argv[1:] or a string that is similar to the one
+             passed on the command line.  If it is a string,
+             it is split to create a list of arguments.
+    """
+
+    parser = OptionParser(usage="usage: %prog [options]")
+
+    parser.add_option("--cc", dest="print_cc",
+                      action="store_true",
+                      help="C compiler used for build")
+
+    parser.add_option("--cxx", dest="print_cxx",
+                      action="store_true",
+                      help="C++ compiler used for build")
+
+    parser.add_option("--fc", dest="print_fc",
+                      action="store_true",
+                      help="Fortran compiler used for build")
+
+    parser.add_option("--cflags", dest="print_cflags",
+                      action="store_true",
+                      help="C compiler flags")
+
+    parser.add_option("--cxxflags", dest="print_cxxflags",
+                      action="store_true",
+                      help="C++ compiler flags")
+
+    parser.add_option("--fcflags", dest="print_fcflags",
+                      action="store_true",
+                      help="Fortran compiler flags")
+
+    parser.add_option("--rpath", dest="print_rpath",
+                      action="store_true",
+                      help="Linker rpath command line")
+
+    parser.add_option("--python", dest="print_python",
+                      action="store_true",
+                      help="Python interpreter")
+
+    parser.add_option("--pyuic4", dest="print_pyuic4",
+                      action="store_true",
+                      help="pyuic4 tool for PyQt4 support")
+
+    parser.add_option("--pyrcc4", dest="print_pyrcc4",
+                      action="store_true",
+                      help="pyrcc4 tool for PyQt4 support")
+
+    parser.add_option("--have", dest="have", metavar="<lib>",
+                      help="supported feature or librarie")
+
+    parser.add_option("--cppflags", dest="cppflags", metavar="<lib>",
+                      help="C preprocessor flags (e.g. -D<macro>, ...)")
+
+    parser.add_option("--ldflags", dest="ldflags", metavar="<lib>",
+                      help="linker flags (e.g. -g, -L<path>, ...)")
+
+    parser.add_option("--libs", dest="libs", metavar="<lib>",
+                      help="librairies used (e.g. -l<libname>, ...)")
+
+    parser.add_option("--deplibs", dest="deplibs", metavar="<lib>",
+                      help="dependency librairies used (e.g. -l<libname>, ...)")
+
+    parser.set_defaults(print_cc=False)
+    parser.set_defaults(print_cxx=False)
+    parser.set_defaults(print_fc=False)
+
+    parser.set_defaults(print_cflags=False)
+    parser.set_defaults(print_cxxflags=False)
+    parser.set_defaults(print_fcflags=False)
+
+    parser.set_defaults(print_rpath=False)
+
+    parser.set_defaults(print_python=False)
+    parser.set_defaults(print_pyrcc4=False)
+    parser.set_defaults(print_pyuic4=False)
+
+    parser.set_defaults(have=None)
+    parser.set_defaults(cppflags=None)
+    parser.set_defaults(ldflags=None)
+    parser.set_defaults(libs=None)
+    parser.set_defaults(deplibs=None)
+
+    (options, args) = parser.parse_args(argv)
+
+    if len(args) > 0:
+        parser.print_help()
+        sys.exit(1)
+
+    return options
+
+#-------------------------------------------------------------------------------
+
+def get_config(pkg):
+    """
+    Get the configuration information.
+    """
+    msg = """\
+Compilers and associated options:
+  cc = %(cc)s
+  cxx = %(cxx)s
+  fc = %(fc)s
+  cppflags = %(cppflags)s
+  cflags = %(cflags)s
+  cxxflags = %(cxxflags)s
+  fcflags = %(fcflags)s
+  ldflags = %(ldflags)s
+  libs = %(libs)s
+  rpath = %(rpath)s\
+"""
+
+    return msg \
+        % { 'cc':pkg.cc, 'cxx': pkg.cxx, 'fc':pkg.fc,
+            'cppflags':pkg.cppflags, 'cflags':pkg.cflags,
+            'cxxflags':pkg.cxxflags,
+            'fcflags':pkg.fcflags, 'ldflags':pkg.ldflags,
+            'libs':pkg.libs, 'rpath':pkg.rpath }
+
+#-------------------------------------------------------------------------------
+
+def get_config_mpi(pkg):
+    """
+    Get the configuration information.
+    """
+    msg = """\
+MPI library information:
+  mpi_lib.type = %(mpi_type)s
+  mpi_lib.bindir = %(mpi_bindir)s
+  mpi_lib.libdir = %(mpi_libdir)s\
+"""
+
+    return msg \
+        % { 'mpi_type':pkg.mpi_type, 'mpi_bindir':pkg.mpi_bindir,
+            'mpi_libdir':pkg.mpi_libdir }
+
+#-------------------------------------------------------------------------------
+# Main
+#-------------------------------------------------------------------------------
+
+def get_config_syrthes():
+    """
+    Get the configuration information.
+    """
+    msg = """\
+Compilers and associated options for SYRTHES pkg:
+  cc = %(cc)s
+  fc = %(fc)s
+  cppflags = %(cppflags)s
+  cflags = %(cflags)s
+  fcflags = %(fcflags)s
+  ldflags = %(ldflags)s
+  libs = %(libs)s\
+"""
+
+    return msg \
+        % { 'cc':pkg_syrthes.cc, 'fc':build_syrthes.fc,
+            'cppflags':pkg_syrthes.cppflags, 'cflags':build_syrthes.cflags,
+            'fcflags':pkg_syrthes.fcflags, 'ldflags':build_syrthes.ldflags,
+            'libs':pkg_syrthes.libs }
+
+#-------------------------------------------------------------------------------
+
+def main(argv, pkg):
+    """
+    Main configuration info function.
+    """
+
+    opts = process_cmd_line(argv)
+
+    cfg = config()
+
+    if opts.print_cc  == True: print(pkg.cc)
+    if opts.print_cxx == True: print(pkg.cxx)
+    if opts.print_fc  == True: print(pkg.fc)
+
+    if opts.print_cflags   == True: print(pkg.cflags)
+    if opts.print_cxxflags == True: print(pkg.cxxflags)
+    if opts.print_fcflags  == True: print(pkg.fcflags)
+
+    if opts.print_rpath == True: print(pkg.rpath)
+
+    if opts.print_python  == True: print(cfg.python)
+    if opts.print_pyuic4  == True: print(cfg.pyuic4)
+    if opts.print_pyrcc4  == True: print(cfg.pyrcc4)
+
+    if opts.have is not None:
+        if opts.have in cfg.optlibs: print(cfg.libs[opts.have].have)
+        if opts.have in cfg.optfeatures: print(cfg.features[opts.have])
+
+    if opts.cppflags is not None:
+        if opts.cppflags == "saturne":
+            print("@CPPFLAGS@ -I" + pkg.pkgincludedir)
+        elif opts.cppflags == "ple":
+            print(pkg.ple_cppflags)
+        else:
+            print(cfg.libs[opts.cppflags].cppflags)
+
+    if opts.ldflags is not None:
+        if opts.ldflags == "saturne":
+            print("-L" + pkg.libdir)
+        elif opts.ldflags == "ple":
+            print(pkg.ple_ldflags)
+        else:
+            print(cfg.libs[opts.ldflags].ldflags)
+
+    if opts.libs is not None:
+        if opts.libs == "saturne":
+            print("-lsaturne -lmei -lfvm_filters -lfvm -lbft")
+        elif opts.libs == "ple":
+            print(pkg.ple_libs)
+        else:
+            print(cfg.libs[opts.libs].libs)
+
+    if opts.deplibs is not None:
+        if opts.deplibs == "saturne":
+            print("@LDFLAGS@ @LIBS@ @FCLIBS@")
+        else:
+            print(cfg.libs[opts.deplibs].deplibs)
+
+if __name__ == '__main__':
+    import sys
+    import cs_package
+    pkg = cs_package.package()
+    main(sys.argv[1:], pkg)
+

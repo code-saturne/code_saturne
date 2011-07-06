@@ -1,0 +1,93 @@
+2011-06-27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Improve robustness of MPI detection tests.
+
+2011-06-24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Improve behavior of ple_coupling_synchronize() so as to only
+	add PLE_COUPLING_NO_SYNC at the synchronization following
+	PLE_COUPLING_STOP or PLE_COUPLING_LAST, and not imediately.
+
+2011-06-20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Add Doxygen documentation.
+
+2011-05-23  David Monfort <david.monfort@edf.fr>
+
+	* Update backup and bootstrap scripts.
+
+2011-05-23  David Monfort <david.monfort@edf.fr>
+
+	* Improve MPI auto-detection in Debian-based environments.
+
+2011-05-23  David Monfort <david.monfort@edf.fr>
+
+	* Update configury setup according to recent Code_Saturne package changes.
+
+2011-03-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Update default compiler flags to avoid site-specific Itanium options.
+
+2011-03-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Automatically add PLE_COUPLING_INIT flag in applications status when
+	calling ple_coupling_mpi_set_create(), and cancel it upon first call
+	to ple_coupling_mpi_set_synchronize().
+
+2011-03-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* examples/my_ple_point_location.c: fix point location bug for
+	 polyhedral cells.
+
+2010-11-24  David Monfort <david.monfort@edf.fr>
+
+	* Makefile.am improvements.
+
+2010-10-12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Add missing detection of gettimeofday().
+
+2010-09-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Correct location of points on closest elements bug.
+
+2010-09-17  David Monfort <david.monfort@edf.fr>
+
+	* Remove obsolete documentation.
+
+2010-09-14  David Monfort <david.monfort@edf.fr>
+
+	* Make the dist target functional.
+
+2010-08-23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Update and clean-up default compiler flags.
+
+2010-08-09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Corrected blocking bug in ple_locator_set_mesh().
+
+2010-08-05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Corrected Makefile.am so as to avoid failure on uninstall when the
+	installation include directory is not empty.
+
+2010-07-27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Changed ple_coupling_mpi_world... ple_coupling_mpi_set, and add
+	ple_coupling_mpi_set_synchronize(), ple_coupling_mpi_set_get_status(),
+	and ple_coupling_mpi_set_get_timestep() functions.
+
+2010-06-24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Ensure all processes accessing a locator use the same type of
+	algorithm (synchronous or asynchronous).
+
+2010-06-28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Added ple_coupling_mpi_name_to_id() function.
+
+2010-02-15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Initial version based on simplification of FVM library.
+

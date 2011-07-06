@@ -1,0 +1,59 @@
+#------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Kernel, element of the
+#   Code_Saturne CFD tool.
+#
+#   Copyright (C) 2010-2011 EDF S.A., France
+#
+#   The Code_Saturne Kernel is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Kernel is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Kernel; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
+
+# Turn off the Automake warning about the makefile portability as we need
+# GNUmake rules in order to account for the IDL files target.
+
+AUTOMAKE_OPTIONS = -Wno-portability
+
+include $(top_srcdir)/config/salome_module.mk
+
+MODULE_NAME = FSI
+
+BUILT_SOURCES = FSISK.cc  
+IDL_FILES = FSI.idl 
+
+salomelib_LTLIBRARIES = libSalomeIDLFSI.la
+salomeidl_DATA = $(IDL_FILES) 
+libSalomeIDLFSI_la_SOURCES =
+nodist_libSalomeIDLFSI_la_SOURCES = FSISK.cc 
+nodist_salomeinclude_HEADERS = FSI.hh 
+libSalomeIDLFSI_la_CXXFLAGS = $(SALOME_INCLUDES)
+libSalomeIDLFSI_la_LIBADD = $(SALOME_IDL_LIBS)
+
+%SK.cc %.hh : %.idl
+	$(OMNIORB_IDL) -bcxx $(OMNIORB_IDLCXXFLAGS) $(IDL_INCLUDES) $<
+%_idl.py : %.idl
+	$(OMNIORB_IDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES)  $<
+
+CLEANFILES = *.hh *SK.cc *.py *.hxx *.cxx
+
+EXTRA_DIST = $(IDL_FILES)
+
+install-data-local: $(IDL_FILES)
+	$(INSTALL) -d  $(DESTDIR)$(salomepythondir)
+	ls $^ | while read file; do \
+	$(OMNIORB_IDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) -C$(DESTDIR)$(salomepythondir) $$file ; \
+	done
+
+uninstall-local:
+	rm -rf $(DESTDIR)$(salomepythondir)/*

@@ -1,0 +1,74 @@
+.\"
+.\"  This file is part of the "Parallel Location and Exchange",
+.\"  intended to provide mesh or particle-based code coupling services.
+.\"
+.\"  Copyright (C) 2010 EDF S.A., France
+.\"
+.\"  This library is free software; you can redistribute it and/or
+.\"  modify it under the terms of the GNU Lesser General Public
+.\"  License as published by the Free Software Foundation; either
+.\"  version 2.1 of the License, or (at your option) any later version.
+.\"
+.\"  This library is distributed in the hope that it will be useful,
+.\"  but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\"  Lesser General Public License for more details.
+.\"
+.\"  You should have received a copy of the GNU Lesser General Public
+.\"  License along with this library; if not, write to the Free Software
+.\"  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+.\"
+.TH PLE-CONFIG 1 2010-02-15 "" ""
+.SH NAME
+ple-config \- Script to get information about the installed version of
+the PLE library.
+.SH SYNOPSIS
+.B PLE-config
+.RI [options]
+.RI [scope]
+.br
+.SH DESCRIPTION
+This script is a tool that is used to determine the compiler and linker flags
+that should be used to compile and link programs that use
+.BR libple .
+.SH OPTIONS
+.PP
+.I Options
+.B
+.IP --prefix
+Installation path prefix
+.B
+.IP --exec-prefix
+System-dependent path prefix
+.B
+.IP --include-dir
+C header files path
+.B
+.IP --version
+Library version
+.B
+.IP --cppflags
+C preprocessor flags (e.g. -D<macro>, ...)
+.B
+.IP --cflags
+C flags (e.g. -O, -g, ...)
+.B
+.IP --ldflags
+Linker flags (e.g. -g, -L<path>, ...)
+.B
+.IP --libs
+librairies used (e.g. -l<libname>)
+.B
+.IP --cc
+C compiler used for build
+.PP
+.I Scope
+.B
+.IP "use (default)"
+Options required for user code
+.B
+.IP build
+Options used for build
+.B
+.IP mpi
+MPI library related options

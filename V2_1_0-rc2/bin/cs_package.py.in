@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+# Package information, generated from cs_package.py.in by make.
+#============================================================================
+#
+#     This file is part of the Code_Saturne Kernel, element of the
+#     Code_Saturne CFD tool.
+#
+#     Copyright (C) 2010-2011 EDF S.A., France
+#
+#     contact: saturne-support@edf.fr
+#
+#     The Code_Saturne Kernel is free software; you can redistribute it
+#     and/or modify it under the terms of the GNU General Public License
+#     as published by the Free Software Foundation; either version 2 of
+#     the License, or (at your option) any later version.
+#
+#     The Code_Saturne Kernel is distributed in the hope that it will be
+#     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with the Code_Saturne Kernel; if not, write to the
+#     Free Software Foundation, Inc.,
+#     51 Franklin St, Fifth Floor,
+#     Boston, MA  02110-1301  USA
+#
+#============================================================================
+
+#-------------------------------------------------------------------------------
+
+import os.path
+
+# Package information
+#--------------------
+
+class package:
+
+    def __init__(self):
+
+        self.name = "@PACKAGE_NAME@"
+        self.tarname = "@PACKAGE_TARNAME@"
+        self.version = "@PACKAGE_VERSION@"
+        self.string = "@PACKAGE_STRING@"
+        self.bugreport = "@PACKAGE_BUGREPORT@"
+        self.url = "@PACKAGE_URL@"
+
+        self.code_name = "Code_Saturne"
+
+        self.preprocessor = "cs_preprocess"
+        self.partitioner = "cs_partition"
+        self.solver = "cs_solver"
+        self.check_syntax = "cs_check_syntax"
+        self.io_dump = "cs_io_dump"
+        self.guiname = "SaturneGUI"
+        self.configfile = "code_saturne.cfg"
+        self.scratchdir = 'tmp_Saturne'
+        self.srcdir = 'src_saturne'
+
+        self.cc="@CC@"
+        self.cxx="@CXX@"
+        self.fc="@FC@"
+        self.ld = "@CS_LD@"
+
+        self.cppflags = "-DHAVE_CONFIG_H @CS_CPPFLAGS@"
+        self.cflags="@CS_CFLAGS@"
+        self.cxxflags="@CS_CXXFLAGS@"
+        self.fcflags="@CS_FCFLAGS@"
+        self.fcmodinclude="@FCMODINCLUDE@"
+        self.ldflags = "@CS_LDFLAGS@"
+        self.libs = "-lsaturne -lmei -lfvm_filters -lfvm -lbft @CS_LIBS@"
+        self.deplibs = "@LDFLAGS@ @LIBS@ @FCLIBS@"
+        self.rpath="@LDRPATH@"
+
+        # PLE library can be an internal or external library
+        # Its flags are included in other build flags,
+        # but are made available here for "code_saturne config".
+        self.ple_cppflags = "@PLE_CPPFLAGS@"
+        self.ple_ldflags = "@PLE_LDFLAGS@"
+        self.ple_libs = "@PLE_LIBS@"
+
+        self.prefix = "@prefix@"
+        self.exec_prefix = "@exec_prefix@"
+        self.bindir = "@bindir@"
+        self.includedir = "@includedir@"
+        self.pkgincludedir = "@pkgincludedir@"
+        self.libdir = "@libdir@"
+        self.libexecdir = "@libexecdir@"
+        self.pkglibexecdir = "@pkglibexecdir@"
+        self.pythondir = "@pythondir@"
+        self.pkgpythondir = "@pkgpythondir@"
+        self.datarootdir = "@datarootdir@"
+        self.datadir = "@datadir@"
+        self.pkgdatadir = "@pkgdatadir@"
+        self.docdir = "@docdir@"
+        self.pdfdir = "@pdfdir@"
+        self.sysconfdir = "@sysconfdir@"
+        self.syrthes_prefix = "@syrthes_prefix@"
+
+        self.mpi_type = "@mpi_type@"
+        self.mpi_bindir = "@mpi_bindir@"
+        self.mpi_libdir = "@mpi_libdir@"
+
+        self.env_modules = "@cs_env_modules@"
+
+    def get_preprocessor(self):
+
+        preprocessordir = "@pkglibexecdir@"
+        return os.path.join(preprocessordir, self.preprocessor)
+
+    def get_partitioner(self):
+
+        partitionerdir = "@pkglibexecdir@"
+        return os.path.join(partitionerdir, self.partitioner)
+
+    def get_solver(self):
+
+        solverdir = "@pkglibexecdir@"
+        return os.path.join(solverdir, self.solver)
+
+    def get_check_syntax(self):
+
+        checksyntaxdir = "@pkglibexecdir@"
+        return os.path.join(checksyntaxdir, self.check_syntax)
+
+    def get_io_dump(self):
+
+        iodumpdir = "@pkglibexecdir@"
+        return os.path.join(iodumpdir, self.io_dump)
+
+    def get_configfile(self):
+
+        configfiledir = "@sysconfdir@"
+        return os.path.join(configfiledir, self.configfile)
+
+    def get_batchdir(self):
+
+        batchdir = "@pkgdatadir@"
+        return os.path.join(batchdir, 'batch')
+
+    def get_runcase_script(self, script):
+
+        runcasedir = "@pkgdatadir@"
+        return os.path.join(runcasedir, script)
+
+    def get_alternate_version(self, version):
+        """
+        Return alternate version package object
+        """
+
+        pkg = None
+
+        # Determine path (by absolute or local name)
+        pythondir = os.path.normpath(version)
+        prefix = os.path.normpath(self.exec_prefix)
+        if not os.path.isabs(pythondir):
+            if self.pkgpythondir.find(prefix) > -1:
+                postfix = self.pkgpythondir[len(prefix)+1:]
+                prefix = os.path.split(prefix)[0]
+                pythondir = os.path.normpath(os.path.join(prefix,
+                                                          version,
+                                                          postfix))
+
+        # load alternate package
+        if os.path.isdir(pythondir):
+            import sys
+            sys.path.insert(0, pythondir)
+            import cs_package
+            reload(cs_package)
+            pkg = cs_package.package()
+            sys.path.pop(0)
+        else:
+            raise ImportError("Alternative version '" + pythondir + "' not found.")
+
+        return pkg
+
+#-------------------------------------------------------------------------------

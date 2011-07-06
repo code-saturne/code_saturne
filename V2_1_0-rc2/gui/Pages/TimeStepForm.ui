@@ -1,0 +1,561 @@
+<ui version="4.0" >
+ <class>TimeStepForm</class>
+ <widget class="QWidget" name="TimeStepForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>437</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <layout class="QVBoxLayout" >
+     <item>
+      <widget class="QGroupBox" name="groupBox" >
+       <property name="title" >
+        <string>Unsteady flow algorithm management</string>
+       </property>
+       <layout class="QGridLayout" >
+        <item row="0" column="0" >
+         <layout class="QHBoxLayout" >
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" >
+            <item>
+             <widget class="QLabel" name="label" >
+              <property name="text" >
+               <string>Time step option</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="comboBoxOptions" >
+              <property name="minimumSize" >
+               <size>
+                <width>241</width>
+                <height>21</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0" >
+         <widget class="Line" name="line" >
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" >
+         <layout class="QHBoxLayout" >
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QGridLayout" >
+            <item row="0" column="0" >
+             <widget class="QLabel" name="label_2" >
+              <property name="toolTip" >
+               <string>Code_Saturne key word: DTREF</string>
+              </property>
+              <property name="text" >
+               <string>Reference time step</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1" >
+             <widget class="QLineEdit" name="lineEditDTREF" >
+              <property name="maximumSize" >
+               <size>
+                <width>60</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="toolTip" >
+               <string>Code_Saturne key word: DTREF</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2" >
+             <widget class="QLabel" name="label_3" >
+              <property name="text" >
+               <string>s</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0" >
+             <widget class="QLabel" name="label_4" >
+              <property name="toolTip" >
+               <string>Code_Saturne key word: NTMABS</string>
+              </property>
+              <property name="statusTip" >
+               <string>Absolute time step number of the simulation, restarts included.</string>
+              </property>
+              <property name="text" >
+               <string>Number of iterations (restart included)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1" >
+             <widget class="QLineEdit" name="lineEditNTMABS" >
+              <property name="maximumSize" >
+               <size>
+                <width>60</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="toolTip" >
+               <string>Code_Saturne key word: NTMABS</string>
+              </property>
+              <property name="statusTip" >
+               <string>Absolute time step number of the simulation, restarts included.</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="3" column="0" >
+         <widget class="QGroupBox" name="groupBoxLabels" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize" >
+           <size>
+            <width>316</width>
+            <height>160</height>
+           </size>
+          </property>
+          <property name="title" >
+           <string/>
+          </property>
+          <property name="flat" >
+           <bool>true</bool>
+          </property>
+          <layout class="QGridLayout" >
+           <property name="bottomMargin" >
+            <number>0</number>
+           </property>
+           <item row="0" column="0" >
+            <layout class="QHBoxLayout" >
+             <item>
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0" >
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <layout class="QGridLayout" >
+               <item row="0" column="0" >
+                <widget class="QLabel" name="labelCOUMAX" >
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: COUMAX</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                 <property name="text" >
+                  <string>Maximal CFL number</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1" >
+                <widget class="QLineEdit" name="lineEditCOUMAX" >
+                 <property name="maximumSize" >
+                  <size>
+                   <width>80</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: COUMAX</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0" >
+                <widget class="QLabel" name="labelFOUMAX" >
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: FOUMAX</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                 <property name="text" >
+                  <string>Maximal Fourier number</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1" >
+                <widget class="QLineEdit" name="lineEditFOUMAX" >
+                 <property name="maximumSize" >
+                  <size>
+                   <width>80</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: FOUMAX</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0" >
+                <widget class="QLabel" name="labelCDTMIN" >
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: DTMIN/DTREF</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                 <property name="text" >
+                  <string>Minimal time step factor</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1" >
+                <widget class="QLineEdit" name="lineEditCDTMIN" >
+                 <property name="maximumSize" >
+                  <size>
+                   <width>80</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: DTMIN/DTREF</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0" >
+                <widget class="QLabel" name="labelCDTMAX" >
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: DTMAX/DTREF</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                 <property name="text" >
+                  <string>Maximal time step factor</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1" >
+                <widget class="QLineEdit" name="lineEditCDTMAX" >
+                 <property name="maximumSize" >
+                  <size>
+                   <width>80</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: DTMAX/DTREF</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0" >
+                <widget class="QLabel" name="labelVARRDT" >
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: VARRDT</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                 <property name="text" >
+                  <string>Time step maximal variation</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1" >
+                <widget class="QLineEdit" name="lineEditVARRDT" >
+                 <property name="maximumSize" >
+                  <size>
+                   <width>80</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip" >
+                  <string>Code_Saturne key word: VARRDT</string>
+                 </property>
+                 <property name="statusTip" >
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer>
+               <property name="orientation" >
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0" >
+                <size>
+                 <width>16</width>
+                 <height>16</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="4" column="0" >
+         <widget class="Line" name="lineIPTLRO" >
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0" >
+         <layout class="QHBoxLayout" >
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>20</width>
+              <height>21</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" >
+            <item>
+             <widget class="QLabel" name="labelIPTLRO" >
+              <property name="toolTip" >
+               <string>Code_Saturne key word: IPTLRO</string>
+              </property>
+              <property name="statusTip" >
+               <string>Accesible if gravity  is not nul, if density is not constant and if the time step is variable</string>
+              </property>
+              <property name="text" >
+               <string>Time step limitation with    
+the local thermal time step</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>16</width>
+                <height>21</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBoxIPTLRO" >
+              <property name="toolTip" >
+               <string>Code_Saturne key word: INPDT0</string>
+              </property>
+              <property name="statusTip" >
+               <string>Code_Saturne key word: INPDT0</string>
+              </property>
+              <property name="text" >
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>16</width>
+              <height>21</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="6" column="0" >
+         <widget class="Line" name="line_4" >
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0" >
+         <layout class="QHBoxLayout" >
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" >
+            <item>
+             <widget class="QLabel" name="label_8" >
+              <property name="toolTip" >
+               <string>Code_Saturne key word: INPDT0</string>
+              </property>
+              <property name="statusTip" >
+               <string/>
+              </property>
+              <property name="text" >
+               <string>Option zero time step</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer>
+              <property name="orientation" >
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0" >
+               <size>
+                <width>16</width>
+                <height>16</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBoxINPDT0" >
+              <property name="toolTip" >
+               <string>Code_Saturne key word: IPTLRO</string>
+              </property>
+              <property name="text" >
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0" >
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <spacer>
+       <property name="orientation" >
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0" >
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

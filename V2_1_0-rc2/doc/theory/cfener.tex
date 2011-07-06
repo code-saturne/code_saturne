@@ -1,0 +1,427 @@
+%-----------------------------------------------------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+%
+%     Copyright (C) 1998-2008 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+%
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+%
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+%
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+%
+\programme{cfener}
+%
+\vspace{1cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fonction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Pour les notations et l'algorithme dans son ensemble,
+on se reportera \`a \fort{cfbase}.
+
+Apr\`es masse (acoustique) et quantit\'e de mouvement,
+on consid\`ere un dernier pas fractionnaire (de $t^{**}$ \`a $t^{***}$)
+au cours duquel seule varie l'\'energie totale $E = \rho e$.
+
+\begin{equation}\label{Cfbl_Cfener_eq_energie_cfener}
+\left\{\begin{array}{l}
+\rho^{***}=\rho^{**}=\rho^{n+1}\\
+\\
+\vect{Q}^{***}=\vect{Q}^{**}=\vect{Q}^{n+1}\\
+\\
+\displaystyle\frac{\partial \rho e}{\partial t}
++ \divs\left( \vect{Q}_{ac} \left(e+\displaystyle\frac{P}{\rho}\right) \right)
+= \rho\vect{f}_v\cdot\vect{u}
++ \divs(\tens{\Sigma}^v \vect{u})
+- \divs{\,\vect{\Phi}_s} + \rho\Phi_v
+\end{array}\right.
+\end{equation}
+
+Pour conserver la positivit\'e de l'\'energie, il est indispensable ici,
+comme pour les scalaires, d'utiliser le flux de masse convectif acoustique
+$\vect{Q}_{ac}^{n+1}$ compatible avec l'\'equation de la masse.
+De plus, pour obtenir des propri\'et\'es de positivit\'e sur les scalaires,
+un sch\'ema upwind pour le terme convectif doit \^etre utilis\'e
+(mais les termes sources introduisent des contraintes suppl\'ementaires
+qui peuvent \^etre pr\'epond\'erantes et g\^enantes).
+
+\vspace{0.5cm}
+
+\`A la fin de cette \'etape, on actualise éventuellement
+(mais par défaut non)
+une deuxi\`eme et derni\`ere fois la pression
+en utilisant la loi d'\'etat pour obtenir la pression finale~:
+\begin{equation}
+\displaystyle P^{n+1}=P(\rho^{n+1},\varepsilon^{n+1})
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discr\'etisation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%---------------------------------
+\subsection{Discr\'etisation en temps}
+%---------------------------------
+
+La mod\'elisation des flux de chaleur choisie jusqu'\`a pr\'esent est de la
+forme $-\divs(\,\vect{\Phi}_s) = \divs(\lambda \gradv{T})$.
+
+Pour faire appara\^itre un terme diffusif stabilisant dans la
+matrice de r\'esolution, on cherche \`a exprimer le flux diffusif de chaleur
+($-\divs(\,\vect{\Phi}_s)$)
+en fonction de la variable r\'esolue (l'\'energie totale).
+
+Avec $\varepsilon_{sup}(P,\rho)$
+d\'ependant de la loi d'\'etat, on exprime l'\'energie totale de la fa\c con suivante~:
+\begin{equation}
+e = \varepsilon + \frac{1}{2} u^2
+= (C_v T + \varepsilon_{sup}) + \frac{1}{2} u^2
+\end{equation}
+
+En supposant $C_v$ constant\footnote{Pour $C_v$ non constant, les
+d\'eveloppements restent \`a faire~: on pourra se
+reporter \`a  P. Mathon, F. Archambeau, J.-M. Hérard : "Implantation d'un
+algorithme compressible dans \CS", HI-83/03/016/A}, on a alors~:
+\begin{equation}\label{Cfbl_Cfener_eq_flux_thermique_cfener}
+-\divs(\,\vect{\Phi}_s)
+= \divs(K \gradv(e - \frac{1}{2} u^2 - \varepsilon_{sup}))\qquad
+\text{avec } K=\lambda / C_v
+\end{equation}
+
+Lorsqu'un mod\`ele de turbulence est activ\'e, on conserve la m\^eme forme
+de mod\'elisation pour les flux thermiques et $K$ int\`egre alors
+la diffusivit\'e turbulente. On pourra se reporter \`a
+la documentation de \fort{cfxtcl} \`a ce sujet.
+
+Avec la formulation~(\ref{Cfbl_Cfener_eq_flux_thermique_cfener}),
+on peut donc impliciter le terme en $\gradv{e}$.
+
+\bigskip
+De plus, puisque la vitesse a
+d\'ej\`a \'et\'e r\'esolue, on implicite \'egalement le terme en
+$\gradv{\frac{1}{2} u^2}$. L'exposant $n+\frac{1}{2}$ de $\varepsilon_{sup}$
+indique que l'implicitation de ce terme est partielle (elle d\'epend de la forme
+de la loi d'\'etat).
+
+Par ailleurs, on implicite le terme de convection, le terme de puissance
+des forces volumiques, éventuellement le terme de puissance des forces de
+pression (suivant la valeur de \var{IGRDPP}, on utilise la pr\'ediction de
+pression obtenue apr\`es r\'esolution de l'\'equation portant sur la masse
+volumique ou bien la pression du pas de temps précédent)
+et le terme de puissance des forces visqueuses. On implicite le terme de puissance
+volumique en utilisant $\rho^{n+1}$.
+
+\bigskip
+On obtient alors l'\'equation discr\`ete portant sur $e$~:
+\begin{equation}\label{Cfbl_Cfener_eq_energie_totale_cfener}
+\begin{array}{l}
+\displaystyle\frac{(\rho e)^{n+1} - (\rho e)^n}{\Delta t^n}
++ \divs(\vect{Q}_{ac}^{n+1} e^{n+1}) - \divs(K^n \gradv{e^{n+1}})
+= \rho^{n+1} \vect{f}_v \cdot \vect{u}^{n+1}
+- \divs(\vect{Q}_{ac}^{n+1} \displaystyle\frac{\widetilde{P}}{\rho^{n+1}} )\\
+\text{\ \ \ \ }+ \divs((\tens{\Sigma}^v)^{n+1} \vect{u}^{n+1})
+- \divs(K^n \gradv(\frac{1}{2} (u^2)^{n+1}
++ \varepsilon_{sup}^{n+\frac{1}{2}}))
++ \rho^{n+1}\Phi_v\\
+\end{array}
+\end{equation}
+avec $\widetilde{P}=P^{Pred}\text{ ou }P^n$ suivant la valeur de \var{IGRDPP}
+($P^n$ par défaut).
+
+En pratique, dans \CS, on r\'esout cette \'equation en faisant appara\^itre \`a
+gauche l'\'ecart $e^{n+1} - e^n$. Pour cela, on \'ecrit la d\'eriv\'ee
+en temps discr\`ete sous la forme suivante~:
+
+\begin{equation}
+\begin{array}{ll}
+\displaystyle
+\frac{(\rho e)^{n+1} - (\rho e)^n}{\Delta t^n}
+& =
+\displaystyle
+\frac{\rho^{n+1}\, e^{n+1} - \rho^n\, e^n}{\Delta t^n}\\
+& =
+\displaystyle
+\frac{\rho^{n}\, e^{n+1} - \rho^n\, e^n}{\Delta t^n}+
+\frac{\rho^{n+1}\, e^{n+1} - \rho^n\, e^{n+1}}{\Delta t^n}\\
+& =
+\displaystyle
+\frac{\rho^{n}}{\Delta t^n}\left(e^{n+1} - e^n\right)+
+e^{n+1}\frac{\rho^{n+1} - \rho^n}{\Delta t^n}
+\end{array}
+\end{equation}
+
+et l'on utilise l'\'equation de la masse discr\`ete pour \'ecrire~:
+\begin{equation}
+\displaystyle
+\frac{(\rho e)^{n+1} - (\rho e)^n}{\Delta t^n}
+=
+\frac{\rho^{n}}{\Delta t^n}\left(e^{n+1} - e^n\right)-
+e^{n+1}\dive\,\vect{Q}_{ac}^{n+1}
+\end{equation}
+
+
+
+%---------------------------------
+\subsection{Discr\'etisation en espace}
+%---------------------------------
+
+
+%.................................
+\subsubsection{Introduction}
+%.................................
+
+On int\`egre l'\'equation (\ref{Cfbl_Cfener_eq_energie_totale_cfener})
+sur la cellule $i$ de volume $\Omega_i$ et l'on proc\`ede comme
+pour l'\'equation de la masse et de la quantit\'e de mouvement.
+
+On obtient alors l'\'equation discr\`ete
+suivante~:
+\begin{equation}\label{Cfbl_Cfener_eq_energie_totale_discrete_cfener}
+\begin{array}{l}
+\displaystyle\frac{\Omega_i}{\Delta t^n}
+(\rho_i^{n+1} e_i^{n+1}-\rho_i^n e_i^n)
++ \displaystyle\sum\limits_{j\in V(i)}
+\left(e^{n+1} \vect{Q}_{ac}^{n+1}\right)_{ij} \cdot \vect{S}_{ij}
+- \displaystyle\sum\limits_{j\in V(i)}
+\left(K^n\gradv(e^{n+1})\right)_{ij}\cdot\vect{S}_{ij}\\
+\\
+\text{\ \ \ \ } = \Omega_i\rho_i^{n+1} {\vect{f}_v}_i \cdot \vect{u}_i^{n+1}
+- \displaystyle\sum\limits_{j\in V(i)}
+\left(\displaystyle\frac{P^{Pred}}{\rho^{n+1}}\
+\vect{Q}_{ac}^{n+1}\right)_{ij} \cdot \vect{S}_{ij}
++ \displaystyle\sum\limits_{j\in V(i)}
+\left((\tens{\Sigma}^v)^{n+1} \vect{u}^{n+1} \right)_{ij}\cdot \vect{S}_{ij}\\
+\\
+\text{\ \ \ \ } - \displaystyle\sum\limits_{j\in V(i)}
+\left(K^n \gradv\left(\frac{1}{2}(u^2)^{n+1}
++ \varepsilon_{sup}^{n+\frac{1}{2}}\right)\right)_{ij}\cdot\vect{S}_{ij}
++ \Omega_i\rho_i^{n+1}{\Phi_v}_i\\
+\end{array}
+\end{equation}
+
+
+%.................................
+\subsubsection{Discr\'etisation de la partie ``convective''}
+%.................................
+
+La valeur \`a la face s'\'ecrit~:
+\begin{equation}
+\left(e^{n+1} \vect{Q}_{ac}^{n+1}\right)_{ij} \cdot \vect{S}_{ij}
+= e_{ij}^{n+1}(\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij}
+\end{equation}
+avec un d\'ecentrement sur la valeur de $e^{n+1}$ aux faces~:
+\begin{equation}
+\begin{array}{lllll}
+e_{ij}^{n+1}
+& = & e_i^{n+1}
+& \text{si\ } & (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\
+& = & e_j^{n+1}
+& \text{si\ } & (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} < 0 \\
+\end{array}
+\end{equation}
+que l'on peut noter~:
+\begin{equation}
+ e_{ij}^{n+1}
+ = \beta_{ij}e_i^{n+1} + (1-\beta_{ij})e_j^{n+1}
+\end{equation}
+avec
+\begin{equation}
+\left\{\begin{array}{lll}
+\beta_{ij} = 1 & \text{si\ }
+& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\
+\beta_{ij} = 0 & \text{si\ }
+& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} < 0 \\
+\end{array}\right.
+\end{equation}
+
+
+%.................................
+\subsubsection{Discr\'etisation de la partie ``diffusive''}
+%.................................
+
+La valeur \`a la face s'\'ecrit~:
+\begin{equation}
+\begin{array}{c}
+\left(K^n\gradv(e^{n+1})\right)_{ij}\cdot\vect{S}_{ij}
+= K_{ij}^n
+\displaystyle \left( \frac{\partial e}{\partial n} \right)^{n+1}_{ij}S_{ij}\\
+\text{et}\\
+\left(K^n \gradv\left(\frac{1}{2}(u^2)^{n+1}
++ \varepsilon_{sup}^{n+\frac{1}{2}}\right)\right)_{ij}\cdot\vect{S}_{ij}
+= K_{ij}^n
+\displaystyle \left( \frac{\partial \left(\frac{1}{2} u^2
++ \varepsilon_{sup}\right)}{\partial n} \right)^{n+\frac{1}{2}}_{ij}S_{ij}
+\end{array}
+\end{equation}
+avec une interpolation lin\'eaire pour
+$K^n$ aux faces (et en pratique, $\alpha_{ij}=\frac{1}{2}$)~:
+\begin{equation}
+K_{ij}^n
+= \alpha_{ij}K_{i}^n+(1-\alpha_{ij})K_{j}^n
+\end{equation}
+et un sch\'ema centr\'e avec reconstruction pour le gradient normal aux faces~:
+\begin{equation}
+\displaystyle \left( \frac{\partial e}{\partial n} \right)^{n+1}_{ij}
+= \displaystyle\frac{e_{J'}^{n+1} - e_{I'}^{n+1}}{\overline{I'J'}}
+\quad \text{et} \quad
+\displaystyle \left( \frac{\partial \left(\frac{1}{2} u^2
++ \varepsilon_{sup}\right)}{\partial n} \right)^{n+\frac{1}{2}}_{ij}
+= \displaystyle\frac{(\frac{1}{2} u^2
++ \varepsilon_{sup})_{J'}^{n+\frac{1}{2}} - (\frac{1}{2} u^2
++ \varepsilon_{sup})_{I'}^{n+\frac{1}{2}}}{\overline{I'J'}}
+\end{equation}
+
+
+
+%.................................
+\subsubsection{Discr\'etisation de la puissance des forces de pression}
+%.................................
+
+Ce terme
+est issu du terme convectif, on le discr\'etise donc de la m\^eme fa\c con.
+
+\begin{equation}
+\left(\displaystyle\frac{\widetilde{P}}{\rho^{n+1}}\
+\vect{Q}_{ac}^{n+1}\right)_{ij} \cdot \vect{S}_{ij}
+= \left(\displaystyle\frac{\widetilde{P}}{\rho^{n+1}}\right)_{ij}
+(\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij}
+\end{equation}
+
+avec un d\'ecentrement sur la valeur de
+$\displaystyle\frac{P}{\rho}$ aux faces~:
+\begin{equation}
+\begin{array}{lll}
+\left(\displaystyle\frac{\widetilde{P}}{\rho^{n+1}}\right)_{ij}
+ = \beta_{ij}\displaystyle\frac{\widetilde{P}_i}{\rho^{n+1}_i}
++ (1-\beta_{ij})\displaystyle\frac{\widetilde{P}_j}{\rho^{n+1}_j}
+& \text{avec}
+& \left\{\begin{array}{lll}
+\beta_{ij} = 1 & \text{si\ }
+& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\
+\beta_{ij} = 0 & \text{si\ }
+& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} < 0 \\
+\end{array}\right.
+\end{array}
+\end{equation}
+
+
+
+%.................................
+\subsubsection{Discr\'etisation de la puissance des forces visqueuses}
+%.................................
+
+On calcule les termes dans les cellules puis on utilise une
+interpolation lin\'eaire (on utilise
+$\alpha_{ij}=\frac{1}{2}$ dans la relation ci-dessous)~:
+\begin{equation}
+\left((\tens{\Sigma}^v)^{n+1} \vect{u}^{n+1} \right)_{ij}\cdot \vect{S}_{ij}
+= \left\{\alpha_{ij} \left((\tens{\Sigma}^v)^{n+1} \vect{u}^{n+1}\right)_i
++ (1-\alpha_{ij}) \left((\tens{\Sigma}^v)^{n+1} \vect{u}^{n+1}\right)_j
+\right\} \cdot \vect{S}_{ij}
+\end{equation}
+
+
+%.................................
+\subsubsection{Remarques}
+%.................................
+
+
+Les termes ``convectifs'' associ\'es \`a
+$\displaystyle\dive\left(\left(e^{n+1}+\frac{\widetilde{P}}{\rho^{n+1}}\right)\,
+\vect{Q}_{ac}^{n+1}\right)$ sont calcul\'es avec un d\'ecentrement amont
+(consistant, d'ordre 1 en espace). Les valeurs utilis\'ees sont bien prises au
+centre de la cellule amont ($e_i$, $P_i$, $\rho_i$) et non pas au projet\'e $I'$
+du centre de la cellule sur la normale \`a la face passant par son centre de
+gravit\'e (sur un cas test en triangles, l'utilisation de $P_I'$ et de $\rho_I'$
+pour le terme de transport de pression a conduit \`a un r\'esultat
+insatisfaisant, mais des corrections ont \'et\'e apport\'ees aux sources depuis
+et il serait utile de v\'erifier que cette conclusion n'est pas remise en question).
+
+Les termes diffusifs associ\'es \`a
+$\displaystyle\dive\left(K\,\grad\left(e+\frac{1}{2} u^2 +
+\varepsilon_{sup}\right)\right)$ sont calcul\'es en utilisant des valeurs aux
+faces reconstruites pour s'assurer de la consistance du sch\'ema.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mise en \oe uvre}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+Apr\`es une \'etape de gestion de la m\'emoire (\fort{memcfe}), on calcule les
+diff\'erents termes sources (au centre des cellules)~:
+\begin{itemize}
+\item source volumique de chaleur (\fort{ustssc}),
+\item source associ\'ee aux sources de masse (\fort{catsma}),
+\item source associ\'ee \`a l'accumulation de masse $\dive\,\vect{Q}_{ac}$ (directement dans \fort{cfener}),
+\item dissipation visqueuse (\fort{cfdivs}),
+\item transport de pression (directement dans \fort{cfener}),
+\item puissance de la pesanteur (directement dans \fort{cfener}),
+\item termes diffusifs en $\displaystyle\dive\left(K\,\grad\left(\frac{1}{2} u^2 +
+\varepsilon_{sup}\right)\right)$ (calcul de $\varepsilon_{sup}$ par
+\fort{uscfth}, puis calcul du terme diffusif directement dans \fort{cfener}).
+\end{itemize}
+
+\bigskip
+Le syst\`eme (\ref{Cfbl_Cfener_eq_energie_totale_discrete_cfener}) est r\'esolu par une m\'ethode
+d'incr\'ement et r\'esidu  en utilisant une m\'ethode de Jacobi (\fort{cfcdts}).
+
+L'impression des bornes et
+la limitation \'eventuelle de l'\'energie sont ensuite effectu\'ees par
+\fort{clpsca} suivi de \fort{uscfth} (intervention utilisateur optionnelle).
+
+On actualise enfin la pression et on calcule la
+temp\'erature (\fort{uscfth}).
+
+Pour
+terminer, en parall\`ele ou en p\'eriodique, on \'echange les variables
+pression, \'energie et temp\'erature.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Points \`a traiter}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% propose en patch 1.2.1
+
+%Corriger \fort{cfener} dans lequel \var{W1} produit par \fort{uscfth} est
+%\'ecras\'e par \fort{grdcel}, causant probablement des d\'eg\^ats
+%dans les cas o\`u le gradient de l'\'energie cin\'etique dans la direction $x$
+%est sensiblement non nul sur des faces de bord dont la normale a une
+%composante en $x$ et lorsque la conductivit\'e n'est pas n\'egligeable.
+
+
+\etape{Choix de $\widetilde{P}$}
+En standard, on utilise $\widetilde{P}=P^n$, mais ce n'est pas le seul choix
+possible. On pourrait étudier le comportement de l'algorithme avec $P^{Pred}$ et
+$P^{n+1}$ (avec $P^{n+1}$, en particulier,
+$\displaystyle\frac{\widetilde{P}}{\rho^{n+1}}$
+est évalué avec la masse volumique et l'énergie prises au même instant).
+
+\etape{Terme source dans l'équation de l'énergie}
+La présence d'un terme source externe dans l'équation de l'énergie génère des
+oscillations de vitesse qu'il est important d'analyser et de comprendre.

@@ -1,0 +1,413 @@
+<ui version="4.0" >
+ <class>ProfilesForm</class>
+ <widget class="QWidget" name="ProfilesForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>439</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" >
+   <property name="margin" >
+    <number>9</number>
+   </property>
+   <property name="spacing" >
+    <number>6</number>
+   </property>
+   <item row="0" column="0" >
+    <widget class="QGroupBox" name="groupBox" >
+     <property name="title" >
+      <string>Definition of 1D profiles</string>
+     </property>
+     <layout class="QGridLayout" >
+      <property name="margin" >
+       <number>9</number>
+      </property>
+      <property name="spacing" >
+       <number>6</number>
+      </property>
+      <item row="4" column="0" >
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>16</width>
+          <height>61</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="4" column="1" >
+       <layout class="QHBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QWidget" native="1" name="widgetDrag" >
+          <property name="minimumSize" >
+           <size>
+            <width>50</width>
+            <height>0</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" >
+          <property name="margin" >
+           <number>0</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="pushButtonAddVar" >
+            <property name="text" >
+             <string/>
+            </property>
+            <property name="icon" >
+             <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/32x32/go-next.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonSuppressVar" >
+            <property name="text" >
+             <string/>
+            </property>
+            <property name="icon" >
+             <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/32x32/go-previous.png</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QWidget" native="1" name="widgetDrop" >
+          <property name="minimumSize" >
+           <size>
+            <width>50</width>
+            <height>0</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="4" column="2" >
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>16</width>
+          <height>61</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="3" column="0" colspan="3" >
+       <layout class="QHBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>13</width>
+            <height>13</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" >
+          <property name="margin" >
+           <number>0</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item row="0" column="0" colspan="2" >
+           <widget class="QLabel" name="labelBaseName" >
+            <property name="text" >
+             <string>Filename</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2" colspan="3" >
+           <widget class="QLineEdit" name="lineEditBaseName" />
+          </item>
+          <item row="1" column="0" >
+           <widget class="QLabel" name="label" >
+            <property name="text" >
+             <string>Title</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2" colspan="3" >
+           <widget class="QLineEdit" name="lineEditTitle" />
+          </item>
+          <item row="2" column="0" >
+           <widget class="QLabel" name="labelFirstPoint" >
+            <property name="text" >
+             <string>First point</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" >
+           <widget class="QLabel" name="labelX1" >
+            <property name="text" >
+             <string>X&lt;sub>1&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2" >
+           <widget class="QLineEdit" name="lineEditX1" />
+          </item>
+          <item row="2" column="3" >
+           <widget class="QLabel" name="labelY1" >
+            <property name="text" >
+             <string>Y&lt;sub>1&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4" >
+           <widget class="QLineEdit" name="lineEditY1" />
+          </item>
+          <item row="2" column="5" >
+           <widget class="QLabel" name="labelZ1" >
+            <property name="text" >
+             <string>Z&lt;sub>1&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="6" >
+           <widget class="QLineEdit" name="lineEditZ1" />
+          </item>
+          <item row="3" column="0" >
+           <widget class="QLabel" name="labelLastPoint" >
+            <property name="text" >
+             <string>Last point</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" >
+           <widget class="QLabel" name="labelX2" >
+            <property name="text" >
+             <string>X&lt;sub>2&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2" >
+           <widget class="QLineEdit" name="lineEditX2" />
+          </item>
+          <item row="3" column="3" >
+           <widget class="QLabel" name="labelY2" >
+            <property name="text" >
+             <string>Y&lt;sub>2&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4" >
+           <widget class="QLineEdit" name="lineEditY2" />
+          </item>
+          <item row="3" column="5" >
+           <widget class="QLabel" name="labelZ2" >
+            <property name="text" >
+             <string>Z&lt;sub>2&lt;/sub></string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="6" >
+           <widget class="QLineEdit" name="lineEditZ2" />
+          </item>
+          <item row="4" column="0" >
+           <widget class="QLabel" name="labelFreq" >
+            <property name="text" >
+             <string>Output
+frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2" colspan="3" >
+           <widget class="QComboBox" name="comboBoxFreq" />
+          </item>
+          <item row="4" column="5" colspan="2" >
+           <widget class="QLineEdit" name="lineEditFreq" >
+            <property name="maximumSize" >
+             <size>
+              <width>50</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>17</width>
+            <height>18</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="0" colspan="3" >
+       <widget class="Line" name="line" >
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="3" >
+       <layout class="QHBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>20</width>
+            <height>21</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" >
+          <property name="margin" >
+           <number>0</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="pushButtonAdd" >
+            <property name="text" >
+             <string>Add</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonEdit" >
+            <property name="text" >
+             <string>Modify</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonDelete" >
+            <property name="text" >
+             <string>Delete</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="0" colspan="3" >
+       <widget class="QTreeView" name="treeViewProfile" >
+        <property name="indentation" >
+         <number>0</number>
+        </property>
+        <property name="rootIsDecorated" >
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" >
+    <spacer>
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" >
+      <size>
+       <width>432</width>
+       <height>16</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="resources_pages.qrc" />
+ </resources>
+ <connections/>
+</ui>

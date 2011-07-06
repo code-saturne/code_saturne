@@ -1,0 +1,27 @@
+<ui version="4.0" >
+ <class>BrowserForm</class>
+ <widget class="QWidget" name="BrowserForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>260</width>
+    <height>79</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QTreeView" name="treeView" >
+     <property name="statusTip" >
+      <string>Click right for context menu</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

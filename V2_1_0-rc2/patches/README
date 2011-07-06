@@ -1,0 +1,7 @@
+Patches directory
+=================
+
+This directory contains files fixing potential problems that could arise
+in some particular situations. These patches have not been fully validated
+and therefore are NOT SUPPORTED.
+
