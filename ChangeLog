@@ -1,3 +1,8 @@
+* 06/07/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Use the vector gradient API to calculate 2.Oij.Oij
+  modified routine:
+    src/turb/turbsa.f90
+
 * 04/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Several minor fixes and improvements in handling of postprocessing output
   by the GUI (adds minor changes to XML format).

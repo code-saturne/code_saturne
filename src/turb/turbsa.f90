@@ -39,7 +39,7 @@ subroutine turbsa &
 ! --------
 
 ! Solving op the equation of nusa, which is the scalar quantity defined by
-! the Spalart-Allmaras model, for 1 phase for 1 time-step.
+! the Spalart-Allmaras model for 1 time-step.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -90,7 +90,7 @@ use optcal
 use mesh
 !We have to know if there is any rough wall
 use parall
-use pointe, only: dispar
+use pointe, only: dispar, coefau, coefbu
 
 !===============================================================================
 
@@ -119,7 +119,7 @@ integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          iivar , iiun
 integer          iclip , isqrt
 integer          nswrgp, imligp
-integer          icliup, iclivp, icliwp
+integer          icliup
 integer          iclvar, iclvaf
 integer          iconvp, idiffp, ndircp, ireslp
 integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
@@ -129,6 +129,8 @@ integer          iwarnp, ipp
 integer          iptsta
 integer          ipcroo, ipbroo, ipcvto, ipcvlo
 integer          ipatrg
+
+logical          ilved
 
 double precision romvsd
 double precision visct , rom
@@ -146,7 +148,8 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
 double precision, allocatable, dimension(:) :: smbrsa, tinssa, divu
-double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw, grad
+double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4
 double precision, allocatable, dimension(:) :: w7
@@ -168,10 +171,7 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet))
 allocate(w7(ncelet))
 
-
 icliup = iclrtp(iu,icoef)
-iclivp = iclrtp(iv,icoef)
-icliwp = iclrtp(iw,icoef)
 
 ipcrom = ipproc(irom  )
 ipcvst = ipproc(ivisct)
@@ -217,16 +217,10 @@ cv13 = csav1**3
 
 !===============================================================================
 ! 2. CALCUL DE OmegaIJ OmegaIJ ET DE DIVU ET NORME DE GRAD NUSA
-
-!      Tableaux de travail              SMBRSA,TINSSA,W1,W2,W3,W4,W5,W6
-!      SijSij est stocke dans           TINSSA
-!      DivU est stocke dans             DIVU
-!      Grad nu est stocke dans          SMBRSA
-!      En sortie de l'etape on conserve TINSSA, DIVU, SMBRSA
 !===============================================================================
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+allocate(gradv(ncelet,3,3))
 
 iccocg = 1
 inc = 1
@@ -238,42 +232,30 @@ epsrgp = epsrgr(iu)
 climgp = climgr(iu)
 extrap = extrag(iu)
 
-call grdcel &
-!==========
- ( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
-   gradu  )
+if (ivelco.eq.1) then
 
+  ilved = .false.
 
-nswrgp = nswrgr(iv)
-imligp = imligr(iv)
-iwarnp = iwarni(inusa)
-epsrgp = epsrgr(iv)
-climgp = climgr(iv)
-extrap = extrag(iv)
+  call grdvec &
+  !==========
+( iu     , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+  iwarnp , nfecra ,                                              &
+  epsrgp , climgp , extrap ,                                     &
+  ilved ,                                                        &
+  rtpa(1,iu) ,  coefau , coefbu,                                 &
+  gradv  )
 
-call grdcel &
-!==========
- ( iv  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iv)   , coefa(1,iclivp) , coefb(1,iclivp) ,             &
-   gradv  )
+else
 
+  call grdvni &
+  !==========
+( iu  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
+  iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  rtpa(1,iu)   , coefa(1,icliup) , coefb(1,icliup) ,             &
+  gradv  )
 
-nswrgp = nswrgr(iw)
-imligp = imligr(iw)
-iwarnp = iwarni(inusa)
-epsrgp = epsrgr(iw)
-climgp = climgr(iw)
-extrap = extrag(iw)
+endif
 
-call grdcel &
-!==========
- ( iw  , imrgra , inc    , iccocg , nswrgp , imligp ,             &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   rtpa(1,iw)   , coefa(1,icliwp) , coefb(1,icliwp) ,             &
-   gradw  )
 
 ! TINSSA = 2 OMEGA**2 = DUDY**2 + DVDX**2 + DUDZ**2 + DWDX**2 + DVDZ**2 + DWDY**2
 !                     - 2*DUDY*DVDX - 2*DUDZ*DWDX - 2*DVDZ*DWDY
@@ -282,17 +264,17 @@ call grdcel &
 ! DIVU = DUDX + DVDY + DWDZ
 
 do iel = 1, ncel
-  tinssa(iel) = gradu(iel,2)**2 + gradv(iel,1)**2   &
-              + gradu(iel,3)**2 + gradw(iel,1)**2   &
-              + gradv(iel,3)**2 + gradw(iel,2)**2   &
-              - 2.d0*(gradu(iel,2)*gradv(iel,1))    &
-              - 2.d0*(gradu(iel,3)*gradw(iel,1))    &
-              - 2.d0*(gradv(iel,3)*gradw(iel,2))
-  divu(iel) = gradu(iel,1) + gradv(iel,2) + gradw(iel,3)
+  tinssa(iel) = gradv(iel,2,1)**2 + gradv(iel,1,2)**2   &
+              + gradv(iel,3,1)**2 + gradv(iel,1,3)**2   &
+              + gradv(iel,3,2)**2 + gradv(iel,2,3)**2   &
+              - 2.d0*(gradv(iel,2,1)*gradv(iel,1,2))    &
+              - 2.d0*(gradv(iel,3,1)*gradv(iel,1,3))    &
+              - 2.d0*(gradv(iel,3,2)*gradv(iel,2,3))
+  divu(iel) = gradv(iel,1,1) + gradv(iel,2,2) + gradv(iel,3,3)
 enddo
 
 ! Free memory
-deallocate(gradu, gradv, gradw)
+deallocate(gradv)
 
 ! Allocate a temporary array for the gradient calculation
 allocate(grad(ncelet,3))
