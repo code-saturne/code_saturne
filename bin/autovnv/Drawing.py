@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 #
 #     This file is part of the Code_Saturne Scripts, element of the
@@ -143,7 +144,7 @@ class Plot(object):
     def setMeasurement(self, bool):
         self.ismesure = bool
         if self.ismesure and self.fmt == "":
-            sef.fmt = 'o'
+            self.fmt = 'ko'
 
 
     def measurement(self):
@@ -205,7 +206,7 @@ class Subplot(object):
         self.xlabel    = ""
         self.ylabel    = ""
         self.id        = 0
-        self.legstatus = "No"
+        self.legstatus = "off"
         self.legpos    = ""
         self.xrange    = ""
         self.yrange    = ""
@@ -231,7 +232,7 @@ class Subplot(object):
         try:
             self.legstatus = node.attributes["legstatus"].value
         except:
-            self.legstatus = 'Yes'
+            self.legstatus = "on"
 
         try:
             self.legpos = [float(s) for s in node.attributes["legpos"].value.split()]
@@ -449,7 +450,12 @@ class Plotter(object):
                                      case.label, "RESU",
                                      dest, file)
                     if not os.path.isfile(f):
-                        raise ValueError, "This file does not exist: %s" % f
+                        f = os.path.join(self.parser.getDestination(),
+                                         study_label,
+                                         case.label, "RESU",
+                                         dest, "monitoring", file)
+                        if not os.path.isfile(f):
+                            raise ValueError, "This file does not exist: %s" % f
                     for node in plots:
                         curve = Plot(node, self.parser, f)
                         curve.setMeasurement(False)
@@ -505,14 +511,14 @@ class Plotter(object):
                 else:
                     lines = plt.plot(xspan, yspan, ':')
 
-            # additional matplotlib raw commands for line2D
-            line = lines[0]
-            for cmd in curve.cmd:
-                f = open("./tmp.py", "w")
-                f.write(cmd)
-                f.close()
-                execfile("./tmp.py")
-                os.remove("./tmp.py")
+        # additional matplotlib raw commands for line2D
+        line = lines[0]
+        for cmd in curve.cmd:
+            f = open("./tmp.py", "w")
+            f.write(cmd)
+            f.close()
+            execfile("./tmp.py")
+            os.remove("./tmp.py")
         plt.hold(True)
 
 
@@ -529,7 +535,7 @@ class Plotter(object):
             plt.ylim((p.yrange[0], p.yrange[1]))
 
         if p.legends:
-            if p.legstatus == 'Yes':
+            if p.legstatus == "on":
                 if p.legpos == None:
                     plt.legend(p.legends, bbox_to_anchor=(1.02, 1), \
                                 loc=2, borderaxespad=0., markerscale=0.5)
@@ -618,7 +624,7 @@ class Plotter(object):
         # additional matplotlib raw commands for subplot
         for i in range(len(figure.l_plots)):
             j = figure.l_plots[i]
-            #p = figure.o_plots[i]
+            p = figure.o_plots[i]
             ax = plt.subplot(nbcol, nbrow, j)
             for cmd in p.cmd:
                 f = open("./tmp.py", "w")
