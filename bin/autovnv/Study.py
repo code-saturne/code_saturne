@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 #
 #     This file is part of the Code_Saturne Scripts, element of the
@@ -218,10 +219,11 @@ class Case(object):
         home = os.getcwd()
         os.chdir(os.path.join(self.__dest, self.label, 'SCRIPTS'))
 
-        t1 = RunThread("runcase", self.__log)
-        t1.start()
-        t1.join()
-        error, self.is_time = t1.stop()
+        error, self.is_time = run_command("./runcase", self.__log)
+        #t1 = RunThread("runcase", self.__log)
+        #t1.start()
+        #t1.join()
+        #error, self.is_time = t1.stop()
 
         if not error:
             self.is_run = "OK"

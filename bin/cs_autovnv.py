@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 #
 #     This file is part of the Code_Saturne Scripts, element of the
@@ -66,15 +67,15 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("-q", "--quiet",
                       action="store_true", dest="verbose", default=False,
-                      help="don't print status messages to stdout")
+                      help="does not print status messages to stdout")
 
     parser.add_option("-r", "--run",
                       action="store_true", dest="runcase", default=False,
-                      help="run all cases")
+                      help="runs all cases")
 
     parser.add_option("-c", "--compare",
                       action="store_true", dest="compare", default=False,
-                      help="compare results between repository and destination")
+                      help="compares results between repository and destination")
 
     parser.add_option("-p", "--post",
                       action="store_true", dest="post", default=False,
@@ -82,7 +83,7 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("-m", "--mail", dest="addresses", default="",
                       type="string", metavar="ADDRESS1 ADDRESS2 ...",
-                      help="addresses for sending the report")
+                      help="addresses for sending the reports")
 
     (options, args) = parser.parse_args(argv)
 
