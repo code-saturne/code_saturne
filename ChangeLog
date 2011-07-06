@@ -1,3 +1,10 @@
+* 06/07/2011 - David Monfort <david.monfort@edf.fr>
+  Set the relaxation coefficient to the classical value of 0.7 instead of
+  0.9 for the steady algorithm.
+  modified file:
+    gui/Pages/SteadyManagementModel.py
+    src/base/iniini.f90
+
 * 06/07/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Use the vector gradient API to calculate 2.Oij.Oij
   modified routine:
