@@ -77,7 +77,7 @@ class SteadyManagementModel(Model):
         default = {}
         default['status']                 = "off"
         default['iterations']             = 10
-        default['relaxation_coefficient'] = 0.9
+        default['relaxation_coefficient'] = 0.7
         default['zero_iteration']         = "off"
 
         return default
@@ -228,7 +228,7 @@ class SteadyManagementTestCase(ModelTest):
         doc = """<steady_management status="on">
                     <zero_iteration status="off"/>
                     <iterations>33</iterations>
-                    <relaxation_coefficient>0.9</relaxation_coefficient>
+                    <relaxation_coefficient>0.7</relaxation_coefficient>
                  </steady_management>"""
         assert node == self.xmlNodeFromString(doc),\
                     'Could not set a number of iterations'
@@ -247,7 +247,7 @@ class SteadyManagementTestCase(ModelTest):
         doc = """<steady_management status="on">
                    <zero_iteration status="on"/>
                    <iterations>10</iterations>
-                   <relaxation_coefficient>0.9</relaxation_coefficient>
+                   <relaxation_coefficient>0.7</relaxation_coefficient>
                  </steady_management>"""
         assert node == self.xmlNodeFromString(doc),\
                     'Could not set a status for zero iteration'

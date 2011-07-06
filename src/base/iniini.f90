@@ -813,7 +813,7 @@ do ii = 1, nvarmx
   cdtvar(ii) = 1.d0
   relaxv(ii) =-999.d0
 enddo
-relxst = 0.9d0
+relxst = 0.7d0
 
 
 !     Par defaut, pas de limitation du pas de temps liee aux
