@@ -839,9 +839,20 @@ cs_base_logfile_head(int    argc,
 
 #if defined(MPI_VERSION) && defined(MPI_SUBVERSION)
 #if defined(OPEN_MPI)
+#if defined(OMPI_MAJOR_VERSION)
+  char mpi_lib[32];
+  snprintf(mpi_lib, 31, "Open MPI %d.%d%d",
+          OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
+  mpi_lib[31] = '\0';
+#else
   const char mpi_lib[] = "Open MPI";
+#endif
 #elif defined(MPICH2)
+#if defined(MPICH2_VERSION)
+  const char mpi_lib[] = MPICH2_VERSION;
+#else
   const char mpi_lib[] = "MPICH2";
+#endif
 #elif defined(LAM_MPI)
   const char mpi_lib[] = "LAM/MPI";
 #elif defined(MPICH_NAME)
