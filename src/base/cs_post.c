@@ -3395,6 +3395,9 @@ cs_post_get_writer(cs_int_t  writer_id)
   id = _cs_post_writer_id(writer_id);
   writer = _cs_post_writers + id;
 
+  if (writer->writer == NULL)
+    _init_writer(writer);
+
   return writer->writer;
 }
 
