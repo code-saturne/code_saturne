@@ -1,3 +1,9 @@
+* 07/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix missing initialization of FVM writer when cs_post_get_writer() is called
+  before standard meshes are output by cs_post_init_meshes().
+  modified files:
+    src/base/cs_post.c
+
 * 06/07/2011 - Pascal Nicolas <pascal.nicolas@incka.fr>
                Yvan Fournier <yvan.fournier@edf.fr>
   Update user documentation, including addition of GUI screenshots.
