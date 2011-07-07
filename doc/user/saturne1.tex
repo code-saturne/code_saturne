@@ -774,7 +774,6 @@ each other. The following formats are currently supported by \CS:
 
 \item \hyperref[fmtdesc:des]{\simail (NOPO)}
 \item \hyperref[fmtdesc:unv]{\ideas universal}
-\item \hyperref[fmtdesc:igghexa]{NUMECA IGG/Hexa}
 \item \hyperref[fmtdesc:med]{\med}
 \item \hyperref[fmtdesc:cgns]{CGNS}
 \item \hyperref[fmtdesc:ensight6]{\ensight 6}
@@ -1104,52 +1103,6 @@ Compatibility:     & all files of this type\\
 Documentation:     & included documentation, also available at:
                      \href{http://www.geuz.org/gmsh}
                           {http://www.geuz.org/gmsh}\\
-\hline
-\end{tabular}
-
-\subsubsubsection{IGG/Hexa (NUMECA)%
-\label{fmtdesc:igghexa}}
-
-This format is quite peculiar in the sense that it defines a hierarchical mesh
-built exclusively of hexahedra, of quadrangular faces, and of edges, in which
-edges may be split in 2, faces in 2 or 4, and cells in 2, 4, or 8. Two
-neighboring elements are thus not always conforming. The \pcs only keeps the
-finest mesh level, and uses the hierarchical information so as to
-automatically build the appropriate conformal joining. CAD face
-information is transformed into color numbers.
-
-\noindent
-\parbox[t]{.15\linewidth}{{\bf Remark}:}
-\parbox[t]{.85\linewidth}{
-  The reader is based on the IGG/Hexa format as it was defined at the end of
-  2001. Since that time, the mesher seems to have been renamed $HEXPRESS^{TM}$, and
-  we do not have any recent documentation or test file. For this reason,
-  support for this format is not directly included in the main \pcs executable,
-  but requires conversion using the \texttt{igghexa\_to\_med} tool.
-}
-
-\smallskip \noindent
-\begin{tabular}[top]{|p{4.5cm}%
-                     |>{\PreserveBackslash\raggedright\hspace{0pt}}p{10.5cm}|}
-\hline
-Default extension: & {\tt .hex}\\
-\hline
-File type:         & portable binary by default
-                     (4-byte integers, 8-byte IEEE double-precision reals,
-                     big-endian), or text\\
-\hline
-Surface elements:  & quadrangles\\
-\hline
-Volume elements:   & hexahedra\\
-\hline
-Zone selection:    & no volume selection, CAD surface numbers interpreted as
-                     colors\\
-\hline
-Compatibility:     & unknown (at least files from late 2001 are readable)\\
-\hline
-Documentation:     & elements provided by NUMECA (\href{http://www.numeca.be}
-                                                       {http://www.numeca.be})
-                     in 2001.\\
 \hline
 \end{tabular}
 
