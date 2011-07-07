@@ -1,0 +1,431 @@
+%-----------------------------------------------------------------------
+%
+%     This file is part of the Code_Saturne Kernel, element of the
+%     Code_Saturne CFD tool.
+%
+%     Copyright (C) 1998-2008 EDF S.A., France
+%
+%     contact: saturne-support@edf.fr
+%
+%     The Code_Saturne Kernel is free software; you can redistribute it
+%     and/or modify it under the terms of the GNU General Public License
+%     as published by the Free Software Foundation; either version 2 of
+%     the License, or (at your option) any later version.
+%
+%     The Code_Saturne Kernel is distributed in the hope that it will be
+%     useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+%     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+%
+%     You should have received a copy of the GNU General Public License
+%     along with the Code_Saturne Kernel; if not, write to the
+%     Free Software Foundation, Inc.,
+%     51 Franklin St, Fifth Floor,
+%     Boston, MA  02110-1301  USA
+%
+%-----------------------------------------------------------------------
+\documentclass[a4paper,10pt,twoside]{article}
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES OBLIGATOIRES
+\usepackage{csdoc}
+% MACROS SUPPLEMENTAIRES
+\usepackage{csmacros}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
+\hypersetup{%
+  pdftitle = {CodeSaturne autovnv},
+  pdfauthor = {MFEE},
+  pdfpagemode = UseOutlines
+}
+\pdfinfo{/CreationDate (D:20110704000000-01 00 )}
+%
+% To have thumbnails upon opening the document under ACROREAD
+% pdfpagemode = UseThumbs
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INFO POUR PAGES DE GARDES
+\titreCS{\CS version~\verscs: autovnv tool}
+
+\docassociesCS{}
+\resumeCS{This document presents the autovnv tool. The aim of this script
+is to drive \CS's cases automatically, to compare checkpoint files and
+to display results.
+
+\CS version~\verscs.
+
+\begin{center}
+\large{WORK IN PROGRESS}
+\end{center}
+}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DEBUT DU DOCUMENT
+\begin{document}
+
+\def\contentsname{\textbf{\normalsize TABLE OF CONTENTS}\pdfbookmark[1]{Table of
+contents}{contents}}
+
+\pdfbookmark[1]{Flyleaf}{pdg}
+\large
+\makepdgCS
+\normalsize
+
+\passepage
+
+\begin{center}\begin{singlespace}
+\tableofcontents
+\end{singlespace}\end{center}
+%
+\section{Introduction}
+
+\textsc{Autovnv} is a small framework to automate the launch of \CS computations
+and do some operations on new results.
+
+The script needs a directory of previous \CS cases which are candidates to be duplicated.
+This directory is called \textbf{repository}. The duplication is done in an new directory
+which is called the \textbf{destination}.
+
+For each duplicated case, \textsc{Autovnv} is able to compile the User Defined Functions,
+to run the case, to compare the obtained checkpoint file with the previous one
+from the \textbf{repository}, and to plot curves in order to illustrate the computations.
+
+For all these steps, \textsc{Autovnv} generate two reports, a global report which summarize
+the status of each case, and a detailed report which gives the differences between the new results
+and the previous one in the \textbf{repository}, and display the defined plots.
+
+In the \textbf{repository}, previous results of computations are required only for checkpoint
+files comparison purpose. They can be also usfull, if the user needs to run a specific script.
+
+\section{Installation and prerequisites}
+
+\textsc{Autovnv} does not need a specific installation: the related files are installed
+with other python scripts of the code. Additional prerequisites required are:
+\begin{list}{$\bullet$}{}
+\item \texttt{numpy},
+\item \texttt{matplotlib}.
+\end{list}
+
+\section{Command line options}
+
+The command line options can be found with the command: \texttt{code\_saturne autovnv -h}.
+
+\begin{list}{$\bullet$}{}
+\item \texttt{-f FILE, --file=FILE}: gives the file of parameters for \textsc{Autovnv}.
+This file is mandatory, and therefore this option must be completed;
+\item \texttt{-q, --quiet}: does not print status messages to stdout;
+\item \texttt{-r, --run}: runs all cases;
+\item \texttt{-c, --compare}: compares chekpoint files between \textbf{repository} and \textbf{destination};
+\item \texttt{-p, --post}: postprocess results of computations;
+\item \texttt{-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...}: addresses for sending the reports.
+\end{list}
+
+\underline{Examples:}
+
+\begin{list}{$\bullet$}{}
+\item \texttt{code\_saturne autovnv -f sample.xml}: duplicates all cases from the \textbf{repository}
+int the \textbf{destination}, compile all User Defined Functions and exits;
+\item \texttt{code\_saturne autovnv -f sample.xml -r}: as above, and run all cases if defined
+in \texttt{sample.xml};
+\item \texttt{code\_saturne autovnv -f sample.xml -r -c}: as above, and compares all new checkpoint files
+with those from the \textbf{repository} if defined in \texttt{sample.xml};
+\item \texttt{code\_saturne autovnv -f sample.xml -r -c -p}: as above, and plots results
+if defined in \texttt{sample.xml};
+\item \texttt{code\_saturne autovnv -f sample.xml -r -c -p -m "dupont@moulinsart.be dupond@moulinsart.be"}: as above,
+and send the two reports.
+\item \texttt{code\_saturne autovnv -f sample.xml -c -p}: compares and plots result in the \textbf{destination}
+already computed.
+\end{list}
+
+\underline{Note:}
+
+The detailed report is generated only if the options \texttt{-c, --compare} or \texttt{-p, --post} is present
+in the command line.
+
+
+\section{File of parameters}
+
+The file of parameters is of XML formatted ascii file.
+
+\subsection{Headers of the file of parameters}
+
+\begin{verbatim}
+<?xml version="1.0"?>
+<autoverif version="2.0">
+    <repository>/home/dupond/codesaturne/MyRepository</repository>
+    <destination>/home/dupond/codesaturne/MyDestination</destination>
+\end{verbatim}
+
+This exemple shows the four mandatory first lines of the file of parameters.
+
+The two last lines correspond to the definition of the \textbf{repository}
+and \textbf{destination} directories.
+Inside the markups \texttt{<repository>} and \texttt{<destination>} the user
+must inform the related directories. If the \textbf{destination} does not exit,
+the directory is created.
+
+\subsection{Case creation and compilation fo the User Defined Functions}
+
+When \textsc{Autovnv} is launched, the file of parameters if parsed in order to known
+which studies and cases from the \textbf{repository} should be duplicated in
+the \textbf{destination}. The selection is done with the markups \texttt{<study>}
+and \texttt{<case>} as the following example:
+
+\begin{verbatim}
+<?xml version="1.0"?>
+<autoverif version="2.0">
+    <repository>/home/dupond/codesaturne/MyRepository</repository>
+    <destination>/home/dupond/codesaturne/MyDestination</destination>
+
+    <study label="MyStudy1" status="on">
+        <case label="Grid1" status="on" compute="on" post="off"/>
+        <case label="Grid2" status="off" compute="on" post="off"/>
+    </study>
+    <study label="MyStudy2" status="off">
+        <case label="k-eps" status="on" compute="on" post="off"/>
+        <case label="Rij-eps" status="on" compute="on" post="off"/>
+    </study>
+</autoverif>
+\end{verbatim}
+
+The attributes are:
+
+\begin{list}{$\bullet$}{}
+\item \texttt{label}: the name of the file of the script;
+\item \texttt{status}: must ne equal to \texttt{on} or \texttt{off},
+activate or desactivate the markup;
+\item \texttt{compute}: must ne equal to \texttt{on} or \texttt{off},
+activate or desactivate the computation of the case;
+\item \texttt{post}: must ne equal to \texttt{on} or \texttt{off},
+activate or desactivate the post-treatment of the case.
+\end{list}
+
+All these attributes are mandatory.
+
+With the attribute \texttt{status}, a single case or a complete study can be switched off.
+If the above example, only the case \texttt{Grid1} of the study \texttt{MyStudy1} is going
+to be created.
+
+After the creation of the directories in the \textbf{destination}, for each case, all User Defined Functions
+are compiled. The \textsc{Autovnv} stops if a compilation error occurs: no computation, or
+comparison, or plot will be performed, even if they are switched on.
+
+\underline{Note:}
+
+During the duplication, every files are copied, except mesh files, for which a symbolic link is used.
+
+
+\subsection{Run a case}
+
+The run of \CS is activated if the option \texttt{-r, --run} is present in the command line.
+
+All cases described in the file of parameters with the attribute \texttt{compute="on"}
+are taken into account.
+
+\begin{verbatim}
+<?xml version="1.0"?>
+<autoverif version="2.0">
+    <repository>/home/dupond/codesaturne/MyRepository</repository>
+    <destination>/home/dupond/codesaturne/MyDestination</destination>
+
+    <study label="MyStudy1" status="on">
+        <case label="Grid1" status="on" compute="on" post="off"/>
+        <case label="Grid2" status="on" compute="off" post="off"/>
+    </study>
+    <study label="MyStudy2" status="on">
+        <case label="k-eps" status="on" compute="on" post="off"/>
+        <case label="Rij-eps" status="on" compute="on" post="off"/>
+    </study>
+</autoverif>
+\end{verbatim}
+
+After the computation, if no error occurs, the attribute \texttt{compute} is set to \texttt{"off"}
+in the copy of the file of parameters in the \textbf{destination}. It is allow a restart
+of \textsc{Autovnv} without re-run successfull previous computations.
+
+\subsection{Compare checkpoint files}
+
+The comparison is activated if the option \texttt{-c, --compare} is present in the command line.
+
+In order to compare two checkpoint files, the markup \texttt{<compare>} has to be added as
+a child of the condidered case. In the following exemple, a checkpoint file comparison
+is switched on for the case \textit{Grid1}, whereas no comparision is planed for the case
+\textit{Grid2}.
+The comparison is done by the external script \texttt{cs\_io\_dump} with the option \texttt{--diff}.
+
+\begin{verbatim}
+    <study label='MyStudy1' status='on'>
+        <case label='Grid1' status='on' compute="on" post="off"/>
+            <compare dest="" repo="" threshold="1.0e-5"/>
+        <case label='Grid2' status='on' compute="off" post="off"/>
+    </study>
+\end{verbatim}
+
+The attributes are:
+\begin{list}{$\bullet$}{}
+
+\item \texttt{repo}: id of the results directory in the \textbf{repository} for example \texttt{repo="20110704-1116"},
+if there is a single results directory in the \texttt{RESU} directory of the case, the id can be ommitted: \texttt{repo=""};
+
+\item \texttt{dest}: id of the results directory in the \textbf{destination}:
+\begin{list}{$\rightarrow$}{}
+\item if the id is not known already because the case has not yet run, just let the attribute empty \texttt{dest=""},
+\item if \textsc{Autovnv} is restarted without the run step (with the command line \texttt{code\_saturne
+autovnv -f sample.xml -c} for example), the id of the results directory in
+the \textbf{destination} must be given (for example \texttt{dest="20110706-1523"}), but if there is a single results directory in the \texttt{RESU} directory
+of the case, the id can be ommitted: \texttt{repo=""}, the id will be completed automatically;
+\end{list}
+
+\item \texttt{threshold}: real value above which a difference is considered significant (default: $1e-30$).
+
+\end{list}
+
+Only the attributes \texttt{repo} and \texttt{dest} are mandatory.
+
+\subsection{Run an external additional script with arguments}
+
+The launch of an external script is activated if the option \texttt{-p, --post} is present in the command line.
+
+The markup \texttt{<script>} has to be added as a child of the condidered case.
+
+\begin{verbatim}
+    <study label='STUDY' status='on'>
+        <case label='CASE1' status='on' compute="on" post="on">
+            <script label="script_post.py" args="-n 1" dest="" repo="20110216-2147" status="on"/>
+        </case>
+    </study>
+\end{verbatim}
+
+The attributes are:
+
+\begin{list}{$\bullet$}{}
+\item \texttt{label}: the name of the file of the script;
+\item \texttt{status}: mandatory must ne equal to \texttt{on} or \texttt{off},
+activate or desactivate the markup.
+\item \texttt{args}: the arguments to pass to the script;
+\item \texttt{repo} and \texttt{dest}: id of the results directory in the \textbf{repository} or
+in the \textbf{destination}; if there is a single results directory in the \texttt{RESU} directory
+of the case, the id can be ommitted: \texttt{repo=""} or \texttt{dest=""}, the id will be completed automatically;
+
+\end{list}
+
+Only the attributes \texttt{label} and \texttt{status} are mandatory.
+
+Several calls of the same script or to different scripts are permitted:
+
+\begin{verbatim}
+    <study label="STUDY" status="on">
+        <case label="CASE1" status="on" compute="on" post="on">
+            <script label="script_post.py" args="-n 1" status="on"/>
+            <script label="script_post.py" args="-n 2" status="on"/>
+            <script label="script_post.py" args="-n 3" status="on"/>
+            <script label="another_script.py" status="on"/>
+        </case>
+    </study>
+\end{verbatim}
+
+Example of script, which searches printed informations in the listing:
+\begin{verbatim}
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os, sys
+import string
+from optparse import OptionParser
+
+def process_cmd_line(argv):
+    """Processes the passed command line arguments."""
+    parser = OptionParser(usage="usage: %prog [options]")
+
+    parser.add_option("-r", "--repo", dest="repo", type="string",
+                      help="Directory of the result in the repository")
+
+    parser.add_option("-d", "--dest", dest="dest", type="string",
+                      help="Directory of the result in the destination")
+
+    (options, args) = parser.parse_args(argv)
+
+    return options
+
+def main(options):
+    m = os.path.join(options.dest, "listing")
+    f = open(m)
+    lines = f.readlines()
+    f.close()
+
+    g = open(os.path.join(options.dest, "water_level.dat"), "w")
+    g.write("# time,   h_sim,   h_th\n")
+    for l in lines:
+       if l.rfind("time, h_sim, h_th") == 0:
+           d = l.split()
+           g.write("%s  %s  %s\n" % (d[3], d[4], d[5]))
+    g.close()
+
+if __name__ == '__main__':
+    options = process_cmd_line(sys.argv[1:])
+    main(options)
+\end{verbatim}
+
+\subsection{Post-treatment: plotting curves}
+
+The post-treatment is activated if the option \texttt{-p, --post} is present in the command line.
+
+\subsubsection{Experimental data}
+
+\begin{verbatim}
+    <study label='MyStudy' status='on'>
+        <measurement file='exp.dat' path ='/home/dupond/codesaturne/MyDestination/MyStudy/DATA_EXP'>
+                <plot fig='1' xcol='1' ycol='2' legend='U Experimental data'/>
+                <plot fig='2' xcol='3' ycol='4' legend='V Experimental data'/>
+        </measurement>
+        <case label='Grid1' status='on' compute="off" post="on">
+            <data file="profile.dat" dest="">
+                <plot fig="1" xcol="1" ycol="2"  legend="U computed" fmt='r-s'/>
+                <plot fig="2" xcol="1" ycol="3"  legend="V computed" fmt='b-s'/>
+            </data>
+        </case>
+    </study>
+    <subplot fig="1" legstatus='on'  ylabel="U ($m/s$)" xlabel= "$r$ ($m$)" legpos ='0.05 0.1'/>
+    <subplot fig="2" legstatus='off' ylabel="V ($m/s$)" xlabel= "$r$ ($m$)"/>
+    <figure name="MyFigure" fig="1 2"  figsize="(4,4)" />
+\end{verbatim}
+
+\subsubsection{Curves with error bar}
+
+
+\subsubsection{Legends}
+
+
+\subsubsection{Matplotlib raw commands}
+
+
+\section{Output and restart}
+
+\textsc{Autovnv} produces several files in the \textbf{destination} directory:
+\begin{list}{$\bullet$}{}
+\item \texttt{report.txt}: standard output of the script;
+\item \texttt{auto\_vnv.log}: log of the code and the \texttt{pdflatex} compilation;
+\item \texttt{report\_global.pdf}: summary of the compilation, run, comparison, and plot steps;
+\item \texttt{report\_detailed.pdf}: details the comparison and display the plot;
+\item \texttt{sample.xml}: udpated file of parameters, useful for restart the script if an error occurs.
+\end{list}
+
+After the computation of a case, if no error occurs, the attribute \texttt{compute}
+is set to \texttt{"off"} in the copy of the file of parameters in
+the \textbf{destination}. It is allow a restart
+of \textsc{Autovnv} without re-run successfull previous computations.
+
+In the same manner, all empty attributes \texttt{repo=""} and \texttt{dest=""}
+are completed in the udpated file of parameters.
+
+%
+\end{document}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

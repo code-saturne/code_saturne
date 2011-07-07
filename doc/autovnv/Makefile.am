@@ -1,0 +1,96 @@
+#------------------------------------------------------------------------------
+#   This file is part of the Code_Saturne Kernel, element of the
+#   Code_Saturne CFD tool.
+#
+#   Copyright (C) 2009-2010 EDF S.A., France
+#
+#   The Code_Saturne Kernel is free software; you can redistribute it
+#   and/or modify it under the terms of the GNU General Public License
+#   as published by the Free Software Foundation; either version 2 of
+#   the License, or (at your option) any later version.
+#
+#   The Code_Saturne Kernel is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public Licence
+#   along with the Code_Saturne Kernel; if not, write to the
+#   Free Software Foundation, Inc.,
+#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#-------------------------------------------------------------------------------
+
+# Main LaTeX document
+
+TEXMAIN = autovnv.tex
+
+# Other LaTex document
+
+TEXOTHERS =
+
+TEXINPUTFILES = input
+
+# Distributed files
+
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
+
+# Subdirectories (order is important)
+
+SUBDIRS = graphics .
+
+# Environment variables for LaTeX
+
+TEXINPUTS = $(top_srcdir)/doc/style/:$(top_builddir)/doc/style/:$(srcdir)//:$(builddir)//:
+BIBINPUTS = $(top_srcdir)/doc/style/:
+BSTINPUTS = $(top_srcdir)/doc/style/:
+
+# LaTeX commands
+
+PDFLATEX = export TEXINPUTS="$(TEXINPUTS)"; pdflatex
+BIBTEX = export BIBINPUTS="$(BIBINPUTS)"; bibtex
+
+# Generated documents (pdf and index files)
+
+PDFMAIN = $(TEXMAIN:.tex=.pdf)
+
+# One redefines here the standard pdf targets of automake
+# so that they handle generation from LaTeX documents.
+
+pdf-local:
+	@$(PDFLATEX) $(TEXMAIN)
+	@$(PDFLATEX) $(TEXMAIN)
+	@$(PDFLATEX) $(TEXMAIN)
+
+clean-local:
+	-rm -f *.out *.log *.aux *.toc *.lof *.lot \
+	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy 
+
+install-pdf-local:
+	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"
+	$(INSTALL_DATA) $(PDFMAIN) $(DESTDIR)$(pdfdir)
+
+distclean-local: clean-local
+	-rm -f $(PDFMAIN)
+
+# Generate the documentation at dist stage so that the user do not need
+# to have LaTeX (and mandatory tools).
+
+#dist-hook: pdf
+#	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
+
+# Install the documentation if available
+
+install-data-local:
+	if test -f $(srcdir)/$(PDFMAIN); then \
+	  $(MKDIR_P) "$(DESTDIR)$(pdfdir)"; \
+	  $(INSTALL_DATA) $(srcdir)/$(PDFMAIN) $(DESTDIR)$(pdfdir); \
+	fi
+
+uninstall-local:
+	@$(NORMAL_UNINSTALL)
+	files=$(PDFMAIN); \
+	test -d "$(DESTDIR)$(pdfdir)" || exit 0; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(pdfdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(pdfdir)" && rm -f $$files
+	rmdir $(pdfdir) || exit 0
