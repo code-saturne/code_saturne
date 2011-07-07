@@ -371,13 +371,14 @@
            </widget>
           </item>
           <item row="0" column="2">
-           <widget class="QLineEdit" name="lineEditFrequency"/>
+           <widget class="QLineEdit" name="lineEditFrequency">
             <property name="minimumSize">
              <size>
               <width>100</width>
               <height>0</height>
              </size>
             </property>
+           </widget>
           </item>
           <item row="0" column="3">
            <widget class="QLineEdit" name="lineEditFrequencyTime">
