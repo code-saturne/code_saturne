@@ -354,7 +354,7 @@ class Study(object):
                 for m in os.listdir(ref):
                     os.symlink(os.path.join(ref, m), os.path.join(des, m))
 
-            # Copy scripts for post-processing
+            # Copy external scripts for post-processing
             ref = os.path.join(self.__repo, "POST")
             if os.path.isdir(ref):
                 des = os.path.join(self.__dest, "POST")
@@ -402,9 +402,16 @@ class Studies(object):
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         """
 
-        # create if necessary the destination directory
+        # Create the xml parser
 
         self.__parser = Parser(f)
+
+        # Test if the repository exists
+
+        self.getRepository()
+
+        # create if necessary the destination directory
+
         try:
             os.makedirs(self.getDestination())
         except:
@@ -567,7 +574,7 @@ class Studies(object):
                         self.__log.flush()
 
 
-    def __check_dir(self, study_label, case_label, node, result, rep, markup):
+    def __check_dir(self, study_label, case_label, node, result, rep, attr):
         """
         Check coherency between xml file of parameters and repository or destination.
         """
@@ -588,7 +595,7 @@ class Studies(object):
                 raise ValueError, msg
 
         # 3. Update the file of parameters with the name of the result directory
-            self.__parser.setAttribute(node, markup, os.listdir(result)[0])
+            self.__parser.setAttribute(node, attr, os.listdir(result)[0])
         else:
             self.reporting('Error: check compare/script/plot failed.')
             sys.exit(1)
@@ -598,11 +605,13 @@ class Studies(object):
         """
         Check coherency between xml file of parameters and repository and destination.
         """
-        result = os.path.join(self.getRepository(), study_label, case_label, 'RESU')
-        self.__check_dir(study_label, case_label, node, result, repo, "repo")
+        if repo != None:
+            result = os.path.join(self.getRepository(), study_label, case_label, 'RESU')
+            self.__check_dir(study_label, case_label, node, result, repo, "repo")
 
-        result = os.path.join(self.getDestination(), study_label, case_label, 'RESU')
-        self.__check_dir(study_label, case_label, node, result, dest, "dest")
+        if dest != None:
+            result = os.path.join(self.getDestination(), study_label, case_label, 'RESU')
+            self.__check_dir(study_label, case_label, node, result, dest, "dest")
 
 
     def check_compare(self):
@@ -648,10 +657,7 @@ class Studies(object):
 
     def scripts(self):
         """
-        http://www.rug.nl/cit/hpcv/visualisation/VTK/3Ds/ortho.tcl.html
-        http://www.google.com/codesearch/p?hl=fr#ppCGMdqDQVw/trunk/vtkPythonWidgetTest/vtkImageTraceWidgetTest.py&q=vtkExtractVOI%20lang:python&sa=N&cd=6&ct=rc
-        http://www.google.com/codesearch/p?hl=fr#QX936C7g5ro/trunk/jolly/src/jolly/visual/vtkPythonViewImage2D.py&q=vtkExtractVOI%20lang:python&sa=N&cd=5&ct=rc
-        http://www.google.com/codesearch/p?hl=fr#I0cABDTB4TA/pub/FreeBSD/ports/distfiles/VTK-4.4-LatestRelease.tar.gz%7CrhZlPdp5SE0/VTK/Examples/ImageProcessing/Python/Contours2D.py&q=vtkExtractVOI%20lang:python&d=9
+        Launch external additional scripts with arguments.
         """
         for l, s in self.studies:
             self.reporting('  o Script study: ' + l)
@@ -661,9 +667,13 @@ class Studies(object):
                     for i in range(len(label)):
                         cmd = os.path.join(self.getDestination(), l, "POST", label[i])
                         if os.path.isfile(cmd):
-                            r = os.path.join(self.getRepository(),  l, case.label, "RESU", repo[i])
-                            d = os.path.join(self.getDestination(), l, case.label, "RESU", dest[i])
-                            cmd += " " + args[i] + " -r " + r + " -d " + d
+                            cmd += " " + args[i]
+                            if repo[i]:
+                                r = os.path.join(self.getRepository(),  l, case.label, "RESU", repo[i])
+                                cmd += " -r " + r
+                            if dest[i]:
+                                d = os.path.join(self.getDestination(), l, case.label, "RESU", dest[i])
+                                cmd += " -d " + d
                             retcode, t = run_command(cmd, self.__log)
                             self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                         else:
@@ -681,7 +691,6 @@ class Studies(object):
                     for node in self.__parser.getChilds(case.node, "data"):
                         plots, file, dest, repo = self.__parser.getResult(node)
                         self.__check_dirs(l, case.label, node, repo, dest)
-
 
     def plot(self):
         """
@@ -762,7 +771,13 @@ class Studies(object):
 
 
     def __del__(self):
-        self.__log.close()
-        self.reportFile.close()
+        try:
+            self.__log.close()
+        except:
+            pass
+        try:
+            self.reportFile.close()
+        except:
+            pass
 
 #-------------------------------------------------------------------------------

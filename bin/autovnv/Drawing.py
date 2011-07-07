@@ -69,7 +69,7 @@ log.setLevel(logging.NOTSET)
 #log.setLevel(logging.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Curve
+# Curve or plot
 #-------------------------------------------------------------------------------
 
 class Plot(object):
@@ -84,11 +84,12 @@ class Plot(object):
         @type file: C{String}
         @param file: label of the file which contains data of the curve
         """
-        self.id       = 0
+        self.subplot  = 0
         self.xspan    = []
         self.yspan    = []
         self.ismesure = False
         self.errorbar = []
+        self.o_plot   = None
 
         # Open file of data
 
@@ -96,9 +97,9 @@ class Plot(object):
 
         # Read mandatory attributes
 
-        self.id     = int(node.attributes["fig"].value)
-        self.legend = node.attributes["legend"].value
-        ycol        = int(node.attributes["ycol"].value)
+        self.subplot = int(node.attributes["fig"].value)
+        self.legend  = node.attributes["legend"].value
+        ycol         = int(node.attributes["ycol"].value)
 
         # Read optional attributes
         try:
@@ -134,8 +135,10 @@ class Plot(object):
         except:
             errorbar = None
 
-        self.uploadErrorBar(errorbar)
+        self.f.close()
+        self.f = open(file, 'r')
 
+        self.uploadErrorBar(errorbar)
         self.f.close()
 
         self.cmd = parser.getPltCommands(node)
@@ -191,7 +194,7 @@ class Plot(object):
             self.errorbar = error
 
 #-------------------------------------------------------------------------------
-# Plot
+# SubPlot
 #-------------------------------------------------------------------------------
 
 class Subplot(object):
@@ -250,7 +253,7 @@ class Subplot(object):
             self.yrange = None
 
         for curve in curves:
-            if curve.id == self.id:
+            if curve.subplot == self.id:
                 self.curves.append(curve)
 
         self.cmd = parser.getPltCommands(node)
@@ -259,7 +262,7 @@ class Subplot(object):
         self.legends = []
 
         for curve in self.curves:
-            if curve.id == self.id:
+            if curve.subplot == self.id:
                 if curve.measurement():
                     if curve.errorbar != None:
                         self.legends.append(curve.legend + " errorbar")
@@ -276,14 +279,14 @@ class Subplot(object):
 
 class Figure(object):
     """
-    Management of a single figure (layout of several plots).
+    Management of a single figure (layout of several subplots).
     """
-    def __init__ (self, node, parser, curves, n_plots, plots):
+    def __init__ (self, node, parser, curves, n_plots, subplots):
         """
         Constructor of a figure.
         """
         self.file_name = node.attributes["name"].value
-        self.l_plots = [int(s) for s in node.attributes["fig"].value.split()]
+        self.l_subplots = [int(s) for s in node.attributes["fig"].value.split()]
 
         self.tags = ("title", "figsize", "dpi", "facecolor", "edgecolor", "linewidth")
         for tag in self.tags:
@@ -294,11 +297,11 @@ class Figure(object):
 
         self.cmd = parser.getPltCommands(node)
 
-        self.o_plots = []
-        for i in self.l_plots:
-            for p in plots:
+        self.o_subplots = []
+        for i in self.l_subplots:
+            for p in subplots:
                 if p.id == i:
-                    self.o_plots.append(p)
+                    self.o_subplots.append(p)
 
         # Figure options
         if self.figsize:
@@ -316,7 +319,7 @@ class Figure(object):
             plt.suptitle(self.title, fontsize=10)
 
 
-    def layout(self, n_plots):
+    def layout(self):
         """
         Automatic layout, based on the number of subplots
         Parameters with their defaults:
@@ -327,9 +330,11 @@ class Figure(object):
         wspace = 0.2 the amount of width reserved for blank space between subplots
         hspace = 0.2 the amount of height reserved for white space between subplots
         """
-        if n_plots < 3:
+        nbr = len(self.l_subplots)
+
+        if nbr < 3:
             nbrow = 1
-            nbcol = n_plots
+            nbcol = nbr
             rcParams['font.size'] = 6
             rcParams['lines.markersize']= 2
             ri = 0.8
@@ -337,11 +342,11 @@ class Figure(object):
             hs = 0.35
             ws = 0.5
             plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-        elif n_plots > 24:
+        elif nbr > 24:
             rcParams['font.size'] = 4
             rcParams['lines.markersize']= 1
             nbrow = 5
-            nbcol = (n_plots-1)/nbrow+1
+            nbcol = (nbr-1)/nbrow+1
             hs=0.5
             if nbcol > 7:
                 hs = 1.0
@@ -353,11 +358,11 @@ class Figure(object):
             le = 0.1
             ws = 1.25
             plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-        elif n_plots > 12:
+        elif nbr > 12:
             nbrow = 4
             rcParams['font.size'] = 5
             rcParams['lines.markersize'] = 2
-            nbcol = (n_plots-1) / nbrow+1
+            nbcol = (nbr-1) / nbrow+1
             hs=0.45
             if nbcol > 5:
                 hs = 0.8
@@ -367,9 +372,9 @@ class Figure(object):
             le = 0.1
             ws = 0.99
             plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-        elif n_plots > 6:
+        elif nbr > 6:
             nbrow = 3
-            nbcol = (n_plots-1) / nbrow+1
+            nbcol = (nbr-1) / nbrow+1
             rcParams['lines.markersize'] = 3
             rcParams['font.size'] = 6
             hs = 0.4
@@ -379,9 +384,9 @@ class Figure(object):
             le = 0.1
             ws = 0.8
             plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-        elif n_plots > 2:
+        elif nbr > 2:
             nbrow = 2
-            nbcol = (n_plots-1) / nbrow+1
+            nbcol = (nbr-1) / nbrow+1
             hs = 0.3
             if nbcol > 2:
               hs = 0.45
@@ -426,7 +431,6 @@ class Plotter(object):
         # initialisation for each Study
         self.n_plots = 0
         self.curves  = []
-        self.plots   = []
         self.figures = []
 
         # Read the parser for the Measurments Files
@@ -438,38 +442,47 @@ class Plotter(object):
                 curve = Plot(node, self.parser, file)
                 curve.setMeasurement(True)
                 self.curves.append(curve)
-                self.n_plots = max(self.n_plots, curve.id)
+                self.n_plots = max(self.n_plots, curve.subplot)
 
         # Read the files of results
         for case in study_object.Cases:
             if case.plot == "on" and case.is_run != "KO":
                 for node in self.parser.getChilds(case.node, "data"):
                     plots, file, dest, repo = self.parser.getResult(node)
+
+                    if dest:
+                        d = dest
+                    elif repo:
+                        d = repo
+
                     f = os.path.join(self.parser.getDestination(),
                                      study_label,
                                      case.label, "RESU",
-                                     dest, file)
+                                     d, file)
+
                     if not os.path.isfile(f):
                         f = os.path.join(self.parser.getDestination(),
                                          study_label,
                                          case.label, "RESU",
-                                         dest, "monitoring", file)
+                                         d, "monitoring", file)
                         if not os.path.isfile(f):
                             raise ValueError, "This file does not exist: %s" % f
+
                     for node in plots:
                         curve = Plot(node, self.parser, f)
                         curve.setMeasurement(False)
                         self.curves.append(curve)
-                        self.n_plots = max(self.n_plots, curve.id)
+                        self.n_plots = max(self.n_plots, curve.subplot)
 
+        subplots = []
         for node in self.parser.getPlots(study_label):
-            self.plots.append(Subplot(node, self.parser, self.curves))
+            subplots.append(Subplot(node, self.parser, self.curves))
 
-        for p in self.plots:
+        for p in subplots:
             self.n_plots = max(self.n_plots, p.id)
 
         for node in self.parser.getFigures(study_label):
-            self.figures.append(Figure(node, self.parser, self.curves, self.n_plots, self.plots))
+            self.figures.append(Figure(node, self.parser, self.curves, self.n_plots, subplots))
 
         for figure in self.figures:
             self.plot_figure(figure)
@@ -490,7 +503,7 @@ class Plotter(object):
             study_object.matplotlib_figures.append(f)
 
 
-    def __draw_curve(self, curve, n_fig, j):
+    def __draw_curve(self, curve, n_fig):
         xspan = curve.xspan
         yspan = curve.yspan
 
@@ -504,9 +517,9 @@ class Plotter(object):
             if curve.fmt:
                 lines = plt.plot(xspan, yspan, curve.fmt)
             else:
-                if n_fig[curve.id -1] < 8:
+                if n_fig[curve.subplot -1] < 8:
                     lines = plt.plot(xspan, yspan)
-                elif n_fig[curve.id -1] < 15:
+                elif n_fig[curve.subplot -1] < 15:
                     lines = plt.plot(xspan, yspan, '--')
                 else:
                     lines = plt.plot(xspan, yspan, ':')
@@ -573,59 +586,39 @@ class Plotter(object):
         Plotter of a single figure with several subplots.
         """
         # Layout
-        nbrow, nbcol, hs, ri, le, ws = figure.layout(self.n_plots)
-        log.debug("plot_figure --> layout: n_plots: %s nbcol: %s nbrow: %s l_plots: %s" % \
-                  (self.n_plots, nbcol, nbrow, figure.l_plots))
+        nbrow, nbcol, hs, ri, le, ws = figure.layout()
+        log.debug("plot_figure --> layout: n_plots: %s nbcol: %s nbrow: %s l_subplots: %s" % \
+                  (self.n_plots, nbcol, nbrow, figure.l_subplots))
 
-        # list of numbers of curves per plot
+        # list of numbers of curves per subplot
         n_fig = [0] * self.n_plots
 
-        # single plot in the figure
-        if len(figure.l_plots) == 1:
-            log.debug("plot_figure --> single plot draw")
+        # draw curves in the right subplot
+        for j in figure.l_subplots:
+            idx = figure.l_subplots.index(j)
+            log.debug("plot_figure --> plot draw: id = %s" % j)
+            plt.subplot(nbcol, nbrow, idx + 1)
 
-            # build of the plots
             for curve in self.curves:
-                plt.subplot(nbcol, nbrow, curve.id)
-                n_fig[curve.id-1] += 1
-                self.__draw_curve(curve, n_fig, curve.id-1)
-
-        # several plots in the figure
-        else:
-            # build of the plots
-            for j in range(len(figure.l_plots)):
-                log.debug("plot_figure --> several plot draw: id = %s" % j)
-                plt.subplot(nbcol, nbrow, j+1)
-
-                for curve in self.curves:
-                    if figure.l_plots[j] == curve.id:
-                        n_fig[j] += 1
-                        self.__draw_curve(curve, n_fig, j)
+                if j == curve.subplot:
+                    n_fig[j-1] += 1
+                    self.__draw_curve(curve, n_fig)
 
         plt.hold(False)
 
-        # single plot in the figure: legends layout
-        if len(figure.l_plots) == 1:
-            for i in range(self.n_plots):
-                p = figure.o_plots[i]
-                plt.subplot(nbcol, nbrow, i+1)
-                log.debug("plot_figure --> single plot legends")
-                self.__draw_legend(p, False, hs, ws, ri, le)
-
-        else:
-            # several plots in the figure: legends layout
-            for i in range(len(figure.l_plots)):
-                j = figure.l_plots[i]
-                p = figure.o_plots[i]
-                plt.subplot(nbcol, nbrow, j)
-                log.debug("plot_figure --> several plot legends: id = %s" % j)
-                self.__draw_legend(p, True, hs, ws, ri, le)
+        # legend
+        for i in range(len(figure.l_subplots)):
+            j = figure.l_subplots[i]
+            p = figure.o_subplots[i]
+            plt.subplot(nbcol, nbrow, i + 1)
+            log.debug("plot_figure --> several plot legends: id = %s" % j)
+            self.__draw_legend(p, True, hs, ws, ri, le)
 
         # additional matplotlib raw commands for subplot
-        for i in range(len(figure.l_plots)):
-            j = figure.l_plots[i]
-            p = figure.o_plots[i]
-            ax = plt.subplot(nbcol, nbrow, j)
+        for i in range(len(figure.l_subplots)):
+            j = figure.l_subplots[i]
+            p = figure.o_subplots[i]
+            ax = plt.subplot(nbcol, nbrow, i + 1)
             for cmd in p.cmd:
                 f = open("./tmp.py", "w")
                 f.write(cmd)

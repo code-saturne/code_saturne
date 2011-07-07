@@ -59,13 +59,13 @@ class Parser(object):
         try:
             self.doc =  minidom.parse(XMLFileName)
         except:
-            print "No file or syntax error"
+            print "No file of parameters or error in the name of the file.\n"
             sys.exit(1)
 
         self.root = self.doc.firstChild
 
         if self.root.nodeName != "autoverif":
-            print XMLFileName + ": Wrong XML file."
+            print XMLFileName + ": Wrong XML file.\n"
             sys.exit(1)
 
 
@@ -342,13 +342,11 @@ class Parser(object):
 
         if nodes:
             compare = True
+            repo      = str(nodes[0].attributes["repo"].value)
+            dest      = str(nodes[0].attributes["dest"].value)
             try:
-                repo      = str(nodes[0].attributes["repo"].value)
-                dest      = str(nodes[0].attributes["dest"].value)
                 threshold = str(nodes[0].attributes["threshold"].value)
             except:
-                repo      = None
-                dest      = None
                 threshold = None
 
         return compare, repo, dest, threshold
@@ -359,7 +357,7 @@ class Parser(object):
         Read:
             <study label='STUDY' status='on'>
                 <case label='CASE1' status='on' compute="on" post="on">
-                    <script label="script_post.py" args="" repo="20110216-2047" dest="20110216-2147" status="on"/>
+                    <script label="script_post.py" args="" dest="20110216-2147" status="on"/>
                 </case>
             </study>
         @type caseNode: C{DOM Element}
@@ -379,11 +377,11 @@ class Parser(object):
                 try:
                     repo.append(str(node.attributes["repo"].value))
                 except:
-                    repo.append("")
+                    repo.append(None)
                 try:
                     dest.append(str(node.attributes["dest"].value))
                 except:
-                    dest.append("")
+                    dest.append(None)
 
         return script, label, args, repo, dest
 
@@ -391,7 +389,7 @@ class Parser(object):
     def getResult(self, node):
         """
         Read:
-            <data file='profil1.dat'>
+            <data file='profil1.dat' dest="">
                 <plot fig='1' xcol='1' ycol='2' legend='U'/>
                 <plot fig='2' xcol='1' ycol='3' legend='V'/>
             </data>
@@ -401,10 +399,16 @@ class Parser(object):
         @rtype: C{List}, C{List}
         @return: C{List} of nodes <plot>, and C{List} of file names
         """
-        plots = node.getElementsByTagName("plot")
-        dest  = str(node.attributes["dest"].value)
-        repo  = str(node.attributes["repo"].value)
         file  = str(node.attributes["file"].value)
+        plots = node.getElementsByTagName("plot")
+        try:
+            dest  = str(node.attributes["dest"].value)
+        except:
+            dest = None
+        try:
+            repo = str(node.attributes["repo"].value)
+        except:
+            repo = None
 
         return plots, file, dest, repo
 
