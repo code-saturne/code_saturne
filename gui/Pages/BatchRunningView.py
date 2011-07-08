@@ -890,7 +890,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                     if len(l) == 0:
                         break
                     else:
-                        self.class_list.append(l.split(' ')[0])
+                        name = l.split(' ')[0]
+                        if name[-1:] == '*':
+                            name = name[:-1]
+                        self.class_list.append(name)
 
         except Exception:
             pass

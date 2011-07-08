@@ -1,3 +1,8 @@
+* 08/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Remove asterisk from default partition name selection in GUI when using SLURM.
+  modified files:
+    gui/Pages/BatchRunningView.py
+
 * 07/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix missing initialization of FVM writer when cs_post_get_writer() is called
   before standard meshes are output by cs_post_init_meshes().
