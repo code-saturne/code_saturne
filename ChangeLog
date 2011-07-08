@@ -1,3 +1,8 @@
+* 08/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix dialog filter for mesh_input selection.
+  modified files:
+    gui/Pages/SolutionDomainView.py
+
 * 08/07/2011 - Martin Ferrand <martin.ferrand@edf.fr>
   Fix writing the mesh viscosity array for checkpoints.
   modified routine:
