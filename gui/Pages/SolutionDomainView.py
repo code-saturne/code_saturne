@@ -528,7 +528,7 @@ class MeshInputDialog(QFileDialog):
         caption =  self.tr("Select input mesh file or directory")
         self.setWindowTitle(caption)
 
-        self.name_filter = QString(self.tr("Imported or preprocessed meshes (mesh_input; mesh_output)"))
+        self.name_filter = QString(self.tr("Imported or preprocessed meshes (mesh_input mesh_output)"))
         self.setFilter(self.name_filter)
 
         self.select_label = QString(self.tr("Choose"))
