@@ -1,3 +1,8 @@
+* 08/07/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fix writing the mesh viscosity array for checkpoints.
+  modified routine:
+    src/base/ecrava.f90
+
 * 08/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Remove asterisk from default partition name selection in GUI when using SLURM.
   modified files:
