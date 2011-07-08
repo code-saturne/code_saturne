@@ -7,7 +7,7 @@
 import sys
 
 if sys.version_info[:2] < (2,3):
-    sys.stderr.write("This script needs Python 2.3 at least\n")
+    sys.stderr.write("This script needs Python 2.4 at least\n")
 
 import platform
 
@@ -134,25 +134,54 @@ class Package:
 
     def extract(self):
 
-        import tarfile
+        if self.archive[-4:] == '.zip':
 
-        if not tarfile.is_tarfile(self.archive):
-            sys.stderr.write("%s is not a tar archive\n" % self.archive)
-            sys.exit(1)
+            import zipfile
 
-        tar = tarfile.open(self.archive)
+            if not zipfile.is_zipfile(self.archive):
+                sys.stderr.write("%s is not a zip archive\n" % self.archive)
+                sys.exit(1)
 
-        first_member = tar.next()
-        relative_source_dir = first_member.name.split(os.path.sep)[0]
-        self.source_dir = os.path.abspath(relative_source_dir)
+            zip = zipfile.ZipFile(self.archive)
 
-        try:
-            tar.extractall()
-        except AttributeError:
-            for tarinfo in tar:
-                tar.extract(tarinfo)
+            relative_source_dir = zip.namelist()[0].split(os.path.sep)[0]
+            self.source_dir = os.path.abspath(relative_source_dir)
 
-        tar.close()
+            zip.close()
+
+            # Use external unzip command so as to keep file properties
+
+            p = subprocess.Popen('unzip ' + self.archive,
+                                 shell=True,
+                                 stdout=sys.stdout,
+                                 stderr=sys.stderr)
+            output = p.communicate()
+
+            if p.returncode != 0:
+                sys.stderr.write("Error unzipping file " + self.archive + ".\n")
+                sys.exit(1)
+
+        else:
+
+            import tarfile
+
+            if not tarfile.is_tarfile(self.archive):
+                sys.stderr.write("%s is not a tar archive\n" % self.archive)
+                sys.exit(1)
+
+            tar = tarfile.open(self.archive)
+
+            first_member = tar.next()
+            relative_source_dir = first_member.name.split(os.path.sep)[0]
+            self.source_dir = os.path.abspath(relative_source_dir)
+
+            try:
+                tar.extractall()
+            except AttributeError:
+                for tarinfo in tar:
+                    tar.extract(tarinfo)
+
+            tar.close()
 
 
     def install(self):
@@ -277,6 +306,7 @@ class Setup:
         self.packages = {}
 
         url_cs = "https://code-saturne.info/products/code-saturne/releases/" + self.version + "/%s"
+        url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
 
         # BFT library
 
@@ -284,8 +314,8 @@ class Setup:
             Package(name="BFT",
                     description="Basic Functions and Tools",
                     package="bft",
-                    version="1.1.3",
-                    archive="bft-113.tgz",
+                    version="1.1.5",
+                    archive="bft-115.zip",
                     url=url_cs)
 
         # FVM library
@@ -294,8 +324,8 @@ class Setup:
             Package(name="FVM",
                     description="Finite Volume Mesh",
                     package="fvm",
-                    version="0.15.1",
-                    archive="fvm-0151.tgz",
+                    version="0.15.3",
+                    archive="fvm-0153.zip",
                     url=url_cs)
 
         p = self.packages['fvm']
@@ -308,7 +338,7 @@ class Setup:
                     description="Mathematical Expressions Interpreter",
                     package="mei",
                     version="1.0.2",
-                    archive="mei-102.tgz",
+                    archive="mei-102.zip",
                     url=url_cs)
 
         # Code_Saturne Preprocessor
@@ -317,18 +347,21 @@ class Setup:
             Package(name="ECS",
                     description="Code_Saturne Preprocessor",
                     package="ecs",
-                    version="2.0",
-                    archive="ecs-200.tgz",
+                    version="2.0.2",
+                    archive="ecs-202.zip",
                     url=url_cs)
 
         # Code_Saturne Kernel
+
+        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/569282765/%s"
+        url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
 
         self.packages['ncs'] = \
             Package(name="NCS",
                     description="Code_Saturne Kernel",
                     package="ncs",
-                    version="2.0",
-                    archive="ncs-200.tgz",
+                    version="2.0.2",
+                    archive="ncs-202.zip",
                     url=url_cs)
 
         p = self.packages['ncs']
@@ -355,8 +388,8 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.6.10",
-                    archive="hdf5-1.6.10.tar.gz",
+                    version="1.8.7",
+                    archive="hdf5-1.8.7.tar.gz",
                     url="http://www.hdfgroup.org/ftp/HDF5/current16/src/%s")
 
         p = self.packages['hdf5']
@@ -368,9 +401,9 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="2.3.6",
-                    archive="med-fichier_2.3.6.tar.gz",
-                    url="http://files.opencascade.com/Salome/Salome5.1.3/%s")
+                    version="3.0.3",
+                    archive="med-3.0.3.tar.gz",
+                    url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
         p.config_opts = "--with-med_int=int"
@@ -381,8 +414,8 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.4.2",
-                    archive="openmpi-1.4.2.tar.gz",
+                    version="1.4.3",
+                    archive="openmpi-1.4.3.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.4/downloads/%s")
 
         # Libxml2 library (official url "ftp://xmlsoft.org/libxml2/%s")
