@@ -1205,7 +1205,7 @@ Documentation:     & online documentation, also available at:
 \hline
 \end{tabular}
 
-\subsubsubsection{\med 2.3}\hyperdef{sec}{med}{}
+\subsubsubsection{\med 2.3 or \med 3.0}\hyperdef{sec}{med}{}
 \label{fmtdesc:med}
 
 Initially defined by EDF R\&D, this format (\emph{Modèle d'échanges de Données},
@@ -1245,14 +1245,14 @@ Volume elements:   & tetrahedra, pyramids, prisms, hexahedra, simple polyhedra\\
 \hline
 Zone selection:    & element families ({\it i.e.} colors and groups)\\
 \hline
-Compatibility:     & all versions of \med 2.2 or 2.3 (only unstructured
+Compatibility:     & \med 2.3.5, \med 2.3.6, or \med 3.0.2 and above (only unstructured
                      nodal connectivity is supported)\\
 \hline
-Documentation:     & online documentation. Download link at \url{http://files.opencascade.com/Salome/Salome5.1.5/med-fichier_2.3.6.tar.gz}\\
+Documentation:     & online documentation. Download link at \url{http://files.salome-platform.org/Salome/other/med-3.0.3.tar.gz}\\
 \hline
 \end{tabular}
 
-\subsubsubsection{CGNS 2.5}\hyperdef{sec}{cgns}{}
+\subsubsubsection{CGNS 2.5 or CGNS 3.1}\hyperdef{sec}{cgns}{}
 \label{fmtdesc:cgns}
 
 Promoted especially by NASA, Boeing, and ICEM~CFD (as well as ONERA in France),
@@ -1316,8 +1316,8 @@ Regarding support of polygons (\emph{ngons} in the CGNS standard), even the
 verification tools published alongside the CGNS library are unable
 to handle them, and report errors in valid files containing such elements.
 VisIt 1.11.1 reports an error when a mesh contains such faces, while
-\ensightg 8 ignores them. CGNS 3 should improve this situation,
-allowing for polyhedra, but it is still in beta stage as of August 2009.
+\ensightg 8 ignores them. CGNS 3 allows for polyhedra, but as this is a
+recent developpement, it is not supported yet by \CS.
 
 \smallskip \noindent
 \begin{tabular}[top]{|p{4.5cm}%
@@ -1335,7 +1335,7 @@ Zone selection:    & Surface zone selection using boundary conditions, no volume
                      selection, but the \pcs allows creation of groups associated to
                      zones or sections in the mesh using mesh selection sub-options\\
 \hline
-Compatibility:     & CGNS 2.0 to 2.5 on input, CGNS 2.5 on output\\
+Compatibility:     & CGNS 2.5 or 3.1 on output\\
 \hline
 Documentation:     & See CGNS site: \url{http://www.cgns.org}\\
 \hline
