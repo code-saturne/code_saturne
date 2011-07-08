@@ -1594,7 +1594,7 @@ if (iecaux.eq.1) then
     nbval  = 1
     irtyp  = 2
     call ecrsui(impavx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
-         propce(1,ipproc(ivisma)),ierror)
+         propce(1,ipproc(ivisma(1))),ierror)
     nberro = nberro+ierror
 
     if (iortvm.eq.1) then
