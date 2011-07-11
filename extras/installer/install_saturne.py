@@ -305,8 +305,7 @@ class Setup:
         # Packages definition
         self.packages = {}
 
-        url_cs = "https://code-saturne.info/products/code-saturne/releases/" + self.version + "/%s"
-        url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
+        url_cs = "http://innovation.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
 
         # BFT library
 
@@ -353,9 +352,6 @@ class Setup:
 
         # Code_Saturne Kernel
 
-        url_cs = "https://code-saturne.info/products/code-saturne/forums/announces/918391265/569282765/%s"
-        url_cs = "http://research.edf.com/fichiers/fckeditor/Commun/Innovation/logiciels/code_saturne/Releases/%s"
-
         self.packages['ncs'] = \
             Package(name="NCS",
                     description="Code_Saturne Kernel",
@@ -373,9 +369,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="2.5.4",
-                    archive="cgnslib_2.5-4.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%%204/%s/download")
+                    version="2.5.5",
+                    archive="cgnslib_2.5-5.tar.gz",
+                    url="http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%%205/%s/download")
 
         p = self.packages['cgns']
         p.config_opts = "--enable-64bit --enable-lfs"
@@ -390,7 +386,7 @@ class Setup:
                     package="hdf5",
                     version="1.8.7",
                     archive="hdf5-1.8.7.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/current16/src/%s")
+                    url="http://www.hdfgroup.org/ftp/HDF5/current/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
