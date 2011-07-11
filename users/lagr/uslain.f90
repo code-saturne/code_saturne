@@ -212,7 +212,7 @@ integer          ipnfac(nfac+1) , nodfac(lndfac)
 integer          ipnfbr(nfabor+1) , nodfbr(lndfbr)
 integer          itypfb(nfabor,nphas) , itrifb(nfabor,nphas)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
-integer          injfac(nbpnew)
+integer          injfac(nbpmax)
 integer          idevel(nideve) , ituser(nituse)
 integer          ia(*)
 

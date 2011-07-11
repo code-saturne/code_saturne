@@ -1,3 +1,17 @@
+* 11/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Added several user-provided patches relative to the Lagrangian module.
+  As 2 of those patches affect rarely-used options and have not been tested
+  with multiple option combinations yet, they are currently provided in the
+  patches directory, not as defaults.
+  An incorrect injfac array size in uslain is fixed.
+  Thanks to Ralf Becker for reporting these issues and providing patches.
+  added files:
+    patches/dvvpst.f90
+    patches/lagent.f90
+  modified files:
+    patches/README
+    users/lagr/uslain.f90
+
 * 28/06/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add an installation documentation.
   added file:

@@ -13,3 +13,30 @@ number of processors. This is caused by the face number chosen by the code to
 rescale the pressure profile.
 
 patch: typecl.90
+
+* Particles: continuous injection during time step
+  ------------------------------------------------
+
+In uslag1() the parameter injcon enables the continuous injection of
+particles during a lagrangian time step, by shifting the position of new
+particles in the grid by  alpha*timestep*velocity, where alpha is a random
+number in the range [0, 1].
+
+In the reference lagent() subroutine, the particle velocity is used for
+the calculation of a position shift before it is initialized, which is
+an error. The following patch should fix this (Thanks to Ralf Becker
+for identifying the problem and suggesting a patch):
+
+patch: lagent.f90
+
+* Particles: user defined volumetric statistics
+  ---------------------------------------------
+
+Using the lagrange module with user defined statistics results in
+incorrect post-processing data, because the sum of the statistical weights
+is stored with the name of the first user variable, and the first user
+variable is overwritten. The following patch should fix this (Thanks to
+Ralf Becker for identifying the problem and suggesting a patch):
+
+patch: dvvpst.f90
+
