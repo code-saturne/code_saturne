@@ -75,8 +75,7 @@ LOADL, SGE, or SLURM), absolute path to batch template file, or "no")])
 
     ccc_msub) cs_batch_template=CCC ;; 
     bsub) cs_batch_template=LSF ;;
-    bsub) cs_batch_template=LSF ;;
-    lsubmit) cs_batch_template=LOADL ;;
+    llsubmit) cs_batch_template=LOADL ;;
     sbatch) cs_batch_template=SLURM ;;
     *) cs_batch_template=no ;;
   esac
