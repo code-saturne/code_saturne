@@ -408,8 +408,10 @@ syr_mpi_initialize(int    *argc,
 
   MPI_Allreduce(&app_num, &app_num_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
-  if (app_num_max > 0)
+  if (app_num_max > 0) {
     ierror = MPI_Comm_split(MPI_COMM_WORLD, app_num, rank, &mpi_comm_syr);
+    MPI_Comm_rank(mpi_comm_syr, &syr_glob_base_rank);
+  }
   else
     ierror = 1;
 
@@ -429,6 +431,15 @@ syr_mpi_initialize(int    *argc,
 
   if (mpi_comm_syr != MPI_COMM_NULL)
     MPI_Comm_free(&mpi_comm_syr);
+
+  /* If more than 1 rank was assigned to SYRTHES, only 1 is active
+     (this may be the case in IBM BlueGene/P, where a whole pset
+     must be assigned to a given executable) */
+
+  if (syr_glob_base_rank > 0) {
+    syr_mpi_finalize();
+    syr_exit(EXIT_SUCCESS);
+  }
 }
 
 /*----------------------------------------------------------------------------

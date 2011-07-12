@@ -593,6 +593,8 @@ main(int argc,
   /* Call syrtc1 */
   /* ----------- */
 
+  fflush(stdout);
+
   proc(syrtc1, SYRTC1)(&ndim_,
                        &npoinf,
                        nodebf,
@@ -600,6 +602,8 @@ main(int argc,
                        xyzf,
                        tf,
                        hht);
+
+  fflush(stdout);
 
   /* Free nodebf and xyzf, which are not needed anymore */
 

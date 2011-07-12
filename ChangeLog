@@ -1,4 +1,16 @@
 * 12/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Various fixes to coupling with SYRTHES 3 to enable coupling on Blue Gene/P.
+  This includes adding an optional pset_size argument for the SYRTHES domain
+  in the Python runcase to allow starting SYRTHES on a whole processor set,
+  as required by mpiexec on this machine.
+  modified files:
+    bin/cs_case.py
+    bin/cs_case_domain.py
+    bin/runcase.py.in
+    libsyrcs/syr_cs.c
+    libsyrcs/syr_defs.c
+
+* 12/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Ensure MPICH2 environment variables are tested before those of MPICH1.
   modified files:
     src/base/cs_opts.c

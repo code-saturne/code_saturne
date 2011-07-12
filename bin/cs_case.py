@@ -798,18 +798,11 @@ class case:
         # Determine if an MPMD syntax (mpiexec variant) will be used
 
         mpiexec_mpmd = False
-        if len(self.domains) > 1:
+        if len(self.domains) > 1 or n_mpi_syr > 0:
             if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
                 mpiexec_mpmd = True
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
                 mpiexec_mpmd = True
-
-        # Avoid mpiexec variant with SYRTHES as stdout must be redirected;
-
-        if n_mpi_syr > 0:
-            mpiexec_mpmd = False
-            mpi_env.unset_mpmd_mode(cs_exec_environment.MPI_MPMD_mpiexec)
-            mpi_env.unset_mpmd_mode(cs_exec_environment.MPI_MPMD_configfile)
 
         # Initialize simple solver command script
 

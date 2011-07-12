@@ -1124,9 +1124,11 @@ class syrthes_domain(base_domain):
                  syrthes_env = 'syrthes.env',  # SYRTHES environment file
                  echo_comm = None,             # coupling verbosity
                  coupling_mode = 'MPI',        # 'MPI' or 'sockets'
-                 coupled_app_ids = 1):         # coupled aplication ids
+                 coupled_app_ids = 1,          # coupled aplication ids
+                 pset_size = 1):               # size of processor set
+                                               # (for MPI on IBM Blue Gene/P)
 
-        base_domain.__init__(self, 1, 1, 1)
+        base_domain.__init__(self, 1, pset_size, pset_size)
 
         # Names, directories, and files in case structure
         self.data_dir = None
@@ -1301,7 +1303,7 @@ class syrthes_domain(base_domain):
 
         # Build kernel command-line arguments
 
-        args = '-log listsyr'
+        args = ' -log listsyr'
 
         if self.echo_comm != None:
             args += ' -echo-comm ' + str(self.echo_comm)
