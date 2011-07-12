@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -63,7 +63,11 @@ typedef enum {
     || defined(__linux__)
 
 #define name2(a,b)  a##b
+#if !defined(__xlc__)
 #define proc(x,y) name2(x,_)
+#else
+#define proc(x,y) x
+#endif
 #define proci(x)  x
 
 #elif defined(sun) || defined(__alpha)

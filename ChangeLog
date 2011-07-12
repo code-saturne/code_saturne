@@ -1,3 +1,16 @@
+* 12/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Various fixes to coupling with SYRTHES 3 to enable coupling on Blue Gene/P.
+  This includes adding an optional pset_size argument for the SYRTHES 3 domains
+  in the coupling script to allow starting SYRTHES on a whole processor set,
+  as required by mpiexec on this machine.
+  modified files:
+    bin/cs_case.py
+    bin/cs_case_coupling.py
+    bin/cs_case_domain.py
+    bin/runcase_coupling.in
+    libsyrcs/syr_cs.c
+    libsyrcs/syr_defs.c
+
 * 08/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix dialog filter for mesh_input selection.
   modified files:

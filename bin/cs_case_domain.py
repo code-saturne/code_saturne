@@ -1247,13 +1247,13 @@ class syrthes3_domain(base_domain):
     def __init__(self,
                  package,
                  name = None,
-                 echo_comm = None,             # coupling verbosity
-                 coupling_mode = 'MPI',        # 'MPI' or 'sockets'
-                 coupled_apps = None):         # coupled domain names
-                                               # if n_domains > 1
+                 echo_comm = None,       # coupling verbosity
+                 coupling_mode = 'MPI',  # 'MPI' or 'sockets'
+                 coupled_apps = None,    # coupled domain names if n_domains > 1
+                 pset_size = 1):         # size of processor set (for IBM BG/P)
 
 
-        base_domain.__init__(self, package, name, 1, 1, 1)
+        base_domain.__init__(self, package, name, 1, pset_size, pset_size)
 
         self.log_file = 'syrthes.log'
 

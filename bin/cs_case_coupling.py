@@ -76,7 +76,8 @@ def get_param(path):
 
 def coupling(package,
              domains,
-             casedir):
+             casedir,
+             pset_size):
 
     use_saturne = False
     use_syrthes = False
@@ -140,7 +141,8 @@ def coupling(package,
                                       name = d.get('domain'),
                                       echo_comm = d.get('echo_comm'),
                                       coupling_mode = 'MPI',  # 'MPI' or 'Sockets'
-                                      coupled_apps = d.get('coupled_apps'))
+                                      coupled_apps = d.get('coupled_apps'),
+                                      pset_size)
 
             except Exception:
                 err_str = 'Cannot create SYRTHES 3 domain.\n'
