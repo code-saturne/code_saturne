@@ -398,6 +398,10 @@ cs_opts_mpi_init(int    *argc,
 
   use_mpi = true;
 
+#elif defined(MPICH2)
+  if (getenv("PMI_RANK") != NULL)
+    use_mpi = true;
+
 #elif defined(MPICH_NAME)
 
   /*
@@ -429,10 +433,6 @@ cs_opts_mpi_init(int    *argc,
   if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)         /* OpenMPI 1.2 */
     use_mpi = true;
   else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 */
-    use_mpi = true;
-
-#elif defined(MPICH2)
-  if (getenv("PMI_RANK") != NULL)
     use_mpi = true;
 
 #endif /* Tests for known MPI variants */

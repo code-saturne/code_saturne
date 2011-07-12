@@ -1,3 +1,9 @@
+* 12/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Ensure MPICH2 environment variables are tested before those of MPICH1.
+  modified files:
+    src/base/cs_opts.c
+    libsyrcs/syr_defs.c
+
 * 11/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Added several user-provided patches relative to the Lagrangian module.
   As 2 of those patches affect rarely-used options and have not been tested

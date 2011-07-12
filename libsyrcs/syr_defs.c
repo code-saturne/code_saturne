@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -81,7 +81,7 @@ extern "C" {
  * Global variables
  *============================================================================*/
 
-int syr_glob_base_rank = - 1;           /* Parallel rank; -1 if serial */
+int syr_glob_base_rank = -1;            /* Parallel rank; -1 if serial */
 
 char syr_glob_build_date[] = __DATE__;  /* Build date */
 
@@ -156,7 +156,15 @@ _mpi_test_and_initialize(int    *argc,
   int arg_id = 0, flag = 0;
   int use_mpi = 0;
 
-#if defined(MPICH_NAME)
+#if   defined(__blrts__) || defined(__bgp__) \
+   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+  use_mpi = 1;
+
+#elif defined(MPICH2)
+  if (getenv("PMI_RANK") != NULL)
+    use_mpi = 1;
+
+#elif defined(MPICH_NAME)
 
   /*
     Using standard MPICH1 1.2.x with the p4 (default) mechanism,
@@ -179,10 +187,6 @@ _mpi_test_and_initialize(int    *argc,
   if (getenv("GMPI_ID") != NULL) /* In case we are using MPICH-GM */
     use_mpi = 1;
 
-#elif   defined(__blrts__) || defined(__bgp__) \
-   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-  use_mpi = 1;
-
 #elif defined(LAM_MPI)
   if (getenv("LAMRANK") != NULL)
     use_mpi = 1;
@@ -191,10 +195,6 @@ _mpi_test_and_initialize(int    *argc,
   if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)
     use_mpi = 1;
   else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)
-    use_mpi = 1;
-
-#elif defined(MPICH2)
-  if (getenv("PMI_RANK") != NULL)
     use_mpi = 1;
 
 #endif /* Tests for known MPI variants */
@@ -418,7 +418,7 @@ syr_mpi_initialize(int    *argc,
               "Erreur a la creation d'un communicateur local a SYRTHES.\n");
 
   /* Discover other applications in the same MPI root communicator
-     (and participate in correspondig communication). */
+     (and participate in corresponding communication). */
 
   syr_glob_coupling_world = fvm_coupling_mpi_world_create(app_num,
                                                           "SYRTHES 3.4",
