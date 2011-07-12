@@ -608,6 +608,19 @@ module settings, debuggers requiring a specific module may
 not work under a standard run script if they were not loaded when
 installing the code.
 
+\subsection{Batch Systems\label{sec:config:batch}}
+
+\CS's {\tt configure} script tries to detect if a resource management or
+job scheduling system is available based on the presence of common commands.
+If such a system for which \CS has a template is detected,
+that template will be automatically inserted in run scripts.
+If multiple systems are detected (which may be the case when one system provides
+wrappers for another), the script will complain unless the \texttt{--with-batch=}
+option is specified. This option may either be used with a predefined template
+(\texttt{CCC}, \texttt{LOADL}, \texttt{LOADL\_BG}, \texttt{LSF}, \texttt{PBS},
+\texttt{SGE}, or \texttt{SLURM}), but an absolute path to a local template
+file may also be chosen.
+
 \subsection{Compiler flags and environment variables\label{sec:config:flags}}
 
 As usual when using an Autoconf-based \texttt{configure} script,
@@ -985,7 +998,7 @@ For the compute nodes:
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/bft-1.0.5/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp \textbackslash \\
---without-zlib \textbackslash \\
+\textcolor{Violet}{--without-zlib} \textbackslash \\
 \textcolor{Magenta}{--build}=ppc64 \textbackslash \\
 \textcolor{Magenta}{--host}=bluegenep \textbackslash \\
 \textcolor{red}{CC}=bgxlc
@@ -993,13 +1006,13 @@ For the compute nodes:
 
 Here, the \texttt{--build=ppc64 --host=bluegenep} options ensure the
 \texttt{configure} script is forced into cross-compilation mode.
-With a front-end base on an Intel or AMD, architecture,
-\texttt{--build=x86\_64} or \texttt{--build=amd64} should be used
-instead of \texttt{--build=ppc64}. For the host (target) architecture,
-\texttt{--host=bluegenep} is recognized by current GNU Autoconf versions,
-so it is preferred, but \texttt{--host=ppc} also works well. Actually,
-any choice of build and host architectures recognized by Autoconf would
-probably work, as long as build and host are different.
+With a front-end base on an Intel or AMD architecture,
+\texttt{--build=x86\_64} or \texttt{--build=amd64} should replace
+\texttt{--build=ppc64}. For the host (target) architecture,
+\texttt{--host=bluegenep} is recognized by GNU Autoconf,
+so it is preferred, but \texttt{--host=ppc} also works well
+(any choice of recognized build and host architectures would
+probably work, as long as build and host are different).
 
 For the front-end nodes:
 
@@ -1019,8 +1032,8 @@ For the Python bindings on the front-end nodes:
 
 \subsubsection{\pcs configuration}
 
-The \pcs only needs to be built for the front-end nodes, so apart
-from forcing the compiler in 64-bit mode, its configuration is classical:
+The \pcs only needs to be built for the front-end nodes
+(forcing the compiler in 64-bit mode):
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/ecs-2.0.2/configure \textbackslash \\
@@ -1040,8 +1053,8 @@ from forcing the compiler in 64-bit mode, its configuration is classical:
 
 \subsubsection{FVM configuration}
 
-For the compute nodes, the following FVM configuration may be
-used if no MED of CGNS output is necessary:
+For compute nodes, the following configuration may be
+used if no MED or CGNS output is necessary:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/fvm-0.15.3/configure \textbackslash \\
@@ -1083,26 +1096,23 @@ variable:
 }\end{minipage}}
 
 Note that MED is generally more useful for the \pcs than for post-processing:
-meshes built using the SALOME tool will be produced in MED format, so
+meshes built using the SALOME platform will be produced in MED format, so
 importing it may be useful. For post-processing, other formats such
-as the \ensight format are also handled by ParaView and VisIt, so
+as \ensight may be used, so
 MED is only useful if required by a downstream calculation.
-In addition, MED 2.3 requires arrays to be output in one piece, and
-the parallel IO enabled by the recent MED 3 releases are not yet
-handled by FVM. This means that when writing mesh vertices, a global
-array containing coordinates of all vertices from all processors
-must be gathered to the first processor, which may require more memory
-than available on the compute nodes even for mid-sized meshes
-(as CGNS has allowed partial writes and \ensight output is handled
-internally, we only have this limitation with MED output).
-MED output may be useful for example to output a boundary mesh
+In addition, MED requires arrays to be output in one piece
+(the parallel IO enabled by recent MED 3 releases is not yet
+handled by FVM). Global arrays must be gathered to the first compute node,
+which may require more memory than available even for mid-sized meshes
+(CGNS and \ensight output may use partial writes, so they do not have this
+limitation). MED output may thus be useful for a boundary mesh
 with pressure data usable by a solid mechanics code such as
-\emph{Code\_Aster}, but it will not be usable for the main volume
-for the large meshes we may expect to use on Blue Gene type machines.
-In addition, linking with MED and HDF5 significantly increase
-the size of the \CS executable, bringing it above 50 Mb,
-so building FVM with support for MED output may be worthwhile
-only if the use of this format is truly required.
+\emph{Code\_Aster}, but it will not be usable for the
+large volume meshes we expect on Blue Gene type machines.
+Linking with MED and HDF5 also almost doubles
+the size of the Kernel executable, bringing it above 50 Mb,
+so building FVM with support for MED may be worthwhile
+only if truly required.
 
 A front-end configuration is more standard:
 
@@ -1159,6 +1169,7 @@ be configured. For the compute nodes, the following command may be used:
 \textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/4.4 \textbackslash \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/frontend \textbackslash \\
 \textcolor{Violet}{--with-syrthes}=/home/projects/syrthes3.4.3 \textbackslash \\
+\textcolor{Violet}{--with-batch}=LOADL\_BG \textbackslash \\
 \textcolor{Violet}{--disable-sockets} \textbackslash \\
 \textcolor{Violet}{--disable-dlloader} \textbackslash \\
 \textcolor{Violet}{--disable-nls} \textbackslash \\
