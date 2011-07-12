@@ -1,0 +1,33 @@
+#
+# Batch options (LoadLeveler)
+# ===========================
+#
+# To obtain all available options, run the LoadLeveler GUI,
+# "xloadl", choose the "build job" option; select options,
+# then select "save". Options and their matching syntax
+# may then be inferred from the saved file.
+#
+# @ job_name = nameandcase
+#
+# @ job_type = BlueGene
+# @ class = BGP64_1H
+# @ group = No_Group
+#
+# @ bg_connection = mesh                   # other options: torus, prefer_torus
+#
+# @ input = /dev/null
+# @ output = $(job_name).$(jobid).out
+# @ error  = $(job_name).$(jobid).err
+# @ notification = never
+#
+# @ queue
+#
+# Other LoadLeveler arguments or variants: (use "@" to define):
+#   wall_clock_limit = <hard_limit>, <soft_limit>
+#   class = <class_name>
+#
+# Warning: when coupling with SYRTHES, 1 pset will be reserved for each
+#          instance of SYRTHES. The Kernel will be executed on the remaining
+#          processors, so make sure to reserve a sufficiently high number
+#          of processors.
+#
