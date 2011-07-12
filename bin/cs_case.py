@@ -838,13 +838,7 @@ class case:
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_command()
             e.write('  cd ' + s_args[0] + '\n')
-            if 'compile_and_link' in dir(d):  # For SYRTHES 3
-                e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
-            else: # TODO: Check if we have --log option for SYRTHES 4
-                try:
-                    e.write('  ' + s_args[1] + s_args[2] + ' $@ > ' + d.log_file + '2>&1\n')
-                except AttributeError:
-                    e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
+            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -933,10 +927,7 @@ class case:
                     a_s += ', "' + arg + '"'
                 a_s += ', (char *)NULL};\n'
                 e.write(a_s)
-                e.write('    FILE *fp;\n')
                 e.write('    chdir("' + s_args[0] + '");\n')
-                e.write('    freopen("listsyr", "w", stdout);\n'
-                        '    dup2(fileno(fp), fileno(stderr));\n')
                 e.write('    execve(filename, argv, envp);\n'
                         '  }\n')
 
@@ -1009,18 +1000,11 @@ class case:
         # Determine if an MPMD syntax (mpiexec variant) will be used
 
         mpiexec_mpmd = False
-        if len(self.domains) > 1:
+        if len(self.domains) > 1 or n_mpi_syr > 0:
             if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
                 mpiexec_mpmd = True
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
                 mpiexec_mpmd = True
-
-        # Avoid mpiexec variant with SYRTHES as stdout must be redirected;
-
-        if n_mpi_syr > 0:
-            mpiexec_mpmd = False
-            mpi_env.unset_mpmd_mode(cs_exec_environment.MPI_MPMD_mpiexec)
-            mpi_env.unset_mpmd_mode(cs_exec_environment.MPI_MPMD_configfile)
 
         # Initialize simple solver command script
 
@@ -1113,8 +1097,7 @@ fi
                 for d in self.syr_domains:
                     s_args = d.solver_command(host_port='localhost:$CS_PORT')
                     s.write('cd ' + s_args[0] + '\n')
-                    s.write(s_args[1] + s_args[2] + ' $@ > '
-                            + s_args[0] + '/listsyr 2>&1 &\n')
+                    s.write(s_args[1] + s_args[2] + ' $@ &\n')
                     s.write('SYR_PID' + str(syr_id) + '=$!\n')
                     syr_id += 1
 

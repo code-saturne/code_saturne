@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -329,6 +329,7 @@ main(int argc,
     FILE *log_ptr = freopen(log_name, "w", stdout);
     if (log_ptr != NULL)
       dup2(fileno(log_ptr), fileno(stderr));
+    fflush(stdout);
   }
 
   /* ---------------------------- */
@@ -600,6 +601,8 @@ main(int argc,
   /* Call syrtc1 */
   /* ----------- */
 
+  fflush(stdout);
+
   proc(syrtc1, SYRTC1)(&ndim_,
                        &npoinf,
                        nodebf,
@@ -607,6 +610,8 @@ main(int argc,
                        xyzf,
                        tf,
                        hht);
+
+  fflush(stdout);
 
   /* Free nodebf and xyzf, which are not needed anymore */
 
