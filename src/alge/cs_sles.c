@@ -164,10 +164,8 @@ static cs_sles_info_t **cs_glob_sles_systems = NULL; /* System info array */
   products may not be amortized).
 */
 
-cs_matrix_structure_t *cs_glob_sles_base_matrix_struct = NULL;
-cs_matrix_structure_t *cs_glob_sles_native_matrix_struct = NULL;
 
-cs_matrix_t *cs_glob_sles_base_matrix = NULL;
+cs_matrix_structure_t *cs_glob_sles_native_matrix_struct = NULL;
 cs_matrix_t *cs_glob_sles_native_matrix = NULL;
 
 /* Sparse linear equation solver type names */
@@ -2287,7 +2285,7 @@ _cell_residual(cs_bool_t        symmetric,
 
   const cs_int_t n_cells = cs_glob_mesh->n_cells;
 
-  cs_matrix_t *a = cs_glob_sles_base_matrix;
+  cs_matrix_t *a = cs_glob_matrix_default;
 
   if (interleaved || symmetric)
     cs_matrix_set_coefficients(a, symmetric, diag_block_size, ad, ax);
@@ -2763,7 +2761,7 @@ void CS_PROCF(reslin, RESLIN)
                         diag_block_size,
                         dam,
                         xam,
-                        cs_glob_sles_base_matrix,
+                        cs_glob_matrix_default,
                         cs_glob_sles_native_matrix,
                         *ipol,
                         rotation_mode,
@@ -2782,7 +2780,7 @@ void CS_PROCF(reslin, RESLIN)
                     type,
                     dam,
                     xam,
-                    cs_glob_sles_base_matrix,
+                    cs_glob_matrix_default,
                     cs_glob_sles_native_matrix,
                     *ipol,
                     rotation_mode,
@@ -2841,7 +2839,7 @@ cs_sles_initialize(void)
 
   assert(mesh != NULL);
 
-  cs_glob_sles_base_matrix_struct
+   cs_glob_sles_native_matrix_struct
     = cs_matrix_structure_create(CS_MATRIX_NATIVE,
                                  true,
                                  mesh->n_cells,
@@ -2851,20 +2849,6 @@ cs_sles_initialize(void)
                                  mesh->i_face_cells,
                                  mesh->halo,
                                  mesh->i_face_numbering);
-
-  cs_glob_sles_native_matrix_struct
-    = cs_matrix_structure_create(CS_MATRIX_NATIVE,
-                                 true,
-                                 mesh->n_cells,
-                                 mesh->n_cells_with_ghosts,
-                                 mesh->n_i_faces,
-                                 mesh->global_cell_num,
-                                 mesh->i_face_cells,
-                                 mesh->halo,
-                                 mesh->i_face_numbering);
-
-  cs_glob_sles_base_matrix
-    = cs_matrix_create(cs_glob_sles_base_matrix_struct);
 
   cs_glob_sles_native_matrix
     = cs_matrix_create(cs_glob_sles_native_matrix_struct);
@@ -2901,11 +2885,9 @@ cs_sles_finalize(void)
   /* Free matrix structures */
 
   cs_matrix_destroy(&cs_glob_sles_native_matrix);
-  cs_matrix_destroy(&cs_glob_sles_base_matrix);
 
   cs_matrix_structure_destroy(&cs_glob_sles_native_matrix_struct);
-  cs_matrix_structure_destroy(&cs_glob_sles_base_matrix_struct);
-}
+ }
 
 #if defined(HAVE_MPI)
 

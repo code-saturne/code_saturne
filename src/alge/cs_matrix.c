@@ -414,6 +414,9 @@ static char _cs_glob_perio_ignore_error_str[]
        "with an external halo synchronization, preceded by a backup and\n"
        "followed by a restoration of the rotation halo.");
 
+cs_matrix_t            *cs_glob_matrix_default = NULL;
+cs_matrix_structure_t  *cs_glob_matrix_default_struct = NULL;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -3611,9 +3614,98 @@ _alpha_a_x_p_beta_y_csr_sym(cs_real_t           alpha,
  *  Public function definitions for Fortran API
  *============================================================================*/
 
+
+void CS_PROCF(promav, PROMAV)
+(
+ const cs_int_t   *ncelet,    /* <-- Number of cells, halo included */
+ const cs_int_t   *ncel,      /* <-- Number of local cells */
+ const cs_int_t   *nfac,      /* <-- Number of faces */
+ const cs_int_t   *isym,      /* <-- Symmetry indicator:
+                                     1: symmetric; 2: not symmetric */
+ const cs_int_t   *ibsize,    /* <-- Block size of element ii, ii */
+ const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
+                                     in rotational periodicty (2) or
+                                     to exchange them as scalars (1) */
+ const cs_int_t   *ifacel,    /* <-- Face -> cell connectivity  */
+ const cs_real_t  *dam,       /* <-- Matrix diagonal */
+ const cs_real_t  *xam,       /* <-- Matrix extra-diagonal terms */
+ cs_real_t        *vx,        /* <-- A*vx */
+ cs_real_t        *vy         /* <-> vy = A*vx */
+)
+{
+  int diag_block_size[4] = {1, 1, 1, 1};
+  cs_bool_t symmetric = (*isym == 1) ? true : false;
+  cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
+
+  assert(*ncelet >= *ncel);
+  assert(*nfac > 0);
+  assert(ifacel != NULL);
+
+  if (*iinvpe == 2)
+    rotation_mode = CS_PERIO_ROTA_RESET;
+  else if (*iinvpe == 3)
+    rotation_mode = CS_PERIO_ROTA_IGNORE;
+
+  if (*ibsize > 1) {
+    /* TODO: update diag_block_size[] values for the general case */
+    diag_block_size[0] = *ibsize;
+    diag_block_size[1] = *ibsize;
+    diag_block_size[2] = *ibsize;
+    diag_block_size[3] = (*ibsize)*(*ibsize);
+    cs_matrix_set_coefficients(cs_glob_matrix_default,
+                               symmetric,
+                               diag_block_size,
+                               dam,
+                               xam);
+  }
+  else
+    cs_matrix_set_coefficients_ni(cs_glob_matrix_default, false, dam, xam);
+
+  cs_matrix_vector_multiply(rotation_mode,
+                            cs_glob_matrix_default,
+                            vx,
+                            vy);
+}
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Initialize sparse matrix API.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_initialize(void)
+{
+  cs_mesh_t  *mesh = cs_glob_mesh;
+
+  assert(mesh != NULL);
+
+  cs_glob_matrix_default_struct
+    = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                 true,
+                                 mesh->n_cells,
+                                 mesh->n_cells_with_ghosts,
+                                 mesh->n_i_faces,
+                                 mesh->global_cell_num,
+                                 mesh->i_face_cells,
+                                 mesh->halo,
+                                 mesh->i_face_numbering);
+
+  cs_glob_matrix_default
+    = cs_matrix_create(cs_glob_matrix_default_struct);
+}
+
+/*----------------------------------------------------------------------------
+ * Finalize sparse matrix API.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_finalize(void)
+{
+  cs_matrix_destroy(&cs_glob_matrix_default);
+  cs_matrix_structure_destroy(&cs_glob_matrix_default_struct);
+}
 
 /*----------------------------------------------------------------------------
  * Create a matrix Structure.

@@ -87,13 +87,10 @@ itrmav.f90 \
 matrdt.f90 \
 matrix.f90 \
 matrxv.f90 \
-prods2.f90 \
 prods3.f90 \
 prodsc.f90 \
 projts.f90 \
 projtv.f90 \
-promav.f90 \
-proxav.f90 \
 vectds.f90 \
 viscfa.f90 \
 visort.f90 \

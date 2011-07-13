@@ -1,4 +1,20 @@
 * 13/07/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Base the promave subroutine on the main C matrix API.
+  Unused Fortran subroutines are also removed.
+  removed files:
+    src/alge/prods2.f90
+    src/alge/promav.f90
+    src/alge/proxav.f90
+  modified files:
+    src/alge/Makefile.am
+    src/alge/cs_matrix.c
+    src/alge/cs_matrix.h
+    src/alge/cs_sles.c
+    src/apps/cs_solver.c
+    src/base/codits.f90
+    src/cfbl/cfcdts.f90
+
+* 13/07/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Fix missing multiplier bug in theta scheme.
   modified files:
     src/alge/bilsc4.f90
