@@ -1047,8 +1047,8 @@ else
         testj = gradva(isou,1,jj)*surfac(1,ifac)                  &
               + gradva(isou,2,jj)*surfac(2,ifac)                  &
               + gradva(isou,3,jj)*surfac(3,ifac)
-        testij= gradva(isou,1,ii)*gradva(isou,1,jj)             &
-              + gradva(isou,2,ii)*gradva(isou,2,jj)             &
+        testij= gradva(isou,1,ii)*gradva(isou,1,jj)               &
+              + gradva(isou,2,ii)*gradva(isou,2,jj)               &
               + gradva(isou,3,ii)*gradva(isou,3,jj)
 
         if( flumas(ifac).gt.0.d0) then
@@ -1198,11 +1198,11 @@ if (idtvar.lt.0) then
       enddo
 
       pir  = vel(isou,ii)/relaxp - (1.d0-relaxp)/relaxp*vela(isou,ii)
-      pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
-                         + gradv(isou,2,ii)*diipbv(2)           &
+      pipr = pir +ircflp*( gradv(isou,1,ii)*diipbv(1)             &
+                         + gradv(isou,2,ii)*diipbv(2)             &
                          + gradv(isou,3,ii)*diipbv(3)    )
 
-      flux = iconvp*( flui*pir +fluj*pfac )                         &
+      flux = iconvp*( flui*pir +fluj*pfac )                       &
            + idiffp*viscb(ifac)*( pipr -pfacd )
       smbr(isou,ii) = smbr(isou,ii) - flux
     enddo
@@ -1245,13 +1245,13 @@ else
         pfacd = pfacd + cofbfv(isou,jsou,ifac)*pip
       enddo
 
-      pip = vel(isou,ii) +ircflp*( gradv(isou,1,ii)*diipbv(1)           &
-                                 + gradv(isou,2,ii)*diipbv(2)           &
+      pip = vel(isou,ii) +ircflp*( gradv(isou,1,ii)*diipbv(1)             &
+                                 + gradv(isou,2,ii)*diipbv(2)             &
                                  + gradv(isou,3,ii)*diipbv(3)    )
 
-      flux = iconvp*( flui*vel(isou,ii) +fluj*pfac )                         &
+      flux = iconvp*( flui*vel(isou,ii) +fluj*pfac )                      &
            + idiffp*viscb(ifac)*( pip -pfacd )
-      smbr(isou,ii) = smbr(isou,ii) - flux
+      smbr(isou,ii) = smbr(isou,ii) - thetap * flux
     enddo
     !end isou
 
