@@ -158,7 +158,6 @@ double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:,:) :: dfrcxt
 double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, allocatable, dimension(:) :: esflum, esflub
-double precision, allocatable, dimension(:) :: flint, flbrd
 
 double precision, pointer, dimension(:) :: viscfi => null(), viscbi => null()
 
@@ -179,7 +178,9 @@ allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
 allocate(trav(3,ncelet))
 allocate(vela(3,ncelet))
 allocate(vel(3,ncelet))
-allocate(tpucov(3,ncelet))
+if (ipucou.eq.1 .or. ncpdct.gt.0) then 
+  allocate(tpucov(3,ncelet))
+endif
 
 ! Allocate other arrays, depending on user options
 !if (iphydr.eq.1) allocate(dfrcxt(ncelet,3))
@@ -201,7 +202,7 @@ allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 if (irnpnw.eq.1) allocate(w10(ncelet))
 
-! Interleaved value of vel and vela
+! Interleaved value of vel and vela and tpucou
 do iel = 1, ncelet
   vel (1,iel) = rtp (iel,iu)
   vel (2,iel) = rtp (iel,iv)
@@ -209,9 +210,6 @@ do iel = 1, ncelet
   vela(1,iel) = rtpa(iel,iu)
   vela(2,iel) = rtpa(iel,iv)
   vela(3,iel) = rtpa(iel,iw)
-  tpucov(1,iel) = tpucou(iel,1)
-  tpucov(2,iel) = tpucou(iel,2)
-  tpucov(3,iel) = tpucou(iel,3)
 enddo
 
 if(iwarni(iu).ge.1) then
@@ -226,7 +224,6 @@ ipcrom = 0
 imax = 0
 
 ! Memoire
-
 
 if(nterup.gt.1) then
 
@@ -305,14 +302,14 @@ call predvv &
 
 if( iprco.le.0 ) then
 
- icliup = iclrtp(iu ,icoef)
-  iclivp = iclrtp(iv ,icoef)
-  icliwp = iclrtp(iw ,icoef)
+  icliup = iclrtp(iu,icoef)
+  iclivp = iclrtp(iv,icoef)
+  icliwp = iclrtp(iw,icoef)
 
   iflmas = ipprof(ifluma(iu))
   iflmab = ipprob(ifluma(iu))
-  ipcrom = ipproc(irom  )
-  ipbrom = ipprob(irom  )
+  ipcrom = ipproc(irom)
+  ipbrom = ipprob(irom)
 
   init   = 1
   inc    = 1
@@ -346,8 +343,8 @@ if( iprco.le.0 ) then
 
     iflmas = ipprof(ifluma(iu))
     iflmab = ipprob(ifluma(iu))
-    ipcrom = ipproc(irom  )
-    ipbrom = ipprob(irom  )
+    ipcrom = ipproc(irom)
+    ipbrom = ipprob(irom)
 
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
@@ -547,17 +544,16 @@ endif
 ! 5.  CALCUL D'UN ESTIMATEUR D'ERREUR DE L'ETAPE DE CORRECTION ET TOTAL
 !===============================================================================
 
-
 if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
 
   ! ---> REPERAGE DES VARIABLES
 
-  icliup = iclrtp(iu ,icoef)
-  iclivp = iclrtp(iv ,icoef)
-  icliwp = iclrtp(iw ,icoef)
+  icliup = iclrtp(iu,icoef)
+  iclivp = iclrtp(iv,icoef)
+  icliwp = iclrtp(iw,icoef)
 
-  ipcrom = ipproc(irom  )
-  ipbrom = ipprob(irom  )
+  ipcrom = ipproc(irom)
+  ipbrom = ipprob(irom)
 
 
   ! ---> ECHANGE DES VITESSES ET PRESSION EN PERIODICITE ET PARALLELISME
@@ -596,13 +592,12 @@ if(iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   iccocg = 1
   iflmb0 = 1
   if (iale.eq.1) iflmb0 = 0
-  nswrgp = nswrgr(iu )
-  imligp = imligr(iu )
-  iwarnp = iwarni(iu )
-  epsrgp = epsrgr(iu )
-  climgp = climgr(iu )
-  extrap = extrag(iu )
-
+  nswrgp = nswrgr(iu)
+  imligp = imligr(iu)
+  iwarnp = iwarni(iu)
+  epsrgp = epsrgr(iu)
+  climgp = climgr(iu)
+  extrap = extrag(iu)
 
   call inimav                                                     &
   !==========
@@ -756,8 +751,8 @@ endif
 
 iflmas = ipprof(ifluma(iu))
 iflmab = ipprob(ifluma(iu))
-ipcrom = ipproc(irom  )
-ipbrom = ipprob(irom  )
+ipcrom = ipproc(irom)
+ipbrom = ipprob(irom)
 
 if (iwarni(iu).ge.1) then
 
@@ -883,16 +878,18 @@ do iel = 1, ncelet
   rtpa(iel,iu) = vela(1,iel)
   rtpa(iel,iv) = vela(2,iel)
   rtpa(iel,iw) = vela(3,iel)
-  tpucou(iel,1) = tpucov(1,iel)
-  tpucou(iel,2) = tpucov(2,iel)
-  tpucou(iel,3) = tpucov(3,iel)
+  if (ipucou.eq.1 .or. ncpdct.gt.0) then 
+    tpucou(iel,1) = tpucov(1,iel)
+    tpucou(iel,2) = tpucov(2,iel)
+    tpucou(iel,3) = tpucov(3,iel)
+  endif
 enddo
 
 ! Free memory
 !--------------
 deallocate(vel)
 deallocate(vela)
-deallocate(tpucov)
+if(ipucou.eq.1 .or. ncpdct.gt.0) deallocate(tpucov)
 
 !--------
 ! FORMATS
