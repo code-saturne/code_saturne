@@ -473,6 +473,7 @@ cs_run(void)
     cs_multigrid_finalize();
     cs_sles_finalize();
     cs_matrix_finalize();
+
     /* Finalize gradient computation */
 
     cs_gradient_finalize();
