@@ -1,3 +1,9 @@
+* 13/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Print additional MPI environment info for Blue Gene/P.
+  modified files:
+    config/cs_auto_flags.h
+    src/base/cs_base.c
+
 * 12/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Various fixes to coupling with SYRTHES 3 to enable coupling on Blue Gene/P.
   This includes adding an optional pset_size argument for the SYRTHES domain

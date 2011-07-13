@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2009 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -52,6 +52,12 @@
 
 #if defined(HAVE_UNAME)
 #include <sys/utsname.h>
+#endif
+
+#if defined(__bgp__)
+#include <spi/kernel_interface.h>
+#include <common/bgp_personality.h>
+#include <common/bgp_personality_inlines.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -1347,6 +1353,11 @@ cs_base_system_info(void)
   char  str_directory[PATH_MAX] = "";
   char  *str_user = NULL;
 
+#if defined(__bgp__)
+  _BGP_Personality_t personality;
+  Kernel_GetPersonality(&personality, sizeof(personality));
+#endif
+
   /* Date */
 
   if (   time(&date) == -1
@@ -1355,7 +1366,11 @@ cs_base_system_info(void)
 
   /* Available memory */
 
-  ram = bft_sys_info_mem_ram();
+#if defined(__bgp__)
+  ram = personality.DDR_Config.DDRSizeMB;
+#else
+  ram = bft_sys_info_mem_ram() / (size_t)1024;
+#endif
 
   /* User */
 
@@ -1425,7 +1440,8 @@ cs_base_system_info(void)
   bft_printf("  %s%s\n", _("Processor:         "), bft_sys_info_cpu());
 
   if (ram > 0)
-    bft_printf("  %s%llu\n", _("Memory:            "), (unsigned long long)ram);
+    bft_printf("  %s%llu mB\n", _("Memory:            "),
+               (unsigned long long)ram);
 
   if (str_user != NULL) {
     bft_printf("  %s%s\n", _("User:              "), str_user);
@@ -1434,9 +1450,37 @@ cs_base_system_info(void)
 
   bft_printf("  %s%s\n", _("Directory:         "), str_directory);
 
-#if defined(HAVE_MPI)
+  /* MPI Info */
+
+#if defined(__bgp__)
+  {
+    int node_config = personality.Kernel_Config.ProcessConfig;
+    const char *_mode_names[] = {N_("SMP mode"),
+                                 N_("Virtual-node mode"),
+                                 N_("Dual mode"),
+                                 N_("Unknown mode")};
+    const char *mode_name = _mode_names[3];
+
+    if (node_config == _BGP_PERS_PROCESSCONFIG_SMP)
+      mode_name = _mode_names[0];
+    else if (node_config == _BGP_PERS_PROCESSCONFIG_VNM)
+      mode_name = _mode_names[1];
+    else if (node_config == _BGP_PERS_PROCESSCONFIG_2x2)
+      mode_name = _mode_names[2];
+
+    bft_printf("  %s%d (%s)\n", _("MPI ranks:         "),
+               cs_glob_n_ranks, _(mode_name));
+    bft_printf("  %s%d\n", _("pset size:         "),
+               personality.Network_Config.PSetSize);
+    bft_printf("  %s<%d,%d,%d>\n", _("Torus dimensions:  "),
+               personality.Network_Config.Xnodes,
+               personality.Network_Config.Ynodes,
+               personality.Network_Config.Znodes);
+  }
+#elif defined(HAVE_MPI)
   bft_printf("  %s%d\n", _("MPI ranks:         "), cs_glob_n_ranks);
 #endif
+
 #if defined(HAVE_OPENMP)
   bft_printf("  %s%d\n", _("OpenMP threads:    "), cs_glob_n_threads);
 #endif
