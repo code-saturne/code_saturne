@@ -1,3 +1,8 @@
+* 13/07/2011 - Martin Ferrand <martin.ferrand@edf.fr>
+  Fix array allocation handling when not using ipucou or ncpdct options.
+  modified files:
+    src/base/navstv.f90
+
 * 12/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Various fixes to coupling with SYRTHES 3 to enable coupling on Blue Gene/P.
   This includes adding an optional pset_size argument for the SYRTHES 3 domains
