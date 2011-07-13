@@ -178,7 +178,7 @@ allocate(drtp(ncelet), smbr(ncelet), rovsdt(ncelet))
 allocate(trav(3,ncelet))
 allocate(vela(3,ncelet))
 allocate(vel(3,ncelet))
-if (ipucou.eq.1 .or. ncpdct.gt.0) then 
+if (ipucou.eq.1 .or. ncpdct.gt.0) then
   allocate(tpucov(3,ncelet))
 endif
 
@@ -878,7 +878,7 @@ do iel = 1, ncelet
   rtpa(iel,iu) = vela(1,iel)
   rtpa(iel,iv) = vela(2,iel)
   rtpa(iel,iw) = vela(3,iel)
-  if (ipucou.eq.1 .or. ncpdct.gt.0) then 
+  if (ipucou.eq.1 .or. ncpdct.gt.0) then
     tpucou(iel,1) = tpucov(1,iel)
     tpucou(iel,2) = tpucov(2,iel)
     tpucou(iel,3) = tpucov(3,iel)
