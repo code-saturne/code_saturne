@@ -522,7 +522,7 @@ syr_mpi_appinfo(int    app_num,
         *n_ranks = ai.n_ranks;
 
         printf("  Couplage CFD:\n"
-               "    Numero d'application MPI :  %d\n"
+               "   Numero d'application MPI :  %d\n"
                "   type d'application :        \"%s\"\n"
                "   nom de l'instance :         \"%s\"\n"
                "   rang racine MPI :           %d\n"
