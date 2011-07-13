@@ -261,7 +261,7 @@ double precision tps1, tps2, tempsjf
 
 double precision, allocatable, dimension(:,:,:) :: dam
 double precision, allocatable, dimension(:,:) :: xam
-double precision, allocatable, dimension(:,:) :: dpvar, smbini
+double precision, allocatable, dimension(:,:) :: dpvar, smbini, w1
 
 save tempsjf
 data tempsjf /0/
@@ -451,9 +451,6 @@ do 100 isweep = 1, nswmod
    flumas , flumab , viscfs , viscbs ,                            &
    smbr   )
 
-!TODO prodsc3 interleaved
-    call prodsc(3*ncelet,3*ncel,isqrt,smbr(1,1),smbr(1,1),residu)
-
 ! ---> RESIDU DE NORMALISATION CALCULE AU PREMIER SWEEP
 !    (NORME C.L +TERMES SOURCES+ TERMES DE NON ORTHOGONALITE)
 
@@ -466,23 +463,30 @@ do 100 isweep = 1, nswmod
 !         inchange.
 !         Pour les autres variables (scalaires) IINVPE=1 permettra de
 !         tout echanger, meme si c'est superflu.
-  if( isweep.eq.1 ) then
+
+  if (isweep.eq.1) then
+
+    allocate(w1(3, ncelet))  ! Allocate a temporary array
+
     if(iinvpe.eq.2) then
       iinvpp = 3
     else
       iinvpp = iinvpe
     endif
-
-!                      ---------->
-!                      ---------->   --> n   ----> 1
-!MF A cHanger: mettre (DAM + XAM)  * PVAR   + SMBRU
-
-
-    call prodsc(3*ncelet,3*ncel,isqrt, smbr, smbr,rnorm)
-
+    call promav(ncelet,ncel,nfac,isym,3,iinvpp,ifacel,dam,xam,pvar,w1)
+    !==========
+    do iel = 1, ncel
+       do isou = 1, 3
+          w1(isou,iel) = w1(isou,iel) + smbr(isou,iel)
+       enddo
+    enddo
+    call prodsc(3*ncelet,3*ncel,isqrt,w1(1,1),w1(1,1),rnorm)
+    !==========
     rnsmbr(ippu) = rnorm
     rnsmbr(ippv) = rnorm
     rnsmbr(ippw) = rnorm
+
+    deallocate(w1)  ! Free memory
 
   endif
 

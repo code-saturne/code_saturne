@@ -1,4 +1,9 @@
 * 13/07/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Compute normalization for linear solvers in a manner consistent with codits.
+  modified files:
+    src/base/coditv.f90
+
+* 13/07/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Base the promave subroutine on the main C matrix API.
   Unused Fortran subroutines are also removed.
   removed files:
