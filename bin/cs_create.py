@@ -649,9 +649,13 @@ class Study:
 
         if config.has_option('install', 'batch'):
 
-            template = 'batch.' + config.get('install', 'batch')
+            template = config.get('install', 'batch')
 
-            fdt = open(os.path.join(self.package.get_batchdir(), template), 'r')
+            if not os.path.isabs(template):
+                template = os.path.join(self.package.get_batchdir(),
+                                        'batch.' + template)
+
+            fdt = open(template, 'r')
 
             kwd1 = re.compile('nameandcase')
 
