@@ -766,7 +766,8 @@ class case:
         e_path = os.path.join(self.exec_dir, 'mpmd_configfile')
         e = open(e_path, 'w')
 
-        e.write('# MPMD configuration file for mpiexec\n')
+        if mpi_env.type != 'BGP_MPI': # Comment lines not accepted on BG/P
+            e.write('# MPMD configuration file for mpiexec\n')
 
         app_id = 0
 
