@@ -1,4 +1,10 @@
 * 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add timing information for mesh input I/O.
+  modified files:
+    src/base/cs_preprocessor_data.c
+    po/fr.po
+
+* 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Update memory logging units and translations.
   modified files:
     src/base/cs_base.c

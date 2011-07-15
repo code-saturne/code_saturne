@@ -57,6 +57,7 @@
 #include <bft_file.h>
 #include <bft_mem.h>
 #include <bft_printf.h>
+#include <bft_timer.h>
 
 /*----------------------------------------------------------------------------
  * FVM library headers
@@ -138,6 +139,7 @@ typedef struct {
  *============================================================================*/
 
 static cs_bool_t  _use_sfc = true;
+static double     _cs_glob_mesh_read_time = 0.0;
 
 static _mesh_reader_t *_cs_glob_mesh_reader = NULL;
 
@@ -328,6 +330,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
 {
   char file_name[32]; /* more than enough for "domain_number_<n_ranks>" */
   size_t  i;
+  double  t1, t2;
   cs_io_sec_header_t  header;
 
   cs_io_t  *rank_pp_in = NULL;
@@ -361,6 +364,8 @@ _read_cell_rank(cs_mesh_t       *mesh,
   }
 
   /* Open file */
+
+  t1 = bft_timer_wtime();
 
 #if defined(FVM_HAVE_MPI)
   rank_pp_in = cs_io_initialize(file_name,
@@ -464,6 +469,11 @@ _read_cell_rank(cs_mesh_t       *mesh,
 
   if (rank_pp_in != NULL)
     cs_io_finalize(&rank_pp_in);
+
+  t2 = bft_timer_wtime();
+
+  bft_printf(_("\n   Elapsed time for reading %s: %.3g s\n"),
+             file_name, t2-t1);
 }
 
 #if defined(HAVE_MPI)
@@ -2144,6 +2154,7 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
                          cs_int_t   *iperot)
 {
   cs_int_t  i;
+  double  t1, t2;
   cs_io_sec_header_t  header;
 
   fvm_gnum_t n_elts = 0;
@@ -2155,6 +2166,8 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
 
   const char  *unexpected_msg = N_("Message of type <%s> on <%s>\n"
                                    "unexpected or of incorrect size");
+
+  t1 = bft_timer_wtime();
 
   /* Initialize reading of Preprocessor output */
 
@@ -2464,6 +2477,10 @@ CS_PROCF(ledevi, LEDEVI)(cs_int_t   *ndim,
   }
   else
     mesh->domain_num = cs_glob_rank_id + 1;
+
+  t2 = bft_timer_wtime();
+
+  _cs_glob_mesh_read_time += (t2 - t1);
 }
 
 /*============================================================================
@@ -2523,6 +2540,7 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
                                cs_mesh_builder_t  *mesh_builder)
 {
   cs_int_t  perio_id, perio_type;
+  double  t1, t2;
   cs_io_sec_header_t  header;
 
   cs_real_t  perio_matrix[3][4];
@@ -2537,11 +2555,13 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   _mesh_reader_t  *mr = _cs_glob_mesh_reader;
 
   const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
-                                   "inexpected or of incorrect size.");
+                                   "unexpected or of incorrect size.");
 
   echo = cs_io_get_echo(pp_in);
 
   _set_block_ranges(mesh, mr);
+
+  t1 = bft_timer_wtime();
 
   /* Loop on sections read */
 
@@ -2794,10 +2814,21 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
     cs_glob_pp_io = NULL;
   }
 
+  t2 = bft_timer_wtime();
+
+  _cs_glob_mesh_read_time += (t2 - t1);
+
+  /* Log timing info */
+
+  bft_printf(_("\n   Elapsed time for reading %s: %.3g s\n"),
+             "preprocessor_output", t2-t1);
+
   /* Read cell rank data if available */
 
   if (cs_glob_n_ranks > 1)
     _read_cell_rank(mesh, mr, echo);
+  else
+    bft_printf("\n");
 
   /* Now send data to the correct rank */
   /*-----------------------------------*/

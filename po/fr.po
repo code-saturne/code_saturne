@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-07-15 11:54+0200\n"
+"POT-Creation-Date: 2011-07-15 13:23+0200\n"
 "PO-Revision-Date: 2010-01-11 12:50+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4221,17 +4221,17 @@ msgstr "Bord"
 msgid "Calculation domain"
 msgstr "Domaine de calcul"
 
-#: src/base/cs_preprocessor_data.c:250
+#: src/base/cs_preprocessor_data.c:252
 #, c-format
 msgid " Adding periodicity %d (translation [%10.4e, %10.4e, %10.4e]).\n"
 msgstr " Ajout de la périodicité %d (translation [%10.4e, %10.4e, %10.4e]).\n"
 
-#: src/base/cs_preprocessor_data.c:255
+#: src/base/cs_preprocessor_data.c:257
 #, c-format
 msgid " Adding periodicity %d (rotation).\n"
 msgstr " Ajout de la périodicité %d (rotation).\n"
 
-#: src/base/cs_preprocessor_data.c:338 src/base/cs_preprocessor_data.c:2156
+#: src/base/cs_preprocessor_data.c:341 src/base/cs_preprocessor_data.c:2167
 #, c-format
 msgid ""
 "Message of type <%s> on <%s>\n"
@@ -4240,20 +4240,20 @@ msgstr ""
 "Message de type <%s> sur <%s>\n"
 "inattendu ou de taille incorrecte"
 
-#: src/base/cs_preprocessor_data.c:355
+#: src/base/cs_preprocessor_data.c:358
 #, c-format
 msgid " No \"%s\" file available;\n"
 msgstr ""
 
-#: src/base/cs_preprocessor_data.c:357
+#: src/base/cs_preprocessor_data.c:360
 msgid "   an unoptimized domain partitioning will be used.\n"
 msgstr "   un découpage de domaines non optimisé sera utilisé.\n"
 
-#: src/base/cs_preprocessor_data.c:359
+#: src/base/cs_preprocessor_data.c:362
 msgid "   domain partitioning will use a space-filling curve.\n"
 msgstr "   le partitionnement sera basé sur une courbe fractale.\n"
 
-#: src/base/cs_preprocessor_data.c:405
+#: src/base/cs_preprocessor_data.c:410
 #, c-format
 msgid ""
 "The number of cells reported by file\n"
@@ -4264,7 +4264,7 @@ msgstr ""
 "\"%s\" (%llu)\n"
 "ne correspond pas au maillage courant (%llu)."
 
-#: src/base/cs_preprocessor_data.c:426
+#: src/base/cs_preprocessor_data.c:431
 #, c-format
 msgid ""
 "Le number of ranks reported by file\n"
@@ -4275,12 +4275,21 @@ msgstr ""
 "\"%s\" (%d)\n"
 "ne correspond pas au nombre de rangs courant (%d)."
 
-#: src/base/cs_preprocessor_data.c:461
+#: src/base/cs_preprocessor_data.c:466
 #, c-format
 msgid "Message of type <%s> on <%s> is unexpected."
 msgstr "Message de type <%s> sur <%s> inattendu."
 
-#: src/base/cs_preprocessor_data.c:1526 src/base/cs_preprocessor_data.c:1782
+#: src/base/cs_preprocessor_data.c:475 src/base/cs_preprocessor_data.c:2823
+#, c-format
+msgid ""
+"\n"
+"   Elapsed time for reading %s: %.3g s\n"
+msgstr ""
+"\n"
+"   Temps écoulé pour le lecture de %s : %.3g s\n"
+
+#: src/base/cs_preprocessor_data.c:1536 src/base/cs_preprocessor_data.c:1792
 #, c-format
 msgid ""
 "Number of cells on rank %d is zero.\n"
@@ -4289,7 +4298,7 @@ msgstr ""
 "Le nombre de cellules pour le rang %d est nul.\n"
 "(rapport nombre de cellules / nombre de processeurs trop faible)."
 
-#: src/base/cs_preprocessor_data.c:2494
+#: src/base/cs_preprocessor_data.c:2511
 #, c-format
 msgid ""
 "The algorithm selection indicator for domain partitioning\n"
@@ -4304,11 +4313,11 @@ msgstr ""
 "  2: partition basée sur une courbe fractale\n"
 "et non %d."
 
-#: src/base/cs_preprocessor_data.c:2539
+#: src/base/cs_preprocessor_data.c:2557
 #, c-format
 msgid ""
 "Section of type <%s> on <%s>\n"
-"inexpected or of incorrect size."
+"unexpected or of incorrect size."
 msgstr ""
 "Section de type <%s> sur <%s>\n"
 "inattendue ou de taille incorrecte"
