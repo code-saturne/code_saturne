@@ -41,13 +41,6 @@
 #include <stdio.h>
 #endif
 
-#if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
-#  if defined(__uxpv__) && defined(HAVE_SYS_TYPES_H)
-#  include <sys/types.h> /* Workaround: missing include on VPP500 */
-#  endif
-#include <sys/sysinfo.h>
-#endif
-
 #if defined HAVE_SYS_UTSNAME_H
 #include <sys/utsname.h>
 #endif
@@ -154,72 +147,6 @@ bft_sys_info_cpu(void)
 }
 
 #endif /* bft_OS*/
-
-/*!
- * \brief Return system memory info depending on system.
- *
- * \return System memory (in kB), or 0 if information unavailable.
- */
-
-#if defined(__linux__)
-
-size_t
-bft_sys_info_mem_ram(void)
-{
-#if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
-
-  struct sysinfo info;
-
-  sysinfo(&info);
-  return(info.totalram / 1024);
-
-#else
-  return(0);
-#endif
-}
-
-#else
-
-size_t
-bft_sys_info_mem_ram(void)
-{
-  return(0);
-}
-
-#endif /* bft_OS*/
-
-/*!
- * \brief Return swap memory info depending on system.
- *
- * \return Swap memory (in kB), or 0 if information unavailable.
- */
-
-#if defined(__linux__)
-
-size_t
-bft_sys_info_mem_swap(void)
-{
-#if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
-
-  struct sysinfo info;
-
-  sysinfo(&info);
-  return(info.totalswap / 1024);
-
-#else
-  return(0);
-#endif
-}
-
-#else
-
-size_t
-bft_sys_info_mem_swap(void)
-{
-  return(0);
-}
-
-#endif /* OS type */
 
 /*-----------------------------------------------------------------------------*/
 
