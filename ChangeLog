@@ -1,4 +1,9 @@
 * 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow using absolute file name for batch template configuration option.
+  modified files:
+    bin/cs_create.py
+
+* 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Minor improvements to system information in log file,
   with additional info for Blue Gene/P.
   modified files:
