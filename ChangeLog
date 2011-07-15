@@ -1,3 +1,9 @@
+* 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Update memory logging units and translations.
+  modified files:
+    src/base/cs_base.c
+    po/fr.po
+
 * 13/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Print additional MPI environment info for Blue Gene/P.
   modified files:

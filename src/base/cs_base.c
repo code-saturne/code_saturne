@@ -1121,7 +1121,7 @@ cs_base_mem_fin(void)
 #endif
 
   int   ind_val[2] = {1, 1};
-  char  unite[]    = {'k', 'm', 'g', 't', 'p'};
+  char  unite[]    = {'K', 'M', 'G', 'T', 'P'};
 
   const char  * type_bil[] = {N_("Total memory used:                       "),
                               N_("Theoretical instrumented dynamic memory: ")};
@@ -1173,17 +1173,17 @@ cs_base_mem_fin(void)
     if (ind_val[ind_bil] == 1) {
 
       for (itot = 0;
-           valreal[ind_bil] > 1024. && unite[itot] != 'p';
+           valreal[ind_bil] > 1024. && unite[itot] != 'P';
            itot++)
         valreal[ind_bil] /= 1024.;
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
         for (imin = 0;
-             val_min[ind_bil].val > 1024. && unite[imin] != 'p';
+             val_min[ind_bil].val > 1024. && unite[imin] != 'P';
              imin++)
           val_min[ind_bil].val /= 1024.;
         for (imax = 0;
-             val_max[ind_bil].val > 1024. && unite[imax] != 'p';
+             val_max[ind_bil].val > 1024. && unite[imax] != 'P';
              imax++)
           val_max[ind_bil].val /= 1024.;
       }
@@ -1191,16 +1191,16 @@ cs_base_mem_fin(void)
 
       /* Print to log file */
 
-      bft_printf(_("  %s %12.3f %cb\n"),
+      bft_printf(_("  %s %12.3f %cB\n"),
                  _(type_bil[ind_bil]), valreal[ind_bil], unite[itot]);
 
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
         bft_printf(_("                             "
-                     "local minimum: %12.3f %cb  (rank %d)\n"),
+                     "local minimum: %12.3f %cB  (rank %d)\n"),
                    val_min[ind_bil].val, unite[imin], val_min[ind_bil].rank);
         bft_printf(_("                             "
-                     "local maximum: %12.3f %cb  (rank %d)\n"),
+                     "local maximum: %12.3f %cB  (rank %d)\n"),
                    val_max[ind_bil].val, unite[imax], val_max[ind_bil].rank);
       }
 #endif
@@ -1243,8 +1243,8 @@ cs_base_mem_fin(void)
                  "  Fortran work arrays memory use:\n"
                  "   %-12llu integers needed (maximum reached in %s)\n"
                  "   %-12llu reals    needed (maximum reached in %s)\n\n"
-                 "   Local maximum work memory requested %12.3f %cb\n"
-                 "                                  used %12.3f %cb\n"),
+                 "   Local maximum work memory requested %12.3f %cB\n"
+                 "                                  used %12.3f %cB\n"),
                (unsigned long long)_cs_glob_mem_ia_peak, _cs_glob_srt_ia_peak,
                (unsigned long long)_cs_glob_mem_ra_peak, _cs_glob_srt_ra_peak,
                wk_size[0], unite[wk_unit[0]],
@@ -1440,8 +1440,8 @@ cs_base_system_info(void)
   bft_printf("  %s%s\n", _("Processor:         "), bft_sys_info_cpu());
 
   if (ram > 0)
-    bft_printf("  %s%llu mB\n", _("Memory:            "),
-               (unsigned long long)ram);
+    bft_printf("  %s%llu %s\n", _("Memory:            "),
+               (unsigned long long)ram, _("MB"));
 
   if (str_user != NULL) {
     bft_printf("  %s%s\n", _("User:              "), str_user);

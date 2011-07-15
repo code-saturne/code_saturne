@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ncs 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-05-02 09:32+0200\n"
+"POT-Creation-Date: 2011-07-15 11:54+0200\n"
 "PO-Revision-Date: 2010-01-11 12:50+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -108,7 +108,7 @@ msgstr ""
 "\n"
 " Destruction des structures et clôture du calcul\n"
 
-#: src/base/cs_base.c:222
+#: src/base/cs_base.c:228
 #, c-format
 msgid ""
 "Fatal error: bft_printf() called on a message of size %d\n"
@@ -117,7 +117,7 @@ msgstr ""
 "Erreur fatale: bft_printf() appellé sur message de taille %d\n"
 "alors que le tampon d'impression est de taille %d."
 
-#: src/base/cs_base.c:398
+#: src/base/cs_base.c:404
 #, c-format
 msgid ""
 "\n"
@@ -126,7 +126,7 @@ msgstr ""
 "\n"
 "Erreur système : %s\n"
 
-#: src/base/cs_base.c:400
+#: src/base/cs_base.c:406
 #, c-format
 msgid ""
 "\n"
@@ -137,7 +137,7 @@ msgstr ""
 "%s:%d: Erreur fatale.\n"
 "\n"
 
-#: src/base/cs_base.c:420
+#: src/base/cs_base.c:426
 msgid ""
 "\n"
 "\n"
@@ -151,27 +151,27 @@ msgstr ""
 "------------------------------\n"
 "\n"
 
-#: src/base/cs_base.c:427
+#: src/base/cs_base.c:433
 #, c-format
 msgid "Theoretical current allocated memory:   %llu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %llu ko\n"
 
-#: src/base/cs_base.c:431
+#: src/base/cs_base.c:437
 #, c-format
 msgid "Theoretical maximum allocated memory:   %llu kB\n"
 msgstr "Mémoire dynamique instrumentée théorique : %llu ko\n"
 
-#: src/base/cs_base.c:441
+#: src/base/cs_base.c:447
 #, c-format
 msgid "Maximum program memory measure:         %llu kB\n"
 msgstr "Mémoire programme mesurée maximale:        %llu ko\n"
 
-#: src/base/cs_base.c:449
+#: src/base/cs_base.c:455
 #, c-format
 msgid "Current program memory measure:         %llu kB\n"
 msgstr "Mémoire programme mesurée courante:        %llu ko\n"
 
-#: src/base/cs_base.c:511
+#: src/base/cs_base.c:517
 msgid ""
 "\n"
 "Call stack:\n"
@@ -179,7 +179,7 @@ msgstr ""
 "\n"
 "Pile d'appels :\n"
 
-#: src/base/cs_base.c:539
+#: src/base/cs_base.c:545
 msgid ""
 "End of stack\n"
 "\n"
@@ -187,7 +187,7 @@ msgstr ""
 "Fin de la pile\n"
 "\n"
 
-#: src/base/cs_base.c:557
+#: src/base/cs_base.c:563
 msgid ""
 "SIGHUP signal (hang-up) intercepted.\n"
 "--> computation interrupted.\n"
@@ -195,7 +195,7 @@ msgstr ""
 "Signal SIGHUP (déconnexion) intercepté.\n"
 "--> calcul interrompu.\n"
 
-#: src/base/cs_base.c:563
+#: src/base/cs_base.c:569
 msgid ""
 "SIGINT signal (Control+C or equivalent) received.\n"
 "--> computation interrupted by user.\n"
@@ -203,7 +203,7 @@ msgstr ""
 "Signal SIGINT (Control+C ou équivalent) reçu.\n"
 "--> calcul interrompu par l'utilisateur.\n"
 
-#: src/base/cs_base.c:568
+#: src/base/cs_base.c:574
 msgid ""
 "SIGTERM signal (termination) received.\n"
 "--> computation interrupted by environment.\n"
@@ -211,24 +211,24 @@ msgstr ""
 "Signal SIGTERM (terminaison) reçu.\n"
 "--> calcul interrompu par l'environnement.\n"
 
-#: src/base/cs_base.c:573
+#: src/base/cs_base.c:579
 msgid "SIGFPE signal (floating point exception) intercepted!\n"
 msgstr "Signal SIGFPE (exception en virgule flottante) intercepté !\n"
 
-#: src/base/cs_base.c:578
+#: src/base/cs_base.c:584
 msgid "SIGSEGV signal (forbidden memory area access) intercepted!\n"
 msgstr "Signal SIGSEGV (accès à une zone mémoire interdite) intercepté !\n"
 
-#: src/base/cs_base.c:584
+#: src/base/cs_base.c:590
 msgid "SIGXCPU signal (CPU time limit reached) intercepted.\n"
 msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 
-#: src/base/cs_base.c:590
+#: src/base/cs_base.c:596
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
 
-#: src/base/cs_base.c:648
+#: src/base/cs_base.c:654
 #, c-format
 msgid ""
 "\n"
@@ -239,7 +239,7 @@ msgstr ""
 "Erreur MPI (communicateur %s):\n"
 "%s\n"
 
-#: src/base/cs_base.c:651
+#: src/base/cs_base.c:657
 #, c-format
 msgid ""
 "\n"
@@ -250,7 +250,7 @@ msgstr ""
 "Erreur MPI :\n"
 "%s\n"
 
-#: src/base/cs_base.c:766
+#: src/base/cs_base.c:772
 #, c-format
 msgid ""
 " Sub-routine calling iasize:                %s\n"
@@ -265,7 +265,7 @@ msgstr ""
 "\n"
 " ----> Définir iasize au moins égale à %d entiers)."
 
-#: src/base/cs_base.c:810
+#: src/base/cs_base.c:816
 #, c-format
 msgid ""
 " Sub-routine calling rasize:             %s\n"
@@ -280,15 +280,15 @@ msgstr ""
 "\n"
 " ----> Définir rasize au moins égale à %d réels)."
 
-#: src/base/cs_base.c:1120
+#: src/base/cs_base.c:1126
 msgid "Total memory used:                       "
 msgstr "Consommation mémoire totale mesurée :     "
 
-#: src/base/cs_base.c:1121
+#: src/base/cs_base.c:1127
 msgid "Theoretical instrumented dynamic memory: "
 msgstr "Mémoire dynamique instrumentée théorique :"
 
-#: src/base/cs_base.c:1125
+#: src/base/cs_base.c:1131
 msgid ""
 "\n"
 "Memory use summary:\n"
@@ -298,22 +298,22 @@ msgstr ""
 "Bilan de l'occupation mémoire :\n"
 "\n"
 
-#: src/base/cs_base.c:1188
+#: src/base/cs_base.c:1194
 #, c-format
-msgid "  %s %12.3f %cb\n"
+msgid "  %s %12.3f %cB\n"
 msgstr "  %s %12.3f %co\n"
 
-#: src/base/cs_base.c:1193
+#: src/base/cs_base.c:1199
 #, c-format
-msgid "                             local minimum: %12.3f %cb  (rank %d)\n"
+msgid "                             local minimum: %12.3f %cB  (rank %d)\n"
 msgstr "                             minimum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1196
+#: src/base/cs_base.c:1202
 #, c-format
-msgid "                             local maximum: %12.3f %cb  (rank %d)\n"
+msgid "                             local maximum: %12.3f %cB  (rank %d)\n"
 msgstr "                             maximum local : %12.3f %co  (rang %d)\n"
 
-#: src/base/cs_base.c:1236
+#: src/base/cs_base.c:1242
 #, c-format
 msgid ""
 "\n"
@@ -321,8 +321,8 @@ msgid ""
 "   %-12llu integers needed (maximum reached in %s)\n"
 "   %-12llu reals    needed (maximum reached in %s)\n"
 "\n"
-"   Local maximum work memory requested %12.3f %cb\n"
-"                                  used %12.3f %cb\n"
+"   Local maximum work memory requested %12.3f %cB\n"
+"                                  used %12.3f %cB\n"
 msgstr ""
 "\n"
 "  Utilisation des tableaux de travail Fortran :\n"
@@ -332,7 +332,7 @@ msgstr ""
 "   Mémoire de travail maximale locale demandée %12.3f %co\n"
 "                                      utilisée %12.3f %co\n"
 
-#: src/base/cs_base.c:1273
+#: src/base/cs_base.c:1279
 msgid ""
 "\n"
 "Calculation time summary:\n"
@@ -340,7 +340,7 @@ msgstr ""
 "\n"
 "Bilan des temps de calcul :\n"
 
-#: src/base/cs_base.c:1287
+#: src/base/cs_base.c:1293
 #, c-format
 msgid ""
 "\n"
@@ -349,12 +349,12 @@ msgstr ""
 "\n"
 "  Temps CPU utilisateur : %12.3f s\n"
 
-#: src/base/cs_base.c:1289
+#: src/base/cs_base.c:1295
 #, c-format
 msgid "  System CPU time:     %12.3f s\n"
 msgstr "  Temps CPU système :     %12.3f s\n"
 
-#: src/base/cs_base.c:1294
+#: src/base/cs_base.c:1300
 #, c-format
 msgid ""
 "\n"
@@ -363,12 +363,12 @@ msgstr ""
 "\n"
 "  Temps CPU :             %12.3f s\n"
 
-#: src/base/cs_base.c:1303
+#: src/base/cs_base.c:1309
 #, c-format
 msgid "  Total CPU time:      %12.3f s\n"
 msgstr "  Temps CPU cumulé :      %12.3f s\n"
 
-#: src/base/cs_base.c:1314
+#: src/base/cs_base.c:1320
 #, c-format
 msgid ""
 "\n"
@@ -377,52 +377,80 @@ msgstr ""
 "\n"
 "  Temps écoulé :          %12.3f s\n"
 
-#: src/base/cs_base.c:1317
+#: src/base/cs_base.c:1323
 #, c-format
 msgid "  CPU / elapsed time   %12.3f\n"
 msgstr "  Temps CPU / écoulé      %12.3f\n"
 
-#: src/base/cs_base.c:1409
+#: src/base/cs_base.c:1424
 msgid "Local case configuration:\n"
 msgstr "Configuration locale du cas :\n"
 
-#: src/base/cs_base.c:1411
+#: src/base/cs_base.c:1426
 msgid "Date:              "
 msgstr "Date :             "
 
-#: src/base/cs_base.c:1419
+#: src/base/cs_base.c:1434
 msgid "System:            "
 msgstr "Système :          "
 
-#: src/base/cs_base.c:1421
+#: src/base/cs_base.c:1436
 msgid "Machine:           "
 msgstr "Machine :          "
 
-#: src/base/cs_base.c:1425
+#: src/base/cs_base.c:1440
 msgid "Processor:         "
 msgstr "Processeur :       "
 
-#: src/base/cs_base.c:1428
+#: src/base/cs_base.c:1443
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
-#: src/base/cs_base.c:1431
+#: src/base/cs_base.c:1444
+msgid "MB"
+msgstr "Mo"
+
+#: src/base/cs_base.c:1447
 msgid "User:              "
 msgstr "Utilisateur :      "
 
-#: src/base/cs_base.c:1435
+#: src/base/cs_base.c:1451
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
-#: src/base/cs_base.c:1438
+#: src/base/cs_base.c:1458
+msgid "SMP mode"
+msgstr ""
+
+#: src/base/cs_base.c:1459
+msgid "Virtual-node mode"
+msgstr ""
+
+#: src/base/cs_base.c:1460
+msgid "Dual mode"
+msgstr ""
+
+#: src/base/cs_base.c:1461
+msgid "Unknown mode"
+msgstr ""
+
+#: src/base/cs_base.c:1471 src/base/cs_base.c:1481
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
 
-#: src/base/cs_base.c:1441
+#: src/base/cs_base.c:1473
+msgid "pset size:         "
+msgstr ""
+
+#: src/base/cs_base.c:1475
+msgid "Torus dimensions:  "
+msgstr ""
+
+#: src/base/cs_base.c:1485
 msgid "OpenMP threads:    "
 msgstr "Threads OpenMP:    "
 
-#: src/base/cs_base.c:1471
+#: src/base/cs_base.c:1515
 #, c-format
 msgid ""
 "\n"
