@@ -1,4 +1,9 @@
 * 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  The MPMD configfile for Blue Gene/P does not accept comments.
+  modified file:
+    bin/cs_case.py
+
+* 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix incorrect injfac array size. Thanks to Ralf Becker for this patch.
   modified file:
     users/lagr/uslain.f90
