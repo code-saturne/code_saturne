@@ -1,4 +1,14 @@
 * 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Minor improvements to system information in log file,
+  with additional info for Blue Gene/P.
+  modified files:
+    config/cs_auto_flags.sh
+    po/fr.po
+    src/base/cs_base.c
+    src/bft/bft_sys_info.c
+    src/bft/bft_sys_info.h
+
+* 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   The MPMD configfile for Blue Gene/P does not accept comments.
   modified file:
     bin/cs_case.py

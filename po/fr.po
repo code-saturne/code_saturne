@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne 2.0\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2011-06-29 18:31+0200\n"
+"POT-Creation-Date: 2011-07-15 13:58+0200\n"
 "PO-Revision-Date: 2010-09-10 17:21+0200\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4538,14 +4538,35 @@ msgstr "Processeur :       "
 msgid "Memory:            "
 msgstr "Mémoire :          "
 
+msgid "MB"
+msgstr "Mo"
+
 msgid "User:              "
 msgstr "Utilisateur :      "
 
 msgid "Directory:         "
 msgstr "Répertoire :       "
 
+msgid "SMP mode"
+msgstr ""
+
+msgid "Virtual-node mode"
+msgstr ""
+
+msgid "Dual mode"
+msgstr ""
+
+msgid "Unknown mode"
+msgstr ""
+
 msgid "MPI ranks:         "
 msgstr "Rangs MPI :        "
+
+msgid "pset size:         "
+msgstr ""
+
+msgid "Torus dimensions:  "
+msgstr ""
 
 msgid "appnum attribute:"
 msgstr "attribut appnum :"

@@ -73,26 +73,6 @@ extern "C" {
 const char *
 bft_sys_info_cpu(void);
 
-/*
- * Return system memory info depending on system.
- *
- * returns:
- *   System memory (in kB), or 0 if information unavailable.
- */
-
-size_t
-bft_sys_info_mem_ram(void);
-
-/*
- * Return swap memory info depending on system.
- *
- * returns
- *   Swap memory (in kB), or 0 if information unavailable.
- */
-
-size_t
-bft_sys_info_mem_swap(void);
-
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
