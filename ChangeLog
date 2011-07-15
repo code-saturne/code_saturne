@@ -1,3 +1,8 @@
+* 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix incorrect injfac array size. Thanks to Ralf Becker for this patch.
+  modified file:
+    users/lagr/uslain.f90
+
 * 13/07/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Compute normalization for linear solvers in a manner consistent with codits.
   modified files:

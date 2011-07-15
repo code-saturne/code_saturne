@@ -79,7 +79,7 @@ subroutine uslain &
 ! ifrlag(nfabor)   ! ia ! --> ! type of the Lagrangian boundary faces          !
 ! itepa            ! ia ! <-- ! particle information (integers)                !
 ! (nbpmax,nivep    !    !     !                                                !
-! injfac(nptnew    ! ia ! <-- ! number of the injection boundary face          !
+! injfac(npbmax)   ! ia ! <-- ! number of the injection boundary face          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! transported variables at the previous timestep !
 ! (ncelet,*)       !    !     !                                                !
@@ -135,7 +135,7 @@ integer          nptnew
 
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
-integer          injfac(nbpnew)
+integer          injfac(nbpmax)
 
 double precision dt(ncelet) , rtpa(ncelet,*)
 double precision propce(ncelet,*)
