@@ -835,6 +835,7 @@ if (isuist.eq.1) then
       enddo
 
       do ivl = 1,nvlsta-1
+        ivar  = ipas*nvlsta +ivl
         if (ipas.gt.0) then
           WRITE(CAR4,'(I4.4)') IPAS
           RUBRIQ = 'var_stat_vol_groupe_'//CAR4//'_'//NOMLAV(IVAR)

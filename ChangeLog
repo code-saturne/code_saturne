@@ -1,3 +1,9 @@
+* 18/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Fix bug when reading the variance of volumetric statistics from a restart file.
+  Thanks to Ralf Becker for this patch.
+  modified files:
+    src/lagr/laglec.f90
+
 * 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add conditional compilation to work around gcc 4.1 bug with Fortran pointers.
   modified files:
