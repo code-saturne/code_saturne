@@ -1,0 +1,54 @@
+General Information
+===================
+
+This directory contains the Code_Saturne kernel, element of the
+Code_Saturne CFD tool.
+
+Code_Saturne is EDF's general purpose Computational Fluid Dynamics (CFD)
+software.
+
+The basic capabilities of Code_Saturne enable the handling of either
+incompressible or expandable flows with or without heat transfer and
+turbulence. Dedicated modules are available for specific physics such as
+radiative heat transfer, combustion (gas, coal, heavy fuel oil, ...),
+magneto-hydrodynamics, compressible flows, two-phase flows
+(Euler-Lagrange approach with two-way coupling), or atmospheric flows.
+
+For more information, see the http://www.code-saturne.org and
+https://code-saturne.info sites.
+
+Presentation
+============
+
+Code_Saturne is portable on all Linux and UNIX platforms tested so far
+(HP-UX, Solaris, Cray, IBM Blue Gene, Tru64, ...). It runs in parallel with
+MPI on distributed memory machines (clusters, Cray XT, IBM Blue Gene, ...).
+Developed since 1997 at EDF R&D, it is based on a co-located Finite Volume
+approach that accepts meshes with any type of cell (tetrahedral, hexahedral,
+prismatic, pyramidal, polyhedral...) and any type of grid structure
+(unstructured, block structured, hybrid, conforming or with hanging nodes, ...).
+
+Compatible mesh generators include I-Deas, GMSH, GAMBIT, Simail, SALOME,
+Harpoon, ICEM, ... Post-processing output is available in EnSight, CGNS
+and MED formats, with advanced data management capabilities by the FVM
+library (EDF's "Finite Volume Mesh" library, under LGPL licence).
+Parallel code coupling capabilities are also provided by the FVM library.
+
+Code_Saturne can be coupled to EDF's thermal software SYRTHES (conjugate
+heat transfer). It can also produce output usable by EDF's structural analysis
+software Code_Aster, in particular in the SALOME platform. SYRTHES and
+Code_Aster are developped by EDF and distributed under GNU GPL licence.
+
+Copying
+=======
+
+The Code_Saturne kernel is distributed under the GNU General Public Licence.
+See the COPYING file for details.
+
+Installation
+============
+
+See the file 'INSTALL'
+
+Detailed installation instructions are also available as a pdf file,
+available on the Code_Saturne web site.
