@@ -142,7 +142,7 @@ def coupling(package,
                                       echo_comm = d.get('echo_comm'),
                                       coupling_mode = 'MPI',  # 'MPI' or 'Sockets'
                                       coupled_apps = d.get('coupled_apps'),
-                                      pset_size = set_size)
+                                      pset_size = pset_size)
 
             except Exception:
                 err_str = 'Cannot create SYRTHES 3 domain.\n'
