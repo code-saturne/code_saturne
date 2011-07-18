@@ -90,7 +90,7 @@ XML_LIB  =-L$(XML_HOME)/lib -lxml2
 
 # BLAS support
 BLAS            =1
-BLAS_INC        =-I/opt/ibmmath/essl/4.3/include
+BLAS_INC        =-I/opt/ibmmath/essl/4.4/include
 BLAS_CFLAGS     =-D_CS_HAVE_ESSL
 BLAS_LDFLAGS    =
 
@@ -142,7 +142,7 @@ FTNPREPROCOPT          = -WF,
 # Linker
 #-------
 
-LDEDL           = bgxlf_r -qflttrap=enable:overflow:zerodivide
+LDEDL           = mpixlf77_r -qflttrap=enable:overflow:zerodivide
 LDEDLFLAGS      = -O3
 LDEDLFLAGSLO    = -O0
 LDEDLFLAGSDBG   = -g
@@ -163,13 +163,12 @@ VARDEF          = -D_POSIX_SOURCE
 ZLIB     = -L/bgsys/local/tools_ibm/lib -lz
 
 # IBM libraries
-SYSLIBS  = -L/bgsys/drivers/ppcfloor/comm/lib -lmpich.cnk -ldcmfcoll.cnk /bgsys/local/fixes/libdcmf.cnk.a -L/bgsys/drivers/ppcfloor/runtime/SPI -lSPI.cna -lrt -lpthread
 MASS     = -L/opt/ibmcmp/xlmass/bg/4.4/bglib -lmass -lmassv
-ESSL     = -L/opt/ibmmath/essl/4.3/lib -lesslbg -lesslsmpbg
+ESSL     = -L/opt/ibmmath/essl/4.4/lib -lesslbg -lesslsmpbg
 
 # Base libraries (always used)
 
-LIBBASIC = $(ZLIB) -Wl,--allow-multiple-definition $(MASS) $(ESSL) $(TRACE) $(SYSLIBS)
+LIBBASIC = $(ZLIB) -Wl,--allow-multiple-definition $(MASS) $(ESSL) $(TRACE)
 
 # Libraries in production mode
 
