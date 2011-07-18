@@ -1109,10 +1109,8 @@ limitation). MED output may thus be useful for a boundary mesh
 with pressure data usable by a solid mechanics code such as
 \emph{Code\_Aster}, but it will not be usable for the
 large volume meshes we expect on Blue Gene type machines.
-Linking with MED and HDF5 also almost doubles
-the size of the Kernel executable, bringing it above 50 Mb,
-so building FVM with support for MED may be worthwhile
-only if truly required.
+Building FVM with support for MED may thus be worthwhile
+only if truly required by a downstream application.
 
 A front-end configuration is more standard:
 
