@@ -604,6 +604,14 @@ if test "$?" = "0" ; then
   fcflags_default_prf="-pg"
   fcflags_default_omp="-fopenmp"
 
+  # Deactivate bounds checking with older gfortran 4.1
+  # to avoid issue in turrij.f90
+  case "$cs_fc_vers_major-$cs_fc_vers_minor" in
+    gcc-4.[01]*)
+     fcflags_default_dbg="-g"
+      ;;
+  esac
+
 fi
 
 if test "x$cs_fc_compiler_known" != "xyes" ; then
