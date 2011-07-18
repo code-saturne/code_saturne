@@ -1,4 +1,9 @@
 * 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add conditional compilation to work around gcc 4.1 bug with Fortran pointers.
+  modified files:
+    src/base/turrij.f90
+
+* 15/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add timing information for mesh input I/O.
   modified files:
     src/base/cs_preprocessor_data.c

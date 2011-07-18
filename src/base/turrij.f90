@@ -3,7 +3,7 @@
 !     This file is part of the Code_Saturne Kernel, element of the
 !     Code_Saturne CFD tool.
 
-!     Copyright (C) 1998-2009 EDF S.A., France
+!     Copyright (C) 1998-2011 EDF S.A., France
 
 !     contact: saturne-support@edf.fr
 
@@ -173,6 +173,15 @@ include "optcal.h"
 include "lagpar.h"
 include "lagran.h"
 
+! Disable use of Fortran 90 pointers if using gfortran < 4.2, as
+! a gfortran 4.1 bug produces an error here. Array bounds checking
+! with such an old version will thus lead to errors.
+#if defined(__GNUC__) && defined(__GNUC_MINOR__)
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ < 2)
+#define CS_DISABLE_F90_POINTERS 1
+#endif
+#endif
+
 !===============================================================================
 
 ! Arguments
@@ -195,7 +204,11 @@ integer          icetsm(ncesmp)
 integer          idevel(nideve), ituser(nituse)
 integer          ia(*)
 
+#if !defined(CS_DISABLE_F90_POINTERS)
 integer, dimension(ncesmp,nvar), target :: itypsm
+#else
+integer          itypsm(ncesmp,nvar)
+#endif
 
 double precision xyzcen(ndim,ncelet)
 double precision surfac(ndim,nfac), surfbo(ndim,nfabor)
@@ -216,8 +229,13 @@ double precision w4(ncelet), w5(ncelet), w6(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
 double precision rdevel(nrdeve), rtuser(nrtuse), ra(*)
 
+#if !defined(CS_DISABLE_F90_POINTERS)
 double precision, dimension(ncesmp,nvar), target ::  smacel
 double precision, dimension(ncelet,*), target :: tslagr
+#else
+double precision smacel(ncesmp,nvar)
+double precision tslagr(ncelet,*)
+#endif
 
 ! Local variables
 
@@ -234,9 +252,11 @@ integer          ipcrom, ipbrom, ipcroo, ipbroo, iivar
 integer          iitsla
 double precision epsrgp, climgp, extrap
 
+#if !defined(CS_DISABLE_F90_POINTERS)
 integer,          pointer, dimension(:) :: itpsmp => null()
 double precision, pointer, dimension(:) :: smcelp => null(), gammap => null()
 double precision, pointer, dimension(:) :: tslage => null(), tslagi => null()
+#endif
 
 !===============================================================================
 
@@ -629,6 +649,8 @@ do isou = 1, 6
   endif
   ipp    = ipprtp(ivar)
 
+#if !defined(CS_DISABLE_F90_POINTERS)
+
   if (iilagr.eq.2 .and. iphas.eq.1) then
     iitsla = itsr11 + (isou-1)
     tslage => tslagr(1:ncelet, iitsla)
@@ -692,6 +714,65 @@ do isou = 1, 6
    rdevel , rtuser , ra     )
   endif
 
+#else
+
+  if (iilagr.eq.2 .and. iphas.eq.1) then
+    iitsla = itsr11 + (isou-1)
+  endif
+
+!     Rij-epsilon standard (LRR)
+  if (iturb(iphas).eq.30) then
+    call resrij                                                   &
+    !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   iphas  , ivar   , isou   , ipp    ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   icepdc , icetsm , itypsm(1,ivar)  ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  , produc , grarox , graroy , graroz ,          &
+   ckupdc , smacel(1,ivar)  , smacel(1,ipriph),                   &
+   viscf  , viscb  , coefax ,                                     &
+   tslagr(1,iitsla) , tslagr(1,itsli) ,                           &
+   dam    , xam    , drtp   , smbr   , rovsdt ,                   &
+   w1     , w2     , w3     , w4     ,                            &
+   w5     , w6     , w7     , w8     , w9     ,                   &
+   rdevel , rtuser , ra     )
+
+  else
+!     Rij-epsilon SSG
+    call resssg                                                   &
+    !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   iphas  , ivar   , isou   , ipp    ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   icepdc , icetsm , itypsm(1,ivar)  ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  , grdvit , grarox , graroy , graroz ,          &
+   ckupdc , smacel(1,ivar)  , smacel(1,ipriph),                   &
+   viscf  , viscb  , coefax ,                                     &
+   tslagr(1,iitsla) , tslagr(1,itsli) ,                           &
+   dam    , xam    , drtp   , smbr   , rovsdt ,                   &
+   w1     , w2     , w3     , w4     ,                            &
+   w5     , w6     , w7     , w8     , w9     ,                   &
+   rdevel , rtuser , ra     )
+  endif
+
+#endif
+
 enddo
 
 !===============================================================================
@@ -701,6 +782,8 @@ enddo
 ivar   = ieiph
 ipp    = ipprtp(ivar)
 isou   = 7
+
+#if !defined(CS_DISABLE_F90_POINTERS)
 
 if (ncesmp.gt.0) then
   itpsmp => itypsm(1:ncesmp,ivar)
@@ -730,6 +813,33 @@ call reseps                                                       &
    w1     , w2     , w3     , w4     ,                            &
    w5     , w6     , w7     , w8     , w9     ,                   &
    rdevel , rtuser , ra     )
+
+#else
+
+   call reseps                                                    &
+   !==========
+ ( idebia , idebra ,                                              &
+   ndim   , ncelet , ncel   , nfac   , nfabor , nfml   , nprfml , &
+   nnod   , lndfac , lndfbr , ncelbr ,                            &
+   nvar   , nscal  , nphas  , ncepdp , ncesmp ,                   &
+   nideve , nrdeve , nituse , nrtuse ,                            &
+   iphas  , ivar   , isou   , ipp    ,                            &
+   ifacel , ifabor , ifmfbr , ifmcel , iprfml ,                   &
+   ipnfac , nodfac , ipnfbr , nodfbr ,                            &
+   icepdc , icetsm , itypsm(1,ivar)  ,                            &
+   idevel , ituser , ia     ,                                     &
+   xyzcen , surfac , surfbo , cdgfac , cdgfbo , xyznod , volume , &
+   dt     , rtp    , rtpa   , propce , propfa , propfb ,          &
+   coefa  , coefb  , grdvit , produc ,grarox , graroy , graroz ,  &
+   ckupdc , smacel(1,ivar)  , smacel(1,ipriph),                   &
+   viscf  , viscb  ,                                              &
+   tslagr ,                                                       &
+   dam    , xam    , drtp   , smbr   , rovsdt ,                   &
+   w1     , w2     , w3     , w4     ,                            &
+   w5     , w6     , w7     , w8     , w9     ,                   &
+   rdevel , rtuser , ra     )
+
+#endif
 
 !===============================================================================
 ! 6. CLIPPING
