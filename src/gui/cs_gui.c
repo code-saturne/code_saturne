@@ -2001,7 +2001,7 @@ void CS_PROCF (csvnum, CSVNUM) (const int *const nvar,
     BFT_MALLOC(cs_glob_var->name[n], strlen("turb_fb")+1, char);
     strcpy(cs_glob_var->name[n++], "turb_fb");
 
-  } else if (iturb == 51) {
+  } else if (*iturb == 51) {
 
     cs_glob_var->rtp[n] = *ik   -1;
     BFT_MALLOC(cs_glob_var->name[n], strlen("turb_k")+1, char);
