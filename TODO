@@ -4,14 +4,6 @@ POINTS A PRIORITE ELEVEE
 =======================================================================
 =======================================================================
 
-LONG TERME
-==========
-
-* Multigrille et algebre lineaire en general. Resolution sur gros maillage,
-  mailles allongees, ... + interaction avec parallelisme, periodicite.
-
-
-
 MOYEN ET COURT TERME
 ====================
 
@@ -176,8 +168,8 @@ RAYT
 
 ALE
 ---
-* Branchement de couplage avec Aster. Changement du numero de maillage fvm (10 par defaut)
-  pour l'envoi vers Calcium
+* Branchement de couplage avec Aster. Changement du numero de maillage fvm (10 par
+  defaut) pour l'envoi vers Calcium
 
 * Non compatible avec la periodicite de rotation (a cause de inimas
     qui necessiterait de connaitre le gradient de w) -> au pire le changer
@@ -216,16 +208,6 @@ POINTS A PRIORITE MODEREE OU FAIBLE
 =======================================================================
 =======================================================================
 
-SCRIPTS ET DOC
--------------
-* Refonte des Makefiles
-
-
-* Dans la doc, on pourrait creer un "apropos", par exemple "apropos gradient" qui
-  renverrait a un exemple de calcul de gradient dans un sous-programme utilisateur
-  -> on pourrait rajouter une ligne "c-apropos" suivi des mots clefs, sur lesquels on
-     ferait un "grep".
-
 BASE
 ----
 * Ordre 2 en temps : est-il interessant de passer dans bilsc2 avec f(n+1/2)
@@ -252,8 +234,8 @@ BASE
 	rayonnement (en lagr, on ne teste pas si on rayonne) (?? a verifier)
 
 * Pour la diffusion, on reconstruit avec (gradI+gradJ)/2.(II'-JJ') au lieu de
-  gardI.II'-gradJ.JJ' -> repute plus stable, mais est-ce le cas ? Erreur sans doute + gde (meme
-  si l'ordre est identique)
+  gardI.II'-gradJ.JJ' -> repute plus stable, mais est-ce le cas ? Erreur sans
+  doute + gde (meme si l'ordre est identique)
 
 * Dans distyp, on initialise y+ par une valeur permettant d'obtenir une valeur
   maximale dans les zones n'ayant eventuellement pas bien converge. Au premier
@@ -279,9 +261,10 @@ BASE
   eviter une double recopie.
 
 * Dans le test de pente, le terme DPDXA est reconstruit avec un gradient, donc il fait
-  intervenir des points plus lointains que C, U et D. On peut donc imaginer une variation
-  de la fonction entre U, C et D qui implique un passage en upwind mais que le test soit
-  compense par les valeurs en UU et DD et que du coup le passage en upwind ne se fasse pas.
+  intervenir des points plus lointains que C, U et D. On peut donc imaginer une
+  variation de la fonction entre U, C et D qui implique un passage en upwind mais
+  que le test soit compense par les valeurs en UU et DD et que du coup le passage en
+  upwind ne se fasse pas.
   -> A tester
 
 * Interpolation de la viscosite aux faces : en cas de discontinuite forte, l'interpol
@@ -291,8 +274,8 @@ BASE
 * Reperage des capteurs d'historiques qui sont hors domaine. On pourra se baser sur les
   developpements de FVM et d'interpolation de maillage. On pourra ainsi definir une part
   Ensight nodale et la visualiser. On peut reflechir a cette methode pour extraire des
-  points autrement que par FINDPT (qui est lourd  en temps calcul si le nb de pts devient
-  grand ... mais seulement dans ce cas !!).
+  points autrement que par FINDPT (qui est lourd  en temps calcul si le nb de pts
+  devient grand ... mais seulement dans ce cas !!).
 
 * IRCFLU : separer la convection de la diffusion.
 
@@ -326,8 +309,8 @@ BASE
   le demanderait l'extrapolation des termes sources places
   dans propce)
 
-* Tester le calcul d'un Hessien par approximation diffuse. Utilite pour un schema QUICK,
-  un schema de diffusion d'ordre 2 meme si on n'est pas en 1/2-1/2, ...
+* Tester le calcul d'un Hessien par approximation diffuse. Utilite pour un schema
+  QUICK, un schema de diffusion d'ordre 2 meme si on n'est pas en 1/2-1/2, ...
 
 * Tester le couplage vitesse/pression par lagrangien augmente.
 
@@ -337,9 +320,9 @@ BASE
 
 * Dans le cas d'un voisinage etendu traite separement (en parallele), les communications
   necessitent un PARCVE en plus des PARCOM et PERCOM. Ces appels sont integres dans les
-  routines CFLITR, CGRDMC et CLMGRD. Or pour le cas du filtre LES, la communication du volume
-  des cellules pourrait n'etre faite qu'une fois dans CLVOLC, a condition que le voisinage
-  etendu y soit bien defini.
+  routines CFLITR, CGRDMC et CLMGRD. Or pour le cas du filtre LES, la communication
+  du volume des cellules pourrait n'etre faite qu'une fois dans CLVOLC, a condition
+  que le voisinage etendu y soit bien defini.
 
 * Supprimer les dépendances croises entre cs_mesh.*, cs_mesh_connect.*, cs_halo.*,
   et cs_ext_neighborhood.*, ou au moins faire apparaitre la hierarchie des structures
@@ -383,95 +366,3 @@ RAYT
 * Analyser la pertinence et la complexite des suites en rayonnement d'un calcul
   sans rayonnement (notamment faire intervenir ISUIRD dans le test autour de raypar
   dans raycli).
-
-
-
-=======================================================================
-=======================================================================
-REMARQUES POUR MEMOIRE
-=======================================================================
-=======================================================================
-
-* csprnt.F : le format "$" n'est pas reconnu sur un compilateur sous ...
-  Windows !!!!!!!
-
-* Attention au recalage pression au deuxieme pas de temps. 
-
-* Attention grdcel n'echange pas la variable ; peut etre problematique 
-  pour les utilisateurs ; evite de dupliquer les echanges pour les
-  variables de calcul (on ne stocke pas les gradients)
-
-* Augmenter le nbre d'arg dans usthht (si utile)
-
-* Dans les TS de masse, les tableaux SMACEL sont dimensionnes a NCETSM*NVAR. Or
-  NVAR concerne toutes les variables de toutes les phases ... surdimensionne.
-  Mais a priori insoluble autrement !
-
-* On utilise pour le moment une approche "explicite" pour la 
-  periodicite de rotation de QDMX, QDMY, QDMZ --> Il serait cependant 
-  interessant de tester l'approche avec des neumann quand il y a une 
-  periodicite de rotation sur un vecteur ou un tenseur (ca reviendrait 
-  a une sorte de symetrie)
-
-* Ce qui sort d'invers n'a pas ete tourne (a priori ok mais a savoir)
-
-* Pour le clipping variance d'une variable seulement utile en combustion gaz il faudrait que 
-  l'on soit sur que la variable soit resolue avant sa variance (detail : sinon, y a 
-  la variable au t prec et c'est faux) 
-
-* Pas de prise en compte du schema d'ordre 2 en temps pour les 
-  physiques particulieres actuelles :
-  - pas de besoin avant plusieurs annees apres interview
-  - en particulier pas de LES en combustion avec saturne 
-  - noter egalement que la masse volumique est determinee 
-    de maniere complexe et que le traitment simple qu'on lui 
-    applique entrainera sans doute des difficultes
-  On garde les sources sous le coude pour eviter de rendre ces 
-  sous-programmes plus complexes qu'ils ne le sont deja
-
-* Attention au thetav dans le bilsc2 pour les estim
-
-
-
-=======================================================================
-=======================================================================
-BONNES PRATIQUES (POUR MEMOIRE)
-=======================================================================
-=======================================================================
-
-* Une routine par fichier (sauf eventuellement si elles 
- 			sont toutes "privees", sauf la premiere), 
-  6 lettre par nom de routine exactement 
-  6 lettres au plus et 2 lettres au moins par nom de variable 
- 			(bannir les variables I, N, J ou K )
-
-* Ne pas mettre de tabs dans les fortrans ou C (penser au script rmb.sh). 
-
-* Eviter les lignes de fortran commentees dans les us* : 
- 		sinon jamais compile donc forcement faux
-
-* Continuation character : & et pas de + (on utilise un caractere 
- 		qui ne veut rien dire en fortran afin de ne pas le confondre)
-
-* Donner aux entiers des noms commencant par I, J, K, L, M, N 
-
-* Eviter les goto a la mode case 
-  Mettre des do enddo et pas de do continue 
-  Virer les do while si possible (mettre un goto si necessaire) 
-
-* Eviter l'acces a des pointeurs de pointeurs de pointeur dans les boucles 
- 	mettre un entier avant, c'est plus lisible et ca va plus vite. 
-
-* Encadrer les write et print sauvages par ifdef debug 
- 		(ex de cpcym1 : le test doit il etre conserve ?) 
- 		Attention : verifier que ce qui est dans les tests 
- 		ne sert pas ailleurs 
-
-
-* Mettre des reels en D et pas en E 
-  Pas de E50 (ca n'existe pas sur IRIX : out of range) 
-
-* Eviter a = 3.d0*b 
-  preferer si possible double precision trois
-                       trois = 3.d0
-                       a = trois * b  
