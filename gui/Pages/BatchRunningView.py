@@ -947,7 +947,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
             title = self.tr("Warning")
             msg   = self.tr("The current case must be saved before "\
-                            "Code_Saturne batch running.")
+                            "running a Code_Saturne batch job.")
             QMessageBox.information(self, title, msg)
             return
 #        if self.case.saved() == "no":

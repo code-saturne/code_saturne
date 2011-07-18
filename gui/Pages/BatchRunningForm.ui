@@ -350,9 +350,9 @@ results files name</string>
         <item>
          <widget class="QPushButton" name="pushButtonRun" >
           <property name="text" >
-           <string>Code_Saturne
-batch
-running</string>
+           <string>run
+Code_Saturne
+batch job</string>
           </property>
          </widget>
         </item>
