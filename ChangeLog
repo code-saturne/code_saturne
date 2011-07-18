@@ -1,3 +1,8 @@
+* 18/07/2011 - David Monfort <david.monfort@edf.fr>
+  Fix a XML reader bug when using iturb value (thanks to Charles Moulinec).
+  modified routine:
+    src/base/cs_gui.c
+
 * 18/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Fix bug when reading the variance of volumetric statistics from a restart file.
   Thanks to Ralf Becker for this patch.
