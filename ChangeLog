@@ -1,4 +1,10 @@
 * 19/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Add --with-modules configure option to allow override of automatic detection.
+  modified files:
+    config/cs_modules.m4
+    doc/install/install.tex
+
+* 19/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Make parsing of syrthes.env files more robust.
   modified files:
     bin/runcase_syrthes

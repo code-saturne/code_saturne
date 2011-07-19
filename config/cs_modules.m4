@@ -26,39 +26,58 @@ dnl-----------------------------------------------------------------------------
 
 AC_DEFUN([CS_AC_TEST_ENV_MODULES], [
 
+AC_ARG_WITH(modules,
+            [AS_HELP_STRING([--with-modules=LIST],
+                            [colon-separated list of environment modules])],
+            [with_modules=$withval],
+            [with_modules=check])
+
+# Attempt at auto-detection
+
 cs_env_modules="no"
 
-# Test for environment modules
+if test "x$with_modules" = "xcheck" ; then
 
-if test "x$MODULESHOME" != "x" ; then
+  # Test for environment modules
 
-  AC_MSG_CHECKING([for environment modules])
+  if test "x$MODULESHOME" != "x" ; then
+
+    AC_MSG_CHECKING([for environment modules])
+
+    cs_env_modules=""
+    try_modules=""
+    try_modules_p=""
+
+    oldIFS=$IFS; IFS=:
+    for m in $LOADEDMODULES; do try_modules="$try_modules $m"; done
+    IFS=$oldIFS
+
+    module purge
+
+    while test "x$try_modules" != "x$try_modules_p" ;
+    do
+      try_modules_p=$try_modules
+      try_modules=""
+      for m in $try_modules_p ; do
+        prv_LOADED=$LOADEDMODULES
+        module load $m > /dev/null 2>&1
+        if test "$prv_LOADED" != "$LOADEDMODULES" ; then
+          cs_env_modules="$cs_env_modules $m"
+        else
+          try_modules="$retry_modules $m"
+        fi
+      done
+    done
+    module list
+
+  fi
+
+elif test "x$with_modules" != "xno" ; then
 
   cs_env_modules=""
-  try_modules=""
-  try_modules_p=""
-
   oldIFS=$IFS; IFS=:
-  for m in $LOADEDMODULES; do try_modules="$try_modules $m"; done
+  for m in $with_modules; do cs_env_modules="$cs_env_modules $m"; done
   IFS=$oldIFS
-
-  module purge
-
-  while test "x$try_modules" != "x$try_modules_p" ;
-  do
-    try_modules_p=$try_modules
-    try_modules=""
-    for m in $try_modules_p ; do
-      prv_LOADED=$LOADEDMODULES
-      module load $m > /dev/null 2>&1
-      if test "$prv_LOADED" != "$LOADEDMODULES" ; then
-        cs_env_modules="$cs_env_modules $m"
-      else
-        try_modules="$retry_modules $m"
-      fi
-    done
-  done
-  module list
 
 fi
 

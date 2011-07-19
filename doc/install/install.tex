@@ -597,7 +597,7 @@ As noted in \S\ref{sec:obtain_ext_lib}, on systems providing
 Environment Modules with the {\tt module} command, \CS's {\tt configure}
 script detects which modules are loaded and saves
 this list so that future runs of the code use that same environment,
-rather than the user's environment, so as to allows using versions of
+rather than the user's environment, so as to allow using versions of
 \CS built with different modules safely and easily.
 
 Given this, it is recommended that when configuring and installing
@@ -607,6 +607,11 @@ environment detected and runtime instead of the user's current
 module settings, debuggers requiring a specific module may
 not work under a standard run script if they were not loaded when
 installing the code.
+
+The detection of environement modules may be disabled using the
+\texttt{--without-modules} option,
+or the use of a specified (colon-separated) list of modules
+may be forced using the \texttt{--with-modules=} option.
 
 \subsection{Batch Systems\label{sec:config:batch}}
 
@@ -688,7 +693,7 @@ In practice, we have encountered a limit with slightly smaller meshes,
 around 150 million cells.
 
 Above 150 million hexahedral cells or so, it is thus imperative to configure
-the build to use 64-bit global element ids, with the
+the FVM library to use 64-bit global element ids, with the
 {\tt --enable-long-gnum} option. Local indexes will still use
 the default {int} size, so memory consumption will only be slightly
 increased.
@@ -696,12 +701,9 @@ increased.
 Recent versions of some third-party libraries may also optionally use 64-bit ids,
 independently of each other or of \CS.
 This is the case for the \scotch and \metis, MED and
-CGNS libraries. In the case of graph-based partitioning, only
-global cell ids are used, so 64-bit ids should not in theory be necessary
-for meshes under 2 billion cells. In a similar vein, for post-processing output
-using nodal connectivity, 64-bit global ids should only be an imperative
-when the number of cells or vertices approaches 2 billion.
-Practical limits may be lower, if some intermediate internal counts
+CGNS libraries. Use of 64-bit ids should not in theory be necessary
+for meshes under 2 billion cells, whether for partitioning or post-processing
+output, but practical limits might be lower, if some intermediate internal counts
 reach these limits earlier.
 
 Note also that \metis 4 is known to crash for meshes in the range of
@@ -715,7 +717,6 @@ The backup solution is to simply use the built-in parallel Morton Z curve
 partitioning, which may produce partitions of lower quality, but
 runs transparently at \CS calculation initialization, and is highly
 scalable.
-
 
 \section{Troubleshooting\label{sec:config:troubleshoot}}
 
@@ -740,7 +741,7 @@ and detailed reasons for its failure.
 
 When coupling with \syrthes using MPI, both \CS and \syrthes must
 use the same MPI library. Coupling with \syrthes is also possible
-using TCP/IP sockets, but this is rarely used, and is recommended only
+using TCP/IP sockets, but this recommended only
 when running on a single node. On compute clusters, the MPI environment
 will distribute \syrthes and \CS instances to different processors when
 they are coupled using MPI, while using sockets, the \syrthes process will
@@ -755,11 +756,9 @@ Kernel's \texttt{configure} script must be used so that
 
 Most available prerequisites are auto-detected, so to install the
 code to the default \texttt{/usr/local} sub-directory,
-a command such as:
+a command such as follows should be sufficient:
 
 \texttt{\$ ../../saturne/configure}
-
-should be sufficient.
 
 For the following examples, Let us define environment variables respectively
 reflecting the \CS source path, installation path, and a path where optional
@@ -966,7 +965,7 @@ either for the front-end, for the compute nodes, or both:
 \item HDF5, MED and CGNSlib may be used by the Preprocessor on the front-end node
       to import meshes, and by the main solver on the compute nodes
       to output visualization meshes and fields.
-\item libCCMIO is used by the Preprocessor exclusively, so it may be needed on the
+\item libCCMIO is used by the Preprocessor, so it may be needed on the
       front-end node only.
 \item \scotch or \metis may be used by a front-end node build of the
       partitioner, as serial partitioning of large meshes requires a lot of memory.
