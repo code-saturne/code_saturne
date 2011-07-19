@@ -593,6 +593,11 @@ module settings, debuggers requiring a specific module may
 not work under a standard run script if they were not loaded when
 installing the code.
 
+The detection of environement modules may be disabled using the
+\texttt{--without-modules} option,
+or the use of a specified (colon-separated) list of modules
+may be forced using the \texttt{--with-modules=} option.
+
 \subsection{Remarks for very large meshes\label{sec:config:largemesh}}
 
 If \CS is to be run on large meshes, several precautions regarding
