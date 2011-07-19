@@ -1,3 +1,8 @@
+* 19/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Make parsing of syrthes.env files more robust.
+  modified files:
+    bin/runcase_syrthes
+
 * 18/07/2011 - David Monfort <david.monfort@edf.fr>
   Fix a SYRTHES 3 coupling bug with MPI pset initialization (BGP).
   modified script:
