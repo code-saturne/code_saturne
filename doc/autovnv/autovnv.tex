@@ -140,47 +140,53 @@ with those from the \textbf{repository} if defined in \texttt{sample.xml};
 if defined in \texttt{sample.xml};
 \item \texttt{code\_saturne autovnv -f sample.xml -r -c -p -m "dupont@moulinsart.be dupond@moulinsart.be"}: as above,
 and send the two reports.
-\item \texttt{code\_saturne autovnv -f sample.xml -c -p}: compares and plots result in the \textbf{destination}
+\item \texttt{code\_saturne autovnv -f sample.xml -c -p}: compares and plots results in the \textbf{destination}
 already computed.
 \end{list}
 
 \underline{Note:}
 
-The detailed report is generated only if the options \texttt{-c, --compare} or \texttt{-p, --post} is present
-in the command line.
-
+The detailed report is generated only if the options \texttt{-c, --compare}
+or \texttt{-p, --post} is present in the command line.
 
 \section{File of parameters}
 
 The file of parameters is of XML formatted ascii file.
 
-\subsection{Headers of the file of parameters}
+\subsection{Begin and end of the file of parameters}
+
+This example shows the four mandatory first lines of the file of parameters.
 
 \begin{verbatim}
 <?xml version="1.0"?>
-<autoverif version="2.0">
+<autovnv>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 \end{verbatim}
 
-This exemple shows the four mandatory first lines of the file of parameters.
 
-The two last lines correspond to the definition of the \textbf{repository}
+The third and fourth lines correspond to the definition of the \textbf{repository}
 and \textbf{destination} directories.
 Inside the markups \texttt{<repository>} and \texttt{<destination>} the user
 must inform the related directories. If the \textbf{destination} does not exit,
 the directory is created.
 
+The last line of the file of parameters must be:
+
+\begin{verbatim}
+</autovnv>
+\end{verbatim}
+
 \subsection{Case creation and compilation fo the User Defined Functions}
 
-When \textsc{Autovnv} is launched, the file of parameters if parsed in order to known
+When \textsc{Autovnv} is launched, the file of parameters is parsed in order to known
 which studies and cases from the \textbf{repository} should be duplicated in
 the \textbf{destination}. The selection is done with the markups \texttt{<study>}
 and \texttt{<case>} as the following example:
 
 \begin{verbatim}
 <?xml version="1.0"?>
-<autoverif version="2.0">
+<autovnv>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 
@@ -192,11 +198,10 @@ and \texttt{<case>} as the following example:
         <case label="k-eps" status="on" compute="on" post="off"/>
         <case label="Rij-eps" status="on" compute="on" post="off"/>
     </study>
-</autoverif>
+</autovnv>
 \end{verbatim}
 
 The attributes are:
-
 \begin{list}{$\bullet$}{}
 \item \texttt{label}: the name of the file of the script;
 \item \texttt{status}: must ne equal to \texttt{on} or \texttt{off},
@@ -210,7 +215,7 @@ activate or desactivate the post-treatment of the case.
 All these attributes are mandatory.
 
 With the attribute \texttt{status}, a single case or a complete study can be switched off.
-If the above example, only the case \texttt{Grid1} of the study \texttt{MyStudy1} is going
+In the above example, only the case \texttt{Grid1} of the study \texttt{MyStudy1} is going
 to be created.
 
 After the creation of the directories in the \textbf{destination}, for each case, all User Defined Functions
@@ -222,16 +227,16 @@ comparison, or plot will be performed, even if they are switched on.
 During the duplication, every files are copied, except mesh files, for which a symbolic link is used.
 
 
-\subsection{Run a case}
+\subsection{Run cases}
 
-The run of \CS is activated if the option \texttt{-r, --run} is present in the command line.
+The runs of \CS is activated are the option \texttt{-r, --run} is present in the command line.
 
 All cases described in the file of parameters with the attribute \texttt{compute="on"}
 are taken into account.
 
 \begin{verbatim}
 <?xml version="1.0"?>
-<autoverif version="2.0">
+<autovnv>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 
@@ -243,7 +248,7 @@ are taken into account.
         <case label="k-eps" status="on" compute="on" post="off"/>
         <case label="Rij-eps" status="on" compute="on" post="off"/>
     </study>
-</autoverif>
+</autovnv>
 \end{verbatim}
 
 After the computation, if no error occurs, the attribute \texttt{compute} is set to \texttt{"off"}
@@ -282,9 +287,7 @@ autovnv -f sample.xml -c} for example), the id of the results directory in
 the \textbf{destination} must be given (for example \texttt{dest="20110706-1523"}), but if there is a single results directory in the \texttt{RESU} directory
 of the case, the id can be ommitted: \texttt{repo=""}, the id will be completed automatically;
 \end{list}
-
 \item \texttt{threshold}: real value above which a difference is considered significant (default: $1e-30$).
-
 \end{list}
 
 Only the attributes \texttt{repo} and \texttt{dest} are mandatory.
@@ -304,22 +307,20 @@ The markup \texttt{<script>} has to be added as a child of the condidered case.
 \end{verbatim}
 
 The attributes are:
-
 \begin{list}{$\bullet$}{}
 \item \texttt{label}: the name of the file of the script;
-\item \texttt{status}: mandatory must ne equal to \texttt{on} or \texttt{off},
-activate or desactivate the markup.
+\item \texttt{status}: mandatory must be equal to \texttt{on} or \texttt{off},
+activate or desactivate the markup;
 \item \texttt{args}: the arguments to pass to the script;
 \item \texttt{repo} and \texttt{dest}: id of the results directory in the \textbf{repository} or
 in the \textbf{destination}; if there is a single results directory in the \texttt{RESU} directory
-of the case, the id can be ommitted: \texttt{repo=""} or \texttt{dest=""}, the id will be completed automatically;
-
+of the case, the id can be ommitted: \texttt{repo=""} or \texttt{dest=""}, the id will be completed
+automatically.
 \end{list}
 
 Only the attributes \texttt{label} and \texttt{status} are mandatory.
 
 Several calls of the same script or to different scripts are permitted:
-
 \begin{verbatim}
     <study label="STUDY" status="on">
         <case label="CASE1" status="on" compute="on" post="on">
@@ -330,6 +331,9 @@ Several calls of the same script or to different scripts are permitted:
         </case>
     </study>
 \end{verbatim}
+
+The main objectif of running external scripts is to create or modify
+result in order to plot them.
 
 Example of script, which searches printed informations in the listing:
 \begin{verbatim}
@@ -351,7 +355,6 @@ def process_cmd_line(argv):
                       help="Directory of the result in the destination")
 
     (options, args) = parser.parse_args(argv)
-
     return options
 
 def main(options):
@@ -377,24 +380,119 @@ if __name__ == '__main__':
 
 The post-treatment is activated if the option \texttt{-p, --post} is present in the command line.
 
+The following example shows the drawing of four curves or (2D lines) from two files of data (which
+has the same name \texttt{profile.dat}). There are two subplots (i.e. frame with axis and 2D lines),
+in a single figure. The figure will be saved on the disk in a png format.
+Each plot of a single curve is defined as a child of a file of data inside a case. The subplots and 
+the figures are defined as childs of the study.
+
+\begin{verbatim}
+    <study label='Study' status='on'>
+        <case label='Grid1' status='on' compute="off" post="on">
+            <data file="profile.dat" dest="">
+                <plot fig="1" xcol="1" ycol="2" legend="Grid level 1" fmt='r-s'/>
+                <plot fig="2" xcol="1" ycol="3" legend="Grid level 1" fmt='r-s'/>
+            </data>
+        </case>
+        <case label='Grid2' status='on' compute="off" post="on">
+            <data file="profile.dat" dest="">
+                <plot fig="1" xcol="1" ycol="2" legend="Grid level 2" fmt='b-p'/>
+                <plot fig="2" xcol="1" ycol="3" legend="Grid level 2" fmt='b-p'/>
+            </data>
+        </case>
+        <subplot id="1" legstatus='on' legpos ='0.95 0.95' ylabel="U ($m/s$)" xlabel="Time ($s$)"/>
+        <subplot id="2" legstatus='on' legpos ='0.95 0.95' ylabel="U ($m/s$)" xlabel="Time ($s$)"/>
+        <figure name="velocity" idlist="1 2" figsize="(4,5)"/>
+    </study>
+\end{verbatim}
+
+\subsubsection{Plot curves}
+
+\underline{Definition:}
+\begin{list}{$\bullet$}{}
+\item \texttt{<data>}: child of markup \texttt{<case>}, defines a file of data;
+\begin{list}{$\rightarrow$}{}
+\item \texttt{<file>}: 
+\item \texttt{<repo>}: 
+\item \texttt{<dest>}: 
+\end{list}
+The attribute \texttt{<file>} is mandatory, and \texttt{<repo>} or \texttt{<dest>} must be present
+even if it is empty.
+
+\item \texttt{<plot>}: child of markup \texttt{<data>}, defines a curve
+\begin{list}{$\rightarrow$}{}
+\item \texttt{<fig>}: id of the subplot in which the current curve should be plotted;
+\item \texttt{<xcol>}: number of the column in the file of data for the abscisse;
+\item \texttt{<ycol>}: number of the column in the file of data for the ;
+\item \texttt{<legend>}: add a label to a curve;
+\item \texttt{<fmt>}: format of the line, composed from a symbol, a color and a linestyle;
+\item \texttt{<xplus>}: real to add to all values of the column \texttt{xcol};
+\item \texttt{<yplus>}: real to add to all values of the column \texttt{ycol};
+\item \texttt{<xfois>}: real to multiply to all values of the column \texttt{xcol};
+\item \texttt{<yfois>}: real to multiply to all values of the column \texttt{ycol};
+\item \texttt{<xerr>}: draw error bar;
+\item \texttt{<yerr>}:draw error bar;
+\item all standard options of 2D lines can be added, for example \texttt{markevery="2"}
+or \texttt{markersize="3.5"}. Every options can be found in the matplotlib documentation.
+
+The attributes \texttt{fig} and \texttt{<ycol>} are mandatory.
+\end{list}
+
+\item \texttt{<subplot>}: child of markup \texttt{<study>}, defines a frame with severals curves
+\begin{list}{$\rightarrow$}{}
+\item \texttt{<id>}:
+\item \texttt{<legstatus>}:
+\item \texttt{<legpos>}:
+\item \texttt{<title>}:
+\item \texttt{<xlabel>}:
+\item \texttt{<ylabel>}:
+\item \texttt{<xlim>}:
+\item \texttt{<ylim>}:
+\item all standard options of subplot can be added, for example \texttt{markevery="2"}
+or \texttt{markersize="3.5"}. Every options can be found in the matplotlib documentation.
+
+The attributes \texttt{fig} and \texttt{<ycol>} are mandatory.
+\end{list}
+
+\item \texttt{<figure>}: child of markup \texttt{<study>}, defines a pictures with a layout of frames
+\begin{list}{$\rightarrow$}{}
+\item \texttt{<name>}: name of the file to be written on the disk;
+\item \texttt{<idlist>}: list of the subplot to be displyed in the figure;
+\item \texttt{<title>}: add a title at the top of the figure;
+\item \texttt{<nbrow>}: impose a  number of row of the layout of the subplots;
+\item \texttt{<nbcol>}: impose a  number of column of the layout of the subplots;
+\item all standard options of figure can be added, for example \texttt{figsize="(3,4)"}
+or \texttt{dpi="200"}. Every options can be found in the matplotlib documentation.
+
+The attributes \texttt{name} and \texttt{<idlist>} are mandatory.
+\end{list}
+
+\end{list}
+
 \subsubsection{Experimental data}
+
+
 
 \begin{verbatim}
     <study label='MyStudy' status='on'>
-        <measurement file='exp.dat' path ='/home/dupond/codesaturne/MyDestination/MyStudy/DATA_EXP'>
+        <measurement file='exp1.dat' path ='/home/dupond/codesaturne/MyDestination/MyStudy/DATA_EXP'>
                 <plot fig='1' xcol='1' ycol='2' legend='U Experimental data'/>
                 <plot fig='2' xcol='3' ycol='4' legend='V Experimental data'/>
         </measurement>
+        <measurement file='exp2.dat' path =''>
+                <plot fig='1' xcol='1' ycol='2' legend='U Experimental data'/>
+                <plot fig='2' xcol='1' ycol='3' legend='V Experimental data'/>
+        </measurement>
         <case label='Grid1' status='on' compute="off" post="on">
             <data file="profile.dat" dest="">
-                <plot fig="1" xcol="1" ycol="2"  legend="U computed" fmt='r-s'/>
-                <plot fig="2" xcol="1" ycol="3"  legend="V computed" fmt='b-s'/>
+                <plot fig="1" xcol="1" ycol="2" legend="U computed" fmt='r-s'/>
+                <plot fig="2" xcol="1" ycol="3" legend="V computed" fmt='b-s'/>
             </data>
         </case>
     </study>
-    <subplot fig="1" legstatus='on'  ylabel="U ($m/s$)" xlabel= "$r$ ($m$)" legpos ='0.05 0.1'/>
-    <subplot fig="2" legstatus='off' ylabel="V ($m/s$)" xlabel= "$r$ ($m$)"/>
-    <figure name="MyFigure" fig="1 2"  figsize="(4,4)" />
+    <subplot id="1" legstatus='on'  ylabel="U ($m/s$)" xlabel= "$r$ ($m$)" legpos ='0.05 0.1'/>
+    <subplot id="2" legstatus='off' ylabel="V ($m/s$)" xlabel= "$r$ ($m$)"/>
+    <figure name="MyFigure" idlist="1 2"  figsize="(4,4)" />
 \end{verbatim}
 
 \subsubsection{Curves with error bar}
@@ -403,7 +501,34 @@ The post-treatment is activated if the option \texttt{-p, --post} is present in 
 \subsubsection{Legends}
 
 
+
 \subsubsection{Matplotlib raw commands}
+The file of parameters allows to execute additional matplotlib commands,
+for curves (2D lines), or subplot, or figure.
+The behaviour 
+
+
+
+\begin{verbatim}
+                <plot fig="1" xcol="1" ycol="2" fmt='g^' legend="Simulated water level">
+                    <plt_command>plt.setp(lines, color="blue")</plt_command>
+                </plot>
+\end{verbatim}
+
+
+\begin{verbatim}
+        <subplot id="1" xlabel="time (s)" ylabel="level (m)" legend='Yes' legpos ='0.2 0.95'>
+            <plt_command>plt.grid(True)</plt_command>
+            <plt_command>plt.xlim(0, 20)</plt_command>
+            <plt_command>ax.set_ylim(1, 3)</plt_command>
+            <plt_command>plt.xlabel(r"Time ($s$)", fontsize=8)</plt_command>
+            <plt_command>ax.set_ylabel(r"Level ($m$)", fontsize=8)</plt_command>
+            <plt_command>for l in ax.xaxis.get_ticklabels(): l.set_fontsize(8)</plt_command>
+            <plt_command>for l in ax.yaxis.get_ticklabels(): l.set_fontsize(8)</plt_command>
+        </subplot>
+        <figure name="1_Water_level" fig="1"  title="Water Level" figsize="(3,3)"/>
+\end{verbatim}
+
 
 
 \section{Output and restart}
