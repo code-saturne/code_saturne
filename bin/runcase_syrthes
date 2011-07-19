@@ -196,9 +196,9 @@ if [ "$1" = "-copy-data" -o "$1" = "-copy-results" ] ; then
     exit 1
   fi
 
-  SYR_IN=`grep "AMONT :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
-  SYR_OUT=` grep "AVAL :"  $SYRTHES_ENV | sed -e "s/^.*: *//"`
-  SYR_RESTART=`grep "SUITE :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYR_IN=`grep "AMONT :" $SYRTHES_ENV | sed -e "s/^.*: *//" -e "s/ //g"`
+  SYR_OUT=` grep "AVAL :"  $SYRTHES_ENV | sed -e "s/^.*: *//" -e "s/ //g"`
+  SYR_RESTART=`grep "SUITE :" $SYRTHES_ENV | sed -e "s/^.*: *//" -e "s/ //g"`
   SYRTHES_DATA=`grep "DONNEES DU CALCUL :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
   SYRTHES_GEOM=`grep "GEOMETRIE SOLIDE :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
   SYRTHES_SUIT=`grep "SUITE SOLIDE RESU :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
