@@ -1,3 +1,6 @@
+* 19/07/2011 - David Monfort <david.monfort@edf.fr>
+  Release of Code_Saturne 2.0.2.
+
 * 19/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add --with-modules configure option to allow override of automatic detection.
   modified files:
