@@ -196,24 +196,24 @@ if [ "$1" = "-copy-data" -o "$1" = "-copy-results" ] ; then
     exit 1
   fi
 
-  SYR_IN=`grep "AMONT :" $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
-  SYR_OUT=` grep "AVAL :"  $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
-  SYR_RESTART=`grep "SUITE :" $SYRTHES_ENV | awk -F: '{print $NF}' | sed -e "s/ //g"`
-  SYRTHES_DATA=`grep "DONNEES DU CALCUL :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_GEOM=`grep "GEOMETRIE SOLIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_SUIT=`grep "SUITE SOLIDE RESU :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_DATA_RAY=`grep "DONNEES POUR LE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_MAIL_RAY=`grep "MAILLAGE RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_CORR=`grep "STOCKAGE DES CORRESPONDANTS :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_FFOR_RAY=`grep "FACTEURS DE FORME RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_CORR_RAY=`grep "STOCKAGE DES CORRESPONDANTS RAYONNEMENT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_OUT_RES1=`grep "RESU SYRTHES 1 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_OUT_RES2=`grep "RESU SYRTHES 2 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_OUT_CHR2=`grep "CHRONO SYRTHES 2 :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_OUT_HIST=`grep "HISTORIQUE SOLIDE RESULTAT :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_OUT_MAIL_PEAU_FLUIDE=`grep "MAILLAGE PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_OUT_RESU_PEAU_FLUIDE=`grep "RESULTATS PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
-  SYRTHES_OUT_CHR_PEAU_FLUIDE=`grep "CHRONO PEAU FLUIDE :" $SYRTHES_ENV | awk -F: '{print $NF}'`
+  SYR_IN=`grep "AMONT :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYR_OUT=` grep "AVAL :"  $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYR_RESTART=`grep "SUITE :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_DATA=`grep "DONNEES DU CALCUL :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_GEOM=`grep "GEOMETRIE SOLIDE :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_SUIT=`grep "SUITE SOLIDE RESU :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_DATA_RAY=`grep "DONNEES POUR LE RAYONNEMENT :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_MAIL_RAY=`grep "MAILLAGE RAYONNEMENT :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_CORR=`grep "STOCKAGE DES CORRESPONDANTS :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_FFOR_RAY=`grep "FACTEURS DE FORME RAYONNEMENT :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_CORR_RAY=`grep "STOCKAGE DES CORRESPONDANTS RAYONNEMENT :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_OUT_RES1=`grep "RESU SYRTHES 1 :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_OUT_RES2=`grep "RESU SYRTHES 2 :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_OUT_CHR2=`grep "CHRONO SYRTHES 2 :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_OUT_HIST=`grep "HISTORIQUE SOLIDE RESULTAT :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_OUT_MAIL_PEAU_FLUIDE=`grep "MAILLAGE PEAU FLUIDE :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_OUT_RESU_PEAU_FLUIDE=`grep "RESULTATS PEAU FLUIDE :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
+  SYRTHES_OUT_CHR_PEAU_FLUIDE=`grep "CHRONO PEAU FLUIDE :" $SYRTHES_ENV | sed -e "s/^.*: *//"`
 
   # if empty, we use default names for results:
   if [ -z "$SYRTHES_CORR" ] ; then
