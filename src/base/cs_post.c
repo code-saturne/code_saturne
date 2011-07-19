@@ -1927,7 +1927,8 @@ void CS_PROCF (pstact, PSTACT)
  const cs_int_t  *indact
 )
 {
-  cs_post_activate_writer(*numwri, *indact);
+  cs_bool_t flag = (*indact != 0) ? true : false;
+  cs_post_activate_writer(*numwri, flag);
 }
 
 /*----------------------------------------------------------------------------
