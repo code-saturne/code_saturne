@@ -59,13 +59,13 @@ class Parser(object):
         try:
             self.doc =  minidom.parse(XMLFileName)
         except:
-            print "No file of parameters or error in the name of the file.\n"
+            print "No file of parameters or error in the name of the file or error in the syntax of the xml.\n"
             sys.exit(1)
 
         self.root = self.doc.firstChild
 
-        if self.root.nodeName != "autoverif":
-            print XMLFileName + ": Wrong XML file.\n"
+        if self.root.nodeName != "autovnv":
+            print XMLFileName + ": Wrong XML file. The Root markup is not autovnv.\n"
             sys.exit(1)
 
 
@@ -261,15 +261,8 @@ class Parser(object):
         """
         Read N_PROCS and USER_INPUT_FILES in:
             <study label='STUDY' status='on'>
-                <case label='CASE1' status='on' compute="on" post="on">
-                    <N_PROCS>2</N_PROCS>
-                </case>
-                <case label='CASE2' status='on' compute="on" post="on">
-                    <USER_INPUT_FILES>['data1', 'data2']</USER_INPUT_FILES>
-                </case>
-                <case label='CASE2' status='on' compute="on" post="on">
-                    <USER_INPUT_FILES>['data3', 'data4']</USER_INPUT_FILES>
-                </case>
+                <case label='CASE1' status='on' compute="on" post="on"/>
+                <case label='CASE2' status='on' compute="on" post="on"/>
             </study>
         @type l: C{String}
         @param l: label of a study
@@ -427,26 +420,21 @@ class Parser(object):
         for node in self.getStudyNode(l).getElementsByTagName("measurement"):
             nodes.append(node.getElementsByTagName("plot"))
             fileName = node.attributes["file"].value
-            try:
-                filePath = node.attributes["path"].value
-                files.append(os.path.join(filePath, fileName))
-            except:
-                files.append(fileName)
+            filePath = node.attributes["path"].value
+
+            if filePath == "":
+                for root, dirs, fs in os.walk(self.getRepository()):
+                    if fileName in fs:
+                        filePath = root
+                        break
+
+            files.append(os.path.join(filePath, fileName))
 
         return nodes, files
 
 
-    def getPlots(self, studyLabel):
-        Idfig = []
-        nodes = []
-        nbfigure = 0
-        for node in self.getStudyNode(studyLabel).getElementsByTagName("subplot"):
-            figvalue = int(node.attributes["fig"].value)
-            nbfigure += 1
-            if figvalue not in Idfig:
-                Idfig.append(figvalue)
-                nodes.append(node)
-        return nodes
+    def getSubplots(self, studyLabel):
+        return self.getStudyNode(studyLabel).getElementsByTagName("subplot")
 
 
     def getFigures(self, studyLabel):
@@ -462,5 +450,28 @@ class Parser(object):
                 if n.tagName == "plt_command":
                     cmd.append(n.childNodes[0].data)
         return cmd
+
+
+    def getAttributes(self, node):
+        """
+        Return a dictionary with attributes and value of a node.
+        """
+        d = {}
+        for k in node.attributes.keys():
+            d[k] = node.attributes[k].value
+        return d
+
+
+    def getAttribute(self, node, k, bool=True):
+        """
+        Return a value of an attribute.
+        """
+        if k in node.attributes.keys():
+            return node.attributes[k].value
+        else:
+            if bool:
+                raise ValueError, "Error: attribute %s is mandatory!" % k
+            else:
+                return None
 
 #-------------------------------------------------------------------------------

@@ -312,8 +312,6 @@ class Study(object):
 
         self.Cases = []
         for data in self.__parser.getCasesKeywords(self.__study):
-            print("dbg:")
-            print(data)
             c = Case(self.__log,
                      self.__exe,
                      self.__diff,
@@ -434,8 +432,6 @@ class Studies(object):
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
         for l in self.labels:
-            print("dbg:")
-            print(l)
             self.studies.append( [l, Study(self.__parser, l, exe, dif, self.__log)] )
 
         # start the report
