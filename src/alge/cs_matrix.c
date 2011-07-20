@@ -1648,9 +1648,9 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
 
   /* Diagonal part of matrix.vector product */
 
-  _diag_vec_p_l(mc->da, x, y, ms->n_cells, 1);
+  _diag_vec_p_l(mc->da, x, y, ms->n_cells);
 
-  _zero_range(y, ms->n_cells, ms->n_cells_ext, 1);
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
 
   /* Note: parallel and periodic synchronization could be delayed to here */
 
