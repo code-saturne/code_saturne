@@ -1,3 +1,9 @@
+* 20/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Allow reading of CGNS files with BC's referring non-existant edges, as a
+  workaround for a bug in ICEM CFD 13 CGNS export.
+  modified files:
+    preprocessor/pre-post/ecs_pre_cgns.c
+
 * 20/07/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
   Fixes in matrix-vector products, including symmetric case with promav.
   modified files:

@@ -2592,6 +2592,7 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
   ecs_int_t    ind_ent;
   ecs_int_t    ind_glob;
   ecs_int_t    ind_nom;
+  ecs_int_t    n_elts_zone;
 
   int          cel_dim;
 
@@ -2735,6 +2736,8 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
 
         ptr_zone = tab_zone + ptr_boco->num_zone - 1;
 
+        n_elts_zone = ptr_zone->num_elt_fin - ptr_zone->num_elt_deb;
+
         /* Liste définie par numéro de début et fin */
 
         if (   ptr_boco->ptset_type == CS_CG_ENUM(PointRange)
@@ -2770,6 +2773,12 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
           for (ind = 0; ind < ptr_boco->npnts; ind++) {
 
             ind_ent = ptr_boco->pnts[ind] - ptr_zone->num_elt_deb;
+
+            /* If boundary condition references elements not present,
+               ignore it (workaroud for bug in ICEM Meshing 13 output). */
+
+            if (ind_ent > n_elts_zone)
+              continue;
 
             /* Stockage des valeurs lues avant transfert dans maillage */
 
