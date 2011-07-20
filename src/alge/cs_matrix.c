@@ -1651,9 +1651,9 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
 
   /* Diagonal part of matrix.vector product */
 
-  _diag_vec_p_l(mc->da, x, y, ms->n_cells, 1);
+  _diag_vec_p_l(mc->da, x, y, ms->n_cells);
 
-  _zero_range(y, ms->n_cells, ms->n_cells_ext, 1);
+  _zero_range(y, ms->n_cells, ms->n_cells_ext);
 
   /* Note: parallel and periodic synchronization could be delayed to here */
 
@@ -3646,7 +3646,7 @@ void CS_PROCF(promav, PROMAV)
   else if (*iinvpe == 3)
     rotation_mode = CS_PERIO_ROTA_IGNORE;
 
-  if (*ibsize > 1) {
+  if (*ibsize > 1 || symmetric) {
     /* TODO: update diag_block_size[] values for the general case */
     diag_block_size[0] = *ibsize;
     diag_block_size[1] = *ibsize;

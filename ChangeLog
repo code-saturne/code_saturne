@@ -1,3 +1,8 @@
+* 20/07/2011 - Jacques Fontaine <jacques-j.fontaine@edf.fr>
+  Fixes in matrix-vector products, including symmetric case with promav.
+  modified files:
+    src/alge/cs_matrix.c
+
 * 19/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Add --with-modules configure option to allow override of automatic detection.
   modified files:
