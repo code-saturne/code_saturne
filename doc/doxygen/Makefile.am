@@ -19,27 +19,22 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-# The name of the module.
-DOC_MODULE=saturne
-
-docdir = $(datadir)/doc/@PACKAGE@-@VERSION@/doxygen
 EXTRA_DIST = Doxyfile mainpage.h images/icon.png
 
 doxygen:
 	srcdir="$(top_srcdir)" builddir="$(top_builddir)" doxygen $(top_srcdir)/doc/doxygen/Doxyfile
 
-doxygen-install: doxygen
-	cp -r html $(docdir)
+html-local: doxygen
 
 clean-local:
-	rm -rf index.bt
+	-rm -rf html latex man index.bt
 
 distclean-local:
-	rm -rf *~
-	rm -rf html latex man index.bt
-	rm -rf Makefile
+	-rm -rf Makefile
+
+install-html-local:
+	$(MKDIR_P) "$(DESTDIR)$(htmldir)"
+	\cp -R html $(DESTDIR)$(htmldir)/doxygen
 
 uninstall-local:
-	rm -rf $(docdir)
-
-
+	-rm -rf $(docdir)
