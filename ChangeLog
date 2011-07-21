@@ -1,3 +1,8 @@
+* 21/07/2011 - David Monfort <david.monfort@edf.fr>
+  Use a standard "make html" target to generate Doxygen documentation.
+  modified file:
+    doc/doxygen/Doxyfile
+
 * 20/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Allow reading of CGNS files with BC's referring non-existant edges, as a
   workaround for a bug in ICEM CFD 13 CGNS export.
