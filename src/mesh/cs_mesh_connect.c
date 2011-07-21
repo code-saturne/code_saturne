@@ -111,34 +111,34 @@ static void
 _add_faces_to_nodal(const cs_mesh_t  *mesh,
                     fvm_nodal_t      *extr_mesh,
                     bool              include_families,
-                    fvm_lnum_t        i_face_list_size,
-                    fvm_lnum_t        b_face_list_size,
-                    fvm_lnum_t        i_face_list[],
-                    fvm_lnum_t        b_face_list[])
+                    cs_lnum_t         i_face_list_size,
+                    cs_lnum_t         b_face_list_size,
+                    cs_lnum_t         i_face_list[],
+                    cs_lnum_t         b_face_list[])
 {
-  fvm_lnum_t   face_id, i;
+  cs_lnum_t   face_id, i;
 
-  fvm_lnum_t   n_max_faces = 0;
-  fvm_lnum_t   b_face_count = 0;
-  fvm_lnum_t   i_face_count = 0;
-  fvm_lnum_t   extr_face_count = 0;
-  fvm_lnum_t  *extr_face_idx = NULL;
-  fvm_lnum_t  *extr_face_list = NULL;
+  cs_lnum_t   n_max_faces = 0;
+  cs_lnum_t   b_face_count = 0;
+  cs_lnum_t   i_face_count = 0;
+  cs_lnum_t   extr_face_count = 0;
+  cs_lnum_t  *extr_face_idx = NULL;
+  cs_lnum_t  *extr_face_list = NULL;
 
-  fvm_lnum_t   face_num_shift[3];
-  fvm_lnum_t  *face_vertices_idx[2];
-  fvm_lnum_t  *face_vertices_num[2];
+  cs_lnum_t   face_num_shift[3];
+  cs_lnum_t  *face_vertices_idx[2];
+  cs_lnum_t  *face_vertices_num[2];
   const int   *_face_families[2];
   const int   **face_families = NULL;
 
-  fvm_gnum_t  *num_glob_fac = NULL;
+  cs_gnum_t  *num_glob_fac = NULL;
 
-  assert(sizeof(int) == sizeof(fvm_lnum_t)); /* For families */
+  assert(sizeof(int) == sizeof(cs_lnum_t)); /* For families */
 
   /* Count the number of faces to convert */
 
   n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
-  BFT_MALLOC(extr_face_idx, n_max_faces, fvm_lnum_t);
+  BFT_MALLOC(extr_face_idx, n_max_faces, cs_lnum_t);
 
   /* Initialize index as marker */
 
@@ -199,7 +199,7 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
 
   extr_face_count = b_face_count + i_face_count;
 
-  BFT_MALLOC(extr_face_list, extr_face_count, fvm_lnum_t);
+  BFT_MALLOC(extr_face_list, extr_face_count, cs_lnum_t);
 
   if (b_face_list != NULL) {
     for (face_id = 0; face_id < b_face_count; face_id++)
@@ -241,8 +241,8 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
                                 extr_face_list,
                                 2,
                                 face_num_shift,
-                                (const fvm_lnum_t **)face_vertices_idx,
-                                (const fvm_lnum_t **)face_vertices_num,
+                                (const cs_lnum_t **)face_vertices_idx,
+                                (const cs_lnum_t **)face_vertices_num,
                                 face_families,
                                 NULL);
 
@@ -253,7 +253,7 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
 
   if (mesh->global_i_face_num != NULL || mesh->global_b_face_num != NULL) {
 
-    BFT_MALLOC(num_glob_fac, n_max_faces, fvm_gnum_t);
+    BFT_MALLOC(num_glob_fac, n_max_faces, cs_gnum_t);
 
     if (mesh->global_b_face_num == NULL) {
       for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
@@ -315,17 +315,17 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_connect_get_cell_faces(const cs_mesh_t             *mesh,
-                               fvm_lnum_t                   extr_cell_size,
-                               const fvm_lnum_t             extr_cell_id[],
-                               fvm_lnum_t          * *const p_cell_faces_idx,
-                               fvm_lnum_t          * *const p_cell_faces_val)
+cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
+                               cs_lnum_t                extr_cell_size,
+                               const cs_lnum_t          extr_cell_id[],
+                               cs_lnum_t        **const p_cell_faces_idx,
+                               cs_lnum_t        **const p_cell_faces_val)
 {
-  fvm_lnum_t  cell_id, c_id1, c_id2, face_id, n_loc_cells;
+  cs_lnum_t  cell_id, c_id1, c_id2, face_id, n_loc_cells;
 
-  fvm_lnum_t  *cell_face_count = NULL;
-  fvm_lnum_t  *cell_faces_idx = NULL;
-  fvm_lnum_t  *cell_faces_val = NULL;
+  cs_lnum_t  *cell_face_count = NULL;
+  cs_lnum_t  *cell_faces_idx = NULL;
+  cs_lnum_t  *cell_faces_val = NULL;
 
   /* Allocate and initialize cell ->faces index */
 
@@ -474,25 +474,25 @@ fvm_nodal_t  *
 cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
                                bool              include_families,
-                               fvm_lnum_t        cell_list_size,
-                               fvm_lnum_t        cell_list[])
+                               cs_lnum_t         cell_list_size,
+                               cs_lnum_t         cell_list[])
 {
-  fvm_lnum_t   face_id, cell_id;
+  cs_lnum_t   face_id, cell_id;
 
-  int          null_family = 0;
-  fvm_lnum_t   extr_cell_count = 0, i_face_count = 0, b_face_count = 0;
-  fvm_lnum_t  *extr_cell_idx = NULL;
+  int         null_family = 0;
+  cs_lnum_t   extr_cell_count = 0, i_face_count = 0, b_face_count = 0;
+  cs_lnum_t  *extr_cell_idx = NULL;
 
-  fvm_lnum_t  *cell_face_idx = NULL;
-  fvm_lnum_t  *cell_face_num = NULL;
+  cs_lnum_t  *cell_face_idx = NULL;
+  cs_lnum_t  *cell_face_num = NULL;
 
-  fvm_lnum_t  *i_face_list= NULL, *b_face_list = NULL;
+  cs_lnum_t  *i_face_list= NULL, *b_face_list = NULL;
 
-  fvm_lnum_t  face_num_shift[3];
-  fvm_lnum_t  *face_vertices_idx[2];
-  fvm_lnum_t  *face_vertices_num[2];
-  fvm_lnum_t  *polyhedra_faces = NULL;
-  const int   *cell_family = NULL;
+  cs_lnum_t  face_num_shift[3];
+  cs_lnum_t  *face_vertices_idx[2];
+  cs_lnum_t  *face_vertices_num[2];
+  cs_lnum_t  *polyhedra_faces = NULL;
+  const int  *cell_family = NULL;
 
   fvm_nodal_t  *extr_mesh;
 
@@ -513,15 +513,15 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                 "reconstruction (cs_mesh_connect_cells_to_nodal)."));
 
   if (include_families) {
-    BFT_MALLOC(i_face_list, mesh->n_i_faces, fvm_lnum_t);
-    BFT_MALLOC(b_face_list, mesh->n_b_faces, fvm_lnum_t);
+    BFT_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
+    BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
   }
 
   /* Count the number of cells to convert */
 
   if (cell_list != NULL) {
 
-    BFT_MALLOC(extr_cell_idx, mesh->n_cells, fvm_lnum_t);
+    BFT_MALLOC(extr_cell_idx, mesh->n_cells, cs_lnum_t);
 
     /* Initialize index as marker */
 
@@ -537,23 +537,23 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
     if (include_families) {
 
       for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-        fvm_lnum_t c_id_0 = mesh->i_face_cells[face_id*2] - 1;
-        fvm_lnum_t c_id_1 = mesh->i_face_cells[face_id*2 + 1] - 1;
+        cs_lnum_t c_id_0 = mesh->i_face_cells[face_id*2] - 1;
+        cs_lnum_t c_id_1 = mesh->i_face_cells[face_id*2 + 1] - 1;
         if (   (extr_cell_idx[c_id_0] == 1 || extr_cell_idx[c_id_1] == 1)
             && (mesh->i_face_family[face_id] != null_family)) {
           i_face_list[i_face_count++] = face_id + 1;
         }
       }
-      BFT_REALLOC(i_face_list, i_face_count, fvm_lnum_t);
+      BFT_REALLOC(i_face_list, i_face_count, cs_lnum_t);
 
       for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-        fvm_lnum_t c_id = mesh->b_face_cells[face_id] - 1;
+        cs_lnum_t c_id = mesh->b_face_cells[face_id] - 1;
         if (   (extr_cell_idx[c_id] == 1)
             && (mesh->b_face_family[face_id] != null_family)) {
           b_face_list[b_face_count++] = face_id + 1;
         }
       }
-      BFT_REALLOC(b_face_list, b_face_count, fvm_lnum_t);
+      BFT_REALLOC(b_face_list, b_face_count, cs_lnum_t);
 
     }
 
@@ -578,23 +578,23 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
     if (include_families && extr_cell_count > 0) {
 
       for (face_id = 0; face_id < mesh->n_i_faces; face_id++) {
-        fvm_lnum_t c_id_0 = mesh->i_face_cells[face_id*2] - 1;
-        fvm_lnum_t c_id_1 = mesh->i_face_cells[face_id*2 + 1] - 1;
+        cs_lnum_t c_id_0 = mesh->i_face_cells[face_id*2] - 1;
+        cs_lnum_t c_id_1 = mesh->i_face_cells[face_id*2 + 1] - 1;
         if (   (c_id_0 < extr_cell_count || c_id_1 < extr_cell_count)
             && (mesh->i_face_family[face_id] != null_family)) {
           i_face_list[i_face_count++] = face_id + 1;
         }
       }
-      BFT_REALLOC(i_face_list, i_face_count, fvm_lnum_t);
+      BFT_REALLOC(i_face_list, i_face_count, cs_lnum_t);
 
       for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
-        fvm_lnum_t c_id = mesh->b_face_cells[face_id] - 1;
+        cs_lnum_t c_id = mesh->b_face_cells[face_id] - 1;
         if (   (c_id < extr_cell_count)
             && (mesh->b_face_family[face_id] != null_family)) {
           b_face_list[b_face_count++] = face_id + 1;
         }
       }
-      BFT_REALLOC(b_face_list, b_face_count, fvm_lnum_t);
+      BFT_REALLOC(b_face_list, b_face_count, cs_lnum_t);
 
     }
   }
@@ -623,7 +623,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   extr_mesh = fvm_nodal_create(name, 3);
 
-  assert(sizeof(int) == sizeof(fvm_lnum_t)); /* For families */
+  assert(sizeof(int) == sizeof(cs_lnum_t)); /* For families */
 
   if (include_families)
     cell_family = mesh->cell_family;
@@ -633,8 +633,8 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                 NULL,
                                 2,
                                 face_num_shift,
-                                (const fvm_lnum_t **)face_vertices_idx,
-                                (const fvm_lnum_t **)face_vertices_num,
+                                (const cs_lnum_t **)face_vertices_idx,
+                                (const cs_lnum_t **)face_vertices_num,
                                 cell_face_idx,
                                 cell_face_num,
                                 cell_family,
@@ -708,14 +708,14 @@ fvm_nodal_t *
 cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
                                bool              include_families,
-                               fvm_lnum_t        i_face_list_size,
-                               fvm_lnum_t        b_face_list_size,
-                               fvm_lnum_t        i_face_list[],
-                               fvm_lnum_t        b_face_list[])
+                               cs_lnum_t         i_face_list_size,
+                               cs_lnum_t         b_face_list_size,
+                               cs_lnum_t         i_face_list[],
+                               cs_lnum_t         b_face_list[])
 {
   fvm_nodal_t  *extr_mesh = NULL;
 
-  assert(sizeof(int) == sizeof(fvm_lnum_t)); /* For families */
+  assert(sizeof(int) == sizeof(cs_lnum_t)); /* For families */
 
   /* Check that the mesh contains face -> vertices connectivity */
 

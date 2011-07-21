@@ -56,7 +56,7 @@ struct _fvm_box_distrib_t {
 
   int                 n_ranks;      /* Number of associated ranks */
 
-  fvm_lnum_t          n_boxes;      /* Number of bounding boxes */
+  cs_lnum_t           n_boxes;      /* Number of bounding boxes */
 
   int                 max_level;    /* Global max level used to compute the
                                        distribution */
@@ -69,8 +69,8 @@ struct _fvm_box_distrib_t {
 
   /* Indexed list on ranks to list related bounding boxes */
 
-  fvm_lnum_t  *index;   /* Index on ranks (size = n_ranks + 1) */
-  fvm_lnum_t  *list;    /* List of bounding boxes associated to each rank */
+  cs_lnum_t   *index;   /* Index on ranks (size = n_ranks + 1) */
+  cs_lnum_t   *list;    /* List of bounding boxes associated to each rank */
 };
 
 #endif /* defined(HAVE_MPI) */
@@ -82,17 +82,17 @@ struct _fvm_box_set_t {
   int            dim;            /* Spatial dimension (1, 2 or 3) */
   int            dimensions[3];  /* Only used in 1 or 2D: X = 0, Y = 1, Z = 2 */
 
-  fvm_lnum_t     n_boxes;        /* Number of bounding boxes */
-  fvm_gnum_t     n_g_boxes;      /* Global number of bounding boxes */
+  cs_lnum_t      n_boxes;        /* Number of bounding boxes */
+  cs_gnum_t      n_g_boxes;      /* Global number of bounding boxes */
 
-  fvm_gnum_t    *g_num;          /* Array of associated global numbers */
-  fvm_coord_t   *extents;        /* Extents associated with each box:
+  cs_gnum_t     *g_num;          /* Array of associated global numbers */
+  cs_coord_t    *extents;        /* Extents associated with each box:
                                   * x_min_0, y_min_0, ..., x_max_0, y_max_0, ...
                                   * x_min_n, y_min_n, ..., x_max_n, y_max_n,
                                   * (size: n_boxes * dim * 2) */
 
-  fvm_coord_t    gmin[3];        /* Global minima of the coordinates */
-  fvm_coord_t    gmax[3];        /* Global maxima of the coordinates */
+  cs_coord_t     gmin[3];        /* Global minima of the coordinates */
+  cs_coord_t     gmax[3];        /* Global maxima of the coordinates */
 
 #if defined(HAVE_MPI)
   MPI_Comm       comm;           /* Associated MPI communicator */

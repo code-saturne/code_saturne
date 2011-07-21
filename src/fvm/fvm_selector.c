@@ -108,7 +108,7 @@ typedef struct {
 struct _fvm_selector_t {
 
   int                dim;                      /* Spatial dimension */
-  fvm_lnum_t         n_elements;               /* Number of elements */
+  cs_lnum_t          n_elements;               /* Number of elements */
 
   const int         *group_class_id;           /* Element group class ids */
   int               *_group_class_id;          /* private group_class_id,
@@ -143,9 +143,9 @@ struct _fvm_selector_t {
                                                   previously interpreted
                                                   strings (operations) */
 
-  fvm_lnum_t        *_n_group_class_elements;  /* Number of elements per
+  cs_lnum_t         *_n_group_class_elements;  /* Number of elements per
                                                   group class */
-  fvm_lnum_t        **_group_class_elements;   /* Group class elements array */
+  cs_lnum_t         **_group_class_elements;   /* Group class elements array */
 
   int                 n_evals;                 /* Number of evaluations */
   double              eval_wtime;              /* Wall-clock time
@@ -766,7 +766,7 @@ _get_criteria_id(fvm_selector_t  *selector,
 
 fvm_selector_t *
 fvm_selector_create(int                           dim,
-                    fvm_lnum_t                    n_elements,
+                    cs_lnum_t                     n_elements,
                     const fvm_group_class_set_t  *group_class_set,
                     const int                     group_class_id[],
                     int                           group_class_id_base,
@@ -774,7 +774,7 @@ fvm_selector_create(int                           dim,
                     const double                  normals[])
 {
   int i;
-  fvm_lnum_t j;
+  cs_lnum_t j;
   fvm_selector_t *selector;
 
   int n_group_classes = fvm_group_class_set_size(group_class_set);
@@ -815,8 +815,8 @@ fvm_selector_create(int                           dim,
 
   if (group_class_id != NULL && n_group_classes > 0) {
 
-    BFT_MALLOC(selector->_n_group_class_elements, n_group_classes, fvm_lnum_t);
-    BFT_MALLOC(selector->_group_class_elements, n_group_classes, fvm_lnum_t *);
+    BFT_MALLOC(selector->_n_group_class_elements, n_group_classes, cs_lnum_t);
+    BFT_MALLOC(selector->_group_class_elements, n_group_classes, cs_lnum_t *);
 
     /* Counting loop and allocation */
 
@@ -932,12 +932,12 @@ fvm_selector_destroy(fvm_selector_t  *this_selector)
 int
 fvm_selector_get_list(fvm_selector_t  *this_selector,
                       const char      *str,
-                      fvm_lnum_t      *n_selected_elements,
-                      fvm_lnum_t      *selected_elements)
+                      cs_lnum_t       *n_selected_elements,
+                      cs_lnum_t       *selected_elements)
 
 {
   int  c_id, gc_id;
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
   const fvm_selector_postfix_t *pf = NULL;
   fvm_selector_t  *ts = this_selector;
   double t0 = bft_timer_wtime();

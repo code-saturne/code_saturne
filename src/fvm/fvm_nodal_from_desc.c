@@ -120,21 +120,21 @@ typedef enum {
  *----------------------------------------------------------------------------*/
 
 inline static fvm_element_t
-_is_prism_or_poly(const fvm_lnum_t   cell_id,
+_is_prism_or_poly(const cs_lnum_t    cell_id,
                   const int          n_face_lists,
-                  const fvm_lnum_t   face_list_shift[],
-                  const fvm_lnum_t  *face_vertex_idx[],
-                  const fvm_lnum_t  *face_vertex_num[],
-                  const fvm_lnum_t   cell_face_idx[],
-                  const fvm_lnum_t   cell_face_num[])
+                  const cs_lnum_t    face_list_shift[],
+                  const cs_lnum_t   *face_vertex_idx[],
+                  const cs_lnum_t   *face_vertex_num[],
+                  const cs_lnum_t    cell_face_idx[],
+                  const cs_lnum_t    cell_face_num[])
 {
   int         vtx_id_1, vtx_id_2;
-  fvm_lnum_t  face_id, fl;
-  fvm_lnum_t  idx, idx_start, idx_end;
-  fvm_lnum_t  n_face_vertices;
-  fvm_lnum_t  vtx, vertex_id_start, vertex_id_end;
+  cs_lnum_t   face_id, fl;
+  cs_lnum_t   idx, idx_start, idx_end;
+  cs_lnum_t   n_face_vertices;
+  cs_lnum_t   vtx, vertex_id_start, vertex_id_end;
 
-  fvm_lnum_t  vtx_tria[6];
+  cs_lnum_t   vtx_tria[6];
   int         n_trias = 0;
 
   /* Extract 2 triangles */
@@ -219,27 +219,27 @@ _is_prism_or_poly(const fvm_lnum_t   cell_id,
  *----------------------------------------------------------------------------*/
 
 inline static fvm_element_t
-_nodal_cell_from_desc(const fvm_lnum_t   cell_id,
+_nodal_cell_from_desc(const cs_lnum_t    cell_id,
                       const int          n_face_lists,
-                      const fvm_lnum_t   face_list_shift[],
-                      const fvm_lnum_t  *face_vertex_idx[],
-                      const fvm_lnum_t  *face_vertex_num[],
-                      const fvm_lnum_t   cell_face_idx[],
-                      const fvm_lnum_t   cell_face_num[],
-                      fvm_lnum_t        *cell_vtx_tria,
-                      fvm_lnum_t        *cell_vtx_quad)
+                      const cs_lnum_t    face_list_shift[],
+                      const cs_lnum_t   *face_vertex_idx[],
+                      const cs_lnum_t   *face_vertex_num[],
+                      const cs_lnum_t    cell_face_idx[],
+                      const cs_lnum_t    cell_face_num[],
+                      cs_lnum_t         *cell_vtx_tria,
+                      cs_lnum_t         *cell_vtx_quad)
 {
-  fvm_lnum_t  n_cell_faces;
-  fvm_lnum_t  face_id, fl;
-  fvm_lnum_t  idx, idx_start, idx_end;
-  fvm_lnum_t  n_face_vertices;
-  fvm_lnum_t  vtx, vertex_id_start, vertex_id_end;
+  cs_lnum_t   n_cell_faces;
+  cs_lnum_t   face_id, fl;
+  cs_lnum_t   idx, idx_start, idx_end;
+  cs_lnum_t   n_face_vertices;
+  cs_lnum_t   vtx, vertex_id_start, vertex_id_end;
 
   fvm_element_t cell_type;
 
-  fvm_lnum_t  n_trias = 0;
-  fvm_lnum_t  n_quads = 0;
-  fvm_lnum_t  n_ngons = 0;
+  cs_lnum_t   n_trias = 0;
+  cs_lnum_t   n_quads = 0;
+  cs_lnum_t   n_ngons = 0;
 
 
   /* Guess connectivity types */
@@ -355,12 +355,12 @@ _nodal_cell_from_desc(const fvm_lnum_t   cell_id,
  *----------------------------------------------------------------------------*/
 
 inline static fvm_nodal_from_desc_t
-_nodal_from_desc_cnv_cel_tetra(const fvm_lnum_t  cell_vtx_tria[],
-                               fvm_lnum_t  cell_vtx_tetra[])
+_nodal_from_desc_cnv_cel_tetra(const cs_lnum_t   cell_vtx_tria[],
+                               cs_lnum_t   cell_vtx_tetra[])
 {
-  fvm_lnum_t  vertex_id, face_id;
-  fvm_lnum_t  direction;
-  fvm_lnum_t  vtx_num, vtx_num_1, vtx_num_2;
+  cs_lnum_t   vertex_id, face_id;
+  cs_lnum_t   direction;
+  cs_lnum_t   vtx_num, vtx_num_1, vtx_num_2;
 
   _Bool  warn_orient = false;
 
@@ -462,13 +462,13 @@ _nodal_from_desc_cnv_cel_tetra(const fvm_lnum_t  cell_vtx_tria[],
  *----------------------------------------------------------------------------*/
 
 inline static fvm_nodal_from_desc_t
-_nodal_from_desc_cnv_cel_pyram(const fvm_lnum_t  cell_vtx_tria[],
-                               const fvm_lnum_t  cell_vtx_quad[],
-                               fvm_lnum_t  cell_vtx_pyram[])
+_nodal_from_desc_cnv_cel_pyram(const cs_lnum_t   cell_vtx_tria[],
+                               const cs_lnum_t   cell_vtx_quad[],
+                               cs_lnum_t   cell_vtx_pyram[])
 {
-  fvm_lnum_t  vertex_id, face_id;
-  fvm_lnum_t  direction;
-  fvm_lnum_t  vtx_num, vtx_num_1, vtx_num_2;
+  cs_lnum_t   vertex_id, face_id;
+  cs_lnum_t   direction;
+  cs_lnum_t   vtx_num, vtx_num_1, vtx_num_2;
 
   _Bool  warn_orient = false;
 
@@ -573,13 +573,13 @@ _nodal_from_desc_cnv_cel_pyram(const fvm_lnum_t  cell_vtx_tria[],
  *----------------------------------------------------------------------------*/
 
 inline static fvm_nodal_from_desc_t
-_nodal_from_desc_cnv_cel_prism(const fvm_lnum_t  cell_vtx_tria[],
-                               const fvm_lnum_t  cell_vtx_quad[],
-                               fvm_lnum_t  cell_vtx_prism[])
+_nodal_from_desc_cnv_cel_prism(const cs_lnum_t   cell_vtx_tria[],
+                               const cs_lnum_t   cell_vtx_quad[],
+                               cs_lnum_t   cell_vtx_prism[])
 {
-  fvm_lnum_t  vertex_id, face_id;
-  fvm_lnum_t  ipass, direction;
-  fvm_lnum_t  vtx_num, vtx_num_1, vtx_num_2;
+  cs_lnum_t   vertex_id, face_id;
+  cs_lnum_t   ipass, direction;
+  cs_lnum_t   vtx_num, vtx_num_1, vtx_num_2;
 
   _Bool  warn_orient = false;
 
@@ -693,12 +693,12 @@ _nodal_from_desc_cnv_cel_prism(const fvm_lnum_t  cell_vtx_tria[],
  *----------------------------------------------------------------------------*/
 
 inline static fvm_nodal_from_desc_t
-_nodal_from_desc_cnv_cel_hexa(const fvm_lnum_t  cell_vtx_quad[],
-                              fvm_lnum_t  cell_vtx_hexa[])
+_nodal_from_desc_cnv_cel_hexa(const cs_lnum_t   cell_vtx_quad[],
+                              cs_lnum_t   cell_vtx_hexa[])
 {
-  fvm_lnum_t  vertex_id, face_id;
-  fvm_lnum_t  ipass, direction;
-  fvm_lnum_t  vtx_num, vtx_num_1, vtx_num_2;
+  cs_lnum_t   vertex_id, face_id;
+  cs_lnum_t   ipass, direction;
+  cs_lnum_t   vtx_num, vtx_num_1, vtx_num_2;
 
   _Bool  warn_orient = false;
 
@@ -824,15 +824,15 @@ _nodal_from_desc_cnv_cel_hexa(const fvm_lnum_t  cell_vtx_quad[],
  *   number of vertices of face defined by face_id
  *----------------------------------------------------------------------------*/
 
-inline static fvm_lnum_t
-_nodal_face_from_desc_size(const fvm_lnum_t   face_id,
+inline static cs_lnum_t
+_nodal_face_from_desc_size(const cs_lnum_t    face_id,
                            const int          n_face_lists,
-                           const fvm_lnum_t   face_list_shift[],
-                           const fvm_lnum_t  *face_vertex_idx[])
+                           const cs_lnum_t    face_list_shift[],
+                           const cs_lnum_t   *face_vertex_idx[])
 {
-  fvm_lnum_t  fl, _face_id;
-  fvm_lnum_t  n_face_vertices;
-  fvm_lnum_t  vertex_id_start, vertex_id_end;
+  cs_lnum_t   fl, _face_id;
+  cs_lnum_t   n_face_vertices;
+  cs_lnum_t   vertex_id_start, vertex_id_end;
 
   /* Compute number of vertices */
   /*----------------------------*/
@@ -867,15 +867,15 @@ _nodal_face_from_desc_size(const fvm_lnum_t   face_id,
  *----------------------------------------------------------------------------*/
 
 inline static void
-_nodal_face_from_desc_copy(const fvm_lnum_t   face_id,
+_nodal_face_from_desc_copy(const cs_lnum_t    face_id,
                            const int          n_face_lists,
-                           const fvm_lnum_t   face_list_shift[],
-                           const fvm_lnum_t  *face_vertex_idx[],
-                           const fvm_lnum_t  *face_vertex_num[],
-                           fvm_lnum_t        *face_vtx)
+                           const cs_lnum_t    face_list_shift[],
+                           const cs_lnum_t   *face_vertex_idx[],
+                           const cs_lnum_t   *face_vertex_num[],
+                           cs_lnum_t         *face_vtx)
 {
-  fvm_lnum_t  fl, _face_id;
-  fvm_lnum_t  vtx, vertex_id, vertex_id_start, vertex_id_end;
+  cs_lnum_t   fl, _face_id;
+  cs_lnum_t   vtx, vertex_id, vertex_id_start, vertex_id_end;
 
   /* Copy vertex numbers */
   /*---------------------*/
@@ -913,23 +913,23 @@ _nodal_face_from_desc_copy(const fvm_lnum_t   face_id,
 
 static void
 _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
-                             const fvm_lnum_t      n_polys,
-                             const fvm_lnum_t      list_poly[],
+                             const cs_lnum_t       n_polys,
+                             const cs_lnum_t       list_poly[],
                              const int             n_face_lists,
-                             const fvm_lnum_t      face_list_shift[],
-                             const fvm_lnum_t     *face_vertex_idx[],
-                             const fvm_lnum_t     *face_vertex_num[],
-                             const fvm_lnum_t      cell_face_idx[],
-                             const fvm_lnum_t      cell_face_num[],
-                             fvm_lnum_t           *cell_face_list[])
+                             const cs_lnum_t       face_list_shift[],
+                             const cs_lnum_t      *face_vertex_idx[],
+                             const cs_lnum_t      *face_vertex_num[],
+                             const cs_lnum_t       cell_face_idx[],
+                             const cs_lnum_t       cell_face_num[],
+                             cs_lnum_t            *cell_face_list[])
 {
-  fvm_lnum_t   n_faces, n_cell_faces;
-  fvm_lnum_t   c_cell_face_vertex_idxs, c_cell_face_vertex_nums;
-  fvm_lnum_t   n_cell_face_vertex_nums;
-  fvm_lnum_t   face_counter, face_id, poly_id, cell_id;
-  fvm_lnum_t   fl, i, idx, idx_start, idx_end, num_count;
+  cs_lnum_t    n_faces, n_cell_faces;
+  cs_lnum_t    c_cell_face_vertex_idxs, c_cell_face_vertex_nums;
+  cs_lnum_t    n_cell_face_vertex_nums;
+  cs_lnum_t    face_counter, face_id, poly_id, cell_id;
+  cs_lnum_t    fl, i, idx, idx_start, idx_end, num_count;
 
-  fvm_lnum_t  *local_face_num = NULL;
+  cs_lnum_t   *local_face_num = NULL;
 
   int sgn;
 
@@ -938,7 +938,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   n_faces = face_list_shift[n_face_lists] - face_list_shift[0];
 
-  BFT_MALLOC(local_face_num, n_faces, fvm_lnum_t);
+  BFT_MALLOC(local_face_num, n_faces, cs_lnum_t);
 
   for (face_id = 0 ; face_id < n_faces ; face_id++)
     local_face_num[face_id] = 0;
@@ -948,7 +948,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   n_cell_faces = 0;
 
-  BFT_MALLOC(this_section->_face_index, n_polys + 1, fvm_lnum_t);
+  BFT_MALLOC(this_section->_face_index, n_polys + 1, cs_lnum_t);
   this_section->face_index = this_section->_face_index;
   this_section->_face_index[0] = 0;
 
@@ -1008,7 +1008,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   BFT_MALLOC(this_section->_face_num,
              this_section->_face_index[n_polys],
-             fvm_lnum_t);
+             cs_lnum_t);
   this_section->face_num = this_section->_face_num;
 
   num_count = 0;
@@ -1038,16 +1038,16 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
   /*--------------------------------*/
 
   if (cell_face_list != NULL)
-    BFT_MALLOC(*cell_face_list, n_cell_faces, fvm_lnum_t);
+    BFT_MALLOC(*cell_face_list, n_cell_faces, cs_lnum_t);
 
   BFT_MALLOC(this_section->_vertex_index,
              n_cell_faces + 1,
-             fvm_lnum_t);
+             cs_lnum_t);
   this_section->vertex_index = this_section->_vertex_index;
 
   BFT_MALLOC(this_section->_vertex_num,
              n_cell_face_vertex_nums,
-             fvm_lnum_t);
+             cs_lnum_t);
   this_section->vertex_num = this_section->_vertex_num;
 
   /* Definition */
@@ -1124,10 +1124,10 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 static void
 _raise_sections_parent_num(const int             n_sections,
                            fvm_nodal_section_t  *sections[],
-                           const fvm_lnum_t      parent_element_num[])
+                           const cs_lnum_t       parent_element_num[])
 {
   int  section_id;
-  fvm_lnum_t  element_counter;
+  cs_lnum_t   element_counter;
 
   fvm_nodal_section_t  *section;
 
@@ -1140,7 +1140,7 @@ _raise_sections_parent_num(const int             n_sections,
       if (section->_parent_element_num == NULL) {
         BFT_MALLOC(section->_parent_element_num,
                    section->n_elements,
-                   fvm_lnum_t);
+                   cs_lnum_t);
         section->parent_element_num = section->_parent_element_num;
       }
       for (element_counter = 0 ;
@@ -1172,7 +1172,7 @@ _optimize_sections_parent_num(const int             n_sections,
                               fvm_nodal_section_t  *sections[])
 {
   int  section_id;
-  fvm_lnum_t  element_counter;
+  cs_lnum_t   element_counter;
 
   fvm_nodal_section_t  *section;
 
@@ -1284,34 +1284,34 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
 
 void
 fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
-                              const fvm_lnum_t    n_extr_cells,
-                              const fvm_lnum_t    extr_cells[],
+                              const cs_lnum_t     n_extr_cells,
+                              const cs_lnum_t     extr_cells[],
                               const int           n_face_lists,
-                              const fvm_lnum_t    face_list_shift[],
-                              const fvm_lnum_t   *face_vertex_idx[],
-                              const fvm_lnum_t   *face_vertex_num[],
-                              const fvm_lnum_t    cell_face_idx[],
-                              const fvm_lnum_t    cell_face_num[],
+                              const cs_lnum_t     face_list_shift[],
+                              const cs_lnum_t    *face_vertex_idx[],
+                              const cs_lnum_t    *face_vertex_num[],
+                              const cs_lnum_t     cell_face_idx[],
+                              const cs_lnum_t     cell_face_num[],
                               const int           cell_gc_id[],
-                              const fvm_lnum_t    parent_cell_num[],
-                              fvm_lnum_t         *cell_face_list[])
+                              const cs_lnum_t     parent_cell_num[],
+                              cs_lnum_t          *cell_face_list[])
 {
   int  type_id;
-  fvm_lnum_t  cell_counter, cell_id;
+  cs_lnum_t   cell_counter, cell_id;
 
   fvm_element_t  cell_type;
 
-  fvm_lnum_t  cell_vtx_tria[3*4]; /* We will only seek to fill these arrays */
-  fvm_lnum_t  cell_vtx_quad[4*6]; /* for local faces 1-4 and 1-6 at most    */
-  fvm_lnum_t  *p_cell_vertex;
+  cs_lnum_t   cell_vtx_tria[3*4]; /* We will only seek to fill these arrays */
+  cs_lnum_t   cell_vtx_quad[4*6]; /* for local faces 1-4 and 1-6 at most    */
+  cs_lnum_t   *p_cell_vertex;
 
-  fvm_lnum_t  n_elements_type[FVM_N_ELEMENT_TYPES];
-  fvm_gnum_t  n_g_elements_type[FVM_N_ELEMENT_TYPES];
+  cs_lnum_t   n_elements_type[FVM_N_ELEMENT_TYPES];
+  cs_gnum_t   n_g_elements_type[FVM_N_ELEMENT_TYPES];
 
   fvm_nodal_section_t  *section;
   fvm_nodal_section_t  *sections[FVM_N_ELEMENT_TYPES];
 
-  fvm_gnum_t  n_orient_pbs = 0; /* Number of cells with potential (non-
+  cs_gnum_t   n_orient_pbs = 0; /* Number of cells with potential (non-
                                    fatal) orientation problem */
 
   fvm_nodal_from_desc_t  retcode;
@@ -1388,7 +1388,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
           && section->type != FVM_CELL_POLY) {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = section->stride * section->n_elements;
-        BFT_MALLOC(section->_vertex_num, section->connectivity_size, fvm_lnum_t);
+        BFT_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
         section->vertex_num = section->_vertex_num;
       }
     }
@@ -1397,7 +1397,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   for (type_id = 0 ; type_id < FVM_N_ELEMENT_TYPES ; type_id++) {
     section = sections[type_id];
     if (section != NULL) {
-      BFT_MALLOC(section->_parent_element_num, section->n_elements, fvm_lnum_t);
+      BFT_MALLOC(section->_parent_element_num, section->n_elements, cs_lnum_t);
       section->parent_element_num = section->_parent_element_num;
     }
   }
@@ -1556,27 +1556,27 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
 void
 fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
-                              const fvm_lnum_t    n_extr_faces,
-                              const fvm_lnum_t    extr_faces[],
+                              const cs_lnum_t     n_extr_faces,
+                              const cs_lnum_t     extr_faces[],
                               const int           n_face_lists,
-                              const fvm_lnum_t    face_list_shift[],
-                              const fvm_lnum_t   *face_vertex_idx[],
-                              const fvm_lnum_t   *face_vertex_num[],
+                              const cs_lnum_t     face_list_shift[],
+                              const cs_lnum_t    *face_vertex_idx[],
+                              const cs_lnum_t    *face_vertex_num[],
                               const int          *face_gc_id[],
-                              const fvm_lnum_t    parent_face_num[])
+                              const cs_lnum_t     parent_face_num[])
 {
   int  type_id;
-  fvm_lnum_t  face_counter, face_id;
+  cs_lnum_t   face_counter, face_id;
 
   fvm_element_t  face_type;
 
-  fvm_lnum_t  *p_vertex_idx;
-  fvm_lnum_t  *p_vertex_num;
+  cs_lnum_t   *p_vertex_idx;
+  cs_lnum_t   *p_vertex_num;
 
-  fvm_lnum_t  poly_connect_size;
-  fvm_lnum_t  n_face_vertices;
-  fvm_lnum_t  n_elements_type[FVM_N_ELEMENT_TYPES];
-  fvm_gnum_t  n_g_elements_type[FVM_N_ELEMENT_TYPES];
+  cs_lnum_t   poly_connect_size;
+  cs_lnum_t   n_face_vertices;
+  cs_lnum_t   n_elements_type[FVM_N_ELEMENT_TYPES];
+  cs_gnum_t   n_g_elements_type[FVM_N_ELEMENT_TYPES];
 
   fvm_nodal_section_t  *section;
   fvm_nodal_section_t  *sections[FVM_N_ELEMENT_TYPES];
@@ -1657,14 +1657,14 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
       if (section->type != FVM_FACE_POLY) {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = section->stride * section->n_elements;
-        BFT_MALLOC(section->_vertex_num, section->connectivity_size, fvm_lnum_t);
+        BFT_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
         section->vertex_num = section->_vertex_num;
       }
       else {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = poly_connect_size;
-        BFT_MALLOC(section->_vertex_index, section->n_elements + 1, fvm_lnum_t);
-        BFT_MALLOC(section->_vertex_num, section->connectivity_size, fvm_lnum_t);
+        BFT_MALLOC(section->_vertex_index, section->n_elements + 1, cs_lnum_t);
+        BFT_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
         section->vertex_index = section->_vertex_index;
         section->vertex_num = section->_vertex_num;
         section->_vertex_index[0] = 0;
@@ -1675,7 +1675,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
   for (type_id = 0 ; type_id < FVM_N_ELEMENT_TYPES ; type_id++) {
     section = sections[type_id];
     if (section != NULL) {
-      BFT_MALLOC(section->_parent_element_num, section->n_elements, fvm_lnum_t);
+      BFT_MALLOC(section->_parent_element_num, section->n_elements, cs_lnum_t);
       section->parent_element_num = section->_parent_element_num;
     }
   }
@@ -1752,7 +1752,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
       if (section->parent_element_num != NULL) {
         for (face_id = 0; face_id < section->n_elements; face_id++) {
           int fl;
-          fvm_lnum_t _face_id = section->parent_element_num[face_id] - 1;
+          cs_lnum_t _face_id = section->parent_element_num[face_id] - 1;
           for (fl = n_face_lists - 1 ; _face_id < face_list_shift[fl] ; fl--);
           assert(fl > -1);
           _face_id -= face_list_shift[fl];
@@ -1763,7 +1763,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
       else {
         for (face_id = 0; face_id < section->n_elements; face_id++) {
           int fl;
-          fvm_lnum_t _face_id = face_id;
+          cs_lnum_t _face_id = face_id;
           for (fl = n_face_lists - 1 ; _face_id < face_list_shift[fl] ; fl--);
           assert(fl > -1);
           _face_id -= face_list_shift[fl];

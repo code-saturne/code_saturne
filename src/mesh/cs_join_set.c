@@ -93,13 +93,13 @@ BEGIN_C_DECLS
  *---------------------------------------------------------------------------*/
 
 static void
-_coupled_adapted_gnum_shellsort(int         l,
-                                int         r,
-                                fvm_gnum_t  a[],
-                                fvm_gnum_t  b[])
+_coupled_adapted_gnum_shellsort(int        l,
+                                int        r,
+                                cs_gnum_t  a[],
+                                cs_gnum_t  b[])
 {
   int  i, start;
-  fvm_gnum_t  ref;
+  cs_gnum_t  ref;
 
   int  size = r - l;
 
@@ -137,8 +137,8 @@ _coupled_adapted_gnum_shellsort(int         l,
  *----------------------------------------------------------------------------*/
 
 static int
-_order_local_test_s2(const fvm_lnum_t  number[],
-                     size_t            n_elts)
+_order_local_test_s2(const cs_lnum_t  number[],
+                     size_t           n_elts)
 {
   size_t i = 0;
 
@@ -176,10 +176,10 @@ _order_local_test_s2(const fvm_lnum_t  number[],
  *----------------------------------------------------------------------------*/
 
 inline static void
-_order_descend_tree_s2(const fvm_lnum_t  number[],
-                       size_t            level,
-                       const size_t      n_elts,
-                       fvm_lnum_t        order[])
+_order_descend_tree_s2(const cs_lnum_t  number[],
+                       size_t           level,
+                       const size_t     n_elts,
+                       cs_lnum_t        order[])
 {
   size_t i_save, i1, i2, j, lv_cur;
 
@@ -237,12 +237,12 @@ _order_descend_tree_s2(const fvm_lnum_t  number[],
  *----------------------------------------------------------------------------*/
 
 static void
-_order_local_s2(const fvm_lnum_t  number[],
-                fvm_lnum_t        order[],
-                const size_t      n_elts)
+_order_local_s2(const cs_lnum_t  number[],
+                cs_lnum_t        order[],
+                const size_t     n_elts)
 {
   size_t i;
-  fvm_lnum_t o_save;
+  cs_lnum_t o_save;
 
   assert (number != NULL || n_elts == 0);
 
@@ -449,7 +449,7 @@ cs_join_eset_clean(cs_join_eset_t  **eset)
   cs_int_t  prev, current;
 
   cs_int_t  count = 0;
-  fvm_lnum_t  *order = NULL;
+  cs_lnum_t  *order = NULL;
   cs_join_eset_t  *new_eset = NULL;
   cs_join_eset_t  *_eset = *eset;
 
@@ -459,7 +459,7 @@ cs_join_eset_clean(cs_join_eset_t  **eset)
   if (_eset->n_equiv == 1)
     return;
 
-  BFT_MALLOC(order, _eset->n_equiv, fvm_lnum_t);
+  BFT_MALLOC(order, _eset->n_equiv, cs_lnum_t);
 
   if (_order_local_test_s2(_eset->equiv_couple,
                            _eset->n_equiv) == false) {
@@ -558,7 +558,7 @@ cs_join_gset_create(cs_int_t  n_elts)
   cs_join_gset_t  *new_set = NULL;
 
   BFT_MALLOC(new_set, 1, cs_join_gset_t);
-  BFT_MALLOC(new_set->g_elts, n_elts, fvm_gnum_t);
+  BFT_MALLOC(new_set->g_elts, n_elts, cs_gnum_t);
 
   new_set->n_elts = n_elts;
   new_set->index = NULL;
@@ -589,13 +589,13 @@ cs_join_gset_create(cs_int_t  n_elts)
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
-cs_join_gset_create_from_tag(cs_int_t          n_elts,
-                             const fvm_gnum_t  tag[])
+cs_join_gset_create_from_tag(cs_int_t         n_elts,
+                             const cs_gnum_t  tag[])
 {
   cs_int_t  i, n_list_elts;
-  fvm_gnum_t  prev;
+  cs_gnum_t  prev;
 
-  fvm_lnum_t  *order = NULL;
+  cs_lnum_t  *order = NULL;
   cs_join_gset_t  *set = NULL;
 
   if (n_elts == 0)
@@ -605,7 +605,7 @@ cs_join_gset_create_from_tag(cs_int_t          n_elts,
 
   assert(tag != NULL);
 
-  BFT_MALLOC(order, n_elts, fvm_lnum_t);
+  BFT_MALLOC(order, n_elts, cs_lnum_t);
 
   fvm_order_local_allocated(NULL, tag, order, n_elts);
 
@@ -619,7 +619,7 @@ cs_join_gset_create_from_tag(cs_int_t          n_elts,
 
   for (i = 1; i < n_elts; i++) {
 
-    fvm_gnum_t  cur = tag[order[i]];
+    cs_gnum_t  cur = tag[order[i]];
 
     if (prev != cur) {
       n_list_elts++;
@@ -645,7 +645,7 @@ cs_join_gset_create_from_tag(cs_int_t          n_elts,
 
     for (i = 1; i < n_elts; i++) {
 
-      fvm_gnum_t  cur = tag[order[i]];
+      cs_gnum_t  cur = tag[order[i]];
 
       if (prev != cur) {
         prev = cur;
@@ -665,7 +665,7 @@ cs_join_gset_create_from_tag(cs_int_t          n_elts,
 
     /* Fill list */
 
-    BFT_MALLOC(set->g_list, set->index[set->n_elts], fvm_gnum_t);
+    BFT_MALLOC(set->g_list, set->index[set->n_elts], cs_gnum_t);
 
     n_list_elts = 0;
     prev = tag[order[0]];
@@ -673,8 +673,8 @@ cs_join_gset_create_from_tag(cs_int_t          n_elts,
 
     for (i = 1; i < n_elts; i++) {
 
-      fvm_lnum_t  o_id = order[i];
-      fvm_gnum_t  cur = tag[o_id];
+      cs_lnum_t  o_id = order[i];
+      cs_gnum_t  cur = tag[o_id];
 
       if (prev != cur) {
         prev = cur;
@@ -723,14 +723,14 @@ cs_join_gset_create_from_tag(cs_int_t          n_elts,
 
 cs_join_gset_t *
 cs_join_gset_create_by_equiv(const cs_join_gset_t  *set,
-                             const fvm_gnum_t       init_array[])
+                             const cs_gnum_t        init_array[])
 {
   cs_int_t  i, list_size, n_equiv_grp, count, shift, o_id;
-  fvm_gnum_t  prev, cur;
+  cs_gnum_t  prev, cur;
 
   cs_int_t  save_i = -1;
-  fvm_lnum_t  *order = NULL;
-  fvm_gnum_t  *couple_list = NULL;
+  cs_lnum_t  *order = NULL;
+  cs_gnum_t  *couple_list = NULL;
   cs_join_gset_t  *equiv = NULL;
 
   if (init_array == NULL)
@@ -742,8 +742,8 @@ cs_join_gset_create_by_equiv(const cs_join_gset_t  *set,
 
   /* Order set->g_list */
 
-  BFT_MALLOC(order, list_size, fvm_lnum_t);
-  BFT_MALLOC(couple_list, 2*list_size, fvm_gnum_t);
+  BFT_MALLOC(order, list_size, cs_lnum_t);
+  BFT_MALLOC(couple_list, 2*list_size, cs_gnum_t);
 
   for (i = 0; i < list_size; i++) {
     couple_list[2*i] = set->g_list[i];
@@ -819,7 +819,7 @@ cs_join_gset_create_by_equiv(const cs_join_gset_t  *set,
 
     /* Fill list */
 
-    BFT_MALLOC(equiv->g_list, equiv->index[equiv->n_elts], fvm_gnum_t);
+    BFT_MALLOC(equiv->g_list, equiv->index[equiv->n_elts], cs_gnum_t);
 
     n_equiv_grp = 0;
     prev = set->g_list[order[0]] + 1;
@@ -890,7 +890,7 @@ cs_join_gset_copy(const cs_join_gset_t  *src)
   for (i = 0; i < src->n_elts + 1; i++)
     copy->index[i] = src->index[i];
 
-  BFT_MALLOC(copy->g_list, copy->index[copy->n_elts], fvm_gnum_t);
+  BFT_MALLOC(copy->g_list, copy->index[copy->n_elts], cs_gnum_t);
 
   for (i = 0; i < src->index[src->n_elts]; i++)
     copy->g_list[i] = src->g_list[i];
@@ -931,8 +931,8 @@ cs_join_gset_sort_elts(cs_join_gset_t  *set)
   cs_int_t  n_elts;
 
   cs_int_t  *new_index = NULL;
-  fvm_lnum_t  *order = NULL;
-  fvm_gnum_t  *tmp = NULL, *g_elts = NULL, *g_list = NULL;
+  cs_lnum_t  *order = NULL;
+  cs_gnum_t  *tmp = NULL, *g_elts = NULL, *g_list = NULL;
 
   if (set == NULL)
     return;
@@ -941,8 +941,8 @@ cs_join_gset_sort_elts(cs_join_gset_t  *set)
   g_list = set->g_list;
   n_elts = set->n_elts;
 
-  BFT_MALLOC(order, n_elts, fvm_lnum_t);
-  BFT_MALLOC(tmp, n_elts, fvm_gnum_t);
+  BFT_MALLOC(order, n_elts, cs_lnum_t);
+  BFT_MALLOC(tmp, n_elts, cs_gnum_t);
   BFT_MALLOC(new_index, n_elts + 1, cs_int_t);
 
   for (i = 0; i < n_elts; i++)
@@ -968,7 +968,7 @@ cs_join_gset_sort_elts(cs_join_gset_t  *set)
 
   /* Define new g_list */
 
-  BFT_REALLOC(tmp, set->index[n_elts], fvm_gnum_t);
+  BFT_REALLOC(tmp, set->index[n_elts], cs_gnum_t);
 
   for (i = 0; i < set->index[n_elts]; i++)
     tmp[i] = g_list[i];
@@ -1031,11 +1031,11 @@ cs_join_gset_t *
 cs_join_gset_invert(const cs_join_gset_t  *set)
 {
   int  i, j, o_id, shift, elt_id;
-  fvm_gnum_t  prev, cur;
+  cs_gnum_t  prev, cur;
 
   cs_int_t  list_size = 0, n_elts = 0;
   cs_int_t  *count = NULL;
-  fvm_lnum_t  *order = NULL;
+  cs_lnum_t  *order = NULL;
   cs_join_gset_t  *invert_set = NULL;
 
   if (set == NULL)
@@ -1048,7 +1048,7 @@ cs_join_gset_invert(const cs_join_gset_t  *set)
   if (list_size == 0)
     return cs_join_gset_create(list_size);
 
-  BFT_MALLOC(order, list_size, fvm_lnum_t);
+  BFT_MALLOC(order, list_size, cs_lnum_t);
 
   fvm_order_local_allocated(NULL, set->g_list, order, list_size);
 
@@ -1114,7 +1114,7 @@ cs_join_gset_invert(const cs_join_gset_t  *set)
 
   BFT_MALLOC(invert_set->g_list,
              invert_set->index[invert_set->n_elts],
-             fvm_gnum_t);
+             cs_gnum_t);
 
   /* Define invert_set->g_list */
 
@@ -1158,7 +1158,7 @@ cs_join_gset_clean(cs_join_gset_t  *set)
   int  i, j, l, r, save, n_elts;
 
   int  shift = 0;
-  fvm_gnum_t  *g_list = NULL;
+  cs_gnum_t  *g_list = NULL;
 
   if (set == NULL)
     return;
@@ -1205,14 +1205,14 @@ cs_join_gset_clean(cs_join_gset_t  *set)
 
 void
 cs_join_gset_clean_from_array(cs_join_gset_t  *set,
-                              fvm_gnum_t       linked_array[])
+                              cs_gnum_t        linked_array[])
 {
   int  i, j, l, r;
   cs_int_t  n_elts;
 
   int  shift = 0;
   cs_int_t  *new_index = NULL;
-  fvm_gnum_t  *g_list = NULL;
+  cs_gnum_t  *g_list = NULL;
 
   if (set == NULL)
     return;
@@ -1268,7 +1268,7 @@ cs_join_gset_clean_from_array(cs_join_gset_t  *set,
 
   /* Reshape cs_join_gset_t structure */
 
-  BFT_REALLOC(g_list, new_index[n_elts], fvm_gnum_t);
+  BFT_REALLOC(g_list, new_index[n_elts], cs_gnum_t);
   BFT_FREE(set->index);
 
   set->index = new_index;
@@ -1290,10 +1290,10 @@ cs_join_gset_clean_from_array(cs_join_gset_t  *set,
 void
 cs_join_gset_single_order(const cs_join_gset_t  *set,
                           cs_int_t              *n_elts,
-                          fvm_gnum_t            *new_array[])
+                          cs_gnum_t             *new_array[])
 {
   cs_int_t  _n_elts = 0;
-  fvm_gnum_t  *_new_array = NULL;
+  cs_gnum_t  *_new_array = NULL;
 
   *n_elts = _n_elts;
   *new_array = _new_array;
@@ -1306,14 +1306,14 @@ cs_join_gset_single_order(const cs_join_gset_t  *set,
   if (_n_elts > 0) {
 
     cs_int_t  i, shift;
-    fvm_gnum_t  prev;
+    cs_gnum_t  prev;
 
-    fvm_lnum_t  *order = NULL;
-    fvm_gnum_t  *elt_list = NULL;
+    cs_lnum_t  *order = NULL;
+    cs_gnum_t  *elt_list = NULL;
 
     _n_elts += set->index[_n_elts]; /* Add number of elements in g_list */
 
-    BFT_MALLOC(elt_list, _n_elts, fvm_gnum_t);
+    BFT_MALLOC(elt_list, _n_elts, cs_gnum_t);
 
     for (i = 0; i < set->n_elts; i++)
       elt_list[i] = set->g_elts[i];
@@ -1324,8 +1324,8 @@ cs_join_gset_single_order(const cs_join_gset_t  *set,
 
     /* Define an ordered list of elements */
 
-    BFT_MALLOC(_new_array, _n_elts, fvm_gnum_t);
-    BFT_MALLOC(order, _n_elts, fvm_lnum_t);
+    BFT_MALLOC(_new_array, _n_elts, cs_gnum_t);
+    BFT_MALLOC(order, _n_elts, cs_lnum_t);
 
     fvm_order_local_allocated(NULL, elt_list, order, _n_elts);
 
@@ -1354,7 +1354,7 @@ cs_join_gset_single_order(const cs_join_gset_t  *set,
 
     BFT_FREE(order);
     BFT_FREE(elt_list);
-    BFT_REALLOC(_new_array, _n_elts, fvm_gnum_t);
+    BFT_REALLOC(_new_array, _n_elts, cs_gnum_t);
 
   } /* End if n_elts > 0 */
 
@@ -1380,7 +1380,7 @@ void
 cs_join_gset_compress(cs_join_gset_t  *set)
 {
   cs_int_t  i, j, start, end, save, shift;
-  fvm_gnum_t  cur;
+  cs_gnum_t  cur;
 
   if (set == NULL)
     return;
@@ -1444,7 +1444,7 @@ cs_join_gset_compress(cs_join_gset_t  *set)
 
   if (save != set->index[set->n_elts]) {
     assert(save > set->index[set->n_elts]);
-    BFT_REALLOC(set->g_list, set->index[set->n_elts], fvm_gnum_t);
+    BFT_REALLOC(set->g_list, set->index[set->n_elts], cs_gnum_t);
   }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
@@ -1467,7 +1467,7 @@ cs_join_gset_merge_elts(cs_join_gset_t  *set,
                         int              order_tag)
 {
   cs_int_t  i, save, start, end, n_init_elts, n_sub_elts;
-  fvm_gnum_t  prev, cur;
+  cs_gnum_t  prev, cur;
 
   if (set == NULL)
     return;
@@ -1524,9 +1524,9 @@ cs_join_gset_merge_elts(cs_join_gset_t  *set,
 
     assert(n_init_elts > set->n_elts);
 
-    BFT_REALLOC(set->g_elts, set->n_elts, fvm_gnum_t);
+    BFT_REALLOC(set->g_elts, set->n_elts, cs_gnum_t);
     BFT_REALLOC(set->index, set->n_elts + 1, cs_int_t);
-    BFT_REALLOC(set->g_list, set->index[set->n_elts], fvm_gnum_t);
+    BFT_REALLOC(set->g_list, set->index[set->n_elts], cs_gnum_t);
 
   }
 
@@ -1557,11 +1557,11 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
 {
   int  i, j, shift, elt_id;
   int  rank, local_rank, n_ranks, n_recv_elts, n_sub_elts;
-  fvm_gnum_t  gnum;
+  cs_gnum_t  gnum;
 
   cs_int_t  *send_count = NULL, *recv_count = NULL;
   cs_int_t  *send_shift = NULL, *recv_shift = NULL;
-  fvm_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
+  cs_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
   cs_join_gset_t  *sync_set = NULL;
 
   MPI_Comm_rank(comm, &local_rank);
@@ -1628,8 +1628,8 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
 
   /* Fill send_buffer: global number and number of elements in index */
 
-  BFT_MALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -1651,8 +1651,8 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
 
   }
 
-  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
-                recv_buffer, recv_count, recv_shift, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
+                recv_buffer, recv_count, recv_shift, CS_MPI_GNUM,
                 comm);
 
   n_recv_elts = recv_shift[n_ranks];
@@ -1687,7 +1687,7 @@ cs_join_gset_robin_sync(cs_join_gset_t  *loc_set,
 
   BFT_MALLOC(sync_set->g_list,
              sync_set->index[sync_set->n_elts],
-             fvm_gnum_t);
+             cs_gnum_t);
 
   /* Fill g_list of sync_set */
 
@@ -1736,11 +1736,11 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
 {
   int  i, j, k, shift, elt_id, start, end;
   int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
-  fvm_gnum_t  gnum;
+  cs_gnum_t  gnum;
 
   cs_int_t  *send_count = NULL, *recv_count = NULL;
   cs_int_t  *send_shift = NULL, *recv_shift = NULL, *wanted_rank_index = NULL;
-  fvm_gnum_t  *send_buffer = NULL, *recv_buffer = NULL, *wanted_elts = NULL;
+  cs_gnum_t  *send_buffer = NULL, *recv_buffer = NULL, *wanted_elts = NULL;
 
   /* Sanity checks */
 
@@ -1783,8 +1783,8 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
 
   /* Fill send_buffer: global number */
 
-  BFT_MALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(wanted_elts, wanted_rank_index[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(wanted_elts, wanted_rank_index[n_ranks], cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -1800,8 +1800,8 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
 
   }
 
-  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
-                wanted_elts, recv_count, wanted_rank_index, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
+                wanted_elts, recv_count, wanted_rank_index, CS_MPI_GNUM,
                 comm);
 
   /* Send new list definition holding by sync_set to ranks which have
@@ -1840,8 +1840,8 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
     recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
   }
 
-  BFT_REALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_REALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -1869,8 +1869,8 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
 
   } /* End of loop on ranks */
 
-  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
-                recv_buffer, recv_count, recv_shift, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
+                recv_buffer, recv_count, recv_shift, CS_MPI_GNUM,
                 comm);
 
   n_recv_elts = recv_shift[n_ranks];
@@ -1916,7 +1916,7 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
   for (i = 0; i < loc_set->n_elts; i++)
     loc_set->index[i+1] += loc_set->index[i];
 
-  BFT_REALLOC(loc_set->g_list, loc_set->index[loc_set->n_elts], fvm_gnum_t);
+  BFT_REALLOC(loc_set->g_list, loc_set->index[loc_set->n_elts], cs_gnum_t);
 
   i = 0; /* id in recv_buffer */
   j = 0; /* id in g_elts */
@@ -1956,18 +1956,18 @@ cs_join_gset_robin_update(const cs_join_gset_t  *sync_set,
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
-cs_join_gset_block_sync(fvm_gnum_t       max_gnum,
+cs_join_gset_block_sync(cs_gnum_t        max_gnum,
                         cs_join_gset_t  *loc_set,
                         MPI_Comm         comm)
 {
   int  i, j, shift, block_id;
   int  rank, local_rank, n_ranks, n_recv_elts, n_sub_elts;
-  fvm_gnum_t  gnum;
+  cs_gnum_t  gnum;
   cs_join_block_info_t  block_info;
 
   cs_int_t  *send_count = NULL, *recv_count = NULL, *counter = NULL;
   cs_int_t  *send_shift = NULL, *recv_shift = NULL;
-  fvm_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
+  cs_gnum_t  *send_buffer = NULL, *recv_buffer = NULL;
   cs_join_gset_t  *sync_set = NULL;
 
   if (max_gnum == 0)
@@ -2012,8 +2012,8 @@ cs_join_gset_block_sync(fvm_gnum_t       max_gnum,
 
   /* Fill send_buffer: global number and number of elements in index */
 
-  BFT_MALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -2035,8 +2035,8 @@ cs_join_gset_block_sync(fvm_gnum_t       max_gnum,
 
   }
 
-  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
-                recv_buffer, recv_count, recv_shift, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
+                recv_buffer, recv_count, recv_shift, CS_MPI_GNUM,
                 comm);
 
   n_recv_elts = recv_shift[n_ranks];
@@ -2080,7 +2080,7 @@ cs_join_gset_block_sync(fvm_gnum_t       max_gnum,
 
   BFT_MALLOC(sync_set->g_list,
              sync_set->index[sync_set->n_elts],
-             fvm_gnum_t);
+             cs_gnum_t);
 
   /* Fill g_list of sync_set */
 
@@ -2129,19 +2129,19 @@ cs_join_gset_block_sync(fvm_gnum_t       max_gnum,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_gset_block_update(fvm_gnum_t             max_gnum,
+cs_join_gset_block_update(cs_gnum_t              max_gnum,
                           const cs_join_gset_t  *sync_set,
                           cs_join_gset_t        *loc_set,
                           MPI_Comm               comm)
 {
   int  i, j, k, shift, block_id, start, end;
   int  rank, local_rank, n_ranks, n_sub_elts, n_recv_elts;
-  fvm_gnum_t  gnum;
+  cs_gnum_t  gnum;
   cs_join_block_info_t  block_info;
 
   cs_int_t  *send_count = NULL, *recv_count = NULL;
   cs_int_t  *send_shift = NULL, *recv_shift = NULL, *wanted_rank_index = NULL;
-  fvm_gnum_t  *send_buffer = NULL, *recv_buffer = NULL, *wanted_elts = NULL;
+  cs_gnum_t  *send_buffer = NULL, *recv_buffer = NULL, *wanted_elts = NULL;
 
   if (max_gnum == 0)
     return;
@@ -2189,8 +2189,8 @@ cs_join_gset_block_update(fvm_gnum_t             max_gnum,
 
   /* Fill send_buffer: global number */
 
-  BFT_MALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(wanted_elts, wanted_rank_index[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(wanted_elts, wanted_rank_index[n_ranks], cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -2206,8 +2206,8 @@ cs_join_gset_block_update(fvm_gnum_t             max_gnum,
 
   }
 
-  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
-                wanted_elts, recv_count, wanted_rank_index, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
+                wanted_elts, recv_count, wanted_rank_index, CS_MPI_GNUM,
                 comm);
 
   /* Send new list definition holding by sync_set to ranks which have
@@ -2241,8 +2241,8 @@ cs_join_gset_block_update(fvm_gnum_t             max_gnum,
     recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
   }
 
-  BFT_REALLOC(send_buffer, send_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_REALLOC(send_buffer, send_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(recv_buffer, recv_shift[n_ranks], cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -2270,8 +2270,8 @@ cs_join_gset_block_update(fvm_gnum_t             max_gnum,
 
   } /* End of loop on ranks */
 
-  MPI_Alltoallv(send_buffer, send_count, send_shift, FVM_MPI_GNUM,
-                recv_buffer, recv_count, recv_shift, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_buffer, send_count, send_shift, CS_MPI_GNUM,
+                recv_buffer, recv_count, recv_shift, CS_MPI_GNUM,
                 comm);
 
   n_recv_elts = recv_shift[n_ranks];
@@ -2317,7 +2317,7 @@ cs_join_gset_block_update(fvm_gnum_t             max_gnum,
   for (i = 0; i < loc_set->n_elts; i++)
     loc_set->index[i+1] += loc_set->index[i];
 
-  BFT_REALLOC(loc_set->g_list, loc_set->index[loc_set->n_elts], fvm_gnum_t);
+  BFT_REALLOC(loc_set->g_list, loc_set->index[loc_set->n_elts], cs_gnum_t);
 
   i = 0; /* id in recv_buffer */
   j = 0; /* id in g_elts */
@@ -2398,7 +2398,7 @@ cs_join_dump_array(FILE        *f,
   }
   else if (!strncmp(type, "gnum", strlen("gnum"))) { /* "gnum" array */
 
-    const fvm_gnum_t  *u_array = array;
+    const cs_gnum_t  *u_array = array;
 
     for (i = 0; i < n_elts; i++)
       fprintf(f, " %9llu", (unsigned long long)u_array[i]);

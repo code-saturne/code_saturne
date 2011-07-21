@@ -215,8 +215,8 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
                          const cs_mesh_t    *mesh,
                          cs_join_mesh_t    **p_work_jmesh,
                          cs_join_edges_t   **p_work_edges,
-                         fvm_gnum_t          init_max_vtx_gnum,
-                         fvm_gnum_t          n_g_new_vertices);
+                         cs_gnum_t           init_max_vtx_gnum,
+                         cs_gnum_t           n_g_new_vertices);
 
 /*----------------------------------------------------------------------------
  * Duplicate and apply transformation to the selected faces and also to

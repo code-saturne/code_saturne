@@ -169,7 +169,7 @@ struct _fvm_tesselation_t {
 
   fvm_element_t  type;             /* Element types */
 
-  fvm_lnum_t  n_elements;          /* Number of elements */
+  cs_lnum_t   n_elements;          /* Number of elements */
 
   int         dim;                 /* Spatial dimension */
 
@@ -178,32 +178,32 @@ struct _fvm_tesselation_t {
   int         stride;              /* Element size for regular elements
                                       (0 for polygons and polyhedra) */
 
-  fvm_lnum_t  n_faces;             /* Number of faces defining polyhedra */
+  cs_lnum_t   n_faces;             /* Number of faces defining polyhedra */
 
   /* Pointers to shared vertex coordinates */
 
-  const fvm_coord_t  *vertex_coords;    /* pointer to  vertex coordinates
+  const cs_coord_t   *vertex_coords;    /* pointer to  vertex coordinates
                                            (always interlaced:
                                            x1, y1, z1, x2, y2, z2, ...) */
 
-  const fvm_lnum_t   *parent_vertex_num; /* Local numbers (1 to n) of local
+  const cs_lnum_t    *parent_vertex_num; /* Local numbers (1 to n) of local
                                             vertices in the parent mesh.
                                             This array is present only when non
                                             "trivial" (i.e. not 1, 2, ..., n). */
 
   /* Pointers to shared connectivity arrays */
 
-  const fvm_lnum_t  *face_index;   /* polyhedron -> faces index (O to n-1);
+  const cs_lnum_t   *face_index;   /* polyhedron -> faces index (O to n-1);
                                       dimension [n_elements + 1] */
-  const fvm_lnum_t  *face_num;     /* polyhedron -> face numbers (1 to n, signed,
+  const cs_lnum_t   *face_num;     /* polyhedron -> face numbers (1 to n, signed,
                                       > 0 for outwards pointing face normal
                                       < 0 for inwards pointing face normal);
                                       dimension: [face_index[n_elements]] */
 
-  const fvm_lnum_t  *vertex_index; /* polygon face -> vertices index (O to n-1);
+  const cs_lnum_t   *vertex_index; /* polygon face -> vertices index (O to n-1);
                                       dimension: [n_cell_faces + 1] */
 
-  const fvm_lnum_t  *vertex_num;   /* vertex numbers (1 to n);
+  const cs_lnum_t   *vertex_num;   /* vertex numbers (1 to n);
                                       dimension: connectivity_size */
 
   /* Pointer to shared global element numbers */
@@ -217,14 +217,14 @@ struct _fvm_tesselation_t {
                                             (currently max 2) */
   fvm_element_t     sub_type[2];         /* Sub-element types */
 
-  fvm_lnum_t        n_sub_max[2];        /* Maximum number of sub-elements of
+  cs_lnum_t         n_sub_max[2];        /* Maximum number of sub-elements of
                                             each type per element */
-  fvm_lnum_t        n_sub_max_glob[2];   /* Global maximum number of
+  cs_lnum_t         n_sub_max_glob[2];   /* Global maximum number of
                                             sub-elements of each type
                                             per element */
-  fvm_lnum_t        n_sub[2];            /* Number of sub-elements of
+  cs_lnum_t         n_sub[2];            /* Number of sub-elements of
                                             each type */
-  fvm_gnum_t        n_sub_glob[2];       /* Global number of sub-elements
+  cs_gnum_t         n_sub_glob[2];       /* Global number of sub-elements
                                             of each type */
 
   const fvm_tesselation_encoding_t  *encoding;    /* Compact tesselation
@@ -234,10 +234,10 @@ struct _fvm_tesselation_t {
   fvm_tesselation_encoding_t        *_encoding;   /* encoding if owner,
                                                      NULL if shared */
 
-  const fvm_lnum_t  *sub_elt_index[2];   /* index of sub-elements of each
+  const cs_lnum_t   *sub_elt_index[2];   /* index of sub-elements of each
                                             given type associated with
                                             each element (0 to n-1); */
-  fvm_lnum_t        *_sub_elt_index[2];  /* sub_elt_index if owner,
+  cs_lnum_t         *_sub_elt_index[2];  /* sub_elt_index if owner,
                                             NULL if shared */
 
 };
@@ -262,16 +262,16 @@ struct _fvm_tesselation_t {
 
 static inline void
 _added_vertex_coords(const fvm_tesselation_t  *ts,
-                     fvm_coord_t               vertex_coords[3],
+                     cs_coord_t                vertex_coords[3],
                      int                      *n_vertices_tot,
-                     fvm_lnum_t                element_id)
+                     cs_lnum_t                 element_id)
 {
-  fvm_lnum_t n_vertices;
-  fvm_lnum_t i, j, k, face_id, vertex_id;
+  cs_lnum_t n_vertices;
+  cs_lnum_t i, j, k, face_id, vertex_id;
 
-  fvm_lnum_t _n_vertices_tot = 0;
-  fvm_coord_t cell_center[3] = {0., 0., 0.};
-  fvm_coord_t cell_center_divisor = 0.;
+  cs_lnum_t _n_vertices_tot = 0;
+  cs_coord_t cell_center[3] = {0., 0., 0.};
+  cs_coord_t cell_center_divisor = 0.;
 
   /* Loop on polyhedron's faces */
   /*----------------------------*/
@@ -280,16 +280,16 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
        i < ts->face_index[element_id + 1];
        i++) {
 
-    fvm_coord_t sign, v1[3], v2[3];
+    cs_coord_t sign, v1[3], v2[3];
 
-    fvm_coord_t vertices_center[3] = {0., 0., 0.};
-    fvm_coord_t face_center[3] = {0., 0., 0.};
-    fvm_coord_t face_normal[3] = {0., 0., 0.};
-    fvm_coord_t triangle_center[3] = {0., 0., 0.};
-    fvm_coord_t triangle_normal[3] = {0., 0., 0.};
-    fvm_coord_t face_surface = 0.;
-    fvm_coord_t triangle_surface = 0.;
-    const fvm_coord_t *current_coords = NULL;
+    cs_coord_t vertices_center[3] = {0., 0., 0.};
+    cs_coord_t face_center[3] = {0., 0., 0.};
+    cs_coord_t face_normal[3] = {0., 0., 0.};
+    cs_coord_t triangle_center[3] = {0., 0., 0.};
+    cs_coord_t triangle_normal[3] = {0., 0., 0.};
+    cs_coord_t face_surface = 0.;
+    cs_coord_t triangle_surface = 0.;
+    const cs_coord_t *current_coords = NULL;
 
     face_id = FVM_ABS(ts->face_num[i]) - 1;
 
@@ -315,7 +315,7 @@ _added_vertex_coords(const fvm_tesselation_t  *ts,
     }
 
     for (k = 0; k < 3; k++)
-      vertices_center[k] /= (fvm_coord_t)n_vertices;
+      vertices_center[k] /= (cs_coord_t)n_vertices;
 
     /* At this stage, current_coords points
        to the last face vertice's coords */
@@ -507,13 +507,13 @@ _solve_ax_b_4(double            a[4][4],
 
 static inline void
 _polyhedron_vertices(const fvm_tesselation_t   *ts,
-                     fvm_lnum_t                 heap[],
-                     fvm_lnum_t                 vertex_list[],
+                     cs_lnum_t                  heap[],
+                     cs_lnum_t                  vertex_list[],
                      int                       *vertex_list_size,
-                     fvm_lnum_t                 element_id)
+                     cs_lnum_t                  element_id)
 {
-  fvm_lnum_t n_vertices;
-  fvm_lnum_t i, j, face_id, vertex_id;
+  cs_lnum_t n_vertices;
+  cs_lnum_t i, j, face_id, vertex_id;
 
   int heap_size = 0;
 
@@ -634,30 +634,30 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
                              int                       src_dim,
                              int                       src_dim_shift,
                              int                       dest_dim,
-                             fvm_lnum_t                start_id,
-                             fvm_lnum_t                end_id,
+                             cs_lnum_t                 start_id,
+                             cs_lnum_t                 end_id,
                              fvm_interlace_t           src_interlace,
                              fvm_datatype_t            src_datatype,
                              fvm_datatype_t            dest_datatype,
                              int                       n_parent_lists,
-                             const fvm_lnum_t          parent_num_shift[],
-                             const fvm_lnum_t          parent_num[],
+                             const cs_lnum_t           parent_num_shift[],
+                             const cs_lnum_t           parent_num[],
                              const void         *const src_data[],
                              void               *const dest_data)
 {
   int n_vertices_tot, pl, vertex_list_size;
-  fvm_lnum_t i, j, parent_id, src_id, vertex_id;
+  cs_lnum_t i, j, parent_id, src_id, vertex_id;
 
   int _src_dim_shift = src_dim_shift;
   int max_list_size = 128;
 
-  fvm_lnum_t _heap[128];
-  fvm_lnum_t _vertex_list[128];
-  fvm_lnum_t *heap = _heap;
-  fvm_lnum_t *vertex_list = _vertex_list;
+  cs_lnum_t _heap[128];
+  cs_lnum_t _vertex_list[128];
+  cs_lnum_t *heap = _heap;
+  cs_lnum_t *vertex_list = _vertex_list;
 
   const fvm_tesselation_t *ts = this_tesselation;
-  const fvm_coord_t *current_coords = NULL;
+  const cs_coord_t *current_coords = NULL;
 
   if (ts->type != FVM_CELL_POLY)
     return;
@@ -669,7 +669,7 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
 
     for (j = 0; j < dest_dim; j++) { /* Loop on destination dimension */
 
-      fvm_coord_t vertex_coords[3];
+      cs_coord_t vertex_coords[3];
       double coeff[4];
       double interpolated_value, v_x, v_y, v_z;
       double v_f = 0.;
@@ -693,8 +693,8 @@ _vertex_field_of_real_values(const fvm_tesselation_t  *this_tesselation,
           heap = NULL;
           vertex_list = NULL;
         }
-        BFT_REALLOC(heap, max_list_size, fvm_lnum_t);
-        BFT_REALLOC(vertex_list, max_list_size, fvm_lnum_t);
+        BFT_REALLOC(heap, max_list_size, cs_lnum_t);
+        BFT_REALLOC(vertex_list, max_list_size, cs_lnum_t);
       }
 
       /* Obtain list of polyhedron's vertices */
@@ -864,21 +864,21 @@ _init_decoding_mask(fvm_tesselation_encoding_t decoding_mask[3])
 static void
 _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
                     int                 dim,
-                    const fvm_coord_t   vertex_coords[],
-                    const fvm_lnum_t    parent_vertex_num[],
-                    fvm_lnum_t         *error_count)
+                    const cs_coord_t    vertex_coords[],
+                    const cs_lnum_t     parent_vertex_num[],
+                    cs_lnum_t          *error_count)
 {
   int type_id;
-  fvm_lnum_t n_vertices, n_triangles, n_quads, n_elements;
-  fvm_lnum_t n_vertices_max, n_triangles_max;
-  fvm_lnum_t i, j, k, vertex_id, encoding_id;
+  cs_lnum_t n_vertices, n_triangles, n_quads, n_elements;
+  cs_lnum_t n_vertices_max, n_triangles_max;
+  cs_lnum_t i, j, k, vertex_id, encoding_id;
   fvm_tesselation_encoding_t encoding_sub[3];
 
-  fvm_gnum_t n_g_elements_tot[2] = {0, 0}; /* Global new elements count */
-  fvm_lnum_t n_elements_tot[2] = {0, 0}; /* New triangles/quadrangles */
-  fvm_lnum_t n_g_elements_max[2] = {0, 0}; /* Global max triangles/quadrangles */
-  fvm_lnum_t n_elements_max[2] = {0, 0}; /* Max triangles/quadrangles */
-  fvm_lnum_t *triangle_vertices = NULL;
+  cs_gnum_t n_g_elements_tot[2] = {0, 0}; /* Global new elements count */
+  cs_lnum_t n_elements_tot[2] = {0, 0}; /* New triangles/quadrangles */
+  cs_lnum_t n_g_elements_max[2] = {0, 0}; /* Global max triangles/quadrangles */
+  cs_lnum_t n_elements_max[2] = {0, 0}; /* Max triangles/quadrangles */
+  cs_lnum_t *triangle_vertices = NULL;
   fvm_triangulate_state_t *state = NULL;
 
   fvm_tesselation_t *ts = this_tesselation;
@@ -937,7 +937,7 @@ _tesselate_polygons(fvm_tesselation_t  *this_tesselation,
                ts->vertex_index[n_elements] - n_elements*2,
                fvm_tesselation_encoding_t);
     ts->encoding = ts->_encoding;
-    BFT_MALLOC(triangle_vertices, (n_vertices_max - 2) * 3, fvm_lnum_t);
+    BFT_MALLOC(triangle_vertices, (n_vertices_max - 2) * 3, cs_lnum_t);
     state = fvm_triangulate_state_create(n_vertices_max);
   }
 
@@ -1082,10 +1082,10 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
                               _Bool               global_count)
 {
   int sub_type_id, type_id;
-  fvm_lnum_t n_vertices, n_triangles, n_elements;
-  fvm_lnum_t i, j, encoding_id;
+  cs_lnum_t n_vertices, n_triangles, n_elements;
+  cs_lnum_t i, j, encoding_id;
 
-  fvm_lnum_t *n_sub_elements[2] = {NULL, NULL};
+  cs_lnum_t *n_sub_elements[2] = {NULL, NULL};
 
   fvm_tesselation_t *ts = this_tesselation;
 
@@ -1114,7 +1114,7 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
       assert(0);
     }
 
-    BFT_MALLOC(ts->_sub_elt_index[sub_type_id], n_elements + 1, fvm_lnum_t);
+    BFT_MALLOC(ts->_sub_elt_index[sub_type_id], n_elements + 1, cs_lnum_t);
 
     for (i = 0 ; i < n_elements + 1 ; i++)
       ts->_sub_elt_index[sub_type_id][i] = 0;
@@ -1169,7 +1169,7 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
 
     for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++) {
       if (ts->_sub_elt_index[sub_type_id] != NULL) {
-        fvm_lnum_t * _n_sub_elements = ts->_sub_elt_index[sub_type_id] + 1;
+        cs_lnum_t * _n_sub_elements = ts->_sub_elt_index[sub_type_id] + 1;
         if (n_elements == 0) _n_sub_elements = NULL;
         ts->n_sub_glob[sub_type_id]
           = fvm_io_num_global_sub_size(ts->global_element_num,
@@ -1185,7 +1185,7 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
 
   for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++) {
 
-    fvm_lnum_t *sub_elt_index = ts->_sub_elt_index[sub_type_id];
+    cs_lnum_t *sub_elt_index = ts->_sub_elt_index[sub_type_id];
     for (i = 0 ; i < n_elements ; i++)
       sub_elt_index[i+1] = sub_elt_index[i] + sub_elt_index[i+1];
     ts->sub_elt_index[sub_type_id] = ts->_sub_elt_index[sub_type_id];
@@ -1208,19 +1208,19 @@ _count_and_index_sub_polygons(fvm_tesselation_t  *this_tesselation,
 
 static void
 _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
-                               fvm_lnum_t         *error_count,
+                               cs_lnum_t          *error_count,
                                _Bool               global_count)
 {
   int sub_type_id, type_id;
-  fvm_lnum_t n_vertices, n_triangles, n_elements;
-  fvm_lnum_t n_tetras, n_pyrams;
-  fvm_lnum_t i, j, k, face_id, encoding_id;
+  cs_lnum_t n_vertices, n_triangles, n_elements;
+  cs_lnum_t n_tetras, n_pyrams;
+  cs_lnum_t i, j, k, face_id, encoding_id;
 
-  fvm_gnum_t n_g_elements_tot[2] = {0, 0}; /* Global new elements count */
-  fvm_lnum_t n_elements_tot[2] = {0, 0}; /* New tetrahedra/pyramids */
-  fvm_lnum_t *n_sub_elements[2] = {NULL, NULL};
-  fvm_lnum_t n_g_elements_max[2] = {0, 0}; /* Global max tetrahedra/pyramids */
-  fvm_lnum_t n_elements_max[2] = {0, 0}; /* Max tetrahedra/pyramids */
+  cs_gnum_t n_g_elements_tot[2] = {0, 0}; /* Global new elements count */
+  cs_lnum_t n_elements_tot[2] = {0, 0}; /* New tetrahedra/pyramids */
+  cs_lnum_t *n_sub_elements[2] = {NULL, NULL};
+  cs_lnum_t n_g_elements_max[2] = {0, 0}; /* Global max tetrahedra/pyramids */
+  cs_lnum_t n_elements_max[2] = {0, 0}; /* Max tetrahedra/pyramids */
 
   fvm_tesselation_t *ts = this_tesselation;
 
@@ -1254,7 +1254,7 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
       assert(0);
     }
 
-    BFT_MALLOC(ts->_sub_elt_index[sub_type_id], n_elements + 1, fvm_lnum_t);
+    BFT_MALLOC(ts->_sub_elt_index[sub_type_id], n_elements + 1, cs_lnum_t);
 
     for (i = 0 ; i < n_elements + 1 ; i++)
       ts->_sub_elt_index[sub_type_id][i] = 0;
@@ -1363,7 +1363,7 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
 
     for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++) {
       if (ts->_sub_elt_index[sub_type_id] != NULL) {
-        fvm_lnum_t * _n_sub_elements = ts->_sub_elt_index[sub_type_id] + 1;
+        cs_lnum_t * _n_sub_elements = ts->_sub_elt_index[sub_type_id] + 1;
         if (n_elements == 0) _n_sub_elements = NULL;
         ts->n_sub_glob[sub_type_id]
           = fvm_io_num_global_sub_size(ts->global_element_num,
@@ -1379,7 +1379,7 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
 
   for (sub_type_id = 0; sub_type_id < ts->n_sub_types; sub_type_id++) {
 
-    fvm_lnum_t *sub_elt_index = ts->_sub_elt_index[sub_type_id];
+    cs_lnum_t *sub_elt_index = ts->_sub_elt_index[sub_type_id];
     for (i = 0 ; i < n_elements ; i++)
       sub_elt_index[i+1] = sub_elt_index[i] + sub_elt_index[i+1];
     ts->sub_elt_index[sub_type_id] = ts->_sub_elt_index[sub_type_id];
@@ -1407,13 +1407,13 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
 
 static void
 _expand_limit_g(const fvm_tesselation_t  *this_tesselation,
-                fvm_lnum_t                end_id,
-                fvm_gnum_t               *global_num_end,
+                cs_lnum_t                 end_id,
+                cs_gnum_t                *global_num_end,
                 MPI_Comm                  comm)
 {
-  fvm_gnum_t local_max, global_max;
+  cs_gnum_t local_max, global_max;
 
-  const fvm_gnum_t *global_element_num
+  const cs_gnum_t *global_element_num
     = fvm_io_num_get_global_num(this_tesselation->global_element_num);
 
   /* Check if the maximum id returned on some ranks leads to
@@ -1429,7 +1429,7 @@ _expand_limit_g(const fvm_tesselation_t  *this_tesselation,
   else
     local_max = *global_num_end;
 
-  MPI_Allreduce(&local_max, &global_max, 1, FVM_MPI_GNUM, MPI_MIN, comm);
+  MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MIN, comm);
 
   if (global_max < *global_num_end)
     *global_num_end = global_max;
@@ -1465,27 +1465,27 @@ _expand_limit_g(const fvm_tesselation_t  *this_tesselation,
  *   polygon index end corresponding to decoded range
  *----------------------------------------------------------------------------*/
 
-static fvm_lnum_t
+static cs_lnum_t
 _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
                                fvm_element_t             connect_type,
-                               fvm_lnum_t                start_id,
-                               fvm_lnum_t                buffer_limit,
-                               fvm_gnum_t                global_num_end,
+                               cs_lnum_t                 start_id,
+                               cs_lnum_t                 buffer_limit,
+                               cs_gnum_t                 global_num_end,
                                const fvm_io_num_t       *global_vertex_num,
-                               fvm_gnum_t                vertex_num[])
+                               cs_gnum_t                 vertex_num[])
 {
-  fvm_lnum_t n_vertices;
-  fvm_lnum_t i, j, k, l, vertex_id, encoding_id;
-  fvm_lnum_t tv[3];
+  cs_lnum_t n_vertices;
+  cs_lnum_t i, j, k, l, vertex_id, encoding_id;
+  cs_lnum_t tv[3];
   fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
 
-  fvm_lnum_t n_sub_tot = 0;
+  cs_lnum_t n_sub_tot = 0;
   const fvm_tesselation_t *ts = this_tesselation;
-  fvm_lnum_t retval = start_id;
+  cs_lnum_t retval = start_id;
 
-  const fvm_gnum_t *_global_vertex_num
+  const cs_gnum_t *_global_vertex_num
                       = fvm_io_num_get_global_num(global_vertex_num);
-  const fvm_gnum_t *global_element_num
+  const cs_gnum_t *global_element_num
     = fvm_io_num_get_global_num(ts->global_element_num);
 
   _init_decoding_mask(decoding_mask);
@@ -1619,21 +1619,21 @@ _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
  *   polygon index end corresponding to decoded range
  *----------------------------------------------------------------------------*/
 
-static fvm_lnum_t
+static cs_lnum_t
 _decode_polygons_tesselation_l(const fvm_tesselation_t  *this_tesselation,
                                fvm_element_t             connect_type,
-                               fvm_lnum_t                start_id,
-                               fvm_lnum_t                buffer_limit,
-                               fvm_lnum_t                vertex_num[])
+                               cs_lnum_t                 start_id,
+                               cs_lnum_t                 buffer_limit,
+                               cs_lnum_t                 vertex_num[])
 {
-  fvm_lnum_t n_vertices;
-  fvm_lnum_t i, j, k, vertex_id, encoding_id;
-  fvm_lnum_t tv[3];
+  cs_lnum_t n_vertices;
+  cs_lnum_t i, j, k, vertex_id, encoding_id;
+  cs_lnum_t tv[3];
   fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
 
-  fvm_lnum_t n_sub_tot = 0;
+  cs_lnum_t n_sub_tot = 0;
   const fvm_tesselation_t *ts = this_tesselation;
-  fvm_lnum_t retval = start_id;
+  cs_lnum_t retval = start_id;
 
   _init_decoding_mask(decoding_mask);
 
@@ -1749,29 +1749,29 @@ _decode_polygons_tesselation_l(const fvm_tesselation_t  *this_tesselation,
  *   polyhedron index end corresponding to decoded range
  *----------------------------------------------------------------------------*/
 
-static fvm_lnum_t
+static cs_lnum_t
 _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
                                 fvm_element_t             connect_type,
-                                fvm_lnum_t                start_id,
-                                fvm_lnum_t                buffer_limit,
-                                fvm_gnum_t                global_num_end,
-                                fvm_gnum_t                extra_vertex_base_num,
+                                cs_lnum_t                 start_id,
+                                cs_lnum_t                 buffer_limit,
+                                cs_gnum_t                 global_num_end,
+                                cs_gnum_t                 extra_vertex_base_num,
                                 const fvm_io_num_t       *global_vertex_num,
-                                fvm_gnum_t                vertex_num[])
+                                cs_gnum_t                 vertex_num[])
 {
   int orient;
-  fvm_lnum_t n_vertices;
-  fvm_lnum_t i, j, k, l, m, base_dest_id, face_id, vertex_id, encoding_id;
-  fvm_lnum_t tv[3];
+  cs_lnum_t n_vertices;
+  cs_lnum_t i, j, k, l, m, base_dest_id, face_id, vertex_id, encoding_id;
+  cs_lnum_t tv[3];
   fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
 
-  fvm_lnum_t n_sub_tot = 0;
+  cs_lnum_t n_sub_tot = 0;
   const fvm_tesselation_t *ts = this_tesselation;
-  fvm_lnum_t retval = start_id;
+  cs_lnum_t retval = start_id;
 
-  const fvm_gnum_t *_global_vertex_num
+  const cs_gnum_t *_global_vertex_num
                       = fvm_io_num_get_global_num(global_vertex_num);
-  const fvm_gnum_t *global_element_num
+  const cs_gnum_t *global_element_num
     = fvm_io_num_get_global_num(ts->global_element_num);
 
   _init_decoding_mask(decoding_mask);
@@ -1878,7 +1878,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
         if (l == n_vertices - 2 || ts->encoding == NULL) {
 
-          fvm_lnum_t stride = n_vertices + 1;
+          cs_lnum_t stride = n_vertices + 1;
 
           /* Return previous element's end index if buffer size reached */
 
@@ -1950,23 +1950,23 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
  *   polyhedron index end corresponding to decoded range
  *----------------------------------------------------------------------------*/
 
-static fvm_lnum_t
+static cs_lnum_t
 _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
                                 fvm_element_t             connect_type,
-                                fvm_lnum_t                start_id,
-                                fvm_lnum_t                buffer_limit,
-                                fvm_lnum_t                extra_vertex_base_num,
-                                fvm_lnum_t                vertex_num[])
+                                cs_lnum_t                 start_id,
+                                cs_lnum_t                 buffer_limit,
+                                cs_lnum_t                 extra_vertex_base_num,
+                                cs_lnum_t                 vertex_num[])
 {
   int orient;
-  fvm_lnum_t n_vertices;
-  fvm_lnum_t i, j, k, l, m, base_dest_id, face_id, vertex_id, encoding_id;
-  fvm_lnum_t tv[3];
+  cs_lnum_t n_vertices;
+  cs_lnum_t i, j, k, l, m, base_dest_id, face_id, vertex_id, encoding_id;
+  cs_lnum_t tv[3];
   fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
 
-  fvm_lnum_t n_sub_tot = 0;
+  cs_lnum_t n_sub_tot = 0;
   const fvm_tesselation_t *ts = this_tesselation;
-  fvm_lnum_t retval = start_id;
+  cs_lnum_t retval = start_id;
 
   _init_decoding_mask(decoding_mask);
 
@@ -2057,7 +2057,7 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
 
         if (l == n_vertices - 2 || ts->encoding == NULL) {
 
-          fvm_lnum_t stride = n_vertices + 1;
+          cs_lnum_t stride = n_vertices + 1;
 
           /* Return previous element's end index if buffer size reached */
 
@@ -2132,11 +2132,11 @@ _decode_polyhedra_tesselation_l(const fvm_tesselation_t  *this_tesselation,
 
 fvm_tesselation_t *
 fvm_tesselation_create(fvm_element_t        element_type,
-                       fvm_lnum_t           n_elements,
-                       const fvm_lnum_t     face_index[],
-                       const fvm_lnum_t     face_num[],
-                       const fvm_lnum_t     vertex_index[],
-                       const fvm_lnum_t     vertex_num[],
+                       cs_lnum_t            n_elements,
+                       const cs_lnum_t      face_index[],
+                       const cs_lnum_t      face_num[],
+                       const cs_lnum_t      vertex_index[],
+                       const cs_lnum_t      vertex_num[],
                        const fvm_io_num_t  *global_element_num)
 
 {
@@ -2209,8 +2209,8 @@ fvm_tesselation_create(fvm_element_t        element_type,
   /* Compute number of polyhedron faces */
 
   if (n_elements > 0 && face_index != NULL) {
-    fvm_lnum_t  j, k, face_id;
-    fvm_lnum_t  max_face_id = 0;
+    cs_lnum_t   j, k, face_id;
+    cs_lnum_t   max_face_id = 0;
     for (j = 0; j < n_elements; j++) {
       for (k = face_index[j]; k < face_index[j+1]; k++) {
         face_id = FVM_ABS(face_num[k]) - 1;
@@ -2286,9 +2286,9 @@ fvm_tesselation_destroy(fvm_tesselation_t  * this_tesselation)
 void
 fvm_tesselation_init(fvm_tesselation_t  *this_tesselation,
                      int                 dim,
-                     const fvm_coord_t   vertex_coords[],
-                     const fvm_lnum_t    parent_vertex_num[],
-                     fvm_lnum_t         *error_count)
+                     const cs_coord_t    vertex_coords[],
+                     const cs_lnum_t     parent_vertex_num[],
+                     cs_lnum_t          *error_count)
 {
   assert(this_tesselation != NULL);
 
@@ -2365,10 +2365,10 @@ fvm_tesselation_reduce(fvm_tesselation_t  * this_tesselation)
  *   number of parent elements
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_n_elements(const fvm_tesselation_t  *this_tesselation)
 {
-  fvm_lnum_t retval = 0;
+  cs_lnum_t retval = 0;
 
   if (this_tesselation != NULL)
     retval = this_tesselation->n_elements;
@@ -2386,10 +2386,10 @@ fvm_tesselation_n_elements(const fvm_tesselation_t  *this_tesselation)
  *   global number of added vertices associated with the tesselation
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_tesselation_n_g_vertices_add(const fvm_tesselation_t  *this_tesselation)
 {
-  fvm_gnum_t retval = 0;
+  cs_gnum_t retval = 0;
 
   assert(this_tesselation != NULL);
 
@@ -2415,10 +2415,10 @@ fvm_tesselation_n_g_vertices_add(const fvm_tesselation_t  *this_tesselation)
  *   global number of added vertices associated with the tesselation
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_n_vertices_add(const fvm_tesselation_t  *this_tesselation)
 {
-  fvm_gnum_t retval = 0;
+  cs_gnum_t retval = 0;
 
   assert(this_tesselation != NULL);
 
@@ -2487,13 +2487,13 @@ fvm_tesselation_sub_type(const fvm_tesselation_t  *this_tesselation,
  *   sub-types of the tesselation with the given index
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_n_sub_elements(const fvm_tesselation_t  *this_tesselation,
                                fvm_element_t             sub_type)
 {
   int id;
 
-  fvm_lnum_t retval = 0;
+  cs_lnum_t retval = 0;
 
   if (this_tesselation != NULL) {
     for (id = 0; id < this_tesselation->n_sub_types; id++) {
@@ -2522,8 +2522,8 @@ fvm_tesselation_n_sub_elements(const fvm_tesselation_t  *this_tesselation,
 void
 fvm_tesselation_get_global_size(const fvm_tesselation_t  *this_tesselation,
                                 fvm_element_t             sub_type,
-                                fvm_gnum_t               *n_sub_elements_glob,
-                                fvm_lnum_t               *n_sub_elements_max)
+                                cs_gnum_t                *n_sub_elements_glob,
+                                cs_lnum_t                *n_sub_elements_max)
 {
   int id;
 
@@ -2584,9 +2584,9 @@ fvm_tesselation_global_vertex_num(const fvm_tesselation_t  *this_tesselation)
 
 void
 fvm_tesselation_vertex_coords(const fvm_tesselation_t  *this_tesselation,
-                              fvm_coord_t               vertex_coords[])
+                              cs_coord_t                vertex_coords[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
   if (this_tesselation->type != FVM_CELL_POLY)
     return;
@@ -2611,12 +2611,12 @@ fvm_tesselation_vertex_coords(const fvm_tesselation_t  *this_tesselation,
  *   index of sub-elements associated with each element (0 to n-1 numbering)
  *----------------------------------------------------------------------------*/
 
-const fvm_lnum_t *
+const cs_lnum_t *
 fvm_tesselation_sub_elt_index(const fvm_tesselation_t  *this_tesselation,
                               fvm_element_t             sub_type)
 {
   int id;
-  const fvm_lnum_t *retval = NULL;
+  const cs_lnum_t *retval = NULL;
 
   if (this_tesselation != NULL) {
     for (id = 0; id < this_tesselation->n_sub_types; id++) {
@@ -2659,23 +2659,23 @@ fvm_tesselation_sub_elt_index(const fvm_tesselation_t  *this_tesselation,
  *   polyhedron index end corresponding to decoded range
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_range_index_g(const fvm_tesselation_t  *this_tesselation,
                               fvm_element_t             connect_type,
                               int                       stride,
-                              fvm_lnum_t                start_id,
-                              fvm_lnum_t                buffer_limit,
-                              fvm_gnum_t               *global_num_end,
-                              fvm_lnum_t                index[],
+                              cs_lnum_t                 start_id,
+                              cs_lnum_t                 buffer_limit,
+                              cs_gnum_t                *global_num_end,
+                              cs_lnum_t                 index[],
                               MPI_Comm                  comm)
 {
-  fvm_lnum_t i;
-  fvm_lnum_t buffer_size = buffer_limit * stride;
+  cs_lnum_t i;
+  cs_lnum_t buffer_size = buffer_limit * stride;
 
-  const fvm_gnum_t *global_element_num
+  const cs_gnum_t *global_element_num
     = fvm_io_num_get_global_num(this_tesselation->global_element_num);
 
-  const fvm_lnum_t *sub_element_idx
+  const cs_lnum_t *sub_element_idx
     = fvm_tesselation_sub_elt_index(this_tesselation, connect_type);
 
   /* In parallel mode, global_element_num should exist */
@@ -2745,18 +2745,18 @@ fvm_tesselation_range_index_g(const fvm_tesselation_t  *this_tesselation,
  *   polygon index corresponding to end of decoded range
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_decode_g(const fvm_tesselation_t  *this_tesselation,
                          fvm_element_t             connect_type,
-                         fvm_lnum_t                start_id,
-                         fvm_lnum_t                buffer_limit,
-                         fvm_gnum_t               *global_num_end,
+                         cs_lnum_t                 start_id,
+                         cs_lnum_t                 buffer_limit,
+                         cs_gnum_t                *global_num_end,
                          const fvm_io_num_t       *global_vertex_num,
-                         fvm_gnum_t                extra_vertex_base,
-                         fvm_gnum_t                vertex_num[],
+                         cs_gnum_t                 extra_vertex_base,
+                         cs_gnum_t                 vertex_num[],
                          MPI_Comm                  comm)
 {
-  fvm_lnum_t retval = 0;
+  cs_lnum_t retval = 0;
 
   switch(this_tesselation->type) {
 
@@ -2823,15 +2823,15 @@ fvm_tesselation_decode_g(const fvm_tesselation_t  *this_tesselation,
  *   polygon index corresponding to end of decoded range
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_decode(const fvm_tesselation_t  *this_tesselation,
                        fvm_element_t             connect_type,
-                       fvm_lnum_t                start_id,
-                       fvm_lnum_t                buffer_limit,
-                       fvm_lnum_t                extra_vertex_base,
-                       fvm_lnum_t                vertex_num[])
+                       cs_lnum_t                 start_id,
+                       cs_lnum_t                 buffer_limit,
+                       cs_lnum_t                 extra_vertex_base,
+                       cs_lnum_t                 vertex_num[])
 {
-  fvm_lnum_t retval = 0;
+  cs_lnum_t retval = 0;
 
   switch(this_tesselation->type) {
 
@@ -2881,17 +2881,17 @@ fvm_tesselation_decode(const fvm_tesselation_t  *this_tesselation,
 void
 fvm_tesselation_distribute(const fvm_tesselation_t  *this_tesselation,
                            fvm_element_t             connect_type,
-                           fvm_lnum_t                start_id,
-                           fvm_lnum_t                end_id,
+                           cs_lnum_t                 start_id,
+                           cs_lnum_t                 end_id,
                            size_t                    size,
                            void                     *data)
 {
   int id;
-  fvm_lnum_t  i, j, k, n_sub;
+  cs_lnum_t   i, j, k, n_sub;
   size_t  l;
   char  *src, *dest;
 
-  const fvm_lnum_t *sub_elt_index = NULL;
+  const cs_lnum_t *sub_elt_index = NULL;
 
   /* Find index, or return */
 
@@ -2958,14 +2958,14 @@ fvm_tesselation_vertex_values(const fvm_tesselation_t  *this_tesselation,
                               int                       src_dim,
                               int                       src_dim_shift,
                               int                       dest_dim,
-                              fvm_lnum_t                start_id,
-                              fvm_lnum_t                end_id,
+                              cs_lnum_t                 start_id,
+                              cs_lnum_t                 end_id,
                               fvm_interlace_t           src_interlace,
                               fvm_datatype_t            src_datatype,
                               fvm_datatype_t            dest_datatype,
                               int                       n_parent_lists,
-                              const fvm_lnum_t          parent_num_shift[],
-                              const fvm_lnum_t          parent_num[],
+                              const cs_lnum_t           parent_num_shift[],
+                              const cs_lnum_t           parent_num[],
                               const void         *const src_data[],
                               void               *const dest_data)
 {
@@ -3019,8 +3019,8 @@ void
 fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
 {
   int  i;
-  fvm_lnum_t  n_elements, j, k;
-  const fvm_lnum_t  *idx;
+  cs_lnum_t   n_elements, j, k;
+  const cs_lnum_t   *idx;
 
   if (this_tesselation == NULL)
     return;
@@ -3122,7 +3122,7 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
   if (this_tesselation->encoding != NULL) {
 
     fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
-    fvm_lnum_t tv[3];
+    cs_lnum_t tv[3];
 
     _init_decoding_mask(decoding_mask);
 

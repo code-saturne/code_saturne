@@ -78,21 +78,21 @@ typedef struct _fvm_box_distrib_t fvm_box_distrib_t;
 
 #if defined(HAVE_MPI)
 fvm_box_set_t *
-fvm_box_set_create(int                 dim,
-                   int                 normalize,
-                   int                 allow_projection,
-                   fvm_lnum_t          n_boxes,
-                   const fvm_gnum_t   *box_gnum,
-                   const fvm_coord_t  *box_extents,
-                   MPI_Comm            comm);
+fvm_box_set_create(int                dim,
+                   int                normalize,
+                   int                allow_projection,
+                   cs_lnum_t          n_boxes,
+                   const cs_gnum_t   *box_gnum,
+                   const cs_coord_t  *box_extents,
+                   MPI_Comm           comm);
 #else
 fvm_box_set_t *
-fvm_box_set_create(int                 dim,
-                   int                 normalize,
-                   int                 allow_projection,
-                   fvm_lnum_t          n_boxes,
-                   const fvm_gnum_t   *box_gnum,
-                   const fvm_coord_t  *box_extents);
+fvm_box_set_create(int                dim,
+                   int                normalize,
+                   int                allow_projection,
+                   cs_lnum_t          n_boxes,
+                   const cs_gnum_t   *box_gnum,
+                   const cs_coord_t  *box_extents);
 
 #endif
 
@@ -129,7 +129,7 @@ fvm_box_set_get_dim(const fvm_box_set_t  *boxes);
  *   local number of boxes
  *---------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_box_set_get_size(const fvm_box_set_t  *boxes);
 
 /*----------------------------------------------------------------------------
@@ -142,7 +142,7 @@ fvm_box_set_get_size(const fvm_box_set_t  *boxes);
  *   local number of boxes
  *---------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_box_set_get_global_size(const fvm_box_set_t  *boxes);
 
 /*----------------------------------------------------------------------------
@@ -161,7 +161,7 @@ fvm_box_set_get_global_size(const fvm_box_set_t  *boxes);
  *   pointer to extents array
  *---------------------------------------------------------------------------*/
 
-const fvm_coord_t *
+const cs_coord_t *
 fvm_box_set_get_extents(fvm_box_set_t  *boxes);
 
 /*----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ fvm_box_set_get_extents(fvm_box_set_t  *boxes);
  *   pointer to global box numbers array
  *---------------------------------------------------------------------------*/
 
-const fvm_gnum_t *
+const cs_gnum_t *
 fvm_box_set_get_g_num(fvm_box_set_t  *boxes);
 
 /*----------------------------------------------------------------------------
@@ -191,9 +191,9 @@ fvm_box_set_get_g_num(fvm_box_set_t  *boxes);
 void
 fvm_box_set_build_morton_index(const fvm_box_set_t  *boxes,
                                fvm_box_distrib_t    *distrib,
-                               fvm_lnum_t            n_leaves,
+                               cs_lnum_t             n_leaves,
                                fvm_morton_code_t    *leaf_codes,
-                               fvm_lnum_t           *weight);
+                               cs_lnum_t            *weight);
 
 /*----------------------------------------------------------------------------
  * Redistribute boxes over the ranks according to the Morton index to
@@ -236,10 +236,10 @@ fvm_box_set_dump(const fvm_box_set_t  *boxes,
  *---------------------------------------------------------------------------*/
 
 fvm_box_distrib_t *
-fvm_box_distrib_create(fvm_lnum_t  n_boxes,
-                       fvm_gnum_t  n_g_boxes,
-                       int         max_level,
-                       MPI_Comm    comm);
+fvm_box_distrib_create(cs_lnum_t  n_boxes,
+                       cs_gnum_t  n_g_boxes,
+                       int        max_level,
+                       MPI_Comm   comm);
 
 /*----------------------------------------------------------------------------
  * Destroy a fvm_box_distrib_t structure.

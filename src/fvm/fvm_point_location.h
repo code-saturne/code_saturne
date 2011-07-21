@@ -84,9 +84,9 @@ void
 fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                          double              tolerance,
                          int                 locate_on_parents,
-                         fvm_lnum_t          n_points,
-                         const fvm_coord_t   point_coords[],
-                         fvm_lnum_t          location[],
+                         cs_lnum_t           n_points,
+                         const cs_coord_t    point_coords[],
+                         cs_lnum_t           location[],
                          float               distance[]);
 
 /*----------------------------------------------------------------------------
@@ -115,9 +115,9 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
 void
 fvm_point_location_closest_nodal(const fvm_nodal_t  *this_nodal,
                                  int                 locate_on_parents,
-                                 fvm_lnum_t          n_points,
-                                 const fvm_coord_t   point_coords[],
-                                 fvm_lnum_t          location[],
+                                 cs_lnum_t           n_points,
+                                 const cs_coord_t    point_coords[],
+                                 cs_lnum_t           location[],
                                  float               distance[]);
 
 /*----------------------------------------------------------------------------*/

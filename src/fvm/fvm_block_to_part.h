@@ -59,14 +59,14 @@ extern "C" {
 
 typedef struct {
 
-  fvm_gnum_t   gnum_range[2];  /* Start and past-the-end global numbers
+  cs_gnum_t    gnum_range[2];  /* Start and past-the-end global numbers
                                   associated with local block */
   int          n_ranks;        /* Number of active ranks */
   int          rank_step;      /* Step between active block ranks
                                   (1 in basic case, > 1 if we seek to
                                   avoid too small buffers and agglomerate
                                   blocks on only a few ranks) */
-  fvm_lnum_t   block_size;     /* Basic block size */
+  cs_lnum_t    block_size;     /* Basic block size */
 
 } fvm_block_to_part_info_t;
 
@@ -97,11 +97,11 @@ typedef struct _fvm_block_to_part_t  fvm_block_to_part_t;
  *----------------------------------------------------------------------------*/
 
 fvm_block_to_part_info_t
-fvm_block_to_part_compute_sizes(int         rank_id,
-                                int         n_ranks,
-                                int         min_rank_step,
-                                fvm_lnum_t  min_block_size,
-                                fvm_gnum_t  n_g_ents);
+fvm_block_to_part_compute_sizes(int        rank_id,
+                                int        n_ranks,
+                                int        min_rank_step,
+                                cs_lnum_t  min_block_size,
+                                cs_gnum_t  n_g_ents);
 
 #if defined(HAVE_MPI)
 
@@ -159,7 +159,7 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
                                   fvm_block_to_part_info_t  block,
                                   fvm_block_to_part_info_t  adjacent_block,
                                   int                       stride,
-                                  fvm_gnum_t                adjacency[],
+                                  cs_gnum_t                 adjacency[],
                                   int                       adjacent_ent_rank[],
                                   int                       default_rank[]);
 
@@ -181,7 +181,7 @@ fvm_block_to_part_t *
 fvm_block_to_part_create_adj(MPI_Comm                  comm,
                              fvm_block_to_part_info_t  adj_bi,
                              size_t                    adjacency_size,
-                             const fvm_gnum_t          adjacency[]);
+                             const cs_gnum_t           adjacency[]);
 
 /*----------------------------------------------------------------------------
  * Initialize block to partition distributor based global element numbers
@@ -198,10 +198,10 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
  *----------------------------------------------------------------------------*/
 
 fvm_block_to_part_t *
-fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
-                                 fvm_block_to_part_info_t   bi,
-                                 fvm_lnum_t                 n_ents,
-                                 const fvm_gnum_t           global_ent_num[]);
+fvm_block_to_part_create_by_gnum(MPI_Comm                  comm,
+                                 fvm_block_to_part_info_t  bi,
+                                 cs_lnum_t                 n_ents,
+                                 const cs_gnum_t           global_ent_num[]);
 
 /*----------------------------------------------------------------------------
  * Destroy a block to partition distributor structure.
@@ -223,7 +223,7 @@ fvm_block_to_part_destroy(fvm_block_to_part_t **d);
  *   number of entities associated with distribution receive
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_block_to_part_get_n_part_ents(fvm_block_to_part_t *d);
 
 /*----------------------------------------------------------------------------
@@ -240,7 +240,7 @@ fvm_block_to_part_get_n_part_ents(fvm_block_to_part_t *d);
  *   domain partition distributor was not the owner of this array.
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t *
+cs_gnum_t *
 fvm_block_to_part_transfer_gnum(fvm_block_to_part_t *d);
 
 /*----------------------------------------------------------------------------
@@ -275,8 +275,8 @@ fvm_block_to_part_copy_array(fvm_block_to_part_t   *d,
 
 void
 fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
-                             const fvm_lnum_t     *block_index,
-                             fvm_lnum_t           *part_index);
+                             const cs_lnum_t      *block_index,
+                             cs_lnum_t            *part_index);
 
 /*----------------------------------------------------------------------------
  * Copy indexed data from block distribution to general domain partition.
@@ -295,9 +295,9 @@ fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
 void
 fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
                                fvm_datatype_t         datatype,
-                               const fvm_lnum_t      *block_index,
+                               const cs_lnum_t       *block_index,
                                const void            *block_val,
-                               const fvm_lnum_t      *part_index,
+                               const cs_lnum_t       *part_index,
                                void                  *part_val);
 
 #endif /* defined(HAVE_MPI) */
@@ -329,12 +329,12 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_global_to_local(fvm_lnum_t        n_ents,
-                                  fvm_lnum_t        base,
-                                  fvm_lnum_t        global_list_size,
-                                  const fvm_gnum_t  global_list[],
-                                  const fvm_gnum_t  global_number[],
-                                  fvm_lnum_t        local_number[]);
+fvm_block_to_part_global_to_local(cs_lnum_t        n_ents,
+                                  cs_lnum_t        base,
+                                  cs_lnum_t        global_list_size,
+                                  const cs_gnum_t  global_list[],
+                                  const cs_gnum_t  global_number[],
+                                  cs_lnum_t        local_number[]);
 
 /*----------------------------------------------------------------------------*/
 

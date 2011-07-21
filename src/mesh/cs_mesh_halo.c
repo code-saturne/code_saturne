@@ -142,8 +142,8 @@ _fill_vtx_lookup(vtx_lookup_table_t         *vtx_lookup,
   for (rank_id = 0; rank_id < n_interfaces; rank_id++) {
 
     const fvm_interface_t  *interface = fvm_interface_set_get(ifs, rank_id);
-    const fvm_lnum_t  interface_size = fvm_interface_size(interface);
-    const fvm_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+    const cs_lnum_t  interface_size = fvm_interface_size(interface);
+    const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
 
     for (i = 0; i < interface_size; i++) { /* Only parallel vertices */
 
@@ -198,9 +198,9 @@ _fill_vtx_lookup_with_perio(vtx_lookup_table_t         *vtx_lookup,
 
     const fvm_interface_t  *interface
       = fvm_interface_set_get(ifs, vtx_lookup->rank_ids[rank_id]);
-    const fvm_lnum_t  tr_index_size = fvm_interface_get_tr_index_size(interface);
-    const fvm_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
-    const fvm_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+    const cs_lnum_t  tr_index_size = fvm_interface_get_tr_index_size(interface);
+    const cs_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
+    const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
 
     assert(n_transforms + 2 == tr_index_size);
     assert(tr_index != NULL);
@@ -257,7 +257,7 @@ _vtx_lookup_create(cs_int_t                    n_vertices,
   vtx_lookup_table_t  *vtx_lookup = NULL;
 
   const fvm_interface_t  *interface = NULL;
-  const fvm_lnum_t  *local_num = NULL;
+  const cs_lnum_t  *local_num = NULL;
   const fvm_periodicity_t  *periodicity = fvm_interface_set_periodicity(ifs);
   const cs_int_t  n_transforms = fvm_periodicity_get_n_transforms(periodicity);
   const cs_int_t  n_interfaces = fvm_interface_set_size(ifs);
@@ -305,19 +305,19 @@ _vtx_lookup_create(cs_int_t                    n_vertices,
 
     if (n_interfaces > 2) {
 
-      fvm_lnum_t  *order = NULL;
-      fvm_gnum_t  *buffer = NULL;
+      cs_lnum_t  *order = NULL;
+      cs_gnum_t  *buffer = NULL;
       cs_int_t  *_rank_ids = NULL;
 
-      assert(sizeof(fvm_lnum_t) == sizeof(cs_int_t));
+      assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
 
-      BFT_MALLOC(order, n_interfaces - 1, fvm_lnum_t);
-      BFT_MALLOC(buffer, n_interfaces - 1, fvm_gnum_t);
+      BFT_MALLOC(order, n_interfaces - 1, cs_lnum_t);
+      BFT_MALLOC(buffer, n_interfaces - 1, cs_gnum_t);
       BFT_MALLOC(_rank_ids, n_interfaces , cs_int_t);
 
       _rank_ids[0] = vtx_lookup->rank_ids[0];
       for (i = 1; i < n_interfaces; i++) {
-        buffer[i-1] = (fvm_gnum_t)vtx_lookup->if_ranks[i];
+        buffer[i-1] = (cs_gnum_t)vtx_lookup->if_ranks[i];
         _rank_ids[i] = vtx_lookup->rank_ids[i];
       }
 
@@ -1039,8 +1039,8 @@ _get_vertex_tag(cs_int_t                    n_vertices,
   for (rank_id = 0; rank_id < ifs_size; rank_id++) {
 
     const fvm_interface_t  *interface = fvm_interface_set_get(vertex_ifs, rank_id);
-    const fvm_lnum_t  *local_num = fvm_interface_get_local_num(interface);
-    const fvm_lnum_t  if_size = fvm_interface_size(interface);
+    const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+    const cs_lnum_t  if_size = fvm_interface_size(interface);
 
     for (j = 0; j < if_size; j++)
       vertex_tag[local_num[j]-1] = 1;
@@ -1358,7 +1358,7 @@ _get_list_buffer_size(const fvm_interface_set_t  *ifs)
   cs_int_t  max_lst_size = 0;
 
   const fvm_interface_t  *interface = NULL;
-  const fvm_lnum_t  *tr_index = NULL;
+  const cs_lnum_t  *tr_index = NULL;
   const cs_int_t  ifs_size = fvm_interface_set_size(ifs);
 
   if (ifs == NULL)
@@ -1413,8 +1413,8 @@ _define_vtx_interface_idx(const fvm_interface_set_t  *ifs,
 
     if (rank_id == fvm_interface_rank(interface)) {
 
-      const fvm_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
-      const fvm_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+      const cs_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
+      const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
 
       if (tr_index == NULL) {  /*  purelly parallel elements */
 
@@ -1478,9 +1478,9 @@ _define_dist_num_lst(const fvm_interface_set_t  *ifs,
 
     if (rank_id == fvm_interface_rank(interface)) {
 
-      const fvm_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
-      const fvm_lnum_t  *distant_num = fvm_interface_get_distant_num(interface);
-      const fvm_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+      const cs_lnum_t  *tr_index = fvm_interface_get_tr_index(interface);
+      const cs_lnum_t  *distant_num = fvm_interface_get_distant_num(interface);
+      const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
 
       if (tr_index == NULL)
         for (j = 0; j < (cs_int_t)fvm_interface_size(interface); j++)
@@ -2214,12 +2214,12 @@ _check_i_face_cells(cs_mesh_t  *mesh)
  *---------------------------------------------------------------------------*/
 
 static void
-_tag_interface_faces(int                prev,
-                     int                start,
-                     int                end,
-                     const fvm_lnum_t   lnum[],
-                     const fvm_lnum_t   dnum[],
-                     cs_int_t           l2d_fids[])
+_tag_interface_faces(int              prev,
+                     int              start,
+                     int              end,
+                     const cs_lnum_t  lnum[],
+                     const cs_lnum_t  dnum[],
+                     cs_int_t         l2d_fids[])
 {
   int  i;
 
@@ -2266,9 +2266,9 @@ _update_i_face_cells(cs_mesh_t                  *mesh,
   const int  *s_index = halo->send_index;
   const int  *s_gcell_ids = halo->send_list;
   const fvm_interface_t  *interface = NULL;
-  const fvm_lnum_t  *loc_num = NULL;
-  const fvm_lnum_t  *dist_num = NULL;
-  const fvm_lnum_t  *tr_index = NULL;
+  const cs_lnum_t  *loc_num = NULL;
+  const cs_lnum_t  *dist_num = NULL;
+  const cs_lnum_t  *tr_index = NULL;
 
 #if defined(HAVE_MPI)
   MPI_Request _request[128];
@@ -2839,7 +2839,7 @@ _create_gcell_faces_connect(cs_mesh_t                  *mesh,
     cell_tag[i] = -1;
   }
 
-  assert(sizeof(cs_int_t) == sizeof(fvm_lnum_t));
+  assert(sizeof(cs_int_t) == sizeof(cs_lnum_t));
 
   _get_vertex_tag(mesh->n_vertices, vertex_ifs, &vtx_tag);
 

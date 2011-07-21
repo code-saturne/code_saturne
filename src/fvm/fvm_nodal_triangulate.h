@@ -55,7 +55,7 @@ extern "C" {
 
 void
 fvm_nodal_triangulate(fvm_nodal_t  *this_nodal,
-                      fvm_lnum_t   *error_count);
+                      cs_lnum_t    *error_count);
 
 /*----------------------------------------------------------------------------
  * Triangulate polygonal sections of a nodal mesh.
@@ -67,7 +67,7 @@ fvm_nodal_triangulate(fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
-                               fvm_lnum_t   *error_count);
+                               cs_lnum_t    *error_count);
 
 /*----------------------------------------------------------------------------*/
 

@@ -73,17 +73,17 @@ typedef double  fvm_hilbert_code_t;
 
 #if defined(HAVE_MPI)
 void
-fvm_hilbert_get_coord_extents(int                dim,
-                              size_t             n_coords,
-                              const fvm_coord_t  coords[],
-                              fvm_coord_t        g_extents[],
-                              MPI_Comm           comm);
+fvm_hilbert_get_coord_extents(int               dim,
+                              size_t            n_coords,
+                              const cs_coord_t  coords[],
+                              cs_coord_t        g_extents[],
+                              MPI_Comm          comm);
 #else
 void
-fvm_hilbert_get_coord_extents(int                dim,
-                              size_t             n_coords,
-                              const fvm_coord_t  coords[],
-                              fvm_coord_t        g_extents[]);
+fvm_hilbert_get_coord_extents(int               dim,
+                              size_t            n_coords,
+                              const cs_coord_t  coords[],
+                              cs_coord_t        g_extents[]);
 #endif
 
 /*----------------------------------------------------------------------------
@@ -102,9 +102,9 @@ fvm_hilbert_get_coord_extents(int                dim,
 
 void
 fvm_hilbert_encode_coords(int                 dim,
-                          const fvm_coord_t   extents[],
-                          fvm_lnum_t          n_coords,
-                          const fvm_coord_t   coords[],
+                          const cs_coord_t    extents[],
+                          cs_lnum_t           n_coords,
+                          const cs_coord_t    coords[],
                           fvm_hilbert_code_t  h_code[]);
 
 /*----------------------------------------------------------------------------
@@ -121,9 +121,9 @@ fvm_hilbert_encode_coords(int                 dim,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_hilbert_local_order(fvm_lnum_t                n_codes,
+fvm_hilbert_local_order(cs_lnum_t                 n_codes,
                         const fvm_hilbert_code_t  hilbert_codes[],
-                        fvm_lnum_t                order[]);
+                        cs_lnum_t                 order[]);
 
 /*----------------------------------------------------------------------------
  * Locally order a list of coordinates based on their Hilbert code.
@@ -140,11 +140,11 @@ fvm_hilbert_local_order(fvm_lnum_t                n_codes,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_hilbert_local_order_coords(int                 dim,
-                               const fvm_coord_t   extents[],
-                               fvm_lnum_t          n_coords,
-                               const fvm_coord_t   coords[],
-                               fvm_lnum_t          order[]);
+fvm_hilbert_local_order_coords(int                dim,
+                               const cs_coord_t   extents[],
+                               cs_lnum_t          n_coords,
+                               const cs_coord_t   coords[],
+                               cs_lnum_t          order[]);
 
 /*----------------------------------------------------------------------------
  * Get the quantile associated to a Hilbert code using a binary search.
@@ -187,10 +187,10 @@ fvm_hilbert_quantile_search(size_t              n_quantiles,
 
 double
 fvm_hilbert_build_rank_index(int                       dim,
-                             fvm_lnum_t                n_codes,
+                             cs_lnum_t                 n_codes,
                              const fvm_hilbert_code_t  hilbert_code[],
-                             const fvm_lnum_t          weight[],
-                             const fvm_lnum_t          order[],
+                             const cs_lnum_t           weight[],
+                             const cs_lnum_t           order[],
                              fvm_hilbert_code_t        rank_index[],
                              MPI_Comm                  comm);
 

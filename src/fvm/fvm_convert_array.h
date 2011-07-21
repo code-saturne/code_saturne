@@ -101,14 +101,14 @@ void
 fvm_convert_array(const int                     src_dim,
                   const int                     src_dim_shift,
                   const int                     dest_dim,
-                  const fvm_lnum_t              src_idx_start,
-                  const fvm_lnum_t              src_idx_end,
+                  const cs_lnum_t               src_idx_start,
+                  const cs_lnum_t               src_idx_end,
                   const fvm_interlace_t         src_interlace,
                   const fvm_datatype_t          src_datatype,
                   const fvm_datatype_t          dest_datatype,
                   const int                     n_parent_lists,
-                  const fvm_lnum_t              parent_num_shift[],
-                  const fvm_lnum_t              parent_num[],
+                  const cs_lnum_t               parent_num_shift[],
+                  const cs_lnum_t               parent_num[],
                   const void             *const src_data[],
                   void                   *const dest_data);
 

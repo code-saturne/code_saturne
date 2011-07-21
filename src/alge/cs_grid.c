@@ -115,13 +115,13 @@ struct _cs_grid_t {
   bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
 
-  fvm_lnum_t          n_cells;      /* Local number of cells */
-  fvm_lnum_t          n_cells_ext;  /* Local number of participating cells
+  cs_lnum_t           n_cells;      /* Local number of cells */
+  cs_lnum_t           n_cells_ext;  /* Local number of participating cells
                                        (cells + ghost cells sharing a face) */
-  fvm_lnum_t          n_faces;      /* Local number of faces */
-  fvm_gnum_t          n_g_cells;    /* Global number of cells */
+  cs_lnum_t           n_faces;      /* Local number of faces */
+  cs_gnum_t           n_g_cells;    /* Global number of cells */
 
-  fvm_lnum_t          n_cells_r[2]; /* Size of array used for restriction
+  cs_lnum_t           n_cells_r[2]; /* Size of array used for restriction
                                        operations ({ncells, n_cells_ext} when
                                        no grid merging has taken place) */
 
@@ -131,15 +131,15 @@ struct _cs_grid_t {
 
   /* Connectivity information */
 
-  const fvm_lnum_t   *face_cell;    /* Face -> cells connectivity (1 to n) */
-  fvm_lnum_t         *_face_cell;   /* Face -> cells connectivity
+  const cs_lnum_t    *face_cell;    /* Face -> cells connectivity (1 to n) */
+  cs_lnum_t          *_face_cell;   /* Face -> cells connectivity
                                        (private array) */
 
   /* Restriction from parent to current level */
 
-  fvm_lnum_t         *coarse_cell;  /* Fine -> coarse cell connectivity
+  cs_lnum_t          *coarse_cell;  /* Fine -> coarse cell connectivity
                                        (1 to n); size: parent n_cells_ext */
-  fvm_lnum_t         *coarse_face;  /* Fine -> coarse face connectivity
+  cs_lnum_t          *coarse_face;  /* Fine -> coarse face connectivity
                                        (1 to n, signed:
                                        = 0 fine face inside coarse cell
                                        > 0 orientation same as parent
@@ -194,7 +194,7 @@ struct _cs_grid_t {
   int               next_merge_stride; /* total number of ranks over which
                                           merging occurred at current level */
 
-  fvm_lnum_t       *merge_cell_idx;    /* start cell_id for each sub-rank
+  cs_lnum_t        *merge_cell_idx;    /* start cell_id for each sub-rank
                                           when merge_sub_rank = 0
                                           (size: merge_size + 1) */
 
@@ -211,7 +211,7 @@ struct _cs_grid_t {
 
 #if defined(HAVE_MPI)
 
-static fvm_gnum_t  _grid_merge_threshold[2] = {300, 500};
+static cs_gnum_t   _grid_merge_threshold[2] = {300, 500};
 static int         _grid_merge_min_ranks = 1;
 static int         _grid_merge_stride = 4;
 
@@ -317,7 +317,7 @@ _create_grid(void)
 static cs_grid_t *
 _coarse_init(const cs_grid_t *f)
 {
-  fvm_lnum_t ii;
+  cs_lnum_t ii;
   cs_grid_t *c = NULL;
 
   c = _create_grid();
@@ -327,7 +327,7 @@ _coarse_init(const cs_grid_t *f)
   c->level = f->level + 1;
   c->symmetric = f->symmetric;
 
-  BFT_MALLOC(c->coarse_cell, f->n_cells_ext, fvm_lnum_t);
+  BFT_MALLOC(c->coarse_cell, f->n_cells_ext, cs_lnum_t);
 
   for (ii = 0; ii < f->n_cells_ext; ii++)
     c->coarse_cell[ii] = 0;
@@ -367,39 +367,39 @@ _coarse_init(const cs_grid_t *f)
 
 static void
 _coarsen_faces(const cs_grid_t    *fine,
-               const fvm_lnum_t   *restrict coarse_cell,
-               fvm_lnum_t          n_coarse_cells,
-               fvm_lnum_t         *n_coarse_faces,
-               fvm_lnum_t        **coarse_face,
-               fvm_lnum_t        **coarse_face_cell)
+               const cs_lnum_t    *restrict coarse_cell,
+               cs_lnum_t           n_coarse_cells,
+               cs_lnum_t          *n_coarse_faces,
+               cs_lnum_t         **coarse_face,
+               cs_lnum_t         **coarse_face_cell)
 {
-  fvm_lnum_t  ii, jj, face_id, connect_size;
+  cs_lnum_t  ii, jj, face_id, connect_size;
 
-  fvm_lnum_t  *restrict c_cell_cell_cnt = NULL;
-  fvm_lnum_t  *restrict c_cell_cell_idx = NULL;
-  fvm_lnum_t  *restrict c_cell_cell_id = NULL;
-  fvm_lnum_t  *restrict c_cell_cell_face = NULL;
+  cs_lnum_t  *restrict c_cell_cell_cnt = NULL;
+  cs_lnum_t  *restrict c_cell_cell_idx = NULL;
+  cs_lnum_t  *restrict c_cell_cell_id = NULL;
+  cs_lnum_t  *restrict c_cell_cell_face = NULL;
 
-  fvm_lnum_t  *restrict _coarse_face = NULL;
-  fvm_lnum_t  *restrict _c_face_cell = NULL;
+  cs_lnum_t  *restrict _coarse_face = NULL;
+  cs_lnum_t  *restrict _c_face_cell = NULL;
 
-  fvm_lnum_t   c_n_faces = 0;
+  cs_lnum_t   c_n_faces = 0;
 
-  const fvm_lnum_t c_n_cells = n_coarse_cells;
-  const fvm_lnum_t f_n_faces = fine->n_faces;
-  const fvm_lnum_t *restrict f_face_cell = fine->face_cell;
+  const cs_lnum_t c_n_cells = n_coarse_cells;
+  const cs_lnum_t f_n_faces = fine->n_faces;
+  const cs_lnum_t *restrict f_face_cell = fine->face_cell;
 
   /* Pre-allocate return values
      (coarse face->cell connectivity is over-allocated) */
 
-  BFT_MALLOC(_coarse_face, f_n_faces, fvm_lnum_t);
-  BFT_MALLOC(_c_face_cell, f_n_faces*2, fvm_lnum_t);
+  BFT_MALLOC(_coarse_face, f_n_faces, cs_lnum_t);
+  BFT_MALLOC(_c_face_cell, f_n_faces*2, cs_lnum_t);
 
   for (face_id = 0; face_id < f_n_faces; _coarse_face[face_id++] = 0);
 
   /* Allocate index */
 
-  BFT_MALLOC(c_cell_cell_idx, c_n_cells + 1, fvm_lnum_t);
+  BFT_MALLOC(c_cell_cell_idx, c_n_cells + 1, cs_lnum_t);
 
   for (ii = 0; ii <= c_n_cells; c_cell_cell_idx[ii++] = 0);
 
@@ -422,11 +422,11 @@ _coarsen_faces(const cs_grid_t    *fine,
 
   BFT_MALLOC(c_cell_cell_id,
              c_cell_cell_idx[c_n_cells],
-             fvm_lnum_t);
+             cs_lnum_t);
 
   BFT_MALLOC(c_cell_cell_face,
              c_cell_cell_idx[c_n_cells],
-             fvm_lnum_t);
+             cs_lnum_t);
 
   for (ii = 0, connect_size = c_cell_cell_idx[c_n_cells];
        ii < connect_size;
@@ -435,7 +435,7 @@ _coarsen_faces(const cs_grid_t    *fine,
   /* Use a counter for array population, as array will usually
      not be fully populated */
 
-  BFT_MALLOC(c_cell_cell_cnt, c_n_cells, fvm_lnum_t);
+  BFT_MALLOC(c_cell_cell_cnt, c_n_cells, cs_lnum_t);
 
   for (ii = 0; ii < c_n_cells; c_cell_cell_cnt[ii++] = 0);
 
@@ -445,8 +445,8 @@ _coarsen_faces(const cs_grid_t    *fine,
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
 
-    fvm_lnum_t kk, start_id, end_id;
-    fvm_lnum_t sign = 1;
+    cs_lnum_t kk, start_id, end_id;
+    cs_lnum_t sign = 1;
 
     ii = coarse_cell[f_face_cell[face_id*2]     - 1] - 1;
     jj = coarse_cell[f_face_cell[face_id*2 + 1] - 1] - 1;
@@ -490,7 +490,7 @@ _coarsen_faces(const cs_grid_t    *fine,
 
   /* Set return values */
 
-  BFT_REALLOC(_c_face_cell, c_n_faces*2, fvm_lnum_t);
+  BFT_REALLOC(_c_face_cell, c_n_faces*2, cs_lnum_t);
 
   *n_coarse_faces = c_n_faces;
   *coarse_face = _coarse_face;
@@ -513,7 +513,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
                           cs_int_t          coarse_send[],
                           cs_int_t          coarse_cell[])
 {
-  fvm_lnum_t  i, start, length;
+  cs_lnum_t  i, start, length;
 
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
@@ -636,19 +636,19 @@ _coarsen_halo(const cs_grid_t   *f,
               cs_grid_t         *c)
 {
   int domain_id, tr_id, section_id;
-  fvm_lnum_t ii, jj;
-  fvm_lnum_t start_id, end_id, sub_count;
+  cs_lnum_t ii, jj;
+  cs_lnum_t start_id, end_id, sub_count;
 
-  fvm_lnum_t *start_end_id = NULL;
-  fvm_lnum_t *sub_num = NULL;
-  cs_int_t   *coarse_send = NULL;
+  cs_lnum_t *start_end_id = NULL;
+  cs_lnum_t *sub_num = NULL;
+  cs_int_t  *coarse_send = NULL;
 
-  fvm_lnum_t *restrict coarse_cell = c->coarse_cell;
+  cs_lnum_t *restrict coarse_cell = c->coarse_cell;
 
   cs_halo_t *c_halo = NULL;
   const cs_halo_t *f_halo = f->halo;
 
-  const fvm_lnum_t c_n_cells = c->n_cells;
+  const cs_lnum_t c_n_cells = c->n_cells;
 
   const int stride = f_halo->n_c_domains*4;
   const int n_sections = f_halo->n_transforms + 1;
@@ -669,8 +669,8 @@ _coarsen_halo(const cs_grid_t   *f,
 
   /* Allocate and initialize counters */
 
-  BFT_MALLOC(start_end_id, n_sections*2, fvm_lnum_t);
-  BFT_MALLOC(sub_num, c_n_cells, fvm_lnum_t);
+  BFT_MALLOC(start_end_id, n_sections*2, cs_lnum_t);
+  BFT_MALLOC(sub_num, c_n_cells, cs_lnum_t);
   BFT_MALLOC(coarse_send, n_f_send, cs_int_t);
 
   for (ii = 0; ii < c_n_cells; ii++)
@@ -925,12 +925,12 @@ static void
 _coarsen(const cs_grid_t   *f,
          cs_grid_t         *c)
 {
-  fvm_lnum_t  ii, jj, face_id;
+  cs_lnum_t  ii, jj, face_id;
 
-  fvm_lnum_t  c_n_cells = 0;
+  cs_lnum_t  c_n_cells = 0;
 
-  const fvm_lnum_t f_n_faces = f->n_faces;
-  const fvm_lnum_t *restrict f_face_cell = f->face_cell;
+  const cs_lnum_t f_n_faces = f->n_faces;
+  const cs_lnum_t *restrict f_face_cell = f->face_cell;
 
   /* Sanity check */
 
@@ -956,8 +956,8 @@ _coarsen(const cs_grid_t   *f,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    fvm_gnum_t _c_n_cells = c_n_cells;
-    MPI_Allreduce(&_c_n_cells, &(c->n_g_cells), 1, FVM_MPI_GNUM, MPI_SUM,
+    cs_gnum_t _c_n_cells = c_n_cells;
+    MPI_Allreduce(&_c_n_cells, &(c->n_g_cells), 1, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
 #endif
@@ -1084,32 +1084,32 @@ _finalize_reduced_communicators(void)
  *----------------------------------------------------------------------------*/
 
 static void
-_rebuild_halo_send_lists(cs_halo_t   *h,
-                         fvm_lnum_t   new_src_cell_id[])
+_rebuild_halo_send_lists(cs_halo_t  *h,
+                         cs_lnum_t   new_src_cell_id[])
 {
   /* As halos are based on interior faces, every domain is both
      sender and receiver */
 
-  fvm_lnum_t start, length;
+  cs_lnum_t start, length;
 
   int rank_id, tr_id;
   int n_sections = 1 + h->n_transforms;
   int request_count = 0;
-  fvm_lnum_t *send_buf = NULL, *recv_buf = NULL;
+  cs_lnum_t *send_buf = NULL, *recv_buf = NULL;
   MPI_Status *status = NULL;
   MPI_Request *request = NULL;
 
   BFT_MALLOC(status, h->n_c_domains*2, MPI_Status);
   BFT_MALLOC(request, h->n_c_domains*2, MPI_Request);
-  BFT_MALLOC(send_buf, h->n_c_domains*n_sections, fvm_lnum_t);
-  BFT_MALLOC(recv_buf, h->n_c_domains*n_sections, fvm_lnum_t);
+  BFT_MALLOC(send_buf, h->n_c_domains*n_sections, cs_lnum_t);
+  BFT_MALLOC(recv_buf, h->n_c_domains*n_sections, cs_lnum_t);
 
   /* Exchange sizes */
 
   for (rank_id = 0; rank_id < h->n_c_domains; rank_id++)
     MPI_Irecv(recv_buf + rank_id*n_sections,
               n_sections,
-              FVM_MPI_LNUM,
+              CS_MPI_LNUM,
               h->c_domain_rank[rank_id],
               h->c_domain_rank[rank_id],
               cs_glob_mpi_comm,
@@ -1126,7 +1126,7 @@ _rebuild_halo_send_lists(cs_halo_t   *h,
     }
     MPI_Isend(send_buf + rank_id*n_sections,
               n_sections,
-              FVM_MPI_LNUM,
+              CS_MPI_LNUM,
               h->c_domain_rank[rank_id],
               cs_glob_rank_id,
               cs_glob_mpi_comm,
@@ -1140,7 +1140,7 @@ _rebuild_halo_send_lists(cs_halo_t   *h,
 
   /* Update sizes */
 
-  BFT_MALLOC(h->send_index, h->n_c_domains*2 + 1, fvm_lnum_t);
+  BFT_MALLOC(h->send_index, h->n_c_domains*2 + 1, cs_lnum_t);
   h->send_index[0] = 0;
   for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
     h->send_index[rank_id*2 + 1]
@@ -1151,13 +1151,13 @@ _rebuild_halo_send_lists(cs_halo_t   *h,
   /* Update send_perio_lst in case of transforms */
 
   if (h->n_transforms > 0) {
-    BFT_MALLOC(h->send_perio_lst, h->n_c_domains*h->n_transforms*4, fvm_lnum_t);
+    BFT_MALLOC(h->send_perio_lst, h->n_c_domains*h->n_transforms*4, cs_lnum_t);
     for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
-      fvm_lnum_t n_cur_vals = recv_buf[rank_id*n_sections];
+      cs_lnum_t n_cur_vals = recv_buf[rank_id*n_sections];
       for (tr_id = 0; tr_id < h->n_transforms; tr_id++)
         n_cur_vals -= recv_buf[rank_id*n_sections + 1 + tr_id];
       for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-        fvm_lnum_t n_tr_vals = recv_buf[rank_id*n_sections + 1 + tr_id];
+        cs_lnum_t n_tr_vals = recv_buf[rank_id*n_sections + 1 + tr_id];
         h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id] = n_cur_vals;
         h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1] = n_tr_vals;
         n_cur_vals += n_tr_vals;
@@ -1173,7 +1173,7 @@ _rebuild_halo_send_lists(cs_halo_t   *h,
   h->n_send_elts[0] = h->send_index[h->n_c_domains*2];
   h->n_send_elts[1] = h->n_send_elts[0];
 
-  BFT_MALLOC(h->send_list, h->n_send_elts[0], fvm_lnum_t);
+  BFT_MALLOC(h->send_list, h->n_send_elts[0], cs_lnum_t);
 
   /* Receive data from distant ranks */
 
@@ -1182,7 +1182,7 @@ _rebuild_halo_send_lists(cs_halo_t   *h,
     length = h->send_index[2*rank_id + 1] - h->send_index[2*rank_id];
     MPI_Irecv(h->send_list + start,
               length,
-              FVM_MPI_LNUM,
+              CS_MPI_LNUM,
               h->c_domain_rank[rank_id],
               h->c_domain_rank[rank_id],
               cs_glob_mpi_comm,
@@ -1196,7 +1196,7 @@ _rebuild_halo_send_lists(cs_halo_t   *h,
     length = h->index[2*rank_id + 1] - h->index[2*rank_id];
     MPI_Isend(new_src_cell_id + start,
               length,
-              FVM_MPI_LNUM,
+              CS_MPI_LNUM,
               h->c_domain_rank[rank_id],
               cs_glob_rank_id,
               cs_glob_mpi_comm,
@@ -1257,19 +1257,19 @@ _empty_halo(cs_halo_t  *h)
 static void
 _merge_halo_data(cs_halo_t   *h,
                  int          loc_rank_id,
-                 fvm_lnum_t   n_new_cells,
-                 fvm_lnum_t   new_src_cell_id[],
-                 fvm_lnum_t   new_halo_cell_num[])
+                 cs_lnum_t    n_new_cells,
+                 cs_lnum_t    new_src_cell_id[],
+                 cs_lnum_t    new_halo_cell_num[])
 {
   int  rank_id, prev_rank_id, tr_id, prev_section_id;
-  fvm_lnum_t  ii, cur_id, section_id, src_id, prev_src_id;
+  cs_lnum_t  ii, cur_id, section_id, src_id, prev_src_id;
 
   int   stride = (h->n_transforms > 0) ? 3 : 2;
   int   n_c_domains_ini = h->n_c_domains;
 
-  fvm_lnum_t   n_elts_ini = h->n_elts[0];
-  fvm_lnum_t  *order = NULL, *section_idx = NULL;
-  fvm_gnum_t  *tmp_num = NULL;
+  cs_lnum_t   n_elts_ini = h->n_elts[0];
+  cs_lnum_t  *order = NULL, *section_idx = NULL;
+  cs_gnum_t  *tmp_num = NULL;
 
   const int  n_sections = h->n_transforms + 1;
 
@@ -1280,7 +1280,7 @@ _merge_halo_data(cs_halo_t   *h,
 
   /* Order list by rank, transform, and new element number */
 
-  BFT_MALLOC(tmp_num, n_elts_ini*stride, fvm_gnum_t);
+  BFT_MALLOC(tmp_num, n_elts_ini*stride, cs_gnum_t);
 
   for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
     for (ii = h->index[rank_id*2];
@@ -1302,9 +1302,9 @@ _merge_halo_data(cs_halo_t   *h,
 
     for (rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
       for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
-        fvm_lnum_t ii_0
+        cs_lnum_t ii_0
           = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id];
-        fvm_lnum_t ii_1
+        cs_lnum_t ii_1
           = ii_0 + h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + 1];
         for (ii = ii_0; ii < ii_1; ii++)
           tmp_num[ii*3 + 1] = tr_id + 1;
@@ -1364,13 +1364,13 @@ _merge_halo_data(cs_halo_t   *h,
   }
   else { /* if (stride == 3) */
 
-    const fvm_lnum_t section_idx_size = n_sections * h->n_c_domains + 1;
+    const cs_lnum_t section_idx_size = n_sections * h->n_c_domains + 1;
 
     prev_section_id = -1;
 
     /* Initialize index as count */
 
-    BFT_MALLOC(section_idx, section_idx_size, fvm_lnum_t);
+    BFT_MALLOC(section_idx, section_idx_size, cs_lnum_t);
     for (ii = 0; ii < section_idx_size; ii++)
       section_idx[ii] = 0;
 
@@ -1445,11 +1445,11 @@ _merge_halo_data(cs_halo_t   *h,
   BFT_FREE(order);
   BFT_FREE(tmp_num);
   BFT_REALLOC(h->c_domain_rank, h->n_c_domains, int);
-  BFT_REALLOC(h->index, h->n_c_domains*2+1, fvm_lnum_t);
+  BFT_REALLOC(h->index, h->n_c_domains*2+1, cs_lnum_t);
   if (h->n_transforms > 0)
     BFT_REALLOC(h->perio_lst,
                 h->n_c_domains * h->n_transforms * 4,
-                fvm_lnum_t);
+                cs_lnum_t);
 
   h->n_elts[1] = h->n_elts[0];
   h->index[h->n_c_domains*2] = h->n_elts[0];
@@ -1469,14 +1469,14 @@ _merge_halo_data(cs_halo_t   *h,
 
 static void
 _append_halos(cs_grid_t   *g,
-              fvm_lnum_t  *new_cell_num)
+              cs_lnum_t   *new_cell_num)
 {
-  fvm_lnum_t ii, jj;
+  cs_lnum_t ii, jj;
   int rank_id;
   int counts[3];
 
   int *recv_count = NULL;
-  fvm_lnum_t *new_src_cell_id = NULL, *new_halo_cell_num = NULL;
+  cs_lnum_t *new_src_cell_id = NULL, *new_halo_cell_num = NULL;
 
   cs_halo_t *h = g->_halo;
 
@@ -1532,28 +1532,28 @@ _append_halos(cs_grid_t   *g,
 
   if (g->merge_sub_rank == 0) {
 
-    BFT_MALLOC(new_src_cell_id, counts[2], fvm_lnum_t);
+    BFT_MALLOC(new_src_cell_id, counts[2], cs_lnum_t);
     for (ii = g->n_cells, jj = 0; ii < g->n_cells_ext; ii++, jj++)
       new_src_cell_id[jj] = new_cell_num[ii] - 1;
 
     BFT_REALLOC(h->c_domain_rank, counts[0], int);
-    BFT_REALLOC(h->index, counts[0]*2 + 1, fvm_lnum_t);
-    BFT_REALLOC(h->perio_lst, counts[0]*n_transforms*4, fvm_lnum_t);
+    BFT_REALLOC(h->index, counts[0]*2 + 1, cs_lnum_t);
+    BFT_REALLOC(h->perio_lst, counts[0]*n_transforms*4, cs_lnum_t);
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
       int n_c_domains_r = recv_count[rank_id*3 + 0];
-      fvm_lnum_t n_recv = recv_count[rank_id*3 + 2];
+      cs_lnum_t n_recv = recv_count[rank_id*3 + 2];
 
-      fvm_lnum_t index_shift = h->index[2*h->n_c_domains];
+      cs_lnum_t index_shift = h->index[2*h->n_c_domains];
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
       MPI_Recv(h->c_domain_rank + h->n_c_domains, n_c_domains_r,
                MPI_INT, dist_rank, tag, comm, &status);
       MPI_Recv(new_src_cell_id + h->n_elts[0], n_recv,
-               FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+               CS_MPI_LNUM, dist_rank, tag, comm, &status);
       MPI_Recv(h->index + h->n_c_domains*2, n_c_domains_r*2+1,
-               FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+               CS_MPI_LNUM, dist_rank, tag, comm, &status);
 
       for (ii = 0, jj = h->n_c_domains*2;
            ii < n_c_domains_r*2+1;
@@ -1563,7 +1563,7 @@ _append_halos(cs_grid_t   *g,
       if (n_transforms > 0)
         MPI_Recv(h->perio_lst + h->n_c_domains*n_transforms*4,
                  n_c_domains_r*n_transforms*4,
-                 FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+                 CS_MPI_LNUM, dist_rank, tag, comm, &status);
 
       /* Update halo sizes */
 
@@ -1576,20 +1576,20 @@ _append_halos(cs_grid_t   *g,
   }
   else if (g->merge_sub_size > 1) {
 
-    BFT_MALLOC(new_src_cell_id, h->n_elts[0], fvm_lnum_t);
+    BFT_MALLOC(new_src_cell_id, h->n_elts[0], cs_lnum_t);
     for (ii = g->n_cells, jj = 0; ii < g->n_cells_ext; ii++, jj++)
       new_src_cell_id[jj] = new_cell_num[ii] - 1;
 
     MPI_Send(h->c_domain_rank, h->n_c_domains, MPI_INT,
              g->merge_sub_root, tag, comm);
-    MPI_Send(new_src_cell_id, h->n_elts[0], FVM_MPI_LNUM,
+    MPI_Send(new_src_cell_id, h->n_elts[0], CS_MPI_LNUM,
              g->merge_sub_root, tag, comm);
-    MPI_Send(h->index, h->n_c_domains*2+1, FVM_MPI_LNUM,
+    MPI_Send(h->index, h->n_c_domains*2+1, CS_MPI_LNUM,
              g->merge_sub_root, tag, comm);
 
     if (n_transforms > 0)
       MPI_Send(h->perio_lst, h->n_c_domains*n_transforms*4,
-               FVM_MPI_LNUM, g->merge_sub_root, tag, comm);
+               CS_MPI_LNUM, g->merge_sub_root, tag, comm);
 
     _empty_halo(h);
   }
@@ -1598,7 +1598,7 @@ _append_halos(cs_grid_t   *g,
 
   if (h != NULL) {
 
-    BFT_MALLOC(new_halo_cell_num, h->n_elts[0], fvm_lnum_t);
+    BFT_MALLOC(new_halo_cell_num, h->n_elts[0], cs_lnum_t);
 
     _merge_halo_data(h,
                      cs_glob_rank_id,
@@ -1622,8 +1622,8 @@ _append_halos(cs_grid_t   *g,
 
   if (g->merge_sub_rank == 0) {
 
-    fvm_lnum_t n_send = recv_count[2];
-    fvm_lnum_t send_shift = n_send;
+    cs_lnum_t n_send = recv_count[2];
+    cs_lnum_t send_shift = n_send;
 
     for (ii = 0; ii < n_send; ii++)
       new_cell_num[g->n_cells + ii] = new_halo_cell_num[ii];
@@ -1631,7 +1631,7 @@ _append_halos(cs_grid_t   *g,
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
       n_send = recv_count[rank_id*3 + 2];
-      MPI_Send(new_halo_cell_num + send_shift, n_send, FVM_MPI_LNUM,
+      MPI_Send(new_halo_cell_num + send_shift, n_send, CS_MPI_LNUM,
                dist_rank, tag, comm);
       send_shift += n_send;
     }
@@ -1640,7 +1640,7 @@ _append_halos(cs_grid_t   *g,
   }
   else if (g->merge_sub_size > 1)
     MPI_Recv(new_cell_num + g->n_cells, g->n_cells_ext - g->n_cells,
-             FVM_MPI_LNUM, g->merge_sub_root, tag, comm, &status);
+             CS_MPI_LNUM, g->merge_sub_root, tag, comm, &status);
 
   BFT_FREE(new_halo_cell_num);
 }
@@ -1675,7 +1675,7 @@ _append_cell_data(cs_grid_t  *g)
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
-      fvm_lnum_t n_recv = (  g->merge_cell_idx[rank_id+1]
+      cs_lnum_t n_recv = (  g->merge_cell_idx[rank_id+1]
                            - g->merge_cell_idx[rank_id]);
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
@@ -1748,12 +1748,12 @@ _sync_merged_cell_data(cs_grid_t  *g)
 
 static void
 _append_face_data(cs_grid_t   *g,
-                  fvm_lnum_t   n_faces,
-                  fvm_lnum_t  *face_list)
+                  cs_lnum_t    n_faces,
+                  cs_lnum_t   *face_list)
 {
   int rank_id;
 
-  fvm_lnum_t *recv_count = NULL;
+  cs_lnum_t *recv_count = NULL;
 
   MPI_Status status;
   MPI_Comm  comm = cs_glob_mpi_comm;
@@ -1763,16 +1763,16 @@ _append_face_data(cs_grid_t   *g,
   /* Exchange counters needed for concatenation */
 
   if (g->merge_sub_rank == 0) {
-    BFT_MALLOC(recv_count, g->merge_sub_size, fvm_lnum_t);
+    BFT_MALLOC(recv_count, g->merge_sub_size, cs_lnum_t);
     recv_count[0] = g->n_faces;
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
-      MPI_Recv(recv_count + rank_id, 1, FVM_MPI_LNUM, dist_rank,
+      MPI_Recv(recv_count + rank_id, 1, CS_MPI_LNUM, dist_rank,
                tag, comm, &status);
     }
   }
   else
-    MPI_Send(&n_faces, 1, FVM_MPI_LNUM, g->merge_sub_root, tag, comm);
+    MPI_Send(&n_faces, 1, CS_MPI_LNUM, g->merge_sub_root, tag, comm);
 
   /* Reallocate arrays for receiving rank and append data */
 
@@ -1780,12 +1780,12 @@ _append_face_data(cs_grid_t   *g,
 
   if (g->merge_sub_rank == 0) {
 
-    fvm_lnum_t n_faces_tot = 0;
+    cs_lnum_t n_faces_tot = 0;
 
     for (rank_id = 0; rank_id < g->merge_sub_size; rank_id++)
       n_faces_tot += recv_count[rank_id];
 
-    BFT_REALLOC(g->_face_cell, n_faces_tot*2, fvm_lnum_t);
+    BFT_REALLOC(g->_face_cell, n_faces_tot*2, cs_lnum_t);
 
     BFT_REALLOC(g->_face_normal, n_faces_tot*3, cs_real_t);
 
@@ -1801,11 +1801,11 @@ _append_face_data(cs_grid_t   *g,
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
-      fvm_lnum_t n_recv = recv_count[rank_id];
+      cs_lnum_t n_recv = recv_count[rank_id];
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
 
       MPI_Recv(g->_face_cell + g->n_faces*2, n_recv*2,
-               FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+               CS_MPI_LNUM, dist_rank, tag, comm, &status);
 
       MPI_Recv(g->_face_normal + g->n_faces*3, n_recv*3,
                CS_MPI_REAL, dist_rank, tag, comm, &status);
@@ -1831,11 +1831,11 @@ _append_face_data(cs_grid_t   *g,
   }
   else {
 
-    fvm_lnum_t face_id = 0;
+    cs_lnum_t face_id = 0;
 
     /* Filter face connectivity then send it */
     for (face_id = 0; face_id < n_faces; face_id++) {
-      fvm_lnum_t p_face_id = face_list[face_id];
+      cs_lnum_t p_face_id = face_list[face_id];
       g->_face_cell[face_id*2] = g->_face_cell[p_face_id*2];
       g->_face_cell[face_id*2 + 1] = g->_face_cell[p_face_id*2 + 1];
       g->_face_normal[face_id*3] = g->_face_normal[p_face_id*3];
@@ -1853,7 +1853,7 @@ _append_face_data(cs_grid_t   *g,
       g->xa0ij[face_id*3 + 2] = g->xa0ij[p_face_id*3 + 2];
     }
 
-    MPI_Send(g->_face_cell, n_faces*2, FVM_MPI_LNUM,
+    MPI_Send(g->_face_cell, n_faces*2, CS_MPI_LNUM,
              g->merge_sub_root, tag, comm);
     BFT_FREE(g->_face_cell);
 
@@ -1905,11 +1905,11 @@ _merge_grids(cs_grid_t  *g,
              int         verbosity)
 {
   int i, rank_id, t_id;
-  fvm_lnum_t j, face_id;
+  cs_lnum_t j, face_id;
   int base_rank = cs_glob_rank_id;
-  fvm_lnum_t cell_shift = 0;
-  fvm_lnum_t n_faces = 0;
-  fvm_lnum_t *new_cell_num = NULL, *face_list = NULL;
+  cs_lnum_t cell_shift = 0;
+  cs_lnum_t n_faces = 0;
+  cs_lnum_t *new_cell_num = NULL, *face_list = NULL;
   bool  *halo_cell_flag = NULL;
   MPI_Comm comm = cs_glob_mpi_comm;
   MPI_Status status;
@@ -1967,38 +1967,38 @@ _merge_grids(cs_grid_t  *g,
   if (g->merge_sub_size > 1) {
 
     if (g->merge_sub_rank == 0) {
-      BFT_MALLOC(g->merge_cell_idx, g->merge_sub_size + 1, fvm_lnum_t);
+      BFT_MALLOC(g->merge_cell_idx, g->merge_sub_size + 1, cs_lnum_t);
       g->merge_cell_idx[0] = 0; g->merge_cell_idx[1] = g->n_cells;
       for (i = 1; i < g->merge_sub_size; i++) {
-        fvm_lnum_t recv_val;
+        cs_lnum_t recv_val;
         int dist_rank = g->merge_sub_root + g->merge_stride*i;
-        MPI_Recv(&recv_val, 1, FVM_MPI_LNUM, dist_rank, tag, comm, &status);
+        MPI_Recv(&recv_val, 1, CS_MPI_LNUM, dist_rank, tag, comm, &status);
         g->merge_cell_idx[i + 1] = recv_val + g->merge_cell_idx[i];
       }
     }
     else {
-      fvm_lnum_t send_val = g->n_cells;
-      MPI_Send(&send_val, 1, FVM_MPI_LNUM, g->merge_sub_root, tag, comm);
+      cs_lnum_t send_val = g->n_cells;
+      MPI_Send(&send_val, 1, CS_MPI_LNUM, g->merge_sub_root, tag, comm);
     }
 
     /* Now return computed info to grids that will be merged */
 
     if (g->merge_sub_rank == 0) {
       for (i = 1; i < g->merge_sub_size; i++) {
-        fvm_lnum_t send_val;
+        cs_lnum_t send_val;
         send_val = g->merge_cell_idx[i];
-        MPI_Send(&send_val, 1, FVM_MPI_LNUM,
+        MPI_Send(&send_val, 1, CS_MPI_LNUM,
                  g->merge_sub_root + g->merge_stride*i, tag, comm);
       }
     }
     else
-      MPI_Recv(&cell_shift, 1, FVM_MPI_LNUM,
+      MPI_Recv(&cell_shift, 1, CS_MPI_LNUM,
                g->merge_sub_root, tag, comm, &status);
   }
 
   /* Compute and exchange new cell numbers */
 
-  BFT_MALLOC(new_cell_num, g->n_cells_ext, fvm_lnum_t);
+  BFT_MALLOC(new_cell_num, g->n_cells_ext, cs_lnum_t);
   for (j = 0; j < g->n_cells; j++)
     new_cell_num[j] = cell_shift + j + 1;
   for (j = g->n_cells; j < g->n_cells; j++)
@@ -2006,20 +2006,20 @@ _merge_grids(cs_grid_t  *g,
 
   cs_halo_sync_untyped(g->halo,
                        CS_HALO_STANDARD,
-                       sizeof(fvm_lnum_t),
+                       sizeof(cs_lnum_t),
                        new_cell_num);
 
   /* Now build face filter list (before halo is modified) */
 
   if (g->merge_sub_size > 1 && g->merge_sub_rank > 0 && g->n_faces > 0) {
 
-    fvm_lnum_t n_ghost_cells = g->n_cells_ext - g->n_cells;
+    cs_lnum_t n_ghost_cells = g->n_cells_ext - g->n_cells;
 
     /* Mark which faces should be merged: to avoid duplicates, a face
        connected to a cell on a lower rank in the same merge set is
        discarded, as it has already been accounted for by that rank. */
 
-    BFT_MALLOC(face_list, g->n_faces, fvm_lnum_t);
+    BFT_MALLOC(face_list, g->n_faces, cs_lnum_t);
     BFT_MALLOC(halo_cell_flag, n_ghost_cells, bool);
     for (j = 0; j < n_ghost_cells; j++)
       halo_cell_flag[j] = false;
@@ -2029,8 +2029,8 @@ _merge_grids(cs_grid_t  *g,
       if (rank_id >= g->merge_sub_root && rank_id < cs_glob_rank_id) {
         for (t_id = 0; t_id < g->halo->n_transforms; t_id++) {
           int t_shift = 4 * g->halo->n_c_domains * t_id;
-          fvm_lnum_t t_start = g->halo->perio_lst[t_shift + 4*i];
-          fvm_lnum_t t_end = t_start + g->halo->perio_lst[t_shift + 4*i + 1];
+          cs_lnum_t t_start = g->halo->perio_lst[t_shift + 4*i];
+          cs_lnum_t t_end = t_start + g->halo->perio_lst[t_shift + 4*i + 1];
           for (j = t_start; j < t_end; j++)
             halo_cell_flag[j] = true;
         }
@@ -2043,8 +2043,8 @@ _merge_grids(cs_grid_t  *g,
 
     for (face_id = 0; face_id < g->n_faces; face_id++) {
       bool use_face = true;
-      fvm_lnum_t ii = g->face_cell[face_id*2] - g->n_cells;
-      fvm_lnum_t jj = g->face_cell[face_id*2 + 1] - g->n_cells;
+      cs_lnum_t ii = g->face_cell[face_id*2] - g->n_cells;
+      cs_lnum_t jj = g->face_cell[face_id*2 + 1] - g->n_cells;
       if (ii > 0) {
         if (halo_cell_flag[ii - 1] == false)
           use_face = false;
@@ -2067,8 +2067,8 @@ _merge_grids(cs_grid_t  *g,
   /* Update face ->cells connectivity */
 
   for (face_id = 0; face_id < g->n_faces; face_id++) {
-    fvm_lnum_t ii = g->face_cell[face_id*2] - 1;
-    fvm_lnum_t jj = g->face_cell[face_id*2 + 1] - 1;
+    cs_lnum_t ii = g->face_cell[face_id*2] - 1;
+    cs_lnum_t jj = g->face_cell[face_id*2 + 1] - 1;
     assert(ii != jj && new_cell_num[ii] != new_cell_num[jj]);
     g->_face_cell[face_id*2] = new_cell_num[ii];
     g->_face_cell[face_id*2 + 1] = new_cell_num[jj];
@@ -2123,8 +2123,8 @@ _scatter_cell_num(const cs_grid_t  *g,
       int rank_id;
       assert(cs_glob_rank_id == g->merge_sub_root);
       for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
-        fvm_lnum_t n_send = (  g->merge_cell_idx[rank_id+1]
-                             - g->merge_cell_idx[rank_id]);
+        cs_lnum_t n_send = (  g->merge_cell_idx[rank_id+1]
+                            - g->merge_cell_idx[rank_id]);
         int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
         MPI_Send(num + g->merge_cell_idx[rank_id], n_send, MPI_INT,
                  dist_rank, tag, comm);
@@ -2207,11 +2207,11 @@ void CS_PROCF(clmimp, CLMIMP)
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_create_from_shared(fvm_lnum_t             n_cells,
-                           fvm_lnum_t             n_cells_ext,
-                           fvm_lnum_t             n_faces,
+cs_grid_create_from_shared(cs_lnum_t              n_cells,
+                           cs_lnum_t              n_cells_ext,
+                           cs_lnum_t              n_faces,
                            bool                   symmetric,
-                           const fvm_lnum_t      *face_cell,
+                           const cs_lnum_t       *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
                            const cs_real_t       *cell_cen,
@@ -2220,7 +2220,7 @@ cs_grid_create_from_shared(fvm_lnum_t             n_cells,
                            const cs_real_t       *da,
                            const cs_real_t       *xa)
 {
-  fvm_lnum_t ii, jj, kk, face_id;
+  cs_lnum_t ii, jj, kk, face_id;
 
   cs_grid_t *g = NULL;
 
@@ -2238,8 +2238,8 @@ cs_grid_create_from_shared(fvm_lnum_t             n_cells,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    fvm_gnum_t _n_cells = n_cells;
-    MPI_Allreduce(&_n_cells, &(g->n_g_cells), 1, FVM_MPI_GNUM, MPI_SUM,
+    cs_gnum_t _n_cells = n_cells;
+    MPI_Allreduce(&_n_cells, &(g->n_g_cells), 1, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
 #endif
@@ -2370,10 +2370,10 @@ cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  bool             *symmetric,
                  int              *n_ranks,
-                 fvm_lnum_t       *n_cells,
-                 fvm_lnum_t       *n_cells_ext,
-                 fvm_lnum_t       *n_faces,
-                 fvm_gnum_t       *n_g_cells)
+                 cs_lnum_t        *n_cells,
+                 cs_lnum_t        *n_cells_ext,
+                 cs_lnum_t        *n_faces,
+                 cs_gnum_t        *n_g_cells)
 {
   assert(g != NULL);
 
@@ -2412,7 +2412,7 @@ cs_grid_get_info(const cs_grid_t  *g,
  *   number of cells of grid structure
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_grid_get_n_cells(const cs_grid_t  *g)
 {
   assert(g != NULL);
@@ -2430,7 +2430,7 @@ cs_grid_get_n_cells(const cs_grid_t  *g)
  *   number of extended cells of grid structure
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_grid_get_n_cells_ext(const cs_grid_t  *g)
 {
   assert(g != NULL);
@@ -2450,10 +2450,10 @@ cs_grid_get_n_cells_ext(const cs_grid_t  *g)
  *   merging
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_grid_get_n_cells_max(const cs_grid_t  *g)
 {
-  fvm_lnum_t retval = 0;
+  cs_lnum_t retval = 0;
 
   if (g != NULL)
     retval = CS_MAX(g->n_cells_ext, g->n_cells_r[1]);
@@ -2471,7 +2471,7 @@ cs_grid_get_n_cells_max(const cs_grid_t  *g)
  *   global number of cells of grid structure
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 cs_grid_get_n_g_cells(const cs_grid_t  *g)
 {
   assert(g != NULL);
@@ -2767,8 +2767,8 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
 #if defined(HAVE_MPI)
   if (c->n_ranks > _grid_merge_min_ranks && _grid_merge_stride > 1) {
-    fvm_gnum_t  _n_ranks = c->n_ranks;
-    fvm_gnum_t  _n_mean_g_cells = c->n_g_cells / _n_ranks;
+    cs_gnum_t  _n_ranks = c->n_ranks;
+    cs_gnum_t  _n_mean_g_cells = c->n_g_cells / _n_ranks;
     if (   _n_mean_g_cells < _grid_merge_threshold[0]
         || c->n_g_cells < _grid_merge_threshold[1])
     _merge_grids(c, verbosity);
@@ -2808,12 +2808,12 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
                           const cs_real_t  *f_var,
                           cs_real_t        *c_var)
 {
-  fvm_lnum_t ii;
+  cs_lnum_t ii;
 
-  const fvm_lnum_t *coarse_cell;
+  const cs_lnum_t *coarse_cell;
 
-  fvm_lnum_t f_n_cells = f->n_cells;
-  fvm_lnum_t c_n_cells_ext = c->n_cells_r[1];
+  cs_lnum_t f_n_cells = f->n_cells;
+  cs_lnum_t c_n_cells_ext = c->n_cells_r[1];
 
   assert(f != NULL);
   assert(c != NULL);
@@ -2847,8 +2847,8 @@ cs_grid_restrict_cell_var(const cs_grid_t  *f,
       MPI_Status status;
       assert(cs_glob_rank_id == c->merge_sub_root);
       for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
-        fvm_lnum_t n_recv = (  c->merge_cell_idx[rank_id+1]
-                             - c->merge_cell_idx[rank_id]);
+        cs_lnum_t n_recv = (  c->merge_cell_idx[rank_id+1]
+                            - c->merge_cell_idx[rank_id]);
         int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
         MPI_Recv(c_var + c->merge_cell_idx[rank_id], n_recv, CS_MPI_REAL,
                  dist_rank, tag, comm, &status);
@@ -2879,11 +2879,11 @@ cs_grid_prolong_cell_num(const cs_grid_t  *c,
                          int              *c_num,
                          int              *f_num)
 {
-  fvm_lnum_t ii;
-  const fvm_lnum_t *coarse_cell;
+  cs_lnum_t ii;
+  const cs_lnum_t *coarse_cell;
   const int *_c_num = c_num;
 
-  fvm_lnum_t f_n_cells = f->n_cells;
+  cs_lnum_t f_n_cells = f->n_cells;
 
   assert(f != NULL);
   assert(c != NULL);
@@ -2919,11 +2919,11 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
                          cs_real_t        *c_var,
                          cs_real_t        *f_var)
 {
-  fvm_lnum_t ii;
-  const fvm_lnum_t *coarse_cell;
+  cs_lnum_t ii;
+  const cs_lnum_t *coarse_cell;
   const cs_real_t *_c_var = c_var;
 
-  fvm_lnum_t f_n_cells = f->n_cells;
+  cs_lnum_t f_n_cells = f->n_cells;
 
   assert(f != NULL);
   assert(c != NULL);
@@ -2946,8 +2946,8 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
       int rank_id;
       assert(cs_glob_rank_id == c->merge_sub_root);
       for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
-        fvm_lnum_t n_send = (  c->merge_cell_idx[rank_id+1]
-                             - c->merge_cell_idx[rank_id]);
+        cs_lnum_t n_send = (  c->merge_cell_idx[rank_id+1]
+                            - c->merge_cell_idx[rank_id]);
         int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
         MPI_Send(c_var + c->merge_cell_idx[rank_id], n_send, CS_MPI_REAL,
                  dist_rank, tag, comm);
@@ -2985,15 +2985,15 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
 
 void
 cs_grid_project_cell_num(const cs_grid_t  *g,
-                         fvm_lnum_t        n_base_cells,
+                         cs_lnum_t         n_base_cells,
                          int               max_num,
                          int               c_cell_num[])
 {
-  fvm_lnum_t ii = 0;
-  fvm_gnum_t base_shift = 1;
-  fvm_gnum_t _max_num = max_num;
-  fvm_lnum_t n_max_cells = 0;
-  fvm_lnum_t *tmp_num_1 = NULL, *tmp_num_2 = NULL;
+  cs_lnum_t ii = 0;
+  cs_gnum_t base_shift = 1;
+  cs_gnum_t _max_num = max_num;
+  cs_lnum_t n_max_cells = 0;
+  cs_lnum_t *tmp_num_1 = NULL, *tmp_num_2 = NULL;
   const cs_grid_t *_g = g;
 
   assert(g != NULL);
@@ -3007,32 +3007,32 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
       n_max_cells = _g->n_cells;
   }
 
-  BFT_MALLOC(tmp_num_1, n_max_cells, fvm_lnum_t);
+  BFT_MALLOC(tmp_num_1, n_max_cells, cs_lnum_t);
 
   /* Compute local base starting cell number in parallel mode */
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    fvm_gnum_t local_shift = g->n_cells;
-    fvm_gnum_t global_shift = 0;
-    MPI_Scan(&local_shift, &global_shift, 1, FVM_MPI_GNUM, MPI_SUM,
+    cs_gnum_t local_shift = g->n_cells;
+    cs_gnum_t global_shift = 0;
+    MPI_Scan(&local_shift, &global_shift, 1, CS_MPI_GNUM, MPI_SUM,
              cs_glob_mpi_comm);
     base_shift = 1 + global_shift - g->n_cells;
   }
 #endif
 
   for (ii = 0; ii < g->n_cells; ii++)
-    tmp_num_1[ii] = (fvm_gnum_t)(ii + base_shift) % _max_num;
+    tmp_num_1[ii] = (cs_gnum_t)(ii + base_shift) % _max_num;
 
   if (g->level > 0) {
 
     /* Allocate temporary arrays */
 
-    BFT_MALLOC(tmp_num_2, n_max_cells, fvm_lnum_t);
+    BFT_MALLOC(tmp_num_2, n_max_cells, cs_lnum_t);
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
-      fvm_lnum_t n_parent_cells = _g->parent->n_cells;
+      cs_lnum_t n_parent_cells = _g->parent->n_cells;
 
 #if defined(HAVE_MPI)
       _scatter_cell_num(_g, tmp_num_1);
@@ -3070,11 +3070,11 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
 
 void
 cs_grid_project_cell_rank(const cs_grid_t  *g,
-                          fvm_lnum_t        n_base_cells,
+                          cs_lnum_t         n_base_cells,
                           int               c_cell_rank[])
 {
-  fvm_lnum_t ii;
-  fvm_lnum_t n_max_cells = 0;
+  cs_lnum_t ii;
+  cs_lnum_t n_max_cells = 0;
   int *tmp_rank_1 = NULL, *tmp_rank_2 = NULL;
   const cs_grid_t *_g = g;
 
@@ -3102,7 +3102,7 @@ cs_grid_project_cell_rank(const cs_grid_t  *g,
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
-      fvm_lnum_t n_parent_cells = _g->parent->n_cells;
+      cs_lnum_t n_parent_cells = _g->parent->n_cells;
 
       cs_grid_prolong_cell_num(_g,
                                _g->parent,
@@ -3139,12 +3139,12 @@ cs_grid_project_cell_rank(const cs_grid_t  *g,
 
 void
 cs_grid_project_var(const cs_grid_t  *g,
-                    fvm_lnum_t        n_base_cells,
+                    cs_lnum_t         n_base_cells,
                     const cs_real_t   c_var[],
                     cs_real_t         f_var[])
 {
-  fvm_lnum_t ii;
-  fvm_lnum_t n_max_cells = 0;
+  cs_lnum_t ii;
+  cs_lnum_t n_max_cells = 0;
   cs_real_t *tmp_var_1 = NULL, *tmp_var_2 = NULL;
   const cs_grid_t *_g = g;
 
@@ -3171,7 +3171,7 @@ cs_grid_project_var(const cs_grid_t  *g,
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
-      fvm_lnum_t n_parent_cells = _g->parent->n_cells;
+      cs_lnum_t n_parent_cells = _g->parent->n_cells;
 
       cs_grid_prolong_cell_var(_g,
                                _g->parent,
@@ -3207,10 +3207,10 @@ cs_grid_project_var(const cs_grid_t  *g,
 
 void
 cs_grid_project_diag_dom(const cs_grid_t  *g,
-                         fvm_lnum_t        n_base_cells,
+                         cs_lnum_t         n_base_cells,
                          cs_real_t         diag_dom[])
 {
-  fvm_lnum_t ii, jj, face_id;
+  cs_lnum_t ii, jj, face_id;
 
   cs_real_t *dd = NULL;
 
@@ -3225,9 +3225,9 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
   /* Compute coarse diagonal dominance */
 
   {
-    const fvm_lnum_t n_cells = g->n_cells;
-    const fvm_lnum_t n_faces = g->n_faces;
-    const fvm_lnum_t *face_cel = g->face_cell;
+    const cs_lnum_t n_cells = g->n_cells;
+    const cs_lnum_t n_faces = g->n_faces;
+    const cs_lnum_t *face_cel = g->face_cell;
 
     /* Diagonal part of matrix.vector product */
 
@@ -3399,7 +3399,7 @@ cs_grid_finalize(void)
 void
 cs_grid_dump(const cs_grid_t  *g)
 {
-  fvm_lnum_t  i;
+  cs_lnum_t  i;
 
   if (g == NULL) {
     bft_printf("\n\n  grid: null\n");

@@ -285,8 +285,8 @@ fvm_file_read_block(fvm_file_t  *f,
                     void        *buf,
                     size_t       size,
                     size_t       stride,
-                    fvm_gnum_t   global_num_start,
-                    fvm_gnum_t   global_num_end);
+                    cs_gnum_t    global_num_start,
+                    cs_gnum_t    global_num_end);
 
 /*----------------------------------------------------------------------------
  * Write data to a file, each associated process providing a contiguous part
@@ -323,8 +323,8 @@ fvm_file_write_block(fvm_file_t  *f,
                      const void  *buf,
                      size_t       size,
                      size_t       stride,
-                     fvm_gnum_t   global_num_start,
-                     fvm_gnum_t   global_num_end);
+                     cs_gnum_t    global_num_start,
+                     cs_gnum_t    global_num_end);
 
 /*----------------------------------------------------------------------------
  * Write data to a file, each associated process providing a contiguous part
@@ -361,8 +361,8 @@ fvm_file_write_block_buffer(fvm_file_t  *f,
                             void        *buf,
                             size_t       size,
                             size_t       stride,
-                            fvm_gnum_t   global_num_start,
-                            fvm_gnum_t   global_num_end);
+                            cs_gnum_t    global_num_start,
+                            cs_gnum_t    global_num_end);
 
 /*----------------------------------------------------------------------------
  * Update the file pointer according to whence.
@@ -463,8 +463,8 @@ fvm_file_dump(const fvm_file_t  *f);
 fvm_file_serializer_t *
 fvm_file_serializer_create(size_t        size,
                            size_t        stride,
-                           fvm_gnum_t    global_num_start,
-                           fvm_gnum_t    global_num_end,
+                           cs_gnum_t     global_num_start,
+                           cs_gnum_t     global_num_end,
                            size_t        buf_block_size,
                            void         *buf,
                            MPI_Comm      comm);
@@ -505,7 +505,7 @@ fvm_file_serializer_destroy(fvm_file_serializer_t  **s);
 
 void *
 fvm_file_serializer_advance(fvm_file_serializer_t  *s,
-                            fvm_gnum_t              cur_range[2]);
+                            cs_gnum_t               cur_range[2]);
 
 #endif /* defined(HAVE_MPI) */
 

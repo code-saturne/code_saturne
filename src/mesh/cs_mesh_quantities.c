@@ -954,7 +954,7 @@ _compute_face_distances(const cs_int_t   dim,
   cs_real_t xvn, yvn, zvn, xvv, yvv, zvv;
   cs_real_t dist2f;
 
-  fvm_gnum_t w_count = 0;
+  cs_gnum_t w_count = 0;
 
   /* Interior faces */
 
@@ -1650,7 +1650,7 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
 {
   cs_int_t  cell_id;
 
-  fvm_gnum_t  error_count = 0;
+  cs_gnum_t  error_count = 0;
 
   for (cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
     if (mesh_quantities->cell_vol[cell_id] < 0.0)
@@ -1659,8 +1659,8 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    fvm_gnum_t tot_error_count = 0;
-    MPI_Allreduce(&error_count, &tot_error_count, 1, FVM_MPI_GNUM, MPI_SUM,
+    cs_gnum_t tot_error_count = 0;
+    MPI_Allreduce(&error_count, &tot_error_count, 1, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
     error_count = tot_error_count;
   }

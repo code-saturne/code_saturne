@@ -124,8 +124,8 @@ _binary_search(int              start,
 inline static int
 _binary_gsearch(int                start,
                 int                end,
-                fvm_gnum_t         gnum,
-                const fvm_gnum_t   lst[])
+                cs_gnum_t          gnum,
+                const cs_gnum_t    lst[])
 {
   if (lst[start] == gnum)
     return start;
@@ -167,8 +167,8 @@ _binary_gsearch(int                start,
 inline static int
 _binary_index_gsearch(int                 start,
                       int                 end,
-                      fvm_gnum_t          gnum,
-                      const fvm_gnum_t    index[])
+                      cs_gnum_t           gnum,
+                      const cs_gnum_t     index[])
 {
   if (end - start < 2)
     return start;
@@ -205,8 +205,8 @@ _binary_index_gsearch(int                 start,
 
 int
 cs_search_g_binary(size_t             size,
-                   fvm_gnum_t         gnum,
-                   const fvm_gnum_t   lst[])
+                   cs_gnum_t          gnum,
+                   const cs_gnum_t    lst[])
 {
   return _binary_gsearch(0, size - 1, gnum, lst);
 }
@@ -247,8 +247,8 @@ cs_search_binary(size_t           size,
 
 int
 cs_search_gindex_binary(size_t             size,
-                        fvm_gnum_t         gnum,
-                        const fvm_gnum_t   index[])
+                        cs_gnum_t          gnum,
+                        const cs_gnum_t    index[])
 {
   return _binary_index_gsearch(0, size, gnum, index);
 }

@@ -327,22 +327,22 @@ _join_select_destroy(cs_join_param_t     param,
  *---------------------------------------------------------------------------*/
 
 static void
-_compact_face_gnum_selection(cs_int_t     n_select_faces,
-                             fvm_gnum_t  *reduce_gnum[],
-                             fvm_gnum_t  *reduce_gnum_index[])
+_compact_face_gnum_selection(cs_int_t    n_select_faces,
+                             cs_gnum_t  *reduce_gnum[],
+                             cs_gnum_t  *reduce_gnum_index[])
 {
   cs_int_t  i;
 
-  fvm_gnum_t  shift = 0;
-  fvm_gnum_t  *_reduce_gnum = *reduce_gnum;
-  fvm_gnum_t  *_reduce_gnum_index = *reduce_gnum_index;
+  cs_gnum_t  shift = 0;
+  cs_gnum_t  *_reduce_gnum = *reduce_gnum;
+  cs_gnum_t  *_reduce_gnum_index = *reduce_gnum_index;
 
   const int  n_ranks = cs_glob_n_ranks;
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
 
   assert(_reduce_gnum_index == NULL);
 
-  BFT_MALLOC(_reduce_gnum_index, n_ranks + 1, fvm_gnum_t);
+  BFT_MALLOC(_reduce_gnum_index, n_ranks + 1, cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     _reduce_gnum_index[i] = 0;
@@ -350,10 +350,10 @@ _compact_face_gnum_selection(cs_int_t     n_select_faces,
   if (n_ranks > 1) {
 #if defined(HAVE_MPI)
     MPI_Comm  mpi_comm = cs_glob_mpi_comm;
-    fvm_gnum_t  _n_faces = n_select_faces;
+    cs_gnum_t  _n_faces = n_select_faces;
 
-    MPI_Allgather(&_n_faces, 1, FVM_MPI_GNUM,
-                  &(_reduce_gnum_index[1]), 1, FVM_MPI_GNUM, mpi_comm);
+    MPI_Allgather(&_n_faces, 1, CS_MPI_GNUM,
+                  &(_reduce_gnum_index[1]), 1, CS_MPI_GNUM, mpi_comm);
 #endif
 
     for (i = 0; i < n_ranks; i++)
@@ -365,11 +365,11 @@ _compact_face_gnum_selection(cs_int_t     n_select_faces,
   else {
 
     assert(n_ranks == 1);
-    _reduce_gnum_index[n_ranks] = (fvm_gnum_t)n_select_faces;
+    _reduce_gnum_index[n_ranks] = (cs_gnum_t)n_select_faces;
 
   }
 
-  BFT_MALLOC(_reduce_gnum, n_select_faces, fvm_gnum_t);
+  BFT_MALLOC(_reduce_gnum, n_select_faces, cs_gnum_t);
 
   for (i = 0; i < n_select_faces; i++)
     _reduce_gnum[i] = shift + i + 1;
@@ -527,18 +527,18 @@ _extract_contig_faces(cs_int_t          n_vertices,
  *----------------------------------------------------------------------------*/
 
 static void
-_add_single_vertices(fvm_interface_set_t    *interfaces,
-                     fvm_lnum_t              var_size,
-                     fvm_lnum_t             *count,
-                     fvm_lnum_t             *related_ranks,
-                     cs_join_sync_t         *single)
+_add_single_vertices(fvm_interface_set_t  *interfaces,
+                     cs_lnum_t             var_size,
+                     cs_lnum_t            *count,
+                     cs_lnum_t            *related_ranks,
+                     cs_join_sync_t       *single)
 {
   int  request_count, distant_rank, n_interfaces, total_size;
   int  id, ii, last_found_rank;
 
   int  count_size = 0;
   int  n_max_ranks = 0, n_max_elts = 0;
-  fvm_lnum_t  n_entities = 0;
+  cs_lnum_t  n_entities = 0;
   int  *buf = NULL, *send_buf = NULL, *recv_buf = NULL;
 
   MPI_Request  *request = NULL;
@@ -546,7 +546,7 @@ _add_single_vertices(fvm_interface_set_t    *interfaces,
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const fvm_lnum_t  *local_num = NULL;
+  const cs_lnum_t  *local_num = NULL;
   const fvm_interface_t  *interface = NULL;
 
   assert(count != NULL);
@@ -765,16 +765,16 @@ _add_single_vertices(fvm_interface_set_t    *interfaces,
  *----------------------------------------------------------------------------*/
 
 static void
-_add_coupled_vertices(fvm_interface_set_t    *interfaces,
-                      fvm_lnum_t              var_size,
-                      int                    *related_ranks,
-                      cs_join_sync_t         *coupled)
+_add_coupled_vertices(fvm_interface_set_t  *interfaces,
+                      cs_lnum_t             var_size,
+                      int                  *related_ranks,
+                      cs_join_sync_t       *coupled)
 {
   int  id, ii;
   int  request_count, distant_rank, n_interfaces, total_size, last_found_rank;
 
   int  count_size = 0;
-  fvm_lnum_t  n_entities = 0;
+  cs_lnum_t  n_entities = 0;
   int  *buf = NULL, *send_buf = NULL, *recv_buf = NULL;
 
   MPI_Request  *request = NULL;
@@ -782,7 +782,7 @@ _add_coupled_vertices(fvm_interface_set_t    *interfaces,
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const fvm_lnum_t  *local_num = NULL;
+  const cs_lnum_t  *local_num = NULL;
   const fvm_interface_t  *interface = NULL;
 
   assert(related_ranks != NULL);
@@ -992,7 +992,7 @@ _get_missing_vertices(cs_int_t              n_vertices,
                       cs_join_select_t     *selection)
 {
   cs_int_t  i;
-  fvm_gnum_t  n_l_elts, n_g_elts;
+  cs_gnum_t  n_l_elts, n_g_elts;
 
   cs_int_t  *vtx_tag = NULL, *related_ranks = NULL;
 
@@ -1020,7 +1020,7 @@ _get_missing_vertices(cs_int_t              n_vertices,
 
   n_l_elts = selection->s_vertices->n_elts;
 
-  MPI_Allreduce(&n_l_elts, &n_g_elts, 1, FVM_MPI_GNUM,
+  MPI_Allreduce(&n_l_elts, &n_g_elts, 1, CS_MPI_GNUM,
                 MPI_SUM, cs_glob_mpi_comm);
 
   if (n_g_elts > 0) {
@@ -1371,7 +1371,7 @@ _add_single_edges(fvm_interface_set_t   *ifs,
     int  *edge_tag = NULL;
 
     const int  n_interfaces = fvm_interface_set_size(ifs);
-    const fvm_lnum_t  *local_num = NULL;
+    const cs_lnum_t  *local_num = NULL;
     const fvm_interface_t  *interface = NULL;
 
     shift = 0;
@@ -1481,7 +1481,7 @@ _add_coupled_edges(fvm_interface_set_t   *ifs,
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
-  const fvm_lnum_t  *local_num = NULL, *distant_num = NULL;
+  const cs_lnum_t  *local_num = NULL, *distant_num = NULL;
   const int  n_interfaces = fvm_interface_set_size(ifs);
   const fvm_interface_t  *interface = NULL;
 
@@ -1895,7 +1895,7 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
                    cs_int_t              i_face_cells[],
                    cs_join_select_t     *selection)
 {
-  fvm_gnum_t  n_l_elts, n_g_elts;
+  cs_gnum_t  n_l_elts, n_g_elts;
 
   cs_int_t  *sel_v2v_idx = NULL, *sel_v2v_lst = NULL;
 
@@ -1922,7 +1922,7 @@ _get_missing_edges(cs_int_t              b_f2v_idx[],
 
   n_l_elts = selection->s_edges->n_elts;
 
-  MPI_Allreduce(&n_l_elts, &n_g_elts, 1, FVM_MPI_GNUM,
+  MPI_Allreduce(&n_l_elts, &n_g_elts, 1, CS_MPI_GNUM,
                 MPI_SUM, cs_glob_mpi_comm);
 
   if (n_g_elts > 0) {
@@ -2150,7 +2150,7 @@ cs_join_select_create(const char  *selection_criteria,
 
   cs_int_t  *vtx_tag = NULL;
   cs_join_select_t  *selection = NULL;
-  fvm_lnum_t  *order = NULL, *ordered_faces = NULL;
+  cs_lnum_t  *order = NULL, *ordered_faces = NULL;
   fvm_interface_set_t  *ifs = NULL;
   cs_mesh_t  *mesh = cs_glob_mesh;
   FILE  *logfile = cs_glob_join_log;
@@ -2204,14 +2204,14 @@ cs_join_select_create(const char  *selection_criteria,
 
   /* Extract selected boundary faces */
 
-  BFT_MALLOC(selection->faces, mesh->n_b_faces, fvm_lnum_t);
+  BFT_MALLOC(selection->faces, mesh->n_b_faces, cs_lnum_t);
 
   cs_selector_get_b_face_list(selection_criteria,
                               &(selection->n_faces),
                               selection->faces);
 
-  BFT_MALLOC(order, selection->n_faces, fvm_lnum_t);
-  BFT_MALLOC(ordered_faces, selection->n_faces, fvm_lnum_t);
+  BFT_MALLOC(order, selection->n_faces, cs_lnum_t);
+  BFT_MALLOC(ordered_faces, selection->n_faces, cs_lnum_t);
 
   fvm_order_local_allocated(selection->faces, NULL, order, selection->n_faces);
 
@@ -2228,10 +2228,10 @@ cs_join_select_create(const char  *selection_criteria,
 #if defined(HAVE_MPI)
   if (n_ranks > 1) { /* Parallel treatment */
 
-    fvm_gnum_t n_l_faces = selection->n_faces;
+    cs_gnum_t n_l_faces = selection->n_faces;
 
     MPI_Allreduce(&n_l_faces, &(selection->n_g_faces),
-                  1, FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+                  1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
 
   }
 #endif
@@ -2463,12 +2463,12 @@ cs_join_select_create(const char  *selection_criteria,
  *---------------------------------------------------------------------------*/
 
 cs_join_block_info_t
-cs_join_get_block_info(fvm_gnum_t  n_g_elts,
-                       int         n_ranks,
-                       int         local_rank)
+cs_join_get_block_info(cs_gnum_t  n_g_elts,
+                       int        n_ranks,
+                       int        local_rank)
 {
   size_t  block_size, n_treat_elts;
-  fvm_gnum_t  first_glob_num, last_glob_num;
+  cs_gnum_t  first_glob_num, last_glob_num;
 
   cs_join_block_info_t  block_info;
 

@@ -181,8 +181,8 @@ void CS_PROCF(nbfsyr, NBFSYR)
 
 void CS_PROCF(lfasyr, LFASYR)
 (
- const cs_int_t    *coupl_num,
-       fvm_lnum_t  *coupl_face_list
+ const cs_int_t   *coupl_num,
+       cs_lnum_t  *coupl_face_list
 );
 
 /*----------------------------------------------------------------------------

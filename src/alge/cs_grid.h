@@ -128,11 +128,11 @@ void CS_PROCF(clmimp, CLMIMP)
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_create_from_shared(fvm_lnum_t             n_cells,
-                           fvm_lnum_t             n_cells_ext,
-                           fvm_lnum_t             n_faces,
+cs_grid_create_from_shared(cs_lnum_t              n_cells,
+                           cs_lnum_t              n_cells_ext,
+                           cs_lnum_t              n_faces,
                            bool                   symmetric,
-                           const fvm_lnum_t      *face_cell,
+                           const cs_lnum_t       *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
                            const cs_real_t       *cell_cen,
@@ -170,10 +170,10 @@ cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  bool             *symmetric,
                  int              *n_ranks,
-                 fvm_lnum_t       *n_cells,
-                 fvm_lnum_t       *n_cells_ext,
-                 fvm_lnum_t       *n_faces,
-                 fvm_gnum_t       *n_g_cells);
+                 cs_lnum_t        *n_cells,
+                 cs_lnum_t        *n_cells_ext,
+                 cs_lnum_t        *n_faces,
+                 cs_gnum_t        *n_g_cells);
 
 /*----------------------------------------------------------------------------
  * Get number of cells corresponding to a grid.
@@ -185,7 +185,7 @@ cs_grid_get_info(const cs_grid_t  *g,
  *   number of cells of grid structure
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_grid_get_n_cells(const cs_grid_t  *g);
 
 /*----------------------------------------------------------------------------
@@ -198,7 +198,7 @@ cs_grid_get_n_cells(const cs_grid_t  *g);
  *   number of extended cells of grid structure
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_grid_get_n_cells_ext(const cs_grid_t  *g);
 
 /*----------------------------------------------------------------------------
@@ -213,7 +213,7 @@ cs_grid_get_n_cells_ext(const cs_grid_t  *g);
  *   merging
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_grid_get_n_cells_max(const cs_grid_t  *g);
 
 /*----------------------------------------------------------------------------
@@ -226,7 +226,7 @@ cs_grid_get_n_cells_max(const cs_grid_t  *g);
  *   global number of cells of grid structure
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 cs_grid_get_n_g_cells(const cs_grid_t  *g);
 
 /*----------------------------------------------------------------------------
@@ -348,7 +348,7 @@ cs_grid_prolong_cell_var(const cs_grid_t  *c,
 
 void
 cs_grid_project_cell_num(const cs_grid_t  *g,
-                         fvm_lnum_t        n_base_cells,
+                         cs_lnum_t         n_base_cells,
                          int               max_num,
                          int               c_cell_num[]);
 
@@ -363,7 +363,7 @@ cs_grid_project_cell_num(const cs_grid_t  *g,
 
 void
 cs_grid_project_cell_rank(const cs_grid_t  *g,
-                          fvm_lnum_t        n_base_cells,
+                          cs_lnum_t         n_base_cells,
                           int               f_cell_rank[]);
 
 /*----------------------------------------------------------------------------
@@ -378,7 +378,7 @@ cs_grid_project_cell_rank(const cs_grid_t  *g,
 
 void
 cs_grid_project_var(const cs_grid_t  *g,
-                    fvm_lnum_t        n_base_cells,
+                    cs_lnum_t         n_base_cells,
                     const cs_real_t   c_var[],
                     cs_real_t         f_var[]);
 
@@ -393,7 +393,7 @@ cs_grid_project_var(const cs_grid_t  *g,
 
 void
 cs_grid_project_diag_dom(const cs_grid_t  *g,
-                         fvm_lnum_t        n_base_cells,
+                         cs_lnum_t         n_base_cells,
                          cs_real_t         diag_dom[]);
 
 /*----------------------------------------------------------------------------

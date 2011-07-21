@@ -57,7 +57,7 @@ extern "C" {
 void
 fvm_nodal_project(fvm_nodal_t  *this_nodal,
                   int           chosen_axis,
-                  fvm_lnum_t   *error_count);
+                  cs_lnum_t    *error_count);
 
 /*----------------------------------------------------------------------------
  * Reduce the spatial dimension of a mesh, discarding the last coordinate

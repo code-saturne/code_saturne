@@ -209,18 +209,18 @@ typedef struct {
 
   cs_int_t      n_faces;     /* Number of border faces selected
                                 for the joining operation */
-  fvm_gnum_t    n_g_faces;   /* Global number of border faces selected
+  cs_gnum_t     n_g_faces;   /* Global number of border faces selected
                                 for the joining operation */
   cs_int_t     *faces;       /* List of selected border faces */
 
-  fvm_gnum_t   *compact_face_gnum;    /* Global face numbering defined
+  cs_gnum_t    *compact_face_gnum;    /* Global face numbering defined
                                          on the selected faces */
-  fvm_gnum_t   *compact_rank_index;   /* Distribution of the selected faces
+  cs_gnum_t    *compact_rank_index;   /* Distribution of the selected faces
                                          over the ranks */
 
   cs_int_t      n_vertices;      /* Number of vertices selected
                                     for the joining operation */
-  fvm_gnum_t    n_g_vertices;    /* Global number of selected vertices */
+  cs_gnum_t     n_g_vertices;    /* Global number of selected vertices */
   cs_int_t     *vertices;        /* List of selected vertices */
 
   /* Adjacent faces of the current face selection: border and interior */
@@ -239,7 +239,7 @@ typedef struct {
   /* For periodicity handling: list of periodic vertex couples */
 
   cs_int_t     n_couples;
-  fvm_gnum_t  *per_v_couples;
+  cs_gnum_t   *per_v_couples;
 
   /*
      Single elements (Only possible in parallel). It appears
@@ -280,8 +280,8 @@ typedef struct {
 
 typedef struct {
 
-  fvm_gnum_t  n_g_elts;    /* Global number of elements to distribute */
-  fvm_gnum_t  first_gnum;  /* Global number of the element in the local block */
+  cs_gnum_t   n_g_elts;    /* Global number of elements to distribute */
+  cs_gnum_t   first_gnum;  /* Global number of the element in the local block */
 
   int  n_ranks;            /* Number of processes in the communicator used
                               to define the current distribution */
@@ -375,9 +375,9 @@ cs_join_select_create(const char  *selection_criteria,
  *---------------------------------------------------------------------------*/
 
 cs_join_block_info_t
-cs_join_get_block_info(fvm_gnum_t  n_g_elts,
-                       int         n_ranks,
-                       int         local_rank);
+cs_join_get_block_info(cs_gnum_t  n_g_elts,
+                       int        n_ranks,
+                       int        local_rank);
 
 /*----------------------------------------------------------------------------
  * Extract vertices from a selection of faces.

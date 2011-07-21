@@ -119,17 +119,17 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 static inline void
-_face_quantities_3d(fvm_lnum_t          n_vertices,
-                    const fvm_lnum_t    face_vertex_num[],
-                    const fvm_lnum_t   *parent_vertex_num,
-                    const fvm_coord_t   vertex_coords[],
+_face_quantities_3d(cs_lnum_t           n_vertices,
+                    const cs_lnum_t     face_vertex_num[],
+                    const cs_lnum_t    *parent_vertex_num,
+                    const cs_coord_t    vertex_coords[],
                     double              center[3],
                     double              normal[3],
                     double             *surface)
 {
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
   double v0[3], v1[3], tc[3], tn[3], ts;
-  const fvm_coord_t *_coords_0, *_coords_1;
+  const cs_coord_t *_coords_0, *_coords_1;
 
   double one_third = 1./3.;
   double vertices_center[3] = {0., 0., 0.};
@@ -171,8 +171,8 @@ _face_quantities_3d(fvm_lnum_t          n_vertices,
 
   for (i = 0; i < n_vertices; i++) {
 
-    fvm_lnum_t v_id_0 = face_vertex_num[i] - 1;
-    fvm_lnum_t v_id_1 = face_vertex_num[(i+1)%n_vertices] - 1;
+    cs_lnum_t v_id_0 = face_vertex_num[i] - 1;
+    cs_lnum_t v_id_1 = face_vertex_num[(i+1)%n_vertices] - 1;
 
     if (parent_vertex_num != NULL) {
       _coords_0 = vertex_coords + (parent_vertex_num[v_id_0] - 1)*3;
@@ -228,16 +228,16 @@ _face_quantities_3d(fvm_lnum_t          n_vertices,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_face_quantities_2d(fvm_lnum_t          n_vertices,
-                    const fvm_lnum_t    face_vertex_num[],
-                    const fvm_lnum_t   *parent_vertex_num,
-                    const fvm_coord_t   vertex_coords[],
-                    double              center[2],
-                    double             *surface)
+_face_quantities_2d(cs_lnum_t          n_vertices,
+                    const cs_lnum_t    face_vertex_num[],
+                    const cs_lnum_t   *parent_vertex_num,
+                    const cs_coord_t   vertex_coords[],
+                    double             center[2],
+                    double            *surface)
 {
-  fvm_lnum_t  i, j, v_id_1, v_id_2;
+  cs_lnum_t   i, j, v_id_1, v_id_2;
   double v0[2], v1[2], tc[2], ts;
-  const fvm_coord_t *_coords_0, *_coords_1, *_coords_2;
+  const cs_coord_t *_coords_0, *_coords_1, *_coords_2;
 
   double one_third = 1./3.;
 
@@ -312,17 +312,17 @@ _face_quantities_2d(fvm_lnum_t          n_vertices,
 
 static void
 _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
-                           fvm_lnum_t                  n_elements,
-                           fvm_lnum_t                 *element_count,
-                           const fvm_lnum_t           *parent_vertex_num,
-                           const fvm_coord_t           vertex_coords[],
+                           cs_lnum_t                   n_elements,
+                           cs_lnum_t                  *element_count,
+                           const cs_lnum_t            *parent_vertex_num,
+                           const cs_coord_t            vertex_coords[],
                            fvm_interlace_t             interlace,
-                           fvm_coord_t                *cell_centers)
+                           cs_coord_t                 *cell_centers)
 {
-  fvm_lnum_t i, j;
+  cs_lnum_t i, j;
   int k;
 
-  fvm_lnum_t _element_count = *element_count;
+  cs_lnum_t _element_count = *element_count;
 
   assert(this_section != NULL);
 
@@ -343,10 +343,10 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
 
       double f_center[3], f_normal[3], f_surface;
 
-      fvm_lnum_t face_id = FVM_ABS(this_section->face_num[j]) - 1;
-      fvm_lnum_t v_index_start = this_section->vertex_index[face_id];
-      fvm_lnum_t v_index_end = this_section->vertex_index[face_id + 1];
-      fvm_lnum_t n_vertices = v_index_end - v_index_start;
+      cs_lnum_t face_id = FVM_ABS(this_section->face_num[j]) - 1;
+      cs_lnum_t v_index_start = this_section->vertex_index[face_id];
+      cs_lnum_t v_index_end = this_section->vertex_index[face_id + 1];
+      cs_lnum_t n_vertices = v_index_end - v_index_start;
 
       _face_quantities_3d(n_vertices,
                           this_section->vertex_num + v_index_start,
@@ -393,20 +393,20 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
 
 static void
 _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
-                              fvm_lnum_t                  n_elements,
-                              fvm_lnum_t                 *element_count,
-                              const fvm_lnum_t           *parent_vertex_num,
-                              const fvm_coord_t           vertex_coords[],
+                              cs_lnum_t                   n_elements,
+                              cs_lnum_t                  *element_count,
+                              const cs_lnum_t            *parent_vertex_num,
+                              const cs_coord_t            vertex_coords[],
                               fvm_interlace_t             interlace,
-                              fvm_coord_t                *cell_centers)
+                              cs_coord_t                 *cell_centers)
 {
-  fvm_lnum_t i, j;
+  cs_lnum_t i, j;
   int k;
 
   int n_faces, stride;
   int n_face_vertices[6], face_vertices[6][4];
 
-  fvm_lnum_t _element_count = *element_count;
+  cs_lnum_t _element_count = *element_count;
 
   assert(this_section != NULL);
 
@@ -428,7 +428,7 @@ _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
 
     for (j = 0; j < n_faces; j++) {
 
-      fvm_lnum_t _vertex_num[4];
+      cs_lnum_t _vertex_num[4];
       double f_center[3], f_normal[3], f_surface;
 
       for (k = 0; k < n_face_vertices[j]; k++)
@@ -480,17 +480,17 @@ _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
 
 static void
 _face_section_centers_3d(const fvm_nodal_section_t  *this_section,
-                         fvm_lnum_t                  n_elements,
-                         fvm_lnum_t                 *element_count,
-                         const fvm_lnum_t           *parent_vertex_num,
-                         const fvm_coord_t           vertex_coords[],
+                         cs_lnum_t                   n_elements,
+                         cs_lnum_t                  *element_count,
+                         const cs_lnum_t            *parent_vertex_num,
+                         const cs_coord_t            vertex_coords[],
                          fvm_interlace_t             interlace,
-                         fvm_coord_t                *cell_centers)
+                         cs_coord_t                 *cell_centers)
 {
-  fvm_lnum_t i, v_index_start, v_index_end, n_vertices;
+  cs_lnum_t i, v_index_start, v_index_end, n_vertices;
   int k;
 
-  fvm_lnum_t _element_count = *element_count;
+  cs_lnum_t _element_count = *element_count;
 
   /* Loop on elements */
 
@@ -548,17 +548,17 @@ _face_section_centers_3d(const fvm_nodal_section_t  *this_section,
 
 static void
 _face_section_centers_2d(const fvm_nodal_section_t  *this_section,
-                         fvm_lnum_t                  n_elements,
-                         fvm_lnum_t                 *element_count,
-                         const fvm_lnum_t           *parent_vertex_num,
-                         const fvm_coord_t           vertex_coords[],
+                         cs_lnum_t                   n_elements,
+                         cs_lnum_t                  *element_count,
+                         const cs_lnum_t            *parent_vertex_num,
+                         const cs_coord_t            vertex_coords[],
                          fvm_interlace_t             interlace,
-                         fvm_coord_t                *cell_centers)
+                         cs_coord_t                 *cell_centers)
 {
-  fvm_lnum_t i, v_index_start, v_index_end, n_vertices;
+  cs_lnum_t i, v_index_start, v_index_end, n_vertices;
   int k;
 
-  fvm_lnum_t _element_count = *element_count;
+  cs_lnum_t _element_count = *element_count;
 
   /* Loop on elements */
 
@@ -616,13 +616,13 @@ _face_section_centers_2d(const fvm_nodal_section_t  *this_section,
 
 inline static void
 _update_elt_extents(int                 dim,
-                    fvm_lnum_t          vertex_id,
-                    const fvm_lnum_t   *parent_vertex_num,
-                    const fvm_coord_t   vertex_coords[],
+                    cs_lnum_t           vertex_id,
+                    const cs_lnum_t    *parent_vertex_num,
+                    const cs_coord_t    vertex_coords[],
                     double              elt_extents[],
                     _Bool              *elt_initialized)
 {
-  fvm_lnum_t  i, coord_idx;
+  cs_lnum_t   i, coord_idx;
 
   if (parent_vertex_num == NULL)
     coord_idx = vertex_id;
@@ -733,12 +733,12 @@ _update_extents(int               dim,
 static void
 _nodal_section_extents(const fvm_nodal_section_t  *this_section,
                        int                         dim,
-                       const fvm_lnum_t           *parent_vertex_num,
-                       const fvm_coord_t           vertex_coords[],
+                       const cs_lnum_t            *parent_vertex_num,
+                       const cs_coord_t            vertex_coords[],
                        double                      tolerance,
                        double                      extents[])
 {
-  fvm_lnum_t  i, j, k, face_id, vertex_id;
+  cs_lnum_t   i, j, k, face_id, vertex_id;
   double elt_extents[6];
 
   /* initialize extents in case section is empty */
@@ -785,7 +785,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
   else if (this_section->vertex_index != NULL) {
 
-    fvm_lnum_t  n_faces = (this_section->n_faces > 0) ?
+    cs_lnum_t   n_faces = (this_section->n_faces > 0) ?
                           this_section->n_faces : this_section->n_elements;
 
     for (i = 0; i < n_faces; i++) {
@@ -862,10 +862,10 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
 void
 fvm_nodal_get_global_vertex_num(const fvm_nodal_t  *this_nodal,
-                                fvm_gnum_t         *g_vtx_num)
+                                cs_gnum_t          *g_vtx_num)
 {
   size_t size;
-  fvm_lnum_t  vertex_id;
+  cs_lnum_t   vertex_id;
   fvm_io_num_t *global_io_num = this_nodal->global_vertex_num;
 
   assert(g_vtx_num != NULL || this_nodal->n_vertices == 0);
@@ -881,7 +881,7 @@ fvm_nodal_get_global_vertex_num(const fvm_nodal_t  *this_nodal,
   }
   else {
 
-    size = sizeof(fvm_gnum_t) * fvm_io_num_get_local_count(global_io_num);
+    size = sizeof(cs_gnum_t) * fvm_io_num_get_local_count(global_io_num);
     memcpy(g_vtx_num, fvm_io_num_get_global_num(global_io_num), size);
 
   }
@@ -905,13 +905,13 @@ fvm_nodal_get_global_vertex_num(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_global_element_num(const fvm_nodal_t  *this_nodal,
                                  fvm_element_t       element_type,
-                                 fvm_gnum_t         *g_elt_num)
+                                 cs_gnum_t          *g_elt_num)
 {
   int element_id, section_id;
 
-  fvm_lnum_t n_elements = 0, element_count = 0;
-  fvm_gnum_t n_g_elements = 0, global_count = 0;
-  const fvm_gnum_t *g_num = NULL;
+  cs_lnum_t n_elements = 0, element_count = 0;
+  cs_gnum_t n_g_elements = 0, global_count = 0;
+  const cs_gnum_t *g_num = NULL;
 
   /* Define global element numbers */
 
@@ -942,7 +942,7 @@ fvm_nodal_get_global_element_num(const fvm_nodal_t  *this_nodal,
         if (global_count == 0) {
           memcpy((char *)g_elt_num,
                  g_num,
-                 sizeof(fvm_gnum_t) * n_elements);
+                 sizeof(cs_gnum_t) * n_elements);
 
         }
         else {
@@ -977,20 +977,20 @@ fvm_nodal_get_global_element_num(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
                             fvm_interlace_t     interlace,
-                            fvm_coord_t        *vertex_coords)
+                            cs_coord_t         *vertex_coords)
 {
   int i;
-  fvm_lnum_t vertex_id;
+  cs_lnum_t vertex_id;
 
   const int dim = this_nodal->dim;
-  const fvm_lnum_t n_vertices = this_nodal->n_vertices;
-  const fvm_coord_t *coords = this_nodal->vertex_coords;
-  const fvm_lnum_t  *parent_num = this_nodal->parent_vertex_num;
+  const cs_lnum_t n_vertices = this_nodal->n_vertices;
+  const cs_coord_t *coords = this_nodal->vertex_coords;
+  const cs_lnum_t   *parent_num = this_nodal->parent_vertex_num;
 
   if (this_nodal->parent_vertex_num == NULL) {
 
     if (interlace == FVM_INTERLACE)
-      memcpy(vertex_coords, coords, sizeof(fvm_coord_t) * n_vertices * dim);
+      memcpy(vertex_coords, coords, sizeof(cs_coord_t) * n_vertices * dim);
 
     else {
       for (i = 0; i < dim; i++) {
@@ -1045,18 +1045,18 @@ void
 fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
                               fvm_interlace_t     interlace,
                               int                 entity_dim,
-                              fvm_coord_t        *cell_centers)
+                              cs_coord_t         *cell_centers)
 {
   int i, j;
   int section_id;
-  fvm_lnum_t element_id;
+  cs_lnum_t element_id;
 
-  fvm_lnum_t element_count = 0;
+  cs_lnum_t element_count = 0;
 
   const int dim = this_nodal->dim;
-  const fvm_coord_t *coords = this_nodal->vertex_coords;
-  const fvm_lnum_t  *parent_num = this_nodal->parent_vertex_num;
-  const fvm_lnum_t n_elements = fvm_nodal_get_n_entities(this_nodal,
+  const cs_coord_t *coords = this_nodal->vertex_coords;
+  const cs_lnum_t   *parent_num = this_nodal->parent_vertex_num;
+  const cs_lnum_t n_elements = fvm_nodal_get_n_entities(this_nodal,
                                                          entity_dim);
 
   for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
@@ -1139,7 +1139,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
 
         if (this_nodal->parent_vertex_num == NULL) {
           for (j = 0; j < stride; j++) {
-            const fvm_lnum_t vertex_id
+            const cs_lnum_t vertex_id
               = section->vertex_num[(element_id * stride) + j] - 1;
             for (i = 0; i < dim; i++)
               cell_center[i] += coords[vertex_id*dim + i];
@@ -1148,7 +1148,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
         }
         else { /* if (this_nodal->parent_vertex_num != NULL) */
           for (j = 0; j < stride; j++) {
-            const fvm_lnum_t vertex_id
+            const cs_lnum_t vertex_id
               = section->vertex_num[(element_id * stride) + j] - 1;
             for (i = 0; i < dim; i++)
               cell_center[i] += coords[(parent_num[vertex_id]-1)*dim + i];
@@ -1190,11 +1190,11 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_strided_connect(const fvm_nodal_t  *this_nodal,
                               fvm_element_t       element_type,
-                              fvm_lnum_t         *connectivity)
+                              cs_lnum_t          *connectivity)
 {
   int i, section_id;
-  fvm_lnum_t element_id;
-  fvm_lnum_t element_count = 0;
+  cs_lnum_t element_id;
+  cs_lnum_t element_count = 0;
 
   /* Verify section with "element_type" type exists and is strided */
 
@@ -1214,7 +1214,7 @@ fvm_nodal_get_strided_connect(const fvm_nodal_t  *this_nodal,
     if (section->type == element_type) {
 
       const int stride = section->stride;
-      const fvm_lnum_t *num = section->vertex_num;
+      const cs_lnum_t *num = section->vertex_num;
 
       for (element_id = 0; element_id < section->n_elements; element_id++) {
         for (i = 0; i < stride; i++) {
@@ -1256,17 +1256,17 @@ fvm_nodal_get_strided_connect(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
                               int                  entity_dim,
-                              fvm_lnum_t         **element_index,
-                              fvm_lnum_t         **element_id)
+                              cs_lnum_t          **element_index,
+                              cs_lnum_t          **element_id)
 {
   int section_id;
-  fvm_lnum_t i, j, k, l, element_concat_id, vertex_id;
+  cs_lnum_t i, j, k, l, element_concat_id, vertex_id;
 
-  fvm_lnum_t *element_count = NULL;
-  fvm_lnum_t *_element_index = NULL;
-  fvm_lnum_t *_element_id = NULL;
+  cs_lnum_t *element_count = NULL;
+  cs_lnum_t *_element_index = NULL;
+  cs_lnum_t *_element_id = NULL;
 
-  const fvm_lnum_t n_vertices = this_nodal->n_vertices;
+  const cs_lnum_t n_vertices = this_nodal->n_vertices;
 
   /* Initialize return values */
 
@@ -1276,7 +1276,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
   /* Build count and index */
   /*-----------------------*/
 
-  BFT_MALLOC(element_count, n_vertices, fvm_lnum_t);
+  BFT_MALLOC(element_count, n_vertices, cs_lnum_t);
   for (i = 0; i < n_vertices; i++)
     element_count[i] = 0;
 
@@ -1304,8 +1304,8 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
     else if (section->type == FVM_FACE_POLY) {
 
       for (i = 0; i < section->n_elements; i++) {
-        fvm_lnum_t start_id = section->vertex_index[i];
-        fvm_lnum_t end_id = section->vertex_index[i+1];
+        cs_lnum_t start_id = section->vertex_index[i];
+        cs_lnum_t end_id = section->vertex_index[i+1];
         for (j = start_id; j < end_id; j++)
           element_count[section->vertex_num[j] - 1] += 1;
       }
@@ -1315,12 +1315,12 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
     else if (section->type == FVM_CELL_POLY) {
 
       for (i = 0; i < section->n_elements; i++) {
-        fvm_lnum_t start_face_id = section->face_index[i];
-        fvm_lnum_t end_face_id = section->face_index[i+1];
+        cs_lnum_t start_face_id = section->face_index[i];
+        cs_lnum_t end_face_id = section->face_index[i+1];
         for (j = start_face_id; j < end_face_id; j++) {
-          fvm_lnum_t face_id = FVM_ABS(section->face_num[j]) - 1;
-          fvm_lnum_t start_id = section->vertex_index[face_id];
-          fvm_lnum_t end_id = section->vertex_index[face_id+1];
+          cs_lnum_t face_id = FVM_ABS(section->face_num[j]) - 1;
+          cs_lnum_t start_id = section->vertex_index[face_id];
+          cs_lnum_t end_id = section->vertex_index[face_id+1];
           for (k = start_id; k < end_id; k++)
             element_count[section->vertex_num[k] - 1] += 1;
         }
@@ -1330,7 +1330,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
 
   } /* End of loop on sections */
 
-  BFT_MALLOC(_element_index, n_vertices + 1, fvm_lnum_t);
+  BFT_MALLOC(_element_index, n_vertices + 1, cs_lnum_t);
   _element_index[0] = 0;
 
   for (i = 0; i < n_vertices; i++) {
@@ -1341,7 +1341,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
   /* Build inverse connectivity */
   /*----------------------------*/
 
-  BFT_MALLOC(_element_id, _element_index[n_vertices], fvm_lnum_t);
+  BFT_MALLOC(_element_id, _element_index[n_vertices], cs_lnum_t);
 
   element_concat_id = 0;
 
@@ -1373,8 +1373,8 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
     else if (section->type == FVM_FACE_POLY) {
 
       for (i = 0; i < section->n_elements; i++, element_concat_id++) {
-        fvm_lnum_t start_id = section->vertex_index[i];
-        fvm_lnum_t end_id = section->vertex_index[i+1];
+        cs_lnum_t start_id = section->vertex_index[i];
+        cs_lnum_t end_id = section->vertex_index[i+1];
         for (j = start_id; j < end_id; j++) {
           vertex_id = section->vertex_num[j] - 1;
           k = _element_index[vertex_id] + element_count[vertex_id];
@@ -1388,12 +1388,12 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
     else if (section->type == FVM_CELL_POLY) {
 
       for (i = 0; i < section->n_elements; i++, element_concat_id++) {
-        fvm_lnum_t start_face_id = section->face_index[i];
-        fvm_lnum_t end_face_id = section->face_index[i+1];
+        cs_lnum_t start_face_id = section->face_index[i];
+        cs_lnum_t end_face_id = section->face_index[i+1];
         for (j = start_face_id; j < end_face_id; j++) {
-          fvm_lnum_t face_id = FVM_ABS(section->face_num[j]) - 1;
-          fvm_lnum_t start_id = section->vertex_index[face_id];
-          fvm_lnum_t end_id = section->vertex_index[face_id+1];
+          cs_lnum_t face_id = FVM_ABS(section->face_num[j]) - 1;
+          cs_lnum_t start_id = section->vertex_index[face_id];
+          cs_lnum_t end_id = section->vertex_index[face_id+1];
           for (k = start_id; k < end_id; k++) {
             vertex_id = section->vertex_num[k] - 1;
             l = _element_index[vertex_id] + element_count[vertex_id];

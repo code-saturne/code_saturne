@@ -245,16 +245,16 @@ _type_read_to_elt_type(fvm_datatype_t type_read)
   fvm_datatype_t elt_type = FVM_DATATYPE_NULL;
 
   if (type_read == FVM_INT32 || type_read == FVM_INT64) {
-    assert(sizeof(fvm_lnum_t) == 4 || sizeof(fvm_lnum_t) == 8);
-    if (sizeof(fvm_lnum_t) == 4)
+    assert(sizeof(cs_lnum_t) == 4 || sizeof(cs_lnum_t) == 8);
+    if (sizeof(cs_lnum_t) == 4)
       elt_type = FVM_INT32;
     else
       elt_type = FVM_INT64;
   }
 
   else if (type_read == FVM_UINT32 || type_read == FVM_UINT64) {
-    assert(sizeof(fvm_gnum_t) == 4 || sizeof(fvm_gnum_t) == 8);
-    if (sizeof(fvm_gnum_t) == 4)
+    assert(sizeof(cs_gnum_t) == 4 || sizeof(cs_gnum_t) == 8);
+    if (sizeof(cs_gnum_t) == 4)
       elt_type = FVM_UINT32;
     else
       elt_type = FVM_UINT64;
@@ -783,7 +783,7 @@ _file_open(cs_io_t     *cs_io,
 
 static void
 _file_legacy_add_sizes(cs_io_t     *inp,
-                       fvm_lnum_t   sizes[4])
+                       cs_lnum_t    sizes[4])
 {
   int i;
   cs_io_sec_header_t h;
@@ -854,20 +854,20 @@ _file_legacy_add_sizes(cs_io_t     *inp,
 static int
 _file_legacy_restart_open(cs_io_t     *inp,
                           const char  *name,
-                          fvm_lnum_t   sizes[4],
+                          cs_lnum_t    sizes[4],
                           MPI_Comm     comm)
 #else
 static int
 _file_legacy_restart_open(cs_io_t    *inp,
                           const char  *name,
-                          fvm_lnum_t   sizes[4])
+                          cs_lnum_t    sizes[4])
 #endif
 {
   char expected_header[] = "Code_Saturne_1.1_bin_reprise\n";
   char header_read[32] = "";
-  fvm_lnum_t expected_len = strlen(expected_header);
+  cs_lnum_t expected_len = strlen(expected_header);
 
-  fvm_lnum_t n_read = 0;
+  cs_lnum_t n_read = 0;
   int retval = 0;
 
   assert(inp->mode == CS_IO_MODE_READ);
@@ -911,7 +911,7 @@ _file_legacy_restart_open(cs_io_t    *inp,
 
   /* Read location sizes */
 
-  n_read = fvm_file_read_global(inp->f, sizes, sizeof(fvm_lnum_t), 4);
+  n_read = fvm_file_read_global(inp->f, sizes, sizeof(cs_lnum_t), 4);
   if (n_read < 4) {
     bft_error(__FILE__, __LINE__, 0,
               _("Restart file \"%s\"\n"
@@ -956,9 +956,9 @@ _file_legacy_restart_index(cs_io_t     *inp,
                            const char  *name)
 #endif
 {
-  fvm_lnum_t sizes[4] = {0, 0, 0, 0};
+  cs_lnum_t sizes[4] = {0, 0, 0, 0};
 
-  fvm_lnum_t n_read = 0;
+  cs_lnum_t n_read = 0;
   int end_of_file = 0;
   int retval = 0;
 
@@ -988,20 +988,20 @@ _file_legacy_restart_index(cs_io_t     *inp,
 
   while (end_of_file == 0) {
 
-    fvm_lnum_t buf[4];
+    cs_lnum_t buf[4];
     char *sec_name = NULL;
 
     /* Read section */
 
-    n_read = fvm_file_read_global(inp->f, buf, sizeof(fvm_lnum_t), 4);
+    n_read = fvm_file_read_global(inp->f, buf, sizeof(cs_lnum_t), 4);
 
     if (n_read < 4) {
       end_of_file = 1;
       break;
     }
 
-    if (buf[0] + 56 >= (fvm_lnum_t)(inp->buffer_size)) {
-      while (buf[0] + 56 >= (fvm_lnum_t)(inp->buffer_size))
+    if (buf[0] + 56 >= (cs_lnum_t)(inp->buffer_size)) {
+      while (buf[0] + 56 >= (cs_lnum_t)(inp->buffer_size))
         inp->buffer_size *= 2;
       BFT_REALLOC(inp->buffer, inp->buffer_size, unsigned char);
     }
@@ -1023,7 +1023,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
     if (strcmp(sec_name, "reprise : fic suivant") == 0) {
 
       size_t ii;
-      fvm_lnum_t cmp_sizes[4] = {0, 0, 0, 0};
+      cs_lnum_t cmp_sizes[4] = {0, 0, 0, 0};
       size_t _name_len = strlen(name) + strlen("_pxx");
       char *_name = NULL;
 
@@ -1060,7 +1060,7 @@ _file_legacy_restart_index(cs_io_t     *inp,
     /* If the beginning of a new file is indicated */
 
     else if (strcmp(sec_name, "reprise : partie num") == 0) {
-      if (buf[0] != (fvm_lnum_t)(inp->index->n_files)) {
+      if (buf[0] != (cs_lnum_t)(inp->index->n_files)) {
         bft_error(__FILE__, __LINE__, 0, _(incorrect_next_file_msg),
                   fvm_file_get_name(inp->f), (int)(inp->index->n_files));
         end_of_file = 1;
@@ -1227,7 +1227,7 @@ _echo_pre(const cs_io_t  *cs_io)
 
 static void
 _echo_header(const char      *sec_name,
-             fvm_gnum_t       n_elts,
+             cs_gnum_t        n_elts,
              fvm_datatype_t   type)
 {
   /* Instructions */
@@ -1280,8 +1280,8 @@ _echo_header(const char      *sec_name,
  * FVM datatypes must have been converted to the corresponding
  * Code_Saturne compatible datatype before calling this function:
  *   FVM_CHAR                -> char
- *   FVM_INT32 / FVM_INT64   -> fvm_lnum_t / cs_int_t
- *   FVM_UINT32 / FVM_UINT64 -> fvm_gnum_t
+ *   FVM_INT32 / FVM_INT64   -> cs_lnum_t / cs_int_t
+ *   FVM_UINT32 / FVM_UINT64 -> cs_gnum_t
  *   FVM_REAL / FVM_FLOAT    -> double / cs_real_t
  *
  * If global_num_start and global_num_end are > 0, the echo shows that
@@ -1301,13 +1301,13 @@ _echo_header(const char      *sec_name,
 static void
 _echo_data(size_t           echo,
            fvm_file_off_t   n_elts,
-           fvm_gnum_t       global_num_start,
-           fvm_gnum_t       global_num_end,
+           cs_gnum_t        global_num_start,
+           cs_gnum_t        global_num_end,
            fvm_datatype_t   elt_type,
            const void      *elts)
 {
   fvm_file_off_t  i;
-  fvm_gnum_t  num_shift = 1;
+  cs_gnum_t   num_shift = 1;
   size_t  _n_elts = n_elts;
   fvm_file_off_t  echo_start = 0;
   fvm_file_off_t  echo_end = 0;
@@ -1352,7 +1352,7 @@ _echo_data(size_t           echo,
     case FVM_INT32:
     case FVM_INT64:
       {
-        const fvm_lnum_t *_elts = elts;
+        const cs_lnum_t *_elts = elts;
 
         for (i = echo_start ; i < echo_end ; i++)
           bft_printf("    %10llu : %12d\n",
@@ -1363,7 +1363,7 @@ _echo_data(size_t           echo,
     case FVM_UINT32:
     case FVM_UINT64:
       {
-        const fvm_gnum_t *_elts = elts;
+        const cs_gnum_t *_elts = elts;
 
         for (i = echo_start ; i < echo_end ; i++)
           bft_printf("    %10llu : %12llu\n",
@@ -1424,8 +1424,8 @@ _echo_data(size_t           echo,
  * dest_type must have been set to the corresponding
  * Code_Saturne compatible datatype before calling this function and
  * conversion will be done accordingly:
- *   FVM_INT32 / FVM_INT64   -> fvm_lnum_t / cs_int_t
- *   FVM_UINT32 / FVM_UINT64 -> fvm_gnum_t
+ *   FVM_INT32 / FVM_INT64   -> cs_lnum_t / cs_int_t
+ *   FVM_UINT32 / FVM_UINT64 -> cs_gnum_t
  *   FVM_REAL / FVM_FLOAT    -> double / cs_real_t
  *
  * parameters:
@@ -1457,7 +1457,7 @@ _cs_io_convert_read(void            *buffer,
   case FVM_INT32:
   case FVM_INT64:
     {
-      fvm_lnum_t *_dest = dest;
+      cs_lnum_t *_dest = dest;
 
       if (   buffer_type == FVM_INT32
           || buffer_type == FVM_INT64) {
@@ -1521,7 +1521,7 @@ _cs_io_convert_read(void            *buffer,
   case FVM_UINT32:
   case FVM_UINT64:
     {
-      fvm_gnum_t *_dest = dest;
+      cs_gnum_t *_dest = dest;
 
       if (   buffer_type == FVM_INT32
           || buffer_type == FVM_INT64) {
@@ -1643,8 +1643,8 @@ _cs_io_convert_read(void            *buffer,
 
 static void *
 _cs_io_read_body(const cs_io_sec_header_t  *header,
-                 fvm_gnum_t                 global_num_start,
-                 fvm_gnum_t                 global_num_end,
+                 cs_gnum_t                  global_num_start,
+                 cs_gnum_t                  global_num_end,
                  void                      *elts,
                  cs_io_t                   *inp)
 {
@@ -1661,7 +1661,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
 
   assert(header->n_vals == inp->n_vals);
 
-  assert(global_num_end <= (fvm_gnum_t)header->n_vals + 1);
+  assert(global_num_end <= (cs_gnum_t)header->n_vals + 1);
 
   if (inp->log_id > -1) {
     log = _cs_io_log[inp->mode] + inp->log_id;
@@ -1931,7 +1931,7 @@ _write_padding(size_t    align,
 
 static bool
 _write_header(const char      *sec_name,
-              fvm_gnum_t       n_vals,
+              cs_gnum_t        n_vals,
               size_t           location_id,
               size_t           index_id,
               size_t           n_location_vals,
@@ -2737,7 +2737,7 @@ cs_io_set_indexed_position(cs_io_t             *inp,
 }
 
 /*----------------------------------------------------------------------------
- * Set a section's final data type to fvm_lnum_t.
+ * Set a section's final data type to cs_lnum_t.
  *
  * It the datatype is not compatible, throw an error.
  *
@@ -2763,16 +2763,16 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
                 "and is not convertible from type read: \"%s\"."),
               fvm_file_get_name(cs_io->f), cs_io->type_name);
 
-  assert(sizeof(fvm_lnum_t) == 4 || sizeof(fvm_lnum_t) == 8);
+  assert(sizeof(cs_lnum_t) == 4 || sizeof(cs_lnum_t) == 8);
 
-  if (sizeof(fvm_lnum_t) == 4)
+  if (sizeof(cs_lnum_t) == 4)
     header->elt_type = FVM_INT32;
   else
     header->elt_type = FVM_INT64;
 }
 
 /*----------------------------------------------------------------------------
- * Set a section's final data type to fvm_gnum_t.
+ * Set a section's final data type to cs_gnum_t.
  *
  * It the datatype is not compatible, throw an error.
  *
@@ -2798,9 +2798,9 @@ cs_io_set_fvm_gnum(cs_io_sec_header_t  *header,
                 "and is not convertible from type read: \"%s\"."),
               fvm_file_get_name(cs_io->f), cs_io->type_name);
 
-  assert(sizeof(fvm_gnum_t) == 4 || sizeof(fvm_gnum_t) == 8);
+  assert(sizeof(cs_gnum_t) == 4 || sizeof(cs_gnum_t) == 8);
 
-  if (sizeof(fvm_gnum_t) == 4)
+  if (sizeof(cs_gnum_t) == 4)
     header->elt_type = FVM_UINT32;
   else
     header->elt_type = FVM_UINT64;
@@ -2883,8 +2883,8 @@ cs_io_read_global(const cs_io_sec_header_t  *header,
 
 void *
 cs_io_read_block(const cs_io_sec_header_t  *header,
-                 fvm_gnum_t                 global_num_start,
-                 fvm_gnum_t                 global_num_end,
+                 cs_gnum_t                  global_num_start,
+                 cs_gnum_t                  global_num_end,
                  void                      *elts,
                  cs_io_t                   *cs_io)
 {
@@ -2903,7 +2903,7 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
  * when the body corresponds to an index.
  *
  * In serial mode, this function behaves just like cs_io_read_block(),
- * except that it allows only unsigned integer values (fvm_gnum_t).
+ * except that it allows only unsigned integer values (cs_gnum_t).
  *
  * In parallel mode, global_num_end should be set to the past-the-end value
  * of the base data block, the same as for regular data (and not increased
@@ -2932,15 +2932,15 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
 
 void *
 cs_io_read_index_block(cs_io_sec_header_t  *header,
-                       fvm_gnum_t           global_num_start,
-                       fvm_gnum_t           global_num_end,
-                       fvm_gnum_t          *elts,
+                       cs_gnum_t            global_num_start,
+                       cs_gnum_t            global_num_end,
+                       cs_gnum_t           *elts,
                        cs_io_t             *cs_io)
 {
-  fvm_gnum_t _global_num_start = global_num_start;
-  fvm_gnum_t _global_num_end = global_num_end;
+  cs_gnum_t _global_num_start = global_num_start;
+  cs_gnum_t _global_num_end = global_num_end;
 
-  fvm_gnum_t *retval = NULL;
+  cs_gnum_t *retval = NULL;
 
 #if defined(HAVE_MPI)
   int rank_id = 0;
@@ -2962,7 +2962,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   /* Increase _global_num_end by 1 for the last rank containing data */
 
-  if (global_num_end == (fvm_gnum_t)header->n_vals) {
+  if (global_num_end == (cs_gnum_t)header->n_vals) {
 
     if (global_num_start < global_num_end)
       _global_num_end += 1;
@@ -2986,7 +2986,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
   /* Ensure element value initialized in case of empty block */
 
   if (retval == NULL)
-    BFT_MALLOC(retval, 1, fvm_gnum_t);
+    BFT_MALLOC(retval, 1, cs_gnum_t);
 
   if (_global_num_start == _global_num_end)
     retval[0] = 0;
@@ -2997,16 +2997,16 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
   if (n_ranks > 1) {
 
-    fvm_gnum_t  past_last_max = 0;
-    fvm_gnum_t  past_last_max_0 = 0;
-    fvm_gnum_t  past_last = 0;
-    fvm_gnum_t *past_last_0 = NULL;
+    cs_gnum_t  past_last_max = 0;
+    cs_gnum_t  past_last_max_0 = 0;
+    cs_gnum_t  past_last = 0;
+    cs_gnum_t *past_last_0 = NULL;
 
     if (   _global_num_end > global_num_end
         && _global_num_end > _global_num_start)
       past_last_max = retval[_global_num_end - _global_num_start - 1];
 
-    MPI_Reduce(&past_last_max, &past_last_max_0, 1, FVM_MPI_GNUM, MPI_MAX,
+    MPI_Reduce(&past_last_max, &past_last_max_0, 1, CS_MPI_GNUM, MPI_MAX,
                0, comm);
 
     /* Initially, past_last values contain the first index value
@@ -3017,10 +3017,10 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
       past_last = retval[0];
 
     if (rank_id == 0)
-      BFT_MALLOC(past_last_0, n_ranks, fvm_gnum_t);
+      BFT_MALLOC(past_last_0, n_ranks, cs_gnum_t);
 
-    MPI_Gather(&past_last, 1, FVM_MPI_GNUM,
-               past_last_0, 1, FVM_MPI_GNUM,
+    MPI_Gather(&past_last, 1, CS_MPI_GNUM,
+               past_last_0, 1, CS_MPI_GNUM,
                0, comm);
 
     if (rank_id == 0) {
@@ -3048,8 +3048,8 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
         past_last_0[i] = past_last_max_0;
     }
 
-    MPI_Scatter(past_last_0, 1, FVM_MPI_GNUM,
-                &past_last, 1, FVM_MPI_GNUM,
+    MPI_Scatter(past_last_0, 1, CS_MPI_GNUM,
+                &past_last, 1, CS_MPI_GNUM,
                 0, comm);
 
     if (rank_id == 0)
@@ -3060,7 +3060,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
   }
 
   if (   retval != NULL
-      && header->n_vals != 0 && (fvm_gnum_t)header->n_vals != global_num_end
+      && header->n_vals != 0 && (cs_gnum_t)header->n_vals != global_num_end
       && cs_io->echo > CS_IO_ECHO_HEADERS)
     bft_printf(_("    first element for next rank:\n"
                  "    %10llu : %12llu\n"),
@@ -3092,7 +3092,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
 void
 cs_io_write_global(const char      *sec_name,
-                   fvm_gnum_t       n_vals,
+                   cs_gnum_t        n_vals,
                    size_t           location_id,
                    size_t           index_id,
                    size_t           n_location_vals,
@@ -3185,9 +3185,9 @@ cs_io_write_global(const char      *sec_name,
 
 void
 cs_io_write_block_buffer(const char      *sec_name,
-                         fvm_gnum_t       n_g_elts,
-                         fvm_gnum_t       global_num_start,
-                         fvm_gnum_t       global_num_end,
+                         cs_gnum_t        n_g_elts,
+                         cs_gnum_t        global_num_start,
+                         cs_gnum_t        global_num_end,
                          size_t           location_id,
                          size_t           index_id,
                          size_t           n_location_vals,

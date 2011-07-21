@@ -610,7 +610,7 @@ _find_or_add_system(const char  *name)
 
 static void
 _multigrid_add_post(cs_multigrid_t  *mg,
-                    fvm_lnum_t       n_base_cells)
+                    cs_lnum_t        n_base_cells)
 {
   int ii;
 
@@ -923,7 +923,7 @@ _abort_on_divergence(cs_multigrid_t    *mg,
 
     const cs_real_t *_da = NULL, *_xa = NULL;
     const cs_grid_t *g = mg->grid_hierarchy[0];
-    const fvm_lnum_t n_base_cells = cs_grid_get_n_cells(g);
+    const cs_lnum_t n_base_cells = cs_grid_get_n_cells(g);
 
     BFT_MALLOC(var, cs_grid_get_n_cells_ext(g), cs_real_t);
 
@@ -962,9 +962,9 @@ _abort_on_divergence(cs_multigrid_t    *mg,
 
     if (level > 0) {
 
-      fvm_lnum_t ii;
-      fvm_lnum_t n_cells = 0;
-      fvm_lnum_t n_cells_ext = 0;
+      cs_lnum_t ii;
+      cs_lnum_t n_cells = 0;
+      cs_lnum_t n_cells_ext = 0;
 
       cs_real_t *c_res = NULL;
       cs_matrix_t  *_matrix = NULL;
@@ -1074,7 +1074,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                  void               *aux_vectors)
 {
   int level, coarsest_level;
-  fvm_lnum_t ii;
+  cs_lnum_t ii;
 
   int cvg = 0, c_cvg = 0;
   int n_iter = 0;
@@ -1083,7 +1083,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   cs_real_t _residue = -1.;
 
   size_t _aux_size = aux_size;
-  fvm_lnum_t n_cells = 0, n_cells_ext = 0;
+  cs_lnum_t n_cells = 0, n_cells_ext = 0;
   cs_real_t r_norm_l = r_norm;
 
   char _var_lv_name[33];
@@ -1135,7 +1135,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   /* Allocate wr or use working area */
 
   for (level = 1, wr_size = n_cells_ext; level < mg->n_levels; level++) {
-    fvm_lnum_t n_cells_max
+    cs_lnum_t n_cells_max
       = cs_grid_get_n_cells_max(mg->grid_hierarchy[level]);
     wr_size = CS_MAX(wr_size, (size_t)n_cells_max);
   }
@@ -1173,7 +1173,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
     _vx[1] = _rhs_vx_val + alloc_size;
 
     for (level = 2; level < mg->n_levels; level++) {
-      fvm_lnum_t _n_cells_ext_prev
+      cs_lnum_t _n_cells_ext_prev
         = cs_grid_get_n_cells_max(mg->grid_hierarchy[level-1]);
       _rhs[level] = _rhs[level - 1] + _n_cells_ext_prev;
       _vx[level] = _vx[level - 1] + _n_cells_ext_prev;
@@ -1503,10 +1503,10 @@ void CS_PROCF(clmlga, CLMLGA)
 
   int n_coarse_ranks = cs_glob_n_ranks;
   int n_coarse_ranks_prev = 0;
-  fvm_lnum_t n_cells = 0;
-  fvm_lnum_t n_faces = 0;
-  fvm_gnum_t n_g_cells = 0;
-  fvm_gnum_t n_g_cells_prev = 0;
+  cs_lnum_t n_cells = 0;
+  cs_lnum_t n_faces = 0;
+  cs_gnum_t n_g_cells = 0;
+  cs_gnum_t n_g_cells_prev = 0;
 
   cs_int_t grid_lv = 0;
   cs_multigrid_t *mg = NULL;
@@ -1573,7 +1573,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
     /* Recursion test */
 
-    if (n_g_cells <= (fvm_gnum_t)(*ncegrm))
+    if (n_g_cells <= (cs_gnum_t)(*ncegrm))
       break;
 
     else if (grid_lv >= *ngrmax) {
@@ -1961,7 +1961,7 @@ cs_multigrid_solve(const char         *var_name,
   unsigned _n_iter[3] = {0, 0, 0};
 
   int cvg = 0;
-  fvm_lnum_t n_cells = 0;
+  cs_lnum_t n_cells = 0;
 
   cs_multigrid_t *mg = NULL;
   cs_multigrid_info_t *mg_info = NULL;
@@ -2066,7 +2066,7 @@ cs_multigrid_solve(const char         *var_name,
     /* Estimate "equivalent" iterations */
 
     for (ii = 0; ii < mg->n_levels; ii++) {
-      fvm_gnum_t n_g_cells = cs_grid_get_n_g_cells(mg->grid_hierarchy[ii]);
+      cs_gnum_t n_g_cells = cs_grid_get_n_g_cells(mg->grid_hierarchy[ii]);
       it_count_num += n_g_cells * n_level_iter[ii];
       _n_iter[2] += n_level_iter[ii];
     }

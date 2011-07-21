@@ -128,11 +128,11 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state);
 int
 fvm_triangulate_polygon(int                             dim,
                         int                             n_vertices,
-                        const fvm_coord_t               coords[],
-                        const fvm_lnum_t                parent_vertex_num[],
-                        const fvm_lnum_t                polygon_vertices[],
+                        const cs_coord_t                coords[],
+                        const cs_lnum_t                 parent_vertex_num[],
+                        const cs_lnum_t                 polygon_vertices[],
                         fvm_triangulate_def_t           mode,
-                        fvm_lnum_t                      triangle_vertices[],
+                        cs_lnum_t                       triangle_vertices[],
                         fvm_triangulate_state_t  *const state);
 
 /*----------------------------------------------------------------------------
@@ -157,11 +157,11 @@ fvm_triangulate_polygon(int                             dim,
  *----------------------------------------------------------------------------*/
 
 int
-fvm_triangulate_quadrangle(int                dim,
-                           const fvm_coord_t  coords[],
-                           const fvm_lnum_t   parent_vertex_num[],
-                           const fvm_lnum_t   quadrangle_vertices[],
-                           fvm_lnum_t         triangle_vertices[]);
+fvm_triangulate_quadrangle(int               dim,
+                           const cs_coord_t  coords[],
+                           const cs_lnum_t   parent_vertex_num[],
+                           const cs_lnum_t   quadrangle_vertices[],
+                           cs_lnum_t         triangle_vertices[]);
 
 /*----------------------------------------------------------------------------*/
 

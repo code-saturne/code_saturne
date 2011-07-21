@@ -6,7 +6,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2008-2009  EDF
+  Copyright (C) 2008-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -97,16 +97,16 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 fvm_block_dist_info_t
-fvm_block_dist_compute_sizes(int         rank_id,
-                             int         n_ranks,
-                             int         min_rank_step,
-                             fvm_lnum_t  min_block_size,
-                             fvm_gnum_t  n_g_ents)
+fvm_block_dist_compute_sizes(int        rank_id,
+                             int        n_ranks,
+                             int        min_rank_step,
+                             cs_lnum_t  min_block_size,
+                             cs_gnum_t  n_g_ents)
 {
   int _rank_id = rank_id;
-  fvm_gnum_t _min_block_size = 1;
-  fvm_gnum_t _block_size = 0;
-  fvm_gnum_t _n_ranks = n_ranks;
+  cs_gnum_t _min_block_size = 1;
+  cs_gnum_t _block_size = 0;
+  cs_gnum_t _n_ranks = n_ranks;
 
   fvm_block_dist_info_t bi;
 
@@ -160,7 +160,7 @@ fvm_block_dist_compute_sizes(int         rank_id,
   if (_rank_id > -1) {
     int i;
     for (i = 0; i < 2; i++) {
-      fvm_gnum_t _g_rank = _rank_id + i;
+      cs_gnum_t _g_rank = _rank_id + i;
       bi.gnum_range[i] = _g_rank*_block_size + 1;
       if (bi.gnum_range[i] > n_g_ents + 1)
         bi.gnum_range[i] = n_g_ents + 1;
@@ -168,7 +168,7 @@ fvm_block_dist_compute_sizes(int         rank_id,
   }
   else {
     int i;
-    fvm_gnum_t _g_rank = -_rank_id;
+    cs_gnum_t _g_rank = -_rank_id;
     for (i = 0; i < 2; i++) {
       bi.gnum_range[i] = _g_rank*_block_size + 1;
       if (bi.gnum_range[i] > n_g_ents + 1)
@@ -198,15 +198,15 @@ fvm_block_dist_compute_sizes(int         rank_id,
  *----------------------------------------------------------------------------*/
 
 fvm_block_dist_info_t
-fvm_block_dist_compute_sizes_nr(int         rank_id,
-                                int         n_ranks,
-                                int         n_block_ranks,
-                                fvm_gnum_t  n_g_ents)
+fvm_block_dist_compute_sizes_nr(int        rank_id,
+                                int        n_ranks,
+                                int        n_block_ranks,
+                                cs_gnum_t  n_g_ents)
 {
   int _rank_id = rank_id;
 
-  fvm_gnum_t _block_size = 0;
-  fvm_gnum_t _n_ranks = n_ranks;
+  cs_gnum_t _block_size = 0;
+  cs_gnum_t _n_ranks = n_ranks;
 
   fvm_block_dist_info_t bi;
 
@@ -255,7 +255,7 @@ fvm_block_dist_compute_sizes_nr(int         rank_id,
   if (_rank_id > -1) {
     int i;
     for (i = 0; i < 2; i++) {
-      fvm_gnum_t _g_rank = _rank_id + i;
+      cs_gnum_t _g_rank = _rank_id + i;
       bi.gnum_range[i] = _g_rank*_block_size + 1;
       if (bi.gnum_range[i] > n_g_ents + 1)
         bi.gnum_range[i] = n_g_ents + 1;
@@ -263,7 +263,7 @@ fvm_block_dist_compute_sizes_nr(int         rank_id,
   }
   else {
     int i;
-    fvm_gnum_t _g_rank = -_rank_id;
+    cs_gnum_t _g_rank = -_rank_id;
     for (i = 0; i < 2; i++) {
       bi.gnum_range[i] = _g_rank*_block_size + 1;
       if (bi.gnum_range[i] > n_g_ents + 1)

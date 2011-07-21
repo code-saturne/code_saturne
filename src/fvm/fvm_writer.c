@@ -290,25 +290,25 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
                               int                 n_slices,
                               int                 n_polyhedron_vertices_mean,
                               int                 n_polygon_vertices_mean,
-                              fvm_gnum_t         *n_g_vertices,
-                              fvm_gnum_t          n_g_elements_section[],
-                              fvm_gnum_t         *global_s_size,
-                              fvm_gnum_t         *global_connect_s_size)
+                              cs_gnum_t          *n_g_vertices,
+                              cs_gnum_t           n_g_elements_section[],
+                              cs_gnum_t          *global_s_size,
+                              cs_gnum_t          *global_connect_s_size)
 {
   int  i;
-  fvm_gnum_t  n_g_elements = 0;
-  fvm_gnum_t  n_g_cells = 0, n_g_faces = 0, n_g_edges = 0;
-  fvm_gnum_t  _n_g_vertices = 0;
+  cs_gnum_t   n_g_elements = 0;
+  cs_gnum_t   n_g_cells = 0, n_g_faces = 0, n_g_edges = 0;
+  cs_gnum_t   _n_g_vertices = 0;
 
-  fvm_gnum_t  connect_size = 0;
-  fvm_gnum_t  *_n_g_elements_section = NULL;
+  cs_gnum_t   connect_size = 0;
+  cs_gnum_t   *_n_g_elements_section = NULL;
 
   const fvm_nodal_section_t  *section = NULL;
 
   assert(this_nodal != NULL);
 
   if (n_g_elements_section == NULL)
-    BFT_MALLOC(_n_g_elements_section, this_nodal->n_sections, fvm_gnum_t);
+    BFT_MALLOC(_n_g_elements_section, this_nodal->n_sections, cs_gnum_t);
   else
     _n_g_elements_section = n_g_elements_section;
 
@@ -386,7 +386,7 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
         for (i_type = 0; i_type < n_sub_types; i_type++) {
 
           int  stride;
-          fvm_lnum_t  n_sub_elements_max;
+          cs_lnum_t   n_sub_elements_max;
 
           fvm_element_t  sub_type = fvm_tesselation_sub_type(tesselation,
                                                              i_type);
@@ -400,7 +400,7 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
 
 
           connect_size = FVM_MAX(connect_size,
-                                 (fvm_gnum_t)n_sub_elements_max * stride);
+                                 (cs_gnum_t)n_sub_elements_max * stride);
 
         }
 
@@ -995,7 +995,7 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
                         int                           dimension,
                         fvm_interlace_t               interlace,
                         int                           n_parent_lists,
-                        const fvm_lnum_t              parent_num_shift[],
+                        const cs_lnum_t               parent_num_shift[],
                         fvm_datatype_t                datatype,
                         int                           time_step,
                         double                        time_value,

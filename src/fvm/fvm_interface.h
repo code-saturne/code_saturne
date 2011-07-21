@@ -95,7 +95,7 @@ fvm_interface_rank(const fvm_interface_t  *this_interface);
  *   number of local and distant entities defining the interface
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_interface_size(const fvm_interface_t  *this_interface);
 
 /*----------------------------------------------------------------------------
@@ -112,7 +112,7 @@ fvm_interface_size(const fvm_interface_t  *this_interface);
  *   pointer to array of local entity numbers defining the interface
  *----------------------------------------------------------------------------*/
 
-const fvm_lnum_t *
+const cs_lnum_t *
 fvm_interface_get_local_num(const fvm_interface_t  *this_interface);
 
 /*----------------------------------------------------------------------------
@@ -129,7 +129,7 @@ fvm_interface_get_local_num(const fvm_interface_t  *this_interface);
  *   pointer to array of local entity numbers defining the interface
  *----------------------------------------------------------------------------*/
 
-const fvm_lnum_t *
+const cs_lnum_t *
 fvm_interface_get_distant_num(const fvm_interface_t  *this_interface);
 
 /*----------------------------------------------------------------------------
@@ -148,7 +148,7 @@ fvm_interface_get_distant_num(const fvm_interface_t  *this_interface);
  *   transform index size for the interface
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_interface_get_tr_index_size(const fvm_interface_t  *this_interface);
 
 /*----------------------------------------------------------------------------
@@ -166,7 +166,7 @@ fvm_interface_get_tr_index_size(const fvm_interface_t  *this_interface);
  *   pointer to transform index for the interface
  *----------------------------------------------------------------------------*/
 
-const fvm_lnum_t *
+const cs_lnum_t *
 fvm_interface_get_tr_index(const fvm_interface_t  *this_interface);
 
 /*----------------------------------------------------------------------------
@@ -209,14 +209,14 @@ fvm_interface_get_tr_index(const fvm_interface_t  *this_interface);
  *----------------------------------------------------------------------------*/
 
 fvm_interface_set_t *
-fvm_interface_set_create(fvm_lnum_t                n_ent,
-                         const fvm_lnum_t          parent_entity_number[],
-                         const fvm_gnum_t          global_number[],
+fvm_interface_set_create(cs_lnum_t                 n_ent,
+                         const cs_lnum_t           parent_entity_number[],
+                         const cs_gnum_t           global_number[],
                          const fvm_periodicity_t  *periodicity,
                          int                       n_periodic_lists,
                          const int                 periodicity_num[],
-                         const fvm_lnum_t          n_periodic_couples[],
-                         const fvm_gnum_t   *const periodic_couples[]);
+                         const cs_lnum_t           n_periodic_couples[],
+                         const cs_gnum_t    *const periodic_couples[]);
 
 /*----------------------------------------------------------------------------
  * Destruction of an interface list.
@@ -285,7 +285,7 @@ fvm_interface_set_periodicity(const fvm_interface_set_t  *this_interface_set);
 
 void
 fvm_interface_set_renumber(fvm_interface_set_t  *this_interface_set,
-                           const fvm_lnum_t      old_to_new[]);
+                           const cs_lnum_t       old_to_new[]);
 
 /*----------------------------------------------------------------------------
  * Dump printout of an interface list.

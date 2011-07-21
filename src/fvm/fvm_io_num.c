@@ -121,11 +121,11 @@ extern "C" {
 
 struct _fvm_io_num_t {
 
-  fvm_gnum_t         global_count;    /* Global number of entities */
-  fvm_lnum_t         global_num_size; /* Local size of global numbering array */
-  const fvm_gnum_t  *global_num;      /* Global (possibly shared) entity
+  cs_gnum_t          global_count;    /* Global number of entities */
+  cs_lnum_t          global_num_size; /* Local size of global numbering array */
+  const cs_gnum_t   *global_num;      /* Global (possibly shared) entity
                                          numbers (1 to n) */
-  fvm_gnum_t        *_global_num;     /* Global entity numbers if owner,
+  cs_gnum_t         *_global_num;     /* Global entity numbers if owner,
                                          NULL otherwise */
 
 };
@@ -159,11 +159,11 @@ const char  *fvm_io_num_sfc_type_name[] = {N_("Morton (in bounding box)"),
  *----------------------------------------------------------------------------*/
 
 inline static void
-_reorder_coords_lexicographic(int                dim,
-                              size_t             start_id,
-                              size_t             end_id,
-                              const fvm_coord_t  coords[],
-                              fvm_lnum_t         order[])
+_reorder_coords_lexicographic(int               dim,
+                              size_t            start_id,
+                              size_t            end_id,
+                              const cs_coord_t  coords[],
+                              cs_lnum_t         order[])
 {
   size_t  i;
   _Bool g_swap;
@@ -201,7 +201,7 @@ _reorder_coords_lexicographic(int                dim,
       }
 
       if (l_swap) {
-        fvm_lnum_t o_save = order[i-1];
+        cs_lnum_t o_save = order[i-1];
         order[i-1] = order[i];
         order[i] = o_save;
         g_swap = true;
@@ -234,9 +234,9 @@ _reorder_coords_lexicographic(int                dim,
 static void
 _check_morton_ordering(int                      dim,
                        size_t                   n_entities,
-                       const fvm_coord_t        coords[],
+                       const cs_coord_t         coords[],
                        const fvm_morton_code_t  m_code[],
-                       fvm_lnum_t               order[])
+                       cs_lnum_t                order[])
 {
   size_t  i_prev = 0, i = 1;
 
@@ -282,10 +282,10 @@ static void
 _fvm_io_num_copy_on_write(fvm_io_num_t  *const this_io_num)
 {
   if (this_io_num->_global_num == NULL) {
-    fvm_lnum_t i;
+    cs_lnum_t i;
     BFT_MALLOC(this_io_num->_global_num,
                this_io_num->global_num_size,
-               fvm_gnum_t);
+               cs_gnum_t);
     for (i = 0; i < this_io_num->global_num_size; i++)
       this_io_num->_global_num[i] = this_io_num->global_num[i];
     this_io_num->global_num = this_io_num->_global_num;
@@ -305,10 +305,10 @@ _fvm_io_num_copy_on_write(fvm_io_num_t  *const this_io_num)
 
 static void
 _fvm_io_num_try_to_set_shared(fvm_io_num_t      *const this_io_num,
-                              const fvm_gnum_t         parent_global_number[])
+                              const cs_gnum_t          parent_global_number[])
 {
   if (this_io_num->_global_num != NULL && parent_global_number != NULL) {
-    fvm_lnum_t i;
+    cs_lnum_t i;
     for (i = 0; i < this_io_num->global_num_size; i++)
       if (this_io_num->_global_num[i] != parent_global_number[i])
         break;
@@ -332,11 +332,11 @@ _fvm_io_num_try_to_set_shared(fvm_io_num_t      *const this_io_num,
  *   maximum global number associated with the I/O numbering
  *----------------------------------------------------------------------------*/
 
-static fvm_gnum_t
+static cs_gnum_t
 _fvm_io_num_global_max(const fvm_io_num_t  *const this_io_num,
                        const MPI_Comm             comm)
 {
-  fvm_gnum_t  local_max, global_max;
+  cs_gnum_t   local_max, global_max;
   size_t      n_ent;
 
   /* Get maximum global number value */
@@ -347,7 +347,7 @@ _fvm_io_num_global_max(const fvm_io_num_t  *const this_io_num,
   else
     local_max = 0;
 
-  MPI_Allreduce(&local_max, &global_max, 1, FVM_MPI_GNUM, MPI_MAX, comm);
+  MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
 
   return global_max;
 }
@@ -372,26 +372,26 @@ _fvm_io_num_global_max(const fvm_io_num_t  *const this_io_num,
 
 static void
 _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
-                         const fvm_lnum_t    n_sub_entities[],
+                         const cs_lnum_t     n_sub_entities[],
                          MPI_Comm            comm)
 {
 
-  fvm_gnum_t  n_ent_recv, num_prev, num_cur;
+  cs_gnum_t   n_ent_recv, num_prev, num_cur;
   size_t      i, j, slice_size;
-  fvm_lnum_t  k;
+  cs_lnum_t   k;
   int         rank;
 
   _Bool       may_be_shared = false;
 
-  fvm_gnum_t  *recv_global_num = NULL;
-  fvm_lnum_t  *recv_n_sub = NULL, *recv_order = NULL;
+  cs_gnum_t   *recv_global_num = NULL;
+  cs_lnum_t   *recv_n_sub = NULL, *recv_order = NULL;
   int         *send_count = NULL, *recv_count = NULL;
   int         *send_shift = NULL, *recv_shift = NULL;
   int         have_sub_loc = 0, have_sub_glob = 0;
 
   int         local_rank, size;
 
-  fvm_gnum_t  current_global_num = 0, global_num_shift = 0;
+  cs_gnum_t   current_global_num = 0, global_num_shift = 0;
 
   /* Initialization */
 
@@ -418,7 +418,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
   if (this_io_num->global_count % size > 0)
     slice_size += 1;
 
-  assert(sizeof(fvm_gnum_t) >= sizeof(fvm_lnum_t));
+  assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
 
   BFT_MALLOC(send_count, size, int);
   BFT_MALLOC(recv_count, size, int);
@@ -450,11 +450,11 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   n_ent_recv = recv_shift[size - 1] + recv_count[size - 1];
 
-  BFT_MALLOC(recv_global_num, n_ent_recv, fvm_gnum_t);
-  BFT_MALLOC(recv_order, n_ent_recv, fvm_lnum_t);
+  BFT_MALLOC(recv_global_num, n_ent_recv, cs_gnum_t);
+  BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
-  MPI_Alltoallv(this_io_num->_global_num, send_count, send_shift, FVM_MPI_GNUM,
-                recv_global_num, recv_count, recv_shift, FVM_MPI_GNUM, comm);
+  MPI_Alltoallv(this_io_num->_global_num, send_count, send_shift, CS_MPI_GNUM,
+                recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
 
   /* Do we have sub-entities ? */
 
@@ -465,10 +465,10 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   if (have_sub_glob > 0) {
 
-    fvm_lnum_t  *send_n_sub;
+    cs_lnum_t   *send_n_sub;
 
-    BFT_MALLOC(send_n_sub, this_io_num->global_num_size, fvm_lnum_t);
-    BFT_MALLOC(recv_n_sub, n_ent_recv, fvm_lnum_t);
+    BFT_MALLOC(send_n_sub, this_io_num->global_num_size, cs_lnum_t);
+    BFT_MALLOC(recv_n_sub, n_ent_recv, cs_lnum_t);
 
     if (n_sub_entities != NULL) {
       for (i = 0; i < (size_t)(this_io_num->global_num_size); i++)
@@ -479,8 +479,8 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
         send_n_sub[i] = 1;
     }
 
-    MPI_Alltoallv(send_n_sub, send_count, send_shift, FVM_MPI_LNUM,
-                  recv_n_sub, recv_count, recv_shift, FVM_MPI_LNUM, comm);
+    MPI_Alltoallv(send_n_sub, send_count, send_shift, CS_MPI_LNUM,
+                  recv_n_sub, recv_count, recv_shift, CS_MPI_LNUM, comm);
 
     BFT_FREE(send_n_sub);
   }
@@ -543,7 +543,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
      processes by the cumulative total number of entities handled by
      each process */
 
-  MPI_Scan(&current_global_num, &global_num_shift, 1, FVM_MPI_GNUM,
+  MPI_Scan(&current_global_num, &global_num_shift, 1, CS_MPI_GNUM,
            MPI_SUM, comm);
   global_num_shift -= current_global_num;
 
@@ -552,8 +552,8 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   /* Return global order to all processors */
 
-  MPI_Alltoallv(recv_global_num, recv_count, recv_shift, FVM_MPI_GNUM,
-                this_io_num->_global_num, send_count, send_shift, FVM_MPI_GNUM,
+  MPI_Alltoallv(recv_global_num, recv_count, recv_shift, CS_MPI_GNUM,
+                this_io_num->_global_num, send_count, send_shift, CS_MPI_GNUM,
                 comm);
 
   /* Free memory */
@@ -575,12 +575,12 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   if (n_sub_entities != NULL) {
 
-    fvm_gnum_t *_global_num;
+    cs_gnum_t *_global_num;
 
     for (i = 0, j = 0; i < (size_t)(this_io_num->global_num_size); i++)
       j += n_sub_entities[i];
 
-    BFT_MALLOC(_global_num, j, fvm_gnum_t);
+    BFT_MALLOC(_global_num, j, cs_gnum_t);
 
     for (i = 0, j = 0; i < (size_t)(this_io_num->global_num_size); i++) {
       for (k = 0; k < n_sub_entities[i]; j++, k++)
@@ -590,7 +590,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
     BFT_FREE(this_io_num->_global_num);
     this_io_num->_global_num = _global_num;
 
-    if (this_io_num->global_num_size != (fvm_lnum_t)j) {
+    if (this_io_num->global_num_size != (cs_lnum_t)j) {
       this_io_num->global_num_size = j;
       may_be_shared = false;
     }
@@ -630,21 +630,21 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 static void
 _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
                            size_t              stride,
-                           fvm_gnum_t          global_num[],
+                           cs_gnum_t           global_num[],
                            MPI_Comm            comm)
 {
-  fvm_gnum_t  n_ent_recv;
+  cs_gnum_t   n_ent_recv;
   size_t      i, j, slice_size;
   int         rank;
 
-  fvm_gnum_t  *block_global_num = NULL, *recv_global_num = NULL;
-  fvm_lnum_t  *recv_order = NULL;
+  cs_gnum_t   *block_global_num = NULL, *recv_global_num = NULL;
+  cs_lnum_t   *recv_order = NULL;
   int         *send_count = NULL, *recv_count = NULL;
   int         *send_shift = NULL, *recv_shift = NULL;
 
   int         local_rank, size;
 
-  fvm_gnum_t  current_global_num = 0, global_num_shift = 0;
+  cs_gnum_t   current_global_num = 0, global_num_shift = 0;
 
   /* Initialization */
 
@@ -655,12 +655,12 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
      (does not need to be exact, simply used to define blocks) */
 
   {
-    fvm_gnum_t  local_max = 0, global_max = 0;
+    cs_gnum_t   local_max = 0, global_max = 0;
     size_t      n_ent = this_io_num->global_num_size;
 
     if (n_ent > 0)
       local_max = global_num[(n_ent-1)*stride];
-    MPI_Allreduce(&local_max, &global_max, 1, FVM_MPI_GNUM, MPI_MAX, comm);
+    MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
     this_io_num->global_count = global_max;
   }
 
@@ -670,7 +670,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
   if (this_io_num->global_count % size > 0)
     slice_size += 1;
 
-  assert(sizeof(fvm_gnum_t) >= sizeof(fvm_lnum_t));
+  assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
 
   BFT_MALLOC(send_count, size, int);
   BFT_MALLOC(recv_count, size, int);
@@ -702,11 +702,11 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
 
   n_ent_recv = (recv_shift[size - 1] + recv_count[size - 1]) / stride;
 
-  BFT_MALLOC(recv_global_num, stride*n_ent_recv, fvm_gnum_t);
-  BFT_MALLOC(recv_order, n_ent_recv, fvm_lnum_t);
+  BFT_MALLOC(recv_global_num, stride*n_ent_recv, cs_gnum_t);
+  BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
-  MPI_Alltoallv(global_num, send_count, send_shift, FVM_MPI_GNUM,
-                recv_global_num, recv_count, recv_shift, FVM_MPI_GNUM, comm);
+  MPI_Alltoallv(global_num, send_count, send_shift, CS_MPI_GNUM,
+                recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
 
   if (n_ent_recv > 0) {
 
@@ -725,7 +725,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
        such that for each slice, the global number of an entity is equal to
        the cumulative number of sub-entities */
 
-    BFT_MALLOC(block_global_num, n_ent_recv, fvm_gnum_t);
+    BFT_MALLOC(block_global_num, n_ent_recv, cs_gnum_t);
 
     current_global_num = 1;
     prev_id = recv_order[0];
@@ -758,7 +758,7 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
      processes by the cumulative total number of entities handled by
      each process */
 
-  MPI_Scan(&current_global_num, &global_num_shift, 1, FVM_MPI_GNUM,
+  MPI_Scan(&current_global_num, &global_num_shift, 1, CS_MPI_GNUM,
            MPI_SUM, comm);
   global_num_shift -= current_global_num;
 
@@ -777,8 +777,8 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
     recv_shift[rank] = recv_shift[rank - 1] + recv_count[rank -1];
   }
 
-  MPI_Alltoallv(block_global_num, recv_count, recv_shift, FVM_MPI_GNUM,
-                this_io_num->_global_num, send_count, send_shift, FVM_MPI_GNUM,
+  MPI_Alltoallv(block_global_num, recv_count, recv_shift, CS_MPI_GNUM,
+                this_io_num->_global_num, send_count, send_shift, CS_MPI_GNUM,
                 comm);
 
   /* Free memory */
@@ -812,13 +812,13 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
 inline static _Bool
 _indexed_is_greater(size_t            i1,
                     size_t            i2,
-                    const fvm_lnum_t  index[],
-                    const fvm_gnum_t  number[])
+                    const cs_lnum_t   index[],
+                    const cs_gnum_t   number[])
 {
   int  i;
 
-  fvm_lnum_t  i1_s = index[i1], i1_e = index[i1+1], s1 = i1_e - i1_s;
-  fvm_lnum_t  i2_s = index[i2], i2_e = index[i2+1], s2 = i2_e - i2_s;
+  cs_lnum_t   i1_s = index[i1], i1_e = index[i1+1], s1 = i1_e - i1_s;
+  cs_lnum_t   i2_s = index[i2], i2_e = index[i2+1], s2 = i2_e - i2_s;
 
   if (s1 > s2) {
 
@@ -861,20 +861,20 @@ _indexed_is_greater(size_t            i1,
 
 static void
 _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
-                               fvm_lnum_t          index[],
-                               fvm_gnum_t          global_num[],
+                               cs_lnum_t           index[],
+                               cs_gnum_t           global_num[],
                                MPI_Comm            comm)
 {
   int  rank, local_rank, size;
   size_t  i, shift, slice_size;
 
-  fvm_gnum_t  n_ent_recv = 0, n_ent_send = 0;
-  fvm_gnum_t  current_global_num = 0, global_num_shift = 0;
+  cs_gnum_t   n_ent_recv = 0, n_ent_send = 0;
+  cs_gnum_t   current_global_num = 0, global_num_shift = 0;
   int  *send_count = NULL, *recv_count = NULL;
   int  *send_shift = NULL, *recv_shift = NULL;
-  fvm_lnum_t  *recv_order = NULL, *recv_sub_index = NULL;
-  fvm_lnum_t  *recv_sub_count = NULL, *send_sub_count = NULL;
-  fvm_gnum_t  *block_global_num = NULL, *recv_global_num = NULL;
+  cs_lnum_t   *recv_order = NULL, *recv_sub_index = NULL;
+  cs_lnum_t   *recv_sub_count = NULL, *send_sub_count = NULL;
+  cs_gnum_t   *block_global_num = NULL, *recv_global_num = NULL;
 
   /* Initialization */
 
@@ -885,12 +885,12 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
      (does not need to be exact, simply used to define blocks) */
 
   {
-    fvm_gnum_t  local_max = 0, global_max = 0;
+    cs_gnum_t   local_max = 0, global_max = 0;
     size_t      n_ent = this_io_num->global_num_size;
 
     if (n_ent > 0)
       local_max = global_num[index[n_ent-1]];
-    MPI_Allreduce(&local_max, &global_max, 1, FVM_MPI_GNUM, MPI_MAX, comm);
+    MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
     this_io_num->global_count = global_max;
   }
 
@@ -903,7 +903,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
   /* Build for each slice, a new ordered indexed list from the received
      elements */
 
-  assert(sizeof(fvm_gnum_t) >= sizeof(fvm_lnum_t));
+  assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
 
   BFT_MALLOC(send_count, size, int);
   BFT_MALLOC(recv_count, size, int);
@@ -935,10 +935,10 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
   n_ent_recv = recv_shift[size];
   n_ent_send = send_shift[size];
 
-  BFT_MALLOC(recv_sub_count, n_ent_recv, fvm_lnum_t);
-  BFT_MALLOC(send_sub_count, n_ent_send, fvm_lnum_t);
+  BFT_MALLOC(recv_sub_count, n_ent_recv, cs_lnum_t);
+  BFT_MALLOC(send_sub_count, n_ent_send, cs_lnum_t);
 
-  assert(n_ent_send == (fvm_gnum_t)this_io_num->global_num_size);
+  assert(n_ent_send == (cs_gnum_t)this_io_num->global_num_size);
 
   for (rank = 0; rank < size; rank++)
     send_count[rank] = 0;
@@ -950,10 +950,10 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
     send_count[rank] +=  1;
   }
 
-  MPI_Alltoallv(send_sub_count, send_count, send_shift, FVM_MPI_LNUM,
-                recv_sub_count, recv_count, recv_shift, FVM_MPI_LNUM, comm);
+  MPI_Alltoallv(send_sub_count, send_count, send_shift, CS_MPI_LNUM,
+                recv_sub_count, recv_count, recv_shift, CS_MPI_LNUM, comm);
 
-  BFT_MALLOC(recv_sub_index, n_ent_recv + 1, fvm_lnum_t);
+  BFT_MALLOC(recv_sub_index, n_ent_recv + 1, cs_lnum_t);
 
   recv_sub_index[0] = 0;
   for (i = 0; i < n_ent_recv; i++)
@@ -984,20 +984,20 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
     recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
   }
 
-  BFT_MALLOC(recv_global_num, recv_sub_index[n_ent_recv], fvm_gnum_t);
+  BFT_MALLOC(recv_global_num, recv_sub_index[n_ent_recv], cs_gnum_t);
 
   /* As data is sorted by increasing base global numbering, we do not
      need to build an extra array, but only to send the correct parts
      of the indexed list to the correct processors */
 
-  MPI_Alltoallv(global_num, send_count, send_shift, FVM_MPI_GNUM,
-                recv_global_num, recv_count, recv_shift, FVM_MPI_GNUM, comm);
+  MPI_Alltoallv(global_num, send_count, send_shift, CS_MPI_GNUM,
+                recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
 
   if (n_ent_recv > 0) { /* Order received elements of the indexed list */
 
     size_t prev_id, cur_id;
 
-    BFT_MALLOC(recv_order, n_ent_recv, fvm_lnum_t);
+    BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
     fvm_order_local_allocated_i(NULL,
                                 recv_global_num,
@@ -1012,7 +1012,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
        such that for each slice, the global number of an entity is equal to
        the cumulative number of elements */
 
-    BFT_MALLOC(block_global_num, n_ent_recv, fvm_gnum_t);
+    BFT_MALLOC(block_global_num, n_ent_recv, cs_gnum_t);
 
     current_global_num = 1;
     prev_id = recv_order[0];
@@ -1044,7 +1044,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
      processes by the cumulative total number of entities handled by
      each process */
 
-  MPI_Scan(&current_global_num, &global_num_shift, 1, FVM_MPI_GNUM,
+  MPI_Scan(&current_global_num, &global_num_shift, 1, CS_MPI_GNUM,
            MPI_SUM, comm);
   global_num_shift -= current_global_num;
 
@@ -1073,8 +1073,8 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
     recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
   }
 
-  MPI_Alltoallv(block_global_num, recv_count, recv_shift, FVM_MPI_GNUM,
-                this_io_num->_global_num, send_count, send_shift, FVM_MPI_GNUM,
+  MPI_Alltoallv(block_global_num, recv_count, recv_shift, CS_MPI_GNUM,
+                this_io_num->_global_num, send_count, send_shift, CS_MPI_GNUM,
                 comm);
 
   /* Free memory */
@@ -1104,27 +1104,27 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
  *   global number of sub-entities
  *----------------------------------------------------------------------------*/
 
-static fvm_gnum_t
+static cs_gnum_t
 _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
-                            const fvm_lnum_t     n_sub_entities[],
+                            const cs_lnum_t      n_sub_entities[],
                             MPI_Comm             comm)
 {
 
-  fvm_gnum_t  global_count, n_ent_recv, num_prev, num_cur;
+  cs_gnum_t   global_count, n_ent_recv, num_prev, num_cur;
   size_t      i, slice_size;
   int         rank;
 
-  fvm_gnum_t  *recv_global_num = NULL;
-  fvm_gnum_t  *send_global_num = NULL;
-  fvm_lnum_t  *recv_n_sub = NULL, *recv_order = NULL;
+  cs_gnum_t   *recv_global_num = NULL;
+  cs_gnum_t   *send_global_num = NULL;
+  cs_lnum_t   *recv_n_sub = NULL, *recv_order = NULL;
   int         *send_count = NULL, *recv_count = NULL;
   int         *send_shift = NULL, *recv_shift = NULL;
   int         have_sub_loc = 0, have_sub_glob = 0;
 
   int         size;
 
-  fvm_gnum_t  current_global_num = 0;
-  fvm_gnum_t  retval = 0;
+  cs_gnum_t   current_global_num = 0;
+  cs_gnum_t   retval = 0;
 
   /* Initialization */
 
@@ -1142,7 +1142,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
   if (global_count % size > 0)
     slice_size += 1;
 
-  assert(sizeof(fvm_gnum_t) >= sizeof(fvm_lnum_t));
+  assert(sizeof(cs_gnum_t) >= sizeof(cs_lnum_t));
 
   BFT_MALLOC(send_count, size, int);
   BFT_MALLOC(recv_count, size, int);
@@ -1174,22 +1174,22 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
   n_ent_recv = recv_shift[size - 1] + recv_count[size - 1];
 
-  BFT_MALLOC(recv_global_num, n_ent_recv, fvm_gnum_t);
-  BFT_MALLOC(recv_order, n_ent_recv, fvm_lnum_t);
+  BFT_MALLOC(recv_global_num, n_ent_recv, cs_gnum_t);
+  BFT_MALLOC(recv_order, n_ent_recv, cs_lnum_t);
 
   if (this_io_num->_global_num != NULL)
     send_global_num = this_io_num->_global_num;
   else {
     BFT_MALLOC(send_global_num,
                this_io_num->global_num_size,
-               fvm_gnum_t);
+               cs_gnum_t);
     memcpy(send_global_num,
            this_io_num->global_num,
-           this_io_num->global_num_size * sizeof(fvm_gnum_t));
+           this_io_num->global_num_size * sizeof(cs_gnum_t));
   }
 
-  MPI_Alltoallv(send_global_num, send_count, send_shift, FVM_MPI_GNUM,
-                recv_global_num, recv_count, recv_shift, FVM_MPI_GNUM, comm);
+  MPI_Alltoallv(send_global_num, send_count, send_shift, CS_MPI_GNUM,
+                recv_global_num, recv_count, recv_shift, CS_MPI_GNUM, comm);
 
   if (send_global_num != this_io_num->_global_num)
     BFT_FREE(send_global_num);
@@ -1203,10 +1203,10 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 
   if (have_sub_glob > 0) {
 
-    fvm_lnum_t  *send_n_sub;
+    cs_lnum_t   *send_n_sub;
 
-    BFT_MALLOC(send_n_sub, this_io_num->global_num_size, fvm_lnum_t);
-    BFT_MALLOC(recv_n_sub, n_ent_recv, fvm_lnum_t);
+    BFT_MALLOC(send_n_sub, this_io_num->global_num_size, cs_lnum_t);
+    BFT_MALLOC(recv_n_sub, n_ent_recv, cs_lnum_t);
 
     if (n_sub_entities != NULL) {
       for (i = 0; i < (size_t)(this_io_num->global_num_size); i++)
@@ -1217,8 +1217,8 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
         send_n_sub[i] = 1;
     }
 
-    MPI_Alltoallv(send_n_sub, send_count, send_shift, FVM_MPI_LNUM,
-                  recv_n_sub, recv_count, recv_shift, FVM_MPI_LNUM, comm);
+    MPI_Alltoallv(send_n_sub, send_count, send_shift, CS_MPI_LNUM,
+                  recv_n_sub, recv_count, recv_shift, CS_MPI_LNUM, comm);
 
     BFT_FREE(send_n_sub);
   }
@@ -1266,7 +1266,7 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
      numberings on different processes by the cumulative total
      number of entities handled by each process */
 
-  MPI_Allreduce(&current_global_num, &retval, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+  MPI_Allreduce(&current_global_num, &retval, 1, CS_MPI_GNUM, MPI_SUM, comm);
 
   return retval;
 }
@@ -1286,11 +1286,11 @@ _fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
  *----------------------------------------------------------------------------*/
 
 static void
-_adjust_extents(fvm_coord_t  extents[6],
-                int          box_to_cube)
+_adjust_extents(cs_coord_t  extents[6],
+                int         box_to_cube)
 {
   size_t  i;
-  fvm_coord_t max_width = 0.;
+  cs_coord_t max_width = 0.;
   const double epsilon = 1e-12;
 
   for (i = 0; i < 3; i++) {
@@ -1332,14 +1332,14 @@ _adjust_extents(fvm_coord_t  extents[6],
  *----------------------------------------------------------------------------*/
 
 static fvm_io_num_t *
-_create_from_coords_morton(const fvm_coord_t  coords[],
-                           int                dim,
-                           size_t             n_entities,
-                           int                box_to_cube)
+_create_from_coords_morton(const cs_coord_t  coords[],
+                           int               dim,
+                           size_t            n_entities,
+                           int               box_to_cube)
 {
   size_t i;
-  fvm_coord_t extents[6];
-  fvm_lnum_t *order = NULL;
+  cs_coord_t extents[6];
+  cs_lnum_t *order = NULL;
   fvm_morton_code_t *m_code = NULL;
 
 #if defined(HAVE_MPI)
@@ -1357,7 +1357,7 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
 
   this_io_num->global_num_size = n_entities;
 
-  BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
+  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   /* Build Morton encoding and order it */
@@ -1371,7 +1371,7 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
   _adjust_extents(extents, box_to_cube);
 
   BFT_MALLOC(m_code, n_entities, fvm_morton_code_t);
-  BFT_MALLOC(order, n_entities, fvm_lnum_t);
+  BFT_MALLOC(order, n_entities, cs_lnum_t);
 
   fvm_morton_encode_coords(dim, level, extents, n_entities, coords, m_code);
 
@@ -1382,21 +1382,21 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
   if (n_ranks > 1) {
 
     int rank_id;
-    fvm_lnum_t j, shift;
+    cs_lnum_t j, shift;
 
     size_t n_block_ents = 0;
-    fvm_gnum_t current_global_num = 0, global_num_shift = 0;
+    cs_gnum_t current_global_num = 0, global_num_shift = 0;
     double fit = 0.;
 
     int *c_rank = NULL;
     int *send_count = NULL, *send_shift = NULL;
     int *recv_count = NULL, *recv_shift = NULL;
-    fvm_coord_t *send_coords = NULL, *recv_coords = NULL;
-    fvm_lnum_t *weight = NULL;
-    fvm_gnum_t *block_global_num = NULL, *part_global_num = NULL;
+    cs_coord_t *send_coords = NULL, *recv_coords = NULL;
+    cs_lnum_t *weight = NULL;
+    cs_gnum_t *block_global_num = NULL, *part_global_num = NULL;
     fvm_morton_code_t *morton_index = NULL;
 
-    BFT_MALLOC(weight, n_entities, fvm_lnum_t);
+    BFT_MALLOC(weight, n_entities, cs_lnum_t);
     BFT_MALLOC(morton_index, n_ranks + 1, fvm_morton_code_t);
 
     for (i = 0; i < n_entities; i++)
@@ -1450,7 +1450,7 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
 
     /* Build send and receive buffers */
 
-    BFT_MALLOC(send_coords, send_shift[n_ranks], fvm_coord_t);
+    BFT_MALLOC(send_coords, send_shift[n_ranks], cs_coord_t);
 
     for (rank_id = 0; rank_id < n_ranks; rank_id++)
       send_count[rank_id] = 0;
@@ -1463,12 +1463,12 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
       send_count[rank_id] += dim;
     }
 
-    BFT_MALLOC(recv_coords, recv_shift[n_ranks], fvm_coord_t);
+    BFT_MALLOC(recv_coords, recv_shift[n_ranks], cs_coord_t);
 
     /* Exchange coords between processes */
 
-    MPI_Alltoallv(send_coords, send_count, send_shift, FVM_MPI_COORD,
-                  recv_coords, recv_count, recv_shift, FVM_MPI_COORD,
+    MPI_Alltoallv(send_coords, send_count, send_shift, CS_MPI_COORD,
+                  recv_coords, recv_count, recv_shift, CS_MPI_COORD,
                   comm);
 
     BFT_FREE(send_coords);
@@ -1478,7 +1478,7 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
     n_block_ents = recv_shift[n_ranks] / dim;
 
     BFT_MALLOC(m_code, n_block_ents, fvm_morton_code_t);
-    BFT_MALLOC(order, n_block_ents, fvm_lnum_t);
+    BFT_MALLOC(order, n_block_ents, cs_lnum_t);
 
     fvm_morton_encode_coords(dim,
                              level,
@@ -1504,7 +1504,7 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
 
     BFT_FREE(m_code);
     BFT_FREE(recv_coords);
-    BFT_MALLOC(block_global_num, n_block_ents, fvm_gnum_t);
+    BFT_MALLOC(block_global_num, n_block_ents, cs_gnum_t);
 
     for (i = 0; i < n_block_ents; i++)
       block_global_num[order[i]] = i+1;
@@ -1519,7 +1519,7 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
        processes by the cumulative total number of entities handled by
        each process */
 
-    MPI_Scan(&current_global_num, &global_num_shift, 1, FVM_MPI_GNUM,
+    MPI_Scan(&current_global_num, &global_num_shift, 1, CS_MPI_GNUM,
              MPI_SUM, comm);
     global_num_shift -= current_global_num;
 
@@ -1537,10 +1537,10 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
 
     send_shift[n_ranks] /= dim;
 
-    BFT_MALLOC(part_global_num, send_shift[n_ranks], fvm_gnum_t);
+    BFT_MALLOC(part_global_num, send_shift[n_ranks], cs_gnum_t);
 
-    MPI_Alltoallv(block_global_num, recv_count, recv_shift, FVM_MPI_GNUM,
-                  part_global_num, send_count, send_shift, FVM_MPI_GNUM,
+    MPI_Alltoallv(block_global_num, recv_count, recv_shift, CS_MPI_GNUM,
+                  part_global_num, send_count, send_shift, CS_MPI_GNUM,
                   comm);
 
     for (rank_id = 0; rank_id < n_ranks; rank_id++)
@@ -1610,14 +1610,14 @@ _create_from_coords_morton(const fvm_coord_t  coords[],
  *----------------------------------------------------------------------------*/
 
 static fvm_io_num_t *
-_create_from_coords_hilbert(const fvm_coord_t  coords[],
-                            int                dim,
-                            size_t             n_entities,
-                            int                box_to_cube)
+_create_from_coords_hilbert(const cs_coord_t  coords[],
+                            int               dim,
+                            size_t            n_entities,
+                            int               box_to_cube)
 {
   size_t i;
-  fvm_coord_t extents[6];
-  fvm_lnum_t *order = NULL;
+  cs_coord_t extents[6];
+  cs_lnum_t *order = NULL;
 
 #if defined(HAVE_MPI)
   MPI_Comm comm = fvm_parall_get_mpi_comm();
@@ -1633,7 +1633,7 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
 
   this_io_num->global_num_size = n_entities;
 
-  BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
+  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   /* Build Hilbert encoding and order it */
@@ -1646,25 +1646,25 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
 
   _adjust_extents(extents, box_to_cube);
 
-  BFT_MALLOC(order, n_entities, fvm_lnum_t);
+  BFT_MALLOC(order, n_entities, cs_lnum_t);
 
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1) {
 
     int rank_id;
-    fvm_lnum_t j, shift;
+    cs_lnum_t j, shift;
 
     size_t n_block_ents = 0;
-    fvm_gnum_t current_global_num = 0, global_num_shift = 0;
+    cs_gnum_t current_global_num = 0, global_num_shift = 0;
     double fit = 0.;
 
     int *c_rank = NULL;
     int *send_count = NULL, *send_shift = NULL;
     int *recv_count = NULL, *recv_shift = NULL;
-    fvm_coord_t *send_coords = NULL, *recv_coords = NULL;
-    fvm_lnum_t *weight = NULL;
-    fvm_gnum_t *block_global_num = NULL, *part_global_num = NULL;
+    cs_coord_t *send_coords = NULL, *recv_coords = NULL;
+    cs_lnum_t *weight = NULL;
+    cs_gnum_t *block_global_num = NULL, *part_global_num = NULL;
     fvm_hilbert_code_t *h_code = NULL;
     fvm_hilbert_code_t *hilbert_index = NULL;
 
@@ -1674,7 +1674,7 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
 
     fvm_hilbert_local_order(n_entities, h_code, order);
 
-    BFT_MALLOC(weight, n_entities, fvm_lnum_t);
+    BFT_MALLOC(weight, n_entities, cs_lnum_t);
     BFT_MALLOC(hilbert_index, (n_ranks + 1)*3, fvm_hilbert_code_t);
 
     for (i = 0; i < n_entities; i++)
@@ -1727,7 +1727,7 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
 
     /* Build send and receive buffers */
 
-    BFT_MALLOC(send_coords, send_shift[n_ranks], fvm_coord_t);
+    BFT_MALLOC(send_coords, send_shift[n_ranks], cs_coord_t);
 
     for (rank_id = 0; rank_id < n_ranks; rank_id++)
       send_count[rank_id] = 0;
@@ -1740,12 +1740,12 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
       send_count[rank_id] += dim;
     }
 
-    BFT_MALLOC(recv_coords, recv_shift[n_ranks], fvm_coord_t);
+    BFT_MALLOC(recv_coords, recv_shift[n_ranks], cs_coord_t);
 
     /* Exchange coords between processes */
 
-    MPI_Alltoallv(send_coords, send_count, send_shift, FVM_MPI_COORD,
-                  recv_coords, recv_count, recv_shift, FVM_MPI_COORD,
+    MPI_Alltoallv(send_coords, send_count, send_shift, CS_MPI_COORD,
+                  recv_coords, recv_count, recv_shift, CS_MPI_COORD,
                   comm);
 
     BFT_FREE(send_coords);
@@ -1754,7 +1754,7 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
 
     n_block_ents = recv_shift[n_ranks] / dim;
 
-    BFT_MALLOC(order, n_block_ents, fvm_lnum_t);
+    BFT_MALLOC(order, n_block_ents, cs_lnum_t);
 
     fvm_hilbert_local_order_coords(dim,
                                    extents,
@@ -1770,7 +1770,7 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
        the cumulative number of sub-entities */
 
     BFT_FREE(recv_coords);
-    BFT_MALLOC(block_global_num, n_block_ents, fvm_gnum_t);
+    BFT_MALLOC(block_global_num, n_block_ents, cs_gnum_t);
 
     for (i = 0; i < n_block_ents; i++)
       block_global_num[order[i]] = i+1;
@@ -1785,7 +1785,7 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
        processes by the cumulative total number of entities handled by
        each process */
 
-    MPI_Scan(&current_global_num, &global_num_shift, 1, FVM_MPI_GNUM,
+    MPI_Scan(&current_global_num, &global_num_shift, 1, CS_MPI_GNUM,
              MPI_SUM, comm);
     global_num_shift -= current_global_num;
 
@@ -1803,10 +1803,10 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
 
     send_shift[n_ranks] /= dim;
 
-    BFT_MALLOC(part_global_num, send_shift[n_ranks], fvm_gnum_t);
+    BFT_MALLOC(part_global_num, send_shift[n_ranks], cs_gnum_t);
 
-    MPI_Alltoallv(block_global_num, recv_count, recv_shift, FVM_MPI_GNUM,
-                  part_global_num, send_count, send_shift, FVM_MPI_GNUM,
+    MPI_Alltoallv(block_global_num, recv_count, recv_shift, CS_MPI_GNUM,
+                  part_global_num, send_count, send_shift, CS_MPI_GNUM,
                   comm);
 
     for (rank_id = 0; rank_id < n_ranks; rank_id++)
@@ -1883,8 +1883,8 @@ _create_from_coords_hilbert(const fvm_coord_t  coords[],
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create(const fvm_lnum_t  parent_entity_number[],
-                  const fvm_gnum_t  parent_global_number[],
+fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
+                  const cs_gnum_t   parent_global_number[],
                   size_t            n_entities,
                   int               share_parent_global)
 {
@@ -1907,7 +1907,7 @@ fvm_io_num_create(const fvm_lnum_t  parent_entity_number[],
 
   this_io_num->global_num_size = n_entities;
 
-  BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
+  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
   this_io_num->global_num = this_io_num->_global_num;
 
   if (n_entities > 0) {
@@ -1963,8 +1963,8 @@ fvm_io_num_create(const fvm_lnum_t  parent_entity_number[],
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_shared(const fvm_gnum_t  global_number[],
-                         fvm_gnum_t        global_count,
+fvm_io_num_create_shared(const cs_gnum_t   global_number[],
+                         cs_gnum_t         global_count,
                          size_t            n_entities)
 {
   fvm_io_num_t  *this_io_num;
@@ -1999,7 +1999,7 @@ fvm_io_num_create_shared(const fvm_gnum_t  global_number[],
 
 fvm_io_num_t *
 fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
-                           const fvm_lnum_t     n_sub_entities[])
+                           const cs_lnum_t      n_sub_entities[])
 {
   fvm_io_num_t  *this_io_num = NULL;
 
@@ -2012,7 +2012,7 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
 
 #if defined(HAVE_MPI)
   {
-    fvm_lnum_t  i, n_ent;
+    cs_lnum_t   i, n_ent;
 
     /* Create structure */
 
@@ -2020,7 +2020,7 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
 
     n_ent = base_io_num->global_num_size;
 
-    BFT_MALLOC(this_io_num->_global_num, n_ent, fvm_gnum_t);
+    BFT_MALLOC(this_io_num->_global_num, n_ent, cs_gnum_t);
     this_io_num->global_num = this_io_num->_global_num;
 
     this_io_num->global_num_size = n_ent;
@@ -2062,8 +2062,8 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_adj_s(const fvm_lnum_t  parent_entity_number[],
-                             const fvm_gnum_t  adjacency[],
+fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
+                             const cs_gnum_t   adjacency[],
                              size_t            n_entities,
                              size_t            stride)
 {
@@ -2081,7 +2081,7 @@ fvm_io_num_create_from_adj_s(const fvm_lnum_t  parent_entity_number[],
 
 #if defined(HAVE_MPI)
   {
-    fvm_gnum_t *_adjacency = NULL;
+    cs_gnum_t *_adjacency = NULL;
 
     /* Create structure */
 
@@ -2089,7 +2089,7 @@ fvm_io_num_create_from_adj_s(const fvm_lnum_t  parent_entity_number[],
 
     this_io_num->global_num_size = n_entities;
 
-    BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
+    BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
     this_io_num->global_num = this_io_num->_global_num;
 
     if (n_entities > 0) {
@@ -2098,7 +2098,7 @@ fvm_io_num_create_from_adj_s(const fvm_lnum_t  parent_entity_number[],
 
       /* Assign initial global numbers */
 
-      BFT_MALLOC(_adjacency, n_entities*stride, fvm_gnum_t);
+      BFT_MALLOC(_adjacency, n_entities*stride, cs_gnum_t);
 
       if (parent_entity_number != NULL) {
         for (i = 0 ; i < n_entities ; i++) {
@@ -2108,7 +2108,7 @@ fvm_io_num_create_from_adj_s(const fvm_lnum_t  parent_entity_number[],
         }
       }
       else
-        memcpy(_adjacency, adjacency, n_entities*stride*sizeof(fvm_gnum_t));
+        memcpy(_adjacency, adjacency, n_entities*stride*sizeof(cs_gnum_t));
 
     }
 
@@ -2146,10 +2146,10 @@ fvm_io_num_create_from_adj_s(const fvm_lnum_t  parent_entity_number[],
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
-                             const fvm_lnum_t  index[],
-                             const fvm_gnum_t  adjacency[],
-                             fvm_lnum_t        n_entities)
+fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
+                             const cs_lnum_t   index[],
+                             const cs_gnum_t   adjacency[],
+                             cs_lnum_t         n_entities)
 {
   fvm_io_num_t  *this_io_num = NULL;
 
@@ -2160,8 +2160,8 @@ fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
 
 #if defined(HAVE_MPI)
   {
-    fvm_lnum_t  *_index = NULL;
-    fvm_gnum_t *_adjacency = NULL;
+    cs_lnum_t   *_index = NULL;
+    cs_gnum_t *_adjacency = NULL;
 
 #if defined(DEBUG) && !defined(NDEBUG)
     const char no_adjacent_elt_msg[]
@@ -2178,16 +2178,16 @@ fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
 
     this_io_num->global_num_size = n_entities;
 
-    BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
+    BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
     this_io_num->global_num = this_io_num->_global_num;
 
     if (n_entities > 0) {
 
-      fvm_lnum_t  i, j, k, ent_id, _shift;
+      cs_lnum_t   i, j, k, ent_id, _shift;
 
       /* Assign initial global numbers */
 
-      BFT_MALLOC(_index, n_entities + 1, fvm_lnum_t);
+      BFT_MALLOC(_index, n_entities + 1, cs_lnum_t);
       _index[0] = 0;
 
       if (parent_entity_number != NULL) {
@@ -2210,7 +2210,7 @@ fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
         for (i = 0 ; i < n_entities ; i++)
           _index[i+1] += _index[i];
 
-        BFT_MALLOC(_adjacency, _index[n_entities], fvm_gnum_t);
+        BFT_MALLOC(_adjacency, _index[n_entities], cs_gnum_t);
 
         /* Define reduced index and adjacency */
 
@@ -2234,10 +2234,10 @@ fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
         }
 #endif
 
-        BFT_MALLOC(_adjacency, index[n_entities], fvm_gnum_t);
+        BFT_MALLOC(_adjacency, index[n_entities], cs_gnum_t);
 
-        memcpy(_index, index, (n_entities+1)*sizeof(fvm_lnum_t));
-        memcpy(_adjacency, adjacency, index[n_entities]*sizeof(fvm_gnum_t));
+        memcpy(_index, index, (n_entities+1)*sizeof(cs_lnum_t));
+        memcpy(_adjacency, adjacency, index[n_entities]*sizeof(cs_gnum_t));
 
       }
 
@@ -2280,10 +2280,10 @@ fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_sfc(const fvm_coord_t  coords[],
-                           int                dim,
-                           size_t             n_entities,
-                           fvm_io_num_sfc_t   sfc_type)
+fvm_io_num_create_from_sfc(const cs_coord_t  coords[],
+                           int               dim,
+                           size_t            n_entities,
+                           fvm_io_num_sfc_t  sfc_type)
 {
   fvm_io_num_t  *this_io_num = NULL;
 
@@ -2331,9 +2331,9 @@ fvm_io_num_create_from_scan(size_t  n_entities)
 #if defined(HAVE_MPI)
   {
     size_t  i;
-    fvm_gnum_t gnum_base = n_entities;
-    fvm_gnum_t gnum_sum = n_entities;
-    fvm_gnum_t gnum_shift = 0;
+    cs_gnum_t gnum_base = n_entities;
+    cs_gnum_t gnum_sum = n_entities;
+    cs_gnum_t gnum_shift = 0;
 
     MPI_Comm comm = fvm_parall_get_mpi_comm();
 
@@ -2341,12 +2341,12 @@ fvm_io_num_create_from_scan(size_t  n_entities)
 
     BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
 
-    BFT_MALLOC(this_io_num->_global_num, n_entities, fvm_gnum_t);
+    BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
     this_io_num->global_num = this_io_num->_global_num;
 
     this_io_num->global_num_size = n_entities;
 
-    MPI_Scan(&gnum_base, &gnum_shift, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+    MPI_Scan(&gnum_base, &gnum_shift, 1, CS_MPI_GNUM, MPI_SUM, comm);
 
     gnum_base = gnum_shift - gnum_base + 1;
 
@@ -2355,7 +2355,7 @@ fvm_io_num_create_from_scan(size_t  n_entities)
 
     gnum_base = n_entities;
 
-    MPI_Allreduce(&gnum_base, &gnum_sum, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+    MPI_Allreduce(&gnum_base, &gnum_sum, 1, CS_MPI_GNUM, MPI_SUM, comm);
 
     this_io_num->global_count = gnum_sum;
   }
@@ -2396,7 +2396,7 @@ fvm_io_num_destroy(fvm_io_num_t  * this_io_num)
  *  local number of associated entities
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_io_num_get_local_count(const fvm_io_num_t  *const this_io_num)
 {
   assert(this_io_num != NULL);
@@ -2415,7 +2415,7 @@ fvm_io_num_get_local_count(const fvm_io_num_t  *const this_io_num)
  *  global number of associated entities
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_io_num_get_global_count(const fvm_io_num_t  *const this_io_num)
 {
   assert(this_io_num != NULL);
@@ -2434,7 +2434,7 @@ fvm_io_num_get_global_count(const fvm_io_num_t  *const this_io_num)
  *  (1 to n numbering)
  *----------------------------------------------------------------------------*/
 
-const fvm_gnum_t *
+const cs_gnum_t *
 fvm_io_num_get_global_num(const fvm_io_num_t  *const this_io_num)
 {
   assert(this_io_num != NULL);
@@ -2456,11 +2456,11 @@ fvm_io_num_get_global_num(const fvm_io_num_t  *const this_io_num)
  *   global number of sub-entities
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
-                           const fvm_lnum_t     n_sub_entities[])
+                           const cs_lnum_t      n_sub_entities[])
 {
-  fvm_gnum_t  retval = 0;
+  cs_gnum_t   retval = 0;
 
   /* Initial checks */
 
@@ -2501,7 +2501,7 @@ fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
 void
 fvm_io_num_dump(const fvm_io_num_t  *const this_io_num)
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
   if (this_io_num == NULL) {
     bft_printf("  global numbering: nil\n");

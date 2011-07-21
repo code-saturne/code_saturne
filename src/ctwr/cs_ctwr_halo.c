@@ -127,8 +127,8 @@ _fill_vtx_lookup(vtx_lookup_table_t   *vtx_lookup,
   for (rank_id = 0; rank_id < n_interfaces; rank_id++) {
 
     const fvm_interface_t  *interface = fvm_interface_set_get(ifs, rank_id);
-    const fvm_lnum_t  interface_size = fvm_interface_size(interface);
-    const fvm_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+    const cs_lnum_t  interface_size = fvm_interface_size(interface);
+    const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
 
     for (i = 0; i < interface_size; i++) { /* Only parallel vertices */
 
@@ -167,7 +167,7 @@ _vtx_lookup_create(cs_int_t              n_vertices,
   vtx_lookup_table_t  *vtx_lookup = NULL;
 
   const fvm_interface_t  *interface = NULL;
-  const fvm_lnum_t  *local_num = NULL;
+  const cs_lnum_t  *local_num = NULL;
   const cs_int_t  n_interfaces = fvm_interface_set_size(ifs);
 
   BFT_MALLOC(vtx_lookup, 1, vtx_lookup_table_t);
@@ -211,19 +211,19 @@ _vtx_lookup_create(cs_int_t              n_vertices,
 
     if (n_interfaces > 2) {
 
-      fvm_lnum_t  *order = NULL;
-      fvm_gnum_t  *buffer = NULL;
+      cs_lnum_t  *order = NULL;
+      cs_gnum_t  *buffer = NULL;
       cs_int_t  *_rank_ids = NULL;
 
-      assert(sizeof(fvm_lnum_t) == sizeof(cs_int_t));
+      assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
 
-      BFT_MALLOC(order, n_interfaces - 1, fvm_lnum_t);
-      BFT_MALLOC(buffer, n_interfaces - 1, fvm_gnum_t);
+      BFT_MALLOC(order, n_interfaces - 1, cs_lnum_t);
+      BFT_MALLOC(buffer, n_interfaces - 1, cs_gnum_t);
       BFT_MALLOC(_rank_ids, n_interfaces , cs_int_t);
 
       _rank_ids[0] = vtx_lookup->rank_ids[0];
       for (i = 1; i < n_interfaces; i++) {
-        buffer[i-1] = (fvm_gnum_t)vtx_lookup->if_ranks[i];
+        buffer[i-1] = (cs_gnum_t)vtx_lookup->if_ranks[i];
         _rank_ids[i] = vtx_lookup->rank_ids[i];
       }
 
@@ -553,8 +553,8 @@ _get_vertex_tag(cs_int_t                    n_vertices,
   for (rank_id = 0; rank_id < ifs_size; rank_id++) {
 
     const fvm_interface_t  *interface = fvm_interface_set_get(interface_set, rank_id);
-    const fvm_lnum_t  *local_num = fvm_interface_get_local_num(interface);
-    const fvm_lnum_t  if_size = fvm_interface_size(interface);
+    const cs_lnum_t  *local_num = fvm_interface_get_local_num(interface);
+    const cs_lnum_t  if_size = fvm_interface_size(interface);
 
     for (j = 0; j < if_size; j++)
       vertex_tag[local_num[j]-1] = 1;
@@ -974,11 +974,11 @@ _create_gvtx_faces_connect(cs_ctwr_zone_t            *ct,
 {
   cs_int_t   id, nb, index, index_g;
 
-  cs_int_t     *vtx_tag         = NULL;
-  fvm_lnum_t   *_g_vtx_faces_idx = NULL;
-  fvm_lnum_t   *_g_vtx_faces_lst = NULL;
-  cs_int_t     *_vtx_faces_idx  = NULL;
-  cs_int_t     *_vtx_faces_lst  = NULL;
+  cs_int_t    *vtx_tag         = NULL;
+  cs_lnum_t   *_g_vtx_faces_idx = NULL;
+  cs_lnum_t   *_g_vtx_faces_lst = NULL;
+  cs_int_t    *_vtx_faces_idx  = NULL;
+  cs_int_t    *_vtx_faces_lst  = NULL;
 
 
   const cs_int_t  n_vtx
@@ -1108,8 +1108,8 @@ _create_in_faces_vtx_connect( cs_ctwr_zone_t              *ct            ,
     if( halo->c_domain_rank[ rank_id ] != local_rank ) {
       const fvm_interface_t *interface = fvm_interface_set_get( interface_set ,
                                                                rank_id      );
-      const fvm_lnum_t  *local_num     = fvm_interface_get_local_num( interface );
-      const fvm_lnum_t  if_size        = fvm_interface_size( interface );
+      const cs_lnum_t  *local_num     = fvm_interface_get_local_num( interface );
+      const cs_lnum_t  if_size        = fvm_interface_size( interface );
 
       for (j = 0; j < if_size; j++)
         vertex_tag[ local_num[ j ] - 1 ] = 0;
@@ -1148,9 +1148,9 @@ _create_in_faces_vtx_connect( cs_ctwr_zone_t              *ct            ,
     if( halo->c_domain_rank[ rank_id ] != local_rank ) {
       const fvm_interface_t *interface = fvm_interface_set_get( interface_set ,
                                                                rank_id      );
-      const fvm_lnum_t  *local_num     = fvm_interface_get_local_num( interface );
-      const fvm_lnum_t  *distant_num   = fvm_interface_get_distant_num( interface );
-      const fvm_lnum_t  if_size        = fvm_interface_size( interface );
+      const cs_lnum_t  *local_num     = fvm_interface_get_local_num( interface );
+      const cs_lnum_t  *distant_num   = fvm_interface_get_distant_num( interface );
+      const cs_lnum_t  if_size        = fvm_interface_size( interface );
 
       for (j = 0; j < if_size; j++)
         vertex_tag[ local_num[ j ] - 1 ] = distant_num [ j ] - 1;

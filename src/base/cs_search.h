@@ -71,8 +71,8 @@ BEGIN_C_DECLS
 
 int
 cs_search_g_binary(size_t             size,
-                   fvm_gnum_t         gnum,
-                   const fvm_gnum_t   lst[]);
+                   cs_gnum_t          gnum,
+                   const cs_gnum_t    lst[]);
 
 /*----------------------------------------------------------------------------
  * Get the position inside an array related to a value thanks to a binary
@@ -107,8 +107,8 @@ cs_search_binary(size_t           size,
 
 int
 cs_search_gindex_binary(size_t             size,
-                        fvm_gnum_t         gnum,
-                        const fvm_gnum_t   index[]);
+                        cs_gnum_t          gnum,
+                        const cs_gnum_t    index[]);
 
 /*---------------------------------------------------------------------------*/
 

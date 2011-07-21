@@ -75,7 +75,7 @@ typedef enum {
 typedef struct {
 
   cs_join_state_t  state;      /* State of the vertices (perio/origin/...) */
-  fvm_gnum_t       gnum;       /* Global vertex number */
+  cs_gnum_t        gnum;       /* Global vertex number */
   double           tolerance;  /* Tolerance = radius of the sphere in which
                                   intersection and merge is possible. */
   double           coord[3];   /* Coordinates of the vertex */
@@ -88,10 +88,10 @@ typedef struct {
      in their global numbering */
 
   cs_int_t     n_edges;    /* Local number of edges */
-  fvm_gnum_t   n_g_edges;  /* Global number of edges */
+  cs_gnum_t    n_g_edges;  /* Global number of edges */
   cs_int_t    *def;        /* Definition of each edge by a couple of vertex
                               numbers */
-  fvm_gnum_t  *gnum;       /* Global numbering of edges */
+  cs_gnum_t   *gnum;       /* Global numbering of edges */
 
   /*
     Edge definition through the relation between vertices :
@@ -120,15 +120,15 @@ typedef struct {
   /* Face connectivity */
 
   cs_int_t     n_faces;
-  fvm_gnum_t   n_g_faces;
-  fvm_gnum_t  *face_gnum;
+  cs_gnum_t    n_g_faces;
+  cs_gnum_t   *face_gnum;
   cs_int_t    *face_vtx_idx;
   cs_int_t    *face_vtx_lst;
 
   /* Vertex data */
 
   cs_int_t           n_vertices;
-  fvm_gnum_t         n_g_vertices;
+  cs_gnum_t          n_g_vertices;
   cs_join_vertex_t  *vertices;
 
 } cs_join_mesh_t;
@@ -217,8 +217,8 @@ cs_join_mesh_create(const char  *name);
 cs_join_mesh_t *
 cs_join_mesh_create_from_glob_sel(const char            *mesh_name,
                                   cs_int_t               n_elts,
-                                  const fvm_gnum_t       glob_sel[],
-                                  const fvm_gnum_t       gnum_rank_index[],
+                                  const cs_gnum_t        glob_sel[],
+                                  const cs_gnum_t        gnum_rank_index[],
                                   const cs_join_mesh_t  *local_mesh);
 
 /*----------------------------------------------------------------------------
@@ -273,7 +273,7 @@ cs_join_mesh_create_from_select(const char              *name,
                                 const cs_int_t           i_f2v_lst[],
                                 const cs_int_t           n_vertices,
                                 const cs_real_t          vtx_coord[],
-                                const fvm_gnum_t         vtx_gnum[]);
+                                const cs_gnum_t          vtx_gnum[]);
 
 /*----------------------------------------------------------------------------
  * Destroy a cs_join_mesh_t structure.

@@ -69,10 +69,10 @@ typedef struct _fvm_writer_section_t {
 
   const fvm_nodal_section_t  *section;  /* Corresponding section in mesh */
 
-  fvm_gnum_t  extra_vertex_base;        /* Start global number of added
+  cs_gnum_t   extra_vertex_base;        /* Start global number of added
                                            vertices (for tesselation) */
 
-  fvm_lnum_t  num_shift;                /* Element number shift when no
+  cs_lnum_t   num_shift;                /* Element number shift when no
                                            parent lists are used */
   fvm_element_t  type;                  /* Corresponding element type (may
                                            differ from  section->type when
@@ -276,7 +276,7 @@ fvm_writer_field_helper_step_e(fvm_writer_field_helper_t   *helper,
                                int                          src_dim_shift,
                                fvm_interlace_t              src_interlace,
                                int                          n_parent_lists,
-                               const fvm_lnum_t             parent_num_shift[],
+                               const cs_lnum_t              parent_num_shift[],
                                fvm_datatype_t               datatype,
                                const void            *const field_values[],
                                void                        *output_buffer,
@@ -318,7 +318,7 @@ fvm_writer_field_helper_step_n(fvm_writer_field_helper_t   *helper,
                                int                          src_dim_shift,
                                fvm_interlace_t              src_interlace,
                                int                          n_parent_lists,
-                               const fvm_lnum_t             parent_num_shift[],
+                               const cs_lnum_t              parent_num_shift[],
                                fvm_datatype_t               datatype,
                                const void            *const field_values[],
                                void                        *output_buffer,

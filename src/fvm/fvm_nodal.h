@@ -144,7 +144,7 @@ fvm_nodal_reduce(fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_change_parent_num(fvm_nodal_t        *this_nodal,
-                            const fvm_lnum_t    new_parent_num[],
+                            const cs_lnum_t     new_parent_num[],
                             int                 entity_dim);
 
 /*----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ fvm_nodal_remove_parent_num(fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_init_io_num(fvm_nodal_t        *this_nodal,
-                      const fvm_gnum_t    parent_global_numbers[],
+                      const cs_gnum_t     parent_global_numbers[],
                       int                 entity_dim);
 
 /*----------------------------------------------------------------------------
@@ -204,8 +204,8 @@ fvm_nodal_init_io_num(fvm_nodal_t        *this_nodal,
 
 void
 fvm_nodal_define_vertex_list(fvm_nodal_t  *this_nodal,
-                             fvm_lnum_t    n_vertices,
-                             fvm_lnum_t    parent_vertex_num[]);
+                             cs_lnum_t     n_vertices,
+                             cs_lnum_t     parent_vertex_num[]);
 
 /*----------------------------------------------------------------------------
  * Assign shared vertex coordinates to an extracted nodal mesh,
@@ -221,8 +221,8 @@ fvm_nodal_define_vertex_list(fvm_nodal_t  *this_nodal,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_set_shared_vertices(fvm_nodal_t        *this_nodal,
-                              const fvm_coord_t   vertex_coords[]);
+fvm_nodal_set_shared_vertices(fvm_nodal_t       *this_nodal,
+                              const cs_coord_t   vertex_coords[]);
 
 /*----------------------------------------------------------------------------
  * Assign private vertex coordinates to a nodal mesh,
@@ -244,9 +244,9 @@ fvm_nodal_set_shared_vertices(fvm_nodal_t        *this_nodal,
  *   argument if vertices were renumbered).
  *----------------------------------------------------------------------------*/
 
-fvm_coord_t *
+cs_coord_t *
 fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
-                            fvm_coord_t   vertex_coords[]);
+                            cs_coord_t    vertex_coords[]);
 
 /*----------------------------------------------------------------------------
  * Make vertex coordinates of a nodal mesh private.
@@ -333,7 +333,7 @@ fvm_nodal_get_max_entity_dim(const fvm_nodal_t  *this_nodal);
  *  number of entities of given dimension in mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_nodal_get_n_entities(const fvm_nodal_t  *this_nodal,
                          int                 entity_dim);
 
@@ -347,7 +347,7 @@ fvm_nodal_get_n_entities(const fvm_nodal_t  *this_nodal,
  *   global number of vertices associated with nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_nodal_get_n_g_vertices(const fvm_nodal_t  *this_nodal);
 
 /*----------------------------------------------------------------------------
@@ -361,7 +361,7 @@ fvm_nodal_get_n_g_vertices(const fvm_nodal_t  *this_nodal);
  *   global number of elements of the given type associated with nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_nodal_get_n_g_elements(const fvm_nodal_t  *this_nodal,
                            fvm_element_t       element_type);
 
@@ -376,7 +376,7 @@ fvm_nodal_get_n_g_elements(const fvm_nodal_t  *this_nodal,
  *   local number of elements of the given type associated with nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_nodal_get_n_elements(const fvm_nodal_t  *this_nodal,
                          fvm_element_t       element_type);
 
@@ -398,7 +398,7 @@ fvm_nodal_get_n_elements(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
                          int                 entity_dim,
-                         fvm_lnum_t          parent_num[]);
+                         cs_lnum_t           parent_num[]);
 
 /*----------------------------------------------------------------------------
  * Compute tesselation a a nodal mesh's sections of a given type, and add the
@@ -420,7 +420,7 @@ fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_tesselate(fvm_nodal_t    *this_nodal,
                     fvm_element_t   type,
-                    fvm_lnum_t     *error_count);
+                    cs_lnum_t      *error_count);
 
 /*----------------------------------------------------------------------------
  * Build a nodal representation structure based on extraction of a

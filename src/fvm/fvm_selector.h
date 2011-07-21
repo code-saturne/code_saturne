@@ -78,7 +78,7 @@ typedef struct _fvm_selector_t  fvm_selector_t;
 
 fvm_selector_t *
 fvm_selector_create(int                           dim,
-                    fvm_lnum_t                    n_elements,
+                    cs_lnum_t                     n_elements,
                     const fvm_group_class_set_t  *group_class_set,
                     const int                     group_class_id[],
                     int                           group_class_id_base,
@@ -118,8 +118,8 @@ fvm_selector_destroy(fvm_selector_t  *this_selector);
 int
 fvm_selector_get_list(fvm_selector_t  *this_selector,
                       const char      *str,
-                      fvm_lnum_t      *n_selected_elements,
-                      fvm_lnum_t      *selected_elements);
+                      cs_lnum_t       *n_selected_elements,
+                      cs_lnum_t       *selected_elements);
 
 /*----------------------------------------------------------------------------
  * Define the list of group classes verifying the criteria described

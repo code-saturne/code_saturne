@@ -95,8 +95,8 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
   /* Example: modify vertex coordinates */
   /*------------------------------------*/
 
-  fvm_lnum_t   n_selected_faces = 0;
-  fvm_lnum_t  *selected_faces = NULL; 
+  cs_lnum_t   n_selected_faces = 0;
+  cs_lnum_t  *selected_faces = NULL; 
 
   cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
 

@@ -371,16 +371,16 @@ cs_halo_create(fvm_interface_set_t  *ifs)
                               NULL,
                               halo->n_c_domains-1) == 0) {
 
-    fvm_lnum_t  *order = NULL;
-    fvm_gnum_t  *buffer = NULL;
+    cs_lnum_t  *order = NULL;
+    cs_gnum_t  *buffer = NULL;
 
-    assert(sizeof(fvm_lnum_t) == sizeof(cs_int_t));
+    assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
 
-    BFT_MALLOC(order, halo->n_c_domains - 1, fvm_lnum_t);
-    BFT_MALLOC(buffer, halo->n_c_domains - 1, fvm_gnum_t);
+    BFT_MALLOC(order, halo->n_c_domains - 1, cs_lnum_t);
+    BFT_MALLOC(buffer, halo->n_c_domains - 1, cs_gnum_t);
 
     for (i = 1; i < halo->n_c_domains; i++)
-      buffer[i-1] = (fvm_gnum_t)halo->c_domain_rank[i];
+      buffer[i-1] = (cs_gnum_t)halo->c_domain_rank[i];
 
     fvm_order_local_allocated(NULL,
                               buffer,
@@ -703,7 +703,7 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
                      size_t            size,
                      void             *val)
 {
-  fvm_lnum_t i, start, length;
+  cs_lnum_t i, start, length;
   size_t j;
 
   cs_int_t end_shift = 0;
@@ -836,7 +836,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
                  cs_halo_type_t    sync_mode,
                  cs_int_t          num[])
 {
-  fvm_lnum_t i, start, length;
+  cs_lnum_t i, start, length;
 
   cs_int_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
@@ -963,7 +963,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
                  cs_halo_type_t    sync_mode,
                  cs_real_t         var[])
 {
-  fvm_lnum_t i, start, length;
+  cs_lnum_t i, start, length;
 
   cs_int_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
@@ -1092,7 +1092,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
                          cs_real_t         var[],
                          int               stride)
 {
-  fvm_lnum_t i, j, start, length;
+  cs_lnum_t i, j, start, length;
 
   cs_int_t end_shift = 0;
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;

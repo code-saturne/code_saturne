@@ -83,13 +83,13 @@ extern "C" {
 
 void
 fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
-                             fvm_lnum_t      n_elements,
+                             cs_lnum_t       n_elements,
                              fvm_element_t   type,
-                             fvm_lnum_t      face_index[],
-                             fvm_lnum_t      face_num[],
-                             fvm_lnum_t      vertex_index[],
-                             fvm_lnum_t      vertex_num[],
-                             fvm_lnum_t      parent_element_num[]);
+                             cs_lnum_t       face_index[],
+                             cs_lnum_t       face_num[],
+                             cs_lnum_t       vertex_index[],
+                             cs_lnum_t       vertex_num[],
+                             cs_lnum_t       parent_element_num[]);
 
 /*----------------------------------------------------------------------------
  * Append a new section to an existing fvm_nodal mesh, sharing the given
@@ -118,13 +118,13 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
 
 void
 fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
-                        fvm_lnum_t      n_elements,
+                        cs_lnum_t       n_elements,
                         fvm_element_t   type,
-                        fvm_lnum_t      face_index[],
-                        fvm_lnum_t      face_num[],
-                        fvm_lnum_t      vertex_index[],
-                        fvm_lnum_t      vertex_num[],
-                        fvm_lnum_t      parent_element_num[]);
+                        cs_lnum_t       face_index[],
+                        cs_lnum_t       face_num[],
+                        cs_lnum_t       vertex_index[],
+                        cs_lnum_t       vertex_num[],
+                        cs_lnum_t       parent_element_num[]);
 
 /*----------------------------------------------------------------------------*/
 

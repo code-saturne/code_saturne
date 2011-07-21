@@ -110,11 +110,11 @@ typedef struct _fvm_tesselation_t fvm_tesselation_t;
 
 fvm_tesselation_t *
 fvm_tesselation_create(fvm_element_t        element_type,
-                       fvm_lnum_t           n_elements,
-                       const fvm_lnum_t     face_index[],
-                       const fvm_lnum_t     face_num[],
-                       const fvm_lnum_t     vertex_index[],
-                       const fvm_lnum_t     vertex_num[],
+                       cs_lnum_t            n_elements,
+                       const cs_lnum_t      face_index[],
+                       const cs_lnum_t      face_num[],
+                       const cs_lnum_t      vertex_index[],
+                       const cs_lnum_t      vertex_num[],
                        const fvm_io_num_t  *global_element_num);
 
 /*----------------------------------------------------------------------------
@@ -145,9 +145,9 @@ fvm_tesselation_destroy(fvm_tesselation_t  * this_tesselation);
 void
 fvm_tesselation_init(fvm_tesselation_t  *this_tesselation,
                      int                 dim,
-                     const fvm_coord_t   vertex_coords[],
-                     const fvm_lnum_t    parent_vertex_num[],
-                     fvm_lnum_t         *error_count);
+                     const cs_coord_t    vertex_coords[],
+                     const cs_lnum_t     parent_vertex_num[],
+                     cs_lnum_t          *error_count);
 
 /*----------------------------------------------------------------------------
  * Reduction of a nodal mesh polygon splitting representation structure;
@@ -172,7 +172,7 @@ fvm_tesselation_reduce(fvm_tesselation_t  * this_tesselation);
  *   number of parent elements
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_n_elements(const fvm_tesselation_t  *this_tesselation);
 
 /*----------------------------------------------------------------------------
@@ -185,7 +185,7 @@ fvm_tesselation_n_elements(const fvm_tesselation_t  *this_tesselation);
  *   global number of added vertices associated with the tesselation
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_tesselation_n_g_vertices_add(const fvm_tesselation_t  *this_tesselation);
 
 /*----------------------------------------------------------------------------
@@ -198,7 +198,7 @@ fvm_tesselation_n_g_vertices_add(const fvm_tesselation_t  *this_tesselation);
  *   global number of added vertices associated with the tesselation
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_n_vertices_add(const fvm_tesselation_t  *this_tesselation);
 
 /*----------------------------------------------------------------------------
@@ -240,7 +240,7 @@ fvm_tesselation_sub_type(const fvm_tesselation_t  *this_tesselation,
  *   sub-types of the tesselation with the given index
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_n_sub_elements(const fvm_tesselation_t  *this_tesselation,
                                fvm_element_t             sub_type);
 
@@ -259,8 +259,8 @@ fvm_tesselation_n_sub_elements(const fvm_tesselation_t  *this_tesselation,
 void
 fvm_tesselation_get_global_size(const fvm_tesselation_t  *this_tesselation,
                                 fvm_element_t             sub_type,
-                                fvm_gnum_t               *n_sub_elements_glob,
-                                fvm_lnum_t               *n_sub_elements_max);
+                                cs_gnum_t                *n_sub_elements_glob,
+                                cs_lnum_t                *n_sub_elements_max);
 
 /*----------------------------------------------------------------------------
  * Return global numbering of added vertices associated with a tesselation.
@@ -290,7 +290,7 @@ fvm_tesselation_global_vertex_num(const fvm_tesselation_t  *this_tesselation);
 
 void
 fvm_tesselation_vertex_coords(const fvm_tesselation_t  *this_tesselation,
-                              fvm_coord_t               vertex_coords[]);
+                              cs_coord_t                vertex_coords[]);
 
 /*----------------------------------------------------------------------------
  * Return index of sub-elements associated with each element of a given
@@ -304,7 +304,7 @@ fvm_tesselation_vertex_coords(const fvm_tesselation_t  *this_tesselation,
  *   index of sub-elements associated with each element (0 to n-1 numbering)
  *----------------------------------------------------------------------------*/
 
-const fvm_lnum_t *
+const cs_lnum_t *
 fvm_tesselation_sub_elt_index(const fvm_tesselation_t  *this_tesselation,
                               fvm_element_t             sub_type);
 
@@ -337,14 +337,14 @@ fvm_tesselation_sub_elt_index(const fvm_tesselation_t  *this_tesselation,
  *   polyhedron index end corresponding to decoded range
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_range_index_g(const fvm_tesselation_t  *this_tesselation,
                               fvm_element_t             connect_type,
                               int                       stride,
-                              fvm_lnum_t                start_id,
-                              fvm_lnum_t                buffer_limit,
-                              fvm_gnum_t               *global_num_end,
-                              fvm_lnum_t                index[],
+                              cs_lnum_t                 start_id,
+                              cs_lnum_t                 buffer_limit,
+                              cs_gnum_t                *global_num_end,
+                              cs_lnum_t                 index[],
                               MPI_Comm                  comm);
 
 /*----------------------------------------------------------------------------
@@ -375,15 +375,15 @@ fvm_tesselation_range_index_g(const fvm_tesselation_t  *this_tesselation,
  *   polygon index corresponding to end of decoded range
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_decode_g(const fvm_tesselation_t  *this_tesselation,
                          fvm_element_t             connect_type,
-                         fvm_lnum_t                start_id,
-                         fvm_lnum_t                buffer_limit,
-                         fvm_gnum_t               *global_num_end,
+                         cs_lnum_t                 start_id,
+                         cs_lnum_t                 buffer_limit,
+                         cs_gnum_t                *global_num_end,
                          const fvm_io_num_t       *global_vertex_num,
-                         fvm_gnum_t                extra_vertex_base,
-                         fvm_gnum_t                vertex_num[],
+                         cs_gnum_t                 extra_vertex_base,
+                         cs_gnum_t                 vertex_num[],
                          MPI_Comm                  comm);
 
 #endif /* defined(HAVE_MPI) */
@@ -410,13 +410,13 @@ fvm_tesselation_decode_g(const fvm_tesselation_t  *this_tesselation,
  *   polygon index corresponding to end of decoded range
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_tesselation_decode(const fvm_tesselation_t  *this_tesselation,
                        fvm_element_t             connect_type,
-                       fvm_lnum_t                start_id,
-                       fvm_lnum_t                buffer_limit,
-                       fvm_lnum_t                extra_vertex_base,
-                       fvm_lnum_t                vertex_num[]);
+                       cs_lnum_t                 start_id,
+                       cs_lnum_t                 buffer_limit,
+                       cs_lnum_t                 extra_vertex_base,
+                       cs_lnum_t                 vertex_num[]);
 
 /*----------------------------------------------------------------------------
  * Distribute "per element" data from the base elements to their tesselation.
@@ -439,8 +439,8 @@ fvm_tesselation_decode(const fvm_tesselation_t  *this_tesselation,
 void
 fvm_tesselation_distribute(const fvm_tesselation_t  *this_tesselation,
                            fvm_element_t             connect_type,
-                           fvm_lnum_t                start_id,
-                           fvm_lnum_t                end_id,
+                           cs_lnum_t                 start_id,
+                           cs_lnum_t                 end_id,
                            size_t                    size,
                            void                     *data);
 
@@ -478,14 +478,14 @@ fvm_tesselation_vertex_values(const fvm_tesselation_t  *this_tesselation,
                               int                       src_dim,
                               int                       src_dim_shift,
                               int                       dest_dim,
-                              fvm_lnum_t                start_id,
-                              fvm_lnum_t                end_id,
+                              cs_lnum_t                 start_id,
+                              cs_lnum_t                 end_id,
                               fvm_interlace_t           src_interlace,
                               fvm_datatype_t            src_datatype,
                               fvm_datatype_t            dest_datatype,
                               int                       n_parent_lists,
-                              const fvm_lnum_t          parent_num_shift[],
-                              const fvm_lnum_t          parent_num[],
+                              const cs_lnum_t           parent_num_shift[],
+                              const cs_lnum_t           parent_num[],
                               const void         *const src_data[],
                               void               *const dest_data);
 

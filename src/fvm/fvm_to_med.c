@@ -270,7 +270,7 @@ _convert_float_fvm_to_med(const void      *fvm_data,
 }
 
 /*----------------------------------------------------------------------------
- * Convert FVM datatype fvm_gnum_t into MED datatype med_int.
+ * Convert FVM datatype cs_gnum_t into MED datatype med_int.
  *
  * parameters:
  *   fvm_data    <-- FVM data array to convert.
@@ -281,15 +281,15 @@ _convert_float_fvm_to_med(const void      *fvm_data,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_fvm_gnum_to_med_int(fvm_gnum_t        *fvm_data,
+_convert_cs_gnum_to_med_int(cs_gnum_t         *fvm_data,
                              med_int           *med_data,
-                             const fvm_gnum_t   n_vals)
+                             const cs_gnum_t    n_vals)
 {
-  fvm_gnum_t i_val;
+  cs_gnum_t i_val;
 
   for (i_val = 0; i_val < n_vals; i_val++) {
 
-    if (sizeof(med_int) > sizeof(fvm_gnum_t))
+    if (sizeof(med_int) > sizeof(cs_gnum_t))
       med_data[n_vals - 1 - i_val] = (med_int)fvm_data[n_vals - 1 -i_val];
     else
       med_data[i_val] = (med_int)fvm_data[i_val];
@@ -563,8 +563,8 @@ _add_med_mesh(fvm_to_med_writer_t  *writer,
 static void
 _count_extra_vertices(const fvm_to_med_writer_t  *this_writer,
                       const fvm_nodal_t          *mesh,
-                      fvm_gnum_t                 *n_extra_vertices_g,
-                      fvm_lnum_t                 *n_extra_vertices)
+                      cs_gnum_t                  *n_extra_vertices_g,
+                      cs_lnum_t                  *n_extra_vertices)
 {
   int  i;
 
@@ -615,16 +615,16 @@ _count_extra_vertices(const fvm_to_med_writer_t  *this_writer,
  *   array containing all extra vertex coordinates
  *----------------------------------------------------------------------------*/
 
-static fvm_coord_t *
+static cs_coord_t *
 _extra_vertex_coords(const fvm_to_med_writer_t  *this_writer,
                      const fvm_nodal_t          *mesh)
 {
   int  i;
-  fvm_lnum_t  n_extra_vertices_section;
+  cs_lnum_t   n_extra_vertices_section;
 
-  fvm_lnum_t  n_extra_vertices = 0;
+  cs_lnum_t   n_extra_vertices = 0;
   size_t  coord_shift = 0;
-  fvm_coord_t  *coords = NULL;
+  cs_coord_t  *coords = NULL;
 
   _count_extra_vertices(this_writer,
                         mesh,
@@ -635,7 +635,7 @@ _extra_vertex_coords(const fvm_to_med_writer_t  *this_writer,
 
     const int  export_dim = fvm_nodal_get_max_entity_dim(mesh);
 
-    BFT_MALLOC(coords, n_extra_vertices * 3, fvm_coord_t);
+    BFT_MALLOC(coords, n_extra_vertices * 3, cs_coord_t);
 
     for (i = 0 ; i < mesh->n_sections ; i++) {
 
@@ -836,8 +836,8 @@ static size_t
 _get_connect_section_size(const fvm_to_med_writer_t   *writer,
                           const fvm_writer_section_t  *export_sections)
 {
-  fvm_gnum_t n_g_sub_elements = 0;
-  fvm_gnum_t n_g_elements = 0;
+  cs_gnum_t n_g_sub_elements = 0;
+  cs_gnum_t n_g_elements = 0;
 
   size_t connect_section_size = 0;
 
@@ -856,13 +856,13 @@ _get_connect_section_size(const fvm_to_med_writer_t   *writer,
     }
     else { /* section->stride == 0 */
 
-      fvm_lnum_t  i, j, f_id;
+      cs_lnum_t   i, j, f_id;
 
       size_t l_connect_size = 0;
 
-      const fvm_lnum_t  *f_idx = section->face_index;
-      const fvm_lnum_t  *f_num = section->face_num;
-      const fvm_lnum_t  *v_idx = section->vertex_index;
+      const cs_lnum_t   *f_idx = section->face_index;
+      const cs_lnum_t   *f_num = section->face_num;
+      const cs_lnum_t   *v_idx = section->vertex_index;
 
       assert(   section->type == FVM_FACE_POLY
              || section->type == FVM_CELL_POLY);
@@ -1420,15 +1420,15 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
                         fvm_to_med_writer_t  *writer)
 {
   int  i_dim;
-  fvm_lnum_t   i_lnod;
+  cs_lnum_t    i_lnod;
   MPI_Datatype  mpi_datatype;
   fvm_datatype_t  fvm_datatype;
 
-  fvm_lnum_t  n_extra_vertices = 0;
-  fvm_gnum_t  n_g_extra_vertices = 0;
-  fvm_gnum_t  global_num_start = 0, global_num_end = 0;
+  cs_lnum_t   n_extra_vertices = 0;
+  cs_gnum_t   n_g_extra_vertices = 0;
+  cs_gnum_t   global_num_start = 0, global_num_end = 0;
 
-  fvm_coord_t  *extra_vertex_coords = NULL;
+  cs_coord_t  *extra_vertex_coords = NULL;
   med_float  *med_coords = NULL;
   med_float  *global_coords_buffer = NULL;
   fvm_gather_slice_t  *vertices_slice = NULL;
@@ -1437,12 +1437,12 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   const int          dim = mesh->dim;
   const int          rank = writer->rank;
   const MPI_Comm     comm = writer->comm;
-  const fvm_lnum_t   n_vertices = mesh->n_vertices;
-  const fvm_gnum_t   n_g_vertices =
+  const cs_lnum_t    n_vertices = mesh->n_vertices;
+  const cs_gnum_t    n_g_vertices =
     fvm_io_num_get_global_count(mesh->global_vertex_num);
 
-  const fvm_lnum_t    *parent_vertex_num = mesh->parent_vertex_num;
-  const fvm_coord_t   *vertex_coords = mesh->vertex_coords;
+  const cs_lnum_t     *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_coord_t   *vertex_coords = mesh->vertex_coords;
   const fvm_io_num_t  *global_vertex_num = mesh->global_vertex_num;
 
   med_err   retval = 0;
@@ -1461,14 +1461,14 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
 
   /* Define MPI and FVM datatype */
 
-  if (sizeof(fvm_coord_t) == sizeof(double))
+  if (sizeof(cs_coord_t) == sizeof(double))
     fvm_datatype = FVM_DOUBLE;
-  else if (sizeof(fvm_coord_t) == sizeof(float))
+  else if (sizeof(cs_coord_t) == sizeof(float))
     fvm_datatype = FVM_FLOAT;
   else
     bft_error(__FILE__, __LINE__, 0 ,
-              "Unexpected fvm_coord_t datatype size (%d).",
-              sizeof(fvm_coord_t));
+              "Unexpected cs_coord_t datatype size (%d).",
+              sizeof(cs_coord_t));
 
   if (sizeof(med_float) == sizeof(double))
     mpi_datatype = MPI_DOUBLE;
@@ -1504,7 +1504,7 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
 
   if (parent_vertex_num != NULL) {
 
-    fvm_lnum_t  idx = 0;
+    cs_lnum_t   idx = 0;
 
     for (i_lnod = 0; i_lnod < n_vertices; i_lnod++) {
       for (i_dim = 0; i_dim < dim; i_dim++)
@@ -1547,8 +1547,8 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
     /*-----------------------*/
 
     int section_id;
-    fvm_lnum_t extra_vertices_count = 0;
-    fvm_gnum_t extra_vertices_count_g = 0;
+    cs_lnum_t extra_vertices_count = 0;
+    cs_gnum_t extra_vertices_count_g = 0;
 
     for (section_id = 0 ; section_id < mesh->n_sections ; section_id++) {
 
@@ -1565,12 +1565,12 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
 
         const fvm_io_num_t *extra_vertex_num
           = fvm_tesselation_global_vertex_num(section->tesselation);
-        const fvm_gnum_t n_extra_vertices_section
+        const cs_gnum_t n_extra_vertices_section
           = fvm_tesselation_n_vertices_add(section->tesselation);
-        const fvm_gnum_t n_g_extra_vertices_section
+        const cs_gnum_t n_g_extra_vertices_section
           = fvm_tesselation_n_g_vertices_add(section->tesselation);
 
-        fvm_lnum_t  idx = 0;
+        cs_lnum_t   idx = 0;
 
         for (i_lnod = 0 ; i_lnod < n_extra_vertices ; i_lnod++) {
           for (i_dim = 0; i_dim < dim; i_dim++)
@@ -1727,19 +1727,19 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
                         fvm_to_med_writer_t   *writer)
 {
   int  i_dim;
-  fvm_lnum_t  i_vtx;
+  cs_lnum_t   i_vtx;
   fvm_datatype_t  datatype;
 
-  fvm_lnum_t  idx = 0;
-  fvm_lnum_t  n_extra_vertices = 0;
+  cs_lnum_t   idx = 0;
+  cs_lnum_t   n_extra_vertices = 0;
 
   med_float  *med_coords = NULL;
-  fvm_coord_t  *extra_vertex_coords = NULL;
+  cs_coord_t  *extra_vertex_coords = NULL;
 
   const int  dim = mesh->dim;
-  const fvm_lnum_t  n_vertices = mesh->n_vertices;
-  const fvm_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
-  const fvm_coord_t  *vertex_coords = mesh->vertex_coords;
+  const cs_lnum_t   n_vertices = mesh->n_vertices;
+  const cs_lnum_t    *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_coord_t  *vertex_coords = mesh->vertex_coords;
 
   med_err retval = 0;
 
@@ -1757,14 +1757,14 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
 
   /* Define FVM datatype */
 
-  if (sizeof(fvm_coord_t) == sizeof(double))
+  if (sizeof(cs_coord_t) == sizeof(double))
     datatype = FVM_DOUBLE;
-  else if (sizeof(fvm_coord_t) == sizeof(float))
+  else if (sizeof(cs_coord_t) == sizeof(float))
     datatype = FVM_FLOAT;
   else
     bft_error(__FILE__, __LINE__, 0 ,
-              "Unexpected fvm_coord_t datatype size (%d).",
-              sizeof(fvm_coord_t));
+              "Unexpected cs_coord_t datatype size (%d).",
+              sizeof(cs_coord_t));
 
   /* Compute extra vertex coordinates if present */
 
@@ -1805,7 +1805,7 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
                 (n_vertices + n_extra_vertices)*dim,
                 med_float);
 
-    /* Convert fvm_coord_t to med_float */
+    /* Convert cs_coord_t to med_float */
 
     _convert_float_fvm_to_med(extra_vertex_coords,
                               datatype,
@@ -1925,23 +1925,23 @@ _export_families_g(const fvm_writer_section_t  *export_section,
                    fvm_to_med_writer_t         *writer,
                    fvm_to_med_mesh_t           *med_mesh)
 {
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
 
   fvm_part_to_block_info_t  bi;
   fvm_part_to_block_t  *d = NULL;
 
   int         n_sections = 0;
   _Bool       have_tesselation = false;
-  fvm_lnum_t  start_id = 0;
-  fvm_lnum_t  part_size = 0, block_size = 0;
-  fvm_gnum_t  block_sub_size = 0, block_start = 0, block_end = 0;
-  fvm_gnum_t  n_g_elements = 0;
+  cs_lnum_t   start_id = 0;
+  cs_lnum_t   part_size = 0, block_size = 0;
+  cs_gnum_t   block_sub_size = 0, block_start = 0, block_end = 0;
+  cs_gnum_t   n_g_elements = 0;
 
   int  *part_n_sub = NULL, *block_n_sub = NULL;
   med_int  *part_values = NULL, *block_values = NULL, *_block_values = NULL;
 
-  fvm_gnum_t        *_g_elt_num = NULL;
-  const fvm_gnum_t  *g_elt_num
+  cs_gnum_t         *_g_elt_num = NULL;
+  const cs_gnum_t   *g_elt_num
     = fvm_io_num_get_global_num(export_section->section->global_element_num);
 
   const fvm_writer_section_t  *current_section = NULL;
@@ -1997,7 +1997,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
     start_id = 0;
 
-    BFT_MALLOC(_g_elt_num, part_size, fvm_gnum_t);
+    BFT_MALLOC(_g_elt_num, part_size, cs_gnum_t);
     g_elt_num = _g_elt_num;
 
     /* loop on sections which should be appended */
@@ -2006,12 +2006,12 @@ _export_families_g(const fvm_writer_section_t  *export_section,
     do {
 
       const fvm_nodal_section_t  *section = current_section->section;
-      const fvm_lnum_t section_size
+      const cs_lnum_t section_size
         = fvm_io_num_get_local_count(section->global_element_num);
 
       memcpy(_g_elt_num + start_id,
              fvm_io_num_get_global_num(section->global_element_num),
-             sizeof(fvm_gnum_t)*section_size);
+             sizeof(cs_gnum_t)*section_size);
       start_id += section_size;
 
       current_section = current_section->next;
@@ -2032,11 +2032,11 @@ _export_families_g(const fvm_writer_section_t  *export_section,
     do {
 
       const fvm_nodal_section_t  *section = current_section->section;
-      const fvm_lnum_t section_size
+      const cs_lnum_t section_size
         = fvm_io_num_get_local_count(section->global_element_num);
 
       if (current_section->type != section->type) {
-        const fvm_lnum_t  *sub_element_idx
+        const cs_lnum_t   *sub_element_idx
           = fvm_tesselation_sub_elt_index(section->tesselation,
                                           current_section->type);
         for (i = 0; i < section_size; i++)
@@ -2096,12 +2096,12 @@ _export_families_g(const fvm_writer_section_t  *export_section,
      Without tesselation, _block_n_sub simply points to block_n_sub */
 
   BFT_MALLOC(part_values,
-             FVM_MAX(part_size, (fvm_lnum_t)block_sub_size),
+             FVM_MAX(part_size, (cs_lnum_t)block_sub_size),
              med_int);
   BFT_MALLOC(block_values, block_size, med_int);
 
   if (have_tesselation) {
-    MPI_Scan(&block_sub_size, &block_end, 1, FVM_MPI_GNUM, MPI_SUM,
+    MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM,
              writer->comm);
     block_end += 1;
     block_start = block_end - block_sub_size;
@@ -2170,7 +2170,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
   /* Scatter values to sub-elements in case of tesselation */
 
   if (have_tesselation) {
-    fvm_lnum_t  k = 0;
+    cs_lnum_t   k = 0;
     for (i = 0; i < block_size; i++) {
       for (j = 0; j < block_n_sub[i]; j++)
         _block_values[k++] = block_values[i];
@@ -2258,14 +2258,14 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
                   char                        *export_connect)
 {
   int vertex_order[FVM_MED_MAX_N_NODES];
-  fvm_lnum_t  i_vtx, i_elt;
+  cs_lnum_t   i_vtx, i_elt;
   med_geometry_type  med_section_type;
 
-  fvm_lnum_t  i_num = 0;
-  fvm_gnum_t  global_num_start = 0, global_num_end = 0;
-  fvm_gnum_t  n_export_elements = 0;
+  cs_lnum_t   i_num = 0;
+  cs_gnum_t   global_num_start = 0, global_num_end = 0;
+  cs_gnum_t   n_export_elements = 0;
 
-  fvm_gnum_t *_fvm_export_connect = (fvm_gnum_t *)export_connect;
+  cs_gnum_t *_fvm_export_connect = (cs_gnum_t *)export_connect;
   med_int    *_med_export_connect = (med_int *)export_connect;
   fvm_gather_slice_t *elements_slice = NULL;
 
@@ -2289,7 +2289,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
   do {   /* Loop on sections with equivalent MED element type */
 
     const fvm_nodal_section_t *section = current_section->section;
-    const fvm_gnum_t  n_g_elements_section
+    const cs_gnum_t   n_g_elements_section
       = fvm_nodal_section_n_g_elements(section);
 
     if (section->type == current_section->type) {
@@ -2297,9 +2297,9 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
       /* Ordinary section */
       /*------------------*/
 
-      fvm_lnum_t *_vertex_num = NULL;
+      cs_lnum_t *_vertex_num = NULL;
 
-      const fvm_lnum_t *vertex_num = section->vertex_num;
+      const cs_lnum_t *vertex_num = section->vertex_num;
 
       /* Convert FVM connectivity to be congruent with MED standard */
 
@@ -2346,19 +2346,19 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
       /*--------------------*/
 
       size_t i_tmp;
-      fvm_lnum_t  n_elts_slice = 0;
-      fvm_lnum_t  start_id = 0, end_id = 0;
-      fvm_gnum_t  buffer_size = 0;
-      fvm_gnum_t  buffer_size_prev = 0;
-      fvm_lnum_t  n_sub_elements_max = 0;
-      fvm_gnum_t  n_g_sub_elements = 0;
+      cs_lnum_t   n_elts_slice = 0;
+      cs_lnum_t   start_id = 0, end_id = 0;
+      cs_gnum_t   buffer_size = 0;
+      cs_gnum_t   buffer_size_prev = 0;
+      cs_lnum_t   n_sub_elements_max = 0;
+      cs_gnum_t   n_g_sub_elements = 0;
 
-      fvm_lnum_t  *local_idx = NULL;
-      fvm_gnum_t  *global_idx = NULL;
-      fvm_gnum_t  *sub_elt_vertex_num = NULL;
-      fvm_gnum_t  tmp_connect[5];
+      cs_lnum_t   *local_idx = NULL;
+      cs_gnum_t   *global_idx = NULL;
+      cs_gnum_t   *sub_elt_vertex_num = NULL;
+      cs_gnum_t   tmp_connect[5];
 
-      const fvm_lnum_t *sub_elt_index
+      const cs_lnum_t *sub_elt_index
         = fvm_tesselation_sub_elt_index(section->tesselation,
                                         current_section->type);
 
@@ -2367,15 +2367,15 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
                                       &n_g_sub_elements,
                                       &n_sub_elements_max);
 
-      BFT_MALLOC(local_idx, section->n_elements + 1, fvm_lnum_t);
-      BFT_MALLOC(global_idx, n_g_elements_section + 1, fvm_gnum_t);
+      BFT_MALLOC(local_idx, section->n_elements + 1, cs_lnum_t);
+      BFT_MALLOC(global_idx, n_g_elements_section + 1, cs_gnum_t);
 
-      buffer_size = FVM_MAX((fvm_gnum_t)(10 * n_sub_elements_max),
-                            (fvm_gnum_t)(n_g_sub_elements / writer->n_ranks));
+      buffer_size = FVM_MAX((cs_gnum_t)(10 * n_sub_elements_max),
+                            (cs_gnum_t)(n_g_sub_elements / writer->n_ranks));
       buffer_size *= stride;
       buffer_size_prev = buffer_size;
 
-      BFT_MALLOC(sub_elt_vertex_num, buffer_size, fvm_gnum_t);
+      BFT_MALLOC(sub_elt_vertex_num, buffer_size, cs_gnum_t);
 
       elements_slice = fvm_gather_slice_create(section->global_element_num,
                                                n_g_sub_elements,
@@ -2423,7 +2423,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
         /* If the buffer already allocated is too small, reallocate it */
 
         if (buffer_size_prev < buffer_size) {
-          BFT_REALLOC(sub_elt_vertex_num, buffer_size, fvm_gnum_t);
+          BFT_REALLOC(sub_elt_vertex_num, buffer_size, cs_gnum_t);
           buffer_size_prev = buffer_size;
         }
 
@@ -2462,7 +2462,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
         fvm_gather_indexed(sub_elt_vertex_num,
                            _fvm_export_connect
                            + n_export_elements * stride,
-                           FVM_MPI_GNUM,
+                           CS_MPI_GNUM,
                            local_idx,
                            section->global_element_num,
                            writer->comm,
@@ -2495,7 +2495,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
 
   if (writer->rank == 0) {
 
-    _convert_fvm_gnum_to_med_int(_fvm_export_connect,
+    _convert_cs_gnum_to_med_int(_fvm_export_connect,
                                  _med_export_connect,
                                  n_export_elements * stride);
 
@@ -2574,11 +2574,11 @@ _export_families_l(const fvm_writer_section_t  *export_section,
                    fvm_to_med_writer_t         *writer,
                    fvm_to_med_mesh_t           *med_mesh)
 {
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
   med_geometry_type  med_section_type;
 
-  fvm_lnum_t  start_id = 0;
-  fvm_lnum_t  n_elements = 0;
+  cs_lnum_t   start_id = 0;
+  cs_lnum_t   n_elements = 0;
 
   med_err     retval = 0;
   med_int    *elt_family = NULL;
@@ -2761,7 +2761,7 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
                   med_int                     *med_export_connect)
 {
   int vertex_order[FVM_MED_MAX_N_NODES];
-  fvm_lnum_t  i_vtx, i_elt, i_num;
+  cs_lnum_t   i_vtx, i_elt, i_num;
   med_geometry_type  med_section_type;
 
   med_int  n_export_elements = 0;
@@ -2792,7 +2792,7 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
       /* Ordinary section */
       /*------------------*/
 
-      const fvm_lnum_t *vertex_num = section->vertex_num;
+      const cs_lnum_t *vertex_num = section->vertex_num;
 
       /* Convert FVM connectivity to be congruent with MED standard */
 
@@ -2812,12 +2812,12 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
       /*--------------------*/
 
       size_t  buffer_size = 0;
-      fvm_lnum_t  start_id = 0, end_id = 0;
-      fvm_lnum_t  n_sub_elts = 0, n_sub_loc = 0, n_sub_elts_max = 0;
+      cs_lnum_t   start_id = 0, end_id = 0;
+      cs_lnum_t   n_sub_elts = 0, n_sub_loc = 0, n_sub_elts_max = 0;
 
-      fvm_lnum_t  *sub_elt_vertex_num = NULL;
+      cs_lnum_t   *sub_elt_vertex_num = NULL;
 
-      const fvm_lnum_t *sub_elt_index
+      const cs_lnum_t *sub_elt_index
         = fvm_tesselation_sub_elt_index(section->tesselation,
                                         current_section->type);
 
@@ -2832,7 +2832,7 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
       buffer_size = FVM_MAX(n_sub_elts_max, n_sub_elts/4 + 1);
       buffer_size = FVM_MAX(256, buffer_size);
 
-      BFT_MALLOC(sub_elt_vertex_num, buffer_size * stride, fvm_lnum_t);
+      BFT_MALLOC(sub_elt_vertex_num, buffer_size * stride, cs_lnum_t);
 
       do {
 
@@ -2945,25 +2945,25 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
                          fvm_to_med_mesh_t           *med_mesh,
                          char                        *export_connect)
 {
-  fvm_gnum_t  i;
+  cs_gnum_t   i;
   med_geometry_type  med_section_type;
 
   int   n_passes = 0;
-  fvm_gnum_t  _n_connect_size = 0, n_g_connect_size = 0;
-  fvm_gnum_t  global_num_start = 0, global_num_end = 0;
-  fvm_gnum_t  n_export_connect = 0;
-  fvm_gnum_t  n_export_elements = 0;
+  cs_gnum_t   _n_connect_size = 0, n_g_connect_size = 0;
+  cs_gnum_t   global_num_start = 0, global_num_end = 0;
+  cs_gnum_t   n_export_connect = 0;
+  cs_gnum_t   n_export_elements = 0;
 
   char  *global_vtx_idx_buffer = NULL;
-  fvm_gnum_t *fvm_global_vtx_idx = NULL;
+  cs_gnum_t *fvm_global_vtx_idx = NULL;
   med_int    *med_global_vtx_idx = NULL;
 
   fvm_gather_slice_t *polygons_slice = NULL;
 
-  fvm_gnum_t *_fvm_export_connect = (fvm_gnum_t *)export_connect;
+  cs_gnum_t *_fvm_export_connect = (cs_gnum_t *)export_connect;
   med_int    *_med_export_connect = (med_int *)export_connect;
 
-  const size_t export_datasize = FVM_MAX(sizeof(fvm_gnum_t),sizeof(med_int));
+  const size_t export_datasize = FVM_MAX(sizeof(cs_gnum_t),sizeof(med_int));
   const fvm_writer_section_t *current_section = NULL;
 
   med_err  retval = 0;
@@ -2983,16 +2983,16 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
   do {   /* Loop on sections with equivalent MED element type */
 
     const fvm_nodal_section_t *section = current_section->section;
-    const fvm_gnum_t  n_g_element_section
+    const cs_gnum_t   n_g_element_section
       = fvm_nodal_section_n_g_elements(section);
 
     n_passes++;
 
-    _n_connect_size = (fvm_gnum_t)section->connectivity_size;
+    _n_connect_size = (cs_gnum_t)section->connectivity_size;
     MPI_Allreduce(&_n_connect_size,
                   &n_g_connect_size,
                   1,
-                  FVM_MPI_GNUM,
+                  CS_MPI_GNUM,
                   MPI_SUM,
                   writer->comm);
 
@@ -3002,7 +3002,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
                 (n_export_elements + n_g_element_section + 1)*export_datasize,
                 char);
 
-    fvm_global_vtx_idx = (fvm_gnum_t *)global_vtx_idx_buffer;
+    fvm_global_vtx_idx = (cs_gnum_t *)global_vtx_idx_buffer;
 
     /* Compute global buffers */
 
@@ -3058,7 +3058,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
   if (writer->rank == 0) {
 
     int i_count = 0;
-    fvm_gnum_t offset = 1;
+    cs_gnum_t offset = 1;
 
     /* Create faces -> vertices index for MED from fvm_global_vtx_idx */
 
@@ -3077,13 +3077,13 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
     assert(n_passes == i_count + 1);
 
     med_global_vtx_idx = (med_int *)global_vtx_idx_buffer;
-    _convert_fvm_gnum_to_med_int(fvm_global_vtx_idx,
+    _convert_cs_gnum_to_med_int(fvm_global_vtx_idx,
                                  med_global_vtx_idx,
                                  n_export_elements);
 
     /* FVM connectivity to MED connectivity */
 
-    _convert_fvm_gnum_to_med_int(_fvm_export_connect,
+    _convert_cs_gnum_to_med_int(_fvm_export_connect,
                                  _med_export_connect,
                                  n_export_connect);
 
@@ -3158,12 +3158,12 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_sections,
                          med_int                     *med_export_connect)
 {
   int i_count;
-  fvm_gnum_t  i;
+  cs_gnum_t   i;
   med_geometry_type  med_section_type;
 
   int   n_passes = 0;
-  fvm_gnum_t  n_export_connect = 0;
-  fvm_gnum_t  n_export_elements = 0;
+  cs_gnum_t   n_export_connect = 0;
+  cs_gnum_t   n_export_elements = 0;
   med_int   offset = 1;
   med_int  *med_global_vtx_idx = NULL;
 
@@ -3186,8 +3186,8 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_sections,
   do {   /* Loop on sections with equivalent MED element type */
 
     const fvm_nodal_section_t *section = current_section->section;
-    const fvm_gnum_t n_connect_size = (fvm_gnum_t)section->connectivity_size;
-    const fvm_gnum_t n_elements_section
+    const cs_gnum_t n_connect_size = (cs_gnum_t)section->connectivity_size;
+    const cs_gnum_t n_elements_section
       = fvm_nodal_section_n_g_elements(section);
 
       n_passes++;
@@ -3311,31 +3311,31 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
                           fvm_to_med_mesh_t           *med_mesh,
                           char                        *export_connect)
 {
-  fvm_lnum_t  i_elt, vtx_id, face_id;
-  fvm_lnum_t  i_face_idx, cell_vtx_length;
-  fvm_gnum_t  i;
+  cs_lnum_t   i_elt, vtx_id, face_id;
+  cs_lnum_t   i_face_idx, cell_vtx_length;
+  cs_gnum_t   i;
   med_geometry_type  med_section_type;
 
-  fvm_lnum_t  i_face = 0, i_connect = 0;
-  fvm_gnum_t  global_num_start = 0, global_num_end = 0;
-  fvm_gnum_t  n_export_connect = 0;
-  fvm_gnum_t  n_export_elements = 0;
-  fvm_gnum_t  n_export_faces = 0;
+  cs_lnum_t   i_face = 0, i_connect = 0;
+  cs_gnum_t   global_num_start = 0, global_num_end = 0;
+  cs_gnum_t   n_export_connect = 0;
+  cs_gnum_t   n_export_elements = 0;
+  cs_gnum_t   n_export_faces = 0;
 
   char       *global_face_lengths_buffer = NULL;
-  fvm_gnum_t *fvm_global_face_lengths = NULL;
+  cs_gnum_t *fvm_global_face_lengths = NULL;
   med_int    *med_export_faces_index = NULL;
 
   char       *global_cell_lengths_buffer = NULL;
-  fvm_gnum_t *fvm_global_cell_lengths = NULL;
+  cs_gnum_t *fvm_global_cell_lengths = NULL;
   med_int    *med_export_vertices_index = NULL;
 
-  fvm_gnum_t *fvm_export_connect = (fvm_gnum_t *)export_connect;
+  cs_gnum_t *fvm_export_connect = (cs_gnum_t *)export_connect;
   med_int    *med_export_connect = (med_int *)export_connect;
 
   fvm_gather_slice_t *polyhedra_slice = NULL;
 
-  const size_t export_datasize = FVM_MAX(sizeof(fvm_gnum_t), sizeof(med_int));
+  const size_t export_datasize = FVM_MAX(sizeof(cs_gnum_t), sizeof(med_int));
   const fvm_writer_section_t *current_section = NULL;
 
   med_err  retval = 0;
@@ -3354,25 +3354,25 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
 
   do {   /* Loop on sections with equivalent MED element type */
 
-    fvm_gnum_t  n_l_faces_section = 0, n_l_connect_section = 0;
-    fvm_gnum_t  n_g_faces_section = 0, n_g_connect_section = 0;
+    cs_gnum_t   n_l_faces_section = 0, n_l_connect_section = 0;
+    cs_gnum_t   n_g_faces_section = 0, n_g_connect_section = 0;
 
-    fvm_lnum_t *_face_lengths = NULL;
-    fvm_lnum_t *_cell_vtx_idx = NULL;
-    fvm_lnum_t *_cell_connect = NULL;
-    fvm_gnum_t *_cell_lengths = NULL;
-    fvm_gnum_t *global_cell_vtx_idx = NULL;
-    fvm_gnum_t *global_cell_face_idx = NULL;
+    cs_lnum_t *_face_lengths = NULL;
+    cs_lnum_t *_cell_vtx_idx = NULL;
+    cs_lnum_t *_cell_connect = NULL;
+    cs_gnum_t *_cell_lengths = NULL;
+    cs_gnum_t *global_cell_vtx_idx = NULL;
+    cs_gnum_t *global_cell_face_idx = NULL;
 
     const fvm_nodal_section_t *section = current_section->section;
-    const fvm_gnum_t  n_g_elements_section
+    const cs_gnum_t   n_g_elements_section
       = fvm_nodal_section_n_g_elements(section);
 
     n_l_faces_section = section->face_index[section->n_elements];
     MPI_Allreduce(&n_l_faces_section,
                   &n_g_faces_section,
                   1,
-                  FVM_MPI_GNUM,
+                  CS_MPI_GNUM,
                   MPI_SUM,
                   writer->comm);
 
@@ -3383,15 +3383,15 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
        - cells -> vertices index for each polyhedral section
     */
 
-    BFT_MALLOC(_face_lengths, n_l_faces_section + 1, fvm_lnum_t);
-    BFT_MALLOC(_cell_lengths, section->n_elements, fvm_gnum_t);
-    BFT_MALLOC(_cell_vtx_idx, section->n_elements + 1, fvm_lnum_t);
+    BFT_MALLOC(_face_lengths, n_l_faces_section + 1, cs_lnum_t);
+    BFT_MALLOC(_cell_lengths, section->n_elements, cs_gnum_t);
+    BFT_MALLOC(_cell_vtx_idx, section->n_elements + 1, cs_lnum_t);
 
     _cell_vtx_idx[0] = 0;
 
     for (i_elt = 0; i_elt < section->n_elements; i_elt++) {
 
-      _cell_lengths[i_elt] = (fvm_gnum_t)(  section->face_index[i_elt + 1]
+      _cell_lengths[i_elt] = (cs_gnum_t)(  section->face_index[i_elt + 1]
                                           - section->face_index[i_elt]);
       cell_vtx_length = 0;
 
@@ -3412,7 +3412,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
     /* Build locally _cell_connect */
 
     n_l_connect_section = _cell_vtx_idx[section->n_elements];
-    BFT_MALLOC(_cell_connect, n_l_connect_section, fvm_lnum_t);
+    BFT_MALLOC(_cell_connect, n_l_connect_section, cs_lnum_t);
 
     i_connect = 0;
 
@@ -3445,7 +3445,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
     MPI_Allreduce(&n_l_connect_section,
                   &n_g_connect_section,
                   1,
-                  FVM_MPI_GNUM,
+                  CS_MPI_GNUM,
                   MPI_SUM,
                   writer->comm);
 
@@ -3459,13 +3459,13 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
                 (n_export_faces + 1 + n_g_faces_section)*export_datasize,
                 char);
 
-    fvm_global_cell_lengths = (fvm_gnum_t *)global_cell_lengths_buffer;
-    fvm_global_face_lengths = (fvm_gnum_t *)global_face_lengths_buffer;
+    fvm_global_cell_lengths = (cs_gnum_t *)global_cell_lengths_buffer;
+    fvm_global_face_lengths = (cs_gnum_t *)global_face_lengths_buffer;
 
     /* Allocate global buffers used in "fvm_gather" operations */
 
-    BFT_MALLOC(global_cell_face_idx, n_g_elements_section + 1, fvm_gnum_t);
-    BFT_MALLOC(global_cell_vtx_idx, n_g_elements_section + 1, fvm_gnum_t);
+    BFT_MALLOC(global_cell_face_idx, n_g_elements_section + 1, cs_gnum_t);
+    BFT_MALLOC(global_cell_vtx_idx, n_g_elements_section + 1, cs_gnum_t);
 
     /* Compute global buffers */
 
@@ -3487,7 +3487,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
 
       fvm_gather_array(_cell_lengths,
                        fvm_global_cell_lengths + 1 + n_export_elements,
-                       FVM_MPI_GNUM,
+                       CS_MPI_GNUM,
                        1,
                        section->global_element_num,
                        writer->comm,
@@ -3571,7 +3571,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
         fvm_global_cell_lengths[i] + fvm_global_cell_lengths[i-1];
 
     med_export_faces_index = (med_int *)fvm_global_cell_lengths;
-    _convert_fvm_gnum_to_med_int(fvm_global_cell_lengths,
+    _convert_cs_gnum_to_med_int(fvm_global_cell_lengths,
                                  med_export_faces_index,
                                  n_export_elements + 1);
 
@@ -3583,13 +3583,13 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
         fvm_global_face_lengths[i] + fvm_global_face_lengths[i-1];
 
     med_export_vertices_index = (med_int *)fvm_global_face_lengths;
-    _convert_fvm_gnum_to_med_int(fvm_global_face_lengths,
+    _convert_cs_gnum_to_med_int(fvm_global_face_lengths,
                                  med_export_vertices_index,
                                  n_export_faces + 1);
 
     /* FVM connectivity to MED connectivity */
 
-    _convert_fvm_gnum_to_med_int(fvm_export_connect,
+    _convert_cs_gnum_to_med_int(fvm_export_connect,
                                  med_export_connect,
                                  n_export_connect);
 
@@ -3669,13 +3669,13 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
                           fvm_to_med_mesh_t           *med_mesh,
                           med_int                     *med_export_connect)
 {
-  fvm_lnum_t  i_face_idx, face_id, vtx_id, i_elt;
-  fvm_gnum_t  i;
+  cs_lnum_t   i_face_idx, face_id, vtx_id, i_elt;
+  cs_gnum_t   i;
   med_geometry_type  med_section_type;
 
-  fvm_gnum_t  i_cell = 1, i_face = 1, i_connect = 0;
-  fvm_gnum_t  n_export_elements = 0;
-  fvm_gnum_t  n_export_faces = 0;
+  cs_gnum_t   i_cell = 1, i_face = 1, i_connect = 0;
+  cs_gnum_t   n_export_elements = 0;
+  cs_gnum_t   n_export_faces = 0;
 
   med_int  *med_face_lengths = NULL;
   med_int  *med_cell_lengths = NULL;
@@ -3700,7 +3700,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
 
     const fvm_nodal_section_t *section = current_section->section;
 
-    fvm_gnum_t  n_faces_section = 0;
+    cs_gnum_t   n_faces_section = 0;
 
     n_faces_section = section->face_index[section->n_elements];
 
@@ -3877,7 +3877,7 @@ _export_field_values_e(const fvm_writer_section_t      *export_section,
                        int                              output_dim,
                        fvm_interlace_t                  interlace,
                        int                              n_parent_lists,
-                       const fvm_lnum_t                 parent_num_shift[],
+                       const cs_lnum_t                  parent_num_shift[],
                        fvm_datatype_t                   datatype,
                        const void                *const field_values[],
                        char                            *med_mesh_name,
@@ -4032,7 +4032,7 @@ _export_field_values_n(const fvm_nodal_t               *mesh,
                        int                              output_dim,
                        fvm_interlace_t                  interlace,
                        int                              n_parent_lists,
-                       const fvm_lnum_t                 parent_num_shift[],
+                       const cs_lnum_t                  parent_num_shift[],
                        fvm_datatype_t                   datatype,
                        const void                *const field_values[],
                        char                            *med_mesh_name,
@@ -4629,7 +4629,7 @@ fvm_to_med_export_nodal(void               *this_writer,
   size_t connect_type_size;
   med_geometry_type med_type;
 
-  fvm_gnum_t  global_connect_slice_size = 0;
+  cs_gnum_t   global_connect_slice_size = 0;
 
   char  med_mesh_name[MED_NAME_SIZE + 1];
 
@@ -4752,7 +4752,7 @@ fvm_to_med_export_nodal(void               *this_writer,
 #if defined(HAVE_MPI)
   if (n_ranks > 1) {
 
-    connect_type_size = FVM_MAX(sizeof(fvm_gnum_t), sizeof(med_int));
+    connect_type_size = FVM_MAX(sizeof(cs_gnum_t), sizeof(med_int));
     BFT_MALLOC(export_connect_buffer,
                global_connect_slice_size * connect_type_size,
                char);
@@ -4917,7 +4917,7 @@ fvm_to_med_export_field(void                            *this_writer,
                         const int                        dimension,
                         const fvm_interlace_t            interlace,
                         const int                        n_parent_lists,
-                        const fvm_lnum_t                 parent_num_shift[],
+                        const cs_lnum_t                  parent_num_shift[],
                         const fvm_datatype_t             datatype,
                         const int                        time_step,
                         const double                     time_value,

@@ -93,7 +93,7 @@ typedef struct _fvm_gather_slice_t fvm_gather_slice_t;
 
 fvm_gather_slice_t *
 fvm_gather_slice_create(const fvm_io_num_t  *entity_io_num,
-                        const fvm_gnum_t     slice_size,
+                        const cs_gnum_t      slice_size,
                         MPI_Comm             comm);
 
 /*----------------------------------------------------------------------------
@@ -127,8 +127,8 @@ fvm_gather_slice_destroy(fvm_gather_slice_t  * this_slice);
 
 int
 fvm_gather_slice_advance(fvm_gather_slice_t  *this_slice,
-                         fvm_gnum_t          *global_num_start,
-                         fvm_gnum_t          *global_num_end);
+                         cs_gnum_t           *global_num_start,
+                         cs_gnum_t           *global_num_end);
 
 /*----------------------------------------------------------------------------
  * Reset a fvm_gather_slice_t structure to its initial state.
@@ -153,7 +153,7 @@ fvm_gather_slice_reinitialize(fvm_gather_slice_t  *this_slice);
 
 void
 fvm_gather_slice_limit(fvm_gather_slice_t  *this_slice,
-                       fvm_gnum_t          *global_num_end);
+                       cs_gnum_t           *global_num_end);
 
 /*----------------------------------------------------------------------------
  * Build a slice index (0 to n-1 numbering) on rank 0 from local index arrays.
@@ -187,8 +187,8 @@ fvm_gather_slice_limit(fvm_gather_slice_t  *this_slice,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_gather_slice_index(const fvm_lnum_t     local_index[],
-                       fvm_gnum_t           slice_index[],
+fvm_gather_slice_index(const cs_lnum_t      local_index[],
+                       cs_gnum_t            slice_index[],
                        const fvm_io_num_t  *element_io_num,
                        MPI_Comm             comm,
                        fvm_gather_slice_t  *this_slice);
@@ -222,11 +222,11 @@ fvm_gather_slice_index(const fvm_lnum_t     local_index[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_gather_resize_indexed_slice(const fvm_gnum_t     n_elements_s_min,
-                                fvm_gnum_t          *global_num_end,
-                                fvm_gnum_t          *global_connect_s_size,
+fvm_gather_resize_indexed_slice(const cs_gnum_t      n_elements_s_min,
+                                cs_gnum_t           *global_num_end,
+                                cs_gnum_t           *global_connect_s_size,
                                 MPI_Comm             comm,
-                                const fvm_gnum_t     slice_index[],
+                                const cs_gnum_t      slice_index[],
                                 fvm_gather_slice_t  *this_slice);
 
 /*----------------------------------------------------------------------------
@@ -310,10 +310,10 @@ void
 fvm_gather_indexed(const void          *local_array,
                    void                *global_array_s,
                    const MPI_Datatype   datatype,
-                   const fvm_lnum_t     local_index[],
+                   const cs_lnum_t      local_index[],
                    const fvm_io_num_t  *element_io_num,
                    MPI_Comm             comm,
-                   const fvm_gnum_t     slice_index[],
+                   const cs_gnum_t      slice_index[],
                    fvm_gather_slice_t  *this_slice);
 
 /*----------------------------------------------------------------------------
@@ -350,8 +350,8 @@ fvm_gather_indexed(const void          *local_array,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_gather_strided_connect(const fvm_lnum_t     local_connect[],
-                           fvm_gnum_t           global_connect_s[],
+fvm_gather_strided_connect(const cs_lnum_t      local_connect[],
+                           cs_gnum_t            global_connect_s[],
                            const int            stride,
                            const fvm_io_num_t  *connected_io_num,
                            const fvm_io_num_t  *element_io_num,
@@ -404,13 +404,13 @@ fvm_gather_strided_connect(const fvm_lnum_t     local_connect[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_gather_indexed_numbers(const fvm_lnum_t     local_index[],
-                           const fvm_lnum_t     local_numbers[],
-                           fvm_gnum_t           global_numbers_s[],
+fvm_gather_indexed_numbers(const cs_lnum_t      local_index[],
+                           const cs_lnum_t      local_numbers[],
+                           cs_gnum_t            global_numbers_s[],
                            const fvm_io_num_t  *connected_io_num,
                            const fvm_io_num_t  *element_io_num,
                            MPI_Comm             comm,
-                           const fvm_gnum_t     slice_index[],
+                           const cs_gnum_t      slice_index[],
                            fvm_gather_slice_t  *this_slice);
 
 #endif /* defined(HAVE_MPI) */

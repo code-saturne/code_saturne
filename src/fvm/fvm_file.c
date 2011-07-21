@@ -135,15 +135,15 @@ struct _fvm_file_serializer_t {
   int          rank_id;        /* Local rank in communicator */
   int          n_ranks;        /* Number of ranks in communicator */
 
-  fvm_gnum_t   range[2];       /* Global start and past-the-end numbers
+  cs_gnum_t    range[2];       /* Global start and past-the-end numbers
                                   for local rank */
 
   size_t       size;           /* datatype size (may include stride) */
 
-  fvm_gnum_t   next_g_num;     /* Next global number */
+  cs_gnum_t    next_g_num;     /* Next global number */
   int          next_rank_id;   /* Next rank with which we will communicate */
 
-  fvm_lnum_t  *count;          /* Number of elements in each block */
+  cs_lnum_t   *count;          /* Number of elements in each block */
 
   void        *buf;            /* pointer to external buffer */
   void        *recv_buf;       /* pointer to external buffer if
@@ -198,14 +198,14 @@ static fvm_file_hints_t _default_semantics = 0;
 static void
 _serializer_init(fvm_file_serializer_t  *s,
                  size_t                  size,
-                 fvm_gnum_t              global_num_start,
-                 fvm_gnum_t              global_num_end,
+                 cs_gnum_t               global_num_start,
+                 cs_gnum_t               global_num_end,
                  size_t                  buf_block_size,
                  void                   *buf,
                  MPI_Comm                comm)
 
 {
-  fvm_lnum_t l_count = 0;
+  cs_lnum_t l_count = 0;
 
   s->range[0] = global_num_start;
   s->range[1] = global_num_end;
@@ -226,11 +226,11 @@ _serializer_init(fvm_file_serializer_t  *s,
   /* Initialize counter */
 
   if (s->rank_id == 0)
-    BFT_MALLOC(s->count, s->n_ranks, fvm_lnum_t);
+    BFT_MALLOC(s->count, s->n_ranks, cs_lnum_t);
   else
     s->count = NULL;
 
-  MPI_Gather(&l_count, 1, FVM_MPI_LNUM, s->count, 1, FVM_MPI_LNUM, 0, comm);
+  MPI_Gather(&l_count, 1, CS_MPI_LNUM, s->count, 1, CS_MPI_LNUM, 0, comm);
 
   /* Allocate local buffer if necessary, or point to external buffer */
 
@@ -239,8 +239,8 @@ _serializer_init(fvm_file_serializer_t  *s,
 
   if (s->rank_id == 0) {
     int i;
-    fvm_lnum_t _max_block_size = 0;
-    fvm_lnum_t _buf_block_size = FVM_MAX((fvm_lnum_t)buf_block_size, l_count);
+    cs_lnum_t _max_block_size = 0;
+    cs_lnum_t _buf_block_size = FVM_MAX((cs_lnum_t)buf_block_size, l_count);
     for (i = 0; i < s->n_ranks; i++)
       _max_block_size = FVM_MAX(_max_block_size, s->count[i]);
     if (_max_block_size > _buf_block_size)
@@ -653,8 +653,8 @@ static size_t
 _file_read_block(fvm_file_t  *f,
                  void        *buf,
                  size_t       size,
-                 fvm_gnum_t   global_num_start,
-                 fvm_gnum_t   global_num_end)
+                 cs_gnum_t    global_num_start,
+                 cs_gnum_t    global_num_end)
 {
   size_t retval = 0;
 
@@ -774,8 +774,8 @@ static size_t
 _file_write_block(fvm_file_t  *f,
                   void        *buf,
                   size_t       size,
-                  fvm_gnum_t   global_num_start,
-                  fvm_gnum_t   global_num_end)
+                  cs_gnum_t    global_num_start,
+                  cs_gnum_t    global_num_end)
 {
   size_t retval = 0;
 
@@ -790,7 +790,7 @@ _file_write_block(fvm_file_t  *f,
   if (f->n_ranks > 1) {
 
     fvm_file_serializer_t  s;
-    fvm_lnum_t *count = NULL;
+    cs_lnum_t *count = NULL;
     void  *write_buf = NULL;
 
     _serializer_init(&s,
@@ -809,7 +809,7 @@ _file_write_block(fvm_file_t  *f,
 
       if (write_buf != NULL) /* only on rank 0 */
         s.count[dist_rank]
-          = (fvm_lnum_t)_file_write(f,
+          = (cs_lnum_t)_file_write(f,
                                     write_buf,
                                     size,
                                     (size_t)(s.count[dist_rank]));
@@ -821,7 +821,7 @@ _file_write_block(fvm_file_t  *f,
     if (s.rank_id == 0)
       count = s.count;
     else
-      BFT_MALLOC(count, s.n_ranks, fvm_lnum_t);
+      BFT_MALLOC(count, s.n_ranks, cs_lnum_t);
 
     MPI_Scatter(count, 1, MPI_INT, &retval, 1, MPI_INT,  0, f->comm);
 
@@ -1024,10 +1024,10 @@ static size_t
 _mpi_file_read_block_eo(fvm_file_t  *f,
                         void        *buf,
                         size_t       size,
-                        fvm_gnum_t   global_num_start,
-                        fvm_gnum_t   global_num_end)
+                        cs_gnum_t    global_num_start,
+                        cs_gnum_t    global_num_end)
 {
-  fvm_gnum_t global_num_end_last = global_num_end;
+  cs_gnum_t global_num_end_last = global_num_end;
   size_t retval = 0;
 
   MPI_Offset disp;
@@ -1046,7 +1046,7 @@ _mpi_file_read_block_eo(fvm_file_t  *f,
     MPI_Get_count(&status, MPI_BYTE, &count);
   retval = count / size;
 
-  MPI_Bcast(&global_num_end_last, 1, FVM_MPI_GNUM, f->n_ranks-1, f->comm);
+  MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
   f->offset += ((global_num_end_last - 1) * size);
 
   return retval;
@@ -1056,8 +1056,8 @@ static size_t
 _mpi_file_read_block_ip(fvm_file_t  *f,
                         void        *buf,
                         size_t       size,
-                        fvm_gnum_t   global_num_start,
-                        fvm_gnum_t   global_num_end)
+                        cs_gnum_t    global_num_start,
+                        cs_gnum_t    global_num_end)
 {
   int errcode;
   int lengths[1];
@@ -1067,7 +1067,7 @@ _mpi_file_read_block_ip(fvm_file_t  *f,
 
   int count = 0;
   char datarep[] = "native";
-  fvm_gnum_t global_num_end_last = global_num_end;
+  cs_gnum_t global_num_end_last = global_num_end;
   size_t retval = 0;
 
   lengths[0] = (global_num_end - global_num_start) * size;
@@ -1090,7 +1090,7 @@ _mpi_file_read_block_ip(fvm_file_t  *f,
     MPI_Get_count(&status, MPI_BYTE, &count);
   retval = count / size;
 
-  MPI_Bcast(&global_num_end_last, 1, FVM_MPI_GNUM, f->n_ranks-1, f->comm);
+  MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
   f->offset += ((global_num_end_last - 1) * size);
 
   return retval;
@@ -1126,10 +1126,10 @@ static size_t
 _mpi_file_write_block_eo(fvm_file_t  *f,
                          void        *buf,
                          size_t       size,
-                         fvm_gnum_t   global_num_start,
-                         fvm_gnum_t   global_num_end)
+                         cs_gnum_t    global_num_start,
+                         cs_gnum_t    global_num_end)
 {
-  fvm_gnum_t global_num_end_last = global_num_end;
+  cs_gnum_t global_num_end_last = global_num_end;
   size_t retval = 0;
 
   MPI_Offset disp;
@@ -1148,7 +1148,7 @@ _mpi_file_write_block_eo(fvm_file_t  *f,
     MPI_Get_count(&status, MPI_BYTE, &count);
   retval = count / size;
 
-  MPI_Bcast(&global_num_end_last, 1, FVM_MPI_GNUM, f->n_ranks-1, f->comm);
+  MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
   f->offset += ((global_num_end_last - 1) * size);
 
   return retval;
@@ -1158,8 +1158,8 @@ static size_t
 _mpi_file_write_block_ip(fvm_file_t  *f,
                          void        *buf,
                          size_t       size,
-                         fvm_gnum_t   global_num_start,
-                         fvm_gnum_t   global_num_end)
+                         cs_gnum_t    global_num_start,
+                         cs_gnum_t    global_num_end)
 {
   int lengths[1];
   MPI_Aint disps[1];
@@ -1168,7 +1168,7 @@ _mpi_file_write_block_ip(fvm_file_t  *f,
 
   int errcode = MPI_SUCCESS, count = 0;
   char datarep[] = "native";
-  fvm_gnum_t global_num_end_last = global_num_end;
+  cs_gnum_t global_num_end_last = global_num_end;
   size_t retval = 0;
 
   lengths[0] = (global_num_end - global_num_start) * size;
@@ -1191,7 +1191,7 @@ _mpi_file_write_block_ip(fvm_file_t  *f,
     MPI_Get_count(&status, MPI_BYTE, &count);
   retval = count / size;
 
-  MPI_Bcast(&global_num_end_last, 1, FVM_MPI_GNUM, f->n_ranks-1, f->comm);
+  MPI_Bcast(&global_num_end_last, 1, CS_MPI_GNUM, f->n_ranks-1, f->comm);
   f->offset += ((global_num_end_last - 1) * size);
 
   return retval;
@@ -1671,13 +1671,13 @@ fvm_file_read_block(fvm_file_t  *f,
                     void        *buf,
                     size_t       size,
                     size_t       stride,
-                    fvm_gnum_t   global_num_start,
-                    fvm_gnum_t   global_num_end)
+                    cs_gnum_t    global_num_start,
+                    cs_gnum_t    global_num_end)
 {
   size_t retval = 0;
 
-  const fvm_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
-  const fvm_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
+  const cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
+  const cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
 
   if (f->semantics & FVM_FILE_NO_MPI_IO)
     retval = _file_read_block(f,
@@ -1748,8 +1748,8 @@ fvm_file_write_block(fvm_file_t  *f,
                      const void  *buf,
                      size_t       size,
                      size_t       stride,
-                     fvm_gnum_t   global_num_start,
-                     fvm_gnum_t   global_num_end)
+                     cs_gnum_t    global_num_start,
+                     cs_gnum_t    global_num_end)
 {
   size_t retval = 0;
 
@@ -1781,8 +1781,8 @@ fvm_file_write_block(fvm_file_t  *f,
 
   else if (f->sh != NULL) {
 
-    const fvm_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
-    const fvm_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
+    const cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
+    const cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
 
     retval = _file_write(f,
                          buf,
@@ -1828,13 +1828,13 @@ fvm_file_write_block_buffer(fvm_file_t  *f,
                             void        *buf,
                             size_t       size,
                             size_t       stride,
-                            fvm_gnum_t   global_num_start,
-                            fvm_gnum_t   global_num_end)
+                            cs_gnum_t    global_num_start,
+                            cs_gnum_t    global_num_end)
 {
   size_t retval = 0;
 
-  const fvm_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
-  const fvm_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
+  const cs_gnum_t _global_num_start = (global_num_start-1)*stride + 1;
+  const cs_gnum_t _global_num_end = (global_num_end-1)*stride + 1;
 
   /* Swap bytes prior to writing if necessary */
 
@@ -2125,8 +2125,8 @@ fvm_file_dump(const fvm_file_t  *f)
 fvm_file_serializer_t *
 fvm_file_serializer_create(size_t        size,
                            size_t        stride,
-                           fvm_gnum_t    global_num_start,
-                           fvm_gnum_t    global_num_end,
+                           cs_gnum_t     global_num_start,
+                           cs_gnum_t     global_num_end,
                            size_t        buf_block_size,
                            void         *buf,
                            MPI_Comm      comm)
@@ -2188,10 +2188,10 @@ fvm_file_serializer_destroy(fvm_file_serializer_t  **s)
 
 void *
 fvm_file_serializer_advance(fvm_file_serializer_t  *s,
-                            fvm_gnum_t              cur_range[2])
+                            cs_gnum_t               cur_range[2])
 {
   MPI_Status status;
-  fvm_gnum_t sync_range[2] = {s->next_g_num, 0};
+  cs_gnum_t sync_range[2] = {s->next_g_num, 0};
 
   void *retval = NULL;
 
@@ -2211,7 +2211,7 @@ fvm_file_serializer_advance(fvm_file_serializer_t  *s,
 
       /* Forced synchronization */
       sync_range[1] = sync_range[0] + count;
-      MPI_Send(&sync_range, 2, FVM_MPI_GNUM, dist_rank, FVM_MPI_TAG, s->comm);
+      MPI_Send(&sync_range, 2, CS_MPI_GNUM, dist_rank, FVM_MPI_TAG, s->comm);
 
       /* Receive data */
       MPI_Recv(s->recv_buf, (count * s->size), MPI_BYTE, dist_rank,
@@ -2253,7 +2253,7 @@ fvm_file_serializer_advance(fvm_file_serializer_t  *s,
     if (count > 0) {
 
       /* Forced synchronization */
-      MPI_Recv(&sync_range, 2, FVM_MPI_GNUM, 0, FVM_MPI_TAG, s->comm, &status);
+      MPI_Recv(&sync_range, 2, CS_MPI_GNUM, 0, FVM_MPI_TAG, s->comm, &status);
       count = (sync_range[1] - sync_range[0]);
 
       if (sync_range[0] != s->range[0] || sync_range[1] != s->range[1])

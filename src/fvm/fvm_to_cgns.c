@@ -517,8 +517,8 @@ _get_solution_index(const fvm_to_cgns_writer_t  *writer,
 static void
 _count_extra_vertices(const fvm_to_cgns_writer_t *this_writer,
                       const fvm_nodal_t          *mesh,
-                      fvm_gnum_t                 *n_extra_vertices_g,
-                      fvm_lnum_t                 *n_extra_vertices)
+                      cs_gnum_t                  *n_extra_vertices_g,
+                      cs_lnum_t                  *n_extra_vertices)
 {
   int  i;
 
@@ -576,14 +576,14 @@ _add_zone(const fvm_nodal_t           *mesh,
           const fvm_to_cgns_writer_t  *writer,
           const fvm_to_cgns_base_t    *base,
           const fvm_writer_section_t  *export_sections,
-          fvm_gnum_t                   n_g_vertices)
+          cs_gnum_t                    n_g_vertices)
 {
   int zone_index;
   cgsize_t    zone_sizes[3];
 
-  fvm_gnum_t  n_g_entities = 0;
-  fvm_gnum_t  n_g_tesselated_elements = 0;
-  fvm_gnum_t  n_g_extra_vertices = 0;
+  cs_gnum_t   n_g_entities = 0;
+  cs_gnum_t   n_g_tesselated_elements = 0;
+  cs_gnum_t   n_g_extra_vertices = 0;
 
   const fvm_writer_section_t *current_section = NULL;
 
@@ -675,16 +675,16 @@ _add_zone(const fvm_nodal_t           *mesh,
  *   array containing all extra vertex coordinates
  *----------------------------------------------------------------------------*/
 
-static fvm_coord_t *
+static cs_coord_t *
 _extra_vertex_coords(const fvm_to_cgns_writer_t  *this_writer,
                      const fvm_nodal_t           *mesh)
 {
   int  i;
-  fvm_lnum_t  n_extra_vertices_section;
+  cs_lnum_t   n_extra_vertices_section;
 
-  fvm_lnum_t  n_extra_vertices = 0;
+  cs_lnum_t   n_extra_vertices = 0;
   size_t  coord_shift = 0;
-  fvm_coord_t  *coords = NULL;
+  cs_coord_t  *coords = NULL;
 
   _count_extra_vertices(this_writer,
                         mesh,
@@ -695,7 +695,7 @@ _extra_vertex_coords(const fvm_to_cgns_writer_t  *this_writer,
 
     const int  export_dim = fvm_nodal_get_max_entity_dim(mesh);
 
-    BFT_MALLOC(coords, n_extra_vertices * 3, fvm_coord_t);
+    BFT_MALLOC(coords, n_extra_vertices * 3, cs_coord_t);
 
     for (i = 0 ; i < mesh->n_sections ; i++) {
 
@@ -813,27 +813,27 @@ static void
 _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
                         const fvm_nodal_t     *mesh,
                         fvm_to_cgns_base_t    *base,
-                        fvm_gnum_t             global_s_size)
+                        cs_gnum_t              global_s_size)
 {
   int coord_index, section_id;
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
   MPI_Datatype  mpi_datatype;
   CGNS_ENUMT(DataType_t)  cgns_datatype;
 
   cgsize_t  idx_start = 0, idx_end = 0;
   int zone_index = 1;
-  fvm_lnum_t  n_extra_vertices = 0;
-  fvm_gnum_t  n_g_extra_vertices = 0;
-  fvm_gnum_t  global_num_start = 0, global_num_end = 0;
-  fvm_coord_t *extra_vertex_coords = NULL;
-  fvm_coord_t *coords_tmp = NULL;
-  fvm_coord_t *global_coords_s = NULL;
+  cs_lnum_t   n_extra_vertices = 0;
+  cs_gnum_t   n_g_extra_vertices = 0;
+  cs_gnum_t   global_num_start = 0, global_num_end = 0;
+  cs_coord_t *extra_vertex_coords = NULL;
+  cs_coord_t *coords_tmp = NULL;
+  cs_coord_t *global_coords_s = NULL;
   fvm_gather_slice_t  *vertices_slice = NULL;
 
-  const fvm_coord_t *vertex_coords = mesh->vertex_coords;
-  const fvm_lnum_t *parent_vertex_num = mesh->parent_vertex_num;
-  const fvm_lnum_t n_vertices = mesh->n_vertices;
-  const fvm_gnum_t n_g_vertices
+  const cs_coord_t *vertex_coords = mesh->vertex_coords;
+  const cs_lnum_t *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t n_vertices = mesh->n_vertices;
+  const cs_gnum_t n_g_vertices
     = fvm_io_num_get_global_count(mesh->global_vertex_num);
 
   const char *const coord_name[3] = {"CoordinateX",
@@ -845,7 +845,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
 
   assert(base != NULL);
 
-  if (sizeof(fvm_coord_t) == sizeof(double)) {
+  if (sizeof(cs_coord_t) == sizeof(double)) {
     cgns_datatype = CGNS_ENUMV(RealDouble);
     mpi_datatype = MPI_DOUBLE;
   }
@@ -862,8 +862,8 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
   extra_vertex_coords = _extra_vertex_coords(writer,
                                              mesh);
 
-  BFT_MALLOC(coords_tmp, FVM_MAX(n_vertices, n_extra_vertices), fvm_coord_t);
-  BFT_MALLOC(global_coords_s, global_s_size, fvm_coord_t);
+  BFT_MALLOC(coords_tmp, FVM_MAX(n_vertices, n_extra_vertices), cs_coord_t);
+  BFT_MALLOC(global_coords_s, global_s_size, cs_coord_t);
 
   vertices_slice = fvm_gather_slice_create(mesh->global_vertex_num,
                                            global_s_size,
@@ -933,7 +933,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
 
     if (n_g_extra_vertices > 0) {
 
-      fvm_lnum_t extra_vertices_count = 0;
+      cs_lnum_t extra_vertices_count = 0;
 
       for (section_id = 0 ; section_id < mesh->n_sections ; section_id++) {
 
@@ -951,7 +951,7 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
 
           const fvm_io_num_t *extra_vertex_num
             = fvm_tesselation_global_vertex_num(section->tesselation);
-          const fvm_lnum_t n_extra_vertices_section
+          const cs_lnum_t n_extra_vertices_section
             = fvm_tesselation_n_vertices_add(section->tesselation);
 
           for (i = 0 ; i < n_extra_vertices ; i++)
@@ -1047,19 +1047,19 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
                         fvm_to_cgns_base_t    *base)
 {
   int  coord_index;
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
   cgsize_t  idx_start, idx_end;
   CGNS_ENUMT(DataType_t)  cgns_datatype;
 
   int  zone_index = 1;
   size_t  stride = (size_t)mesh->dim;
-  fvm_lnum_t  n_extra_vertices = 0;
-  fvm_coord_t  *extra_vertex_coords = NULL;
-  fvm_coord_t  *coords_tmp = NULL;
+  cs_lnum_t   n_extra_vertices = 0;
+  cs_coord_t  *extra_vertex_coords = NULL;
+  cs_coord_t  *coords_tmp = NULL;
 
-  const fvm_lnum_t  n_vertices = mesh->n_vertices;
-  const fvm_lnum_t *parent_vertex_num = mesh->parent_vertex_num;
-  const fvm_coord_t *vertex_coords = mesh->vertex_coords;
+  const cs_lnum_t   n_vertices = mesh->n_vertices;
+  const cs_lnum_t *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_coord_t *vertex_coords = mesh->vertex_coords;
 
   const char *const coord_name[3] = {"CoordinateX",
                                      "CoordinateY",
@@ -1070,7 +1070,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
   assert(writer->is_open == true);
   assert(base != NULL);
 
-  if (sizeof(fvm_coord_t) == sizeof(double))
+  if (sizeof(cs_coord_t) == sizeof(double))
     cgns_datatype = CGNS_ENUMV(RealDouble);
   else
     cgns_datatype = CGNS_ENUMV(RealSingle);
@@ -1086,7 +1086,7 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
                                              mesh);
 
 
-  BFT_MALLOC(coords_tmp, FVM_MAX(n_vertices, n_extra_vertices), fvm_coord_t);
+  BFT_MALLOC(coords_tmp, FVM_MAX(n_vertices, n_extra_vertices), cs_coord_t);
 
   /* Loop on dimension */
 
@@ -1194,17 +1194,17 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
                   const fvm_nodal_t           *mesh,
                   fvm_to_cgns_base_t          *base,
                   int                          section_id,
-                  fvm_gnum_t                  *global_counter,
-                  fvm_gnum_t                   global_s_size,
-                  fvm_gnum_t                   global_connect_s_call[])
+                  cs_gnum_t                   *global_counter,
+                  cs_gnum_t                    global_s_size,
+                  cs_gnum_t                    global_connect_s_call[])
 {
   int  section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
   CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
-  fvm_gnum_t  global_num_start = 0, global_num_end = 0;
-  fvm_gnum_t  elt_start = 0, elt_end = 0;
-  fvm_gnum_t  *global_connect_s = global_connect_s_call;
+  cs_gnum_t   global_num_start = 0, global_num_end = 0;
+  cs_gnum_t   elt_start = 0, elt_end = 0;
+  cs_gnum_t   *global_connect_s = global_connect_s_call;
   fvm_gather_slice_t  *elements_slice = NULL;
 
   const int  zone_index = 1; /* We always use zone index = 1 */
@@ -1242,9 +1242,9 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
 
       if (global_connect_s != NULL) {
         cgsize_t *_global_connect_s = (cgsize_t *)global_connect_s;
-        if (sizeof(cgsize_t) != sizeof(fvm_gnum_t)) {
+        if (sizeof(cgsize_t) != sizeof(cs_gnum_t)) {
           cgsize_t i = 0, n = (elt_end + 1 - elt_start)*section->stride;
-          if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+          if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
             BFT_MALLOC(_global_connect_s, n, cgsize_t);
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
@@ -1279,7 +1279,7 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
                                              elt_end,
                                              _global_connect_s);
 #endif /* (CGNS_VERSION >= 3000) */
-        if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+        if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }
 
@@ -1324,13 +1324,13 @@ _export_connect_l(const fvm_writer_section_t  *export_section,
                   const fvm_to_cgns_writer_t  *writer,
                   const fvm_to_cgns_base_t    *base,
                   int                          section_id,
-                  fvm_gnum_t                  *global_counter)
+                  cs_gnum_t                   *global_counter)
 {
   int  section_index;
   char section_name[FVM_CGNS_NAME_SIZE + 1];
   CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
-  fvm_gnum_t elt_start = 0, elt_end = 0;
+  cs_gnum_t elt_start = 0, elt_end = 0;
 
   const int  zone_index = 1; /* We always use zone index = 1 */
   const fvm_writer_section_t  *current_section = export_section;
@@ -1348,7 +1348,7 @@ _export_connect_l(const fvm_writer_section_t  *export_section,
   if (section->vertex_num != NULL) {
     cgsize_t *_vertex_num = NULL;
     const cgsize_t *vertex_num = (const cgsize_t *)section->vertex_num;
-    if (sizeof(cgsize_t) != sizeof(fvm_lnum_t)) {
+    if (sizeof(cgsize_t) != sizeof(cs_lnum_t)) {
       cgsize_t i = 0, n = (elt_end + 1 - elt_start)*section->stride;
       BFT_MALLOC(_vertex_num, n, cgsize_t);
       vertex_num = _vertex_num;
@@ -1408,27 +1408,27 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
                            const fvm_nodal_t  *mesh,
                            const fvm_to_cgns_base_t  *base,
                            int  section_id,
-                           fvm_gnum_t  *global_counter,
-                           fvm_gnum_t  global_s_size,
-                           fvm_gnum_t  global_connect_s_size_call,
-                           fvm_gnum_t  global_connect_s_call[])
+                           cs_gnum_t   *global_counter,
+                           cs_gnum_t   global_s_size,
+                           cs_gnum_t   global_connect_s_size_call,
+                           cs_gnum_t   global_connect_s_call[])
 {
   int  section_index;
   char section_name[FVM_CGNS_NAME_SIZE + 1];
   CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
-  fvm_lnum_t  n_sub_elements_max = 0;
-  fvm_lnum_t  start_id = 0, end_id = 0;
-  fvm_gnum_t  elt_start = 0, elt_end = 0;
-  fvm_gnum_t  global_num_start = 0, global_num_end = 0;
-  fvm_gnum_t  n_g_sub_elements = 0, local_connect_size = 0;
-  fvm_gnum_t  global_connect_s_size_prev = global_connect_s_size_call;
-  fvm_gnum_t  global_connect_s_size = global_connect_s_size_call;
+  cs_lnum_t   n_sub_elements_max = 0;
+  cs_lnum_t   start_id = 0, end_id = 0;
+  cs_gnum_t   elt_start = 0, elt_end = 0;
+  cs_gnum_t   global_num_start = 0, global_num_end = 0;
+  cs_gnum_t   n_g_sub_elements = 0, local_connect_size = 0;
+  cs_gnum_t   global_connect_s_size_prev = global_connect_s_size_call;
+  cs_gnum_t   global_connect_s_size = global_connect_s_size_call;
 
-  fvm_lnum_t  *local_idx = NULL;
-  fvm_gnum_t  *global_idx_s = NULL;
-  fvm_gnum_t  *sub_elt_vertex_num = NULL;
-  fvm_gnum_t  *global_connect_s = global_connect_s_call;
+  cs_lnum_t   *local_idx = NULL;
+  cs_gnum_t   *global_idx_s = NULL;
+  cs_gnum_t   *sub_elt_vertex_num = NULL;
+  cs_gnum_t   *global_connect_s = global_connect_s_call;
 
   fvm_gather_slice_t  *elements_slice = NULL;
 
@@ -1436,8 +1436,8 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
   const fvm_writer_section_t *current_section = export_section;
   const fvm_nodal_section_t *section = current_section->section;
   const fvm_tesselation_t *tesselation = section->tesselation;
-  const fvm_gnum_t extra_vertex_base = current_section->extra_vertex_base;
-  const fvm_lnum_t n_elements = fvm_tesselation_n_elements(tesselation);
+  const cs_gnum_t extra_vertex_base = current_section->extra_vertex_base;
+  const cs_lnum_t n_elements = fvm_tesselation_n_elements(tesselation);
   const int stride = fvm_nodal_n_vertices_element[current_section->type];
 
   int  retval = CG_OK;
@@ -1453,12 +1453,12 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
   /* Allocate memory for additionnal indexes and decoded connectivity */
 
-  BFT_MALLOC(local_idx, n_elements + 1, fvm_lnum_t);
-  BFT_MALLOC(global_idx_s, global_s_size + 1, fvm_gnum_t);
+  BFT_MALLOC(local_idx, n_elements + 1, cs_lnum_t);
+  BFT_MALLOC(global_idx_s, global_s_size + 1, cs_gnum_t);
 
   local_connect_size = FVM_MAX(global_s_size,
-                               (fvm_gnum_t)n_sub_elements_max*10);
-  BFT_MALLOC(sub_elt_vertex_num, local_connect_size * stride, fvm_gnum_t);
+                               (cs_gnum_t)n_sub_elements_max*10);
+  BFT_MALLOC(sub_elt_vertex_num, local_connect_size * stride, cs_gnum_t);
 
   /* Loop on slices */
   /*----------------*/
@@ -1514,7 +1514,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
     if (global_connect_s_size_prev < global_connect_s_size) {
       if (global_connect_s == global_connect_s_call)
         global_connect_s = NULL;
-      BFT_REALLOC(global_connect_s, global_connect_s_size, fvm_gnum_t);
+      BFT_REALLOC(global_connect_s, global_connect_s_size, cs_gnum_t);
       global_connect_s_size_prev = global_connect_s_size;
     }
 
@@ -1539,7 +1539,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
     fvm_gather_indexed(sub_elt_vertex_num,
                        global_connect_s,
-                       FVM_MPI_GNUM,
+                       CS_MPI_GNUM,
                        local_idx,
                        section->global_element_num,
                        writer->comm,
@@ -1556,9 +1556,9 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
 
       if (global_connect_s != NULL) {
         cgsize_t *_global_connect_s = (cgsize_t *)global_connect_s;
-        if (sizeof(cgsize_t) != sizeof(fvm_gnum_t)) {
+        if (sizeof(cgsize_t) != sizeof(cs_gnum_t)) {
           int i = 0, n = (elt_end + 1 - elt_start)*stride;
-          if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+          if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
             BFT_MALLOC(_global_connect_s, n, cgsize_t);
           for (i = 0; i < n; i++)
             _global_connect_s[i] = global_connect_s[i];
@@ -1593,7 +1593,7 @@ _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
                                              elt_end,
                                              _global_connect_s);
 #endif /* (CGNS_VERSION >= 3000) */
-        if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+        if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }
 
@@ -1646,19 +1646,19 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
                            const fvm_to_cgns_writer_t  *writer,
                            const fvm_to_cgns_base_t  *base,
                            int  section_id,
-                           fvm_gnum_t  *global_counter)
+                           cs_gnum_t   *global_counter)
 {
   int  section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
-  fvm_lnum_t  n_sub_elements_max;
-  fvm_lnum_t  n_buffer_elements_max;
+  cs_lnum_t   n_sub_elements_max;
+  cs_lnum_t   n_buffer_elements_max;
   CGNS_ENUMT(ElementType_t)  cgns_elt_type; /* Definition in cgnslib.h */
 
-  fvm_lnum_t  start_id = 0, end_id = 0;
-  fvm_gnum_t  elt_start = 0, elt_end = 0;
+  cs_lnum_t   start_id = 0, end_id = 0;
+  cs_gnum_t   elt_start = 0, elt_end = 0;
 
-  const fvm_lnum_t  *sub_element_idx = NULL;
-  fvm_lnum_t  *vertex_num = NULL;
+  const cs_lnum_t   *sub_element_idx = NULL;
+  cs_lnum_t   *vertex_num = NULL;
 
   const  int zone_index = 1; /* We always use zone index = 1 */
   const  fvm_writer_section_t *current_section = export_section;
@@ -1685,7 +1685,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
   if (n_sub_elements_max > n_buffer_elements_max)
     n_buffer_elements_max = n_sub_elements_max;
 
-  BFT_MALLOC(vertex_num, n_buffer_elements_max * stride, fvm_lnum_t);
+  BFT_MALLOC(vertex_num, n_buffer_elements_max * stride, cs_lnum_t);
 
   for (start_id = 0;
        start_id < section->n_elements;
@@ -1706,9 +1706,9 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
 
     if (vertex_num != NULL) {
       cgsize_t *_vertex_num = (cgsize_t *)vertex_num;
-      if (sizeof(cgsize_t) != sizeof(fvm_lnum_t)) {
+      if (sizeof(cgsize_t) != sizeof(cs_lnum_t)) {
         int i = 0, n = (elt_end + 1 - elt_start)*stride;
-        if (sizeof(cgsize_t) > sizeof(fvm_lnum_t))
+        if (sizeof(cgsize_t) > sizeof(cs_lnum_t))
           BFT_MALLOC(_vertex_num, n, cgsize_t);
         for (i = 0; i < n; i++)
           _vertex_num[i] = vertex_num[i];
@@ -1743,7 +1743,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
                                            elt_end,
                                            _vertex_num);
 #endif /* (CGNS_VERSION >= 3000) */
-      if (sizeof(cgsize_t) > sizeof(fvm_lnum_t))
+      if (sizeof(cgsize_t) > sizeof(cs_lnum_t))
         BFT_FREE(_vertex_num);
     }
 
@@ -1758,7 +1758,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
 
   } /* End of loop on parent elements */
 
-  *global_counter += (fvm_gnum_t)
+  *global_counter += (cs_gnum_t)
     fvm_tesselation_n_sub_elements(tesselation,
                                    current_section->type);
 
@@ -1791,33 +1791,33 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                          const fvm_nodal_t      *mesh,
                          fvm_to_cgns_base_t     *base,
                          int                     section_id,
-                         fvm_gnum_t             *global_counter,
-                         fvm_gnum_t              global_s_size,
-                         fvm_gnum_t              global_connect_s_size,
-                         fvm_gnum_t              global_connect_s_call[])
+                         cs_gnum_t              *global_counter,
+                         cs_gnum_t               global_s_size,
+                         cs_gnum_t               global_connect_s_size,
+                         cs_gnum_t               global_connect_s_call[])
 {
   int  section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
-  fvm_lnum_t  elt_id, vertex_id;
+  cs_lnum_t   elt_id, vertex_id;
   CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
 
   size_t  connect_end = 0;
-  fvm_gnum_t  elt_start = 0, elt_end = 0;
-  fvm_gnum_t  global_num_start = 0, global_num_end = 0;
-  fvm_lnum_t  *connect_index = NULL;
-  fvm_lnum_t  *connect_num = NULL;
-  fvm_gnum_t  *global_connect_s = global_connect_s_call;
-  fvm_gnum_t  *global_index_s = NULL;
+  cs_gnum_t   elt_start = 0, elt_end = 0;
+  cs_gnum_t   global_num_start = 0, global_num_end = 0;
+  cs_lnum_t   *connect_index = NULL;
+  cs_lnum_t   *connect_num = NULL;
+  cs_gnum_t   *global_connect_s = global_connect_s_call;
+  cs_gnum_t   *global_index_s = NULL;
   fvm_gather_slice_t *polygons_slice = NULL;
 
   const int  zone_index = 1; /* Always = 1 */
   const fvm_writer_section_t *current_section = export_section;
   const fvm_nodal_section_t  *section = current_section->section;
-  const fvm_lnum_t  n_elements = section->n_elements;
-  const fvm_lnum_t  *const vertex_index = section->vertex_index;
-  const fvm_lnum_t  *const vertex_num = section->vertex_num;
+  const cs_lnum_t   n_elements = section->n_elements;
+  const cs_lnum_t   *const vertex_index = section->vertex_index;
+  const cs_lnum_t   *const vertex_num = section->vertex_num;
   const fvm_io_num_t  *const global_elt_num = section->global_element_num;
-  const fvm_gnum_t  *vertex_gnum =
+  const cs_gnum_t   *vertex_gnum =
     fvm_io_num_get_global_num(mesh->global_vertex_num);
 
   int  retval = CG_OK;
@@ -1826,14 +1826,14 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
 
   /* Allocate memory for global index array */
 
-  BFT_MALLOC(global_index_s, global_connect_s_size, fvm_gnum_t);
+  BFT_MALLOC(global_index_s, global_connect_s_size, cs_gnum_t);
 
   _define_section(current_section, section_id, section_name, &cgns_elt_type);
 
   /* Create local vertex_index and vertex_num with CGNS standard */
 
-  BFT_MALLOC(connect_index, n_elements + 1, fvm_lnum_t);
-  BFT_MALLOC(connect_num, vertex_index[n_elements] + n_elements, fvm_lnum_t);
+  BFT_MALLOC(connect_index, n_elements + 1, cs_lnum_t);
+  BFT_MALLOC(connect_num, vertex_index[n_elements] + n_elements, cs_lnum_t);
 
   for (elt_id = 0; elt_id < n_elements; elt_id++) {
 
@@ -1891,11 +1891,11 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
 
       if (global_connect_s != NULL) {
         cgsize_t *_global_connect_s = (cgsize_t *)global_connect_s;
-        if (sizeof(cgsize_t) != sizeof(fvm_gnum_t)) {
+        if (sizeof(cgsize_t) != sizeof(cs_gnum_t)) {
           int i = 0, j = 0, n = elt_end + 1 - elt_start;
           for (i = 0; i < n; i++)
             j += global_connect_s[j] - CGNS_ENUMV(NGON_n) + 1;
-          if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+          if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
             BFT_MALLOC(_global_connect_s, j, cgsize_t);
           for (i = 0; i < j; i++)
             _global_connect_s[i] = global_connect_s[i];
@@ -1930,7 +1930,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
                                              elt_end,
                                              _global_connect_s);
 #endif /* (CGNS_VERSION >= 3000) */
-        if (sizeof(cgsize_t) > sizeof(fvm_gnum_t))
+        if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
           BFT_FREE(_global_connect_s);
       }
 
@@ -1979,14 +1979,14 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
                          const fvm_to_cgns_writer_t  *writer,
                          const fvm_to_cgns_base_t    *base,
                          int                          section_id,
-                         fvm_gnum_t                  *global_counter)
+                         cs_gnum_t                   *global_counter)
 {
   int  i, j, section_index;
   char  section_name[FVM_CGNS_NAME_SIZE + 1];
   CGNS_ENUMT(ElementType_t)  cgns_elt_type; /* Definition in cgnslib.h */
 
-  fvm_lnum_t  connect_size = 0;
-  fvm_gnum_t  elt_start = 0, elt_end = 0;
+  cs_lnum_t   connect_size = 0;
+  cs_gnum_t   elt_start = 0, elt_end = 0;
   cgsize_t  *connect = NULL;
 
   const  int  zone_index = 1; /* We always use zone index = 1 */
@@ -2077,7 +2077,7 @@ _export_field_e(const fvm_writer_section_t      *export_list,
                 CGNS_ENUMT(DataType_t)           cgns_datatype,
                 fvm_interlace_t                  interlace,
                 int                              n_parent_lists,
-                const fvm_lnum_t                 parent_num_shift[],
+                const cs_lnum_t                  parent_num_shift[],
                 fvm_datatype_t                   datatype,
                 const void                *const field_values[],
                 size_t                           output_buffer_size,
@@ -2191,7 +2191,7 @@ _export_field_n(const fvm_nodal_t               *mesh,
                 CGNS_ENUMT(DataType_t)           cgns_datatype,
                 fvm_interlace_t                  interlace,
                 int                              n_parent_lists,
-                const fvm_lnum_t                 parent_num_shift[],
+                const cs_lnum_t                  parent_num_shift[],
                 fvm_datatype_t                   datatype,
                 const void                *const field_values[],
                 size_t                           output_buffer_size,
@@ -2864,10 +2864,10 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   int   base_index;
 
   int section_id = 0;
-  fvm_gnum_t  n_g_vertices = 0;
-  fvm_gnum_t  global_counter = 0;
-  fvm_gnum_t  global_connect_s_size = 0;
-  fvm_gnum_t  global_s_size = 0;
+  cs_gnum_t   n_g_vertices = 0;
+  cs_gnum_t   global_counter = 0;
+  cs_gnum_t   global_connect_s_size = 0;
+  cs_gnum_t   global_s_size = 0;
 
   const fvm_writer_section_t  *export_section = NULL;
   fvm_writer_section_t  *export_list = NULL;
@@ -2875,7 +2875,7 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   fvm_to_cgns_writer_t  *writer
                         = (fvm_to_cgns_writer_t *)this_writer_p;
 
-  fvm_gnum_t  *global_connect_s = NULL;
+  cs_gnum_t   *global_connect_s = NULL;
 
   const int   n_ranks = writer->n_ranks;
 
@@ -2915,9 +2915,9 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
 
   if (n_ranks > 1 && global_connect_s_size > 0) {
     size_t min_buffer_size =   fvm_parall_get_min_coll_buf_size()
-                             / sizeof(fvm_gnum_t);
+                             / sizeof(cs_gnum_t);
     if (min_buffer_size > global_connect_s_size) {
-      fvm_gnum_t global_s_size_min = global_s_size * (  min_buffer_size
+      cs_gnum_t global_s_size_min = global_s_size * (  min_buffer_size
                                                       / global_connect_s_size);
       if (global_s_size_min > global_s_size) {
         global_s_size = global_s_size_min;
@@ -2967,7 +2967,7 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   /*----------------------*/
 
   if (n_ranks > 1)
-    BFT_MALLOC(global_connect_s, global_connect_s_size, fvm_gnum_t);
+    BFT_MALLOC(global_connect_s, global_connect_s_size, cs_gnum_t);
 
   export_section = export_list;
 
@@ -3106,7 +3106,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
                          int                     dimension,
                          fvm_interlace_t         interlace,
                          int                     n_parent_lists,
-                         const fvm_lnum_t        parent_num_shift[],
+                         const cs_lnum_t         parent_num_shift[],
                          fvm_datatype_t          datatype,
                          int                     time_step,
                          double                  time_value,

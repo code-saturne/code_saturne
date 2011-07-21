@@ -415,15 +415,15 @@ _sync_single_edges(const cs_join_select_t   *selection,
 {
   int  i, j, k, id, vid, rank, shift, edge_id, vid1, vid2;
   int  length, request_count, distant_rank;
-  fvm_gnum_t  cur, prev;
+  cs_gnum_t cur, prev;
 
   int  c_sub_size = 0, s_sub_size = 0, n_new_vertices = 0;
   cs_int_t  *new_v2v_sub_idx = NULL, *new_v2v_sub_lst = NULL;
   int  *s_count = NULL, *s_sub_index = NULL;
   int  *c_count = NULL, *c_sub_index = NULL;
-  fvm_gnum_t  *c_sub_gbuf = NULL, *s_sub_gbuf = NULL;
-  fvm_gnum_t  *new_vtx_gnum = NULL;
-  cs_real_t  *c_sub_coord = NULL, *s_sub_coord = NULL, *new_coord = NULL;
+  cs_gnum_t *c_sub_gbuf = NULL, *s_sub_gbuf = NULL;
+  cs_gnum_t *new_vtx_gnum = NULL;
+  cs_real_t *c_sub_coord = NULL, *s_sub_coord = NULL, *new_coord = NULL;
 
   MPI_Request  *request = NULL;
   MPI_Status   *status = NULL;
@@ -530,7 +530,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   c_sub_size = c_sub_index[c_edges->n_ranks];
 
-  BFT_MALLOC(c_sub_gbuf, c_sub_size, fvm_gnum_t);
+  BFT_MALLOC(c_sub_gbuf, c_sub_size, cs_gnum_t);
   BFT_MALLOC(c_sub_coord, 3*c_sub_size, cs_real_t);
 
   shift = 0;
@@ -573,7 +573,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   s_sub_size = s_sub_index[s_edges->n_ranks];
 
-  BFT_MALLOC(s_sub_gbuf, s_sub_size, fvm_gnum_t);
+  BFT_MALLOC(s_sub_gbuf, s_sub_size, cs_gnum_t);
   BFT_MALLOC(s_sub_coord, 3*s_sub_size, cs_real_t);
 
   /* Exchange sub-edge definition: global vertex number  */
@@ -582,7 +582,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   for (i = 0; i < s_edges->n_ranks; i++) {
 
-    fvm_gnum_t  *recv_gbuf;
+    cs_gnum_t *recv_gbuf;
 
     distant_rank = s_edges->ranks[i];
     length = s_sub_index[i+1] - s_sub_index[i];
@@ -590,7 +590,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     MPI_Irecv(recv_gbuf,
               length,
-              FVM_MPI_GNUM,
+              CS_MPI_GNUM,
               distant_rank,
               distant_rank,
               mpi_comm,
@@ -606,7 +606,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   for (i = 0; i < c_edges->n_ranks; i++) {
 
-    fvm_gnum_t  *send_gbuf;
+    cs_gnum_t *send_gbuf;
 
     distant_rank = c_edges->ranks[i];
     length = c_sub_index[i+1] - c_sub_index[i];
@@ -614,7 +614,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     MPI_Isend(send_gbuf,
               length,
-              FVM_MPI_GNUM,
+              CS_MPI_GNUM,
               distant_rank,
               loc_rank,
               mpi_comm,
@@ -688,11 +688,11 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
   if (s_edges->n_elts > 0) {
 
-    fvm_lnum_t  *order = NULL, *inv_order = NULL;
+    cs_lnum_t *order = NULL, *inv_order = NULL;
 
     /* Update vertices from list of sub elements. Define new vertices */
 
-    BFT_MALLOC(order, s_sub_size, fvm_lnum_t);
+    BFT_MALLOC(order, s_sub_size, cs_lnum_t);
 
     fvm_order_local_allocated(NULL, s_sub_gbuf, order, s_sub_size);
 
@@ -714,7 +714,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
     }  /* End of loop on received sub-elements */
 
     BFT_REALLOC(mesh->global_vtx_num,
-                mesh->n_vertices + n_new_vertices, fvm_gnum_t);
+                mesh->n_vertices + n_new_vertices, cs_gnum_t);
 
     BFT_REALLOC(mesh->vtx_coord,
                 3*(mesh->n_vertices + n_new_vertices), cs_real_t);
@@ -753,14 +753,14 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     /* Reorder global_vtx_num in order to have an ordered list */
 
-    BFT_REALLOC(order, mesh->n_vertices, fvm_lnum_t);
+    BFT_REALLOC(order, mesh->n_vertices, cs_lnum_t);
 
     fvm_order_local_allocated(NULL,
                               mesh->global_vtx_num,
                               order,
                               mesh->n_vertices);
 
-    BFT_MALLOC(new_vtx_gnum, mesh->n_vertices, fvm_gnum_t);
+    BFT_MALLOC(new_vtx_gnum, mesh->n_vertices, cs_gnum_t);
 
     for (i = 0; i < mesh->n_vertices; i++)
       new_vtx_gnum[i] = mesh->global_vtx_num[order[i]];
@@ -783,7 +783,7 @@ _sync_single_edges(const cs_join_select_t   *selection,
 
     /* Define a new o2n_vtx_id and o2n_vtx_gnum */
 
-    BFT_MALLOC(inv_order, mesh->n_vertices, fvm_lnum_t);
+    BFT_MALLOC(inv_order, mesh->n_vertices, cs_lnum_t);
 
     for (i = 0; i < mesh->n_vertices; i++) {
       j = order[i];
@@ -899,20 +899,20 @@ _sync_single_edges(const cs_join_select_t   *selection,
  *---------------------------------------------------------------------------*/
 
 static void
-_update_vertices_after_merge(const fvm_gnum_t       o2n_vtx_gnum[],
+_update_vertices_after_merge(const cs_gnum_t        o2n_vtx_gnum[],
                              const cs_join_mesh_t  *join_mesh,
                              cs_mesh_t             *mesh,
                              cs_int_t              *p_join2mesh_vtx_id[],
                              cs_int_t              *p_o2n_vtx_id[])
 {
   cs_int_t  i, j, k, o_id, j_id;
-  fvm_gnum_t  prev, cur;
+  cs_gnum_t  prev, cur;
 
-  cs_int_t  n_am_vertices = -1; /* am: after merge */
+  cs_int_t    n_am_vertices = -1; /* am: after merge */
   cs_real_t  *new_vtx_coord = NULL;
   cs_int_t   *o2n_vtx_id = NULL, *join2mesh_vtx_id = NULL;
-  fvm_lnum_t  *order = NULL;
-  fvm_gnum_t  *new_vtx_gnum = NULL, *tmp_vtx_gnum = NULL;
+  cs_lnum_t  *order = NULL;
+  cs_gnum_t  *new_vtx_gnum = NULL, *tmp_vtx_gnum = NULL;
 
   const cs_int_t  n_bm_vertices = mesh->n_vertices; /* bm: before merge */
   const cs_int_t  n_j_vertices = join_mesh->n_vertices;
@@ -924,8 +924,8 @@ _update_vertices_after_merge(const fvm_gnum_t       o2n_vtx_gnum[],
 
   BFT_MALLOC(o2n_vtx_id, n_bm_vertices, cs_int_t);
   BFT_MALLOC(join2mesh_vtx_id, n_j_vertices, cs_int_t);
-  BFT_MALLOC(tmp_vtx_gnum, n_vertices, fvm_gnum_t);
-  BFT_MALLOC(new_vtx_gnum, n_vertices, fvm_gnum_t);
+  BFT_MALLOC(tmp_vtx_gnum, n_vertices, cs_gnum_t);
+  BFT_MALLOC(new_vtx_gnum, n_vertices, cs_gnum_t);
   BFT_MALLOC(order, n_vertices, cs_int_t);
 
   for (i = 0; i < n_bm_vertices; i++)
@@ -999,7 +999,7 @@ _update_vertices_after_merge(const fvm_gnum_t       o2n_vtx_gnum[],
               "Old num : %7d (%9llu) => New num : %7d (%9llu) (%9llu)\n",
               i+1,
               (unsigned long long)(n_ranks >1 ?   mesh->global_vtx_num[i]
-                                                : (fvm_gnum_t)i+1),
+                                                : (cs_gnum_t)i+1),
               o2n_vtx_id[i]+1, (unsigned long long)o2n_vtx_gnum[i],
               (unsigned long long)new_vtx_gnum[o2n_vtx_id[i]]);
     fflush(cs_glob_join_log);
@@ -1011,20 +1011,20 @@ _update_vertices_after_merge(const fvm_gnum_t       o2n_vtx_gnum[],
   mesh->n_vertices = n_am_vertices;
   mesh->n_g_vertices =  new_vtx_gnum[n_am_vertices - 1];
 
-  BFT_REALLOC(new_vtx_gnum, n_am_vertices, fvm_gnum_t);
+  BFT_REALLOC(new_vtx_gnum, n_am_vertices, cs_gnum_t);
   BFT_FREE(mesh->global_vtx_num);
   mesh->global_vtx_num = new_vtx_gnum;
 
 #if defined(HAVE_MPI)
   if (n_ranks > 1) { /* Get temporary a no contiguous numbering */
 
-    fvm_gnum_t  glob_gmax;
-    fvm_gnum_t loc_gmax = new_vtx_gnum[n_am_vertices - 1];
+    cs_gnum_t glob_gmax;
+    cs_gnum_t loc_gmax = new_vtx_gnum[n_am_vertices - 1];
     MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
     /* Find the max. global number */
 
-    MPI_Allreduce(&loc_gmax, &glob_gmax, 1, FVM_MPI_GNUM, MPI_MAX, mpi_comm);
+    MPI_Allreduce(&loc_gmax, &glob_gmax, 1, CS_MPI_GNUM, MPI_MAX, mpi_comm);
 
     mesh->n_g_vertices = glob_gmax;
 
@@ -1070,13 +1070,13 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
                              cs_int_t              *p_join2mesh_vtx_id[])
 {
   cs_int_t  i, j, k, o_id, j_id, v_id;
-  fvm_gnum_t  prev, cur;
+  cs_gnum_t  prev, cur;
 
   cs_int_t  n_as_vertices = -1; /* ac: after splitting */
-  fvm_lnum_t  *order = NULL;
+  cs_lnum_t  *order = NULL;
   cs_real_t  *new_vtx_coord = NULL;
   cs_int_t   *o2n_vtx_id = NULL, *join2mesh_vtx_id = NULL;
-  fvm_gnum_t  *new_vtx_gnum = NULL, *tmp_vtx_gnum = NULL;
+  cs_gnum_t  *new_vtx_gnum = NULL, *tmp_vtx_gnum = NULL;
 
   const cs_int_t  n_bs_vertices = mesh->n_vertices; /* bs: before splitting */
   const cs_int_t  n_j_vertices = join_mesh->n_vertices;
@@ -1089,9 +1089,9 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
 
   BFT_MALLOC(o2n_vtx_id, n_bs_vertices, cs_int_t);
   BFT_MALLOC(join2mesh_vtx_id, n_j_vertices, cs_int_t);
-  BFT_MALLOC(tmp_vtx_gnum, n_vertices, fvm_gnum_t);
-  BFT_MALLOC(new_vtx_gnum, n_vertices, fvm_gnum_t);
-  BFT_MALLOC(order, n_vertices, fvm_lnum_t);
+  BFT_MALLOC(tmp_vtx_gnum, n_vertices, cs_gnum_t);
+  BFT_MALLOC(new_vtx_gnum, n_vertices, cs_gnum_t);
+  BFT_MALLOC(order, n_vertices, cs_lnum_t);
 
   for (i = 0; i < n_bs_vertices; i++)
     tmp_vtx_gnum[i] = mesh->global_vtx_num[i];
@@ -1157,7 +1157,7 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
 
   BFT_FREE(tmp_vtx_gnum);
   BFT_FREE(order);
-  BFT_REALLOC(new_vtx_gnum, n_as_vertices, fvm_gnum_t);
+  BFT_REALLOC(new_vtx_gnum, n_as_vertices, cs_gnum_t);
   BFT_MALLOC(new_vtx_coord, 3*n_as_vertices, cs_real_t);
 
   mesh->n_vertices = n_as_vertices;
@@ -1173,7 +1173,7 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
               "Old num : %7d (%9llu) => New num : %7d (%9llu)\n",
               i+1,
               (unsigned long long)(cs_glob_n_ranks >1 ?  mesh->global_vtx_num[i]
-                                                        : (fvm_gnum_t)i+1),
+                                                        : (cs_gnum_t)i+1),
               o2n_vtx_id[i]+1, (unsigned long long)new_vtx_gnum[o2n_vtx_id[i]]);
     fflush(cs_glob_join_log);
   }
@@ -1339,7 +1339,7 @@ _init_edge_builder(const cs_join_select_t  *join_select,
   cs_int_t  *count = NULL;
   edge_builder_t  *edge_builder = NULL;
 
-  assert(sizeof(cs_int_t) == sizeof(fvm_lnum_t));
+  assert(sizeof(cs_int_t) == sizeof(cs_lnum_t));
 
   /* Allocate and initialize edge_builder_t structure */
 
@@ -1477,7 +1477,7 @@ _init_edge_builder(const cs_join_select_t  *join_select,
 
 static void
 _get_local_faces_connect(cs_int_t                 select_id,
-                         const fvm_gnum_t         o2n_vtx_gnum[],
+                         const cs_gnum_t          o2n_vtx_gnum[],
                          const cs_join_select_t  *join_select,
                          const cs_join_mesh_t    *join_mesh,
                          const cs_mesh_t         *mesh,
@@ -1485,10 +1485,10 @@ _get_local_faces_connect(cs_int_t                 select_id,
                          cs_int_t                 am_tmp[])
 {
   cs_int_t  i, j, k, v_id, bm_shift;
-  fvm_gnum_t  new_gnum;
+  cs_gnum_t  new_gnum;
 
   cs_int_t  fid = join_select->faces[select_id] - 1;
-  fvm_gnum_t  fgnum = join_select->compact_face_gnum[select_id];
+  cs_gnum_t  fgnum = join_select->compact_face_gnum[select_id];
   cs_int_t  am_s = join_mesh->face_vtx_idx[select_id] - 1;
   cs_int_t  am_e = join_mesh->face_vtx_idx[select_id+1] - 1;
   cs_int_t  n_am_face_vertices = am_e - am_s;
@@ -1592,13 +1592,13 @@ static void
 _complete_edge_builder(const cs_join_select_t  *join_select,
                        const cs_join_mesh_t    *join_mesh,
                        const cs_mesh_t         *mesh,
-                       const fvm_gnum_t         o2n_vtx_gnum[],
+                       const cs_gnum_t          o2n_vtx_gnum[],
                        const cs_int_t           join2mesh_vtx_id[],
                        edge_builder_t          *edge_builder)
 {
   cs_int_t  i, j, j1, j2, k, shift;
   cs_int_t  v1_id, v2_id, edge_id, n_subs;
-  fvm_gnum_t  v1_gnum, v2_gnum;
+  cs_gnum_t  v1_gnum, v2_gnum;
   bool  direct_scan, degenerate_edge;
 
   cs_int_t  am_max = 0, bm_max = 0;
@@ -1635,7 +1635,7 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
   for (i = 0; i < join_select->n_faces; i++) {
 
     cs_int_t  fid = join_select->faces[i] - 1;
-    fvm_gnum_t  fgnum = join_select->compact_face_gnum[i];
+    cs_gnum_t  fgnum = join_select->compact_face_gnum[i];
     cs_int_t  bm_s = mesh->b_face_vtx_idx[fid] - 1;
     cs_int_t  bm_e = mesh->b_face_vtx_idx[fid+1] - 1;
     cs_int_t  n_bm_face_vertices = bm_e - bm_s;
@@ -1842,7 +1842,7 @@ _update_selected_face_connect(const cs_join_select_t  *join_select,
                               cs_int_t                *p_f2v_lst[])
 {
   cs_int_t  i, j, shift, v_id, select_id, join_fid;
-  fvm_gnum_t  fgnum;
+  cs_gnum_t  fgnum;
 
   cs_int_t  *new_f2v_lst = NULL, *new_f2v_idx = NULL;
   cs_int_t  *f2v_idx = *p_f2v_idx;
@@ -2185,26 +2185,26 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
                                const cs_join_select_t   *join_select,
                                const cs_mesh_t          *mesh,
                                cs_join_param_t           join_param,
-                               fvm_gnum_t                cell_gnum[],
+                               cs_gnum_t                 cell_gnum[],
                                cs_int_t                  face_family[])
 {
   int  rank;
-  fvm_lnum_t  i, j, fid, shift;
-  fvm_gnum_t  compact_fgnum;
+  cs_lnum_t  i, j, fid, shift;
+  cs_gnum_t  compact_fgnum;
 
   int  reduce_size = 0;
   int  *reduce_ids = NULL, *parent = NULL;
   int  *send_count = NULL, *recv_count = NULL;
   int  *send_shift = NULL, *recv_shift = NULL;
-  fvm_gnum_t  *recv_gbuf = NULL, *send_gbuf = NULL, *reduce_index = NULL;
+  cs_gnum_t  *recv_gbuf = NULL, *send_gbuf = NULL, *reduce_index = NULL;
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
   const int  n_ranks = cs_glob_n_ranks;
   const int  loc_rank = CS_MAX(cs_glob_rank_id, 0);
-  const fvm_gnum_t  *gnum_rank_index = join_select->compact_rank_index;
-  const fvm_gnum_t  loc_rank_s = join_select->compact_rank_index[loc_rank];
-  const fvm_gnum_t  loc_rank_e = join_select->compact_rank_index[loc_rank+1];
+  const cs_gnum_t  *gnum_rank_index = join_select->compact_rank_index;
+  const cs_gnum_t  loc_rank_s = join_select->compact_rank_index[loc_rank];
+  const cs_gnum_t  loc_rank_e = join_select->compact_rank_index[loc_rank+1];
 
   /* Sanity checks */
 
@@ -2228,7 +2228,7 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
     if (gnum_rank_index[i] < gnum_rank_index[i+1])
       reduce_size++;
 
-  BFT_MALLOC(reduce_index, reduce_size+1, fvm_gnum_t);
+  BFT_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
   BFT_MALLOC(reduce_ids, reduce_size, int);
 
   reduce_size = 0;
@@ -2268,7 +2268,7 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
 
   assert(send_shift[n_ranks] == n2o_hist->index[n2o_hist->n_elts]);
 
-  BFT_MALLOC(send_gbuf, send_shift[n_ranks]*2, fvm_gnum_t);
+  BFT_MALLOC(send_gbuf, send_shift[n_ranks]*2, cs_gnum_t);
   BFT_MALLOC(parent, send_shift[n_ranks], int);
 
   /* Fill the list of ranks */
@@ -2328,10 +2328,10 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
   for (rank = 0; rank < n_ranks; rank++)
     recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
 
-  BFT_MALLOC(recv_gbuf, recv_shift[n_ranks]*2, fvm_gnum_t);
+  BFT_MALLOC(recv_gbuf, recv_shift[n_ranks]*2, cs_gnum_t);
 
-  MPI_Alltoallv(send_gbuf, send_count, send_shift, FVM_MPI_GNUM,
-                recv_gbuf, recv_count, recv_shift, FVM_MPI_GNUM, mpi_comm);
+  MPI_Alltoallv(send_gbuf, send_count, send_shift, CS_MPI_GNUM,
+                recv_gbuf, recv_count, recv_shift, CS_MPI_GNUM, mpi_comm);
 
   /* Now switch from 1 to 2 entries in send and receive buffers */
 
@@ -2403,8 +2403,8 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
 
   /* Return values to send ranks */
 
-  MPI_Alltoallv(recv_gbuf, recv_count, recv_shift, FVM_MPI_GNUM,
-                send_gbuf, send_count, send_shift, FVM_MPI_GNUM, mpi_comm);
+  MPI_Alltoallv(recv_gbuf, recv_count, recv_shift, CS_MPI_GNUM,
+                send_gbuf, send_count, send_shift, CS_MPI_GNUM, mpi_comm);
 
   /* Define cell_gnum */
 
@@ -2445,20 +2445,20 @@ _get_linked_cell_gnum_and_family(const cs_join_select_t  *join_select,
                                  cs_join_param_t          join_param,
                                  const cs_join_gset_t    *n2o_face_hist,
                                  const cs_mesh_t         *mesh,
-                                 fvm_gnum_t              *p_cell_gnum[],
+                                 cs_gnum_t               *p_cell_gnum[],
                                  cs_int_t                *p_face_family[])
 {
   cs_int_t  i, j, fid;
-  fvm_gnum_t  compact_fgnum;
+  cs_gnum_t  compact_fgnum;
 
-  fvm_gnum_t  *cell_gnum = NULL;
-  cs_int_t    *face_family = NULL;
+  cs_gnum_t  *cell_gnum = NULL;
+  cs_int_t   *face_family = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
 
   BFT_MALLOC(cell_gnum,
              n2o_face_hist->index[n2o_face_hist->n_elts],
-             fvm_gnum_t);
+             cs_gnum_t);
 
   BFT_MALLOC(face_family,
              n2o_face_hist->index[n2o_face_hist->n_elts],
@@ -2558,7 +2558,7 @@ _get_linked_cell_gnum_and_family(const cs_join_select_t  *join_select,
 
 static void
 _print_error_info(cs_int_t                jfnum,
-                  const fvm_gnum_t        cgnum[],
+                  const cs_gnum_t         cgnum[],
                   const cs_int_t          fnum[],
                   const cs_join_mesh_t   *jmesh)
 {
@@ -2699,10 +2699,10 @@ _get_topo_orient(cs_int_t                omfnum,
                  cs_int_t                jmfnum,
                  const cs_mesh_t        *mesh,
                  const cs_join_mesh_t   *jmesh,
-                 fvm_gnum_t              gtmp[])
+                 cs_gnum_t               gtmp[])
 {
   int  i, j, k, jvid, mvid;
-  fvm_gnum_t  ref1, ref2;
+  cs_gnum_t  ref1, ref2;
 
   int  ret = 0;
   int  jmfid = jmfnum - 1, omfid = omfnum - 1;
@@ -2711,8 +2711,8 @@ _get_topo_orient(cs_int_t                omfnum,
   int  ms = mesh->b_face_vtx_idx[omfid] - 1;
   int  me = mesh->b_face_vtx_idx[omfid+1] - 1;
   int  jsize = jme - jms, size = me - ms;
-  fvm_gnum_t  *jconnect = &(gtmp[0]);
-  fvm_gnum_t  *connect = &(gtmp[jsize+1]);
+  cs_gnum_t  *jconnect = &(gtmp[0]);
+  cs_gnum_t  *connect = &(gtmp[jsize+1]);
 
   /* Fill work buffers
      mesh->global_vtx_num is always allocated even if in serial run */
@@ -2782,12 +2782,12 @@ _get_topo_orient(cs_int_t                omfnum,
 
 static void
 _reorient(cs_int_t                jfnum,
-          fvm_gnum_t              cgnum[],
+          cs_gnum_t               cgnum[],
           cs_int_t                fnum[],
           const cs_mesh_t        *mesh,
           const cs_join_mesh_t   *jmesh,
           cs_int_t                ltmp[],
-          fvm_gnum_t              gtmp[],
+          cs_gnum_t               gtmp[],
           double                  dtmp[])
 {
   int  i, k, orient_tag;
@@ -3067,18 +3067,18 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 {
   cs_int_t  i, j, k, select_id, vid, fid, shift;
   cs_int_t  n_face_vertices, max_size, orient_tag;
-  fvm_gnum_t  compact_old_fgnum;
+  cs_gnum_t  compact_old_fgnum;
 
-  cs_int_t  n_ib_faces = mesh->n_b_faces, n_fb_faces = 0;
-  fvm_gnum_t  n_g_ib_faces = mesh->n_g_b_faces;
+  cs_int_t   n_ib_faces = mesh->n_b_faces, n_fb_faces = 0;
+  cs_gnum_t  n_g_ib_faces = mesh->n_g_b_faces;
   cs_int_t  *new_f2v_idx = NULL, *new_f2v_lst = NULL, *ltmp = NULL;
   cs_int_t  *_new_face_family = NULL, *new_face_cells = NULL;
-  fvm_gnum_t  *new_fgnum = NULL, *gtmp = NULL;
+  cs_gnum_t  *new_fgnum = NULL, *gtmp = NULL;
 
   const int  n_ranks = cs_glob_n_ranks;
   const int  rank = CS_MAX(cs_glob_rank_id, 0);
-  const fvm_gnum_t  rank_start = join_select->compact_rank_index[rank] + 1;
-  const fvm_gnum_t  rank_end = join_select->compact_rank_index[rank+1] + 1;
+  const cs_gnum_t  rank_start = join_select->compact_rank_index[rank] + 1;
+  const cs_gnum_t  rank_end = join_select->compact_rank_index[rank+1] + 1;
 
   n_fb_faces = n_ib_faces + n_new_b_faces - join_select->n_faces;
   mesh->n_b_faces = n_fb_faces;
@@ -3089,7 +3089,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   BFT_MALLOC(_new_face_family, n_fb_faces, cs_int_t);
 
   if (n_ranks > 1)
-    BFT_MALLOC(new_fgnum, n_fb_faces, fvm_gnum_t);
+    BFT_MALLOC(new_fgnum, n_fb_faces, cs_gnum_t);
 
   max_size = 0;
   for (i = 0; i < n_ib_faces; i++)
@@ -3099,7 +3099,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
     max_size = CS_MAX(max_size,
                       jmesh->face_vtx_idx[i+1]-jmesh->face_vtx_idx[i]);
 
-  BFT_MALLOC(gtmp, 2*(max_size+1), fvm_gnum_t);
+  BFT_MALLOC(gtmp, 2*(max_size+1), cs_gnum_t);
   BFT_MALLOC(ltmp, max_size, cs_int_t);
 
   /* Delete faces included in join_selection. Add other initial faces.
@@ -3329,7 +3329,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
                                                   n_fb_faces,
                                                   0); /* Not shared */
 
-    const fvm_gnum_t  *new_io_gnum = fvm_io_num_get_global_num(new_io_num);
+    const cs_gnum_t  *new_io_gnum = fvm_io_num_get_global_num(new_io_num);
 
     mesh->n_g_b_faces = fvm_io_num_get_global_count(new_io_num);
 
@@ -3636,9 +3636,9 @@ _sync_family_combinations(int   *n_fam,
 
 static int *
 _combine_families(cs_mesh_t   *mesh,
-                  fvm_lnum_t  *family_idx,
+                  cs_lnum_t   *family_idx,
                   cs_int_t    *family,
-                  fvm_lnum_t   n_elts)
+                  cs_lnum_t    n_elts)
 {
   int   n_fam = 0;
   int  *_family_idx = NULL;
@@ -3652,14 +3652,14 @@ _combine_families(cs_mesh_t   *mesh,
 
   if (n_elts > 0) {
 
-    fvm_lnum_t i, j, j_prev, n_prev;
-    fvm_lnum_t *order = NULL;
-    fvm_gnum_t *tmp_family = NULL;
-    const fvm_lnum_t n_fam_values = family_idx[n_elts];
+    cs_lnum_t i, j, j_prev, n_prev;
+    cs_lnum_t *order = NULL;
+    cs_gnum_t *tmp_family = NULL;
+    const cs_lnum_t n_fam_values = family_idx[n_elts];
 
     /* Build ordering of elements by associated families */
 
-    BFT_MALLOC(tmp_family, n_fam_values, fvm_gnum_t);
+    BFT_MALLOC(tmp_family, n_fam_values, cs_gnum_t);
 
     for (i = 0; i < n_fam_values; i++)
       tmp_family[i] = family[i] + 1;
@@ -3681,7 +3681,7 @@ _combine_families(cs_mesh_t   *mesh,
     n_prev = -1;
 
     for (i = 0; i < n_elts; i++) {
-      fvm_lnum_t k, l, n;
+      cs_lnum_t k, l, n;
       _Bool is_same = true;
       j = order[i];
       n = family_idx[j+1] - family_idx[j];
@@ -3728,7 +3728,7 @@ _combine_families(cs_mesh_t   *mesh,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-    fvm_lnum_t i;
+    cs_lnum_t i;
     int *renum = _sync_family_combinations(&n_fam,
                                            &_family_idx,
                                            &_family);
@@ -3832,10 +3832,10 @@ _update_families(const cs_join_gset_t    *n2o_face_hist,
                  cs_join_mesh_t          *join_mesh,
                  cs_mesh_t               *mesh)
 {
-  fvm_lnum_t  i, j, k;
+  cs_lnum_t  i, j, k;
 
   int  null_family = 0;
-  fvm_lnum_t  *face_family_idx = NULL;
+  cs_lnum_t  *face_family_idx = NULL;
   cs_int_t  *face_family = NULL;
   int  *new_face_family = NULL;
 
@@ -3846,7 +3846,7 @@ _update_families(const cs_join_gset_t    *n2o_face_hist,
 
   assert(n2o_face_hist->n_elts == join_mesh->n_faces);
 
-  BFT_MALLOC(face_family_idx, join_mesh->n_faces + 1, fvm_lnum_t);
+  BFT_MALLOC(face_family_idx, join_mesh->n_faces + 1, cs_lnum_t);
   BFT_MALLOC(face_family, n2o_face_hist->index[join_mesh->n_faces], cs_int_t);
 
   /* Compact numbering (remove zeroes) */
@@ -3862,8 +3862,8 @@ _update_families(const cs_join_gset_t    *n2o_face_hist,
   for (i = 0; i < join_mesh->n_faces; i++) {
 
     int prev_fam = 0;
-    const fvm_lnum_t start_id = n2o_face_hist->index[i];
-    const fvm_lnum_t end_id = n2o_face_hist->index[i+1];
+    const cs_lnum_t start_id = n2o_face_hist->index[i];
+    const cs_lnum_t end_id = n2o_face_hist->index[i+1];
 
     cs_sort_shell(start_id, end_id, old_face_family);
 
@@ -3920,31 +3920,31 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
                         cs_join_param_t             join_param,
                         cs_join_mesh_t             *jmesh,
                         const cs_int_t              join2mesh_vtx_id[],
-                        const fvm_gnum_t            cell_gnum[],
+                        const cs_gnum_t             cell_gnum[],
                         cs_int_t                    n_new_i_faces,
                         const cs_join_face_type_t   new_face_type[],
                         const int                   new_face_family[],
                         const cs_join_gset_t       *n2o_face_hist,
                         cs_mesh_t                  *mesh)
 {
-  fvm_lnum_t  i, j, k, vid, id, shift, fnum[2], max_size;
-  fvm_gnum_t  compact_fgnum, cgnum[2];
+  cs_lnum_t  i, j, k, vid, id, shift, fnum[2], max_size;
+  cs_gnum_t  compact_fgnum, cgnum[2];
 
-  fvm_gnum_t  *gtmp = NULL;
+  cs_gnum_t  *gtmp = NULL;
   double  *dtmp = NULL;
-  fvm_lnum_t  *ltmp = NULL;
-  fvm_lnum_t  n_fi_faces = 0, n_ii_faces = mesh->n_i_faces;
-  fvm_lnum_t  *new_f2v_idx = mesh->i_face_vtx_idx;
-  fvm_lnum_t  *new_f2v_lst = mesh->i_face_vtx_lst;
-  cs_int_t    *_new_face_family = mesh->i_face_family;
-  fvm_lnum_t  *new_face_cells = mesh->i_face_cells;
-  fvm_gnum_t  n_g_ii_faces = mesh->n_g_i_faces;
-  fvm_gnum_t  *new_fgnum = mesh->global_i_face_num;
+  cs_lnum_t  *ltmp = NULL;
+  cs_lnum_t  n_fi_faces = 0, n_ii_faces = mesh->n_i_faces;
+  cs_lnum_t  *new_f2v_idx = mesh->i_face_vtx_idx;
+  cs_lnum_t  *new_f2v_lst = mesh->i_face_vtx_lst;
+  cs_int_t   *_new_face_family = mesh->i_face_family;
+  cs_lnum_t  *new_face_cells = mesh->i_face_cells;
+  cs_gnum_t  n_g_ii_faces = mesh->n_g_i_faces;
+  cs_gnum_t  *new_fgnum = mesh->global_i_face_num;
 
   const int  n_ranks = cs_glob_n_ranks;
   const int  rank = CS_MAX(cs_glob_rank_id, 0);
-  const fvm_gnum_t  rank_start = join_select->compact_rank_index[rank] + 1;
-  const fvm_gnum_t  rank_end = join_select->compact_rank_index[rank+1] + 1;
+  const cs_gnum_t  rank_start = join_select->compact_rank_index[rank] + 1;
+  const cs_gnum_t  rank_end = join_select->compact_rank_index[rank+1] + 1;
 
   assert(mesh->global_vtx_num != NULL); /* Even if in serial run */
 
@@ -3952,8 +3952,8 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   mesh->n_i_faces = n_fi_faces;
   mesh->n_g_i_faces = n_fi_faces;
 
-  BFT_REALLOC(new_f2v_idx, n_fi_faces + 1, fvm_lnum_t);
-  BFT_REALLOC(new_face_cells, 2*n_fi_faces, fvm_lnum_t);
+  BFT_REALLOC(new_f2v_idx, n_fi_faces + 1, cs_lnum_t);
+  BFT_REALLOC(new_face_cells, 2*n_fi_faces, cs_lnum_t);
   BFT_REALLOC(_new_face_family, n_fi_faces, cs_int_t);
 
   max_size = 0;
@@ -3968,8 +3968,8 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   }
 
   BFT_MALLOC(dtmp, 6*(max_size+1), double);
-  BFT_MALLOC(gtmp, 2*(max_size+1), fvm_gnum_t);
-  BFT_MALLOC(ltmp, max_size, fvm_lnum_t);
+  BFT_MALLOC(gtmp, 2*(max_size+1), cs_gnum_t);
+  BFT_MALLOC(ltmp, max_size, cs_lnum_t);
 
   /* Add faces resulting from the joining operation
      - face -> vertex index
@@ -4078,7 +4078,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
   for (i = n_ii_faces; i < n_fi_faces; i++)
     new_f2v_idx[i+1] += new_f2v_idx[i];
 
-  BFT_REALLOC(new_f2v_lst, new_f2v_idx[n_fi_faces]-1, fvm_lnum_t);
+  BFT_REALLOC(new_f2v_lst, new_f2v_idx[n_fi_faces]-1, cs_lnum_t);
 
   /* Define the face -> vertex connectivity list */
 
@@ -4100,10 +4100,10 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
 
   if (n_ranks > 1) { /* Get a compact global face numbering */
 
-    fvm_io_num_t  *new_io_num = NULL;
-    const fvm_gnum_t  *new_io_gnum = NULL;
+    fvm_io_num_t *new_io_num = NULL;
+    const cs_gnum_t  *new_io_gnum = NULL;
 
-    BFT_REALLOC(new_fgnum, mesh->n_i_faces, fvm_gnum_t);
+    BFT_REALLOC(new_fgnum, mesh->n_i_faces, cs_gnum_t);
 
     n_fi_faces = n_ii_faces;
     for (i = 0; i < jmesh->n_faces; i++)
@@ -4187,8 +4187,8 @@ _clean_vertices(cs_join_param_t   param,
 
   if (n_ranks > 1) {
 
-    fvm_io_num_t  *vtx_io_num = NULL;
-    const fvm_gnum_t  *io_gnum = NULL;
+    fvm_io_num_t *vtx_io_num = NULL;
+    const cs_gnum_t  *io_gnum = NULL;
 
     /* Define a new compact global vertex numbering */
 
@@ -4197,7 +4197,7 @@ _clean_vertices(cs_join_param_t   param,
       if (tag[i] > 0)
         mesh->global_vtx_num[n_f_vertices++] = mesh->global_vtx_num[i];
 
-    BFT_REALLOC(mesh->global_vtx_num, n_f_vertices, fvm_gnum_t);
+    BFT_REALLOC(mesh->global_vtx_num, n_f_vertices, cs_gnum_t);
 
     vtx_io_num = fvm_io_num_create(NULL,
                                    mesh->global_vtx_num,
@@ -4228,7 +4228,7 @@ _clean_vertices(cs_join_param_t   param,
     }
   }
 
-  BFT_REALLOC(mesh->vtx_coord, 3*mesh->n_vertices, fvm_coord_t);
+  BFT_REALLOC(mesh->vtx_coord, 3*mesh->n_vertices, cs_coord_t);
 
   /* Update interior face connectivity */
 
@@ -4363,7 +4363,7 @@ _delete_edges(cs_int_t        s,
 void
 cs_join_update_mesh_after_merge(cs_join_param_t        join_param,
                                 cs_join_select_t      *join_select,
-                                fvm_gnum_t             o2n_vtx_gnum[],
+                                cs_gnum_t              o2n_vtx_gnum[],
                                 cs_join_mesh_t        *join_mesh,
                                 cs_mesh_t             *mesh)
 {
@@ -4596,12 +4596,12 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 {
   int  i, j, n_matches;
 
-  fvm_gnum_t  n_g_new_b_faces = 0, n_g_multiple_bfaces = 0;
+  cs_gnum_t  n_g_new_b_faces = 0, n_g_multiple_bfaces = 0;
   cs_int_t  n_new_i_faces = 0, n_new_b_faces = 0, n_undef_faces = 0;
   cs_int_t  n_multiple_bfaces = 0;
   cs_int_t  n_old_i_faces = mesh->n_i_faces, n_old_b_faces = mesh->n_b_faces;
   cs_int_t  *join2mesh_vtx_id = NULL;
-  fvm_gnum_t  *cell_gnum = NULL;
+  cs_gnum_t  *cell_gnum = NULL;
   int  *old_face_family = NULL;
   int  *new_face_family = NULL;
   cs_join_face_type_t  *new_face_type = NULL;
@@ -4685,14 +4685,14 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
 #if defined(HAVE_MPI)
   if (n_ranks > 1) {
 
-    fvm_gnum_t _loc[3], _glob[3];
+    cs_gnum_t _loc[3], _glob[3];
     MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
     _loc[0] = n_new_b_faces;
     _loc[1] = n_undef_faces;
     _loc[2] = n_multiple_bfaces;
 
-    MPI_Allreduce(_loc, _glob, 3, FVM_MPI_GNUM, MPI_SUM, mpi_comm);
+    MPI_Allreduce(_loc, _glob, 3, CS_MPI_GNUM, MPI_SUM, mpi_comm);
 
     n_g_new_b_faces = _glob[0];
     n_g_multiple_bfaces = _glob[2];
@@ -4879,7 +4879,7 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
   cs_int_t  connect_shift = 0;
   cs_int_t  max_connect = 0, b_size = 10, i_size = 10;
   cs_int_t  n_b_clean_faces = 0, n_i_clean_faces = 0;
-  fvm_gnum_t  n_g_clean_faces[2] = {0, 0};
+  cs_gnum_t  n_g_clean_faces[2] = {0, 0};
   cs_int_t  *b_clean_faces = NULL, *i_clean_faces = NULL;
   cs_int_t  *kill = NULL, *connect = NULL;
   FILE *logfile = cs_glob_join_log;
@@ -5028,8 +5028,8 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    fvm_gnum_t  buf[2];
-    MPI_Allreduce(n_g_clean_faces, buf, 2, FVM_MPI_GNUM, MPI_SUM,
+    cs_gnum_t  buf[2];
+    MPI_Allreduce(n_g_clean_faces, buf, 2, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
     n_g_clean_faces[0] = buf[0];
     n_g_clean_faces[1] = buf[1];

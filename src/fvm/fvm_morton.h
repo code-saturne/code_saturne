@@ -88,19 +88,19 @@ typedef struct {
 #if defined(HAVE_MPI)
 
 void
-fvm_morton_get_coord_extents(int                dim,
-                             size_t             n_coords,
-                             const fvm_coord_t  coords[],
-                             fvm_coord_t        g_extents[],
-                             MPI_Comm           comm);
+fvm_morton_get_coord_extents(int               dim,
+                             size_t            n_coords,
+                             const cs_coord_t  coords[],
+                             cs_coord_t        g_extents[],
+                             MPI_Comm          comm);
 
 #else
 
 void
-fvm_morton_get_coord_extents(int                dim,
-                             size_t             n_coords,
-                             const fvm_coord_t  coords[],
-                             fvm_coord_t        g_extents[]);
+fvm_morton_get_coord_extents(int               dim,
+                             size_t            n_coords,
+                             const cs_coord_t  coords[],
+                             cs_coord_t        g_extents[]);
 
 #endif
 
@@ -118,19 +118,19 @@ fvm_morton_get_coord_extents(int                dim,
 #if defined(HAVE_MPI)
 
 void
-fvm_morton_get_global_extents(int                dim,
-                              size_t             n_extents,
-                              const fvm_coord_t  extents[],
-                              fvm_coord_t        g_extents[],
-                              MPI_Comm           comm);
+fvm_morton_get_global_extents(int               dim,
+                              size_t            n_extents,
+                              const cs_coord_t  extents[],
+                              cs_coord_t        g_extents[],
+                              MPI_Comm          comm);
 
 #else
 
 void
-fvm_morton_get_global_extents(int                dim,
-                              size_t             n_extents,
-                              const fvm_coord_t  extents[],
-                              fvm_coord_t        g_extents[]);
+fvm_morton_get_global_extents(int               dim,
+                              size_t            n_extents,
+                              const cs_coord_t  extents[],
+                              cs_coord_t        g_extents[]);
 
 #endif
 
@@ -150,7 +150,7 @@ fvm_morton_get_global_extents(int                dim,
 fvm_morton_code_t
 fvm_morton_encode(int                dim,
                   fvm_morton_int_t   level,
-                  const fvm_coord_t  coords[]);
+                  const cs_coord_t   coords[]);
 
 /*----------------------------------------------------------------------------
  * Encode an array of coordinates.
@@ -170,9 +170,9 @@ fvm_morton_encode(int                dim,
 void
 fvm_morton_encode_coords(int                dim,
                          fvm_morton_int_t   level,
-                         const fvm_coord_t  extents[],
+                         const cs_coord_t   extents[],
                          size_t             n_coords,
-                         const fvm_coord_t  coords[],
+                         const cs_coord_t   coords[],
                          fvm_morton_code_t  m_code[]);
 
 /*----------------------------------------------------------------------------
@@ -219,9 +219,9 @@ fvm_morton_compare(int                dim,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_morton_local_order(fvm_lnum_t               n_codes,
+fvm_morton_local_order(cs_lnum_t                n_codes,
                        const fvm_morton_code_t  morton_codes[],
-                       fvm_lnum_t               order[]);
+                       cs_lnum_t                order[]);
 
 /*----------------------------------------------------------------------------
  * Locally sort a list of Morton ids.
@@ -232,7 +232,7 @@ fvm_morton_local_order(fvm_lnum_t               n_codes,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_morton_local_sort(fvm_lnum_t         n_codes,
+fvm_morton_local_sort(cs_lnum_t          n_codes,
                       fvm_morton_code_t  morton_codes[]);
 
 /*----------------------------------------------------------------------------
@@ -280,7 +280,7 @@ fvm_morton_a_ge_b(fvm_morton_code_t  a,
  *----------------------------------------------------------------------------*/
 
 int
-fvm_morton_binary_search(fvm_lnum_t          size,
+fvm_morton_binary_search(cs_lnum_t           size,
                          fvm_morton_code_t   code,
                          fvm_morton_code_t  *codes);
 
@@ -327,10 +327,10 @@ fvm_morton_quantile_search(size_t              n_quantiles,
 double
 fvm_morton_build_rank_index(int                      dim,
                             int                      gmax_level,
-                            fvm_gnum_t               n_codes,
+                            cs_gnum_t                n_codes,
                             const fvm_morton_code_t  code[],
-                            const fvm_lnum_t         weight[],
-                            const fvm_lnum_t         order[],
+                            const cs_lnum_t          weight[],
+                            const cs_lnum_t          order[],
                             fvm_morton_code_t        rank_index[],
                             MPI_Comm                 comm);
 

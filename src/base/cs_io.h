@@ -293,7 +293,7 @@ cs_io_set_indexed_position(cs_io_t             *inp,
                            size_t               id);
 
 /*----------------------------------------------------------------------------
- * Set a message's final data type to fvm_lnum_t.
+ * Set a message's final data type to cs_lnum_t.
  *
  * It the datatype is not compatible, throw an error.
  *
@@ -307,7 +307,7 @@ cs_io_set_fvm_lnum(cs_io_sec_header_t  *header,
                    const cs_io_t       *pp_io);
 
 /*----------------------------------------------------------------------------
- * Set a message's final data type to fvm_gnum_t.
+ * Set a message's final data type to cs_gnum_t.
  *
  * It the datatype is not compatible, throw an error.
  *
@@ -383,8 +383,8 @@ cs_io_read_global(const cs_io_sec_header_t  *header,
 
 void *
 cs_io_read_block(const cs_io_sec_header_t  *header,
-                 fvm_gnum_t                 global_num_start,
-                 fvm_gnum_t                 global_num_end,
+                 cs_gnum_t                  global_num_start,
+                 cs_gnum_t                  global_num_end,
                  void                      *elts,
                  cs_io_t                   *pp_io);
 
@@ -393,7 +393,7 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
  * when the body corresponds to an index.
  *
  * In serial mode, this function behaves just like cs_io_read_block(),
- * except that it allows only unsigned integer values (fvm_gnum_t).
+ * except that it allows only unsigned integer values (cs_gnum_t).
  *
  * In parallel mode, global_num_end should be set to the past-the-end value
  * of the base data block, the same as for regular data (and not increased
@@ -422,9 +422,9 @@ cs_io_read_block(const cs_io_sec_header_t  *header,
 
 void *
 cs_io_read_index_block(cs_io_sec_header_t  *header,
-                       fvm_gnum_t           global_num_start,
-                       fvm_gnum_t           global_num_end,
-                       fvm_gnum_t          *elts,
+                       cs_gnum_t            global_num_start,
+                       cs_gnum_t            global_num_end,
+                       cs_gnum_t           *elts,
                        cs_io_t             *pp_io);
 
 /*----------------------------------------------------------------------------
@@ -447,7 +447,7 @@ cs_io_read_index_block(cs_io_sec_header_t  *header,
 
 void
 cs_io_write_global(const char      *sec_name,
-                   fvm_gnum_t       n_vals,
+                   cs_gnum_t        n_vals,
                    size_t           location_id,
                    size_t           index_id,
                    size_t           n_location_vals,
@@ -492,9 +492,9 @@ cs_io_write_global(const char      *sec_name,
 
 void
 cs_io_write_block_buffer(const char      *sec_name,
-                         fvm_gnum_t       n_g_elts,
-                         fvm_gnum_t       global_num_start,
-                         fvm_gnum_t       global_num_end,
+                         cs_gnum_t        n_g_elts,
+                         cs_gnum_t        global_num_start,
+                         cs_gnum_t        global_num_end,
                          size_t           location_id,
                          size_t           index_id,
                          size_t           n_location_vals,

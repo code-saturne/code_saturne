@@ -75,7 +75,7 @@ extern "C" {
 struct _fvm_triangulate_state_t {
 
   int          *triangle_vertices; /* current triangle vertices list */
-  fvm_coord_t  *coords;            /* vertex coordinates */
+  cs_coord_t   *coords;            /* vertex coordinates */
   int          *list_previous;     /* indices of previous vertices in polygon;
                                       size:n_vertices; */
   int          *list_next;         /* indices of next vertices in polygon;
@@ -128,16 +128,16 @@ struct _fvm_triangulate_state_t {
  *----------------------------------------------------------------------------*/
 
 static void
-_polygon_plane_3d(const int    n_vertices,
-                  fvm_coord_t  coords[])
+_polygon_plane_3d(const int   n_vertices,
+                  cs_coord_t  coords[])
 {
 
   int i, j;
 
-  fvm_coord_t  face_center[3], face_normal[3];
-  fvm_coord_t  v1[3], v2[3], cross_v1_v2[3];
-  fvm_coord_t  dot_v1_v2, module_v2;
-  fvm_coord_t  tmp_coord;
+  cs_coord_t  face_center[3], face_normal[3];
+  cs_coord_t  v1[3], v2[3], cross_v1_v2[3];
+  cs_coord_t  dot_v1_v2, module_v2;
+  cs_coord_t  tmp_coord;
 
   double   cost;
   double   sint;
@@ -146,9 +146,9 @@ _polygon_plane_3d(const int    n_vertices,
                                      buffer; above this size, allocation
                                      is necessary */
 
-  fvm_coord_t  _tmp_coords[_N_VERTICES_AUTO_MAX * 3];
-  fvm_coord_t  *_tmp_coords_p = NULL;
-  fvm_coord_t  *tmp_coords = _tmp_coords;
+  cs_coord_t  _tmp_coords[_N_VERTICES_AUTO_MAX * 3];
+  cs_coord_t  *_tmp_coords_p = NULL;
+  cs_coord_t  *tmp_coords = _tmp_coords;
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
@@ -198,7 +198,7 @@ _polygon_plane_3d(const int    n_vertices,
     /* First rotation of axis (Oz) and angle (Ox, normal proj. on Oxy) */
 
     if (n_vertices > _N_VERTICES_AUTO_MAX) {
-      BFT_MALLOC(_tmp_coords_p, n_vertices*3, fvm_coord_t);
+      BFT_MALLOC(_tmp_coords_p, n_vertices*3, cs_coord_t);
       tmp_coords = _tmp_coords_p;
     }
 
@@ -302,10 +302,10 @@ _polygon_plane_3d(const int    n_vertices,
  *----------------------------------------------------------------------------*/
 
 static _Bool
-_polygon_vertex_is_convex(const int    previous,
-                          const int    current,
-                          const int    next,
-                          const fvm_coord_t  coords[])
+_polygon_vertex_is_convex(int               previous,
+                          int               current,
+                          int               next,
+                          const cs_coord_t  coords[])
 {
   /* sin(theta) = (v1 x v2) / (|v1| x |v2|), so the sign of the sine
      is that of the cross product's z component (as v1 and v2 lie in
@@ -336,13 +336,13 @@ _polygon_vertex_is_convex(const int    previous,
  *----------------------------------------------------------------------------*/
 
 static _Bool
-_polygon_vertex_is_ear(const int          n_vertices,
-                       const int          current,
-                       const int          list_previous[],
-                       const int          list_next[],
-                       const _Bool        concave[],
-                       const fvm_coord_t  coords[],
-                       const double       epsilon)
+_polygon_vertex_is_ear(int               n_vertices,
+                       int               current,
+                       int               list_previous[],
+                       int               list_next[],
+                       _Bool             concave[],
+                       const cs_coord_t  coords[],
+                       double            epsilon)
 
 {
   int i, previous, next;
@@ -421,11 +421,11 @@ _polygon_vertex_is_ear(const int          n_vertices,
  *----------------------------------------------------------------------------*/
 
 static _Bool
-_edge_is_locally_delaunay(const int          edge_vertex_0,
-                          const int          edge_vertex_1,
-                          const int          flip_vertex_0,
-                          const int          flip_vertex_1,
-                          const fvm_coord_t  coords[])
+_edge_is_locally_delaunay(int         edge_vertex_0,
+                          int         edge_vertex_1,
+                          int         flip_vertex_0,
+                          int         flip_vertex_1,
+                          cs_coord_t  coords[])
 {
   double   a, b, delta;
   double   lambda[4];
@@ -547,12 +547,12 @@ _triangle_by_sorted_vertices(int triangle_vertices[])
  *----------------------------------------------------------------------------*/
 
 static void
-_polygon_delaunay_flip(const int          n_vertices,
-                       int                triangle_vertices[],
-                       int                edge_vertices[],
-                       int                edge_neighbors[],
-                       _Bool              edge_is_delaunay[],
-                       const fvm_coord_t  coords[])
+_polygon_delaunay_flip(int               n_vertices,
+                       int               triangle_vertices[],
+                       int               edge_vertices[],
+                       int               edge_neighbors[],
+                       _Bool             edge_is_delaunay[],
+                       const cs_coord_t  coords[])
 {
   int    triangle_id, edge_id, vertex_id;
   int    triangle_id_0, triangle_id_1;
@@ -834,7 +834,7 @@ fvm_triangulate_state_create(const int  n_vertices_max)
 
   if (n_vertices_max > 3) {
     BFT_MALLOC(this_state->triangle_vertices, (n_vertices_max - 2) * 3, int);
-    BFT_MALLOC(this_state->coords, n_vertices_max*3, fvm_coord_t);
+    BFT_MALLOC(this_state->coords, n_vertices_max*3, cs_coord_t);
     BFT_MALLOC(this_state->list_previous, n_vertices_max, int);
     BFT_MALLOC(this_state->list_next, n_vertices_max, int);
     BFT_MALLOC(this_state->edge_vertices, n_edges_tot_max*2, int);
@@ -914,11 +914,11 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state)
 int
 fvm_triangulate_polygon(int                             dim,
                         int                             n_vertices,
-                        const fvm_coord_t               coords[],
-                        const fvm_lnum_t                parent_vertex_num[],
-                        const fvm_lnum_t                polygon_vertices[],
+                        const cs_coord_t                coords[],
+                        const cs_lnum_t                 parent_vertex_num[],
+                        const cs_lnum_t                 polygon_vertices[],
                         fvm_triangulate_def_t           mode,
-                        fvm_lnum_t                      triangle_vertices[],
+                        cs_lnum_t                       triangle_vertices[],
                         fvm_triangulate_state_t  *const state)
 {
   int i, j;
@@ -941,7 +941,7 @@ fvm_triangulate_polygon(int                             dim,
 
     state->n_vertices_max = n_vertices_max;
     BFT_REALLOC(state->triangle_vertices, (n_vertices_max - 2) * 3, int);
-    BFT_REALLOC(state->coords, n_vertices_max*3, fvm_coord_t);
+    BFT_REALLOC(state->coords, n_vertices_max*3, cs_coord_t);
     BFT_REALLOC(state->list_previous, n_vertices_max, int);
     BFT_REALLOC(state->list_next, n_vertices_max, int);
     BFT_REALLOC(state->edge_vertices, n_edges_tot_max*2, int);
@@ -1113,16 +1113,16 @@ fvm_triangulate_polygon(int                             dim,
  *----------------------------------------------------------------------------*/
 
 int
-fvm_triangulate_quadrangle(int                dim,
-                           const fvm_coord_t  coords[],
-                           const fvm_lnum_t   parent_vertex_num[],
-                           const fvm_lnum_t   quadrangle_vertices[],
-                           fvm_lnum_t         triangle_vertices[])
+fvm_triangulate_quadrangle(int               dim,
+                           const cs_coord_t  coords[],
+                           const cs_lnum_t   parent_vertex_num[],
+                           const cs_lnum_t   quadrangle_vertices[],
+                           cs_lnum_t         triangle_vertices[])
 {
   int i, j;
   double d2_02, d2_13;
   int o_count = 0, o_id = 0;
-  fvm_lnum_t  vertex_id[4] = {0, 1, 2, 3};
+  cs_lnum_t   vertex_id[4] = {0, 1, 2, 3};
   double v1[3] = {0.0, 0.0, 0.0}, v2[3] = {0.0, 0.0, 0.0};
   double n0[3] = {0.0, 0.0, 0.0}, ni[3] = {0.0, 0.0, 0.0};
 

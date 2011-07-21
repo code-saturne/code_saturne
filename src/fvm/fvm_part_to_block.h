@@ -59,14 +59,14 @@ extern "C" {
 
 typedef struct {
 
-  fvm_gnum_t   gnum_range[2];  /* Start and past-the-end global numbers
+  cs_gnum_t    gnum_range[2];  /* Start and past-the-end global numbers
                                   associated with local block */
   int          n_ranks;        /* Number of active ranks */
   int          rank_step;      /* Step between active block ranks
                                   (1 in basic case, > 1 if we seek to
                                   avoid too small buffers and agglomerate
                                   blocks on only a few ranks) */
-  fvm_lnum_t   block_size;     /* Basic block size */
+  cs_lnum_t    block_size;     /* Basic block size */
 
 } fvm_part_to_block_info_t;
 
@@ -100,8 +100,8 @@ fvm_part_to_block_info_t
 fvm_part_to_block_compute_sizes(int         rank_id,
                                 int         n_ranks,
                                 int         min_rank_step,
-                                fvm_lnum_t  min_block_size,
-                                fvm_gnum_t  n_g_ents);
+                                cs_lnum_t   min_block_size,
+                                cs_gnum_t   n_g_ents);
 
 #if defined(HAVE_MPI)
 
@@ -121,8 +121,8 @@ fvm_part_to_block_compute_sizes(int         rank_id,
 fvm_part_to_block_t *
 fvm_part_to_block_create_by_gnum(MPI_Comm                   comm,
                                  fvm_part_to_block_info_t   bi,
-                                 fvm_lnum_t                 n_ents,
-                                 const fvm_gnum_t           global_ent_num[]);
+                                 cs_lnum_t                  n_ents,
+                                 const cs_gnum_t            global_ent_num[]);
 
 /*----------------------------------------------------------------------------
  * Destroy a partition to block distributor structure.
@@ -147,7 +147,7 @@ fvm_part_to_block_destroy(fvm_part_to_block_t **d);
 
 void
 fvm_part_to_block_transfer_gnum(fvm_part_to_block_t  *d,
-                                fvm_gnum_t            global_ent_num[]);
+                                cs_gnum_t             global_ent_num[]);
 
 /*----------------------------------------------------------------------------
  * Return number of entities associated with local partition
@@ -159,7 +159,7 @@ fvm_part_to_block_transfer_gnum(fvm_part_to_block_t  *d,
  *   number of entities associated with distribution receive
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_part_to_block_get_n_part_ents(fvm_part_to_block_t *d);
 
 /*----------------------------------------------------------------------------
@@ -195,8 +195,8 @@ fvm_part_to_block_copy_array(fvm_part_to_block_t   *d,
 
 void
 fvm_part_to_block_copy_index(fvm_part_to_block_t  *d,
-                             const fvm_lnum_t     *part_index,
-                             fvm_lnum_t           *block_index);
+                             const cs_lnum_t      *part_index,
+                             cs_lnum_t            *block_index);
 
 /*----------------------------------------------------------------------------
  * Copy indexed data from general domain partition to block distribution.
@@ -217,9 +217,9 @@ fvm_part_to_block_copy_index(fvm_part_to_block_t  *d,
 void
 fvm_part_to_block_copy_indexed(fvm_part_to_block_t   *d,
                                fvm_datatype_t         datatype,
-                               const fvm_lnum_t      *part_index,
+                               const cs_lnum_t       *part_index,
                                const void            *part_val,
-                               const fvm_lnum_t      *block_index,
+                               const cs_lnum_t       *block_index,
                                void                  *block_val);
 
 #endif /* defined(HAVE_MPI) */

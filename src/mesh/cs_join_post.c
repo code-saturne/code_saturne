@@ -270,7 +270,7 @@ cs_join_post_mesh(const char            *mesh_name,
   const char *name = NULL;
   int  *ifield = NULL;
   double  *dfield = NULL;
-  fvm_gnum_t  *vertex_gnum = NULL;
+  cs_gnum_t  *vertex_gnum = NULL;
   cs_real_t  *vertex_coord = NULL;
   cs_int_t  *parent_vtx_num = NULL;
   fvm_nodal_t  *post_mesh = NULL;
@@ -321,7 +321,7 @@ cs_join_post_mesh(const char            *mesh_name,
 
   /* Order vertices by increasing global number */
 
-  BFT_MALLOC(vertex_gnum, join_mesh->n_vertices, fvm_gnum_t);
+  BFT_MALLOC(vertex_gnum, join_mesh->n_vertices, cs_gnum_t);
 
   for (i = 0; i < join_mesh->n_vertices; i++)
     vertex_gnum[i] = (join_mesh->vertices[i]).gnum;
@@ -476,7 +476,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 void
 cs_join_post_after_split(cs_int_t          n_old_i_faces,
                          cs_int_t          n_old_b_faces,
-                         fvm_gnum_t        n_g_new_b_faces,
+                         cs_gnum_t         n_g_new_b_faces,
                          cs_int_t          n_select_faces,
                          const cs_mesh_t  *mesh,
                          cs_join_param_t   join_param)

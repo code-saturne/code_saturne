@@ -560,7 +560,7 @@ _init_all_socket_syr(int port_num)
 
 void CS_PROCF(nbcsyr, NBCSYR)
 (
- fvm_lnum_t  *n_couplings
+ cs_lnum_t  *n_couplings
 )
 {
   if (_cs_glob_n_syr_cp < 0) {
@@ -720,8 +720,8 @@ void CS_PROCF(nbfsyr, NBFSYR)
 
 void CS_PROCF(lfasyr, LFASYR)
 (
- const cs_int_t    *coupl_num,
-       fvm_lnum_t  *coupl_face_list
+ const cs_int_t   *coupl_num,
+       cs_lnum_t  *coupl_face_list
 )
 {
   int n_couplings = _cs_glob_n_syr3_cp + _cs_glob_n_syr4_cp;

@@ -462,9 +462,9 @@ void CS_PROCF (ecrctw, ECRCTW)
   cs_ctwr_zone_t  *ct;
   char            *location_name = NULL;
   cs_int_t         length        = 0;
-  fvm_gnum_t      *g_elt_num     = NULL;
+  cs_gnum_t       *g_elt_num     = NULL;
 
-  fvm_lnum_t n_g_elements, n_elements;
+  cs_lnum_t n_g_elements, n_elements;
 
   ierror = CS_RESTART_SUCCES;
 
@@ -493,7 +493,7 @@ void CS_PROCF (ecrctw, ECRCTW)
     n_g_elements = fvm_nodal_get_n_g_elements(ct->water_mesh, FVM_CELL_HEXA);
     n_elements = fvm_nodal_get_n_elements(ct->water_mesh, FVM_CELL_HEXA);
 
-    BFT_MALLOC(g_elt_num, n_g_elements, fvm_gnum_t);
+    BFT_MALLOC(g_elt_num, n_g_elements, cs_gnum_t);
 
     fvm_nodal_get_global_element_num(ct->water_mesh,
                                      FVM_CELL_HEXA,
@@ -638,13 +638,13 @@ void CS_PROCF (lecctw, LECCTW)
   cs_restart_location_t location_id,support;
   cs_type_t             typ_val;
 
-  fvm_lnum_t n_g_elements, n_elements;
+  cs_lnum_t n_g_elements, n_elements;
 
   cs_ctwr_zone_t  *ct;
 
   char        *location_name = NULL;
   cs_int_t     length        = 0;
-  fvm_gnum_t  *g_elt_num     = NULL;
+  cs_gnum_t   *g_elt_num     = NULL;
 
   ierror = CS_RESTART_SUCCES;
 
@@ -687,7 +687,7 @@ void CS_PROCF (lecctw, LECCTW)
     n_g_elements = fvm_nodal_get_n_g_elements(ct->water_mesh, FVM_CELL_HEXA);
     n_elements   = fvm_nodal_get_n_elements  (ct->water_mesh, FVM_CELL_HEXA);
 
-    BFT_MALLOC( g_elt_num , n_g_elements, fvm_gnum_t );
+    BFT_MALLOC( g_elt_num , n_g_elements, cs_gnum_t );
 
     fvm_nodal_get_global_element_num( ct->water_mesh ,
                                       FVM_CELL_HEXA  ,
@@ -1055,11 +1055,11 @@ void cs_ctwr_definit
 
   /* Selection des cellules */
 
-  BFT_MALLOC(ct->ze_cell_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+  BFT_MALLOC(ct->ze_cell_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
   cs_selector_get_cell_list(ze_name, &(ct->nbevct), ct->ze_cell_list);
 
-  BFT_REALLOC(ct->ze_cell_list, ct->nbevct, fvm_lnum_t);
+  BFT_REALLOC(ct->ze_cell_list, ct->nbevct, cs_lnum_t);
 
   /* Redimensionnement du tableau des zones d'echange si necessaire */
 
@@ -1157,8 +1157,8 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
   cs_real_t   cpe, cpv, cpa, hv0, dgout, visc, conduc, rhoe;
 
 
-  fvm_lnum_t *lst_par_fac_sup_ct, *lst_par_fac_inf_ct_upw;
-  const fvm_lnum_t *locat_cel_upw = NULL;
+  cs_lnum_t *lst_par_fac_sup_ct, *lst_par_fac_inf_ct_upw;
+  const cs_lnum_t *locat_cel_upw = NULL;
 
   cs_ctwr_zone_t  *ct;
   cs_ctwr_zone_t  *ct_upw;
@@ -1284,7 +1284,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
     * Calcul pour la face superieure ,           *
     * Introduction des conditions aux limites ct *
     *--------------------------------------------*/
-    BFT_MALLOC( lst_par_fac_sup_ct , ct->nnpsct, fvm_lnum_t );
+    BFT_MALLOC( lst_par_fac_sup_ct , ct->nnpsct, cs_lnum_t );
 
     fvm_nodal_get_parent_num(ct->face_sup_mesh,
                                       2,lst_par_fac_sup_ct);
@@ -1298,7 +1298,7 @@ cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
 
         BFT_MALLOC( teau_upw_send  , nb_dist_upw, cs_real_t);
         BFT_MALLOC( fem_upw_send  , nb_dist_upw, cs_real_t);
-        BFT_MALLOC( lst_par_fac_inf_ct_upw , (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), fvm_lnum_t );
+        BFT_MALLOC( lst_par_fac_inf_ct_upw , (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_lnum_t );
 
         fvm_nodal_get_parent_num(ct_upw->face_inf_mesh,
                                       2,lst_par_fac_inf_ct_upw);
@@ -1690,7 +1690,7 @@ void cs_ctwr_aetssc
   cs_real_t *tai_inter, *xai_inter, *rhoai_inter,*vx_inter, *vy_inter,*vz_inter,
             *tei_inter, *femei_inter, *vgin_inter;
   cs_real_t *tai, *xai, *rhoai,*vx, *vy, *vz, *tei, *femei, *vgin;
-  fvm_lnum_t  *lst_par_cel;
+  cs_lnum_t  *lst_par_cel;
   cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
   fax = 0.;
@@ -1799,7 +1799,7 @@ void cs_ctwr_aetssc
 
       nb = (int) fvm_nodal_get_n_entities(ct->cell_mesh, 3);
 
-      BFT_MALLOC( lst_par_cel , nb, fvm_lnum_t );
+      BFT_MALLOC( lst_par_cel , nb, cs_lnum_t );
       fvm_nodal_get_parent_num( ct->cell_mesh, 3, lst_par_cel);
 
       for (iseg = 0; iseg < ct->nnpsct; iseg++) {
@@ -1880,7 +1880,7 @@ void cs_ctwr_aetssc
     }
 
 
-    BFT_MALLOC( lst_par_cel , nb, fvm_lnum_t );
+    BFT_MALLOC( lst_par_cel , nb, cs_lnum_t );
     fvm_nodal_get_parent_num( ct->cell_mesh, 3, lst_par_cel);
     /*--------------------------------------------*
      * interpolation  eau->air                    *
@@ -2181,7 +2181,7 @@ void cs_ctwr_aetsvi
 
     nb = (int) fvm_nodal_get_n_entities(ct->cell_mesh, 3);
 
-    BFT_MALLOC( lst_par_cel , (nb*3), fvm_lnum_t );
+    BFT_MALLOC( lst_par_cel , (nb*3), cs_lnum_t );
     fvm_nodal_get_parent_num( ct->cell_mesh, 3, lst_par_cel);
     /*--------------------------------------------*
      * interpolation  eau->air                    *
@@ -2290,9 +2290,9 @@ void cs_ctwr_bilanct
   cs_real_t        xsata,debit,hair,n_sortant[3],vitair[3],aux,
                    surf,surf_e,surf_s;
 
-  fvm_lnum_t   *face_sup;      /* liste des faces  superieures de la ct */
-  fvm_lnum_t   *face_inf;      /* liste des faces  inferior de la ct */
-  fvm_lnum_t   *face_lat;      /* liste des faces  inferior de la ct */
+  cs_lnum_t  *face_sup;      /* liste des faces  superieures de la ct */
+  cs_lnum_t  *face_inf;      /* liste des faces  inferior de la ct */
+  cs_lnum_t  *face_lat;      /* liste des faces  inferior de la ct */
 
   cs_ctwr_zone_t  *ct;
   bft_file_t *f;
@@ -2319,11 +2319,11 @@ void cs_ctwr_bilanct
     nbr_fbr_air[2][0] = ct->nbfbr_lct + ct->nbfac_lct;
     nbr_fbr_air[2][1] = ct->nbfbr_lct;
 
-    BFT_MALLOC( face_sup ,(ct->nbfac_sct + ct->nbfbr_sct) ,fvm_lnum_t );
+    BFT_MALLOC( face_sup ,(ct->nbfac_sct + ct->nbfbr_sct) ,cs_lnum_t );
     fvm_nodal_get_parent_num( ct->face_sup_mesh, 2, face_sup);
-    BFT_MALLOC( face_inf ,(ct->nbfac_ict + ct->nbfbr_ict) ,fvm_lnum_t );
+    BFT_MALLOC( face_inf ,(ct->nbfac_ict + ct->nbfbr_ict) ,cs_lnum_t );
     fvm_nodal_get_parent_num( ct->face_inf_mesh, 2, face_inf);
-    BFT_MALLOC( face_lat ,(ct->nbfbr_lct + ct->nbfac_lct) ,fvm_lnum_t );
+    BFT_MALLOC( face_lat ,(ct->nbfbr_lct + ct->nbfac_lct) ,cs_lnum_t );
     fvm_nodal_get_parent_num( ct->face_lat_mesh, 2, face_lat);
 
     ct->fem_e   = 0.0;

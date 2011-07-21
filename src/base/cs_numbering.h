@@ -76,7 +76,7 @@ typedef struct {
   int   n_threads;            /* Number of threads */
   int   n_groups;             /* Number of associated groups */
 
-  fvm_lnum_t *group_index;   /* For thread t and group g, the start and end
+  cs_lnum_t *group_index;   /* For thread t and group g, the start and end
                                 ids for entities in a given group and thread
                                 are group_index[t*n_groups*2 + g] and
                                 group_index[t*n_groups*2 + g + 1] respectively.
@@ -129,9 +129,9 @@ cs_numbering_create_vectorized(int  vector_size);
  *---------------------------------------------------------------------------*/
 
 cs_numbering_t *
-cs_numbering_create_threaded(int         n_threads,
-                             int         n_groups,
-                             fvm_lnum_t  group_index[]);
+cs_numbering_create_threaded(int        n_threads,
+                             int        n_groups,
+                             cs_lnum_t  group_index[]);
 
 /*----------------------------------------------------------------------------
  * Destroy a numbering information structure.

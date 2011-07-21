@@ -54,13 +54,13 @@ BEGIN_C_DECLS
 
 typedef struct { /* Definition of a global indexed list of global elements */
 
-  cs_int_t    n_elts;
-  fvm_gnum_t  n_g_elts;
+  cs_int_t   n_elts;
+  cs_gnum_t  n_g_elts;
 
-  fvm_gnum_t  *g_elts;   /* Global numbering of elements */
+  cs_gnum_t  *g_elts;   /* Global numbering of elements */
 
-  cs_int_t    *index;    /* Index on elements from */
-  fvm_gnum_t  *g_list;   /* Global numbering of entities linked with g_elts */
+  cs_int_t   *index;    /* Index on elements from */
+  cs_gnum_t  *g_list;   /* Global numbering of entities linked with g_elts */
 
 } cs_join_gset_t;
 
@@ -203,8 +203,8 @@ cs_join_gset_create(cs_int_t  n_elts);
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
-cs_join_gset_create_from_tag(cs_int_t          n_elts,
-                             const fvm_gnum_t  tag[]);
+cs_join_gset_create_from_tag(cs_int_t         n_elts,
+                             const cs_gnum_t  tag[]);
 
 /*----------------------------------------------------------------------------
  * Create a new cs_join_gset_t which holds equivalences between elements of
@@ -227,7 +227,7 @@ cs_join_gset_create_from_tag(cs_int_t          n_elts,
 
 cs_join_gset_t *
 cs_join_gset_create_by_equiv(const cs_join_gset_t  *set,
-                             const fvm_gnum_t       init_array[]);
+                             const cs_gnum_t        init_array[]);
 
 /*----------------------------------------------------------------------------
  * Copy a cs_join_gset_t structure.
@@ -308,7 +308,7 @@ cs_join_gset_clean(cs_join_gset_t  *set);
 
 void
 cs_join_gset_clean_from_array(cs_join_gset_t  *set,
-                              fvm_gnum_t       linked_array[]);
+                              cs_gnum_t        linked_array[]);
 
 /*----------------------------------------------------------------------------
  * Concatenate the two g_elts and g_list arrays.
@@ -325,7 +325,7 @@ cs_join_gset_clean_from_array(cs_join_gset_t  *set,
 void
 cs_join_gset_single_order(const cs_join_gset_t  *set,
                           cs_int_t              *n_elts,
-                          fvm_gnum_t            *new_array[]);
+                          cs_gnum_t             *new_array[]);
 
 /*----------------------------------------------------------------------------
  * Compress a g_list such as for each element "e" in g_elts:
@@ -406,7 +406,7 @@ cs_join_gset_robin_update(const cs_join_gset_t   *sync_set,
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
-cs_join_gset_block_sync(fvm_gnum_t       max_gnum,
+cs_join_gset_block_sync(cs_gnum_t        max_gnum,
                         cs_join_gset_t  *loc_set,
                         MPI_Comm         comm);
 
@@ -424,7 +424,7 @@ cs_join_gset_block_sync(fvm_gnum_t       max_gnum,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_gset_block_update(fvm_gnum_t             max_gnum,
+cs_join_gset_block_update(cs_gnum_t              max_gnum,
                           const cs_join_gset_t  *sync_set,
                           cs_join_gset_t        *loc_set,
                           MPI_Comm               comm);

@@ -81,17 +81,17 @@ extern "C" {
 
 void
 fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
-                              const fvm_lnum_t    n_extr_cells,
-                              const fvm_lnum_t    extr_cells[],
+                              const cs_lnum_t     n_extr_cells,
+                              const cs_lnum_t     extr_cells[],
                               const int           n_face_lists,
-                              const fvm_lnum_t    face_list_shift[],
-                              const fvm_lnum_t   *face_vertex_idx[],
-                              const fvm_lnum_t   *face_vertex_num[],
-                              const fvm_lnum_t    cell_face_idx[],
-                              const fvm_lnum_t    cell_face_num[],
+                              const cs_lnum_t     face_list_shift[],
+                              const cs_lnum_t    *face_vertex_idx[],
+                              const cs_lnum_t    *face_vertex_num[],
+                              const cs_lnum_t     cell_face_idx[],
+                              const cs_lnum_t     cell_face_num[],
                               const int           cell_gc_id[],
-                              const fvm_lnum_t    parent_cell_num[],
-                              fvm_lnum_t         *cell_face_list[]);
+                              const cs_lnum_t     parent_cell_num[],
+                              cs_lnum_t          *cell_face_list[]);
 
 /*----------------------------------------------------------------------------
  * Convert and add faces from an descending connectivity mesh to a nodal mesh.
@@ -124,14 +124,14 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
 void
 fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
-                              const fvm_lnum_t    n_extr_faces,
-                              const fvm_lnum_t    extr_faces[],
+                              const cs_lnum_t     n_extr_faces,
+                              const cs_lnum_t     extr_faces[],
                               const int           n_face_lists,
-                              const fvm_lnum_t    face_list_shift[],
-                              const fvm_lnum_t   *face_vertex_idx[],
-                              const fvm_lnum_t   *face_vertex_num[],
+                              const cs_lnum_t     face_list_shift[],
+                              const cs_lnum_t    *face_vertex_idx[],
+                              const cs_lnum_t    *face_vertex_num[],
                               const int          *face_gc_id[],
-                              const fvm_lnum_t    parent_face_num[]);
+                              const cs_lnum_t     parent_face_num[]);
 
 /*----------------------------------------------------------------------------*/
 

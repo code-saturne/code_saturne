@@ -115,8 +115,8 @@ static int _compare_edges(const void *x, const void *y)
 {
   int retval = 1;
 
-  const fvm_lnum_t *e0 = x;
-  const fvm_lnum_t *e1 = y;
+  const cs_lnum_t *e0 = x;
+  const cs_lnum_t *e1 = y;
 
   if (e0[0] < e1[0])
     retval = -1;
@@ -184,11 +184,11 @@ _fvm_nodal_section_copy(const fvm_nodal_section_t *this_section)
   new_section->_parent_element_num = NULL;
 
   if (this_section->global_element_num != NULL) {
-    fvm_lnum_t n_ent
+    cs_lnum_t n_ent
       = fvm_io_num_get_local_count(this_section->global_element_num);
-    fvm_gnum_t global_count
+    cs_gnum_t global_count
       = fvm_io_num_get_global_count(this_section->global_element_num);
-    const fvm_gnum_t *global_num
+    const cs_gnum_t *global_num
       = fvm_io_num_get_global_num(this_section->global_element_num);
 
     new_section->global_element_num
@@ -277,15 +277,15 @@ _fvm_nodal_section_reduce(fvm_nodal_section_t  * this_section)
  *   pointer to resulting parent_num[] array
  *----------------------------------------------------------------------------*/
 
-static fvm_lnum_t *
-_renumber_parent_num(fvm_lnum_t         parent_num_size,
-                     const fvm_lnum_t   new_parent_num[],
-                     const fvm_lnum_t   parent_num[],
-                     fvm_lnum_t         _parent_num[])
+static cs_lnum_t *
+_renumber_parent_num(cs_lnum_t          parent_num_size,
+                     const cs_lnum_t    new_parent_num[],
+                     const cs_lnum_t    parent_num[],
+                     cs_lnum_t          _parent_num[])
 {
   int  i;
-  fvm_lnum_t  old_num_id;
-  fvm_lnum_t *parent_num_p = _parent_num;
+  cs_lnum_t   old_num_id;
+  cs_lnum_t *parent_num_p = _parent_num;
   _Bool trivial = true;
 
   if (parent_num_size > 0 && new_parent_num != NULL) {
@@ -299,7 +299,7 @@ _renumber_parent_num(fvm_lnum_t         parent_num_size,
       }
     }
     else {
-      BFT_MALLOC(parent_num_p, parent_num_size, fvm_lnum_t);
+      BFT_MALLOC(parent_num_p, parent_num_size, cs_lnum_t);
       if (parent_num != NULL) {
         for (i = 0; i < parent_num_size; i++) {
           old_num_id = parent_num[i] - 1;
@@ -344,13 +344,13 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
 {
   size_t      i;
   int         section_id;
-  fvm_lnum_t  j;
-  fvm_lnum_t  vertex_id;
-  fvm_lnum_t  n_vertices;
+  cs_lnum_t   j;
+  cs_lnum_t   vertex_id;
+  cs_lnum_t   n_vertices;
   fvm_nodal_section_t  *section;
 
-  fvm_lnum_t  *loc_vertex_num = NULL;
-  fvm_lnum_t   max_vertex_num = 0;
+  cs_lnum_t   *loc_vertex_num = NULL;
+  cs_lnum_t    max_vertex_num = 0;
 
   /* Find maximum vertex reference */
   /*-------------------------------*/
@@ -375,7 +375,7 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
     section = this_nodal->sections[section_id];
     if (this_nodal->parent_vertex_num != NULL) {
       for (i = 0; i < section->connectivity_size; i++) {
-        fvm_lnum_t vertex_num
+        cs_lnum_t vertex_num
           = this_nodal->parent_vertex_num[section->vertex_num[i] - 1];
         if (vertex_num > max_vertex_num)
           max_vertex_num = vertex_num;
@@ -392,7 +392,7 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
   /* Flag referenced vertices and compute size */
   /*-------------------------------------------*/
 
-  BFT_MALLOC(loc_vertex_num, max_vertex_num, fvm_lnum_t);
+  BFT_MALLOC(loc_vertex_num, max_vertex_num, cs_lnum_t);
 
   for (vertex_id = 0; vertex_id < max_vertex_num; vertex_id++)
     loc_vertex_num[vertex_id] = 0;
@@ -467,7 +467,7 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
       BFT_FREE(this_nodal->_parent_vertex_num);
 
     if (loc_vertex_num != NULL) {
-      BFT_MALLOC(this_nodal->_parent_vertex_num, n_vertices, fvm_lnum_t);
+      BFT_MALLOC(this_nodal->_parent_vertex_num, n_vertices, cs_lnum_t);
       for (vertex_id = 0; vertex_id < max_vertex_num; vertex_id++) {
         if (loc_vertex_num[vertex_id] > 0)
           this_nodal->_parent_vertex_num[loc_vertex_num[vertex_id] - 1]
@@ -492,8 +492,8 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
 static void
 _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
 {
-  fvm_lnum_t  n_elements, i, j;
-  const fvm_lnum_t  *idx, *num;
+  cs_lnum_t   n_elements, i, j;
+  const cs_lnum_t   *idx, *num;
 
   /* Global indicators */
   /*--------------------*/
@@ -551,7 +551,7 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
   }
 
   if (this_section->vertex_index != NULL) {
-    fvm_lnum_t  n_faces = (this_section->n_faces > 0) ?
+    cs_lnum_t   n_faces = (this_section->n_faces > 0) ?
                           this_section->n_faces : this_section->n_elements;
     bft_printf("\nPolygons -> vertices connectivity:\n\n");
     idx = this_section->vertex_index;
@@ -780,12 +780,12 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
                                 _Bool                 copy_vertex_index,
                                 _Bool                 copy_vertex_num)
 {
-  fvm_lnum_t  n_faces;
+  cs_lnum_t   n_faces;
   size_t  i;
 
   if (copy_face_index == true
       && this_section->face_index != NULL && this_section->_face_index == NULL) {
-    BFT_MALLOC(this_section->_face_index, this_section->n_elements + 1, fvm_lnum_t);
+    BFT_MALLOC(this_section->_face_index, this_section->n_elements + 1, cs_lnum_t);
     for (i = 0; i < (size_t)(this_section->n_elements + 1); i++) {
       this_section->_face_index[i] = this_section->face_index[i];
     }
@@ -795,7 +795,7 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
   if (copy_face_num == true
       && this_section->face_num != NULL && this_section->_face_num == NULL) {
     n_faces = this_section->face_index[this_section->n_elements];
-    BFT_MALLOC(this_section->_face_num, n_faces, fvm_lnum_t);
+    BFT_MALLOC(this_section->_face_num, n_faces, cs_lnum_t);
     for (i = 0; i < (size_t)n_faces; i++) {
       this_section->_face_num[i] = this_section->face_num[i];
     }
@@ -809,7 +809,7 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
       n_faces = this_section->n_faces;
     else
       n_faces = this_section->n_elements;
-    BFT_MALLOC(this_section->_vertex_index, n_faces + 1, fvm_lnum_t);
+    BFT_MALLOC(this_section->_vertex_index, n_faces + 1, cs_lnum_t);
     for (i = 0; i < (size_t)n_faces + 1; i++) {
       this_section->_vertex_index[i] = this_section->vertex_index[i];
     }
@@ -818,7 +818,7 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
 
   if (copy_vertex_num == true && this_section->_vertex_num == NULL) {
     BFT_MALLOC(this_section->_vertex_num,
-               this_section->connectivity_size, fvm_lnum_t);
+               this_section->connectivity_size, cs_lnum_t);
     for (i = 0; i < this_section->connectivity_size; i++) {
       this_section->_vertex_num[i] = this_section->vertex_num[i];
     }
@@ -837,7 +837,7 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
  *   global number of elements associated with section
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_nodal_section_n_g_elements(const fvm_nodal_section_t  *this_section)
 {
   if (this_section->global_element_num != NULL)
@@ -856,10 +856,10 @@ fvm_nodal_section_n_g_elements(const fvm_nodal_section_t  *this_section)
  *   global number of vertices associated with nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_nodal_n_g_vertices(const fvm_nodal_t  *this_nodal)
 {
-  fvm_gnum_t  n_g_vertices;
+  cs_gnum_t   n_g_vertices;
 
   if (this_nodal->global_vertex_num != NULL)
     n_g_vertices = fvm_io_num_get_global_count(this_nodal->global_vertex_num);
@@ -903,7 +903,7 @@ fvm_nodal_cell_face_connect(fvm_element_t   element_type,
 
   case FVM_CELL_TETRA:
     {
-      fvm_lnum_t _face_vertices[4][3] = {{1, 3, 2},     /*       x 4     */
+      cs_lnum_t _face_vertices[4][3] = {{1, 3, 2},     /*       x 4     */
                                          {1, 2, 4},     /*      /|\      */
                                          {1, 4, 3},     /*     / | \     */
                                          {2, 3, 4}};    /*    /  |  \    */
@@ -919,8 +919,8 @@ fvm_nodal_cell_face_connect(fvm_element_t   element_type,
 
   case FVM_CELL_PYRAM:
     {
-      fvm_lnum_t _n_face_vertices[5] = {3, 3, 3, 3, 4};
-      fvm_lnum_t _face_vertices[5][4] = {{1, 2, 5, 0},  /*        5 x       */
+      cs_lnum_t _n_face_vertices[5] = {3, 3, 3, 3, 4};
+      cs_lnum_t _face_vertices[5][4] = {{1, 2, 5, 0},  /*        5 x       */
                                          {1, 5, 4, 0},  /*         /|\      */
                                          {2, 3, 5, 0},  /*        //| \     */
                                          {3, 4, 5, 0},  /*       // |  \    */
@@ -937,8 +937,8 @@ fvm_nodal_cell_face_connect(fvm_element_t   element_type,
 
   case FVM_CELL_PRISM:
     {
-      fvm_lnum_t _n_face_vertices[5] = {3, 3, 4, 4, 4};
-      fvm_lnum_t _face_vertices[5][4] = {{1, 3, 2, 0},  /* 4 x-------x 6 */
+      cs_lnum_t _n_face_vertices[5] = {3, 3, 4, 4, 4};
+      cs_lnum_t _face_vertices[5][4] = {{1, 3, 2, 0},  /* 4 x-------x 6 */
                                          {4, 5, 6, 0},  /*   |\     /|   */
                                          {1, 2, 5, 4},  /*   | \   / |   */
                                          {1, 4, 6, 3},  /* 1 x- \-/ -x 3 */
@@ -955,8 +955,8 @@ fvm_nodal_cell_face_connect(fvm_element_t   element_type,
 
   case FVM_CELL_HEXA:
     {
-      fvm_lnum_t _n_face_vertices[6] = {4, 4, 4, 4, 4, 4};
-      fvm_lnum_t _face_vertices[6][4] = {{1, 4, 3, 2},  /*    8 x-------x 7 */
+      cs_lnum_t _n_face_vertices[6] = {4, 4, 4, 4, 4, 4};
+      cs_lnum_t _face_vertices[6][4] = {{1, 4, 3, 2},  /*    8 x-------x 7 */
                                          {1, 2, 6, 5},  /*     /|      /|   */
                                          {1, 5, 8, 4},  /*    / |     / |   */
                                          {2, 3, 7, 6},  /* 5 x-------x6 |   */
@@ -1143,11 +1143,11 @@ fvm_nodal_copy(const fvm_nodal_t *this_nodal)
   new_nodal->_parent_vertex_num = NULL;
 
   if (this_nodal->global_vertex_num != NULL) {
-    fvm_lnum_t n_ent
+    cs_lnum_t n_ent
       = fvm_io_num_get_local_count(this_nodal->global_vertex_num);
-    fvm_gnum_t global_count
+    cs_gnum_t global_count
       = fvm_io_num_get_global_count(this_nodal->global_vertex_num);
-    const fvm_gnum_t *global_num
+    const cs_gnum_t *global_num
       = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
 
     new_nodal->global_vertex_num
@@ -1239,7 +1239,7 @@ fvm_nodal_reduce(fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_change_parent_num(fvm_nodal_t       *this_nodal,
-                            const fvm_lnum_t   new_parent_num[],
+                            const cs_lnum_t    new_parent_num[],
                             int                entity_dim)
 {
   /* Vertices */
@@ -1337,7 +1337,7 @@ fvm_nodal_remove_parent_num(fvm_nodal_t  *this_nodal,
 
 void
 fvm_nodal_init_io_num(fvm_nodal_t       *this_nodal,
-                      const fvm_gnum_t   parent_global_numbers[],
+                      const cs_gnum_t    parent_global_numbers[],
                       int                entity_dim)
 {
   int  i;
@@ -1388,8 +1388,8 @@ fvm_nodal_init_io_num(fvm_nodal_t       *this_nodal,
 
 void
 fvm_nodal_define_vertex_list(fvm_nodal_t  *this_nodal,
-                             fvm_lnum_t    n_vertices,
-                             fvm_lnum_t    parent_vertex_num[])
+                             cs_lnum_t     n_vertices,
+                             cs_lnum_t     parent_vertex_num[])
 {
   assert(this_nodal != NULL);
 
@@ -1420,8 +1420,8 @@ fvm_nodal_define_vertex_list(fvm_nodal_t  *this_nodal,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_set_shared_vertices(fvm_nodal_t        *this_nodal,
-                              const fvm_coord_t   vertex_coords[])
+fvm_nodal_set_shared_vertices(fvm_nodal_t       *this_nodal,
+                              const cs_coord_t   vertex_coords[])
 {
   assert(this_nodal != NULL);
 
@@ -1464,14 +1464,14 @@ fvm_nodal_set_shared_vertices(fvm_nodal_t        *this_nodal,
  *   argument if vertices were renumbered).
  *----------------------------------------------------------------------------*/
 
-fvm_coord_t *
+cs_coord_t *
 fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
-                            fvm_coord_t   vertex_coords[])
+                            cs_coord_t    vertex_coords[])
 {
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
   int         j;
 
-  fvm_coord_t  *_vertex_coords = vertex_coords;
+  cs_coord_t  *_vertex_coords = vertex_coords;
 
   assert(this_nodal != NULL);
 
@@ -1485,9 +1485,9 @@ fvm_nodal_transfer_vertices(fvm_nodal_t  *this_nodal,
   if (this_nodal->parent_vertex_num != NULL) {
 
     int dim = this_nodal->dim;
-    const fvm_lnum_t *parent_vertex_num = this_nodal->parent_vertex_num;
+    const cs_lnum_t *parent_vertex_num = this_nodal->parent_vertex_num;
 
-    BFT_MALLOC(_vertex_coords, this_nodal->n_vertices * dim, fvm_coord_t);
+    BFT_MALLOC(_vertex_coords, this_nodal->n_vertices * dim, cs_coord_t);
 
     for (i = 0; i < this_nodal->n_vertices; i++) {
       for (j = 0; j < dim; j++)
@@ -1528,20 +1528,20 @@ fvm_nodal_make_vertices_private(fvm_nodal_t  *this_nodal)
 
   if (this_nodal->_vertex_coords == NULL) {
 
-    fvm_coord_t *_vertex_coords = NULL;
-    const fvm_coord_t *vertex_coords = this_nodal->vertex_coords;
-    const fvm_lnum_t n_vertices = this_nodal->n_vertices;
+    cs_coord_t *_vertex_coords = NULL;
+    const cs_coord_t *vertex_coords = this_nodal->vertex_coords;
+    const cs_lnum_t n_vertices = this_nodal->n_vertices;
     const int dim = this_nodal->dim;
 
-    BFT_MALLOC(vertex_coords, n_vertices * dim, fvm_coord_t);
+    BFT_MALLOC(vertex_coords, n_vertices * dim, cs_coord_t);
 
     /* If renumbering is necessary, update connectivity */
 
     if (this_nodal->parent_vertex_num != NULL) {
 
-      fvm_lnum_t i;
+      cs_lnum_t i;
       int j;
-      const fvm_lnum_t *parent_vertex_num = this_nodal->parent_vertex_num;
+      const cs_lnum_t *parent_vertex_num = this_nodal->parent_vertex_num;
 
       for (i = 0; i < n_vertices; i++) {
         for (j = 0; j < dim; j++)
@@ -1554,7 +1554,7 @@ fvm_nodal_make_vertices_private(fvm_nodal_t  *this_nodal)
         BFT_FREE(this_nodal->_parent_vertex_num);
     }
     else
-      memcpy(_vertex_coords, vertex_coords, n_vertices*dim*sizeof(fvm_coord_t));
+      memcpy(_vertex_coords, vertex_coords, n_vertices*dim*sizeof(cs_coord_t));
 
     /* Assign new array to structure */
 
@@ -1585,7 +1585,7 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
   int gc_id, section_id;
   int n_gc = fvm_group_class_set_size(gc_set);
   int n_gc_new = 0;
-  fvm_lnum_t *gc_renum = NULL;
+  cs_lnum_t *gc_renum = NULL;
 
   assert(this_nodal != NULL);
 
@@ -1597,13 +1597,13 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
 
   /* Mark referenced group classes */
 
-  BFT_MALLOC(gc_renum, n_gc, fvm_lnum_t);
+  BFT_MALLOC(gc_renum, n_gc, cs_lnum_t);
 
   for (gc_id = 0; gc_id < n_gc; gc_id++)
     gc_renum[gc_id] = 0;
 
   for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
-    fvm_lnum_t i;
+    cs_lnum_t i;
     const fvm_nodal_section_t  *section = this_nodal->sections[section_id];
     if (section->gc_id == NULL)
       continue;
@@ -1626,7 +1626,7 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
 
   if (n_gc_new < n_gc) {
     for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
-      fvm_lnum_t i;
+      cs_lnum_t i;
       const fvm_nodal_section_t  *section = this_nodal->sections[section_id];
       if (section->gc_id == NULL)
         continue;
@@ -1725,11 +1725,11 @@ fvm_nodal_get_max_entity_dim(const fvm_nodal_t  *this_nodal)
  *  number of entities of given dimension in mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_nodal_get_n_entities(const fvm_nodal_t  *this_nodal,
                          int                 entity_dim)
 {
-  fvm_lnum_t n_entities;
+  cs_lnum_t n_entities;
 
   assert(this_nodal != NULL);
 
@@ -1763,7 +1763,7 @@ fvm_nodal_get_n_entities(const fvm_nodal_t  *this_nodal,
  *   global number of vertices associated with nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_nodal_get_n_g_vertices(const fvm_nodal_t  *this_nodal)
 {
   return fvm_nodal_n_g_vertices(this_nodal);
@@ -1780,12 +1780,12 @@ fvm_nodal_get_n_g_vertices(const fvm_nodal_t  *this_nodal)
  *   global number of elements of the given type associated with nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_nodal_get_n_g_elements(const fvm_nodal_t  *this_nodal,
                            fvm_element_t       element_type)
 {
   int  i;
-  fvm_gnum_t  n_g_elements = 0;
+  cs_gnum_t   n_g_elements = 0;
 
   assert(this_nodal != NULL);
 
@@ -1809,12 +1809,12 @@ fvm_nodal_get_n_g_elements(const fvm_nodal_t  *this_nodal,
  *   local number of elements of the given type associated with nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_nodal_get_n_elements(const fvm_nodal_t  *this_nodal,
                          fvm_element_t       element_type)
 {
   int  i;
-  fvm_lnum_t  n_elements = 0;
+  cs_lnum_t   n_elements = 0;
 
   assert(this_nodal != NULL);
 
@@ -1845,12 +1845,12 @@ fvm_nodal_get_n_elements(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
                          int                 entity_dim,
-                         fvm_lnum_t          parent_num[])
+                         cs_lnum_t           parent_num[])
 {
   int section_id;
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
-  fvm_lnum_t entity_count = 0;
+  cs_lnum_t entity_count = 0;
 
   assert(this_nodal != NULL);
 
@@ -1911,10 +1911,10 @@ fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_tesselate(fvm_nodal_t    *this_nodal,
                     fvm_element_t   type,
-                    fvm_lnum_t     *error_count)
+                    cs_lnum_t      *error_count)
 {
   int section_id;
-  fvm_lnum_t section_error_count;
+  cs_lnum_t section_error_count;
 
   assert(this_nodal != NULL);
 
@@ -1962,8 +1962,8 @@ fvm_nodal_copy_edges(const char         *name,
                      const fvm_nodal_t  *this_nodal)
 {
   int i;
-  fvm_lnum_t j, k;
-  fvm_lnum_t n_edges = 0, n_max_edges = 0;
+  cs_lnum_t j, k;
+  cs_lnum_t n_edges = 0, n_max_edges = 0;
   fvm_nodal_t *new_nodal = NULL;
   fvm_nodal_section_t *new_section = NULL;
 
@@ -1999,11 +1999,11 @@ fvm_nodal_copy_edges(const char         *name,
   new_nodal->_parent_vertex_num = NULL;
 
   if (this_nodal->global_vertex_num != NULL) {
-    fvm_lnum_t n_ent
+    cs_lnum_t n_ent
       = fvm_io_num_get_local_count(this_nodal->global_vertex_num);
-    fvm_gnum_t global_count
+    cs_gnum_t global_count
       = fvm_io_num_get_global_count(this_nodal->global_vertex_num);
-    const fvm_gnum_t *global_num
+    const cs_gnum_t *global_num
       = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
 
     new_nodal->global_vertex_num
@@ -2030,7 +2030,7 @@ fvm_nodal_copy_edges(const char         *name,
   new_section = fvm_nodal_section_create(FVM_EDGE);
   new_nodal->sections[0] = new_section;
 
-  BFT_MALLOC(new_section->_vertex_num, n_max_edges*2, fvm_lnum_t);
+  BFT_MALLOC(new_section->_vertex_num, n_max_edges*2, cs_lnum_t);
 
   /* Add edges */
 
@@ -2041,12 +2041,12 @@ fvm_nodal_copy_edges(const char         *name,
     if (   this_section->type == FVM_FACE_POLY
         || this_section->type == FVM_CELL_POLY) {
 
-      fvm_lnum_t n_faces = this_section->type == FVM_FACE_POLY ?
+      cs_lnum_t n_faces = this_section->type == FVM_FACE_POLY ?
         this_section->n_elements : this_section->n_faces;
 
       for (j = 0; j < n_faces; j++) {
-        const fvm_lnum_t face_start_id = this_section->vertex_index[j];
-        const fvm_lnum_t n_face_edges
+        const cs_lnum_t face_start_id = this_section->vertex_index[j];
+        const cs_lnum_t n_face_edges
           = this_section->vertex_index[j+1] - this_section->vertex_index[j];
         for (k = 0; k < n_face_edges; k++) {
           new_section->_vertex_num[n_edges*2]
@@ -2060,11 +2060,11 @@ fvm_nodal_copy_edges(const char         *name,
     }
     else {
 
-      fvm_lnum_t edges[2][12];
+      cs_lnum_t edges[2][12];
 
-      fvm_lnum_t n_elt_edges = fvm_nodal_n_edges_element[this_section->type];
-      fvm_lnum_t n_elts = this_section->n_elements;
-      fvm_lnum_t stride = this_section->stride;
+      cs_lnum_t n_elt_edges = fvm_nodal_n_edges_element[this_section->type];
+      cs_lnum_t n_elts = this_section->n_elements;
+      cs_lnum_t stride = this_section->stride;
 
       switch (this_section->type) {
 
@@ -2130,7 +2130,7 @@ fvm_nodal_copy_edges(const char         *name,
       }
 
       for (j = 0; j < n_elts; j++) {
-        const fvm_lnum_t *_vertex_num = this_section->vertex_num + (j*stride);
+        const cs_lnum_t *_vertex_num = this_section->vertex_num + (j*stride);
         for (k = 0; k < n_elt_edges; k++) {
           new_section->_vertex_num[n_edges*2] = _vertex_num[edges[0][k]];
           new_section->_vertex_num[n_edges*2 + 1] = _vertex_num[edges[1][k]];
@@ -2146,12 +2146,12 @@ fvm_nodal_copy_edges(const char         *name,
 
   if (this_nodal->global_vertex_num != NULL) {
 
-    const fvm_gnum_t *v_num_g
+    const cs_gnum_t *v_num_g
       = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
 
     for (j = 0; j < n_max_edges; j++) {
-      fvm_lnum_t vnum_1 = new_section->_vertex_num[j*2];
-      fvm_lnum_t vnum_2 = new_section->_vertex_num[j*2 + 1];
+      cs_lnum_t vnum_1 = new_section->_vertex_num[j*2];
+      cs_lnum_t vnum_2 = new_section->_vertex_num[j*2 + 1];
       if (v_num_g[vnum_1 - 1] > v_num_g[vnum_2 - 1]) {
         new_section->_vertex_num[j*2] = vnum_2;
         new_section->_vertex_num[j*2 + 1] = vnum_1;
@@ -2163,8 +2163,8 @@ fvm_nodal_copy_edges(const char         *name,
   else {
 
     for (j = 0; j < n_max_edges; j++) {
-      fvm_lnum_t vnum_1 = new_section->_vertex_num[j*2];
-      fvm_lnum_t vnum_2 = new_section->_vertex_num[j*2 + 1];
+      cs_lnum_t vnum_1 = new_section->_vertex_num[j*2];
+      cs_lnum_t vnum_2 = new_section->_vertex_num[j*2 + 1];
       if (vnum_1 > vnum_2) {
         new_section->_vertex_num[j*2] = vnum_2;
         new_section->_vertex_num[j*2 + 1] = vnum_1;
@@ -2178,19 +2178,19 @@ fvm_nodal_copy_edges(const char         *name,
 
   qsort(new_section->_vertex_num,
         n_max_edges,
-        sizeof(fvm_lnum_t) * 2,
+        sizeof(cs_lnum_t) * 2,
         &_compare_edges);
 
   {
-    fvm_lnum_t vn_1_p = -1;
-    fvm_lnum_t vn_2_p = -1;
+    cs_lnum_t vn_1_p = -1;
+    cs_lnum_t vn_2_p = -1;
 
     n_edges = 0;
 
     for (j = 0; j < n_max_edges; j++) {
 
-      fvm_lnum_t vn_1 = new_section->_vertex_num[j*2];
-      fvm_lnum_t vn_2 = new_section->_vertex_num[j*2 + 1];
+      cs_lnum_t vn_1 = new_section->_vertex_num[j*2];
+      cs_lnum_t vn_2 = new_section->_vertex_num[j*2 + 1];
 
       if (vn_1 != vn_1_p || vn_2 != vn_2_p) {
         new_section->_vertex_num[n_edges*2]     = vn_1;
@@ -2204,7 +2204,7 @@ fvm_nodal_copy_edges(const char         *name,
 
   /* Resize edge connectivity to adjust to final size */
 
-  BFT_REALLOC(new_section->_vertex_num, n_edges*2, fvm_lnum_t);
+  BFT_REALLOC(new_section->_vertex_num, n_edges*2, cs_lnum_t);
   new_section->vertex_num = new_section->_vertex_num;
 
   new_section->n_elements = n_edges;
@@ -2214,12 +2214,12 @@ fvm_nodal_copy_edges(const char         *name,
 
   if (new_nodal->n_doms > 1) {
 
-    fvm_gnum_t *edge_vertices_g; /* edges -> global vertices */
+    cs_gnum_t *edge_vertices_g; /* edges -> global vertices */
 
-    BFT_MALLOC(edge_vertices_g, n_edges*2, fvm_gnum_t);
+    BFT_MALLOC(edge_vertices_g, n_edges*2, cs_gnum_t);
 
     if (this_nodal->global_vertex_num != NULL) {
-      const fvm_gnum_t *v_num_g
+      const cs_gnum_t *v_num_g
         = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
       for (j = 0; j < n_edges; j++) {
         edge_vertices_g[j*2]   = v_num_g[new_section->_vertex_num[j*2] - 1];
@@ -2255,9 +2255,9 @@ fvm_nodal_copy_edges(const char         *name,
 void
 fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
 {
-  fvm_lnum_t  i;
-  fvm_lnum_t  num_vertex = 1;
-  const fvm_coord_t  *coord = this_nodal->vertex_coords;
+  cs_lnum_t   i;
+  cs_lnum_t   num_vertex = 1;
+  const cs_coord_t  *coord = this_nodal->vertex_coords;
 
   /* Global indicators */
   /*--------------------*/

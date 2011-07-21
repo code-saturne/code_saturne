@@ -370,9 +370,9 @@ cs_restart_check_base_location(const cs_restart_t  *restart,
 int
 cs_restart_add_location(cs_restart_t      *restart,
                         const char        *location_name,
-                        fvm_gnum_t         n_glob_ents,
-                        fvm_lnum_t         n_ents,
-                        const fvm_gnum_t  *ent_global_num);
+                        cs_gnum_t          n_glob_ents,
+                        cs_lnum_t          n_ents,
+                        const cs_gnum_t   *ent_global_num);
 
 /*----------------------------------------------------------------------------
  * Print the index associated with a restart file in read mode

@@ -99,12 +99,12 @@ BEGIN_C_DECLS
 
 typedef struct _location_t {
 
-  char              *name;            /* Location name */
-  size_t             id;              /* Associated id in file */
-  fvm_lnum_t         n_ents;          /* Local number of entities */
-  fvm_gnum_t         n_glob_ents_f;   /* Global number of entities by file */
-  fvm_gnum_t         n_glob_ents;     /* Global number of entities */
-  const fvm_gnum_t  *ent_global_num;  /* Global entity numbers, or NULL */
+  char             *name;            /* Location name */
+  size_t            id;              /* Associated id in file */
+  cs_lnum_t         n_ents;          /* Local number of entities */
+  cs_gnum_t         n_glob_ents_f;   /* Global number of entities by file */
+  cs_gnum_t         n_glob_ents;     /* Global number of entities */
+  const cs_gnum_t  *ent_global_num;  /* Global entity numbers, or NULL */
 
 } _location_t;
 
@@ -405,16 +405,16 @@ _add_file(cs_restart_t  *r)
 static void
 _read_ent_values(cs_restart_t        *r,
                  cs_io_sec_header_t  *header,
-                 fvm_gnum_t           n_glob_ents,
-                 fvm_lnum_t           n_ents,
-                 const fvm_gnum_t     ent_global_num[],
+                 cs_gnum_t            n_glob_ents,
+                 cs_lnum_t            n_ents,
+                 const cs_gnum_t      ent_global_num[],
                  int                  n_location_vals,
                  cs_type_t            val_type,
                  cs_byte_t            vals[])
 {
   cs_byte_t  *buffer = NULL;
 
-  fvm_lnum_t  block_buf_size = 0;
+  cs_lnum_t  block_buf_size = 0;
 
   size_t  nbr_byte_ent, nbr_byte_val;
 
@@ -495,15 +495,15 @@ _read_ent_values(cs_restart_t        *r,
 static void
 _write_ent_values(const cs_restart_t  *r,
                   const char          *sec_name,
-                  fvm_gnum_t           n_glob_ents,
-                  fvm_lnum_t           n_ents,
-                  const fvm_gnum_t    *ent_global_num,
+                  cs_gnum_t            n_glob_ents,
+                  cs_lnum_t            n_ents,
+                  const cs_gnum_t     *ent_global_num,
                   int                  location_id,
                   int                  n_location_vals,
                   cs_type_t            val_type,
                   const cs_byte_t     *vals)
 {
-  fvm_lnum_t  block_buf_size = 0;
+  cs_lnum_t  block_buf_size = 0;
 
   fvm_datatype_t elt_type = FVM_DATATYPE_NULL;
   size_t      nbr_byte_ent;
@@ -686,11 +686,11 @@ _section_f77_to_c(const cs_int_t   *numsui,
  *----------------------------------------------------------------------------*/
 
 static void
-_restart_permute_read(cs_int_t           n_ents,
-                      const fvm_gnum_t  *ini_ent_num,
-                      cs_int_t           n_location_vals,
-                      cs_type_t          val_type,
-                      cs_byte_t         *vals)
+_restart_permute_read(cs_int_t          n_ents,
+                      const cs_gnum_t  *ini_ent_num,
+                      cs_int_t          n_location_vals,
+                      cs_type_t         val_type,
+                      cs_byte_t        *vals)
 {
   cs_int_t ent_id, jj;
 
@@ -764,11 +764,11 @@ _restart_permute_read(cs_int_t           n_ents,
  *----------------------------------------------------------------------------*/
 
 static cs_byte_t *
-_restart_permute_write(cs_int_t           n_ents,
-                       const fvm_gnum_t  *ini_ent_num,
-                       cs_int_t           n_location_vals,
-                       cs_type_t          val_type,
-                       const cs_byte_t   *vals)
+_restart_permute_write(cs_int_t          n_ents,
+                       const cs_gnum_t  *ini_ent_num,
+                       cs_int_t          n_location_vals,
+                       cs_type_t         val_type,
+                       const cs_byte_t  *vals)
 {
   cs_int_t  ent_id, jj;
 
@@ -1487,11 +1487,11 @@ cs_restart_check_base_location(const cs_restart_t  *restart,
  *----------------------------------------------------------------------------*/
 
 int
-cs_restart_add_location(cs_restart_t      *restart,
-                        const char        *location_name,
-                        fvm_gnum_t         n_glob_ents,
-                        fvm_lnum_t         n_ents,
-                        const fvm_gnum_t  *ent_global_num)
+cs_restart_add_location(cs_restart_t     *restart,
+                        const char       *location_name,
+                        cs_gnum_t         n_glob_ents,
+                        cs_lnum_t         n_ents,
+                        const cs_gnum_t  *ent_global_num)
 {
   double timing[2];
 
@@ -1531,7 +1531,7 @@ cs_restart_add_location(cs_restart_t      *restart,
   else {
 
     fvm_datatype_t gnum_type
-      = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+      = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
 
     /* Create a new location */
 
@@ -1624,9 +1624,9 @@ cs_restart_read_section(cs_restart_t  *restart,
   double timing[2];
 
   cs_int_t   n_ents;
-  fvm_gnum_t n_glob_ents;
+  cs_gnum_t n_glob_ents;
 
-  const fvm_gnum_t  *ent_global_num;
+  const cs_gnum_t  *ent_global_num;
 
   size_t rec_id, rec_id_tmp;
   cs_io_sec_header_t header;
@@ -1823,7 +1823,7 @@ cs_restart_write_section(cs_restart_t  *restart,
   cs_int_t         n_tot_vals, n_glob_ents, n_ents;
   fvm_datatype_t   elt_type = FVM_DATATYPE_NULL;
 
-  const fvm_gnum_t  *ent_global_num;
+  const cs_gnum_t  *ent_global_num;
 
   cs_int_t _n_location_vals = n_location_vals;
 

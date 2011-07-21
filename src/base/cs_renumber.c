@@ -313,16 +313,16 @@ _update_family(cs_int_t         n_elts,
  *----------------------------------------------------------------------------*/
 
 static void
-_update_global_num(size_t              n_elts,
-                   const fvm_lnum_t    init_num[],
-                   fvm_gnum_t        **global_num)
+_update_global_num(size_t             n_elts,
+                   const cs_lnum_t    init_num[],
+                   cs_gnum_t        **global_num)
 {
   size_t i;
-  fvm_gnum_t *_global_num = *global_num;
+  cs_gnum_t *_global_num = *global_num;
 
   if (_global_num == NULL) {
 
-      BFT_MALLOC(_global_num, n_elts, fvm_gnum_t);
+      BFT_MALLOC(_global_num, n_elts, cs_gnum_t);
 
       for (i = 0; i < n_elts; i++)
         _global_num[i] = init_num[i];
@@ -332,10 +332,10 @@ _update_global_num(size_t              n_elts,
 
   else {
 
-    fvm_gnum_t *tmp_global;
+    cs_gnum_t *tmp_global;
 
-    BFT_MALLOC(tmp_global, n_elts, fvm_gnum_t);
-    memcpy(tmp_global, _global_num, n_elts*sizeof(fvm_gnum_t));
+    BFT_MALLOC(tmp_global, n_elts, cs_gnum_t);
+    memcpy(tmp_global, _global_num, n_elts*sizeof(cs_gnum_t));
 
     for (i = 0; i < n_elts; i++)
       _global_num[i] = tmp_global[init_num[i] - 1];
@@ -640,8 +640,8 @@ _renumber_for_threads(cs_mesh_t             *mesh,
   int  update_c = 0, update_fi = 0, update_fb = 0;
   int  n_i_groups = 1, n_b_groups = 1;
   int  n_i_threads = 1, n_b_threads = 1;
-  cs_int_t  *inumc = NULL, *inumfi = NULL, *inumfb = NULL;
-  fvm_lnum_t *i_group_index = NULL, *b_group_index = NULL;
+  cs_int_t *inumc = NULL, *inumfi = NULL, *inumfb = NULL;
+  cs_lnum_t *i_group_index = NULL, *b_group_index = NULL;
 
   /* Allocate Work arrays */
 

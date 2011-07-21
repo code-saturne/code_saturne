@@ -103,14 +103,14 @@ extern "C" {
 static fvm_nodal_section_t *
 _faces_to_edges(int                         dim,
                 int                         chosen_axis,
-                const fvm_coord_t           vertex_coords[],
-                const fvm_lnum_t            parent_vertex_num[],
+                const cs_coord_t            vertex_coords[],
+                const cs_lnum_t             parent_vertex_num[],
                 const fvm_nodal_section_t  *base_section,
                 _Bool                      *selected_vertices,
-                fvm_lnum_t                 *error_count)
+                cs_lnum_t                  *error_count)
 {
-  fvm_lnum_t n_vertices, n_elements;
-  fvm_lnum_t i, j, k, vertex_id;
+  cs_lnum_t n_vertices, n_elements;
+  cs_lnum_t i, j, k, vertex_id;
 
   fvm_nodal_section_t *ret_section = NULL;
 
@@ -133,14 +133,14 @@ _faces_to_edges(int                         dim,
 
   BFT_MALLOC(ret_section->_vertex_num,
              ret_section->connectivity_size,
-             fvm_lnum_t);
+             cs_lnum_t);
   ret_section->vertex_num = ret_section->_vertex_num;
 
   if (base_section->parent_element_num != NULL) {
 
     BFT_MALLOC(ret_section->_parent_element_num,
                ret_section->n_elements,
-               fvm_lnum_t);
+               cs_lnum_t);
     ret_section->parent_element_num = ret_section->_parent_element_num;
 
   }
@@ -150,11 +150,11 @@ _faces_to_edges(int                         dim,
 
   for (i = 0 ; i < n_elements ; i++) {
 
-    fvm_lnum_t tmp_id[2], tmp_selected_edge[2];
-    fvm_coord_t tmp_edge_center;
+    cs_lnum_t tmp_id[2], tmp_selected_edge[2];
+    cs_coord_t tmp_edge_center;
 
-    fvm_lnum_t selected_edge[2] = {0, 0};
-    fvm_coord_t selected_edge_center = 0;
+    cs_lnum_t selected_edge[2] = {0, 0};
+    cs_coord_t selected_edge_center = 0;
 
     /* Compute number of vertices on each face */
 
@@ -261,17 +261,17 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
   int idx = 0;
 
-  fvm_lnum_t   *old_to_new = NULL;
-  fvm_lnum_t   *new_to_old = NULL;
-  fvm_lnum_t   *new_parent_vtx_num = NULL;
-  fvm_coord_t  *new_coords = NULL;
+  cs_lnum_t    *old_to_new = NULL;
+  cs_lnum_t    *new_to_old = NULL;
+  cs_lnum_t    *new_parent_vtx_num = NULL;
+  cs_coord_t  *new_coords = NULL;
   fvm_io_num_t *new_vtx_io_num = NULL;
 
-  fvm_lnum_t n_vertices_new = 0;
-  fvm_lnum_t n_vertices_old = this_nodal->n_vertices;
+  cs_lnum_t n_vertices_new = 0;
+  cs_lnum_t n_vertices_old = this_nodal->n_vertices;
 
   const int dim = this_nodal->dim;
-  const fvm_gnum_t *old_global_vtx_num = NULL;
+  const cs_gnum_t *old_global_vtx_num = NULL;
 
   /* Count the new number of vertices */
 
@@ -283,8 +283,8 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
   n_vertices_new = idx;
 
 
-  BFT_MALLOC(new_to_old, n_vertices_new, fvm_lnum_t);
-  BFT_MALLOC(old_to_new, n_vertices_old, fvm_lnum_t);
+  BFT_MALLOC(new_to_old, n_vertices_new, cs_lnum_t);
+  BFT_MALLOC(old_to_new, n_vertices_old, cs_lnum_t);
 
   for (i = 0, idx = 0; i < n_vertices_old; i++) {
 
@@ -307,7 +307,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
       /* generate a new coordinate array */
 
-      BFT_MALLOC(new_coords, dim * n_vertices_new, fvm_coord_t);
+      BFT_MALLOC(new_coords, dim * n_vertices_new, cs_coord_t);
 
       if (this_nodal->_parent_vertex_num != NULL) {
         BFT_FREE(this_nodal->_parent_vertex_num);
@@ -332,7 +332,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
         /* generate a new parent_vertex_num */
 
-        BFT_MALLOC(new_parent_vtx_num, n_vertices_new, fvm_lnum_t);
+        BFT_MALLOC(new_parent_vtx_num, n_vertices_new, cs_lnum_t);
 
         for (i = 0, idx = 0; i < n_vertices_old; i++) {
 
@@ -358,12 +358,12 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
     for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
 
       fvm_nodal_section_t *section = this_nodal->sections[section_id];
-      const fvm_lnum_t n_connect = section->stride * section->n_elements;
+      const cs_lnum_t n_connect = section->stride * section->n_elements;
 
       if (section->type == FVM_EDGE) {
 
         if (section->_vertex_num == NULL)
-          BFT_MALLOC(section->_vertex_num, n_connect, fvm_lnum_t);
+          BFT_MALLOC(section->_vertex_num, n_connect, cs_lnum_t);
 
         for (j = 0; j < n_connect; j++)
           section->_vertex_num[j] = old_to_new[section->vertex_num[j] - 1];
@@ -415,13 +415,13 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 void
 fvm_nodal_project(fvm_nodal_t  *this_nodal,
                   int           chosen_axis,
-                  fvm_lnum_t   *error_count)
+                  cs_lnum_t    *error_count)
 {
   int i;
 
-  fvm_lnum_t n_vertices = 0;
-  fvm_lnum_t n_edges = 0;
-  fvm_lnum_t section_error_count = 0;
+  cs_lnum_t n_vertices = 0;
+  cs_lnum_t n_edges = 0;
+  cs_lnum_t section_error_count = 0;
 
   _Bool *selected_vertices = NULL;
 
@@ -500,8 +500,8 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
   int i;
 
   int new_dim = 0, old_dim, entity_dim = 0;
-  fvm_lnum_t n_vertices = 0;
-  fvm_coord_t *new_coords = NULL;
+  cs_lnum_t n_vertices = 0;
+  cs_coord_t *new_coords = NULL;
 
   assert(this_nodal != NULL);
 
@@ -518,7 +518,7 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
                 "spatial dimension would be reduced to %d"),
               entity_dim, new_dim);
 
-  BFT_MALLOC(new_coords, n_vertices*new_dim, fvm_coord_t);
+  BFT_MALLOC(new_coords, n_vertices*new_dim, cs_coord_t);
 
   if (old_dim == 3) {
 

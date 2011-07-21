@@ -121,7 +121,7 @@ typedef void
                              int                     dimension,
                              fvm_interlace_t         interlace,
                              int                     n_parent_lists,
-                             const fvm_lnum_t        parent_num_shift[],
+                             const cs_lnum_t         parent_num_shift[],
                              fvm_datatype_t          datatype,
                              int                     time_step,
                              double                  time_value,
@@ -221,10 +221,10 @@ fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
                               int                 n_slices,
                               int                 n_polyhedron_vertices_mean,
                               int                 n_polygon_vertices_mean,
-                              fvm_gnum_t         *n_g_vertices,
-                              fvm_gnum_t          n_g_elements_section[],
-                              fvm_gnum_t         *global_s_size,
-                              fvm_gnum_t         *global_connect_s_size);
+                              cs_gnum_t          *n_g_vertices,
+                              cs_gnum_t           n_g_elements_section[],
+                              cs_gnum_t          *global_s_size,
+                              cs_gnum_t          *global_connect_s_size);
 
 /*----------------------------------------------------------------------------*/
 

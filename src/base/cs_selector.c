@@ -339,8 +339,8 @@ void CS_PROCF(csgfam, CSGFAM)
 
 void
 cs_selector_get_b_face_list(const char  *criteria,
-                            fvm_lnum_t  *n_b_faces,
-                            fvm_lnum_t   b_face_list[])
+                            cs_lnum_t   *n_b_faces,
+                            cs_lnum_t    b_face_list[])
 {
   int c_id;
 
@@ -374,8 +374,8 @@ cs_selector_get_b_face_list(const char  *criteria,
 
 void
 cs_selector_get_i_face_list(const char  *criteria,
-                            fvm_lnum_t  *n_i_faces,
-                            fvm_lnum_t   i_face_list[])
+                            cs_lnum_t   *n_i_faces,
+                            cs_lnum_t    i_face_list[])
 {
   int c_id;
 
@@ -409,8 +409,8 @@ cs_selector_get_i_face_list(const char  *criteria,
 
 void
 cs_selector_get_cell_list(const char  *criteria,
-                          fvm_lnum_t  *n_cells,
-                          fvm_lnum_t   cell_list[])
+                          cs_lnum_t   *n_cells,
+                          cs_lnum_t    cell_list[])
 {
   int c_id;
 
@@ -448,20 +448,20 @@ cs_selector_get_cell_list(const char  *criteria,
 
 void
 cs_selector_get_cells_boundary(const char  *criteria,
-                               fvm_lnum_t  *n_i_faces,
-                               fvm_lnum_t  *n_b_faces,
-                               fvm_lnum_t   i_face_list[],
-                               fvm_lnum_t   b_face_list[])
+                               cs_lnum_t   *n_i_faces,
+                               cs_lnum_t   *n_b_faces,
+                               cs_lnum_t    i_face_list[],
+                               cs_lnum_t    b_face_list[])
 {
-  fvm_lnum_t ii, n_cells;
-  fvm_lnum_t *cell_list, *cell_flag;
+  cs_lnum_t ii, n_cells;
+  cs_lnum_t *cell_list, *cell_flag;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
 
   /* Mark cells inside zone selection */
 
-  BFT_MALLOC(cell_list, mesh->n_cells, fvm_lnum_t);
-  BFT_MALLOC(cell_flag, mesh->n_cells, fvm_lnum_t);
+  BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
+  BFT_MALLOC(cell_flag, mesh->n_cells, cs_lnum_t);
 
   for (ii = 0; ii < mesh->n_cells; ii++)
     cell_flag[ii] = 0;
@@ -481,8 +481,8 @@ cs_selector_get_cells_boundary(const char  *criteria,
   /* Now build lists of faces on cell boundaries */
 
   for (ii = 0; ii < mesh->n_i_faces; ii++) {
-    fvm_lnum_t c_id_0 = mesh->i_face_cells[ii*2] - 1;
-    fvm_lnum_t c_id_1 = mesh->i_face_cells[ii*2 + 1] - 1;
+    cs_lnum_t c_id_0 = mesh->i_face_cells[ii*2] - 1;
+    cs_lnum_t c_id_1 = mesh->i_face_cells[ii*2 + 1] - 1;
     if (cell_flag[c_id_0] != cell_flag[c_id_1]) {
       i_face_list[*n_i_faces] = ii + 1;
       *n_i_faces += 1;
@@ -490,7 +490,7 @@ cs_selector_get_cells_boundary(const char  *criteria,
   }
 
   for (ii = 0; ii < mesh->n_b_faces; ii++) {
-    fvm_lnum_t c_id = mesh->b_face_cells[ii] - 1;
+    cs_lnum_t c_id = mesh->b_face_cells[ii] - 1;
     if (cell_flag[c_id] == 1) {
       b_face_list[*n_b_faces] = ii + 1;
       *n_b_faces += 1;
@@ -511,9 +511,9 @@ cs_selector_get_cells_boundary(const char  *criteria,
  *----------------------------------------------------------------------------*/
 
 void
-cs_selector_get_perio_face_list(int          perio_num,
-                                fvm_lnum_t  *n_i_faces,
-                                fvm_lnum_t   i_face_list[])
+cs_selector_get_perio_face_list(int         perio_num,
+                                cs_lnum_t  *n_i_faces,
+                                cs_lnum_t   i_face_list[])
 {
   int ii;
   int *face_perio_num = NULL;
@@ -545,7 +545,7 @@ cs_selector_get_perio_face_list(int          perio_num,
 
 void
 cs_selector_get_family_list(const char  *criteria,
-                            fvm_lnum_t  *n_families,
+                            cs_lnum_t   *n_families,
                             cs_int_t     family_list[])
 {
   int c_id;

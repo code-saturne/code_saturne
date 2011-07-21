@@ -7,7 +7,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2009  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -84,26 +84,26 @@ struct _fvm_gather_slice_t {
 
   /* Initial and final global element numbers for all slices */
 
-  fvm_gnum_t  global_num_initial;
-  fvm_gnum_t  global_num_final;
+  cs_gnum_t   global_num_initial;
+  cs_gnum_t   global_num_final;
 
   /* First and past the last global element numbers for current slice */
 
-  fvm_gnum_t  ref_slice_size;
-  fvm_gnum_t  global_num_slice_start;
-  fvm_gnum_t  global_num_slice_end;
+  cs_gnum_t   ref_slice_size;
+  cs_gnum_t   global_num_slice_start;
+  cs_gnum_t   global_num_slice_end;
 
   /* Local indexes corresponding to first element of a series with
      global number >= global_num_slice_start initially, and
      global number > global_num_end after a gather operation
      (initialized to 0 before first of a series of calls) */
 
-  fvm_lnum_t  local_index_start;   /* Current start value */
-  fvm_lnum_t  local_index_last;    /* Last value reached, to advance */
+  cs_lnum_t   local_index_start;   /* Current start value */
+  cs_lnum_t   local_index_last;    /* Last value reached, to advance */
 
   /* Number of local entities (constant after initialization) */
 
-  fvm_lnum_t  local_index_end;
+  cs_lnum_t   local_index_end;
 
   /* Next global element number expected for each rank before and after
      current call (rank 0 only); initialized upon the first call of
@@ -112,8 +112,8 @@ struct _fvm_gather_slice_t {
      processors having no element in a given slice, which could
      represent the majority of MPI calls for high processor counts */
 
-  fvm_gnum_t  *next_global_num;      /* Current values */
-  fvm_gnum_t  *next_global_num_last; /* Next values, to advance */
+  cs_gnum_t   *next_global_num;      /* Current values */
+  cs_gnum_t   *next_global_num_last; /* Next values, to advance */
 
   /* We may only use the next global element number to avoid
      sending and receiving empty messages when it is up to date;
@@ -128,7 +128,7 @@ struct _fvm_gather_slice_t {
   void        *recv_buf;       /* Receive buffer */
 
   int         *blocklengths;   /* Required only for indexed operations */
-  fvm_gnum_t  *displacements;  /* Always required for all ranks; size
+  cs_gnum_t   *displacements;  /* Always required for all ranks; size
                                   slice_size + 1 (last position used to
                                   exchange next_global_num[] values) */
 
@@ -290,7 +290,7 @@ fvm_gather_slice_dump(fvm_gather_slice_t  * this_slice)
 
 fvm_gather_slice_t *
 fvm_gather_slice_create(const fvm_io_num_t  *entity_io_num,
-                        const fvm_gnum_t     slice_size,
+                        const cs_gnum_t      slice_size,
                         MPI_Comm             comm)
 {
   int i;
@@ -324,8 +324,8 @@ fvm_gather_slice_create(const fvm_io_num_t  *entity_io_num,
 
   if (local_rank == 0) {
 
-    BFT_MALLOC(this_slice->next_global_num, n_ranks, fvm_gnum_t);
-    BFT_MALLOC(this_slice->next_global_num_last, n_ranks, fvm_gnum_t);
+    BFT_MALLOC(this_slice->next_global_num, n_ranks, cs_gnum_t);
+    BFT_MALLOC(this_slice->next_global_num_last, n_ranks, cs_gnum_t);
 
     for (i = 0; i < n_ranks; i++) {
       this_slice->next_global_num[i] = 0;
@@ -347,7 +347,7 @@ fvm_gather_slice_create(const fvm_io_num_t  *entity_io_num,
 
   this_slice->blocklengths = NULL;
 
-  BFT_MALLOC(this_slice->displacements, slice_size + 1,  fvm_gnum_t);
+  BFT_MALLOC(this_slice->displacements, slice_size + 1, cs_gnum_t);
 
   return this_slice;
 }
@@ -405,8 +405,8 @@ fvm_gather_slice_destroy(fvm_gather_slice_t  * this_slice)
 
 int
 fvm_gather_slice_advance(fvm_gather_slice_t  *this_slice,
-                         fvm_gnum_t          *global_num_start,
-                         fvm_gnum_t          *global_num_end)
+                         cs_gnum_t           *global_num_start,
+                         cs_gnum_t           *global_num_end)
 {
   int retval = 0;
 
@@ -489,7 +489,7 @@ fvm_gather_slice_reinitialize(fvm_gather_slice_t  *this_slice)
 
 void
 fvm_gather_slice_limit(fvm_gather_slice_t  *this_slice,
-                       fvm_gnum_t          *global_num_end)
+                       cs_gnum_t           *global_num_end)
 {
   if (*global_num_end != this_slice->global_num_slice_end) {
 
@@ -538,31 +538,31 @@ fvm_gather_slice_limit(fvm_gather_slice_t  *this_slice,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_gather_slice_index(const fvm_lnum_t     local_index[],
-                       fvm_gnum_t           slice_index[],
+fvm_gather_slice_index(const cs_lnum_t      local_index[],
+                       cs_gnum_t            slice_index[],
                        const fvm_io_num_t  *element_io_num,
                        MPI_Comm             comm,
                        fvm_gather_slice_t  *this_slice)
 {
   int  i, j;
   int  n_local_entities, n_distant_entities;
-  fvm_lnum_t  local_index_start, local_index_stop;
+  cs_lnum_t  local_index_start, local_index_stop;
 
   /* MPI related variables */
   MPI_Status status;
   int  distant_rank;
   const int local_rank = this_slice->local_rank;
   const int n_ranks = this_slice->n_ranks;
-  fvm_gnum_t *const displacements = this_slice->displacements;
+  cs_gnum_t *const displacements = this_slice->displacements;
 
   /* Local number of elements */
-  const fvm_lnum_t  local_index_end = this_slice->local_index_end;
+  const cs_lnum_t  local_index_end = this_slice->local_index_end;
 
   /* Global numbering */
-  const fvm_gnum_t global_num_start = this_slice->global_num_slice_start;
-  const fvm_gnum_t global_num_end = this_slice->global_num_slice_end;
-  const fvm_gnum_t *entity_global_num
-                      = fvm_io_num_get_global_num(element_io_num);
+  const cs_gnum_t global_num_start = this_slice->global_num_slice_start;
+  const cs_gnum_t global_num_end = this_slice->global_num_slice_end;
+  const cs_gnum_t *entity_global_num
+                     = fvm_io_num_get_global_num(element_io_num);
 
   /* Initialize blocklengths and displacements */
 
@@ -624,7 +624,7 @@ fvm_gather_slice_index(const fvm_lnum_t     local_index[],
         MPI_Recv(&n_distant_entities, 1, MPI_INT,
                  distant_rank, FVM_MPI_TAG, comm, &status);
 
-        MPI_Recv(displacements, n_distant_entities, FVM_MPI_GNUM,
+        MPI_Recv(displacements, n_distant_entities, CS_MPI_GNUM,
                  distant_rank, FVM_MPI_TAG, comm, &status);
 
         n_distant_entities -= 1;
@@ -633,15 +633,15 @@ fvm_gather_slice_index(const fvm_lnum_t     local_index[],
 
         if (n_distant_entities > 0) {
 
-          fvm_gnum_t *recv_buf = NULL;
+          cs_gnum_t *recv_buf = NULL;
 
           _slice_recv_buf_size_array(this_slice, n_distant_entities,
-                                     1, sizeof(fvm_gnum_t));
+                                     1, sizeof(cs_gnum_t));
 
           recv_buf = this_slice->recv_buf;
 
           MPI_Recv(this_slice->recv_buf, n_distant_entities,
-                   FVM_MPI_GNUM, distant_rank, FVM_MPI_TAG, comm, &status);
+                   CS_MPI_GNUM, distant_rank, FVM_MPI_TAG, comm, &status);
 
           for (i = 0 ; i < n_distant_entities ; i++)
             slice_index[displacements[i]] = recv_buf[i];
@@ -682,13 +682,13 @@ fvm_gather_slice_index(const fvm_lnum_t     local_index[],
       MPI_Send(&buf_val, 1, MPI_INT, 0, FVM_MPI_TAG, comm);
 
       MPI_Send(displacements, n_local_entities + 1,
-               FVM_MPI_GNUM, 0, FVM_MPI_TAG, comm);
+               CS_MPI_GNUM, 0, FVM_MPI_TAG, comm);
 
       /* Send local portion of lengths array to rank zero */
 
       if (n_local_entities > 0)
         MPI_Send(slice_index, (int)n_local_entities,
-                 FVM_MPI_GNUM, 0, FVM_MPI_TAG, comm);
+                 CS_MPI_GNUM, 0, FVM_MPI_TAG, comm);
 
     }
 
@@ -729,17 +729,17 @@ fvm_gather_slice_index(const fvm_lnum_t     local_index[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_gather_resize_indexed_slice(const fvm_gnum_t     n_elements_s_min,
-                                fvm_gnum_t          *global_num_end,
-                                fvm_gnum_t          *global_connect_s_size,
+fvm_gather_resize_indexed_slice(const cs_gnum_t      n_elements_s_min,
+                                cs_gnum_t           *global_num_end,
+                                cs_gnum_t           *global_connect_s_size,
                                 MPI_Comm             comm,
-                                const fvm_gnum_t     slice_index[],
+                                const cs_gnum_t      slice_index[],
                                 fvm_gather_slice_t  *this_slice)
 {
-  fvm_gnum_t  i_s;
-  fvm_gnum_t  buf[2];
+  cs_gnum_t  i_s;
+  cs_gnum_t  buf[2];
 
-  fvm_gnum_t global_num_start = this_slice->global_num_slice_start;
+  cs_gnum_t global_num_start = this_slice->global_num_slice_start;
 
   const int local_rank = this_slice->local_rank;
 
@@ -784,7 +784,7 @@ fvm_gather_resize_indexed_slice(const fvm_gnum_t     n_elements_s_min,
 
   }
 
-  MPI_Bcast(buf, 2, FVM_MPI_GNUM, 0, comm);
+  MPI_Bcast(buf, 2, CS_MPI_GNUM, 0, comm);
 
   /* Modify (reduce) slice size limit if necessary */
 
@@ -841,7 +841,7 @@ fvm_gather_array(const void          *local_array,
   int  n_local_entities, n_distant_entities;
   size_t  i, j, k;
   size_t  size_mult;
-  fvm_lnum_t  local_index_start, local_index_stop;
+  cs_lnum_t  local_index_start, local_index_stop;
 
   const char *local_array_val = local_array;
   char *global_array_s_val = global_array_s;
@@ -851,16 +851,16 @@ fvm_gather_array(const void          *local_array,
   int  size, distant_rank;
   const int local_rank = this_slice->local_rank;
   const int n_ranks = this_slice->n_ranks;
-  fvm_gnum_t *const displacements = this_slice->displacements;
+  cs_gnum_t *const displacements = this_slice->displacements;
 
   /* Local number of elements */
-  const fvm_lnum_t  local_index_end = this_slice->local_index_end;
+  const cs_lnum_t  local_index_end = this_slice->local_index_end;
 
   /* Global numbering */
-  const fvm_gnum_t global_num_start = this_slice->global_num_slice_start;
-  const fvm_gnum_t global_num_end = this_slice->global_num_slice_end;
-  const fvm_gnum_t *entity_global_num
-                      = fvm_io_num_get_global_num(element_io_num);
+  const cs_gnum_t global_num_start = this_slice->global_num_slice_start;
+  const cs_gnum_t global_num_end = this_slice->global_num_slice_end;
+  const cs_gnum_t *entity_global_num
+                     = fvm_io_num_get_global_num(element_io_num);
 
   /* Get info on the current MPI communicator */
 
@@ -929,7 +929,7 @@ fvm_gather_array(const void          *local_array,
         MPI_Recv(&n_distant_entities, 1, MPI_INT,
                  distant_rank, FVM_MPI_TAG, comm, &status);
 
-        MPI_Recv(displacements, n_distant_entities, FVM_MPI_GNUM,
+        MPI_Recv(displacements, n_distant_entities, CS_MPI_GNUM,
                  distant_rank, FVM_MPI_TAG, comm, &status);
 
         n_distant_entities -= 1;
@@ -976,7 +976,7 @@ fvm_gather_array(const void          *local_array,
       buf_val = n_local_entities + 1;
       MPI_Send(&buf_val, 1, MPI_INT, 0, FVM_MPI_TAG, comm);
 
-      MPI_Send(displacements, n_local_entities + 1, FVM_MPI_GNUM, 0,
+      MPI_Send(displacements, n_local_entities + 1, CS_MPI_GNUM, 0,
                FVM_MPI_TAG, comm);
 
       /* Send local portion of connectivity array to rank zero */
@@ -1039,16 +1039,16 @@ void
 fvm_gather_indexed(const void          *local_array,
                    void                *global_array_s,
                    const MPI_Datatype   datatype,
-                   const fvm_lnum_t     local_index[],
+                   const cs_lnum_t      local_index[],
                    const fvm_io_num_t  *element_io_num,
                    MPI_Comm             comm,
-                   const fvm_gnum_t     slice_index[],
+                   const cs_gnum_t      slice_index[],
                    fvm_gather_slice_t  *this_slice)
 {
   int  i, j, k, l;
   int  n_local_entities, n_distant_entities;
   int  n_values_send = 0;
-  fvm_lnum_t  local_index_start, local_index_stop;
+  cs_lnum_t  local_index_start, local_index_stop;
 
   const char *local_array_val = local_array;
   char *global_array_s_val = global_array_s;
@@ -1059,16 +1059,16 @@ fvm_gather_indexed(const void          *local_array,
   const int local_rank = this_slice->local_rank;
   const int n_ranks = this_slice->n_ranks;
   int  *blocklengths = this_slice->blocklengths;
-  fvm_gnum_t *const displacements = this_slice->displacements;
+  cs_gnum_t *const displacements = this_slice->displacements;
 
   /* Local number of elements */
-  const fvm_lnum_t  local_index_end = this_slice->local_index_end;
+  const cs_lnum_t  local_index_end = this_slice->local_index_end;
 
   /* Global numbering */
-  const fvm_gnum_t global_num_start = this_slice->global_num_slice_start;
-  const fvm_gnum_t global_num_end = this_slice->global_num_slice_end;
-  const fvm_gnum_t *entity_global_num
-                      = fvm_io_num_get_global_num(element_io_num);
+  const cs_gnum_t global_num_start = this_slice->global_num_slice_start;
+  const cs_gnum_t global_num_end = this_slice->global_num_slice_end;
+  const cs_gnum_t *entity_global_num
+                     = fvm_io_num_get_global_num(element_io_num);
 
   MPI_Type_size(datatype, &size);
 
@@ -1152,7 +1152,7 @@ fvm_gather_indexed(const void          *local_array,
 
         /* Get index from distant rank */
 
-        MPI_Recv(displacements, n_distant_entities, FVM_MPI_GNUM,
+        MPI_Recv(displacements, n_distant_entities, CS_MPI_GNUM,
                  distant_rank, FVM_MPI_TAG, comm, &status);
 
         n_distant_entities -= 1;
@@ -1208,7 +1208,7 @@ fvm_gather_indexed(const void          *local_array,
       buf_val = n_local_entities + 1;
       MPI_Send(&buf_val, 1, MPI_INT, 0, FVM_MPI_TAG, comm);
 
-      MPI_Send(displacements, n_local_entities + 1, FVM_MPI_GNUM,
+      MPI_Send(displacements, n_local_entities + 1, CS_MPI_GNUM,
                0, FVM_MPI_TAG, comm);
 
       /* Send local portion of numbers array to rank zero */
@@ -1261,9 +1261,9 @@ fvm_gather_indexed(const void          *local_array,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_gather_strided_connect(const fvm_lnum_t    local_connect[],
-                           fvm_gnum_t          global_connect_s[],
-                           const int           stride,
+fvm_gather_strided_connect(const cs_lnum_t      local_connect[],
+                           cs_gnum_t            global_connect_s[],
+                           const int            stride,
                            const fvm_io_num_t  *connected_io_num,
                            const fvm_io_num_t  *element_io_num,
                            MPI_Comm             comm,
@@ -1271,25 +1271,25 @@ fvm_gather_strided_connect(const fvm_lnum_t    local_connect[],
 {
   int  i, j, k;
   int  n_local_entities, n_distant_entities;
-  fvm_lnum_t  local_index_start, local_index_stop;
+  cs_lnum_t  local_index_start, local_index_stop;
 
   /* MPI related variables */
   MPI_Status status;
   int  distant_rank;
   const int local_rank = this_slice->local_rank;
   const int n_ranks = this_slice->n_ranks;
-  fvm_gnum_t *const displacements = this_slice->displacements;
+  cs_gnum_t *const displacements = this_slice->displacements;
 
   /* Local number of elements */
-  const fvm_lnum_t  local_index_end = this_slice->local_index_end;
+  const cs_lnum_t  local_index_end = this_slice->local_index_end;
 
   /* Global numbering */
-  const fvm_gnum_t global_num_start = this_slice->global_num_slice_start;
-  const fvm_gnum_t global_num_end = this_slice->global_num_slice_end;
-  const fvm_gnum_t *connected_global_num
-                      = fvm_io_num_get_global_num(connected_io_num);
-  const fvm_gnum_t *entity_global_num
-                      = fvm_io_num_get_global_num(element_io_num);
+  const cs_gnum_t global_num_start = this_slice->global_num_slice_start;
+  const cs_gnum_t global_num_end = this_slice->global_num_slice_end;
+  const cs_gnum_t *connected_global_num
+                     = fvm_io_num_get_global_num(connected_io_num);
+  const cs_gnum_t *entity_global_num
+                     = fvm_io_num_get_global_num(element_io_num);
 
   /* Initialize displacements */
 
@@ -1331,7 +1331,7 @@ fvm_gather_strided_connect(const fvm_lnum_t    local_connect[],
   }
   else {
     int n_local_values = n_local_entities * stride;
-    for (i = 0, j = (fvm_gnum_t)(local_index_start * stride);
+    for (i = 0, j = (cs_gnum_t)(local_index_start * stride);
          i < n_local_values;
          i++, j++) {
       global_connect_s[i] = connected_global_num[local_connect[j] - 1];
@@ -1353,7 +1353,7 @@ fvm_gather_strided_connect(const fvm_lnum_t    local_connect[],
         MPI_Recv(&n_distant_entities, 1, MPI_INT,
                  distant_rank, FVM_MPI_TAG, comm, &status);
 
-        MPI_Recv(displacements, n_distant_entities, FVM_MPI_GNUM,
+        MPI_Recv(displacements, n_distant_entities, CS_MPI_GNUM,
                  distant_rank, FVM_MPI_TAG, comm, &status);
 
         n_distant_entities -= 1;
@@ -1362,15 +1362,15 @@ fvm_gather_strided_connect(const fvm_lnum_t    local_connect[],
 
         if (n_distant_entities > 0) {
 
-          fvm_gnum_t *_recv_buf;
+          cs_gnum_t *_recv_buf;
 
           _slice_recv_buf_size_array(this_slice, n_distant_entities,
-                                     stride, sizeof(fvm_gnum_t));
+                                     stride, sizeof(cs_gnum_t));
 
           _recv_buf = this_slice->recv_buf;
 
           MPI_Recv(this_slice->recv_buf, (int)(n_distant_entities*stride),
-                   FVM_MPI_GNUM, distant_rank, FVM_MPI_TAG, comm, &status);
+                   CS_MPI_GNUM, distant_rank, FVM_MPI_TAG, comm, &status);
 
           for (i = 0 ; i < n_distant_entities ; i++) {
             for (j = 0 ; j < stride ; j++)
@@ -1399,14 +1399,14 @@ fvm_gather_strided_connect(const fvm_lnum_t    local_connect[],
       buf_val = n_local_entities + 1;
       MPI_Send(&buf_val, 1, MPI_INT, 0, FVM_MPI_TAG, comm);
 
-      MPI_Send(displacements, n_local_entities + 1, FVM_MPI_GNUM, 0,
+      MPI_Send(displacements, n_local_entities + 1, CS_MPI_GNUM, 0,
                FVM_MPI_TAG, comm);
 
       /* Send local portion of connectivity array to rank zero */
 
       if (n_local_entities > 0)
         MPI_Send(global_connect_s, (int)(n_local_entities * stride),
-                 FVM_MPI_GNUM, 0, FVM_MPI_TAG, comm);
+                 CS_MPI_GNUM, 0, FVM_MPI_TAG, comm);
 
     }
 
@@ -1464,19 +1464,19 @@ fvm_gather_strided_connect(const fvm_lnum_t    local_connect[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_gather_indexed_numbers(const fvm_lnum_t     local_index[],
-                           const fvm_lnum_t     local_numbers[],
-                           fvm_gnum_t           global_numbers_s[],
+fvm_gather_indexed_numbers(const cs_lnum_t      local_index[],
+                           const cs_lnum_t      local_numbers[],
+                           cs_gnum_t            global_numbers_s[],
                            const fvm_io_num_t  *connected_io_num,
                            const fvm_io_num_t  *element_io_num,
                            MPI_Comm             comm,
-                           const fvm_gnum_t     slice_index[],
+                           const cs_gnum_t      slice_index[],
                            fvm_gather_slice_t  *this_slice)
 {
   int  i, j, k, l;
   int  n_local_entities, n_distant_entities;
   int  n_values_send = 0;
-  fvm_lnum_t  local_index_start, local_index_stop;
+  cs_lnum_t  local_index_start, local_index_stop;
 
   /* MPI related variables */
   MPI_Status status;
@@ -1484,17 +1484,17 @@ fvm_gather_indexed_numbers(const fvm_lnum_t     local_index[],
   const int local_rank = this_slice->local_rank;
   const int n_ranks = this_slice->n_ranks;
   int  *blocklengths = this_slice->blocklengths;
-  fvm_gnum_t *const displacements = this_slice->displacements;
+  cs_gnum_t *const displacements = this_slice->displacements;
 
   /* Local number of elements */
-  const fvm_lnum_t  local_index_end = this_slice->local_index_end;
+  const cs_lnum_t  local_index_end = this_slice->local_index_end;
 
   /* Global numbering */
-  const fvm_gnum_t global_num_start = this_slice->global_num_slice_start;
-  const fvm_gnum_t global_num_end = this_slice->global_num_slice_end;
-  const fvm_gnum_t *connected_global_num = NULL;
-  const fvm_gnum_t *entity_global_num
-                      = fvm_io_num_get_global_num(element_io_num);
+  const cs_gnum_t global_num_start = this_slice->global_num_slice_start;
+  const cs_gnum_t global_num_end = this_slice->global_num_slice_end;
+  const cs_gnum_t *connected_global_num = NULL;
+  const cs_gnum_t *entity_global_num
+                     = fvm_io_num_get_global_num(element_io_num);
 
   if (connected_io_num != NULL)
     connected_global_num = fvm_io_num_get_global_num(connected_io_num);
@@ -1606,7 +1606,7 @@ fvm_gather_indexed_numbers(const fvm_lnum_t     local_index[],
 
       /* Get index from distant rank */
 
-        MPI_Recv(displacements, n_distant_entities, FVM_MPI_GNUM,
+        MPI_Recv(displacements, n_distant_entities, CS_MPI_GNUM,
                  distant_rank, FVM_MPI_TAG, comm, &status);
 
         n_distant_entities -= 1;
@@ -1623,13 +1623,13 @@ fvm_gather_indexed_numbers(const fvm_lnum_t     local_index[],
         if (n_distant_entities > 0) {
 
           size_t  recv_id;
-          fvm_gnum_t  *_recv_buf = NULL;
+          cs_gnum_t  *_recv_buf = NULL;
 
           _slice_recv_buf_size_indexed(this_slice,
                                        recv_size,
-                                       sizeof(fvm_gnum_t));
+                                       sizeof(cs_gnum_t));
 
-          MPI_Recv(this_slice->recv_buf, recv_size, FVM_MPI_GNUM,
+          MPI_Recv(this_slice->recv_buf, recv_size, CS_MPI_GNUM,
                    distant_rank, FVM_MPI_TAG, comm, &status);
 
           _recv_buf = this_slice->recv_buf;
@@ -1661,14 +1661,14 @@ fvm_gather_indexed_numbers(const fvm_lnum_t     local_index[],
       buf_val = n_local_entities + 1;
       MPI_Send(&buf_val, 1, MPI_INT, 0, FVM_MPI_TAG, comm);
 
-      MPI_Send(displacements, n_local_entities + 1, FVM_MPI_GNUM,
+      MPI_Send(displacements, n_local_entities + 1, CS_MPI_GNUM,
                0, FVM_MPI_TAG, comm);
 
       /* Send local portion of numbers array to rank zero */
 
       if (n_local_entities > 0)
         MPI_Send(global_numbers_s, (int)n_values_send,
-                 FVM_MPI_GNUM, 0, FVM_MPI_TAG, comm);
+                 CS_MPI_GNUM, 0, FVM_MPI_TAG, comm);
 
     }
 

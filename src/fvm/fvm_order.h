@@ -75,8 +75,8 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 int
-fvm_order_local_test(const fvm_lnum_t  list[],
-                     const fvm_gnum_t  number[],
+fvm_order_local_test(const cs_lnum_t   list[],
+                     const cs_gnum_t   number[],
                      size_t            nb_ent);
 
 /*----------------------------------------------------------------------------
@@ -97,8 +97,8 @@ fvm_order_local_test(const fvm_lnum_t  list[],
  *----------------------------------------------------------------------------*/
 
 int
-fvm_order_local_test_s(const fvm_lnum_t  list[],
-                       const fvm_gnum_t  number[],
+fvm_order_local_test_s(const cs_lnum_t   list[],
+                       const cs_gnum_t   number[],
                        size_t            stride,
                        size_t            nb_ent);
 
@@ -120,9 +120,9 @@ fvm_order_local_test_s(const fvm_lnum_t  list[],
  *   freeing this array when it is not needed anymore
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t *
-fvm_order_local(const fvm_lnum_t  list[],
-                const fvm_gnum_t  number[],
+cs_lnum_t *
+fvm_order_local(const cs_lnum_t   list[],
+                const cs_gnum_t   number[],
                 size_t            nb_ent);
 
 /*----------------------------------------------------------------------------
@@ -145,9 +145,9 @@ fvm_order_local(const fvm_lnum_t  list[],
  *   freeing this array when it is not needed anymore.
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t *
-fvm_order_local_s(const fvm_lnum_t  list[],
-                  const fvm_gnum_t  number[],
+cs_lnum_t *
+fvm_order_local_s(const cs_lnum_t   list[],
+                  const cs_gnum_t   number[],
                   size_t            stride,
                   size_t            nb_ent);
 
@@ -171,10 +171,10 @@ fvm_order_local_s(const fvm_lnum_t  list[],
  *   freeing this array when it is not needed anymore.
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t *
-fvm_order_local_i(const fvm_lnum_t  list[],
-                  const fvm_gnum_t  number[],
-                  const fvm_lnum_t  index[],
+cs_lnum_t *
+fvm_order_local_i(const cs_lnum_t   list[],
+                  const cs_gnum_t   number[],
+                  const cs_lnum_t   index[],
                   size_t            nb_ent);
 
 /*----------------------------------------------------------------------------
@@ -192,9 +192,9 @@ fvm_order_local_i(const fvm_lnum_t  list[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_order_local_allocated(const fvm_lnum_t  list[],
-                          const fvm_gnum_t  number[],
-                          fvm_lnum_t        order[],
+fvm_order_local_allocated(const cs_lnum_t   list[],
+                          const cs_gnum_t   number[],
+                          cs_lnum_t         order[],
                           const size_t      nb_ent);
 
 /*----------------------------------------------------------------------------
@@ -215,10 +215,10 @@ fvm_order_local_allocated(const fvm_lnum_t  list[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_order_local_allocated_s(const fvm_lnum_t  list[],
-                            const fvm_gnum_t  number[],
+fvm_order_local_allocated_s(const cs_lnum_t   list[],
+                            const cs_gnum_t   number[],
                             size_t            stride,
-                            fvm_lnum_t        order[],
+                            cs_lnum_t         order[],
                             const size_t      nb_ent);
 
 /*----------------------------------------------------------------------------
@@ -238,10 +238,10 @@ fvm_order_local_allocated_s(const fvm_lnum_t  list[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_order_local_allocated_i(const fvm_lnum_t  list[],
-                            const fvm_gnum_t  number[],
-                            const fvm_lnum_t  index[],
-                            fvm_lnum_t        order[],
+fvm_order_local_allocated_i(const cs_lnum_t   list[],
+                            const cs_gnum_t   number[],
+                            const cs_lnum_t   index[],
+                            cs_lnum_t         order[],
                             const size_t      nb_ent);
 
 /*----------------------------------------------------------------------------
@@ -257,8 +257,8 @@ fvm_order_local_allocated_i(const fvm_lnum_t  list[],
  *   freeing this array when it is not needed anymore
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t *
-fvm_order_local_renumbering(const fvm_lnum_t  order[],
+cs_lnum_t *
+fvm_order_local_renumbering(const cs_lnum_t   order[],
                             const size_t      nb_ent);
 
 /*----------------------------------------------------------------------------*/

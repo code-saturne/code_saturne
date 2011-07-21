@@ -9,7 +9,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2007  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -58,28 +58,6 @@ extern "C" {
 #if defined(HAVE_MPI)
 
 #define FVM_MPI_TAG      (int)('F'+'V'+'M') /* MPI tag for FVM operations */
-
-/* MPI type for fvm_gnum_t integer type (depends on configuration) */
-
-#if defined(HAVE_LONG_GNUM)
-  #if (SIZEOF_LONG == 8)
-    #define FVM_MPI_GNUM     MPI_UNSIGNED_LONG
-  #elif (SIZEOF_LONG_LONG == 8)
-    #if defined(MPI_UNSIGNED_LONG_LONG)
-      #define FVM_MPI_GNUM     MPI_UNSIGNED_LONG_LONG
-    #elif defined(MPI_LONG_LONG)
-      #define FVM_MPI_GNUM     MPI_LONG_LONG
-    #endif
-  #endif
-  #if !defined(FVM_MPI_GNUM)
-    #error
-  #endif
-#else
-  #define FVM_MPI_GNUM       MPI_UNSIGNED
-#endif
-
-#define FVM_MPI_LNUM     MPI_INT         /* MPI type for fvm_lnum_t type */
-#define FVM_MPI_COORD    MPI_DOUBLE      /* MPI type for fvm_coord_t type */
 
 #endif
 
@@ -153,7 +131,7 @@ fvm_parall_get_size(void);
 
 #if defined(HAVE_MPI)
 void
-fvm_parall_counter(fvm_gnum_t  cpt[],
+fvm_parall_counter(cs_gnum_t   cpt[],
                    const int   n);
 #else
 #define fvm_parall_counter(_cpt, _n)
@@ -169,7 +147,7 @@ fvm_parall_counter(fvm_gnum_t  cpt[],
 
 #if defined(HAVE_MPI)
 void
-fvm_parall_counter_max(fvm_lnum_t  cpt[],
+fvm_parall_counter_max(cs_lnum_t   cpt[],
                        const int   n);
 #else
 #define fvm_parall_counter_max(_cpt, _n)

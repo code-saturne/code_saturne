@@ -475,14 +475,14 @@ _get_global_tolerance(cs_int_t             n_vertices,
                       cs_join_vertex_t     vtx_data[])
 {
   cs_int_t  i, rank, vtx_id, block_size, shift;
-  fvm_gnum_t  first_vtx_gnum;
+  cs_gnum_t  first_vtx_gnum;
 
   double  *g_vtx_tolerance = NULL, *send_list = NULL, *recv_list = NULL;
   cs_int_t  *send_count = NULL, *recv_count = NULL;
   cs_int_t  *send_shift = NULL, *recv_shift = NULL;
-  fvm_gnum_t  *send_glist = NULL, *recv_glist = NULL;
-  fvm_gnum_t  n_g_vertices = fvm_io_num_get_global_count(select_vtx_io_num);
-  const fvm_gnum_t  *io_gnum = fvm_io_num_get_global_num(select_vtx_io_num);
+  cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
+  cs_gnum_t  n_g_vertices = fvm_io_num_get_global_count(select_vtx_io_num);
+  const cs_gnum_t  *io_gnum = fvm_io_num_get_global_num(select_vtx_io_num);
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
   const int  local_rank = CS_MAX(cs_glob_rank_id, 0);
@@ -525,8 +525,8 @@ _get_global_tolerance(cs_int_t             n_vertices,
   /* Send the global numbering for each vertex */
   /* ----------------------------------------- */
 
-  BFT_MALLOC(send_glist, n_vertices, fvm_gnum_t);
-  BFT_MALLOC(recv_glist, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(send_glist, n_vertices, cs_gnum_t);
+  BFT_MALLOC(recv_glist, recv_shift[n_ranks], cs_gnum_t);
 
   for (rank = 0; rank < n_ranks; rank++)
     send_count[rank] = 0;
@@ -538,8 +538,8 @@ _get_global_tolerance(cs_int_t             n_vertices,
     send_glist[shift] = io_gnum[i];
   }
 
-  MPI_Alltoallv(send_glist, send_count, send_shift, FVM_MPI_GNUM,
-                recv_glist, recv_count, recv_shift, FVM_MPI_GNUM, mpi_comm);
+  MPI_Alltoallv(send_glist, send_count, send_shift, CS_MPI_GNUM,
+                recv_glist, recv_count, recv_shift, CS_MPI_GNUM, mpi_comm);
 
   /* Send the vertex tolerance for each vertex */
   /* ----------------------------------------- */
@@ -637,7 +637,7 @@ _define_vertices(cs_join_param_t        param,
                  const cs_int_t         i_f2v_lst[],
                  const cs_int_t         n_vertices,
                  const cs_real_t        vtx_coord[],
-                 const fvm_gnum_t       vtx_gnum[])
+                 const cs_gnum_t        vtx_gnum[])
 {
   int  i;
 
@@ -794,9 +794,9 @@ _define_vertices(cs_join_param_t        param,
  *---------------------------------------------------------------------------*/
 
 static cs_int_t *
-_get_rank_from_index(cs_int_t          n_elts,
-                     const fvm_gnum_t  glob_list[],
-                     const fvm_gnum_t  rank_index[])
+_get_rank_from_index(cs_int_t         n_elts,
+                     const cs_gnum_t  glob_list[],
+                     const cs_gnum_t  rank_index[])
 {
   cs_int_t  i, rank;
 
@@ -833,19 +833,19 @@ _get_rank_from_index(cs_int_t          n_elts,
  *---------------------------------------------------------------------------*/
 
 static void
-_get_send_faces(int                n_ranks,
-                const fvm_gnum_t   gnum_rank_index[],
-                cs_int_t           n_elts,
-                const fvm_gnum_t   glob_list[],
-                cs_int_t          *send_rank_index[],
-                cs_int_t          *send_faces[])
+_get_send_faces(int               n_ranks,
+                const cs_gnum_t   gnum_rank_index[],
+                cs_int_t          n_elts,
+                const cs_gnum_t   glob_list[],
+                cs_int_t         *send_rank_index[],
+                cs_int_t         *send_faces[])
 {
   int  i, rank, shift;
-  fvm_gnum_t  first_gface_id;
+  cs_gnum_t  first_gface_id;
 
   cs_int_t  *gface_ranks = NULL, *_send_faces = NULL, *_send_rank_index = NULL;
   cs_int_t  *send_count = NULL, *recv_count = NULL, *send_shift = NULL;
-  fvm_gnum_t  *gfaces_to_send = NULL, *gfaces_to_recv = NULL;
+  cs_gnum_t  *gfaces_to_send = NULL, *gfaces_to_recv = NULL;
 
   MPI_Comm  comm = cs_glob_mpi_comm;
 
@@ -895,8 +895,8 @@ _get_send_faces(int                n_ranks,
   /* Build gfaces_to_recv = glob_list but potentially in a different order.
      List of face (global numbering) for which we want the connectivity */
 
-  BFT_MALLOC(gfaces_to_recv, send_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(gfaces_to_send, _send_rank_index[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(gfaces_to_recv, send_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(gfaces_to_send, _send_rank_index[n_ranks], cs_gnum_t);
 
   assert(send_shift[n_ranks] == n_elts);
 
@@ -914,8 +914,8 @@ _get_send_faces(int                n_ranks,
 
   /* Exchange list of global num. to exchange */
 
-  MPI_Alltoallv(gfaces_to_recv, send_count, send_shift, FVM_MPI_GNUM,
-                gfaces_to_send, recv_count, _send_rank_index, FVM_MPI_GNUM,
+  MPI_Alltoallv(gfaces_to_recv, send_count, send_shift, CS_MPI_GNUM,
+                gfaces_to_send, recv_count, _send_rank_index, CS_MPI_GNUM,
                 comm);
 
   BFT_MALLOC(_send_faces, _send_rank_index[n_ranks], cs_int_t);
@@ -1007,7 +1007,7 @@ _remove_empty_edges(cs_join_mesh_t  *mesh,
               new_face_vtx_idx[mesh->n_faces]-1, cs_int_t);
 
   if (verbosity > 1) {
-    fvm_gnum_t n_g_simplified_faces = n_simplified_faces;
+    cs_gnum_t n_g_simplified_faces = n_simplified_faces;
     fvm_parall_counter(&n_g_simplified_faces, 1);
     bft_printf(_("\n  Number of simplified faces: %llu\n"),
                (unsigned long long)n_simplified_faces);
@@ -1067,7 +1067,7 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
   cs_int_t  shift = 0;
   cs_int_t  n_faces = mesh->n_faces;
   cs_int_t  n_modified_faces = 0;
-  fvm_gnum_t  n_g_modified_faces = 0;
+  cs_gnum_t  n_g_modified_faces = 0;
   cs_join_rset_t  *tmp = NULL;
   cs_join_rset_t  *kill = NULL;
 
@@ -1381,7 +1381,7 @@ cs_join_mesh_create_vtx_datatype(void)
 
   int  blocklengths[4] = {1, 1, 1, 3};
   MPI_Aint  displacements[4] = {0 , 0, 0, 0};
-  MPI_Datatype  types[4] = {MPI_INT,  FVM_MPI_GNUM, MPI_DOUBLE, FVM_MPI_COORD};
+  MPI_Datatype  types[4] = {MPI_INT,  CS_MPI_GNUM, MPI_DOUBLE, CS_MPI_COORD};
 
   /* Initialize vertex structure */
 
@@ -1586,8 +1586,8 @@ cs_join_mesh_create(const char  *name)
 cs_join_mesh_t *
 cs_join_mesh_create_from_glob_sel(const char            *mesh_name,
                                   cs_int_t               n_elts,
-                                  const fvm_gnum_t       glob_sel[],
-                                  const fvm_gnum_t       gnum_rank_index[],
+                                  const cs_gnum_t        glob_sel[],
+                                  const cs_gnum_t        gnum_rank_index[],
                                   const cs_join_mesh_t  *local_mesh)
 {
   cs_join_mesh_t  *new_mesh = NULL;
@@ -1713,7 +1713,7 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
   /* Build face_vtx_idx, and face global numbering */
 
   BFT_MALLOC(mesh->face_vtx_idx, mesh->n_faces + 1, cs_int_t);
-  BFT_MALLOC(mesh->face_gnum, mesh->n_faces, fvm_gnum_t);
+  BFT_MALLOC(mesh->face_gnum, mesh->n_faces, cs_gnum_t);
 
   for (i = 0; i < mesh->n_faces; i++) {
 
@@ -1775,9 +1775,9 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
   else {
 
     fvm_io_num_t  *io_num = NULL;
-    fvm_gnum_t  *vtx_gnum = NULL;
+    cs_gnum_t  *vtx_gnum = NULL;
 
-    const fvm_gnum_t  *io_gnum = NULL;
+    const cs_gnum_t  *io_gnum = NULL;
 
     /* Get the global number of faces in the subset */
 
@@ -1789,7 +1789,7 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
 
     /* Get the global number of vertices in the subset */
 
-    BFT_MALLOC(vtx_gnum, mesh->n_vertices, fvm_gnum_t);
+    BFT_MALLOC(vtx_gnum, mesh->n_vertices, cs_gnum_t);
 
     for (i = 0; i < mesh->n_vertices; i++)
       vtx_gnum[i] = mesh->vertices[i].gnum;
@@ -1849,7 +1849,7 @@ cs_join_mesh_create_from_select(const char              *name,
                                 const cs_int_t           i_f2v_lst[],
                                 const cs_int_t           n_vertices,
                                 const cs_real_t          vtx_coord[],
-                                const fvm_gnum_t         vtx_gnum[])
+                                const cs_gnum_t          vtx_gnum[])
 {
   int  i, j, id, face_id, start, end, shift;
 
@@ -1902,7 +1902,7 @@ cs_join_mesh_create_from_select(const char              *name,
 
   /* Define global face numbering */
 
-  BFT_MALLOC(mesh->face_gnum, mesh->n_faces, fvm_gnum_t);
+  BFT_MALLOC(mesh->face_gnum, mesh->n_faces, cs_gnum_t);
 
   if (selection->compact_face_gnum == NULL)
     for (i = 0; i < selection->n_faces; i++)
@@ -2006,7 +2006,7 @@ cs_join_mesh_copy(cs_join_mesh_t        **mesh,
   _mesh->n_faces = ref_mesh->n_faces;
   _mesh->n_g_faces = ref_mesh->n_g_faces;
 
-  BFT_REALLOC(_mesh->face_gnum, _mesh->n_faces, fvm_gnum_t);
+  BFT_REALLOC(_mesh->face_gnum, _mesh->n_faces, cs_gnum_t);
   BFT_REALLOC(_mesh->face_vtx_idx, _mesh->n_faces + 1, cs_int_t);
 
   _mesh->face_vtx_idx[0] = 1;
@@ -2049,7 +2049,7 @@ void
 cs_join_mesh_minmax_tol(cs_join_param_t    param,
                         cs_join_mesh_t    *mesh)
 {
-  fvm_lnum_t  i;
+  cs_lnum_t  i;
   cs_join_vertex_t  _min, _max, g_min, g_max;
 
   const int  n_ranks = cs_glob_n_ranks;
@@ -2152,7 +2152,7 @@ cs_join_mesh_exchange(int                    n_ranks,
   cs_int_t  *vtx_shift = NULL, *vtx_tag = NULL;
   cs_int_t  *send_count = NULL, *recv_count = NULL;
   cs_int_t  *send_shift = NULL, *recv_shift = NULL;
-  fvm_gnum_t  *send_gbuf = NULL, *recv_gbuf = NULL;
+  cs_gnum_t  *send_gbuf = NULL, *recv_gbuf = NULL;
   cs_join_vertex_t  *send_vtx_buf = NULL, *recv_vtx_buf = NULL;
 
   MPI_Datatype  MPI_JOIN_VERTEX = cs_join_mesh_create_vtx_datatype();
@@ -2193,7 +2193,7 @@ cs_join_mesh_exchange(int                    n_ranks,
 
   recv_mesh->n_faces = n_face_to_recv;
 
-  BFT_MALLOC(recv_mesh->face_gnum, n_face_to_recv, fvm_gnum_t);
+  BFT_MALLOC(recv_mesh->face_gnum, n_face_to_recv, cs_gnum_t);
   BFT_MALLOC(recv_mesh->face_vtx_idx, n_face_to_recv + 1, cs_int_t);
 
   /* The mesh doesn't change from a global point of view.
@@ -2265,8 +2265,8 @@ cs_join_mesh_exchange(int                    n_ranks,
 
   /* Build send_gbuf to exchange face connectivity */
 
-  BFT_MALLOC(send_gbuf, send_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(recv_gbuf, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_MALLOC(send_gbuf, send_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(recv_gbuf, recv_shift[n_ranks], cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -2308,8 +2308,8 @@ cs_join_mesh_exchange(int                    n_ranks,
 
   } /* End of loop on ranks */
 
-  MPI_Alltoallv(send_gbuf, send_count, send_shift, FVM_MPI_GNUM,
-                recv_gbuf, recv_count, recv_shift, FVM_MPI_GNUM, comm);
+  MPI_Alltoallv(send_gbuf, send_count, send_shift, CS_MPI_GNUM,
+                recv_gbuf, recv_count, recv_shift, CS_MPI_GNUM, comm);
 
   BFT_FREE(send_gbuf);
 
@@ -2523,12 +2523,12 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
 {
   int  i, j, o_id;
   cs_int_t  shift, start, end, n_new_faces;
-  fvm_gnum_t  prev, cur;
+  cs_gnum_t  prev, cur;
 
   cs_int_t  n_faces = mesh->n_faces;
   cs_int_t  *num_buf = NULL,  *selection = NULL;
-  fvm_lnum_t  *order = NULL;
-  fvm_gnum_t  *gnum_buf = NULL;
+  cs_lnum_t  *order = NULL;
+  cs_gnum_t  *gnum_buf = NULL;
 
   assert(mesh != NULL);
 
@@ -2537,13 +2537,13 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
 
   /* Order faces according to their global numbering */
 
-  BFT_MALLOC(order, n_faces, fvm_lnum_t);
+  BFT_MALLOC(order, n_faces, cs_lnum_t);
 
   fvm_order_local_allocated(NULL, mesh->face_gnum, order, n_faces);
 
   /* Order global face numbering */
 
-  BFT_MALLOC(gnum_buf, n_faces, fvm_gnum_t);
+  BFT_MALLOC(gnum_buf, n_faces, cs_gnum_t);
   BFT_MALLOC(selection, n_faces, cs_int_t);
 
   for (i = 0; i < n_faces; i++)
@@ -2571,7 +2571,7 @@ cs_join_mesh_face_order(cs_join_mesh_t  *mesh)
   BFT_FREE(gnum_buf);
   BFT_FREE(order);
 
-  BFT_REALLOC(mesh->face_gnum, n_new_faces, fvm_gnum_t);
+  BFT_REALLOC(mesh->face_gnum, n_new_faces, cs_gnum_t);
   BFT_REALLOC(selection, n_new_faces, cs_int_t);
 
   /* Order face -> vertex connectivity list */
@@ -2627,13 +2627,13 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 {
   cs_int_t  i, rank, shift, start, end;
   double  min_tol;
-  fvm_gnum_t  ref_gnum, l_max_gnum, g_max_gnum;
+  cs_gnum_t  ref_gnum, l_max_gnum, g_max_gnum;
   cs_join_block_info_t  block_info;
 
   int  *send_shift = NULL, *recv_shift = NULL;
   int  *send_count = NULL, *recv_count = NULL;
-  fvm_lnum_t  *order = NULL;
-  fvm_gnum_t  *recv_gnum = NULL;
+  cs_lnum_t  *order = NULL;
+  cs_gnum_t  *recv_gnum = NULL;
   cs_join_vertex_t  *send_vertices = NULL, *recv_vertices = NULL;
 
   MPI_Datatype  CS_MPI_JOIN_VERTEX = cs_join_mesh_create_vtx_datatype();
@@ -2650,7 +2650,7 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
   for (i = 0; i < mesh->n_vertices; i++)
     l_max_gnum = CS_MAX(l_max_gnum, mesh->vertices[i].gnum);
 
-  MPI_Allreduce(&l_max_gnum, &g_max_gnum, 1, FVM_MPI_GNUM, MPI_MAX, mpi_comm);
+  MPI_Allreduce(&l_max_gnum, &g_max_gnum, 1, CS_MPI_GNUM, MPI_MAX, mpi_comm);
 
   block_info = cs_join_get_block_info(g_max_gnum,
                                       n_ranks,
@@ -2703,8 +2703,8 @@ cs_join_mesh_sync_vertices(cs_join_mesh_t  *mesh)
 
   /* Order vertices by increasing global number */
 
-  BFT_MALLOC(recv_gnum, recv_shift[n_ranks], fvm_gnum_t);
-  BFT_MALLOC(order, recv_shift[n_ranks], fvm_lnum_t);
+  BFT_MALLOC(recv_gnum, recv_shift[n_ranks], cs_gnum_t);
+  BFT_MALLOC(order, recv_shift[n_ranks], cs_lnum_t);
 
   for (i = 0; i < recv_shift[n_ranks]; i++)
     recv_gnum[i] = recv_vertices[i].gnum;
@@ -2781,11 +2781,11 @@ void
 cs_join_mesh_vertex_clean(cs_join_mesh_t  *mesh)
 {
   cs_int_t  i, j, shift, n_init_vertices, n_final_vertices;
-  fvm_gnum_t  prev, cur;
+  cs_gnum_t  prev, cur;
 
-  fvm_lnum_t  *order = NULL;
+  cs_lnum_t  *order = NULL;
   cs_int_t  *init2final = NULL, *tag = NULL;
-  fvm_gnum_t  *gnum_buf = NULL;
+  cs_gnum_t  *gnum_buf = NULL;
   cs_join_vertex_t  *final_vertices = NULL;
 
   assert(mesh != NULL);
@@ -2797,9 +2797,9 @@ cs_join_mesh_vertex_clean(cs_join_mesh_t  *mesh)
 
   /* Count the final number of vertices */
 
-  BFT_MALLOC(order, n_init_vertices, fvm_lnum_t);
+  BFT_MALLOC(order, n_init_vertices, cs_lnum_t);
   BFT_MALLOC(tag, n_init_vertices, cs_int_t);
-  BFT_MALLOC(gnum_buf, n_init_vertices, fvm_gnum_t);
+  BFT_MALLOC(gnum_buf, n_init_vertices, cs_gnum_t);
 
   for (i = 0; i < n_init_vertices; i++) {
     gnum_buf[i] = mesh->vertices[i].gnum;
@@ -2937,11 +2937,11 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
   int  i, j;
   cs_int_t  v1_num, v2_num, o_id1, o_id2;
   cs_int_t  edge_shift, shift, n_init_edges;
-  fvm_gnum_t  v1_gnum, v2_gnum;
+  cs_gnum_t  v1_gnum, v2_gnum;
 
-  fvm_lnum_t  *order = NULL;
+  cs_lnum_t  *order = NULL;
   cs_int_t  *vtx_counter = NULL, *vtx_lst = NULL;
-  fvm_gnum_t  *adjacency = NULL;
+  cs_gnum_t  *adjacency = NULL;
   cs_join_edges_t  *edges = NULL;
 
   if (mesh == NULL)
@@ -2972,7 +2972,7 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
   /* Loop on faces to initialize edge list */
 
   BFT_MALLOC(vtx_lst, 2*n_init_edges, cs_int_t);
-  BFT_MALLOC(adjacency, 2*n_init_edges, fvm_gnum_t);
+  BFT_MALLOC(adjacency, 2*n_init_edges, cs_gnum_t);
 
   for (shift = 0, i = 0; i < mesh->n_faces; i++) {
 
@@ -3037,7 +3037,7 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
 
   assert(shift == n_init_edges);
 
-  BFT_MALLOC(order, n_init_edges, fvm_lnum_t);
+  BFT_MALLOC(order, n_init_edges, cs_lnum_t);
 
   fvm_order_local_allocated_s(NULL, adjacency, 2, order, n_init_edges);
 
@@ -3090,7 +3090,7 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
   if (n_init_edges > 0) {
 
     cs_int_t  vtx_id_a, vtx_id_b, shift_a, shift_b;
-    fvm_gnum_t  vtx_gnum_a, vtx_gnum_b;
+    cs_gnum_t  vtx_gnum_a, vtx_gnum_b;
 
     cs_int_t  cur_edge_num = 1;
 
@@ -3173,8 +3173,8 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
 
   /* Define a global numbering on edges */
 
-  BFT_MALLOC(edges->gnum, edges->n_edges, fvm_gnum_t);
-  BFT_REALLOC(adjacency, 2*edges->n_edges, fvm_gnum_t);
+  BFT_MALLOC(edges->gnum, edges->n_edges, cs_gnum_t);
+  BFT_REALLOC(adjacency, 2*edges->n_edges, cs_gnum_t);
 
   for (i = 0; i < edges->n_edges; i++) {
 
@@ -3214,13 +3214,13 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh)
   }
   else { /* Parallel treatment */
 
-    fvm_gnum_t  *order_couples = NULL;
-    fvm_io_num_t  *edge_io_num = NULL;
-    const fvm_gnum_t  *edges_gnum = NULL;
+    cs_gnum_t  *order_couples = NULL;
+    fvm_io_num_t *edge_io_num = NULL;
+    const cs_gnum_t  *edges_gnum = NULL;
 
     assert(cs_glob_n_ranks > 1);
 
-    BFT_MALLOC(order_couples, 2*edges->n_edges, fvm_gnum_t);
+    BFT_MALLOC(order_couples, 2*edges->n_edges, cs_gnum_t);
 
     for (i = 0; i < edges->n_edges; i++) {
 
@@ -3487,13 +3487,13 @@ cs_join_mesh_update(cs_join_mesh_t         *mesh,
 
   if (cs_glob_n_ranks > 1) {
 
-    fvm_gnum_t  *vtx_gnum = NULL;
+    cs_gnum_t  *vtx_gnum = NULL;
     fvm_io_num_t  *io_num = NULL;
 
     /* Global number of selected vertices and associated
        fvm_io_num_t structure */
 
-    BFT_MALLOC(vtx_gnum, n_new_vertices, fvm_gnum_t);
+    BFT_MALLOC(vtx_gnum, n_new_vertices, cs_gnum_t);
 
     for (i = 0; i < n_new_vertices; i++)
       vtx_gnum[i] = (mesh->vertices[i]).gnum;
@@ -3965,8 +3965,8 @@ cs_join_mesh_dump_edges(FILE                   *f,
 
     cs_int_t  v1_id = edges->def[2*i] - 1;
     cs_int_t  v2_id = edges->def[2*i+1] - 1;
-    fvm_gnum_t  v1_gnum = (mesh->vertices[v1_id]).gnum;
-    fvm_gnum_t  v2_gnum = (mesh->vertices[v2_id]).gnum;
+    cs_gnum_t  v1_gnum = (mesh->vertices[v1_id]).gnum;
+    cs_gnum_t  v2_gnum = (mesh->vertices[v2_id]).gnum;
 
     fprintf(f, "  Edge %6d  (%8llu) <Vertex> [%8llu %8llu]\n",
             i+1, (unsigned long long)edges->gnum[i],

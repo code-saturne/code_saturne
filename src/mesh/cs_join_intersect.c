@@ -97,8 +97,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  fvm_gnum_t  vtx_gnum;   /* vertex global number relative to the inter. */
-  float       curv_abs;   /* curvilinear abscissa of the intersection */
+  cs_gnum_t vtx_gnum;   /* vertex global number relative to the inter. */
+  float     curv_abs;   /* curvilinear abscissa of the intersection */
 
 } exch_inter_t;
 
@@ -127,13 +127,13 @@ static const double  _cs_join_tol_eps_coef = 1.0001;
  *---------------------------------------------------------------------------*/
 
 inline static void
-_adapted_lshellsort(fvm_lnum_t  l,
-                    fvm_lnum_t  r,
-                    float       a[],
-                    fvm_lnum_t  b[])
+_adapted_lshellsort(cs_lnum_t  l,
+                    cs_lnum_t  r,
+                    float      a[],
+                    cs_lnum_t  b[])
 {
   int  i, j, h;
-  fvm_lnum_t  size = r - l;
+  cs_lnum_t  size = r - l;
 
   if (size == 0)
     return;
@@ -147,7 +147,7 @@ _adapted_lshellsort(fvm_lnum_t  l,
     for (i = l+h; i < r; i++) {
 
       float  va = a[i];
-      fvm_lnum_t  vb = b[i];
+      cs_lnum_t  vb = b[i];
 
       j = i;
       while ( (j >= l+h) && (va < a[j-h]) ) {
@@ -176,10 +176,10 @@ _adapted_lshellsort(fvm_lnum_t  l,
  *---------------------------------------------------------------------------*/
 
 inline static void
-_adapted_gshellsort(fvm_lnum_t  l,
-                    fvm_lnum_t  r,
-                    float       a[],
-                    fvm_gnum_t  b[])
+_adapted_gshellsort(cs_lnum_t  l,
+                    cs_lnum_t  r,
+                    float      a[],
+                    cs_gnum_t  b[])
 {
   int  i, j, h;
   cs_int_t  size = r - l;
@@ -196,7 +196,7 @@ _adapted_gshellsort(fvm_lnum_t  l,
     for (i = l+h; i < r; i++) {
 
       float  va = a[i];
-      fvm_gnum_t vb = b[i];
+      cs_gnum_t vb = b[i];
 
       j = i;
       while ( (j >= l+h) && (va < a[j-h]) ) {
@@ -253,7 +253,7 @@ _get_face_extents(const cs_int_t           face_start,
                   const cs_int_t           face_end,
                   const cs_int_t           face_vtx_lst[],
                   const cs_join_vertex_t  *vertices,
-                  fvm_coord_t              extents[6])
+                  cs_coord_t               extents[6])
 {
   cs_int_t  i, j;
 
@@ -323,7 +323,7 @@ _compute_length(cs_join_vertex_t  v1,
 
 static cs_join_vertex_t
 _get_new_vertex(float                  curv_abs,
-                fvm_gnum_t             gnum,
+                cs_gnum_t              gnum,
                 const cs_int_t        *vtx_couple,
                 const cs_join_mesh_t  *work)
 {
@@ -2136,7 +2136,7 @@ _create_exch_inter_datatype(void)
 
   int  blocklengths[2] = {1, 1};
   MPI_Aint  displacements[2] = {0 , 0};
-  MPI_Datatype  types[2] = {FVM_MPI_GNUM, MPI_FLOAT};
+  MPI_Datatype  types[2] = {CS_MPI_GNUM, MPI_FLOAT};
 
   /* Initialize exch_inter_t */
 
@@ -2226,8 +2226,8 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
   int i;
   int  dim;
   int  depth[3];
-  fvm_lnum_t  _n_leaves[3], _n_boxes[3];
-  fvm_lnum_t  _n_threshold_leaves[3], _n_leaf_boxes[3];
+  cs_lnum_t  _n_leaves[3], _n_boxes[3];
+  cs_lnum_t  _n_threshold_leaves[3], _n_leaf_boxes[3];
   size_t  _mem_final[3], _mem_required[3];
   unsigned long  n_leaves[3], n_boxes[3], n_threshold_leaves[3];
   int n_leaf_boxes[3];
@@ -2244,7 +2244,7 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
                                        _mem_required);
 
   /* Convert to unsigned long (so as to ensure correct logging
-     whether fvm_lnum_t is 32 or 64-bit) */
+     whether cs_lnum_t is 32 or 64-bit) */
   for (i = 0; i < 3; i++) {
     n_leaves[i] = _n_leaves[i];
     n_boxes[i] = _n_boxes[i];
@@ -2417,10 +2417,10 @@ cs_join_inter_set_dump(FILE                       *f,
     cs_int_t  v2e1_id = edges->def[2*inter1.edge_id+1] - 1;
     cs_int_t  v1e2_id = edges->def[2*inter2.edge_id] - 1;
     cs_int_t  v2e2_id = edges->def[2*inter2.edge_id+1] - 1;
-    fvm_gnum_t  v1e1 = (mesh->vertices[v1e1_id]).gnum;
-    fvm_gnum_t  v2e1 = (mesh->vertices[v2e1_id]).gnum;
-    fvm_gnum_t  v1e2 = (mesh->vertices[v1e2_id]).gnum;
-    fvm_gnum_t  v2e2 = (mesh->vertices[v2e2_id]).gnum;
+    cs_gnum_t  v1e1 = (mesh->vertices[v1e1_id]).gnum;
+    cs_gnum_t  v2e1 = (mesh->vertices[v2e1_id]).gnum;
+    cs_gnum_t  v1e2 = (mesh->vertices[v1e2_id]).gnum;
+    cs_gnum_t  v2e2 = (mesh->vertices[v2e2_id]).gnum;
 
     fprintf(f, "\n%5d - (%9llu - %9llu)\n",
             i, (unsigned long long)edges->gnum[inter1.edge_id],
@@ -2468,7 +2468,7 @@ cs_join_inter_edges_create(cs_int_t  n_edges)
   for (i = 0; i < n_edges + 1; i++)
     inter_edges->index[i] = 0;
 
-  BFT_MALLOC(inter_edges->edge_gnum, n_edges, fvm_gnum_t);
+  BFT_MALLOC(inter_edges->edge_gnum, n_edges, cs_gnum_t);
 
   for (i = 0; i < n_edges; i++)
     inter_edges->edge_gnum[i] = 0;
@@ -2729,8 +2729,8 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
         if (param.verbosity > 4) {
           int  vid;
           double  ds_tol;
-          fvm_gnum_t  v1_gnum = (mesh->vertices[v1_num-1]).gnum;
-          fvm_gnum_t  v2_gnum = (mesh->vertices[v2_num-1]).gnum;
+          cs_gnum_t  v1_gnum = (mesh->vertices[v1_num-1]).gnum;
+          cs_gnum_t  v2_gnum = (mesh->vertices[v2_num-1]).gnum;
 
           fprintf(logfile,
                   "\n%6d: [%9llu] = (%7d [%9llu] - %7d [%9llu] - len: %8.6e)\n",
@@ -2868,14 +2868,14 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
 
   if (param.verbosity > 0) {
 
-    fvm_gnum_t n_g_break_counter = n_break_counter;
+    cs_gnum_t n_g_break_counter = n_break_counter;
     fvm_parall_counter(&n_g_break_counter, 1);
 
     bft_printf(_("\n  Equivalences broken for %llu edges.\n"),
                (unsigned long long)n_g_break_counter);
 
     if (param.verbosity > 1) {
-      fvm_lnum_t g_n_max_breaks = n_max_breaks;
+      cs_lnum_t g_n_max_breaks = n_max_breaks;
       fvm_parall_counter_max(&g_n_max_breaks, 1);
       bft_printf(_("\n  Max. number of equiv. breaks: %llu\n"),
                  (unsigned long long)g_n_max_breaks);
@@ -2907,7 +2907,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   cs_int_t  i, j, rank, shift, sub_shift;
   cs_int_t  send_list_size, recv_list_size;
   cs_int_t   send_inter_list_size, recv_inter_list_size;
-  fvm_gnum_t  ii;
+  cs_gnum_t  ii;
   cs_join_block_info_t  block_info;
 
   cs_int_t  _max = 0;
@@ -2915,7 +2915,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
   cs_int_t  *send_shift = NULL, *recv_shift = NULL;
   cs_int_t  *send_count = NULL, *recv_count = NULL;
   cs_int_t  *send_inter_count = NULL, *recv_inter_count = NULL;
-  fvm_gnum_t  *send_glist = NULL, *recv_glist = NULL;
+  cs_gnum_t  *send_glist = NULL, *recv_glist = NULL;
   exch_inter_t  *send_inter_list = NULL, *recv_inter_list = NULL;
   cs_join_inter_edges_t  *block = NULL;
 
@@ -2971,8 +2971,8 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   /* Build send_list */
 
-  BFT_MALLOC(send_glist, send_list_size, fvm_gnum_t);
-  BFT_MALLOC(recv_glist, recv_list_size, fvm_gnum_t);
+  BFT_MALLOC(send_glist, send_list_size, cs_gnum_t);
+  BFT_MALLOC(recv_glist, recv_list_size, cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -2987,8 +2987,8 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   }
 
-  MPI_Alltoallv(send_glist, send_count, send_shift, FVM_MPI_GNUM,
-                recv_glist, recv_count, recv_shift, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_glist, send_count, send_shift, CS_MPI_GNUM,
+                recv_glist, recv_count, recv_shift, CS_MPI_GNUM,
                 mpi_comm);
 
   /* Build send_inter_list and exchange information */
@@ -3073,7 +3073,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   for (i = 0; i < recv_list_size; i+= 2) {
 
-    fvm_gnum_t  num = recv_glist[i] - block_info.first_gnum + 1;
+    cs_gnum_t  num = recv_glist[i] - block_info.first_gnum + 1;
     cs_int_t  n_sub_elts = recv_glist[i+1];
 
     assert(num <= block_info.local_size);
@@ -3090,7 +3090,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   BFT_MALLOC(block->vtx_glst,
              block->index[block_info.local_size],
-             fvm_gnum_t);
+             cs_gnum_t);
 
   BFT_MALLOC(block->abs_lst,
              block->index[block_info.local_size],
@@ -3102,7 +3102,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   for (i = 0; i < recv_list_size; i+= 2) {
 
-    fvm_gnum_t  block_id = recv_glist[i] - block_info.first_gnum;
+    cs_gnum_t  block_id = recv_glist[i] - block_info.first_gnum;
     cs_int_t  n_sub_elts = recv_glist[i+1];
 
     assert(block_id < block_info.local_size);
@@ -3157,7 +3157,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
 
   block->index = new_index;
 
-  BFT_REALLOC(block->vtx_glst, block->index[block_info.local_size], fvm_gnum_t);
+  BFT_REALLOC(block->vtx_glst, block->index[block_info.local_size], cs_gnum_t);
   BFT_REALLOC(block->abs_lst, block->index[block_info.local_size], float);
 
   /* Sort intersection by increasing curvilinear abscissa for each edge */
@@ -3211,7 +3211,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
+cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
                                   const cs_join_inter_edges_t  *block,
                                   cs_join_inter_edges_t        *part)
 {
@@ -3224,7 +3224,7 @@ cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
   cs_int_t  *send_shift = NULL, *recv_shift = NULL;
   cs_int_t  *send_count = NULL, *recv_count = NULL;
   cs_int_t  *nsubs_to_send = NULL, *nsubs_to_recv = NULL;
-  fvm_gnum_t  *glist_to_send = NULL, *glist_to_recv = NULL;
+  cs_gnum_t  *glist_to_send = NULL, *glist_to_recv = NULL;
   exch_inter_t  *send_inter_list = NULL, *recv_inter_list = NULL;
 
   MPI_Datatype  MPI_JOIN_EXCH_INTER = _create_exch_inter_datatype();
@@ -3276,8 +3276,8 @@ cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
 
   /* Build lists to exchange */
 
-  BFT_MALLOC(glist_to_recv, list_to_recv_size, fvm_gnum_t);
-  BFT_MALLOC(glist_to_send, list_to_send_size, fvm_gnum_t);
+  BFT_MALLOC(glist_to_recv, list_to_recv_size, cs_gnum_t);
+  BFT_MALLOC(glist_to_send, list_to_send_size, cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
@@ -3291,8 +3291,8 @@ cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
 
   }
 
-  MPI_Alltoallv(glist_to_recv, send_count, recv_rank_index, FVM_MPI_GNUM,
-                glist_to_send, recv_count, send_rank_index, FVM_MPI_GNUM,
+  MPI_Alltoallv(glist_to_recv, send_count, recv_rank_index, CS_MPI_GNUM,
+                glist_to_send, recv_count, send_rank_index, CS_MPI_GNUM,
                 mpi_comm);
 
   /* block send the requested global edges to all the part on
@@ -3307,7 +3307,7 @@ cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
 
     for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++) {
 
-      fvm_gnum_t  s_id = glist_to_send[i] - block_info.first_gnum;
+      cs_gnum_t  s_id = glist_to_send[i] - block_info.first_gnum;
 
       nsubs_to_send[i] = block->index[s_id+1] - block->index[s_id];
 
@@ -3357,7 +3357,7 @@ cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
 
     for (i = send_rank_index[rank]; i < send_rank_index[rank+1]; i++) {
 
-      fvm_gnum_t  s_id = glist_to_send[i] - block_info.first_gnum;
+      cs_gnum_t  s_id = glist_to_send[i] - block_info.first_gnum;
       cs_int_t  start = block->index[s_id];
       cs_int_t  end = block->index[s_id+1];
 
@@ -3413,7 +3413,7 @@ cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
 
   BFT_FREE(part->vtx_lst);
   part->vtx_lst = NULL;
-  BFT_REALLOC(part->vtx_glst, recv_shift[n_ranks], fvm_gnum_t);
+  BFT_REALLOC(part->vtx_glst, recv_shift[n_ranks], cs_gnum_t);
   BFT_REALLOC(part->abs_lst, recv_shift[n_ranks], float);
 
   for (i = 0; i < recv_shift[n_ranks]; i++) {
@@ -3457,8 +3457,8 @@ cs_join_intersect_update_struct(int                      verbosity,
   cs_int_t  i, j, shift, o_id, max_size;
 
   cs_int_t  n_new_vertices = 0;
-  fvm_gnum_t  *vtx_gnum = NULL, *edge_gnum = NULL;
-  fvm_lnum_t  *edge_order = NULL, *vtx_order = NULL;
+  cs_gnum_t  *vtx_gnum = NULL, *edge_gnum = NULL;
+  cs_lnum_t  *edge_order = NULL, *vtx_order = NULL;
   cs_join_inter_edges_t  *_inter_edges = *inter_edges;
   cs_join_inter_edges_t  *new_inter_edges = NULL;
   cs_join_vertex_t  *new_vertices = NULL;
@@ -3481,8 +3481,8 @@ cs_join_intersect_update_struct(int                      verbosity,
 
     /* Order global edge numbering */
 
-    BFT_MALLOC(edge_order, n_edges, fvm_lnum_t);
-    BFT_MALLOC(edge_gnum, n_edges, fvm_gnum_t);
+    BFT_MALLOC(edge_order, n_edges, cs_lnum_t);
+    BFT_MALLOC(edge_gnum, n_edges, cs_gnum_t);
 
     fvm_order_local_allocated(NULL, edges->gnum, edge_order, n_edges);
 
@@ -3493,7 +3493,7 @@ cs_join_intersect_update_struct(int                      verbosity,
 
     for (i = 0; i < n_edges; i++) {
 
-      fvm_gnum_t  e_gnum = _inter_edges->edge_gnum[i];
+      cs_gnum_t  e_gnum = _inter_edges->edge_gnum[i];
       cs_int_t  e_id = cs_search_g_binary(n_edges, e_gnum, edge_gnum);
 
       if (e_id == -1)
@@ -3513,13 +3513,13 @@ cs_join_intersect_update_struct(int                      verbosity,
       new_inter_edges->index[i+1] += new_inter_edges->index[i];
 
     BFT_MALLOC(new_inter_edges->vtx_glst,
-               new_inter_edges->index[n_edges], fvm_gnum_t);
+               new_inter_edges->index[n_edges], cs_gnum_t);
     BFT_MALLOC(new_inter_edges->abs_lst,
                new_inter_edges->index[n_edges], float);
 
     for (i = 0; i < n_edges; i++) {
 
-      fvm_gnum_t  e_gnum = _inter_edges->edge_gnum[i];
+      cs_gnum_t  e_gnum = _inter_edges->edge_gnum[i];
       cs_int_t  e_id = cs_search_g_binary(n_edges, e_gnum, edge_gnum);
 
       o_id = edge_order[e_id];
@@ -3551,8 +3551,8 @@ cs_join_intersect_update_struct(int                      verbosity,
 
   /* Order global vertex numbering */
 
-  BFT_MALLOC(vtx_gnum, n_init_vertices, fvm_gnum_t);
-  BFT_MALLOC(vtx_order, n_init_vertices, fvm_lnum_t);
+  BFT_MALLOC(vtx_gnum, n_init_vertices, cs_gnum_t);
+  BFT_MALLOC(vtx_order, n_init_vertices, cs_lnum_t);
 
   for (i = 0; i < n_init_vertices; i++)
     vtx_gnum[i] = mesh->vertices[i].gnum;
@@ -3662,14 +3662,14 @@ cs_join_intersect_edges(cs_join_param_t         param,
                         cs_join_eset_t        **vtx_eset,
                         cs_join_inter_set_t   **inter_set)
 {
-  fvm_lnum_t  i, j, k;
+  cs_lnum_t  i, j, k;
   double  clock_start, clock_end, cpu_start, cpu_end;
   double  abs_e1[2], abs_e2[2];
 
   cs_join_type_t  join_type = CS_JOIN_TYPE_CONFORMING;
-  fvm_lnum_t  n_inter = 0;
-  fvm_lnum_t  n_inter_detected = 0, n_real_inter = 0, n_trivial_inter = 0;
-  fvm_gnum_t  n_g_inter[3] = {0, 0, 0};
+  cs_lnum_t  n_inter = 0;
+  cs_lnum_t  n_inter_detected = 0, n_real_inter = 0, n_trivial_inter = 0;
+  cs_gnum_t  n_g_inter[3] = {0, 0, 0};
   cs_join_inter_set_t  *_inter_set = NULL;
   cs_join_eset_t  *_vtx_eset = NULL;
   FILE  *logfile = cs_glob_join_log;
@@ -3739,10 +3739,10 @@ cs_join_intersect_edges(cs_join_param_t         param,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
       if (param.verbosity > 3 && n_inter > 0) {
 
-        fvm_lnum_t  v1e1 = edges->def[2*e1_id] - 1;
-        fvm_lnum_t  v2e1 = edges->def[2*e1_id+1] - 1;
-        fvm_lnum_t  v1e2 = edges->def[2*e2_id] - 1;
-        fvm_lnum_t  v2e2 = edges->def[2*e2_id+1] - 1;
+        cs_lnum_t  v1e1 = edges->def[2*e1_id] - 1;
+        cs_lnum_t  v2e1 = edges->def[2*e1_id+1] - 1;
+        cs_lnum_t  v1e2 = edges->def[2*e2_id] - 1;
+        cs_lnum_t  v2e2 = edges->def[2*e2_id+1] - 1;
 
         fprintf(logfile,
                 "\n Intersection: "
@@ -3816,13 +3816,13 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
     int  tag = (int)join_type;
     int  sync_tag = tag;
-    fvm_gnum_t tmp_inter[3];
+    cs_gnum_t tmp_inter[3];
 
     MPI_Allreduce(&tag, &sync_tag, 1, MPI_INT, MPI_MAX, cs_glob_mpi_comm);
 
     join_type = sync_tag;
 
-    MPI_Allreduce(n_g_inter, tmp_inter, 3, FVM_MPI_GNUM, MPI_SUM,
+    MPI_Allreduce(n_g_inter, tmp_inter, 3, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
 
     for (i = 0; i < 3; i++)
@@ -3898,7 +3898,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
   cs_int_t  i;
   double  extents_wtime, extents_cpu_time;
 
-  fvm_coord_t  *f_extents = NULL;
+  cs_coord_t  *f_extents = NULL;
   fvm_neighborhood_t  *face_neighborhood = NULL;
   cs_join_gset_t  *face_visibility = NULL;
 
@@ -3921,7 +3921,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   /* Allocate temporary extent arrays */
 
-  BFT_MALLOC(f_extents, join_mesh->n_faces*6, fvm_coord_t);
+  BFT_MALLOC(f_extents, join_mesh->n_faces*6, cs_coord_t);
 
   /* Define each bounding box for the selected faces */
 
@@ -3952,7 +3952,7 @@ cs_join_intersect_faces(const cs_join_param_t   param,
 
   BFT_MALLOC(face_visibility, 1, cs_join_gset_t);
 
-  assert(sizeof(cs_int_t) == sizeof(fvm_lnum_t));
+  assert(sizeof(cs_int_t) == sizeof(cs_lnum_t));
 
   fvm_neighborhood_transfer_data(face_neighborhood,
                                  &(face_visibility->n_elts),
@@ -4007,7 +4007,7 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
   cs_int_t  size = 0, size_max = 0;
   cs_int_t  *count = NULL, *face2edge_idx = NULL, *face2edge_lst = NULL;
-  fvm_gnum_t  *tmp = NULL;
+  cs_gnum_t  *tmp = NULL;
   cs_join_gset_t  *edge_visib = NULL;
 
   /* Create a local "face -> edge" connectivity
@@ -4127,9 +4127,9 @@ cs_join_intersect_face_to_edge(const cs_join_mesh_t   *mesh,
 
   BFT_MALLOC(edge_visib->g_list,
              edge_visib->index[edge_visib->n_elts],
-             fvm_gnum_t);
+             cs_gnum_t);
 
-  BFT_MALLOC(tmp, size_max, fvm_gnum_t);
+  BFT_MALLOC(tmp, size_max, cs_gnum_t);
 
   /* Build list */
 
@@ -4225,8 +4225,8 @@ cs_join_inter_edges_dump(FILE                         *f,
 
     cs_int_t  v1_num = edges->def[2*i];
     cs_int_t  v2_num = edges->def[2*i+1];
-    fvm_gnum_t  v1_gnum = (mesh->vertices[v1_num-1]).gnum;
-    fvm_gnum_t  v2_gnum = (mesh->vertices[v2_num-1]).gnum;
+    cs_gnum_t  v1_gnum = (mesh->vertices[v1_num-1]).gnum;
+    cs_gnum_t  v2_gnum = (mesh->vertices[v2_num-1]).gnum;
     cs_int_t  start = inter_edges->index[i];
     cs_int_t  end = inter_edges->index[i+1];
 

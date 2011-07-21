@@ -173,10 +173,10 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_box_tree_get_intersects(fvm_box_tree_t        *bt,
-                            const fvm_box_set_t   *boxes,
-                            fvm_lnum_t            *box_index[],
-                            fvm_gnum_t            *box_g_num[]);
+fvm_box_tree_get_intersects(fvm_box_tree_t       *bt,
+                            const fvm_box_set_t  *boxes,
+                            cs_lnum_t            *box_index[],
+                            cs_gnum_t            *box_g_num[]);
 
 /*----------------------------------------------------------------------------
  * Get global box tree statistics.
@@ -211,10 +211,10 @@ fvm_box_tree_get_intersects(fvm_box_tree_t        *bt,
 int
 fvm_box_tree_get_stats(const fvm_box_tree_t  *bt,
                        int                    depth[3],
-                       fvm_lnum_t             n_leaves[3],
-                       fvm_lnum_t             n_boxes[3],
-                       fvm_lnum_t             n_threshold_leaves[3],
-                       fvm_lnum_t             n_leaf_boxes[3],
+                       cs_lnum_t              n_leaves[3],
+                       cs_lnum_t              n_boxes[3],
+                       cs_lnum_t              n_threshold_leaves[3],
+                       cs_lnum_t              n_leaf_boxes[3],
                        size_t                 mem_used[3],
                        size_t                 mem_allocated[3]);
 

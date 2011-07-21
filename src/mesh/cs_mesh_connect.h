@@ -86,11 +86,11 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_connect_get_cell_faces(const cs_mesh_t             *mesh,
-                               fvm_lnum_t                   extr_cell_size,
-                               const fvm_lnum_t             extr_cell_id[],
-                               fvm_lnum_t          * *const p_cell_faces_idx,
-                               fvm_lnum_t          * *const p_cell_faces_val);
+cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
+                               cs_lnum_t                extr_cell_size,
+                               const cs_lnum_t          extr_cell_id[],
+                               cs_lnum_t        **const p_cell_faces_idx,
+                               cs_lnum_t        **const p_cell_faces_val);
 
 /*----------------------------------------------------------------------------
  * Build a nodal connectivity structure from a subset of a mesh's cells.
@@ -116,8 +116,8 @@ fvm_nodal_t *
 cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
                                bool              include_families,
-                               fvm_lnum_t        cell_list_size,
-                               fvm_lnum_t        cell_list[]);
+                               cs_lnum_t         cell_list_size,
+                               cs_lnum_t         cell_list[]);
 
 /*----------------------------------------------------------------------------
  * Build a nodal connectivity structure from a subset of a mesh's faces.
@@ -145,10 +145,10 @@ fvm_nodal_t *
 cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
                                bool              include_families,
-                               fvm_lnum_t        i_face_list_size,
-                               fvm_lnum_t        b_face_list_size,
-                               fvm_lnum_t        i_face_list[],
-                               fvm_lnum_t        b_face_list[]);
+                               cs_lnum_t         i_face_list_size,
+                               cs_lnum_t         b_face_list_size,
+                               cs_lnum_t         i_face_list[],
+                               cs_lnum_t         b_face_list[]);
 
 /*----------------------------------------------------------------------------*/
 

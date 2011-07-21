@@ -91,16 +91,16 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 static void
-_fvm_nodal_order_parent_list(fvm_lnum_t        * _list[],
-                             const fvm_lnum_t  * list[],
-                             const fvm_lnum_t    order[],
+_fvm_nodal_order_parent_list(cs_lnum_t         * _list[],
+                             const cs_lnum_t   * list[],
+                             const cs_lnum_t     order[],
                              const size_t        nb_ent)
 {
   size_t  i;
 
-  fvm_lnum_t  *ordered_list = NULL;
+  cs_lnum_t   *ordered_list = NULL;
 
-  BFT_MALLOC(ordered_list, nb_ent, fvm_lnum_t);
+  BFT_MALLOC(ordered_list, nb_ent, cs_lnum_t);
 
   if (*list != NULL) {
 
@@ -139,17 +139,17 @@ _fvm_nodal_order_parent_list(fvm_lnum_t        * _list[],
  *----------------------------------------------------------------------------*/
 
 static void
-_fvm_nodal_order_strided_connect(fvm_lnum_t          connect[],
-                                 const fvm_lnum_t    order[],
+_fvm_nodal_order_strided_connect(cs_lnum_t           connect[],
+                                 const cs_lnum_t     order[],
                                  const size_t        stride,
                                  const size_t        nb_ent)
 {
   size_t  i, j;
-  fvm_lnum_t  *p1, *p2;
+  cs_lnum_t   *p1, *p2;
 
-  fvm_lnum_t  *tmp_connect = NULL;
+  cs_lnum_t   *tmp_connect = NULL;
 
-  BFT_MALLOC(tmp_connect, nb_ent * stride, fvm_lnum_t);
+  BFT_MALLOC(tmp_connect, nb_ent * stride, cs_lnum_t);
 
   /* Temporary ordered copy */
 
@@ -162,7 +162,7 @@ _fvm_nodal_order_strided_connect(fvm_lnum_t          connect[],
 
   /* Now put back in initial location */
 
-  memcpy(connect, tmp_connect, stride * nb_ent * sizeof(fvm_lnum_t));
+  memcpy(connect, tmp_connect, stride * nb_ent * sizeof(cs_lnum_t));
 
   BFT_FREE(tmp_connect);
 }
@@ -178,21 +178,21 @@ _fvm_nodal_order_strided_connect(fvm_lnum_t          connect[],
  *----------------------------------------------------------------------------*/
 
 static void
-_fvm_nodal_order_indexed_connect(fvm_lnum_t          connect_idx[],
-                                 fvm_lnum_t          connect_num[],
-                                 const fvm_lnum_t    order[],
+_fvm_nodal_order_indexed_connect(cs_lnum_t           connect_idx[],
+                                 cs_lnum_t           connect_num[],
+                                 const cs_lnum_t     order[],
                                  const size_t        nb_ent)
 {
   size_t  i, j, nb_ent_max, nb_loc;
-  fvm_lnum_t  *p1, *p2;
+  cs_lnum_t   *p1, *p2;
 
-  fvm_lnum_t  *tmp_connect = NULL;
+  cs_lnum_t   *tmp_connect = NULL;
 
   nb_ent_max = connect_idx[nb_ent] ; /* size of connect_num */
   if (nb_ent > nb_ent_max) /* only if some entities have no connectivity */
     nb_ent_max = nb_ent;
 
-  BFT_MALLOC(tmp_connect, nb_ent_max, fvm_lnum_t);
+  BFT_MALLOC(tmp_connect, nb_ent_max, cs_lnum_t);
 
   /* Temporary ordered copy of values */
 
@@ -207,7 +207,7 @@ _fvm_nodal_order_indexed_connect(fvm_lnum_t          connect_idx[],
   /* Now put back in initial location */
 
   memcpy(connect_num, tmp_connect,
-         (size_t)(connect_idx[nb_ent]) * sizeof(fvm_lnum_t));
+         (size_t)(connect_idx[nb_ent]) * sizeof(cs_lnum_t));
 
   /* Index to size : size associated with entity i in position i+1 */
 
@@ -223,7 +223,7 @@ _fvm_nodal_order_indexed_connect(fvm_lnum_t          connect_idx[],
 
   /* Put back in initial location and re-convert to index*/
 
-  memcpy(connect_idx, tmp_connect, (size_t)(nb_ent + 1) * sizeof(fvm_lnum_t));
+  memcpy(connect_idx, tmp_connect, (size_t)(nb_ent + 1) * sizeof(cs_lnum_t));
 
   for (i = 0 ; i < nb_ent ; i++)
     connect_idx[i+1] = connect_idx[i+1] + connect_idx[i];
@@ -247,10 +247,10 @@ _fvm_nodal_order_indexed_connect(fvm_lnum_t          connect_idx[],
 
 void
 fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
-                      const fvm_gnum_t   parent_global_number[])
+                      const cs_gnum_t    parent_global_number[])
 {
-  fvm_lnum_t  i;
-  fvm_lnum_t  *order = NULL;
+  cs_lnum_t   i;
+  cs_lnum_t   *order = NULL;
   fvm_nodal_section_t  *section = NULL;
 
   if (this_nodal == NULL)
@@ -315,10 +315,10 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
 
 void
 fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
-                      const fvm_gnum_t   parent_global_number[])
+                      const cs_gnum_t    parent_global_number[])
 {
-  fvm_lnum_t  i;
-  fvm_lnum_t  *order = NULL;
+  cs_lnum_t   i;
+  cs_lnum_t   *order = NULL;
   fvm_nodal_section_t  *section = NULL;
 
   if (this_nodal == NULL)
@@ -383,13 +383,13 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
 
 void
 fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
-                         const fvm_gnum_t   parent_global_number[])
+                         const cs_gnum_t    parent_global_number[])
 {
   int         i;
   size_t      j;
 
-  fvm_lnum_t  *order = NULL;
-  fvm_lnum_t  *renumber = NULL;
+  cs_lnum_t   *order = NULL;
+  cs_lnum_t   *renumber = NULL;
   fvm_nodal_section_t  *section = NULL;
 
   /* Do nothing for trivial cases */

@@ -101,12 +101,12 @@ struct _fvm_block_to_part_t {
   int         *send_displ;   /* Send displs for MPi_Alltoall */
   int         *recv_displ;   /* Receive displs for MPi_Alltoall */
 
-  fvm_lnum_t  *send_list;    /* List of entities to send in rank order */
-  fvm_lnum_t  *recv_order;   /* Ordering of received entities by
+  cs_lnum_t   *send_list;    /* List of entities to send in rank order */
+  cs_lnum_t   *recv_order;   /* Ordering of received entities by
                                 increasing global number (duplicates removed) */
 
-  const fvm_gnum_t  *recv_global_num;  /* Possibly shared global numbers */
-  fvm_gnum_t        *_recv_global_num; /* Private global entity numbers
+  const cs_gnum_t   *recv_global_num;  /* Possibly shared global numbers */
+  cs_gnum_t         *_recv_global_num; /* Private global entity numbers
                                           (NULL if shared); */
 
 };
@@ -131,13 +131,13 @@ struct _fvm_block_to_part_t {
  *   cumulative count for all ranks
  *----------------------------------------------------------------------------*/
 
-static fvm_lnum_t
+static cs_lnum_t
 _compute_displ(int        n_ranks,
                const int  count[],
                int        displ[])
 {
   int i;
-  fvm_lnum_t total_count = 0;
+  cs_lnum_t total_count = 0;
 
   displ[0] = 0;
 
@@ -165,15 +165,15 @@ _compute_displ(int        n_ranks,
 
 static void
 _ordered_list(size_t              n_ents,
-              const fvm_gnum_t    ent_global_num[],
+              const cs_gnum_t     ent_global_num[],
               size_t             *n_ordered_ents,
-              fvm_lnum_t        **ordered_ent)
+              cs_lnum_t         **ordered_ent)
 {
   size_t i, j;
   size_t _n_ordered_ents = 1;
 
-  fvm_lnum_t *order = NULL;
-  fvm_lnum_t *_ordered_ent = NULL;
+  cs_lnum_t *order = NULL;
+  cs_lnum_t *_ordered_ent = NULL;
 
   if (n_ents == 0)
     return;
@@ -199,7 +199,7 @@ _ordered_list(size_t              n_ents,
   }
   else {
 
-    BFT_MALLOC(_ordered_ent, _n_ordered_ents, fvm_lnum_t);
+    BFT_MALLOC(_ordered_ent, _n_ordered_ents, cs_lnum_t);
 
     _ordered_ent[0] = order[0];
     for (i = 1, j = 1; i < n_ents; i++) {
@@ -230,22 +230,22 @@ _init_global_num(fvm_block_to_part_t       *d,
 
   size_t recv_size = 0;
 
-  fvm_gnum_t *send_global_num = NULL;
-  fvm_gnum_t *recv_global_num = NULL;
+  cs_gnum_t *send_global_num = NULL;
+  cs_gnum_t *recv_global_num = NULL;
 
   /* Build temporay global numbers */
 
-  BFT_MALLOC(send_global_num, d->send_size, fvm_gnum_t);
+  BFT_MALLOC(send_global_num, d->send_size, cs_gnum_t);
 
   for (j = 0; j < d->send_size; j++)
-    send_global_num[j] = (fvm_gnum_t)(d->send_list[j]) + bi.gnum_range[0];
+    send_global_num[j] = (cs_gnum_t)(d->send_list[j]) + bi.gnum_range[0];
 
   /* Exchange global numbers */
 
-  BFT_MALLOC(recv_global_num, d->n_part_ents, fvm_gnum_t);
+  BFT_MALLOC(recv_global_num, d->n_part_ents, cs_gnum_t);
 
-  MPI_Alltoallv(send_global_num, d->send_count, d->send_displ, FVM_MPI_GNUM,
-                recv_global_num, d->recv_count, d->recv_displ, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_global_num, d->send_count, d->send_displ, CS_MPI_GNUM,
+                recv_global_num, d->recv_count, d->recv_displ, CS_MPI_GNUM,
                 d->comm);
 
   /* Count number of distinct global entities and build retrieval index,
@@ -265,7 +265,7 @@ _init_global_num(fvm_block_to_part_t       *d,
 
   /* Now build global number list */
 
-  BFT_MALLOC(d->_recv_global_num, d->n_part_ents, fvm_gnum_t);
+  BFT_MALLOC(d->_recv_global_num, d->n_part_ents, cs_gnum_t);
   d->recv_global_num = d->_recv_global_num;
 
   for (j = 0; j < d->n_part_ents; j++)
@@ -343,11 +343,11 @@ _block_to_part_create(MPI_Comm comm)
  *----------------------------------------------------------------------------*/
 
 fvm_block_to_part_info_t
-fvm_block_to_part_compute_sizes(int         rank_id,
-                                int         n_ranks,
-                                int         min_rank_step,
-                                fvm_lnum_t  min_block_size,
-                                fvm_gnum_t  n_g_ents)
+fvm_block_to_part_compute_sizes(int        rank_id,
+                                int        n_ranks,
+                                int        min_rank_step,
+                                cs_lnum_t  min_block_size,
+                                cs_gnum_t  n_g_ents)
 {
   fvm_block_to_part_info_t bi;
 
@@ -407,7 +407,7 @@ fvm_block_to_part_create_by_rank(MPI_Comm                  comm,
 
   /* Prepare send list (using send_displ for insertion positions) */
 
-  BFT_MALLOC(d->send_list, d->send_size, fvm_lnum_t);
+  BFT_MALLOC(d->send_list, d->send_size, cs_lnum_t);
 
   for (j = 0; j < d->send_size; j++) {
     int send_rank = ent_rank[j];
@@ -465,25 +465,25 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
                                   fvm_block_to_part_info_t  block,
                                   fvm_block_to_part_info_t  adjacent_block,
                                   int                       stride,
-                                  fvm_gnum_t                adjacency[],
+                                  cs_gnum_t                 adjacency[],
                                   int                       adjacent_ent_rank[],
                                   int                       default_rank[])
 {
   int i, k;
-  fvm_lnum_t j;
+  cs_lnum_t j;
 
-  fvm_lnum_t   adj_send_size = 0, adj_recv_size = 0;
+  cs_lnum_t    adj_send_size = 0, adj_recv_size = 0;
   int         *adj_send_count = NULL, *adj_recv_count = NULL;
   int         *adj_send_displ = NULL, *adj_recv_displ = NULL;
-  fvm_lnum_t  *rank_flag = NULL;
-  fvm_gnum_t  *adj_send_num = NULL, *adj_recv_num = NULL;
+  cs_lnum_t   *rank_flag = NULL;
+  cs_gnum_t   *adj_send_num = NULL, *adj_recv_num = NULL;
 
   fvm_block_to_part_t *d = _block_to_part_create(comm);
 
   int rank = -1;
   const int n_ranks = d->n_ranks;
 
-  const fvm_lnum_t n_ents = block.gnum_range[1] - block.gnum_range[0];
+  const cs_lnum_t n_ents = block.gnum_range[1] - block.gnum_range[0];
 
   MPI_Comm_rank(comm, &rank);
 
@@ -506,7 +506,7 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
 
   for (j = 0; j < n_ents; j++) {
     for (k = 0; k < stride; k++) {
-      fvm_gnum_t adj_g_num = adjacency[j*stride + k];
+      cs_gnum_t adj_g_num = adjacency[j*stride + k];
       if (adj_g_num > 0) {
         int adj_ent_rank =   ((adj_g_num-1) / adjacent_block.block_size)
                            * adjacent_block.rank_step;
@@ -522,12 +522,12 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
 
   /* Prepare destination rank request (temporarily modifying adj_send_displ) */
 
-  BFT_MALLOC(adj_send_num, adj_send_size, fvm_gnum_t);
-  BFT_MALLOC(adj_recv_num, adj_recv_size, fvm_gnum_t);
+  BFT_MALLOC(adj_send_num, adj_send_size, cs_gnum_t);
+  BFT_MALLOC(adj_recv_num, adj_recv_size, cs_gnum_t);
 
   for (j = 0; j < n_ents; j++) {
     for (k = 0; k < stride; k++) {
-      fvm_gnum_t adj_g_num = adjacency[j*stride + k];
+      cs_gnum_t adj_g_num = adjacency[j*stride + k];
       if (adj_g_num > 0) {
         int adj_ent_rank =   ((adj_g_num-1) / adjacent_block.block_size)
                            * adjacent_block.rank_step;
@@ -542,8 +542,8 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
 
   /* Adj_Send destination rank request */
 
-  MPI_Alltoallv(adj_send_num, adj_send_count, adj_send_displ, FVM_MPI_GNUM,
-                adj_recv_num, adj_recv_count, adj_recv_displ, FVM_MPI_GNUM,
+  MPI_Alltoallv(adj_send_num, adj_send_count, adj_send_displ, CS_MPI_GNUM,
+                adj_recv_num, adj_recv_count, adj_recv_displ, CS_MPI_GNUM,
                 d->comm);
 
   /* Reply by indicating to which ranks indicated adjacent entities
@@ -551,7 +551,7 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
 
   if (adjacent_ent_rank != NULL) {
     for (j = 0; j < adj_recv_size; j++) {
-      fvm_lnum_t adj_l_id = (adj_recv_num[j] - 1) % adjacent_block.block_size;
+      cs_lnum_t adj_l_id = (adj_recv_num[j] - 1) % adjacent_block.block_size;
       adj_recv_num[j] = adjacent_ent_rank[adj_l_id];
     }
   }
@@ -563,8 +563,8 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
 
   /* Send and receive arguments are inverted as this is a "reply" */
 
-  MPI_Alltoallv(adj_recv_num, adj_recv_count, adj_recv_displ, FVM_MPI_GNUM,
-                adj_send_num, adj_send_count, adj_send_displ, FVM_MPI_GNUM,
+  MPI_Alltoallv(adj_recv_num, adj_recv_count, adj_recv_displ, CS_MPI_GNUM,
+                adj_send_num, adj_send_count, adj_send_displ, CS_MPI_GNUM,
                 d->comm);
 
   BFT_FREE(adj_recv_num);
@@ -584,7 +584,7 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
   for (j = 0; j < n_ents; j++) {
     int send_rank = -1;
     for (k = 0; k < stride; k++) {
-      fvm_gnum_t adj_g_num = adjacency[j*stride + k];
+      cs_gnum_t adj_g_num = adjacency[j*stride + k];
       if (adj_g_num > 0) {
         int adj_ent_rank =   ((adj_g_num-1) / adjacent_block.block_size)
                            * adjacent_block.rank_step;
@@ -616,7 +616,7 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
 
   /* Prepare send list (using send_displ for insertion positions) */
 
-  BFT_MALLOC(d->send_list, d->send_size, fvm_lnum_t);
+  BFT_MALLOC(d->send_list, d->send_size, cs_lnum_t);
 
   for (i = 0; i < n_ranks; i++)
     rank_flag[i] = -1;
@@ -624,7 +624,7 @@ fvm_block_to_part_create_by_adj_s(MPI_Comm                  comm,
   for (j = 0; j < n_ents; j++) {
     int send_rank = -1;
     for (k = 0; k < stride; k++) {
-      fvm_gnum_t adj_g_num = adjacency[j*stride + k];
+      cs_gnum_t adj_g_num = adjacency[j*stride + k];
       if (adj_g_num > 0) {
         int adj_ent_rank =   ((adj_g_num-1) / adjacent_block.block_size)
                            * adjacent_block.rank_step;
@@ -682,14 +682,14 @@ fvm_block_to_part_t *
 fvm_block_to_part_create_adj(MPI_Comm                  comm,
                              fvm_block_to_part_info_t  adjacent_block,
                              size_t                    adjacency_size,
-                             const fvm_gnum_t          adjacency[])
+                             const cs_gnum_t           adjacency[])
 {
   int i;
   size_t j;
 
   size_t recv_size = 0;
-  fvm_lnum_t *adj_list = NULL, *_adj_list = NULL;
-  fvm_gnum_t *send_num = NULL, *recv_num = NULL;
+  cs_lnum_t *adj_list = NULL, *_adj_list = NULL;
+  cs_gnum_t *send_num = NULL, *recv_num = NULL;
 
   fvm_block_to_part_t *d = _block_to_part_create(comm);
 
@@ -721,7 +721,7 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
   }
 
   for (j = 0; j < d->n_part_ents; j++) {
-    fvm_gnum_t adj_g_id = adjacency[adj_list[j]] - 1;
+    cs_gnum_t adj_g_id = adjacency[adj_list[j]] - 1;
     int adj_ent_rank =   (adj_g_id / adjacent_block.block_size)
                        * adjacent_block.rank_step;
     d->recv_count[adj_ent_rank] += 1;
@@ -741,10 +741,10 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
 
   /* Allocate distributor arrays */
 
-  BFT_MALLOC(d->send_list, d->send_size, fvm_lnum_t);
-  BFT_MALLOC(d->recv_order, d->n_part_ents, fvm_lnum_t);
+  BFT_MALLOC(d->send_list, d->send_size, cs_lnum_t);
+  BFT_MALLOC(d->recv_order, d->n_part_ents, cs_lnum_t);
 
-  BFT_MALLOC(d->_recv_global_num, d->n_part_ents, fvm_gnum_t);
+  BFT_MALLOC(d->_recv_global_num, d->n_part_ents, cs_gnum_t);
   d->recv_global_num = d->_recv_global_num;
 
   /* We already have all the necessary info to build the global numbering */
@@ -755,11 +755,11 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
   /* Prepare destination rank request and receive_order at the same time
      (temporarily modifying d->recv_displ) */
 
-  BFT_MALLOC(send_num, d->send_size, fvm_gnum_t);
-  BFT_MALLOC(recv_num, d->n_part_ents, fvm_gnum_t);
+  BFT_MALLOC(send_num, d->send_size, cs_gnum_t);
+  BFT_MALLOC(recv_num, d->n_part_ents, cs_gnum_t);
 
   for (j = 0; j < d->n_part_ents; j++) {
-    fvm_gnum_t adj_g_num = adjacency[adj_list[j]];
+    cs_gnum_t adj_g_num = adjacency[adj_list[j]];
     int adj_ent_rank =   ((adj_g_num-1) / adjacent_block.block_size)
                        * adjacent_block.rank_step;
     recv_num[d->recv_displ[adj_ent_rank]] = adj_g_num;
@@ -773,8 +773,8 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
   BFT_FREE(_adj_list);
   adj_list = NULL;
 
-  MPI_Alltoallv(recv_num, d->recv_count, d->recv_displ, FVM_MPI_GNUM,
-                send_num, d->send_count, d->send_displ, FVM_MPI_GNUM,
+  MPI_Alltoallv(recv_num, d->recv_count, d->recv_displ, CS_MPI_GNUM,
+                send_num, d->send_count, d->send_displ, CS_MPI_GNUM,
                 d->comm);
 
   BFT_FREE(recv_num);
@@ -813,14 +813,14 @@ fvm_block_to_part_create_adj(MPI_Comm                  comm,
 fvm_block_to_part_t *
 fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
                                  fvm_block_to_part_info_t   bi,
-                                 fvm_lnum_t                 n_part_ents,
-                                 const fvm_gnum_t           global_ent_num[])
+                                 cs_lnum_t                  n_part_ents,
+                                 const cs_gnum_t            global_ent_num[])
 {
   int i;
   size_t j;
 
   size_t recv_size = 0;
-  fvm_gnum_t *send_num = NULL, *recv_num = NULL;
+  cs_gnum_t *send_num = NULL, *recv_num = NULL;
 
   fvm_block_to_part_t *d = _block_to_part_create(comm);
 
@@ -836,7 +836,7 @@ fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
     d->recv_count[i] = 0;
 
   for (j = 0; j < d->n_part_ents; j++) {
-    fvm_gnum_t ent_g_id = global_ent_num[j] - 1;
+    cs_gnum_t ent_g_id = global_ent_num[j] - 1;
     int ent_ent_rank =   (ent_g_id / bi.block_size)
                        * bi.rank_step;
     d->recv_count[ent_ent_rank] += 1;
@@ -856,10 +856,10 @@ fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
 
   /* Allocate distributor arrays */
 
-  BFT_MALLOC(d->send_list, d->send_size, fvm_lnum_t);
-  BFT_MALLOC(d->recv_order, d->n_part_ents, fvm_lnum_t);
+  BFT_MALLOC(d->send_list, d->send_size, cs_lnum_t);
+  BFT_MALLOC(d->recv_order, d->n_part_ents, cs_lnum_t);
 
-  BFT_MALLOC(d->_recv_global_num, d->n_part_ents, fvm_gnum_t);
+  BFT_MALLOC(d->_recv_global_num, d->n_part_ents, cs_gnum_t);
   d->recv_global_num = d->_recv_global_num;
 
   /* We already have all the necessary info to build the global numbering */
@@ -870,11 +870,11 @@ fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
   /* Prepare destination rank request and receive_order at the same time
      (temporarily modifying d->recv_displ) */
 
-  BFT_MALLOC(send_num, d->send_size, fvm_gnum_t);
-  BFT_MALLOC(recv_num, d->n_part_ents, fvm_gnum_t);
+  BFT_MALLOC(send_num, d->send_size, cs_gnum_t);
+  BFT_MALLOC(recv_num, d->n_part_ents, cs_gnum_t);
 
   for (j = 0; j < d->n_part_ents; j++) {
-    fvm_gnum_t ent_g_num = global_ent_num[j];
+    cs_gnum_t ent_g_num = global_ent_num[j];
     int ent_ent_rank =   ((ent_g_num-1) / bi.block_size)
                        * bi.rank_step;
     recv_num[d->recv_displ[ent_ent_rank]] = ent_g_num;
@@ -885,8 +885,8 @@ fvm_block_to_part_create_by_gnum(MPI_Comm                   comm,
   for (i = 0; i < n_ranks; i++)
     d->recv_displ[i] -= d->recv_count[i];
 
-  MPI_Alltoallv(recv_num, d->recv_count, d->recv_displ, FVM_MPI_GNUM,
-                send_num, d->send_count, d->send_displ, FVM_MPI_GNUM,
+  MPI_Alltoallv(recv_num, d->recv_count, d->recv_displ, CS_MPI_GNUM,
+                send_num, d->send_count, d->send_displ, CS_MPI_GNUM,
                 d->comm);
 
   BFT_FREE(recv_num);
@@ -938,10 +938,10 @@ fvm_block_to_part_destroy(fvm_block_to_part_t **d)
  *   number of entities associated with distribution receive
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_block_to_part_get_n_part_ents(fvm_block_to_part_t *d)
 {
-  fvm_lnum_t retval = 0;
+  cs_lnum_t retval = 0;
 
   if (d != NULL)
     retval = d->n_part_ents;
@@ -963,10 +963,10 @@ fvm_block_to_part_get_n_part_ents(fvm_block_to_part_t *d)
  *   domain partition distributor was not the owner of this array.
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t *
+cs_gnum_t *
 fvm_block_to_part_transfer_gnum(fvm_block_to_part_t *d)
 {
-  fvm_gnum_t *retval = d->_recv_global_num;
+  cs_gnum_t *retval = d->_recv_global_num;
 
   d->_recv_global_num = NULL;
 
@@ -1080,18 +1080,18 @@ fvm_block_to_part_copy_array(fvm_block_to_part_t   *d,
 
 void
 fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
-                             const fvm_lnum_t     *block_index,
-                             fvm_lnum_t           *part_index)
+                             const cs_lnum_t      *block_index,
+                             cs_lnum_t            *part_index)
 
 {
   size_t i;
 
-  fvm_lnum_t *send_recv_size = NULL;
-  fvm_lnum_t *send_ent_size = NULL, *recv_ent_size = NULL;
+  cs_lnum_t *send_recv_size = NULL;
+  cs_lnum_t *send_ent_size = NULL, *recv_ent_size = NULL;
 
   /* Convert send index to count, then exchange */
 
-  BFT_MALLOC(send_recv_size, d->send_size + d->n_part_ents, fvm_lnum_t);
+  BFT_MALLOC(send_recv_size, d->send_size + d->n_part_ents, cs_lnum_t);
   send_ent_size = send_recv_size;
   recv_ent_size = send_recv_size + d->send_size;
 
@@ -1102,8 +1102,8 @@ fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
 
   /* Exchange entity sizes */
 
-  MPI_Alltoallv(send_ent_size, d->send_count, d->send_displ, FVM_MPI_LNUM,
-                recv_ent_size, d->recv_count, d->recv_displ, FVM_MPI_LNUM,
+  MPI_Alltoallv(send_ent_size, d->send_count, d->send_displ, CS_MPI_LNUM,
+                recv_ent_size, d->recv_count, d->recv_displ, CS_MPI_LNUM,
                 d->comm);
 
   send_ent_size = NULL;
@@ -1141,9 +1141,9 @@ fvm_block_to_part_copy_index(fvm_block_to_part_t  *d,
 void
 fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
                                fvm_datatype_t         datatype,
-                               const fvm_lnum_t      *block_index,
+                               const cs_lnum_t       *block_index,
                                const void            *block_val,
-                               const fvm_lnum_t      *part_index,
+                               const cs_lnum_t       *part_index,
                                void                  *part_val)
 {
   int    i;
@@ -1157,7 +1157,7 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
   int  *send_displ = NULL;
   int  *recv_displ = NULL;
 
-  fvm_lnum_t  *inv_order = NULL;
+  cs_lnum_t   *inv_order = NULL;
   size_t  *recv_val_index = NULL;
 
   unsigned char *send_buf = NULL;
@@ -1193,7 +1193,7 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
     }
   }
 
-  BFT_MALLOC(inv_order, d->n_part_ents, fvm_lnum_t);
+  BFT_MALLOC(inv_order, d->n_part_ents, cs_lnum_t);
 
   for (j = 0; j < d->n_part_ents; j++)
     inv_order[d->recv_order[j]] = j;
@@ -1306,14 +1306,14 @@ fvm_block_to_part_copy_indexed(fvm_block_to_part_t   *d,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_block_to_part_global_to_local(fvm_lnum_t        n_ents,
-                                  fvm_lnum_t        base,
-                                  fvm_lnum_t        global_list_size,
-                                  const fvm_gnum_t  global_list[],
-                                  const fvm_gnum_t  global_number[],
-                                  fvm_lnum_t        local_number[])
+fvm_block_to_part_global_to_local(cs_lnum_t        n_ents,
+                                  cs_lnum_t        base,
+                                  cs_lnum_t        global_list_size,
+                                  const cs_gnum_t  global_list[],
+                                  const cs_gnum_t  global_number[],
+                                  cs_lnum_t        local_number[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
   if (n_ents == 0)
     return;
@@ -1325,15 +1325,15 @@ fvm_block_to_part_global_to_local(fvm_lnum_t        n_ents,
 
   for (i = 0; i < n_ents; i++) {
 
-    fvm_lnum_t start_id = 0;
-    fvm_lnum_t end_id = global_list_size;
+    cs_lnum_t start_id = 0;
+    cs_lnum_t end_id = global_list_size;
 
-    const fvm_gnum_t num_1 = global_number[i];
+    const cs_gnum_t num_1 = global_number[i];
 
     /* Use binary search */
 
     while (start_id < end_id) {
-      fvm_lnum_t mid_id = start_id + ((end_id - start_id) / 2);
+      cs_lnum_t mid_id = start_id + ((end_id - start_id) / 2);
       if (global_list[mid_id] < num_1)
         start_id = mid_id + 1;
       else

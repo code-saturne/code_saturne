@@ -90,8 +90,8 @@ typedef struct {
   fvm_morton_code_t  morton_code;  /* Level and coordinates in the grid
                                       according to Morton encoding */
 
-  fvm_lnum_t  n_boxes;             /* Number of associated bounding boxes */
-  fvm_lnum_t  start_id;            /* Position of the first box_id */
+  cs_lnum_t   n_boxes;             /* Number of associated bounding boxes */
+  cs_lnum_t   start_id;            /* Position of the first box_id */
 
 } _node_t;
 
@@ -101,13 +101,13 @@ typedef struct {
 
   unsigned    max_level_reached;  /* Max level number reached */
 
-  fvm_lnum_t  n_leaves;           /* Number of leaves in the tree */
-  fvm_lnum_t  n_boxes;            /* Number of boxes to locate in the tree */
-  fvm_lnum_t  n_linked_boxes;     /* Number of linked boxes in the tree */
-  fvm_lnum_t  n_spill_leaves;     /* Number of leaves where n_boxes > threshold */
+  cs_lnum_t   n_leaves;           /* Number of leaves in the tree */
+  cs_lnum_t   n_boxes;            /* Number of boxes to locate in the tree */
+  cs_lnum_t   n_linked_boxes;     /* Number of linked boxes in the tree */
+  cs_lnum_t   n_spill_leaves;     /* Number of leaves where n_boxes > threshold */
 
-  fvm_lnum_t  min_linked_boxes;   /* Minimum number of boxes for a leaf */
-  fvm_lnum_t  max_linked_boxes;   /* Maximum number of boxes for a leaf */
+  cs_lnum_t   min_linked_boxes;   /* Minimum number of boxes for a leaf */
+  cs_lnum_t   max_linked_boxes;   /* Maximum number of boxes for a leaf */
 
 } fvm_box_tree_stats_t;
 
@@ -119,20 +119,20 @@ struct _fvm_box_tree_t {
   int               n_children;      /* 8, 4, or 2 (2^dim) */
 
   fvm_morton_int_t  max_level;       /* Max. possible level */
-  fvm_lnum_t        threshold;       /* Max number of boxes linked to a
+  cs_lnum_t         threshold;       /* Max number of boxes linked to a
                                         node if max_level is not reached */
   float             max_box_ratio;   /* Max n_linked_boxes / n_boxes value */
 
   fvm_box_tree_stats_t stats;        /* Statistics related to the structure */
 
-  fvm_lnum_t        n_max_nodes;     /* Current max. allocated nodes */
-  fvm_lnum_t        n_nodes;         /* Number of nodes (including leaves) */
+  cs_lnum_t         n_max_nodes;     /* Current max. allocated nodes */
+  cs_lnum_t         n_nodes;         /* Number of nodes (including leaves) */
 
   _node_t          *nodes;           /* Array of nodes (root at index 0) */
 
-  fvm_lnum_t       *child_ids;       /* Ids of associated children
+  cs_lnum_t        *child_ids;       /* Ids of associated children
                                         (size: 2^dim * n_max_nodes) */
-  fvm_lnum_t       *box_ids;         /* List of associated box ids.
+  cs_lnum_t        *box_ids;         /* List of associated box ids.
                                         size = stat.n_linked_boxes */
 
   int     n_build_loops;             /* Number of loops required to build */
@@ -161,9 +161,9 @@ struct _fvm_box_tree_t {
  *   pointer to minimum box coordinates
  *---------------------------------------------------------------------------*/
 
-inline static const fvm_coord_t *
+inline static const cs_coord_t *
 _box_min(const fvm_box_set_t   *boxes,
-         fvm_lnum_t             box_id)
+         cs_lnum_t              box_id)
 {
   return boxes->extents + box_id*boxes->dim*2;
 }
@@ -179,9 +179,9 @@ _box_min(const fvm_box_set_t   *boxes,
  *   pointer to maximum box coordinates
  *---------------------------------------------------------------------------*/
 
-inline static const fvm_coord_t *
+inline static const cs_coord_t *
 _box_max(const fvm_box_set_t   *boxes,
-         fvm_lnum_t             box_id)
+         cs_lnum_t              box_id)
 {
   return boxes->extents + box_id*boxes->dim*2 + boxes->dim;
 }
@@ -199,12 +199,12 @@ _box_max(const fvm_box_set_t   *boxes,
  *---------------------------------------------------------------------------*/
 
 inline static _Bool
-_boxes_intersect_3d(const fvm_coord_t  *extents,
-                    fvm_lnum_t          id_0,
-                    fvm_lnum_t          id_1)
+_boxes_intersect_3d(const cs_coord_t  *extents,
+                    cs_lnum_t          id_0,
+                    cs_lnum_t          id_1)
 {
-  const fvm_coord_t *e0 = extents + id_0*6;
-  const fvm_coord_t *e1 = extents + id_1*6;
+  const cs_coord_t *e0 = extents + id_0*6;
+  const cs_coord_t *e1 = extents + id_1*6;
 
   if (   e0[0] > e1[3] || e1[0] > e0[3]
       || e0[1] > e1[4] || e1[1] > e0[4]
@@ -215,12 +215,12 @@ _boxes_intersect_3d(const fvm_coord_t  *extents,
 }
 
 inline static _Bool
-_boxes_intersect_2d(const fvm_coord_t  *extents,
-                    fvm_lnum_t          id_0,
-                    fvm_lnum_t          id_1)
+_boxes_intersect_2d(const cs_coord_t  *extents,
+                    cs_lnum_t          id_0,
+                    cs_lnum_t          id_1)
 {
-  const fvm_coord_t *e0 = extents + id_0*4;
-  const fvm_coord_t *e1 = extents + id_1*4;
+  const cs_coord_t *e0 = extents + id_0*4;
+  const cs_coord_t *e1 = extents + id_1*4;
 
   if (   e0[0] > e1[2] || e1[0] > e0[2]
       || e0[1] > e1[3] || e1[1] > e0[3])
@@ -230,12 +230,12 @@ _boxes_intersect_2d(const fvm_coord_t  *extents,
 }
 
 inline static _Bool
-_boxes_intersect_1d(const fvm_coord_t  *extents,
-                    fvm_lnum_t          id_0,
-                    fvm_lnum_t          id_1)
+_boxes_intersect_1d(const cs_coord_t  *extents,
+                    cs_lnum_t          id_0,
+                    cs_lnum_t          id_1)
 {
-  const fvm_coord_t *e0 = extents + id_0*2;
-  const fvm_coord_t *e1 = extents + id_1*2;
+  const cs_coord_t *e0 = extents + id_0*2;
+  const cs_coord_t *e1 = extents + id_1*2;
 
   if (   e0[0] > e1[1] || e1[0] > e0[1])
     return false;
@@ -253,7 +253,7 @@ _boxes_intersect_1d(const fvm_coord_t  *extents,
 
 static void
 _update_tree_stats(fvm_box_tree_t  *bt,
-                   fvm_lnum_t       node_id)
+                   cs_lnum_t        node_id)
 {
   int  i;
 
@@ -261,7 +261,7 @@ _update_tree_stats(fvm_box_tree_t  *bt,
 
   if (node->is_leaf == false) {
     int n_children = bt->n_children;
-    const fvm_lnum_t *_child_ids = bt->child_ids + node_id*bt->n_children;
+    const cs_lnum_t *_child_ids = bt->child_ids + node_id*bt->n_children;
     for (i = 0; i < n_children; i++)
       _update_tree_stats(bt, _child_ids[i]);
   }
@@ -369,9 +369,9 @@ _get_grid_coords_1d(fvm_morton_int_t  level,
  *----------------------------------------------------------------------------*/
 
 inline static _Bool
-_node_intersect_box_3d(fvm_morton_code_t   morton_code,
-                       const fvm_coord_t   min_box[3],
-                       const fvm_coord_t   max_box[3])
+_node_intersect_box_3d(fvm_morton_code_t  morton_code,
+                       const cs_coord_t   min_box[3],
+                       const cs_coord_t   max_box[3])
 {
   int  i;
   double  min_oct[3], max_oct[3];
@@ -390,9 +390,9 @@ _node_intersect_box_3d(fvm_morton_code_t   morton_code,
 }
 
 inline static _Bool
-_node_intersect_box_2d(fvm_morton_code_t   morton_code,
-                       const fvm_coord_t   min_box[2],
-                       const fvm_coord_t   max_box[2])
+_node_intersect_box_2d(fvm_morton_code_t  morton_code,
+                       const cs_coord_t   min_box[2],
+                       const cs_coord_t   max_box[2])
 {
   int  i;
   double  min_oct[2], max_oct[2];
@@ -410,9 +410,9 @@ _node_intersect_box_2d(fvm_morton_code_t   morton_code,
 }
 
 inline static _Bool
-_node_intersect_box_1d(fvm_morton_code_t   morton_code,
-                       const fvm_coord_t   min_box[1],
-                       const fvm_coord_t   max_box[1])
+_node_intersect_box_1d(fvm_morton_code_t  morton_code,
+                       const cs_coord_t   min_box[1],
+                       const cs_coord_t   max_box[1])
 {
   double  min_oct, max_oct;
 
@@ -440,9 +440,9 @@ _node_intersect_box_1d(fvm_morton_code_t   morton_code,
 static int
 _evaluate_splitting_3d(fvm_box_tree_t       *bt,
                        const fvm_box_set_t  *boxes,
-                       fvm_lnum_t            node_id)
+                       cs_lnum_t             node_id)
 {
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
   fvm_morton_code_t  min_code, max_code;
   fvm_morton_code_t  children[8];
 
@@ -461,11 +461,11 @@ _evaluate_splitting_3d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[3], max_grid_coord[3];
+    cs_coord_t  min_grid_coord[3], max_grid_coord[3];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(3, next_level, box_min);
     max_code = fvm_morton_encode(3, next_level, box_max);
@@ -505,9 +505,9 @@ _evaluate_splitting_3d(fvm_box_tree_t       *bt,
 static int
 _evaluate_splitting_2d(fvm_box_tree_t       *bt,
                        const fvm_box_set_t  *boxes,
-                       fvm_lnum_t            node_id)
+                       cs_lnum_t             node_id)
 {
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
   fvm_morton_code_t  min_code, max_code;
   fvm_morton_code_t  children[4];
 
@@ -526,11 +526,11 @@ _evaluate_splitting_2d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[2], max_grid_coord[2];
+    cs_coord_t  min_grid_coord[2], max_grid_coord[2];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(2, next_level, box_min);
     max_code = fvm_morton_encode(2, next_level, box_max);
@@ -571,9 +571,9 @@ _evaluate_splitting_2d(fvm_box_tree_t       *bt,
 static int
 _evaluate_splitting_1d(fvm_box_tree_t       *bt,
                        const fvm_box_set_t  *boxes,
-                       fvm_lnum_t            node_id)
+                       cs_lnum_t             node_id)
 {
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
   fvm_morton_code_t  min_code, max_code;
   fvm_morton_code_t  children[2];
 
@@ -590,11 +590,11 @@ _evaluate_splitting_1d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[1], max_grid_coord[1];
+    cs_coord_t  min_grid_coord[1], max_grid_coord[1];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(1, next_level, box_min);
     max_code = fvm_morton_encode(1, next_level, box_max);
@@ -646,11 +646,11 @@ _evaluate_splitting_1d(fvm_box_tree_t       *bt,
 static void
 _count_next_level(fvm_box_tree_t           *bt,
                   const fvm_box_set_t      *boxes,
-                  fvm_lnum_t                node_id,
+                  cs_lnum_t                 node_id,
                   fvm_box_tree_sync_t       build_type,
-                  fvm_lnum_t               *next_level_size)
+                  cs_lnum_t                *next_level_size)
 {
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
 
   _node_t  *node = bt->nodes + node_id;
 
@@ -701,10 +701,10 @@ static _Bool
 _recurse_tree_build(fvm_box_tree_t       *bt,
                     const fvm_box_set_t  *boxes,
                     fvm_box_tree_sync_t   build_type,
-                    fvm_lnum_t           *next_size)
+                    cs_lnum_t            *next_size)
 {
   int  state = 0;
-  fvm_lnum_t  _next_size = 0;
+  cs_lnum_t   _next_size = 0;
 
   _Bool retval = false;
 
@@ -804,17 +804,17 @@ _copy_tree(fvm_box_tree_t        *dest,
   memcpy(dest, src, sizeof(fvm_box_tree_t));
 
   BFT_MALLOC(dest->nodes, dest->n_max_nodes, _node_t);
-  BFT_MALLOC(dest->child_ids, dest->n_max_nodes*dest->n_children, fvm_lnum_t);
-  BFT_MALLOC(dest->box_ids, (dest->stats).n_linked_boxes, fvm_lnum_t);
+  BFT_MALLOC(dest->child_ids, dest->n_max_nodes*dest->n_children, cs_lnum_t);
+  BFT_MALLOC(dest->box_ids, (dest->stats).n_linked_boxes, cs_lnum_t);
 
   memcpy(dest->nodes, src->nodes, dest->n_nodes * sizeof(_node_t));
   memcpy(dest->child_ids,
          src->child_ids,
-         dest->n_nodes * src->n_children * sizeof(fvm_lnum_t));
+         dest->n_nodes * src->n_children * sizeof(cs_lnum_t));
 
   memcpy(dest->box_ids,
          src->box_ids,
-         (dest->stats).n_linked_boxes * sizeof(fvm_lnum_t));
+         (dest->stats).n_linked_boxes * sizeof(cs_lnum_t));
 }
 
 /*----------------------------------------------------------------------------
@@ -846,7 +846,7 @@ _free_tree_arrays(fvm_box_tree_t  *bt)
 static inline void
 _new_node(fvm_box_tree_t     *bt,
           fvm_morton_code_t   morton_code,
-          fvm_lnum_t          node_id)
+          cs_lnum_t           node_id)
 {
   int  i;
   _node_t *node;
@@ -886,16 +886,16 @@ static void
 _split_node_3d(fvm_box_tree_t       *bt,
                fvm_box_tree_t       *next_bt,
                const fvm_box_set_t  *boxes,
-               fvm_lnum_t            node_id,
-               fvm_lnum_t           *shift_ids)
+               cs_lnum_t             node_id,
+               cs_lnum_t            *shift_ids)
 {
   int j, i;
   fvm_morton_code_t  min_code, max_code;
   fvm_morton_code_t  children[8];
 
-  fvm_lnum_t  n_linked_boxes = 0;
-  fvm_lnum_t  _shift_ids = *shift_ids;
-  fvm_lnum_t  n_init_nodes = next_bt->n_nodes;
+  cs_lnum_t   n_linked_boxes = 0;
+  cs_lnum_t   _shift_ids = *shift_ids;
+  cs_lnum_t   n_init_nodes = next_bt->n_nodes;
   _node_t  split_node = next_bt->nodes[node_id];
 
   const _node_t  node = bt->nodes[node_id];
@@ -909,7 +909,7 @@ _split_node_3d(fvm_box_tree_t       *bt,
     assert(next_bt->n_max_nodes > 0);
     next_bt->n_max_nodes *= 2;
     BFT_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
-    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*8, fvm_lnum_t);
+    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*8, cs_lnum_t);
   }
 
   /* Define a Morton code for each child and create the children nodes */
@@ -917,7 +917,7 @@ _split_node_3d(fvm_box_tree_t       *bt,
   fvm_morton_get_children(3, node.morton_code, children);
 
   for (i = 0; i < 8; i++) {
-    const fvm_lnum_t  new_id = n_init_nodes + i;
+    const cs_lnum_t   new_id = n_init_nodes + i;
     next_bt->child_ids[node_id*8 + i] = new_id;
     _new_node(next_bt, children[i], new_id);
   }
@@ -933,11 +933,11 @@ _split_node_3d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[3], max_grid_coord[3];
+    cs_coord_t  min_grid_coord[3], max_grid_coord[3];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(3, next_level, box_min);
     max_code = fvm_morton_encode(3, next_level, box_max);
@@ -990,11 +990,11 @@ _split_node_3d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[3], max_grid_coord[3];
+    cs_coord_t  min_grid_coord[3], max_grid_coord[3];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(3, next_level, box_min);
     max_code = fvm_morton_encode(3, next_level, box_max);
@@ -1011,8 +1011,8 @@ _split_node_3d(fvm_box_tree_t       *bt,
                                    min_grid_coord,
                                    max_grid_coord)) {
 
-          const fvm_lnum_t sub_id = n_init_nodes + i;
-          const fvm_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
+          const cs_lnum_t sub_id = n_init_nodes + i;
+          const cs_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
                                    + (next_bt->nodes[sub_id]).start_id;
           next_bt->box_ids[shift] = box_id;
           (next_bt->nodes[sub_id]).n_boxes += 1;
@@ -1031,8 +1031,8 @@ _split_node_3d(fvm_box_tree_t       *bt,
         if (   fvm_morton_compare(3, min_code, children[i])
             == FVM_MORTON_EQUAL_ID) {
 
-          const fvm_lnum_t sub_id = n_init_nodes + i;
-          const fvm_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
+          const cs_lnum_t sub_id = n_init_nodes + i;
+          const cs_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
                                    + (next_bt->nodes[sub_id]).start_id;
 
           next_bt->box_ids[shift] = box_id;
@@ -1066,16 +1066,16 @@ static void
 _split_node_2d(fvm_box_tree_t       *bt,
                fvm_box_tree_t       *next_bt,
                const fvm_box_set_t  *boxes,
-               fvm_lnum_t            node_id,
-               fvm_lnum_t           *shift_ids)
+               cs_lnum_t             node_id,
+               cs_lnum_t            *shift_ids)
 {
   int j, i;
   fvm_morton_code_t  min_code, max_code;
   fvm_morton_code_t  children[4];
 
-  fvm_lnum_t  n_linked_boxes = 0;
-  fvm_lnum_t  _shift_ids = *shift_ids;
-  fvm_lnum_t  n_init_nodes = next_bt->n_nodes;
+  cs_lnum_t   n_linked_boxes = 0;
+  cs_lnum_t   _shift_ids = *shift_ids;
+  cs_lnum_t   n_init_nodes = next_bt->n_nodes;
   _node_t  split_node = next_bt->nodes[node_id];
 
   const _node_t  node = bt->nodes[node_id];
@@ -1089,7 +1089,7 @@ _split_node_2d(fvm_box_tree_t       *bt,
     assert(next_bt->n_max_nodes > 0);
     next_bt->n_max_nodes *= 2;
     BFT_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
-    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*4, fvm_lnum_t);
+    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*4, cs_lnum_t);
   }
 
   /* Define a Morton code for each child and create the children nodes */
@@ -1097,7 +1097,7 @@ _split_node_2d(fvm_box_tree_t       *bt,
   fvm_morton_get_children(2, node.morton_code, children);
 
   for (i = 0; i < 4; i++) {
-    const fvm_lnum_t  new_id = n_init_nodes + i;
+    const cs_lnum_t   new_id = n_init_nodes + i;
     next_bt->child_ids[node_id*4 + i] = new_id;
     _new_node(next_bt, children[i], new_id);
   }
@@ -1113,11 +1113,11 @@ _split_node_2d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[2], max_grid_coord[2];
+    cs_coord_t  min_grid_coord[2], max_grid_coord[2];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(2, next_level, box_min);
     max_code = fvm_morton_encode(2, next_level, box_max);
@@ -1170,11 +1170,11 @@ _split_node_2d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[2], max_grid_coord[2];
+    cs_coord_t  min_grid_coord[2], max_grid_coord[2];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(2, next_level, box_min);
     max_code = fvm_morton_encode(2, next_level, box_max);
@@ -1191,8 +1191,8 @@ _split_node_2d(fvm_box_tree_t       *bt,
                                    min_grid_coord,
                                    max_grid_coord)) {
 
-          const fvm_lnum_t sub_id = n_init_nodes + i;
-          const fvm_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
+          const cs_lnum_t sub_id = n_init_nodes + i;
+          const cs_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
                                    + (next_bt->nodes[sub_id]).start_id;
           next_bt->box_ids[shift] = box_id;
           (next_bt->nodes[sub_id]).n_boxes += 1;
@@ -1211,8 +1211,8 @@ _split_node_2d(fvm_box_tree_t       *bt,
         if (   fvm_morton_compare(2, min_code, children[i])
             == FVM_MORTON_EQUAL_ID) {
 
-          const fvm_lnum_t sub_id = n_init_nodes + i;
-          const fvm_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
+          const cs_lnum_t sub_id = n_init_nodes + i;
+          const cs_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
                                    + (next_bt->nodes[sub_id]).start_id;
 
           next_bt->box_ids[shift] = box_id;
@@ -1246,16 +1246,16 @@ static void
 _split_node_1d(fvm_box_tree_t       *bt,
                fvm_box_tree_t       *next_bt,
                const fvm_box_set_t  *boxes,
-               fvm_lnum_t            node_id,
-               fvm_lnum_t           *shift_ids)
+               cs_lnum_t             node_id,
+               cs_lnum_t            *shift_ids)
 {
   int j, i;
   fvm_morton_code_t  min_code, max_code;
   fvm_morton_code_t  children[2];
 
-  fvm_lnum_t  n_linked_boxes = 0;
-  fvm_lnum_t  _shift_ids = *shift_ids;
-  fvm_lnum_t  n_init_nodes = next_bt->n_nodes;
+  cs_lnum_t   n_linked_boxes = 0;
+  cs_lnum_t   _shift_ids = *shift_ids;
+  cs_lnum_t   n_init_nodes = next_bt->n_nodes;
   _node_t  split_node = next_bt->nodes[node_id];
 
   const _node_t  node = bt->nodes[node_id];
@@ -1269,7 +1269,7 @@ _split_node_1d(fvm_box_tree_t       *bt,
     assert(next_bt->n_max_nodes > 0);
     next_bt->n_max_nodes *= 2;
     BFT_REALLOC(next_bt->nodes, next_bt->n_max_nodes, _node_t);
-    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*2, fvm_lnum_t);
+    BFT_REALLOC(next_bt->child_ids, next_bt->n_max_nodes*2, cs_lnum_t);
   }
 
   /* Define a Morton code for each child and create the children nodes */
@@ -1277,7 +1277,7 @@ _split_node_1d(fvm_box_tree_t       *bt,
   fvm_morton_get_children(1, node.morton_code, children);
 
   for (i = 0; i < 2; i++) {
-    const fvm_lnum_t  new_id = n_init_nodes + i;
+    const cs_lnum_t   new_id = n_init_nodes + i;
     next_bt->child_ids[node_id*2 + i] = new_id;
     _new_node(next_bt, children[i], new_id);
   }
@@ -1293,11 +1293,11 @@ _split_node_1d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[2], max_grid_coord[2];
+    cs_coord_t  min_grid_coord[2], max_grid_coord[2];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(1, next_level, box_min);
     max_code = fvm_morton_encode(1, next_level, box_max);
@@ -1350,11 +1350,11 @@ _split_node_1d(fvm_box_tree_t       *bt,
 
   for (j = 0; j < node.n_boxes; j++) {
 
-    fvm_coord_t  min_grid_coord[2], max_grid_coord[2];
+    cs_coord_t  min_grid_coord[2], max_grid_coord[2];
 
-    fvm_lnum_t  box_id = bt->box_ids[node.start_id + j];
-    const fvm_coord_t  *box_min = _box_min(boxes, box_id);
-    const fvm_coord_t  *box_max = _box_max(boxes, box_id);
+    cs_lnum_t   box_id = bt->box_ids[node.start_id + j];
+    const cs_coord_t  *box_min = _box_min(boxes, box_id);
+    const cs_coord_t  *box_max = _box_max(boxes, box_id);
 
     min_code = fvm_morton_encode(1, next_level, box_min);
     max_code = fvm_morton_encode(1, next_level, box_max);
@@ -1371,8 +1371,8 @@ _split_node_1d(fvm_box_tree_t       *bt,
                                    min_grid_coord,
                                    max_grid_coord)) {
 
-          const fvm_lnum_t sub_id = n_init_nodes + i;
-          const fvm_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
+          const cs_lnum_t sub_id = n_init_nodes + i;
+          const cs_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
                                    + (next_bt->nodes[sub_id]).start_id;
           next_bt->box_ids[shift] = box_id;
           (next_bt->nodes[sub_id]).n_boxes += 1;
@@ -1391,8 +1391,8 @@ _split_node_1d(fvm_box_tree_t       *bt,
         if (   fvm_morton_compare(1, min_code, children[i])
             == FVM_MORTON_EQUAL_ID) {
 
-          const fvm_lnum_t sub_id = n_init_nodes + i;
-          const fvm_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
+          const cs_lnum_t sub_id = n_init_nodes + i;
+          const cs_lnum_t shift =   (next_bt->nodes[sub_id]).n_boxes
                                    + (next_bt->nodes[sub_id]).start_id;
 
           next_bt->box_ids[shift] = box_id;
@@ -1439,13 +1439,13 @@ static void
 _build_next_level(fvm_box_tree_t       *bt,
                   fvm_box_tree_t       *next_bt,
                   const fvm_box_set_t  *boxes,
-                  fvm_lnum_t            node_id,
+                  cs_lnum_t             node_id,
                   fvm_box_tree_sync_t   build_type,
-                  fvm_lnum_t           *shift_ids)
+                  cs_lnum_t            *shift_ids)
 {
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
 
-  fvm_lnum_t  _shift_ids = *shift_ids;
+  cs_lnum_t   _shift_ids = *shift_ids;
   const _node_t  *cur_node = bt->nodes + node_id;
 
   if (cur_node->is_leaf == false) {
@@ -1524,14 +1524,14 @@ _build_next_level(fvm_box_tree_t       *bt,
 
 static void
 _build_leaf_weight(const fvm_box_tree_t  *bt,
-                   fvm_lnum_t             node_id,
-                   fvm_lnum_t            *n_leaves,
+                   cs_lnum_t              node_id,
+                   cs_lnum_t             *n_leaves,
                    fvm_morton_code_t     *leaf_codes,
-                   fvm_lnum_t            *weight)
+                   cs_lnum_t             *weight)
 {
   int  i;
 
-  fvm_lnum_t _n_leaves = *n_leaves;
+  cs_lnum_t _n_leaves = *n_leaves;
 
   const _node_t  *node = bt->nodes + node_id;
 
@@ -1573,7 +1573,7 @@ static void
 _build_rank_to_box_index(const fvm_box_tree_t  *bt,
                          fvm_box_distrib_t     *distrib,
                          int                    dim,
-                         fvm_lnum_t             node_id,
+                         cs_lnum_t              node_id,
                          size_t                 size,
                          fvm_morton_code_t      search_index[],
                          int                    id_rank[])
@@ -1628,8 +1628,8 @@ static void
 _build_rank_to_box_list(const fvm_box_tree_t  *bt,
                         fvm_box_distrib_t     *distrib,
                         int                    dim,
-                        fvm_lnum_t             node_id,
-                        fvm_lnum_t             counter[],
+                        cs_lnum_t              node_id,
+                        cs_lnum_t              counter[],
                         size_t                 size,
                         fvm_morton_code_t      search_index[],
                         int                    id_rank[])
@@ -1661,8 +1661,8 @@ _build_rank_to_box_list(const fvm_box_tree_t  *bt,
 
       for (i = 0; i < node->n_boxes; i++) {
 
-        fvm_lnum_t  box_id = bt->box_ids[node->start_id + i];
-        fvm_lnum_t  shift = distrib->index[rank] + counter[rank];
+        cs_lnum_t   box_id = bt->box_ids[node->start_id + i];
+        cs_lnum_t   shift = distrib->index[rank] + counter[rank];
 
         distrib->list[shift] = box_id;
         counter[rank] += 1;
@@ -1688,12 +1688,12 @@ _build_rank_to_box_list(const fvm_box_tree_t  *bt,
 static void
 _count_intersections(const fvm_box_tree_t  *bt,
                      const fvm_box_set_t   *boxes,
-                     fvm_lnum_t             node_id,
-                     fvm_lnum_t             count[])
+                     cs_lnum_t              node_id,
+                     cs_lnum_t              count[])
 {
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
 
-  const fvm_coord_t  *box_extents = boxes->extents;
+  const cs_coord_t  *box_extents = boxes->extents;
   const _node_t  *node = bt->nodes + node_id;
 
   if (node->is_leaf == false) {
@@ -1710,8 +1710,8 @@ _count_intersections(const fvm_box_tree_t  *bt,
 
       for (i = 0; i < node->n_boxes - 1; i++) {
         for (j = i+1; j < node->n_boxes; j++) {
-          fvm_lnum_t  id0 = bt->box_ids[node->start_id + i];
-          fvm_lnum_t  id1 = bt->box_ids[node->start_id + j];
+          cs_lnum_t   id0 = bt->box_ids[node->start_id + i];
+          cs_lnum_t   id1 = bt->box_ids[node->start_id + j];
           if (_boxes_intersect_3d(box_extents, id0, id1)) {
             count[id0] += 1;
             count[id1] += 1;
@@ -1725,8 +1725,8 @@ _count_intersections(const fvm_box_tree_t  *bt,
 
       for (i = 0; i < node->n_boxes - 1; i++) {
         for (j = i+1; j < node->n_boxes; j++) {
-          fvm_lnum_t  id0 = bt->box_ids[node->start_id + i];
-          fvm_lnum_t  id1 = bt->box_ids[node->start_id + j];
+          cs_lnum_t   id0 = bt->box_ids[node->start_id + i];
+          cs_lnum_t   id1 = bt->box_ids[node->start_id + j];
           if (_boxes_intersect_2d(box_extents, id0, id1)) {
             count[id0] += 1;
             count[id1] += 1;
@@ -1740,8 +1740,8 @@ _count_intersections(const fvm_box_tree_t  *bt,
 
       for (i = 0; i < node->n_boxes - 1; i++) {
         for (j = i+1; j < node->n_boxes; j++) {
-          fvm_lnum_t  id0 = bt->box_ids[node->start_id + i];
-          fvm_lnum_t  id1 = bt->box_ids[node->start_id + j];
+          cs_lnum_t   id0 = bt->box_ids[node->start_id + i];
+          cs_lnum_t   id1 = bt->box_ids[node->start_id + j];
           if (_boxes_intersect_1d(box_extents, id0, id1)) {
             count[id0] += 1;
             count[id1] += 1;
@@ -1770,14 +1770,14 @@ _count_intersections(const fvm_box_tree_t  *bt,
 static void
 _get_intersections(const fvm_box_tree_t  *bt,
                    const fvm_box_set_t   *boxes,
-                   fvm_lnum_t             node_id,
-                   fvm_lnum_t             count[],
-                   fvm_lnum_t             box_index[],
-                   fvm_gnum_t             box_g_num[])
+                   cs_lnum_t              node_id,
+                   cs_lnum_t              count[],
+                   cs_lnum_t              box_index[],
+                   cs_gnum_t              box_g_num[])
 {
   int  i, j;
 
-  const fvm_coord_t  *box_extents = boxes->extents;
+  const cs_coord_t  *box_extents = boxes->extents;
   const _node_t  *node = bt->nodes + node_id;
 
   if (node->is_leaf == false) {
@@ -1796,12 +1796,12 @@ _get_intersections(const fvm_box_tree_t  *bt,
 
       for (i = 0; i < node->n_boxes - 1; i++) {
         for (j = i+1; j < node->n_boxes; j++) {
-          fvm_lnum_t  id0 = bt->box_ids[node->start_id + i];
-          fvm_lnum_t  id1 = bt->box_ids[node->start_id + j];
+          cs_lnum_t   id0 = bt->box_ids[node->start_id + i];
+          cs_lnum_t   id1 = bt->box_ids[node->start_id + j];
 
           if (_boxes_intersect_3d(box_extents, id0, id1)) {
-            fvm_lnum_t  shift0 = box_index[id0] + count[id0];
-            fvm_lnum_t  shift1 = box_index[id1] + count[id1];
+            cs_lnum_t   shift0 = box_index[id0] + count[id0];
+            cs_lnum_t   shift1 = box_index[id1] + count[id1];
             box_g_num[shift0] = boxes->g_num[id1];
             box_g_num[shift1] = boxes->g_num[id0];
             count[id0] += 1;
@@ -1814,12 +1814,12 @@ _get_intersections(const fvm_box_tree_t  *bt,
 
       for (i = 0; i < node->n_boxes - 1; i++) {
         for (j = i+1; j < node->n_boxes; j++) {
-          fvm_lnum_t  id0 = bt->box_ids[node->start_id + i];
-          fvm_lnum_t  id1 = bt->box_ids[node->start_id + j];
+          cs_lnum_t   id0 = bt->box_ids[node->start_id + i];
+          cs_lnum_t   id1 = bt->box_ids[node->start_id + j];
 
           if (_boxes_intersect_2d(box_extents, id0, id1)) {
-            fvm_lnum_t  shift0 = box_index[id0] + count[id0];
-            fvm_lnum_t  shift1 = box_index[id1] + count[id1];
+            cs_lnum_t   shift0 = box_index[id0] + count[id0];
+            cs_lnum_t   shift1 = box_index[id1] + count[id1];
             box_g_num[shift0] = boxes->g_num[id1];
             box_g_num[shift1] = boxes->g_num[id0];
             count[id0] += 1;
@@ -1833,12 +1833,12 @@ _get_intersections(const fvm_box_tree_t  *bt,
 
       for (i = 0; i < node->n_boxes - 1; i++) {
         for (j = i+1; j < node->n_boxes; j++) {
-          fvm_lnum_t  id0 = bt->box_ids[node->start_id + i];
-          fvm_lnum_t  id1 = bt->box_ids[node->start_id + j];
+          cs_lnum_t   id0 = bt->box_ids[node->start_id + i];
+          cs_lnum_t   id1 = bt->box_ids[node->start_id + j];
 
           if (_boxes_intersect_1d(box_extents, id0, id1)) {
-            fvm_lnum_t  shift0 = box_index[id0] + count[id0];
-            fvm_lnum_t  shift1 = box_index[id1] + count[id1];
+            cs_lnum_t   shift0 = box_index[id0] + count[id0];
+            cs_lnum_t   shift1 = box_index[id1] + count[id1];
             box_g_num[shift0] = boxes->g_num[id1];
             box_g_num[shift1] = boxes->g_num[id0];
             count[id0] += 1;
@@ -1868,11 +1868,11 @@ _get_intersections(const fvm_box_tree_t  *bt,
 
 static void
 _build_histogram(const fvm_box_tree_t  *bt,
-                 fvm_lnum_t             node_id,
-                 fvm_lnum_t             n_steps,
-                 fvm_lnum_t             step,
-                 fvm_lnum_t             h_min,
-                 fvm_gnum_t             count[])
+                 cs_lnum_t              node_id,
+                 cs_lnum_t              n_steps,
+                 cs_lnum_t              step,
+                 cs_lnum_t              h_min,
+                 cs_gnum_t              count[])
 {
   int  i, j;
 
@@ -1906,7 +1906,7 @@ _build_histogram(const fvm_box_tree_t  *bt,
 
 static void
 _dump_node(const fvm_box_tree_t  *bt,
-           fvm_lnum_t             node_id)
+           cs_lnum_t              node_id)
 {
   int  i;
 
@@ -1929,7 +1929,7 @@ _dump_node(const fvm_box_tree_t  *bt,
 
   if (node->is_leaf == false) {
 
-    const fvm_lnum_t *c_id = bt->child_ids + bt->n_children*node_id;
+    const cs_lnum_t *c_id = bt->child_ids + bt->n_children*node_id;
 
     if (bt->n_children == 8)
       bft_printf("  children_id:  %d %d %d %d %d %d %d %d\n",
@@ -2087,12 +2087,12 @@ fvm_box_tree_set_boxes(fvm_box_tree_t       *bt,
                        const fvm_box_set_t  *boxes,
                        fvm_box_tree_sync_t   build_type)
 {
-  fvm_lnum_t  box_id;
+  cs_lnum_t   box_id;
 
   fvm_box_tree_t  tmp_bt;
 
-  fvm_lnum_t  next_box_ids_size = 0, shift = 0;
-  fvm_coord_t anchor[3] = {0., 0., 0.};
+  cs_lnum_t   next_box_ids_size = 0, shift = 0;
+  cs_coord_t anchor[3] = {0., 0., 0.};
 
   /* Initialization */
 
@@ -2124,7 +2124,7 @@ fvm_box_tree_set_boxes(fvm_box_tree_t       *bt,
   BFT_MALLOC(bt->nodes, bt->n_max_nodes, _node_t);
   BFT_MALLOC(bt->child_ids,
              bt->n_max_nodes*bt->n_children,
-             fvm_lnum_t);
+             cs_lnum_t);
 
   /* Define root node */
 
@@ -2132,7 +2132,7 @@ fvm_box_tree_set_boxes(fvm_box_tree_t       *bt,
 
   /* Initialize bt by assigning all boxes to the root leaf */
 
-  BFT_MALLOC(bt->box_ids, boxes->n_boxes, fvm_lnum_t);
+  BFT_MALLOC(bt->box_ids, boxes->n_boxes, cs_lnum_t);
 
   for (box_id = 0; box_id < boxes->n_boxes; box_id++)
     bt->box_ids[box_id] = box_id;
@@ -2162,11 +2162,11 @@ fvm_box_tree_set_boxes(fvm_box_tree_t       *bt,
     BFT_REALLOC(bt->nodes, bt->n_nodes, _node_t);
     BFT_REALLOC(bt->child_ids,
                 bt->n_max_nodes*bt->n_children,
-                fvm_lnum_t);
+                cs_lnum_t);
 
     /* Define a box ids list for the next level of the boxtree */
 
-    BFT_REALLOC(tmp_bt.box_ids, next_box_ids_size, fvm_lnum_t);
+    BFT_REALLOC(tmp_bt.box_ids, next_box_ids_size, cs_lnum_t);
     shift = 0;
 
     _build_next_level(bt,
@@ -2214,10 +2214,10 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
   int  i;
 
   int  reduce_size = 0;
-  fvm_lnum_t  n_leaves = 0;
+  cs_lnum_t   n_leaves = 0;
   int  *reduce_ids = NULL;
   fvm_morton_code_t  *leaf_codes = NULL, *reduce_index = NULL;
-  fvm_lnum_t  *weight = NULL, *counter = NULL;
+  cs_lnum_t   *weight = NULL, *counter = NULL;
 
   fvm_box_distrib_t  *distrib = NULL;
 
@@ -2235,7 +2235,7 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
     return NULL;
 
   BFT_MALLOC(leaf_codes, bt->stats.n_leaves, fvm_morton_code_t);
-  BFT_MALLOC(weight, bt->stats.n_leaves, fvm_lnum_t);
+  BFT_MALLOC(weight, bt->stats.n_leaves, cs_lnum_t);
 
   /* Build index for boxes */
 
@@ -2248,7 +2248,7 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
   assert(n_leaves <= bt->stats.n_leaves);
 
   BFT_REALLOC(leaf_codes, n_leaves, fvm_morton_code_t);
-  BFT_REALLOC(weight, n_leaves, fvm_lnum_t);
+  BFT_REALLOC(weight, n_leaves, cs_lnum_t);
 
   /* Compute the resulting Morton index */
 
@@ -2302,7 +2302,7 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
   BFT_MALLOC(distrib->list,
              distrib->index[distrib->n_ranks], int);
 
-  BFT_MALLOC(counter, distrib->n_ranks, fvm_lnum_t);
+  BFT_MALLOC(counter, distrib->n_ranks, cs_lnum_t);
 
   for (i = 0; i < distrib->n_ranks; i++)
     counter[i] = 0;
@@ -2349,20 +2349,20 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_box_tree_get_intersects(fvm_box_tree_t        *bt,
-                            const fvm_box_set_t   *boxes,
-                            fvm_lnum_t            *box_index[],
-                            fvm_gnum_t            *box_g_num[])
+fvm_box_tree_get_intersects(fvm_box_tree_t       *bt,
+                            const fvm_box_set_t  *boxes,
+                            cs_lnum_t            *box_index[],
+                            cs_gnum_t            *box_g_num[])
 {
-  fvm_lnum_t  i, list_size;
+  cs_lnum_t  i, list_size;
 
-  fvm_lnum_t  *counter = NULL;
-  fvm_lnum_t  *_index = NULL;
-  fvm_gnum_t  *_g_num = NULL;
+  cs_lnum_t  *counter = NULL;
+  cs_lnum_t  *_index = NULL;
+  cs_gnum_t  *_g_num = NULL;
 
   /* Build index */
 
-  BFT_MALLOC(_index, boxes->n_boxes + 1, fvm_lnum_t);
+  BFT_MALLOC(_index, boxes->n_boxes + 1, cs_lnum_t);
 
   for (i = 0; i < boxes->n_boxes + 1; i++)
     _index[i] = 0;
@@ -2379,9 +2379,9 @@ fvm_box_tree_get_intersects(fvm_box_tree_t        *bt,
 
   list_size = _index[boxes->n_boxes];
 
-  BFT_MALLOC(_g_num, list_size, fvm_gnum_t);
+  BFT_MALLOC(_g_num, list_size, cs_gnum_t);
 
-  BFT_MALLOC(counter, boxes->n_boxes, fvm_lnum_t);
+  BFT_MALLOC(counter, boxes->n_boxes, cs_lnum_t);
 
   for (i = 0; i < boxes->n_boxes; i++)
     counter[i] = 0;
@@ -2436,10 +2436,10 @@ fvm_box_tree_get_intersects(fvm_box_tree_t        *bt,
 int
 fvm_box_tree_get_stats(const fvm_box_tree_t  *bt,
                        int                    depth[3],
-                       fvm_lnum_t             n_leaves[3],
-                       fvm_lnum_t             n_boxes[3],
-                       fvm_lnum_t             n_threshold_leaves[3],
-                       fvm_lnum_t             n_leaf_boxes[3],
+                       cs_lnum_t              n_leaves[3],
+                       cs_lnum_t              n_boxes[3],
+                       cs_lnum_t              n_threshold_leaves[3],
+                       cs_lnum_t              n_leaf_boxes[3],
                        size_t                 mem_used[3],
                        size_t                 mem_allocated[3])
 {
@@ -2478,15 +2478,15 @@ fvm_box_tree_get_stats(const fvm_box_tree_t  *bt,
 
   /* Estimate theoretical memory usage */
 
-  mem_per_node = sizeof(_node_t) + bt->n_children*sizeof(fvm_lnum_t);
+  mem_per_node = sizeof(_node_t) + bt->n_children*sizeof(cs_lnum_t);
 
   s_mean[5] = sizeof(fvm_box_tree_t);
   s_mean[5] += bt->n_nodes * mem_per_node;
-  s_mean[5] += s.n_linked_boxes * sizeof(fvm_lnum_t);
+  s_mean[5] += s.n_linked_boxes * sizeof(cs_lnum_t);
 
   s_mean[5] += sizeof(fvm_box_set_t);
-  s_mean[5] += s.n_boxes * (  sizeof(fvm_gnum_t)
-                           + (dim * 2 * sizeof(fvm_coord_t)));
+  s_mean[5] += s.n_boxes * (  sizeof(cs_gnum_t)
+                           + (dim * 2 * sizeof(cs_coord_t)));
 
   s_mean[6] = s_mean[5] + (bt->n_max_nodes - bt->n_nodes)*mem_per_node;
 
@@ -2504,13 +2504,13 @@ fvm_box_tree_get_stats(const fvm_box_tree_t  *bt,
   if (bt->comm != MPI_COMM_NULL) {
 
     int n_ranks;
-    fvm_gnum_t s_l_sum[14], s_g_sum[14];
+    cs_gnum_t s_l_sum[14], s_g_sum[14];
 
     MPI_Comm_size(bt->comm, &n_ranks);
 
     if (n_ranks > 1) { /* Should always be the case, bat play it safe) */
 
-      /* Split value to avoid exceeding fvm_gnum_t limits
+      /* Split value to avoid exceeding cs_gnum_t limits
          (especially when it is a 32-bit value) */
 
       s_l_sum[0] = s.n_linked_boxes/n_ranks;
@@ -2520,12 +2520,12 @@ fvm_box_tree_get_stats(const fvm_box_tree_t  *bt,
         s_l_sum[i+7] = s_mean[i]%n_ranks;
       }
 
-      MPI_Allreduce(s_l_sum, s_g_sum, 14, FVM_MPI_GNUM, MPI_SUM, bt->comm);
+      MPI_Allreduce(s_l_sum, s_g_sum, 14, CS_MPI_GNUM, MPI_SUM, bt->comm);
 
       s_mean[0] = s.min_linked_boxes;
-      MPI_Allreduce(s_mean, s_min, 7, FVM_MPI_GNUM, MPI_MIN, bt->comm);
+      MPI_Allreduce(s_mean, s_min, 7, CS_MPI_GNUM, MPI_MIN, bt->comm);
       s_mean[0] = s.max_linked_boxes;
-      MPI_Allreduce(s_mean, s_max, 7, FVM_MPI_GNUM, MPI_MAX, bt->comm);
+      MPI_Allreduce(s_mean, s_max, 7, CS_MPI_GNUM, MPI_MAX, bt->comm);
 
       /* Specific handling for linked boxes, so as to ensure correct
          total using large integers even if we do not know the
@@ -2542,7 +2542,7 @@ fvm_box_tree_get_stats(const fvm_box_tree_t  *bt,
       for (i = 1; i < 7; i++) {
         s_mean[i] = s_g_sum[i] + s_g_sum[i+7]/n_ranks;
         /* Round to nearest integer, and not floor */
-        if (s_g_sum[i+7]%n_ranks >= (fvm_gnum_t)n_ranks/2)
+        if (s_g_sum[i+7]%n_ranks >= (cs_gnum_t)n_ranks/2)
           s_mean[i] += 1;
       }
     }
@@ -2610,11 +2610,11 @@ fvm_box_tree_dump_statistics(const fvm_box_tree_t  *bt)
   int i, j;
   fvm_box_tree_stats_t s;
   unsigned g_max_level_reached;
-  fvm_gnum_t n_g_leaves, n_g_boxes, n_g_linked_boxes, n_g_spill_leaves;
-  fvm_lnum_t g_min_linked_boxes, g_max_linked_boxes;
+  cs_gnum_t n_g_leaves, n_g_boxes, n_g_linked_boxes, n_g_spill_leaves;
+  cs_lnum_t g_min_linked_boxes, g_max_linked_boxes;
   double mean_linked_boxes, box_ratio;
 
-  fvm_gnum_t count[5];
+  cs_gnum_t count[5];
 
   int step = 0, delta = 0;
   const int n_steps = 5;
@@ -2636,9 +2636,9 @@ fvm_box_tree_dump_statistics(const fvm_box_tree_t  *bt)
 
   if (bt->comm != MPI_COMM_NULL) {
 
-    fvm_gnum_t l_min[1], g_min[1];
-    fvm_gnum_t l_max[2], g_max[2];
-    fvm_gnum_t l_sum[3], g_sum[3];
+    cs_gnum_t l_min[1], g_min[1];
+    cs_gnum_t l_max[2], g_max[2];
+    cs_gnum_t l_sum[3], g_sum[3];
 
     l_sum[0] = n_g_leaves;
     l_sum[1] = n_g_spill_leaves;
@@ -2648,9 +2648,9 @@ fvm_box_tree_dump_statistics(const fvm_box_tree_t  *bt)
     l_max[0] = s.max_level_reached;
     l_max[1] = g_max_linked_boxes;
 
-    MPI_Allreduce(l_sum, g_sum, 3, FVM_MPI_GNUM, MPI_SUM, bt->comm);
-    MPI_Allreduce(l_min, g_min, 1, FVM_MPI_GNUM, MPI_MIN, bt->comm);
-    MPI_Allreduce(l_max, g_max, 2, FVM_MPI_GNUM, MPI_MAX, bt->comm);
+    MPI_Allreduce(l_sum, g_sum, 3, CS_MPI_GNUM, MPI_SUM, bt->comm);
+    MPI_Allreduce(l_min, g_min, 1, CS_MPI_GNUM, MPI_MIN, bt->comm);
+    MPI_Allreduce(l_max, g_max, 2, CS_MPI_GNUM, MPI_MAX, bt->comm);
 
     n_g_leaves = l_sum[0];
     n_g_spill_leaves = l_sum[1];

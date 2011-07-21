@@ -88,7 +88,7 @@ cs_join_split_faces(cs_join_param_t          param,
 void
 cs_join_split_update_struct(const cs_join_param_t   param,
                             const cs_join_mesh_t   *work_mesh,
-                            const fvm_gnum_t        gnum_rank_index[],
+                            const cs_gnum_t         gnum_rank_index[],
                             cs_join_gset_t        **o2n_hist,
                             cs_join_mesh_t        **local_mesh);
 

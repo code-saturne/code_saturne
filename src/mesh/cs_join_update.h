@@ -82,7 +82,7 @@ BEGIN_C_DECLS
 void
 cs_join_update_mesh_after_merge(cs_join_param_t    join_param,
                                 cs_join_select_t  *join_select,
-                                fvm_gnum_t         o2n_vtx_gnum[],
+                                cs_gnum_t          o2n_vtx_gnum[],
                                 cs_join_mesh_t    *join_mesh,
                                 cs_mesh_t         *mesh);
 

@@ -113,7 +113,7 @@ _compare_nums(const void *x,
               const void *y)
 {
   int retval = 0;
-  fvm_lnum_t v_diff = (*((const fvm_lnum_t *)x) - *((const fvm_lnum_t *)y));
+  cs_lnum_t v_diff = (*((const cs_lnum_t *)x) - *((const cs_lnum_t *)y));
   if (v_diff > 0)
     retval = 1;
   else if (v_diff < 0)
@@ -136,17 +136,17 @@ _compare_nums(const void *x,
  *   number of element removed from i_face_lst
  *----------------------------------------------------------------------------*/
 
-static fvm_lnum_t
-_clean_i_faces(fvm_lnum_t         *i_face_vtx_idx,
-               fvm_lnum_t         *i_face_vtx_lst,
-               fvm_lnum_t          n_i_faces,
-               const fvm_lnum_t   *clean_list,
-               fvm_lnum_t          clean_list_size)
+static cs_lnum_t
+_clean_i_faces(cs_lnum_t         *i_face_vtx_idx,
+               cs_lnum_t         *i_face_vtx_lst,
+               cs_lnum_t          n_i_faces,
+               const cs_lnum_t   *clean_list,
+               cs_lnum_t          clean_list_size)
 {
-  fvm_lnum_t face_id, d, i;
-  fvm_lnum_t ind_empty = 0;
-  fvm_lnum_t ind_full = 0;
-  fvm_lnum_t ind = 0;
+  cs_lnum_t face_id, d, i;
+  cs_lnum_t ind_empty = 0;
+  cs_lnum_t ind_full = 0;
+  cs_lnum_t ind = 0;
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
     d = i_face_vtx_idx[face_id + 1] - i_face_vtx_idx[face_id];
@@ -184,15 +184,15 @@ _clean_i_faces(fvm_lnum_t         *i_face_vtx_idx,
  *----------------------------------------------------------------------------*/
 
 static void
-_clean_i_face_cells(fvm_lnum_t        *i_face_cells,
-                    fvm_lnum_t         n_i_faces,
-                    const fvm_lnum_t  *clean_list,
-                    fvm_lnum_t         clean_list_size)
+_clean_i_face_cells(cs_lnum_t        *i_face_cells,
+                    cs_lnum_t         n_i_faces,
+                    const cs_lnum_t  *clean_list,
+                    cs_lnum_t         clean_list_size)
 {
-  fvm_lnum_t face_id;
-  fvm_lnum_t ind_empty = 0;
-  fvm_lnum_t ind_full = 0;
-  fvm_lnum_t ind = 0;
+  cs_lnum_t face_id;
+  cs_lnum_t ind_empty = 0;
+  cs_lnum_t ind_full = 0;
+  cs_lnum_t ind = 0;
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
@@ -226,15 +226,15 @@ _clean_i_face_cells(fvm_lnum_t        *i_face_cells,
  *----------------------------------------------------------------------------*/
 
 static void
-_clean_i_family(fvm_lnum_t        *i_face_family,
-                fvm_lnum_t         n_i_faces,
-                const fvm_lnum_t  *clean_list,
-                fvm_lnum_t         clean_list_size)
+_clean_i_family(cs_lnum_t        *i_face_family,
+                cs_lnum_t         n_i_faces,
+                const cs_lnum_t  *clean_list,
+                cs_lnum_t         clean_list_size)
 {
-  fvm_lnum_t face_id;
-  fvm_lnum_t ind_empty = 0;
-  fvm_lnum_t ind_full = 0;
-  fvm_lnum_t ind = 0;
+  cs_lnum_t face_id;
+  cs_lnum_t ind_empty = 0;
+  cs_lnum_t ind_full = 0;
+  cs_lnum_t ind = 0;
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
@@ -266,14 +266,14 @@ _clean_i_family(fvm_lnum_t        *i_face_family,
  *----------------------------------------------------------------------------*/
 
 static void
-_get_list_c(fvm_lnum_t        *list_c,
-            fvm_lnum_t         list_c_size,
-            const fvm_lnum_t  *list,
-            fvm_lnum_t         list_size)
+_get_list_c(cs_lnum_t        *list_c,
+            cs_lnum_t         list_c_size,
+            const cs_lnum_t  *list,
+            cs_lnum_t         list_size)
 {
-  fvm_lnum_t face_id;
-  fvm_lnum_t i_empty = 0;
-  fvm_lnum_t i_full = 0;
+  cs_lnum_t face_id;
+  cs_lnum_t i_empty = 0;
+  cs_lnum_t i_full = 0;
 
   for (face_id = 0; face_id < list_c_size; face_id++) {
 
@@ -302,16 +302,16 @@ _get_list_c(fvm_lnum_t        *list_c,
  *----------------------------------------------------------------------------*/
 
 static void
-_count_b_faces_to_add(const fvm_lnum_t  *i_face_cells,
-                      const fvm_lnum_t  *i_face_vtx_idx,
-                      const fvm_lnum_t  *list,
-                      fvm_lnum_t         list_size,
-                      fvm_lnum_t        *count)
+_count_b_faces_to_add(const cs_lnum_t  *i_face_cells,
+                      const cs_lnum_t  *i_face_vtx_idx,
+                      const cs_lnum_t  *list,
+                      cs_lnum_t         list_size,
+                      cs_lnum_t        *count)
 {
-  fvm_lnum_t ii;
+  cs_lnum_t ii;
 
-  fvm_lnum_t n_bf = 0;
-  fvm_lnum_t n_bf_lst = 0;
+  cs_lnum_t n_bf = 0;
+  cs_lnum_t n_bf_lst = 0;
 
   for (ii = 0; ii < list_size; ii++) {
     if (i_face_cells[2*list[ii] - 1] > 0) {
@@ -348,23 +348,23 @@ _count_b_faces_to_add(const fvm_lnum_t  *i_face_cells,
  *----------------------------------------------------------------------------*/
 
 static void
-_add_b_faces(cs_mesh_t         *mesh,
-             fvm_lnum_t        *b_face_vtx_idx,
-             fvm_lnum_t        *b_face_vtx_lst,
-             fvm_lnum_t        *b_face_cells,
-             fvm_lnum_t        *b_face_family,
-             fvm_lnum_t         b_face_vtx_connect_size,
-             const fvm_lnum_t  *list,
-             fvm_lnum_t         list_size)
+_add_b_faces(cs_mesh_t        *mesh,
+             cs_lnum_t        *b_face_vtx_idx,
+             cs_lnum_t        *b_face_vtx_lst,
+             cs_lnum_t        *b_face_cells,
+             cs_lnum_t        *b_face_family,
+             cs_lnum_t         b_face_vtx_connect_size,
+             const cs_lnum_t  *list,
+             cs_lnum_t         list_size)
  {
   int ii, jj;
-  fvm_lnum_t   n_face_vertices;
-  fvm_lnum_t   inc = 0;
-  fvm_lnum_t  *i_face_vtx_idx = mesh->i_face_vtx_idx;
-  fvm_lnum_t  *i_face_vtx_lst = mesh->i_face_vtx_lst;
-  fvm_lnum_t  *i_face_cells = mesh->i_face_cells;
-  fvm_lnum_t  *i_face_family = mesh->i_face_family;
-  fvm_lnum_t   n_b_faces = mesh->n_b_faces;
+  cs_lnum_t   n_face_vertices;
+  cs_lnum_t   inc = 0;
+  cs_lnum_t  *i_face_vtx_idx = mesh->i_face_vtx_idx;
+  cs_lnum_t  *i_face_vtx_lst = mesh->i_face_vtx_lst;
+  cs_lnum_t  *i_face_cells = mesh->i_face_cells;
+  cs_lnum_t  *i_face_family = mesh->i_face_family;
+  cs_lnum_t   n_b_faces = mesh->n_b_faces;
 
   for (ii = 0; ii < list_size; ii++) {
 
@@ -424,16 +424,16 @@ _add_b_faces(cs_mesh_t         *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_refresh_b_glob_num(const fvm_lnum_t   *i_face_cells,
-                    fvm_gnum_t          n_g_faces,
-                    fvm_lnum_t          n_b_faces,
-                    const fvm_lnum_t   *list,
-                    fvm_lnum_t          list_size,
-                    const fvm_gnum_t   *list_glob_num,
-                    fvm_gnum_t         *b_faces_glob_num)
+_refresh_b_glob_num(const cs_lnum_t   *i_face_cells,
+                    cs_gnum_t          n_g_faces,
+                    cs_lnum_t          n_b_faces,
+                    const cs_lnum_t   *list,
+                    cs_lnum_t          list_size,
+                    const cs_gnum_t   *list_glob_num,
+                    cs_gnum_t         *b_faces_glob_num)
 {
-  fvm_lnum_t ii;
-  fvm_lnum_t inc = 0;
+  cs_lnum_t ii;
+  cs_lnum_t inc = 0;
 
   for (ii = 0; ii < list_size; ii++) {
     if (i_face_cells[2*list[ii] - 1] > 0) {
@@ -464,36 +464,36 @@ _refresh_b_glob_num(const fvm_lnum_t   *i_face_cells,
  *----------------------------------------------------------------------------*/
 
 void
-cs_create_thinwall(cs_mesh_t   *mesh,
-                   fvm_lnum_t  *face_list,
-                   int          face_list_size)
+cs_create_thinwall(cs_mesh_t  *mesh,
+                   cs_lnum_t  *face_list,
+                   int         face_list_size)
  {
-  fvm_lnum_t ii;
-  fvm_gnum_t _n_g_b_faces, _n_g_i_faces;
-  fvm_lnum_t i_face_vtx_cleaned;
-  fvm_lnum_t count[2];
+  cs_lnum_t ii;
+  cs_gnum_t _n_g_b_faces, _n_g_i_faces;
+  cs_lnum_t i_face_vtx_cleaned;
+  cs_lnum_t count[2];
 
-  fvm_lnum_t n_i_faces =  mesh->n_i_faces;
-  fvm_lnum_t n_b_faces = mesh->n_b_faces;
-  fvm_lnum_t new_n_i_faces = n_i_faces - face_list_size;
+  cs_lnum_t n_i_faces =  mesh->n_i_faces;
+  cs_lnum_t n_b_faces = mesh->n_b_faces;
+  cs_lnum_t new_n_i_faces = n_i_faces - face_list_size;
 
-  fvm_lnum_t i_face_vtx_connect_size = mesh->i_face_vtx_connect_size;
-  fvm_lnum_t b_face_vtx_connect_size = mesh->b_face_vtx_connect_size;
+  cs_lnum_t i_face_vtx_connect_size = mesh->i_face_vtx_connect_size;
+  cs_lnum_t b_face_vtx_connect_size = mesh->b_face_vtx_connect_size;
 
   fvm_io_num_t *global_number_i_faces = NULL;
   fvm_io_num_t *global_number_b_faces = NULL;
-  const fvm_gnum_t *global_order_i_faces = NULL;
-  const fvm_gnum_t *global_order_b_faces = NULL;
+  const cs_gnum_t *global_order_i_faces = NULL;
+  const cs_gnum_t *global_order_b_faces = NULL;
 
-  fvm_lnum_t *face_list_c = NULL;
+  cs_lnum_t *face_list_c = NULL;
 
-  qsort(face_list, face_list_size, sizeof(fvm_lnum_t), &_compare_nums);
+  qsort(face_list, face_list_size, sizeof(cs_lnum_t), &_compare_nums);
 
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
-    BFT_MALLOC(face_list_c, (n_i_faces - face_list_size), fvm_lnum_t);
+    BFT_MALLOC(face_list_c, (n_i_faces - face_list_size), cs_lnum_t);
     _get_list_c(face_list_c,
                 n_i_faces,
                 face_list,
@@ -511,11 +511,11 @@ cs_create_thinwall(cs_mesh_t   *mesh,
                                               0);
     global_order_b_faces = fvm_io_num_get_global_num(global_number_b_faces);
 
-    BFT_REALLOC(mesh->global_i_face_num, new_n_i_faces, fvm_gnum_t);
+    BFT_REALLOC(mesh->global_i_face_num, new_n_i_faces, cs_gnum_t);
 
     memcpy(mesh->global_i_face_num,
            global_order_i_faces,
-           new_n_i_faces*sizeof(fvm_gnum_t));
+           new_n_i_faces*sizeof(cs_gnum_t));
 
   }
 
@@ -527,12 +527,12 @@ cs_create_thinwall(cs_mesh_t   *mesh,
                         face_list_size,
                         count);
 
-  BFT_REALLOC(mesh->b_face_vtx_idx, n_b_faces + count[0]  + 1, fvm_lnum_t);
-  BFT_REALLOC(mesh->b_face_cells, n_b_faces + count[0], fvm_lnum_t);
+  BFT_REALLOC(mesh->b_face_vtx_idx, n_b_faces + count[0]  + 1, cs_lnum_t);
+  BFT_REALLOC(mesh->b_face_cells, n_b_faces + count[0], cs_lnum_t);
   BFT_REALLOC(mesh->b_face_vtx_lst,
               b_face_vtx_connect_size + count[1],
-              fvm_lnum_t);
-  BFT_REALLOC(mesh->b_face_family, n_b_faces + count[0], fvm_lnum_t);
+              cs_lnum_t);
+  BFT_REALLOC(mesh->b_face_family, n_b_faces + count[0], cs_lnum_t);
 
   _add_b_faces(mesh,
                mesh->b_face_vtx_idx,
@@ -552,10 +552,10 @@ cs_create_thinwall(cs_mesh_t   *mesh,
 
   if (cs_glob_n_ranks > 1) {
 
-    MPI_Allreduce(&(mesh->n_b_faces), &_n_g_b_faces, 1, FVM_MPI_LNUM, MPI_SUM,
+    MPI_Allreduce(&(mesh->n_b_faces), &_n_g_b_faces, 1, CS_MPI_LNUM, MPI_SUM,
                   cs_glob_mpi_comm);
 
-    BFT_REALLOC(mesh->global_b_face_num, mesh->n_b_faces, fvm_gnum_t);
+    BFT_REALLOC(mesh->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
 
     _refresh_b_glob_num(mesh->i_face_cells,
                         mesh->n_g_b_faces,
@@ -598,15 +598,15 @@ cs_create_thinwall(cs_mesh_t   *mesh,
       if (mesh->i_face_cells[2*(ii+1) - 1] > 0)
         n_bf++;
     }
-    MPI_Allreduce(&n_bf, &_n_g_i_faces, 1, FVM_MPI_LNUM, MPI_SUM,
+    MPI_Allreduce(&n_bf, &_n_g_i_faces, 1, CS_MPI_LNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
 #endif
 
-  BFT_REALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces + 1, fvm_lnum_t);
-  BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, fvm_lnum_t);
-  BFT_REALLOC(mesh->i_face_cells, 2*(mesh->n_i_faces), fvm_lnum_t);
-  BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, fvm_lnum_t);
+  BFT_REALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces + 1, cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_cells, 2*(mesh->n_i_faces), cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, cs_lnum_t);
 
   mesh->n_g_b_faces = _n_g_b_faces;
   mesh->n_g_i_faces = _n_g_i_faces;

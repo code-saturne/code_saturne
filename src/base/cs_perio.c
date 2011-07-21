@@ -91,15 +91,15 @@ typedef struct {
 
   /* Periodic features */
 
-  fvm_lnum_t  *per_face_idx;    /* Index on periodicity for per_face_lst */
+  cs_lnum_t  *per_face_idx;    /* Index on periodicity for per_face_lst */
 
-  fvm_lnum_t  *per_face_lst;    /* Periodic faces list. For each couple,
-                                   we have the local face number on local rank
-                                   and the local face number on distant rank */
+  cs_lnum_t  *per_face_lst;    /* Periodic faces list. For each couple,
+                                  we have the local face number on local rank
+                                  and the local face number on distant rank */
 
-  cs_int_t   *per_rank_lst;     /* Remote ranks list. For each couple,
-                                   we have the distant rank number. Exists
-                                   only in case of parallelism. */
+  cs_int_t   *per_rank_lst;    /* Remote ranks list. For each couple,
+                                  we have the distant rank number. Exists
+                                  only in case of parallelism. */
 
 } _perio_mesh_builder_t ;
 

@@ -537,20 +537,20 @@ _hilbert_compare_3d(const double  coord_0[3],
  *---------------------------------------------------------------------------*/
 
 static void
-_local_to_global_extents(int          dim,
-                         fvm_coord_t  extents[],
-                         MPI_Comm     comm)
+_local_to_global_extents(int         dim,
+                         cs_coord_t  extents[],
+                         MPI_Comm    comm)
 {
   int i;
-  fvm_coord_t  l_min[3], l_max[3];
+  cs_coord_t  l_min[3], l_max[3];
 
   for (i = 0; i < dim; i++) {
     l_min[i] = extents[i];
     l_max[i] = extents[i + dim];
   }
 
-  MPI_Allreduce(l_min, extents, dim, FVM_MPI_COORD, MPI_MIN, comm);
-  MPI_Allreduce(l_max, extents + dim, dim, FVM_MPI_COORD, MPI_MAX, comm);
+  MPI_Allreduce(l_min, extents, dim, CS_MPI_COORD, MPI_MIN, comm);
+  MPI_Allreduce(l_max, extents + dim, dim, CS_MPI_COORD, MPI_MAX, comm);
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -567,13 +567,13 @@ _local_to_global_extents(int          dim,
  *----------------------------------------------------------------------------*/
 
 static void
-_descend_hilbert_heap(fvm_gnum_t                 parent,
-                      fvm_lnum_t                 n_codes,
+_descend_hilbert_heap(cs_gnum_t                  parent,
+                      cs_lnum_t                  n_codes,
                       const fvm_hilbert_code_t   hilbert_codes[],
-                      fvm_lnum_t                *order)
+                      cs_lnum_t                 *order)
 {
-  fvm_lnum_t  tmp;
-  fvm_lnum_t  child = 2 * parent + 1;
+  cs_lnum_t   tmp;
+  cs_lnum_t   child = 2 * parent + 1;
 
   while (child < n_codes) {
 
@@ -608,19 +608,19 @@ _descend_hilbert_heap(fvm_gnum_t                 parent,
  *----------------------------------------------------------------------------*/
 
 static void
-_descend_hilbert_heap_coords(int                 dim,
-                             const fvm_coord_t   extents[],
-                             fvm_gnum_t          parent,
-                             fvm_lnum_t          n_coords,
-                             const fvm_coord_t   coords[],
-                             fvm_lnum_t         *order)
+_descend_hilbert_heap_coords(int                dim,
+                             const cs_coord_t   extents[],
+                             cs_gnum_t          parent,
+                             cs_lnum_t          n_coords,
+                             const cs_coord_t   coords[],
+                             cs_lnum_t         *order)
 {
   size_t      i, j;
-  fvm_lnum_t  tmp, a_id, b_id;
-  fvm_lnum_t  child = 2 * parent + 1;
+  cs_lnum_t   tmp, a_id, b_id;
+  cs_lnum_t   child = 2 * parent + 1;
 
-  fvm_coord_t s[3], d[3], a[3], b[3];
-  fvm_coord_t d_max = 0.0;
+  cs_coord_t s[3], d[3], a[3], b[3];
+  cs_coord_t d_max = 0.0;
 
   for (i = 0; i < (size_t)dim; i++) {
     s[i] = extents[i];
@@ -746,7 +746,7 @@ _descend_hilbert_heap_coords(int                 dim,
 
 static double
 _evaluate_distribution(int          n_ranges,
-                       fvm_gnum_t  *distribution,
+                       cs_gnum_t   *distribution,
                        double       optim)
 {
   int  i;
@@ -800,29 +800,29 @@ _evaluate_distribution(int          n_ranges,
 static void
 _define_rank_distrib(int                       dim,
                      int                       n_ranks,
-                     fvm_gnum_t                gsum_weight,
-                     fvm_lnum_t                n_codes,
+                     cs_gnum_t                 gsum_weight,
+                     cs_lnum_t                 n_codes,
                      const fvm_hilbert_code_t  hilbert_codes[],
-                     const fvm_lnum_t          weight[],
-                     const fvm_lnum_t          order[],
+                     const cs_lnum_t           weight[],
+                     const cs_lnum_t           order[],
                      const fvm_hilbert_code_t  sampling[],
                      double                    cfreq[],
-                     fvm_gnum_t                g_distrib[],
+                     cs_gnum_t                 g_distrib[],
                      MPI_Comm                  comm)
 {
   int  id, rank_id;
   fvm_hilbert_code_t  sample_code;
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
 
   int  bucket_id = 1;
-  fvm_gnum_t  *l_distrib = NULL;
+  cs_gnum_t   *l_distrib = NULL;
 
   const int  sampling_factor = _sampling_factors[dim];
   const int  n_samples = sampling_factor * n_ranks;
 
   /* Initialization */
 
-  BFT_MALLOC(l_distrib, n_samples, fvm_gnum_t);
+  BFT_MALLOC(l_distrib, n_samples, cs_gnum_t);
 
   for (id = 0; id < n_samples; id++) {
     l_distrib[id] = 0;
@@ -835,7 +835,7 @@ _define_rank_distrib(int                       dim,
 
   for (i = 0; i < n_codes; i++) {
 
-    fvm_gnum_t  o_id = order[i];
+    cs_gnum_t   o_id = order[i];
 
     if (sample_code >= hilbert_codes[o_id])
       l_distrib[bucket_id - 1] += weight[o_id];
@@ -856,7 +856,7 @@ _define_rank_distrib(int                       dim,
 
   /* Define the global distribution */
 
-  MPI_Allreduce(l_distrib, g_distrib, n_samples, FVM_MPI_GNUM, MPI_SUM, comm);
+  MPI_Allreduce(l_distrib, g_distrib, n_samples, CS_MPI_GNUM, MPI_SUM, comm);
 
   BFT_FREE(l_distrib);
 
@@ -908,8 +908,8 @@ _define_rank_distrib(int                       dim,
 
   for (rank_id = 0; rank_id < n_ranks; rank_id++) {
 
-    fvm_gnum_t  sum = 0;
-    fvm_lnum_t  shift = rank_id * sampling_factor;
+    cs_gnum_t   sum = 0;
+    cs_lnum_t   shift = rank_id * sampling_factor;
 
     for (id = 0; id < sampling_factor; id++)
       sum += g_distrib[shift + id];
@@ -919,7 +919,7 @@ _define_rank_distrib(int                       dim,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Sanity check in debug */
   {
-    fvm_gnum_t  sum = 0;
+    cs_gnum_t   sum = 0;
     for (rank_id = 0; rank_id < n_ranks; rank_id++)
       sum += g_distrib[rank_id];
 
@@ -1039,19 +1039,19 @@ _update_sampling(int                  dim,
 static double
 _bucket_sampling(int                       dim,
                  int                       n_ranks,
-                 fvm_lnum_t                n_codes,
+                 cs_lnum_t                 n_codes,
                  const fvm_hilbert_code_t  hilbert_codes[],
-                 const fvm_lnum_t          weight[],
-                 const fvm_lnum_t          order[],
+                 const cs_lnum_t           weight[],
+                 const cs_lnum_t           order[],
                  fvm_hilbert_code_t       *sampling[],
                  MPI_Comm                  comm)
 {
   int  i, n_iters;
-  fvm_lnum_t  j;
+  cs_lnum_t   j;
   double  fit, best_fit, optim;
 
-  fvm_gnum_t  lsum_weight = 0, gsum_weight = 0;
-  fvm_gnum_t  *distrib = NULL;
+  cs_gnum_t   lsum_weight = 0, gsum_weight = 0;
+  cs_gnum_t   *distrib = NULL;
   double  *cfreq = NULL;
   fvm_hilbert_code_t  *best_sampling = NULL;
   fvm_hilbert_code_t  *_sampling = *sampling;
@@ -1066,7 +1066,7 @@ _bucket_sampling(int                       dim,
   for (j = 0; j < n_codes; j++)
     lsum_weight += weight[j];
 
-  MPI_Allreduce(&lsum_weight, &gsum_weight, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+  MPI_Allreduce(&lsum_weight, &gsum_weight, 1, CS_MPI_GNUM, MPI_SUM, comm);
 
   optim = (double)gsum_weight / (double)n_ranks;
 
@@ -1077,7 +1077,7 @@ _bucket_sampling(int                       dim,
 
   /* Define the distribution associated to the current sampling array */
 
-  BFT_MALLOC(distrib, n_samples, fvm_gnum_t);
+  BFT_MALLOC(distrib, n_samples, cs_gnum_t);
   BFT_MALLOC(cfreq, n_samples + 1, double);
 
   _define_rank_distrib(dim,
@@ -1175,22 +1175,22 @@ _bucket_sampling(int                       dim,
 
 #if defined(HAVE_MPI)
 void
-fvm_hilbert_get_coord_extents(int                dim,
-                              size_t             n_coords,
-                              const fvm_coord_t  coords[],
-                              fvm_coord_t        g_extents[],
-                              MPI_Comm           comm)
+fvm_hilbert_get_coord_extents(int               dim,
+                              size_t            n_coords,
+                              const cs_coord_t  coords[],
+                              cs_coord_t        g_extents[],
+                              MPI_Comm          comm)
 #else
 void
-fvm_hilbert_get_coord_extents(int                dim,
-                              size_t             n_coords,
-                              const fvm_coord_t  coords[],
-                              fvm_coord_t        g_extents[])
+fvm_hilbert_get_coord_extents(int               dim,
+                              size_t            n_coords,
+                              const cs_coord_t  coords[],
+                              cs_coord_t        g_extents[])
 #endif
 {
   size_t  i, j;
-  fvm_coord_t d[3];
-  fvm_coord_t d_max = 0.0;
+  cs_coord_t d[3];
+  cs_coord_t d_max = 0.0;
   const double epsilon = 1e-10;
 
   /* Get global min/max coordinates */
@@ -1246,13 +1246,13 @@ fvm_hilbert_get_coord_extents(int                dim,
 
 void
 fvm_hilbert_encode_coords(int                 dim,
-                          const fvm_coord_t   extents[],
-                          fvm_lnum_t          n_coords,
-                          const fvm_coord_t   coords[],
+                          const cs_coord_t    extents[],
+                          cs_lnum_t           n_coords,
+                          const cs_coord_t    coords[],
                           fvm_hilbert_code_t  h_code[])
 {
-  fvm_lnum_t i, j;
-  fvm_coord_t s[3], d[3], n[3];
+  cs_lnum_t i, j;
+  cs_coord_t s[3], d[3], n[3];
 
   for (i = 0; i < dim; i++) {
     s[i] = extents[i];
@@ -1300,11 +1300,11 @@ fvm_hilbert_encode_coords(int                 dim,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_hilbert_local_order(fvm_lnum_t                n_codes,
+fvm_hilbert_local_order(cs_lnum_t                 n_codes,
                         const fvm_hilbert_code_t  hilbert_codes[],
-                        fvm_lnum_t                order[])
+                        cs_lnum_t                 order[])
 {
-  fvm_lnum_t  i, tmp;
+  cs_lnum_t   i, tmp;
 
   assert(n_codes == 0 || hilbert_codes != NULL);
   assert(n_codes == 0 || order != NULL);
@@ -1345,13 +1345,13 @@ fvm_hilbert_local_order(fvm_lnum_t                n_codes,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_hilbert_local_order_coords(int                 dim,
-                               const fvm_coord_t   extents[],
-                               fvm_lnum_t          n_coords,
-                               const fvm_coord_t   coords[],
-                               fvm_lnum_t          order[])
+fvm_hilbert_local_order_coords(int                dim,
+                               const cs_coord_t   extents[],
+                               cs_lnum_t          n_coords,
+                               const cs_coord_t   coords[],
+                               cs_lnum_t          order[])
 {
-  fvm_lnum_t  i, tmp;
+  cs_lnum_t   i, tmp;
 
   assert(n_coords == 0 || coords != NULL);
   assert(n_coords == 0 || order != NULL);
@@ -1454,10 +1454,10 @@ fvm_hilbert_quantile_search(size_t              n_quantiles,
 
 double
 fvm_hilbert_build_rank_index(int                       dim,
-                             fvm_lnum_t                n_codes,
+                             cs_lnum_t                 n_codes,
                              const fvm_hilbert_code_t  hilbert_code[],
-                             const fvm_lnum_t          weight[],
-                             const fvm_lnum_t          order[],
+                             const cs_lnum_t           weight[],
+                             const cs_lnum_t           order[],
                              fvm_hilbert_code_t        rank_index[],
                              MPI_Comm                  comm)
 {

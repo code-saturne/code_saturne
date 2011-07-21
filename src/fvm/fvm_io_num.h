@@ -116,8 +116,8 @@ extern const char  *fvm_io_num_sfc_type_name[];
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create(const fvm_lnum_t  parent_entity_number[],
-                  const fvm_gnum_t  parent_global_number[],
+fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
+                  const cs_gnum_t   parent_global_number[],
                   const size_t      n_entities,
                   const int         share_parent_global);
 
@@ -138,8 +138,8 @@ fvm_io_num_create(const fvm_lnum_t  parent_entity_number[],
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_shared(const fvm_gnum_t  global_number[],
-                         fvm_gnum_t        global_count,
+fvm_io_num_create_shared(const cs_gnum_t   global_number[],
+                         cs_gnum_t         global_count,
                          size_t            n_entities);
 
 /*----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ fvm_io_num_create_shared(const fvm_gnum_t  global_number[],
 
 fvm_io_num_t *
 fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
-                           const fvm_lnum_t     n_sub_entities[]);
+                           const cs_lnum_t      n_sub_entities[]);
 
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure based on a strided adjacency.
@@ -179,8 +179,8 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_adj_s(const fvm_lnum_t  parent_entity_number[],
-                             const fvm_gnum_t  adjacency[],
+fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
+                             const cs_gnum_t   adjacency[],
                              size_t            n_entities,
                              size_t            stride);
 
@@ -202,10 +202,10 @@ fvm_io_num_create_from_adj_s(const fvm_lnum_t  parent_entity_number[],
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
-                             const fvm_lnum_t  index[],
-                             const fvm_gnum_t  adjacency[],
-                             fvm_lnum_t        n_entities);
+fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
+                             const cs_lnum_t   index[],
+                             const cs_gnum_t   adjacency[],
+                             cs_lnum_t         n_entities);
 
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure based on a space-filling curve.
@@ -225,10 +225,10 @@ fvm_io_num_create_from_adj_i(const fvm_lnum_t  parent_entity_number[],
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_sfc(const fvm_coord_t  coords[],
-                           int                dim,
-                           size_t             n_entities,
-                           fvm_io_num_sfc_t   sfc_type);
+fvm_io_num_create_from_sfc(const cs_coord_t  coords[],
+                           int               dim,
+                           size_t            n_entities,
+                           fvm_io_num_sfc_t  sfc_type);
 
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure based on a simple accumulation
@@ -268,7 +268,7 @@ fvm_io_num_destroy(fvm_io_num_t  * this_io_num);
  *  local number of associated entities
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 fvm_io_num_get_local_count(const fvm_io_num_t  *const this_io_num);
 
 /*----------------------------------------------------------------------------
@@ -282,7 +282,7 @@ fvm_io_num_get_local_count(const fvm_io_num_t  *const this_io_num);
  *  global number of associated entities
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_io_num_get_global_count(const fvm_io_num_t  *const this_io_num);
 
 /*----------------------------------------------------------------------------
@@ -296,7 +296,7 @@ fvm_io_num_get_global_count(const fvm_io_num_t  *const this_io_num);
  *  (1 to n numbering)
  *----------------------------------------------------------------------------*/
 
-const fvm_gnum_t *
+const cs_gnum_t *
 fvm_io_num_get_global_num(const fvm_io_num_t  *const this_io_num);
 
 /*----------------------------------------------------------------------------
@@ -313,9 +313,9 @@ fvm_io_num_get_global_num(const fvm_io_num_t  *const this_io_num);
  *   global number of sub-entities
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_io_num_global_sub_size(const fvm_io_num_t  *this_io_num,
-                           const fvm_lnum_t     n_sub_entities[]);
+                           const cs_lnum_t      n_sub_entities[]);
 
 /*----------------------------------------------------------------------------
  * Dump printout of a I/O numbering structure.

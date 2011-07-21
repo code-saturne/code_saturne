@@ -404,8 +404,8 @@ cs_user_postprocess_meshes(void)
        from those of group "3", (assuming no cell has both colors), as well as
        boundary faces of group "4". */
 
-    fvm_lnum_t n_i_faces = 0, n_b_faces = 0;
-    fvm_lnum_t *i_face_list = NULL, *b_face_list = NULL;
+    cs_lnum_t n_i_faces = 0, n_b_faces = 0;
+    cs_lnum_t *i_face_list = NULL, *b_face_list = NULL;
 
     const int n_writers = 1;
     const int writer_ids[] = {1};  /* Associate to writer 1 */
@@ -414,14 +414,14 @@ cs_user_postprocess_meshes(void)
 
     /* Allocate selection lists */
 
-    BFT_MALLOC(i_face_list, m->n_i_faces, fvm_lnum_t);
-    BFT_MALLOC(b_face_list, m->n_b_faces, fvm_lnum_t);
+    BFT_MALLOC(i_face_list, m->n_i_faces, cs_lnum_t);
+    BFT_MALLOC(b_face_list, m->n_b_faces, cs_lnum_t);
 
     /* Select interior faces */
 
     {
-      fvm_lnum_t i, face_id;
-      fvm_lnum_t n_families = 0;
+      cs_lnum_t i, face_id;
+      cs_lnum_t n_families = 0;
       cs_int_t *family_list = NULL;
       int *family_mask = NULL;
 
@@ -451,8 +451,8 @@ cs_user_postprocess_meshes(void)
 
         /* Adjacent cells  and flags */
 
-        fvm_lnum_t c1 = m->i_face_cells[face_id*2] - 1;
-        fvm_lnum_t c2 = m->i_face_cells[face_id*2 + 1] - 1;
+        cs_lnum_t c1 = m->i_face_cells[face_id*2] - 1;
+        cs_lnum_t c2 = m->i_face_cells[face_id*2 + 1] - 1;
 
         int iflag1 = family_mask[m->cell_family[c1]];
         int iflag2 = family_mask[m->cell_family[c2]];

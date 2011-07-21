@@ -75,9 +75,9 @@ BEGIN_C_DECLS
  *---------------------------------------------------------------------------*/
 
 void
-cs_sort_shell(cs_int_t  l,
-              cs_int_t  r,
-              cs_int_t  a[]);
+cs_sort_shell(cs_lnum_t  l,
+              cs_lnum_t  r,
+              cs_lnum_t  a[]);
 
 /*----------------------------------------------------------------------------
  * Sort a global array "a" between its left bound "l" and its right bound "r"
@@ -90,9 +90,9 @@ cs_sort_shell(cs_int_t  l,
  *---------------------------------------------------------------------------*/
 
 void
-cs_sort_gnum_shell(cs_int_t    l,
-                   cs_int_t    r,
-                   fvm_gnum_t  a[]);
+cs_sort_gnum_shell(cs_lnum_t  l,
+                   cs_lnum_t  r,
+                   cs_gnum_t  a[]);
 
 /*----------------------------------------------------------------------------
  * Sort an array "a" and apply the sort to its associated array "b" (local
@@ -107,10 +107,10 @@ cs_sort_gnum_shell(cs_int_t    l,
  *---------------------------------------------------------------------------*/
 
 void
-cs_sort_coupled_shell(cs_int_t   l,
-                      cs_int_t   r,
-                      cs_int_t   a[],
-                      cs_int_t   b[]);
+cs_sort_coupled_shell(cs_lnum_t  l,
+                      cs_lnum_t  r,
+                      cs_lnum_t  a[],
+                      cs_lnum_t  b[]);
 
 /*----------------------------------------------------------------------------
  * Sort an array "a" and apply the sort to its associated array "b" (local
@@ -125,10 +125,10 @@ cs_sort_coupled_shell(cs_int_t   l,
  *---------------------------------------------------------------------------*/
 
 void
-cs_sort_coupled_gnum_shell(cs_int_t     l,
-                           cs_int_t     r,
-                           fvm_gnum_t   a[],
-                           fvm_gnum_t   b[]);
+cs_sort_coupled_gnum_shell(cs_lnum_t  l,
+                           cs_lnum_t  r,
+                           cs_gnum_t  a[],
+                           cs_gnum_t  b[]);
 
 /*---------------------------------------------------------------------------*/
 

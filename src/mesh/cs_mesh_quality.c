@@ -140,10 +140,10 @@ _compute_local_minmax(cs_int_t         n_vals,
  *----------------------------------------------------------------------------*/
 
 static void
-_display_histograms(int         n_steps,
-                    cs_real_t   var_min,
-                    cs_real_t   var_max,
-                    fvm_gnum_t  count[])
+_display_histograms(int        n_steps,
+                    cs_real_t  var_min,
+                    cs_real_t  var_max,
+                    cs_gnum_t  count[])
 {
   int  i, j;
   double var_step;
@@ -152,13 +152,13 @@ _display_histograms(int         n_steps,
 
   if (cs_glob_n_ranks > 1) {
 
-    fvm_gnum_t _g_count[CS_MESH_QUALITY_N_SUBS];
-    fvm_gnum_t *g_count = _g_count;
+    cs_gnum_t _g_count[CS_MESH_QUALITY_N_SUBS];
+    cs_gnum_t *g_count = _g_count;
 
     if (n_steps > CS_MESH_QUALITY_N_SUBS)
-      BFT_MALLOC(g_count, n_steps, fvm_gnum_t);
+      BFT_MALLOC(g_count, n_steps, cs_gnum_t);
 
-    MPI_Allreduce(count, g_count, n_steps, FVM_MPI_GNUM, MPI_SUM,
+    MPI_Allreduce(count, g_count, n_steps, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
 
     for (i = 0; i < n_steps; i++)
@@ -215,7 +215,7 @@ _histogram(cs_int_t         n_vals,
   cs_real_t  step;
   cs_real_t  max, min, _max, _min;
 
-  fvm_gnum_t count[CS_MESH_QUALITY_N_SUBS];
+  cs_gnum_t count[CS_MESH_QUALITY_N_SUBS];
   const int  n_steps = CS_MESH_QUALITY_N_SUBS;
 
   assert (sizeof(double) == sizeof(cs_real_t));
@@ -287,7 +287,7 @@ _int_face_histogram(const cs_mesh_t  *mesh,
   cs_real_t  step;
   cs_real_t  max, min, _max, _min;
 
-  fvm_gnum_t count[CS_MESH_QUALITY_N_SUBS];
+  cs_gnum_t count[CS_MESH_QUALITY_N_SUBS];
   const int  n_steps = CS_MESH_QUALITY_N_SUBS;
 
   assert (sizeof (double) == sizeof (cs_real_t));

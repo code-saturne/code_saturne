@@ -125,15 +125,15 @@ typedef struct
  *----------------------------------------------------------------------------*/
 
 static void
-_min_gnum_face(fvm_gnum_t  *face_gnum,
-               int         *face_type,
-               double       face_coo[3])
+_min_gnum_face(cs_gnum_t  *face_gnum,
+               int        *face_type,
+               double      face_coo[3])
 {
 #if defined(HAVE_MPI)
 
   /* local variables */
 
-  fvm_gnum_t  min_face_gnum;
+  cs_gnum_t  min_face_gnum;
   _mpi_int_int_t  val_in, val_min;
 
   /* Return immediately if not running under MPI */
@@ -143,9 +143,9 @@ _min_gnum_face(fvm_gnum_t  *face_gnum,
 
   /* Obtain the lowest global face number with an error; use minloc
      with a marker, rather than with a global number directly, in
-     case fvm_gnum_t is larger than an integer) */
+     case cs_gnum_t is larger than an integer) */
 
-  MPI_Allreduce(face_gnum, &min_face_gnum, 1, FVM_MPI_GNUM, MPI_MIN,
+  MPI_Allreduce(face_gnum, &min_face_gnum, 1, CS_MPI_GNUM, MPI_MIN,
                 cs_glob_mpi_comm);
 
   if (*face_gnum == min_face_gnum)
@@ -162,13 +162,13 @@ _min_gnum_face(fvm_gnum_t  *face_gnum,
   if (val_min.rank > 0) {
 
     if (val_min.rank == cs_glob_rank_id) {
-      MPI_Send(face_gnum, 1, FVM_MPI_GNUM, 0, 1, cs_glob_mpi_comm);
+      MPI_Send(face_gnum, 1, CS_MPI_GNUM, 0, 1, cs_glob_mpi_comm);
       MPI_Send(face_type, 1, MPI_INT, 0, 2, cs_glob_mpi_comm);
       MPI_Send(face_coo, 3, MPI_DOUBLE, 0, 3, cs_glob_mpi_comm);
     }
     else if (cs_glob_rank_id == 0) {
       MPI_Status status;
-      MPI_Recv(face_gnum, 1, FVM_MPI_GNUM, val_min.rank, 1,
+      MPI_Recv(face_gnum, 1, CS_MPI_GNUM, val_min.rank, 1,
                cs_glob_mpi_comm, &status);
       MPI_Recv(face_type, 1, MPI_INT, val_min.rank, 2,
                cs_glob_mpi_comm, &status);
@@ -233,16 +233,16 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 {
   /* local variables */
 
-  fvm_lnum_t  face_id;
+  cs_lnum_t  face_id;
 
-  fvm_gnum_t  n_errors = 0;
+  cs_gnum_t  n_errors = 0;
 
   unsigned char  *face_marker = NULL;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mesh_q = cs_glob_mesh_quantities;
 
-  const fvm_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
 
   /* Prepare face marker */
 
@@ -254,9 +254,9 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
   /* Count and mark faces with problems */
 
   {
-    int         err_face_type;
-    cs_real_t   err_face_coo[3];
-    fvm_gnum_t  err_face_gnum = 0;
+    int        err_face_type;
+    cs_real_t  err_face_coo[3];
+    cs_gnum_t  err_face_gnum = 0;
 
     const cs_int_t  *_bc_type = bc_type;
 
@@ -266,7 +266,7 @@ cs_boundary_conditions_error(const cs_int_t  bc_type[])
 
       if (_bc_type[face_id] < 1) {
 
-        fvm_gnum_t face_gnum;
+        cs_gnum_t face_gnum;
 
         if (mesh->global_b_face_num != NULL)
           face_gnum = mesh->global_b_face_num[face_id];

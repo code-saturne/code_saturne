@@ -87,25 +87,25 @@ extern "C" {
 
 static void
 _extrude_strided_section(fvm_nodal_section_t  * this_section,
-                         const fvm_lnum_t       n_layers)
+                         const cs_lnum_t        n_layers)
 {
   int stride;
   size_t  connectivity_size;
   int k;
-  fvm_lnum_t  i, j;
-  fvm_lnum_t  base_vertex_id;
-  fvm_lnum_t  element_shift, layer_shift, bottom_shift, top_shift;
-  fvm_lnum_t *vertex_num;
+  cs_lnum_t   i, j;
+  cs_lnum_t   base_vertex_id;
+  cs_lnum_t   element_shift, layer_shift, bottom_shift, top_shift;
+  cs_lnum_t *vertex_num;
 
-  fvm_lnum_t n_elements = this_section->n_elements;
-  const fvm_lnum_t  n_planes = n_layers + 1;
+  cs_lnum_t n_elements = this_section->n_elements;
+  const cs_lnum_t   n_planes = n_layers + 1;
 
   /* Build new connectivity */
 
   stride = this_section->stride * 2;
   connectivity_size = this_section->n_elements * stride * n_layers;
 
-  BFT_MALLOC(vertex_num, connectivity_size, fvm_lnum_t);
+  BFT_MALLOC(vertex_num, connectivity_size, cs_lnum_t);
   this_section->connectivity_size = 0;
 
   for (i = 0; i < this_section->n_elements; i++) {
@@ -148,18 +148,18 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
 
     /* Create new global numbering */
 
-    fvm_gnum_t  *global_element_num = NULL;
+    cs_gnum_t   *global_element_num = NULL;
 
-    const fvm_gnum_t *old_global_element_num
+    const cs_gnum_t *old_global_element_num
       = fvm_io_num_get_global_num(this_section->global_element_num);
 
-    BFT_MALLOC(global_element_num, n_elements*n_layers, fvm_gnum_t);
+    BFT_MALLOC(global_element_num, n_elements*n_layers, cs_gnum_t);
 
     for (i = 0; i < n_elements; i++) {
-      fvm_gnum_t  base_num = (  (old_global_element_num[i]-1)
-                              * (fvm_gnum_t)n_layers) + 1;
+      cs_gnum_t   base_num = (  (old_global_element_num[i]-1)
+                              * (cs_gnum_t)n_layers) + 1;
       for (j = 0; j < n_layers; j++)
-        global_element_num[i*n_layers + j] = base_num + (fvm_gnum_t)j;
+        global_element_num[i*n_layers + j] = base_num + (cs_gnum_t)j;
     }
 
     /* Remplace old global number with new */
@@ -220,21 +220,21 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_extrude(fvm_nodal_t        *const this_nodal,
-                  const fvm_lnum_t          n_layers,
-                  const fvm_coord_t         extrusion_vectors[],
-                  const fvm_coord_t         distribution[])
+fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
+                  const cs_lnum_t     n_layers,
+                  const cs_coord_t    extrusion_vectors[],
+                  const cs_coord_t    distribution[])
 {
   int dim, k;
-  fvm_lnum_t  i, j;
-  fvm_lnum_t  n_vertices;
-  fvm_lnum_t  vertex_shift;
-  fvm_coord_t  *_distrib = NULL;
-  fvm_coord_t  *new_coords = NULL;
+  cs_lnum_t   i, j;
+  cs_lnum_t   n_vertices;
+  cs_lnum_t   vertex_shift;
+  cs_coord_t  *_distrib = NULL;
+  cs_coord_t  *new_coords = NULL;
 
-  const fvm_lnum_t  n_planes = n_layers + 1;
-  const fvm_coord_t  *distrib = distribution;
-  const fvm_coord_t  *old_coords = NULL;
+  const cs_lnum_t   n_planes = n_layers + 1;
+  const cs_coord_t  *distrib = distribution;
+  const cs_coord_t  *old_coords = NULL;
 
   assert(this_nodal != NULL);
   assert(extrusion_vectors != NULL || this_nodal->n_vertices == 0);
@@ -256,7 +256,7 @@ fvm_nodal_extrude(fvm_nodal_t        *const this_nodal,
   /* Set distribution if necessary */
 
   if (distribution == NULL) {
-    BFT_MALLOC(_distrib, n_planes, fvm_coord_t);
+    BFT_MALLOC(_distrib, n_planes, cs_coord_t);
     for (i = 0; i < n_planes; i++)
       _distrib[i] = ((double)i) / ((double)n_layers);
     distrib = _distrib;
@@ -267,7 +267,7 @@ fvm_nodal_extrude(fvm_nodal_t        *const this_nodal,
   n_vertices = this_nodal->n_vertices;
   old_coords = this_nodal->vertex_coords;
 
-  BFT_MALLOC(new_coords, n_planes*n_vertices*dim, fvm_coord_t);
+  BFT_MALLOC(new_coords, n_planes*n_vertices*dim, cs_coord_t);
 
   if (this_nodal->_parent_vertex_num != NULL) {
 
@@ -318,18 +318,18 @@ fvm_nodal_extrude(fvm_nodal_t        *const this_nodal,
 
     /* Create new global numbering */
 
-    fvm_gnum_t  *global_vertex_num = NULL;
+    cs_gnum_t   *global_vertex_num = NULL;
 
-    const fvm_gnum_t *old_global_vertex_num
+    const cs_gnum_t *old_global_vertex_num
       = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
 
-    BFT_MALLOC(global_vertex_num, n_planes*n_vertices, fvm_gnum_t);
+    BFT_MALLOC(global_vertex_num, n_planes*n_vertices, cs_gnum_t);
 
     for (i = 0; i < n_vertices; i++) {
-      fvm_gnum_t  base_num = (  (old_global_vertex_num[i]-1)
-                              * (fvm_gnum_t)n_planes) + 1;
+      cs_gnum_t   base_num = (  (old_global_vertex_num[i]-1)
+                              * (cs_gnum_t)n_planes) + 1;
       for (j = 0; j < n_planes; j++)
-        global_vertex_num[i*n_planes + j] = base_num + (fvm_gnum_t)j;
+        global_vertex_num[i*n_planes + j] = base_num + (cs_gnum_t)j;
     }
 
     /* Remplace old global number with new */

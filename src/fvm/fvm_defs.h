@@ -99,18 +99,6 @@ typedef enum {
 
 } fvm_datatype_t;
 
-/*----------------------------------------------------------------------------
- * Basic types used by FVM.
- * They may be modified here to better map to a given library, with the
- * following constraints:
- *  - fvm_lnum_t must be signed
- *  - fvm_gnum_t may be signed or unsigned
- *----------------------------------------------------------------------------*/
-
-typedef cs_gnum_t   fvm_gnum_t;     /* Global integer index or number */
-typedef cs_lnum_t   fvm_lnum_t;     /* Local integer index or number */
-typedef cs_coord_t  fvm_coord_t;    /* Real number (coordinate value) */
-
 /*=============================================================================
  * Static global variables
  *============================================================================*/

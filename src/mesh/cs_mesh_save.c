@@ -115,10 +115,10 @@ _write_mesh_perio_metadata(const cs_mesh_t  *mesh,
   char section_name[32];
 
   const fvm_datatype_t lnum_type
-    = (sizeof(fvm_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+    = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
 
   double  matrix[3][4];
-  fvm_lnum_t perio_type = 0;
+  cs_lnum_t perio_type = 0;
 
   const int tr_id = (perio_num - 1)*2;
   const fvm_periodicity_t *perio = mesh->periodicity;
@@ -162,29 +162,29 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
                        fvm_part_to_block_t       *d,
                        cs_io_t                   *pp_out)
 {
-  fvm_lnum_t i, j, k;
-  fvm_gnum_t block_size, g_vtx_connect_size, n_block_faces, n_face_vertices;
-  fvm_gnum_t idx_range[4];
+  cs_lnum_t i, j, k;
+  cs_gnum_t block_size, g_vtx_connect_size, n_block_faces, n_face_vertices;
+  cs_gnum_t idx_range[4];
 
-  fvm_lnum_t *face_vtx_idx = NULL, *_face_vtx_idx = NULL;
-  fvm_gnum_t *face_vtx_idx_g = NULL;
-  fvm_gnum_t *face_vtx_g = NULL, *_face_vtx_g = NULL;
+  cs_lnum_t *face_vtx_idx = NULL, *_face_vtx_idx = NULL;
+  cs_gnum_t *face_vtx_idx_g = NULL;
+  cs_gnum_t *face_vtx_g = NULL, *_face_vtx_g = NULL;
 
-  const fvm_lnum_t n_i_faces = mesh->n_i_faces;
-  const fvm_lnum_t n_b_faces = mesh->n_b_faces;
-  const fvm_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
 
-  const fvm_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
+  const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
   const fvm_datatype_t gnum_type
-    = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
 
   /* Face -> vertex connectivity */
   /*-----------------------------*/
 
-  BFT_MALLOC(face_vtx_idx, n_faces + 1, fvm_lnum_t);
+  BFT_MALLOC(face_vtx_idx, n_faces + 1, cs_lnum_t);
   BFT_MALLOC(_face_vtx_idx,
              (face_bi.gnum_range[1] - face_bi.gnum_range[0]) + 1,
-             fvm_lnum_t);
+             cs_lnum_t);
 
   face_vtx_idx[0] = 0;
   for (i = 0; i < n_i_faces; i++) {
@@ -201,15 +201,15 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
   /* Copy index from block to global values */
 
   n_block_faces = (face_bi.gnum_range[1] - face_bi.gnum_range[0]);
-  BFT_MALLOC(face_vtx_idx_g, n_block_faces+ 1, fvm_gnum_t);
+  BFT_MALLOC(face_vtx_idx_g, n_block_faces+ 1, cs_gnum_t);
 
   block_size = _face_vtx_idx[n_block_faces];
-  MPI_Scan(&block_size, face_vtx_idx_g, 1, FVM_MPI_GNUM, MPI_SUM,
+  MPI_Scan(&block_size, face_vtx_idx_g, 1, CS_MPI_GNUM, MPI_SUM,
            cs_glob_mpi_comm);
   face_vtx_idx_g[0] -= block_size;
   face_vtx_idx_g[0] += 1;
 
-  for (i = 0; i < (fvm_lnum_t)n_block_faces; i++) {
+  for (i = 0; i < (cs_lnum_t)n_block_faces; i++) {
     n_face_vertices = _face_vtx_idx[i+1] - _face_vtx_idx[i];
     face_vtx_idx_g[i+1] = face_vtx_idx_g[i] + n_face_vertices;
   }
@@ -230,7 +230,7 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
   idx_range[3] = face_vtx_idx_g[0] + block_size;
 
   MPI_Allreduce(face_vtx_idx_g + n_block_faces, &g_vtx_connect_size, 1,
-                FVM_MPI_GNUM, MPI_MAX, cs_glob_mpi_comm);
+                CS_MPI_GNUM, MPI_MAX, cs_glob_mpi_comm);
   g_vtx_connect_size -= 1;
 
   /* Now write buffer */
@@ -252,7 +252,7 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
 
   BFT_MALLOC(face_vtx_g,
              mesh->i_face_vtx_connect_size + mesh->b_face_vtx_connect_size,
-             fvm_gnum_t);
+             cs_gnum_t);
 
   k = 0;
   for (i = 0; i < n_i_faces; i++) {
@@ -266,7 +266,7 @@ _write_face_vertices_g(const cs_mesh_t           *mesh,
         = mesh->global_vtx_num[mesh->b_face_vtx_lst[j - 1] - 1];
   }
 
-  BFT_MALLOC(_face_vtx_g, block_size, fvm_gnum_t);
+  BFT_MALLOC(_face_vtx_g, block_size, cs_gnum_t);
 
   fvm_part_to_block_copy_indexed(d,
                                  gnum_type,
@@ -305,30 +305,30 @@ static void
 _write_mesh_data_g(const cs_mesh_t  *mesh,
                    cs_io_t          *pp_out)
 {
-  fvm_lnum_t i, j;
+  cs_lnum_t i, j;
 
   fvm_part_to_block_info_t cell_bi;
   fvm_part_to_block_info_t face_bi;
   fvm_part_to_block_info_t vtx_bi;
   fvm_part_to_block_t *d = NULL;
 
-  fvm_lnum_t *_cell_gc_id = NULL, *_face_gc_id = NULL;
-  fvm_lnum_t *face_gc_id = NULL;
-  fvm_gnum_t *cell_gnum = NULL, *face_gnum = NULL;
-  fvm_gnum_t *face_cell_g = NULL, *_face_cell_g = NULL;
+  cs_lnum_t *_cell_gc_id = NULL, *_face_gc_id = NULL;
+  cs_lnum_t *face_gc_id = NULL;
+  cs_gnum_t *cell_gnum = NULL, *face_gnum = NULL;
+  cs_gnum_t *face_cell_g = NULL, *_face_cell_g = NULL;
   cs_real_t *_vtx_coords = NULL;
 
-  const fvm_lnum_t n_i_faces = mesh->n_i_faces;
-  const fvm_lnum_t n_b_faces = mesh->n_b_faces;
-  const fvm_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
 
-  const fvm_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
+  const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
   const fvm_datatype_t real_type
     = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
   const fvm_datatype_t gnum_type
-    = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
   const fvm_datatype_t lnum_type
-    = (sizeof(fvm_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+    = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
 
   /* Distribute cell group class info to blocks (write later) */
   /*----------------------------------------------------------*/
@@ -341,7 +341,7 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
 
   BFT_MALLOC(_cell_gc_id,
              (cell_bi.gnum_range[1] - cell_bi.gnum_range[0]),
-             fvm_lnum_t);
+             cs_lnum_t);
 
   d = fvm_part_to_block_create_by_gnum(cs_glob_mpi_comm,
                                        cell_bi,
@@ -359,7 +359,7 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
   /* Build global face part to block distribution structures */
   /*---------------------------------------------------------*/
 
-  BFT_MALLOC(face_gnum, n_faces, fvm_gnum_t);
+  BFT_MALLOC(face_gnum, n_faces, cs_gnum_t);
 
   for (i = 0; i < n_i_faces; i++)
     face_gnum[i] = mesh->global_i_face_num[i];
@@ -388,7 +388,7 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
 
   cell_gnum = cs_mesh_get_cell_gnum(mesh, 1);
 
-  BFT_MALLOC(face_cell_g, n_faces*2, fvm_gnum_t);
+  BFT_MALLOC(face_cell_g, n_faces*2, cs_gnum_t);
 
   for (i = 0; i < n_i_faces; i++) {
     face_cell_g[i*2] = cell_gnum[mesh->i_face_cells[i*2] - 1];
@@ -405,7 +405,7 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
 
   BFT_MALLOC(_face_cell_g,
              (face_bi.gnum_range[1] - face_bi.gnum_range[0]) * 2,
-             fvm_gnum_t);
+             cs_gnum_t);
 
   fvm_part_to_block_copy_array(d,
                                gnum_type,
@@ -448,10 +448,10 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
 
   /* Face group classes */
 
-  BFT_MALLOC(face_gc_id, n_faces, fvm_lnum_t);
+  BFT_MALLOC(face_gc_id, n_faces, cs_lnum_t);
   BFT_MALLOC(_face_gc_id,
              (face_bi.gnum_range[1] - face_bi.gnum_range[0]),
-             fvm_lnum_t);
+             cs_lnum_t);
 
   for (i = 0; i < n_i_faces; i++)
     face_gc_id[i] = mesh->i_face_family[i];
@@ -542,21 +542,21 @@ _write_mesh_data_g(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_write_mesh_perio_data_g(int               perio_num,
-                         fvm_lnum_t        n_perio_couples,
-                         fvm_gnum_t        perio_couples[],
-                         cs_io_t          *pp_out)
+_write_mesh_perio_data_g(int         perio_num,
+                         cs_lnum_t   n_perio_couples,
+                         cs_gnum_t   perio_couples[],
+                         cs_io_t    *pp_out)
 {
   char section_name[32];
   fvm_part_to_block_info_t bi;
 
-  fvm_gnum_t  n_g_couples = 0;
-  fvm_gnum_t  *_perio_couples = NULL;
-  const fvm_gnum_t  *couple_g_num = NULL;
+  cs_gnum_t  n_g_couples = 0;
+  cs_gnum_t  *_perio_couples = NULL;
+  const cs_gnum_t  *couple_g_num = NULL;
   fvm_part_to_block_t *d = NULL;
 
   const fvm_datatype_t gnum_type
-    = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
 
   /* Create global couple numbering */
 
@@ -583,7 +583,7 @@ _write_mesh_perio_data_g(int               perio_num,
 
   BFT_MALLOC(_perio_couples,
              (bi.gnum_range[1] - bi.gnum_range[0]) * 2,
-             fvm_gnum_t);
+             cs_gnum_t);
 
   fvm_part_to_block_copy_array(d,
                                gnum_type,
@@ -627,30 +627,30 @@ static void
 _write_mesh_data_l(const cs_mesh_t  *mesh,
                    cs_io_t          *pp_out)
 {
-  fvm_lnum_t i, j, k, l, n_face_vertices, cell_id_0, cell_id_1;
-  fvm_gnum_t g_vtx_connect_size;
+  cs_lnum_t i, j, k, l, n_face_vertices, cell_id_0, cell_id_1;
+  cs_gnum_t g_vtx_connect_size;
 
-  fvm_lnum_t *cell_gc_id = NULL, *face_gc_id = NULL;
-  fvm_gnum_t *face_vtx_idx_g = NULL, *face_vtx_g = NULL;
-  fvm_gnum_t *face_cell_g = NULL;
-  fvm_lnum_t *order = NULL, *i_order = NULL, *b_order = NULL;
+  cs_lnum_t *cell_gc_id = NULL, *face_gc_id = NULL;
+  cs_gnum_t *face_vtx_idx_g = NULL, *face_vtx_g = NULL;
+  cs_gnum_t *face_cell_g = NULL;
+  cs_lnum_t *order = NULL, *i_order = NULL, *b_order = NULL;
   cs_real_t *vtx_coords = NULL;
 
-  const fvm_lnum_t n_i_faces = mesh->n_i_faces;
-  const fvm_lnum_t n_b_faces = mesh->n_b_faces;
-  const fvm_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
+  const cs_lnum_t n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_faces = mesh->n_i_faces + mesh->n_b_faces;
 
-  const fvm_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
+  const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
   const fvm_datatype_t real_type
     = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
   const fvm_datatype_t gnum_type
-    = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
   const fvm_datatype_t lnum_type
-    = (sizeof(fvm_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+    = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
 
   /* Prepare cell group classes */
 
-  BFT_MALLOC(cell_gc_id, mesh->n_cells, fvm_lnum_t);
+  BFT_MALLOC(cell_gc_id, mesh->n_cells, cs_lnum_t);
 
   order = fvm_order_local(NULL, mesh->global_cell_num, mesh->n_cells);
   for (i = 0; i < mesh->n_cells; i++)
@@ -665,7 +665,7 @@ _write_mesh_data_l(const cs_mesh_t  *mesh,
 
   /* Face -> cell connectivity (excluding periodic values )*/
 
-  BFT_MALLOC(face_cell_g, n_faces*2, fvm_gnum_t);
+  BFT_MALLOC(face_cell_g, n_faces*2, cs_gnum_t);
 
   if (mesh->global_cell_num != NULL) {
 
@@ -744,7 +744,7 @@ _write_mesh_data_l(const cs_mesh_t  *mesh,
 
   /* Face group classes */
 
-  BFT_MALLOC(face_gc_id, n_faces, fvm_lnum_t);
+  BFT_MALLOC(face_gc_id, n_faces, cs_lnum_t);
 
   for (i = 0; i < n_i_faces; i++)
     face_gc_id[i] = mesh->i_face_family[i_order[i]];
@@ -769,7 +769,7 @@ _write_mesh_data_l(const cs_mesh_t  *mesh,
   /* Face -> vertex connectivity */
   /*-----------------------------*/
 
-  BFT_MALLOC(face_vtx_idx_g, n_faces + 1, fvm_gnum_t);
+  BFT_MALLOC(face_vtx_idx_g, n_faces + 1, cs_gnum_t);
 
   face_vtx_idx_g[0] = 1;
   for (i = 0; i < n_i_faces; i++) {
@@ -803,7 +803,7 @@ _write_mesh_data_l(const cs_mesh_t  *mesh,
   g_vtx_connect_size = (  mesh->i_face_vtx_connect_size
                         + mesh->b_face_vtx_connect_size);
 
-  BFT_MALLOC(face_vtx_g, g_vtx_connect_size, fvm_gnum_t);
+  BFT_MALLOC(face_vtx_g, g_vtx_connect_size, cs_gnum_t);
 
   if (mesh->global_vtx_num != NULL) {
     l = 0;
@@ -888,15 +888,15 @@ _write_mesh_data_l(const cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_write_mesh_perio_data_l(int               perio_num,
-                         fvm_lnum_t        n_perio_couples,
-                         fvm_gnum_t        perio_couples[],
-                         cs_io_t          *pp_out)
+_write_mesh_perio_data_l(int         perio_num,
+                         cs_lnum_t   n_perio_couples,
+                         cs_gnum_t   perio_couples[],
+                         cs_io_t    *pp_out)
 {
   char section_name[32];
 
   const fvm_datatype_t gnum_type
-    = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
 
   /* Write face couples */
 
@@ -930,22 +930,22 @@ void
 cs_mesh_save(const cs_mesh_t  *mesh,
              const char       *filename)
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
   long  echo = CS_IO_ECHO_OPEN_CLOSE;
-  fvm_gnum_t g_i_face_vertices_size = 0, g_b_face_vertices_size = 0;
-  fvm_gnum_t g_face_vertices_size = 0;
+  cs_gnum_t g_i_face_vertices_size = 0, g_b_face_vertices_size = 0;
+  cs_gnum_t g_face_vertices_size = 0;
 
-  fvm_gnum_t  *n_g_perio_faces = NULL;
-  fvm_lnum_t  *n_perio_faces = NULL;
-  fvm_gnum_t  **perio_faces = NULL;
+  cs_gnum_t  *n_g_perio_faces = NULL;
+  cs_lnum_t  *n_perio_faces = NULL;
+  cs_gnum_t  **perio_faces = NULL;
   cs_io_t  *pp_out = NULL;
 
-  const fvm_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
+  const cs_gnum_t n_g_faces = mesh->n_g_i_faces + mesh->n_g_b_faces;
   const fvm_datatype_t gnum_type
-    = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
   const fvm_datatype_t lnum_type
-    = (sizeof(fvm_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+    = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
 
   /* Precompute some sizes */
 
@@ -965,21 +965,21 @@ cs_mesh_save(const cs_mesh_t  *mesh,
        ranks of the local counts. */
 
   if (mesh->n_init_perio > 0)
-    BFT_MALLOC(n_g_perio_faces, mesh->n_init_perio, fvm_gnum_t);
+    BFT_MALLOC(n_g_perio_faces, mesh->n_init_perio, cs_gnum_t);
 
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
-    fvm_gnum_t *_n_l_perio_faces = NULL;
+    cs_gnum_t *_n_l_perio_faces = NULL;
 
-    BFT_MALLOC(_n_l_perio_faces, mesh->n_init_perio, fvm_gnum_t);
+    BFT_MALLOC(_n_l_perio_faces, mesh->n_init_perio, cs_gnum_t);
 
     for (i = 0; i < mesh->n_init_perio; i++)
       _n_l_perio_faces[i] = n_perio_faces[i];
 
     MPI_Allreduce(_n_l_perio_faces, n_g_perio_faces, mesh->n_init_perio,
-                  FVM_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+                  CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
 
     BFT_FREE(_n_l_perio_faces);
   }

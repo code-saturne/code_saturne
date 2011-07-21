@@ -53,14 +53,14 @@ extern "C" {
 
 typedef struct {
 
-  fvm_gnum_t   gnum_range[2];  /* Start and past-the-end global numbers
+  cs_gnum_t    gnum_range[2];  /* Start and past-the-end global numbers
                                   associated with local block */
   int          n_ranks;        /* Number of active ranks */
   int          rank_step;      /* Step between active block ranks
                                   (1 in basic case, > 1 if we seek to
                                   avoid too small buffers and agglomerate
                                   blocks on only a few ranks) */
-  fvm_lnum_t   block_size;     /* Basic block size */
+  cs_lnum_t    block_size;     /* Basic block size */
 
 } fvm_block_dist_info_t;
 
@@ -86,8 +86,8 @@ fvm_block_dist_info_t
 fvm_block_dist_compute_sizes(int         rank_id,
                              int         n_ranks,
                              int         min_rank_step,
-                             fvm_lnum_t  min_block_size,
-                             fvm_gnum_t  n_g_ents);
+                             cs_lnum_t   min_block_size,
+                             cs_gnum_t  n_g_ents);
 
 /*----------------------------------------------------------------------------
  * Compute block size and rank info for use with a block distribution
@@ -105,10 +105,10 @@ fvm_block_dist_compute_sizes(int         rank_id,
  *----------------------------------------------------------------------------*/
 
 fvm_block_dist_info_t
-fvm_block_dist_compute_sizes_nr(int         rank_id,
-                                int         n_ranks,
-                                int         n_block_ranks,
-                                fvm_gnum_t  n_g_ents);
+fvm_block_dist_compute_sizes_nr(int        rank_id,
+                                int        n_ranks,
+                                int        n_block_ranks,
+                                cs_gnum_t  n_g_ents);
 
 /*----------------------------------------------------------------------------*/
 

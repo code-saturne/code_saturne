@@ -1236,18 +1236,18 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
 
   int  request_count;
   int  distant_rank, n_interfaces;
-  fvm_lnum_t  id, ii, jj;
-  fvm_lnum_t  total_size;
+  cs_lnum_t  id, ii, jj;
+  cs_lnum_t  total_size;
 
-  fvm_lnum_t  count_size = 0;
-  fvm_lnum_t  tr_index_size = 0;
-  fvm_lnum_t  n_entities = 0;
+  cs_lnum_t  count_size = 0;
+  cs_lnum_t  tr_index_size = 0;
+  cs_lnum_t  n_entities = 0;
   cs_real_t  *buf = NULL, *send_buf = NULL, *recv_buf = NULL;
 
   MPI_Request  *request = NULL;
   MPI_Status  *status  = NULL;
 
-  const fvm_lnum_t  *local_num = NULL;
+  const cs_lnum_t  *local_num = NULL;
   const fvm_interface_t  *interface = NULL;
 
   /* Initialize and allocate */
@@ -1317,8 +1317,8 @@ cs_parall_interface_sr(fvm_interface_set_t  *interfaces,
     if (tr_index_size != 0) {
 
       int perio_id;
-      fvm_lnum_t kk = 0;
-      const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(interface);
+      cs_lnum_t kk = 0;
+      const cs_lnum_t *tr_index = fvm_interface_get_tr_index(interface);
       const int n_perio = (tr_index_size -2) / 2;
 
       for (ii = tr_index[0]; ii < tr_index[1]; ii++) {

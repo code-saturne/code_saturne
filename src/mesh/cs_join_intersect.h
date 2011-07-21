@@ -87,14 +87,14 @@ typedef struct {
 
   cs_int_t     n_edges;    /* Number of edges implied in an intersection */
 
-  fvm_gnum_t  *edge_gnum;  /* Global number of the related edges */
+  cs_gnum_t   *edge_gnum;  /* Global number of the related edges */
   cs_int_t    *index;      /* Indexed list of vertex num describing
                               intersections on a given edge without
                               vertices at the extremity and ordered
                               by curvilinear abscissa */
 
   cs_int_t    *vtx_lst;    /* List of new vertex num */
-  fvm_gnum_t  *vtx_glst;   /* List of new vertex global num */
+  cs_gnum_t   *vtx_glst;   /* List of new vertex global num */
   float       *abs_lst;    /* List of curvilinear abscissa */
 
   cs_int_t     max_sub_size;
@@ -236,7 +236,7 @@ cs_join_inter_edges_part_to_block(const cs_join_mesh_t         *mesh,
  *---------------------------------------------------------------------------*/
 
 void
-cs_join_inter_edges_block_to_part(fvm_gnum_t                    n_g_edges,
+cs_join_inter_edges_block_to_part(cs_gnum_t                     n_g_edges,
                                   const cs_join_inter_edges_t  *block,
                                   cs_join_inter_edges_t        *part);
 

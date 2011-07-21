@@ -563,8 +563,8 @@ _cell_part_histogram(size_t      n_cells,
   size_t j;
   double step;
 
-  fvm_lnum_t *n_part_cells;
-  fvm_lnum_t n_min, n_max;
+  cs_lnum_t *n_part_cells;
+  cs_lnum_t n_min, n_max;
   size_t count[10];
   int n_steps = 10;
 
@@ -573,7 +573,7 @@ _cell_part_histogram(size_t      n_cells,
 
   bft_printf(_("  Number of cells per domain (histogramm):\n"));
 
-  BFT_MALLOC(n_part_cells, n_parts, fvm_lnum_t);
+  BFT_MALLOC(n_part_cells, n_parts, cs_lnum_t);
 
   for (i = 0; i < n_parts; i++)
     n_part_cells[i] = 0;
@@ -584,10 +584,10 @@ _cell_part_histogram(size_t      n_cells,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-    fvm_lnum_t *n_part_cells_sum;
-    BFT_MALLOC(n_part_cells_sum, n_parts, fvm_lnum_t);
+    cs_lnum_t *n_part_cells_sum;
+    BFT_MALLOC(n_part_cells_sum, n_parts, cs_lnum_t);
     MPI_Allreduce(n_part_cells, n_part_cells_sum, n_parts,
-                  FVM_MPI_LNUM, MPI_SUM, cs_glob_mpi_comm);
+                  CS_MPI_LNUM, MPI_SUM, cs_glob_mpi_comm);
     BFT_FREE(n_part_cells);
     n_part_cells = n_part_cells_sum;
     n_part_cells_sum = NULL;
@@ -665,12 +665,12 @@ _cell_part_histogram(size_t      n_cells,
  * returns: value associated with section.
  *----------------------------------------------------------------------------*/
 
-static fvm_gnum_t
+static cs_gnum_t
 _read_global_count(cs_io_t             *inp,
                    int                  rec_id,
                    cs_io_sec_header_t  *header)
 {
-  fvm_gnum_t retval;
+  cs_gnum_t retval;
 
   assert(inp != NULL);
 
@@ -724,7 +724,7 @@ _read_adjacency_array(cs_io_t                         *inp,
                       int                              rec_id,
                       const fvm_block_to_part_info_t  *bi,
                       cs_io_sec_header_t              *header,
-                      fvm_gnum_t                      *adjacency)
+                      cs_gnum_t                       *adjacency)
 {
   assert(inp != NULL);
 
@@ -784,24 +784,24 @@ _read_adjacency_array(cs_io_t                         *inp,
 
 static void
 _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
-                           fvm_gnum_t                g_face_cells[],
-                           fvm_lnum_t                n_periodic_couples,
-                           const fvm_gnum_t          periodic_couples[],
+                           cs_gnum_t                 g_face_cells[],
+                           cs_lnum_t                 n_periodic_couples,
+                           const cs_gnum_t           periodic_couples[],
                            MPI_Comm                  comm)
 {
   int i;
-  fvm_lnum_t j;
+  cs_lnum_t j;
   size_t k;
 
   int n_ranks;
   int *send_count = NULL, *recv_count = NULL;
   int *send_displ = NULL, *recv_displ = NULL;
-  fvm_gnum_t *send_buf = NULL, *recv_buf = NULL, *send_adj = NULL;
+  cs_gnum_t *send_buf = NULL, *recv_buf = NULL, *send_adj = NULL;
 
   size_t n_send = 0, n_recv = 0;
 
   const int rank_step = bi.rank_step;
-  const fvm_lnum_t block_size = bi.block_size;
+  const cs_lnum_t block_size = bi.block_size;
 
   /* Initialization */
 
@@ -837,15 +837,15 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
 
   /* Now prepare data for request to matching cell */
 
-  BFT_MALLOC(send_buf, n_send, fvm_gnum_t);
-  BFT_MALLOC(recv_buf, n_recv, fvm_gnum_t);
+  BFT_MALLOC(send_buf, n_send, cs_gnum_t);
+  BFT_MALLOC(recv_buf, n_recv, cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
 
   for (j = 0; j < n_periodic_couples; j++) {
-    fvm_gnum_t f_id_0 = periodic_couples[j*2] - 1;
-    fvm_gnum_t f_id_1 = periodic_couples[j*2 + 1] - 1;
+    cs_gnum_t f_id_0 = periodic_couples[j*2] - 1;
+    cs_gnum_t f_id_1 = periodic_couples[j*2 + 1] - 1;
     int rank_0 = (f_id_0/block_size) * rank_step;
     int rank_1 = (f_id_1/block_size) * rank_step;
     send_buf[send_displ[rank_0] + send_count[rank_0]] = f_id_0 + 1;
@@ -854,8 +854,8 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
     send_count[rank_1] += 1;
   }
 
-  MPI_Alltoallv(send_buf, send_count, send_displ, FVM_MPI_GNUM,
-                recv_buf, recv_count, recv_displ, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_buf, send_count, send_displ, CS_MPI_GNUM,
+                recv_buf, recv_count, recv_displ, CS_MPI_GNUM,
                 comm);
 
   /* Receive buffer contains global cell face whose cell adjacency
@@ -863,9 +863,9 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
      by the adjacent cell number, for return exchange */
 
   for (k = 0; k < n_recv; k++) {
-    fvm_gnum_t g_face_id = recv_buf[k] - bi. gnum_range[0];
-    fvm_gnum_t c_num_0 = g_face_cells[g_face_id*2];
-    const fvm_gnum_t c_num_1 = g_face_cells[g_face_id*2 + 1];
+    cs_gnum_t g_face_id = recv_buf[k] - bi. gnum_range[0];
+    cs_gnum_t c_num_0 = g_face_cells[g_face_id*2];
+    const cs_gnum_t c_num_1 = g_face_cells[g_face_id*2 + 1];
     assert(c_num_0 == 0 || c_num_1 == 0);
     /* assign c_num_0 or c_num_1 depending on which is nonzero
        (or 0 if both are 0, which should not happen) */
@@ -874,27 +874,27 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
 
   /* Return message (send and receive buffers inverted) */
 
-  MPI_Alltoallv(recv_buf, recv_count, recv_displ, FVM_MPI_GNUM,
-                send_buf, send_count, send_displ, FVM_MPI_GNUM,
+  MPI_Alltoallv(recv_buf, recv_count, recv_displ, CS_MPI_GNUM,
+                send_buf, send_count, send_displ, CS_MPI_GNUM,
                 comm);
 
   /* Now send_buf contains the global cell number matching a given face */
 
-  BFT_MALLOC(send_adj, n_send*2, fvm_gnum_t);
+  BFT_MALLOC(send_adj, n_send*2, cs_gnum_t);
 
   for (i = 0; i < n_ranks; i++)
     send_count[i] = 0;
 
   for (j = 0; j < n_periodic_couples; j++) {
 
-    fvm_gnum_t f_id_0 = periodic_couples[j*2] - 1;
-    fvm_gnum_t f_id_1 = periodic_couples[j*2 + 1] - 1;
+    cs_gnum_t f_id_0 = periodic_couples[j*2] - 1;
+    cs_gnum_t f_id_1 = periodic_couples[j*2 + 1] - 1;
     int rank_0 = (f_id_0/block_size) * rank_step;
     int rank_1 = (f_id_1/block_size) * rank_step;
 
     /* Retrieve adjacent cell number from previous exchange */
-    fvm_gnum_t c_num_0 = send_buf[send_displ[rank_0] + send_count[rank_0]];
-    fvm_gnum_t c_num_1 = send_buf[send_displ[rank_1] + send_count[rank_1]];
+    cs_gnum_t c_num_0 = send_buf[send_displ[rank_0] + send_count[rank_0]];
+    cs_gnum_t c_num_1 = send_buf[send_displ[rank_1] + send_count[rank_1]];
 
     /* Send global face number and cell number adjacent with its
        periodic face to rank defining the adjacency for this face */
@@ -919,10 +919,10 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
   }
 
   BFT_FREE(send_buf);
-  BFT_REALLOC(recv_buf, n_recv*2, fvm_gnum_t);
+  BFT_REALLOC(recv_buf, n_recv*2, cs_gnum_t);
 
-  MPI_Alltoallv(send_adj, send_count, send_displ, FVM_MPI_GNUM,
-                recv_buf, recv_count, recv_displ, FVM_MPI_GNUM,
+  MPI_Alltoallv(send_adj, send_count, send_displ, CS_MPI_GNUM,
+                recv_buf, recv_count, recv_displ, CS_MPI_GNUM,
                 comm);
 
   BFT_FREE(send_adj);
@@ -934,8 +934,8 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
   /* Update face -> cell connectivity */
 
   for (k = 0; k < n_recv; k++) {
-    const fvm_gnum_t g_face_id = recv_buf[k*2] - bi. gnum_range[0];
-    const fvm_gnum_t g_cell_num = recv_buf[k*2 + 1];
+    const cs_gnum_t g_face_id = recv_buf[k*2] - bi. gnum_range[0];
+    const cs_gnum_t g_cell_num = recv_buf[k*2 + 1];
     if (g_face_cells[g_face_id*2] == 0)
       g_face_cells[g_face_id*2] = g_cell_num;
     else {
@@ -973,22 +973,22 @@ _add_perio_to_face_cells_g(fvm_block_to_part_info_t  bi,
  *----------------------------------------------------------------------------*/
 
 static void
-_add_perio_to_face_cells_l(fvm_gnum_t        g_face_cells[],
-                           fvm_lnum_t        n_periodic_couples,
-                           const fvm_gnum_t  periodic_couples[])
+_add_perio_to_face_cells_l(cs_gnum_t         g_face_cells[],
+                           cs_lnum_t         n_periodic_couples,
+                           const cs_gnum_t   periodic_couples[])
 {
-  fvm_lnum_t j;
+  cs_lnum_t j;
 
   /* Update face -> cell connectivity */
 
   for (j = 0; j < n_periodic_couples; j++) {
 
-    fvm_gnum_t f_id_0 = periodic_couples[j*2] - 1;
-    fvm_gnum_t f_id_1 = periodic_couples[j*2 + 1] - 1;
-    fvm_gnum_t c_num_00 = g_face_cells[f_id_0*2];
-    fvm_gnum_t c_num_01 = g_face_cells[f_id_0*2 + 1];
-    fvm_gnum_t c_num_10 = g_face_cells[f_id_1*2];
-    fvm_gnum_t c_num_11 = g_face_cells[f_id_1*2 + 1];
+    cs_gnum_t f_id_0 = periodic_couples[j*2] - 1;
+    cs_gnum_t f_id_1 = periodic_couples[j*2 + 1] - 1;
+    cs_gnum_t c_num_00 = g_face_cells[f_id_0*2];
+    cs_gnum_t c_num_01 = g_face_cells[f_id_0*2 + 1];
+    cs_gnum_t c_num_10 = g_face_cells[f_id_1*2];
+    cs_gnum_t c_num_11 = g_face_cells[f_id_1*2 + 1];
 
     assert(c_num_00 == 0 || c_num_01 == 0);
     assert(c_num_10 == 0 || c_num_11 == 0);
@@ -1023,16 +1023,16 @@ _add_perio_to_face_cells_l(fvm_gnum_t        g_face_cells[],
  *----------------------------------------------------------------------------*/
 
 static void
-_metis_cell_cells(size_t        n_cells,
-                  size_t        n_faces,
-                  fvm_gnum_t    start_cell,
-                  fvm_gnum_t   *face_cells,
-                  idxtype     **cell_idx,
-                  idxtype     **cell_neighbors)
+_metis_cell_cells(size_t       n_cells,
+                  size_t       n_faces,
+                  cs_gnum_t    start_cell,
+                  cs_gnum_t   *face_cells,
+                  idxtype    **cell_idx,
+                  idxtype    **cell_neighbors)
 {
   size_t i, id_0, id_1;
 
-  fvm_gnum_t  c_num[2];
+  cs_gnum_t  c_num[2];
 
   idxtype  *n_neighbors;
   idxtype  *_cell_idx;
@@ -1266,8 +1266,8 @@ _part_metis(size_t    n_cells,
  *----------------------------------------------------------------------------*/
 
 static void
-_part_parmetis(fvm_gnum_t  n_g_cells,
-               fvm_gnum_t  cell_range[2],
+_part_parmetis(cs_gnum_t   n_g_cells,
+               cs_gnum_t   cell_range[2],
                int         n_parts,
                idxtype    *cell_idx,
                idxtype    *cell_neighbors,
@@ -1462,14 +1462,14 @@ SCOTCH_errorPrintW (const char *errstr,
 static void
 _scotch_cell_cells(size_t        n_cells,
                    size_t        n_faces,
-                   fvm_gnum_t    start_cell,
-                   fvm_gnum_t   *face_cells,
+                   cs_gnum_t     start_cell,
+                   cs_gnum_t    *face_cells,
                    SCOTCH_Num  **cell_idx,
                    SCOTCH_Num  **cell_neighbors)
 {
   size_t i, id_0, id_1;
 
-  fvm_gnum_t  c_num[2];
+  cs_gnum_t  c_num[2];
 
   SCOTCH_Num  *n_neighbors;
   SCOTCH_Num  *_cell_idx;
@@ -1675,8 +1675,8 @@ _part_scotch(SCOTCH_Num   n_cells,
  *----------------------------------------------------------------------------*/
 
 static void
-_part_ptscotch(fvm_gnum_t   n_g_cells,
-               fvm_gnum_t   cell_range[2],
+_part_ptscotch(cs_gnum_t    n_g_cells,
+               cs_gnum_t    cell_range[2],
                int          n_parts,
                SCOTCH_Num  *cell_idx,
                SCOTCH_Num  *cell_neighbors,
@@ -1776,10 +1776,10 @@ _part_ptscotch(fvm_gnum_t   n_g_cells,
 static void
 _read_input(const char   *path,
             int           no_perio,
-            fvm_gnum_t   *n_g_cells,
-            fvm_gnum_t    cell_range[2],
-            fvm_lnum_t   *n_faces,
-            fvm_gnum_t  **g_face_cells)
+            cs_gnum_t    *n_g_cells,
+            cs_gnum_t     cell_range[2],
+            cs_lnum_t    *n_faces,
+            cs_gnum_t   **g_face_cells)
 {
   fvm_block_to_part_info_t cell_bi;
   fvm_block_to_part_info_t face_bi;
@@ -1793,12 +1793,12 @@ _read_input(const char   *path,
   size_t index_size = 0;
   size_t rec_id;
 
-  fvm_gnum_t n_g_faces = 0;
-  fvm_gnum_t *_g_face_cells = NULL;
+  cs_gnum_t n_g_faces = 0;
+  cs_gnum_t *_g_face_cells = NULL;
 
-  fvm_lnum_t n_per_face_couples = 0;
-  fvm_gnum_t n_g_per_face_couples = 0;
-  fvm_gnum_t *g_per_face_couples = NULL;
+  cs_lnum_t n_per_face_couples = 0;
+  cs_gnum_t n_g_per_face_couples = 0;
+  cs_gnum_t *g_per_face_couples = NULL;
 
 #if defined(HAVE_MPI)
   fvm_block_to_part_t *d = NULL;
@@ -1856,7 +1856,7 @@ _read_input(const char   *path,
 
     else if (strcmp("face_cells", header.sec_name) == 0) {
 
-      fvm_gnum_t n_elts = 0;
+      cs_gnum_t n_elts = 0;
 
       if (header.n_vals != (fvm_file_off_t)(n_g_faces*2))
         bft_error(__FILE__, __LINE__, 0, unexpected_msg,
@@ -1868,7 +1868,7 @@ _read_input(const char   *path,
                                                 n_g_faces);
 
       n_elts = (face_bi.gnum_range[1] - face_bi.gnum_range[0])*2;
-      BFT_MALLOC(_g_face_cells, n_elts, fvm_gnum_t);
+      BFT_MALLOC(_g_face_cells, n_elts, cs_gnum_t);
 
       _read_adjacency_array(inp,
                             rec_id,
@@ -1884,7 +1884,7 @@ _read_input(const char   *path,
                                    strlen("periodicity_faces_"))) {
 
       fvm_block_to_part_info_t per_face_bi;
-      fvm_gnum_t n_per_face_couples_prev = n_per_face_couples;
+      cs_gnum_t n_per_face_couples_prev = n_per_face_couples;
 
       if (n_g_faces == 0)
         bft_error(__FILE__, __LINE__, 0, unexpected_msg,
@@ -1898,7 +1898,7 @@ _read_input(const char   *path,
 
       n_per_face_couples  += (  per_face_bi.gnum_range[1]
                               - per_face_bi.gnum_range[0]);
-      BFT_REALLOC(g_per_face_couples, n_per_face_couples*2, fvm_gnum_t);
+      BFT_REALLOC(g_per_face_couples, n_per_face_couples*2, cs_gnum_t);
 
       _read_adjacency_array(inp,
                             rec_id,
@@ -1968,8 +1968,8 @@ _read_input(const char   *path,
   if (cs_glob_n_ranks > 1) {
 
     fvm_datatype_t gnum_type
-      = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
-    fvm_gnum_t *_g_face_cells_tmp = NULL;
+      = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+    cs_gnum_t *_g_face_cells_tmp = NULL;
 
     d = fvm_block_to_part_create_by_adj_s(cs_glob_mpi_comm,
                                           face_bi,
@@ -1981,7 +1981,7 @@ _read_input(const char   *path,
 
     *n_faces = fvm_block_to_part_get_n_part_ents(d);
 
-    BFT_MALLOC(_g_face_cells_tmp, (*n_faces)*2, fvm_gnum_t);
+    BFT_MALLOC(_g_face_cells_tmp, (*n_faces)*2, cs_gnum_t);
 
     /* Face -> cell connectivity */
 
@@ -2021,10 +2021,10 @@ _read_input(const char   *path,
  *----------------------------------------------------------------------------*/
 
 static void
-_write_output(fvm_gnum_t  n_g_cells,
-              fvm_gnum_t  cell_range[2],
-              int         n_ranks,
-              int         domain_num[])
+_write_output(cs_gnum_t  n_g_cells,
+              cs_gnum_t  cell_range[2],
+              int        n_ranks,
+              int        domain_num[])
 {
   size_t i;
   int n_ranks_size;
@@ -2044,9 +2044,9 @@ _write_output(fvm_gnum_t  n_g_cells,
     assert(0);
   }
 
-  if (sizeof(fvm_gnum_t) == 4)
+  if (sizeof(cs_gnum_t) == 4)
     datatype_gnum = FVM_UINT32;
-  else if (sizeof(fvm_gnum_t) == 8)
+  else if (sizeof(cs_gnum_t) == 8)
     datatype_gnum = FVM_UINT64;
   else {
     assert(0);
@@ -2147,11 +2147,11 @@ main(int    argc,
   int  *cell_part = NULL;
 
   const char  input_file[] = "mesh_input";
-  fvm_gnum_t  n_g_cells = 0;
-  fvm_gnum_t  cell_range[2] = {0, 0};
-  fvm_lnum_t  n_cells = 0;
-  fvm_lnum_t  n_faces = 0;
-  fvm_gnum_t  *face_cells = NULL;
+  cs_gnum_t  n_g_cells = 0;
+  cs_gnum_t  cell_range[2] = {0, 0};
+  cs_lnum_t  n_cells = 0;
+  cs_lnum_t  n_faces = 0;
+  cs_gnum_t  *face_cells = NULL;
 
   /* First analysis of the command line to determine if MPI is required,
      and MPI initialization if it is. */

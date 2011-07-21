@@ -112,7 +112,7 @@ typedef struct _cs_syr4_coupling_ent_t {
   ple_locator_t     *locator;        /* Associated locator */
 
   int                elt_dim;        /* Element dimension */
-  fvm_lnum_t         n_elts;         /* Number of coupled elements */
+  cs_lnum_t          n_elts;         /* Number of coupled elements */
 
   fvm_nodal_t       *elts;           /* Coupled elements */
 
@@ -458,9 +458,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                     int                  elt_dim)
 {
   char *coupled_mesh_name = NULL;
-  fvm_gnum_t n_exterior = 0, n_dist_elts = 0;
-  fvm_lnum_t *elt_list = NULL;
-  fvm_coord_t *elt_centers = NULL;
+  cs_gnum_t n_exterior = 0, n_dist_elts = 0;
+  cs_lnum_t *elt_list = NULL;
+  cs_coord_t *elt_centers = NULL;
   const double tolerance = 0.1;
   fvm_nodal_t *location_elts = NULL;
   ple_mesh_elements_closest_t *locate_on_closest = NULL;
@@ -500,7 +500,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                char);
     sprintf(coupled_mesh_name, _("SYRTHES %s cells"), syr_coupling->syr_name);
 
-    BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
+    BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(select_criteria,
                               &(coupling_ent->n_elts),
@@ -529,7 +529,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                char);
     sprintf(coupled_mesh_name, _("SYRTHES %s faces"), syr_coupling->syr_name);
 
-    BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+    BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(select_criteria,
                                 &(coupling_ent->n_elts),
@@ -567,8 +567,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   if (syr_coupling->dim == 2) {
 
-    double      a[6];
-    fvm_lnum_t  n_errors = 0;
+    double     a[6];
+    cs_lnum_t  n_errors = 0;
 
     if (syr_coupling->verbosity > 0) {
       bft_printf(_("Projecting the extracted mesh to 2D ..."));
@@ -604,7 +604,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   /* Element information */
 
   if (syr_coupling->verbosity > 0) {
-    fvm_gnum_t n_g_elts = coupling_ent->n_elts;
+    cs_gnum_t n_g_elts = coupling_ent->n_elts;
     fvm_parall_counter(&n_g_elts, 1);
     bft_printf(_("\nExtracted mesh built of %llu elements.\n"),
                (unsigned long long)n_g_elts);
@@ -644,7 +644,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
     BFT_MALLOC(elt_centers,
                coupling_ent->n_elts*syr_coupling->dim,
-               fvm_coord_t);
+               cs_coord_t);
     fvm_nodal_get_element_centers(location_elts,
                                   FVM_INTERLACE,
                                   coupling_ent->elt_dim,
@@ -709,17 +709,17 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
     if (syr_coupling->visualization != 0) {
 
-      fvm_lnum_t i;
+      cs_lnum_t i;
       int writer_ids[] = {-1};
       int mesh_id = coupling_ent->post_mesh_id - 1;
-      fvm_lnum_t *p_vtx_num = NULL;
+      cs_lnum_t *p_vtx_num = NULL;
       fvm_io_num_t *vtx_io_num = NULL;
       fvm_nodal_t *syr_points = fvm_nodal_create("SYRTHES face centers",
                                                  syr_coupling->dim);
 
-      BFT_MALLOC(p_vtx_num, n_dist_elts, fvm_lnum_t);
+      BFT_MALLOC(p_vtx_num, n_dist_elts, cs_lnum_t);
 
-      for (i = 0; i < (fvm_lnum_t)n_dist_elts; i++)
+      for (i = 0; i < (cs_lnum_t)n_dist_elts; i++)
         p_vtx_num[i] = i+1;
 
       fvm_nodal_define_vertex_list(syr_points, n_dist_elts, p_vtx_num);
@@ -833,7 +833,7 @@ _post_var_update(cs_syr4_coupling_ent_t  *coupling_ent,
                  int                      step,
                  const cs_real_t         *var)
 {
-  fvm_lnum_t  n_elts, ii;
+  cs_lnum_t  n_elts, ii;
 
   assert(coupling_ent != NULL);
 
@@ -885,7 +885,7 @@ _post_var_update(cs_syr4_coupling_ent_t  *coupling_ent,
  *   number of SYRTHES couplings
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_syr4_coupling_n_couplings(void)
 {
   return cs_glob_syr4_n_couplings;
@@ -902,7 +902,7 @@ cs_syr4_coupling_n_couplings(void)
  *----------------------------------------------------------------------------*/
 
 cs_syr4_coupling_t *
-cs_syr4_coupling_by_id(fvm_lnum_t coupling_id)
+cs_syr4_coupling_by_id(cs_lnum_t coupling_id)
 {
   cs_syr4_coupling_t  *retval = NULL;
 
@@ -927,8 +927,8 @@ cs_syr4_coupling_by_id(fvm_lnum_t coupling_id)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_add(fvm_lnum_t   dim,
-                     fvm_lnum_t   ref_axis,
+cs_syr4_coupling_add(cs_lnum_t    dim,
+                     cs_lnum_t    ref_axis,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
                      const char  *syr_name,
@@ -1006,7 +1006,7 @@ cs_syr4_coupling_add(fvm_lnum_t   dim,
 void
 cs_syr4_coupling_all_destroy(void)
 {
-  fvm_lnum_t i_coupl;
+  cs_lnum_t i_coupl;
   cs_syr4_coupling_t *syr_coupling = NULL;
 
   if (cs_glob_syr4_n_couplings == 0)
@@ -1115,7 +1115,7 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling)
   char op_name_send[32 + 1];
   char op_name_recv[32 + 1];
 
-  const fvm_lnum_t verbosity = syr_coupling->verbosity;
+  const cs_lnum_t verbosity = syr_coupling->verbosity;
 
   if (verbosity > 0)
     bft_printf(_("\n ** Processing the mesh for SYRTHES coupling "
@@ -1169,11 +1169,11 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling)
  *   number of vertices in coupled mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_syr4_coupling_get_n_faces(const cs_syr4_coupling_t *syr_coupling)
 {
   cs_syr4_coupling_ent_t  *coupling_ent = NULL;
-  fvm_lnum_t retval = 0;
+  cs_lnum_t retval = 0;
 
   assert(syr_coupling != NULL);
   coupling_ent = syr_coupling->faces;
@@ -1198,7 +1198,7 @@ cs_syr4_coupling_get_face_list(const cs_syr4_coupling_t  *syr_coupling,
 {
   cs_syr4_coupling_ent_t  *coupling_ent = NULL;
 
-  assert(sizeof(fvm_lnum_t) == sizeof(cs_int_t));
+  assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
   assert(syr_coupling != NULL);
 
   coupling_ent = syr_coupling->faces;
@@ -1256,9 +1256,9 @@ cs_syr4_coupling_send_tf_hwall(cs_syr4_coupling_t  *syr_coupling,
                                cs_real_t            tf[],
                                cs_real_t            hwall[])
 {
-  fvm_lnum_t ii;
-  fvm_lnum_t n_dist = 0;
-  const fvm_lnum_t *dist_loc = NULL;
+  cs_lnum_t ii;
+  cs_lnum_t n_dist = 0;
+  const cs_lnum_t *dist_loc = NULL;
 
   cs_syr4_coupling_ent_t  *coupling_ent = NULL;
 

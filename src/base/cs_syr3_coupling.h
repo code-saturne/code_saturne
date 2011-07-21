@@ -136,7 +136,7 @@ cs_syr3_coupling_get_comm(const cs_syr3_coupling_t  *syr_coupling);
  *   number of vertices in coupled mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t  *syr_coupling);
  *   number of vertices in coupled mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_syr3_coupling_get_n_faces(const cs_syr3_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------
@@ -162,7 +162,7 @@ cs_syr3_coupling_get_n_faces(const cs_syr3_coupling_t  *syr_coupling);
 
 void
 cs_syr3_coupling_get_face_list(const cs_syr3_coupling_t  *syr_coupling,
-                               fvm_lnum_t                 coupl_face_list[]);
+                               cs_lnum_t                  coupl_face_list[]);
 
 /*----------------------------------------------------------------------------
  * Create a syr3_coupling_t structure.
@@ -248,7 +248,7 @@ cs_syr3_coupling_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
 void
 cs_syr3_coupling_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
                             const cs_real_t           *elt_values,
-                            fvm_lnum_t                 n_vertices,
+                            cs_lnum_t                  n_vertices,
                             cs_real_t                 *vtx_values);
 
 /*----------------------------------------------------------------------------

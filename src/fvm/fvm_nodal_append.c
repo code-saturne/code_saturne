@@ -98,13 +98,13 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 static fvm_nodal_section_t *
-_transfer_to_section(fvm_lnum_t      n_elements,
+_transfer_to_section(cs_lnum_t       n_elements,
                      fvm_element_t   type,
-                     fvm_lnum_t      face_index[],
-                     fvm_lnum_t      face_num[],
-                     fvm_lnum_t      vertex_index[],
-                     fvm_lnum_t      vertex_num[],
-                     fvm_lnum_t      parent_element_num[])
+                     cs_lnum_t       face_index[],
+                     cs_lnum_t       face_num[],
+                     cs_lnum_t       vertex_index[],
+                     cs_lnum_t       vertex_num[],
+                     cs_lnum_t       parent_element_num[])
 {
   fvm_nodal_section_t  *this_section = NULL;
 
@@ -145,7 +145,7 @@ _transfer_to_section(fvm_lnum_t      n_elements,
       = this_section->vertex_index[this_section->n_elements];
 
   else if (this_section->type == FVM_CELL_POLY) {
-    fvm_lnum_t i, _face_num;
+    cs_lnum_t i, _face_num;
     for (i = 0;
          i < this_section->face_index[this_section->n_elements];
          i++) {
@@ -182,13 +182,13 @@ _transfer_to_section(fvm_lnum_t      n_elements,
  *----------------------------------------------------------------------------*/
 
 static fvm_nodal_section_t *
-_map_to_section(fvm_lnum_t      n_elements,
+_map_to_section(cs_lnum_t       n_elements,
                 fvm_element_t   type,
-                fvm_lnum_t      face_index[],
-                fvm_lnum_t      face_num[],
-                fvm_lnum_t      vertex_index[],
-                fvm_lnum_t      vertex_num[],
-                fvm_lnum_t      parent_element_num[])
+                cs_lnum_t       face_index[],
+                cs_lnum_t       face_num[],
+                cs_lnum_t       vertex_index[],
+                cs_lnum_t       vertex_num[],
+                cs_lnum_t       parent_element_num[])
 {
   fvm_nodal_section_t  *this_section = NULL;
 
@@ -221,7 +221,7 @@ _map_to_section(fvm_lnum_t      n_elements,
       = this_section->vertex_index[this_section->n_elements];
 
   else if (this_section->type == FVM_CELL_POLY) {
-    fvm_lnum_t i, _face_num;
+    cs_lnum_t i, _face_num;
     for (i = 0;
          i < this_section->face_index[this_section->n_elements];
          i++) {
@@ -265,13 +265,13 @@ _map_to_section(fvm_lnum_t      n_elements,
 
 void
 fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
-                             fvm_lnum_t      n_elements,
+                             cs_lnum_t       n_elements,
                              fvm_element_t   type,
-                             fvm_lnum_t      face_index[],
-                             fvm_lnum_t      face_num[],
-                             fvm_lnum_t      vertex_index[],
-                             fvm_lnum_t      vertex_num[],
-                             fvm_lnum_t      parent_element_num[])
+                             cs_lnum_t       face_index[],
+                             cs_lnum_t       face_num[],
+                             cs_lnum_t       vertex_index[],
+                             cs_lnum_t       vertex_num[],
+                             cs_lnum_t       parent_element_num[])
 {
   fvm_nodal_section_t  *new_section = NULL;
   int  n_sections = 0;
@@ -340,13 +340,13 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
 
 void
 fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
-                        fvm_lnum_t      n_elements,
+                        cs_lnum_t       n_elements,
                         fvm_element_t   type,
-                        fvm_lnum_t      face_index[],
-                        fvm_lnum_t      face_num[],
-                        fvm_lnum_t      vertex_index[],
-                        fvm_lnum_t      vertex_num[],
-                        fvm_lnum_t      parent_element_num[])
+                        cs_lnum_t       face_index[],
+                        cs_lnum_t       face_num[],
+                        cs_lnum_t       vertex_index[],
+                        cs_lnum_t       vertex_num[],
+                        cs_lnum_t       parent_element_num[])
 {
   fvm_nodal_section_t  *new_section = NULL;
   int  n_sections = 0;

@@ -100,18 +100,18 @@ static void
 _convert_array_float_to_float(const int                     src_dim,
                               const int                     src_dim_shift,
                               const int                     dest_dim,
-                              const fvm_lnum_t              src_idx_start,
-                              const fvm_lnum_t              src_idx_end,
+                              const cs_lnum_t               src_idx_start,
+                              const cs_lnum_t               src_idx_end,
                               const fvm_interlace_t         src_interlace,
                               const int                     n_parent_lists,
-                              const fvm_lnum_t              parent_num_shift[],
-                              const fvm_lnum_t              parent_num[],
+                              const cs_lnum_t               parent_num_shift[],
+                              const cs_lnum_t               parent_num[],
                               const float            *const src_data[],
                               float                  *const dest_data)
 {
   int  pl;
   size_t  i, k, l, min_dim;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   min_dim = (size_t)(FVM_MIN((src_dim - src_dim_shift), dest_dim));
 
@@ -229,18 +229,18 @@ static void
 _convert_array_float_to_double(const int                     src_dim,
                                const int                     src_dim_shift,
                                const int                     dest_dim,
-                               const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+                               const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const fvm_interlace_t         src_interlace,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const float            *const src_data[],
                                double                 *const dest_data)
 {
   int  pl;
   size_t  i, k, l, min_dim;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   min_dim = (size_t)(FVM_MIN((src_dim - src_dim_shift), dest_dim));
 
@@ -358,18 +358,18 @@ static void
 _convert_array_double_to_float(const int                     src_dim,
                                const int                     src_dim_shift,
                                const int                     dest_dim,
-                               const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+                               const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const fvm_interlace_t         src_interlace,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const double           *const src_data[],
                                float                  *const dest_data)
 {
   int  pl;
   size_t  i, k, l, min_dim;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   min_dim = (size_t)(FVM_MIN((src_dim - src_dim_shift), dest_dim));
 
@@ -487,18 +487,18 @@ static void
 _convert_array_double_to_double(const int                     src_dim,
                                 const int                     src_dim_shift,
                                 const int                     dest_dim,
-                                const fvm_lnum_t              src_idx_start,
-                                const fvm_lnum_t              src_idx_end,
+                                const cs_lnum_t               src_idx_start,
+                                const cs_lnum_t               src_idx_end,
                                 const fvm_interlace_t         src_interlace,
                                 const int                     n_parent_lists,
-                                const fvm_lnum_t              parent_num_shift[],
-                                const fvm_lnum_t              parent_num[],
+                                const cs_lnum_t               parent_num_shift[],
+                                const cs_lnum_t               parent_num[],
                                 const double           *const src_data[],
                                 double                 *const dest_data)
 {
   int  pl;
   size_t  i, k, l, min_dim;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   min_dim = (size_t)(FVM_MIN((src_dim - src_dim_shift), dest_dim));
 
@@ -608,17 +608,17 @@ _convert_array_double_to_double(const int                     src_dim,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int32_to_float(const fvm_lnum_t              src_idx_start,
-                              const fvm_lnum_t              src_idx_end,
+_convert_array_int32_to_float(const cs_lnum_t               src_idx_start,
+                              const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const fvm_lnum_t              parent_num_shift[],
-                              const fvm_lnum_t              parent_num[],
+                              const cs_lnum_t               parent_num_shift[],
+                              const cs_lnum_t               parent_num[],
                               const int32_t          *const src_data[],
                               float                  *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -665,17 +665,17 @@ _convert_array_int32_to_float(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int32_to_double(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_int32_to_double(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const int32_t          *const src_data[],
                                double                 *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -722,17 +722,17 @@ _convert_array_int32_to_double(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int32_to_int32(const fvm_lnum_t              src_idx_start,
-                              const fvm_lnum_t              src_idx_end,
+_convert_array_int32_to_int32(const cs_lnum_t               src_idx_start,
+                              const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const fvm_lnum_t              parent_num_shift[],
-                              const fvm_lnum_t              parent_num[],
+                              const cs_lnum_t               parent_num_shift[],
+                              const cs_lnum_t               parent_num[],
                               const int32_t          *const src_data[],
                               int32_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -779,17 +779,17 @@ _convert_array_int32_to_int32(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int32_to_int64(const fvm_lnum_t              src_idx_start,
-                              const fvm_lnum_t              src_idx_end,
+_convert_array_int32_to_int64(const cs_lnum_t               src_idx_start,
+                              const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const fvm_lnum_t              parent_num_shift[],
-                              const fvm_lnum_t              parent_num[],
+                              const cs_lnum_t               parent_num_shift[],
+                              const cs_lnum_t               parent_num[],
                               const int32_t          *const src_data[],
                               int64_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -836,17 +836,17 @@ _convert_array_int32_to_int64(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int32_to_uint32(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_int32_to_uint32(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const int32_t          *const src_data[],
                                uint32_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -893,17 +893,17 @@ _convert_array_int32_to_uint32(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int32_to_uint64(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_int32_to_uint64(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const int32_t          *const src_data[],
                                uint64_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -950,17 +950,17 @@ _convert_array_int32_to_uint64(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int64_to_float(const fvm_lnum_t              src_idx_start,
-                              const fvm_lnum_t              src_idx_end,
+_convert_array_int64_to_float(const cs_lnum_t               src_idx_start,
+                              const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const fvm_lnum_t              parent_num_shift[],
-                              const fvm_lnum_t              parent_num[],
+                              const cs_lnum_t               parent_num_shift[],
+                              const cs_lnum_t               parent_num[],
                               const int64_t          *const src_data[],
                               float                  *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1007,17 +1007,17 @@ _convert_array_int64_to_float(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int64_to_double(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_int64_to_double(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const int64_t          *const src_data[],
                                double                 *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1064,17 +1064,17 @@ _convert_array_int64_to_double(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int64_to_int32(const fvm_lnum_t              src_idx_start,
-                              const fvm_lnum_t              src_idx_end,
+_convert_array_int64_to_int32(const cs_lnum_t               src_idx_start,
+                              const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const fvm_lnum_t              parent_num_shift[],
-                              const fvm_lnum_t              parent_num[],
+                              const cs_lnum_t               parent_num_shift[],
+                              const cs_lnum_t               parent_num[],
                               const int64_t          *const src_data[],
                               int32_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1121,17 +1121,17 @@ _convert_array_int64_to_int32(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int64_to_int64(const fvm_lnum_t              src_idx_start,
-                              const fvm_lnum_t              src_idx_end,
+_convert_array_int64_to_int64(const cs_lnum_t               src_idx_start,
+                              const cs_lnum_t               src_idx_end,
                               const int                     n_parent_lists,
-                              const fvm_lnum_t              parent_num_shift[],
-                              const fvm_lnum_t              parent_num[],
+                              const cs_lnum_t               parent_num_shift[],
+                              const cs_lnum_t               parent_num[],
                               const int64_t          *const src_data[],
                               int64_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1178,17 +1178,17 @@ _convert_array_int64_to_int64(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int64_to_uint32(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_int64_to_uint32(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const int64_t          *const src_data[],
                                uint32_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1235,17 +1235,17 @@ _convert_array_int64_to_uint32(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_int64_to_uint64(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_int64_to_uint64(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const int64_t          *const src_data[],
                                uint64_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1292,17 +1292,17 @@ _convert_array_int64_to_uint64(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint32_to_float(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_uint32_to_float(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const uint32_t         *const src_data[],
                                float                  *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1349,17 +1349,17 @@ _convert_array_uint32_to_float(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint32_to_double(const fvm_lnum_t              src_idx_start,
-                                const fvm_lnum_t              src_idx_end,
+_convert_array_uint32_to_double(const cs_lnum_t               src_idx_start,
+                                const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const fvm_lnum_t              parent_num_shift[],
-                                const fvm_lnum_t              parent_num[],
+                                const cs_lnum_t               parent_num_shift[],
+                                const cs_lnum_t               parent_num[],
                                 const uint32_t         *const src_data[],
                                 double                 *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1406,17 +1406,17 @@ _convert_array_uint32_to_double(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint32_to_int32(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_uint32_to_int32(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const uint32_t         *const src_data[],
                                int32_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1463,17 +1463,17 @@ _convert_array_uint32_to_int32(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint32_to_int64(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_uint32_to_int64(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const uint32_t         *const src_data[],
                                int64_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1520,17 +1520,17 @@ _convert_array_uint32_to_int64(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint32_to_uint32(const fvm_lnum_t              src_idx_start,
-                                const fvm_lnum_t              src_idx_end,
+_convert_array_uint32_to_uint32(const cs_lnum_t               src_idx_start,
+                                const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const fvm_lnum_t              parent_num_shift[],
-                                const fvm_lnum_t              parent_num[],
+                                const cs_lnum_t               parent_num_shift[],
+                                const cs_lnum_t               parent_num[],
                                 const uint32_t         *const src_data[],
                                 uint32_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1577,17 +1577,17 @@ _convert_array_uint32_to_uint32(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint32_to_uint64(const fvm_lnum_t              src_idx_start,
-                                const fvm_lnum_t              src_idx_end,
+_convert_array_uint32_to_uint64(const cs_lnum_t               src_idx_start,
+                                const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const fvm_lnum_t              parent_num_shift[],
-                                const fvm_lnum_t              parent_num[],
+                                const cs_lnum_t               parent_num_shift[],
+                                const cs_lnum_t               parent_num[],
                                 const uint32_t         *const src_data[],
                                 uint64_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1634,17 +1634,17 @@ _convert_array_uint32_to_uint64(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint64_to_float(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_uint64_to_float(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const uint64_t         *const src_data[],
                                float                  *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1691,17 +1691,17 @@ _convert_array_uint64_to_float(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint64_to_double(const fvm_lnum_t              src_idx_start,
-                                const fvm_lnum_t              src_idx_end,
+_convert_array_uint64_to_double(const cs_lnum_t               src_idx_start,
+                                const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const fvm_lnum_t              parent_num_shift[],
-                                const fvm_lnum_t              parent_num[],
+                                const cs_lnum_t               parent_num_shift[],
+                                const cs_lnum_t               parent_num[],
                                 const uint64_t         *const src_data[],
                                 double                 *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1748,17 +1748,17 @@ _convert_array_uint64_to_double(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint64_to_int32(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_uint64_to_int32(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const uint64_t         *const src_data[],
                                int32_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1805,17 +1805,17 @@ _convert_array_uint64_to_int32(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint64_to_int64(const fvm_lnum_t              src_idx_start,
-                               const fvm_lnum_t              src_idx_end,
+_convert_array_uint64_to_int64(const cs_lnum_t               src_idx_start,
+                               const cs_lnum_t               src_idx_end,
                                const int                     n_parent_lists,
-                               const fvm_lnum_t              parent_num_shift[],
-                               const fvm_lnum_t              parent_num[],
+                               const cs_lnum_t               parent_num_shift[],
+                               const cs_lnum_t               parent_num[],
                                const uint64_t         *const src_data[],
                                int64_t                *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1862,17 +1862,17 @@ _convert_array_uint64_to_int64(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint64_to_uint32(const fvm_lnum_t              src_idx_start,
-                                const fvm_lnum_t              src_idx_end,
+_convert_array_uint64_to_uint32(const cs_lnum_t               src_idx_start,
+                                const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const fvm_lnum_t              parent_num_shift[],
-                                const fvm_lnum_t              parent_num[],
+                                const cs_lnum_t               parent_num_shift[],
+                                const cs_lnum_t               parent_num[],
                                 const uint64_t         *const src_data[],
                                 uint32_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -1919,17 +1919,17 @@ _convert_array_uint64_to_uint32(const fvm_lnum_t              src_idx_start,
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_array_uint64_to_uint64(const fvm_lnum_t              src_idx_start,
-                                const fvm_lnum_t              src_idx_end,
+_convert_array_uint64_to_uint64(const cs_lnum_t               src_idx_start,
+                                const cs_lnum_t               src_idx_end,
                                 const int                     n_parent_lists,
-                                const fvm_lnum_t              parent_num_shift[],
-                                const fvm_lnum_t              parent_num[],
+                                const cs_lnum_t               parent_num_shift[],
+                                const cs_lnum_t               parent_num[],
                                 const uint64_t         *const src_data[],
                                 uint64_t               *const dest_data)
 {
   int  pl;
   size_t  i;
-  fvm_lnum_t  j, parent_id;
+  cs_lnum_t   j, parent_id;
 
   if (n_parent_lists == 0) {
     for (i = 0, j = src_idx_start ; j < src_idx_end ; i++, j++)
@@ -2001,14 +2001,14 @@ void
 fvm_convert_array(const int                     src_dim,
                   const int                     src_dim_shift,
                   const int                     dest_dim,
-                  const fvm_lnum_t              src_idx_start,
-                  const fvm_lnum_t              src_idx_end,
+                  const cs_lnum_t               src_idx_start,
+                  const cs_lnum_t               src_idx_end,
                   const fvm_interlace_t         src_interlace,
                   const fvm_datatype_t          src_datatype,
                   const fvm_datatype_t          dest_datatype,
                   const int                     n_parent_lists,
-                  const fvm_lnum_t              parent_num_shift[],
-                  const fvm_lnum_t              parent_num[],
+                  const cs_lnum_t               parent_num_shift[],
+                  const cs_lnum_t               parent_num[],
                   const void             *const src_data[],
                   void                   *const dest_data)
 {

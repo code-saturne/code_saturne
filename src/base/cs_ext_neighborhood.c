@@ -950,7 +950,7 @@ void
 CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 {
   cs_int_t  i, face_id, cell_id, cell_i, cell_j;
-  fvm_gnum_t  init_cell_cells_connect_size;
+  cs_gnum_t  init_cell_cells_connect_size;
 
   cs_real_t  v_ij[3];
   cs_real_t  face_normal[3];
@@ -958,7 +958,7 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
   cs_real_t  dprod;
   double     ratio;
 
-  fvm_gnum_t  n_deleted_cells = 0;
+  cs_gnum_t  n_deleted_cells = 0;
   cs_int_t  previous_idx = 0, new_idx = -1;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
@@ -1140,12 +1140,12 @@ CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax)
 
       if (cs_glob_n_ranks > 1) {
 
-        fvm_gnum_t count_g[2], count_l[2];
+        cs_gnum_t count_g[2], count_l[2];
 
         count_l[0] = init_cell_cells_connect_size;
         count_l[1] = n_deleted_cells;
 
-        MPI_Allreduce(count_l, count_g, 2, FVM_MPI_GNUM,
+        MPI_Allreduce(count_l, count_g, 2, CS_MPI_GNUM,
                       MPI_SUM, cs_glob_mpi_comm);
 
         init_cell_cells_connect_size = count_g[0];

@@ -131,9 +131,9 @@ cs_numbering_create_vectorized(int  vector_size)
  *---------------------------------------------------------------------------*/
 
 cs_numbering_t *
-cs_numbering_create_threaded(int         n_threads,
-                             int         n_groups,
-                             fvm_lnum_t  group_index[])
+cs_numbering_create_threaded(int        n_threads,
+                             int        n_groups,
+                             cs_lnum_t  group_index[])
 {
   cs_numbering_t  *numbering = NULL;
 
@@ -146,11 +146,11 @@ cs_numbering_create_threaded(int         n_threads,
   numbering->n_threads = n_threads;
   numbering->n_groups = n_groups;
 
-  BFT_MALLOC(numbering->group_index, n_threads*2*n_groups, fvm_lnum_t);
+  BFT_MALLOC(numbering->group_index, n_threads*2*n_groups, cs_lnum_t);
 
   memcpy(numbering->group_index,
          group_index,
-         (n_threads*2*n_groups) * sizeof(fvm_lnum_t));
+         (n_threads*2*n_groups) * sizeof(cs_lnum_t));
 
   return numbering;
 }

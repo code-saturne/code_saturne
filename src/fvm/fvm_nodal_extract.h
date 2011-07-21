@@ -74,7 +74,7 @@ extern "C" {
 
 void
 fvm_nodal_get_global_vertex_num(const fvm_nodal_t  *this_nodal,
-                                fvm_gnum_t         *g_vtx_num);
+                                cs_gnum_t          *g_vtx_num);
 
 /*----------------------------------------------------------------------------
  * Copy global element numbers of a given element type to an array.
@@ -94,7 +94,7 @@ fvm_nodal_get_global_vertex_num(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_global_element_num(const fvm_nodal_t  *this_nodal,
                                  fvm_element_t       element_type,
-                                 fvm_gnum_t         *g_elt_num);
+                                 cs_gnum_t          *g_elt_num);
 
 /*----------------------------------------------------------------------------
  * Copy vertex coordinates to an array.
@@ -108,7 +108,7 @@ fvm_nodal_get_global_element_num(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_vertex_coords(const fvm_nodal_t  *this_nodal,
                             fvm_interlace_t     interlace,
-                            fvm_coord_t        *vertex_coords);
+                            cs_coord_t         *vertex_coords);
 
 /*----------------------------------------------------------------------------
  * Copy element centers to an array.
@@ -128,7 +128,7 @@ void
 fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
                               fvm_interlace_t     interlace,
                               int                 entity_dim,
-                              fvm_coord_t        *cell_centers);
+                              cs_coord_t         *cell_centers);
 
 /*----------------------------------------------------------------------------
  * Copy element -> vertex connectivity of a given element type to an array.
@@ -148,7 +148,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_strided_connect(const fvm_nodal_t  *this_nodal,
                               fvm_element_t       element_type,
-                              fvm_lnum_t         *connectivity);
+                              cs_lnum_t          *connectivity);
 
 /*----------------------------------------------------------------------------
  * Build inverse vertex -> element connectivity.
@@ -175,8 +175,8 @@ fvm_nodal_get_strided_connect(const fvm_nodal_t  *this_nodal,
 void
 fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
                               int                  entity_dim,
-                              fvm_lnum_t         **element_index,
-                              fvm_lnum_t         **element_id);
+                              cs_lnum_t          **element_index,
+                              cs_lnum_t          **element_id);
 
 /*----------------------------------------------------------------------------
  * Compute extents of a nodal mesh representation

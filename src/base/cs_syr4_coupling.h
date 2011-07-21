@@ -115,8 +115,8 @@ cs_syr4_coupling_by_id(cs_int_t coupling_id);
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_add(fvm_lnum_t   dim,
-                     fvm_lnum_t   ref_axis,
+cs_syr4_coupling_add(cs_lnum_t    dim,
+                     cs_lnum_t    ref_axis,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
                      const char  *app_name,
@@ -168,7 +168,7 @@ cs_syr4_coupling_init_mesh(cs_syr4_coupling_t  *syr_coupling);
  *   number of vertices in coupled mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_syr4_coupling_get_n_faces(const cs_syr4_coupling_t  *syr_coupling);
 
 /*----------------------------------------------------------------------------

@@ -121,32 +121,32 @@ typedef struct {
 
   /* Face-related dimensions */
 
-  fvm_gnum_t  n_g_faces;
-  fvm_gnum_t  n_g_face_connect_size;
+  cs_gnum_t   n_g_faces;
+  cs_gnum_t   n_g_face_connect_size;
 
   /* Temporary dimensions necessary for multiple inputs */
 
   int         *gc_id_shift;
 
   int          n_perio_read;
-  fvm_lnum_t   n_cells_read;
-  fvm_lnum_t   n_faces_read;
-  fvm_lnum_t   n_faces_connect_read;
-  fvm_lnum_t   n_vertices_read;
+  cs_lnum_t    n_cells_read;
+  cs_lnum_t    n_faces_read;
+  cs_lnum_t    n_faces_connect_read;
+  cs_lnum_t    n_vertices_read;
 
-  fvm_gnum_t   n_g_cells_read;
-  fvm_gnum_t   n_g_faces_read;
-  fvm_gnum_t   n_g_faces_connect_read;
-  fvm_gnum_t   n_g_vertices_read;
+  cs_gnum_t    n_g_cells_read;
+  cs_gnum_t    n_g_faces_read;
+  cs_gnum_t    n_g_faces_connect_read;
+  cs_gnum_t    n_g_vertices_read;
 
   /* Temporary mesh data */
 
   int           read_cell_rank;
   int          *cell_rank;
 
-  fvm_gnum_t   *face_cells;
-  fvm_lnum_t   *face_vertices_idx;
-  fvm_gnum_t   *face_vertices;
+  cs_gnum_t    *face_cells;
+  cs_lnum_t    *face_vertices_idx;
+  cs_gnum_t    *face_vertices;
   cs_int_t     *cell_gc_id;
   cs_int_t     *face_gc_id;
   cs_real_t    *vertex_coords;
@@ -155,10 +155,10 @@ typedef struct {
 
   int           n_perio;               /* Number of periodicities */
   int          *periodicity_num;       /* Periodicity numbers */
-  fvm_lnum_t   *n_per_face_couples;    /* Nb. face couples per periodicity */
-  fvm_gnum_t   *n_g_per_face_couples;  /* Global nb. couples per periodicity */
+  cs_lnum_t    *n_per_face_couples;    /* Nb. face couples per periodicity */
+  cs_gnum_t    *n_g_per_face_couples;  /* Global nb. couples per periodicity */
 
-  fvm_gnum_t  **per_face_couples;      /* Periodic face couples list. */
+  cs_gnum_t   **per_face_couples;      /* Periodic face couples list. */
 
   /* Block ranges for parallel distribution */
 
@@ -478,9 +478,9 @@ _read_cell_rank(cs_mesh_t       *mesh,
   cs_io_sec_header_t  header;
 
   cs_io_t  *rank_pp_in = NULL;
-  fvm_lnum_t   n_ranks = 0;
-  fvm_gnum_t   n_elts = 0;
-  fvm_gnum_t   n_g_cells = 0;
+  cs_lnum_t   n_ranks = 0;
+  cs_gnum_t   n_elts = 0;
+  cs_gnum_t   n_g_cells = 0;
 
   const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
                                    "unexpected or of incorrect size");
@@ -595,7 +595,7 @@ _read_cell_rank(cs_mesh_t       *mesh,
         cs_io_set_fvm_lnum(&header, rank_pp_in);
         if (mr->cell_bi.gnum_range[0] > 0)
           n_elts = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
-        BFT_MALLOC(mr->cell_rank, n_elts, fvm_lnum_t);
+        BFT_MALLOC(mr->cell_rank, n_elts, cs_lnum_t);
         cs_io_read_block(&header,
                          mr->cell_bi.gnum_range[0],
                          mr->cell_bi.gnum_range[1],
@@ -637,13 +637,13 @@ _read_cell_rank(cs_mesh_t       *mesh,
 
 static void
 _face_type_g(cs_mesh_t                  *mesh,
-             fvm_lnum_t                  n_faces,
+             cs_lnum_t                   n_faces,
              const fvm_interface_set_t  *face_ifs,
-             const fvm_lnum_t            face_cell[],
-             const fvm_lnum_t            face_vertices_idx[],
+             const cs_lnum_t             face_cell[],
+             const cs_lnum_t             face_vertices_idx[],
              char                        face_type[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
   int j;
 
   const int n_interfaces = fvm_interface_set_size(face_ifs);
@@ -667,8 +667,8 @@ _face_type_g(cs_mesh_t                  *mesh,
   for (j = 0; j < n_interfaces; j++) {
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, j);
-    fvm_lnum_t face_if_size = fvm_interface_size(face_if);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    cs_lnum_t face_if_size = fvm_interface_size(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
 
     for (i = 0; i < face_if_size; i++)
       face_type[loc_num[i] - 1] = '\0';
@@ -683,7 +683,7 @@ _face_type_g(cs_mesh_t                  *mesh,
   mesh->b_face_vtx_connect_size = 0;
 
   for (i = 0; i < n_faces; i++) {
-    fvm_lnum_t n_f_vertices = face_vertices_idx[i+1] - face_vertices_idx[i];
+    cs_lnum_t n_f_vertices = face_vertices_idx[i+1] - face_vertices_idx[i];
     if (face_type[i] == '\0') {
       mesh->n_i_faces += 1;
       mesh->i_face_vtx_connect_size += n_f_vertices;
@@ -718,14 +718,14 @@ _face_type_g(cs_mesh_t                  *mesh,
 
 static void
 _face_type_l(cs_mesh_t                  *mesh,
-             fvm_lnum_t                  n_faces,
-             const fvm_lnum_t            n_periodic_couples[],
-             const fvm_gnum_t     *const periodic_couples[],
-             const fvm_lnum_t            face_cell[],
-             const fvm_lnum_t            face_vertices_idx[],
+             cs_lnum_t                   n_faces,
+             const cs_lnum_t             n_periodic_couples[],
+             const cs_gnum_t      *const periodic_couples[],
+             const cs_lnum_t             face_cell[],
+             const cs_lnum_t             face_vertices_idx[],
              char                        face_type[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
   int j;
 
   /* Mark base interior faces */
@@ -745,7 +745,7 @@ _face_type_l(cs_mesh_t                  *mesh,
 
   for (i = 0; i < mesh->n_init_perio; i++) {
 
-    const fvm_gnum_t *p_couples = periodic_couples[i];
+    const cs_gnum_t *p_couples = periodic_couples[i];
 
     for (j = 0; j < n_periodic_couples[i]; j++) {
       face_type[p_couples[j*2] - 1] = '\0';
@@ -762,7 +762,7 @@ _face_type_l(cs_mesh_t                  *mesh,
   mesh->b_face_vtx_connect_size = 0;
 
   for (i = 0; i < n_faces; i++) {
-    fvm_lnum_t n_f_vertices = face_vertices_idx[i+1] - face_vertices_idx[i];
+    cs_lnum_t n_f_vertices = face_vertices_idx[i+1] - face_vertices_idx[i];
     if (face_type[i] == '\0') {
       mesh->n_i_faces += 1;
       mesh->i_face_vtx_connect_size += n_f_vertices;
@@ -799,11 +799,11 @@ _face_type_l(cs_mesh_t                  *mesh,
 
 static void
 _extract_face_cell(cs_mesh_t         *mesh,
-                   fvm_lnum_t         n_faces,
-                   const fvm_lnum_t   face_cell[],
+                   cs_lnum_t          n_faces,
+                   const cs_lnum_t    face_cell[],
                    const char         face_type[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
   size_t n_i_faces = 0;
   size_t n_b_faces = 0;
@@ -858,12 +858,12 @@ _extract_face_cell(cs_mesh_t         *mesh,
 
 static void
 _extract_face_vertices(cs_mesh_t         *mesh,
-                       fvm_lnum_t         n_faces,
-                       const fvm_lnum_t   face_vertices_idx[],
-                       const fvm_lnum_t   face_vertices[],
+                       cs_lnum_t          n_faces,
+                       const cs_lnum_t    face_vertices_idx[],
+                       const cs_lnum_t    face_vertices[],
                        const char         face_type[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
   size_t j;
 
   size_t n_i_faces = 0;
@@ -887,10 +887,10 @@ _extract_face_vertices(cs_mesh_t         *mesh,
   for (i = 0; i < n_faces; i++) {
 
     size_t n_f_vertices = face_vertices_idx[i+1] - face_vertices_idx[i];
-    const fvm_lnum_t *_face_vtx = face_vertices + face_vertices_idx[i];
+    const cs_lnum_t *_face_vtx = face_vertices + face_vertices_idx[i];
 
     if (face_type[i] == '\0') {
-      fvm_lnum_t *_i_face_vtx =   mesh->i_face_vtx_lst
+      cs_lnum_t *_i_face_vtx =   mesh->i_face_vtx_lst
                                 + mesh->i_face_vtx_idx[n_i_faces] - 1;
       for (j = 0; j < n_f_vertices; j++)
         _i_face_vtx[j] = _face_vtx[j];
@@ -900,7 +900,7 @@ _extract_face_vertices(cs_mesh_t         *mesh,
     }
 
     else if (face_type[i] == '\1' || face_type[i] == '\3') {
-      fvm_lnum_t *_b_face_vtx =   mesh->b_face_vtx_lst
+      cs_lnum_t *_b_face_vtx =   mesh->b_face_vtx_lst
                                 + mesh->b_face_vtx_idx[n_b_faces] - 1;
       for (j = 0; j < n_f_vertices; j++)
         _b_face_vtx[j] = _face_vtx[j];
@@ -910,7 +910,7 @@ _extract_face_vertices(cs_mesh_t         *mesh,
     }
 
     else if (face_type[i] == '\2') {
-      fvm_lnum_t *_b_face_vtx =   mesh->b_face_vtx_lst
+      cs_lnum_t *_b_face_vtx =   mesh->b_face_vtx_lst
                                 + mesh->b_face_vtx_idx[n_b_faces] - 1;
       for (j = 0; j < n_f_vertices; j++)
         _b_face_vtx[j] = _face_vtx[n_f_vertices - j - 1];
@@ -940,27 +940,27 @@ _extract_face_vertices(cs_mesh_t         *mesh,
 
 static void
 _extract_face_gnum(cs_mesh_t         *mesh,
-                   fvm_lnum_t         n_faces,
-                   const fvm_gnum_t   global_face_num[],
+                   cs_lnum_t          n_faces,
+                   const cs_gnum_t    global_face_num[],
                    const char         face_type[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
   size_t n_i_faces = 0;
   size_t n_b_faces = 0;
 
-  fvm_lnum_t *global_i_face = NULL;
-  fvm_lnum_t *global_b_face = NULL;
+  cs_lnum_t *global_i_face = NULL;
+  cs_lnum_t *global_b_face = NULL;
 
   fvm_io_num_t *tmp_face_num = NULL;
 
   /* Allocate arrays (including temporary arrays) */
 
-  BFT_MALLOC(mesh->global_i_face_num, mesh->n_i_faces, fvm_gnum_t);
-  BFT_MALLOC(mesh->global_b_face_num, mesh->n_b_faces, fvm_gnum_t);
+  BFT_MALLOC(mesh->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
+  BFT_MALLOC(mesh->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
 
-  BFT_MALLOC(global_i_face, mesh->n_i_faces, fvm_lnum_t);
-  BFT_MALLOC(global_b_face, mesh->n_b_faces, fvm_lnum_t);
+  BFT_MALLOC(global_i_face, mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(global_b_face, mesh->n_b_faces, cs_lnum_t);
 
   /* Now build internal and boundary face lists */
 
@@ -983,11 +983,11 @@ _extract_face_gnum(cs_mesh_t         *mesh,
 
   memcpy(mesh->global_i_face_num,
          fvm_io_num_get_global_num(tmp_face_num),
-         n_i_faces*sizeof(fvm_gnum_t));
+         n_i_faces*sizeof(cs_gnum_t));
 
   mesh->n_g_i_faces = fvm_io_num_get_global_count(tmp_face_num);
 
-  assert(fvm_io_num_get_local_count(tmp_face_num) == (fvm_lnum_t)n_i_faces);
+  assert(fvm_io_num_get_local_count(tmp_face_num) == (cs_lnum_t)n_i_faces);
 
   tmp_face_num = fvm_io_num_destroy(tmp_face_num);
 
@@ -1001,11 +1001,11 @@ _extract_face_gnum(cs_mesh_t         *mesh,
   if (n_b_faces > 0)
     memcpy(mesh->global_b_face_num,
            fvm_io_num_get_global_num(tmp_face_num),
-           n_b_faces*sizeof(fvm_gnum_t));
+           n_b_faces*sizeof(cs_gnum_t));
 
   mesh->n_g_b_faces = fvm_io_num_get_global_count(tmp_face_num);
 
-  assert(fvm_io_num_get_local_count(tmp_face_num) == (fvm_lnum_t)n_b_faces);
+  assert(fvm_io_num_get_local_count(tmp_face_num) == (cs_lnum_t)n_b_faces);
 
   tmp_face_num = fvm_io_num_destroy(tmp_face_num);
 
@@ -1033,11 +1033,11 @@ _extract_face_gnum(cs_mesh_t         *mesh,
 
 static void
 _extract_face_gc_id(cs_mesh_t        *mesh,
-                   fvm_lnum_t         n_faces,
-                   const fvm_lnum_t   face_gc_id[],
+                   cs_lnum_t          n_faces,
+                   const cs_lnum_t    face_gc_id[],
                    const char         face_type[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
   size_t n_i_faces = 0;
   size_t n_b_faces = 0;
@@ -1075,17 +1075,17 @@ _extract_face_gc_id(cs_mesh_t        *mesh,
 
 static void
 _face_ifs_to_interior(fvm_interface_set_t  *face_ifs,
-                      fvm_lnum_t            n_faces,
+                      cs_lnum_t             n_faces,
                       const char            face_type[])
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
-  fvm_lnum_t   i_face_count = 0;
-  fvm_lnum_t  *i_face_id = NULL;
+  cs_lnum_t   i_face_count = 0;
+  cs_lnum_t  *i_face_id = NULL;
 
   /* Build face renumbering */
 
-  BFT_MALLOC(i_face_id, n_faces, fvm_lnum_t);
+  BFT_MALLOC(i_face_id, n_faces, cs_lnum_t);
 
   for (i = 0; i < n_faces; i++) {
     if (face_type[i] == '\0')
@@ -1114,8 +1114,8 @@ static int _compare_couples(const void *x, const void *y)
 {
   int retval = 1;
 
-  const fvm_gnum_t *c0 = x;
-  const fvm_gnum_t *c1 = y;
+  const cs_gnum_t *c0 = x;
+  const cs_gnum_t *c1 = y;
 
   if (c0[0] < c1[0])
     retval = -1;
@@ -1146,16 +1146,16 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
                           const fvm_interface_set_t  *face_ifs)
 {
   int i, j;
-  fvm_lnum_t k, l;
+  cs_lnum_t k, l;
 
   int perio_count = 0;
-  fvm_lnum_t  *send_index = NULL, *recv_index = NULL;
-  fvm_gnum_t  *send_num = NULL, *recv_num = NULL;
+  cs_lnum_t  *send_index = NULL, *recv_index = NULL;
+  cs_gnum_t  *send_num = NULL, *recv_num = NULL;
   int  *tr_id = NULL;
 
   const int n_perio = mesh->n_init_perio;
   const int n_interfaces = fvm_interface_set_size(face_ifs);
-  const fvm_gnum_t *face_gnum = mesh->global_i_face_num;
+  const cs_gnum_t *face_gnum = mesh->global_i_face_num;
 
   /* Allocate arrays in mesh builder (initializing per_face_idx) */
 
@@ -1165,8 +1165,8 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
 
   mb->n_perio = n_perio;
 
-  BFT_MALLOC(mb->n_perio_couples, n_perio, fvm_lnum_t);
-  BFT_MALLOC(mb->perio_couples, n_perio, fvm_gnum_t *);
+  BFT_MALLOC(mb->n_perio_couples, n_perio, cs_lnum_t);
+  BFT_MALLOC(mb->perio_couples, n_perio, cs_gnum_t *);
 
   for (i = 0; i < n_perio; i++) {
     mb->n_perio_couples[i] = 0;
@@ -1191,23 +1191,23 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
   }
   assert(perio_count == n_perio);
 
-  BFT_MALLOC(send_index, n_interfaces + 1, fvm_lnum_t);
-  BFT_MALLOC(recv_index, n_interfaces + 1, fvm_lnum_t);
+  BFT_MALLOC(send_index, n_interfaces + 1, cs_lnum_t);
+  BFT_MALLOC(recv_index, n_interfaces + 1, cs_lnum_t);
   send_index[0] = 0;
   recv_index[0] = 0;
 
   for (i = 0; i < n_interfaces; i++) {
 
-    fvm_lnum_t send_size = 0;
-    fvm_lnum_t recv_size = 0;
+    cs_lnum_t send_size = 0;
+    cs_lnum_t recv_size = 0;
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
 
     for (j = 0; j < n_perio; j++) {
-      const fvm_lnum_t n_tr_faces = (  tr_index[tr_id[j*2] + 1]
+      const cs_lnum_t n_tr_faces = (  tr_index[tr_id[j*2] + 1]
                                      - tr_index[tr_id[j*2]]);
-      const fvm_lnum_t n_rev_faces = (  tr_index[tr_id[j*2+1] + 1]
+      const cs_lnum_t n_rev_faces = (  tr_index[tr_id[j*2+1] + 1]
                                       - tr_index[tr_id[j*2+1]]);
       send_size += n_rev_faces;
       recv_size += n_tr_faces;
@@ -1218,21 +1218,21 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
     recv_index[i+1] = recv_index[i] + recv_size;
   }
 
-  BFT_MALLOC(send_num, send_index[n_interfaces], fvm_gnum_t);
-  BFT_MALLOC(recv_num, recv_index[n_interfaces], fvm_gnum_t);
+  BFT_MALLOC(send_num, send_index[n_interfaces], cs_gnum_t);
+  BFT_MALLOC(recv_num, recv_index[n_interfaces], cs_gnum_t);
 
   /* Prepare send buffer (send reverse transformation values) */
 
   for (i = 0, j = 0; i < n_interfaces; i++) {
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
 
     for (j = 0, l = send_index[i]; j < n_perio; j++) {
 
-      const fvm_lnum_t start_id = tr_index[tr_id[j*2+1]];
-      const fvm_lnum_t end_id = tr_index[tr_id[j*2+1] + 1];
+      const cs_lnum_t start_id = tr_index[tr_id[j*2+1]];
+      const cs_lnum_t end_id = tr_index[tr_id[j*2+1] + 1];
 
       for (k = start_id; k < end_id; k++)
         send_num[l++] = face_gnum[loc_num[k]-1];
@@ -1255,7 +1255,7 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
       int distant_rank = fvm_interface_rank(face_if);
       MPI_Irecv(recv_num + recv_index[i],
                 recv_index[i+1] - recv_index[i],
-                FVM_MPI_GNUM,
+                CS_MPI_GNUM,
                 distant_rank,
                 distant_rank,
                 cs_glob_mpi_comm,
@@ -1267,7 +1267,7 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
       int distant_rank = fvm_interface_rank(face_if);
       MPI_Isend(send_num + send_index[i],
                 send_index[i+1] - send_index[i],
-                FVM_MPI_GNUM,
+                CS_MPI_GNUM,
                 distant_rank,
                 (int)cs_glob_rank_id,
                 cs_glob_mpi_comm,
@@ -1284,7 +1284,7 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
   BFT_FREE(send_index);
 
   for (i = 0; i < n_perio; i++)
-    BFT_MALLOC(mb->perio_couples[i], mb->n_perio_couples[i]*2, fvm_gnum_t);
+    BFT_MALLOC(mb->perio_couples[i], mb->n_perio_couples[i]*2, cs_gnum_t);
 
   /* Reset couples count */
 
@@ -1296,17 +1296,17 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
   for (i = 0, j = 0; i < n_interfaces; i++) {
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
 
     for (j = 0, l = recv_index[i]; j < n_perio; j++) {
 
-      fvm_lnum_t nc = mb->n_perio_couples[j]*2;
-      const fvm_lnum_t start_id = tr_index[tr_id[j*2]];
-      const fvm_lnum_t end_id = tr_index[tr_id[j*2] + 1];
+      cs_lnum_t nc = mb->n_perio_couples[j]*2;
+      const cs_lnum_t start_id = tr_index[tr_id[j*2]];
+      const cs_lnum_t end_id = tr_index[tr_id[j*2] + 1];
 
       for (k = start_id; k < end_id; k++) {
-        fvm_lnum_t f_id = loc_num[k] - 1;
+        cs_lnum_t f_id = loc_num[k] - 1;
         mb->perio_couples[j][nc++] = face_gnum[f_id];
         mb->perio_couples[j][nc++] = recv_num[l++];
       }
@@ -1325,7 +1325,7 @@ _extract_periodic_faces_g(const cs_mesh_t            *mesh,
     if (mb->n_perio_couples[i] > 0)
       qsort(mb->perio_couples[i],
             mb->n_perio_couples[i],
-            sizeof(fvm_gnum_t) * 2,
+            sizeof(cs_gnum_t) * 2,
             &_compare_couples);
   }
 }
@@ -1351,13 +1351,13 @@ static void
 _extract_periodic_faces_l(_mesh_reader_t     *mr,
                           cs_mesh_builder_t  *mb,
                           int                 n_init_perio,
-                          fvm_lnum_t          n_faces,
+                          cs_lnum_t           n_faces,
                           const char          face_type[])
 {
   int i;
 
-  fvm_gnum_t   next_face_num = 1;
-  fvm_gnum_t  *i_face_num = NULL;
+  cs_gnum_t   next_face_num = 1;
+  cs_gnum_t  *i_face_num = NULL;
 
   /* Transfer arrays from reader to builder, then renumber couples */
 
@@ -1373,7 +1373,7 @@ _extract_periodic_faces_l(_mesh_reader_t     *mr,
 
   /* Build face renumbering */
 
-  BFT_MALLOC(i_face_num, n_faces, fvm_gnum_t);
+  BFT_MALLOC(i_face_num, n_faces, cs_gnum_t);
 
   for (i = 0; i < n_faces; i++) {
     if (face_type[i] == '\0')
@@ -1387,7 +1387,7 @@ _extract_periodic_faces_l(_mesh_reader_t     *mr,
   for (i = 0; i < n_init_perio; i++) {
 
     size_t j;
-    fvm_gnum_t *p_couples = mb->perio_couples[i];
+    cs_gnum_t *p_couples = mb->perio_couples[i];
     const size_t n_vals = mb->n_perio_couples[i] * 2;
 
     for (j = 0; j < n_vals; j++) {
@@ -1415,29 +1415,29 @@ _extract_periodic_faces_l(_mesh_reader_t     *mr,
  *----------------------------------------------------------------------------*/
 
 static void
-_cell_center(fvm_lnum_t        n_cells,
-             fvm_lnum_t        n_faces,
-             const fvm_lnum_t  face_cells[],
-             const fvm_lnum_t  face_vtx_idx[],
-             const fvm_lnum_t  face_vtx[],
+_cell_center(cs_lnum_t         n_cells,
+             cs_lnum_t         n_faces,
+             const cs_lnum_t   face_cells[],
+             const cs_lnum_t   face_vtx_idx[],
+             const cs_lnum_t   face_vtx[],
              const cs_real_t   vtx_coord[],
-             fvm_coord_t       cell_center[])
+             cs_coord_t        cell_center[])
 {
-  fvm_lnum_t i, j;
-  fvm_lnum_t vtx_id, face_id, start_id, end_id;
-  fvm_lnum_t n_face_vertices;
-  fvm_coord_t ref_normal[3], vtx_cog[3], face_center[3];
+  cs_lnum_t i, j;
+  cs_lnum_t vtx_id, face_id, start_id, end_id;
+  cs_lnum_t n_face_vertices;
+  cs_coord_t ref_normal[3], vtx_cog[3], face_center[3];
 
-  fvm_lnum_t n_max_face_vertices = 0;
+  cs_lnum_t n_max_face_vertices = 0;
 
   _vtx_coords_t *face_vtx_coord = NULL;
-  fvm_coord_t *weight = NULL;
+  cs_coord_t *weight = NULL;
 
   const double surf_epsilon = 1e-24;
 
   assert(face_vtx_idx[0] == 0);
 
-  BFT_MALLOC(weight, n_cells, fvm_coord_t);
+  BFT_MALLOC(weight, n_cells, cs_coord_t);
 
   for (i = 0; i < n_cells; i++) {
     weight[i] = 0.0;
@@ -1463,12 +1463,12 @@ _cell_center(fvm_lnum_t        n_cells,
 
     /* Initialization */
 
-    fvm_lnum_t tri_id;
+    cs_lnum_t tri_id;
 
-    fvm_lnum_t cell_id_0 = face_cells[face_id*2] -1;
-    fvm_lnum_t cell_id_1 = face_cells[face_id*2 + 1] -1;
-    fvm_coord_t unweighted_center[3] = {0.0, 0.0, 0.0};
-    fvm_coord_t face_surface = 0.0;
+    cs_lnum_t cell_id_0 = face_cells[face_id*2] -1;
+    cs_lnum_t cell_id_1 = face_cells[face_id*2 + 1] -1;
+    cs_coord_t unweighted_center[3] = {0.0, 0.0, 0.0};
+    cs_coord_t face_surface = 0.0;
 
     n_face_vertices = 0;
 
@@ -1479,7 +1479,7 @@ _cell_center(fvm_lnum_t        n_cells,
 
     for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
 
-      fvm_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
+      cs_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
       for (i = 0; i < 3; i++)
         face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
       n_face_vertices++;
@@ -1505,11 +1505,11 @@ _cell_center(fvm_lnum_t        n_cells,
 
     for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
 
-      fvm_coord_t tri_surface;
-      fvm_coord_t vect1[3], vect2[3], tri_normal[3], tri_center[3];
+      cs_coord_t tri_surface;
+      cs_coord_t vect1[3], vect2[3], tri_normal[3], tri_center[3];
 
-      fvm_lnum_t id0 = tri_id;
-      fvm_lnum_t id1 = (tri_id + 1)%n_face_vertices;
+      cs_lnum_t id0 = tri_id;
+      cs_lnum_t id1 = (tri_id + 1)%n_face_vertices;
 
       /* Normal for each triangle */
 
@@ -1603,29 +1603,29 @@ for (i = 0; i < 3; i++)
  *----------------------------------------------------------------------------*/
 
 static void
-_precompute_cell_center(const _mesh_reader_t     *mr,
-                        fvm_coord_t               cell_center[],
-                        MPI_Comm                  comm)
+_precompute_cell_center(const _mesh_reader_t    *mr,
+                        cs_coord_t               cell_center[],
+                        MPI_Comm                 comm)
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
   int n_ranks = 0;
 
-  fvm_datatype_t gnum_type = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+  fvm_datatype_t gnum_type = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
   fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
 
-  fvm_lnum_t _n_cells = 0;
-  fvm_lnum_t _n_faces = 0;
-  fvm_lnum_t _n_vertices = 0;
+  cs_lnum_t _n_cells = 0;
+  cs_lnum_t _n_faces = 0;
+  cs_lnum_t _n_vertices = 0;
 
-  fvm_gnum_t *_cell_num = NULL;
-  fvm_gnum_t *_face_num = NULL;
-  fvm_gnum_t *_vtx_num = NULL;
-  fvm_gnum_t *_face_gcells = NULL;
-  fvm_gnum_t *_face_gvertices = NULL;
+  cs_gnum_t *_cell_num = NULL;
+  cs_gnum_t *_face_num = NULL;
+  cs_gnum_t *_vtx_num = NULL;
+  cs_gnum_t *_face_gcells = NULL;
+  cs_gnum_t *_face_gvertices = NULL;
 
-  fvm_lnum_t *_face_cells = NULL;
-  fvm_lnum_t *_face_vertices_idx = NULL;
-  fvm_lnum_t *_face_vertices = NULL;
+  cs_lnum_t *_face_cells = NULL;
+  cs_lnum_t *_face_vertices_idx = NULL;
+  cs_lnum_t *_face_vertices = NULL;
 
   cs_real_t *_vtx_coord = NULL;
 
@@ -1635,11 +1635,11 @@ _precompute_cell_center(const _mesh_reader_t     *mr,
 
   MPI_Comm_size(comm, &n_ranks);
 
-  assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
+  assert((sizeof(cs_lnum_t) == 4) || (sizeof(cs_lnum_t) == 8));
 
   _n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
 
-  BFT_MALLOC(_cell_num, _n_cells, fvm_gnum_t);
+  BFT_MALLOC(_cell_num, _n_cells, cs_gnum_t);
 
   for (i = 0; i < _n_cells; i++)
     _cell_num[i] = mr->cell_bi.gnum_range[0] + i;
@@ -1663,7 +1663,7 @@ _precompute_cell_center(const _mesh_reader_t     *mr,
 
   _n_faces = fvm_block_to_part_get_n_part_ents(d);
 
-  BFT_MALLOC(_face_gcells, _n_faces*2, fvm_gnum_t);
+  BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
 
   /* Face -> cell connectivity */
 
@@ -1675,7 +1675,7 @@ _precompute_cell_center(const _mesh_reader_t     *mr,
 
   /* Now convert face -> cell connectivity to local cell numbers */
 
-  BFT_MALLOC(_face_cells, _n_faces*2, fvm_lnum_t);
+  BFT_MALLOC(_face_cells, _n_faces*2, cs_lnum_t);
 
   fvm_block_to_part_global_to_local(_n_faces*2,
                                     1,
@@ -1689,13 +1689,13 @@ _precompute_cell_center(const _mesh_reader_t     *mr,
 
   /* Face connectivity */
 
-  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, fvm_lnum_t);
+  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
   fvm_block_to_part_copy_index(d,
                                mr->face_vertices_idx,
                                _face_vertices_idx);
 
-  BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], fvm_gnum_t);
+  BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
 
   fvm_block_to_part_copy_indexed(d,
                                  gnum_type,
@@ -1731,7 +1731,7 @@ _precompute_cell_center(const _mesh_reader_t     *mr,
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
-  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], fvm_lnum_t);
+  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
   fvm_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
                                     1,
@@ -1774,19 +1774,19 @@ _precompute_cell_center(const _mesh_reader_t     *mr,
  *----------------------------------------------------------------------------*/
 
 static void
-_f_face_center(fvm_lnum_t        n_f_faces,
-               fvm_lnum_t        f_face_ids[],
-               const fvm_lnum_t  face_vtx_idx[],
-               const fvm_lnum_t  face_vtx[],
+_f_face_center(cs_lnum_t         n_f_faces,
+               cs_lnum_t         f_face_ids[],
+               const cs_lnum_t   face_vtx_idx[],
+               const cs_lnum_t   face_vtx[],
                const cs_real_t   vtx_coord[],
-               fvm_coord_t       f_face_center[])
+               cs_coord_t        f_face_center[])
 {
-  fvm_lnum_t i, j, k;
-  fvm_lnum_t vtx_id, start_id, end_id;
-  fvm_lnum_t n_face_vertices;
-  fvm_coord_t ref_normal[3], vtx_cog[3];
+  cs_lnum_t i, j, k;
+  cs_lnum_t vtx_id, start_id, end_id;
+  cs_lnum_t n_face_vertices;
+  cs_coord_t ref_normal[3], vtx_cog[3];
 
-  fvm_lnum_t n_max_face_vertices = 0;
+  cs_lnum_t n_max_face_vertices = 0;
 
   _vtx_coords_t *face_vtx_coord = NULL;
 
@@ -1804,7 +1804,7 @@ _f_face_center(fvm_lnum_t        n_f_faces,
   n_max_face_vertices = 0;
 
   for (k = 0; k < n_f_faces; k++) {
-    fvm_lnum_t face_id = f_face_ids[k];
+    cs_lnum_t face_id = f_face_ids[k];
     n_face_vertices = face_vtx_idx[face_id + 1] - face_vtx_idx[face_id];
     if (n_max_face_vertices <= n_face_vertices)
       n_max_face_vertices = n_face_vertices;
@@ -1816,14 +1816,14 @@ _f_face_center(fvm_lnum_t        n_f_faces,
 
   for (k = 0; k < n_f_faces; k++) {
 
-    fvm_lnum_t tri_id;
+    cs_lnum_t tri_id;
 
     /* Initialization */
 
-    fvm_lnum_t face_id = f_face_ids[k];
-    fvm_coord_t unweighted_center[3] = {0.0, 0.0, 0.0};
-    fvm_coord_t face_surface = 0.0;
-    fvm_coord_t *face_center = f_face_center + (k*3);
+    cs_lnum_t face_id = f_face_ids[k];
+    cs_coord_t unweighted_center[3] = {0.0, 0.0, 0.0};
+    cs_coord_t face_surface = 0.0;
+    cs_coord_t *face_center = f_face_center + (k*3);
 
     n_face_vertices = 0;
 
@@ -1834,7 +1834,7 @@ _f_face_center(fvm_lnum_t        n_f_faces,
 
     for (vtx_id = start_id; vtx_id < end_id; vtx_id++) {
 
-      fvm_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
+      cs_lnum_t shift = 3 * (face_vtx[vtx_id] - 1);
       for (i = 0; i < 3; i++)
         face_vtx_coord[n_face_vertices][i] = vtx_coord[shift + i];
       n_face_vertices++;
@@ -1860,11 +1860,11 @@ _f_face_center(fvm_lnum_t        n_f_faces,
 
     for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
 
-      fvm_coord_t tri_surface;
-      fvm_coord_t vect1[3], vect2[3], tri_normal[3], tri_center[3];
+      cs_coord_t tri_surface;
+      cs_coord_t vect1[3], vect2[3], tri_normal[3], tri_center[3];
 
-      fvm_lnum_t id0 = tri_id;
-      fvm_lnum_t id1 = (tri_id + 1)%n_face_vertices;
+      cs_lnum_t id0 = tri_id;
+      cs_lnum_t id1 = (tri_id + 1)%n_face_vertices;
 
       /* Normal for each triangle */
 
@@ -1937,20 +1937,20 @@ _f_face_center(fvm_lnum_t        n_f_faces,
 
 static void
 _precompute_free_face_center(const _mesh_reader_t   *mr,
-                             fvm_lnum_t              n_f_faces,
-                             fvm_lnum_t              f_face_ids[],
-                             fvm_coord_t             f_face_center[],
+                             cs_lnum_t               n_f_faces,
+                             cs_lnum_t               f_face_ids[],
+                             cs_coord_t              f_face_center[],
                              MPI_Comm                comm)
 {
   int n_ranks = 0;
 
   fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
 
-  fvm_lnum_t _n_faces = 0;
-  fvm_lnum_t _n_vertices = 0;
+  cs_lnum_t _n_faces = 0;
+  cs_lnum_t _n_vertices = 0;
 
-  fvm_gnum_t *_vtx_num = NULL;
-  fvm_lnum_t *_face_vertices = NULL;
+  cs_gnum_t *_vtx_num = NULL;
+  cs_lnum_t *_face_vertices = NULL;
 
   cs_real_t *_vtx_coord = NULL;
 
@@ -1960,7 +1960,7 @@ _precompute_free_face_center(const _mesh_reader_t   *mr,
 
   MPI_Comm_size(comm, &n_ranks);
 
-  assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
+  assert((sizeof(cs_lnum_t) == 4) || (sizeof(cs_lnum_t) == 8));
 
   _n_faces = mr->face_bi.gnum_range[1] - mr->face_bi.gnum_range[0];
 
@@ -1988,7 +1988,7 @@ _precompute_free_face_center(const _mesh_reader_t   *mr,
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
-  BFT_MALLOC(_face_vertices, mr->face_vertices_idx[_n_faces], fvm_lnum_t);
+  BFT_MALLOC(_face_vertices, mr->face_vertices_idx[_n_faces], cs_lnum_t);
 
   fvm_block_to_part_global_to_local(mr->face_vertices_idx[_n_faces],
                                     1,
@@ -2023,11 +2023,11 @@ _cell_rank_by_sfc(const _mesh_reader_t     *mr,
                   int                       cell_rank[],
                   MPI_Comm                  comm)
 {
-  fvm_lnum_t i;
-  fvm_lnum_t n_cells = 0, block_size = 0, rank_step = 0;
-  fvm_coord_t *cell_center = NULL;
+  cs_lnum_t i;
+  cs_lnum_t n_cells = 0, block_size = 0, rank_step = 0;
+  cs_coord_t *cell_center = NULL;
   fvm_io_num_t *cell_io_num = NULL;
-  const fvm_gnum_t *cell_num = NULL;
+  const cs_gnum_t *cell_num = NULL;
 
   bft_printf(_(" Partitioning by space-filling curve: %s.\n"),
              fvm_io_num_sfc_type_name[_sfc_type]);
@@ -2036,7 +2036,7 @@ _cell_rank_by_sfc(const _mesh_reader_t     *mr,
   block_size = mr->cell_bi.block_size;
   rank_step = mr->cell_bi.rank_step;
 
-  BFT_MALLOC(cell_center, n_cells*3, fvm_coord_t);
+  BFT_MALLOC(cell_center, n_cells*3, cs_coord_t);
 
   _precompute_cell_center(mr, cell_center, comm);
 
@@ -2071,25 +2071,25 @@ static int *
 _default_face_rank(_mesh_reader_t     *mr,
                    MPI_Comm            comm)
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
   fvm_block_to_part_info_t free_face_bi;
 
   int n_ranks = 0, rank_id = -1;
 
-  fvm_lnum_t _n_faces = 0, n_free_faces = 0;
-  fvm_gnum_t _n_g_free_faces = 0, n_g_free_faces = 0;
+  cs_lnum_t _n_faces = 0, n_free_faces = 0;
+  cs_gnum_t _n_g_free_faces = 0, n_g_free_faces = 0;
 
-  fvm_lnum_t *free_face_ids = NULL;
-  fvm_coord_t *free_face_centers = NULL;
+  cs_lnum_t *free_face_ids = NULL;
+  cs_coord_t *free_face_centers = NULL;
 
   fvm_io_num_t *free_face_io_num = NULL;
-  const fvm_gnum_t *free_face_num = NULL;
+  const cs_gnum_t *free_face_num = NULL;
 
   int *default_rank = NULL;
 
   /* Initialization */
 
-  assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
+  assert((sizeof(cs_lnum_t) == 4) || (sizeof(cs_lnum_t) == 8));
 
   /* Count number of isolated faces */
 
@@ -2103,7 +2103,7 @@ _default_face_rank(_mesh_reader_t     *mr,
 
   _n_g_free_faces = n_free_faces;
   MPI_Allreduce(&_n_g_free_faces, &n_g_free_faces, 1,
-                FVM_MPI_GNUM, MPI_SUM, comm);
+                CS_MPI_GNUM, MPI_SUM, comm);
 
   /* Return if we do not have isolated faces */
 
@@ -2126,8 +2126,8 @@ _default_face_rank(_mesh_reader_t     *mr,
   for (i = 0; i < _n_faces; i++)
     default_rank[i] = -1;
 
-  BFT_MALLOC(free_face_ids, n_free_faces, fvm_lnum_t);
-  BFT_MALLOC(free_face_centers, n_free_faces*3, fvm_coord_t);
+  BFT_MALLOC(free_face_ids, n_free_faces, cs_lnum_t);
+  BFT_MALLOC(free_face_centers, n_free_faces*3, cs_coord_t);
 
   n_free_faces = 0;
   for (i = 0; i < _n_faces; i++) {
@@ -2179,24 +2179,24 @@ _decompose_data_g(cs_mesh_t          *mesh,
                   _mesh_reader_t     *mr,
                   MPI_Comm            comm)
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
   int n_ranks = 0;
 
-  fvm_datatype_t lnum_type = (sizeof(fvm_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
-  fvm_datatype_t gnum_type = (sizeof(fvm_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
+  fvm_datatype_t lnum_type = (sizeof(cs_lnum_t) == 8) ? FVM_INT64 : FVM_INT32;
+  fvm_datatype_t gnum_type = (sizeof(cs_gnum_t) == 8) ? FVM_UINT64 : FVM_UINT32;
   fvm_datatype_t real_type = (sizeof(cs_real_t) == 8) ? FVM_DOUBLE : FVM_FLOAT;
 
   int use_cell_rank = 0;
 
-  fvm_lnum_t _n_faces = 0;
-  fvm_gnum_t *_face_num = NULL;
-  fvm_gnum_t *_face_gcells = NULL;
-  fvm_gnum_t *_face_gvertices = NULL;
+  cs_lnum_t _n_faces = 0;
+  cs_gnum_t *_face_num = NULL;
+  cs_gnum_t *_face_gcells = NULL;
+  cs_gnum_t *_face_gvertices = NULL;
 
-  fvm_lnum_t *_face_cells = NULL;
-  fvm_lnum_t *_face_gc_id = NULL;
-  fvm_lnum_t *_face_vertices_idx = NULL;
-  fvm_lnum_t *_face_vertices = NULL;
+  cs_lnum_t *_face_cells = NULL;
+  cs_lnum_t *_face_gc_id = NULL;
+  cs_lnum_t *_face_vertices_idx = NULL;
+  cs_lnum_t *_face_vertices = NULL;
 
   int  *default_face_rank = NULL;
   char *face_type = NULL;
@@ -2208,7 +2208,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   MPI_Comm_size(comm, &n_ranks);
 
-  assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
+  assert((sizeof(cs_lnum_t) == 4) || (sizeof(cs_lnum_t) == 8));
 
   /* Different handling of cells depending on whether decomposition
      data is available or not. */
@@ -2218,9 +2218,9 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   else if (_use_sfc == true && mr->read_cell_rank == 0) {
 
-    fvm_lnum_t _n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
+    cs_lnum_t _n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
 
-    BFT_MALLOC(mr->cell_rank, _n_cells, fvm_lnum_t);
+    BFT_MALLOC(mr->cell_rank, _n_cells, cs_lnum_t);
 
     _cell_rank_by_sfc(mr,  mr->cell_rank, comm);
 
@@ -2235,7 +2235,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
     mesh->n_cells = fvm_block_to_part_get_n_part_ents(d);
 
-    BFT_MALLOC(mesh->cell_family, mesh->n_cells, fvm_lnum_t);
+    BFT_MALLOC(mesh->cell_family, mesh->n_cells, cs_lnum_t);
 
     fvm_block_to_part_copy_array(d,
                                  lnum_type,
@@ -2254,7 +2254,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
     mesh->n_cells = mr->cell_bi.gnum_range[1] - mr->cell_bi.gnum_range[0];
 
-    BFT_MALLOC(mesh->global_cell_num, mesh->n_cells, fvm_gnum_t);
+    BFT_MALLOC(mesh->global_cell_num, mesh->n_cells, cs_gnum_t);
 
     for (i = 0; i < mesh->n_cells; i++)
       mesh->global_cell_num[i] = mr->cell_bi.gnum_range[0] + i;
@@ -2289,7 +2289,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   _n_faces = fvm_block_to_part_get_n_part_ents(d);
 
-  BFT_MALLOC(_face_gcells, _n_faces*2, fvm_gnum_t);
+  BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
 
   /* Face -> cell connectivity */
 
@@ -2303,7 +2303,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   /* Now convert face -> cell connectivity to local cell numbers */
 
-  BFT_MALLOC(_face_cells, _n_faces*2, fvm_lnum_t);
+  BFT_MALLOC(_face_cells, _n_faces*2, cs_lnum_t);
 
   fvm_block_to_part_global_to_local(_n_faces*2,
                                     1,
@@ -2316,7 +2316,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   /* Face family */
 
-  BFT_MALLOC(_face_gc_id, _n_faces, fvm_lnum_t);
+  BFT_MALLOC(_face_gc_id, _n_faces, cs_lnum_t);
 
   fvm_block_to_part_copy_array(d,
                                lnum_type,
@@ -2328,13 +2328,13 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   /* Face connectivity */
 
-  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, fvm_lnum_t);
+  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
   fvm_block_to_part_copy_index(d,
                                mr->face_vertices_idx,
                                _face_vertices_idx);
 
-  BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], fvm_gnum_t);
+  BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
 
   fvm_block_to_part_copy_indexed(d,
                                  gnum_type,
@@ -2375,7 +2375,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 
-  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], fvm_lnum_t);
+  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
   fvm_block_to_part_global_to_local(_face_vertices_idx[_n_faces],
                                     1,
@@ -2399,7 +2399,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                mr->n_perio,
                                mr->periodicity_num,
                                mr->n_per_face_couples,
-                               (const fvm_gnum_t *const *)mr->per_face_couples);
+                               (const cs_gnum_t *const *)mr->per_face_couples);
 
   /* We may now separate interior from boundary faces */
 
@@ -2415,9 +2415,9 @@ _decompose_data_g(cs_mesh_t          *mesh,
   _extract_face_cell(mesh, _n_faces, _face_cells, face_type);
 
   {
-    fvm_gnum_t _n_g_free_faces = mesh->n_g_free_faces;
+    cs_gnum_t _n_g_free_faces = mesh->n_g_free_faces;
     MPI_Allreduce(&_n_g_free_faces, &(mesh->n_g_free_faces), 1,
-                  FVM_MPI_GNUM, MPI_SUM, comm);
+                  CS_MPI_GNUM, MPI_SUM, comm);
   }
 
   BFT_FREE(_face_cells);
@@ -2475,19 +2475,19 @@ _decompose_data_l(cs_mesh_t          *mesh,
                   cs_mesh_builder_t  *mesh_builder,
                   _mesh_reader_t     *mr)
 {
-  fvm_lnum_t i;
+  cs_lnum_t i;
 
-  fvm_lnum_t _n_faces = 0;
+  cs_lnum_t _n_faces = 0;
 
-  fvm_lnum_t *_face_cells = NULL;
-  fvm_lnum_t *_face_vertices_idx = NULL;
-  fvm_lnum_t *_face_vertices = NULL;
+  cs_lnum_t *_face_cells = NULL;
+  cs_lnum_t *_face_vertices_idx = NULL;
+  cs_lnum_t *_face_vertices = NULL;
 
   char *face_type = NULL;
 
   /* Initialization */
 
-  assert((sizeof(fvm_lnum_t) == 4) || (sizeof(fvm_lnum_t) == 8));
+  assert((sizeof(cs_lnum_t) == 4) || (sizeof(cs_lnum_t) == 8));
 
   mesh->n_cells = mr->cell_bi.gnum_range[1] - 1;
 
@@ -2504,7 +2504,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
 
   /* Now copy face -> cell connectivity to local cell numbers */
 
-  BFT_MALLOC(_face_cells, _n_faces*2, fvm_lnum_t);
+  BFT_MALLOC(_face_cells, _n_faces*2, cs_lnum_t);
 
   for (i = 0; i < _n_faces; i++) {
     _face_cells[i*2] = mr->face_cells[i*2];
@@ -2515,14 +2515,14 @@ _decompose_data_l(cs_mesh_t          *mesh,
 
   /* Face connectivity */
 
-  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, fvm_lnum_t);
+  BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
   for (i = 0; i < _n_faces+1; i++)
     _face_vertices_idx[i] = mr->face_vertices_idx[i];
 
   BFT_FREE(mr->face_vertices_idx);
 
-  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], fvm_lnum_t);
+  BFT_MALLOC(_face_vertices, _face_vertices_idx[_n_faces], cs_lnum_t);
 
   for (i = 0; i < _face_vertices_idx[_n_faces]; i++)
     _face_vertices[i] = mr->face_vertices[i];
@@ -2543,7 +2543,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
   _face_type_l(mesh,
                _n_faces,
                mr->n_per_face_couples,
-               (const fvm_gnum_t *const *)mr->per_face_couples,
+               (const cs_gnum_t *const *)mr->per_face_couples,
                _face_cells,
                _face_vertices_idx,
                face_type);
@@ -2780,7 +2780,7 @@ _read_dimensions(cs_mesh_t       *mesh,
   cs_int_t  i, j;
   cs_io_sec_header_t  header;
 
-  fvm_gnum_t n_elts = 0;
+  cs_gnum_t n_elts = 0;
   int        n_gc = 0;
   int        n_gc_props_max = 0;
   int        n_groups = 0;
@@ -2869,7 +2869,7 @@ _read_dimensions(cs_mesh_t       *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        fvm_gnum_t _n_g_cells;
+        cs_gnum_t _n_g_cells;
         cs_io_set_fvm_gnum(&header, pp_in);
         cs_io_read_global(&header, &_n_g_cells, pp_in);
         mesh->n_g_cells += _n_g_cells;
@@ -2883,7 +2883,7 @@ _read_dimensions(cs_mesh_t       *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        fvm_gnum_t _n_g_faces;
+        cs_gnum_t _n_g_faces;
         cs_io_set_fvm_gnum(&header, pp_in);
         cs_io_read_global(&header, &_n_g_faces, pp_in);
         mr->n_g_faces += _n_g_faces;
@@ -2897,7 +2897,7 @@ _read_dimensions(cs_mesh_t       *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        fvm_gnum_t _n_g_vertices;
+        cs_gnum_t _n_g_vertices;
         cs_io_set_fvm_gnum(&header, pp_in);
         cs_io_read_global(&header, &_n_g_vertices, pp_in);
         mesh->n_g_vertices += _n_g_vertices;
@@ -2911,7 +2911,7 @@ _read_dimensions(cs_mesh_t       *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        fvm_gnum_t _n_g_face_connect_size;
+        cs_gnum_t _n_g_face_connect_size;
         cs_io_set_fvm_gnum(&header, pp_in);
         cs_io_read_global(&header, &_n_g_face_connect_size, pp_in);
         mr->n_g_face_connect_size += _n_g_face_connect_size;
@@ -3082,9 +3082,9 @@ _read_dimensions(cs_mesh_t       *mesh,
           mesh->periodicity = fvm_periodicity_create(0.001);
 
         BFT_REALLOC(mr->periodicity_num, mesh->n_init_perio, int);
-        BFT_REALLOC(mr->n_per_face_couples, mesh->n_init_perio, fvm_lnum_t);
-        BFT_REALLOC(mr->n_g_per_face_couples, mesh->n_init_perio, fvm_gnum_t);
-        BFT_REALLOC(mr->per_face_couples, mesh->n_init_perio, fvm_gnum_t *);
+        BFT_REALLOC(mr->n_per_face_couples, mesh->n_init_perio, cs_lnum_t);
+        BFT_REALLOC(mr->n_g_per_face_couples, mesh->n_init_perio, cs_gnum_t);
+        BFT_REALLOC(mr->per_face_couples, mesh->n_init_perio, cs_gnum_t *);
 
         mr->n_perio = mesh->n_init_perio;
 
@@ -3163,15 +3163,15 @@ _read_dimensions(cs_mesh_t       *mesh,
 static void
 _data_range(cs_io_sec_header_t  *header,
             const cs_io_t       *pp_in,
-            fvm_gnum_t           n_g_elts,
-            fvm_gnum_t           n_g_elts_read,
+            cs_gnum_t            n_g_elts,
+            cs_gnum_t            n_g_elts_read,
             size_t               n_location_vals,
             size_t               is_index,
-            const fvm_gnum_t     gnum_range[2],
-            fvm_gnum_t           gnum_range_cur[2],
-            fvm_gnum_t          *n_g_elts_cur,
-            fvm_lnum_t          *n_vals,
-            fvm_lnum_t          *n_vals_cur)
+            const cs_gnum_t      gnum_range[2],
+            cs_gnum_t            gnum_range_cur[2],
+            cs_gnum_t           *n_g_elts_cur,
+            cs_lnum_t           *n_vals,
+            cs_lnum_t           *n_vals_cur)
 {
   size_t i;
 
@@ -3458,16 +3458,16 @@ _read_data(int              file_id,
   int gc_id_shift = mr->gc_id_shift[file_id];
 
   int n_perio_read = 0;
-  fvm_lnum_t n_cells = 0;
-  fvm_lnum_t n_faces = 0;
-  fvm_lnum_t n_vertices = 0;
-  fvm_lnum_t n_face_connect_size = 0;
-  fvm_gnum_t n_g_cells = 0;
-  fvm_gnum_t n_g_faces = 0;
-  fvm_gnum_t n_g_vertices = 0;
-  fvm_gnum_t n_g_face_connect_size = 0;
+  cs_lnum_t n_cells = 0;
+  cs_lnum_t n_faces = 0;
+  cs_lnum_t n_vertices = 0;
+  cs_lnum_t n_face_connect_size = 0;
+  cs_gnum_t n_g_cells = 0;
+  cs_gnum_t n_g_faces = 0;
+  cs_gnum_t n_g_vertices = 0;
+  cs_gnum_t n_g_face_connect_size = 0;
 
-  fvm_gnum_t face_vtx_range[2] = {0, 0};
+  cs_gnum_t face_vtx_range[2] = {0, 0};
   _mesh_file_info_t  *f = NULL;
 
   const char  *unexpected_msg = N_("Section of type <%s> on <%s>\n"
@@ -3537,11 +3537,11 @@ _read_data(int              file_id,
 
     else {
 
-      fvm_gnum_t gnum_range_cur[2];
+      cs_gnum_t gnum_range_cur[2];
 
-      fvm_lnum_t n_vals = 0;
-      fvm_lnum_t n_vals_cur = 0;
-      fvm_lnum_t val_offset_cur = 0;
+      cs_lnum_t n_vals = 0;
+      cs_lnum_t n_vals_cur = 0;
+      cs_lnum_t val_offset_cur = 0;
 
       if (data_read != true)
         bft_error(__FILE__, __LINE__, 0,
@@ -3570,7 +3570,7 @@ _read_data(int              file_id,
 
         /* Allocate for first file read */
         if (mr->face_cells == NULL)
-          BFT_MALLOC(mr->face_cells, n_vals, fvm_gnum_t);
+          BFT_MALLOC(mr->face_cells, n_vals, cs_gnum_t);
 
         /* Read data */
         cs_io_set_fvm_gnum(&header, pp_in);
@@ -3579,7 +3579,7 @@ _read_data(int              file_id,
 
         /* Shift referenced cell numbers in case of appended data */
         if (mr->n_g_cells_read > 0) {
-          fvm_lnum_t ii;
+          cs_lnum_t ii;
           for (ii = 0; ii < n_vals_cur; ii++) {
             if (mr->face_cells[val_offset_cur + ii] != 0)
               mr->face_cells[val_offset_cur + ii] += mr->n_g_cells_read;
@@ -3619,7 +3619,7 @@ _read_data(int              file_id,
 
         /* Shift referenced numbers in case of appended data */
         if (gc_id_shift > 0) {
-          fvm_lnum_t ii;
+          cs_lnum_t ii;
           for (ii = 0; ii < n_vals_cur; ii++) {
             if (mr->cell_gc_id[val_offset_cur + ii] != 0)
               mr->cell_gc_id[val_offset_cur + ii] += gc_id_shift;
@@ -3659,7 +3659,7 @@ _read_data(int              file_id,
 
         /* Shift referenced numbers in case of appended data */
         if (gc_id_shift > 0) {
-          fvm_lnum_t ii;
+          cs_lnum_t ii;
           for (ii = 0; ii < n_vals_cur; ii++) {
             if (mr->face_gc_id[val_offset_cur + ii] != 0)
               mr->face_gc_id[val_offset_cur + ii] += gc_id_shift;
@@ -3672,10 +3672,10 @@ _read_data(int              file_id,
       else if (strncmp(header.sec_name, "face_vertices_index",
                        CS_IO_NAME_LEN) == 0) {
 
-        fvm_lnum_t ii;
-        fvm_lnum_t idx_offset_shift = 0;
-        fvm_gnum_t idx_gnum_shift = 0;
-        fvm_gnum_t *_g_face_vertices_idx = NULL;
+        cs_lnum_t ii;
+        cs_lnum_t idx_offset_shift = 0;
+        cs_gnum_t idx_gnum_shift = 0;
+        cs_gnum_t *_g_face_vertices_idx = NULL;
 
         /* Compute range for current file  */
         _data_range(&header,
@@ -3695,14 +3695,14 @@ _read_data(int              file_id,
 
         /* Allocate for first file read */
         if (mr->face_vertices_idx == NULL)
-          BFT_MALLOC(mr->face_vertices_idx, n_vals, fvm_lnum_t);
+          BFT_MALLOC(mr->face_vertices_idx, n_vals, cs_lnum_t);
 
         if (val_offset_cur > 0)
           idx_offset_shift = mr->face_vertices_idx[val_offset_cur];
 
         /* Read data */
         cs_io_set_fvm_gnum(&header, pp_in);
-        BFT_MALLOC(_g_face_vertices_idx, n_vals_cur+1, fvm_gnum_t);
+        BFT_MALLOC(_g_face_vertices_idx, n_vals_cur+1, cs_gnum_t);
         cs_io_read_index_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                                _g_face_vertices_idx, pp_in);
 
@@ -3713,7 +3713,7 @@ _read_data(int              file_id,
         /* Shift cell numbers in case of appended data */
         idx_gnum_shift = _g_face_vertices_idx[0];
         for (ii = 0; ii < n_vals_cur; ii++) {
-          fvm_gnum_t _face_vtx_idx = _g_face_vertices_idx[ii] - idx_gnum_shift;
+          cs_gnum_t _face_vtx_idx = _g_face_vertices_idx[ii] - idx_gnum_shift;
           mr->face_vertices_idx[ii + val_offset_cur]
             = _face_vtx_idx + idx_offset_shift;
         }
@@ -3727,7 +3727,7 @@ _read_data(int              file_id,
         n_vals = 0;
         n_g_face_connect_size = header.n_vals;
 
-        if (  (fvm_gnum_t)(header.n_vals) + mr->n_g_faces_connect_read
+        if (  (cs_gnum_t)(header.n_vals) + mr->n_g_faces_connect_read
             > mr->n_g_face_connect_size)
           bft_error
             (__FILE__, __LINE__, 0,
@@ -3752,7 +3752,7 @@ _read_data(int              file_id,
            (and is thus not yet known for future files). */
         BFT_REALLOC(mr->face_vertices,
                     mr->n_faces_connect_read + n_vals_cur,
-                    fvm_gnum_t);
+                    cs_gnum_t);
 
         /* Read data */
         cs_io_set_fvm_gnum(&header, pp_in);
@@ -3761,7 +3761,7 @@ _read_data(int              file_id,
 
         /* Shift referenced vertex numbers in case of appended data */
         if (mr->n_g_vertices_read > 0) {
-          fvm_lnum_t ii;
+          cs_lnum_t ii;
           for (ii = 0; ii < n_vals_cur; ii++) {
             if (mr->face_vertices[val_offset_cur + ii] != 0)
               mr->face_vertices[val_offset_cur + ii] += mr->n_g_vertices_read;
@@ -3802,7 +3802,7 @@ _read_data(int              file_id,
         /* Transform coordinates if necessary */
 
         if (f->matrix != NULL) {
-          fvm_gnum_t range_size = gnum_range_cur[1] - gnum_range_cur[0];
+          cs_gnum_t range_size = gnum_range_cur[1] - gnum_range_cur[0];
           _transform_coords(range_size,
                             mr->vertex_coords + val_offset_cur,
                             f->matrix);
@@ -3874,7 +3874,7 @@ _read_data(int              file_id,
 
           cs_io_set_fvm_gnum(&header, pp_in);
           n_vals = mr->n_per_face_couples[perio_id]*2;
-          BFT_MALLOC(mr->per_face_couples[perio_id], n_vals, fvm_gnum_t);
+          BFT_MALLOC(mr->per_face_couples[perio_id], n_vals, cs_gnum_t);
           assert(header.n_location_vals == 2);
           cs_io_read_block(&header,
                            (mr->per_face_bi[perio_id]).gnum_range[0],
@@ -3884,7 +3884,7 @@ _read_data(int              file_id,
 
           /* Shift referenced face numbers in case of appended data */
           if (mr->n_g_faces_read > 0) {
-            fvm_lnum_t ii;
+            cs_lnum_t ii;
             for (ii = 0; ii < n_vals; ii++) {
               if (mr->per_face_couples[perio_id][ii] != 0)
                 mr->per_face_couples[perio_id][ii] += mr->n_g_faces_read;

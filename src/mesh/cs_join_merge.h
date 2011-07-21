@@ -87,8 +87,8 @@ cs_join_create_new_vertices(int                     verbosity,
                             const cs_join_edges_t  *edges,
                             cs_join_mesh_t         *work,
                             cs_join_inter_set_t    *inter_set,
-                            fvm_gnum_t              init_max_vtx_gnum,
-                            fvm_gnum_t             *p_n_g_new_vertices,
+                            cs_gnum_t               init_max_vtx_gnum,
+                            cs_gnum_t              *p_n_g_new_vertices,
                             cs_join_eset_t        **p_vtx_eset);
 
 /*----------------------------------------------------------------------------
@@ -108,7 +108,7 @@ cs_join_create_new_vertices(int                     verbosity,
 
 void
 cs_join_merge_vertices(cs_join_param_t        param,
-                       fvm_gnum_t             n_g_vertices_tot,
+                       cs_gnum_t              n_g_vertices_tot,
                        cs_join_mesh_t        *work,
                        const cs_join_eset_t  *vtx_eset);
 
@@ -136,14 +136,14 @@ cs_join_merge_vertices(cs_join_param_t        param,
 void
 cs_join_merge_update_struct(cs_join_param_t          param,
                             cs_int_t                 n_iwm_vertices,
-                            const fvm_gnum_t         iwm_vtx_gnum[],
-                            fvm_gnum_t               init_max_vtx_gnum,
-                            const fvm_gnum_t         rank_face_gnum_index[],
+                            const cs_gnum_t          iwm_vtx_gnum[],
+                            cs_gnum_t                init_max_vtx_gnum,
+                            const cs_gnum_t          rank_face_gnum_index[],
                             cs_join_mesh_t         **p_mesh,
                             cs_join_edges_t        **p_edges,
                             cs_join_inter_edges_t  **p_inter_edges,
                             cs_join_mesh_t         **p_local_mesh,
-                            fvm_gnum_t              *p_o2n_vtx_gnum[]);
+                            cs_gnum_t               *p_o2n_vtx_gnum[]);
 
 /*---------------------------------------------------------------------------*/
 

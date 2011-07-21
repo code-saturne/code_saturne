@@ -84,10 +84,10 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 inline static void
-_order_gnum_descend_tree(const fvm_gnum_t  number[],
+_order_gnum_descend_tree(const cs_gnum_t   number[],
                          size_t            level,
                          const size_t      nb_ent,
-                         fvm_lnum_t        order[])
+                         cs_lnum_t         order[])
 {
   size_t i_save, i1, i2, lv_cur;
 
@@ -131,12 +131,12 @@ _order_gnum_descend_tree(const fvm_gnum_t  number[],
  *----------------------------------------------------------------------------*/
 
 static void
-_order_local(const fvm_gnum_t  number[],
-             fvm_lnum_t        order[],
+_order_local(const cs_gnum_t   number[],
+             cs_lnum_t         order[],
              const size_t      nb_ent)
 {
   size_t i;
-  fvm_lnum_t o_save;
+  cs_lnum_t o_save;
 
   /* Initialize ordering array */
 
@@ -178,11 +178,11 @@ _order_local(const fvm_gnum_t  number[],
  *----------------------------------------------------------------------------*/
 
 inline static void
-_order_gnum_descend_tree_s(const fvm_gnum_t  number[],
+_order_gnum_descend_tree_s(const cs_gnum_t   number[],
                            size_t            stride,
                            size_t            level,
                            const size_t      nb_ent,
-                           fvm_lnum_t        order[])
+                           cs_lnum_t         order[])
 {
   size_t i_save, i1, i2, j, lv_cur;
 
@@ -242,13 +242,13 @@ _order_gnum_descend_tree_s(const fvm_gnum_t  number[],
  *----------------------------------------------------------------------------*/
 
 static void
-_order_local_s(const fvm_gnum_t  number[],
+_order_local_s(const cs_gnum_t   number[],
                size_t            stride,
-               fvm_lnum_t        order[],
+               cs_lnum_t         order[],
                const size_t      nb_ent)
 {
   size_t i;
-  fvm_lnum_t o_save;
+  cs_lnum_t o_save;
 
   /* Initialize ordering array */
 
@@ -294,13 +294,13 @@ _order_local_s(const fvm_gnum_t  number[],
 inline static _Bool
 _indexed_is_greater_or_equal(size_t            i1,
                              size_t            i2,
-                             const fvm_lnum_t  index[],
-                             const fvm_gnum_t  number[])
+                             const cs_lnum_t   index[],
+                             const cs_gnum_t   number[])
 {
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
 
-  fvm_lnum_t  i1_s = index[i1], i1_e = index[i1+1], s1 = i1_e - i1_s;
-  fvm_lnum_t  i2_s = index[i2], i2_e = index[i2+1], s2 = i2_e - i2_s;
+  cs_lnum_t   i1_s = index[i1], i1_e = index[i1+1], s1 = i1_e - i1_s;
+  cs_lnum_t   i2_s = index[i2], i2_e = index[i2+1], s2 = i2_e - i2_s;
 
   if (s1 >= s2) {
 
@@ -345,13 +345,13 @@ _indexed_is_greater_or_equal(size_t            i1,
 inline static _Bool
 _indexed_is_greater(size_t            i1,
                     size_t            i2,
-                    const fvm_lnum_t  index[],
-                    const fvm_gnum_t  number[])
+                    const cs_lnum_t   index[],
+                    const cs_gnum_t   number[])
 {
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
 
-  fvm_lnum_t  i1_s = index[i1], i1_e = index[i1+1], s1 = i1_e - i1_s;
-  fvm_lnum_t  i2_s = index[i2], i2_e = index[i2+1], s2 = i2_e - i2_s;
+  cs_lnum_t   i1_s = index[i1], i1_e = index[i1+1], s1 = i1_e - i1_s;
+  cs_lnum_t   i2_s = index[i2], i2_e = index[i2+1], s2 = i2_e - i2_s;
 
   if (s1 > s2) {
 
@@ -392,11 +392,11 @@ _indexed_is_greater(size_t            i1,
  *----------------------------------------------------------------------------*/
 
 inline static void
-_order_gnum_descend_tree_i(const fvm_gnum_t  number[],
-                           const fvm_lnum_t  index[],
+_order_gnum_descend_tree_i(const cs_gnum_t   number[],
+                           const cs_lnum_t   index[],
                            size_t            level,
                            const size_t      nb_ent,
-                           fvm_lnum_t        order[])
+                           cs_lnum_t         order[])
 {
   size_t i_save, i1, i2, lv_cur;
 
@@ -447,13 +447,13 @@ _order_gnum_descend_tree_i(const fvm_gnum_t  number[],
  *----------------------------------------------------------------------------*/
 
 static void
-_order_local_i(const fvm_gnum_t  number[],
-               const fvm_lnum_t  index[],
-               fvm_lnum_t        order[],
+_order_local_i(const cs_gnum_t   number[],
+               const cs_lnum_t   index[],
+               cs_lnum_t         order[],
                const size_t      nb_ent)
 {
   size_t i;
-  fvm_lnum_t o_save;
+  cs_lnum_t o_save;
 
   /* Initialize ordering array */
 
@@ -504,8 +504,8 @@ _order_local_i(const fvm_gnum_t  number[],
  *----------------------------------------------------------------------------*/
 
 int
-fvm_order_local_test(const fvm_lnum_t  list[],
-                     const fvm_gnum_t  number[],
+fvm_order_local_test(const cs_lnum_t   list[],
+                     const cs_gnum_t   number[],
                      const size_t      nb_ent)
 {
   size_t i = 0;
@@ -566,8 +566,8 @@ fvm_order_local_test(const fvm_lnum_t  list[],
  *----------------------------------------------------------------------------*/
 
 int
-fvm_order_local_test_s(const fvm_lnum_t  list[],
-                       const fvm_gnum_t  number[],
+fvm_order_local_test_s(const cs_lnum_t   list[],
+                       const cs_gnum_t   number[],
                        size_t            stride,
                        size_t            nb_ent)
 {
@@ -649,14 +649,14 @@ fvm_order_local_test_s(const fvm_lnum_t  list[],
  *   freeing this array when it is not needed anymore.
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t *
-fvm_order_local(const fvm_lnum_t  list[],
-                const fvm_gnum_t  number[],
+cs_lnum_t *
+fvm_order_local(const cs_lnum_t   list[],
+                const cs_gnum_t   number[],
                 size_t            nb_ent)
 {
-  fvm_lnum_t *order;
+  cs_lnum_t *order;
 
-  BFT_MALLOC(order, nb_ent, fvm_lnum_t);
+  BFT_MALLOC(order, nb_ent, cs_lnum_t);
 
   fvm_order_local_allocated(list,
                             number,
@@ -686,15 +686,15 @@ fvm_order_local(const fvm_lnum_t  list[],
  *   freeing this array when it is not needed anymore.
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t *
-fvm_order_local_s(const fvm_lnum_t  list[],
-                  const fvm_gnum_t  number[],
+cs_lnum_t *
+fvm_order_local_s(const cs_lnum_t   list[],
+                  const cs_gnum_t   number[],
                   size_t            stride,
                   size_t            nb_ent)
 {
-  fvm_lnum_t *order;
+  cs_lnum_t *order;
 
-  BFT_MALLOC(order, nb_ent, fvm_lnum_t);
+  BFT_MALLOC(order, nb_ent, cs_lnum_t);
 
   fvm_order_local_allocated_s(list,
                               number,
@@ -725,15 +725,15 @@ fvm_order_local_s(const fvm_lnum_t  list[],
  *   freeing this array when it is not needed anymore.
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t *
-fvm_order_local_i(const fvm_lnum_t  list[],
-                  const fvm_gnum_t  number[],
-                  const fvm_lnum_t  index[],
+cs_lnum_t *
+fvm_order_local_i(const cs_lnum_t   list[],
+                  const cs_gnum_t   number[],
+                  const cs_lnum_t   index[],
                   size_t            nb_ent)
 {
-  fvm_lnum_t *order = NULL;
+  cs_lnum_t *order = NULL;
 
-  BFT_MALLOC(order, nb_ent, fvm_lnum_t);
+  BFT_MALLOC(order, nb_ent, cs_lnum_t);
 
   fvm_order_local_allocated_i(list, number, index, order, nb_ent);
 
@@ -755,20 +755,20 @@ fvm_order_local_i(const fvm_lnum_t  list[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_order_local_allocated(const fvm_lnum_t  list[],
-                          const fvm_gnum_t  number[],
-                          fvm_lnum_t        order[],
+fvm_order_local_allocated(const cs_lnum_t   list[],
+                          const cs_gnum_t   number[],
+                          cs_lnum_t         order[],
                           const size_t      nb_ent)
 {
   size_t i;
-  fvm_gnum_t *number_list;
+  cs_gnum_t *number_list;
 
   /* Explicit numbering */
 
   if (number != NULL) {
 
     if (list != NULL) {
-      BFT_MALLOC(number_list, nb_ent, fvm_gnum_t);
+      BFT_MALLOC(number_list, nb_ent, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++)
         number_list[i] = number[list[i] - 1];
       _order_local(number_list,
@@ -788,9 +788,9 @@ fvm_order_local_allocated(const fvm_lnum_t  list[],
   else {
 
     if (list != NULL) {
-      BFT_MALLOC(number_list, nb_ent, fvm_gnum_t);
+      BFT_MALLOC(number_list, nb_ent, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++)
-        number_list[i] = (fvm_gnum_t)(list[i]);
+        number_list[i] = (cs_gnum_t)(list[i]);
       _order_local(number_list,
                    order,
                    nb_ent);
@@ -823,21 +823,21 @@ fvm_order_local_allocated(const fvm_lnum_t  list[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_order_local_allocated_s(const fvm_lnum_t  list[],
-                            const fvm_gnum_t  number[],
+fvm_order_local_allocated_s(const cs_lnum_t   list[],
+                            const cs_gnum_t   number[],
                             size_t            stride,
-                            fvm_lnum_t        order[],
+                            cs_lnum_t         order[],
                             const size_t      nb_ent)
 {
   size_t i, j;
-  fvm_gnum_t *number_list;
+  cs_gnum_t *number_list;
 
   /* Explicit numbering */
 
   if (number != NULL) {
 
     if (list != NULL) {
-      BFT_MALLOC(number_list, nb_ent*stride, fvm_gnum_t);
+      BFT_MALLOC(number_list, nb_ent*stride, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++) {
         for (j = 0; j < stride; j++)
           number_list[i*stride + j] = number[(list[i] - 1)*stride + j];
@@ -884,10 +884,10 @@ fvm_order_local_allocated_s(const fvm_lnum_t  list[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_order_local_allocated_i(const fvm_lnum_t  list[],
-                            const fvm_gnum_t  number[],
-                            const fvm_lnum_t  index[],
-                            fvm_lnum_t        order[],
+fvm_order_local_allocated_i(const cs_lnum_t   list[],
+                            const cs_gnum_t   number[],
+                            const cs_lnum_t   index[],
+                            cs_lnum_t         order[],
                             const size_t      nb_ent)
 {
   /* Explicit numbering */
@@ -898,10 +898,10 @@ fvm_order_local_allocated_i(const fvm_lnum_t  list[],
 
       size_t  i, j, k, ent_id, _shift;
 
-      fvm_lnum_t  *_index = NULL;
-      fvm_gnum_t  *number_list = NULL;
+      cs_lnum_t   *_index = NULL;
+      cs_gnum_t   *number_list = NULL;
 
-      BFT_MALLOC(_index, nb_ent + 1, fvm_lnum_t);
+      BFT_MALLOC(_index, nb_ent + 1, cs_lnum_t);
 
       /* Count reduced size */
 
@@ -914,7 +914,7 @@ fvm_order_local_allocated_i(const fvm_lnum_t  list[],
       for (i = 0; i < nb_ent; i++)
         _index[i+1] += _index[i];
 
-      BFT_MALLOC(number_list, _index[nb_ent], fvm_gnum_t);
+      BFT_MALLOC(number_list, _index[nb_ent], cs_gnum_t);
 
       /* Define reduced index and adjacency */
 
@@ -924,7 +924,7 @@ fvm_order_local_allocated_i(const fvm_lnum_t  list[],
         _shift = _index[i];
 
         for (j = index[ent_id], k = 0;
-             (fvm_lnum_t)j < index[ent_id+1]; j++, k++)
+             (cs_lnum_t)j < index[ent_id+1]; j++, k++)
           number_list[_shift + k] = number[j];
 
       }
@@ -967,19 +967,19 @@ fvm_order_local_allocated_i(const fvm_lnum_t  list[],
  *   freeing this array when it is not needed anymore
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t *
-fvm_order_local_renumbering(const fvm_lnum_t  order[],
+cs_lnum_t *
+fvm_order_local_renumbering(const cs_lnum_t   order[],
                             const size_t      nb_ent)
 {
   size_t i;
-  fvm_lnum_t *number;
+  cs_lnum_t *number;
 
   if (nb_ent < 1)
     return NULL;
 
   assert(order != NULL);
 
-  BFT_MALLOC(number, nb_ent, fvm_lnum_t);
+  BFT_MALLOC(number, nb_ent, cs_lnum_t);
 
 #if defined(DEBUG) && !defined(NDEBUG)
   /* Initialize with "impossible" number (so as to have a reproducible

@@ -68,10 +68,10 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 void
-fvm_nodal_extrude(fvm_nodal_t        *const this_nodal,
-                  const fvm_lnum_t          n_layers,
-                  const fvm_coord_t         extrusion_vectors[],
-                  const fvm_coord_t         distribution[]);
+fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
+                  const cs_lnum_t     n_layers,
+                  const cs_coord_t    extrusion_vectors[],
+                  const cs_coord_t    distribution[]);
 
 /*----------------------------------------------------------------------------*/
 

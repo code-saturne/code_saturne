@@ -92,7 +92,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
    *   in cs_user_mesh_input is preferred. */
 
   {
-    fvm_lnum_t  vtx_id;
+    cs_lnum_t  vtx_id;
     const double  coo_mult = 1. / 1000.;
 
     for (vtx_id = 0; vtx_id < mesh->n_vertices; vtx_id++) {

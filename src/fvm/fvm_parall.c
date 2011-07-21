@@ -242,22 +242,22 @@ fvm_parall_get_size(void)
  *----------------------------------------------------------------------------*/
 
 void
-fvm_parall_counter(fvm_gnum_t  cpt[],
+fvm_parall_counter(cs_gnum_t   cpt[],
                    const int   n)
 {
 
   if (_fvm_mpi_parall_size > 1) {
 
     int        i;
-    fvm_gnum_t *sum;
-    fvm_gnum_t _sum[64];
+    cs_gnum_t *sum;
+    cs_gnum_t _sum[64];
 
     if (n > 64)
-      BFT_MALLOC(sum, n, fvm_gnum_t);
+      BFT_MALLOC(sum, n, cs_gnum_t);
     else
       sum = _sum;
 
-    MPI_Allreduce(cpt, sum, n, FVM_MPI_GNUM, MPI_SUM,
+    MPI_Allreduce(cpt, sum, n, CS_MPI_GNUM, MPI_SUM,
                   _fvm_mpi_parall_comm);
 
     for (i = 0; i < n ; i++)
@@ -279,22 +279,22 @@ fvm_parall_counter(fvm_gnum_t  cpt[],
  *----------------------------------------------------------------------------*/
 
 void
-fvm_parall_counter_max(fvm_lnum_t  cpt[],
+fvm_parall_counter_max(cs_lnum_t   cpt[],
                        const int   n)
 {
 
   if (_fvm_mpi_parall_size > 1) {
 
     int        i;
-    fvm_lnum_t *maxval;
-    fvm_lnum_t _maxval[64];
+    cs_lnum_t *maxval;
+    cs_lnum_t _maxval[64];
 
     if (n > 64)
-      BFT_MALLOC(maxval, n, fvm_lnum_t);
+      BFT_MALLOC(maxval, n, cs_lnum_t);
     else
       maxval = _maxval;
 
-    MPI_Allreduce(cpt, maxval, n, FVM_MPI_LNUM, MPI_MAX,
+    MPI_Allreduce(cpt, maxval, n, CS_MPI_LNUM, MPI_MAX,
                   _fvm_mpi_parall_comm);
 
     for (i = 0; i < n ; i++)

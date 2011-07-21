@@ -327,7 +327,7 @@ struct _cs_matrix_structure_t {
      and halo) */
 
   const cs_int_t        *face_cell;    /* Face -> cells connectivity (1 to n) */
-  const fvm_gnum_t      *cell_num;     /* Global cell numbers */
+  const cs_gnum_t       *cell_num;     /* Global cell numbers */
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
@@ -362,7 +362,7 @@ struct _cs_matrix_t {
      and halo) */
 
   const cs_int_t        *face_cell;    /* Face -> cells connectivity (1 to n) */
-  const fvm_gnum_t      *cell_num;     /* Global cell numbers */
+  const cs_gnum_t       *cell_num;     /* Global cell numbers */
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
@@ -438,13 +438,13 @@ cs_matrix_structure_t  *cs_glob_matrix_default_struct = NULL;
  *----------------------------------------------------------------------------*/
 
 static inline void
-_dense_b_ax(fvm_lnum_t        b_id,
+_dense_b_ax(cs_lnum_t         b_id,
             const int         b_size[4],
             const cs_real_t  *restrict a,
             const cs_real_t  *restrict x,
             cs_real_t        *restrict y)
 {
-  fvm_lnum_t  ii, jj;
+  cs_lnum_t   ii, jj;
 
   #if defined(__xlc__) /* Tell IBM compiler not to alias */
   #pragma disjoint(*x, *y, * da)
@@ -478,15 +478,15 @@ _dense_b_ax(fvm_lnum_t        b_id,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_diag_b_y_p_ax(fvm_lnum_t        b_id,
-               fvm_lnum_t        x_id,
-               fvm_lnum_t        y_id,
+_diag_b_y_p_ax(cs_lnum_t         b_id,
+               cs_lnum_t         x_id,
+               cs_lnum_t         y_id,
                const int         b_size[2],
                const cs_real_t  *restrict a,
                const cs_real_t  *restrict x,
                cs_real_t        *restrict y)
 {
-  fvm_lnum_t  ii;
+  cs_lnum_t   ii;
 
   #if defined(__xlc__) /* Tell IBM compiler not to alias */
   #pragma disjoint(*x, *y, * a)
@@ -526,7 +526,7 @@ _dense_b_aax_p_by(int               b_id,
                   const cs_real_t  *restrict x,
                   cs_real_t        *restrict y)
 {
-  fvm_lnum_t  ii, jj;
+  cs_lnum_t   ii, jj;
 
   #if defined(__xlc__) /* Tell IBM compiler not to alias */
   #pragma disjoint(*x, *y, * da)
@@ -563,9 +563,9 @@ _dense_b_aax_p_by(int               b_id,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_diag_b_aax_p_by(fvm_lnum_t        b_id,
-                 fvm_lnum_t        x_id,
-                 fvm_lnum_t        y_id,
+_diag_b_aax_p_by(cs_lnum_t         b_id,
+                 cs_lnum_t         x_id,
+                 cs_lnum_t         y_id,
                  const int         b_size[2],
                  cs_real_t         alpha,
                  cs_real_t         beta,
@@ -573,7 +573,7 @@ _diag_b_aax_p_by(fvm_lnum_t        b_id,
                  const cs_real_t  *restrict x,
                  cs_real_t        *restrict y)
 {
-  fvm_lnum_t  ii;
+  cs_lnum_t   ii;
 
   #if defined(__xlc__) /* Tell IBM compiler not to alias */
   #pragma disjoint(*x, *y, * da)
@@ -640,10 +640,10 @@ static inline void
 _b_diag_vec_p_l(const cs_real_t  *restrict da,
                 const cs_real_t  *restrict x,
                 cs_real_t        *restrict y,
-                fvm_lnum_t        n_elts,
+                cs_lnum_t         n_elts,
                 const int         b_size[4])
 {
-  fvm_lnum_t  ii;
+  cs_lnum_t   ii;
 
   if (da != NULL) {
 #pragma omp parallel for
@@ -718,10 +718,10 @@ _b_diag_x_p_beta_y(cs_real_t         alpha,
                    const cs_real_t  *restrict da,
                    const cs_real_t  *restrict x,
                    cs_real_t        *restrict y,
-                   fvm_lnum_t        n_elts,
+                   cs_lnum_t         n_elts,
                    const int         b_size[4])
 {
-  fvm_lnum_t ii, jj;
+  cs_lnum_t ii, jj;
 
   #if defined(__xlc__) /* Tell IBM compiler not to alias */
   #pragma disjoint(*x, *y, *da)
@@ -761,7 +761,7 @@ _zero_range(cs_real_t  *restrict y,
             cs_int_t    start_id,
             cs_int_t    end_id)
 {
-  fvm_lnum_t  ii;
+  cs_lnum_t   ii;
 
   #pragma omp parallel for
   for (ii = start_id; ii < end_id; ii++)
@@ -1324,7 +1324,7 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
-  const fvm_lnum_t *group_index = matrix->numbering->group_index;
+  const cs_lnum_t *group_index = matrix->numbering->group_index;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
@@ -1414,7 +1414,7 @@ _b_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
-  const fvm_lnum_t *group_index = matrix->numbering->group_index;
+  const cs_lnum_t *group_index = matrix->numbering->group_index;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
@@ -1858,7 +1858,7 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
   cs_int_t  ii, jj, face_id;
   const int n_threads = matrix->numbering->n_threads;
   const int n_groups = matrix->numbering->n_groups;
-  const fvm_lnum_t *group_index = matrix->numbering->group_index;
+  const cs_lnum_t *group_index = matrix->numbering->group_index;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
@@ -3740,7 +3740,7 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
                            cs_int_t               n_cells,
                            cs_int_t               n_cells_ext,
                            cs_int_t               n_faces,
-                           const fvm_gnum_t      *cell_num,
+                           const cs_gnum_t       *cell_num,
                            const cs_int_t        *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering)

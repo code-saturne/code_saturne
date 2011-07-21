@@ -585,9 +585,9 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
   cs_real_t  *distant_surf   = NULL;
   cs_real_t  *distant_xyzcen = NULL;
 
-  const fvm_lnum_t   *lstfbr        = NULL;
-  const fvm_lnum_t   *element       = NULL;
-  const fvm_coord_t  *distant_coord = NULL;
+  const cs_lnum_t   *lstfbr        = NULL;
+  const cs_lnum_t   *element       = NULL;
+  const cs_coord_t  *distant_coord = NULL;
 
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
@@ -858,7 +858,7 @@ void CS_PROCF (ussatc, USSATC)
 
 void CS_PROCF (nbccpl, NBCCPL)
 (
- fvm_lnum_t  *n_couplings
+ cs_lnum_t   *n_couplings
 )
 {
   if (_cs_glob_n_sat_cp < 0) {
@@ -908,8 +908,8 @@ void CS_PROCF (defloc, DEFLOC)
   int  indic_loc[2] = {0, 0};
 
   char coupled_mesh_name[64];
-  fvm_lnum_t *c_elt_list = NULL;
-  fvm_lnum_t *f_elt_list = NULL;
+  cs_lnum_t *c_elt_list = NULL;
+  cs_lnum_t *f_elt_list = NULL;
   cs_sat_coupling_t  *coupl = NULL;
   fvm_nodal_t  *support_fbr = NULL;
   cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
@@ -935,7 +935,7 @@ void CS_PROCF (defloc, DEFLOC)
 
   if (coupl->cell_sup_sel != NULL) {
 
-    BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
+    BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(coupl->cell_sup_sel,
                               &(coupl->nbr_cel_sup),
@@ -945,7 +945,7 @@ void CS_PROCF (defloc, DEFLOC)
 
   if (coupl->face_sup_sel != NULL) {
 
-    BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+    BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(coupl->face_sup_sel,
                                 &(coupl->nbr_fbr_sup),
@@ -1019,7 +1019,7 @@ void CS_PROCF (defloc, DEFLOC)
 
   if (coupl->cell_cpl_sel != NULL) {
 
-    BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, fvm_lnum_t);
+    BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_list(coupl->cell_cpl_sel,
                               &nbr_cel_cpl,
@@ -1043,7 +1043,7 @@ void CS_PROCF (defloc, DEFLOC)
 
   if (coupl->face_cpl_sel != NULL) {
 
-    BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, fvm_lnum_t);
+    BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_list(coupl->face_cpl_sel,
                                 &nbr_fbr_cpl,
@@ -1453,8 +1453,8 @@ void CS_PROCF (coocpl, COOCPL)
 
     if (n_pts_dist > 0) {
 
-      const fvm_lnum_t   *element;
-      const fvm_coord_t  *coord;
+      const cs_lnum_t   *element;
+      const cs_coord_t  *coord;
 
       element = ple_locator_get_dist_locations(localis);
       coord   = ple_locator_get_dist_coords(localis);
@@ -1928,7 +1928,7 @@ cs_sat_coupling_define(const char  *saturne_name,
  *   number of Code_Saturne couplings
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+int
 cs_sat_coupling_n_couplings(void)
 {
   return cs_glob_sat_n_couplings;
@@ -1945,7 +1945,7 @@ cs_sat_coupling_n_couplings(void)
  *----------------------------------------------------------------------------*/
 
 cs_sat_coupling_t *
-cs_sat_coupling_by_id(fvm_lnum_t coupling_id)
+cs_sat_coupling_by_id(int coupling_id)
 {
   cs_sat_coupling_t  *retval = NULL;
 

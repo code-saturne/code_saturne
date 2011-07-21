@@ -150,9 +150,9 @@ _sync_i_face_flag_p(cs_mesh_t                  *mesh,
                     char                        face_flag[])
 {
   int i, j;
-  fvm_lnum_t k, l;
+  cs_lnum_t k, l;
 
-  fvm_lnum_t  *send_index = NULL, *recv_index = NULL;
+  cs_lnum_t  *send_index = NULL, *recv_index = NULL;
   int  *send_flag = NULL, *recv_flag = NULL;
 
   const int n_perio = mesh->n_init_perio;
@@ -163,14 +163,14 @@ _sync_i_face_flag_p(cs_mesh_t                  *mesh,
      for each periodicity i, transform i*2 + 1 is used for the
      direct periodicity and transform i*2 + 2 for its reverse. */
 
-  BFT_MALLOC(send_index, n_interfaces + 1, fvm_lnum_t);
-  BFT_MALLOC(recv_index, n_interfaces + 1, fvm_lnum_t);
+  BFT_MALLOC(send_index, n_interfaces + 1, cs_lnum_t);
+  BFT_MALLOC(recv_index, n_interfaces + 1, cs_lnum_t);
   send_index[0] = 0;
   recv_index[0] = 0;
 
   for (i = 0; i < n_interfaces; i++) {
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t if_size = fvm_interface_size(face_if);
+    const cs_lnum_t if_size = fvm_interface_size(face_if);
     send_index[i+1] = send_index[i] + if_size;
     recv_index[i+1] = recv_index[i] + if_size;
   }
@@ -183,12 +183,12 @@ _sync_i_face_flag_p(cs_mesh_t                  *mesh,
   for (i = 0, j = 0; i < n_interfaces; i++) {
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
 
     if (n_perio != 0) {
 
       l = send_index[i];
-      const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+      const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
 
       for (k = tr_index[0]; k < tr_index[1]; k++)
         send_flag[l++] = face_flag[loc_num[k]-1];
@@ -202,7 +202,7 @@ _sync_i_face_flag_p(cs_mesh_t                  *mesh,
     }
     else { /* if (n_perio != 0) */
 
-      const fvm_lnum_t if_size = fvm_interface_size(face_if);
+      const cs_lnum_t if_size = fvm_interface_size(face_if);
 
       for (k = 0; k < if_size; k++)
         send_flag[l++] = face_flag[loc_num[k]-1];
@@ -259,11 +259,11 @@ _sync_i_face_flag_p(cs_mesh_t                  *mesh,
 
     l = recv_index[i];
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
-    const fvm_lnum_t if_size = fvm_interface_size(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_lnum_t if_size = fvm_interface_size(face_if);
 
     for (k = 0; k < if_size; k++) {
-      fvm_lnum_t face_id = loc_num[k]-1;
+      cs_lnum_t face_id = loc_num[k]-1;
       face_flag[face_id] = CS_MAX(face_flag[face_id], recv_flag[l]);
       l++;
     }
@@ -292,16 +292,16 @@ static void
 _match_halo_face_cut_p(const cs_mesh_t             *mesh,
                        const fvm_interface_set_t   *face_ifs,
                        const char                   face_flag[],
-                       const fvm_lnum_t             old_to_new[],
-                       const fvm_lnum_t             new_face_vtx_idx[],
-                       fvm_lnum_t                   new_face_vtx_lst[])
+                       const cs_lnum_t              old_to_new[],
+                       const cs_lnum_t              new_face_vtx_idx[],
+                       cs_lnum_t                    new_face_vtx_lst[])
 {
   int i, j;
-  fvm_lnum_t k, l, t_id, v_id;
-  fvm_lnum_t face_id = -1, new_face_id = -1;
-  fvm_lnum_t n_face_triangles;
-  fvm_lnum_t  *send_count = NULL, *recv_count = NULL;
-  fvm_lnum_t  *send_index = NULL, *recv_index = NULL;
+  cs_lnum_t k, l, t_id, v_id;
+  cs_lnum_t face_id = -1, new_face_id = -1;
+  cs_lnum_t n_face_triangles;
+  cs_lnum_t  *send_count = NULL, *recv_count = NULL;
+  cs_lnum_t  *send_index = NULL, *recv_index = NULL;
   int  *send_buf = NULL, *recv_buf = NULL;
 
   const int n_perio = mesh->n_init_perio;
@@ -315,8 +315,8 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
   /* Prepare send counts (non-periodic info is sent from lower
      rank to higher rank, periodic info is sent in direct direction) */
 
-  BFT_MALLOC(send_count, n_interfaces, fvm_lnum_t);
-  BFT_MALLOC(recv_count, n_interfaces, fvm_lnum_t);
+  BFT_MALLOC(send_count, n_interfaces, cs_lnum_t);
+  BFT_MALLOC(recv_count, n_interfaces, cs_lnum_t);
   for (i = 0; i < n_interfaces; i++) {
     send_count[i] = 0;
     recv_count[i] = 0;
@@ -324,12 +324,12 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
 
   for (i = 0; i < n_interfaces; i++) {
 
-    fvm_lnum_t tr_0_size;
+    cs_lnum_t tr_0_size;
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
     const int distant_rank = fvm_interface_rank(face_if);
-    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
 
     /* Non-periodic faces */
 
@@ -373,8 +373,8 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
     }
   }
 
-  BFT_MALLOC(send_index, n_interfaces + 1, fvm_lnum_t);
-  BFT_MALLOC(recv_index, n_interfaces + 1, fvm_lnum_t);
+  BFT_MALLOC(send_index, n_interfaces + 1, cs_lnum_t);
+  BFT_MALLOC(recv_index, n_interfaces + 1, cs_lnum_t);
   send_index[0] = 0;
   recv_index[0] = 0;
 
@@ -393,12 +393,12 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
 
   for (i = 0; i < n_interfaces; i++) {
 
-    fvm_lnum_t tr_0_size;
+    cs_lnum_t tr_0_size;
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
     const int distant_rank = fvm_interface_rank(face_if);
-    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
 
     l = send_index[i];
 
@@ -417,8 +417,8 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
                               - mesh->i_face_vtx_idx[face_id]) - 2;
           new_face_id = old_to_new[face_id];
           for (t_id = 0; t_id < n_face_triangles; t_id++) {
-            fvm_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-            fvm_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
             for (v_id = start_id; v_id < end_id; v_id++)
               send_buf[l++] = new_face_vtx_lst[v_id];
           }
@@ -437,8 +437,8 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
                               - mesh->i_face_vtx_idx[face_id]) - 2;
           new_face_id = old_to_new[face_id];
           for (t_id = 0; t_id < n_face_triangles; t_id++) {
-            fvm_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-            fvm_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
             for (v_id = start_id; v_id < end_id; v_id++)
               send_buf[l++] = new_face_vtx_lst[v_id];
           }
@@ -499,12 +499,12 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
 
   for (i = 0; i < n_interfaces; i++) {
 
-    fvm_lnum_t tr_0_size;
+    cs_lnum_t tr_0_size;
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, i);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
     const int distant_rank = fvm_interface_rank(face_if);
-    const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+    const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
 
     l = recv_index[i];
 
@@ -523,8 +523,8 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
                               - mesh->i_face_vtx_idx[face_id]) - 2;
           new_face_id = old_to_new[face_id];
           for (t_id = 0; t_id < n_face_triangles; t_id++) {
-            fvm_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-            fvm_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
             for (v_id = start_id; v_id < end_id; v_id++)
               new_face_vtx_lst[v_id] = recv_buf[l++];
           }
@@ -543,8 +543,8 @@ _match_halo_face_cut_p(const cs_mesh_t             *mesh,
                               - mesh->i_face_vtx_idx[face_id]) - 2;
           new_face_id = old_to_new[face_id];
           for (t_id = 0; t_id < n_face_triangles; t_id++) {
-            fvm_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-            fvm_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+            cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
             for (v_id = start_id; v_id < end_id; v_id++)
               new_face_vtx_lst[v_id] = recv_buf[l++];
           }
@@ -579,18 +579,18 @@ _sync_i_face_flag_l(cs_mesh_t                  *mesh,
 
   if (n_perio > 0) {
 
-    fvm_lnum_t i;
+    cs_lnum_t i;
 
     const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, 0);
-    const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
-    const fvm_lnum_t *dist_num = fvm_interface_get_distant_num(face_if);
-    const fvm_lnum_t if_size = fvm_interface_size(face_if);
+    const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+    const cs_lnum_t *dist_num = fvm_interface_get_distant_num(face_if);
+    const cs_lnum_t if_size = fvm_interface_size(face_if);
 
     assert(fvm_interface_set_size(face_ifs) == 1);
 
     for (i = 0; i < if_size; i++) {
-      fvm_lnum_t face_id_0 = loc_num[i]-1;
-      fvm_lnum_t face_id_1 = dist_num[i]-1;
+      cs_lnum_t face_id_0 = loc_num[i]-1;
+      cs_lnum_t face_id_1 = dist_num[i]-1;
       if (face_flag[face_id_0] != 0 || face_flag[face_id_1] != 0) {
         face_flag[face_id_0] = 1;
         face_flag[face_id_1] = 1;
@@ -618,20 +618,20 @@ static void
 _match_halo_face_cut_l(const cs_mesh_t             *mesh,
                        const fvm_interface_set_t   *face_ifs,
                        const char                   face_flag[],
-                       const fvm_lnum_t             old_to_new[],
-                       const fvm_lnum_t             new_face_vtx_idx[],
-                       fvm_lnum_t                   new_face_vtx_lst[])
+                       const cs_lnum_t              old_to_new[],
+                       const cs_lnum_t              new_face_vtx_idx[],
+                       cs_lnum_t                    new_face_vtx_lst[])
 {
   int j;
-  fvm_lnum_t k, l, face_id, p_face_id, new_face_id, new_p_face_id;
-  fvm_lnum_t t_id, v_id;
-  fvm_lnum_t n_face_triangles;
+  cs_lnum_t k, l, face_id, p_face_id, new_face_id, new_p_face_id;
+  cs_lnum_t t_id, v_id;
+  cs_lnum_t n_face_triangles;
 
   const int n_perio = mesh->n_init_perio;
   const fvm_interface_t *face_if = fvm_interface_set_get(face_ifs, 0);
-  const fvm_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
-  const fvm_lnum_t *dist_num = fvm_interface_get_distant_num(face_if);
-  const fvm_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
+  const cs_lnum_t *loc_num = fvm_interface_get_local_num(face_if);
+  const cs_lnum_t *dist_num = fvm_interface_get_distant_num(face_if);
+  const cs_lnum_t *tr_index = fvm_interface_get_tr_index(face_if);
 
   /* Note: in the case of periodicity, transform 0 of the interface
      is used for non-periodic sections, and by construction,
@@ -654,8 +654,8 @@ _match_halo_face_cut_l(const cs_mesh_t             *mesh,
         new_face_id = old_to_new[face_id];
         new_p_face_id = old_to_new[p_face_id];
         for (t_id = 0; t_id < n_face_triangles; t_id++) {
-          fvm_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
-          fvm_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+          cs_lnum_t start_id = new_face_vtx_idx[new_face_id + t_id] - 1;
+          cs_lnum_t end_id = new_face_vtx_idx[new_face_id + t_id] - 1;
           l = new_face_vtx_idx[new_p_face_id + t_id] - 1;
           for (v_id = start_id; v_id < end_id; v_id++)
             new_face_vtx_lst[l++] = new_face_vtx_lst[v_id];
@@ -678,32 +678,32 @@ _match_halo_face_cut_l(const cs_mesh_t             *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_cut_warped_i_faces_halo(cs_mesh_t    *mesh,
-                         fvm_lnum_t   *p_n_cut_faces,
-                         fvm_lnum_t   *p_cut_face_lst[],
-                         fvm_lnum_t   *p_n_sub_elt_lst[])
+_cut_warped_i_faces_halo(cs_mesh_t   *mesh,
+                         cs_lnum_t   *p_n_cut_faces,
+                         cs_lnum_t   *p_cut_face_lst[],
+                         cs_lnum_t   *p_n_sub_elt_lst[])
 {
-  fvm_lnum_t  i, j, face_id, idx_start, idx_end, old_face_idx;
-  fvm_lnum_t  n_triangles, face_shift;
+  cs_lnum_t  i, j, face_id, idx_start, idx_end, old_face_idx;
+  cs_lnum_t  n_triangles, face_shift;
 
-  fvm_lnum_t  n_face_vertices = 0, n_max_face_vertices = 0;
-  fvm_lnum_t  n_new_faces = 0, n_cut_faces = 0, connect_size = 0;
+  cs_lnum_t  n_face_vertices = 0, n_max_face_vertices = 0;
+  cs_lnum_t  n_new_faces = 0, n_cut_faces = 0, connect_size = 0;
 
   fvm_triangulate_state_t  *triangle_state = NULL;
-  fvm_lnum_t  *new_face_vtx_idx = NULL, *new_face_vtx_lst = NULL;
-  fvm_lnum_t  *new_face_cells = NULL, *new_face_family = NULL;
-  fvm_lnum_t  *cut_face_lst = NULL;
-  fvm_lnum_t  *new_face_shift = NULL;
-  fvm_lnum_t  *n_sub_elt_lst = NULL;
-  int         *perio_num = NULL;
-  fvm_lnum_t  *n_perio_faces = NULL;
-  fvm_gnum_t  **perio_faces = NULL;
+  cs_lnum_t  *new_face_vtx_idx = NULL, *new_face_vtx_lst = NULL;
+  cs_lnum_t  *new_face_cells = NULL, *new_face_family = NULL;
+  cs_lnum_t  *cut_face_lst = NULL;
+  cs_lnum_t  *new_face_shift = NULL;
+  cs_lnum_t  *n_sub_elt_lst = NULL;
+  int        *perio_num = NULL;
+  cs_lnum_t  *n_perio_faces = NULL;
+  cs_gnum_t  **perio_faces = NULL;
 
   char *cut_flag = NULL;
   fvm_interface_set_t *face_ifs = NULL;
 
   const int  dim = mesh->dim;
-  const fvm_lnum_t  n_init_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_init_faces = mesh->n_i_faces;
 
   assert(dim == 3);
 
@@ -725,7 +725,7 @@ _cut_warped_i_faces_halo(cs_mesh_t    *mesh,
                                mesh->n_init_perio,
                                perio_num,
                                n_perio_faces,
-                               (const fvm_gnum_t **const)perio_faces);
+                               (const cs_gnum_t **const)perio_faces);
 
   if (mesh->n_init_perio > 0) {
     for (i = 0; i < mesh->n_init_perio; i++)
@@ -735,8 +735,8 @@ _cut_warped_i_faces_halo(cs_mesh_t    *mesh,
     BFT_FREE(perio_num);
   }
 
-  BFT_MALLOC(n_sub_elt_lst, n_init_faces, fvm_lnum_t);
-  BFT_MALLOC(new_face_shift, n_init_faces, fvm_lnum_t);
+  BFT_MALLOC(n_sub_elt_lst, n_init_faces, cs_lnum_t);
+  BFT_MALLOC(new_face_shift, n_init_faces, cs_lnum_t);
 
   /* Build flag for each face from list of faces to cut */
 
@@ -802,12 +802,12 @@ _cut_warped_i_faces_halo(cs_mesh_t    *mesh,
     return;
   }
 
-  BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, fvm_lnum_t);
-  BFT_MALLOC(new_face_vtx_lst, connect_size, fvm_lnum_t);
-  BFT_MALLOC(new_face_cells, 2*n_new_faces, fvm_lnum_t);
-  BFT_MALLOC(new_face_family, n_new_faces, fvm_lnum_t);
+  BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_lnum_t);
+  BFT_MALLOC(new_face_vtx_lst, connect_size, cs_lnum_t);
+  BFT_MALLOC(new_face_cells, 2*n_new_faces, cs_lnum_t);
+  BFT_MALLOC(new_face_family, n_new_faces, cs_lnum_t);
 
-  BFT_MALLOC(cut_face_lst, n_cut_faces, fvm_lnum_t);
+  BFT_MALLOC(cut_face_lst, n_cut_faces, cs_lnum_t);
 
   triangle_state = fvm_triangulate_state_create(n_max_face_vertices);
 
@@ -951,7 +951,7 @@ _cut_warped_i_faces_halo(cs_mesh_t    *mesh,
         for (j = new_face_vtx_idx[face_shift] - 1;
              j < new_face_vtx_idx[face_shift+1] - 1; j++) {
 
-          fvm_lnum_t v_id = new_face_vtx_lst[j] - 1;
+          cs_lnum_t v_id = new_face_vtx_lst[j] - 1;
           new_face_vtx_lst[j] = mesh->i_face_vtx_lst[old_face_idx + v_id];
         }
 
@@ -998,38 +998,38 @@ _cut_warped_i_faces_halo(cs_mesh_t    *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_cut_warped_faces(cs_mesh_t       *mesh,
-                  int              stride,
-                  fvm_lnum_t      *p_n_cut_faces,
-                  fvm_lnum_t      *p_cut_face_lst[],
-                  fvm_lnum_t      *p_n_sub_elt_lst[],
-                  fvm_lnum_t      *p_n_faces,
-                  fvm_lnum_t      *p_face_vtx_connect_size,
-                  fvm_lnum_t      *p_face_cells[],
-                  fvm_lnum_t      *p_face_family[],
-                  fvm_lnum_t      *p_face_vtx_idx[],
-                  fvm_lnum_t      *p_face_vtx_lst[])
+_cut_warped_faces(cs_mesh_t      *mesh,
+                  int             stride,
+                  cs_lnum_t      *p_n_cut_faces,
+                  cs_lnum_t      *p_cut_face_lst[],
+                  cs_lnum_t      *p_n_sub_elt_lst[],
+                  cs_lnum_t      *p_n_faces,
+                  cs_lnum_t      *p_face_vtx_connect_size,
+                  cs_lnum_t      *p_face_cells[],
+                  cs_lnum_t      *p_face_family[],
+                  cs_lnum_t      *p_face_vtx_idx[],
+                  cs_lnum_t      *p_face_vtx_lst[])
 {
-  fvm_lnum_t  i, j, face_id, idx_start, idx_end, shift;
-  fvm_lnum_t  n_triangles;
+  cs_lnum_t  i, j, face_id, idx_start, idx_end, shift;
+  cs_lnum_t  n_triangles;
 
-  fvm_lnum_t  n_face_vertices = 0, n_max_face_vertices = 0;
-  fvm_lnum_t  n_new_faces = 0, n_cut_faces = 0, connect_size = 0;
+  cs_lnum_t  n_face_vertices = 0, n_max_face_vertices = 0;
+  cs_lnum_t  n_new_faces = 0, n_cut_faces = 0, connect_size = 0;
 
   fvm_triangulate_state_t  *triangle_state = NULL;
-  fvm_lnum_t  *new_face_vtx_idx = NULL, *new_face_vtx_lst = NULL;
-  fvm_lnum_t  *new_face_cells = NULL, *new_face_family = NULL;
-  fvm_lnum_t  *cut_face_lst = NULL;
-  fvm_lnum_t  *n_sub_elt_lst = NULL;
+  cs_lnum_t  *new_face_vtx_idx = NULL, *new_face_vtx_lst = NULL;
+  cs_lnum_t  *new_face_cells = NULL, *new_face_family = NULL;
+  cs_lnum_t  *cut_face_lst = NULL;
+  cs_lnum_t  *n_sub_elt_lst = NULL;
   char *cut_flag = NULL;
 
-  const fvm_lnum_t  dim = mesh->dim;
-  const fvm_lnum_t  n_init_faces = *p_n_faces;
+  const cs_lnum_t  dim = mesh->dim;
+  const cs_lnum_t  n_init_faces = *p_n_faces;
 
   assert(stride == 1 || stride ==2);
   assert(dim == 3);
 
-  BFT_MALLOC(n_sub_elt_lst, n_init_faces, fvm_lnum_t);
+  BFT_MALLOC(n_sub_elt_lst, n_init_faces, cs_lnum_t);
 
   /* Build flag for each face from list of faces to cut */
 
@@ -1077,12 +1077,12 @@ _cut_warped_faces(cs_mesh_t       *mesh,
   if (n_cut_faces == 0)
     return;
 
-  BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, fvm_lnum_t);
-  BFT_MALLOC(new_face_vtx_lst, connect_size, fvm_lnum_t);
-  BFT_MALLOC(new_face_cells, n_new_faces*stride, fvm_lnum_t);
-  BFT_MALLOC(new_face_family, n_new_faces, fvm_lnum_t);
+  BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_lnum_t);
+  BFT_MALLOC(new_face_vtx_lst, connect_size, cs_lnum_t);
+  BFT_MALLOC(new_face_cells, n_new_faces*stride, cs_lnum_t);
+  BFT_MALLOC(new_face_family, n_new_faces, cs_lnum_t);
 
-  BFT_MALLOC(cut_face_lst, n_cut_faces, fvm_lnum_t);
+  BFT_MALLOC(cut_face_lst, n_cut_faces, cs_lnum_t);
 
   triangle_state = fvm_triangulate_state_create(n_max_face_vertices);
 
@@ -1201,17 +1201,17 @@ _cut_warped_faces(cs_mesh_t       *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_update_cut_faces_num(cs_mesh_t       *mesh,
-                      cs_int_t         n_faces,
-                      cs_int_t         n_init_faces,
-                      fvm_lnum_t       n_sub_elt_lst[],
-                      fvm_gnum_t      *n_g_faces,
-                      fvm_gnum_t     **p_global_face_num)
+_update_cut_faces_num(cs_mesh_t      *mesh,
+                      cs_int_t        n_faces,
+                      cs_int_t        n_init_faces,
+                      cs_lnum_t       n_sub_elt_lst[],
+                      cs_gnum_t      *n_g_faces,
+                      cs_gnum_t     **p_global_face_num)
 {
   size_t  size;
 
-  fvm_io_num_t  *new_io_num = NULL, *previous_io_num = NULL;
-  const fvm_gnum_t  *global_num = NULL;
+  fvm_io_num_t *new_io_num = NULL, *previous_io_num = NULL;
+  const cs_gnum_t  *global_num = NULL;
 
   /* Simply update global number of faces in trivial case */
 
@@ -1245,8 +1245,8 @@ _update_cut_faces_num(cs_mesh_t       *mesh,
 
     global_num = fvm_io_num_get_global_num(new_io_num);
 
-    BFT_REALLOC(*p_global_face_num, n_faces, fvm_gnum_t);
-    size = sizeof(fvm_gnum_t) * n_faces;
+    BFT_REALLOC(*p_global_face_num, n_faces, cs_gnum_t);
+    size = sizeof(cs_gnum_t) * n_faces;
     memcpy(*p_global_face_num, global_num, size);
 
     new_io_num = fvm_io_num_destroy(new_io_num);
@@ -1274,7 +1274,7 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
                      double          i_face_warping[],
                      double          b_face_warping[])
 {
-  fvm_lnum_t  parent_num_shift[2];
+  cs_lnum_t  parent_num_shift[2];
 
   int  n_parent_lists = 2;
   fvm_nodal_t  *fvm_mesh = NULL;
@@ -1424,9 +1424,9 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
   cs_int_t  *i_face_lst = NULL, *b_face_lst = NULL;
   cs_real_t  *i_face_normal = NULL, *b_face_normal = NULL;
   double  *working_array = NULL, *i_face_warping = NULL, *b_face_warping = NULL;
-  fvm_lnum_t  *n_i_sub_elt_lst = NULL, *n_b_sub_elt_lst = NULL;
-  fvm_gnum_t  n_g_faces_ini = 0;
-  fvm_gnum_t  n_g_i_cut_faces = 0, n_g_b_cut_faces = 0;
+  cs_lnum_t  *n_i_sub_elt_lst = NULL, *n_b_sub_elt_lst = NULL;
+  cs_gnum_t  n_g_faces_ini = 0;
+  cs_gnum_t  n_g_i_cut_faces = 0, n_g_b_cut_faces = 0;
 
   const cs_int_t  n_init_i_faces = mesh->n_i_faces;
   const cs_int_t  n_init_b_faces = mesh->n_b_faces;

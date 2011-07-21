@@ -137,8 +137,8 @@ void CS_PROCF(csgfam, CSGFAM)
 
 void
 cs_selector_get_b_face_list(const char  *criteria,
-                            fvm_lnum_t  *n_b_faces,
-                            fvm_lnum_t   b_face_list[]);
+                            cs_lnum_t   *n_b_faces,
+                            cs_lnum_t    b_face_list[]);
 
 /*----------------------------------------------------------------------------
  * Fill a list of interior faces verifying a given selection criteria.
@@ -152,8 +152,8 @@ cs_selector_get_b_face_list(const char  *criteria,
 
 void
 cs_selector_get_i_face_list(const char  *criteria,
-                            fvm_lnum_t  *n_i_faces,
-                            fvm_lnum_t   i_face_list[]);
+                            cs_lnum_t   *n_i_faces,
+                            cs_lnum_t    i_face_list[]);
 
 /*----------------------------------------------------------------------------
  * Fill a list of cells verifying a given selection criteria.
@@ -167,8 +167,8 @@ cs_selector_get_i_face_list(const char  *criteria,
 
 void
 cs_selector_get_cell_list(const char  *criteria,
-                          fvm_lnum_t  *n_cells,
-                          fvm_lnum_t   cell_list[]);
+                          cs_lnum_t   *n_cells,
+                          cs_lnum_t    cell_list[]);
 
 /*----------------------------------------------------------------------------
  * Fill lists of faces at the boundary of a set of cells verifying a given
@@ -186,10 +186,10 @@ cs_selector_get_cell_list(const char  *criteria,
 
 void
 cs_selector_get_cells_boundary(const char  *criteria,
-                               fvm_lnum_t  *n_i_faces,
-                               fvm_lnum_t  *n_b_faces,
-                               fvm_lnum_t   i_face_list[],
-                               fvm_lnum_t   b_face_list[]);
+                               cs_lnum_t   *n_i_faces,
+                               cs_lnum_t   *n_b_faces,
+                               cs_lnum_t    i_face_list[],
+                               cs_lnum_t    b_face_list[]);
 
 /*----------------------------------------------------------------------------
  * Fill a list of interior faces belonging to a given periodicity.
@@ -203,8 +203,8 @@ cs_selector_get_cells_boundary(const char  *criteria,
 
 void
 cs_selector_get_perio_face_list(int          perio_num,
-                                fvm_lnum_t  *n_i_faces,
-                                fvm_lnum_t   i_face_list[]);
+                                cs_lnum_t   *n_i_faces,
+                                cs_lnum_t    i_face_list[]);
 
 /*----------------------------------------------------------------------------
  * Fill a list of families verifying a given selection criteria.
@@ -218,7 +218,7 @@ cs_selector_get_perio_face_list(int          perio_num,
 
 void
 cs_selector_get_family_list(const char  *criteria,
-                            fvm_lnum_t  *n_families,
+                            cs_lnum_t   *n_families,
                             cs_int_t     family_list[]);
 
 /*----------------------------------------------------------------------------*/

@@ -82,9 +82,9 @@ BEGIN_C_DECLS
  *---------------------------------------------------------------------------*/
 
 void
-cs_sort_shell(cs_int_t  l,
-              cs_int_t  r,
-              cs_int_t  a[])
+cs_sort_shell(cs_lnum_t  l,
+              cs_lnum_t  r,
+              cs_lnum_t  a[])
 {
   int i, j, h;
 
@@ -96,7 +96,7 @@ cs_sort_shell(cs_int_t  l,
 
     for (i = l+h; i < r; i++) {
 
-      cs_int_t  v = a[i];
+      cs_lnum_t  v = a[i];
 
       j = i;
       while ((j >= l+h) && (v < a[j-h])) {
@@ -122,9 +122,9 @@ cs_sort_shell(cs_int_t  l,
  *---------------------------------------------------------------------------*/
 
 void
-cs_sort_gnum_shell(cs_int_t    l,
-                   cs_int_t    r,
-                   fvm_gnum_t  a[])
+cs_sort_gnum_shell(cs_lnum_t  l,
+                   cs_lnum_t  r,
+                   cs_gnum_t  a[])
 {
   int i, j, h;
 
@@ -136,7 +136,7 @@ cs_sort_gnum_shell(cs_int_t    l,
 
     for (i = l+h; i < r; i++) {
 
-      fvm_gnum_t  v = a[i];
+      cs_gnum_t  v = a[i];
 
       j = i;
       while ((j >= l+h) && (v < a[j-h])) {
@@ -164,13 +164,13 @@ cs_sort_gnum_shell(cs_int_t    l,
  *---------------------------------------------------------------------------*/
 
 void
-cs_sort_coupled_shell(cs_int_t   l,
-                      cs_int_t   r,
-                      cs_int_t   a[],
-                      cs_int_t   b[])
+cs_sort_coupled_shell(cs_lnum_t   l,
+                      cs_lnum_t   r,
+                      cs_lnum_t   a[],
+                      cs_lnum_t   b[])
 {
   int  i, j, h;
-  cs_int_t  size = r - l;
+  cs_lnum_t  size = r - l;
 
   if (size == 0)
     return;
@@ -183,8 +183,8 @@ cs_sort_coupled_shell(cs_int_t   l,
 
     for (i = l+h; i < r; i++) {
 
-      cs_int_t  va = a[i];
-      cs_int_t  vb = b[i];
+      cs_lnum_t  va = a[i];
+      cs_lnum_t  vb = b[i];
 
       j = i;
       while ( (j >= l+h) && (va < a[j-h]) ) {
@@ -214,13 +214,13 @@ cs_sort_coupled_shell(cs_int_t   l,
  *---------------------------------------------------------------------------*/
 
 void
-cs_sort_coupled_gnum_shell(cs_int_t     l,
-                           cs_int_t     r,
-                           fvm_gnum_t   a[],
-                           fvm_gnum_t   b[])
+cs_sort_coupled_gnum_shell(cs_lnum_t   l,
+                           cs_lnum_t   r,
+                           cs_gnum_t   a[],
+                           cs_gnum_t   b[])
 {
   int  i, j, h;
-  cs_int_t  size = r - l;
+  cs_lnum_t  size = r - l;
 
   if (size == 0)
     return;
@@ -233,8 +233,8 @@ cs_sort_coupled_gnum_shell(cs_int_t     l,
 
     for (i = l+h; i < r; i++) {
 
-      fvm_gnum_t  va = a[i];
-      fvm_gnum_t  vb = b[i];
+      cs_gnum_t  va = a[i];
+      cs_gnum_t  vb = b[i];
 
       j = i;
       while ( (j >= l+h) && (va < a[j-h]) ) {

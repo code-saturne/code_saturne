@@ -68,7 +68,7 @@ extern "C" {
 
 void
 fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
-                      const fvm_gnum_t   parent_global_number[]);
+                      const cs_gnum_t    parent_global_number[]);
 
 /*----------------------------------------------------------------------------
  * Locally order faces and associated connectivity for a nodal mesh
@@ -81,7 +81,7 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
 
 void
 fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
-                      const fvm_gnum_t   parent_global_number[]);
+                      const cs_gnum_t    parent_global_number[]);
 
 /*----------------------------------------------------------------------------
  * Locally order vertices and update connectivity for a nodal mesh
@@ -94,7 +94,7 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
 
 void
 fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
-                         const fvm_gnum_t   parent_global_number[]);
+                         const cs_gnum_t    parent_global_number[]);
 
 /*----------------------------------------------------------------------------*/
 

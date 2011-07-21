@@ -118,8 +118,8 @@ struct _cs_syr3_coupling_t {
 
   char           *face_sel;         /* Face selection criteria */
 
-  fvm_lnum_t      n_faces;          /* Number of coupled faces */
-  fvm_lnum_t     *face_list;        /* List of coupled faces */
+  cs_lnum_t       n_faces;          /* Number of coupled faces */
+  cs_lnum_t      *face_list;        /* List of coupled faces */
   cs_real_t      *weighting;        /* Triangle area or edge lengths */
   fvm_nodal_t    *coupled_mesh;     /* Nodal mesh extracted */
 
@@ -166,7 +166,7 @@ static int  cs_glob_syr3_post_maillage_ext[2] = {0, 1};
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Conversion from fvm_gnum_t to cs_int_t .
+ * Conversion from cs_gnum_t to cs_int_t .
  * Arrays can use the same memory.
  *
  * parameters:
@@ -176,13 +176,13 @@ static int  cs_glob_syr3_post_maillage_ext[2] = {0, 1};
  *----------------------------------------------------------------------------*/
 
 static void
-_convert_fvm_gnum(fvm_gnum_t   fvm_data[],
-                  cs_int_t     cs_data[],
-                  fvm_gnum_t   n_elts)
+_convert_fvm_gnum(cs_gnum_t   fvm_data[],
+                  cs_int_t    cs_data[],
+                  cs_gnum_t   n_elts)
 {
   size_t i;
 
-  if (sizeof(cs_int_t) > sizeof(fvm_gnum_t)) {
+  if (sizeof(cs_int_t) > sizeof(cs_gnum_t)) {
     for (i = 0; i < n_elts; i++)
       cs_data[n_elts - 1 - i] = fvm_data[n_elts - 1 -i];
   }
@@ -213,7 +213,7 @@ _define_coupled_mesh(char                *coupled_mesh_name,
 
   BFT_MALLOC(syr_coupling->face_list,
              cs_glob_mesh->n_b_faces,
-             fvm_lnum_t);
+             cs_lnum_t);
 
   cs_selector_get_b_face_list(syr_coupling->face_sel,
                               &(syr_coupling->n_faces),
@@ -221,7 +221,7 @@ _define_coupled_mesh(char                *coupled_mesh_name,
 
   BFT_REALLOC(syr_coupling->face_list,
               syr_coupling->n_faces,
-              fvm_lnum_t);
+              cs_lnum_t);
 
   if (comm_echo >= 0)
     bft_printf(_("\nExtracting \"%s\" mesh\n"), coupled_mesh_name);
@@ -272,7 +272,7 @@ _renum_faces_list(cs_syr3_coupling_t *syr_coupling)
 
   fvm_nodal_get_parent_num(coupled_mesh, elt_dim, parent_num);
 
-  assert(sizeof(fvm_lnum_t) == sizeof(cs_int_t));
+  assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
 
   /* Rebuild coupled faces list in same order as fvm_nodal_structure */
 
@@ -319,11 +319,11 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
 {
   cs_int_t  elt_size;
 
-  fvm_gnum_t  n_g_vertices = 0;
+  cs_gnum_t  n_g_vertices = 0;
   cs_int_t  _n_g_vertices = 0;
   char  *global_vtx_num_buffer = NULL;
   cs_int_t  *global_vtx_num_int = NULL;
-  fvm_gnum_t  *global_vtx_num = NULL;
+  cs_gnum_t  *global_vtx_num = NULL;
   fvm_nodal_t  *coupled_mesh = syr_coupling->coupled_mesh;
 
   const cs_int_t  dim = syr_coupling->dim;
@@ -350,19 +350,19 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
 
   if (n_faces > 0) {
 
-    elt_size = CS_MAX(sizeof(fvm_gnum_t), sizeof(cs_int_t));
+    elt_size = CS_MAX(sizeof(cs_gnum_t), sizeof(cs_int_t));
     BFT_MALLOC(global_vtx_num_buffer, n_vertices * elt_size, char);
 
-    global_vtx_num = (fvm_gnum_t *)global_vtx_num_buffer;
+    global_vtx_num = (cs_gnum_t *)global_vtx_num_buffer;
 
     fvm_nodal_get_global_vertex_num(coupled_mesh, global_vtx_num);
 
-    /* Convert fvm_gnum_t to cs_int_t if necessary */
+    /* Convert cs_gnum_t to cs_int_t if necessary */
 
     global_vtx_num_int = (cs_int_t *)global_vtx_num_buffer;
     _convert_fvm_gnum(global_vtx_num,
                       global_vtx_num_int,
-                      (fvm_gnum_t)n_vertices);
+                      (cs_gnum_t)n_vertices);
 
   }
 
@@ -388,7 +388,7 @@ _send_coords(cs_syr3_coupling_t  *syr_coupling,
 
     /* Checkings */
 
-    assert(sizeof(fvm_coord_t) == sizeof(cs_real_t));
+    assert(sizeof(cs_coord_t) == sizeof(cs_real_t));
     assert(sizeof(double) == sizeof(cs_real_t));
 
     fvm_nodal_get_vertex_coords(coupled_mesh,
@@ -425,7 +425,7 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
   cs_int_t  n_connect = 0;
   char  *glob_elt_num = NULL;
   cs_int_t  *ni_connect = NULL;
-  fvm_lnum_t  *connect = NULL;
+  cs_lnum_t  *connect = NULL;
   fvm_nodal_t *coupled_mesh = syr_coupling->coupled_mesh;
 
   const cs_int_t dim = syr_coupling->dim;
@@ -444,27 +444,27 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
 
   if (n_faces > 0) {
 
-    elt_size = CS_MAX(sizeof(fvm_gnum_t), sizeof(cs_int_t));
+    elt_size = CS_MAX(sizeof(cs_gnum_t), sizeof(cs_int_t));
     BFT_MALLOC(glob_elt_num, n_elts * elt_size, char);
 
     if (elt_dim == 2)
       fvm_nodal_get_global_element_num(coupled_mesh,
                                        FVM_FACE_TRIA,
-                                       (fvm_gnum_t *)glob_elt_num);
+                                       (cs_gnum_t *)glob_elt_num);
 
     else if (elt_dim == 1)
       fvm_nodal_get_global_element_num(coupled_mesh,
                                        FVM_EDGE,
-                                       (fvm_gnum_t *)glob_elt_num);
+                                       (cs_gnum_t *)glob_elt_num);
 
     else
       assert(elt_dim == 1 || elt_dim == 2);
 
-    /* Convert fvm_gnum_t to cs_int_t if necessary */
+    /* Convert cs_gnum_t to cs_int_t if necessary */
 
-    _convert_fvm_gnum((fvm_gnum_t *)glob_elt_num,
+    _convert_fvm_gnum((cs_gnum_t *)glob_elt_num,
                       (cs_int_t *)glob_elt_num,
-                      (fvm_gnum_t)n_elts);
+                      (cs_gnum_t)n_elts);
 
   } /* n_faces > 0 */
 
@@ -487,7 +487,7 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
 
       stride = 3;
       n_connect = n_elts * stride;
-      BFT_MALLOC(connect, n_connect, fvm_lnum_t);
+      BFT_MALLOC(connect, n_connect, cs_lnum_t);
 
       fvm_nodal_get_strided_connect(coupled_mesh,
                                     FVM_FACE_TRIA,
@@ -498,7 +498,7 @@ _send_connectivity(cs_syr3_coupling_t  *syr_coupling,
 
       stride = 2;
       n_connect = n_elts * stride;
-      BFT_MALLOC(connect, n_connect, fvm_lnum_t);
+      BFT_MALLOC(connect, n_connect, cs_lnum_t);
 
       fvm_nodal_get_strided_connect(coupled_mesh,
                                     FVM_EDGE,
@@ -668,10 +668,10 @@ static void
 _interpolate_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
                         cs_real_t                 *elt_values,
                         const cs_real_t           *vtx_values,
-                        fvm_lnum_t                 n_elts,
+                        cs_lnum_t                  n_elts,
                         int                        stride,
-                        const fvm_lnum_t          *parent_num,
-                        const fvm_lnum_t          *connect)
+                        const cs_lnum_t           *parent_num,
+                        const cs_lnum_t           *connect)
 {
   cs_int_t  i, j, vtx_id, fac_id;
   cs_int_t  elt_num, elt_num_prev;
@@ -748,12 +748,12 @@ _interpolate_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
 static void
 _interpolate_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
                         const cs_real_t           *elt_values,
-                        fvm_lnum_t                 n_vertices,
+                        cs_lnum_t                  n_vertices,
                         cs_real_t                 *vtx_values,
-                        fvm_lnum_t                 n_elts,
+                        cs_lnum_t                  n_elts,
                         int                        stride,
-                        const fvm_lnum_t          *parent_num,
-                        const fvm_lnum_t          *connect)
+                        const cs_lnum_t           *parent_num,
+                        const cs_lnum_t           *connect)
 {
   cs_int_t  i, j, fac_id, vtx_id;
   cs_int_t  elt_num, elt_num_prev;
@@ -1084,10 +1084,10 @@ cs_syr3_coupling_get_comm(const cs_syr3_coupling_t *syr_coupling)
  *   number of vertices in coupled mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t *syr_coupling)
 {
-  fvm_lnum_t n_vertices = 0;
+  cs_lnum_t n_vertices = 0;
 
   assert(syr_coupling != NULL);
 
@@ -1106,10 +1106,10 @@ cs_syr3_coupling_get_n_vertices(const cs_syr3_coupling_t *syr_coupling)
  *   number of vertices in coupled mesh
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+cs_lnum_t
 cs_syr3_coupling_get_n_faces(const cs_syr3_coupling_t *syr_coupling)
 {
-  fvm_lnum_t n_faces = 0;
+  cs_lnum_t n_faces = 0;
 
   assert(syr_coupling != NULL);
 
@@ -1128,9 +1128,9 @@ cs_syr3_coupling_get_n_faces(const cs_syr3_coupling_t *syr_coupling)
 
 void
 cs_syr3_coupling_get_face_list(const cs_syr3_coupling_t  *syr_coupling,
-                               fvm_lnum_t                 face_list[])
+                               cs_lnum_t                  face_list[])
 {
-  fvm_lnum_t  i;
+  cs_lnum_t  i;
 
   assert(syr_coupling != NULL);
 
@@ -1337,7 +1337,7 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
   cs_int_t  length;
   cs_int_t  dim;
 
-  fvm_gnum_t n_g_vertices = 0;
+  cs_gnum_t n_g_vertices = 0;
   cs_int_t   n_vertices = 0;
   cs_int_t   n_elts = 0;
   cs_int_t   n_errors = 0;
@@ -1432,9 +1432,9 @@ cs_syr3_coupling_init_mesh(cs_syr3_coupling_t  *syr_coupling)
 
   if (cs_glob_n_ranks > 1) {
 
-    fvm_gnum_t  *global_vertex_num = NULL;
+    cs_gnum_t  *global_vertex_num = NULL;
 
-    BFT_MALLOC(global_vertex_num, n_vertices, fvm_gnum_t);
+    BFT_MALLOC(global_vertex_num, n_vertices, cs_gnum_t);
 
     fvm_nodal_get_global_vertex_num(coupled_mesh, global_vertex_num);
 
@@ -1568,7 +1568,7 @@ cs_syr3_coupling_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
   fvm_nodal_get_parent_num(coupled_mesh, elt_dim, parent_num);
 
   /* Sanity test */
-  assert(sizeof(fvm_lnum_t) == sizeof(cs_int_t));
+  assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
 
   /* Get local connectivity */
 
@@ -1633,7 +1633,7 @@ cs_syr3_coupling_vtx_to_elt(const cs_syr3_coupling_t  *syr_coupling,
 void
 cs_syr3_coupling_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
                             const cs_real_t           *elt_values,
-                            fvm_lnum_t                 n_vertices,
+                            cs_lnum_t                  n_vertices,
                             cs_real_t                 *vtx_values)
 {
   cs_int_t n_elts;
@@ -1658,7 +1658,7 @@ cs_syr3_coupling_elt_to_vtx(const cs_syr3_coupling_t  *syr_coupling,
   fvm_nodal_get_parent_num(coupled_mesh, elt_dim, parent_num);
 
   /* Sanity test */
-  assert(sizeof(fvm_lnum_t) == sizeof(cs_int_t));
+  assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
 
   /* Get connectivity */
 

@@ -423,7 +423,7 @@ cs_sat_coupling_define(const char  *saturne_name,
  *   number of Code_Saturne couplings
  *----------------------------------------------------------------------------*/
 
-fvm_lnum_t
+int
 cs_sat_coupling_n_couplings(void);
 
 /*----------------------------------------------------------------------------
@@ -437,7 +437,7 @@ cs_sat_coupling_n_couplings(void);
  *----------------------------------------------------------------------------*/
 
 cs_sat_coupling_t *
-cs_sat_coupling_by_id(fvm_lnum_t coupling_id);
+cs_sat_coupling_by_id(int coupling_id);
 
 /*----------------------------------------------------------------------------
  * Create a sat_coupling_t structure.

@@ -101,17 +101,17 @@ typedef struct {
 
   /* Global dimension */
 
-  fvm_gnum_t   n_g_cells;          /* Global number of cells */
-  fvm_gnum_t   n_g_i_faces;        /* Global number of internal faces */
-  fvm_gnum_t   n_g_b_faces;        /* Global number of border faces */
-  fvm_gnum_t   n_g_vertices;       /* Global number of vertices */
+  cs_gnum_t   n_g_cells;           /* Global number of cells */
+  cs_gnum_t   n_g_i_faces;         /* Global number of internal faces */
+  cs_gnum_t   n_g_b_faces;         /* Global number of border faces */
+  cs_gnum_t   n_g_vertices;        /* Global number of vertices */
 
   /* Global numbering */
 
-  fvm_gnum_t  *global_cell_num;    /* Global cell numbering */
-  fvm_gnum_t  *global_i_face_num;  /* Global internal face numbering */
-  fvm_gnum_t  *global_b_face_num;  /* Global border face numbering */
-  fvm_gnum_t  *global_vtx_num;     /* Global vertex numbering */
+  cs_gnum_t  *global_cell_num;     /* Global cell numbering */
+  cs_gnum_t  *global_i_face_num;   /* Global internal face numbering */
+  cs_gnum_t  *global_b_face_num;   /* Global border face numbering */
+  cs_gnum_t  *global_vtx_num;      /* Global vertex numbering */
 
   /* Periodictity features */
 
@@ -173,7 +173,7 @@ typedef struct {
 
   /* Status flags */
 
-  fvm_gnum_t n_g_free_faces;          /* Global number of boundary faces
+  cs_gnum_t n_g_free_faces;          /* Global number of boundary faces
                                          which are in fact isolated */
   int modified;                       /* Modification status */
 
@@ -184,11 +184,11 @@ typedef struct {
 
 typedef struct {
 
-  int           n_perio;              /* Number of periodicities */
+  int          n_perio;               /* Number of periodicities */
 
-  fvm_lnum_t   *n_perio_couples;      /* Local number of periodic face
+  cs_lnum_t   *n_perio_couples ;      /* Local number of periodic face
                                          couples for each periodicity */
-  fvm_gnum_t  **perio_couples;        /* List of global numbering of
+  cs_gnum_t  **perio_couples;         /* List of global numbering of
                                          periodic faces. */
 
 } cs_mesh_builder_t;
@@ -630,8 +630,8 @@ cs_mesh_init_selectors(void);
 
 void
 cs_mesh_get_perio_faces(const cs_mesh_t    *mesh,
-                        fvm_lnum_t        **n_perio_face_couples,
-                        fvm_gnum_t       ***perio_face_couples);
+                        cs_lnum_t         **n_perio_face_couples,
+                        cs_gnum_t        ***perio_face_couples);
 
 /*----------------------------------------------------------------------------
  * Build global cell numbering array extended to ghost cell values.
@@ -647,7 +647,7 @@ cs_mesh_get_perio_faces(const cs_mesh_t    *mesh,
  *   blank_perio <-- flag to zeroe periodic cell values
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t *
+cs_gnum_t *
 cs_mesh_get_cell_gnum(const cs_mesh_t  *mesh,
                       int               blank_perio);
 
@@ -692,8 +692,8 @@ cs_mesh_print_info(const cs_mesh_t  *mesh,
 
 void
 cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
-                              fvm_gnum_t       *g_i_face_vertices_size,
-                              fvm_gnum_t       *g_b_face_vertices_size);
+                              cs_gnum_t        *g_i_face_vertices_size,
+                              cs_gnum_t        *g_b_face_vertices_size);
 
 /*----------------------------------------------------------------------------
  * Print statistics about mesh selectors usage to log.

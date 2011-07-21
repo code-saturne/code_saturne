@@ -126,7 +126,7 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 void
 cs_join_post_after_split(cs_int_t          n_old_i_faces,
                          cs_int_t          n_old_b_faces,
-                         fvm_gnum_t        n_g_new_b_faces,
+                         cs_gnum_t         n_g_new_b_faces,
                          cs_int_t          n_select_faces,
                          const cs_mesh_t  *mesh,
                          cs_join_param_t   join_param);

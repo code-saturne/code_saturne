@@ -208,8 +208,8 @@ _free_ensight_file(_ensight_file_t  *f)
 static void
 _count_extra_vertices(const fvm_nodal_t  *mesh,
                       _Bool               divide_polyhedra,
-                      fvm_gnum_t         *n_extra_vertices_g,
-                      fvm_lnum_t         *n_extra_vertices)
+                      cs_gnum_t          *n_extra_vertices_g,
+                      cs_lnum_t          *n_extra_vertices)
 {
   int  i;
 
@@ -346,14 +346,14 @@ _write_geom_headers(fvm_to_ensight_writer_t  *this_writer,
  *----------------------------------------------------------------------------*/
 
 static void
-_write_block_floats_g(fvm_gnum_t        num_start,
-                      fvm_gnum_t        num_end,
+_write_block_floats_g(cs_gnum_t         num_start,
+                      cs_gnum_t         num_end,
                       float             values[],
                       MPI_Comm          comm,
                       _ensight_file_t   f)
 {
   size_t  i;
-  fvm_gnum_t  j;
+  cs_gnum_t   j;
 
   /* In Binary mode, all ranks have a file structure,
      we may use use a collective call */
@@ -383,7 +383,7 @@ _write_block_floats_g(fvm_gnum_t        num_start,
 
     do {
 
-      fvm_gnum_t range[2] = {num_start, num_end};
+      cs_gnum_t range[2] = {num_start, num_end};
 
       _values = fvm_file_serializer_advance(s, range);
 
@@ -438,19 +438,19 @@ _write_block_floats_l(size_t           n_values,
  *   array containing all extra vertex coordinates
  *----------------------------------------------------------------------------*/
 
-static fvm_coord_t *
+static cs_coord_t *
 _extra_vertex_coords(const fvm_nodal_t  *mesh,
-                     fvm_lnum_t          n_extra_vertices)
+                     cs_lnum_t           n_extra_vertices)
 {
   int  i;
-  fvm_lnum_t  n_extra_vertices_section;
+  cs_lnum_t   n_extra_vertices_section;
 
   size_t  coord_shift = 0;
-  fvm_coord_t  *coords = NULL;
+  cs_coord_t  *coords = NULL;
 
   if (n_extra_vertices > 0) { /* This implies divide_polyhedra = true */
 
-    BFT_MALLOC(coords, n_extra_vertices * 3, fvm_coord_t);
+    BFT_MALLOC(coords, n_extra_vertices * 3, cs_coord_t);
 
     for (i = 0; i < mesh->n_sections; i++) {
 
@@ -491,13 +491,13 @@ _extra_vertex_coords(const fvm_nodal_t  *mesh,
 
 static void
 _extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
-                       fvm_lnum_t          n_extra_vertices,
-                       fvm_gnum_t          vtx_gnum[])
+                       cs_lnum_t           n_extra_vertices,
+                       cs_gnum_t           vtx_gnum[])
 {
   int  i;
-  fvm_lnum_t  j = 0;
-  fvm_lnum_t  start_id = 0;
-  fvm_gnum_t  gnum_shift
+  cs_lnum_t   j = 0;
+  cs_lnum_t   start_id = 0;
+  cs_gnum_t   gnum_shift
     = fvm_io_num_get_global_count(mesh->global_vertex_num);
 
   if (n_extra_vertices > 0) { /* Implies divide_polyhedra */
@@ -509,14 +509,14 @@ _extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
       if (   section->type == FVM_CELL_POLY
           && section->tesselation != NULL) {
 
-        fvm_lnum_t n_extra_vertices_section
+        cs_lnum_t n_extra_vertices_section
           = fvm_tesselation_n_vertices_add(section->tesselation);
 
         if (n_extra_vertices_section > 0) {
 
           const fvm_io_num_t *extra_vertex_num
             = fvm_tesselation_global_vertex_num(section->tesselation);
-          const fvm_gnum_t *extra_gnum
+          const cs_gnum_t *extra_gnum
             = fvm_io_num_get_global_num(extra_vertex_num);
 
           for (j = 0; j < n_extra_vertices_section; j++)
@@ -554,10 +554,10 @@ _vertex_part_to_block_create(const fvm_nodal_t          *mesh,
 {
   int  rank, n_ranks;
 
-  fvm_gnum_t   n_g_extra_vertices = 0, n_g_vertices_tot = 0;
-  fvm_lnum_t   n_extra_vertices = 0, n_vertices_tot = 0;
+  cs_gnum_t    n_g_extra_vertices = 0, n_g_vertices_tot = 0;
+  cs_lnum_t    n_extra_vertices = 0, n_vertices_tot = 0;
 
-  fvm_gnum_t  *_g_num = NULL;
+  cs_gnum_t   *_g_num = NULL;
 
   fvm_part_to_block_info_t  _bi;
   fvm_part_to_block_t       *_d;
@@ -565,11 +565,11 @@ _vertex_part_to_block_create(const fvm_nodal_t          *mesh,
   size_t min_block_size
     = fvm_parall_get_min_coll_buf_size() / sizeof(float);
 
-  const fvm_lnum_t  n_vertices
+  const cs_lnum_t   n_vertices
     = fvm_io_num_get_local_count(mesh->global_vertex_num);
-  fvm_gnum_t  n_g_vertices
+  cs_gnum_t   n_g_vertices
     = fvm_io_num_get_global_count(mesh->global_vertex_num);
-  const fvm_gnum_t  *g_num
+  const cs_gnum_t   *g_num
     = fvm_io_num_get_global_num(mesh->global_vertex_num);
 
   /* Get info on the current MPI communicator */
@@ -598,9 +598,9 @@ _vertex_part_to_block_create(const fvm_nodal_t          *mesh,
 
   if (n_extra_vertices > 0) {
 
-    BFT_MALLOC(_g_num, n_vertices_tot, fvm_gnum_t);
+    BFT_MALLOC(_g_num, n_vertices_tot, cs_gnum_t);
 
-    memcpy(_g_num, g_num, n_vertices*sizeof(fvm_gnum_t));
+    memcpy(_g_num, g_num, n_vertices*sizeof(cs_gnum_t));
     _extra_vertex_get_gnum(mesh, n_extra_vertices, _g_num + n_vertices);
 
     g_num = _g_num;
@@ -637,23 +637,23 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
                         const fvm_nodal_t              *mesh,
                         _ensight_file_t                 f)
 {
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
   size_t stride;
   fvm_part_to_block_info_t  bi;
 
-  fvm_gnum_t   n_g_extra_vertices = 0, n_g_vertices_tot = 0;
-  fvm_lnum_t   n_extra_vertices = 0, n_vertices_tot = 0;
-  fvm_coord_t  *extra_vertex_coords = NULL;
+  cs_gnum_t    n_g_extra_vertices = 0, n_g_vertices_tot = 0;
+  cs_lnum_t    n_extra_vertices = 0, n_vertices_tot = 0;
+  cs_coord_t  *extra_vertex_coords = NULL;
   float        *part_coords = NULL, *block_coords = NULL;
 
   fvm_part_to_block_t   *d = NULL;
   size_t                 block_buf_size = 0;
 
   const double      *vertex_coords = mesh->vertex_coords;
-  const fvm_lnum_t  *parent_vertex_num = mesh->parent_vertex_num;
-  const fvm_lnum_t  n_vertices
+  const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t   n_vertices
       = fvm_io_num_get_local_count(mesh->global_vertex_num);
-  fvm_gnum_t  n_g_vertices
+  cs_gnum_t   n_g_vertices
       = fvm_io_num_get_global_count(mesh->global_vertex_num);
 
   /* Initialize distribution info */
@@ -752,14 +752,14 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
                         const fvm_nodal_t              *mesh,
                         _ensight_file_t                 f)
 {
-  fvm_lnum_t   i, j;
-  fvm_lnum_t   n_extra_vertices = 0;
-  fvm_coord_t  *extra_vertex_coords = NULL;
+  cs_lnum_t    i, j;
+  cs_lnum_t    n_extra_vertices = 0;
+  cs_coord_t  *extra_vertex_coords = NULL;
   float        *coords_tmp = NULL;
 
-  const fvm_lnum_t   n_vertices = mesh->n_vertices;
+  const cs_lnum_t    n_vertices = mesh->n_vertices;
   const double      *vertex_coords = mesh->vertex_coords;
-  const fvm_lnum_t  *parent_vertex_num = mesh->parent_vertex_num;
+  const cs_lnum_t   *parent_vertex_num = mesh->parent_vertex_num;
 
   const size_t  stride = (size_t)(mesh->dim);
 
@@ -839,11 +839,11 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 
 static void
 _write_connect_block_gt(int             stride,
-                        fvm_lnum_t      n_elems,
+                        cs_lnum_t       n_elems,
                         const int32_t   connect[],
                         bft_file_t     *tf)
 {
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
 
   assert(tf != NULL);
   assert(bft_file_get_type(tf) == BFT_FILE_TYPE_TEXT);
@@ -934,8 +934,8 @@ _write_connect_block_gt(int             stride,
 
 static void
 _write_block_connect_g(int              stride,
-                       fvm_gnum_t       num_start,
-                       fvm_gnum_t       num_end,
+                       cs_gnum_t        num_start,
+                       cs_gnum_t        num_end,
                        int32_t          block_connect[],
                        MPI_Comm         comm,
                        _ensight_file_t  f)
@@ -967,7 +967,7 @@ _write_block_connect_g(int              stride,
                                                           comm);
 
     do {
-      fvm_gnum_t range[2] = {num_start, num_end};
+      cs_gnum_t range[2] = {num_start, num_end};
 
       _block_connect = fvm_file_serializer_advance(s, range);
 
@@ -997,11 +997,11 @@ _write_block_connect_g(int              stride,
 
 static void
 _write_connect_l(int                stride,
-                 fvm_lnum_t         n_elems,
-                 const fvm_lnum_t   connect[],
+                 cs_lnum_t          n_elems,
+                 const cs_lnum_t    connect[],
                  _ensight_file_t    f)
 {
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
 
   if (f.tf != NULL) { /* Text mode */
 
@@ -1108,7 +1108,7 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
                          MPI_Comm            comm,
                          _ensight_file_t     f)
 {
-  const fvm_gnum_t  n_g_vertices
+  const cs_gnum_t   n_g_vertices
     = fvm_io_num_get_global_count(mesh->global_vertex_num);
 
   _write_string(f, "point");
@@ -1116,7 +1116,7 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
 
   if (f.tf != NULL) { /* Text mode, rank 0 only */
 
-    fvm_gnum_t  i;
+    cs_gnum_t   i;
     int32_t  j = 1;
 
     for (i = 0; i < n_g_vertices; i++)
@@ -1126,8 +1126,8 @@ _export_point_elements_g(const fvm_nodal_t  *mesh,
   else if (f.bf != NULL) { /* Binary mode */
 
     int  rank, n_ranks;
-    fvm_lnum_t  i;
-    fvm_gnum_t j;
+    cs_lnum_t   i;
+    cs_gnum_t j;
     fvm_part_to_block_info_t  bi;
 
     size_t min_block_size
@@ -1175,7 +1175,7 @@ static void
 _export_point_elements_l(const fvm_nodal_t  *mesh,
                          _ensight_file_t     f)
 {
-  const fvm_lnum_t  n_vertices = mesh->n_vertices;
+  const cs_lnum_t   n_vertices = mesh->n_vertices;
 
   _write_string(f, "point");
   _write_int(f, (int)n_vertices);
@@ -1222,12 +1222,12 @@ _export_point_elements_l(const fvm_nodal_t  *mesh,
 
 static void
 _write_lengths_g(const fvm_io_num_t  *global_element_num,
-                 const fvm_lnum_t     vertex_index[],
+                 const cs_lnum_t      vertex_index[],
                  MPI_Comm             comm,
                  _ensight_file_t      f)
 {
   int  rank, n_ranks;
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
   fvm_part_to_block_info_t   bi;
 
   int32_t  *part_lengths = NULL;
@@ -1237,11 +1237,11 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
 
   const size_t min_block_size
     = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
-  const fvm_lnum_t  n_elements
+  const cs_lnum_t   n_elements
     = fvm_io_num_get_local_count(global_element_num);
-  const fvm_lnum_t  n_g_elements
+  const cs_lnum_t   n_g_elements
     = fvm_io_num_get_global_count(global_element_num);
-  const fvm_gnum_t  *g_num
+  const cs_gnum_t   *g_num
     = fvm_io_num_get_global_num(global_element_num);
 
   /* Get info on the current MPI communicator */
@@ -1305,20 +1305,20 @@ _write_lengths_g(const fvm_io_num_t  *global_element_num,
  *----------------------------------------------------------------------------*/
 
 static void
-_write_block_indexed(fvm_gnum_t        num_start,
-                     fvm_gnum_t        num_end,
-                     const fvm_lnum_t  block_index[],
+_write_block_indexed(cs_gnum_t         num_start,
+                     cs_gnum_t         num_end,
+                     const cs_lnum_t   block_index[],
                      int32_t           block_connect[],
                      MPI_Comm          comm,
                      _ensight_file_t   f)
 {
-  fvm_gnum_t block_size = 0, block_start = 0, block_end = 0;
+  cs_gnum_t block_size = 0, block_start = 0, block_end = 0;
 
   /* Prepare write to file */
 
   block_size = block_index[num_end - num_start];
 
-  MPI_Scan(&block_size, &block_end, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+  MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
   block_end += 1;
   block_start = block_end - block_size;
 
@@ -1337,7 +1337,7 @@ _write_block_indexed(fvm_gnum_t        num_start,
      we are using a text file, open only on rank 0 */
 
   else {
-    fvm_lnum_t  i;
+    cs_lnum_t   i;
     int32_t *_block_vtx_num = NULL;
     fvm_file_serializer_t *s = fvm_file_serializer_create(sizeof(int32_t),
                                                           1,
@@ -1348,8 +1348,8 @@ _write_block_indexed(fvm_gnum_t        num_start,
                                                           comm);
 
     do {
-      fvm_gnum_t j;
-      fvm_gnum_t range[2] = {block_start, block_end};
+      cs_gnum_t j;
+      cs_gnum_t range[2] = {block_start, block_end};
       _block_vtx_num = fvm_file_serializer_advance(s, range);
       if (_block_vtx_num != NULL) { /* only possible on rank 0 */
         assert(f.tf != NULL);
@@ -1384,7 +1384,7 @@ _write_block_indexed(fvm_gnum_t        num_start,
 
 static void
 _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
-                         const fvm_lnum_t     vertex_index[],
+                         const cs_lnum_t      vertex_index[],
                          const int32_t        vertex_num[],
                          MPI_Comm             comm,
                          _ensight_file_t      f)
@@ -1392,18 +1392,18 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
   int  rank, n_ranks;
   fvm_part_to_block_info_t bi;
 
-  fvm_gnum_t loc_size = 0, tot_size = 0, block_size = 0;
+  cs_gnum_t loc_size = 0, tot_size = 0, block_size = 0;
   fvm_part_to_block_t  *d = NULL;
-  fvm_lnum_t  *block_index = NULL;
+  cs_lnum_t   *block_index = NULL;
   int32_t  *block_vtx_num = NULL;
   size_t  min_block_size
     = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
 
-  const fvm_gnum_t  n_g_elements
+  const cs_gnum_t   n_g_elements
     = fvm_io_num_get_global_count(global_element_num);
-  const fvm_lnum_t  n_elements
+  const cs_lnum_t   n_elements
     = fvm_io_num_get_local_count(global_element_num);
-  const fvm_gnum_t  *g_elt_num
+  const cs_gnum_t   *g_elt_num
     = fvm_io_num_get_global_num(global_element_num);
 
   /* Get info on the current MPI communicator */
@@ -1414,7 +1414,7 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
   /* Adjust min block size based on minimum element size */
 
   loc_size = vertex_index[n_elements];
-  MPI_Allreduce(&loc_size, &tot_size, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+  MPI_Allreduce(&loc_size, &tot_size, 1, CS_MPI_GNUM, MPI_SUM, comm);
 
   min_block_size /= (tot_size / n_g_elements);
 
@@ -1426,7 +1426,7 @@ _write_indexed_connect_g(const fvm_io_num_t  *global_element_num,
                                        min_block_size,
                                        n_g_elements);
 
-  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, fvm_lnum_t);
+  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
   d = fvm_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
 
@@ -1481,9 +1481,9 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
                           _ensight_file_t              f)
 {
   int  rank, n_ranks;
-  fvm_lnum_t  i, j, k, l, face_id;
+  cs_lnum_t   i, j, k, l, face_id;
 
-  fvm_lnum_t  face_length, cell_length;
+  cs_lnum_t   face_length, cell_length;
   fvm_part_to_block_info_t  bi;
 
   fvm_part_to_block_t  *d = NULL;
@@ -1520,19 +1520,19 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
   do { /* loop on sections which should be appended */
 
-    fvm_gnum_t  block_size = 0, block_start = 0, block_end = 0;
-    fvm_lnum_t *block_index = NULL;
+    cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
+    cs_lnum_t *block_index = NULL;
 
     size_t  min_block_size
       = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
     int32_t  *part_face_len = NULL, *block_face_len = NULL;
 
     const fvm_nodal_section_t  *section = current_section->section;
-    const fvm_lnum_t  n_elements
+    const cs_lnum_t   n_elements
       = fvm_io_num_get_local_count(section->global_element_num);
-    const fvm_gnum_t n_g_elements
+    const cs_gnum_t n_g_elements
       = fvm_io_num_get_global_count(section->global_element_num);
-    const fvm_gnum_t  *g_elt_num
+    const cs_gnum_t   *g_elt_num
       = fvm_io_num_get_global_num(section->global_element_num);
 
     /* Build local polyhedron face lengths information */
@@ -1565,7 +1565,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
                                          n_elements,
                                          g_elt_num);
 
-    BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, fvm_lnum_t);
+    BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
 
     fvm_part_to_block_copy_index(d,
                                  section->face_index,
@@ -1582,7 +1582,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
                                    block_index,
                                    block_face_len);
 
-    MPI_Scan(&block_size, &block_end, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+    MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
     block_end += 1;
     block_start = block_end - block_size;
 
@@ -1612,14 +1612,14 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
   do { /* loop on sections which should be appended */
 
-    fvm_lnum_t  *part_vtx_idx = NULL;
+    cs_lnum_t   *part_vtx_idx = NULL;
     int32_t  *part_vtx_num = NULL;
 
     const fvm_nodal_section_t  *section = current_section->section;
-    const fvm_gnum_t  *g_vtx_num
+    const cs_gnum_t   *g_vtx_num
       = fvm_io_num_get_global_num(global_vertex_num);
 
-    BFT_MALLOC(part_vtx_idx, section->n_elements + 1, fvm_lnum_t);
+    BFT_MALLOC(part_vtx_idx, section->n_elements + 1, cs_lnum_t);
 
     l = 0;
 
@@ -1658,7 +1658,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_section,
 
     }
 
-    BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], fvm_lnum_t);
+    BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], cs_lnum_t);
 
     l = 0;
 
@@ -1723,10 +1723,10 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
                           _ensight_file_t              f)
 {
   int  face_sgn;
-  fvm_lnum_t  i, j, k, l;
+  cs_lnum_t   i, j, k, l;
   size_t  i_buf;
 
-  fvm_lnum_t  face_length, face_id;
+  cs_lnum_t   face_length, face_id;
 
   size_t    buffer_size = 0;
   int32_t  *buffer = NULL;
@@ -1946,13 +1946,13 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_section,
 
   do { /* loop on sections which should be appended */
 
-    fvm_lnum_t  i, j, k;
-    fvm_lnum_t  *_part_vtx_idx = NULL;
-    const fvm_lnum_t  *part_vtx_idx = NULL;
+    cs_lnum_t   i, j, k;
+    cs_lnum_t   *_part_vtx_idx = NULL;
+    const cs_lnum_t   *part_vtx_idx = NULL;
     int32_t  *part_vtx_num = NULL;
 
     const fvm_nodal_section_t  *section = current_section->section;
-    const fvm_gnum_t  *g_vtx_num
+    const cs_gnum_t   *g_vtx_num
       = fvm_io_num_get_global_num(global_vertex_num);
 
     if (f.bf != NULL) /* In binary mode, use existing index */
@@ -1963,7 +1963,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_section,
 
     else { /* we are in text mode if f.bf == NULL */
 
-      BFT_MALLOC(_part_vtx_idx, section->n_elements + 1, fvm_lnum_t);
+      BFT_MALLOC(_part_vtx_idx, section->n_elements + 1, cs_lnum_t);
 
       _part_vtx_idx[0] = 0;
       for (i = 0; i < section->n_elements; i++)
@@ -2035,7 +2035,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
 
 {
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
   size_t  i_buf;
 
   size_t    buffer_size = 0;
@@ -2159,37 +2159,37 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
                             const fvm_io_num_t       *global_element_num,
                             const fvm_tesselation_t  *tesselation,
                             fvm_element_t             type,
-                            const fvm_gnum_t          extra_vertex_base,
+                            const cs_gnum_t           extra_vertex_base,
                             MPI_Comm                  comm,
                             _ensight_file_t           f)
 {
   int  rank, n_ranks;
-  fvm_lnum_t  i;
+  cs_lnum_t   i;
   fvm_part_to_block_info_t bi;
 
-  fvm_lnum_t  part_size = 0;
+  cs_lnum_t   part_size = 0;
 
-  fvm_lnum_t  end_id = 0;
-  fvm_gnum_t  n_g_sub_elements = 0, global_num_end = 0;
-  fvm_gnum_t  block_size = 0, block_start = 0, block_end = 0;
+  cs_lnum_t   end_id = 0;
+  cs_gnum_t   n_g_sub_elements = 0, global_num_end = 0;
+  cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
 
   fvm_part_to_block_t  *d = NULL;
-  fvm_lnum_t  *part_index, *block_index = NULL;
+  cs_lnum_t   *part_index, *block_index = NULL;
   int32_t     *part_vtx_num = NULL, *block_vtx_num = NULL;
-  fvm_gnum_t  *part_vtx_gnum = NULL;
+  cs_gnum_t   *part_vtx_gnum = NULL;
 
   size_t  min_block_size
     = fvm_parall_get_min_coll_buf_size() / sizeof(int32_t);
 
   const int  stride = fvm_nodal_n_vertices_element[type];
-  const fvm_lnum_t  n_elements = fvm_tesselation_n_elements(tesselation);
-  const fvm_gnum_t  n_g_elements
+  const cs_lnum_t   n_elements = fvm_tesselation_n_elements(tesselation);
+  const cs_gnum_t   n_g_elements
     = fvm_io_num_get_global_count(global_element_num);
-  const fvm_lnum_t  n_sub_elements
+  const cs_lnum_t   n_sub_elements
     = fvm_tesselation_n_sub_elements(tesselation, type);
-  const fvm_lnum_t  *sub_element_idx
+  const cs_lnum_t   *sub_element_idx
       = fvm_tesselation_sub_elt_index(tesselation, type);
-  const fvm_gnum_t  *g_elt_num
+  const cs_gnum_t   *g_elt_num
     = fvm_io_num_get_global_num(global_element_num);
 
   /* Get info on the current MPI communicator */
@@ -2215,7 +2215,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
 
   if (n_elements > 0) {
     BFT_MALLOC(part_vtx_num, part_size, int32_t);
-    BFT_MALLOC(part_vtx_gnum, part_size, fvm_gnum_t);
+    BFT_MALLOC(part_vtx_gnum, part_size, cs_gnum_t);
   }
 
   end_id = fvm_tesselation_decode_g(tesselation,
@@ -2247,8 +2247,8 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
                                        min_block_size,
                                        n_g_elements);
 
-  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, fvm_lnum_t);
-  BFT_MALLOC(part_index, n_elements + 1, fvm_lnum_t);
+  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
+  BFT_MALLOC(part_index, n_elements + 1, cs_lnum_t);
 
   d = fvm_part_to_block_create_by_gnum(comm, bi, n_elements, g_elt_num);
 
@@ -2287,7 +2287,7 @@ _write_tesselated_connect_g(const fvm_io_num_t       *global_vertex_num,
 
   block_size /= stride;
 
-  MPI_Scan(&block_size, &block_end, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+  MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
   block_end += 1;
   block_start = block_end - block_size;
 
@@ -2376,12 +2376,12 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
 
     const fvm_nodal_section_t  *section = current_section->section;
 
-    fvm_lnum_t  start_id, end_id;
-    fvm_lnum_t  n_sub_elements_max;
-    fvm_lnum_t  n_buffer_elements_max = section->n_elements;
-    fvm_lnum_t *vertex_num = NULL;
+    cs_lnum_t   start_id, end_id;
+    cs_lnum_t   n_sub_elements_max;
+    cs_lnum_t   n_buffer_elements_max = section->n_elements;
+    cs_lnum_t *vertex_num = NULL;
 
-    const fvm_lnum_t *sub_element_idx
+    const cs_lnum_t *sub_element_idx
       = fvm_tesselation_sub_elt_index(section->tesselation,
                                       export_section->type);
 
@@ -2395,7 +2395,7 @@ _export_nodal_tesselated_l(const fvm_writer_section_t  *export_section,
     BFT_MALLOC(vertex_num,
                (  n_buffer_elements_max
                 * fvm_nodal_n_vertices_element[export_section->type]),
-               fvm_lnum_t);
+               cs_lnum_t);
 
     for (start_id = 0;
          start_id < section->n_elements;
@@ -2450,7 +2450,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
                         _ensight_file_t              f)
 {
   int  rank, n_ranks;
-  fvm_lnum_t  i, j;
+  cs_lnum_t   i, j;
 
   const fvm_writer_section_t  *current_section;
 
@@ -2467,7 +2467,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
 
     fvm_part_to_block_info_t bi;
 
-    fvm_lnum_t  block_size = 0;
+    cs_lnum_t   block_size = 0;
     fvm_part_to_block_t  *d = NULL;
     int32_t  *part_vtx_num = NULL, *block_vtx_num = NULL;
 
@@ -2477,13 +2477,13 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
     const size_t  min_block_size
       = fvm_parall_get_min_coll_buf_size() / (sizeof(int32_t) * stride);
 
-    const fvm_lnum_t  n_elements
+    const cs_lnum_t   n_elements
       = fvm_io_num_get_local_count(section->global_element_num);
-    const fvm_gnum_t  n_g_elements
+    const cs_gnum_t   n_g_elements
       = fvm_io_num_get_global_count(section->global_element_num);
-    const fvm_gnum_t  *g_elt_num
+    const cs_gnum_t   *g_elt_num
       = fvm_io_num_get_global_num(section->global_element_num);
-    const fvm_gnum_t  *g_vtx_num
+    const cs_gnum_t   *g_vtx_num
       = fvm_io_num_get_global_num(global_vertex_num);
 
     /* Prepare distribution structures */
@@ -2572,7 +2572,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
                         int                       output_dim,
                         fvm_interlace_t           interlace,
                         int                       n_parent_lists,
-                        const fvm_lnum_t          parent_num_shift[],
+                        const cs_lnum_t           parent_num_shift[],
                         fvm_datatype_t            datatype,
                         const void         *const field_values[],
                         _ensight_file_t           f,
@@ -2581,7 +2581,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
   int  i;
   fvm_part_to_block_info_t  bi;
 
-  fvm_lnum_t  part_size = 0, block_size = 0;
+  cs_lnum_t   part_size = 0, block_size = 0;
   float  *part_values = NULL, *block_values = NULL;
   fvm_part_to_block_t  *d = NULL;
 
@@ -2601,8 +2601,8 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
 
   for (i = 0; i < output_dim; i++) {
 
-    fvm_lnum_t  start_id = 0;
-    fvm_lnum_t  end_id = mesh->n_vertices;
+    cs_lnum_t   start_id = 0;
+    cs_lnum_t   end_id = mesh->n_vertices;
 
     /* Distribute partition to block values */
 
@@ -2638,7 +2638,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
 
         if (section->type == FVM_CELL_POLY && section->tesselation != NULL) {
 
-          fvm_lnum_t  n_extra_vertices
+          cs_lnum_t   n_extra_vertices
             = fvm_tesselation_n_vertices_add(section->tesselation);
 
           start_id = end_id;
@@ -2676,7 +2676,7 @@ _export_field_values_ng(const fvm_nodal_t        *mesh,
     /* Zero extra dimensions */
 
     else {
-      fvm_lnum_t j;
+      cs_lnum_t j;
       for (j = 0; j < block_size; j++)
         block_values[j] = 0.0;
     }
@@ -2725,7 +2725,7 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
                         int                          input_dim,
                         fvm_interlace_t              interlace,
                         int                          n_parent_lists,
-                        const fvm_lnum_t             parent_num_shift[],
+                        const cs_lnum_t              parent_num_shift[],
                         fvm_datatype_t               datatype,
                         const void            *const field_values[],
                         _ensight_file_t              f)
@@ -2802,7 +2802,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
                         int                              output_dim,
                         fvm_interlace_t                  interlace,
                         int                              n_parent_lists,
-                        const fvm_lnum_t                 parent_num_shift[],
+                        const cs_lnum_t                  parent_num_shift[],
                         fvm_datatype_t                   datatype,
                         const void                *const field_values[],
                         MPI_Comm                         comm,
@@ -2810,22 +2810,22 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 {
   int  rank, n_ranks;
   int  i;
-  fvm_lnum_t  j, k;
+  cs_lnum_t   j, k;
 
   fvm_part_to_block_info_t  bi;
   fvm_part_to_block_t  *d = NULL;
 
   int         n_sections = 0;
   _Bool       have_tesselation = false;
-  fvm_lnum_t  part_size = 0, block_size = 0;
-  fvm_gnum_t  block_sub_size = 0, block_start = 0, block_end = 0;
-  fvm_gnum_t  n_g_elements = 0;
+  cs_lnum_t   part_size = 0, block_size = 0;
+  cs_gnum_t   block_sub_size = 0, block_start = 0, block_end = 0;
+  cs_gnum_t   n_g_elements = 0;
 
   int  *part_n_sub = NULL, *block_n_sub = NULL;
   float  *part_values = NULL, *block_values = NULL, *_block_values = NULL;
 
-  fvm_gnum_t        *_g_elt_num = NULL;
-  const fvm_gnum_t  *g_elt_num
+  cs_gnum_t         *_g_elt_num = NULL;
+  const cs_gnum_t   *g_elt_num
     = fvm_io_num_get_global_num(export_section->section->global_element_num);
 
   const fvm_writer_section_t  *current_section = NULL;
@@ -2858,9 +2858,9 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
   if (n_sections > 1) {
 
-    fvm_lnum_t start_id = 0;
+    cs_lnum_t start_id = 0;
 
-    BFT_MALLOC(_g_elt_num, part_size, fvm_gnum_t);
+    BFT_MALLOC(_g_elt_num, part_size, cs_gnum_t);
     g_elt_num = _g_elt_num;
 
     /* loop on sections which should be appended */
@@ -2869,12 +2869,12 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
     do {
 
       const fvm_nodal_section_t  *section = current_section->section;
-      const fvm_lnum_t section_size
+      const cs_lnum_t section_size
         = fvm_io_num_get_local_count(section->global_element_num);
 
       memcpy(_g_elt_num + start_id,
              fvm_io_num_get_global_num(section->global_element_num),
-             sizeof(fvm_gnum_t)*section_size);
+             sizeof(cs_gnum_t)*section_size);
       start_id += section_size;
 
       current_section = current_section->next;
@@ -2887,7 +2887,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
   if (have_tesselation) {
 
-    fvm_lnum_t start_id = 0;
+    cs_lnum_t start_id = 0;
 
     BFT_MALLOC(part_n_sub, part_size, int);
 
@@ -2895,11 +2895,11 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
     do {
 
       const fvm_nodal_section_t  *section = current_section->section;
-      const fvm_lnum_t section_size
+      const cs_lnum_t section_size
         = fvm_io_num_get_local_count(section->global_element_num);
 
       if (current_section->type != section->type) {
-        const fvm_lnum_t  *sub_element_idx
+        const cs_lnum_t   *sub_element_idx
           = fvm_tesselation_sub_elt_index(section->tesselation,
                                           current_section->type);
         for (j = 0; j < section_size; j++)
@@ -2959,12 +2959,12 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
      Without tesselation, _block_n_sub simply points to block_n_sub */
 
   BFT_MALLOC(part_values,
-             FVM_MAX(part_size, (fvm_lnum_t)block_sub_size),
+             FVM_MAX(part_size, (cs_lnum_t)block_sub_size),
              float);
   BFT_MALLOC(block_values, block_size, float);
 
   if (have_tesselation) {
-    MPI_Scan(&block_sub_size, &block_end, 1, FVM_MPI_GNUM, MPI_SUM, comm);
+    MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, comm);
     block_end += 1;
     block_start = block_end - block_sub_size;
     _block_values = part_values;
@@ -2983,8 +2983,8 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
 
     if (i < input_dim) {
 
-      fvm_lnum_t start_id = 0;
-      fvm_lnum_t src_shift = 0;
+      cs_lnum_t start_id = 0;
+      cs_lnum_t src_shift = 0;
 
       /* loop on sections which should be appended */
 
@@ -3028,7 +3028,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
       /* Scatter values to sub-elements in case of tesselation */
 
       if (have_tesselation) {
-        fvm_lnum_t  l = 0;
+        cs_lnum_t   l = 0;
         for (j = 0; j < block_size; j++) {
           for (k = 0; k < block_n_sub[j]; k++)
             _block_values[l++] = block_values[j];
@@ -3040,7 +3040,7 @@ _export_field_values_eg(const fvm_writer_section_t      *export_section,
     /* Zero extra dimensions */
 
     else {
-      for (j = 0; j < (fvm_lnum_t)block_sub_size; j++)
+      for (j = 0; j < (cs_lnum_t)block_sub_size; j++)
         block_values[j] = 0.0;
     }
 
@@ -3099,7 +3099,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
                         int                              input_dim,
                         fvm_interlace_t                  interlace,
                         int                              n_parent_lists,
-                        const fvm_lnum_t                 parent_num_shift[],
+                        const cs_lnum_t                  parent_num_shift[],
                         fvm_datatype_t                   datatype,
                         const void                *const field_values[],
                         _ensight_file_t                  f)
@@ -3512,7 +3512,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
 
     if (export_section->continues_previous == false) {
 
-      fvm_gnum_t n_g_elements = 0;
+      cs_gnum_t n_g_elements = 0;
       const fvm_writer_section_t  *next_section = export_section;
 
       do {
@@ -3521,7 +3521,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
           n_g_elements += fvm_nodal_section_n_g_elements(next_section->section);
 
         else {
-          fvm_gnum_t n_g_sub_elements = 0;
+          cs_gnum_t n_g_sub_elements = 0;
           fvm_tesselation_get_global_size(next_section->section->tesselation,
                                           next_section->type,
                                           &n_g_sub_elements,
@@ -3676,7 +3676,7 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
                             int                    dimension,
                             fvm_interlace_t        interlace,
                             int                    n_parent_lists,
-                            const fvm_lnum_t       parent_num_shift[],
+                            const cs_lnum_t        parent_num_shift[],
                             fvm_datatype_t         datatype,
                             int                    time_step,
                             double                 time_value,

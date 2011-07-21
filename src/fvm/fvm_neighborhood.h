@@ -132,10 +132,10 @@ fvm_neighborhood_set_options(fvm_neighborhood_t  *n,
 
 void
 fvm_neighborhood_get_data(const fvm_neighborhood_t         *n,
-                          fvm_lnum_t                       *n_elts,
-                          fvm_gnum_t                **const elt_num,
-                          fvm_lnum_t                **const neighbor_index,
-                          fvm_gnum_t                **const neighbor_num);
+                          cs_lnum_t                        *n_elts,
+                          cs_gnum_t                 **const elt_num,
+                          cs_lnum_t                 **const neighbor_index,
+                          cs_gnum_t                 **const neighbor_num);
 
 /*----------------------------------------------------------------------------
  * Transfer ownership of arrays from a neighborhood_t structure to the
@@ -157,10 +157,10 @@ fvm_neighborhood_get_data(const fvm_neighborhood_t         *n,
 
 void
 fvm_neighborhood_transfer_data(fvm_neighborhood_t   *n,
-                               fvm_lnum_t           *n_elts,
-                               fvm_gnum_t          **elt_num,
-                               fvm_lnum_t          **neighbor_index,
-                               fvm_gnum_t          **neighbor_num);
+                               cs_lnum_t            *n_elts,
+                               cs_gnum_t           **elt_num,
+                               cs_lnum_t           **neighbor_index,
+                               cs_gnum_t           **neighbor_num);
 
 /*----------------------------------------------------------------------------
  * Determine intersecting boxes.
@@ -196,11 +196,11 @@ fvm_neighborhood_transfer_data(fvm_neighborhood_t   *n,
 void
 fvm_neighborhood_by_boxes(fvm_neighborhood_t  *n,
                           int                  dim,
-                          fvm_lnum_t           n_boxes,
-                          const fvm_gnum_t    *box_gnum,
-                          const fvm_coord_t   *extents,
-                          fvm_gnum_t         **box_gnum_assigned,
-                          fvm_coord_t        **extents_assigned);
+                          cs_lnum_t            n_boxes,
+                          const cs_gnum_t     *box_gnum,
+                          const cs_coord_t    *extents,
+                          cs_gnum_t          **box_gnum_assigned,
+                          cs_coord_t         **extents_assigned);
 
 /*----------------------------------------------------------------------------
  * Prune a neighborhood (remove entries with no neighbors).
@@ -257,10 +257,10 @@ fvm_neighborhood_prune(fvm_neighborhood_t  *n);
 int
 fvm_neighborhood_get_box_stats(const fvm_neighborhood_t  *n,
                                int                        depth[3],
-                               fvm_lnum_t                 n_leaves[3],
-                               fvm_lnum_t                 n_boxes[3],
-                               fvm_lnum_t                 n_threshold_leaves[3],
-                               fvm_lnum_t                 n_leaf_boxes[3],
+                               cs_lnum_t                  n_leaves[3],
+                               cs_lnum_t                  n_boxes[3],
+                               cs_lnum_t                  n_threshold_leaves[3],
+                               cs_lnum_t                  n_leaf_boxes[3],
                                size_t                     mem_final[3],
                                size_t                     mem_required[3]);
 

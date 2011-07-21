@@ -63,7 +63,7 @@ typedef struct _fvm_nodal_section_t {
 
   int         entity_dim;          /* Entity dimension */
 
-  fvm_lnum_t  n_elements;          /* Number of elements */
+  cs_lnum_t   n_elements;          /* Number of elements */
 
   fvm_element_t  type;             /* Element types */
 
@@ -81,29 +81,29 @@ typedef struct _fvm_nodal_section_t {
   int         stride;              /* Element size for regular elements
                                       (0 for polygons and polyhedra) */
 
-  fvm_lnum_t  n_faces;             /* Number of faces defining polyhedra */
+  cs_lnum_t   n_faces;             /* Number of faces defining polyhedra */
 
   /* Pointers to connectivity arrays, which may be shared */
 
-  const fvm_lnum_t  *face_index;   /* polyhedron -> faces index (O to n-1);
+  const cs_lnum_t   *face_index;   /* polyhedron -> faces index (O to n-1);
                                       size: n_elements + 1 */
-  const fvm_lnum_t  *face_num;     /* polyhedron -> face numbers (1 to n, signed,
+  const cs_lnum_t   *face_num;     /* polyhedron -> face numbers (1 to n, signed,
                                       > 0 for outwards pointing face normal
                                       < 0 for inwards pointing face normal);
                                       size: face_index[n_elements] */
 
-  const fvm_lnum_t  *vertex_index; /* polygon face -> vertices index (O to n-1);
+  const cs_lnum_t   *vertex_index; /* polygon face -> vertices index (O to n-1);
                                       size: n_faces + 1 */
 
-  const fvm_lnum_t  *vertex_num;   /* vertex numbers (1 to n);
+  const cs_lnum_t   *vertex_num;   /* vertex numbers (1 to n);
                                       size: connectivity_size */
 
   /* Pointers to local connectivity arrays, if owner */
 
-  fvm_lnum_t  *_face_index;        /* face_index if owner, NULL if shared */
-  fvm_lnum_t  *_face_num;          /* face_num if owner, NULL if shared */
-  fvm_lnum_t  *_vertex_index;      /* vertex_index if owner, NULL if shared */
-  fvm_lnum_t  *_vertex_num;        /* vertex numbers if owner, NULL if shared */
+  cs_lnum_t   *_face_index;        /* face_index if owner, NULL if shared */
+  cs_lnum_t   *_face_num;          /* face_num if owner, NULL if shared */
+  cs_lnum_t   *_vertex_index;      /* vertex_index if owner, NULL if shared */
+  cs_lnum_t   *_vertex_num;        /* vertex numbers if owner, NULL if shared */
 
   /* Pointers to group class ids, if present */
 
@@ -118,7 +118,7 @@ typedef struct _fvm_nodal_section_t {
   /* Numbering */
   /*-----------*/
 
-  const fvm_lnum_t  *parent_element_num; /* Local numbers (1 to n) of local
+  const cs_lnum_t   *parent_element_num; /* Local numbers (1 to n) of local
                                             elements in the parent mesh,
                                             associated with the section's
                                             elements.
@@ -137,7 +137,7 @@ typedef struct _fvm_nodal_section_t {
                                             This array is present only when non
                                             "trivial" (i.e. not 1, 2, ..., n). */
 
-  fvm_lnum_t    *_parent_element_num;    /* pointer to parent_element_num if
+  cs_lnum_t     *_parent_element_num;    /* pointer to parent_element_num if
                                             owner, NULL otherwise */
 
   fvm_io_num_t  *global_element_num;     /* Global element numbers */
@@ -164,21 +164,21 @@ struct _fvm_nodal_t {
   /*------------------*/
 
   /* Total number of cells, faces, edges, and vertices */
-  fvm_lnum_t  n_cells;
-  fvm_lnum_t  n_faces;
-  fvm_lnum_t  n_edges;
-  fvm_lnum_t  n_vertices;
+  cs_lnum_t   n_cells;
+  cs_lnum_t   n_faces;
+  cs_lnum_t   n_edges;
+  cs_lnum_t   n_vertices;
 
   /* Vertex definitions; */
   /*---------------------*/
 
-  const fvm_coord_t  *vertex_coords;    /* pointer to  vertex coordinates
+  const cs_coord_t  *vertex_coords;     /* pointer to  vertex coordinates
                                            (always interlaced:
                                            x1, y1, z1, x2, y2, z2, ...) */
-  fvm_coord_t        *_vertex_coords;   /* pointer to vertex coordinates if
+  cs_coord_t        *_vertex_coords;    /* pointer to vertex coordinates if
                                            owner (for use with own algorithms) */
 
-  const fvm_lnum_t  *parent_vertex_num; /* Local numbers (1 to n) of local
+  const cs_lnum_t   *parent_vertex_num; /* Local numbers (1 to n) of local
                                            vertices in the parent mesh.
 
                                            This array is necessary to redis-
@@ -193,7 +193,7 @@ struct _fvm_nodal_t {
                                            This array is present only when non
                                            "trivial" (i.e. not 1, 2, ..., n). */
 
-  fvm_lnum_t    *_parent_vertex_num;    /* pointer to parent_vertex_num if
+  cs_lnum_t     *_parent_vertex_num;    /* pointer to parent_vertex_num if
                                            owner, NULL otherwise */
 
   fvm_io_num_t  *global_vertex_num;     /* Global vertex numbering */
@@ -268,7 +268,7 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
  *   global number of elements associated with section
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_nodal_section_n_g_elements(const fvm_nodal_section_t  *this_section);
 
 /*----------------------------------------------------------------------------
@@ -281,7 +281,7 @@ fvm_nodal_section_n_g_elements(const fvm_nodal_section_t  *this_section);
  *   global number of vertices associated with nodal mesh
  *----------------------------------------------------------------------------*/
 
-fvm_gnum_t
+cs_gnum_t
 fvm_nodal_n_g_vertices(const fvm_nodal_t  *this_nodal);
 
 /*----------------------------------------------------------------------------

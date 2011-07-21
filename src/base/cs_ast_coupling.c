@@ -92,8 +92,8 @@ BEGIN_C_DECLS
 
 struct _cs_ast_coupling_t {
 
-  fvm_gnum_t   n_g_faces;
-  fvm_gnum_t   n_g_nodes;
+  cs_gnum_t    n_g_faces;
+  cs_gnum_t    n_g_nodes;
 
   /* #if defined(HAVE_MPI) */
 
@@ -103,7 +103,7 @@ struct _cs_ast_coupling_t {
   cs_int_t    *face_index;
   cs_int_t    *node_index;
 
-  fvm_gnum_t  *NUM_GLOB_PTS;
+  cs_gnum_t   *NUM_GLOB_PTS;
 
   /* #endif */
 
@@ -149,8 +149,8 @@ void CS_PROCF(astgeo, ASTGEO)
 
   fvm_nodal_t  *ifs_mesh;
 
-  fvm_gnum_t *num_glob_points = NULL;
-  fvm_gnum_t *num_glob_points_tot = NULL;
+  cs_gnum_t *num_glob_points = NULL;
+  cs_gnum_t *num_glob_points_tot = NULL;
 
   cs_int_t *index = NULL;
   cs_int_t *faces_color = NULL;
@@ -206,10 +206,10 @@ void CS_PROCF(astgeo, ASTGEO)
   BFT_MALLOC(faces_coords, 3*n_faces, cs_real_t);
   BFT_MALLOC(nodes_coords, 3*n_nodes, cs_real_t);
 
-  assert(sizeof(fvm_coord_t)==sizeof(cs_real_t));
+  assert(sizeof(cs_coord_t)==sizeof(cs_real_t));
 
   fvm_nodal_get_vertex_coords(ifs_mesh, FVM_INTERLACE,
-                              (fvm_coord_t *) nodes_coords);
+                              (cs_coord_t *) nodes_coords);
 
   for (j = 0; j < n_faces; j++) {
 
