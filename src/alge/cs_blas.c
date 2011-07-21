@@ -29,9 +29,7 @@
  * Portability and fallback layer for BLAS functions
  *============================================================================*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * External library headers

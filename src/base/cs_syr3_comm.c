@@ -29,17 +29,20 @@
  *  Communication with SYRTHES 3
  *============================================================================*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
-
-/*----------------------------------------------------------------------------
- * Standard C library headers
- *----------------------------------------------------------------------------*/
+/*
+  Define _GNU_SOURCE if necessary before including any headers, to ensure
+  the correct feature macros are defined first.
+*/
 
 #if defined(__linux__)
 # define _GNU_SOURCE 1
 #endif
+
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <errno.h>

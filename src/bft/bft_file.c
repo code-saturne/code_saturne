@@ -25,9 +25,9 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
+
+/*----------------------------------------------------------------------------*/
 
 /*
   Force LARGEFILE_SOURCE if largefiles enabled under 32-bit Linux or Blue Gene
@@ -46,8 +46,6 @@
 #  endif
 # endif
 #endif
-
-#include "bft_config_defs.h"
 
 /*-----------------------------------------------------------------------------*/
 

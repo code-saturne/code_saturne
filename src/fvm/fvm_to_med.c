@@ -26,9 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -64,7 +62,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_config_defs.h"
 #include "fvm_defs.h"
 #include "fvm_convert_array.h"
 #include "fvm_gather.h"

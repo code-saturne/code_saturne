@@ -38,9 +38,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -63,7 +61,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm_defs.h"
-#include "fvm_config_defs.h"
 #include "fvm_hilbert.h"
 #include "fvm_morton.h"
 #include "fvm_order.h"

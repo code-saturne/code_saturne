@@ -29,9 +29,7 @@
  * Management of mesh quantities
  *============================================================================*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -78,8 +76,10 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- * Local structure definitions
+ * Local type definitions
  *============================================================================*/
+
+typedef double  _vtx_coords_t[3];
 
 /*=============================================================================
  * Local Macro definitions
@@ -151,11 +151,11 @@ _compute_face_normal(cs_int_t         dim,
 {
   cs_int_t  i, face_id, tri_id, vtx_id, start_id, end_id, shift;
   cs_int_t  n_face_vertices, n_max_face_vertices;
-  cs_point_t  this_face_normal, this_face_barycentre;
-  cs_point_t  vect1, vect2;
+  _vtx_coords_t  this_face_normal, this_face_barycentre;
+  _vtx_coords_t  vect1, vect2;
 
-  cs_point_t  *face_vtx_coord = NULL;
-  cs_point_t  *triangle_normal = NULL;
+  _vtx_coords_t  *face_vtx_coord = NULL;
+  _vtx_coords_t  *triangle_normal = NULL;
 
   /* Return if there is not enough data (some SolCom meshes) */
 
@@ -181,8 +181,8 @@ _compute_face_normal(cs_int_t         dim,
       n_max_face_vertices = n_face_vertices;
   }
 
-  BFT_MALLOC(face_vtx_coord, n_max_face_vertices + 1, cs_point_t);
-  BFT_MALLOC(triangle_normal, n_max_face_vertices, cs_point_t);
+  BFT_MALLOC(face_vtx_coord, n_max_face_vertices + 1, _vtx_coords_t);
+  BFT_MALLOC(triangle_normal, n_max_face_vertices, _vtx_coords_t);
 
   /* Loop on each face */
 
@@ -315,12 +315,12 @@ _compute_face_quantities(const cs_int_t   dim,
   cs_int_t  lower_coord_id;
   cs_real_t  face_surface, tri_surface;
   cs_real_t  face_vol_part, tri_vol_part, rectif_cog;
-  cs_point_t  face_barycentre, face_normal;
-  cs_point_t  face_centre, tri_centre;
-  cs_point_t  vect1, vect2;
+  _vtx_coords_t  face_barycentre, face_normal;
+  _vtx_coords_t  face_centre, tri_centre;
+  _vtx_coords_t  vect1, vect2;
 
-  cs_point_t  *face_vtx_coord = NULL;
-  cs_point_t  *triangle_norm = NULL;
+  _vtx_coords_t  *face_vtx_coord = NULL;
+  _vtx_coords_t  *triangle_norm = NULL;
 
   /* Return if there is not enough data (some SolCom meshes) */
 
@@ -347,8 +347,8 @@ _compute_face_quantities(const cs_int_t   dim,
       n_max_face_vertices = n_face_vertices;
   }
 
-  BFT_MALLOC(face_vtx_coord, n_max_face_vertices + 1, cs_point_t);
-  BFT_MALLOC(triangle_norm, n_max_face_vertices, cs_point_t);
+  BFT_MALLOC(face_vtx_coord, n_max_face_vertices + 1, _vtx_coords_t);
+  BFT_MALLOC(triangle_norm, n_max_face_vertices, _vtx_coords_t);
 
   /*=========================================================================*/
   /* Loop on faces                                                           */

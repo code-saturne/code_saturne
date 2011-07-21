@@ -29,15 +29,11 @@
  *  Dump of Kernel I/O file for Code_Saturne
  *============================================================================*/
 
-/* Detect version of C used (C89 or C99) */
-
-#if !defined(__STDC_VERSION__)
-#  define __STDC_VERSION__ 1989
-#endif
-
 /* Include configuration file */
 
-#include "cs_config.h"
+#define CS_IGNORE_MPI 1  /* No MPI for this application */
+
+#include "cs_defs.h"
 
 /*
   Force LARGEFILE_SOURCE if large files enabled under 32-bit Linux or Blue Gene
@@ -68,30 +64,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if (__STDC_VERSION__ >= 199901L)
-#include <stdint.h>
-#endif
-
-/*----------------------------------------------------------------------------
- * Internationalization macros
- *----------------------------------------------------------------------------*/
-
-#if defined(ENABLE_NLS)
-
-#include <libintl.h>
-#define _(String) gettext(String)
-#define gettext_noop(String) String
-#define N_(String) gettext_noop(String)
-
-#else
-
-#define _(String) String
-#define N_(String) String
-#define textdomain(Domain)
-#define bindtextdomain(Package, Directory)
-
-#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers

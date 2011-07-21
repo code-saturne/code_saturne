@@ -21,7 +21,9 @@
 
 # Main part
 
-AM_CPPFLAGS =
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+$(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS =
 
@@ -36,9 +38,6 @@ bft_mem_usage.h \
 bft_printf.h \
 bft_sys_info.h \
 bft_timer.h
-
-noinst_HEADERS = \
-bft_config_defs.h
 
 # Library source files
 

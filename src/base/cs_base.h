@@ -3,7 +3,7 @@
  *     This file is part of the Code_Saturne Kernel, element of the
  *     Code_Saturne CFD tool.
  *
- *     Copyright (C) 1998-2010 EDF S.A., France
+ *     Copyright (C) 1998-2011 EDF S.A., France
  *
  *     contact: saturne-support@edf.fr
  *
@@ -32,67 +32,9 @@
  * Definitions, global variables, and base functions
  *============================================================================*/
 
-
-/* Definition of the C langage version used (C89 or C99) */
-
-#if defined(__STDC_VERSION__)
-#  define _CS_STDC_VERSION __STDC_VERSION__
-#else
-#  define _CS_STDC_VERSION 1989
-#endif
-
-/*
- * Redefinition of "inline" et "restrict" qualifiers incompatible with
- * some C89 compilers (standard in C99)
- */
-
-#if (_CS_STDC_VERSION < 199901L)
-
-#  if defined(__GNUC__)
-#    define inline __inline__
-#    define restrict __restrict__
-#  else
-#    define inline
-#    define restrict
-#  endif
-
-#endif
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
-
-#include <stddef.h>
-
-#if (_CS_STDC_VERSION >= 199901L)
-#include <stdint.h>
-#endif
-
-/* C99 _Bool type */
-
-#if HAVE_STDBOOL_H
-#include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char;
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
-#if defined(HAVE_OPENMP)
-#include <omp.h>
-#endif
 
 /*=============================================================================
  * Macro definitions
@@ -105,13 +47,7 @@ typedef bool _Bool;
 
 /* System type name */
 
-#if defined(__sgi__) || defined(__sgi) || defined(sgi)
-#define _CS_ARCH_IRIX_64
-
-#elif defined(__hpux__) || defined(__hpux) || defined(hpux)
-#define _CS_ARCH_HP_UX
-
-#elif defined(__blrts__) || defined(__bgp__)
+#if defined(__blrts__) || defined(__bgp__)
 #define _CS_ARCH_Blue_Gene
 
 #elif defined(__linux__) || defined(__linux) || defined(linux)
@@ -120,14 +56,7 @@ typedef bool _Bool;
 #elif defined(__sun__) || defined(__sun) || defined(sun)
 #define _CS_ARCH_SunOS
 
-#elif defined(__uxpv__) || defined(__uxpv) || defined(uxpv)
-#define _CS_ARCH_UNIX_System_V
-
 #endif
-
-/* Directory name separator: '/' for Unix/Linux, '\' for Windows, ':' for Mac */
-
-#define CS_DIR_SEPARATOR '/'
 
 /*
  * Macro for handling of different symbol names (underscored or not,
@@ -169,40 +98,6 @@ typedef bool _Bool;
 #define CS_MIN(a,b)   ((a) < (b) ?  (a) : (b))  /* Minimum of a et b */
 #define CS_MAX(a,b)   ((a) > (b) ?  (a) : (b))  /* Maximum of a et b */
 
-/*
- * Macros for internationalization via gettext() or a similar
- * function (to mark translatable character strings)
- */
-
-#if defined(ENABLE_NLS)
-
-#include <libintl.h>
-#define _(String) gettext(String)
-#define gettext_noop(String) String
-#define N_(String) gettext_noop(String)
-
-#else
-
-#define _(String) String
-#define N_(String) String
-#define textdomain(Domain)
-#define bindtextdomain(Package, Directory)
-
-#endif
-
-/* Macros for compilation with a C++ compiler */
-
-#undef BEGIN_C_DECLS
-#undef   END_C_DECLS
-
-#if defined(__cplusplus)
-#define BEGIN_C_DECLS  extern "C" {
-#define   END_C_DECLS  }
-#else
-#define BEGIN_C_DECLS
-#define   END_C_DECLS
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -211,21 +106,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef int              cs_int_t;      /* Integer */
-typedef double           cs_real_t;     /* Floating-point real */
-typedef char             cs_byte_t;     /* Byte (untyped memory unit) */
 typedef _Bool            cs_bool_t;     /* Boolean */
-
-typedef cs_real_t        cs_point_t[3];
-
-/* Mappings to MPI datatypes */
-
-#if defined(HAVE_MPI)
-
-#define CS_MPI_INT       MPI_INT         /* If cs_int_t is an int */
-#define CS_MPI_REAL      MPI_DOUBLE      /* If cs_real_t is a double */
-
-#endif /* defined(HAVE_MPI) */
 
 /* Datatype enumeration to transmit a data's type to a function */
 

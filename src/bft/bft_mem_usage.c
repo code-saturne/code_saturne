@@ -25,9 +25,9 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
+
+/*-----------------------------------------------------------------------------*/
 
 /* On Solaris, procfs may not be compiled in a largefile environment,
  * so we redefine macros before including any system header file. */
@@ -39,8 +39,6 @@
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 32
 #endif
-
-#include "bft_config_defs.h"
 
 /*
  * Standard C library headers

@@ -29,10 +29,7 @@
  * Manage the exchange of data between Code_Saturne and the pre-processor
  *============================================================================*/
 
-
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -173,6 +170,8 @@ typedef struct {
 
 } _mesh_reader_t;
 
+typedef double  _vtx_coords_t[3];
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -181,6 +180,12 @@ static cs_bool_t        _use_sfc = true;
 static fvm_io_num_sfc_t _sfc_type = FVM_IO_NUM_SFC_MORTON_BOX;
 
 static _mesh_reader_t *_cs_glob_mesh_reader = NULL;
+
+#if defined(WIN32) || defined(_WIN32)
+static const char _dir_separator = '\\';
+#else
+static const char _dir_separator = '/';
+#endif
 
 /* Definitions of file to read */
 
@@ -216,11 +221,6 @@ _align_size(size_t  min_size)
 static void
 _set_default_input_if_needed(void)
 {
-#if defined(WIN32) || defined(_WIN32)
-  const char dir_separator[] = "\\";
-#else
-  const char dir_separator[] = "/";
-#endif
   const char input_default[] = "mesh_input";
 
   if (_n_mesh_files == 0) {
@@ -236,8 +236,8 @@ _set_default_input_if_needed(void)
         BFT_MALLOC(tmp_name,
                    strlen(input_default) + 1 + strlen(dir_files[i]) + 1,
                    char);
-        sprintf(tmp_name, "%s%s%s",
-                input_default, dir_separator, dir_files[i]);
+        sprintf(tmp_name, "%s%c%s",
+                input_default, _dir_separator, dir_files[i]);
         if (bft_file_isreg(tmp_name))
           cs_preprocessor_data_add_file(tmp_name, 0, NULL, NULL);
         BFT_FREE(tmp_name);
@@ -491,11 +491,11 @@ _read_cell_rank(cs_mesh_t       *mesh,
 #if (_CS_STDC_VERSION < 199901L)
   sprintf(file_name,
           "partition%cdomain_number_%d",
-          CS_DIR_SEPARATOR, cs_glob_n_ranks);
+          _dir_separator, cs_glob_n_ranks);
 #else
   snprintf(file_name, 64,
            "partition%cdomain_number_%d",
-           CS_DIR_SEPARATOR, cs_glob_n_ranks);
+           _dir_separator, cs_glob_n_ranks);
 #endif
   file_name[63] = '\0'; /* Just in case; processor counts would need to be
                            in the exa-range for this to be necessary. */
@@ -1430,7 +1430,7 @@ _cell_center(fvm_lnum_t        n_cells,
 
   fvm_lnum_t n_max_face_vertices = 0;
 
-  cs_point_t *face_vtx_coord = NULL;
+  _vtx_coords_t *face_vtx_coord = NULL;
   fvm_coord_t *weight = NULL;
 
   const double surf_epsilon = 1e-24;
@@ -1455,7 +1455,7 @@ _cell_center(fvm_lnum_t        n_cells,
       n_max_face_vertices = n_face_vertices;
   }
 
-  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, cs_point_t);
+  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
 
   /* Loop on each face */
 
@@ -1788,7 +1788,7 @@ _f_face_center(fvm_lnum_t        n_f_faces,
 
   fvm_lnum_t n_max_face_vertices = 0;
 
-  cs_point_t *face_vtx_coord = NULL;
+  _vtx_coords_t *face_vtx_coord = NULL;
 
   const double surf_epsilon = 1e-24;
 
@@ -1810,7 +1810,7 @@ _f_face_center(fvm_lnum_t        n_f_faces,
       n_max_face_vertices = n_face_vertices;
   }
 
-  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, cs_point_t);
+  BFT_MALLOC(face_vtx_coord, n_max_face_vertices, _vtx_coords_t);
 
   /* Loop on each face */
 

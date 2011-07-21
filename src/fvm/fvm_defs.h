@@ -9,7 +9,7 @@
   This file is part of the "Finite Volume Mesh" library, intended to provide
   finite volume mesh and associated fields I/O and manipulation services.
 
-  Copyright (C) 2004-2008  EDF
+  Copyright (C) 2004-2011  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -39,25 +39,6 @@ extern "C" {
  * Macro definitions
  *============================================================================*/
 
-/* System name */
-
-#if defined(__sgi__) || defined(__sgi) || defined(sgi)
-#define _FVM_ARCH_IRIX_64
-
-#elif defined(__hpux__) || defined(__hpux) || defined(hpux)
-#define _FVM_ARCH_HP_UX
-
-#elif defined(__linux__) || defined(__linux) || defined(linux)
-#define _FVM_ARCH_Linux
-
-#elif defined(__sun__) || defined(__sun) || defined(sun)
-#define _FVM_ARCH_SunOS
-
-#elif defined(__uxpv__) || defined(__uxpv) || defined(uxpv)
-#define _FVM_ARCH_UNIX_System_V
-
-#endif
-
 /* "Classical" macros */
 /*--------------------*/
 
@@ -68,28 +49,6 @@ extern "C" {
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * General C types such as size_t which should be known
- *----------------------------------------------------------------------------*/
-
-/*
- * Obtain definitions such as that of size_t through stddef.h (C99 standard)
- * if available (preferred method), or through stdlib.h (which defines
- * malloc() and family and so must define size_t some way) otherwise.
- * This must be done in fvm_defs.h in a way independent of the private
- * configuration files, as size_t is used in many public FVM headers.
- */
-
-#if defined(__STDC_VERSION__)
-# if (__STDC_VERSION__ >= 199901L)
-#   include <stddef.h>
-# else
-#   include <stdlib.h>
-# endif
-#else
-# include <stdlib.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * Element types
@@ -148,54 +107,9 @@ typedef enum {
  *  - fvm_gnum_t may be signed or unsigned
  *----------------------------------------------------------------------------*/
 
-/* Global integer index or number */
-
-#if defined(HAVE_LONG_GNUM)
-  #if (SIZEOF_LONG == 8)
-    typedef unsigned long       fvm_gnum_t;
-  #elif (SIZEOF_LONG_LONG == 8)
-    typedef unsigned long long  fvm_gnum_t;
-  #else
-    #error
-  #endif
-#else
-  typedef unsigned  fvm_gnum_t;
-#endif
-
-/* Other types */
-
-typedef int      fvm_lnum_t;     /* Local integer index or number */
-typedef double   fvm_coord_t;    /* Real number (coordinate value) */
-
-/* Set associated data types here */
-
-#define FVM_COORD  FVM_DOUBLE
-
-#if (SIZEOF_INT == 4)
-  #define FVM_LNUM  FVM_INT_32
-#elif (SIZEOF_INT == 8)
-  #define FVM_LNUM  FVM_INT_64
-#else
-  #error
-#endif
-
-#if defined(HAVE_LONG_GNUM)
-  #if (SIZEOF_LONG == 8)
-    #define FVM_GNUM  FVM_UINT_64
-  #elif (SIZEOF_LONG_LONG == 8)
-    #define FVM_GNUM  FVM_UINT_64
-  #else
-    #error
-  #endif
-#else
-  #if (SIZEOF_INT == 4)
-    #define FVM_GNUM  FVM_UINT_32
-  #elif (SIZEOF_INT == 8)
-    #define FVM_GNUM  FVM_UINT_64
-  #else
-    #error
-  #endif
-#endif
+typedef cs_gnum_t   fvm_gnum_t;     /* Global integer index or number */
+typedef cs_lnum_t   fvm_lnum_t;     /* Local integer index or number */
+typedef cs_coord_t  fvm_coord_t;    /* Real number (coordinate value) */
 
 /*=============================================================================
  * Static global variables

@@ -25,9 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -53,7 +51,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_config_defs.h"
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_priv.h"
@@ -84,6 +81,16 @@ extern "C" {
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
+
+/*============================================================================
+ * Local macro definitions
+ *============================================================================*/
+
+/* Directory name separator
+   (historically, '/' for Unix/Linux, '\' for Windows, ':' for Mac
+   but '/' should work for all on modern systems) */
+
+#define DIR_SEPARATOR '/'
 
 /*============================================================================
  * Static and constant variables
@@ -669,13 +676,13 @@ fvm_writer_init(const char             *name,
     if (l > 0) {
       BFT_MALLOC(tmp_path, l + 2, char);
       strcpy(tmp_path, path);
-      if (tmp_path[l - 1] == FVM_DIR_SEPARATOR)
+      if (tmp_path[l - 1] == DIR_SEPARATOR)
         tmp_path[l - 1] = '\0';
       if (bft_file_mkdir_default(path) == 1)
         tmp_path[0] = '\0';
       else {
         l = strlen(tmp_path);
-        tmp_path[l]   = FVM_DIR_SEPARATOR;
+        tmp_path[l]   = DIR_SEPARATOR;
         tmp_path[l+1] = '\0';
       }
     }

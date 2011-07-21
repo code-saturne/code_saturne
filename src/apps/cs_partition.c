@@ -29,9 +29,7 @@
  * Main program
  *============================================================================*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -153,6 +151,12 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+#if defined(WIN32) || defined(_WIN32)
+static const char _dir_separator = '\\';
+#else
+static const char _dir_separator = '/';
+#endif
 
 /*============================================================================
  * Private function definitions
@@ -2070,7 +2074,7 @@ _write_output(fvm_gnum_t  n_g_cells,
 
   sprintf(filename,
           "%s%cdomain_number_%d",
-          dir, CS_DIR_SEPARATOR, n_ranks);
+          dir, _dir_separator, n_ranks);
 
 #if defined(HAVE_MPI)
   fh = cs_io_initialize(filename,

@@ -25,15 +25,13 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
+
+/*-----------------------------------------------------------------------------*/
 
 #if defined(HAVE_GLIBC_BACKTRACE) && defined(__GNUC__)
 #define _GNU_SOURCE
 #endif
-
-#include "bft_config_defs.h"
 
 /*
  * Standard C library headers

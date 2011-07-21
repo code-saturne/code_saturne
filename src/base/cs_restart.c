@@ -29,9 +29,7 @@
  * Manage checkpoint / restart files
  *============================================================================*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -122,10 +120,15 @@ struct _cs_restart_t {
   cs_restart_mode_t  mode;         /* Read or write */
 };
 
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+#if defined(WIN32) || defined(_WIN32)
+static const char _dir_separator = '\\';
+#else
+static const char _dir_separator = '/';
+#endif
 
 /* Minimum buffer size on rank 0 (to limit number of blocks
    when there is a large number of processors) */
@@ -1285,7 +1288,7 @@ cs_restart_create(const char         *name,
     if (bft_file_mkdir_default(dir) == 0) {
       BFT_MALLOC(path, ldir + lname + 2, char);
       strcpy(path, dir);
-      path[ldir] = CS_DIR_SEPARATOR;
+      path[ldir] = _dir_separator;
       path[ldir+1] = '\0';
       strcat(path, name);
       path[ldir+lname+1] = '\0';
@@ -1306,7 +1309,7 @@ cs_restart_create(const char         *name,
     if (bft_file_isdir(dir) == 1) {
       BFT_MALLOC(path, ldir + lname + 2, char);
       strcpy(path, dir);
-      path[ldir] = CS_DIR_SEPARATOR;
+      path[ldir] = _dir_separator;
       path[ldir+1] = '\0';
       strcat(path, name);
       path[ldir+lname+1] = '\0';

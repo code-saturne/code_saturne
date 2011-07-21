@@ -29,9 +29,7 @@
  * Management of post-treatment for joining operation
  *===========================================================================*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -83,6 +81,12 @@ typedef struct {
   fvm_writer_t  *writer;        /* writer used for post-processing */
 
 } cs_join_post_t;
+
+/* Directory name separator
+   (historically, '/' for Unix/Linux, '\' for Windows, ':' for Mac
+   but '/' should work for all on modern systems) */
+
+#define DIR_SEPARATOR '/'
 
 /*============================================================================
  * Static global variables
@@ -622,7 +626,7 @@ cs_join_post_dump_mesh(const char            *basename,
 
   len = strlen("log/JoinDBG_.dat") + strlen(basename) + 4 + 2 + 1;
   BFT_MALLOC(fullname, len, char);
-  sprintf(fullname, "log%cJoin%02dDBG_%s%04d.dat", CS_DIR_SEPARATOR,
+  sprintf(fullname, "log%cJoin%02dDBG_%s%04d.dat", DIR_SEPARATOR,
           param.num, basename, rank_id);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG) /* Dump mesh structure */

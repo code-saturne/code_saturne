@@ -75,6 +75,7 @@ cs_base_fortran.h \
 cs_boundary_conditions.h \
 cs_calcium.h \
 cs_coupling.h \
+cs_defs.h \
 cs_ext_neighborhood.h \
 cs_halo.h \
 cs_io.h \

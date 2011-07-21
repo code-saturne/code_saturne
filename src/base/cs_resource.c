@@ -29,9 +29,7 @@
  * Resource allocation management (available time).
  *============================================================================*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 #undef _POSIX_SOURCE /* Otherwise compilation problem on VPP 5000 */
 #undef _XOPEN_SOURCE /* Otherwise, compilation problem on SunOS */

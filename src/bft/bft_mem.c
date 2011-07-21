@@ -25,15 +25,18 @@
 
 /*-----------------------------------------------------------------------------*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+/*
+  Define _GNU_SOURCE if necessary before including any headers, to ensure
+  the correct feature macros are defined first.
+*/
 
 #if defined(__linux__) || defined(__blrts__) || defined(__bgp__)
-# define _GNU_SOURCE
+#  define _GNU_SOURCE
 #endif
 
-#include "bft_config_defs.h"
+#include "cs_defs.h"
+
+/*-----------------------------------------------------------------------------*/
 
 /*
  * Standard C library headers
@@ -136,6 +139,12 @@ struct _bft_mem_block_t {
  * Local macro definitions
  *-----------------------------------------------------------------------------*/
 
+/* Directory name separator
+   (historically, '/' for Unix/Linux, '\' for Windows, ':' for Mac
+   but '/' should work for all on modern systems) */
+
+#define DIR_SEPARATOR '/'
+
 /*-----------------------------------------------------------------------------
  * Local function prototypes
  *-----------------------------------------------------------------------------*/
@@ -209,10 +218,10 @@ _bft_mem_basename(const char  *file_name)
     return NULL;
 
   for (i = strlen(file_name) - 1;
-       i > 0 && file_name[i] != BFT_DIR_SEPARATOR;
+       i > 0 && file_name[i] != DIR_SEPARATOR;
        i--);
 
-  if (file_name[i] == BFT_DIR_SEPARATOR)
+  if (file_name[i] == DIR_SEPARATOR)
     i++;
 
   return (file_name + i);

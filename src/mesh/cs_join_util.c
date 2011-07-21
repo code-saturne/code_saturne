@@ -29,9 +29,7 @@
  * Manipulation of low-level structures for the joining operations
  *===========================================================================*/
 
-#if defined(HAVE_CONFIG_H)
-#include "cs_config.h"
-#endif
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -92,6 +90,12 @@ FILE  *cs_glob_join_log = NULL;
 /*============================================================================
  * Macro and type definitions
  *===========================================================================*/
+
+/* Directory name separator
+   (historically, '/' for Unix/Linux, '\' for Windows, ':' for Mac
+   but '/' should work for all on modern systems) */
+
+#define DIR_SEPARATOR '/'
 
 /*============================================================================
  * Private function definitions
@@ -2083,7 +2087,7 @@ cs_join_create(int                      join_number,
       strcpy(perio_add, "_perio");
     if (cs_glob_n_ranks > 1)
       sprintf(rank_add, "_r%04d", cs_glob_rank_id);
-    sprintf(logname, "log%cjoin_%02d%s%s.log", CS_DIR_SEPARATOR,
+    sprintf(logname, "log%cjoin_%02d%s%s.log", DIR_SEPARATOR,
             join_number, perio_add, rank_add);
     cs_glob_join_log = fopen(logname, "w");
     if (cs_glob_join_log == NULL)
