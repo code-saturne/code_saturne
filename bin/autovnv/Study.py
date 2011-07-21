@@ -554,16 +554,19 @@ class Studies(object):
                         self.reporting('    - running %s ...' % case.label, True)
                         error, run_id = case.run()
                         if not error:
+                            if not run_id:
+                                self.reporting('    - run %s --> Warning suffixe is not read' % case.label)
+
                             self.reporting('    - run %s --> OK (%s s) in %s' % (case.label, case.is_time, run_id))
                             self.__parser.setAttribute(case.node, "compute", "off")
 
-                            # if comparison --> update xml parameters file
-                            if self.__compare:
-                                if not run_id:
-                                    self.reporting('    - run %s --> Warning suffixe is not read' % case.label)
-                                else:
-                                    node = self.__parser.getChild(case.node, "compare")
-                                    self.__parser.setAttribute(node, "dest", run_id)
+                            # update dest="" attribute
+                            n1 = self.__parser.getChilds(case.node, "compare")
+                            n2 = self.__parser.getChilds(case.node, "script")
+                            n3 = self.__parser.getChilds(case.node, "data")
+                            for n in n1 + n2 + n3:
+                                if self.__parser.getAttribute(n, "dest", False) == "":
+                                    self.__parser.setAttribute(n, "dest", run_id)
                         else:
                             self.reporting('    - run %s --> FAILED' % case.label)
 

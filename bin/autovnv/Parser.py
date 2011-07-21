@@ -335,8 +335,8 @@ class Parser(object):
 
         if nodes:
             compare = True
-            repo      = str(nodes[0].attributes["repo"].value)
-            dest      = str(nodes[0].attributes["dest"].value)
+            repo    = str(nodes[0].attributes["repo"].value)
+            dest    = str(nodes[0].attributes["dest"].value)
             try:
                 threshold = str(nodes[0].attributes["threshold"].value)
             except:
