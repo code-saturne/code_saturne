@@ -77,8 +77,8 @@ typedef struct {
 
   /* Other options */
 
-  cs_bool_t      preprocess;    /* Mesh preprocessing mode */
-  cs_bool_t      verif;         /* Mesh quality verification mode */
+  bool           preprocess;    /* Mesh preprocessing mode */
+  bool           verif;         /* Mesh quality verification mode */
 
   int            benchmark;     /* Benchmark mode:
                                    0: not used;

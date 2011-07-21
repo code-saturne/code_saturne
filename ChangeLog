@@ -1,4 +1,53 @@
 * 21/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
+  Replace cs_bool_t with bool.
+  modified files:
+    src/alge/cs_benchmark.c
+    src/alge/cs_gradient.c
+    src/alge/cs_grid.c
+    src/alge/cs_grid.h
+    src/alge/cs_matrix.c
+    src/alge/cs_matrix.h
+    src/alge/cs_multigrid.c
+    src/alge/cs_multigrid.h
+    src/alge/cs_sles.c
+    src/alge/cs_sles.h
+    src/base/cs_base.c
+    src/base/cs_base.h
+    src/base/cs_calcium.c
+    src/base/cs_ext_neighborhood.c
+    src/base/cs_io.c
+    src/base/cs_opts.h
+    src/base/cs_perio.c
+    src/base/cs_post.c
+    src/base/cs_post.h
+    src/base/cs_preprocessor_data.c
+    src/base/cs_proxy_comm.c
+    src/base/cs_restart.c
+    src/base/cs_restart.h
+    src/base/cs_sat_coupling.c
+    src/base/cs_syr3_comm.c
+    src/base/cs_time_plot.c
+    src/base/cs_time_plot.h
+    src/base/cs_tpar1d.c
+    src/ctwr/cs_ctwr.c
+    src/gui/cs_gui_output.c
+    src/mesh/cs_join_intersect.c
+    src/mesh/cs_join_merge.c
+    src/mesh/cs_join_perio.c
+    src/mesh/cs_join_post.c
+    src/mesh/cs_join_set.c
+    src/mesh/cs_join_split.c
+    src/mesh/cs_join_update.c
+    src/mesh/cs_join_util.h
+    src/mesh/cs_mesh_connect.c
+    src/mesh/cs_mesh_connect.h
+    src/mesh/cs_mesh_halo.c
+    src/mesh/cs_mesh_quality.c
+    src/mesh/cs_mesh_warping.c
+    src/mesh/cs_mesh_warping.h
+    users/base/cs_user_postprocess.c
+
+* 21/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Merge bft_config_defs.h, fvm_config_defs.h, and some definitions from
   cs_base.h into a single cs_defs.h header. This also includes preparations
   for replacing fvm_*num_t by cs_*num_t.

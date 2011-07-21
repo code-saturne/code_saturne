@@ -167,7 +167,7 @@ cs_matrix_finalize(void);
 
 cs_matrix_structure_t *
 cs_matrix_structure_create(cs_matrix_type_t       type,
-                           cs_bool_t              have_diag,
+                           bool                   have_diag,
                            cs_int_t               n_cells,
                            cs_int_t               n_cells_ext,
                            cs_int_t               n_faces,
@@ -269,7 +269,7 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
 
 void
 cs_matrix_set_coefficients(cs_matrix_t      *matrix,
-                           cs_bool_t         symmetric,
+                           bool              symmetric,
                            const int        *diag_block_size,
                            const cs_real_t  *da,
                            const cs_real_t  *xa);
@@ -291,7 +291,7 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
 
 void
 cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
-                              cs_bool_t         symmetric,
+                              bool              symmetric,
                               const cs_real_t  *da,
                               const cs_real_t  *xa);
 

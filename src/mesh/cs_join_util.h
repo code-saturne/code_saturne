@@ -248,7 +248,7 @@ typedef struct {
      s = single / c = coupled
   */
 
-  cs_bool_t    do_single_sync;
+  bool         do_single_sync;
 
   cs_join_sync_t  *s_vertices;
   cs_join_sync_t  *c_vertices;

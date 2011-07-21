@@ -148,8 +148,8 @@ BEGIN_C_DECLS
 
 typedef void
 (cs_matrix_set_coeffs_t) (cs_matrix_t      *matrix,
-                          cs_bool_t         symmetric,
-                          cs_bool_t         interleaved,
+                          bool              symmetric,
+                          bool              interleaved,
                           const cs_real_t  *restrict da,
                           const cs_real_t  *restrict xa);
 
@@ -215,7 +215,7 @@ typedef struct _cs_matrix_struct_native_t {
 
 typedef struct _cs_matrix_coeff_native_t {
 
-  cs_bool_t         symmetric;       /* Symmetry indicator */
+  bool              symmetric;       /* Symmetry indicator */
 
   /* Pointers to possibly shared arrays */
 
@@ -242,8 +242,8 @@ typedef struct _cs_matrix_struct_csr_t {
 
   /* Pointers to structure arrays and info (row_index, col_id) */
 
-  cs_bool_t         have_diag;        /* Has non-zero diagonal */
-  cs_bool_t         direct_assembly;  /* True if each value corresponds to
+  bool              have_diag;        /* Has non-zero diagonal */
+  bool              direct_assembly;  /* True if each value corresponds to
                                          a unique face ; false if multiple
                                          faces contribute to the same
                                          value (i.e. we have split faces) */
@@ -286,8 +286,8 @@ typedef struct _cs_matrix_struct_csr_sym_t {
 
   /* Pointers to structure arrays and info (row_index, col_id) */
 
-  cs_bool_t         have_diag;        /* Has non-zero diagonal */
-  cs_bool_t         direct_assembly;  /* True if each value corresponds to
+  bool              have_diag;        /* Has non-zero diagonal */
+  bool              direct_assembly;  /* True if each value corresponds to
                                          a unique face ; false if multiple
                                          faces contribute to the same
                                          value (i.e. we have split faces) */
@@ -1020,8 +1020,8 @@ _destroy_coeff_native(cs_matrix_coeff_native_t **coeff)
 
 static void
 _set_coeffs_native(cs_matrix_t      *matrix,
-                   cs_bool_t         symmetric,
-                   cs_bool_t         interleaved,
+                   bool              symmetric,
+                   bool              interleaved,
                    const cs_real_t  *da,
                    const cs_real_t  *xa)
 {
@@ -2023,7 +2023,7 @@ _alpha_a_x_p_beta_y_native_vector(cs_real_t           alpha,
  *----------------------------------------------------------------------------*/
 
 static cs_matrix_struct_csr_t *
-_create_struct_csr(cs_bool_t         have_diag,
+_create_struct_csr(bool              have_diag,
                    int               n_cells,
                    int               n_cells_ext,
                    int               n_faces,
@@ -2302,8 +2302,8 @@ _destroy_coeff_csr(cs_matrix_coeff_csr_t **coeff)
 
 static void
 _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
-                          cs_bool_t         symmetric,
-                          cs_bool_t         interleaved,
+                          bool              symmetric,
+                          bool              interleaved,
                           const cs_real_t  *restrict xa)
 {
   cs_int_t  ii, jj, face_id;
@@ -2395,8 +2395,8 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
 
 static void
 _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
-                             cs_bool_t         symmetric,
-                             cs_bool_t         interleaved,
+                             bool              symmetric,
+                             bool              interleaved,
                              const cs_real_t  *restrict xa)
 {
   cs_int_t  ii, jj, face_id;
@@ -2484,8 +2484,8 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
 
 static void
 _set_coeffs_csr(cs_matrix_t      *matrix,
-                cs_bool_t         symmetric,
-                cs_bool_t         interleaved,
+                bool              symmetric,
+                bool              interleaved,
                 const cs_real_t  *restrict da,
                 const cs_real_t  *restrict xa)
 {
@@ -2993,7 +2993,7 @@ _alpha_a_x_p_beta_y_csr_pf(cs_real_t           alpha,
  *----------------------------------------------------------------------------*/
 
 static cs_matrix_struct_csr_sym_t *
-_create_struct_csr_sym(cs_bool_t         have_diag,
+_create_struct_csr_sym(bool              have_diag,
                        int               n_cells,
                        int               n_cells_ext,
                        int               n_faces,
@@ -3292,8 +3292,8 @@ _set_xa_coeffs_csr_sym_increment(cs_matrix_t      *matrix,
 
 static void
 _set_coeffs_csr_sym(cs_matrix_t      *matrix,
-                    cs_bool_t         symmetric,
-                    cs_bool_t         interleaved,
+                    bool              symmetric,
+                    bool              interleaved,
                     const cs_real_t  *restrict da,
                     const cs_real_t  *restrict xa)
 {
@@ -3632,7 +3632,7 @@ void CS_PROCF(promav, PROMAV)
 )
 {
   int diag_block_size[4] = {1, 1, 1, 1};
-  cs_bool_t symmetric = (*isym == 1) ? true : false;
+  bool symmetric = (*isym == 1) ? true : false;
   cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
 
   assert(*ncelet >= *ncel);
@@ -3736,7 +3736,7 @@ cs_matrix_finalize(void)
 
 cs_matrix_structure_t *
 cs_matrix_structure_create(cs_matrix_type_t       type,
-                           cs_bool_t              have_diag,
+                           bool                   have_diag,
                            cs_int_t               n_cells,
                            cs_int_t               n_cells_ext,
                            cs_int_t               n_faces,
@@ -4101,7 +4101,7 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
 
 void
 cs_matrix_set_coefficients(cs_matrix_t      *matrix,
-                           cs_bool_t         symmetric,
+                           bool              symmetric,
                            const int        *diag_block_size,
                            const cs_real_t  *da,
                            const cs_real_t  *xa)
@@ -4142,7 +4142,7 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
 
 void
 cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
-                              cs_bool_t         symmetric,
+                              bool              symmetric,
                               const cs_real_t  *da,
                               const cs_real_t  *xa)
 {

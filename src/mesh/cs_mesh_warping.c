@@ -1414,9 +1414,9 @@ CS_PROCF (setcwf, SETCWF) (const cs_int_t   *cwfpst,
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_warping_cut_faces(cs_mesh_t    *mesh,
-                          double        max_warp_angle,
-                          cs_bool_t     post_flag)
+cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
+                          double      max_warp_angle,
+                          bool        post_flag)
 {
   cs_int_t  i;
 

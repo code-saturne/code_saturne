@@ -741,11 +741,11 @@ _add_halo_elements(cs_mesh_t        *mesh,
  *
  *---------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _test_loop_continues(cs_mesh_t   *mesh,
                      cs_int_t     face_num)
 {
-  cs_bool_t  choice = false;
+  bool  choice = false;
 
   /* Face has to be an internal face */
 

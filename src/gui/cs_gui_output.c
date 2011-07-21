@@ -1712,8 +1712,8 @@ cs_gui_postprocess_meshes(void)
   int i, j, id, id_writer;
   char *label = NULL;
   char *all_variables = NULL;
-  cs_bool_t auto_vars = true;
-  cs_bool_t add_groups = true;
+  bool auto_vars = true;
+  bool add_groups = true;
   char *location = NULL;
   int n_writers, nmesh;
   char *type = NULL;
@@ -1795,7 +1795,7 @@ cs_gui_postprocess_writers(void)
 
     int id = 0;
     fvm_writer_time_dep_t  time_dep = FVM_WRITER_FIXED_MESH;
-    cs_bool_t output_at_end = true;
+    bool output_at_end = true;
     cs_int_t time_step = -1;
     cs_real_t time_value = -1.0;
 

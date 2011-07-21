@@ -101,7 +101,7 @@ struct _cs_proxy_comm_t {
   int                    socket;        /* Socket number */
 #endif
 
-  cs_bool_t              swap_endian;   /* Force big-endian communications */
+  bool                   swap_endian;   /* Force big-endian communications */
 
   cs_proxy_comm_type_t   type;          /* Communicator type */
 

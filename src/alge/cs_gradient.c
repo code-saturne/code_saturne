@@ -746,7 +746,7 @@ void CS_PROCF (cgdcel, CGDCEL)
   cs_real_t  *restrict bx, *restrict by, *restrict bz;
   cs_real_t  *restrict dpdx, *restrict dpdy, *restrict dpdz;
 
-  cs_bool_t update_stats = true;
+  bool update_stats = true;
   cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
 
   /* Allocate work arrays */
@@ -970,7 +970,7 @@ void CS_PROCF (cgdvec, CGDVEC)
   cs_int_t  *ipcvse = NULL;
   cs_int_t  *ielvse = NULL;
 
-  cs_bool_t update_stats = true;
+  bool update_stats = true;
   cs_gradient_type_t gradient_type = CS_GRADIENT_N_TYPES;
 
 

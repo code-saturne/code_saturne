@@ -680,7 +680,7 @@ _dump_face_builder(cs_int_t               face_id,
  *   true if an adjacent face was found else false
  *---------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _find_best_adj_face(cs_join_param_t         param,
                     cs_int_t                eid,
                     cs_int_t                fid,
@@ -695,13 +695,13 @@ _find_best_adj_face(cs_join_param_t         param,
 
   int  best_fid = -1;
   double  max_plane = -DBL_MAX;
-  cs_bool_t  respect_plane = false;
+  bool  respect_plane = false;
 
   const double  plane2 = param.plane_criteria;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
 #define _DBGTST 1
-  cs_bool_t  tst_dbg = ( fid==492 || fid==1039 || fid==744 || fid==262 ||
+  bool  tst_dbg = ( fid==492 || fid==1039 || fid==744 || fid==262 ||
                          fid==546 || fid==1057 || fid==564 ? true : false);
 #else
 #define _DBGTST 0
@@ -842,8 +842,8 @@ _find_next(cs_join_param_t         param,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
 #define _DBGTST 1
-  cs_bool_t  tst_dbg = ( fid==492 || fid==1039 || fid==744 || fid==262 ||
-                         fid==546 || fid==1057 || fid==564 ? true : false);
+  bool  tst_dbg = (fid==492 || fid==1039 || fid==744 || fid==262 ||
+                   fid==546 || fid==1057 || fid==564 ? true : false);
 #else
 #define _DBGTST 0
 #endif
@@ -888,7 +888,7 @@ _find_next(cs_join_param_t         param,
 
       if (vid3 != vid1) {
 
-        cs_bool_t  is_in_bbox = true;
+        bool  is_in_bbox = true;
         cs_int_t  connect_eid = CS_ABS(edges->edge_lst[i]) - 1;
 
         /* Test if the connected vertex is inside the face */
@@ -900,11 +900,11 @@ _find_next(cs_join_param_t         param,
 
         if (is_in_bbox == true) {
 
-          cs_bool_t  respect_plane = _find_best_adj_face(param,
-                                                         connect_eid, fid,
-                                                         fnorm, adj_fnorm,
-                                                         face_normal,
-                                                         e2f_idx, e2f_lst);
+          bool  respect_plane = _find_best_adj_face(param,
+                                                    connect_eid, fid,
+                                                    fnorm, adj_fnorm,
+                                                    face_normal,
+                                                    e2f_idx, e2f_lst);
 
           if (respect_plane == true) {
 
@@ -1120,8 +1120,8 @@ _split_face(cs_int_t                fid,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
 #define _DBGTST 1
-  cs_bool_t  tst_dbg = ( fid==492 || fid==1039 || fid==744 || fid==262 ||
-                         fid==546 || fid==1057 || fid==564 ? true : false);
+  bool  tst_dbg = (fid==492 || fid==1039 || fid==744 || fid==262 ||
+                   fid==546 || fid==1057 || fid==564 ? true : false);
   const cs_join_vertex_t  *vertices = work->vertices;
 #else
 #define _DBGTST 0
@@ -1391,7 +1391,7 @@ _split_face(cs_int_t                fid,
  *   true or false
  *---------------------------------------------------------------------------*/
 
-inline static cs_bool_t
+inline static bool
 _indexed_is_greater(size_t           i1,
                     size_t           i2,
                     const cs_int_t   index[],

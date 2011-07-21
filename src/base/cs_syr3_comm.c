@@ -131,7 +131,7 @@ struct _cs_syr3_comm_t {
   int                   sock;         /* Socket number */
 
   cs_syr3_comm_type_t   type;         /* Type of data encoding */
-  cs_bool_t             swap_endian;  /* Swap bytes ? */
+  bool                  swap_endian;  /* Swap bytes ? */
   cs_int_t              echo;         /* Data transfer verbosity level */
 
 };
@@ -146,7 +146,7 @@ static char  cs_syr3_comm_elt_type_name_real[] = "r8";  /* Real */
 
 #if defined(HAVE_SOCKET)
 
-static cs_bool_t  cs_glob_comm_little_endian = false;
+static bool  cs_glob_comm_little_endian = false;
 
 static char  cs_glob_comm_sock_hostname[CS_LOC_SYR3_COMM_LNG_HOSTNAME + 1];
 static int   cs_glob_comm_sock_port_num = -1;

@@ -112,7 +112,7 @@ BEGIN_C_DECLS
 struct _cs_grid_t {
 
   int                 level;        /* Level in multigrid hierarchy */
-  cs_bool_t           symmetric;    /* Symmetric matrix coefficients
+  bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
 
   fvm_lnum_t          n_cells;      /* Local number of cells */
@@ -1329,7 +1329,7 @@ _merge_halo_data(cs_halo_t   *h,
 
     for (ii = 0; ii < n_elts_ini; ii++) {
 
-      cs_bool_t is_same = true;
+      bool is_same = true;
       cur_id = order[ii];
 
       rank_id = tmp_num[cur_id*2];
@@ -1376,7 +1376,7 @@ _merge_halo_data(cs_halo_t   *h,
 
     for (ii = 0; ii < n_elts_ini; ii++) {
 
-      cs_bool_t is_same = true;
+      bool is_same = true;
       cur_id = order[ii];
 
       rank_id = tmp_num[cur_id*3];
@@ -1910,7 +1910,7 @@ _merge_grids(cs_grid_t  *g,
   fvm_lnum_t cell_shift = 0;
   fvm_lnum_t n_faces = 0;
   fvm_lnum_t *new_cell_num = NULL, *face_list = NULL;
-  cs_bool_t  *halo_cell_flag = NULL;
+  bool  *halo_cell_flag = NULL;
   MPI_Comm comm = cs_glob_mpi_comm;
   MPI_Status status;
 
@@ -2020,7 +2020,7 @@ _merge_grids(cs_grid_t  *g,
        discarded, as it has already been accounted for by that rank. */
 
     BFT_MALLOC(face_list, g->n_faces, fvm_lnum_t);
-    BFT_MALLOC(halo_cell_flag, n_ghost_cells, cs_bool_t);
+    BFT_MALLOC(halo_cell_flag, n_ghost_cells, bool);
     for (j = 0; j < n_ghost_cells; j++)
       halo_cell_flag[j] = false;
 
@@ -2042,7 +2042,7 @@ _merge_grids(cs_grid_t  *g,
     }
 
     for (face_id = 0; face_id < g->n_faces; face_id++) {
-      cs_bool_t use_face = true;
+      bool use_face = true;
       fvm_lnum_t ii = g->face_cell[face_id*2] - g->n_cells;
       fvm_lnum_t jj = g->face_cell[face_id*2 + 1] - g->n_cells;
       if (ii > 0) {
@@ -2210,7 +2210,7 @@ cs_grid_t *
 cs_grid_create_from_shared(fvm_lnum_t             n_cells,
                            fvm_lnum_t             n_cells_ext,
                            fvm_lnum_t             n_faces,
-                           cs_bool_t              symmetric,
+                           bool                   symmetric,
                            const fvm_lnum_t      *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
@@ -2368,7 +2368,7 @@ cs_grid_destroy(cs_grid_t **grid)
 void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
-                 cs_bool_t        *symmetric,
+                 bool             *symmetric,
                  int              *n_ranks,
                  fvm_lnum_t       *n_cells,
                  fvm_lnum_t       *n_cells_ext,

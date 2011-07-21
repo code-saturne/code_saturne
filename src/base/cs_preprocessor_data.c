@@ -176,7 +176,7 @@ typedef double  _vtx_coords_t[3];
  *  Global variables
  *============================================================================*/
 
-static cs_bool_t        _use_sfc = true;
+static bool             _use_sfc = true;
 static fvm_io_num_sfc_t _sfc_type = FVM_IO_NUM_SFC_MORTON_BOX;
 
 static _mesh_reader_t *_cs_glob_mesh_reader = NULL;
@@ -2785,8 +2785,8 @@ _read_dimensions(cs_mesh_t       *mesh,
   int        n_gc_props_max = 0;
   int        n_groups = 0;
   int        n_init_perio = 0;
-  cs_bool_t  dim_read = false;
-  cs_bool_t  end_read = false;
+  bool       dim_read = false;
+  bool       end_read = false;
   cs_io_t   *pp_in = NULL;
 
   _mesh_file_info_t  *f = NULL;
@@ -3451,8 +3451,8 @@ _read_data(int              file_id,
   cs_real_t  perio_matrix[3][4];
 
   cs_int_t  perio_num = -1;
-  cs_bool_t  end_read = false;
-  cs_bool_t  data_read = false;
+  bool       end_read = false;
+  bool       data_read = false;
   cs_io_t  *pp_in = NULL;
 
   int gc_id_shift = mr->gc_id_shift[file_id];

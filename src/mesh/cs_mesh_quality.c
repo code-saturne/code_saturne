@@ -837,12 +837,12 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 {
   cs_int_t  i;
 
-  cs_bool_t  compute_volume = true;
-  cs_bool_t  compute_weighting = true;
-  cs_bool_t  compute_orthogonality = true;
-  cs_bool_t  compute_warping = true;
-  cs_bool_t  vol_fields = false;
-  cs_bool_t  brd_fields = false;
+  bool  compute_volume = true;
+  bool  compute_weighting = true;
+  bool  compute_orthogonality = true;
+  bool  compute_warping = true;
+  bool  vol_fields = false;
+  bool  brd_fields = false;
 
   cs_real_t  *face_to_cell = NULL;
   cs_real_t  *face_to_vtx = NULL;

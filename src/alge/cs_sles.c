@@ -2269,8 +2269,8 @@ _value_type(size_t      n_vals,
  *----------------------------------------------------------------------------*/
 
 static void
-_cell_residual(cs_bool_t        symmetric,
-               cs_bool_t        interleaved,
+_cell_residual(bool             symmetric,
+               bool             interleaved,
                const int       *diag_block_size,
                cs_perio_rota_t  rotation_mode,
                const cs_real_t  ad[],
@@ -2307,7 +2307,7 @@ _cell_residual(cs_bool_t        symmetric,
  *----------------------------------------------------------------------------*/
 
 static void
-_diag_dominance(cs_bool_t        symmetric,
+_diag_dominance(bool             symmetric,
                 const cs_real_t  ad[],
                 const cs_real_t  ax[],
                 cs_real_t        dd[])
@@ -2584,8 +2584,8 @@ _solve_ni(const char         *var_name,
 static void
 _post_error_output_def(const char       *var_name,
                        int               mesh_id,
-                       cs_bool_t         symmetric,
-                       cs_bool_t         interleaved,
+                       bool              symmetric,
+                       bool              interleaved,
                        const int        *diag_block_size,
                        cs_perio_rota_t   rotation_mode,
                        const cs_real_t  *ad,
@@ -2711,8 +2711,8 @@ void CS_PROCF(reslin, RESLIN)
   int cvg = 0;
   int n_iter = *niterf;
   int diag_block_size[4] = {1, 1, 1, 1};
-  cs_bool_t symmetric = (*isym == 1) ? true : false;
-  cs_bool_t interleaved = (*ilved == 1) ? true : false;
+  bool symmetric = (*isym == 1) ? true : false;
+  bool interleaved = (*ilved == 1) ? true : false;
   cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
 
   assert(*ncelet >= *ncel);
@@ -3005,8 +3005,8 @@ cs_sles_needs_solving(const char        *var_name,
 int
 cs_sles_solve(const char         *var_name,
               cs_sles_type_t      solver_type,
-              cs_bool_t           update_stats,
-              cs_bool_t           symmetric,
+              bool                update_stats,
+              bool                symmetric,
               const int          *diag_block_size,
               const cs_real_t    *ad_coeffs,
               const cs_real_t    *ax_coeffs,
@@ -3266,7 +3266,7 @@ cs_sles_solve(const char         *var_name,
 void
 cs_sles_post_error_output_def(const char       *var_name,
                               int               mesh_id,
-                              cs_bool_t         symmetric,
+                              bool              symmetric,
                               int               diag_block_size,
                               cs_perio_rota_t   rotation_mode,
                               const cs_real_t  *ad,

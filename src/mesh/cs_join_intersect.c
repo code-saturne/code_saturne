@@ -371,7 +371,7 @@ _get_new_vertex(float                  curv_abs,
  *  true if the check is ok, false otherwise
  *---------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _check_equiv(const cs_join_edges_t  *edges,
              const cs_join_mesh_t   *mesh,
              cs_int_t                e1_id,
@@ -547,11 +547,11 @@ _add_inter(cs_int_t              e1_id,
  *---------------------------------------------------------------------------*/
 
 static void
-_break_equivalence(cs_int_t           n_elts,
-                   double             edge_length,
-                   cs_bool_t          equiv_lst[],
-                   const float        abs_lst[],
-                   const double       tol_lst[])
+_break_equivalence(cs_int_t       n_elts,
+                   double         edge_length,
+                   bool           equiv_lst[],
+                   const float    abs_lst[],
+                   const double   tol_lst[])
 {
   int  i1, i2, i2_save;
   double  range, _rtf, rtf12, rtf21;
@@ -640,7 +640,7 @@ _find_edge_equiv(cs_join_param_t  param,
                  cs_int_t         n_elts,
                  float            abs_lst[],
                  double           tol_lst[],
-                 cs_bool_t        equiv_lst[],
+                 bool             equiv_lst[],
                  int              tag[],
                  double           edge_length)
 {
@@ -648,7 +648,7 @@ _find_edge_equiv(cs_join_param_t  param,
   double  dist;
 
   cs_int_t  n_loops = 0;
-  cs_bool_t  do_reduction = true;
+  bool  do_reduction = true;
 
   /* Find equivalence between vertices sharing the same edge */
 
@@ -802,7 +802,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   double  int_inter[2] = {0., 0.}, ext_inter[4], v0[3], v1[3], v2[3];
 
   int  n_int_inter = 0, n_ext_inter = 0;
-  cs_bool_t  int_p1e2 = false, int_p2e2 = false;
+  bool  int_p1e2 = false, int_p2e2 = false;
 
   cs_int_t  p1e1_id = edges->def[2*e1_id] - 1;
   cs_int_t  p2e1_id = edges->def[2*e1_id+1] - 1;
@@ -815,10 +815,10 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   const cs_join_vertex_t  p2e2 = mesh->vertices[p2e2_id];
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_bool_t  tst_dbg = (verbosity > 6 &&
-                       (p1e1.gnum == 716852 || p2e1.gnum == 716852 ||
-                        p1e2.gnum == 716852 || p2e2.gnum == 716852) ?
-                        true : false);
+  bool  tst_dbg = (verbosity > 6 &&
+                   (p1e1.gnum == 716852 || p2e1.gnum == 716852 ||
+                    p1e2.gnum == 716852 || p2e2.gnum == 716852) ?
+                   true : false);
 #endif
 
   /* Initialize parameters */
@@ -1515,7 +1515,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   double  d2_limit_e1, d_limit_e1, d2_limit_e2, d_limit_e2, d2_e1e2;
   cs_real_t v0[3], v1[3], v2[3];
 
-  cs_bool_t  int_p1e2 = false, int_p2e2 = false;
+  bool  int_p1e2 = false, int_p2e2 = false;
 
   cs_int_t  p1e1_id = edges->def[2*e1_id] - 1;
   cs_int_t  p2e1_id = edges->def[2*e1_id+1] - 1;
@@ -1528,10 +1528,10 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
   const cs_join_vertex_t  p2e2 = mesh->vertices[p2e2_id];
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_bool_t  tst_dbg = (verbosity > 6 &&
-                       (p1e1.gnum == 716852 || p2e1.gnum == 716852 ||
-                        p1e2.gnum == 716852 || p2e2.gnum == 716852) ?
-                        true : false);
+  bool  tst_dbg = (verbosity > 6 &&
+                   (p1e1.gnum == 716852 || p2e1.gnum == 716852 ||
+                    p1e2.gnum == 716852 || p2e2.gnum == 716852) ?
+                   true : false);
 #endif
 
   /* Initialize parameters */
@@ -2185,7 +2185,7 @@ _create_exch_inter_datatype(void)
  *   structure, false otherwise.
  *---------------------------------------------------------------------------*/
 
-inline static cs_bool_t
+inline static bool
 _need_to_add_exch_inter(exch_inter_t                  inter,
                         const cs_join_inter_edges_t  *ref,
                         cs_int_t                      edge_id,
@@ -2193,7 +2193,7 @@ _need_to_add_exch_inter(exch_inter_t                  inter,
 {
   cs_int_t  i;
 
-  cs_bool_t ret = true;
+  bool ret = true;
 
   for (i = ref->index[edge_id]; i < cur_shift[edge_id]; i++) {
 
@@ -2689,7 +2689,7 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
 {
   cs_int_t  i, j, k, i1, i2, size, esize, n_breaks;
 
-  cs_bool_t  *equiv_lst = NULL;
+  bool  *equiv_lst = NULL;
   cs_int_t  *vtx_lst = NULL, *tag_lst = NULL;
   float  *abs_lst = NULL;
   double  *tol_lst = NULL;
@@ -2709,7 +2709,7 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
       BFT_MALLOC(abs_lst, size, float);
       BFT_MALLOC(tol_lst, size, double);
       esize = size*(size-1)/2;
-      BFT_MALLOC(equiv_lst, esize, cs_bool_t);
+      BFT_MALLOC(equiv_lst, esize, bool);
 
       /* Main loop */
 
@@ -3763,7 +3763,7 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
       for (k = 0; k < n_inter; k++) {
 
-        cs_bool_t  trivial = false;
+        bool  trivial = false;
 
         if (abs_e1[k] <= merge_limit || abs_e1[k] >= 1.0 - merge_limit)
           if (abs_e2[k] <= merge_limit || abs_e2[k] >= 1.0 - merge_limit)

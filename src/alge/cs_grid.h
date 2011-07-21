@@ -131,7 +131,7 @@ cs_grid_t *
 cs_grid_create_from_shared(fvm_lnum_t             n_cells,
                            fvm_lnum_t             n_cells_ext,
                            fvm_lnum_t             n_faces,
-                           cs_bool_t              symmetric,
+                           bool                   symmetric,
                            const fvm_lnum_t      *face_cell,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering,
@@ -168,7 +168,7 @@ cs_grid_destroy(cs_grid_t **grid);
 void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
-                 cs_bool_t        *symmetric,
+                 bool             *symmetric,
                  int              *n_ranks,
                  fvm_lnum_t       *n_cells,
                  fvm_lnum_t       *n_cells_ext,

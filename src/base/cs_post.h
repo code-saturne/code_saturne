@@ -308,7 +308,7 @@ cs_post_define_writer(int                     writer_id,
                       const char             *fmt_name,
                       const char             *fmt_opts,
                       fvm_writer_time_dep_t   time_dep,
-                      cs_bool_t               output_at_end,
+                      bool                    output_at_end,
                       cs_int_t                frequency_n,
                       cs_real_t               frequency_t);
 
@@ -329,8 +329,8 @@ void
 cs_post_define_volume_mesh(int          mesh_id,
                            const char  *mesh_name,
                            const char  *cell_criteria,
-                           cs_bool_t    add_groups,
-                           cs_bool_t    auto_variables,
+                           bool         add_groups,
+                           bool         auto_variables,
                            int          n_writers,
                            const int    writer_ids[]);
 
@@ -356,8 +356,8 @@ cs_post_define_volume_mesh_by_list(int          mesh_id,
                                    const char  *mesh_name,
                                    fvm_lnum_t   n_cells,
                                    fvm_lnum_t   cell_list[],
-                                   cs_bool_t    add_groups,
-                                   cs_bool_t    auto_variables,
+                                   bool         add_groups,
+                                   bool         auto_variables,
                                    int          n_writers,
                                    const int    writer_ids[]);
 
@@ -380,8 +380,8 @@ cs_post_define_surface_mesh(int          mesh_id,
                             const char  *mesh_name,
                             const char  *i_face_criteria,
                             const char  *b_face_criteria,
-                            cs_bool_t    add_groups,
-                            cs_bool_t    auto_variables,
+                            bool         add_groups,
+                            bool         auto_variables,
                             int          n_writers,
                             const int    writer_ids[]);
 
@@ -411,8 +411,8 @@ cs_post_define_surface_mesh_by_list(int          mesh_id,
                                     fvm_lnum_t   n_b_faces,
                                     fvm_lnum_t   i_face_list[],
                                     fvm_lnum_t   b_face_list[],
-                                    cs_bool_t    add_groups,
-                                    cs_bool_t    auto_variables,
+                                    bool         add_groups,
+                                    bool         auto_variables,
                                     int          n_writers,
                                     const int    writer_ids[]);
 
@@ -446,7 +446,7 @@ cs_post_define_surface_mesh_by_list(int          mesh_id,
 void
 cs_post_define_alias_mesh(int        mesh_id,
                           int        aliased_mesh_id,
-                          cs_bool_t  auto_variables,
+                          bool       auto_variables,
                           int        n_writers,
                           const int  writer_ids[]);
 
@@ -483,8 +483,8 @@ void
 cs_post_define_existing_mesh(int           mesh_id,
                              fvm_nodal_t  *exp_mesh,
                              int           dim_shift,
-                             cs_bool_t     transfer,
-                             cs_bool_t     auto_variables,
+                             bool          transfer,
+                             bool          auto_variables,
                              int           n_writers,
                              const int     writer_ids[]);
 
@@ -537,7 +537,7 @@ cs_post_free_mesh(int  mesh_id);
  *   true if writer with this id exists, false otherwise
  *----------------------------------------------------------------------------*/
 
-cs_bool_t
+bool
 cs_post_writer_exists(int  writer_id);
 
 /*----------------------------------------------------------------------------
@@ -563,7 +563,7 @@ cs_post_get_writer(cs_int_t  writer_id);
  *   true if mesh with this id exists, false otherwise
  *----------------------------------------------------------------------------*/
 
-cs_bool_t
+bool
 cs_post_mesh_exists(int  mesh_id);
 
 /*----------------------------------------------------------------------------
@@ -659,8 +659,8 @@ cs_post_activate_if_default(int     nt_max_abs,
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_activate_writer(int        writer_id,
-                        cs_bool_t  activate);
+cs_post_activate_writer(int   writer_id,
+                        bool  activate);
 
 /*----------------------------------------------------------------------------
  * Output post-processing meshes using associated writers.
@@ -697,8 +697,8 @@ void
 cs_post_write_var(int              mesh_id,
                   const char      *var_name,
                   cs_int_t         var_dim,
-                  cs_bool_t        interlace,
-                  cs_bool_t        use_parent,
+                  bool             interlace,
+                  bool             use_parent,
                   cs_post_type_t   var_type,
                   cs_int_t         nt_cur_abs,
                   cs_real_t        t_cur_abs,
@@ -727,8 +727,8 @@ void
 cs_post_write_vertex_var(int              mesh_id,
                          const char      *var_name,
                          cs_int_t         var_dim,
-                         cs_bool_t        interlace,
-                         cs_bool_t        use_parent,
+                         bool             interlace,
+                         bool             use_parent,
                          cs_post_type_t   var_type,
                          cs_int_t         nt_cur_abs,
                          cs_real_t        t_cur_abs,

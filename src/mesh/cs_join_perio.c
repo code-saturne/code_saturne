@@ -753,14 +753,14 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
   cs_int_t  i, j, k, shift, vid, start, end, perio_start, perio_end;
   cs_int_t  n_new_vertices, n_init_faces;
   cs_real_t  matrix[3][4], xyz[4];
-  cs_bool_t  is_modified;
+  bool  is_modified;
   fvm_gnum_t  new_gnum;
   cs_join_state_t  state;
 
   cs_int_t  *new_f2v_idx = NULL, *new_f2v_lst = NULL, *vtag = NULL;
   cs_int_t  *linked_id = NULL;
   fvm_gnum_t  *gnum = NULL;
-  cs_bool_t  *f_state = NULL;
+  bool  *f_state = NULL;
   cs_join_mesh_t  *work_jmesh = *p_work_jmesh;
   cs_join_edges_t  *work_edges = *p_work_edges;
   cs_join_param_t  param = this_join->param;
@@ -807,7 +807,7 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
 
   n_init_faces = jmesh->n_faces/2;
 
-  BFT_MALLOC(f_state, jmesh->n_faces, cs_bool_t);
+  BFT_MALLOC(f_state, jmesh->n_faces, bool);
   BFT_MALLOC(new_f2v_idx, jmesh->n_faces + 1, cs_int_t);
   BFT_MALLOC(vtag, jmesh->n_vertices, cs_int_t);
 
@@ -1196,7 +1196,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
     else { /* n_contrib > 2 => remains a border face and keep the new face
               if not all the old faces are periodic */
 
-      cs_bool_t  have_perio = true;
+      bool  have_perio = true;
 
       f_tag[i] = 0; /* Initialize as if we want to delete the new face */
 

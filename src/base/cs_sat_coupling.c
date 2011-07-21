@@ -1672,7 +1672,7 @@ void CS_PROCF (tbicpl, TBICPL)
 {
   cs_int_t  ind;
   cs_int_t  nbr = 0;
-  cs_bool_t  distant = false;
+  bool  distant = false;
 
 #if defined(HAVE_MPI)
 
@@ -1748,7 +1748,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
 {
   cs_int_t  ind;
   cs_int_t  nbr = 0;
-  cs_bool_t  distant = false;
+  bool  distant = false;
 
 #if defined(HAVE_MPI)
 
@@ -1818,7 +1818,7 @@ void CS_PROCF (mxicpl, MXICPL)
        cs_int_t  *varmax
 )
 {
-  cs_bool_t  distant = false;
+  bool  distant = false;
 
 #if defined(HAVE_MPI)
 

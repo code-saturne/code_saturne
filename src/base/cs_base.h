@@ -106,15 +106,13 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef _Bool            cs_bool_t;     /* Boolean */
-
 /* Datatype enumeration to transmit a data's type to a function */
 
 typedef enum {
   CS_TYPE_char,
   CS_TYPE_cs_int_t,
   CS_TYPE_cs_real_t,
-  CS_TYPE_cs_bool_t,
+  CS_TYPE_bool,
   CS_TYPE_cs_point_t,
   CS_TYPE_void
 } cs_type_t;

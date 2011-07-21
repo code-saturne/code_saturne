@@ -93,9 +93,9 @@ struct _cs_time_plot_t {
 
   cs_time_plot_format_t   format;  /* Associated format */
 
-  cs_bool_t   use_iteration;    /* Use iteration number instead of
+  bool        use_iteration;    /* Use iteration number instead of
                                  * physical time ? */
-  cs_bool_t   write_time_value; /* Output time value ? */
+  bool        write_time_value; /* Output time value ? */
 
   double      flush_times[2];   /* 0: File flush time interval
                                  *    (if < 0, no forced flush)
@@ -493,7 +493,7 @@ static cs_time_plot_t *
 _plot_file_create(const char             *plot_name,
                   const char             *file_prefix,
                   cs_time_plot_format_t   format,
-                  cs_bool_t               use_iteration,
+                  bool                    use_iteration,
                   double                  flush_wtime,
                   int                     n_buffer_steps)
 {
@@ -699,7 +699,7 @@ void CS_PROCF (tppini, TPPINI)
   cs_time_plot_format_t fmt;
   char *plot_name   = cs_base_string_f_to_c_create(tplnam, *lnam);
   char *file_prefix = cs_base_string_f_to_c_create(tplpre, *lpre);
-  cs_bool_t use_iteration = false;
+  bool use_iteration = false;
 
   if (*idtvar < 0 || *idtvar == 2)
     use_iteration = true;
@@ -786,7 +786,7 @@ void CS_PROCF (tpsini, TPSINI)
   cs_time_plot_format_t fmt;
   char *plot_name   = cs_base_string_f_to_c_create(tplnam, *lnam);
   char *file_prefix = cs_base_string_f_to_c_create(tplpre, *lpre);
-  cs_bool_t use_iteration = false;
+  bool use_iteration = false;
 
   if (*idtvar < 0 || *idtvar == 2)
     use_iteration = true;
@@ -981,7 +981,7 @@ cs_time_plot_t *
 cs_time_plot_init_probe(const char             *plot_name,
                         const char             *file_prefix,
                         cs_time_plot_format_t   format,
-                        cs_bool_t               use_iteration,
+                        bool                    use_iteration,
                         double                  flush_wtime,
                         int                     n_buffer_steps,
                         int                     n_probes,
@@ -1037,7 +1037,7 @@ cs_time_plot_t *
 cs_time_plot_init_struct(const char             *plot_name,
                          const char             *file_prefix,
                          cs_time_plot_format_t   format,
-                         cs_bool_t               use_iteration,
+                         bool                    use_iteration,
                          double                  flush_wtime,
                          int                     n_buffer_steps,
                          int                     n_structures,

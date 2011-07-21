@@ -115,7 +115,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t             *mesh,
 fvm_nodal_t *
 cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
-                               cs_bool_t         include_families,
+                               bool              include_families,
                                fvm_lnum_t        cell_list_size,
                                fvm_lnum_t        cell_list[]);
 
@@ -144,7 +144,7 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 fvm_nodal_t *
 cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                                const char       *name,
-                               cs_bool_t         include_families,
+                               bool              include_families,
                                fvm_lnum_t        i_face_list_size,
                                fvm_lnum_t        b_face_list_size,
                                fvm_lnum_t        i_face_list[],

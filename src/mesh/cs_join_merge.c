@@ -493,14 +493,14 @@ _get_vtx_id(cs_join_inter_t  inter,
  *   true or false
  *---------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _is_spread_not_converged(cs_int_t          n_vertices,
                          const fvm_gnum_t  prev_vtx_tag[],
                          const fvm_gnum_t  vtx_tag[])
 {
   cs_int_t  i;
 
-  cs_bool_t  have_to_continue = true;
+  bool  have_to_continue = true;
 
   for (i = 0; i < n_vertices; i++)
     if (vtx_tag[i] != prev_vtx_tag[i])
@@ -620,7 +620,7 @@ _local_spread(const cs_join_eset_t  *vtx_eset,
  *   true if we have to continue the spread, false otherwise.
  *---------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _global_spread(cs_int_t               block_size,
                const cs_join_mesh_t  *work,
                fvm_gnum_t             vtx_tag[],
@@ -634,7 +634,7 @@ _global_spread(cs_int_t               block_size,
                cs_int_t               recv_shift[],
                fvm_gnum_t             recv_glob_buffer[])
 {
-  cs_bool_t  ret_value;
+  bool  ret_value;
   cs_int_t  i, local_value, global_value;
 
   cs_int_t  n_vertices = work->n_vertices;
@@ -915,7 +915,7 @@ _tag_equiv_vertices(fvm_gnum_t             n_g_vertices_tot,
 
   if (n_ranks > 1) { /* Parallel treatment */
 
-    cs_bool_t  go_on;
+    bool  go_on;
 
     cs_int_t  block_size = 0;
     cs_int_t  *send_count = NULL, *recv_count = NULL;
@@ -1480,7 +1480,7 @@ _pre_merge(cs_join_param_t     param,
  *   true if all vertices have ref_vertex in their tolerance, false otherwise
  *---------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _is_in_tolerance(cs_int_t                set_size,
                  const cs_join_vertex_t  set[],
                  cs_join_vertex_t        ref_vertex)
@@ -1512,7 +1512,7 @@ _is_in_tolerance(cs_int_t                set_size,
  *   true or false
  *---------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _continue_subset_building(int              set_size,
                           const cs_int_t   prev_num[],
                           const cs_int_t   new_num[])
@@ -1681,7 +1681,7 @@ _check_tol_consistency(cs_int_t                set_size,
  *  true if all subsets are consistent otherwise false
  *---------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _check_subset_consistency(cs_int_t                set_size,
                           const cs_int_t          subset_num[],
                           const cs_join_vertex_t  set[],
@@ -1690,7 +1690,7 @@ _check_subset_consistency(cs_int_t                set_size,
 {
   cs_int_t  i, set_id, subset_size;
 
-  cs_bool_t  is_consistent = true;
+  bool  is_consistent = true;
 
   /* Apply merged to each subset */
 
@@ -1879,7 +1879,7 @@ _solve_transitivity(cs_join_param_t    param,
   cs_int_t  i1, i2, k, n_issues;
 
   cs_int_t  n_loops = 0;
-  cs_bool_t  is_end = false;
+  bool  is_end = false;
   cs_int_t  *subset_num = NULL, *state = NULL, *prev_num = NULL;
   cs_int_t  *subset_issues = NULL, *idx = NULL;
   cs_real_t  *distances = NULL;
@@ -2005,7 +2005,7 @@ _merge_vertices(cs_join_param_t    param,
 {
   cs_int_t  i, j, k, list_size;
   cs_join_vertex_t  merged_vertex;
-  cs_bool_t  ok;
+  bool  ok;
 
   cs_int_t  max_list_size = 0, vv_max_list_size = 0;
   cs_int_t  n_loops = 0, n_max_loops = 0, n_transitivity = 0;
@@ -2492,7 +2492,7 @@ _count_new_sub_edge_elts(cs_int_t                      edge_id,
 {
   cs_int_t  j, k, j1, j2, sub_edge_id;
   cs_int_t  start, end, _start, _end, v1_num, v2_num;
-  cs_bool_t  found;
+  bool  found;
 
   cs_int_t  n_new_sub_elts = 0;
 
@@ -2564,7 +2564,7 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
   cs_int_t  save, _start, _end, start, end;
   cs_int_t  v1_num, v2_num, v1_id, v2_id, sub_edge_id;
   fvm_gnum_t  v1_gnum, v2_gnum, new_gnum, prev_gnum;
-  cs_bool_t  found;
+  bool  found;
 
   cs_int_t  n_adds = 0;
 

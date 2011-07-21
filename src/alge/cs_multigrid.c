@@ -902,7 +902,7 @@ _convergence_test(const char         *var_name,
 static void
 _abort_on_divergence(cs_multigrid_t    *mg,
                      int                level,
-                     cs_bool_t          symmetric,
+                     bool               symmetric,
                      cs_perio_rota_t    rotation_mode,
                      int                cycle_id,
                      double             initial_residue,
@@ -1056,8 +1056,8 @@ _multigrid_cycle(cs_multigrid_t     *mg,
                  cs_sles_type_t      descent_smoother_type,
                  cs_sles_type_t      ascent_smoother_type,
                  cs_sles_type_t      coarse_solver_type,
-                 cs_bool_t           abort_on_divergence,
-                 cs_bool_t           symmetric,
+                 bool                abort_on_divergence,
+                 bool                symmetric,
                  int                 poly_degree,
                  cs_perio_rota_t     rotation_mode,
                  int                 verbosity,
@@ -1104,7 +1104,7 @@ _multigrid_cycle(cs_multigrid_t     *mg,
   const cs_real_t *_da = NULL, *_xa = NULL;
   const cs_grid_t *f = NULL, *c= NULL;
 
-  cs_bool_t end_cycle = false;
+  bool end_cycle = false;
 
   /* Initialization */
 
@@ -1517,7 +1517,7 @@ void CS_PROCF(clmlga, CLMLGA)
 
   cs_grid_t *g = NULL;
 
-  cs_bool_t symmetric = (*isym == 1) ? true : false;
+  bool symmetric = (*isym == 1) ? true : false;
 
   assert(*ncelet >= *ncel);
   assert(*nfac > 0);
@@ -1805,7 +1805,7 @@ void CS_PROCF(resmgr, RESMGR)
   int _iresas = *iresas;
   int _ireslp = *ireslp;
 
-  cs_bool_t symmetric = (*isym == 1) ? true : false;
+  bool symmetric = (*isym == 1) ? true : false;
   cs_perio_rota_t rotation_mode = CS_PERIO_ROTA_COPY;
 
   assert(*ncelet >= *ncel);
@@ -1938,8 +1938,8 @@ cs_multigrid_solve(const char         *var_name,
                    cs_sles_type_t      descent_smoother_type,
                    cs_sles_type_t      ascent_smoother_type,
                    cs_sles_type_t      coarse_solver_type,
-                   cs_bool_t           abort_on_divergence,
-                   cs_bool_t           symmetric,
+                   bool                abort_on_divergence,
+                   bool                symmetric,
                    int                 poly_degree,
                    cs_perio_rota_t     rotation_mode,
                    int                 verbosity,

@@ -127,7 +127,7 @@ cs_user_postprocess_writers(void)
 
   /* Default time step or physical time based output frequencies */
 
-  cs_bool_t  output_at_end = true;
+  bool       output_at_end = true;
   int        ntchr = -1;
   double     frchr = -1.0;
 

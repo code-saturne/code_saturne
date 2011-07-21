@@ -146,7 +146,7 @@ _order_local_test_s2(const fvm_lnum_t  number[],
 
   for (i = 1 ; i < n_elts ; i++) {
     size_t i_prev, k;
-    cs_bool_t unordered = false;
+    bool unordered = false;
     i_prev = i-1;
     for (k = 0; k < 2; k++) {
       if (number[i_prev*2 + k] < number[i*2 + k])
@@ -2378,7 +2378,7 @@ cs_join_dump_array(FILE        *f,
   }
   else if (!strncmp(type, "bool", strlen("bool"))) { /* "boolean" array  */
 
-    const cs_bool_t *b_array = array;
+    const bool *b_array = array;
 
     for (i = 0; i < n_elts; i++)
       if (b_array[i] == true)

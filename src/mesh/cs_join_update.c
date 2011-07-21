@@ -1242,7 +1242,7 @@ _update_face_state(cs_join_select_t        *selection,
 {
   int  i, j, s, e;
   cs_join_state_t  v_state, f_state;
-  cs_bool_t  have_new;
+  bool  have_new;
 
   cs_join_state_t  *states = NULL;
 
@@ -1599,7 +1599,7 @@ _complete_edge_builder(const cs_join_select_t  *join_select,
   cs_int_t  i, j, j1, j2, k, shift;
   cs_int_t  v1_id, v2_id, edge_id, n_subs;
   fvm_gnum_t  v1_gnum, v2_gnum;
-  cs_bool_t  direct_scan, degenerate_edge;
+  bool  direct_scan, degenerate_edge;
 
   cs_int_t  am_max = 0, bm_max = 0;
   cs_int_t  *am_tmp = NULL, *bm_tmp = NULL;
@@ -1855,7 +1855,7 @@ _update_selected_face_connect(const cs_join_select_t  *join_select,
 
   for (i = 0, select_id = 0; i < n_faces; i++) {
 
-    cs_bool_t  in_selection = false;
+    bool  in_selection = false;
 
     if (select_id < join_select->n_faces)
       if (i+1 == join_select->faces[select_id])
@@ -1894,7 +1894,7 @@ _update_selected_face_connect(const cs_join_select_t  *join_select,
 
   for (i = 0, select_id = 0; i < n_faces; i++) {
 
-    cs_bool_t  in_selection = false;
+    bool  in_selection = false;
 
     if (select_id < join_select->n_faces)
       if (i+1 == join_select->faces[select_id])
@@ -1984,7 +1984,7 @@ _update_adj_face_connect(cs_int_t               n_adj_faces,
 
   for (i = 0, select_id = 0; i < n_faces; i++) {
 
-    cs_bool_t  in_selection = false;
+    bool  in_selection = false;
 
     if (select_id < n_adj_faces)
       if (i+1 == adj_faces[select_id])
@@ -2071,8 +2071,8 @@ _update_adj_face_connect(cs_int_t               n_adj_faces,
 
   for (i = 0, select_id = 0; i < n_faces; i++) {
 
-    cs_bool_t  direct_scan;
-    cs_bool_t  in_selection = false;
+    bool  direct_scan;
+    bool  in_selection = false;
 
     if (select_id < n_adj_faces)
       if (i+1 == adj_faces[select_id])
@@ -3112,7 +3112,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   n_fb_faces = 0;
   for (i = 0, select_id = 0; i < n_ib_faces; i++) {
 
-    cs_bool_t  in_selection = false;
+    bool  in_selection = false;
 
     if (select_id < join_select->n_faces) {
       if (i+1 == join_select->faces[select_id]) {
@@ -3281,7 +3281,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   n_fb_faces = 0;
   for (i = 0, select_id = 0; i < n_ib_faces; i++) {
 
-    cs_bool_t  in_selection = false;
+    bool  in_selection = false;
 
     if (select_id < join_select->n_faces) {
       if (i+1 == join_select->faces[select_id]) {
@@ -4492,7 +4492,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t        join_param,
 
   for (i = 0, select_id = 0, adj_id = 0; i < mesh->n_b_faces; i++) {
 
-    cs_bool_t  do_update = true;
+    bool  do_update = true;
 
     if (select_id < join_select->n_faces) {
       if (i+1 == join_select->faces[select_id]) {
@@ -4525,7 +4525,7 @@ cs_join_update_mesh_after_merge(cs_join_param_t        join_param,
 
   for (i = 0, adj_id = 0; i < mesh->n_i_faces; i++) {
 
-    cs_bool_t  do_update = true;
+    bool  do_update = true;
 
     if (adj_id < join_select->n_i_adj_faces) {
       if (i+1 == join_select->i_adj_faces[adj_id]) {

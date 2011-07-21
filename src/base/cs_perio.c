@@ -675,7 +675,7 @@ CS_PROCF (percom, PERCOM) (const cs_int_t  *idimte,
                            cs_real_t        var32[],
                            cs_real_t        var33[])
 {
-  cs_bool_t  bool_err = false;
+  bool bool_err = false;
 
   const cs_halo_t *halo = cs_glob_mesh->halo;
 
@@ -820,7 +820,7 @@ CS_PROCF (percve, PERCVE) (const cs_int_t  *idimte,
                            cs_real_t        var32[],
                            cs_real_t        var33[])
 {
-  cs_bool_t  bool_err = false;
+  bool bool_err = false;
 
   const cs_halo_t *halo = cs_glob_mesh->halo;
 

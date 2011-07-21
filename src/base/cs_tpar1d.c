@@ -420,7 +420,7 @@ void CS_PROCF (lect1d,LECT1D)
  CS_ARGF_SUPP_CHAINE
 )
 {
-  cs_bool_t           corresp_cel, corresp_fac, corresp_fbr, corresp_som;
+  bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
   cs_int_t            nbvent;
   cs_int_t            i, j, ifac, indfac, ierror;
   cs_int_t            version;    /* Not used at the moment */

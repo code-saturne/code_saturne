@@ -999,7 +999,7 @@ void CS_PROCF (tstsui, TSTSUI)
        cs_int_t  *indsom
 )
 {
-  cs_bool_t  match_cell, match_i_face, match_b_face, match_vertex;
+  bool  match_cell, match_i_face, match_b_face, match_vertex;
 
   cs_int_t   r_id   = *numsui - 1;
 
@@ -1430,10 +1430,10 @@ cs_restart_destroy(cs_restart_t  *restart)
 
 void
 cs_restart_check_base_location(const cs_restart_t  *restart,
-                               cs_bool_t           *match_cell,
-                               cs_bool_t           *match_i_face,
-                               cs_bool_t           *match_b_face,
-                               cs_bool_t           *match_vertex)
+                               bool                *match_cell,
+                               bool                *match_i_face,
+                               bool                *match_b_face,
+                               bool                *match_vertex)
 {
   size_t location_id;
 

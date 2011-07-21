@@ -191,7 +191,7 @@ _create_vtx_cells_connect(cs_mesh_t  *mesh,
   cs_int_t  i, j, idx;
   cs_int_t  vtx_id, face_id, cell_num;
 
-  cs_bool_t  already_seen;
+  bool      already_seen;
 
   cs_int_t  vtx_cells_connect_size = 0;
 

@@ -159,12 +159,11 @@ static bft_error_handler_t  *cs_glob_base_err_handler_save = NULL;
 /* Static (private) global variables */
 /*-----------------------------------*/
 
-static cs_bool_t  cs_glob_base_bft_mem_init = false;
+static bool  cs_glob_base_bft_mem_init = false;
 
-static cs_bool_t  cs_glob_base_str_init = false;
-static cs_bool_t  cs_glob_base_str_is_free[CS_BASE_N_STRINGS];
-static char       cs_glob_base_str[CS_BASE_N_STRINGS]
-                                     [CS_BASE_STRING_LEN + 1];
+static bool  cs_glob_base_str_init = false;
+static bool  cs_glob_base_str_is_free[CS_BASE_N_STRINGS];
+static char  cs_glob_base_str[CS_BASE_N_STRINGS][CS_BASE_STRING_LEN + 1];
 
 /* Global variables associated with signal handling */
 
@@ -226,7 +225,7 @@ static void
 _cs_base_err_vprintf(const char  *format,
                      va_list      arg_ptr)
 {
-  static cs_bool_t  initialized = false;
+  static bool  initialized = false;
 
   /* message to the standard output */
 

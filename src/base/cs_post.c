@@ -163,7 +163,7 @@ typedef struct {
                                             first mesh sharing the same
                                             exportable mesh */
 
-  cs_bool_t               add_groups;    /* Add group information if present */
+  bool                    add_groups;    /* Add group information if present */
 
   int                     n_writers;     /* Number of associated writers */
   int                    *writer_id;     /* Array of associated writer ids */
@@ -194,12 +194,12 @@ static char *_cs_post_default_format_options = NULL;
 
 /* Backup of initial vertex coordinates */
 
-static cs_bool_t   _cs_post_deformable = false;
+static bool        _cs_post_deformable = false;
 static cs_real_t  *_cs_post_ini_vtx_coo = NULL;
 
 /* Flag to indicate output of domain number in parallel mode */
 
-static cs_bool_t        _cs_post_domain = true;
+static bool        _cs_post_domain = true;
 
 /* Array of exportable meshes associated with post-processing */
 /* (meshes -1 and -2 reserved, so free ids start at -2)*/
@@ -739,7 +739,7 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
                                             MPI_Allreduce(..., MPI_MIN, ...) */
 
   fvm_nodal_t  *exp_mesh = NULL;
-  cs_bool_t     maj_ent_flag = false;
+  bool          maj_ent_flag = false;
 
   /* Flags:
      0: 0 if cells present, 1 if none,
@@ -1153,7 +1153,7 @@ _cs_post_write_mesh(cs_post_mesh_t  *post_mesh,
 {
   int  j;
   fvm_writer_time_dep_t  time_dep;
-  cs_bool_t  write_mesh = false;
+  bool  write_mesh = false;
 
   cs_post_writer_t *writer = NULL;
 
@@ -1925,7 +1925,7 @@ void CS_PROCF (pstact, PSTACT)
  const cs_int_t  *indact
 )
 {
-  cs_bool_t flag = (*indact != 0) ? true : false;
+  bool  flag = (*indact != 0) ? true : false;
   cs_post_activate_writer(*numwri, flag);
 }
 
@@ -2016,7 +2016,7 @@ void CS_PROCF (pstvar, PSTVAR)
   cs_int_t   n_elts, n_elts_max;
   cs_int_t   nummai, numtyp, imodif;
 
-  cs_bool_t  active;
+  bool       active;
 
   cs_post_mesh_t  *post_mesh;
   cs_post_writer_t  *writer;
@@ -2431,8 +2431,8 @@ void CS_PROCF (pstev1, PSTEV1)
                                          by many Fortran compilers) */
 )
 {
-  cs_bool_t  use_parent = false;
-  cs_bool_t  interlace = false;
+  bool  use_parent = false;
+  bool  interlace = false;
 
   char  *var_name = NULL;
 
@@ -2513,7 +2513,7 @@ cs_post_define_writer(int                     writer_id,
                       const char             *fmt_name,
                       const char             *fmt_opts,
                       fvm_writer_time_dep_t   time_dep,
-                      cs_bool_t               output_at_end,
+                      bool                    output_at_end,
                       cs_int_t                frequency_n,
                       cs_real_t               frequency_t)
 {
@@ -2630,8 +2630,8 @@ void
 cs_post_define_volume_mesh(int          mesh_id,
                            const char  *mesh_name,
                            const char  *cell_criteria,
-                           cs_bool_t    add_groups,
-                           cs_bool_t    auto_variables,
+                           bool         add_groups,
+                           bool         auto_variables,
                            int          n_writers,
                            const int    writer_ids[])
 {
@@ -2678,8 +2678,8 @@ cs_post_define_volume_mesh_by_list(int          mesh_id,
                                    const char  *mesh_name,
                                    fvm_lnum_t   n_cells,
                                    fvm_lnum_t   cell_list[],
-                                   cs_bool_t    add_groups,
-                                   cs_bool_t    auto_variables,
+                                   bool         add_groups,
+                                   bool         auto_variables,
                                    int          n_writers,
                                    const int    writer_ids[])
 {
@@ -2724,8 +2724,8 @@ cs_post_define_surface_mesh(int          mesh_id,
                             const char  *mesh_name,
                             const char  *i_face_criteria,
                             const char  *b_face_criteria,
-                            cs_bool_t    add_groups,
-                            cs_bool_t    auto_variables,
+                            bool         add_groups,
+                            bool         auto_variables,
                             int          n_writers,
                             const int    writer_ids[])
 {
@@ -2781,8 +2781,8 @@ cs_post_define_surface_mesh_by_list(int          mesh_id,
                                     fvm_lnum_t   n_b_faces,
                                     fvm_lnum_t   i_face_list[],
                                     fvm_lnum_t   b_face_list[],
-                                    cs_bool_t    add_groups,
-                                    cs_bool_t    auto_variables,
+                                    bool         add_groups,
+                                    bool         auto_variables,
                                     int          n_writers,
                                     const int    writer_ids[])
 {
@@ -2840,7 +2840,7 @@ cs_post_define_surface_mesh_by_list(int          mesh_id,
 void
 cs_post_define_alias_mesh(int        mesh_id,
                           int        aliased_mesh_id,
-                          cs_bool_t  auto_variables,
+                          bool       auto_variables,
                           int        n_writers,
                           const int  writer_ids[])
 {
@@ -2906,8 +2906,8 @@ void
 cs_post_define_existing_mesh(int           mesh_id,
                              fvm_nodal_t  *exp_mesh,
                              int           dim_shift,
-                             cs_bool_t     transfer,
-                             cs_bool_t     auto_variables,
+                             bool          transfer,
+                             bool          auto_variables,
                              int           n_writers,
                              const int     writer_ids[])
 {
@@ -2924,7 +2924,7 @@ cs_post_define_existing_mesh(int           mesh_id,
 
   int         dim_ent = 0;
   int         dim_ext_ent = 0;
-  cs_bool_t   maj_ent_flag = false;
+  bool        maj_ent_flag = false;
   fvm_lnum_t  n_elts = 0;
 
   fvm_lnum_t      *num_ent_parent = NULL;
@@ -3134,7 +3134,7 @@ cs_post_free_mesh(int  mesh_id)
  *   true if writer with this id exists, false otherwise
  *----------------------------------------------------------------------------*/
 
-cs_bool_t
+bool
 cs_post_writer_exists(int  writer_id)
 {
   /* local variables */
@@ -3163,7 +3163,7 @@ cs_post_writer_exists(int  writer_id)
  *   true if mesh with this id exists, false otherwise
  *----------------------------------------------------------------------------*/
 
-cs_bool_t
+bool
 cs_post_mesh_exists(int  mesh_id)
 {
   int id;
@@ -3356,8 +3356,8 @@ cs_post_activate_if_default(int     nt_max_abs,
  *----------------------------------------------------------------------------*/
 
 void
-cs_post_activate_writer(int        writer_id,
-                        cs_bool_t  activate)
+cs_post_activate_writer(int   writer_id,
+                        bool  activate)
 {
   int i;
   cs_post_writer_t  *writer;
@@ -3452,8 +3452,8 @@ void
 cs_post_write_var(int              mesh_id,
                   const char      *var_name,
                   cs_int_t         var_dim,
-                  cs_bool_t        interlace,
-                  cs_bool_t        use_parent,
+                  bool             interlace,
+                  bool             use_parent,
                   cs_post_type_t   var_type,
                   cs_int_t         nt_cur_abs,
                   cs_real_t        t_cur_abs,
@@ -3689,8 +3689,8 @@ void
 cs_post_write_vertex_var(int              mesh_id,
                          const char      *var_name,
                          cs_int_t         var_dim,
-                         cs_bool_t        interlace,
-                         cs_bool_t        use_parent,
+                         bool             interlace,
+                         bool             use_parent,
                          cs_post_type_t   var_type,
                          cs_int_t         nt_cur_abs,
                          cs_real_t        t_cur_abs,
@@ -3804,7 +3804,7 @@ cs_post_renum_cells(const cs_int_t  init_cell_num[])
 
   cs_int_t  *renum_ent_parent = NULL;
 
-  cs_bool_t  a_traiter = false;
+  bool  need_doing = false;
 
   cs_post_mesh_t   *post_mesh;
   const cs_mesh_t  *maillage = cs_glob_mesh;
@@ -3819,10 +3819,10 @@ cs_post_renum_cells(const cs_int_t  init_cell_num[])
     post_mesh = _cs_post_meshes + i;
 
     if (post_mesh->ent_flag[CS_POST_LOCATION_CELL] > 0)
-      a_traiter = true;
+      need_doing = true;
   }
 
-  if (a_traiter == true) {
+  if (need_doing == true) {
 
     /* Prepare renumbering */
 
@@ -3880,7 +3880,7 @@ cs_post_renum_faces(const cs_int_t  init_i_face_num[],
 
   cs_int_t  *renum_ent_parent = NULL;
 
-  cs_bool_t  a_traiter = false;
+  bool  need_doing = false;
 
   cs_post_mesh_t   *post_mesh;
   const cs_mesh_t  *maillage = cs_glob_mesh;
@@ -3893,12 +3893,12 @@ cs_post_renum_faces(const cs_int_t  init_i_face_num[],
 
     if (   post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] > 0
         || post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] > 0) {
-      a_traiter = true;
+      need_doing = true;
     }
 
   }
 
-  if (a_traiter == true) {
+  if (need_doing == true) {
 
     /* Prepare renumbering */
 
@@ -4190,7 +4190,7 @@ cs_post_add_free_faces(void)
   fvm_writer_t *writer = NULL;
   fvm_nodal_t *exp_mesh = NULL;
 
-  cs_bool_t  generate_submeshes = false;
+  bool  generate_submeshes = false;
   cs_mesh_t *mesh = cs_glob_mesh;
   const char *fmt_name = fvm_writer_format_name(_cs_post_default_format_id);
 

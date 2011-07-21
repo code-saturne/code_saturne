@@ -661,7 +661,7 @@ _proxy_comm_write_any(const char  *func_name,
 static void *
 _get_dl_function_pointer(void        *handle,
                          const char  *name,
-                         cs_bool_t    errors_are_fatal)
+                         bool         errors_are_fatal)
 {
   void  *retval = NULL;
   char  *error = NULL;

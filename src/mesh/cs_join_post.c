@@ -94,7 +94,7 @@ typedef struct {
 
 static  cs_join_post_t  _cs_join_post_param;
 
-static  cs_bool_t       _cs_join_post_initialized = false;
+static  bool            _cs_join_post_initialized = false;
 
 /*============================================================================
  * Private function definitions

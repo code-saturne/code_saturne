@@ -1652,7 +1652,7 @@ _cs_io_read_body(const cs_io_sec_header_t  *header,
   size_t  type_size = 0;
   fvm_file_off_t  n_vals = inp->n_vals;
   cs_io_log_t  *log = NULL;
-  cs_bool_t  convert_type = false;
+  bool  convert_type = false;
   void  *_elts = NULL;
   void  *_buf = NULL;
   size_t  stride = 1;
@@ -1929,7 +1929,7 @@ _write_padding(size_t    align,
  *   true if element data is embedded, false otherwise
  *----------------------------------------------------------------------------*/
 
-static cs_bool_t
+static bool
 _write_header(const char      *sec_name,
               fvm_gnum_t       n_vals,
               size_t           location_id,
@@ -1948,7 +1948,7 @@ _write_header(const char      *sec_name,
   size_t n_written = 0;
   cs_io_log_t  *log = NULL;
 
-  cs_bool_t embed = false;
+  bool embed = false;
 
   assert(outp != NULL);
 
@@ -3100,7 +3100,7 @@ cs_io_write_global(const char      *sec_name,
                    const void      *elts,
                    cs_io_t         *outp)
 {
-  cs_bool_t embed = false;
+  bool embed = false;
 
   if (outp->echo >= CS_IO_ECHO_HEADERS)
     _echo_header(sec_name, n_vals, elt_type);
@@ -3295,7 +3295,7 @@ cs_io_set_offset(cs_io_t         *inp,
 void
 cs_io_defaults_info(void)
 {
-  cs_bool_t  mpi_io = false;
+  bool mpi_io = false;
   const char *fmt = N_("  I/O mode:          %s\n");
 
 #if defined(HAVE_MPI_IO)

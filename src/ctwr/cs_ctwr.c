@@ -630,7 +630,7 @@ void CS_PROCF (lecctw, LECCTW)
  const cs_int_t   *const lngnom
 )
 {
-  cs_bool_t           corresp_cel, corresp_fac, corresp_fbr, corresp_som;
+  bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
   cs_int_t            nbvent;
   cs_int_t            i, ict,indfac, ierror;
 
