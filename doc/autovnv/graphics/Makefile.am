@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009-2011 EDF S.A., France
+#   Copyright (C) 2009 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -20,20 +20,27 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-#SUBDIRS = developper howto install refcard theory tutorial user
+# Xfig files to process
 
-if HAVE_SPHINX
-SALOME = salome
-endif
+FIGFILES =
 
-SUBDIRS = refcard theory tutorial user install developper doxygen autovnv $(SALOME)
+# Generated documents (pdf files)
 
-DIST_SUBDIRS = $(SUBDIRS) howto
+PDF_FIGFILES = $(FIGFILES:.fig=.pdf)
 
-EXTRA_DIST = \
-style/csdoc.sty \
-style/csindex.sty \
-style/csmacros.sty \
-style/csvers.tex.in \
-style/logocs.png \
-style/logoedf.png
+# New suffixes and targets
+
+SUFFIXES = .fig .pdf
+
+.fig.pdf:
+	fig2dev -L pdf $< > $@
+
+# One redefines here the standard pdf targets of automake
+# so that they handle generation from LaTeX documents.
+
+pdf-local: $(PDF_FIGFILES)
+
+clean-local:
+	-rm -f $(PDF_FIGFILES)
+
+distclean-local: clean-local

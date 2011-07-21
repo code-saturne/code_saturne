@@ -67,15 +67,15 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("-q", "--quiet",
                       action="store_true", dest="verbose", default=False,
-                      help="does not print status messages to stdout")
+                      help="don't print status messages to stdout")
 
     parser.add_option("-r", "--run",
                       action="store_true", dest="runcase", default=False,
-                      help="runs all cases")
+                      help="run all cases")
 
     parser.add_option("-c", "--compare",
                       action="store_true", dest="compare", default=False,
-                      help="compares results between repository and destination")
+                      help="compare results between repository and destination")
 
     parser.add_option("-p", "--post",
                       action="store_true", dest="post", default=False,

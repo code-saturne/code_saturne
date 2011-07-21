@@ -69,7 +69,7 @@ log.setLevel(logging.NOTSET)
 #log.setLevel(logging.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Curve
+# Curve or plot
 #-------------------------------------------------------------------------------
 
 class Plot(object):
@@ -84,61 +84,83 @@ class Plot(object):
         @type file: C{String}
         @param file: label of the file which contains data of the curve
         """
-        self.id       = 0
+        self.subplot  = 0
         self.xspan    = []
         self.yspan    = []
         self.ismesure = False
-        self.errorbar = []
+        self.cmd      = []
 
         # Open file of data
 
         self.f = open(file, 'r')
 
         # Read mandatory attributes
-
-        self.id     = int(node.attributes["fig"].value)
-        self.legend = node.attributes["legend"].value
-        ycol        = int(node.attributes["ycol"].value)
+        self.subplot = int(parser.getAttribute(node, "fig"))
+        ycol         = int(parser.getAttribute(node, "ycol"))
 
         # Read optional attributes
         try:
-            self.fmt = node.attributes["fmt"].value
+            self.legend = parser.getAttribute(node, "legend")
+        except:
+            self.legend = ""
+
+        try:
+            self.fmt = parser.getAttribute(node, "fmt")
         except:
             self.fmt = ""
 
         try:
-            xcol = int(node.attributes["xcol"].value)
+            xcol = int(parser.getAttribute(node, "xcol"))
         except:
             xcol = None
+
         try:
-            xplus = float(node.attributes["xplus"].value)
+            xplus = float(parser.getAttribute(node, "xplus"))
         except:
             xplus = 0
+
         try:
-            xfois = float(node.attributes["xfois"].value)
+            xfois = float(parser.getAttribute(node, "xfois"))
         except:
             xfois = 1
+
         try:
-            yplus = float(node.attributes["yplus"].value)
+            yplus = float(parser.getAttribute(node, "yplus"))
         except:
             yplus = 0
+
         try:
-            yfois = float(node.attributes["yfois"].value)
+            yfois = float(parser.getAttribute(node, "yfois"))
         except:
             yfois = 1
 
         self.uploadData(xcol, ycol, xplus, xfois, yplus, yfois)
 
         try:
-            errorbar = [int(s) for s in node.attributes["errorbar"].value.split()]
+            xerr = [int(s) for s in parser.getAttribute(node, "xerr").split()]
         except:
-            errorbar = None
+            xerr = None
 
-        self.uploadErrorBar(errorbar)
+        try:
+            yerr = [int(s) for s in parser.getAttribute(node, "yerr").split()]
+        except:
+            yerr = None
 
         self.f.close()
 
-        self.cmd = parser.getPltCommands(node)
+        # Error Bar
+        self.f = open(file, 'r')
+        self.xerr = self.uploadErrorBar(xerr)
+        self.yerr = self.uploadErrorBar(yerr)
+        self.f.close()
+
+        # List of additional matplotlib commands
+        for k, v in parser.getAttributes(node).items():
+            if k not in ('fig', 'fmt', 'legend', 'xcol', 'ycol', \
+                         'xplus', 'yplus', 'xfois', 'yfois', 'xerr', 'yerr'):
+                self.cmd.append("plt.setp(lines, " + k + "=" + v + ")")
+
+        self.cmd += parser.getPltCommands(node)
 
 
     def setMeasurement(self, bool):
@@ -173,7 +195,7 @@ class Plot(object):
         load and parse listing for Measurement incertitude
         """
         if errorbar == None:
-            self.errorbar = None
+            return None
 
         elif len(errorbar) == 2:
             error = [ [], [] ]
@@ -181,17 +203,17 @@ class Plot(object):
                 if line[0] != '#' and line != "\n":
                     error[0].append(float(split(line)[errorbar[0]-1]))
                     error[1].append(float(split(line)[errorbar[1]-1]))
-            self.errorbar = error
+            return error
 
         elif len(errorbar) == 1:
             error = []
             for line in self.f.readlines():
                 if line[0] != '#' and line != "\n":
                     error.append(float(split(line)[errorbar[0]-1]))
-            self.errorbar = error
+            return error
 
 #-------------------------------------------------------------------------------
-# Plot
+# SubPlot
 #-------------------------------------------------------------------------------
 
 class Subplot(object):
@@ -202,73 +224,44 @@ class Subplot(object):
         """
         Constructor of a plot.
         """
-        self.title     = ""
-        self.xlabel    = ""
-        self.ylabel    = ""
-        self.id        = 0
-        self.legstatus = "off"
-        self.legpos    = ""
-        self.xrange    = ""
-        self.yrange    = ""
-        self.curves    = []
+        # Read mandatory attribute
+        self.id = int(parser.getAttribute(node, "id"))
 
-        self.id = int(node.attributes["fig"].value)
+        # Read optional attributes
+        self.xlabel    = parser.getAttribute(node, "xlabel", False)
+        self.ylabel    = parser.getAttribute(node, "ylabel", False)
+        self.title     = parser.getAttribute(node, "title", False)
+        self.legstatus = parser.getAttribute(node, "legstatus", False)
 
         try:
-            self.xlabel = node.attributes["xlabel"].value
-        except:
-            self.xlabel = ""
-
-        try:
-            self.ylabel = node.attributes["ylabel"].value
-        except:
-            self.ylabel = ""
-
-        try:
-            self.title = node.attributes["title"].value
-        except:
-            self.title = ""
-
-        try:
-            self.legstatus = node.attributes["legstatus"].value
-        except:
-            self.legstatus = "on"
-
-        try:
-            self.legpos = [float(s) for s in node.attributes["legpos"].value.split()]
+            self.legpos = [float(s) for s in parser.getAttribute(node, "legpos").split()]
         except:
             self.legpos = None
 
         try:
-            self.xrange = [float(s) for s in node.attributes["xrange"].value.split()]
+            self.xlim = [float(s) for s in parser.getAttribute(node, "xlim").split()]
         except:
-            self.xrange = None
+            self.xlim = None
 
         try:
-            self.yrange = [float(s) for s in node.attributes["yrange"].value.split()]
+            self.ylim = [float(s) for s in parser.getAttribute(node, "ylim").split()]
         except:
-            self.yrange = None
+            self.ylim = None
 
+        # Store the list of curves to be plotted in this subplot
+        self.curves = []
         for curve in curves:
-            if curve.id == self.id:
+            if curve.subplot == self.id:
                 self.curves.append(curve)
 
-        self.cmd = parser.getPltCommands(node)
+        # List of additional matplotlib commands
+        self.cmd = []
+        for k, v in parser.getAttributes(node).items():
+            if k not in ('id', 'xlabel', 'ylabel', 'title', 'legstatus', \
+                         'legpos', 'xlim', 'xlim'):
+                self.cmd.append("plt.subplot(" + k + "=" + v + ")")
 
-        # build of legends
-        self.legends = []
-
-        for curve in self.curves:
-            if curve.id == self.id:
-                if curve.measurement():
-                    if curve.errorbar != None:
-                        self.legends.append(curve.legend + " errorbar")
-                        self.legends.append(curve.legend + " errorbar")
-                        self.legends.append(curve.legend)
-                    else:
-                        self.legends.append(curve.legend)
-                else:
-                    self.legends.append(curve.legend)
+        self.cmd += parser.getPltCommands(node)
 
 #-------------------------------------------------------------------------------
 # Figure
@@ -276,47 +269,42 @@ class Subplot(object):
 
 class Figure(object):
     """
-    Management of a single figure (layout of several plots).
+    Management of a single figure (layout of several subplots).
     """
-    def __init__ (self, node, parser, curves, n_plots, plots):
+    def __init__ (self, node, parser, curves, n_plots, subplots):
         """
         Constructor of a figure.
         """
         self.file_name = node.attributes["name"].value
-        self.l_plots = [int(s) for s in node.attributes["fig"].value.split()]
+        self.l_subplots = [int(s) for s in node.attributes["idlist"].value.split()]
 
-        self.tags = ("title", "figsize", "dpi", "facecolor", "edgecolor", "linewidth")
+        self.tags = ("title", "nbrow", "nbcol")
         for tag in self.tags:
-            try:
-                self.__dict__[tag] = node.attributes[tag].value
-            except:
-                self.__dict__[tag] = None
+            self.__dict__[tag] = parser.getAttribute(node, tag, False)
 
-        self.cmd = parser.getPltCommands(node)
+        self.cmd = []
+        for k, v in parser.getAttributes(node).items():
+            if k not in ("name", "idlist", "title", "nbrow", "nbcol"):
+                self.cmd.append("plt.figure(" + k + "=" + v + ")")
 
-        self.o_plots = []
-        for i in self.l_plots:
-            for p in plots:
+        self.cmd += parser.getPltCommands(node)
+
+        self.o_subplots = []
+        for i in self.l_subplots:
+            for p in subplots:
                 if p.id == i:
-                    self.o_plots.append(p)
+                    self.o_subplots.append(p)
 
-        # Figure options
-        if self.figsize:
-            t = tuple(int(s) for s in self.figsize[1:-1].split(','))
-            plt.figure(figsize=t)
-        if self.dpi:
-            plt.figure(dpi=int(self.dpi))
-        if self.linewidth:
-            plt.figure(linewidth=float(self.linewidth))
-        if self.facecolor:
-            plt.figure(facecolor=self.facecolor)
-        if self.edgecolor:
-            plt.figure(edgecolor=self.edgecolor)
+
+    def options(self):
+        """
+        Additional figure options.
+        """
         if self.title:
             plt.suptitle(self.title, fontsize=10)
 
 
-    def layout(self, n_plots):
+    def layout(self):
         """
         Automatic layout, based on the number of subplots
         Parameters with their defaults:
@@ -327,21 +315,22 @@ class Figure(object):
         wspace = 0.2 the amount of width reserved for blank space between subplots
         hspace = 0.2 the amount of height reserved for white space between subplots
         """
-        if n_plots < 3:
+        nbr = len(self.l_subplots)
+
+        if nbr < 3:
             nbrow = 1
-            nbcol = n_plots
+            nbcol = nbr
             rcParams['font.size'] = 6
             rcParams['lines.markersize']= 2
             ri = 0.8
             le = 0.15
             hs = 0.35
             ws = 0.5
-            plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-        elif n_plots > 24:
+        elif nbr > 24:
             rcParams['font.size'] = 4
             rcParams['lines.markersize']= 1
             nbrow = 5
-            nbcol = (n_plots-1)/nbrow+1
+            nbcol = (nbr-1)/nbrow+1
             hs=0.5
             if nbcol > 7:
                 hs = 1.0
@@ -352,12 +341,11 @@ class Figure(object):
             ri = 0.9
             le = 0.1
             ws = 1.25
-            plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-        elif n_plots > 12:
+        elif nbr > 12:
             nbrow = 4
             rcParams['font.size'] = 5
             rcParams['lines.markersize'] = 2
-            nbcol = (n_plots-1) / nbrow+1
+            nbcol = (nbr-1) / nbrow+1
             hs=0.45
             if nbcol > 5:
                 hs = 0.8
@@ -366,10 +354,9 @@ class Figure(object):
             ri = 0.9
             le = 0.1
             ws = 0.99
-            plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-        elif n_plots > 6:
+        elif nbr > 6:
             nbrow = 3
-            nbcol = (n_plots-1) / nbrow+1
+            nbcol = (nbr-1) / nbrow+1
             rcParams['lines.markersize'] = 3
             rcParams['font.size'] = 6
             hs = 0.4
@@ -378,19 +365,24 @@ class Figure(object):
             ri = 0.9
             le = 0.1
             ws = 0.8
-            plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
-        elif n_plots > 2:
+        elif nbr > 2:
             nbrow = 2
-            nbcol = (n_plots-1) / nbrow+1
+            nbcol = (nbr-1) / nbrow+1
             hs = 0.3
             if nbcol > 2:
               hs = 0.45
             ri = 0.85
             le = 0.1
             ws = 0.6
-            plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
             rcParams['font.size'] = 6
             rcParams['lines.markersize']= 4
+
+        plt.subplots_adjust(hspace=hs, wspace=ws, right=ri, left=le)
+
+        if self.nbrow:
+            nbrow = int(self.nbrow)
+        if self.nbcol:
+            nbcol = int(self.nbcol)
 
         return nbrow, nbcol, hs, ri, le, ws
 
@@ -426,7 +418,6 @@ class Plotter(object):
         # initialisation for each Study
         self.n_plots = 0
         self.curves  = []
-        self.plots   = []
         self.figures = []
 
         # Read the parser for the Measurments Files
@@ -438,134 +429,175 @@ class Plotter(object):
                 curve = Plot(node, self.parser, file)
                 curve.setMeasurement(True)
                 self.curves.append(curve)
-                self.n_plots = max(self.n_plots, curve.id)
+                self.n_plots = max(self.n_plots, curve.subplot)
 
         # Read the files of results
         for case in study_object.Cases:
             if case.plot == "on" and case.is_run != "KO":
                 for node in self.parser.getChilds(case.node, "data"):
                     plots, file, dest, repo = self.parser.getResult(node)
+
+                    if dest:
+                        d = dest
+                    elif repo:
+                        d = repo
+
                     f = os.path.join(self.parser.getDestination(),
                                      study_label,
                                      case.label, "RESU",
-                                     dest, file)
+                                     d, file)
+
                     if not os.path.isfile(f):
                         f = os.path.join(self.parser.getDestination(),
                                          study_label,
                                          case.label, "RESU",
-                                         dest, "monitoring", file)
+                                         d, "monitoring", file)
                         if not os.path.isfile(f):
                             raise ValueError, "This file does not exist: %s" % f
+
                     for node in plots:
                         curve = Plot(node, self.parser, f)
                         curve.setMeasurement(False)
                         self.curves.append(curve)
-                        self.n_plots = max(self.n_plots, curve.id)
+                        self.n_plots = max(self.n_plots, curve.subplot)
 
-        for node in self.parser.getPlots(study_label):
-            self.plots.append(Subplot(node, self.parser, self.curves))
+        subplots = []
+        for node in self.parser.getSubplots(study_label):
+            subplots.append(Subplot(node, self.parser, self.curves))
 
-        for p in self.plots:
+        for p in subplots:
             self.n_plots = max(self.n_plots, p.id)
 
         for node in self.parser.getFigures(study_label):
-            self.figures.append(Figure(node, self.parser, self.curves, self.n_plots, self.plots))
+            self.figures.append(Figure(node, self.parser, self.curves, self.n_plots, subplots))
 
         for figure in self.figures:
+            figure.options()
+
+            # additional matplotlib raw commands for figure
+            for cmd in figure.cmd:
+                c = open("./tmp.py", "w")
+                c.write(cmd)
+                c.close()
+                try:
+                    execfile("./tmp.py")
+                except:
+                    print "Error with the matplotlib command: %s" % cmd
+                os.remove("./tmp.py")
+
+            # Plot curve
             self.plot_figure(figure)
+
+            # save the figure
             f = os.path.join(self.parser.getDestination(),
                              study_label,
                              "POST",
                              figure.file_name)
 
-            # additional matplotlib raw commands for figure
-            for cmd in figure.cmd:
-                f = open("./tmp.py", "w")
-                f.write(cmd)
-                f.close()
-                execfile("./tmp.py")
-                os.remove("./tmp.py")
-
             figure.save(f)
+
+            # store the name of the figure for the build of
+            # the detailed report
             study_object.matplotlib_figures.append(f)
 
 
-    def __draw_curve(self, curve, n_fig, j):
+    def __draw_curve(self, ax, curve, n_fig):
+        """
+        Draw a single curve.
+        """
         xspan = curve.xspan
         yspan = curve.yspan
 
         if curve.measurement():
-            if curve.errorbar:
-                lines = plt.errorbar(xspan, yspan, yerr=curve.errorbar,
-                                     hold=True, fmt=curve.fmt)
+            if curve.xerr or curve.yerr:
+                lines = ax.errorbar(xspan, yspan,
+                                    xerr=curve.xerr,
+                                    yerr=curve.yerr,
+                                    fmt=curve.fmt,
+                                    label=curve.legend)
             else:
-                lines = plt.plot(xspan, yspan, curve.fmt)
+                lines = ax.plot(xspan, yspan, curve.fmt, label=curve.legend)
         else:
             if curve.fmt:
-                lines = plt.plot(xspan, yspan, curve.fmt)
+                lines = ax.plot(xspan, yspan, curve.fmt, label=curve.legend)
             else:
-                if n_fig[curve.id -1] < 8:
-                    lines = plt.plot(xspan, yspan)
-                elif n_fig[curve.id -1] < 15:
-                    lines = plt.plot(xspan, yspan, '--')
+                if n_fig[curve.subplot -1] < 8:
+                    lines = ax.plot(xspan, yspan, label=curve.legend)
+                elif n_fig[curve.subplot -1] < 15:
+                    lines = ax.plot(xspan, yspan, '--', label=curve.legend)
                 else:
-                    lines = plt.plot(xspan, yspan, ':')
+                    lines = ax.plot(xspan, yspan, ':', label=curve.legend)
 
         # additional matplotlib raw commands for line2D
         line = lines[0]
         for cmd in curve.cmd:
-            f = open("./tmp.py", "w")
-            f.write(cmd)
-            f.close()
-            execfile("./tmp.py")
+            c = open("./tmp.py", "w")
+            c.write(cmd)
+            c.close()
+            try:
+                execfile("./tmp.py")
+            except:
+                print "Error with the matplotlib command: %s" % cmd
             os.remove("./tmp.py")
+
         plt.hold(True)
 
 
-    def __draw_legend(self, p, bool, hs, ws, ri, le):
+    def __draw_axis(self, ax, p):
         if p.xlabel:
-            plt.xlabel(p.xlabel)
+            ax.set_xlabel(p.xlabel)
         if p.ylabel:
-            plt.ylabel(p.ylabel)
-        if p.title:
-            plt.title(p.title)
-        if p.xrange:
-            plt.xlim((p.xrange[0], p.xrange[1]))
-        if p.yrange:
-            plt.ylim((p.yrange[0], p.yrange[1]))
+            ax.set_ylabel(p.ylabel)
+        if p.xlim:
+            ax.set_xlim((p.xlim[0], p.xlim[1]))
+        if p.ylim:
+            ax.set_ylim((p.ylim[0], p.ylim[1]))
 
-        if p.legends:
-            if p.legstatus == "on":
-                if p.legpos == None:
-                    plt.legend(p.legends, bbox_to_anchor=(1.02, 1), \
-                                loc=2, borderaxespad=0., markerscale=0.5)
-                else:
+
+    def __draw_legend(self, ax, p, bool, hs, ws, ri, le):
+        if p.title:
+            ax.set_title(p.title)
+
+        if p.legstatus == "on":
+            handles, labels = ax.get_legend_handles_labels()
+
+            if p.legpos == None:
+                ax.legend(handles,
+                          labels,
+                          bbox_to_anchor=(1.02, 1),
+                          loc=2,
+                          borderaxespad=0.,
+                          markerscale=0.5)
+            else:
+                id_loc = 2
+                if   p.legpos[0] > 0.9 and p.legpos[1] > 0.9:
+                    id_loc = 1
+                elif p.legpos[0] > 0.9 and p.legpos[1] < 0.1:
+                    id_loc = 4
+                elif p.legpos[0] < 0.1 and p.legpos[1] < 0.1:
+                    id_loc = 3
+                elif p.legpos[0] < 0.1 and p.legpos[1] > 0.9:
                     id_loc = 2
-                    if   p.legpos[0] > 0.9 and p.legpos[1] > 0.9:
-                        id_loc = 1
-                    elif p.legpos[0] > 0.9 and p.legpos[1] < 0.1:
-                        id_loc = 4
-                    elif p.legpos[0] < 0.1 and p.legpos[1] < 0.1:
-                        id_loc = 3
-                    elif p.legpos[0] < 0.1 and p.legpos[1] > 0.9:
-                        id_loc = 2
-                    elif p.legpos[1] > 0.9:
-                        id_loc = 2
-                    elif p.legpos[1] < 0.1:
-                        id_loc = 3 
-                    elif p.legpos[0] > 0.9:
-                        id_loc = 4
-                    elif p.legpos[0] < 0.1:
-                        id_loc = 3
-                    plt.legend(p.legends,
-                               bbox_to_anchor=(p.legpos[0], p.legpos[1]),
-                               loc=id_loc, borderaxespad=0., markerscale=0.5)
-                    if bool:
-                        ri2 = min(0.9, ri*1.1)
-                        le2 = max(0.125, le/1.1)
-                        ws2 = min(0.3, ws/1.8)
-                        plt.subplots_adjust(hspace=hs, wspace=ws2,
-                                            right=ri2, left=le2)
+                elif p.legpos[1] > 0.9:
+                    id_loc = 2
+                elif p.legpos[1] < 0.1:
+                    id_loc = 3
+                elif p.legpos[0] > 0.9:
+                    id_loc = 4
+                elif p.legpos[0] < 0.1:
+                    id_loc = 3
+                ax.legend(handles,
+                          labels,
+                          bbox_to_anchor=(p.legpos[0], p.legpos[1]),
+                          loc=id_loc,
+                          borderaxespad=0.,
+                          markerscale=0.5)
+
+                if bool:
+                    ri2 = min(0.9, ri*1.1)
+                    le2 = max(0.125, le/1.1)
+                    ws2 = min(0.3, ws/1.8)
+                    plt.subplots_adjust(hspace=hs, wspace=ws2, right=ri2, left=le2)
 
 
     def plot_figure(self, figure):
@@ -573,64 +605,49 @@ class Plotter(object):
         Plotter of a single figure with several subplots.
         """
         # Layout
-        nbrow, nbcol, hs, ri, le, ws = figure.layout(self.n_plots)
-        log.debug("plot_figure --> layout: n_plots: %s nbcol: %s nbrow: %s l_plots: %s" % \
-                  (self.n_plots, nbcol, nbrow, figure.l_plots))
+        nbrow, nbcol, hs, ri, le, ws = figure.layout()
+        log.debug("plot_figure --> layout: n_plots: %s nbcol: %s nbrow: %s l_subplots: %s" % \
+                  (self.n_plots, nbcol, nbrow, figure.l_subplots))
 
-        # list of numbers of curves per plot
+        # list of numbers of curves per subplot
         n_fig = [0] * self.n_plots
 
-        # single plot in the figure
-        if len(figure.l_plots) == 1:
-            log.debug("plot_figure --> single plot draw")
+        # draw curves in the right subplot
+        for j in figure.l_subplots:
+            idx = figure.l_subplots.index(j)
+            log.debug("plot_figure --> plot draw: id = %s" % j)
+            ax = plt.subplot(nbrow, nbcol, idx + 1)
 
-            # build of the plots
             for curve in self.curves:
-                plt.subplot(nbcol, nbrow, curve.id)
-                n_fig[curve.id-1] += 1
-                self.__draw_curve(curve, n_fig, curve.id-1)
-
-        # several plots in the figure
-        else:
-            # build of the plots
-            for j in range(len(figure.l_plots)):
-                log.debug("plot_figure --> several plot draw: id = %s" % j)
-                plt.subplot(nbcol, nbrow, j+1)
-
-                for curve in self.curves:
-                    if figure.l_plots[j] == curve.id:
-                        n_fig[j] += 1
-                        self.__draw_curve(curve, n_fig, j)
+                if j == curve.subplot:
+                    n_fig[j-1] += 1
+                    self.__draw_curve(ax, curve, n_fig)
 
         plt.hold(False)
 
-        # single plot in the figure: legends layout
-        if len(figure.l_plots) == 1:
-            for i in range(self.n_plots):
-                p = figure.o_plots[i]
-                plt.subplot(nbcol, nbrow, i+1)
-                log.debug("plot_figure --> single plot legends")
-                self.__draw_legend(p, False, hs, ws, ri, le)
+        # axis and legend
+        bool = len(figure.l_subplots) > 1
 
-        else:
-            # several plots in the figure: legends layout
-            for i in range(len(figure.l_plots)):
-                j = figure.l_plots[i]
-                p = figure.o_plots[i]
-                plt.subplot(nbcol, nbrow, j)
-                log.debug("plot_figure --> several plot legends: id = %s" % j)
-                self.__draw_legend(p, True, hs, ws, ri, le)
+        for i in range(len(figure.l_subplots)):
+            j = figure.l_subplots[i]
+            p = figure.o_subplots[i]
+            ax = plt.subplot(nbrow, nbcol, i + 1)
+            self.__draw_axis(ax, p)
+            self.__draw_legend(ax, p, bool, hs, ws, ri, le)
 
         # additional matplotlib raw commands for subplot
-        for i in range(len(figure.l_plots)):
-            j = figure.l_plots[i]
-            p = figure.o_plots[i]
-            ax = plt.subplot(nbcol, nbrow, j)
+        for i in range(len(figure.l_subplots)):
+            j = figure.l_subplots[i]
+            p = figure.o_subplots[i]
+            ax = plt.subplot(nbrow, nbcol, i + 1)
             for cmd in p.cmd:
-                f = open("./tmp.py", "w")
-                f.write(cmd)
-                f.close()
-                execfile("./tmp.py")
+                c = open("./tmp.py", "w")
+                c.write(cmd)
+                c.close()
+                try:
+                    execfile("./tmp.py")
+                except:
+                    print "Error with the matplotlib command: %s" % cmd
                 os.remove("./tmp.py")
 
 #-------------------------------------------------------------------------------
