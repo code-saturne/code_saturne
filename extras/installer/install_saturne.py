@@ -336,8 +336,8 @@ class Setup:
             Package(name="MEI",
                     description="Mathematical Expressions Interpreter",
                     package="mei",
-                    version="1.0.2",
-                    archive="mei-102.zip",
+                    version="1.0.3",
+                    archive="mei-103.zip",
                     url=url_cs)
 
         # Code_Saturne Preprocessor

@@ -1,3 +1,8 @@
+* 21/07/2011 - David Monfort <david.monfort@edf.fr>
+  Update MEI dependency to 1.0.3 (correct version number) in the installer.
+  modified file:
+    extras/installer/install_saturne.py
+
 * 19/07/2011 - David Monfort <david.monfort@edf.fr>
   Release of Code_Saturne 2.0.2.
 
