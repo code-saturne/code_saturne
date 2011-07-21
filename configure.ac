@@ -340,72 +340,6 @@ CS_AC_TEST_FC_FLUSH
 CS_AC_TEST_FC_MOD
 
 #------------------------------------------------------------------------------
-# Determine OpenMP support
-#------------------------------------------------------------------------------
-
-# It seems that we may not use AC_OPENMP both for C and Fortran, so
-# we use our own method here, based on flags already set by default
-# or by the user.
-
-# From this point, no runtime tests should be run, so no issues should
-# arise due to missing RPATH or LD_LIBRARY_PATH values in case of non-standard
-# compiler install paths, such as may happen with gcc's libgomp.
-
-cs_have_openmp=no
-
-AC_ARG_ENABLE(openmp,
-  [AS_HELP_STRING([--disable-openmp], [disable OpenMP support])],
-  [
-    case "${enableval}" in
-      yes) cs_have_openmp=yes ;;
-      no)  cs_have_openmp=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-openmp]) ;;
-    esac
-  ],
-  [ cs_have_openmp=no ]
-)
-
-if test "x$cs_have_openmp" = "xyes" ; then
-
-  saved_CFLAGS="$CFLAGS"
-  saved_FCFLAGS="$FCFLAGS"
-  saved_LDFLAGS="$LDFLAGS"
-
-  CFLAGS="${CFLAGS} ${cflags_default_omp}"
-  FCFLAGS="${FCFLAGS} ${fcflags_default_omp}"
-  LDFLAGS="${LDFLAGS} ${cflags_default_omp}"
-
-  AC_MSG_CHECKING([for OpenMP (C)])
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <omp.h>]],
-                 [[ omp_get_num_threads();]])],
-                 [cs_have_openmp=yes],
-                 [cs_have_openmp=no])
-  AC_MSG_RESULT($cs_have_openmp)
-  if test "x$cs_have_openmp" = "xyes" ; then
-    AC_LANG_PUSH([Fortran])
-    AC_MSG_CHECKING([for OpenMP (Fortran)])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([],
-                   [[
-      integer n
-      n = omp_get_num_threads()
-]])],
-                   [cs_have_openmp=yes],
-                   [cs_have_openmp=no])
-    AC_MSG_RESULT($cs_have_openmp)
-    AC_LANG_POP([Fortran])
-  fi
-  if test "x$cs_have_openmp" = "xyes" ; then
-    AC_DEFINE([HAVE_OPENMP], 1, [openmp support])
-  else
-    cs_have_openmp=no
-    CFLAGS="$saved_CFLAGS"
-    FCFLAGS="$saved_FCFLAGS"
-    LDFLAGS="$saved_LDFLAGS"
-  fi
-fi
-AC_SUBST(cs_have_openmp)
-
-#------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------
 
@@ -417,7 +351,7 @@ if test "x$cs_have_internal_ple" = xyes; then
 fi
 
 CS_AC_TEST_LIBXML2
-CS_AC_TEST_BLAS([$cs_have_openmp])
+CS_AC_TEST_BLAS
 CS_AC_TEST_MPI
 CS_AC_TEST_METIS
 CS_AC_TEST_SCOTCH
@@ -924,7 +858,6 @@ if (test x$cs_have_mpi = xyes) ; then
   echo "   MPI I/O support: "$cs_have_mpi_io""
   echo "   MPI2 one-sided communication support: "$cs_have_mpi_one_sided""
 fi
-echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " Libxml2 (XML Reader) support: "$cs_have_libxml2""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""

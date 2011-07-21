@@ -608,12 +608,10 @@ _diag_vec_p_l(const cs_real_t  *restrict da,
   /* Note: also try with BLAS: DNDOT(n_cells, 1, y, 1, 1, da, x, 1, 1) */
 
   if (da != NULL) {
-#pragma omp parallel for
     for (ii = 0; ii < n_elts; ii++)
       y[ii] = da[ii] * x[ii];
   }
   else {
-#pragma omp parallel for
     for (ii = 0; ii < n_elts; ii++)
       y[ii] = 0.0;
   }
@@ -645,12 +643,10 @@ _b_diag_vec_p_l(const cs_real_t  *restrict da,
   fvm_lnum_t  ii;
 
   if (da != NULL) {
-#pragma omp parallel for
     for (ii = 0; ii < n_elts; ii++)
       _dense_b_ax(ii, b_size, da, x, y);
   }
   else {
-#pragma omp parallel for
     for (ii = 0; ii < n_elts*b_size[1]; ii++)
       y[ii] = 0.0;
   }
@@ -683,12 +679,10 @@ _diag_x_p_beta_y(cs_real_t         alpha,
   #endif
 
   if (da != NULL) {
-#pragma omp parallel for firstprivate(alpha, beta)
     for (ii = 0; ii < n_elts; ii++)
       y[ii] = (alpha * da[ii] * x[ii]) + (beta * y[ii]);
   }
   else {
-#pragma omp parallel for firstprivate(beta)
     for (ii = 0; ii < n_elts; ii++)
       y[ii] *= beta;
   }
@@ -727,7 +721,6 @@ _b_diag_x_p_beta_y(cs_real_t         alpha,
   #endif
 
   if (da != NULL) {
-#pragma omp parallel for firstprivate(alpha, beta)
     for (ii = 0; ii < n_elts; ii++)
       _dense_b_aax_p_by(ii,
                         b_size,
@@ -738,7 +731,6 @@ _b_diag_x_p_beta_y(cs_real_t         alpha,
                         y);
   }
   else {
-#pragma omp parallel for firstprivate(beta)
     for (ii = 0; ii < n_elts; ii++) {
       for (jj = 0; jj < b_size[0]; jj++)
         y[ii*b_size[1] + jj] *= beta;
@@ -762,7 +754,6 @@ _zero_range(cs_real_t  *restrict y,
 {
   fvm_lnum_t  ii;
 
-  #pragma omp parallel for
   for (ii = start_id; ii < end_id; ii++)
     y[ii] = 0.0;
 }
@@ -787,7 +778,6 @@ _b_zero_range(cs_real_t  *restrict y,
 {
   cs_int_t  ii;
 
-  #pragma omp parallel for
   for (ii = start_id*b_size[1]; ii < end_id*b_size[1]; ii++)
     y[ii] = 0.0;
 }
@@ -1128,14 +1118,12 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
 
     if (mc->da != NULL) {
 
-#pragma omp parallel for
       for (ii = 0; ii < n_cells; ii++)
         da[ii] = mc->da[ii];
 
     }
     else {
 
-#pragma omp parallel for
       for (ii = 0; ii < n_cells; ii++)
         da[ii] = 0.0;
 
@@ -1149,7 +1137,6 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
 
     if (mc->da != NULL) {
 
-#pragma omp parallel for private(jj)
       for (ii = 0; ii < n_cells; ii++) {
         for (jj = 0; jj < b_size[0]; jj++)
           da[ii*b_size[1] + jj] = mc->da[ii*b_size[3] + jj*b_size[2] + jj];
@@ -1157,7 +1144,6 @@ _get_diagonal_native(const cs_matrix_t  *matrix,
     }
     else {
 
-#pragma omp parallel for
       for (ii = 0; ii < n_cells*b_size[1]; ii++)
         da[ii] = 0.0;
 
@@ -1355,7 +1341,6 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
@@ -1375,7 +1360,6 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
@@ -1445,7 +1429,6 @@ _b_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
@@ -1468,7 +1451,6 @@ _b_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
@@ -1889,7 +1871,6 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
@@ -1911,7 +1892,6 @@ _alpha_a_x_p_beta_y_native_omp(cs_real_t           alpha,
 
       for (g_id=0; g_id < n_groups; g_id++) {
 
-        #pragma omp parallel for private(face_id, ii, jj)
         for (t_id=0; t_id < n_threads; t_id++) {
 
           for (face_id = group_index[(t_id*n_groups + g_id)*2];
@@ -2689,7 +2669,6 @@ _mat_vec_p_l_csr(const cs_matrix_t  *matrix,
 
   /* Full rows for non-symmetric structure */
 
-  #pragma omp parallel for private(ii, col_id, m_row, n_cols, sii)
   for (ii = 0; ii < n_rows; ii++) {
 
     col_id = ms->col_id + ms->row_index[ii];
@@ -2837,7 +2816,6 @@ _alpha_a_x_p_beta_y_csr(cs_real_t           alpha,
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_int_t  n_rows = ms->n_rows;
 
-  #pragma omp parallel for private(ii, col_id, m_row, n_cols, sii)
   for (ii = 0; ii < n_rows; ii++) {
 
     col_id = ms->col_id + ms->row_index[ii];

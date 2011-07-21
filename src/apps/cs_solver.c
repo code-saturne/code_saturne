@@ -543,7 +543,6 @@ main(int    argc,
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
   {
     int t_id;
-#pragma omp parallel private(t_id)
     {
       t_id = omp_get_thread_num();
       if (t_id == 0)

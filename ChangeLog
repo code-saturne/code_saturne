@@ -1,4 +1,14 @@
 * 21/07/2011 - David Monfort <david.monfort@edf.fr>
+  Remove (very) incomplete OpenMP support, which will be available in
+  future versions, but is not usable yet in the 2.1 release series.
+  modified scripts:
+    configure.ac
+    m4/cs_blas.m4
+  modified routines:
+    src/alge/cs_matrix.c
+    src/apps/cs_solver.c
+
+* 21/07/2011 - David Monfort <david.monfort@edf.fr>
   Use a standard "make html" target to generate Doxygen documentation.
   modified file:
     doc/doxygen/Doxyfile
