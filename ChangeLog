@@ -1,3 +1,10 @@
+* 22/07/2011 - Cyril Baudry <cyril.baudry@edf.fr>
+  Fix minor issues in the post-processing pages.
+  modified routines:
+    gui/Pages/LocalizationForm.ui
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+
 * 21/07/2011 - David Monfort <david.monfort@edf.fr>
   Remove (very) incomplete OpenMP support, which will be available in
   future versions, but is not usable yet in the 2.1 release series.

@@ -229,13 +229,15 @@ class OutputControlModel(Model):
         for w in writer_id:
             self.isInList(w, self.getWriterIdList())
 
-        # First add the main scalar to delete
-        list = writer_id
-        # Delete all scalars
-        for writer in list:
-            self.__deleteWriter(writer)
+            #delete associate with mesh if needed
+            for MeshId in self.getMeshIdList():
+                for WriterId in self.getAssociatedWriterIdList(MeshId):
+                    if (WriterId == w):
+                        self.deleteAssociatedWriter(MeshId, WriterId)
 
-        return list
+        # Delete all scalars
+        for writer in reversed(writer_id):
+            self.__deleteWriter(writer)
 
 
     def getWriterIdList(self):
@@ -585,25 +587,9 @@ class OutputControlModel(Model):
         for mesh in mesh_id:
             self.isInList(mesh, self.getMeshIdList())
 
-        # First add the main scalar to delete
-        list = mesh_id
-
         # Delete all scalars
-        for mesh in list:
+        for mesh in reversed(mesh_id):
             self.__deleteMesh(mesh)
-
-        return list
-
-
-    def getMeshIdList(self):
-        """
-        Return a list of writer id already defined
-        """
-        mesh = []
-        for node in self.node_out.xmlGetNodeList('mesh'):
-            mesh.append(node['id'])
-        return mesh
-
 
 
     def getMeshLabelList(self):
@@ -782,7 +768,7 @@ class OutputControlModel(Model):
         """
         Return the type of output for printing listing
         """
-        node = self.node_out.xmlGetNode('probe_recording_frequency')
+        node = self.node_out.xmlGetNode('probe_recording_frequency_time')
         if node != None :
             return 'Frequency_h_x'
         val = self.getMonitoringPointFrequency()
