@@ -1,3 +1,10 @@
+* 22/07/2011 - Cyril Baudry <cyril.baudry@edf.fr>
+  Fix minor issues in the post-processing pages.
+  modified routines:
+    gui/Pages/LocalizationForm.ui
+    gui/Pages/OutputControlModel.py
+    gui/Pages/OutputControlView.py
+
 * 22/07/2011 - David Monfort <david.monfort@edf.fr>
   Add detection for some headers and function for NEPTUNE_CFD.
   modified script:

@@ -1250,6 +1250,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             format = self.mdl.getWriterFormat(writer)
             directory = self.mdl.getWriterDirectory(writer)
             self.__insertWriter(label, str(new_id), format, directory)
+        self.tableViewMesh.clearSelection()
+        self.groupBoxVariable.hide()
+        self.groupBoxAssociatedWriter.hide()
 
 
     @pyqtSignature("const QModelIndex &, const QModelIndex &")
