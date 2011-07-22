@@ -96,7 +96,7 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
   /*------------------------------------*/
 
   cs_lnum_t   n_selected_faces = 0;
-  cs_lnum_t  *selected_faces = NULL; 
+  cs_lnum_t  *selected_faces = NULL;
 
   cs_real_t  *i_face_cog = NULL, *i_face_normal = NULL;
 
@@ -118,14 +118,14 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
                                                      i_face_normal);
 
   BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_int_t);
-                              
+
   cs_selector_get_i_face_list(criteria,
                               &n_selected_faces,
                               selected_faces);
   cs_create_thinwall(mesh,
                      selected_faces,
                      n_selected_faces);
-  
+
   BFT_FREE(i_face_cog);
   BFT_FREE(i_face_normal);
 

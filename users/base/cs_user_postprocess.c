@@ -170,7 +170,7 @@ cs_user_postprocess_writers(void)
                           "user_txt",                   /* writer name */
                           "postprocessing",             /* directory name */
                           "ensight",                    /* format name */
-                          "text, divide_polyhedra", 
+                          "text, divide_polyhedra",
                           time_dep,                     /* modification flag */
                           output_at_end,
                           ntchr,
@@ -181,11 +181,11 @@ cs_user_postprocess_writers(void)
                           "modif",                      /* writer name */
                           "postprocessing",             /* directory name */
                           "ensight",                    /* format name */
-                          "discard_polyhedra", 
+                          "discard_polyhedra",
                           FVM_WRITER_TRANSIENT_CONNECT,
                           false,
                           3,
-                          frchr);       
+                          frchr);
 
   if (false)
     cs_post_define_writer(4,                            /* writer_id */
@@ -196,7 +196,7 @@ cs_user_postprocess_writers(void)
                           FVM_WRITER_TRANSIENT_COORDS,  /* modification flag */
                           false,
                           ntchr,
-                          frchr);       
+                          frchr);
 }
 
 /*----------------------------------------------------------------------------
@@ -494,7 +494,7 @@ cs_user_postprocess_meshes(void)
   }
 
   /*--------------------------------------------------------------------------*/
- 
+
   /* In cases where a mesh containing polygonal elements is output through
    * a writer configured to divide polygons into triangles (for example when
    * visualization tools do not support polygons, or when higly non convex
