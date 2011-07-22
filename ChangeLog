@@ -1,3 +1,8 @@
+* 22/07/2011 - David Monfort <david.monfort@edf.fr>
+  Add detection for some headers and function for NEPTUNE_CFD.
+  modified script:
+    configure.ac
+
 * 21/07/2011 - Yvan Fournier <yvan.fournier@edf.fr>
   Replace fvm_*num_t with cs_*num_t and fvm_coords_t with cs_coords_t.
   modified files:
